@@ -4,6 +4,7 @@ import { Check, History, Pencil, X } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { LoreArticle, LoreEditor } from './LoreEditor'
 import { RecoveredDraft } from './RecoveredDraft'
+import { VersionActor } from './VersionActor'
 import { useAuth } from '../auth/useAuth'
 import { useUniverseAccess } from '../universes/access'
 import { ApiError } from '../lib/api'
@@ -766,6 +767,7 @@ function ArticleHistory({
                     </p>
                     <p className="version__meta">
                       <span>Version {revision.number}</span>
+                      <VersionActor name={revision.actorName} />
                     </p>
                   </div>
 

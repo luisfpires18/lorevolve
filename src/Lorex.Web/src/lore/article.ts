@@ -35,6 +35,9 @@ export interface ArticleRevisionSummary {
   restoredFromRevisionId: string | null
   createdAt: string
   isEmpty: boolean
+
+  /** The username of the account that saved this version; null when none was recorded. */
+  actorName: string | null
 }
 
 export interface ArticleRevisionDetail {

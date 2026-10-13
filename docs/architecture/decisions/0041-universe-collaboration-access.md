@@ -170,3 +170,23 @@ creates. The owner's restore is unchanged: the selection comes back, or "Restore
 A picture an Editor uploads, replaces or removes changes the owner's storage, never the Editor's. Permission to upload is
 still `EditContent`; the allowance is a separate check on the owner's account. A collaborator refused for room is told
 only that the universe has none - never the owner's usage or allowance.
+
+## Amendment: who made a version (2026-10-13, task 042)
+
+**History names its author.** Every saved version (`EntityRevisions`, `EntityArticleRevisions`,
+`SceneManuscriptRevisions`) records `ActorUserId`, the signed-in account whose write produced it: create, edit, mass
+create, picture change and a restore of an older version alike. It is a raw id with no foreign key, like every other id a
+revision holds, so an account never blocks or rewrites history. Migration `AddRevisionActors`: three nullable columns,
+nothing backfilled. The existing kind (`Created`, `Edited`, `Restored`), number, timestamp and restored-from id stay the
+action, revision and time; no second history or event table exists.
+
+**A username and nothing else.** The history lists (`ManageHistory`, unchanged: owner and Editor) carry `actorName`, the
+account's username read live in the same query. No id, email or role. A null name means no account was recorded - a
+version from before this amendment, one restored from a backup, or an account that no longer exists - and the screen
+says "author not recorded". A former collaborator's name stays on what they wrote.
+
+**Backups still carry no account.** Export is unchanged (format **22**); a restored universe's versions record no one, since
+the restorer did not write them.
+
+**Not recorded:** moving to the Trash and restoring from it write no version, so they name no one; permanent deletion
+removes its history with it. Universe-level activity, notifications and presence are not built.

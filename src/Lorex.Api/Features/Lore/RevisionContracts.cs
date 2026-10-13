@@ -3,6 +3,9 @@ namespace Lorex.Api.Features.Lore;
 /// <summary>
 /// A row in the history list. Carries what the entry was called and where it stood at that
 /// version, so the list reads as a document history without a request per row.
+///
+/// <paramref name="ActorName"/> is the username of the account that made the version, and nothing else of it - no id,
+/// no email. Null when no account was recorded: a version from before attribution, or one restored from a backup.
 /// </summary>
 public sealed record EntityRevisionSummary(
     Guid Id,
@@ -12,7 +15,8 @@ public sealed record EntityRevisionSummary(
     string Name,
     CanonStatus CanonStatus,
     Guid? RestoredFromRevisionId,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? ActorName);
 
 /// <summary>
 /// One value as it stood, with the text it displayed then rather than a live join.

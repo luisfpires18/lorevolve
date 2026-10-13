@@ -100,7 +100,14 @@ public static class EntityArticleEndpoints
         }
 
         var result = await WriteAsync(
-            db, entityId, request.Content!, request.ExpectedUpdatedAt, EntityRevisionKind.Edited, null, cancellationToken);
+            db,
+            entityId,
+            request.Content!,
+            request.ExpectedUpdatedAt,
+            EntityRevisionKind.Edited,
+            null,
+            principal.RequireUserId(),
+            cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
         return result;
@@ -135,6 +142,7 @@ public static class EntityArticleEndpoints
                 revision.RestoredFromRevisionId,
                 revision.CreatedAt,
                 IsEmpty = revision.Content == string.Empty,
+                ActorName = db.Users.Where(user => user.Id == revision.ActorUserId).Select(user => user.UserName).FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
 
@@ -144,7 +152,8 @@ public static class EntityArticleEndpoints
             revision.Kind,
             revision.RestoredFromRevisionId,
             Utc(revision.CreatedAt),
-            revision.IsEmpty)));
+            revision.IsEmpty,
+            revision.ActorName)));
     }
 
     private static async Task<IResult> GetRevisionAsync(
@@ -213,6 +222,7 @@ public static class EntityArticleEndpoints
             request.ExpectedUpdatedAt,
             EntityRevisionKind.Restored,
             revision.Id,
+            principal.RequireUserId(),
             cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
@@ -231,6 +241,7 @@ public static class EntityArticleEndpoints
         DateTime? expectedUpdatedAt,
         EntityRevisionKind kind,
         Guid? restoredFromRevisionId,
+        string actorUserId,
         CancellationToken cancellationToken)
     {
         // A blank document is no article: stored as "", never as whitespace that would read as text.
@@ -277,6 +288,7 @@ public static class EntityArticleEndpoints
             Kind = lastNumber == 0 ? EntityRevisionKind.Created : kind,
             RestoredFromRevisionId = restoredFromRevisionId,
             CreatedAt = now,
+            ActorUserId = actorUserId,
             Content = document,
         });
 

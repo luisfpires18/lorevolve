@@ -346,6 +346,7 @@ public static partial class EntityImageEndpoints
                             entityId,
                             EntityRevisionKind.Edited,
                             restoredFromRevisionId: null,
+                            principal.RequireUserId(),
                             cancellationToken,
                             also: EntityRevisionChange.Image);
 
@@ -579,6 +580,7 @@ public static partial class EntityImageEndpoints
                     entityId,
                     EntityRevisionKind.Edited,
                     restoredFromRevisionId: null,
+                    principal.RequireUserId(),
                     cancellationToken,
                     also: EntityRevisionChange.Image);
 
@@ -659,6 +661,7 @@ public static partial class EntityImageEndpoints
                 entityId,
                 EntityRevisionKind.Edited,
                 restoredFromRevisionId: null,
+                principal.RequireUserId(),
                 cancellationToken,
                 also: EntityRevisionChange.Image);
 

@@ -81,7 +81,8 @@ public static class RevisionEndpoints
                 revision.Name,
                 revision.CanonStatus,
                 revision.RestoredFromRevisionId,
-                revision.CreatedAt))
+                revision.CreatedAt,
+                db.Users.Where(user => user.Id == revision.ActorUserId).Select(user => user.UserName).FirstOrDefault()))
             .ToListAsync(cancellationToken);
 
         return Results.Ok(revisions);
@@ -153,6 +154,7 @@ public static class RevisionEndpoints
                 universeId,
                 entityId,
                 request,
+                principal.RequireUserId(),
                 db,
                 token,
                 EntityRevisionKind.Restored,

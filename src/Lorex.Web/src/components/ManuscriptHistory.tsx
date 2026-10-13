@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { VersionActor } from './VersionActor'
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
 import {
@@ -222,6 +223,7 @@ export function ManuscriptHistory({
                   </p>
                   <p className="version__meta">
                     <span>Version {revision.number}</span>
+                    <VersionActor name={revision.actorName} />
                   </p>
                 </div>
 

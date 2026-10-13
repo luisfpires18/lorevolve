@@ -507,6 +507,86 @@ test.describe('each role is shown what it can do', () => {
   })
 })
 
+test.describe('who saved each version', () => {
+  test('history names the owner and the Editor alike, for both of them, and says when no one was recorded', async ({
+    browser,
+  }) => {
+    const owner = await person(browser, 'attribowner')
+    const editor = await person(browser, 'attribeditor')
+    const world = await universe(owner.page)
+    await share(owner.page, world.id, editor, Role.Editor)
+    const id = await entry(owner.page, world.id, 'Ember Vale')
+    const entity = `/api/universes/${world.id}/entities/${id}`
+
+    // The owner wrote the entry and the article's first version; the Editor changed both.
+    const edited = await editor.page.request.put(entity, {
+      data: {
+        entityTypeId: await characterType(editor.page, world.id),
+        name: 'Ember Vale',
+        summary: 'Edited by the Editor.',
+        canonStatus: 2,
+        aliases: [],
+        tags: [],
+        fields: [],
+      },
+    })
+    expect(edited.ok()).toBe(true)
+    const doc = (text: string) =>
+      JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] })
+    const first = await owner.page.request.put(`${entity}/article`, {
+      data: { content: doc('By the owner.'), expectedUpdatedAt: null },
+    })
+    expect(first.ok()).toBe(true)
+    const second = await editor.page.request.put(`${entity}/article`, {
+      data: {
+        content: doc('By the Editor.'),
+        expectedUpdatedAt: ((await first.json()) as { updatedAt: string }).updatedAt,
+      },
+    })
+    expect(second.ok()).toBe(true)
+
+    const entryPage = `/app/universes/${world.id}/lore/${id}`
+    const row = (page: Page, list: string, number: number) =>
+      page.locator(`[data-testid="${list}"] [data-version="${number}"]`).getByTestId('version-actor')
+
+    for (const reader of [owner, editor]) {
+      const page = reader.page
+      await page.goto(`${entryPage}/history`)
+      await expect(row(page, 'history-list', 2)).toHaveText(`by ${editor.username}`)
+      await expect(row(page, 'history-list', 1)).toHaveText(`by ${owner.username}`)
+
+      await page.goto(entryPage)
+      await page.getByTestId('article-history-toggle').click()
+      await expect(row(page, 'article-history-list', 2)).toHaveText(`by ${editor.username}`)
+      await expect(row(page, 'article-history-list', 1)).toHaveText(`by ${owner.username}`)
+
+      // Nothing else of either account is on the page.
+      for (const email of [owner.email, editor.email]) {
+        await expect(page.getByText(email)).toHaveCount(0)
+      }
+    }
+
+    // A version saved before authors were kept reads plainly, and still opens.
+    await owner.page.route('**/revisions', async (route) => {
+      const response = await route.fetch()
+      const versions = (await response.json()) as { actorName: string | null }[]
+      await route.fulfill({
+        response,
+        json: versions.map((version) => ({ ...version, actorName: null })),
+      })
+    })
+    await owner.page.goto(`${entryPage}/history`)
+    await expect(row(owner.page, 'history-list', 1)).toHaveText('author not recorded')
+    await owner.page
+      .locator('[data-testid="history-list"] [data-version="1"]')
+      .getByTestId('version-view')
+      .click()
+    await expect(owner.page.getByTestId('version-snapshot')).toContainText('Ember Vale')
+
+    for (const person of [owner, editor]) await person.context.close()
+  })
+})
+
 test.describe('collaboration on a phone', () => {
   for (const width of [640, 390, 360]) {
     test(`Collaborators, an invitation and a shared card at ${width}px`, async ({ browser }) => {

@@ -23,6 +23,7 @@ async function signUp(page: Page) {
   await page.getByLabel('Confirm password').fill(PASSWORD)
   await page.getByRole('button', { name: 'Create account' }).click()
   await page.waitForURL('/app')
+  return username
 }
 
 function version(page: Page, number: number) {
@@ -33,7 +34,7 @@ test.describe('history', () => {
   test('an entry keeps its versions, and an older one can be read and put back', async ({
     page,
   }) => {
-    await signUp(page)
+    const username = await signUp(page)
 
     await page.getByTestId('new-universe').click()
     await page.getByLabel('Name').fill(unique('Tidewatch '))
@@ -55,6 +56,7 @@ test.describe('history', () => {
     await page.getByTestId('entry-view-history').click()
     await page.waitForURL(/\/lore\/[0-9a-f-]+\/history$/)
     await expect(version(page, 1)).toContainText('Created')
+    await expect(version(page, 1).getByTestId('version-actor')).toHaveText(`by ${username}`)
     await expect(page.getByTestId('history-list').locator('li')).toHaveCount(1)
 
     // Edit is in the entry's header, so it is pressed from here - and opens the form where the
