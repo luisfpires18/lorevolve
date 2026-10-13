@@ -82,6 +82,20 @@ async function openComments(page: Page) {
   await expect(drawer(page)).toBeVisible()
 }
 
+/**
+ * Every read of a subject's comments the page completes, so a test can say none happens before the drawer opens. Only
+ * finished ones: the development build mounts each effect twice and cancels the first read.
+ */
+function watchCommentReads(page: Page) {
+  const reads: string[] = []
+  page.on('requestfinished', (request) => {
+    if (request.method() === 'GET' && new URL(request.url()).pathname.endsWith('/comments')) {
+      reads.push(request.url())
+    }
+  })
+  return reads
+}
+
 async function closeComments(page: Page) {
   await drawer(page).getByTestId('comments-close').click()
   await expect(drawer(page)).toHaveCount(0)
@@ -102,10 +116,14 @@ test.describe('review comments', () => {
     await share(owner.page, universeId, viewer, Role.Viewer)
     const entryPage = `/app/universes/${universeId}/lore/${entryId}`
 
-    // The owner opens the review layer on an entry and starts a thread.
+    // The owner opens the review layer on an entry and starts a thread. The page reads no comments until it is opened.
+    const ownerReads = watchCommentReads(owner.page)
     await owner.page.goto(entryPage)
+    await expect(owner.page.getByTestId('entry-name')).toHaveText('Ember Vale')
     await expect(owner.page.getByTestId('comments-trigger')).toHaveAccessibleName('Comments')
+    expect(ownerReads).toHaveLength(0)
     await openComments(owner.page)
+    await expect.poll(() => ownerReads.length).toBe(1)
     await expect(drawer(owner.page).getByRole('heading', { name: 'Ember Vale' })).toBeVisible()
     await expect(drawer(owner.page).getByTestId('comments-empty')).toHaveText('No comments yet.')
     await drawer(owner.page).getByLabel('New comment').fill('Is the tide year right?\nIt reads one off.')
@@ -116,14 +134,13 @@ test.describe('review comments', () => {
       'Is the tide year right?\nIt reads one off.',
     )
     await closeComments(owner.page)
-    await expect(owner.page.getByTestId('comments-trigger')).toHaveAccessibleName('Comments, 1 open')
+    expect(ownerReads).toHaveLength(1)
 
     // The Reviewer still cannot edit the entry, and answers the thread.
     await reviewer.page.goto(entryPage)
     await expect(reviewer.page.getByTestId('entry-name')).toHaveText('Ember Vale')
     await expect(reviewer.page.getByTestId('edit-entity')).toHaveCount(0)
     await expect(reviewer.page.getByTestId('entity-actions')).toHaveCount(0)
-    await expect(reviewer.page.getByTestId('comments-count')).toHaveText('1')
     await openComments(reviewer.page)
     await expect(threads(reviewer.page).getByTestId('comment-resolve')).toHaveCount(0)
     await threads(reviewer.page).getByTestId('comment-reply').click()
@@ -144,7 +161,6 @@ test.describe('review comments', () => {
       `Resolved by ${editor.username}`,
     )
     await closeComments(editor.page)
-    await expect(editor.page.getByTestId('comments-count')).toHaveCount(0)
 
     // The owner reads it as resolved, every word kept, and reopens it.
     await owner.page.reload()
@@ -186,7 +202,15 @@ test.describe('review comments', () => {
   }) => {
     const owner = await person(browser, 'reviewstoryowner')
     const reviewer = await person(browser, 'reviewstoryreviewer')
-    const { universeId, storyId, sceneId } = await world(owner.page)
+    const { universeId, entryId, storyId, sceneId } = await world(owner.page)
+    await post(owner.page, `/api/universes/${universeId}/stories/${storyId}/scenes`, {
+      title: 'The Lantern',
+      summary: null,
+      notes: null,
+      povEntityId: null,
+      chronology: null,
+      entityIds: null,
+    })
     await share(owner.page, universeId, reviewer, Role.Reviewer)
     const storyPage = `/app/universes/${universeId}/stories/${storyId}`
 
@@ -213,19 +237,34 @@ test.describe('review comments', () => {
     await expect(threads(reviewer.page)).toHaveCount(1)
     await closeComments(reviewer.page)
 
-    // The owner finds each where it was left, counted, and the two never mix.
+    // The owner finds each where it was left, and the two never mix. A story of two scenes, its Scenes view and its
+    // Manuscript view read no comments until one drawer is opened, and then only that subject's.
+    const ownerReads = watchCommentReads(owner.page)
     await owner.page.goto(storyPage)
-    await expect(owner.page.getByTestId('comments-count')).toHaveText('1')
+    await expect(owner.page.getByTestId('scene')).toHaveCount(2)
     await owner.page.goto(`${storyPage}/manuscript/${sceneId}`)
+    await expect(owner.page.getByTestId('manuscript-scene-title')).toHaveText('The Causeway')
+    expect(ownerReads).toHaveLength(0)
     await owner.page.getByTestId('manuscript-scene').getByTestId('comments-trigger').click()
     await expect(threads(owner.page).getByTestId('comment-body')).toHaveText('Who holds the lantern here?')
+    expect(ownerReads).toEqual([expect.stringContaining(`/scenes/${sceneId}/comments`)])
     await closeComments(owner.page)
 
-    // On a phone the button keeps its icon, count and name, and the drawer takes the screen without scrolling sideways.
+    // On a phone the entry's tools keep to one line: Comments is its icon alone, named, on the views' line.
     await owner.page.setViewportSize({ width: 390, height: 800 })
+    await owner.page.goto(`/app/universes/${universeId}/lore/${entryId}`)
+    const entryTrigger = owner.page.getByTestId('comments-trigger')
+    await expect(entryTrigger).toHaveAccessibleName('Comments')
+    expect((await entryTrigger.boundingBox())!.width).toBeLessThan(48)
+    const edit = (await owner.page.getByTestId('edit-entity').boundingBox())!
+    const more = (await owner.page.getByTestId('entity-actions').boundingBox())!
+    expect(more.y, 'the entry menu wrapped under Edit').toBeLessThan(edit.y + edit.height)
+
+    // The story's line of facts has room for the word; the drawer takes the screen without scrolling sideways.
     await owner.page.goto(storyPage)
     const trigger = owner.page.getByTestId('comments-trigger')
-    await expect(trigger).toHaveAccessibleName('Comments, 1 open')
+    await expect(trigger).toHaveAccessibleName('Comments')
+    await expect(trigger).toContainText('Comments')
     await trigger.click()
     const box = await drawer(owner.page).boundingBox()
     expect(box?.width).toBeGreaterThan(380)

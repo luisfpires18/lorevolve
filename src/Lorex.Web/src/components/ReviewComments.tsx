@@ -31,35 +31,14 @@ const SUBJECT_WORDS: Record<CommentSubject['kind'], string> = {
 }
 
 /**
- * The review layer for one piece of content (task 043): a Comments button with the number of open threads, opening a
- * drawer of threads about the content as a whole. Every member reads; who may write and who may resolve is the API's
- * decision, mirrored here only to leave out controls a role cannot use.
+ * The review layer for one piece of content (task 043): a Comments button opening a drawer of threads about the content
+ * as a whole. Nothing is read until the drawer opens, so a page holding many subjects asks for none of their comments.
+ * Every member reads; who may write and who may resolve is the API's decision, mirrored here only to leave out controls
+ * a role cannot use.
  */
 export function ReviewComments({ universeId, subject, subjectName }: ReviewCommentsProps) {
-  const key = commentsPath(universeId, subject)
-  const [loaded, setLoaded] = useState<{ key: string; threads: CommentThread[] } | null>(null)
-  const [failedKey, setFailedKey] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
-  const [reloads, setReloads] = useState(0)
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listComments(key, controller.signal)
-      .then((threads) => {
-        setLoaded({ key, threads })
-        setFailedKey(null)
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setFailedKey(key)
-      })
-
-    return () => controller.abort()
-  }, [key, reloads])
-
-  // Only what was read for this subject: moving to another scene never shows the last one's threads.
-  const threads = loaded?.key === key ? loaded.threads : null
-  const openCount = threads?.filter((thread) => !thread.isResolved).length ?? 0
+  const path = commentsPath(universeId, subject)
 
   return (
     <>
@@ -67,35 +46,21 @@ export function ReviewComments({ universeId, subject, subjectName }: ReviewComme
         className="button button--text reviewtrigger"
         type="button"
         aria-haspopup="dialog"
-        aria-label={openCount > 0 ? `Comments, ${openCount} open` : 'Comments'}
-        onClick={() => {
-          setIsOpen(true)
-          setReloads((count) => count + 1)
-        }}
+        title="Comments"
+        onClick={() => setIsOpen(true)}
         data-testid="comments-trigger"
       >
         <ActionIcon icon={MessageSquare} />
         <span className="reviewtrigger__label">Comments</span>
-        {openCount > 0 ? (
-          <span className="reviewtrigger__count" aria-hidden="true" data-testid="comments-count">
-            {openCount}
-          </span>
-        ) : null}
       </button>
 
       {isOpen ? (
         <CommentsDrawer
+          key={path}
           universeId={universeId}
-          path={key}
+          path={path}
           kind={subject.kind}
           subjectName={subjectName}
-          threads={threads}
-          failed={failedKey === key && threads === null}
-          onThreads={(change) =>
-            setLoaded((current) =>
-              current?.key === key ? { key, threads: change(current.threads) } : current,
-            )
-          }
           onClose={() => setIsOpen(false)}
         />
       ) : null}
@@ -108,22 +73,11 @@ interface DrawerProps {
   path: string
   kind: CommentSubject['kind']
   subjectName: string
-  threads: CommentThread[] | null
-  failed: boolean
-  onThreads: (change: (threads: CommentThread[]) => CommentThread[]) => void
   onClose: () => void
 }
 
-function CommentsDrawer({
-  universeId,
-  path,
-  kind,
-  subjectName,
-  threads,
-  failed,
-  onThreads,
-  onClose,
-}: DrawerProps) {
+/** Read once, when it opens; afterwards kept in step by what each post, reply, resolve and reopen answers. */
+function CommentsDrawer({ universeId, path, kind, subjectName, onClose }: DrawerProps) {
   const access = useUniverseAccess()
   const dialog = useRef<HTMLDialogElement>(null)
   const headingId = useId()
@@ -135,6 +89,8 @@ function CommentsDrawer({
   const [message, setMessage] = useState<string | null>(null)
   const [draftError, setDraftError] = useState<string | null>(null)
   const [replyError, setReplyError] = useState<string | null>(null)
+  const [threads, setThreads] = useState<CommentThread[] | null>(null)
+  const [failed, setFailed] = useState(false)
 
   const isDirty = draft.trim() !== '' || (replyTo !== null && reply.trim() !== '')
   const { close, dialogProps } = useDrawerGuard(
@@ -148,6 +104,21 @@ function CommentsDrawer({
   useEffect(() => {
     dialog.current?.showModal()
   }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    listComments(path, controller.signal)
+      .then(setThreads)
+      .catch(() => {
+        if (!controller.signal.aborted) setFailed(true)
+      })
+
+    return () => controller.abort()
+  }, [path])
+
+  const onThreads = (change: (current: CommentThread[]) => CommentThread[]) =>
+    setThreads((current) => (current === null ? current : change(current)))
 
   const replace = (updated: CommentThread) =>
     onThreads((current) => current.map((each) => (each.id === updated.id ? updated : each)))

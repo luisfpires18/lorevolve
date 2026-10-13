@@ -58,13 +58,17 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - 9 routes under the universe; threads reached only through a live subject of that universe; Trash hides them (404)
     and a restore brings them back; permanent delete and universe delete cascade. Resolved threads refuse replies (409).
   - API names people by username only (null = unknown account). Backup carries no comments.
-  - UI: `ReviewComments` - "Comments" + open count beside the entry's tools, in the story's facts line (not on the
-    Manuscript view) and in each scene's tool row; opens the moment drawer (full width on phones): new comment, Open and
-    folded Resolved threads, Reply, Resolve/Reopen by capability. Phone manuscript head: tools beside the location line,
-    title full width. Reviewer role hint: "Can read and comment. Cannot edit content."
-  - Deferred: count on cards/lists, notifications, mentions, edit/delete, anchors, activity feed, comments in backups.
+  - UI: `ReviewComments` - a "Comments" button after the entry's views, in the story's facts line (not on the Manuscript
+    view) and in each scene's tool row; icon alone below 640px on the entry and scene rows. No count: nothing is read
+    until the drawer opens (one GET), so a page of many scenes asks for none. The moment drawer (full width on phones):
+    new comment, Open and folded Resolved threads, Reply, Resolve/Reopen by capability. Phone manuscript head: tools
+    beside the location line, title full width. Reviewer role hint: "Can read and comment. Cannot edit content."
+  - Deferred: open counts (would need a batch read), notifications, mentions, edit/delete, anchors, activity feed,
+    comments in backups.
   - Tests: API 1437 -> 1449 (`CommentTests` 11, `CommentMigrationTests` 1, matrix +9 routes). Playwright
-    `review-comments.spec.ts` 2; focused + neighbours 82/82 on a fresh DB, two workers. Full suite not run locally;
+    `review-comments.spec.ts` 2 (no comments read before the drawer opens; phone rows); focused + neighbours on a fresh DB,
+    two workers: 82/82; after the lazy-load follow-up 65/68 - the review spec's own two read counts (fixed, then 2/2)
+    and one known Vite lazy-module blank in `collaboration.spec.ts`, green 3/3 alone. Full suite not run locally;
     delegated to GitHub Actions.
 - **Roadmap task 042 - attribution in history** (`feat/attribution-activity-history` off `dev` at `af44810`; merged into
   `dev` at `89d1abd`). One migration (`AddRevisionActors`), backup stays **22**. ADR 0041 amendment.

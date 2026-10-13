@@ -5273,6 +5273,12 @@ a.button--danger:visited {
   border-bottom: 1px solid var(--rule);
 }
 
+.entry__lenses {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
 .entry__tools {
   display: flex;
   flex-wrap: wrap;
@@ -14380,23 +14386,10 @@ a.idearef__name {
 
 /* ---------- Review comments (043) ----------
 
-   A quiet button beside a subject's other tools, counting open threads, and the threads in the moment drawer. Below
-   640px the button keeps its icon and count and its whole name for assistive technology. A thread is a column of
+   A quiet button beside a subject's views or tools, and the threads in the moment drawer. Below 640px, in the entry's
+   views line and a scene's tool row, the button is its icon alone, keeping its whole name for assistive technology and
+   as its tooltip; the story's line of facts wraps and keeps the word. A thread is a column of
    comments, replies set in under a rule; resolved threads fold away under their own heading. */
-
-.reviewtrigger__count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.35rem;
-  height: 1.35rem;
-  padding: 0 0.35rem;
-  border-radius: var(--radius-full);
-  background: var(--accent-wash);
-  color: var(--ink);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-}
 
 .reviewform {
   display: flex;
@@ -14517,7 +14510,8 @@ details.reviewsection > .reviewsection__list {
 }
 
 @media (max-width: 640px) {
-  .reviewtrigger__label {
+  .entry__lenses .reviewtrigger__label,
+  .manuscript__tools .reviewtrigger__label {
     position: absolute;
     width: 1px;
     height: 1px;

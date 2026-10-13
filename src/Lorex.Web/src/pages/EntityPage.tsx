@@ -636,30 +636,40 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
       {/* One bar under the identity: where in the entry you are, and what you can do to the entry itself -
           Edit first, Family tree beside it, and everything that manages rather than reads in the ⋯ menu,
           Move to Trash last. Not drawn while the entry's own form is open, nor while the article is
-          being written: one editor, and one set of tools, at a time. */}
+          being written: one editor, and one set of tools, at a time. Comments sit just after the views, where a
+          phone's views line has room the tools line does not. */}
       {!isNew && !isEditing ? (
         <div className="entry__bar">
-          <nav className="views" aria-label="Entry views" data-testid="entry-views">
-            <NavLink to={entryPath} end className="views__link" data-testid="entry-view-article">
-              Article
-            </NavLink>
-            <NavLink
-              to={`${entryPath}/relations`}
-              className="views__link"
-              data-testid="entry-view-relations"
-            >
-              Relations
-            </NavLink>
-            {access.manageHistory ? (
-              <NavLink
-                to={`${entryPath}/history`}
-                className="views__link"
-                data-testid="entry-view-history"
-              >
-                History
+          <div className="entry__lenses">
+            <nav className="views" aria-label="Entry views" data-testid="entry-views">
+              <NavLink to={entryPath} end className="views__link" data-testid="entry-view-article">
+                Article
               </NavLink>
-            ) : null}
-          </nav>
+              <NavLink
+                to={`${entryPath}/relations`}
+                className="views__link"
+                data-testid="entry-view-relations"
+              >
+                Relations
+              </NavLink>
+              {access.manageHistory ? (
+                <NavLink
+                  to={`${entryPath}/history`}
+                  className="views__link"
+                  data-testid="entry-view-history"
+                >
+                  History
+                </NavLink>
+              ) : null}
+            </nav>
+            {isWritingArticle ? null : (
+              <ReviewComments
+                universeId={universe.id}
+                subject={{ kind: 'entry', entityId: entityId! }}
+                subjectName={detail?.name ?? ''}
+              />
+            )}
+          </div>
 
           {isWritingArticle ? null : (
             <div className="entry__tools">
@@ -699,11 +709,6 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
                   Family tree
                 </Link>
               ) : null}
-              <ReviewComments
-                universeId={universe.id}
-                subject={{ kind: 'entry', entityId: entityId! }}
-                subjectName={detail?.name ?? ''}
-              />
               {access.manageTrash ? (
                 <ActionMenu
                   label={`More actions for ${detail?.name ?? 'this entry'}`}
