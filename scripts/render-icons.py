@@ -8,7 +8,7 @@ The mark is the owner's artwork and is never redrawn here. All this does is trim
 own edges, place it on a square canvas with the padding each use needs, resample it down,
 and write a PNG. Nothing recolours it and nothing traces it.
 
-Standard library only, still. Downscaling a 1299x1211 master by four to eighty times is an
+Standard library only, still. Downscaling a 1254x1254 master by four to eighty times is an
 area average - each output pixel is the mean of the source rectangle it covers - which is
 the correct filter for a reduction this large and is about thirty lines. Alpha is
 premultiplied before averaging and divided out afterwards, so the transparent margin cannot
@@ -16,21 +16,24 @@ bleed dark fringes into the mark's edges.
 
 Two grounds, and the reason for each:
 
-  transparent  What the master is, and the default. The mark's lit red rings carry its shape
-               on a light or a dark surface alike; its dark side simply merges into a dark
-               one, which reads as a lit sphere rather than as a defect. Checked at 16px on
-               a browser's own dark and light tab greys.
-  paper        `--paper`, #f6f2ea, which is also the manifest's background_color. Used only
-               where transparency is not an option:
+  transparent  What the master is, and the default. The mark - a crimson star and X inside a
+               pale gold ring - carries its shape on a light or a dark surface alike, so the
+               icon sits in whatever tab strip or launcher is behind it.
+  black        #000000, which is also the manifest's background_color and the launch layer's
+               ground (043.5), so an installed icon, the window the platform opens behind it
+               and the first frame Lorex paints are one surface. Used only where transparency
+               is not an option:
 
                - the maskable icon, which a platform crops to its own shape and fills, and
                  where a transparent region is a defect rather than a choice;
-               - the Apple touch icon, because iOS composites transparency onto black, and
-                 the mark is mostly very dark red - 62% of its opaque pixels sit below
-                 luminance 40 - so on black most of it would not be there at all.
+               - the Apple touch icon, because iOS composites transparency onto black anyway.
 
-A paper tile behind the favicon was tried first, for that same 62%. It is legible but it is
-a pale box sitting in a dark tab strip, which is worse than the thing it was solving.
+               The mark was drawn on black; its red and gold read there at every size.
+
+The launch logo is not made here: it is a photograph-like raster with its own black ground, so
+it is resampled and encoded once with libwebp from `assets/brand/lorex-logo.png`:
+
+    ffmpeg -i assets/brand/lorex-logo.png -vf scale=1200:-1:flags=area         -c:v libwebp -quality 82 -compression_level 6 src/Lorex.Web/public/launch-logo.webp
 """
 
 import struct
@@ -40,9 +43,9 @@ from pathlib import Path
 SOURCE = Path(__file__).resolve().parent.parent / "assets" / "brand" / "lorex-icon.png"
 PUBLIC = Path(__file__).resolve().parent.parent / "src" / "Lorex.Web" / "public"
 
-#: `--paper`. The same value as the manifest's background_color, so an installed icon and
-#: the window that opens behind it are the same surface.
-PAPER = (0xF6, 0xF2, 0xEA)
+#: The manifest's background_color and the launch layer's ground, so an installed icon and the
+#: window that opens behind it are the same surface.
+BLACK = (0x00, 0x00, 0x00)
 
 #: Alpha at or below this is margin rather than mark, when measuring the artwork's own edges.
 EDGE = 8
@@ -50,15 +53,16 @@ EDGE = 8
 # name, pixels, padding as a fraction of the canvas on every side, ground.
 #
 # The paddings are not taste. A maskable icon must survive the platform cropping it to a
-# circle of 80% of the canvas, so the mark is kept inside the middle 62%. Apple redraws the
+# circle of 80% of the canvas. The mark's diagonal spikes reach the corners of its own box, so
+# the box is kept inside the middle 56%, whose corners sit at 39.6% from the centre. Apple redraws the
 # corners itself and looks wrong when art runs to the edge, so 12%. The favicons are the
 # opposite problem - at 16px every pixel of margin is a pixel not spent on the rings - so
 # they are cropped tight.
 TARGETS = [
     ("icon-192.png", 192, 0.08, None),
     ("icon-512.png", 512, 0.08, None),
-    ("icon-maskable-512.png", 512, 0.19, PAPER),
-    ("apple-touch-icon.png", 180, 0.12, PAPER),
+    ("icon-maskable-512.png", 512, 0.22, BLACK),
+    ("apple-touch-icon.png", 180, 0.12, BLACK),
     ("favicon-48.png", 48, 0.04, None),
     ("favicon-32.png", 32, 0.03, None),
     ("favicon-16.png", 16, 0.02, None),
@@ -225,7 +229,7 @@ def resample(source, width, height, out_width, out_height):
 def compose(mark, size, padding, ground):
     """One square icon: the mark fitted inside its padding, centred, over `ground`.
 
-    The mark keeps its aspect ratio - it is 1088 x 1044, not square - so it is fitted to
+    The mark keeps its aspect ratio - its own edges need not be square - so it is fitted to
     the longer side and centred on the other.
     """
     inner = max(1, round(size * (1 - 2 * padding)))

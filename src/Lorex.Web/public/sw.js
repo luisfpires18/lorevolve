@@ -30,7 +30,7 @@
   the id being the build's own (src/lib/buildInfo.ts), and the cache is named after it. A new
   build is a new script URL, so the browser installs a new worker; it takes over immediately
   (skipWaiting plus clients.claim) and deletes every other Lorex cache on activate. Root files
-  that keep their names across builds - the icons, brand-mark.png - are therefore fetched
+  that keep their names across builds - the icons, brand-mark.png, launch-logo.webp - are therefore fetched
   afresh once per build rather than pinned to the first one a browser saw. Since navigations
   are never cached, the next load already carries the new asset URLs, so no update prompt is
   needed.
@@ -49,7 +49,7 @@ const BUILD =
 const STATIC_CACHE = `${CACHE_PREFIX}${BUILD}`
 
 /** Build output, plus the handful of static files that live at the web root. */
-const STATIC_ROOT_FILE = /^\/[^/]+\.(?:svg|png|ico|woff2?|css)$/
+const STATIC_ROOT_FILE = /^\/[^/]+\.(?:svg|png|webp|ico|woff2?|css)$/
 
 function isCacheableStatic(url) {
   if (url.pathname.startsWith('/api/')) return false

@@ -92,10 +92,10 @@ test.describe('installability', () => {
     expect(manifest.scope).toBe('/')
     expect(manifest.display).toBe('standalone')
 
-    // The plate and the paper, so the installed window continues the surfaces the app
-    // paints rather than cutting across them.
+    // The plate for the window's chrome, and black behind the launch: the platform's launch screen, the launch layer
+    // and the launch logo's own ground are one surface (043.5).
     expect(manifest.theme_color).toBe('#201f1d')
-    expect(manifest.background_color).toBe('#f6f2ea')
+    expect(manifest.background_color).toBe('#000000')
   })
 
   test('every icon the manifest declares actually resolves, at the sizes it claims', async ({
@@ -134,7 +134,7 @@ test.describe('installability', () => {
     // `transparent` is the default, so the icon sits in whatever tab strip or launcher is
     // behind it rather than as a pale tile in a dark one. The two exceptions are the ones
     // where transparency is not an option: a maskable icon is cropped to a platform shape and
-    // filled, and iOS composites a touch icon onto black.
+    // filled, and iOS composites a touch icon onto black - so both sit on black, the launch's ground.
     const transparent: Record<string, number> = {
       '/icon-192.png': 192,
       '/icon-512.png': 512,
@@ -209,12 +209,44 @@ test.describe('installability', () => {
       expect(shape.width, `${src} is the wrong width`).toBe(size)
       expect(shape.height, `${src} is not square`).toBe(size)
 
-      // Paper, #f6f2ea, which is also the manifest's background_color. Fully opaque, because
-      // a platform mask fills a transparent region and iOS fills it with black.
-      expect(shape.corner, `${src} does not sit on the paper ground`).toEqual([246, 242, 234, 255])
+      // Black, which is also the manifest's background_color. Fully opaque, because a platform
+      // mask fills a transparent region and iOS fills it with black.
+      expect(shape.corner, `${src} does not sit on the black ground`).toEqual([0, 0, 0, 255])
       expect(shape.solidFraction, `${src} has transparent pixels`).toBe(1)
       expect(shape.redFraction, `${src} carries no mark`).toBeGreaterThan(0.02)
     }
+  })
+
+  test('the maskable icon keeps the whole mark inside the safe zone a platform mask leaves', async ({
+    page,
+  }) => {
+    // A platform may crop a maskable icon to any shape that contains the centred circle of 80% of the canvas. Every
+    // pixel of the mark - anything brighter than the black ground - has to lie inside that circle, spikes included.
+    await page.goto('/login')
+    const furthest = await page.evaluate(async () => {
+      const image = new Image()
+      image.src = '/icon-maskable-512.png'
+      await image.decode()
+      const canvas = document.createElement('canvas')
+      canvas.width = image.width
+      canvas.height = image.height
+      const context = canvas.getContext('2d', { willReadFrequently: true })!
+      context.drawImage(image, 0, 0)
+      const { data } = context.getImageData(0, 0, image.width, image.height)
+      const centre = image.width / 2
+      let furthest = 0
+      for (let y = 0; y < image.height; y += 1) {
+        for (let x = 0; x < image.width; x += 1) {
+          const at = (y * image.width + x) * 4
+          if (Math.max(data[at], data[at + 1], data[at + 2]) > 24) {
+            furthest = Math.max(furthest, Math.hypot(x + 0.5 - centre, y + 0.5 - centre))
+          }
+        }
+      }
+      return furthest / image.width
+    })
+    expect(furthest, 'the mark reaches past the maskable safe zone').toBeLessThanOrEqual(0.4)
+    expect(furthest, 'the mark is too small to read').toBeGreaterThan(0.3)
   })
 
   test('the document carries the metadata an install and a phone need', async ({ page }) => {
