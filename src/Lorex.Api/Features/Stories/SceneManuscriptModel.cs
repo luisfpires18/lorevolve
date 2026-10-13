@@ -68,6 +68,11 @@ public sealed class SceneManuscriptRevision
 
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>
+    /// The account that saved this version, as on <see cref="Lore.EntityRevision.ActorUserId"/>. Null when not recorded.
+    /// </summary>
+    public string? ActorUserId { get; set; }
+
     /// <summary>The prose as it was saved, or <c>""</c> for a save that emptied it.</summary>
     public required string Content { get; set; }
 }

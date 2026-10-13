@@ -313,17 +313,18 @@ public static class EntityEndpoints
 
         return await gate.RunAsync(
             universeId,
-            token => CreateCoreAsync(universeId, request, db, token),
+            token => CreateCoreAsync(universeId, request, principal.RequireUserId(), db, token),
             cancellationToken);
     }
 
     private static async Task<IResult> CreateCoreAsync(
         Guid universeId,
         EntityRequest request,
+        string actorUserId,
         LorexDbContext db,
         CancellationToken cancellationToken)
     {
-        var (entity, problem) = await CreateEntryAsync(db, universeId, request, cancellationToken);
+        var (entity, problem) = await CreateEntryAsync(db, universeId, request, actorUserId, cancellationToken);
 
         if (problem is not null)
         {
@@ -361,6 +362,8 @@ public static class EntityEndpoints
             return Results.ValidationProblem(errors);
         }
 
+        var actorUserId = principal.RequireUserId();
+
         return await gate.RunAsync(
             universeId,
             async token =>
@@ -373,6 +376,7 @@ public static class EntityEndpoints
                         db,
                         universeId,
                         new EntityRequest(row!.EntityTypeId, row.Name, null, row.CanonStatus, null, null, null),
+                        actorUserId,
                         token);
 
                     // Unreachable once the batch has been checked, short of a type changing under this request. Passed
@@ -466,6 +470,7 @@ public static class EntityEndpoints
         LorexDbContext db,
         Guid universeId,
         EntityRequest request,
+        string actorUserId,
         CancellationToken cancellationToken)
     {
         if (LoreValidation.ValidateEntity(request) is { } errors)
@@ -517,7 +522,7 @@ public static class EntityEndpoints
         // Inside the gate's transaction, so a candidate that is refused takes its first
         // version down with it.
         await EntityRevisions.CaptureAsync(
-            db, entity.Id, EntityRevisionKind.Created, restoredFromRevisionId: null, cancellationToken);
+            db, entity.Id, EntityRevisionKind.Created, restoredFromRevisionId: null, actorUserId, cancellationToken);
 
         return (entity, null);
     }
@@ -548,7 +553,7 @@ public static class EntityEndpoints
 
         return await gate.RunAsync(
             universeId,
-            token => UpdateCoreAsync(universeId, entityId, request, db, token),
+            token => UpdateCoreAsync(universeId, entityId, request, principal.RequireUserId(), db, token),
             cancellationToken);
     }
 
@@ -576,12 +581,13 @@ public static class EntityEndpoints
     /// The one write path for an existing entry, shared with the restore route so a restored
     /// version is validated, gated, reconciled and recorded exactly like an ordinary edit.
     /// <paramref name="kind"/> and <paramref name="restoredFromRevisionId"/> change nothing
-    /// about the write; they only say what the resulting revision is called.
+    /// about the write; they only say what the resulting revision is called. <paramref name="actorUserId"/> is who made it.
     /// </summary>
     internal static async Task<IResult> UpdateCoreAsync(
         Guid universeId,
         Guid entityId,
         EntityRequest request,
+        string actorUserId,
         LorexDbContext db,
         CancellationToken cancellationToken,
         EntityRevisionKind kind = EntityRevisionKind.Edited,
@@ -655,7 +661,7 @@ public static class EntityEndpoints
         // Before the commit, and inside the gate's transaction when there is one: the edit and
         // the version it produced land together or neither does. A write that changed nothing
         // records nothing.
-        await EntityRevisions.CaptureAsync(db, entity.Id, kind, restoredFromRevisionId, cancellationToken);
+        await EntityRevisions.CaptureAsync(db, entity.Id, kind, restoredFromRevisionId, actorUserId, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
 

@@ -419,6 +419,9 @@ namespace Lorex.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ActorUserId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(200000)
@@ -631,6 +634,9 @@ namespace Lorex.Api.Data.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActorUserId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("CanonStatus")
@@ -1624,6 +1630,9 @@ namespace Lorex.Api.Data.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActorUserId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Content")

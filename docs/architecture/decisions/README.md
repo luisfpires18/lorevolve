@@ -45,7 +45,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0039 | A story's parts are published one by one on its own page; a world may credit the work it is based on | [0039-story-content-publication-and-attribution.md](0039-story-content-publication-and-attribution.md) |
 | 0040 | A type may be enabled for the Family Tree, and a relation kind may mean family without ancestry (supersedes two statements of 0035) | [0040-family-tree-type-semantics.md](0040-family-tree-type-semantics.md) |
 
-| 0041 | A universe has one owner and may have collaborators, and one gate decides what each may do (supersedes 0006's access rule; amended 030: invitations by email and collaborator management) | [0041-universe-collaboration-access.md](0041-universe-collaboration-access.md) |
+| 0041 | A universe has one owner and may have collaborators, and one gate decides what each may do (supersedes 0006's access rule; amended 030: invitations by email and collaborator management; 042: history names who made each version) | [0041-universe-collaboration-access.md](0041-universe-collaboration-access.md) |
 | 0042 | An account has a storage allowance (1 GiB), counted from the originals of the Lore pictures in the universes it owns and held during uploads | [0042-account-storage-quota.md](0042-account-storage-quota.md) |
 
 All accepted. Next number: `0042`.

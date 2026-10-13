@@ -26,7 +26,7 @@ public sealed record EntityArticleRestoreRequest(DateTime? ExpectedUpdatedAt);
 
 /// <summary>
 /// A row in the article's history: no text, so the whole history is one small response. <paramref name="IsEmpty"/> says the
-/// version was a save that cleared the article.
+/// version was a save that cleared the article. <paramref name="ActorName"/> as on <see cref="EntityRevisionSummary"/>.
 /// </summary>
 public sealed record EntityArticleRevisionSummary(
     Guid Id,
@@ -34,7 +34,8 @@ public sealed record EntityArticleRevisionSummary(
     EntityRevisionKind Kind,
     Guid? RestoredFromRevisionId,
     DateTime CreatedAt,
-    bool IsEmpty);
+    bool IsEmpty,
+    string? ActorName);
 
 /// <summary>One saved version, whole.</summary>
 public sealed record EntityArticleRevisionDetail(

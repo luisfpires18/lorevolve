@@ -121,6 +121,7 @@ public static class SceneManuscriptEndpoints
             request.ExpectedUpdatedAt,
             SceneManuscriptRevisionKind.Edited,
             null,
+            principal.RequireUserId(),
             cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
@@ -157,6 +158,7 @@ public static class SceneManuscriptEndpoints
                 revision.RestoredFromRevisionId,
                 revision.CreatedAt,
                 IsEmpty = revision.Content == string.Empty,
+                ActorName = db.Users.Where(user => user.Id == revision.ActorUserId).Select(user => user.UserName).FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
 
@@ -166,7 +168,8 @@ public static class SceneManuscriptEndpoints
             revision.Kind,
             revision.RestoredFromRevisionId,
             Utc(revision.CreatedAt),
-            revision.IsEmpty)));
+            revision.IsEmpty,
+            revision.ActorName)));
     }
 
     private static async Task<IResult> GetRevisionAsync(
@@ -240,6 +243,7 @@ public static class SceneManuscriptEndpoints
             request.ExpectedUpdatedAt,
             SceneManuscriptRevisionKind.Restored,
             revision.Id,
+            principal.RequireUserId(),
             cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
@@ -259,6 +263,7 @@ public static class SceneManuscriptEndpoints
         DateTime? expectedUpdatedAt,
         SceneManuscriptRevisionKind kind,
         Guid? restoredFromRevisionId,
+        string actorUserId,
         CancellationToken cancellationToken)
     {
         var manuscript = await db.SceneManuscripts.FirstOrDefaultAsync(
@@ -302,6 +307,7 @@ public static class SceneManuscriptEndpoints
             Kind = lastNumber == 0 ? SceneManuscriptRevisionKind.Created : kind,
             RestoredFromRevisionId = restoredFromRevisionId,
             CreatedAt = now,
+            ActorUserId = actorUserId,
             Content = content,
         });
 

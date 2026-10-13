@@ -27,7 +27,8 @@ public sealed record SceneManuscriptRestoreRequest(DateTime? ExpectedUpdatedAt);
 
 /// <summary>
 /// A row in a manuscript's history: no text, so the whole history is one small response. <paramref name="IsEmpty"/> says the
-/// version was a save that emptied the prose.
+/// version was a save that emptied the prose. <paramref name="ActorName"/> as on
+/// <see cref="Lore.EntityRevisionSummary"/>.
 /// </summary>
 public sealed record SceneManuscriptRevisionSummary(
     Guid Id,
@@ -35,7 +36,8 @@ public sealed record SceneManuscriptRevisionSummary(
     SceneManuscriptRevisionKind Kind,
     Guid? RestoredFromRevisionId,
     DateTime CreatedAt,
-    bool IsEmpty);
+    bool IsEmpty,
+    string? ActorName);
 
 /// <summary>One saved version of a manuscript, whole.</summary>
 public sealed record SceneManuscriptRevisionDetail(

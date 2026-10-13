@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { LoreArticle } from './LoreEditor'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { NameList } from './NameList'
+import { VersionActor } from './VersionActor'
 import { blockingFindingsOf } from '../canon/blocked'
 import type { CanonBlockingFinding } from '../canon/types'
 import { findEra, formatChronologyYear, formatSignedYear, withEraLabel } from '../chronology/format'
@@ -207,6 +208,7 @@ export function EntityHistory({
                     <bdi>{revision.name}</bdi>
                   </span>
                   <span>{CANON_LABELS[revision.canonStatus]}</span>
+                  <VersionActor name={revision.actorName} />
                   {revision.kind === RevisionKind.Restored ? (
                     <span>
                       restored version{' '}

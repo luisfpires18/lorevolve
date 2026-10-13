@@ -35,12 +35,15 @@ internal static class EntityRevisions
     /// copy of (ADR 0019) - and without it an image-only write would compare equal to the
     /// version before it and record nothing at all, leaving a history that quietly omitted
     /// something the author did.
+    ///
+    /// <paramref name="actorUserId"/> is the signed-in account whose write this is, recorded on the version it produces.
     /// </summary>
     internal static async Task CaptureAsync(
         LorexDbContext db,
         Guid entityId,
         EntityRevisionKind kind,
         Guid? restoredFromRevisionId,
+        string actorUserId,
         CancellationToken cancellationToken,
         EntityRevisionChange also = EntityRevisionChange.None)
     {
@@ -79,6 +82,7 @@ internal static class EntityRevisions
             kind,
             changes,
             restoredFromRevisionId,
+            actorUserId,
             current));
 
         await db.SaveChangesAsync(cancellationToken);
@@ -275,6 +279,7 @@ internal static class EntityRevisions
         EntityRevisionKind kind,
         EntityRevisionChange changes,
         Guid? restoredFromRevisionId,
+        string actorUserId,
         Snapshot snapshot)
     {
         var revision = new EntityRevision
@@ -286,6 +291,7 @@ internal static class EntityRevisions
             Changes = changes,
             RestoredFromRevisionId = restoredFromRevisionId,
             CreatedAt = DateTime.UtcNow,
+            ActorUserId = actorUserId,
             EntityTypeId = snapshot.EntityTypeId,
             EntityTypeName = snapshot.EntityTypeName,
             Name = snapshot.Name,

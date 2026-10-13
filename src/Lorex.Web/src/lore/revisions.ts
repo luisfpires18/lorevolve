@@ -88,6 +88,9 @@ export interface EntityRevisionSummary {
   canonStatus: CanonStatusValue
   restoredFromRevisionId: string | null
   createdAt: string
+
+  /** The username of the account that saved this version; null when none was recorded. */
+  actorName: string | null
 }
 
 export interface RevisionFieldValue {

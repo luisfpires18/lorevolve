@@ -97,6 +97,14 @@ public sealed class EntityRevision
 
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>
+    /// The account whose write produced this version. A raw id with no foreign key, like every other id a revision
+    /// holds: history never blocks, and is never rewritten by, what happens to an account. Null for a version recorded
+    /// before attribution, or restored from a backup, which carries no account (ADR 0041). Read as the account's
+    /// username, live; never as anything else of the account.
+    /// </summary>
+    public string? ActorUserId { get; set; }
+
     // ---------- The snapshot ----------
 
     /// <summary>The type the entry had. Raw id; <see cref="EntityTypeName"/> is what is read.</summary>

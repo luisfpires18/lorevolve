@@ -50,6 +50,17 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   next numbered phase resumes only when the owner says so.
 - **Design refactor 001-007 done and merged** (007 at `cc798c1`, merged into `dev` at `a87b7da`; Deploy DEV #47 green).
   The contract is now an as-built reference. See Design refactor below.
+- **Roadmap task 042 - attribution in history** (`feat/attribution-activity-history` off `dev` at `af44810`; committed, not
+  merged, not pushed). One migration (`AddRevisionActors`), backup stays **22**. ADR 0041 amendment.
+  - Entry, article and manuscript versions record `ActorUserId` (raw id, no FK, nullable, nothing backfilled) on every
+    write that makes one: create, mass create, edit, picture, version restore. Kind/number/time stay the action.
+  - History lists (owner + Editor, unchanged) carry `actorName` = username, read live in the same query; no id or email.
+    Null = not recorded (legacy, backup restore, vanished account); rows read "by name" or "author not recorded".
+  - Backup carries no author (ADR 0041); restored versions name no one.
+  - Deferred: Trash/restore-from-Trash attribution (they write no version), universe activity feed, notifications.
+  - Tests: API 1437/1437 (`RevisionAttributionTests` 8, `RevisionActorMigrationTests` 1). Playwright: collaboration +1,
+    history asserts its author. Focused 12/12, neighbours 55/55, fresh DB, two workers. Full suite
+    not run locally; delegated to GitHub Actions.
 - **Product refinement 040 - account storage quotas** (`claude/dreamy-dirac-u8i6eh` off `dev` at `9c42bbe`; committed and
   pushed, not merged). One migration (`AddAccountStorageQuota`), backup stays **22**. ADR 0042 (new); 0019, 0032, 0041 amendments.
   - `LorexUser.StorageQuotaBytes`, 1 GiB for every account (column default for existing, initializer for new); never
@@ -1432,7 +1443,7 @@ tool has changed the picture.
   revisiting if that ever stops being true. ADR 0019.
 - **Collaboration, after 030** (ADR 0041) - not gaps: outbound email delivery of invitations (the link and model are
   ready for it), notifications, Reviewer comments (planned as a quiet eye action opening a modal), suggestions,
-  attribution (created/edited/trashed/restored by) and activity, concurrent-edit protection, ownership transfer, public
+  trashed/restored-by and an activity feed (version authors done in 042), concurrent-edit protection, ownership transfer, public
   collaborator credit; a collaborator's idea pointing into a shared universe; the public page's workspace link for
   members. An Editor restoring a previously public item from the Trash brings back the owner's selection as it was.
 - **Permanent deletion.** Deferred by Phase 019, so nothing removes an entry - or, since content recovery, a story,
