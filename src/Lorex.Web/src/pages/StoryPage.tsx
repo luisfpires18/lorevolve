@@ -18,6 +18,7 @@ import { EmptyState } from '../components/EmptyState'
 import { IdeasBrowser } from '../components/IdeasBrowser'
 import { ManuscriptPanel } from '../components/ManuscriptPanel'
 import { PageHeader } from '../components/PageHeader'
+import { ReviewComments } from '../components/ReviewComments'
 import { PlotPanel } from '../components/PlotPanel'
 import { SceneCard, type MoveTarget } from '../components/SceneCard'
 import { SceneForm } from '../components/SceneForm'
@@ -643,6 +644,12 @@ function StoryView({ view }: { view: StoryViewName }) {
               <Link className="story__timeline" to={timelinePath} data-testid="story-timeline">
                 View on timeline
               </Link>
+              {/* Comments on the story as a whole. Not on the Manuscript view, where each scene has its own. */}
+              <ReviewComments
+                universeId={universe.id}
+                subject={{ kind: 'story', storyId: story.id }}
+                subjectName={story.title}
+              />
             </div>
           )
         }

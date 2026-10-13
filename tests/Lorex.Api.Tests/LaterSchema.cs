@@ -60,21 +60,35 @@ internal static class LaterSchema
         "IX_StorageReservations_UserId_ExpiresAt",
     ];
 
+    /// <summary>Review comments (AddCommentThreads, 2026-10-13, task 043): two tables, their keys' indexes and four indexes.</summary>
+    private static readonly string[] Comments =
+    [
+        "sqlite_autoindex_CommentThreads_1",
+        "sqlite_autoindex_Comments_1",
+        "IX_CommentThreads_EntityId",
+        "IX_CommentThreads_SceneId",
+        "IX_CommentThreads_StoryId",
+        "IX_Comments_ThreadId",
+    ];
+
     /// <summary>Whether an index or trigger name (or "name on table") predates nested types - and so everything after them.</summary>
     public static bool BeforeNestedTypes(string name) =>
-        !NestedTypes.Concat(Memberships).Concat(ReferenceTargets).Concat(TimelineStories).Concat(Calendars).Concat(Storage)
+        !NestedTypes.Concat(Memberships).Concat(ReferenceTargets).Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments)
             .Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates the link field's allowed type - and so everything after it.</summary>
     public static bool BeforeReferenceTargets(string name) =>
-        !ReferenceTargets.Concat(TimelineStories).Concat(Calendars).Concat(Storage).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !ReferenceTargets.Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates a moment's stories - and so everything after it.</summary>
     public static bool BeforeTimelineStories(string name) =>
-        !TimelineStories.Concat(Calendars).Concat(Storage).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !TimelineStories.Concat(Calendars).Concat(Storage).Concat(Comments).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates custom calendars - and so everything after them.</summary>
     public static bool BeforeCalendars(string name) =>
-        !Calendars.Concat(Storage).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !Calendars.Concat(Storage).Concat(Comments).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
+    /// <summary>Whether an index or trigger name predates review comments.</summary>
+    public static bool BeforeComments(string name) =>
+        !Comments.Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 }

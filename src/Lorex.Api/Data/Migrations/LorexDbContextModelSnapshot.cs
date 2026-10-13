@@ -258,6 +258,72 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("ChronologyEras", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Comments.Comment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AuthorUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ThreadId");
+
+                    b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Comments.CommentThread", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResolvedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SceneId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("StoryId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityId");
+
+                    b.HasIndex("SceneId");
+
+                    b.HasIndex("StoryId");
+
+                    b.ToTable("CommentThreads", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CommentThreads_Subject", "(\"EntityId\" IS NOT NULL) + (\"StoryId\" IS NOT NULL) + (\"SceneId\" IS NOT NULL) = 1");
+                        });
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Ideas.Idea", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2190,6 +2256,41 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("Universe");
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Comments.Comment", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Comments.CommentThread", "Thread")
+                        .WithMany("Comments")
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Thread");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Comments.CommentThread", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
+                        .WithMany()
+                        .HasForeignKey("EntityId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Lorex.Api.Features.Stories.Scene", "Scene")
+                        .WithMany()
+                        .HasForeignKey("SceneId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Lorex.Api.Features.Stories.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Entity");
+
+                    b.Navigation("Scene");
+
+                    b.Navigation("Story");
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Ideas.Idea", b =>
                 {
                     b.HasOne("Lorex.Api.Features.Auth.LorexUser", "Owner")
@@ -3024,6 +3125,11 @@ namespace Lorex.Api.Data.Migrations
             modelBuilder.Entity("Lorex.Api.Features.Chronology.ChronologyCalendar", b =>
                 {
                     b.Navigation("Months");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Comments.CommentThread", b =>
+                {
+                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Ideas.Idea", b =>

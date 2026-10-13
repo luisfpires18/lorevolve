@@ -109,7 +109,7 @@ test.describe('collaborators', () => {
     )
     await role.selectOption({ label: 'Reviewer' })
     await expect(owner.page.getByTestId('invite-role-hint')).toHaveText(
-      'Read-only access intended for review and feedback.',
+      'Can read and comment. Cannot edit content.',
     )
 
     // An empty address is refused at the field, tied to it.

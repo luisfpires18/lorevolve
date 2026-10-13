@@ -1,0 +1,240 @@
+import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
+import { PASSWORD, post, unique } from './support/trash'
+
+/**
+ * Task 043: review comments, as four people in their own browsers. The API's rules are proved by its own tests; this
+ * proves what each person sees: a thread started, answered by a Reviewer who still cannot edit, resolved, read as
+ * resolved and reopened, a Viewer who reads and cannot take part, and the same drawer on a story and a scene.
+ */
+
+const Role = { Viewer: 1, Reviewer: 2, Editor: 3 } as const
+
+interface Person {
+  context: BrowserContext
+  page: Page
+  username: string
+  email: string
+}
+
+async function person(browser: Browser, prefix: string): Promise<Person> {
+  const context = await browser.newContext()
+  const page = await context.newPage()
+  const username = unique(prefix)
+  const email = `${username}@example.test`
+  await page.goto('/register')
+  await page.getByLabel('Username').fill(username)
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
+  await page.getByLabel('Confirm password').fill(PASSWORD)
+  await page.getByRole('button', { name: 'Create account' }).click()
+  await page.waitForURL('/app')
+  return { context, page, username, email }
+}
+
+async function share(owner: Page, universeId: string, member: Person, role: number) {
+  const invitationId = await post(owner, `/api/universes/${universeId}/invitations`, {
+    email: member.email,
+    role,
+  })
+  expect((await member.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(true)
+}
+
+async function world(owner: Page) {
+  const universeId = await post(owner, '/api/universes', {
+    name: unique('Review World '),
+    description: null,
+    accentColor: null,
+  })
+  const types = (await (
+    await owner.request.get(`/api/universes/${universeId}/entity-types`)
+  ).json()) as { id: string; name: string }[]
+  const entryId = await post(owner, `/api/universes/${universeId}/entities`, {
+    entityTypeId: types.find((type) => type.name === 'Character')!.id,
+    name: 'Ember Vale',
+    summary: 'The drowned heir.',
+    canonStatus: 2,
+    aliases: [],
+    tags: [],
+    fields: [],
+  })
+  const storyId = await post(owner, `/api/universes/${universeId}/stories`, {
+    title: 'The Drowned Heir',
+    premise: null,
+    status: 0,
+  })
+  const sceneId = await post(owner, `/api/universes/${universeId}/stories/${storyId}/scenes`, {
+    title: 'The Causeway',
+    summary: null,
+    notes: null,
+    povEntityId: null,
+    chronology: null,
+    entityIds: null,
+    chapterId: null,
+  })
+  return { universeId, entryId, storyId, sceneId }
+}
+
+const drawer = (page: Page) => page.getByTestId('comments-drawer')
+const threads = (page: Page) => drawer(page).getByTestId('comment-thread')
+
+async function openComments(page: Page) {
+  await page.getByTestId('comments-trigger').click()
+  await expect(drawer(page)).toBeVisible()
+}
+
+async function closeComments(page: Page) {
+  await drawer(page).getByTestId('comments-close').click()
+  await expect(drawer(page)).toHaveCount(0)
+}
+
+test.describe('review comments', () => {
+  test('a thread is started, answered by a Reviewer, resolved, reopened, and read by a Viewer', async ({
+    browser,
+  }) => {
+    test.setTimeout(120_000)
+    const owner = await person(browser, 'reviewowner')
+    const editor = await person(browser, 'revieweditor')
+    const reviewer = await person(browser, 'reviewreviewer')
+    const viewer = await person(browser, 'reviewviewer')
+    const { universeId, entryId } = await world(owner.page)
+    await share(owner.page, universeId, editor, Role.Editor)
+    await share(owner.page, universeId, reviewer, Role.Reviewer)
+    await share(owner.page, universeId, viewer, Role.Viewer)
+    const entryPage = `/app/universes/${universeId}/lore/${entryId}`
+
+    // The owner opens the review layer on an entry and starts a thread.
+    await owner.page.goto(entryPage)
+    await expect(owner.page.getByTestId('comments-trigger')).toHaveAccessibleName('Comments')
+    await openComments(owner.page)
+    await expect(drawer(owner.page).getByRole('heading', { name: 'Ember Vale' })).toBeVisible()
+    await expect(drawer(owner.page).getByTestId('comments-empty')).toHaveText('No comments yet.')
+    await drawer(owner.page).getByLabel('New comment').fill('Is the tide year right?\nIt reads one off.')
+    await drawer(owner.page).getByTestId('comment-new-post').click()
+    await expect(threads(owner.page)).toHaveCount(1)
+    await expect(threads(owner.page).getByTestId('comment-author')).toHaveText(owner.username)
+    await expect(threads(owner.page).getByTestId('comment-body')).toHaveText(
+      'Is the tide year right?\nIt reads one off.',
+    )
+    await closeComments(owner.page)
+    await expect(owner.page.getByTestId('comments-trigger')).toHaveAccessibleName('Comments, 1 open')
+
+    // The Reviewer still cannot edit the entry, and answers the thread.
+    await reviewer.page.goto(entryPage)
+    await expect(reviewer.page.getByTestId('entry-name')).toHaveText('Ember Vale')
+    await expect(reviewer.page.getByTestId('edit-entity')).toHaveCount(0)
+    await expect(reviewer.page.getByTestId('entity-actions')).toHaveCount(0)
+    await expect(reviewer.page.getByTestId('comments-count')).toHaveText('1')
+    await openComments(reviewer.page)
+    await expect(threads(reviewer.page).getByTestId('comment-resolve')).toHaveCount(0)
+    await threads(reviewer.page).getByTestId('comment-reply').click()
+    await threads(reviewer.page).getByLabel('Reply').fill('Yes, chapter two says so.')
+    await threads(reviewer.page).getByTestId('comment-reply-post').click()
+    await expect(threads(reviewer.page).getByTestId('comment')).toHaveCount(2)
+    await expect(threads(reviewer.page).getByTestId('comment-author').nth(1)).toHaveText(
+      reviewer.username,
+    )
+
+    // The Editor resolves it: it leaves the open threads and is kept under Resolved.
+    await editor.page.goto(entryPage)
+    await openComments(editor.page)
+    await threads(editor.page).getByTestId('comment-resolve').click()
+    await expect(drawer(editor.page).getByTestId('comments-open')).toHaveCount(0)
+    await drawer(editor.page).getByTestId('comments-resolved-group').locator('summary').click()
+    await expect(threads(editor.page).getByTestId('comment-resolved')).toContainText(
+      `Resolved by ${editor.username}`,
+    )
+    await closeComments(editor.page)
+    await expect(editor.page.getByTestId('comments-count')).toHaveCount(0)
+
+    // The owner reads it as resolved, every word kept, and reopens it.
+    await owner.page.reload()
+    await openComments(owner.page)
+    const resolved = drawer(owner.page).getByTestId('comments-resolved-group')
+    await resolved.locator('summary').click()
+    await expect(resolved.getByTestId('comment')).toHaveCount(2)
+    await resolved.getByTestId('comment-reopen').click()
+    await expect(drawer(owner.page).getByTestId('comments-open').getByTestId('comment')).toHaveCount(2)
+    await expect(drawer(owner.page).getByTestId('comments-resolved-group')).toHaveCount(0)
+
+    // The Viewer reads the thread and is offered nothing to write or change.
+    await viewer.page.goto(entryPage)
+    await openComments(viewer.page)
+    await expect(threads(viewer.page).getByTestId('comment-body')).toHaveText([
+      'Is the tide year right?\nIt reads one off.',
+      'Yes, chapter two says so.',
+    ])
+    await expect(drawer(viewer.page).getByTestId('comments-read-only')).toBeVisible()
+    await expect(drawer(viewer.page).getByLabel('New comment')).toHaveCount(0)
+    await expect(drawer(viewer.page).getByTestId('comment-reply')).toHaveCount(0)
+    await expect(drawer(viewer.page).getByTestId('comment-resolve')).toHaveCount(0)
+
+    // Escape closes the drawer and hands the focus back to the button that opened it.
+    await viewer.page.keyboard.press('Escape')
+    await expect(drawer(viewer.page)).toHaveCount(0)
+    await expect(viewer.page.getByTestId('comments-trigger')).toBeFocused()
+
+    // Nothing private of anyone is on the page.
+    for (const someone of [owner, editor, reviewer]) {
+      await expect(viewer.page.getByText(someone.email)).toHaveCount(0)
+    }
+
+    for (const someone of [owner, editor, reviewer, viewer]) await someone.context.close()
+  })
+
+  test('the same review layer on a story and on a scene, from the keyboard and on a phone', async ({
+    browser,
+  }) => {
+    const owner = await person(browser, 'reviewstoryowner')
+    const reviewer = await person(browser, 'reviewstoryreviewer')
+    const { universeId, storyId, sceneId } = await world(owner.page)
+    await share(owner.page, universeId, reviewer, Role.Reviewer)
+    const storyPage = `/app/universes/${universeId}/stories/${storyId}`
+
+    // The story, as a whole, from the line of facts under its title.
+    await reviewer.page.goto(storyPage)
+    await expect(reviewer.page.getByTestId('edit-story')).toHaveCount(0)
+    await reviewer.page.getByTestId('comments-trigger').focus()
+    await reviewer.page.keyboard.press('Enter')
+    await expect(drawer(reviewer.page)).toBeVisible()
+    await expect(drawer(reviewer.page)).toContainText('On this story')
+    await drawer(reviewer.page).getByLabel('New comment').fill('The pacing drags in the middle.')
+    await drawer(reviewer.page).getByTestId('comment-new-post').click()
+    await expect(threads(reviewer.page)).toHaveCount(1)
+    await closeComments(reviewer.page)
+
+    // One scene, beside its prose.
+    await reviewer.page.goto(`${storyPage}/manuscript/${sceneId}`)
+    const sceneTools = reviewer.page.getByTestId('manuscript-scene')
+    await sceneTools.getByTestId('comments-trigger').click()
+    await expect(drawer(reviewer.page)).toContainText('On this scene')
+    await expect(drawer(reviewer.page).getByRole('heading', { name: 'The Causeway' })).toBeVisible()
+    await drawer(reviewer.page).getByLabel('New comment').fill('Who holds the lantern here?')
+    await drawer(reviewer.page).getByTestId('comment-new-post').click()
+    await expect(threads(reviewer.page)).toHaveCount(1)
+    await closeComments(reviewer.page)
+
+    // The owner finds each where it was left, counted, and the two never mix.
+    await owner.page.goto(storyPage)
+    await expect(owner.page.getByTestId('comments-count')).toHaveText('1')
+    await owner.page.goto(`${storyPage}/manuscript/${sceneId}`)
+    await owner.page.getByTestId('manuscript-scene').getByTestId('comments-trigger').click()
+    await expect(threads(owner.page).getByTestId('comment-body')).toHaveText('Who holds the lantern here?')
+    await closeComments(owner.page)
+
+    // On a phone the button keeps its icon, count and name, and the drawer takes the screen without scrolling sideways.
+    await owner.page.setViewportSize({ width: 390, height: 800 })
+    await owner.page.goto(storyPage)
+    const trigger = owner.page.getByTestId('comments-trigger')
+    await expect(trigger).toHaveAccessibleName('Comments, 1 open')
+    await trigger.click()
+    const box = await drawer(owner.page).boundingBox()
+    expect(box?.width).toBeGreaterThan(380)
+    expect(
+      await owner.page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+    ).toBe(0)
+
+    for (const someone of [owner, reviewer]) await someone.context.close()
+  })
+})

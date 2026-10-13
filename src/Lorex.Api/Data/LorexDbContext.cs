@@ -1,5 +1,6 @@
 using Lorex.Api.Features.Auth;
 using Lorex.Api.Features.CanonIntegrity;
+using Lorex.Api.Features.Comments;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Lore;
@@ -121,6 +122,10 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
     public DbSet<IdeaPlotBeatReference> IdeaPlotBeatReferences => Set<IdeaPlotBeatReference>();
 
     public DbSet<WorldRule> WorldRules => Set<WorldRule>();
+
+    public DbSet<CommentThread> CommentThreads => Set<CommentThread>();
+
+    public DbSet<Comment> Comments => Set<Comment>();
 
     public DbSet<ValidationTerm> ValidationTerms => Set<ValidationTerm>();
 

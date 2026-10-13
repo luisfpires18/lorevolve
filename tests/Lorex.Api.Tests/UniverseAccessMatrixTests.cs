@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Lorex.Api.Features.Chronology;
+using Lorex.Api.Features.Comments;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Publishing;
 using Lorex.Api.Features.Relationships;
@@ -34,6 +35,9 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
     {
         /// <summary>Every member: owner, Editor, Reviewer, Viewer.</summary>
         Read,
+
+        /// <summary>The owner, Editors and Reviewers: review comments (043).</summary>
+        Comment,
 
         /// <summary>The owner and Editors.</summary>
         Edit,
@@ -238,6 +242,17 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             // ---------- Backup ----------
             new("export", Get, $"{u}/export", May.Own),
 
+            // ---------- Review comments (043) ----------
+            new("entry comments", Get, $"{e}/comments", May.Read),
+            new("comment on entry", Post, $"{e}/comments", May.Comment, Json(new CommentRequest("A note."))),
+            new("story comments", Get, $"{s}/comments", May.Read),
+            new("comment on story", Post, $"{s}/comments", May.Comment, Json(new CommentRequest("A note."))),
+            new("scene comments", Get, $"{scene}/comments", May.Read),
+            new("comment on scene", Post, $"{scene}/comments", May.Comment, Json(new CommentRequest("A note."))),
+            new("reply to thread", Post, $"{u}/comment-threads/{any}/replies", May.Comment, Json(new CommentRequest("A reply."))),
+            new("resolve thread", Post, $"{u}/comment-threads/{any}/resolve", May.Edit),
+            new("reopen thread", Post, $"{u}/comment-threads/{any}/reopen", May.Edit),
+
             // ---------- Collaborators (030) ----------
             new("collaborators", Get, $"{u}/collaborators", May.Own),
             new("change collaborator role", Put, $"{u}/collaborators/{w.EditorId}", May.Own, Json(new CollaboratorRoleRequest(UniverseRole.Viewer))),
@@ -251,6 +266,7 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
     private static bool Allowed(May may, Who who) => may switch
     {
         May.Read => who is Who.Owner or Who.Editor or Who.Reviewer or Who.Viewer,
+        May.Comment => who is Who.Owner or Who.Editor or Who.Reviewer,
         May.Edit => who is Who.Owner or Who.Editor,
         _ => who is Who.Owner,
     };
@@ -401,6 +417,10 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             parts.Add(await db.PlotBeats.CountAsync(row => row.PlotArc!.Story!.UniverseId == u && row.DeletedAt == null));
             parts.Add(await db.UniverseArtworks.CountAsync(row => row.UniverseId == u));
             parts.Add(await db.UniverseMemberships.CountAsync(row => row.UniverseId == u));
+            var threads = db.CommentThreads.Where(row => row.Entity!.UniverseId == u || row.Story!.UniverseId == u || row.Scene!.Story!.UniverseId == u);
+            parts.Add(await threads.CountAsync());
+            parts.Add(await threads.CountAsync(row => row.ResolvedAt != null));
+            parts.Add(await threads.SelectMany(row => row.Comments).CountAsync());
         });
 
         return string.Join("|", parts);

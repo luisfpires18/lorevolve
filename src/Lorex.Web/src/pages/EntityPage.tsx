@@ -11,6 +11,7 @@ import {
 import { Check, Maximize2, Network, Pencil, Trash, X } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
+import { ReviewComments } from '../components/ReviewComments'
 import { ContentPublication } from '../components/ContentPublication'
 import { EntityArticleSection } from '../components/EntityArticle'
 import { EntityHistory } from '../components/EntityHistory'
@@ -698,6 +699,11 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
                   Family tree
                 </Link>
               ) : null}
+              <ReviewComments
+                universeId={universe.id}
+                subject={{ kind: 'entry', entityId: entityId! }}
+                subjectName={detail?.name ?? ''}
+              />
               {access.manageTrash ? (
                 <ActionMenu
                   label={`More actions for ${detail?.name ?? 'this entry'}`}
