@@ -36,7 +36,9 @@ async function share(owner: Page, universeId: string, member: Person, role: numb
     email: member.email,
     role,
   })
-  expect((await member.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(true)
+  expect((await member.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(
+    true,
+  )
 }
 
 async function world(owner: Page) {
@@ -126,7 +128,9 @@ test.describe('review comments', () => {
     await expect.poll(() => ownerReads.length).toBe(1)
     await expect(drawer(owner.page).getByRole('heading', { name: 'Ember Vale' })).toBeVisible()
     await expect(drawer(owner.page).getByTestId('comments-empty')).toHaveText('No comments yet.')
-    await drawer(owner.page).getByLabel('New comment').fill('Is the tide year right?\nIt reads one off.')
+    await drawer(owner.page)
+      .getByLabel('New comment')
+      .fill('Is the tide year right?\nIt reads one off.')
     await drawer(owner.page).getByTestId('comment-new-post').click()
     await expect(threads(owner.page)).toHaveCount(1)
     await expect(threads(owner.page).getByTestId('comment-author')).toHaveText(owner.username)
@@ -169,7 +173,9 @@ test.describe('review comments', () => {
     await resolved.locator('summary').click()
     await expect(resolved.getByTestId('comment')).toHaveCount(2)
     await resolved.getByTestId('comment-reopen').click()
-    await expect(drawer(owner.page).getByTestId('comments-open').getByTestId('comment')).toHaveCount(2)
+    await expect(
+      drawer(owner.page).getByTestId('comments-open').getByTestId('comment'),
+    ).toHaveCount(2)
     await expect(drawer(owner.page).getByTestId('comments-resolved-group')).toHaveCount(0)
 
     // The Viewer reads the thread and is offered nothing to write or change.
@@ -246,7 +252,9 @@ test.describe('review comments', () => {
     await expect(owner.page.getByTestId('manuscript-scene-title')).toHaveText('The Causeway')
     expect(ownerReads).toHaveLength(0)
     await owner.page.getByTestId('manuscript-scene').getByTestId('comments-trigger').click()
-    await expect(threads(owner.page).getByTestId('comment-body')).toHaveText('Who holds the lantern here?')
+    await expect(threads(owner.page).getByTestId('comment-body')).toHaveText(
+      'Who holds the lantern here?',
+    )
     expect(ownerReads).toEqual([expect.stringContaining(`/scenes/${sceneId}/comments`)])
     await closeComments(owner.page)
 
