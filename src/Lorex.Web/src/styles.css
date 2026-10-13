@@ -5273,6 +5273,12 @@ a.button--danger:visited {
   border-bottom: 1px solid var(--rule);
 }
 
+.entry__lenses {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
 .entry__tools {
   display: flex;
   flex-wrap: wrap;
@@ -9277,16 +9283,17 @@ a.lorechip--pov:focus-visible .lorechip__name {
   }
 
   .manuscript__where {
-    grid-column: 1 / -1;
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .manuscript__tools {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 1;
   }
 
   .manuscript__title {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 2;
   }
 
@@ -14374,5 +14381,145 @@ a.idearef__name {
 
   .landing-more {
     margin-top: var(--space-3);
+  }
+}
+
+/* ---------- Review comments (043) ----------
+
+   A quiet button beside a subject's views or tools, and the threads in the moment drawer. Below 640px, in the entry's
+   views line and a scene's tool row, the button is its icon alone, keeping its whole name for assistive technology and
+   as its tooltip; the story's line of facts wraps and keeps the word. A thread is a column of
+   comments, replies set in under a rule; resolved threads fold away under their own heading. */
+
+.reviewform {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.reviewsection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.reviewsection__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-ui);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+summary.reviewsection__title {
+  cursor: pointer;
+}
+
+.reviewsection__count {
+  color: var(--muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.reviewsection__list,
+.reviewthread__comments {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reviewsection__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+details.reviewsection > .reviewsection__list {
+  margin-top: var(--space-3);
+}
+
+.reviewthread {
+  padding: var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+
+.reviewthread[data-resolved='true'] {
+  border-style: dashed;
+}
+
+.reviewthread__comments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.reviewcomment--reply {
+  margin-left: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--rule);
+}
+
+.reviewcomment__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.reviewcomment__author {
+  color: var(--ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.reviewcomment__body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reviewthread__resolved {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.reviewthread__reply {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.reviewthread__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.reviewthread__tools:empty {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .entry__lenses .reviewtrigger__label,
+  .manuscript__tools .reviewtrigger__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
 }

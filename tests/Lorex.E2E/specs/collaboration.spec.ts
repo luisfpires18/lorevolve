@@ -109,7 +109,7 @@ test.describe('collaborators', () => {
     )
     await role.selectOption({ label: 'Reviewer' })
     await expect(owner.page.getByTestId('invite-role-hint')).toHaveText(
-      'Read-only access intended for review and feedback.',
+      'Can read and comment. Cannot edit content.',
     )
 
     // An empty address is refused at the field, tied to it.
@@ -532,7 +532,10 @@ test.describe('who saved each version', () => {
     })
     expect(edited.ok()).toBe(true)
     const doc = (text: string) =>
-      JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] })
+      JSON.stringify({
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+      })
     const first = await owner.page.request.put(`${entity}/article`, {
       data: { content: doc('By the owner.'), expectedUpdatedAt: null },
     })
@@ -547,7 +550,9 @@ test.describe('who saved each version', () => {
 
     const entryPage = `/app/universes/${world.id}/lore/${id}`
     const row = (page: Page, list: string, number: number) =>
-      page.locator(`[data-testid="${list}"] [data-version="${number}"]`).getByTestId('version-actor')
+      page
+        .locator(`[data-testid="${list}"] [data-version="${number}"]`)
+        .getByTestId('version-actor')
 
     for (const reader of [owner, editor]) {
       const page = reader.page

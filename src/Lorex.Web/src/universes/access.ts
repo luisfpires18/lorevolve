@@ -6,8 +6,8 @@ import { UniverseRole, type UniverseRoleValue } from './types'
  *
  * These mirror the API's capabilities so a Viewer is not shown an Edit button that can only answer 403. They are not
  * security: the API decides every request on its own, and a control shown by mistake here is still refused there.
- * Components ask a named capability - never compare roles - so a role can later gain one (a Reviewer commenting)
- * without anything else changing.
+ * Components ask a named capability - never compare roles - so a role gains one (a Reviewer commenting) without
+ * anything else changing.
  */
 export interface UniverseCapabilities {
   /** Create and edit creative content, its types and media; run Canon. */
@@ -26,6 +26,10 @@ export interface UniverseCapabilities {
   backup: boolean
   /** Invite people and manage their roles. */
   manageCollaborators: boolean
+  /** Start review threads and reply to them. Every member reads them. */
+  comment: boolean
+  /** Resolve and reopen review threads. */
+  resolveComments: boolean
   /**
    * Keep account ideas about this universe. Not an API capability but a consequence of one: an idea may point only into
    * a universe its author owns (ADR 0030 amendment), so a collaborator has nothing to keep here.
@@ -42,6 +46,8 @@ const NONE: UniverseCapabilities = {
   publish: false,
   backup: false,
   manageCollaborators: false,
+  comment: false,
+  resolveComments: false,
   keepIdeas: false,
 }
 
@@ -58,11 +64,21 @@ export function capabilitiesOf(role: UniverseRoleValue): UniverseCapabilities {
         publish: true,
         backup: true,
         manageCollaborators: true,
+        comment: true,
+        resolveComments: true,
         keepIdeas: true,
       }
     case UniverseRole.Editor:
-      return { ...NONE, editContent: true, manageTrash: true, manageHistory: true }
+      return {
+        ...NONE,
+        editContent: true,
+        manageTrash: true,
+        manageHistory: true,
+        comment: true,
+        resolveComments: true,
+      }
     case UniverseRole.Reviewer:
+      return { ...NONE, comment: true }
     case UniverseRole.Viewer:
       return NONE
     default:
@@ -107,11 +123,11 @@ export const ROLE_LABELS: Record<UniverseRoleValue, string> = {
   [UniverseRole.Viewer]: 'Viewer',
 }
 
-/** One line per role, beside the picker. Nothing promised that does not exist yet: no comments. */
+/** One line per role, beside the picker. Nothing promised that does not exist. */
 export const ROLE_DESCRIPTIONS: Record<UniverseRoleValue, string> = {
   [UniverseRole.Owner]: 'Owns this universe.',
   [UniverseRole.Editor]:
     'Can create and edit content, use Trash and restore items. Cannot permanently delete, publish, or manage the universe.',
-  [UniverseRole.Reviewer]: 'Read-only access intended for review and feedback.',
+  [UniverseRole.Reviewer]: 'Can read and comment. Cannot edit content.',
   [UniverseRole.Viewer]: 'Can read the shared universe.',
 }

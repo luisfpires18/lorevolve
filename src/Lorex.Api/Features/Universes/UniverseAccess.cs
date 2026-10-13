@@ -36,6 +36,12 @@ public enum UniverseCapability
 
     /// <summary>Invite people, change their roles and remove them.</summary>
     ManageCollaborators,
+
+    /// <summary>Start a review thread on content and reply to one (task 043). Reading comments is <see cref="Read"/>.</summary>
+    Comment,
+
+    /// <summary>Resolve a review thread and reopen it.</summary>
+    ResolveComments,
 }
 
 /// <summary>
@@ -74,7 +80,10 @@ public static class UniverseAccess
     {
         UniverseCapability.Read =>
             role is UniverseRole.Owner or UniverseRole.Editor or UniverseRole.Reviewer or UniverseRole.Viewer,
-        UniverseCapability.EditContent or UniverseCapability.ManageTrash or UniverseCapability.ManageHistory =>
+        UniverseCapability.Comment =>
+            role is UniverseRole.Owner or UniverseRole.Editor or UniverseRole.Reviewer,
+        UniverseCapability.EditContent or UniverseCapability.ManageTrash or UniverseCapability.ManageHistory
+            or UniverseCapability.ResolveComments =>
             role is UniverseRole.Owner or UniverseRole.Editor,
         UniverseCapability.PermanentlyDelete or UniverseCapability.ManageUniverse or UniverseCapability.Publish
             or UniverseCapability.Backup or UniverseCapability.ManageCollaborators =>

@@ -190,3 +190,25 @@ the restorer did not write them.
 
 **Not recorded:** moving to the Trash and restoring from it write no version, so they name no one; permanent deletion
 removes its history with it. Universe-level activity, notifications and presence are not built.
+
+## Amendment: review comments (2026-10-14, task 043)
+
+**Two new capabilities.** `Comment` (owner, Editor, Reviewer) starts a thread and replies; `ResolveComments` (owner,
+Editor) resolves and reopens. Reading threads is `Read`, so a Viewer reads them and writes nothing. A Reviewer gains
+nothing else: no edit, history, Trash, publication or collaborator route. The matrix stays in `UniverseAccess.Allows`.
+
+**A thread is about one live subject, as a whole.** `CommentThreads` has three nullable keys - entry, story, scene - and
+`CK_CommentThreads_Subject` holds exactly one. Each cascades, so a thread lives exactly as long as its subject: the Trash
+leaves it for a restore (its routes answer 404 while the subject is binned), and a permanent delete of the content or the
+universe takes it. `Comments` (author, plain trimmed body up to 4,000 characters, time) cascade from their thread. No
+anchors inside text, no editing or deleting a comment, no nested replies. A resolved thread takes no reply (409
+`comment_thread_resolved`) until it is reopened; resolving keeps every word and records who and when, and reopening clears
+both. Routes: `.../entities/{id}/comments`, `.../stories/{id}/comments`, `.../stories/{id}/scenes/{id}/comments`
+(GET, POST), and `.../comment-threads/{id}/replies|resolve|reopen`, each finding its thread only through a live subject
+of the named universe.
+
+**Authors as in 042.** `AuthorUserId` and `ResolvedByUserId` are raw ids with no foreign key; responses carry the username
+only, or null when no account answers to the id. A removed collaborator's comments stay, named.
+
+**Not in a backup.** Comments are private collaboration metadata about accounts, like memberships: export carries none
+and a restore has none. Format stays **22**.

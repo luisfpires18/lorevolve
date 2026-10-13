@@ -50,8 +50,28 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   next numbered phase resumes only when the owner says so.
 - **Design refactor 001-007 done and merged** (007 at `cc798c1`, merged into `dev` at `a87b7da`; Deploy DEV #47 green).
   The contract is now an as-built reference. See Design refactor below.
-- **Roadmap task 042 - attribution in history** (`feat/attribution-activity-history` off `dev` at `af44810`; committed, not
-  merged, not pushed). One migration (`AddRevisionActors`), backup stays **22**. ADR 0041 amendment.
+- **Roadmap task 043 - review comments** (`feat/comments-review-layer` off `dev` at `89d1abd`; committed, not merged,
+  not pushed). One migration (`AddCommentThreads`), backup stays **22**. ADR 0041 amendment.
+  - Capabilities `Comment` (owner, Editor, Reviewer) and `ResolveComments` (owner, Editor); reading is `Read` (Viewer too).
+  - `CommentThreads` (exactly one of entry/story/scene, cascading keys, check constraint; resolved at/by) and `Comments`
+    (raw author id, plain trimmed body <= 4,000, time). Whole-subject only; no edit/delete, mentions, anchors or realtime.
+  - 9 routes under the universe; threads reached only through a live subject of that universe; Trash hides them (404)
+    and a restore brings them back; permanent delete and universe delete cascade. Resolved threads refuse replies (409).
+  - API names people by username only (null = unknown account). Backup carries no comments.
+  - UI: `ReviewComments` - a "Comments" button after the entry's views, in the story's facts line (not on the Manuscript
+    view) and in each scene's tool row; icon alone below 640px on the entry and scene rows. No count: nothing is read
+    until the drawer opens (one GET), so a page of many scenes asks for none. The moment drawer (full width on phones):
+    new comment, Open and folded Resolved threads, Reply, Resolve/Reopen by capability. Phone manuscript head: tools
+    beside the location line, title full width. Reviewer role hint: "Can read and comment. Cannot edit content."
+  - Deferred: open counts (would need a batch read), notifications, mentions, edit/delete, anchors, activity feed,
+    comments in backups.
+  - Tests: API 1437 -> 1449 (`CommentTests` 11, `CommentMigrationTests` 1, matrix +9 routes). Playwright
+    `review-comments.spec.ts` 2 (no comments read before the drawer opens; phone rows); focused + neighbours on a fresh DB,
+    two workers: 82/82; after the lazy-load follow-up 65/68 - the review spec's own two read counts (fixed, then 2/2)
+    and one known Vite lazy-module blank in `collaboration.spec.ts`, green 3/3 alone. Full suite not run locally;
+    delegated to GitHub Actions.
+- **Roadmap task 042 - attribution in history** (`feat/attribution-activity-history` off `dev` at `af44810`; merged into
+  `dev` at `89d1abd`). One migration (`AddRevisionActors`), backup stays **22**. ADR 0041 amendment.
   - Entry, article and manuscript versions record `ActorUserId` (raw id, no FK, nullable, nothing backfilled) on every
     write that makes one: create, mass create, edit, picture, version restore. Kind/number/time stay the action.
   - History lists (owner + Editor, unchanged) carry `actorName` = username, read live in the same query; no id or email.
@@ -1442,7 +1462,7 @@ tool has changed the picture.
   for personal use and for organisations under $1M revenue, which is true of Lorex today. Worth
   revisiting if that ever stops being true. ADR 0019.
 - **Collaboration, after 030** (ADR 0041) - not gaps: outbound email delivery of invitations (the link and model are
-  ready for it), notifications, Reviewer comments (planned as a quiet eye action opening a modal), suggestions,
+  ready for it), notifications, suggestions (045), comment mentions/editing/anchors (comments done in 043),
   trashed/restored-by and an activity feed (version authors done in 042), concurrent-edit protection, ownership transfer, public
   collaborator credit; a collaborator's idea pointing into a shared universe; the public page's workspace link for
   members. An Editor restoring a previously public item from the Trash brings back the owner's selection as it was.

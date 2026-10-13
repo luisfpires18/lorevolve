@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { ManuscriptHistory } from './ManuscriptHistory'
+import { ReviewComments } from './ReviewComments'
 import { RecoveredDraft } from './RecoveredDraft'
 import { SceneBeats, SceneLore, SceneStamp } from './SceneContext'
 import { useAuth } from '../auth/useAuth'
@@ -326,6 +327,11 @@ export function ManuscriptEditor({
                 </span>
               </button>
             ) : null}
+            <ReviewComments
+              universeId={universeId}
+              subject={{ kind: 'scene', storyId, sceneId: scene.id }}
+              subjectName={scene.title}
+            />
             <ActionMenu
               label={`More actions for ${scene.title}`}
               triggerTestId="manuscript-scene-actions"
