@@ -194,3 +194,26 @@ serving old bytes), and a constant somebody must remember to change is the failu
   checks the sweep waits for `activated`; `pwa.spec.ts` does.
 - The semantic version (`package.json`, shown as "LoreX v0.1.0") is separate: it says which release is running and
   never invalidates anything.
+
+## Amendment: the new mark, black grounds and the launch layer (2026-10-14, 043.5)
+
+**New mark, same pipeline.** The owner's new icon (a crimson star and X in a pale gold ring) replaces
+`assets/brand/lorex-icon.png`; `scripts/render-icons.py` re-renders every icon, favicon and `brand-mark.png` from it,
+unaltered. The grounds that cannot be transparent - maskable and Apple touch - move from paper to black: the new mark was
+drawn on black and reads there, and black is now the launch's ground. The maskable padding grows to 22%, because the
+mark's diagonal spikes reach the corners of its own box; `pwa.spec.ts` measures that the whole mark stays inside the 80%
+circle.
+
+**`background_color` is black.** The platform's launch screen, the launch layer and the launch logo's own ground are one
+surface. `theme_color` stays the plate, `#201f1d`.
+
+**The launch layer.** `index.html` draws a black layer with `launch-logo.webp` (encoded from
+`assets/brand/lorex-logo.png`) before the first paint, but only in the installed app (`display-mode: standalone`, or
+iOS's `navigator.standalone`) and once per window (`sessionStorage`). The app starts underneath; `src/lib/launch.ts`
+lifts the layer once the logo has arrived and the shell shows no pending plate, about 1.1 s in all, a fade alone under
+reduced motion. A CSS failsafe hides it after 10 s if the app never starts. Browser tabs never draw it or fetch the logo.
+
+**Caching.** `.webp` joins the root files the worker keeps per build, so the logo is local on a cold launch and fresh
+after each deployment; nothing else changes. An existing install picks up the new manifest and icons when the platform
+next refreshes its install - Android does so on its own schedule, iOS keeps the icon of the home-screen shortcut until it
+is added again. Lorex does not prompt.

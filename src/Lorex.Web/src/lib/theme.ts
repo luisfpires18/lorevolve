@@ -17,7 +17,7 @@ export type Theme = 'light' | 'dark'
 export const THEME_STORAGE_KEY = 'lorex-theme'
 
 /** The browser chrome's colour in each theme - the same values the bootstrap writes. */
-const THEME_COLOR: Record<Theme, string> = { light: '#f6f2ea', dark: '#151617' }
+export const THEME_COLOR: Record<Theme, string> = { light: '#f6f2ea', dark: '#151617' }
 
 const listeners = new Set<() => void>()
 const systemDark = () => window.matchMedia('(prefers-color-scheme: dark)')

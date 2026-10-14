@@ -7,7 +7,7 @@
     "scope": "/",
     "display": "standalone",
     "orientation": "any",
-    "background_color": "#f6f2ea",
+    "background_color": "#000000",
     "theme_color": "#201f1d",
     "categories": ["productivity", "books"],
     "icons": [

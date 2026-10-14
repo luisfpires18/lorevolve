@@ -15,7 +15,8 @@ Repository index. Paths and one-line responsibilities only.
 | `STATE.md` | Operational state only: roadmap position, blockers, deferred decisions. |
 | `graphify-out/` | Generated knowledge graph. Gitignored, manual-only; rebuild with `python -m graphify update .`. |
 | `docs/tooling/` | Agent tooling trial notes (RTK and Graphify evaluation). |
-| `assets/brand/lorex-icon.png` | The Lorex mark, as the owner supplied it. The one source every icon is derived from; not shipped. |
+| `assets/brand/lorex-icon.png` | The Lorex mark, as the owner supplied it (replaced in 043.5). The one source every icon is derived from; not shipped. |
+| `assets/brand/lorex-logo.png` | The Lorex logo on its own black ground, as the owner supplied it (043.5). Source of `public/launch-logo.webp`; not shipped. |
 | `.github/workflows/` | CI on pull requests, and the DEV deployment from `dev`. |
 | `infra/main.bicep` | The two DEV Azure resources: the Linux App Service plan and the site. |
 | `infra/main.parameters.json` | Deployment parameters. Placeholder name; no secret. |
@@ -226,13 +227,15 @@ Repository index. Paths and one-line responsibilities only.
 
 | Path | Responsibility |
 | --- | --- |
-| `index.html` | Document shell: manifest link, PNG favicons and the apple touch icon, theme colours, viewport; the `lorex:head` block the API replaces per page (default `noindex`). |
+| `index.html` | Document shell: manifest link, PNG favicons and the apple touch icon, theme colours, viewport; the `lorex:head` block the API replaces per page (default `noindex`); and the launch layer (043.5): an inline check for an installed window's first launch, its CSS and the black layer with the logo, before the first paint. |
 | `public/manifest.webmanifest` | Web app manifest: name, start URL (`/explore` - the installed app opens the portal; `id` stays `/app`), display mode, colours, icons. |
 | `public/sw.js` | Service worker (033: no hand-kept version - registered as `/sw.js?build=<BUILD_ID>`, it caches under `lorex-static-<build>` and deletes every other `lorex-static-*` on activate; bare `/sw.js`, tests only, is `lorex-static-unbuilt`): caches build output and root icons only, and refuses `/api`, navigations, non-`GET`, cross-origin and - since 014 - the web app manifest, which a kept copy froze at `start_url: /app` for installs made before 011 (ADR 0017 amendment). |
-| `public/icon-*.png` + `apple-touch-icon.png` + `favicon-*.png` | The install and tab icons: the Lorex mark, transparent except where a platform fills transparency (maskable, Apple), at the padding each one needs. All rendered from `assets/brand/lorex-icon.png` by `scripts/render-icons.py`. |
+| `public/icon-*.png` + `apple-touch-icon.png` + `favicon-*.png` | The install and tab icons: the Lorex mark, transparent except where a platform fills transparency (maskable, Apple: on black since 043.5), at the padding each one needs. All rendered from `assets/brand/lorex-icon.png` by `scripts/render-icons.py`. |
+| `public/launch-logo.webp` | The launch layer's logo, 1200x600, encoded once from `assets/brand/lorex-logo.png` (command in `render-icons.py`). |
 | `public/brand-mark.png` | The same mark, transparent, for use inside the product. |
 | `src/main.tsx` | React entry point. |
 | `src/pwa.ts` | Registers the service worker, in production builds only, as `/sw.js?build=<BUILD_ID>`. |
+| `src/lib/launch.ts` | 043.5: lifts the launch layer once the logo has arrived and the shell shows no pending plate (or after 8 s), restores the theme colour and removes the layer; in a browser tab it removes the unused layer at once. Knows no routes or session. |
 | `package.json` `version` | The one application version (033; `0.1.0`). Bumped with `npm version <x> --no-git-tag-version`; nothing else writes it down. |
 | `vite.config.ts` `define` | Writes `__LOREX_VERSION__` (package.json) and `__LOREX_BUILD_ID__` (`LOREX_BUILD_ID`, else `GITHUB_SHA` cut to 12, else random per Vite start; `[A-Za-z0-9._-]`, 40 at most) into the bundle. Nothing else from the environment reaches the browser. |
 | `src/lib/buildInfo.ts` | The frontend's only door to those: `APP_VERSION`, `BUILD_ID`, `VERSION_LABEL` ("LoreX v0.1.0"), shown in the home footer and the account menu. |
@@ -476,7 +479,8 @@ Repository index. Paths and one-line responsibilities only.
 | `Lorex.E2E/specs/profile.spec.ts` | The account screen: reached from a universe, what it prints, the guard, the photo added, framed, reframed, replaced and removed, the two stages of a save, and the circle on a phone. |
 | `Lorex.E2E/specs/account-storage.spec.ts` | The Profile's Storage section: amount and meter, an upload and its removal, an Editor's upload on the owner's Profile only, a phone. |
 | `Lorex.E2E/specs/account-menu.spec.ts` | The one account menu: on the global rail and not in a universe's sidebar, the same in the universes header, the avatar agreeing everywhere, the keyboard, and a phone. |
-| `Lorex.E2E/specs/pwa.spec.ts` | Manifest, icons and metadata, and what the service worker is never allowed to cache. |
+| `Lorex.E2E/specs/pwa.spec.ts` | Manifest, icons (and the maskable safe zone) and metadata, and what the service worker is never allowed to cache. |
+| `Lorex.E2E/specs/launch.spec.ts` | 043.5: an installed launch on black with the logo, revealing the portal and the signed-in workspace past its pending plate; no replay on navigation or reload; nothing in a browser tab; a fade under reduced motion. |
 | `Lorex.E2E/specs/explore.spec.ts` | Explore: the portal header signed out and in, the workspace bridge both ways, real cards only and a card opening its world, filters and search in the address through Back, Forward and refresh, Show more worlds, no match, error and empty platform, 390/360 by touch and keyboard, RTL, a failed picture. |
 | `Lorex.E2E/specs/landing.spec.ts` | 031: `/` is Lorex's home, not a redirect - one h1, landmarks, title, no world search; signed-out and signed-in actions, Start building to the workspace, Log in from home to the workspace, sign-out staying home; brand home from Explore and a public world, Explore named and current, unknown addresses home; the worlds preview equal to the API's `pageSize=4` answer, its empty and failed states; 1440-360 with the title's three lines, the bar and no sideways scroll; no workspace pictured; the four counts equal to the API signed out and in, zeros and large numbers as given, nothing while loading, gone on failure, one row or two by two; Appearance; keyboard order. |
 | `Lorex.E2E/specs/publishing.spec.ts` | Publishing: private by default and the missing list, details, 16:10 artwork, the public name, the confirmation, the public page signed in and out, Explore, make private; the leave guard, one question for two forms; RTL and 390/360, light and dark. |
@@ -494,7 +498,7 @@ Repository index. Paths and one-line responsibilities only.
 | `Lorex.Common.ps1` | Shared launcher helpers: ports, process tracking, readiness. |
 | `Start-Lorex.ps1` | Starts API + web, waits, opens the browser. |
 | `Stop-Lorex.ps1` | Stops launcher-owned processes. |
-| `render-icons.py` | Renders every icon and favicon from `assets/brand/lorex-icon.png`: trim, pad, area-average, write. Standard library only. |
+| `render-icons.py` | Renders every icon and favicon from `assets/brand/lorex-icon.png`: trim, pad, area-average, write. Standard library only. Its header holds the one ffmpeg command that makes `launch-logo.webp`. |
 
 ## `docs`
 

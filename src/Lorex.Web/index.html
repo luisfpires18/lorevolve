@@ -41,6 +41,101 @@
       })()
     </script>
 
+    <!-- The launch layer (043.5): an installed Lorex opens on black with the logo resolving into view, then lifts to
+         reveal the app, which has been starting underneath all along. Only in the installed app, and once per window:
+         a browser tab and a reload in the same window start as they always have. Decided here, before the first paint,
+         so the platform's black launch screen, this layer and the logo are one surface. src/lib/launch.ts lifts it once
+         the shell has drawn something real; the failsafe animation lifts it anyway if the app never starts. -->
+    <script>
+      ;(function () {
+        var installed =
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.navigator.standalone === true
+        if (!installed) return
+        try {
+          if (sessionStorage.getItem('lorex-launched')) return
+          sessionStorage.setItem('lorex-launched', '1')
+        } catch (e) {}
+        document.documentElement.setAttribute('data-launch', 'on')
+        var chrome = document.querySelector('meta[name="theme-color"]')
+        if (chrome) chrome.setAttribute('content', '#000000')
+        var logo = document.createElement('link')
+        logo.rel = 'preload'
+        logo.as = 'image'
+        logo.href = '/launch-logo.webp'
+        document.head.appendChild(logo)
+      })()
+    </script>
+    <style>
+      .launch {
+        display: none;
+      }
+      html[data-launch='on'] {
+        background: #000;
+      }
+      html[data-launch] .launch {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483000;
+        display: grid;
+        place-items: center;
+        background: #000;
+        animation: launch-failsafe 0.3s linear 10s forwards;
+      }
+      .launch__logo {
+        width: min(78vw, 560px, 110vh);
+        aspect-ratio: 2 / 1;
+        background: url('/launch-logo.webp') center / contain no-repeat;
+        opacity: 0;
+        transform: scale(0.965);
+        filter: saturate(0.35) brightness(0.75);
+        animation: launch-logo 480ms cubic-bezier(0.2, 0.7, 0.2, 1) 60ms forwards;
+      }
+      html[data-launch='leaving'] .launch {
+        pointer-events: none;
+        animation: launch-leave 380ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+      @keyframes launch-logo {
+        to {
+          opacity: 1;
+          transform: none;
+          filter: none;
+        }
+      }
+      @keyframes launch-leave {
+        to {
+          opacity: 0;
+          transform: translateY(6vh);
+        }
+      }
+      @keyframes launch-failsafe {
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+      @keyframes launch-fade-in {
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes launch-fade-out {
+        to {
+          opacity: 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .launch__logo {
+          transform: none;
+          filter: none;
+          animation: launch-fade-in 160ms linear forwards;
+        }
+        html[data-launch='leaving'] .launch {
+          animation: launch-fade-out 160ms linear forwards;
+        }
+      }
+    </style>
+
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Lorex" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -59,6 +154,9 @@
     <!-- /lorex:head -->
   </head>
   <body>
+    <div class="launch" id="launch" aria-hidden="true" data-testid="launch">
+      <div class="launch__logo"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

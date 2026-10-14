@@ -50,8 +50,18 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   next numbered phase resumes only when the owner says so.
 - **Design refactor 001-007 done and merged** (007 at `cc798c1`, merged into `dev` at `a87b7da`; Deploy DEV #47 green).
   The contract is now an as-built reference. See Design refactor below.
-- **Roadmap task 043 - review comments** (`feat/comments-review-layer` off `dev` at `89d1abd`; committed, not merged,
-  not pushed). One migration (`AddCommentThreads`), backup stays **22**. ADR 0041 amendment.
+- **043.5 - PWA branding and launch** (interstitial, not a roadmap number; `feat/pwa-branded-launch` off `dev` at
+  `0959b0b`; committed, not merged, not pushed). No backend, schema or backup change. ADR 0017 amendment.
+  - New owner mark is `assets/brand/lorex-icon.png`; every icon, favicon and the in-app `brand-mark.png` re-rendered.
+    Maskable and Apple grounds now black; maskable padding 22% (safe zone measured in `pwa.spec.ts`).
+  - Manifest `background_color` `#000000` (`theme_color` unchanged). Worker keeps `.webp` root files per build.
+  - Launch layer in `index.html` (installed window, once per window): black, `launch-logo.webp` resolves in, lifts
+    down and fades (~1.1 s; fade only under reduced motion); `src/lib/launch.ts` waits for no `.session-pending`; CSS
+    failsafe at 10 s. Browser tabs unchanged.
+  - Tests: `launch.spec.ts` 4, `pwa.spec.ts` +1 and black grounds; focused + neighbours 87/87. Full suite not run
+    locally; delegated to GitHub Actions.
+- **Roadmap task 043 - review comments** (`feat/comments-review-layer` off `dev` at `89d1abd`; merged into `dev` at
+  `0959b0b`). One migration (`AddCommentThreads`), backup stays **22**. ADR 0041 amendment.
   - Capabilities `Comment` (owner, Editor, Reviewer) and `ResolveComments` (owner, Editor); reading is `Read` (Viewer too).
   - `CommentThreads` (exactly one of entry/story/scene, cascading keys, check constraint; resolved at/by) and `Comments`
     (raw author id, plain trimmed body <= 4,000, time). Whole-subject only; no edit/delete, mentions, anchors or realtime.
