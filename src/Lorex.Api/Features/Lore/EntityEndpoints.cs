@@ -476,23 +476,9 @@ public static class EntityEndpoints
         string actorUserId,
         CancellationToken cancellationToken)
     {
-        if (LoreValidation.ValidateEntity(request) is { } errors)
+        if (await CheckEntryAsync(db, universeId, request, cancellationToken) is { } refused)
         {
-            return (null, Results.ValidationProblem(errors));
-        }
-
-        // The type must live in this universe. A type id from elsewhere is treated as
-        // absent rather than reported, so it discloses nothing.
-        var typeExists = await db.EntityTypes.AnyAsync(
-            type => type.Id == request.EntityTypeId && type.UniverseId == universeId,
-            cancellationToken);
-
-        if (!typeExists)
-        {
-            return (null, Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["entityTypeId"] = ["Choose a type from this universe."],
-            }));
+            return (null, refused);
         }
 
         var now = DateTime.UtcNow;
@@ -560,6 +546,42 @@ public static class EntityEndpoints
             cancellationToken);
     }
 
+    /// <summary>The 409 for an entry save written over a version that is no longer current (ADR 0043).</summary>
+    internal static IResult Changed(int currentVersion) =>
+        EditVersion.Changed(
+            ChangedCode,
+            "Entry changed",
+            "This entry was changed after it was opened here. Nothing was overwritten.",
+            currentVersion);
+
+    /// <summary>
+    /// The entry's own checks - its fields' shapes, and a type of this universe - before anything is written. Shared by
+    /// create, update and a suggestion (ADR 0044), which writes nothing at all. A type id from elsewhere is treated as
+    /// absent rather than reported, so it discloses nothing.
+    /// </summary>
+    internal static async Task<IResult?> CheckEntryAsync(
+        LorexDbContext db,
+        Guid universeId,
+        EntityRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (LoreValidation.ValidateEntity(request) is { } errors)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var typeExists = await db.EntityTypes.AnyAsync(
+            type => type.Id == request.EntityTypeId && type.UniverseId == universeId,
+            cancellationToken);
+
+        return typeExists
+            ? null
+            : Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["entityTypeId"] = ["Choose a type from this universe."],
+            });
+    }
+
     /// <summary>
     /// An entry write that still carries the article is refused whole, before anything runs: nothing about the entry is
     /// saved, and the article is saved neither here nor anywhere else. Saving the entry and dropping the article would answer
@@ -613,28 +635,12 @@ public static class EntityEndpoints
         // between this comparison and the write.
         if (!EditVersion.Matches(entity.Version, request.ExpectedVersion))
         {
-            return EditVersion.Changed(
-                ChangedCode,
-                "Entry changed",
-                "This entry was changed after it was opened here. Nothing was overwritten.",
-                entity.Version);
+            return Changed(entity.Version);
         }
 
-        if (LoreValidation.ValidateEntity(request) is { } errors)
+        if (await CheckEntryAsync(db, universeId, request, cancellationToken) is { } refused)
         {
-            return Results.ValidationProblem(errors);
-        }
-
-        var typeExists = await db.EntityTypes.AnyAsync(
-            type => type.Id == request.EntityTypeId && type.UniverseId == universeId,
-            cancellationToken);
-
-        if (!typeExists)
-        {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["entityTypeId"] = ["Choose a type from this universe."],
-            });
+            return refused;
         }
 
         entity.EntityTypeId = request.EntityTypeId;
@@ -885,21 +891,8 @@ public static class EntityEndpoints
 
     private static void AddAliases(LorexDbContext db, LoreEntity entity, IReadOnlyList<string>? aliases)
     {
-        if (aliases is null)
+        foreach (var value in NormalizedAliases(aliases))
         {
-            return;
-        }
-
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var raw in aliases)
-        {
-            var value = raw?.Trim();
-            if (string.IsNullOrWhiteSpace(value) || !seen.Add(value))
-            {
-                continue;
-            }
-
             db.EntityAliases.Add(new EntityAlias
             {
                 Id = Guid.NewGuid(),
@@ -909,6 +902,41 @@ public static class EntityEndpoints
         }
     }
 
+    /// <summary>The aliases a save stores: trimmed, blanks dropped, each once ignoring case, first spelling kept.</summary>
+    internal static List<string> NormalizedAliases(IReadOnlyList<string>? aliases)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var kept = new List<string>();
+
+        foreach (var raw in aliases ?? [])
+        {
+            var value = raw?.Trim();
+            if (!string.IsNullOrWhiteSpace(value) && seen.Add(value))
+            {
+                kept.Add(value);
+            }
+        }
+
+        return kept;
+    }
+
+    /// <summary>The tags a save asks for, by slug (lower case) with the first spelling given: trimmed, blanks dropped.</summary>
+    internal static Dictionary<string, string> NormalizedTags(IReadOnlyList<string>? tags)
+    {
+        var wanted = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var raw in tags ?? [])
+        {
+            var name = raw?.Trim();
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                wanted.TryAdd(name.ToLowerInvariant(), name);
+            }
+        }
+
+        return wanted;
+    }
+
     private static async Task<IResult?> AddTagsAsync(
         LorexDbContext db,
         Guid universeId,
@@ -916,23 +944,7 @@ public static class EntityEndpoints
         IReadOnlyList<string>? tags,
         CancellationToken cancellationToken)
     {
-        if (tags is null)
-        {
-            return null;
-        }
-
-        var wanted = new Dictionary<string, string>(StringComparer.Ordinal);
-
-        foreach (var raw in tags)
-        {
-            var name = raw?.Trim();
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                continue;
-            }
-
-            wanted.TryAdd(name.ToLowerInvariant(), name);
-        }
+        var wanted = NormalizedTags(tags);
 
         if (wanted.Count == 0)
         {
@@ -977,6 +989,25 @@ public static class EntityEndpoints
         EntityRequest request,
         CancellationToken cancellationToken)
     {
+        var prepared = await PrepareFieldValuesAsync(db, universeId, entity.Id, request, cancellationToken);
+        db.EntityFieldValues.AddRange(prepared.Rows);
+
+        return prepared.Errors.Count == 0 ? null : Results.ValidationProblem(prepared.Errors);
+    }
+
+    /// <summary>
+    /// The field values a save would store for <paramref name="entityId"/>, validated against the chosen type's own fields -
+    /// as rows not yet added to anything - with what is wrong, keyed by field. Reads only. Shared by the save and by a
+    /// suggestion (ADR 0044), which writes nothing at all.
+    /// </summary>
+    internal static async Task<(List<EntityFieldDefinition> Definitions, List<EntityFieldValue> Rows, Dictionary<string, string[]> Errors)>
+        PrepareFieldValuesAsync(
+            LorexDbContext db,
+            Guid universeId,
+            Guid entityId,
+            EntityRequest request,
+            CancellationToken cancellationToken)
+    {
         // Only fields belonging to the chosen type, in this universe, are addressable.
         var definitions = await db.EntityFieldDefinitions.AsNoTracking()
             .Include(field => field.Options)
@@ -1015,26 +1046,28 @@ public static class EntityEndpoints
                 .Where(candidate => candidate.UniverseId == universeId && wanted.Contains(candidate.Id))
                 .ToDictionaryAsync(candidate => candidate.Id, candidate => candidate.EntityTypeId, cancellationToken);
 
+        var rows = new List<EntityFieldValue>();
+
         foreach (var definition in definitions)
         {
             supplied.TryGetValue(definition.Id, out var input);
 
-            var rows = BuildRows(entity, definition, input, chronology, referenced, errors);
+            var built = BuildRows(entityId, definition, input, chronology, referenced, errors);
 
-            if (definition.IsRequired && rows.Count == 0)
+            if (definition.IsRequired && built.Count == 0)
             {
                 errors[definition.Id.ToString()] = [$"{definition.Name} is required."];
             }
 
-            db.EntityFieldValues.AddRange(rows);
+            rows.AddRange(built);
         }
 
-        return errors.Count == 0 ? null : Results.ValidationProblem(errors);
+        return (definitions, rows, errors);
     }
 
     /// <param name="referenced">This universe's entries the request links to, each with its type.</param>
     private static List<EntityFieldValue> BuildRows(
-        LoreEntity entity,
+        Guid entityId,
         EntityFieldDefinition definition,
         FieldValueInput? input,
         UniverseChronology chronology,
@@ -1051,7 +1084,7 @@ public static class EntityEndpoints
         EntityFieldValue New() => new()
         {
             Id = Guid.NewGuid(),
-            EntityId = entity.Id,
+            EntityId = entityId,
             FieldDefinitionId = definition.Id,
         };
 

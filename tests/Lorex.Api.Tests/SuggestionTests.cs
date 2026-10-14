@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Stories;
 using Lorex.Api.Features.Suggestions;
@@ -196,7 +197,7 @@ public sealed class SuggestionTests(LorexApiFactory factory) : IClassFixture<Lor
         const string tag = "sg-accept";
         var w = await NewSharedWorld(_factory, tag);
         var (entry, _, _) = Paths(w);
-        var title = await AddField(w.Owner, w.U, w.CharacterType, "Title");
+        var title = (await AddField(w.Owner, w.U, w.CharacterType, "Title")).Id;
         var version = await CurrentVersion(w.Owner, entry);
         var history = (await EntryRevisions(w.Owner, entry)).Count;
 
@@ -536,6 +537,247 @@ public sealed class SuggestionTests(LorexApiFactory factory) : IClassFixture<Lor
         Assert.Empty(await List<EntrySuggestion>(w.Owner, $"/api/universes/{restored.Id}/entities/{restoredEntry}"));
     }
 
+    // ---------- What proposing does not do ----------
+
+    [Fact]
+    public async Task Proposing_never_runs_a_save_and_writes_nothing_but_the_suggestion()
+    {
+        var w = await NewSharedWorld(_factory, "sg-nowrite");
+        var (entry, story, scene) = Paths(w);
+        var bodies = new (string Path, object Body)[]
+        {
+            (entry, new EntityRequest(w.CharacterType, "Ember Vale the Younger", "Unwritten.", CanonStatus.Draft, ["Em"], ["royal"], null, await CurrentVersion(w.Owner, entry))),
+            (story, new StoryRequest("Unwritten title", "Unwritten.", StoryStatus.Complete, await CurrentVersion(w.Owner, story))),
+            (scene, new SceneRequest("Unwritten scene", "Unwritten.", null, w.Other, null, [w.Other], null, await CurrentVersion(w.Owner, scene))),
+        };
+
+        // Any write to anything but the suggestions table fails the request outright: entries, their children, versions,
+        // the search index, stories, scenes, tags - so a proposal that ran a save, even one rolled back, could not succeed.
+        var write = new System.Text.RegularExpressions.Regex(@"\b(INSERT|UPDATE|DELETE|REPLACE)\b");
+        _factory.Commands.FailWhen = command =>
+            write.IsMatch(command.CommandText) && !command.CommandText.Contains("\"SuggestedChanges\"", StringComparison.Ordinal);
+        try
+        {
+            foreach (var (path, body) in bodies)
+            {
+                var response = await w.Reviewer.PostAsJsonAsync($"{path}/suggestions", body);
+                Assert.True(response.StatusCode == HttpStatusCode.Created, $"{path}: {(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}");
+            }
+        }
+        finally
+        {
+            _factory.Commands.FailWhen = null;
+        }
+
+        // And search still finds only what is stored.
+        var found = (await w.Owner.GetFromJsonAsync<EntityPage>($"/api/universes/{w.U}/entities?search=Younger"))!;
+        Assert.Empty(found.Items);
+        Assert.Single((await w.Owner.GetFromJsonAsync<EntityPage>($"/api/universes/{w.U}/entities?search=Ember"))!.Items);
+    }
+
+    [Fact]
+    public async Task A_proposal_is_normalised_and_checked_as_the_save_would_and_an_equivalent_one_is_empty()
+    {
+        var w = await NewSharedWorld(_factory, "sg-normal");
+        var (entry, _, _) = Paths(w);
+        var u = $"/api/universes/{w.U}";
+        var title = await AddField(w.Owner, w.U, w.CharacterType, "Title", EntityFieldKind.ShortText);
+        var house = await AddField(w.Owner, w.U, w.CharacterType, "House", EntityFieldKind.Select, ["Vale", "Tide"]);
+        var oaths = await AddField(w.Owner, w.U, w.CharacterType, "Oaths", EntityFieldKind.MultiSelect, ["Sea", "Salt", "Stone"]);
+        var otherType = (await w.Owner.GetFromJsonAsync<List<EntityTypeResponse>>($"{u}/entity-types"))!.First(type => type.Id != w.CharacterType).Id;
+        var foreignOption = (await AddField(w.Owner, w.U, otherType, "Elsewhere", EntityFieldKind.Select, ["Far"])).Options[0].Id;
+
+        // An existing tag, spelled its own way.
+        await Ok(w.Owner.PutVersionedAsync($"{u}/entities/{w.Other}", new EntityRequest(w.CharacterType, "Ash Vale", null, CanonStatus.Idea, null, ["Heir"], null)));
+
+        var version = await CurrentVersion(w.Owner, entry);
+        var suggestion = await Suggest<EntrySuggestion>(w.Reviewer, entry, new EntityRequest(
+            w.CharacterType,
+            "  Ember of the Vale  ",
+            "   ",
+            CanonStatus.Canon,
+            ["Em", " em ", "", "Embry"],
+            ["heir", " Royal ", "royal", "  "],
+            [
+                new FieldValueInput(title.Id, "  Regent  ", null, null, null, null, null),
+                new FieldValueInput(house.Id, null, null, null, null, [house.Options[1].Id, house.Options[0].Id], null),
+                new FieldValueInput(oaths.Id, null, null, null, null, [oaths.Options[2].Id, oaths.Options[2].Id, foreignOption, oaths.Options[0].Id], null),
+                new FieldValueInput(Guid.NewGuid(), "Not a field of this type", null, null, null, null, null),
+            ],
+            version));
+
+        var proposed = suggestion.Proposed;
+        Assert.Equal(("Ember of the Vale", (string?)null), (proposed.Name, proposed.Summary));
+        Assert.Equal(["Em", "Embry"], proposed.Aliases);
+        Assert.Equal(["Heir", "Royal"], proposed.Tags);
+        Assert.Equal(["Title", "House", "Oaths"], proposed.Fields.Select(field => field.Name));
+        Assert.Equal("Regent", proposed.Fields[0].Text);
+        Assert.Equal(["Tide"], proposed.Fields[1].OptionValues);
+        Assert.Equal(["Stone", "Sea"], proposed.Fields[2].OptionValues);
+
+        // Accepted, the entry holds exactly what the suggestion said it would.
+        await Resolve<EntrySuggestion>(w.Owner, Accept(w, suggestion.Id));
+        var saved = (await w.Owner.GetFromJsonAsync<EntityDetail>(entry))!;
+        Assert.Equal((proposed.Name, proposed.Summary), (saved.Name, saved.Summary));
+        Assert.Equal(proposed.Aliases.Order(), saved.Aliases.Order());
+        Assert.Equal(proposed.Tags.Order(), saved.Tags.Order());
+        Assert.Equal(
+            proposed.Fields.Select(field => (field.FieldDefinitionId, field.Text, string.Join(",", field.OptionIds.Order()))),
+            saved.Fields.Select(field => (field.FieldDefinitionId, field.Text, string.Join(",", field.OptionIds.Order()))));
+
+        // What the save would store unchanged - spacing, case and repeats aside - is nothing to suggest.
+        var same = await w.Reviewer.PostAsJsonAsync($"{entry}/suggestions", new EntityRequest(
+            w.CharacterType,
+            " Ember of the Vale ",
+            null,
+            CanonStatus.Canon,
+            ["Embry", "Em", "em"],
+            ["royal", "HEIR"],
+            [
+                new FieldValueInput(title.Id, "Regent ", null, null, null, null, null),
+                new FieldValueInput(house.Id, null, null, null, null, [house.Options[1].Id], null),
+                new FieldValueInput(oaths.Id, null, null, null, null, [oaths.Options[0].Id, oaths.Options[2].Id], null),
+            ],
+            version + 1));
+        Assert.Equal(SuggestionEndpoints.UnchangedCode, await PublishingTestClient.ProblemCode(same));
+
+        // And the save's checks: a required field left empty is refused before anything is stored.
+        await AddField(w.Owner, w.U, w.CharacterType, "Sworn name", EntityFieldKind.ShortText, required: true);
+        var missing = await w.Reviewer.PostAsJsonAsync($"{entry}/suggestions", Rename(w, "Anyone", version + 1));
+        Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
+    }
+
+    // ---------- Stored snapshots ----------
+
+    [Fact]
+    public async Task An_entry_suggestion_holds_every_kind_of_field_value_and_accepts_it_exactly()
+    {
+        var w = await NewSharedWorld(_factory, "sg-fields");
+        var (entry, _, _) = Paths(w);
+        var text = await AddField(w.Owner, w.U, w.CharacterType, "Motto", EntityFieldKind.LongText);
+        var number = await AddField(w.Owner, w.U, w.CharacterType, "Height", EntityFieldKind.Number);
+        var flag = await AddField(w.Owner, w.U, w.CharacterType, "Crowned", EntityFieldKind.Boolean);
+        var date = await AddField(w.Owner, w.U, w.CharacterType, "Sworn on", EntityFieldKind.Date);
+        var one = await AddField(w.Owner, w.U, w.CharacterType, "House", EntityFieldKind.Select, ["Vale", "Tide"]);
+        var many = await AddField(w.Owner, w.U, w.CharacterType, "Oaths", EntityFieldKind.MultiSelect, ["Sea", "Salt"]);
+        var link = await AddField(w.Owner, w.U, w.CharacterType, "Rival", EntityFieldKind.EntityReference);
+        var sworn = new DateTime(2024, 3, 4, 0, 0, 0, DateTimeKind.Utc);
+
+        var made = await Suggest<EntrySuggestion>(w.Reviewer, entry, new EntityRequest(
+            w.CharacterType, "Ember Vale", "The heir.", CanonStatus.Canon, null, null,
+            [
+                new FieldValueInput(text.Id, "Low water, high hearts.", null, null, null, null, null),
+                new FieldValueInput(number.Id, null, 1.72, null, null, null, null),
+                new FieldValueInput(flag.Id, null, null, true, null, null, null),
+                new FieldValueInput(date.Id, null, null, null, sworn, null, null),
+                new FieldValueInput(one.Id, null, null, null, null, [one.Options[0].Id], null),
+                new FieldValueInput(many.Id, null, null, null, null, [many.Options[0].Id, many.Options[1].Id], null),
+                new FieldValueInput(link.Id, null, null, null, null, null, w.Other),
+            ],
+            await CurrentVersion(w.Owner, entry)));
+
+        // Read back from storage as it was made.
+        var read = Assert.Single(await List<EntrySuggestion>(w.Viewer, entry)).Proposed;
+        Assert.Equal(JsonSerializer.Serialize(made.Proposed), JsonSerializer.Serialize(read));
+        var values = read.Fields.ToDictionary(field => field.FieldDefinitionId);
+        Assert.Equal(("Motto", EntityFieldKind.LongText, "Low water, high hearts."), (values[text.Id].Name, values[text.Id].Kind, values[text.Id].Text));
+        Assert.Equal(1.72, values[number.Id].Number);
+        Assert.True(values[flag.Id].Boolean);
+        Assert.Equal(sworn.Date, values[date.Id].Date!.Value.Date);
+        Assert.Equal(["Vale"], values[one.Id].OptionValues);
+        Assert.Equal(["Salt", "Sea"], values[many.Id].OptionValues.Order());
+        Assert.Equal((w.Other, "Ash Vale", false), (values[link.Id].ReferencedEntityId!.Value, values[link.Id].ReferencedEntityName, values[link.Id].ReferencedEntityIsTrashed));
+
+        await Resolve<EntrySuggestion>(w.Owner, Accept(w, made.Id));
+        var saved = (await w.Owner.GetFromJsonAsync<EntityDetail>(entry))!.Fields.ToDictionary(field => field.FieldDefinitionId);
+        Assert.Equal(values.Keys.Order(), saved.Keys.Order());
+        foreach (var (id, value) in values)
+        {
+            Assert.Equal(
+                (value.Text, value.Number, value.Boolean, value.Date?.Date, string.Join(",", value.OptionIds.Order()), value.ReferencedEntityId),
+                (saved[id].Text, saved[id].Number, saved[id].Boolean, saved[id].Date?.Date, string.Join(",", saved[id].OptionIds.Order()), saved[id].ReferencedEntityId));
+        }
+    }
+
+    [Fact]
+    public async Task A_scene_suggestion_holds_its_chapter_date_and_lore_and_accepts_them_exactly()
+    {
+        var w = await NewSharedWorld(_factory, "sg-scene");
+        var (_, _, scene) = Paths(w);
+        var later = await CreateChapter(w.Owner, w.U, w.Story, "High water");
+
+        var made = await Suggest<SceneSuggestion>(w.Reviewer, scene, new SceneRequest(
+            "  The causeway at dawn ",
+            "She crosses.",
+            "Check the tide tables.",
+            w.Other,
+            new ChronologyValue(null, 12, 3, 4),
+            [w.Other, w.Entry, w.Other],
+            later,
+            await CurrentVersion(w.Owner, scene)));
+
+        var read = Assert.Single(await List<SceneSuggestion>(w.Viewer, scene));
+        Assert.Equal(JsonSerializer.Serialize(made.Proposed), JsonSerializer.Serialize(read.Proposed));
+        var proposed = read.Proposed;
+        Assert.Equal(("The causeway at dawn", (Guid?)later, "Check the tide tables."), (proposed.Title, proposed.ChapterId, proposed.Notes));
+        Assert.Equal(new SuggestedLore(w.Other, "Ash Vale", false), proposed.Pov);
+        Assert.Equal(new SuggestedDate(null, 12, 3, 4, null), proposed.Chronology);
+        Assert.Equal(["Ash Vale", "Ember Vale"], proposed.Entities.Select(link => link.Name));
+        Assert.Equal((w.Chapter, (SuggestedDate?)null), (read.Before.ChapterId!.Value, read.Before.Chronology));
+
+        await Resolve<SceneSuggestion>(w.Owner, Accept(w, made.Id));
+        var saved = (await ReadStory(w.Owner, w.U, w.Story)).Scenes.Single(row => row.Id == w.Scene);
+        Assert.Equal((proposed.Title, proposed.ChapterId, proposed.Summary, proposed.Notes), (saved.Title, saved.ChapterId, saved.Summary, saved.Notes));
+        Assert.Equal(proposed.Pov!.EntityId, saved.Pov!.EntityId);
+        Assert.Equal(proposed.Chronology, SuggestedDate.From(saved.Chronology));
+        Assert.Equal(proposed.Entities.Select(link => link.EntityId).Order(), saved.Entities.Select(link => link.EntityId).Order());
+    }
+
+    // ---------- Every suggestion stays reachable ----------
+
+    [Fact]
+    public async Task Open_and_decided_suggestions_are_read_page_by_page_and_every_one_is_reached_once()
+    {
+        var w = await NewSharedWorld(_factory, "sg-pages");
+        var (_, story, scene) = Paths(w);
+        var version = await CurrentVersion(w.Owner, story);
+        var made = new List<Guid>();
+        for (var index = 0; index < 43; index++)
+        {
+            made.Add((await Suggest<StorySuggestion>(w.Reviewer, story, new StoryRequest($"Title {index}", null, StoryStatus.Drafting, version))).Id);
+        }
+
+        // The oldest 22 are decided; the newest 21 stay open.
+        foreach (var id in made.Take(22))
+        {
+            await Resolve<StorySuggestion>(w.Editor, Reject(w, id));
+        }
+
+        var first = await Page<StorySuggestion>(w.Viewer, story, "open");
+        Assert.Equal(SuggestionLimits.PageSize, first.Items.Count);
+        Assert.True(first.HasMore);
+        Assert.Equal(made.Skip(22).Reverse().Take(20), first.Items.Select(row => row.Id));
+
+        // Something on the first page is decided before the next is read: nothing open is skipped, and it moves across.
+        await Resolve<StorySuggestion>(w.Owner, Reject(w, first.Items[0].Id));
+        var second = await Page<StorySuggestion>(w.Viewer, story, "open", first.Items[^1].Id);
+        Assert.False(second.HasMore);
+        Assert.Equal([made[22]], second.Items.Select(row => row.Id));
+
+        var decided = await AllPages<StorySuggestion>(w.Viewer, story, "decided");
+        Assert.Equal(23, decided.Count);
+        Assert.Equal(decided.Count, decided.Distinct().Count());
+        Assert.Equal(made.Take(22).Append(made[^1]).Order(), decided.Order());
+        Assert.Contains(made[0], decided);
+
+        // Every one, open and decided, through the two lists together.
+        Assert.Equal(made.Order(), (await List<StorySuggestion>(w.Owner, story)).Select(row => row.Id).Order());
+
+        // A cursor from another target, or a state that is not one, is refused.
+        Assert.Equal(HttpStatusCode.BadRequest, (await w.Owner.GetAsync($"{scene}/suggestions?state=decided&before={made[0]}")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await w.Owner.GetAsync($"{story}/suggestions?state=all")).StatusCode);
+    }
+
     // ---------- Helpers ----------
 
     private static (string Entry, string Story, string Scene) Paths(SharedWorld w) =>
@@ -562,19 +804,63 @@ public sealed class SuggestionTests(LorexApiFactory factory) : IClassFixture<Lor
         return (await response.Content.ReadFromJsonAsync<SuggestionResponse<T>>())!;
     }
 
-    private static async Task<List<SuggestionResponse<T>>> List<T>(HttpClient client, string target) =>
-        (await client.GetFromJsonAsync<List<SuggestionResponse<T>>>($"{target}/suggestions"))!;
+    /// <summary>Every suggestion on the target: every page of the open ones, then every page of the decided ones.</summary>
+    private static async Task<List<SuggestionResponse<T>>> List<T>(HttpClient client, string target)
+    {
+        var all = new List<SuggestionResponse<T>>();
+        foreach (var state in new[] { "open", "decided" })
+        {
+            Guid? before = null;
+            SuggestionPage<T> page;
+            do
+            {
+                page = await Page<T>(client, target, state, before);
+                all.AddRange(page.Items);
+                before = page.Items.Count > 0 ? page.Items[^1].Id : before;
+            }
+            while (page.HasMore);
+        }
+
+        return all;
+    }
+
+    private static async Task<SuggestionPage<T>> Page<T>(HttpClient client, string target, string state, Guid? before = null) =>
+        (await client.GetFromJsonAsync<SuggestionPage<T>>(
+            $"{target}/suggestions?state={state}{(before is { } id ? $"&before={id}" : "")}"))!;
+
+    private static async Task<List<Guid>> AllPages<T>(HttpClient client, string target, string state)
+    {
+        var ids = new List<Guid>();
+        Guid? before = null;
+        SuggestionPage<T> page;
+        do
+        {
+            page = await Page<T>(client, target, state, before);
+            ids.AddRange(page.Items.Select(row => row.Id));
+            before = page.Items.Count > 0 ? page.Items[^1].Id : before;
+        }
+        while (page.HasMore);
+
+        return ids;
+    }
 
     private static async Task<List<EntityRevisionSummary>> EntryRevisions(HttpClient owner, string entry) =>
         (await owner.GetFromJsonAsync<List<EntityRevisionSummary>>($"{entry}/revisions"))!;
 
-    private static async Task<Guid> AddField(HttpClient client, Guid universeId, Guid type, string name)
+    private static async Task<FieldDefinitionResponse> AddField(
+        HttpClient client,
+        Guid universeId,
+        Guid type,
+        string name,
+        EntityFieldKind kind = EntityFieldKind.ShortText,
+        IReadOnlyList<string>? options = null,
+        bool required = false)
     {
         var response = await client.PostAsJsonAsync(
             $"/api/universes/{universeId}/entity-types/{type}/fields",
-            new FieldDefinitionRequest(name, EntityFieldKind.ShortText, false, null, null, null));
-        response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<EntityTypeResponse>())!.Fields.Single(field => field.Name == name).Id;
+            new FieldDefinitionRequest(name, kind, required, null, null, options));
+        Assert.True(response.IsSuccessStatusCode, $"field {name}: {(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}");
+        return (await response.Content.ReadFromJsonAsync<EntityTypeResponse>())!.Fields.Single(field => field.Name == name);
     }
 
     /// <summary>What the three targets hold, read straight from the database: every field their forms edit, and their versions.</summary>

@@ -167,7 +167,11 @@ test.describe('suggested changes', () => {
     await expect(drawer(owner.page).getByTestId('comments-empty')).toBeVisible()
     expect(reads).toHaveLength(0)
     await drawer(owner.page).getByRole('tab', { name: 'Suggestions' }).click()
-    await expect.poll(() => reads.length).toBe(1)
+    // Then one page of open suggestions and one of decided ones, both for this entry.
+    await expect.poll(() => reads.length).toBe(2)
+    expect(reads.every((read) => read.includes(`/entities/${entryId}/suggestions?state=`))).toBe(
+      true,
+    )
 
     const item = suggestions(owner.page)
     await expect(item).toHaveCount(1)
@@ -362,6 +366,56 @@ test.describe('suggested changes', () => {
     await expect(owner.page.getByTestId('manuscript-scene-title')).toHaveText(
       'The Causeway at Night',
     )
+
+    for (const someone of [owner, reviewer]) await someone.context.close()
+  })
+
+  test('every decided suggestion stays reachable past the first page', async ({ browser }) => {
+    test.setTimeout(120_000)
+    const owner = await person(browser, 'sgpageowner')
+    const reviewer = await person(browser, 'sgpagereviewer')
+    const { universeId, characterId, entryId } = await world(owner.page)
+    await share(owner.page, universeId, reviewer, Role.Reviewer)
+    const entity = `/api/universes/${universeId}/entities/${entryId}`
+
+    // Twenty-one suggestions, oldest first, each turned down: one more than a page holds.
+    for (let index = 1; index <= 21; index++) {
+      const id = await post(reviewer.page, `${entity}/suggestions`, {
+        entityTypeId: characterId,
+        name: `Ember ${index}`,
+        summary: 'The drowned heir.',
+        canonStatus: 2,
+        aliases: [],
+        tags: [],
+        fields: [],
+        expectedVersion: 1,
+      })
+      expect(
+        (
+          await owner.page.request.post(`/api/universes/${universeId}/suggestions/${id}/reject`)
+        ).ok(),
+      ).toBe(true)
+    }
+
+    await owner.page.goto(`/app/universes/${universeId}/lore/${entryId}`)
+    await openSuggestions(owner.page)
+    const group = drawer(owner.page).getByTestId('suggestions-decided-group')
+    await expect(group.locator('summary')).toContainText('Accepted and rejected 20+')
+    await group.locator('summary').click()
+    await expect(suggestions(owner.page)).toHaveCount(20)
+    await expect(suggestions(owner.page).first().getByTestId('suggestion-mine-value')).toHaveText(
+      'Ember 21',
+    )
+
+    // The oldest is one press away, and then the list is whole.
+    await drawer(owner.page).getByTestId('suggestions-more-decided').click()
+    await expect(suggestions(owner.page)).toHaveCount(21)
+    await expect(suggestions(owner.page).last().getByTestId('suggestion-mine-value')).toHaveText(
+      'Ember 1',
+    )
+    await expect(suggestions(owner.page).last()).toHaveAttribute('data-status', 'rejected')
+    await expect(drawer(owner.page).getByTestId('suggestions-more-decided')).toHaveCount(0)
+    await expect(group.locator('summary')).toContainText('Accepted and rejected 21')
 
     for (const someone of [owner, reviewer]) await someone.context.close()
   })

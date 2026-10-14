@@ -5,7 +5,7 @@ import type { Chronology, ChronologyValue } from '../chronology/types'
 import { differing, type Change } from '../lib/editConflict'
 import type { SceneSuggestion } from '../suggestions/api'
 import { chapterLabel, sceneWhen, UNCHAPTERED } from './format'
-import type { Chapter, Scene, SceneLoreReference } from './types'
+import type { Chapter, Scene } from './types'
 
 /*
  * A scene's form as the scene drawer holds it, sends it and compares it: shared by the drawer itself and the review
@@ -29,7 +29,10 @@ export interface SceneDraft {
  * A reference as the pickers hold it. An entry in the Trash keeps its place - the form posts every
  * reference back, so dropping it would delete it on the next save - and says why it is unavailable.
  */
-function choiceOf(reference: SceneLoreReference): EntityChoice {
+/** A Lore entry a scene names, as much of it as the form uses: a scene's reference or a suggestion's. */
+type LoreRef = { entityId: string; name: string; isTrashed: boolean }
+
+function choiceOf(reference: LoreRef): EntityChoice {
   return {
     id: reference.entityId,
     name: reference.isTrashed ? `${reference.name} (in Trash)` : reference.name,
@@ -41,10 +44,10 @@ function numberText(value: number | null) {
 }
 
 /** A scene's form, as a scene or a suggestion holds it. */
-type SceneFields = Pick<
-  Scene,
-  'title' | 'chapterId' | 'summary' | 'notes' | 'pov' | 'chronology' | 'entities'
->
+type SceneFields = Pick<Scene, 'title' | 'chapterId' | 'summary' | 'notes' | 'chronology'> & {
+  pov: LoreRef | null
+  entities: LoreRef[]
+}
 
 export function draftFrom(scene: SceneFields | null, chapterId: string | null): SceneDraft {
   if (!scene) {

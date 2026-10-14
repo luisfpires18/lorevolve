@@ -54,9 +54,13 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   pushed). One migration (`AddSuggestedChanges`), backup stays **22**. ADR 0044 (new); 0041 amendment.
   - Capabilities `SuggestChanges` (owner, Editor, Reviewer) and `ResolveSuggestedChanges` (owner, Editor); reading is `Read`.
   - `SuggestedChanges`: one of entry/story/scene (cascading keys, check constraint), `BaseVersion`, `Before`/`Proposed` as
-    JSON of one typed snapshot record per kind (the form's fields, names beside ids), status, raw proposer/resolver ids.
-  - Propose = the target's own `PUT` body to `.../suggestions`, run through its write path in a rolled-back savepoint:
-    same 409 (`entity_changed`...), validation and 404; empty = 400 `suggestion_unchanged`; nothing but the row written.
+    JSON of the feature's own snapshot records (`EntrySuggestion`... with `SuggestedFieldValue`, `SuggestedLore`,
+    `SuggestedDate` - never API response types), status, raw proposer/resolver ids. Lists: `state=open|decided`, 20 a
+    page newest first, `before` cursor (time, id); the drawer reads one page of each and offers Show more.
+  - Propose = the target's own `PUT` body to `.../suggestions`: only the save's own checks and normalisation (extracted:
+    entry `CheckEntryAsync`/`NormalizedAliases`/`NormalizedTags`/`PrepareFieldValuesAsync`, scene `CheckAsync`, the three
+    `Changed` 409s), never the save path: same 409 (`entity_changed`...), validation and 404; empty = 400
+    `suggestion_unchanged`; the suggestion row is the only write (a test fails any other write command).
   - Accept = `Proposed` replayed through the same path (entry under the Canon gate) as the resolver over `BaseVersion`, one
     transaction: history author = resolver, version +1 once. Target saved since = 409 `suggestion_target_changed` (no
     merge, no force; `targetChanged` derived). Decided = 409 `suggestion_resolved`. Reject touches nothing else.
@@ -67,8 +71,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     Reviewer: "Suggest changes" where Edit stands (entry, icon alone below 640px) and in the story/scene menus; everyone who
     can suggest: Review > Suggestions > Suggest changes. The same forms in suggest mode ("Send suggestion"); a refused send
     keeps the work through `EditConflict`. Owner/Editor menus unchanged.
-  - Tests: API 1462 -> 1480 (`SuggestionTests` 16, `SuggestionMigrationTests` 2 incl. a real-file accept race; matrix +8
-    routes). Playwright `suggested-changes.spec.ts` 3 (review-comments and collaboration moved to "Review" and the new
+  - Tests: API 1462 -> 1485 (`SuggestionTests` 21, `SuggestionMigrationTests` 2 incl. a real-file accept race; matrix +8
+    routes). Playwright `suggested-changes.spec.ts` 4 (review-comments and collaboration moved to "Review" and the new
     Reviewer line); focused + 13 neighbouring specs on a fresh DB, two workers: 66/66. Full suite not run locally;
     delegated to GitHub Actions.
 - **Fix: entry tools on a phone** (`fix/entry-tools-phone-wrap` off `dev` at `a832393`). CI red since 043:

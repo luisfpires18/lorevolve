@@ -9,6 +9,7 @@ using Lorex.Api.Features.Stories;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Lorex.Api.Features.Suggestions;
 
@@ -18,12 +19,12 @@ namespace Lorex.Api.Features.Suggestions;
 /// (<c>ResolveSuggestedChanges</c>). Like comments, a suggestion is only ever reached through a live target in the
 /// universe named: a target in the Trash, in another universe or made up is 404.
 ///
-/// <b>Nothing here writes content but an accept, and an accept is an ordinary save.</b> A proposal is the target's own
-/// save request, sent here instead of to the save route; it runs through that same write path inside a savepoint that is
-/// always rolled back, so it is validated, version-checked and refused exactly as the save would be, and what it would
-/// store is read back from the write path itself. An accept replays the stored proposal through the same path again, as
-/// the resolver, over the version the proposal was made against - so validation, the Canon gate, history and the version
-/// all behave as for an edit, and a target saved in between refuses it.
+/// <b>Proposing writes nothing but the suggestion.</b> A proposal is the target's own save request, sent here instead of
+/// to the save route. It is checked by the save's own checks - the version it names, the form's shape, references in this
+/// universe - and normalised by the save's own helpers, all reads; the save path itself, with its history, search index
+/// and anything a save may later grow, is never run for a proposal. <b>An accept is an ordinary save:</b> the stored
+/// proposal replayed through the target's write path, as the resolver, over the version it was proposed against, so
+/// everything is checked again there and a target saved in between refuses it.
 /// </summary>
 public static class SuggestionEndpoints
 {
@@ -35,8 +36,6 @@ public static class SuggestionEndpoints
 
     /// <summary>The 400 a proposal gets when it would change nothing the form edits.</summary>
     public const string UnchangedCode = "suggestion_unchanged";
-
-    private const string Trial = "suggestion_trial";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -62,7 +61,13 @@ public static class SuggestionEndpoints
     // ---------- Listing ----------
 
     private static async Task<IResult> ListEntryAsync(
-        Guid universeId, Guid entityId, ClaimsPrincipal principal, LorexDbContext db, CancellationToken cancellationToken)
+        Guid universeId,
+        Guid entityId,
+        [FromQuery] string? state,
+        [FromQuery] Guid? before,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.Read, cancellationToken) is { } denied)
         {
@@ -70,12 +75,18 @@ public static class SuggestionEndpoints
         }
 
         return await CommentEndpoints.EntryIsLiveAsync(db, universeId, entityId, cancellationToken)
-            ? Results.Ok(await ReadAsync<EntrySuggestion>(db, db.SuggestedChanges.Where(row => row.EntityId == entityId), cancellationToken))
+            ? await PageAsync<EntrySuggestion>(db, db.SuggestedChanges.Where(row => row.EntityId == entityId), state, before, cancellationToken)
             : Results.NotFound();
     }
 
     private static async Task<IResult> ListStoryAsync(
-        Guid universeId, Guid storyId, ClaimsPrincipal principal, LorexDbContext db, CancellationToken cancellationToken)
+        Guid universeId,
+        Guid storyId,
+        [FromQuery] string? state,
+        [FromQuery] Guid? before,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.Read, cancellationToken) is { } denied)
         {
@@ -83,12 +94,19 @@ public static class SuggestionEndpoints
         }
 
         return await CommentEndpoints.StoryIsLiveAsync(db, universeId, storyId, cancellationToken)
-            ? Results.Ok(await ReadAsync<StorySuggestion>(db, db.SuggestedChanges.Where(row => row.StoryId == storyId), cancellationToken))
+            ? await PageAsync<StorySuggestion>(db, db.SuggestedChanges.Where(row => row.StoryId == storyId), state, before, cancellationToken)
             : Results.NotFound();
     }
 
     private static async Task<IResult> ListSceneAsync(
-        Guid universeId, Guid storyId, Guid sceneId, ClaimsPrincipal principal, LorexDbContext db, CancellationToken cancellationToken)
+        Guid universeId,
+        Guid storyId,
+        Guid sceneId,
+        [FromQuery] string? state,
+        [FromQuery] Guid? before,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.Read, cancellationToken) is { } denied)
         {
@@ -96,13 +114,67 @@ public static class SuggestionEndpoints
         }
 
         return await CommentEndpoints.SceneIsLiveAsync(db, universeId, storyId, sceneId, cancellationToken)
-            ? Results.Ok(await ReadAsync<SceneSuggestion>(db, db.SuggestedChanges.Where(row => row.SceneId == sceneId), cancellationToken))
+            ? await PageAsync<SceneSuggestion>(db, db.SuggestedChanges.Where(row => row.SceneId == sceneId), state, before, cancellationToken)
             : Results.NotFound();
+    }
+
+    /// <summary>
+    /// One page of the target's open (<c>state=open</c>, the default) or decided (<c>state=decided</c>) suggestions, newest
+    /// first - by when each was made, then by id, so the order never changes. <c>before</c> is the last one already read;
+    /// the page carries on from it by those two values, so nothing is skipped or repeated when something is decided
+    /// meanwhile - a suggestion that moves from open to decided is simply found in the other list.
+    /// </summary>
+    private static async Task<IResult> PageAsync<TSnapshot>(
+        LorexDbContext db,
+        IQueryable<SuggestedChange> target,
+        string? state,
+        Guid? before,
+        CancellationToken cancellationToken)
+    {
+        bool? open = state switch
+        {
+            null or "open" => true,
+            "decided" => false,
+            _ => null,
+        };
+
+        if (open is not { } wantOpen)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]> { ["state"] = ["Ask for open or decided suggestions."] });
+        }
+
+        var rows = target.Where(row => (row.Status == SuggestionStatus.Open) == wantOpen);
+
+        if (before is { } cursorId)
+        {
+            var cursor = await target.AsNoTracking()
+                .Where(row => row.Id == cursorId)
+                .Select(row => new { row.CreatedAt, row.Id })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (cursor is null)
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]> { ["before"] = ["Continue from a suggestion on this page."] });
+            }
+
+            rows = rows.Where(row => row.CreatedAt < cursor.CreatedAt || (row.CreatedAt == cursor.CreatedAt && row.Id > cursor.Id));
+        }
+
+        var page = await ReadAsync<TSnapshot>(
+            db,
+            rows.OrderByDescending(row => row.CreatedAt).ThenBy(row => row.Id).Take(SuggestionLimits.PageSize + 1),
+            cancellationToken);
+
+        return Results.Ok(new SuggestionPage<TSnapshot>([.. page.Take(SuggestionLimits.PageSize)], page.Count > SuggestionLimits.PageSize));
     }
 
     // ---------- Proposing ----------
 
-    /// <summary>The entry form's own save request, here a proposal. A request still carrying the article is refused whole.</summary>
+    /// <summary>
+    /// The entry form's own save request, here a proposal: the version it names, the entry's checks, its aliases, tags and
+    /// field values prepared as the save would prepare them - and nothing written but the suggestion. A request still
+    /// carrying the article is refused whole.
+    /// </summary>
     private static async Task<IResult> ProposeEntryAsync(
         Guid universeId,
         Guid entityId,
@@ -116,22 +188,125 @@ public static class SuggestionEndpoints
             return denied;
         }
 
-        if (EntityEndpoints.RefusedLegacyArticle(request) is { } refused)
+        if (EntityEndpoints.RefusedLegacyArticle(request) is { } legacy)
+        {
+            return legacy;
+        }
+
+        // One IMMEDIATE transaction: the version compared is the version the suggestion is stored against.
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var stored = await EntityEndpoints.LoadDetailAsync(db, universeId, entityId, cancellationToken, liveOnly: true);
+        if (stored is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (!EditVersion.Matches(stored.Version, request.ExpectedVersion))
+        {
+            return EntityEndpoints.Changed(stored.Version);
+        }
+
+        if (await EntityEndpoints.CheckEntryAsync(db, universeId, request, cancellationToken) is { } refused)
         {
             return refused;
         }
 
-        var userId = principal.RequireUserId();
-        return await ProposeAsync<EntityDetail, EntrySuggestion>(
+        var (definitions, rows, errors) = await EntityEndpoints.PrepareFieldValuesAsync(db, universeId, entityId, request, cancellationToken);
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var before = EntrySuggestion.From(stored);
+        var proposed = await DescribeEntryAsync(db, universeId, request, definitions, rows, cancellationToken);
+
+        return await StoreAsync(
             db,
-            userId,
-            token => EntityEndpoints.LoadDetailAsync(db, universeId, entityId, token, liveOnly: true),
-            token => EntityEndpoints.UpdateCoreAsync(universeId, entityId, request, userId, db, token),
-            entry => (EntrySuggestion.From(entry), entry.Version),
+            transaction,
+            principal.RequireUserId(),
+            stored.Version,
+            before,
+            proposed,
+            proposed.SameFormAs(before),
             suggestion => suggestion.EntityId = entityId,
             cancellationToken);
     }
 
+    /// <summary>
+    /// The entry as the proposal would leave it, in the suggestion's own words: names and summary normalised as the save
+    /// does, aliases and tags as it would keep them (an existing tag by its stored name), field values from the prepared
+    /// rows with the names they show. Reads only.
+    /// </summary>
+    private static async Task<EntrySuggestion> DescribeEntryAsync(
+        LorexDbContext db,
+        Guid universeId,
+        EntityRequest request,
+        List<EntityFieldDefinition> definitions,
+        List<EntityFieldValue> rows,
+        CancellationToken cancellationToken)
+    {
+        var typeName = await db.EntityTypes.AsNoTracking()
+            .Where(type => type.Id == request.EntityTypeId && type.UniverseId == universeId)
+            .Select(type => type.Name)
+            .SingleAsync(cancellationToken);
+
+        var wanted = EntityEndpoints.NormalizedTags(request.Tags);
+        var slugs = wanted.Keys.ToList();
+        var existing = slugs.Count == 0
+            ? []
+            : await db.Tags.AsNoTracking()
+                .Where(tag => tag.UniverseId == universeId && slugs.Contains(tag.Slug))
+                .ToDictionaryAsync(tag => tag.Slug, tag => tag.Name, StringComparer.Ordinal, cancellationToken);
+
+        var referencedIds = rows.Select(row => row.ReferencedEntityId).OfType<Guid>().Distinct().ToList();
+        var referenced = referencedIds.Count == 0
+            ? []
+            : await db.Entities.AsNoTracking()
+                .Where(entity => entity.UniverseId == universeId && referencedIds.Contains(entity.Id))
+                .ToDictionaryAsync(entity => entity.Id, entity => (entity.Name, Trashed: entity.DeletedAt != null), cancellationToken);
+
+        var byField = rows.ToLookup(row => row.FieldDefinitionId);
+        var fields = definitions
+            .Where(definition => byField.Contains(definition.Id))
+            .OrderBy(definition => definition.DisplayOrder)
+            .ThenBy(definition => definition.Name, StringComparer.Ordinal)
+            .Select(definition =>
+            {
+                var values = byField[definition.Id].ToList();
+                var optionIds = values.Select(row => row.OptionId).OfType<Guid>().ToList();
+                var referenceId = values.Select(row => row.ReferencedEntityId).FirstOrDefault(id => id != null);
+                var reference = referenceId is { } id ? referenced.GetValueOrDefault(id) : default;
+
+                return new SuggestedFieldValue(
+                    definition.Id,
+                    definition.Name,
+                    definition.Kind,
+                    values.Select(row => row.TextValue).FirstOrDefault(text => text != null),
+                    values.Select(row => row.NumberValue).FirstOrDefault(number => number != null),
+                    values.Select(row => row.BooleanValue).FirstOrDefault(flag => flag != null),
+                    values.Select(row => row.DateValue).FirstOrDefault(date => date != null),
+                    optionIds,
+                    [.. optionIds.Select(option => definition.Options.Single(candidate => candidate.Id == option).Value)],
+                    referenceId,
+                    reference.Name,
+                    reference.Trashed,
+                    values.Select(row => row.EraId).FirstOrDefault(era => era != null));
+            })
+            .ToList();
+
+        return new EntrySuggestion(
+            request.EntityTypeId,
+            typeName,
+            request.Name!.Trim(),
+            LoreValidation.Normalize(request.Summary),
+            request.CanonStatus,
+            EntityEndpoints.NormalizedAliases(request.Aliases),
+            [.. wanted.Select(tag => existing.GetValueOrDefault(tag.Key) ?? tag.Value).Order(StringComparer.Ordinal)],
+            fields);
+    }
+
+    /// <summary>The story form's own save request, here a proposal: its version and its checks, and nothing written but the suggestion.</summary>
     private static async Task<IResult> ProposeStoryAsync(
         Guid universeId,
         Guid storyId,
@@ -145,16 +320,49 @@ public static class SuggestionEndpoints
             return denied;
         }
 
-        return await ProposeAsync<StoryDetail, StorySuggestion>(
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var stored = await db.Stories.AsNoTracking()
+            .Where(story => story.Id == storyId && story.UniverseId == universeId && story.DeletedAt == null)
+            .Select(story => new { Form = new StorySuggestion(story.Title, story.Premise, story.Status), story.Version })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (stored is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (!EditVersion.Matches(stored.Version, request.ExpectedVersion))
+        {
+            return StoryEndpoints.Changed(stored.Version);
+        }
+
+        if (StoryValidation.ValidateStory(request) is { } errors)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var proposed = new StorySuggestion(
+            StoryValidation.Normalize(request.Title)!,
+            StoryValidation.Normalize(request.Premise),
+            request.Status);
+
+        return await StoreAsync(
             db,
+            transaction,
             principal.RequireUserId(),
-            token => StoryEndpoints.LoadDetailAsync(db, universeId, storyId, token),
-            token => StoryEndpoints.UpdateCoreAsync(db, universeId, storyId, request, token),
-            story => (StorySuggestion.From(story), story.Version),
+            stored.Version,
+            stored.Form,
+            proposed,
+            proposed == stored.Form,
             suggestion => suggestion.StoryId = storyId,
             cancellationToken);
     }
 
+    /// <summary>
+    /// The scene form's own save request, here a proposal: its version, the scene's checks against the scene as stored, the
+    /// lore it names read by name - and nothing written but the suggestion.
+    /// </summary>
     private static async Task<IResult> ProposeSceneAsync(
         Guid universeId,
         Guid storyId,
@@ -169,55 +377,77 @@ public static class SuggestionEndpoints
             return denied;
         }
 
-        return await ProposeAsync<SceneResponse, SceneSuggestion>(
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var stored = await CommentEndpoints.SceneIsLiveAsync(db, universeId, storyId, sceneId, cancellationToken)
+            ? await SceneEndpoints.LoadSceneAsync(db, universeId, storyId, sceneId, cancellationToken)
+            : null;
+
+        if (stored is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (!EditVersion.Matches(stored.Version, request.ExpectedVersion))
+        {
+            return SceneEndpoints.Changed(stored.Version);
+        }
+
+        var storedLinks = stored.Entities.Select(link => link.EntityId).ToHashSet();
+        if (await SceneEndpoints.CheckAsync(
+                db, universeId, storyId, stored.ChapterId, stored.Pov?.EntityId, storedLinks, request, cancellationToken)
+            is { } errors)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var entityIds = SceneEndpoints.Requested(request);
+        var references = await StoryLoreReferences.LoadAsync(
             db,
+            universeId,
+            request.PovEntityId is { } povId ? [.. entityIds, povId] : entityIds,
+            cancellationToken);
+
+        // As the save stores the point and the scene then reads it: no year, no date.
+        var point = request.Chronology;
+        var before = SceneSuggestion.From(stored);
+        var proposed = new SceneSuggestion(
+            StoryValidation.Normalize(request.Title)!,
+            request.ChapterId,
+            StoryValidation.Normalize(request.Summary),
+            StoryValidation.Normalize(request.Notes),
+            request.PovEntityId is { } pov ? SuggestedLore.From(references[pov]) : null,
+            point?.Year is null ? null : SuggestedDate.From(point),
+            [.. StoryLoreReferences.Listed(entityIds, references).Select(SuggestedLore.From)]);
+
+        return await StoreAsync(
+            db,
+            transaction,
             principal.RequireUserId(),
-            async token => await CommentEndpoints.SceneIsLiveAsync(db, universeId, storyId, sceneId, token)
-                ? await SceneEndpoints.LoadSceneAsync(db, universeId, storyId, sceneId, token)
-                : null,
-            token => SceneEndpoints.UpdateCoreAsync(db, universeId, storyId, sceneId, request, token),
-            scene => (SceneSuggestion.From(scene), scene.Version),
+            stored.Version,
+            before,
+            proposed,
+            proposed.SameFormAs(before),
             suggestion => suggestion.SceneId = sceneId,
             cancellationToken);
     }
 
     /// <summary>
-    /// One transaction: the target as stored, then its ordinary save inside a savepoint - every refusal it makes (404, the
-    /// stale-version 409, validation) answered as it is - then what that save would have stored, read from its own answer,
-    /// and the savepoint rolled back. Only the suggestion is written. A proposal the save path would not count as a change
-    /// (its version would not move) is refused.
+    /// Stores the suggestion - the only write a proposal makes - inside the transaction its checks ran in, or refuses one
+    /// that would change nothing the form stores.
     /// </summary>
-    private static async Task<IResult> ProposeAsync<TDetail, TSnapshot>(
+    private static async Task<IResult> StoreAsync<TSnapshot>(
         LorexDbContext db,
+        IDbContextTransaction transaction,
         string userId,
-        Func<CancellationToken, Task<TDetail?>> read,
-        Func<CancellationToken, Task<IResult>> save,
-        Func<TDetail, (TSnapshot Snapshot, int Version)> describe,
+        int baseVersion,
+        TSnapshot before,
+        TSnapshot proposed,
+        bool unchanged,
         Action<SuggestedChange> attach,
         CancellationToken cancellationToken)
-        where TDetail : class
     {
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-
-        if (await read(cancellationToken) is not { } stored)
-        {
-            return Results.NotFound();
-        }
-
-        var (before, baseVersion) = describe(stored);
-
-        await transaction.CreateSavepointAsync(Trial, cancellationToken);
-        var saved = await save(cancellationToken);
-        if (saved is not IValueHttpResult<TDetail> { Value: { } written })
-        {
-            return saved;
-        }
-
-        var (proposed, writtenVersion) = describe(written);
-        await transaction.RollbackToSavepointAsync(Trial, cancellationToken);
-        db.ChangeTracker.Clear();
-
-        if (writtenVersion == baseVersion)
+        if (unchanged)
         {
             return Results.Problem(
                 title: "Nothing to suggest",
@@ -434,9 +664,8 @@ public static class SuggestionEndpoints
     // ---------- Reading ----------
 
     /// <summary>
-    /// The suggestions <paramref name="query"/> selects, open first and then newest first, at most
-    /// <see cref="SuggestionLimits.ListMax"/>, in one query: the proposer's and resolver's usernames and the target's
-    /// version read beside each row.
+    /// The suggestions <paramref name="query"/> selects, in its order, in one query: the proposer's and resolver's usernames
+    /// and the target's version read beside each row.
     /// </summary>
     private static async Task<List<SuggestionResponse<TSnapshot>>> ReadAsync<TSnapshot>(
         LorexDbContext db,
@@ -444,10 +673,6 @@ public static class SuggestionEndpoints
         CancellationToken cancellationToken)
     {
         var rows = await query.AsNoTracking()
-            .OrderBy(row => row.Status == SuggestionStatus.Open ? 0 : 1)
-            .ThenByDescending(row => row.CreatedAt)
-            .ThenBy(row => row.Id)
-            .Take(SuggestionLimits.ListMax)
             .Select(row => new
             {
                 row.Id,

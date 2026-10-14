@@ -1,8 +1,7 @@
 import { apiFetch } from '../lib/api'
 import type { CommentSubject } from '../comments/api'
-import type { ChronologyValue } from '../chronology/types'
-import type { CanonStatusValue, EntityInput, FieldValue } from '../lore/types'
-import type { SceneInput, SceneLoreReference, StoryInput, StoryStatusValue } from '../stories/types'
+import type { CanonStatusValue, EntityInput, FieldKindValue } from '../lore/types'
+import type { SceneInput, StoryInput, StoryStatusValue } from '../stories/types'
 
 /** What a suggestion can be about: the same three subjects review comments have. */
 export type SuggestionSubject = CommentSubject
@@ -15,6 +14,44 @@ export const SuggestionStatus = {
 
 export type SuggestionStatusValue = (typeof SuggestionStatus)[keyof typeof SuggestionStatus]
 
+/*
+ * What a suggestion holds: the Suggestions feature's own records (ADR 0044), not the entry, story or scene reads. They look
+ * like those on purpose, so the forms' own comparisons read them, but they are stored and change on their own terms.
+ */
+
+/** One custom field's value as a suggestion holds it, with the names it showed. */
+export interface SuggestedFieldValue {
+  fieldDefinitionId: string
+  name: string
+  kind: FieldKindValue
+  text: string | null
+  number: number | null
+  boolean: boolean | null
+  date: string | null
+  optionIds: string[]
+  optionValues: string[]
+  referencedEntityId: string | null
+  referencedEntityName: string | null
+  referencedEntityIsTrashed: boolean
+  eraId: string | null
+}
+
+/** A Lore entry a scene names, as a suggestion holds it. */
+export interface SuggestedLore {
+  entityId: string
+  name: string
+  isTrashed: boolean
+}
+
+/** Where a scene happens, as a suggestion holds it. */
+export interface SuggestedDate {
+  eraId: string | null
+  year: number | null
+  month: number | null
+  day: number | null
+  monthId: string | null
+}
+
 /** An entry's form as a suggestion holds it: names beside ids, so it still reads after a rename. */
 export interface EntrySuggestion {
   entityTypeId: string
@@ -24,7 +61,7 @@ export interface EntrySuggestion {
   canonStatus: CanonStatusValue
   aliases: string[]
   tags: string[]
-  fields: FieldValue[]
+  fields: SuggestedFieldValue[]
 }
 
 export interface StorySuggestion {
@@ -38,9 +75,9 @@ export interface SceneSuggestion {
   chapterId: string | null
   summary: string | null
   notes: string | null
-  pov: SceneLoreReference | null
-  chronology: ChronologyValue | null
-  entities: SceneLoreReference[]
+  pov: SuggestedLore | null
+  chronology: SuggestedDate | null
+  entities: SuggestedLore[]
 }
 
 /**
@@ -79,9 +116,24 @@ export function suggestionsPath(universeId: string, subject: SuggestionSubject) 
   }
 }
 
-/** Open first, then decided, newest first within each. */
-export function listSuggestions<T>(path: string, signal?: AbortSignal) {
-  return apiFetch<Suggestion<T>[]>(path, { signal })
+/** Which of a subject's suggestions a page holds: those still open, or those accepted or rejected. */
+export type SuggestionState = 'open' | 'decided'
+
+/** One page, newest first. `hasMore`: older ones follow, read by passing the last one's id as `before`. */
+export interface SuggestionPage<T> {
+  items: Suggestion<T>[]
+  hasMore: boolean
+}
+
+export function listSuggestions<T>(
+  path: string,
+  state: SuggestionState,
+  before: string | null,
+  signal?: AbortSignal,
+) {
+  const query = new URLSearchParams({ state })
+  if (before) query.set('before', before)
+  return apiFetch<SuggestionPage<T>>(`${path}?${query}`, { signal })
 }
 
 /** The form's ordinary save body - the version it was opened on included - sent as a suggestion instead. */

@@ -12,6 +12,7 @@ import {
   SUGGESTION_TARGET_CHANGED,
   SuggestionStatus,
   type Suggestion,
+  type SuggestionState,
 } from '../suggestions/api'
 import { useUniverseAccess } from '../universes/access'
 
@@ -34,8 +35,32 @@ interface ReviewSuggestionsProps<T> {
 type Feedback = { text: string; isError: boolean }
 
 /**
+ * What has been read: every suggestion so far, and for each list whether older ones follow and where the next page starts
+ * - the last one that list answered, whatever has been decided here since.
+ */
+interface Loaded<T> {
+  items: Suggestion<T>[]
+  more: Record<SuggestionState, boolean>
+  after: Record<SuggestionState, string | null>
+}
+
+const STATES: SuggestionState[] = ['open', 'decided']
+
+/** Newest first, then by id: the API's own order, kept when a decision moves one from a list to the other. */
+function newestFirst<T>(a: Suggestion<T>, b: Suggestion<T>) {
+  return a.createdAt === b.createdAt ? a.id.localeCompare(b.id) : a.createdAt < b.createdAt ? 1 : -1
+}
+
+/** Adds what a page answered, each suggestion once, a newer read of one replacing the older. */
+function merged<T>(items: Suggestion<T>[], read: Suggestion<T>[]) {
+  const fresh = new Map(read.map((each) => [each.id, each]))
+  return [...items.filter((each) => !fresh.has(each.id)), ...read]
+}
+
+/**
  * The suggested changes to one entry, story or scene (task 045), inside the review drawer. Read only once the tab is
- * first shown, so opening the drawer for comments asks for no suggestions. Open ones first; accepted and rejected ones
+ * first shown, so opening the drawer for comments asks for no suggestions - then the first page of open ones and the first
+ * page of accepted and rejected ones, each with Show more until every one has been reached. Accepted and rejected ones
  * stay readable, folded. Each shows its changed fields, "Before" above "Suggested". The owner and Editors accept or
  * reject; the API decides every request, and refuses an accept once the content was saved after the suggestion.
  */
@@ -52,8 +77,9 @@ export function ReviewSuggestions<T>({
   const headingId = useId()
   const [wanted, setWanted] = useState(active)
   const [reads, setReads] = useState(0)
-  const [suggestions, setSuggestions] = useState<Suggestion<T>[] | null>(null)
+  const [loaded, setLoaded] = useState<Loaded<T> | null>(null)
   const [failed, setFailed] = useState(false)
+  const [reading, setReading] = useState<SuggestionState | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const feedbackLine = useRef<HTMLParagraphElement>(null)
@@ -64,9 +90,13 @@ export function ReviewSuggestions<T>({
     if (!wanted) return
     const controller = new AbortController()
 
-    listSuggestions<T>(path, controller.signal)
-      .then((read) => {
-        setSuggestions(read)
+    Promise.all(STATES.map((state) => listSuggestions<T>(path, state, null, controller.signal)))
+      .then(([open, decided]) => {
+        setLoaded({
+          items: merged(open.items, decided.items),
+          more: { open: open.hasMore, decided: decided.hasMore },
+          after: { open: open.items.at(-1)?.id ?? null, decided: decided.items.at(-1)?.id ?? null },
+        })
         setFailed(false)
       })
       .catch(() => {
@@ -75,6 +105,28 @@ export function ReviewSuggestions<T>({
 
     return () => controller.abort()
   }, [path, wanted, reads])
+
+  /** The next page of one list, after the last one it answered. */
+  async function readMore(state: SuggestionState) {
+    if (!loaded) return
+    setReading(state)
+    try {
+      const page = await listSuggestions<T>(path, state, loaded.after[state])
+      setLoaded((current) =>
+        current === null
+          ? current
+          : {
+              items: merged(current.items, page.items),
+              more: { ...current.more, [state]: page.hasMore },
+              after: { ...current.after, [state]: page.items.at(-1)?.id ?? current.after[state] },
+            },
+      )
+    } catch {
+      setFeedback({ text: 'The suggestions couldn’t be read.', isError: true })
+    } finally {
+      setReading(null)
+    }
+  }
 
   // A decision moves its suggestion out of Open, taking the pressed button with it: the focus goes to what happened.
   useEffect(() => {
@@ -86,10 +138,8 @@ export function ReviewSuggestions<T>({
     setBusy(suggestion.id)
     try {
       const decided = await resolveSuggestion<T>(universeId, suggestion.id, decision)
-      setSuggestions((current) =>
-        current === null
-          ? current
-          : current.map((each) => (each.id === decided.id ? decided : each)),
+      setLoaded((current) =>
+        current === null ? current : { ...current, items: merged(current.items, [decided]) },
       )
       setFeedback({
         text: decision === 'accept' ? 'Suggestion accepted.' : 'Suggestion rejected.',
@@ -124,8 +174,30 @@ export function ReviewSuggestions<T>({
     }
   }
 
-  const open = suggestions?.filter((each) => each.status === SuggestionStatus.Open) ?? []
-  const decided = suggestions?.filter((each) => each.status !== SuggestionStatus.Open) ?? []
+  const items = [...(loaded?.items ?? [])].sort(newestFirst)
+  const open = items.filter((each) => each.status === SuggestionStatus.Open)
+  const decided = items.filter((each) => each.status !== SuggestionStatus.Open)
+
+  /** How many are listed, and a plus while older ones have not been read yet. */
+  const counted = (state: SuggestionState, count: number) =>
+    `${count}${loaded?.more[state] ? '+' : ''}`
+
+  function moreButton(state: SuggestionState) {
+    return loaded?.more[state] ? (
+      <div>
+        <button
+          className="button button--text button--sm"
+          type="button"
+          disabled={reading !== null}
+          aria-busy={reading === state}
+          onClick={() => void readMore(state)}
+          data-testid={`suggestions-more-${state}`}
+        >
+          Show more
+        </button>
+      </div>
+    ) : null
+  }
 
   function renderSuggestion(suggestion: Suggestion<T>) {
     const isOpen = suggestion.status === SuggestionStatus.Open
@@ -247,34 +319,37 @@ export function ReviewSuggestions<T>({
         <p className="history__quiet" role="status">
           The suggestions couldn&rsquo;t be read.
         </p>
-      ) : suggestions === null ? (
+      ) : loaded === null ? (
         <p className="history__quiet" role="status">
           Opening&hellip;
         </p>
-      ) : suggestions.length === 0 ? (
+      ) : items.length === 0 && !loaded.more.open && !loaded.more.decided ? (
         <p className="history__quiet" data-testid="suggestions-empty">
           No suggestions yet.
         </p>
       ) : (
         <>
-          {open.length > 0 ? (
+          {open.length > 0 || loaded.more.open ? (
             <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
               <h3 className="reviewsection__title" id={`${headingId}-open`}>
-                Open <span className="reviewsection__count">{open.length}</span>
+                Open <span className="reviewsection__count">{counted('open', open.length)}</span>
               </h3>
               <ol className="reviewsection__list" data-testid="suggestions-open">
                 {open.map(renderSuggestion)}
               </ol>
+              {moreButton('open')}
             </section>
           ) : null}
-          {decided.length > 0 ? (
+          {decided.length > 0 || loaded.more.decided ? (
             <details className="reviewsection" data-testid="suggestions-decided-group">
               <summary className="reviewsection__title">
-                Accepted and rejected <span className="reviewsection__count">{decided.length}</span>
+                Accepted and rejected{' '}
+                <span className="reviewsection__count">{counted('decided', decided.length)}</span>
               </summary>
               <ol className="reviewsection__list" data-testid="suggestions-decided">
                 {decided.map(renderSuggestion)}
               </ol>
+              {moreButton('decided')}
             </details>
           ) : null}
         </>

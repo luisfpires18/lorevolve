@@ -164,11 +164,7 @@ public static class StoryEndpoints
 
         if (!EditVersion.Matches(story.Version, request.ExpectedVersion))
         {
-            return EditVersion.Changed(
-                ChangedCode,
-                "Story changed",
-                "This story was changed after it was opened here. Nothing was overwritten.",
-                story.Version);
+            return Changed(story.Version);
         }
 
         if (StoryValidation.ValidateStory(request) is { } errors)
@@ -195,6 +191,14 @@ public static class StoryEndpoints
 
         return Results.Ok(await LoadDetailAsync(db, universeId, storyId, cancellationToken));
     }
+
+    /// <summary>The 409 for a story save written over a version that is no longer current (ADR 0043).</summary>
+    internal static IResult Changed(int currentVersion) =>
+        EditVersion.Changed(
+            ChangedCode,
+            "Story changed",
+            "This story was changed after it was opened here. Nothing was overwritten.",
+            currentVersion);
 
     /// <summary>
     /// Moves the story to the Trash. Only the story is marked: its chapters, scenes, prose, saved versions

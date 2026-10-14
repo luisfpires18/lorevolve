@@ -43,11 +43,12 @@ public sealed class SuggestedChange
 
     /// <summary>
     /// The target's form as stored when the suggestion was made: the target kind's own snapshot record as JSON
-    /// (<see cref="EntrySuggestion"/>, <see cref="StorySuggestion"/>, <see cref="SceneSuggestion"/>). Never changed.
+    /// (<see cref="EntrySuggestion"/>, <see cref="StorySuggestion"/>, <see cref="SceneSuggestion"/>) - this feature's own
+    /// records, never an API response's. Never changed.
     /// </summary>
     public required string Before { get; set; }
 
-    /// <summary>The same form with the proposal applied, read back from the write path itself. Never changed.</summary>
+    /// <summary>The same form as the proposal would leave it: validated and normalised as the save would. Never changed.</summary>
     public required string Proposed { get; set; }
 
     public SuggestionStatus Status { get; set; }
@@ -67,8 +68,8 @@ public sealed class SuggestedChange
 
 public static class SuggestionLimits
 {
-    /// <summary>The most one list answers: open ones first, then the newest resolved.</summary>
-    public const int ListMax = 100;
+    /// <summary>How many open, or decided, suggestions one page answers; older ones follow page by page.</summary>
+    public const int PageSize = 20;
 }
 
 public sealed class SuggestedChangeConfiguration : IEntityTypeConfiguration<SuggestedChange>

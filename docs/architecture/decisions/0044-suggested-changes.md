@@ -21,17 +21,24 @@ Rejected; `CK_SuggestedChanges_Status`), the proposer's raw account id and time,
 universe column: it is reached only through a live target of the universe named, like a comment thread. Account ids have
 no foreign key, as for comments and versions (042, 043); answers carry usernames only, null for an account that is gone.
 
-**A proposal is the target's own save request.** `POST .../entities|stories/{id}|stories/{id}/scenes/{id}/suggestions`
-takes the exact body of that target's `PUT`, `expectedVersion` included. Inside one IMMEDIATE transaction the server reads
-the target, then runs the ordinary write path inside a savepoint that is always rolled back: a wrong or missing version is
-refused with the save's own 409 (`entity_changed`, `story_changed`, `scene_changed`), invalid values with the save's own
-validation, a trashed or foreign target with 404. What the write path answers is what it would have stored; a proposal
-the path would not count as a change (its version would not move) is refused, 400 `suggestion_unchanged`. Nothing but
-the suggestion is written: no field, no version, no history, no search index, no Canon reconciliation.
+**A proposal is the target's own save request, and never runs the save.** `POST
+.../entities|stories/{id}|stories/{id}/scenes/{id}/suggestions` takes the exact body of that target's `PUT`,
+`expectedVersion` included. Inside one IMMEDIATE transaction the server reads the target and runs only the save's own
+checks and normalisation, which the save path itself also calls: the version (refused with the save's own 409 -
+`entity_changed`, `story_changed`, `scene_changed` - via `EntityEndpoints.Changed`, `StoryEndpoints.Changed`,
+`SceneEndpoints.Changed`); for an entry `CheckEntryAsync` (shape, a type of this universe), `NormalizedAliases`,
+`NormalizedTags` and `PrepareFieldValuesAsync` (the field values as unattached rows, validated against the type's own
+fields, options and linked entries); for a story `StoryValidation`; for a scene `SceneEndpoints.CheckAsync` (shape and
+date, a chapter of this story, lore of this universe and nothing newly chosen from the Trash). A trashed or foreign
+target is 404. `Proposed` is built from those normalised values; a proposal whose values equal what is stored is refused,
+400 `suggestion_unchanged`. **The invariant:** creating a suggestion cannot write content or anything a save writes - no
+field, version, history, search index or Canon reconciliation, and nothing a save may grow later - because the save path
+is never entered. The suggestion row is the only write. Everything is checked again at accept, through the save itself.
 
 **What is stored.** `Before` and `Proposed` are JSON of one explicit snapshot record per kind - `EntrySuggestion`,
-`StorySuggestion`, `SceneSuggestion` - holding exactly what that form edits, as the read path returns it (names beside
-ids). Both come from the server, never from the client. They are complete snapshots of the form rather than a list of
+`StorySuggestion`, `SceneSuggestion` - holding exactly what that form edits, names beside ids. They and every value inside
+them (`SuggestedFieldValue`, `SuggestedLore`, `SuggestedDate`) are the Suggestions feature's own records, never the API's
+response types, so a suggestion reads the same after those change. Both come from the server, never from the client. They are complete snapshots of the form rather than a list of
 changed fields on purpose: with the version bound below, the stored `Proposed` replayed through the write path is
 exactly "the stored form plus these changes", so applying one needs no merge code and no field-by-field executor. A
 snapshot is read only through its record; nothing reflects JSON property names onto entities, and a member the request
@@ -42,6 +49,12 @@ contract does not declare never reaches it (over-posting is the save contract's 
 rejected, and an accept is refused, 409 `suggestion_target_changed`, with nothing written. There is no merge, no rebase
 and no forced accept - for the owner either. Being out of date is derived (`BaseVersion` against the target's version,
 answered as `targetChanged` while open), never written onto sibling suggestions.
+
+**Every suggestion stays reachable.** A target's suggestions are read as two lists, open (`state=open`, the default) and
+decided (`state=decided`), each newest first by when it was made and then by id, 20 a page. `before` is the last one a
+list answered; the next page carries on from its time and id, so nothing is skipped or repeated when something is decided
+meanwhile - it moves to the other list. The review drawer reads the first page of each when its Suggestions tab opens and
+offers Show more on each list.
 
 **Accepting is the ordinary save, by the resolver.** `POST .../suggestions/{id}/accept` (owner, Editor) runs, in one
 transaction - the Canon gate's for an entry, as its edit is - the open-status check, the version check, then the target's
@@ -67,10 +80,10 @@ experience of its own, and is deferred.
 - A new form-backed target needs only its write path to be callable inside a caller's transaction, a snapshot record and
   two routes. Any write that becomes part of a form's save path is automatically part of acceptance; nothing is
   duplicated to keep in step.
-- The unchanged-proposal check is the write path's own judgement of a change (the version): a proposal is empty exactly
-  when the same save would leave the version alone.
-- Proposing costs one rolled-back write: the same work as a save, and on an entry the article-free update path, but no
-  Canon sweep. A proposal that would introduce a High Canon conflict is accepted as a suggestion and refused at accept.
+- The unchanged-proposal check compares the stored form with the normalised proposal, the order of sets aside: what the
+  save would store differently is a change; spacing, repeats and a repeated alias in another case are not.
+- A proposal is checked by the save's checks, not proven by its write: a High Canon conflict, or anything only the write
+  itself would find, is refused at accept, with the suggestion left open.
 - Snapshots hold the whole form, so a suggestion on an entry with many fields stores those fields twice. Bounded by the
   form; nothing grows with history.
 - A suggestion made over an older version is never applied, even when the intervening save touched a different field.
