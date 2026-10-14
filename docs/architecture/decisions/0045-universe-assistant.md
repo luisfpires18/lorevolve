@@ -33,10 +33,19 @@ and read through that universe; a bad one is `not_found`, a broken argument `bad
 and the question goes on.
 
 **What may be read.** Live lore (name, type, Canon status, summary, aliases, tags, fields, the start of the article, the
-scenes and moments it is in, a relationship count), stories (premise, status, chapters, scenes in reading order, arcs and
-beats), scenes (place, summary, notes, point of view, date, lore; the start of the manuscript only when asked), timeline
+passage of the article around words asked for, the scenes and moments it is in, a relationship count), stories (premise, status, chapters, scenes in reading order, arcs and
+beats), scenes (place, summary, notes, point of view, date, lore; the start of the manuscript, or its passage around words
+asked for, only when asked), timeline
 moments and the unified timeline, direct relationships, and a bounded overview. Never ideas, world rules, comments,
 suggestions, history, Trash, accounts, emails, invitations, storage, backups or images.
+
+**Long prose is reached where the words are, through the search's own index.** An article or manuscript is read from
+its start, cut at 1,500 or 4,000 characters. Past that, `get_lore` and `get_scene` take `find`: the reader asks the same
+FTS5 index the search uses for `snippet()` at its widest (64 tokens), over that one live row's column, with the search's
+own reading of words (`EntitySearchIndex.PassageAsync`, `ArticlePassageAsync`, `UniverseSearchIndex.ManuscriptPassageAsync`).
+No new index, no second matcher, never the whole text. The search result itself already carries a 16-word excerpt and
+says the words were found in the article or the prose; the instructions tell the model to read the passage before
+saying anything is not recorded.
 
 **Content is data.** Authored text reaches the model only as tool results. The instructions name tool results as content
 written by the universe's authors, never instructions, and they never contain authored text themselves.
@@ -56,12 +65,20 @@ minutes (ASP.NET Core's rate limiter, partitioned by account; 429 `assistant_rat
 **A narrow provider boundary.** `IAssistantProvider` and `IAssistantConversation` carry LoreX's own types: messages, tool
 definitions, tool calls and results, one turn. A provider never reads the database, runs a tool or sees a universe id.
 `Assistant:Provider` chooses, as `Media:Provider` does: `OpenAI` (`OpenAIAssistantProvider`, the only file that knows
-OpenAI exists - the official library's Responses API, `store: false`, the conversation resent each step with reasoning
-items dropped, one retry, a 45-second network timeout); `Fake` (`FakeAssistantProvider`, the local server and the
+OpenAI exists - the official library's Responses API, one retry, a 45-second network timeout); `Fake` (`FakeAssistantProvider`, the local server and the
 Playwright suite: no network, real tools, canned wording by plain rules); unset, `UnavailableAssistantProvider`.
 `Assistant:OpenAI:ApiKey` and `Assistant:OpenAI:Model` are both required and neither has a default; the key is a secret
 (user secrets locally, App Service settings in Azure). A host never fails to start over this: an incomplete setting is
 unset. Not set up is 503 `assistant_unavailable`, and nothing else in LoreX notices.
+
+**Stateless, reasoning included (amended 2026-10-15).** Every request sets `store: false`, so nothing is kept at OpenAI
+and no response id is reused; the conversation is sent again each step. That is OpenAI's stateless mode, and a reasoning
+model needs its reasoning carried through a tool loop: every request asks for `include: reasoning.encrypted_content`, and
+every item a step returns - encrypted reasoning, function calls, messages - goes back unchanged, in order, with the next
+step. The reasoning stays inside the provider: never in a turn, a log or an answer. A model that does not reason returns
+no reasoning items and is served by the same requests, so any Responses model that supports function calling and strict
+structured output is in bounds; nothing is restricted by name. The first cut dropped reasoning items between steps; that
+is gone.
 
 **Who may ask.** Asking is reading: `UniverseAccess` `Read` - owner, Editor, Reviewer, Viewer - before the question is
 looked at, the universe read or a model called. Anyone else gets the universe's usual 404. No public route.
@@ -70,7 +87,8 @@ looked at, the universe read or a model called. Anyone else gets the universe's 
 conversation while the universe is open and sends its last messages with the next question; a reload starts afresh.
 
 **Failures in LoreX's words.** Provider failure or an unreadable answer 502 `assistant_failed`; provider rate limiting 503
-`assistant_busy`; too slow 504 `assistant_timeout`. The provider's own words, the key and the prompts are never in an
+`assistant_busy`; too slow 504 `assistant_timeout`. OpenAI also answers 429 when the account has no credit
+(`insufficient_quota`); waiting never fixes that, so it is `assistant_failed`, not busy. The provider's own words, the key and the prompts are never in an
 answer; logs carry the failure kind, steps, tool count and token counts, not content.
 
 **Where it lives on screen.** An Assistant button beside the universe's search on every screen of a universe (its icon
@@ -94,11 +112,15 @@ Suggestion (a note carries none), with its sources as links.
   out of OpenAI's stored responses; what the provider otherwise retains is its own policy, and the operator's choice.
 - Every step resends the conversation so far, so a question that reads near its limits costs up to seven calls of roughly
   this much input each. The limits above are what bounds it; the rate limit bounds an account.
-- Dropping reasoning items between steps keeps the conversation valid for any model without storage, at the cost of the
-  model's own reasoning between steps.
+- Carrying encrypted reasoning makes each step's input larger for a reasoning model; it is opaque and bounded by the
+  model's own output cap.
 - A cut tool result keeps the start of its JSON; readings are bounded so this is rare.
-- An article or manuscript is read from its start, not from where a search matched.
+- A passage is one 64-token fragment, FTS5's best for the words: a fact spread across several far-apart places needs
+  more than one `find`.
 - A search tool result is the bar's search: whole words and prefixes, every word required. The model is told to search
   for a name or two.
+- The provider is held to the official library's real serialization by tests over a stub transport
+  (`OpenAIAssistantProviderTests`), and to the live API by an opt-in smoke (`AssistantOpenAISmokeTests`, skipped unless
+  `LOREX_ASSISTANT_SMOKE_MODEL` and `OPENAI_API_KEY` are set in the environment).
 - The OpenAI library marks its Responses client experimental (`OPENAI001`); the suppression sits in the one file that
   uses it.

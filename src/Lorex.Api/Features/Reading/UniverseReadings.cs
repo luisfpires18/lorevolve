@@ -38,6 +38,8 @@ public sealed record FieldReading(string Name, string Value, Guid? LoreId);
 /// <see cref="UniverseReader.ArticleLength"/>. <paramref name="Scenes"/> are live scenes that link it or are told from its
 /// point of view, and <paramref name="Moments"/> the timeline moments it takes part in, each list bounded; the
 /// <c>More</c> flags say a list was cut. Relationships are read on their own (<see cref="RelationshipsReading"/>).
+/// <paramref name="ArticlePassage"/> is the passage of the article around words asked for - wherever in the article they
+/// are - or null when none were asked for or the article does not hold them.
 /// </summary>
 public sealed record LoreReading(
     Guid Id,
@@ -54,7 +56,8 @@ public sealed record LoreReading(
     bool MoreScenes,
     IReadOnlyList<MomentMention> Moments,
     bool MoreMoments,
-    int RelationshipCount);
+    int RelationshipCount,
+    string? ArticlePassage = null);
 
 /// <summary>A chapter of a story, numbered from 1 in the story's order.</summary>
 public sealed record ChapterReading(Guid Id, int Number, string Title, string? Summary);
@@ -85,6 +88,7 @@ public sealed record StoryReading(
 /// <summary>
 /// One live scene. <paramref name="Date"/> is its world date as this universe writes it, or null. <paramref name="Prose"/>
 /// is the start of its manuscript, only when it was asked for, cut to <see cref="UniverseReader.ProseLength"/>.
+/// <paramref name="ProsePassage"/> is the passage of the manuscript around words asked for, wherever they are in it.
 /// </summary>
 public sealed record SceneReading(
     Guid Id,
@@ -98,7 +102,8 @@ public sealed record SceneReading(
     LoreMention? PointOfView,
     string? Date,
     IReadOnlyList<LoreMention> Lore,
-    string? Prose);
+    string? Prose,
+    string? ProsePassage = null);
 
 /// <summary>One timeline moment: what happened, when, who took part and which stories it matters to. Only live ones are named.</summary>
 public sealed record TimelineItemReading(

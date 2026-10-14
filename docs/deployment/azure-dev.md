@@ -171,7 +171,8 @@ Accepted deliberately. Each one is a reason this topology is not a production to
   set up and nothing else is affected. To turn it on, set `Assistant__Provider=OpenAI`, `Assistant__OpenAI__Model` to
   the model to use and `Assistant__OpenAI__ApiKey` to the key, as app settings, never in a file. The universe content a
   question needs is then sent to OpenAI (`store: false`). Never set `Assistant__Provider=Fake` on a deployed host: it
-  is the test stand-in. ADR 0045.
+  is the test stand-in. An OpenAI account with no credit answers every question with "couldn't answer" (logged as
+  `insufficient_quota`), not "busy". ADR 0045.
 - **A backup is a ZIP, and it does carry image bytes.** The per-universe export is
   `backup.json` plus every entry's original picture, so it does not depend on R2 surviving -
   ADR 0014. It is still a manual, per-universe download and still not a disaster-recovery story.

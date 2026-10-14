@@ -120,7 +120,7 @@ Repository index. Paths and one-line responsibilities only.
 | `Features/Lore/RevisionContracts.cs` | Response records for history and one version. |
 | `Features/Lore/LoreContent.cs` | Structural validation of the Tiptap article. |
 | `Features/Lore/LoreArticleText.cs` | Reduces a Tiptap document to the prose an author wrote. |
-| `Features/Lore/EntitySearchIndex.cs` | The lore FTS5 index: reindex (excerpt markers written as spaces), backfill, the scored query, a result page's article excerpts, how typed words become an expression; and for the universe search, the field-aware match, field excerpts and the shared snippet and column-filter rules. |
+| `Features/Lore/EntitySearchIndex.cs` | The lore FTS5 index: reindex (excerpt markers written as spaces), backfill, the scored query, a result page's article excerpts, how typed words become an expression; and for the universe search, the field-aware match, field excerpts and the shared snippet and column-filter rules; and for a reader (ADR 0045), one live row's 64-token passage around words asked for (`PassageAsync`, `ArticlePassageAsync`). |
 | `Features/Lore/EntitySearchBackfill.cs` | Indexes entries that have no index row, once, at startup. |
 | `Features/Lore/LoreValidation.cs` | Shared lore input checks. |
 | `Features/Relationships/RelationshipModel.cs` | `RelationshipType` with its Canon constraints and its family meaning, `RelationshipAgeOrder`, `RelationshipFamilySemantic` (two parent meanings and `NonStructuralFamily`), `RelationshipFamilySemantics.Parent` (the only meanings anything derives from), and `LoreRelationship`. |
@@ -317,6 +317,8 @@ Repository index. Paths and one-line responsibilities only.
 | Path | Responsibility |
 | --- | --- |
 | `Lorex.Api.Tests/LorexApiFactory.cs` | Boots the real host over in-memory SQLite; a command fault hook, what it fails with, and a movable clock. |
+| `Lorex.Api.Tests/OpenAIAssistantProviderTests.cs` | The OpenAI provider over a stub transport, through the library's real serialization: `store: false`, encrypted reasoning asked for and carried to the next step in order, strict tools and answer, tool choice, and each failure's class (rate limit busy; quota, key, schema and server failed; incomplete failed). |
+| `Lorex.Api.Tests/AssistantOpenAISmokeTests.cs` | Opt-in, real OpenAI: skipped unless `LOREX_ASSISTANT_SMOKE_MODEL` and `OPENAI_API_KEY` are set. A direct question, one read, several reads and a fact deep in an article, no write, with calls, tools, tokens and time in the test output. |
 | `Lorex.Api.Tests/ScriptedAssistantProvider.cs` | A model whose every step a test writes, recording what crossed the provider boundary; set on the factory's `Assistant` before the host is built. |
 | `Lorex.Api.Tests/AssistantTests.cs` | The assistant: every member asks, outsiders and signed-out are refused before a model; search is the bar's own; each reading; Trash and other universes not found; mangled ids and invented tools; sources only what was read; malformed answers and provider failures; content as data and no writes; the loop, tool, history and rate limits; cancellation. Also `AssistantUnconfiguredTests`: no provider, nothing else changes. |
 | `Lorex.Api.Tests/DatabaseFailureTests.cs` | Which `DbUpdateException` is a constraint and which is not, and that a locked database never claims a name is taken. |

@@ -162,6 +162,64 @@ public sealed class AssistantTests(AssistantFixture fixture) : IClassFixture<Ass
     }
 
     [Fact]
+    public async Task A_fact_deep_in_a_long_article_is_reached_through_the_searchs_own_passage()
+    {
+        var (client, universe) = await SignedInWithUniverse(_api, "aslongart");
+        var u = universe.Id;
+        var arin = await CreateEntity(client, u, "Arin Lusk");
+        var filler = string.Concat(Enumerable.Repeat("The court kept its records in salt-stained ledgers through every season. ", 60));
+        await WriteArticle(client, u, arin, Doc(filler, "Arin carries the Ninefold Key, taken from the drowned vault beneath the harbour."));
+
+        var read = await Read(
+            client,
+            u,
+            (AssistantTools.SearchUniverse, new { query = "Ninefold" }),
+            (AssistantTools.GetLore, new { id = arin, find = (string?)null }),
+            (AssistantTools.GetLore, new { id = arin, find = "Ninefold Key" }),
+            (AssistantTools.GetLore, new { id = arin, find = "unicorn" }));
+
+        // The search finds it in the article and says so, with the few words around it.
+        var hit = Assert.Single(read[0].GetProperty("results").EnumerateArray());
+        Assert.Equal(("lore", "Article"), (hit.GetProperty("kind").GetString(), hit.GetProperty("foundIn").GetString()));
+        Assert.Contains("Ninefold", hit.GetProperty("excerpt").GetString(), StringComparison.Ordinal);
+
+        // The article's start stops long before it; asked for, the passage around the words reaches it, bounded.
+        Assert.True(filler.Length > UniverseReader.ArticleLength * 2);
+        Assert.DoesNotContain("Ninefold", read[1].GetProperty("article").GetString(), StringComparison.Ordinal);
+        Assert.False(read[1].TryGetProperty("articlePassage", out _));
+        var passage = read[2].GetProperty("articlePassage").GetString()!;
+        Assert.Contains("Ninefold Key, taken from the drowned vault", passage, StringComparison.Ordinal);
+        Assert.True(passage.Length < 1_000, $"A passage of {passage.Length} characters.");
+        Assert.False(read[3].TryGetProperty("articlePassage", out _));
+    }
+
+    [Fact]
+    public async Task A_fact_deep_in_a_long_manuscript_is_reached_through_the_searchs_own_passage()
+    {
+        var (client, universe) = await SignedInWithUniverse(_api, "aslongms");
+        var u = universe.Id;
+        var story = await CreateStory(client, u, "Salt Letters");
+        var scene = await CreateScene(client, u, story, "The quay at dusk");
+        var filler = string.Concat(Enumerable.Repeat("Rain walked the quay and the boats knocked against the posts all night. ", 90));
+        await WriteManuscript(client, u, story, scene, filler + "At last Mira hid the letter under the third stone of the old wall.");
+
+        var read = await Read(
+            client,
+            u,
+            (AssistantTools.SearchUniverse, new { query = "letter" }),
+            (AssistantTools.GetScene, new { id = scene, include_prose = true, find = (string?)null }),
+            (AssistantTools.GetScene, new { id = scene, include_prose = false, find = "letter" }));
+
+        var hit = read[0].GetProperty("results").EnumerateArray().Single(result => result.GetProperty("kind").GetString() == "scene_prose");
+        Assert.Equal(scene, hit.GetProperty("id").GetGuid());
+
+        Assert.True(filler.Length > UniverseReader.ProseLength);
+        Assert.DoesNotContain("third stone", read[1].GetProperty("prose").GetString(), StringComparison.Ordinal);
+        Assert.False(read[2].TryGetProperty("prose", out _));
+        Assert.Contains("hid the letter under the third stone", read[2].GetProperty("prosePassage").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Relationships_are_read_from_the_entrys_side_one_step_out()
     {
         var (client, universe) = await SignedInWithUniverse(_api, "asrel");

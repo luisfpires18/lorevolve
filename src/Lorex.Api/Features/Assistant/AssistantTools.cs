@@ -45,8 +45,9 @@ internal sealed class AssistantTools(LorexDbContext db, Guid universeId)
         new(
             GetLore,
             "Read one lore entry: its type, Canon status, summary, aliases, tags, recorded fields, the start of its article, "
-            + "the scenes it appears in and the timeline moments it takes part in.",
-            IdSchema),
+            + "the scenes it appears in and the timeline moments it takes part in. Set find to a word or two to also get the "
+            + "article's passage around them, wherever they are in it; otherwise null.",
+            """{"type":"object","properties":{"id":{"type":"string","description":"The id exactly as a tool result gave it."},"find":{"type":["string","null"],"description":"Words to find in the article, or null."}},"required":["id","find"],"additionalProperties":false}"""),
         new(
             GetRelationships,
             "Read one lore entry's direct relationships, each as a label read from that entry's side and the related entry.",
@@ -58,8 +59,9 @@ internal sealed class AssistantTools(LorexDbContext db, Guid universeId)
         new(
             GetScene,
             "Read one scene: its story and chapter, summary, notes, point of view, world date and linked lore. "
-            + "Set include_prose to true only when the question needs the scene's written text itself.",
-            """{"type":"object","properties":{"id":{"type":"string","description":"The scene id exactly as a tool result gave it."},"include_prose":{"type":"boolean"}},"required":["id","include_prose"],"additionalProperties":false}"""),
+            + "Set include_prose to true only when the question needs the start of the scene's written text. Set find to a word "
+            + "or two to get the prose's passage around them, wherever they are in it; otherwise null.",
+            """{"type":"object","properties":{"id":{"type":"string","description":"The scene id exactly as a tool result gave it."},"include_prose":{"type":"boolean"},"find":{"type":["string","null"],"description":"Words to find in the prose, or null."}},"required":["id","include_prose","find"],"additionalProperties":false}"""),
         new(
             GetTimelineItem,
             "Read one timeline moment: its date, Canon status, description, participants and the stories it belongs to.",
@@ -114,13 +116,17 @@ internal sealed class AssistantTools(LorexDbContext db, Guid universeId)
         return call.Name switch
         {
             SearchUniverse => await SearchAsync(Text(arguments, "query"), cancellationToken),
-            GetLore => await ReadAsync(arguments, "id", id => UniverseReader.GetLoreAsync(db, universeId, id, cancellationToken), Remember),
+            GetLore => await ReadAsync(
+                arguments,
+                "id",
+                id => UniverseReader.GetLoreAsync(db, universeId, id, cancellationToken, Text(arguments, "find")),
+                Remember),
             GetRelationships => await ReadAsync(arguments, "id", id => UniverseReader.GetRelationshipsAsync(db, universeId, id, cancellationToken), Remember),
             GetStory => await ReadAsync(arguments, "id", id => UniverseReader.GetStoryAsync(db, universeId, id, cancellationToken), Remember),
             GetScene => await ReadAsync(
                 arguments,
                 "id",
-                id => UniverseReader.GetSceneAsync(db, universeId, id, Flag(arguments, "include_prose"), cancellationToken),
+                id => UniverseReader.GetSceneAsync(db, universeId, id, Flag(arguments, "include_prose"), cancellationToken, Text(arguments, "find")),
                 Remember),
             GetTimelineItem => await ReadAsync(arguments, "id", id => UniverseReader.GetTimelineItemAsync(db, universeId, id, cancellationToken), Remember),
             BrowseTimeline => await BrowseAsync(arguments, cancellationToken),

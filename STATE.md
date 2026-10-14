@@ -70,6 +70,13 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     unset = 503 `assistant_unavailable`, nothing else affected. Relevant universe content goes to the configured provider.
   - UI: an Assistant button beside the search (icon on a phone), drawer with static starting points, labelled parts,
     source links, retry and not-set-up states. Non-streaming.
+  - Follow-up (same branch): stateless reasoning - every request asks `include: reasoning.encrypted_content` and every
+    returned item goes back unchanged; `insufficient_quota` 429 is `assistant_failed`, not busy. Long prose: `get_lore` /
+    `get_scene` take `find`, the search index's own 64-token `snippet` of that row (no new index). Provider tests over a
+    stub transport; opt-in live smoke `AssistantOpenAISmokeTests` (skipped unless `LOREX_ASSISTANT_SMOKE_MODEL` +
+    `OPENAI_API_KEY`). **Blocker:** the live smoke reached OpenAI (key valid; the request accepted by
+    `responses/input_tokens` for `gpt-5.4-mini` and `gpt-4.1-mini`) but every Responses call answered 429
+    `insufficient_quota`. No deployment model chosen yet.
   - Tests: API 1485 -> 1509 (`AssistantTests` 23, `AssistantUnconfiguredTests` 1, matrix +2 routes). Playwright
     `universe-assistant.spec.ts` 5; focused + 26 neighbouring specs on a fresh DB: 182/183, the one a `Lorex could not be
     reached` on universe creation in `manuscript.spec.ts` under four workers, green 3/3 alone. Full suite not run locally;

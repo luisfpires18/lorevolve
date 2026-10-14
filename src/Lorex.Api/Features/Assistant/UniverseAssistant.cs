@@ -65,6 +65,7 @@ internal static partial class UniverseAssistant
         8. Be concise. A briefing is a few short paragraphs at most.
         9. Write dates exactly as the tool results write them. This universe may keep its own calendar; never convert its dates to real-world ones.
         10. Search with one or two distinctive words, usually a name. Read an object before relying on it.
+        11. An entry's article and a scene's prose are read from their start. When a search found your words in an article or in prose, or the start does not answer the question, read the object again with find set to those words to get the passage around them before saying anything is not recorded.
 
         Reply with JSON that follows the schema. Split the answer into segments, each with a kind:
         - "recorded": what tool results state. In "sources", list the ids of the objects that state it.
@@ -133,6 +134,7 @@ internal static partial class UniverseAssistant
                 else
                 {
                     calls++;
+                    LogToolRun(logger, call.Name);
                     output = await RunAsync(tools, call, logger, cancellationToken);
 
                     // ponytail: a cut keeps the start of the JSON; the readings are bounded so this is rare, a smarter cut if it is not.
@@ -240,6 +242,9 @@ internal static partial class UniverseAssistant
         Level = LogLevel.Information,
         Message = "Assistant answered in {Steps} steps with {Calls} tool calls ({InputTokens} input, {OutputTokens} output tokens).")]
     private static partial void LogAnswered(ILogger logger, int steps, int calls, int inputTokens, int outputTokens);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Assistant ran tool {Tool}.")]
+    private static partial void LogToolRun(ILogger logger, string tool);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Assistant tool {Tool} failed; the model was told it could not be read.")]
     private static partial void LogToolFailed(ILogger logger, string tool, Exception exception);

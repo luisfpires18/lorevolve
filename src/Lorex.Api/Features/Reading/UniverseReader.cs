@@ -31,7 +31,10 @@ public static class UniverseReader
     /// <summary>Summaries, notes, descriptions, premises and long field values.</summary>
     public const int TextLength = 600;
 
-    /// <summary>The start of an entry's article, as plain text.</summary>
+    /// <summary>
+    /// The start of an entry's article, as plain text. Past it, a reader asks for the passage around the words it is after
+    /// (<c>find</c>): the search index's own snippet at its widest, 64 words, wherever in the text they are.
+    /// </summary>
     public const int ArticleLength = 1_500;
 
     /// <summary>The start of a scene's manuscript, read only when asked for.</summary>
@@ -77,12 +80,16 @@ public static class UniverseReader
         return [.. found.Results.Where(result => result.Kind is not (UniverseSearchKind.Idea or UniverseSearchKind.WorldRule))];
     }
 
-    /// <summary>One live entry of this universe, or null.</summary>
+    /// <summary>
+    /// One live entry of this universe, or null. <paramref name="find"/>, when given, also reads the passage of its article
+    /// around those words, read the way the search reads them.
+    /// </summary>
     public static async Task<LoreReading?> GetLoreAsync(
         LorexDbContext db,
         Guid universeId,
         Guid loreId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? find = null)
     {
         var detail = await EntityEndpoints.LoadDetailAsync(db, universeId, loreId, cancellationToken, liveOnly: true);
         if (detail is null)
@@ -142,7 +149,8 @@ public static class UniverseReader
             scenes.Count > MentionLimit,
             [.. moments.Items.Select(item => new MomentMention(item.SourceId, item.Title, ReadingText.Date(chronology, item.Date)))],
             moments.TotalPages > 1,
-            relationshipCount);
+            relationshipCount,
+            await EntitySearchIndex.ArticlePassageAsync(db, loreId, find, cancellationToken));
     }
 
     /// <summary>One live story of this universe, or null: its chapters, its scenes in reading order and its plot.</summary>
@@ -192,14 +200,15 @@ public static class UniverseReader
 
     /// <summary>
     /// One live scene of this universe, or null. Its manuscript is read only when <paramref name="includeProse"/> asks, and
-    /// then only its start.
+    /// then only its start; <paramref name="find"/>, when given, reads the passage of the manuscript around those words.
     /// </summary>
     public static async Task<SceneReading?> GetSceneAsync(
         LorexDbContext db,
         Guid universeId,
         Guid sceneId,
         bool includeProse,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? find = null)
     {
         var place = await db.Scenes.AsNoTracking()
             .Where(scene => scene.Id == sceneId
@@ -243,7 +252,8 @@ public static class UniverseReader
                     .Take(MentionLimit)
                     .Select(link => new LoreMention(link.EntityId, link.Name, link.EntityTypeName)),
             ],
-            ReadingText.Cut(prose, ProseLength));
+            ReadingText.Cut(prose, ProseLength),
+            await UniverseSearchIndex.ManuscriptPassageAsync(db, sceneId, find, cancellationToken));
     }
 
     /// <summary>One timeline moment of this universe, or null.</summary>

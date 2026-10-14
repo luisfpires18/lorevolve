@@ -13,8 +13,11 @@ namespace Lorex.Api.Features.Assistant;
 /// stays here, and only <see cref="AssistantModelTurn"/> and <see cref="AssistantProviderException"/> come out.
 ///
 /// <b>Nothing is stored at OpenAI.</b> Every request sets <c>store: false</c> and sends the conversation again, so no
-/// response id is ever kept or reused. Reasoning items a model returns are not sent back - without storage they cannot
-/// be referenced - so each step carries the messages, the tool calls and their results, rebuilt from their parts.
+/// response id is ever kept or reused. That is OpenAI's stateless mode: every request also asks for the model's reasoning as
+/// encrypted content (<c>include: reasoning.encrypted_content</c>), and every item a step returns - reasoning, tool calls,
+/// messages - is sent back unchanged with the next step, so a reasoning model keeps its own reasoning across the tool loop
+/// without anything being stored. The reasoning is opaque here and goes nowhere else: never into a turn, a log or an answer.
+/// A model that does not reason returns no reasoning items, and the same requests serve it.
 ///
 /// <b>Bounded.</b> Output tokens are capped per step, the network timeout is short and the client retries once. Failures
 /// become <see cref="AssistantProviderException"/>; the provider's own words stay in the inner exception, for the log.
@@ -25,15 +28,25 @@ internal sealed class OpenAIAssistantProvider(ResponsesClient client, string mod
 
     public IAssistantConversation Begin(AssistantBrief brief) => new Conversation(client, model, brief);
 
-    /// <summary>The client a deployment uses: the key from configuration, a short network timeout, one retry.</summary>
-    public static ResponsesClient CreateClient(string apiKey) =>
-        new(
-            new ApiKeyCredential(apiKey),
-            new ResponsesClientOptions
-            {
-                NetworkTimeout = TimeSpan.FromSeconds(45),
-                RetryPolicy = new ClientRetryPolicy(maxRetries: 1),
-            });
+    /// <summary>
+    /// The client a deployment uses: the key from configuration, a short network timeout, one retry. A test hands it a
+    /// <paramref name="transport"/> that answers in place of OpenAI; a deployment never does.
+    /// </summary>
+    public static ResponsesClient CreateClient(string apiKey, PipelineTransport? transport = null)
+    {
+        var options = new ResponsesClientOptions
+        {
+            NetworkTimeout = TimeSpan.FromSeconds(45),
+            RetryPolicy = new ClientRetryPolicy(maxRetries: 1),
+        };
+
+        if (transport is not null)
+        {
+            options.Transport = transport;
+        }
+
+        return new ResponsesClient(new ApiKeyCredential(apiKey), options);
+    }
 
     private sealed class Conversation : IAssistantConversation
     {
@@ -82,6 +95,8 @@ internal sealed class OpenAIAssistantProvider(ResponsesClient client, string mod
                 },
             };
 
+            options.IncludedProperties.Add(IncludedResponseProperty.ReasoningEncryptedContent);
+
             foreach (var tool in _brief.Tools)
             {
                 options.Tools.Add(ResponseTool.CreateFunctionTool(
@@ -95,6 +110,12 @@ internal sealed class OpenAIAssistantProvider(ResponsesClient client, string mod
             try
             {
                 response = (await _client.CreateResponseAsync(options, cancellationToken)).Value;
+            }
+            // A 429 is also how OpenAI says the account has no credit left. That is not "busy": waiting never fixes it.
+            catch (ClientResultException exception) when (exception.Status == StatusCodes.Status429TooManyRequests
+                && exception.GetRawResponse()?.Content.ToString().Contains("insufficient_quota", StringComparison.Ordinal) == true)
+            {
+                throw new AssistantProviderException(AssistantFailure.Failed, "The OpenAI account has no quota left.", exception);
             }
             catch (ClientResultException exception) when (exception.Status == StatusCodes.Status429TooManyRequests)
             {
@@ -120,25 +141,16 @@ internal sealed class OpenAIAssistantProvider(ResponsesClient client, string mod
                     $"OpenAI's response ended {response.Status} ({response.IncompleteStatusDetails?.Reason}).");
             }
 
-            List<AssistantToolCall> calls = [];
-            foreach (var item in response.OutputItems)
-            {
-                switch (item)
-                {
-                    case FunctionCallResponseItem call:
-                        calls.Add(new AssistantToolCall(call.CallId, call.FunctionName, call.FunctionArguments.ToString()));
-                        _items.Add(ResponseItem.CreateFunctionCallItem(call.CallId, call.FunctionName, call.FunctionArguments));
-                        break;
-                    case MessageResponseItem message when message.Role == MessageRole.Assistant:
-                        var text = string.Concat(message.Content.Select(part => part.Text));
-                        if (text.Length > 0)
-                        {
-                            _items.Add(ResponseItem.CreateAssistantMessageItem(text, []));
-                        }
+            // Every item goes back with the next step exactly as it came: the reasoning (encrypted), the calls it led to and
+            // any message. Dropping the reasoning would leave a reasoning model's calls without the reasoning they need.
+            _items.AddRange(response.OutputItems);
 
-                        break;
-                }
-            }
+            List<AssistantToolCall> calls =
+            [
+                .. response.OutputItems
+                    .OfType<FunctionCallResponseItem>()
+                    .Select(call => new AssistantToolCall(call.CallId, call.FunctionName, call.FunctionArguments.ToString())),
+            ];
 
             return new AssistantModelTurn(
                 calls,
