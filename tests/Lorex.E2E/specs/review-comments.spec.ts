@@ -122,7 +122,7 @@ test.describe('review comments', () => {
     const ownerReads = watchCommentReads(owner.page)
     await owner.page.goto(entryPage)
     await expect(owner.page.getByTestId('entry-name')).toHaveText('Ember Vale')
-    await expect(owner.page.getByTestId('comments-trigger')).toHaveAccessibleName('Comments')
+    await expect(owner.page.getByTestId('comments-trigger')).toHaveAccessibleName('Review')
     expect(ownerReads).toHaveLength(0)
     await openComments(owner.page)
     await expect.poll(() => ownerReads.length).toBe(1)
@@ -258,11 +258,11 @@ test.describe('review comments', () => {
     expect(ownerReads).toEqual([expect.stringContaining(`/scenes/${sceneId}/comments`)])
     await closeComments(owner.page)
 
-    // On a phone the entry's tools keep to one line: Comments is its icon alone, named, on the views' line.
+    // On a phone the entry's tools keep to one line: Review is its icon alone, named, on the views' line.
     await owner.page.setViewportSize({ width: 390, height: 800 })
     await owner.page.goto(`/app/universes/${universeId}/lore/${entryId}`)
     const entryTrigger = owner.page.getByTestId('comments-trigger')
-    await expect(entryTrigger).toHaveAccessibleName('Comments')
+    await expect(entryTrigger).toHaveAccessibleName('Review')
     expect((await entryTrigger.boundingBox())!.width).toBeLessThan(48)
     const edit = (await owner.page.getByTestId('edit-entity').boundingBox())!
     const more = (await owner.page.getByTestId('entity-actions').boundingBox())!
@@ -271,8 +271,8 @@ test.describe('review comments', () => {
     // The story's line of facts has room for the word; the drawer takes the screen without scrolling sideways.
     await owner.page.goto(storyPage)
     const trigger = owner.page.getByTestId('comments-trigger')
-    await expect(trigger).toHaveAccessibleName('Comments')
-    await expect(trigger).toContainText('Comments')
+    await expect(trigger).toHaveAccessibleName('Review')
+    await expect(trigger).toContainText('Review')
     await trigger.click()
     const box = await drawer(owner.page).boundingBox()
     expect(box?.width).toBeGreaterThan(380)

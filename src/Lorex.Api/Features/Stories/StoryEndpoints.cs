@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Lorex.Api.Data;
+using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -137,8 +138,23 @@ public static class StoryEndpoints
             return denied;
         }
 
-        // One transaction for the version comparison and the write, so nothing can land between them (ADR 0043).
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        return await UpdateCoreAsync(db, universeId, storyId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The one write path for an existing story's form, shared with an accepted suggestion (ADR 0044) so it is validated,
+    /// versioned and saved exactly like an ordinary edit. Access is the caller's to prove first.
+    /// </summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        StoryRequest request,
+        CancellationToken cancellationToken)
+    {
+        // One transaction for the version comparison and the write, so nothing can land between them (ADR 0043) - or the
+        // caller's, when it has one.
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var story = await FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null)

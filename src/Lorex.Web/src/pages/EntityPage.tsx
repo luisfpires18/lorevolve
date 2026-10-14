@@ -8,7 +8,7 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router-dom'
-import { Check, Maximize2, Network, Pencil, Trash, X } from 'lucide-react'
+import { Check, FilePenLine, Maximize2, Network, Pencil, Trash, X } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ReviewComments } from '../components/ReviewComments'
@@ -54,6 +54,7 @@ import {
 } from '../lore/types'
 import { typeChoices } from '../lore/typeTree'
 import { StatusBadge } from '../components/StatusBadge'
+import { suggestEntryChanges } from '../suggestions/api'
 import { useUniverseAccess } from '../universes/access'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { EmptyState } from '../components/EmptyState'
@@ -68,7 +69,20 @@ interface Draft {
   fields: Record<string, FieldValueInput>
 }
 
-function draftFromDetail(detail: EntityDetail): Draft {
+/** What the entry form edits, as an entry or a suggestion holds it (task 045). */
+type EntryFields = Pick<
+  EntityDetail,
+  | 'entityTypeId'
+  | 'entityTypeName'
+  | 'name'
+  | 'summary'
+  | 'canonStatus'
+  | 'aliases'
+  | 'tags'
+  | 'fields'
+>
+
+function draftFromDetail(detail: EntryFields): Draft {
   const fields: Record<string, FieldValueInput> = {}
   for (const value of detail.fields) {
     fields[value.fieldDefinitionId] = {
@@ -136,11 +150,16 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
   const [detail, setDetail] = useState<EntityDetail | null>(null)
   const [editedDraft, setDraft] = useState<Draft | null>(null)
   const [isFormOpen, setIsEditing] = useState(isNew)
+  // The form is open to send a suggestion rather than to save (task 045): the entry itself is not changed.
+  const [isSuggesting, setIsSuggesting] = useState(false)
+  // A suggestion just sent from here, said where it can be seen.
+  const [sent, setSent] = useState(false)
 
   // The entry's form belongs to the Article view - it edits what that view shows. Deriving this rather
   // than clearing it on a view change is what makes the browser's Back honest: going back to Relations
   // shows Relations, and coming forward again finds the form exactly as it was left.
   const isEditing = isFormOpen && view === 'article'
+  const suggesting = isEditing && isSuggesting && !isNew
   const [status, setStatus] = useState<'loading' | 'ready' | 'missing' | 'error'>(
     isNew ? 'ready' : 'loading',
   )
@@ -212,6 +231,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
         setDetail(loaded)
         setDraft(draftFromDetail(loaded))
         setStatus('ready')
+        setSent(false)
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
@@ -265,6 +285,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
     setDraft(detail ? draftFromDetail(detail) : null)
     setPendingImage(null)
     setIsEditing(false)
+    setIsSuggesting(false)
     setMessage(null)
     setFieldErrors({})
     setBlocked(null)
@@ -276,7 +297,9 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
       ? null
       : isNew
         ? 'This new entry has not been created. Leave without saving it?'
-        : `“${detail?.name ?? 'This entry'}” has unsaved changes. Leave without saving them?`,
+        : isSuggesting
+          ? `Your suggestion for “${detail?.name ?? 'this entry'}” hasn’t been sent. Leave without sending it?`
+          : `“${detail?.name ?? 'This entry'}” has unsaved changes. Leave without saving them?`,
     discard,
   )
 
@@ -325,6 +348,16 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
     }
 
     try {
+      if (isSuggesting && !isNew) {
+        // Sent for review, not saved: the entry on screen is still the stored one, so the form simply closes on it.
+        await suggestEntryChanges(universe.id, entityId, input)
+        setDraft(detail ? draftFromDetail(detail) : null)
+        setIsEditing(false)
+        setIsSuggesting(false)
+        setSent(true)
+        return
+      }
+
       const saved = isNew
         ? await createEntity(universe.id, input)
         : await updateEntity(universe.id, entityId, input)
@@ -369,15 +402,27 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be saved.',
+            : isSuggesting
+              ? 'Some details need a change before this can be sent.'
+              : 'Some details need a change before this can be saved.',
         )
       } else {
-        setMessage('That could not be saved.')
+        setMessage(isSuggesting ? 'That suggestion couldn’t be sent.' : 'That could not be saved.')
       }
     } finally {
       setIsSaving(false)
     }
-  }, [draft, selectedType, isNew, universe.id, entityId, navigate, pendingImage, detail?.version])
+  }, [
+    draft,
+    selectedType,
+    isNew,
+    universe.id,
+    entityId,
+    navigate,
+    pendingImage,
+    detail,
+    isSuggesting,
+  ])
 
   /**
    * The one-click promotion, which saves on the spot rather than through the editor.
@@ -558,6 +603,16 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
    * about by the time this runs.
    */
   function startEditing() {
+    setIsSuggesting(false)
+    setSent(false)
+    setIsEditing(true)
+    if (view !== 'article') void navigate(entryPath)
+  }
+
+  /** The same form, to send a suggestion rather than save (task 045). */
+  function startSuggesting() {
+    setIsSuggesting(true)
+    setSent(false)
     setIsEditing(true)
     if (view !== 'article') void navigate(entryPath)
   }
@@ -612,7 +667,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
 
           {/* How settled the entry is, changed in one press. A choice, not an action: the chosen step is
               raised paper with its glyph and word, never a filled block louder than the name. */}
-          {access.editContent || isNew ? (
+          {access.editContent || isNew || suggesting ? (
             <div className="canon" role="group" aria-label="Canon status">
               {CANON_ORDER.map((option) => (
                 <button
@@ -644,6 +699,10 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
           <h1 className="visually-hidden">
             {isNew ? (
               'New entry'
+            ) : suggesting ? (
+              <>
+                Suggesting changes to <bdi>{detail?.name}</bdi>
+              </>
             ) : (
               <>
                 Editing <bdi>{detail?.name}</bdi>
@@ -723,6 +782,11 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
                 universeId={universe.id}
                 subject={{ kind: 'entry', entityId: entityId! }}
                 subjectName={detail?.name ?? ''}
+                describeSuggestion={(before: EntryFields, proposed: EntryFields) =>
+                  entryChanges(before, draftFromDetail(proposed), types, chronology, proposed)
+                }
+                onSuggestionAccepted={() => void reloadAfterRestore()}
+                onSuggest={startSuggesting}
               />
             )}
           </div>
@@ -751,6 +815,18 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
                 >
                   <ActionIcon icon={Pencil} />
                   Edit
+                </button>
+              ) : access.suggestChanges ? (
+                // A Reviewer's way into the same form, where an Editor's Edit stands. Its icon alone on a phone.
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  onClick={startSuggesting}
+                  title="Suggest changes"
+                  data-testid="suggest-entity"
+                >
+                  <ActionIcon icon={FilePenLine} />
+                  <span className="entry__toollabel">Suggest changes</span>
                 </button>
               ) : null}
               {/* Offered on an entry whose type the author enabled for Family Tree, and on any entry
@@ -801,6 +877,12 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
         </p>
       ) : null}
 
+      {sent && !isEditing ? (
+        <p className="callout" role="status" data-testid="suggestion-sent">
+          Suggestion sent. It&rsquo;s waiting under Review.
+        </p>
+      ) : null}
+
       {conflict && isEditing && !isNew && entityId !== undefined ? (
         <EditConflict
           what="entry"
@@ -811,6 +893,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
           onKeepMine={keepMine}
           onUseLatest={takeLatest}
           testId="entry-conflict"
+          suggesting={suggesting}
         />
       ) : null}
 
@@ -820,22 +903,29 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
 
       {isEditing ? (
         <div className="entryform" data-testid="entry-form">
-          <section className="entryform__section">
-            <EntityImageField
-              universeId={universe.id}
-              entityId={isNew ? null : entityId}
-              image={detail?.image ?? null}
-              pending={pendingImage}
-              onPending={setPendingImage}
-              onChanged={(image) => {
-                setDetail((current) => (current ? { ...current, image } : current))
-                // An image change is a version like any other, so the history is read again
-                // rather than left sitting one write behind.
-                setHistoryKey((key) => key + 1)
-              }}
-              disabled={isSaving}
-            />
-          </section>
+          {suggesting ? (
+            <p className="callout" data-testid="entry-suggesting">
+              You&rsquo;re suggesting changes. The entry stays as it is until the owner or an Editor
+              accepts them.
+            </p>
+          ) : (
+            <section className="entryform__section">
+              <EntityImageField
+                universeId={universe.id}
+                entityId={isNew ? null : entityId}
+                image={detail?.image ?? null}
+                pending={pendingImage}
+                onPending={setPendingImage}
+                onChanged={(image) => {
+                  setDetail((current) => (current ? { ...current, image } : current))
+                  // An image change is a version like any other, so the history is read again
+                  // rather than left sitting one write behind.
+                  setHistoryKey((key) => key + 1)
+                }}
+                disabled={isSaving}
+              />
+            </section>
+          )}
 
           <section className="entryform__section">
             <h2 className="entryform__heading sectionrule sectionrule--accent">
@@ -1000,7 +1090,13 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
       {isEditing ? (
         <footer className="entry__actions actionbar">
           <p className="actionbar__status" role="status" data-testid="entry-form-status">
-            {isDirty ? 'Unsaved changes' : isNew ? 'New entry' : 'No changes yet'}
+            {isDirty
+              ? suggesting
+                ? 'Not sent yet'
+                : 'Unsaved changes'
+              : isNew
+                ? 'New entry'
+                : 'No changes yet'}
           </p>
           <div className="actionbar__actions">
             <button
@@ -1008,12 +1104,20 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
               className="button"
               type="button"
               onClick={save}
-              disabled={isSaving}
+              disabled={isSaving || (suggesting && !isDirty)}
               aria-busy={isSaving}
               data-testid="save-entity"
             >
-              <ActionIcon icon={Check} />
-              {isSaving ? 'Saving' : isNew ? 'Create entry' : 'Save changes'}
+              <ActionIcon icon={suggesting ? FilePenLine : Check} />
+              {suggesting
+                ? isSaving
+                  ? 'Sending'
+                  : 'Send suggestion'
+                : isSaving
+                  ? 'Saving'
+                  : isNew
+                    ? 'Create entry'
+                    : 'Save changes'}
             </button>
             {!isNew ? (
               <button
@@ -1024,7 +1128,9 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
                   if (
                     isDirty &&
                     !window.confirm(
-                      'Close the form without saving your changes? They will be lost.',
+                      suggesting
+                        ? 'Close the form without sending your suggestion? It will be lost.'
+                        : 'Close the form without saving your changes? They will be lost.',
                     )
                   ) {
                     return
@@ -1106,11 +1212,11 @@ function factText(value: Parameters<typeof renderFact>[0], chronology: Chronolog
  * the author newly chose is named only if the page already knows the entry; the picker does not hand its name back.
  */
 function entryChanges(
-  latest: EntityDetail,
+  latest: EntryFields,
   draft: Draft,
   types: EntityType[],
   chronology: Chronology,
-  opened: EntityDetail | null,
+  opened: EntryFields | null,
 ): Change[] {
   const sorted = (values: string[]) => [...values].sort().join(', ')
   const rows: Change[] = [

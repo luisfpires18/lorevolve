@@ -1,6 +1,15 @@
 import { useId, type ReactNode } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowRightLeft, ArrowUp, BookOpen, PenLine, Pencil, Trash } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowRightLeft,
+  ArrowUp,
+  BookOpen,
+  FilePenLine,
+  PenLine,
+  Pencil,
+  Trash,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
@@ -35,6 +44,8 @@ interface SceneCardProps {
   onMove: (scene: Scene, by: -1 | 1) => void
   onMoveTo: (scene: Scene, chapterId: string | null) => void
   onEdit: (scene: Scene) => void
+  /** Opens the scene's form to send a suggestion instead of saving (task 045). */
+  onSuggest: (scene: Scene) => void
   onDelete: (scene: Scene) => void
   /** The scene outline's publication control (ADR 0039), drawn first among the scene's tools. */
   publication?: ReactNode
@@ -69,6 +80,7 @@ export function SceneCard({
   onMove,
   onMoveTo,
   onEdit,
+  onSuggest,
   onDelete,
   publication,
 }: SceneCardProps) {
@@ -113,22 +125,35 @@ export function SceneCard({
           <ActionIcon icon={access.editContent ? PenLine : BookOpen} />
           {access.editContent ? 'Write' : 'Read'}
         </Link>
-        {access.editContent ? (
+        {access.editContent || access.suggestChanges ? (
           <ActionMenu
             label={`More actions for ${scene.title}`}
             triggerTestId="scene-actions"
             panelClassName="actionmenu__panel--wide"
           >
-            <button
-              className="actionmenu__item"
-              type="button"
-              onClick={() => onEdit(scene)}
-              data-testid="scene-edit"
-            >
-              <ActionIcon icon={Pencil} />
-              Edit scene
-            </button>
-            {index > 0 ? (
+            {access.editContent ? (
+              <button
+                className="actionmenu__item"
+                type="button"
+                onClick={() => onEdit(scene)}
+                data-testid="scene-edit"
+              >
+                <ActionIcon icon={Pencil} />
+                Edit scene
+              </button>
+            ) : null}
+            {access.suggestChanges && !access.editContent ? (
+              <button
+                className="actionmenu__item"
+                type="button"
+                onClick={() => onSuggest(scene)}
+                data-testid="scene-suggest"
+              >
+                <ActionIcon icon={FilePenLine} />
+                Suggest changes
+              </button>
+            ) : null}
+            {access.editContent && index > 0 ? (
               <button
                 className="actionmenu__item"
                 type="button"
@@ -139,7 +164,7 @@ export function SceneCard({
                 Move up
               </button>
             ) : null}
-            {index < count - 1 ? (
+            {access.editContent && index < count - 1 ? (
               <button
                 className="actionmenu__item"
                 type="button"
@@ -150,7 +175,7 @@ export function SceneCard({
                 Move down
               </button>
             ) : null}
-            {moveTargets.map((target) => (
+            {(access.editContent ? moveTargets : []).map((target) => (
               <button
                 key={target.chapterId ?? 'unchaptered'}
                 className="actionmenu__item"
@@ -169,16 +194,20 @@ export function SceneCard({
                 </span>
               </button>
             ))}
-            <hr className="actionmenu__divider" />
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
-              onClick={() => onDelete(scene)}
-              data-testid="scene-delete"
-            >
-              <ActionIcon icon={Trash} />
-              Delete scene
-            </button>
+            {access.editContent ? (
+              <>
+                <hr className="actionmenu__divider" />
+                <button
+                  className="actionmenu__item actionmenu__item--danger"
+                  type="button"
+                  onClick={() => onDelete(scene)}
+                  data-testid="scene-delete"
+                >
+                  <ActionIcon icon={Trash} />
+                  Delete scene
+                </button>
+              </>
+            ) : null}
           </ActionMenu>
         ) : null}
       </div>

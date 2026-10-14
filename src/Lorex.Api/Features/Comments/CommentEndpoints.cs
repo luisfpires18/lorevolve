@@ -64,14 +64,14 @@ public static class CommentEndpoints
         Guid universeId, Guid storyId, Guid sceneId, [FromBody] CommentRequest request, ClaimsPrincipal principal, LorexDbContext db, CancellationToken cancellationToken) =>
         StartAsync(db, universeId, principal, request, () => SceneIsLiveAsync(db, universeId, storyId, sceneId, cancellationToken), thread => thread.SceneId = sceneId, cancellationToken);
 
-    private static Task<bool> EntryIsLiveAsync(LorexDbContext db, Guid universeId, Guid entityId, CancellationToken cancellationToken) =>
+    internal static Task<bool> EntryIsLiveAsync(LorexDbContext db, Guid universeId, Guid entityId, CancellationToken cancellationToken) =>
         db.Entities.AnyAsync(entity => entity.Id == entityId && entity.UniverseId == universeId && entity.DeletedAt == null, cancellationToken);
 
-    private static Task<bool> StoryIsLiveAsync(LorexDbContext db, Guid universeId, Guid storyId, CancellationToken cancellationToken) =>
+    internal static Task<bool> StoryIsLiveAsync(LorexDbContext db, Guid universeId, Guid storyId, CancellationToken cancellationToken) =>
         db.Stories.AnyAsync(story => story.Id == storyId && story.UniverseId == universeId && story.DeletedAt == null, cancellationToken);
 
     /// <summary>A live scene of a live story of this universe, reached through the story the address names.</summary>
-    private static Task<bool> SceneIsLiveAsync(LorexDbContext db, Guid universeId, Guid storyId, Guid sceneId, CancellationToken cancellationToken) =>
+    internal static Task<bool> SceneIsLiveAsync(LorexDbContext db, Guid universeId, Guid storyId, Guid sceneId, CancellationToken cancellationToken) =>
         db.Scenes.AnyAsync(
             scene => scene.Id == sceneId
                 && scene.StoryId == storyId

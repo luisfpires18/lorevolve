@@ -1,13 +1,14 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useUniverseAccess } from '../universes/access'
 import { SaveAction } from './SaveAction'
-import { History, Info, LocateFixed, Pencil } from 'lucide-react'
+import { FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EditConflict, LatestText } from './EditConflict'
 import { ManuscriptHistory } from './ManuscriptHistory'
 import { ReviewComments } from './ReviewComments'
+import { describeSceneSuggestion } from '../stories/sceneDraft'
 import { RecoveredDraft } from './RecoveredDraft'
 import { SceneBeats, SceneLore, SceneStamp } from './SceneContext'
 import { useAuth } from '../auth/useAuth'
@@ -19,7 +20,12 @@ import { useLocalDraft } from '../lib/useLocalDraft'
 import { getSceneManuscript, MANUSCRIPT_CHANGED, saveSceneManuscript } from '../stories/api'
 import { sceneWhen } from '../stories/format'
 import type { SceneBeatReference } from '../stories/structure'
-import { MANUSCRIPT_MAX_LENGTH, type Scene, type SceneManuscript } from '../stories/types'
+import {
+  MANUSCRIPT_MAX_LENGTH,
+  type Chapter,
+  type Scene,
+  type SceneManuscript,
+} from '../stories/types'
 import { EmptyState } from './EmptyState'
 
 type LoadState =
@@ -53,6 +59,12 @@ interface ManuscriptEditorProps {
   beats: SceneBeatReference[]
   /** Opens the scene's own form. Its planning is edited there, never here. */
   onEditScene: (scene: Scene) => void
+  /** Opens the scene's form to send a suggestion instead (task 045). */
+  onSuggestScene: (scene: Scene) => void
+  /** The story's chapters, for how a suggested chapter reads. */
+  chapters: Chapter[]
+  /** An accepted suggestion changed the scene: the story is read again. */
+  onSceneChanged: () => void
   /** The prose's publication control (ADR 0039), in the save bar beside Save: where the prose is kept is where it is published. */
   publication?: ReactNode
 }
@@ -87,6 +99,9 @@ export function ManuscriptEditor({
   where,
   beats,
   onEditScene,
+  onSuggestScene,
+  chapters,
+  onSceneChanged,
   publication,
 }: ManuscriptEditorProps) {
   const access = useUniverseAccess()
@@ -341,6 +356,9 @@ export function ManuscriptEditor({
               universeId={universeId}
               subject={{ kind: 'scene', storyId, sceneId: scene.id }}
               subjectName={scene.title}
+              describeSuggestion={describeSceneSuggestion(chapters, chronology)}
+              onSuggestionAccepted={onSceneChanged}
+              onSuggest={() => onSuggestScene(scene)}
             />
             <ActionMenu
               label={`More actions for ${scene.title}`}
@@ -355,6 +373,17 @@ export function ManuscriptEditor({
                 >
                   <ActionIcon icon={Pencil} />
                   Edit scene
+                </button>
+              ) : null}
+              {access.suggestChanges && !access.editContent ? (
+                <button
+                  className="actionmenu__item"
+                  type="button"
+                  onClick={() => onSuggestScene(scene)}
+                  data-testid="manuscript-suggest-scene"
+                >
+                  <ActionIcon icon={FilePenLine} />
+                  Suggest changes
                 </button>
               ) : null}
               <Link

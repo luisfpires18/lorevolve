@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Lorex.Api.Data;
+using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Universes;
@@ -192,7 +193,23 @@ public static class SceneEndpoints
             return denied;
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        return await UpdateCoreAsync(db, universeId, storyId, sceneId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The one write path for an existing scene's form, shared with an accepted suggestion (ADR 0044) so it is validated,
+    /// versioned, moved and saved exactly like an ordinary edit. Access is the caller's to prove first. Runs in the
+    /// caller's transaction when it has one.
+    /// </summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        Guid sceneId,
+        SceneRequest request,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null)
@@ -637,7 +654,7 @@ public static class SceneEndpoints
         Publishing.ContentVisibility ManuscriptVisibility,
         int Version);
 
-    private static async Task<SceneResponse?> LoadSceneAsync(
+    internal static async Task<SceneResponse?> LoadSceneAsync(
         LorexDbContext db,
         Guid universeId,
         Guid storyId,

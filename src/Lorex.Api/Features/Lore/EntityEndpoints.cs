@@ -566,7 +566,7 @@ public static class EntityEndpoints
     /// an author's save with success over lost prose. Checked after ownership, so a stranger still learns nothing, and
     /// never forwarded to the article route - a write that names no <c>updatedAt</c> could overwrite a newer article.
     /// </summary>
-    private static IResult? RefusedLegacyArticle(EntityRequest request) =>
+    internal static IResult? RefusedLegacyArticle(EntityRequest request) =>
         request.CarriesLegacyArticle
             ? Results.ValidationProblem(
                 new Dictionary<string, string[]>
