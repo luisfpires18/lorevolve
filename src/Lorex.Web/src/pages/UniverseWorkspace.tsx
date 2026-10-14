@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { AccountMenu } from '../components/AccountMenu'
 import { BRAND_LINK_LABEL } from '../components/BrandMark'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
+import { UniverseAssistant } from '../components/UniverseAssistant'
 import { UniverseSearch } from '../components/UniverseSearch'
 import { getChronology } from '../chronology/api'
 import type { Chronology } from '../chronology/types'
@@ -326,9 +327,15 @@ export default function UniverseWorkspace() {
 
         {/* The universe's search, above every screen in it rather than on any one of them. Keyed by the universe, so a
             search typed in one world is never left standing in the next. Search was the sidebar's last greyed section;
-            it is not a section, it is how any section's content is reached. */}
+            it is not a section, it is how any section's content is reached. The assistant sits beside it for the same
+            reason, keyed the same way so one world's conversation never follows the author into the next (ADR 0045). */}
         <div className="workspace__top">
           <UniverseSearch key={universe.id} universeId={universe.id} />
+          <UniverseAssistant
+            key={universe.id}
+            universeId={universe.id}
+            universeName={universe.name}
+          />
         </div>
 
         <main className="canvas" id={MAIN_CONTENT_ID} tabIndex={-1}>

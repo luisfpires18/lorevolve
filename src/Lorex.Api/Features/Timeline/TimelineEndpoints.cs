@@ -493,7 +493,7 @@ public static class TimelineEndpoints
             .ThenBy(entry => entry.Title)
             .ThenBy(entry => entry.Id);
 
-    private static async Task<TimelineEntryResponse?> LoadAsync(
+    internal static async Task<TimelineEntryResponse?> LoadAsync(
         LorexDbContext db,
         Guid universeId,
         Guid entryId,

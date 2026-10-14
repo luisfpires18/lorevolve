@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Lorex.Api.Features.Assistant;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Comments;
 using Lorex.Api.Features.Lore;
@@ -154,6 +155,8 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("dismiss finding", Post, $"{u}/canon-conflicts/{any}/dismiss", May.Edit),
             new("reopen finding", Post, $"{u}/canon-conflicts/{any}/reopen", May.Edit),
             new("search", Get, $"{u}/search?q=Ember", May.Read),
+            new("assistant status", Get, $"{u}/assistant", May.Read),
+            new("ask assistant", Post, $"{u}/assistant", May.Read, Json(new AssistantRequest("Who is Ember Vale?", null))),
 
             // ---------- Stories ----------
             new("stories", Get, $"{u}/stories", May.Read),

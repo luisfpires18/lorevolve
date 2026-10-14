@@ -448,7 +448,7 @@ public static class RelationshipEndpoints
     /// the entity is the target comes back under the inverse wording, so a client never has
     /// to work out the reverse reading itself.
     /// </summary>
-    private static async Task<List<RelationshipView>> LoadForEntityAsync(
+    internal static async Task<List<RelationshipView>> LoadForEntityAsync(
         LorexDbContext db,
         Guid universeId,
         Guid entityId,

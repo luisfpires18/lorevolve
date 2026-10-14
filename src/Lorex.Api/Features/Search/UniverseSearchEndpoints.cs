@@ -67,12 +67,30 @@ public static class UniverseSearchEndpoints
             return denied;
         }
 
+        return Results.Ok(await RunAsync(db, universeId, q, ownerId, cancellationToken));
+    }
+
+    /// <summary>
+    /// The search itself, beneath the bar's route: the one implementation of what searching a universe means, shared by the
+    /// bar and by anything else that reads the universe the same way (the assistant, ADR 0045). The caller has already
+    /// proved the universe may be read; this names it in every query.
+    ///
+    /// <paramref name="ideasOwnerId"/> is the account whose ideas assigned to this universe are searched too, as the bar
+    /// does for the signed-in author. Null searches no ideas at all: the idea query is not run.
+    /// </summary>
+    internal static async Task<UniverseSearchResponse> RunAsync(
+        LorexDbContext db,
+        Guid universeId,
+        string? q,
+        string? ideasOwnerId,
+        CancellationToken cancellationToken)
+    {
         // Nothing typed, or nothing with a letter or a digit in it: there is no word to look for, so nothing is found. The
         // same expression the lore search builds, so both searches read input the same way.
         var expression = EntitySearchIndex.BuildMatchExpression(q);
         if (expression is null)
         {
-            return Results.Ok(new UniverseSearchResponse([], false));
+            return new UniverseSearchResponse([], false);
         }
 
         var found = new List<Found>();
@@ -80,7 +98,11 @@ public static class UniverseSearchEndpoints
         await AddEntitiesAsync(db, universeId, expression, found, cancellationToken);
         await AddStoryContentAsync(db, universeId, expression, found, cancellationToken);
         await AddManuscriptsAsync(db, universeId, expression, found, cancellationToken);
-        await AddIdeasAsync(db, ownerId, universeId, expression, found, cancellationToken);
+        if (ideasOwnerId is not null)
+        {
+            await AddIdeasAsync(db, ideasOwnerId, universeId, expression, found, cancellationToken);
+        }
+
         await AddWorldRulesAsync(db, universeId, expression, found, cancellationToken);
 
         // Each kind read one row past its limit: that row is not shown, it only says the kind holds more.
@@ -98,7 +120,7 @@ public static class UniverseSearchEndpoints
                 .Select(one => one.Result),
         ];
 
-        return Results.Ok(new UniverseSearchResponse(results, hasMore));
+        return new UniverseSearchResponse(results, hasMore);
     }
 
     // ---------- Lore ----------
