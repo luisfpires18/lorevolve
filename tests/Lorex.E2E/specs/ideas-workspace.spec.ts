@@ -175,6 +175,9 @@ test.describe('ideas workspace', () => {
         return ((await saved.json()) as { body: string }).body
       })
       .toBe('Nobody below has seen its underside.')
+    // The page has to know it too: Back while its own save is still in flight is asked about, and the question is
+    // dismissed, so the editor would stay where it is.
+    await expect(page.getByTestId('idea-status')).toHaveText('Saved')
 
     await page.goBack()
     await page.waitForURL('/app/ideas')
