@@ -754,15 +754,17 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
                 </button>
               ) : null}
               {/* Offered on an entry whose type the author enabled for Family Tree, and on any entry
-                  already holding a family link - never decided by what the type is called (ADR 0040). */}
+                  already holding a family link - never decided by what the type is called (ADR 0040).
+                  Its icon alone on a phone, still named, so the tools keep to one line. */}
               {offersFamilyTree ? (
                 <Link
                   className="button button--text"
                   to={`/app/universes/${universe.id}/family-tree/${entityId}`}
+                  title="Family tree"
                   data-testid="entity-family-tree"
                 >
                   <ActionIcon icon={Network} />
-                  Family tree
+                  <span className="entry__toollabel">Family tree</span>
                 </Link>
               ) : null}
               {access.manageTrash ? (
