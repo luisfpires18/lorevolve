@@ -8,6 +8,8 @@ using Lorex.Api.Features.Universes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
+using static Lorex.Api.Tests.VersionTestClient;
+
 namespace Lorex.Api.Tests;
 
 /// <summary>
@@ -171,7 +173,7 @@ public sealed class EntitySearchTests(LorexApiFactory factory) : IClassFixture<L
 
         var entity = await CreateEntity(
             client, universe.Id, type.Id, "Aldric Vane", summary: "Sworn to the old queen.");
-        (await client.PutAsJsonAsync(
+        (await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{entity.Id}",
             new EntityRequest(
                 entity.EntityTypeId, entity.Name, "Exiled to the salt marshes.", entity.CanonStatus, entity.Aliases, entity.Tags, null)))
@@ -181,8 +183,7 @@ public sealed class EntitySearchTests(LorexApiFactory factory) : IClassFixture<L
             $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions");
         var first = history!.Single(revision => revision.Number == 1);
 
-        var restore = await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{first.Id}/restore", null);
+        var restore = await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id);
         restore.EnsureSuccessStatusCode();
 
         Assert.Equal(["Aldric Vane"], await SearchNames(client, universe.Id, "sworn"));
@@ -526,7 +527,7 @@ public sealed class EntitySearchTests(LorexApiFactory factory) : IClassFixture<L
         Assert.Equal(["marshes"], exiled.ArticleExcerpt!.Where(part => part.IsMatch).Select(part => part.Text));
 
         var first = (await ArticleTestClient.ArticleRevisions(client, universe.Id, entity.Id)).Last();
-        (await ArticleTestClient.RestoreArticle(client, universe.Id, entity.Id, first.Id, rewritten.UpdatedAt))
+        (await ArticleTestClient.RestoreArticle(client, universe.Id, entity.Id, first.Id, rewritten.Version))
             .EnsureSuccessStatusCode();
 
         Assert.Empty(await SearchNames(client, universe.Id, "marshes"));
@@ -754,7 +755,7 @@ public sealed class EntitySearchTests(LorexApiFactory factory) : IClassFixture<L
             return entity;
         }
 
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PutVersionedAsync(
             $"/api/universes/{universeId}/entities/{entity.Id}",
             new EntityRequest(
                 entity.EntityTypeId,

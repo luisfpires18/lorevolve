@@ -20,10 +20,10 @@ namespace Lorex.Api.Features.Stories;
 /// manuscript write passes no Canon gate and reconciles nothing: "The king died before sunrise" gives nobody a death year
 /// (ADR 0027).
 ///
-/// <b>No silent overwrite.</b> A save names the <c>updatedAt</c> it was written over. When the stored manuscript has moved
-/// on since - saved from another tab or device - the save is refused and nothing is written. This is a comparison inside
-/// the write's own transaction, not an editing session: Lorex has one author, and the check exists only so that author's
-/// two windows cannot quietly lose each other's prose. Putting a saved version back is the same write, refused the same way.
+/// <b>No silent overwrite.</b> A save names the manuscript's <c>version</c> it was written over. When the stored manuscript
+/// has moved on since - saved by a collaborator, or from another tab or device - the save is refused and nothing is written.
+/// This is a comparison inside the write's own transaction, not an editing session: no lock, no presence, no merge (ADR
+/// 0043). Putting a saved version back is the same write, refused the same way.
 ///
 /// <b>Saved versions.</b> Every save that changes the prose records the whole text as the manuscript's next version; a save
 /// that changes nothing records nothing. Putting one back records it again as the newest, naming where it came from, and
@@ -72,12 +72,12 @@ public static class SceneManuscriptEndpoints
 
         var stored = await db.SceneManuscripts.AsNoTracking()
             .Where(manuscript => manuscript.SceneId == sceneId)
-            .Select(manuscript => new { manuscript.Content, manuscript.UpdatedAt })
+            .Select(manuscript => new { manuscript.Content, manuscript.UpdatedAt, manuscript.Version })
             .FirstOrDefaultAsync(cancellationToken);
 
         return Results.Ok(stored is null
-            ? new SceneManuscriptResponse(sceneId, string.Empty, null)
-            : new SceneManuscriptResponse(sceneId, stored.Content, Utc(stored.UpdatedAt)));
+            ? new SceneManuscriptResponse(sceneId, string.Empty, null, 0)
+            : new SceneManuscriptResponse(sceneId, stored.Content, Utc(stored.UpdatedAt), stored.Version));
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public static class SceneManuscriptEndpoints
             story,
             sceneId,
             request.Content!,
-            request.ExpectedUpdatedAt,
+            request.ExpectedVersion,
             SceneManuscriptRevisionKind.Edited,
             null,
             principal.RequireUserId(),
@@ -229,7 +229,7 @@ public static class SceneManuscriptEndpoints
         }
 
         // What is put back is held to what a save may store today, so a restore cannot write what a save would refuse.
-        if (StoryValidation.ValidateManuscript(new SceneManuscriptRequest(revision.Content, request.ExpectedUpdatedAt))
+        if (StoryValidation.ValidateManuscript(new SceneManuscriptRequest(revision.Content, request.ExpectedVersion))
             is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -240,7 +240,7 @@ public static class SceneManuscriptEndpoints
             story,
             sceneId,
             revision.Content,
-            request.ExpectedUpdatedAt,
+            request.ExpectedVersion,
             SceneManuscriptRevisionKind.Restored,
             revision.Id,
             principal.RequireUserId(),
@@ -260,7 +260,7 @@ public static class SceneManuscriptEndpoints
         Story story,
         Guid sceneId,
         string content,
-        DateTime? expectedUpdatedAt,
+        int? expectedVersion,
         SceneManuscriptRevisionKind kind,
         Guid? restoredFromRevisionId,
         string actorUserId,
@@ -270,9 +270,17 @@ public static class SceneManuscriptEndpoints
             candidate => candidate.SceneId == sceneId,
             cancellationToken);
 
-        if (!SameMoment(manuscript?.UpdatedAt, expectedUpdatedAt))
+        // No prose yet is version 0, so the first save names 0 and creates version 1.
+        var version = manuscript?.Version ?? 0;
+
+        if (!EditVersion.Matches(version, expectedVersion))
         {
-            return Changed(manuscript?.UpdatedAt);
+            return EditVersion.Changed(
+                ChangedCode,
+                "Manuscript changed",
+                "This scene's manuscript was saved somewhere else after it was opened here. Nothing was overwritten.",
+                version,
+                new Dictionary<string, object?> { ["updatedAt"] = manuscript is null ? null : Utc(manuscript.UpdatedAt) });
         }
 
         if (string.Equals(manuscript?.Content ?? string.Empty, content, StringComparison.Ordinal))
@@ -280,19 +288,21 @@ public static class SceneManuscriptEndpoints
             return Results.Ok(new SceneManuscriptResponse(
                 sceneId,
                 content,
-                manuscript is null ? null : Utc(manuscript.UpdatedAt)));
+                manuscript is null ? null : Utc(manuscript.UpdatedAt),
+                version));
         }
 
         var now = DateTime.UtcNow;
 
         if (manuscript is null)
         {
-            db.SceneManuscripts.Add(new SceneManuscript { SceneId = sceneId, Content = content, UpdatedAt = now });
+            db.SceneManuscripts.Add(new SceneManuscript { SceneId = sceneId, Content = content, UpdatedAt = now, Version = 1 });
         }
         else
         {
             manuscript.Content = content;
             manuscript.UpdatedAt = now;
+            manuscript.Version = version + 1;
         }
 
         var lastNumber = await db.SceneManuscriptRevisions
@@ -315,7 +325,7 @@ public static class SceneManuscriptEndpoints
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return Results.Ok(new SceneManuscriptResponse(sceneId, content, now));
+        return Results.Ok(new SceneManuscriptResponse(sceneId, content, now, version + 1));
     }
 
     /// <summary>A live scene of this story. The caller has already proved the story is the caller's and live.</summary>
@@ -343,38 +353,11 @@ public static class SceneManuscriptEndpoints
                     && revision.Scene.DeletedAt == null,
                 cancellationToken);
 
-    /// <summary>
-    /// Whether a save names the manuscript as it is stored: both "nothing saved yet", or the same instant. Compared as UTC
-    /// ticks, because SQLite hands a stored moment back with no kind and JSON may carry it with or without a zone.
-    /// </summary>
-    private static bool SameMoment(DateTime? stored, DateTime? expected) =>
-        (stored, expected) switch
-        {
-            (null, null) => true,
-            ({ } a, { } b) => Utc(a).Ticks == Utc(b).Ticks,
-            _ => false,
-        };
-
-    /// <summary>Stored as UTC; written out with its zone, so a client can send back exactly what it was given.</summary>
+    /// <summary>Stored as UTC; written out with its zone.</summary>
     private static DateTime Utc(DateTime value) => value.Kind switch
     {
         DateTimeKind.Utc => value,
         DateTimeKind.Local => value.ToUniversalTime(),
         _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
     };
-
-    /// <summary>
-    /// The refusal for a stale save. Carries the stored <c>updatedAt</c>, so a client whose author has seen the warning and
-    /// still means to keep their own text can name it and save again - a decision made by a person, never by a retry.
-    /// </summary>
-    private static IResult Changed(DateTime? current) =>
-        Results.Problem(
-            title: "Manuscript changed",
-            detail: "This scene's manuscript was saved somewhere else after it was opened here. Nothing was overwritten.",
-            statusCode: StatusCodes.Status409Conflict,
-            extensions: new Dictionary<string, object?>
-            {
-                ["code"] = ChangedCode,
-                ["updatedAt"] = current is { } moment ? Utc(moment) : null,
-            });
 }

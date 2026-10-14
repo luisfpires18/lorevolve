@@ -50,6 +50,23 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   next numbered phase resumes only when the owner says so.
 - **Design refactor 001-007 done and merged** (007 at `cc798c1`, merged into `dev` at `a87b7da`; Deploy DEV #47 green).
   The contract is now an as-built reference. See Design refactor below.
+- **Roadmap task 044 - concurrent edit protection** (`feat/concurrent-edit-protection` off `dev` at `5cfb34f`; committed, not
+  merged, not pushed). One migration (`AddContentEditVersions`), backup stays **22**. ADR 0043 (new); 0027, 0028 amendments.
+  - Server-owned integer `Version` on `Entities`, `EntityArticles`, `Stories`, `Scenes`, `SceneManuscripts` (existing rows 1;
+    no article/manuscript row = 0). Reads carry `version`; entry/story/scene `PUT`, article/manuscript `PUT` and entry,
+    article, manuscript history restores send `expectedVersion` (replaces `expectedUpdatedAt`). Wrong or missing = 409
+    `entity_changed` / `entity_article_changed` / `story_changed` / `scene_changed` / `scene_manuscript_changed` +
+    `currentVersion`, nothing written, only after the access gate and the live lookup.
+  - Advanced once per write that changes what the form edits; unchanged saves keep it. Scene: also a move to another chapter,
+    a chapter sent to the Trash, a Trash restore without its chapter. Entry: not picture, article, relationships, Trash.
+  - UI: `EditConflict` keeps unsaved work, reviews the latest on request (fields "Saved now"/"Yours", or whole text), then
+    Keep my changes (save again yourself) or Use the latest version (asked). "Save mine over it" is gone. One-click status
+    and entry history restore read again and say so.
+  - Not covered (ADR 0043): world rules, ideas, calendar keep their `updatedAt` checks; moments, relationships, chapters,
+    plot, types have none.
+  - Tests: API 1449 -> 1462 (`ConcurrentEditTests` 12, `ContentEditVersionMigrationTests` 1; ~70 call sites now name a
+    version via `VersionTestClient`). Playwright `concurrent-editing.spec.ts` 2; focused + neighbours on a fresh DB, two
+    workers: 126/126. Full suite not run locally; delegated to GitHub Actions.
 - **043.5 - PWA branding and launch** (interstitial, not a roadmap number; `feat/pwa-branded-launch` off `dev` at
   `0959b0b`; committed, not merged, not pushed). No backend, schema or backup change. ADR 0017 amendment.
   - New owner mark is `assets/brand/lorex-icon.png`; every icon, favicon and the in-app `brand-mark.png` re-rendered.
@@ -1473,7 +1490,7 @@ tool has changed the picture.
   revisiting if that ever stops being true. ADR 0019.
 - **Collaboration, after 030** (ADR 0041) - not gaps: outbound email delivery of invitations (the link and model are
   ready for it), notifications, suggestions (045), comment mentions/editing/anchors (comments done in 043),
-  trashed/restored-by and an activity feed (version authors done in 042), concurrent-edit protection, ownership transfer, public
+  trashed/restored-by and an activity feed (version authors done in 042), version checks for moments, relationships, chapters and plot (044 covers entries, articles, stories, scenes, manuscripts), ownership transfer, public
   collaborator credit; a collaborator's idea pointing into a shared universe; the public page's workspace link for
   members. An Editor restoring a previously public item from the Trash brings back the owner's selection as it was.
 - **Permanent deletion.** Deferred by Phase 019, so nothing removes an entry - or, since content recovery, a story,

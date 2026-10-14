@@ -134,14 +134,14 @@ function articlePath(universeId: string, entityId: string) {
 async function readArticle(page: Page, universeId: string, entityId: string) {
   const response = await page.request.get(articlePath(universeId, entityId))
   expect(response.status()).toBe(200)
-  return (await response.json()) as { content: string; updatedAt: string | null }
+  return (await response.json()) as { content: string; updatedAt: string | null; version: number }
 }
 
 /** Saves an article straight through the API, as another window or device would, over whatever is stored now. */
 async function writeArticle(page: Page, universeId: string, entityId: string, content: string) {
   const current = await readArticle(page, universeId, entityId)
   const saved = await page.request.put(articlePath(universeId, entityId), {
-    data: { content, expectedUpdatedAt: current.updatedAt },
+    data: { content, expectedVersion: current.version },
   })
   expect(saved.status()).toBe(200)
 }
@@ -153,7 +153,7 @@ function manuscriptPath(universeId: string, storyId: string, sceneId: string) {
 async function readManuscript(page: Page, universeId: string, storyId: string, sceneId: string) {
   const response = await page.request.get(manuscriptPath(universeId, storyId, sceneId))
   expect(response.status()).toBe(200)
-  return (await response.json()) as { content: string; updatedAt: string | null }
+  return (await response.json()) as { content: string; updatedAt: string | null; version: number }
 }
 
 /** Saves prose straight through the API, as another window or device would, over whatever is stored now. */
@@ -166,7 +166,7 @@ async function writeManuscript(
 ) {
   const current = await readManuscript(page, universeId, storyId, sceneId)
   const saved = await page.request.put(manuscriptPath(universeId, storyId, sceneId), {
-    data: { content, expectedUpdatedAt: current.updatedAt },
+    data: { content, expectedVersion: current.version },
   })
   expect(saved.status()).toBe(200)
 }
@@ -392,8 +392,9 @@ test.describe('content recovery', () => {
     await writeArticle(tab, universeId, entityId, doc('Third.'))
     await tab.getByTestId('article-save').click()
     await expect(tab.getByTestId('article-conflict')).toBeVisible()
+    await tab.getByTestId('article-conflict-review').click()
     tab.once('dialog', (dialog) => void dialog.accept())
-    await tab.getByTestId('article-load-saved').click()
+    await tab.getByTestId('article-conflict-use-latest').click()
     await expect(tab.getByTestId('lore-editor')).toHaveText('Third.')
     await expect.poll(async () => (await recoveryCopies(tab)).length).toBe(0)
 

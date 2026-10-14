@@ -69,7 +69,7 @@ internal static class FamilyTreeTestClient
             new EntityRequest(entityTypeId ?? family.Character, name, summary, canonStatus, null, null, null))).Id;
 
     public static async Task SetCanonStatus(Family family, Guid entityId, string name, CanonStatus canonStatus) =>
-        (await family.Client.PutAsJsonAsync(
+        (await family.Client.PutVersionedAsync(
             $"/api/universes/{family.Universe}/entities/{entityId}",
             new EntityRequest(family.Character, name, null, canonStatus, null, null, null))).EnsureSuccessStatusCode();
 

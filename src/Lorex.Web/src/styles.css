@@ -2367,6 +2367,7 @@ a.button--danger:visited {
 .recovery,
 .chron__caution,
 .manuscript__conflict,
+.editconflict,
 .idea__elsewhere {
   padding: var(--space-3) var(--space-4);
   border: 1px solid color-mix(in srgb, var(--callout-tone, var(--danger)) 35%, var(--rule));
@@ -6120,6 +6121,92 @@ html:has(.viewer[open]) {
   flex-wrap: wrap;
   gap: 0.6rem;
   margin-top: 0.7rem;
+}
+
+/* Saved somewhere else while being edited (ADR 0043): the notice, then the latest version on request. Stacked at every
+   width, so a phone reads the comparison as easily as a desk. */
+.editconflict {
+  --callout-tone: var(--warning);
+  max-width: 62ch;
+  margin: 0 0 var(--space-4);
+}
+
+.editconflict__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.editconflict__text,
+.editconflict__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.925rem;
+}
+
+.editconflict__hint {
+  color: var(--muted);
+}
+
+.editconflict__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+}
+
+.editconflict__review {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+}
+
+.editconflict__heading {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.editconflict__latesttext {
+  max-height: 18rem;
+  overflow: auto;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.changelist {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.changelist__row {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+
+.changelist__label {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.changelist__value {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.changelist__side {
+  color: var(--muted);
+  font-size: var(--text-sm);
 }
 
 /* The writing surface gives a phone most of its height rather than a fixed strip. */

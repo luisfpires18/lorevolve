@@ -834,7 +834,7 @@ public sealed class CanonPromotionGateTests(LorexApiFactory factory) : IClassFix
 
         var intruder = await SignedInClient("user-gateintruder");
 
-        var edit = await intruder.PutAsJsonAsync(
+        var edit = await intruder.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{character.Id}",
             new EntityRequest(
                 character.EntityTypeId, "Renamed", null, CanonStatus.Canon, null, null,
@@ -945,7 +945,7 @@ public sealed class CanonPromotionGateTests(LorexApiFactory factory) : IClassFix
         Guid universeId,
         EntityDetail entity,
         IReadOnlyList<FieldValueInput> fields) =>
-        client.PutAsJsonAsync(
+        client.PutVersionedAsync(
             $"/api/universes/{universeId}/entities/{entity.Id}",
             new EntityRequest(
                 entity.EntityTypeId,

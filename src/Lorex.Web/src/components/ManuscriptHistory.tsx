@@ -26,7 +26,7 @@ interface ManuscriptHistoryProps {
   reloadKey: number
 
   /** The manuscript as it is saved - what a restore names as the version it is written over. */
-  current: { content: string; updatedAt: string | null }
+  current: { content: string; updatedAt: string | null; version: number }
 
   /** Why no version can be put back right now, if none can: unsaved writing, or a recovered draft still to decide. */
   blocked: string | null
@@ -135,7 +135,7 @@ export function ManuscriptHistory({
         storyId,
         sceneId,
         revision.id,
-        current.updatedAt,
+        current.version,
       )
       setViewing(null)
       onRestored(restored)

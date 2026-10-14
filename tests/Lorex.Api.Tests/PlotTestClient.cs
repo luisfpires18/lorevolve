@@ -125,7 +125,10 @@ internal static class PlotTestClient
 
     public static async Task<T> PutJson<T>(HttpClient client, string path, object body)
     {
-        var response = await client.PutAsJsonAsync(path, body);
+        // An entry, story or scene save names the version it was written over (ADR 0043), as its editor would.
+        var response = body is Lorex.Api.Features.Lore.EntityRequest or StoryRequest or SceneRequest
+            ? await client.PutVersionedAsync(path, body)
+            : await client.PutAsJsonAsync(path, body);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<T>())!;
     }

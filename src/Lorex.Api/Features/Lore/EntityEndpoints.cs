@@ -40,6 +40,9 @@ public static class EntityEndpoints
     /// </summary>
     public const string ArticleMovedCode = "entity_article_moved";
 
+    /// <summary>The machine-readable marker on the 409 for an entry save written over a version that is no longer current.</summary>
+    public const string ChangedCode = "entity_changed";
+
     /// <summary>
     /// The one grid-card projection, shared because the listing now has two orderings and only
     /// one shape: browsing reads it straight off the entity, searching reads it off the entity
@@ -606,6 +609,17 @@ public static class EntityEndpoints
             return Results.NotFound();
         }
 
+        // Read inside the transaction the write commits in - the gate's, or the restore's under it - so nothing can land
+        // between this comparison and the write.
+        if (!EditVersion.Matches(entity.Version, request.ExpectedVersion))
+        {
+            return EditVersion.Changed(
+                ChangedCode,
+                "Entry changed",
+                "This entry was changed after it was opened here. Nothing was overwritten.",
+                entity.Version);
+        }
+
         if (LoreValidation.ValidateEntity(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -661,7 +675,13 @@ public static class EntityEndpoints
         // Before the commit, and inside the gate's transaction when there is one: the edit and
         // the version it produced land together or neither does. A write that changed nothing
         // records nothing.
-        await EntityRevisions.CaptureAsync(db, entity.Id, kind, restoredFromRevisionId, actorUserId, cancellationToken);
+        // A write that changed the entry - the same judgement its history makes - moves its version on, exactly once; an
+        // unchanged save leaves every other open form current.
+        if (await EntityRevisions.CaptureAsync(db, entity.Id, kind, restoredFromRevisionId, actorUserId, cancellationToken))
+        {
+            entity.Version++;
+            await db.SaveChangesAsync(cancellationToken);
+        }
 
         await transaction.CommitAsync(cancellationToken);
 
@@ -1288,6 +1308,7 @@ public static class EntityEndpoints
                                 candidate.Image.CropHeight!.Value)),
                 candidate.CreatedAt,
                 candidate.UpdatedAt,
+                candidate.Version,
                 // Whatever its type, an entry that already holds a live family link keeps its way into the Family Tree (ADR 0040).
                 HasFamilyConnections = db.Relationships.Any(relationship =>
                     relationship.UniverseId == universeId
@@ -1340,6 +1361,7 @@ public static class EntityEndpoints
             entity.Image,
             entity.CreatedAt,
             entity.UpdatedAt,
-            entity.HasFamilyConnections);
+            entity.HasFamilyConnections,
+            entity.Version);
     }
 }

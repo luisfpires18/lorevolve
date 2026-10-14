@@ -74,8 +74,8 @@ public sealed class CommentTests(LorexApiFactory factory) : IClassFixture<LorexA
 
         // And gains nothing else: no edit, no history, no Trash, no publishing, no collaborators.
         var scene = ManuscriptTestClient.Manuscript(w.U, w.Story, w.Scene);
-        await AssertDenied(await w.Reviewer.PutAsJsonAsync($"{u}/entities/{w.Entry}", new EntityRequest(w.CharacterType, "Taken", null, CanonStatus.Canon, null, null, null)), "entry edit");
-        await AssertDenied(await w.Reviewer.PutAsJsonAsync(Story(w.U, w.Story), new StoryRequest("Taken", null, StoryStatus.Drafting)), "story edit");
+        await AssertDenied(await w.Reviewer.PutVersionedAsync($"{u}/entities/{w.Entry}", new EntityRequest(w.CharacterType, "Taken", null, CanonStatus.Canon, null, null, null)), "entry edit");
+        await AssertDenied(await w.Reviewer.PutVersionedAsync(Story(w.U, w.Story), new StoryRequest("Taken", null, StoryStatus.Drafting)), "story edit");
         await AssertDenied(await w.Reviewer.PutAsJsonAsync(scene, new SceneManuscriptRequest("Taken.", null)), "manuscript save");
         await AssertDenied(await w.Reviewer.GetAsync($"{u}/entities/{w.Entry}/revisions"), "history");
         await AssertDenied(await w.Reviewer.DeleteAsync($"{u}/entities/{w.Entry}"), "trash");

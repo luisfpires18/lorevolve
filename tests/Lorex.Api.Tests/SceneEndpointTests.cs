@@ -155,7 +155,7 @@ public sealed class SceneEndpointTests(LorexApiFactory factory) : IClassFixture<
         var a = await Create(client, universe.Id, story.Id, Scene("A"));
         await Create(client, universe.Id, story.Id, Scene("B"));
 
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PutVersionedAsync(
             Scene(universe.Id, story.Id, a.Id),
             new SceneRequest("A, rewritten", "What happens.", "Planning notes.", null, At(900), null));
         response.EnsureSuccessStatusCode();
@@ -284,7 +284,7 @@ public sealed class SceneEndpointTests(LorexApiFactory factory) : IClassFixture<
         Assert.Equal(["Arlen", "Council of Nine", "White Tower"], scene.Entities.Select(entity => entity.Name));
 
         // Renaming the entry renames it in the scene: nothing was copied.
-        var renamed = await client.PutAsJsonAsync(
+        var renamed = await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{arlen.Id}",
             new EntityRequest(arlen.EntityTypeId, "Arlen the Grey", null, CanonStatus.Canon, null, null, null));
         renamed.EnsureSuccessStatusCode();
@@ -348,7 +348,7 @@ public sealed class SceneEndpointTests(LorexApiFactory factory) : IClassFixture<
 
         var scene = await Create(client, universe.Id, story.Id, Scene("Kept", pov: mine.Id, entities: [mine.Id]));
         await AssertRefused(
-            await client.PutAsJsonAsync(Scene(universe.Id, story.Id, scene.Id), Scene("Kept", pov: elsewhere.Id)),
+            await client.PutVersionedAsync(Scene(universe.Id, story.Id, scene.Id), Scene("Kept", pov: elsewhere.Id)),
             "povEntityId");
 
         var read = (await Detail(client, universe.Id, story.Id)).Scenes.Single();
@@ -411,10 +411,10 @@ public sealed class SceneEndpointTests(LorexApiFactory factory) : IClassFixture<
         await AssertRefused(await Post(client, universe.Id, story.Id, Scene("New", pov: arlen.Id)), "povEntityId");
         await AssertRefused(await Post(client, universe.Id, story.Id, Scene("New", entities: [arlen.Id])), "entityIds");
         await AssertRefused(
-            await client.PutAsJsonAsync(Scene(universe.Id, story.Id, scene.Id), Scene("Held", pov: arlen.Id, entities: [tower.Id])),
+            await client.PutVersionedAsync(Scene(universe.Id, story.Id, scene.Id), Scene("Held", pov: arlen.Id, entities: [tower.Id])),
             "povEntityId");
         await AssertRefused(
-            await client.PutAsJsonAsync(Scene(universe.Id, story.Id, scene.Id), Scene("Held", pov: tower.Id, entities: [tower.Id, arlen.Id])),
+            await client.PutVersionedAsync(Scene(universe.Id, story.Id, scene.Id), Scene("Held", pov: tower.Id, entities: [tower.Id, arlen.Id])),
             "entityIds");
 
         Assert.Equal(["Held"], await Titles(client, universe.Id, story.Id));
@@ -482,7 +482,7 @@ public sealed class SceneEndpointTests(LorexApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Scene(universe.Id, other.Id, scene.Id))).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await client.PutAsJsonAsync(Scene(universe.Id, other.Id, scene.Id), Scene("Moved"))).StatusCode);
+            (await client.PutVersionedAsync(Scene(universe.Id, other.Id, scene.Id), Scene("Moved"))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync(Scene(universe.Id, other.Id, scene.Id))).StatusCode);
 
         Assert.Equal(["Belongs here"], await Titles(client, universe.Id, story.Id));
@@ -503,7 +503,7 @@ public sealed class SceneEndpointTests(LorexApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.NotFound, (await Post(stranger, universe.Id, story.Id, Scene("Intruder"))).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await stranger.PutAsJsonAsync(Scene(universe.Id, story.Id, a.Id), Scene("Mine now"))).StatusCode);
+            (await stranger.PutVersionedAsync(Scene(universe.Id, story.Id, a.Id), Scene("Mine now"))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await Reorder(stranger, universe.Id, story.Id, b.Id, a.Id)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.DeleteAsync(Scene(universe.Id, story.Id, a.Id))).StatusCode);
 
@@ -539,7 +539,7 @@ public sealed class SceneEndpointTests(LorexApiFactory factory) : IClassFixture<
 
     private static async Task<SceneResponse> Update(HttpClient client, Guid universeId, Guid storyId, Guid sceneId, SceneRequest request)
     {
-        var response = await client.PutAsJsonAsync(Scene(universeId, storyId, sceneId), request);
+        var response = await client.PutVersionedAsync(Scene(universeId, storyId, sceneId), request);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<SceneResponse>())!;
     }

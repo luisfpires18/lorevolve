@@ -90,6 +90,8 @@ export interface Scene {
   visibility: VisibilityValue
   /** Whether the author selected the scene's prose for the story's public page, under its title. */
   manuscriptVisibility: VisibilityValue
+  /** What the scene form's save names as the version it was written over (ADR 0043). */
+  version: number
 }
 
 /**
@@ -105,12 +107,16 @@ export interface StoryDetail {
   scenes: Scene[]
   createdAt: string
   updatedAt: string
+  /** What the story form's save names as the version it was written over (ADR 0043). */
+  version: number
 }
 
 export interface StoryInput {
   title: string
   premise: string | null
   status: StoryStatusValue
+  /** The story's version an edit was written over; left out on create. */
+  expectedVersion?: number
 }
 
 /**
@@ -126,6 +132,8 @@ export interface SceneInput {
   chronology: ChronologyValue | null
   entityIds: string[]
   chapterId: string | null
+  /** The scene's version an edit was written over; left out on create. */
+  expectedVersion?: number
 }
 
 /**
@@ -143,15 +151,17 @@ export interface SceneManuscript {
   sceneId: string
   content: string
   updatedAt: string | null
+  /** What the next save names: 0 until the first save, then advanced by every save that changes the prose. */
+  version: number
 }
 
 /**
- * One save of a scene's prose: the whole text, and the `updatedAt` it was written over - exactly as the API gave it,
- * never parsed - so a save over prose that changed somewhere else is refused rather than silently winning.
+ * One save of a scene's prose: the whole text, and the `version` it was written over, so a save over prose that changed
+ * somewhere else is refused rather than silently winning (ADR 0043).
  */
 export interface SceneManuscriptInput {
   content: string
-  expectedUpdatedAt: string | null
+  expectedVersion: number
 }
 
 /** Mirrors the backend enum. What a saved version of a manuscript was. */

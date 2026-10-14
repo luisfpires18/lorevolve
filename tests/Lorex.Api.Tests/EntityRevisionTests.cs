@@ -6,6 +6,8 @@ using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Timeline;
 using Lorex.Api.Features.Universes;
 
+using static Lorex.Api.Tests.VersionTestClient;
+
 namespace Lorex.Api.Tests;
 
 /// <summary>
@@ -304,9 +306,7 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
         var revisionId = (await Revisions(owner, universe.Id, entity.Id))[0].Id;
         var one = await intruder.GetAsync(
             $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{revisionId}");
-        var restore = await intruder.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{revisionId}/restore",
-            content: null);
+        var restore = await intruder.PostAsJsonAsync($"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{revisionId}/restore", new EntityRevisionRestoreRequest(1));
 
         Assert.Equal(HttpStatusCode.NotFound, list.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, one.StatusCode);
@@ -346,9 +346,7 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
         });
 
         var first = (await Revisions(client, universe.Id, entity.Id)).Single(r => r.Number == 1);
-        var response = await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{first.Id}/restore",
-            content: null);
+        var response = await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id);
         response.EnsureSuccessStatusCode();
 
         var restored = (await response.Content.ReadFromJsonAsync<EntityDetail>())!;
@@ -377,9 +375,7 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
         var before = await Revisions(client, universe.Id, entity.Id);
         var first = before.Single(revision => revision.Number == 1);
 
-        var response = await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{first.Id}/restore",
-            content: null);
+        var response = await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id);
         response.EnsureSuccessStatusCode();
 
         var after = await Revisions(client, universe.Id, entity.Id);
@@ -397,9 +393,7 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
         var entity = await CreateEntity(client, universe.Id, "Galdor");
         var first = (await Revisions(client, universe.Id, entity.Id))[0];
 
-        var response = await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{first.Id}/restore",
-            content: null);
+        var response = await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id);
         response.EnsureSuccessStatusCode();
 
         Assert.Single(await Revisions(client, universe.Id, entity.Id));
@@ -432,9 +426,7 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
         moment.EnsureSuccessStatusCode();
 
         var first = (await Revisions(client, universe.Id, entity.Id)).Single(r => r.Number == 1);
-        var response = await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{first.Id}/restore",
-            content: null);
+        var response = await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id);
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         var blocked = (await response.Content.ReadFromJsonAsync<CanonPromotionBlockedResponse>())!;
@@ -481,9 +473,7 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
             .EnsureSuccessStatusCode();
 
         var first = (await Revisions(client, universe.Id, entity.Id)).Single(r => r.Number == 1);
-        var response = await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{first.Id}/restore",
-            content: null);
+        var response = await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id);
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         var problem = await response.Content.ReadAsStringAsync();
@@ -517,9 +507,7 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
             .EnsureSuccessStatusCode();
 
         var first = (await Revisions(client, universe.Id, entity.Id)).Single(r => r.Number == 1);
-        var response = await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{first.Id}/restore",
-            content: null);
+        var response = await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id);
 
         response.EnsureSuccessStatusCode();
 
@@ -623,7 +611,7 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
         Guid universeId,
         EntityDetail entity,
         IReadOnlyList<FieldValueInput>? fields = null) =>
-        client.PutAsJsonAsync(
+        client.PutVersionedAsync(
             $"/api/universes/{universeId}/entities/{entity.Id}",
             new EntityRequest(
                 entity.EntityTypeId,

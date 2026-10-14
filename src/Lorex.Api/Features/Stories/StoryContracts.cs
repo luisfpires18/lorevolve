@@ -5,9 +5,10 @@ namespace Lorex.Api.Features.Stories;
 
 /// <summary>
 /// Everything a client may set on a story. Explicit, so the universe, the id and the timestamps
-/// cannot be reached by posting extra fields.
+/// cannot be reached by posting extra fields. <paramref name="ExpectedVersion"/> is the story's <c>version</c> an edit was
+/// written over; ignored on create (ADR 0043).
 /// </summary>
-public sealed record StoryRequest(string? Title, string? Premise, StoryStatus Status);
+public sealed record StoryRequest(string? Title, string? Premise, StoryStatus Status, int? ExpectedVersion = null);
 
 /// <summary>One story in a universe's list, with how many scenes it has so far.</summary>
 public sealed record StorySummary(
@@ -35,7 +36,8 @@ public sealed record StoryDetail(
     IReadOnlyList<ChapterResponse> Chapters,
     IReadOnlyList<SceneResponse> Scenes,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    int Version);
 
 /// <summary>
 /// Everything a client may set on a chapter. The order is absent - a new chapter is appended and only
@@ -77,7 +79,8 @@ public sealed record SceneRequest(
     Guid? PovEntityId,
     ChronologyValue? Chronology,
     IReadOnlyList<Guid>? EntityIds,
-    Guid? ChapterId = null);
+    Guid? ChapterId = null,
+    int? ExpectedVersion = null);
 
 /// <summary>
 /// A lore entry as a scene shows it, read from the entry itself on every request - never stored on
@@ -118,7 +121,8 @@ public sealed record SceneResponse(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     Publishing.ContentVisibility Visibility = Publishing.ContentVisibility.Private,
-    Publishing.ContentVisibility ManuscriptVisibility = Publishing.ContentVisibility.Private);
+    Publishing.ContentVisibility ManuscriptVisibility = Publishing.ContentVisibility.Private,
+    int Version = 1);
 
 /// <summary>
 /// One container's whole narrative order: every scene id in the chapter named by

@@ -1084,7 +1084,7 @@ public sealed class CanonChronologyRuleTests(LorexApiFactory factory) : IClassFi
     {
         var settled = await StoredStatus(entity.Id);
 
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PutVersionedAsync(
             $"/api/universes/{universeId}/entities/{entity.Id}",
             new EntityRequest(
                 entity.EntityTypeId,

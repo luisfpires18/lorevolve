@@ -528,6 +528,9 @@ test.describe('who saved each version', () => {
         aliases: [],
         tags: [],
         fields: [],
+        expectedVersion: (
+          (await (await editor.page.request.get(entity)).json()) as { version: number }
+        ).version,
       },
     })
     expect(edited.ok()).toBe(true)
@@ -537,13 +540,13 @@ test.describe('who saved each version', () => {
         content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
       })
     const first = await owner.page.request.put(`${entity}/article`, {
-      data: { content: doc('By the owner.'), expectedUpdatedAt: null },
+      data: { content: doc('By the owner.'), expectedVersion: 0 },
     })
     expect(first.ok()).toBe(true)
     const second = await editor.page.request.put(`${entity}/article`, {
       data: {
         content: doc('By the Editor.'),
-        expectedUpdatedAt: ((await first.json()) as { updatedAt: string }).updatedAt,
+        expectedVersion: ((await first.json()) as { version: number }).version,
       },
     })
     expect(second.ok()).toBe(true)

@@ -22,6 +22,9 @@ namespace Lorex.Api.Features.Stories;
 /// </summary>
 public static class StoryEndpoints
 {
+    /// <summary>The machine-readable marker on the 409 for a story save written over a version that is no longer current.</summary>
+    public const string ChangedCode = "story_changed";
+
     public static IEndpointRouteBuilder MapStoryEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/universes/{universeId:guid}/stories")
@@ -134,10 +137,22 @@ public static class StoryEndpoints
             return denied;
         }
 
+        // One transaction for the version comparison and the write, so nothing can land between them (ADR 0043).
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
         var story = await FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null)
         {
             return Results.NotFound();
+        }
+
+        if (!EditVersion.Matches(story.Version, request.ExpectedVersion))
+        {
+            return EditVersion.Changed(
+                ChangedCode,
+                "Story changed",
+                "This story was changed after it was opened here. Nothing was overwritten.",
+                story.Version);
         }
 
         if (StoryValidation.ValidateStory(request) is { } errors)
@@ -145,12 +160,22 @@ public static class StoryEndpoints
             return Results.ValidationProblem(errors);
         }
 
-        story.Title = StoryValidation.Normalize(request.Title)!;
-        story.Premise = StoryValidation.Normalize(request.Premise);
+        var title = StoryValidation.Normalize(request.Title)!;
+        var premise = StoryValidation.Normalize(request.Premise);
+
+        // Only a save that changes what the form edits moves the version on; an unchanged one leaves other forms current.
+        if (story.Title != title || story.Premise != premise || story.Status != request.Status)
+        {
+            story.Version++;
+        }
+
+        story.Title = title;
+        story.Premise = premise;
         story.Status = request.Status;
         story.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return Results.Ok(await LoadDetailAsync(db, universeId, storyId, cancellationToken));
     }
@@ -246,6 +271,7 @@ public static class StoryEndpoints
                 candidate.Status,
                 candidate.CreatedAt,
                 candidate.UpdatedAt,
+                candidate.Version,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -270,6 +296,7 @@ public static class StoryEndpoints
             chapters,
             scenes,
             story.CreatedAt,
-            story.UpdatedAt);
+            story.UpdatedAt,
+            story.Version);
     }
 }

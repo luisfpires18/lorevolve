@@ -34,7 +34,7 @@ public sealed class SceneManuscriptEndpointTests(LorexApiFactory factory) : ICla
 
         var read = await ReadManuscript(client, universe.Id, story, scene);
 
-        Assert.Equal(new SceneManuscriptResponse(scene, string.Empty, null), read);
+        Assert.Equal(new SceneManuscriptResponse(scene, string.Empty, null, 0), read);
         await WithDb(_factory, async db => Assert.False(await db.SceneManuscripts.AnyAsync(row => row.SceneId == scene)));
     }
 
@@ -46,7 +46,7 @@ public sealed class SceneManuscriptEndpointTests(LorexApiFactory factory) : ICla
         var scene = await CreateScene(client, universe.Id, story, "The Council");
         var before = await ReadStory(client, universe.Id, story);
 
-        var first = await PutManuscript(client, universe.Id, story, scene, "The hall had emptied.", null);
+        var first = await PutManuscript(client, universe.Id, story, scene, "The hall had emptied.", 0);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         var created = (await first.Content.ReadFromJsonAsync<SceneManuscriptResponse>())!;
         Assert.Equal("The hall had emptied.", created.Content);
@@ -56,7 +56,7 @@ public sealed class SceneManuscriptEndpointTests(LorexApiFactory factory) : ICla
         Assert.Equal("The hall had emptied.", read.Content);
         SameMoment(created.UpdatedAt, read.UpdatedAt);
 
-        var second = await PutManuscript(client, universe.Id, story, scene, "Long before Arlen understood.", read.UpdatedAt);
+        var second = await PutManuscript(client, universe.Id, story, scene, "Long before Arlen understood.", read.Version);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
         Assert.Equal("Long before Arlen understood.", (await ReadManuscript(client, universe.Id, story, scene)).Content);
 
@@ -116,7 +116,7 @@ public sealed class SceneManuscriptEndpointTests(LorexApiFactory factory) : ICla
         var saved = await WriteManuscript(client, universe.Id, story, scene, full);
         Assert.Equal(StoryLimits.ManuscriptMaxLength, saved.Content.Length);
 
-        var over = await PutManuscript(client, universe.Id, story, scene, full + "b", saved.UpdatedAt);
+        var over = await PutManuscript(client, universe.Id, story, scene, full + "b", saved.Version);
         Assert.Contains("\"content\"", await Errors(over), StringComparison.Ordinal);
 
         var kept = await ReadManuscript(client, universe.Id, story, scene);
@@ -154,35 +154,39 @@ public sealed class SceneManuscriptEndpointTests(LorexApiFactory factory) : ICla
 
         // Both windows open the empty scene. The first saves.
         var opened = await ReadManuscript(client, universe.Id, story, scene);
-        var first = await PutManuscript(client, universe.Id, story, scene, "From the first window.", opened.UpdatedAt);
+        var first = await PutManuscript(client, universe.Id, story, scene, "From the first window.", opened.Version);
         var firstSaved = (await first.Content.ReadFromJsonAsync<SceneManuscriptResponse>())!;
 
         // The second still believes nothing was saved, and is told otherwise - with what is stored now.
-        var second = await PutManuscript(client, universe.Id, story, scene, "From the second window.", opened.UpdatedAt);
-        var (code, current) = await Refusal(second);
+        var second = await PutManuscript(client, universe.Id, story, scene, "From the second window.", opened.Version);
+        var (code, current, currentVersion) = await Refusal(second);
         Assert.Equal(SceneManuscriptEndpoints.ChangedCode, code);
         SameMoment(firstSaved.UpdatedAt, current);
+        Assert.Equal((0, 1, 1), (opened.Version, firstSaved.Version, currentVersion));
         Assert.Equal("From the first window.", (await ReadManuscript(client, universe.Id, story, scene)).Content);
 
-        // Having seen that, its author chooses to keep their own text: naming what is stored now is a deliberate overwrite.
-        var kept = await PutManuscript(client, universe.Id, story, scene, "From the second window.", current);
+        // Having seen that, its author chooses to keep their own text: naming the version stored now is a deliberate save.
+        var kept = await PutManuscript(client, universe.Id, story, scene, "From the second window.", currentVersion);
         Assert.Equal(HttpStatusCode.OK, kept.StatusCode);
         var keptSaved = (await kept.Content.ReadFromJsonAsync<SceneManuscriptResponse>())!;
+        Assert.Equal(2, keptSaved.Version);
 
-        // A save naming a moment that is no longer the latest is just as stale.
-        var older = await PutManuscript(client, universe.Id, story, scene, "Stale again.", firstSaved.UpdatedAt);
-        SameMoment(keptSaved.UpdatedAt, (await Refusal(older)).UpdatedAt);
+        // A save naming a version that is no longer the latest is just as stale.
+        var older = await PutManuscript(client, universe.Id, story, scene, "Stale again.", firstSaved.Version);
+        var olderRefusal = await Refusal(older);
+        SameMoment(keptSaved.UpdatedAt, olderRefusal.UpdatedAt);
+        Assert.Equal(keptSaved.Version, olderRefusal.CurrentVersion);
         Assert.Equal("From the second window.", (await ReadManuscript(client, universe.Id, story, scene)).Content);
 
-        // The same instant written with another zone is the same instant.
-        var local = await PutManuscript(
-            client, universe.Id, story, scene, "Same instant, local clock.", keptSaved.UpdatedAt!.Value.ToLocalTime());
-        Assert.Equal(HttpStatusCode.OK, local.StatusCode);
+        // A save naming no version, or one ahead of the stored one, is refused the same way.
+        await Refusal(await PutManuscript(client, universe.Id, story, scene, "Unnamed.", null));
+        await Refusal(await PutManuscript(client, universe.Id, story, scene, "Ahead.", keptSaved.Version + 1));
+        Assert.Equal("From the second window.", (await ReadManuscript(client, universe.Id, story, scene)).Content);
 
         // And a save naming a manuscript that was never written is refused, saying nothing is stored.
         var other = await CreateScene(client, universe.Id, story, "Untouched");
-        var imagined = await PutManuscript(client, universe.Id, story, other, "Over nothing.", DateTime.UtcNow);
-        Assert.Equal((SceneManuscriptEndpoints.ChangedCode, (DateTime?)null), await Refusal(imagined));
+        var imagined = await PutManuscript(client, universe.Id, story, other, "Over nothing.", 1);
+        Assert.Equal((SceneManuscriptEndpoints.ChangedCode, (DateTime?)null, 0), await Refusal(imagined));
         await WithDb(_factory, async db => Assert.False(await db.SceneManuscripts.AnyAsync(row => row.SceneId == other)));
     }
 
@@ -201,7 +205,7 @@ public sealed class SceneManuscriptEndpointTests(LorexApiFactory factory) : ICla
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync(Manuscript(universe.Id, story, scene))).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await PutManuscript(stranger, universe.Id, story, scene, "Mine now.", saved.UpdatedAt)).StatusCode);
+            (await PutManuscript(stranger, universe.Id, story, scene, "Mine now.", saved.Version)).StatusCode);
 
         // Not even the shape of a refusal: an invalid body from a stranger is the same 404, never a 400.
         Assert.Equal(
@@ -309,7 +313,7 @@ public sealed class SceneManuscriptEndpointTests(LorexApiFactory factory) : ICla
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Manuscript(universe.Id, story, doomed))).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await PutManuscript(client, universe.Id, story, doomed, "Written into the Trash.", DateTime.UtcNow)).StatusCode);
+            (await PutManuscript(client, universe.Id, story, doomed, "Written into the Trash.", 1)).StatusCode);
         Assert.Equal("Kept prose.", (await ReadManuscript(client, universe.Id, story, kept)).Content);
 
         // Kept, word for word, for the scene's restore (ADR 0029).
@@ -457,7 +461,7 @@ public sealed class SceneManuscriptEndpointTests(LorexApiFactory factory) : ICla
             $"{Story(universe.Id, story)}/scenes/order", new SceneOrderRequest([gate, council], chapter));
         var moved = await client.PutAsJsonAsync(
             $"{Story(universe.Id, story)}/scenes/{council}/position", new ScenePositionRequest(null, null));
-        var edited = await client.PutAsJsonAsync(
+        var edited = await client.PutVersionedAsync(
             $"{Story(universe.Id, story)}/scenes/{council}",
             new SceneRequest("The Council", "Mira betrays him.", null, null, null, null));
 

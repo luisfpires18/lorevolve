@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import type { Editor } from '@tiptap/react'
 import { Check, History, Pencil, X } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { EditConflict, LatestText } from './EditConflict'
 import { LoreArticle, LoreEditor } from './LoreEditor'
 import { RecoveredDraft } from './RecoveredDraft'
 import { VersionActor } from './VersionActor'
@@ -9,6 +10,7 @@ import { useAuth } from '../auth/useAuth'
 import { useUniverseAccess } from '../universes/access'
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
+import { isChangedElsewhere } from '../lib/editConflict'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { useLocalDraft } from '../lib/useLocalDraft'
 import {
@@ -32,12 +34,11 @@ type LoadState = { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } |
 interface Stored {
   content: string
   updatedAt: string | null
+  version: number
 }
 
-/** The stored moment a stale save's refusal reports, when it carries one. */
-function storedMomentOf(problem: unknown) {
-  const updatedAt = (problem as { updatedAt?: unknown } | null)?.updatedAt
-  return typeof updatedAt === 'string' ? updatedAt : null
+function storedOf(article: EntityArticle): Stored {
+  return { content: article.content, updatedAt: article.updatedAt, version: article.version }
 }
 
 /** A document with no text in it is no article, however the editor happens to serialise the emptiness. */
@@ -65,9 +66,10 @@ interface EntityArticleSectionProps {
  *
  * It is read on its own route when the entry opens, and written on it: an explicit Save, or Ctrl+S / Cmd+S while the
  * focus is in the article. The text is unsaved until the API confirms it, so a failed save changes nothing on screen and
- * can be tried again. A save over an article saved from another tab or device since this one opened is refused, and the
- * author chooses - keep this text, or load that one. While anything is unsaved, following a link, signing out or leaving
- * the page asks first.
+ * can be tried again. A save over an article saved by someone else, or from another tab or device, since this one opened is
+ * refused (ADR 0043): the text stays in the editor, the author reviews the latest saved article, and then keeps their own
+ * text - saving again over what they have seen - or takes the latest. While anything is unsaved, following a link, signing
+ * out or leaving the page asks first.
  *
  * Unsaved writing is also kept on this device as a recovery copy, never sent anywhere (ADR 0029). When the entry opens
  * with a copy that differs from what is saved, the saved article is shown and the copy is offered beside it: recovering
@@ -100,7 +102,7 @@ export function EntityArticleSection({
 
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
-  const [stored, setStored] = useState<Stored>({ content: '', updatedAt: null })
+  const [stored, setStored] = useState<Stored>({ content: '', updatedAt: null, version: 0 })
   const [isEditing, setIsEditing] = useState(false)
   const [editorKey, setEditorKey] = useState(0)
   const [openingWith, setOpeningWith] = useState<string | null>(null)
@@ -108,7 +110,7 @@ export function EntityArticleSection({
   const [baseline, setBaseline] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
-  const [conflict, setConflict] = useState<{ updatedAt: string | null } | null>(null)
+  const [conflict, setConflict] = useState(false)
   const [historyKey, setHistoryKey] = useState(0)
   const [announcement, setAnnouncement] = useState('')
   const inFlight = useRef(false)
@@ -122,7 +124,7 @@ export function EntityArticleSection({
 
     getEntityArticle(universeId, entityId, controller.signal)
       .then((article) => {
-        setStored({ content: article.content, updatedAt: article.updatedAt })
+        setStored(storedOf(article))
         setLoad({ kind: 'ready' })
       })
       .catch((error: unknown) => {
@@ -187,29 +189,29 @@ export function EntityArticleSection({
     discard,
   )
 
-  /** Saves the document as it stands, naming the stored article it was written over. */
-  async function save(expectedUpdatedAt: string | null) {
+  /** Saves the document as it stands, naming the stored article's version it was written over. */
+  async function save(expectedVersion: number) {
     if (inFlight.current || !isDirty || isTooLong || draft === null) return
 
     const sent = draft
     inFlight.current = true
     setIsSaving(true)
     setFailure(null)
-    setConflict(null)
+    setConflict(false)
 
     try {
       const saved = await saveEntityArticle(universeId, entityId, {
         content: comparable(sent),
-        expectedUpdatedAt,
+        expectedVersion,
       })
       // Measured against what was sent, so anything typed while the save was in flight is still unsaved.
-      setStored({ content: saved.content, updatedAt: saved.updatedAt })
+      setStored(storedOf(saved))
       setBaseline(sent)
       setHistoryKey((key) => key + 1)
       if (saved.updatedAt) onSaved(saved.updatedAt)
     } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409 && error.code === ARTICLE_CHANGED) {
-        setConflict({ updatedAt: storedMomentOf(error.problem) })
+      if (isChangedElsewhere(error, ARTICLE_CHANGED)) {
+        setConflict(true)
       } else if (error instanceof ApiError && error.status === 404) {
         setFailure(
           'This entry is no longer here, so the article could not be saved. It may have been moved to the Trash in another window. Your text is still here: copy it before you leave.',
@@ -240,7 +242,7 @@ export function EntityArticleSection({
   // article is only being read, the shortcut is the browser's. The listener reads the latest save through a ref, so it
   // is added once per editing session rather than on every keystroke.
   useEffect(() => {
-    shortcut.current = () => void save(stored.updatedAt)
+    shortcut.current = () => void save(stored.version)
   })
 
   useEffect(() => {
@@ -268,7 +270,7 @@ export function EntityArticleSection({
   /** Opens the writing on the saved article - or, when recovering, on the recovery copy, unsaved against it. */
   function startEditing(recovered: string | null = null) {
     setFailure(null)
-    setConflict(null)
+    setConflict(false)
     setDraft(null)
     setBaseline(null)
     setOpeningWith(recovered)
@@ -292,13 +294,13 @@ export function EntityArticleSection({
     setDraft(null)
     setBaseline(null)
     setFailure(null)
-    setConflict(null)
+    setConflict(false)
     // Back to the control that opened the writing, so the keyboard carries on from where it started.
     requestAnimationFrame(() => startButton.current?.focus())
   }
 
   function reread() {
-    setConflict(null)
+    setConflict(false)
     setFailure(null)
     setDraft(null)
     setBaseline(null)
@@ -309,15 +311,22 @@ export function EntityArticleSection({
     setHistoryKey((key) => key + 1)
   }
 
-  /** Throws away this window's unsaved text for the version saved elsewhere - only once the author says so. */
-  function loadSavedVersion() {
-    if (
-      !window.confirm(
-        'Replace the text here with the version saved elsewhere? What you wrote here since your last save will be lost.',
-      )
-    ) {
-      return
-    }
+  /**
+   * The author has seen the latest article and keeps their own text: it stays in the editor, still unsaved, now measured
+   * against the latest - and the next save names the version they reviewed, so it is refused again if that moved on too.
+   */
+  function keepMine(latest: EntityArticle) {
+    setStored(storedOf(latest))
+    setBaseline(latest.content)
+    setConflict(false)
+    setHistoryKey((key) => key + 1)
+    if (latest.updatedAt) onSaved(latest.updatedAt)
+    setAnnouncement('Your changes are still unsaved. Save when you’re ready.')
+    requestAnimationFrame(() => editor.current?.commands.focus())
+  }
+
+  /** Lets this window's unsaved text go for the latest article. The conflict notice has already asked. */
+  function takeLatest() {
     discard()
     reread()
   }
@@ -471,32 +480,22 @@ export function EntityArticleSection({
       {isReady && isEditing ? (
         <div className="article__editing">
           {conflict ? (
-            <div className="article__conflict" role="alert" data-testid="article-conflict">
-              <p className="article__conflicttext">
-                This article was saved in another tab or on another device after you opened it here.
-                Nothing was overwritten, and your text below is not saved.
-              </p>
-              <div className="article__conflictactions">
-                <button
-                  className="button button--secondary"
-                  type="button"
-                  disabled={isSaving}
-                  onClick={() => void save(conflict.updatedAt)}
-                  data-testid="article-keep-mine"
-                >
-                  Save mine over it
-                </button>
-                <button
-                  className="button button--secondary"
-                  type="button"
-                  disabled={isSaving}
-                  onClick={loadSavedVersion}
-                  data-testid="article-load-saved"
-                >
-                  Load the saved version
-                </button>
-              </div>
-            </div>
+            <EditConflict
+              what="article"
+              read={() => getEntityArticle(universeId, entityId)}
+              renderLatest={(latest) => (
+                <LatestText label="Latest saved article">
+                  {isEmptyDocument(latest.content) ? (
+                    <p className="entry__blank">No text in the latest version.</p>
+                  ) : (
+                    <LoreArticle content={latest.content} />
+                  )}
+                </LatestText>
+              )}
+              onKeepMine={keepMine}
+              onUseLatest={takeLatest}
+              testId="article-conflict"
+            />
           ) : null}
 
           {failure ? (
@@ -550,7 +549,7 @@ export function EntityArticleSection({
                 className="button"
                 type="button"
                 disabled={!isDirty || isSaving || isTooLong}
-                onClick={() => void save(stored.updatedAt)}
+                onClick={() => void save(stored.version)}
                 aria-describedby={statusId}
                 aria-keyshortcuts="Control+S Meta+S"
                 data-testid="article-save"
@@ -583,7 +582,7 @@ export function EntityArticleSection({
           reloadKey={historyKey}
           current={stored}
           onRestored={(article) => {
-            setStored({ content: article.content, updatedAt: article.updatedAt })
+            setStored(storedOf(article))
             setHistoryKey((key) => key + 1)
             if (article.updatedAt) onSaved(article.updatedAt)
           }}
@@ -700,12 +699,12 @@ function ArticleHistory({
         universeId,
         entityId,
         revision.id,
-        current.updatedAt,
+        current.version,
       )
       setViewing(null)
       onRestored(restored)
     } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409 && error.code === ARTICLE_CHANGED) {
+      if (isChangedElsewhere(error, ARTICLE_CHANGED)) {
         setMessage(
           'The article was saved somewhere else after this page opened, so nothing was put back. The article above is now the latest.',
         )

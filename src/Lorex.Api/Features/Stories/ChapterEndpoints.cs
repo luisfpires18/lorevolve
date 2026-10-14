@@ -236,11 +236,14 @@ public static class ChapterEndpoints
             await StoryOrder.PlaceScenesAsync(
                 db, [new SceneContainer(null, [.. unchaptered, .. released])], cancellationToken);
 
-            // A scene in the Trash holds no place, so it joins Unchaptered without one.
+            // A scene in the Trash holds no place, so it joins Unchaptered without one - and, like any scene that changes
+            // chapter, moves its version on (ADR 0043).
             await db.Scenes
                 .Where(scene => scene.ChapterId == chapterId && scene.DeletedAt != null)
                 .ExecuteUpdateAsync(
-                    setters => setters.SetProperty(scene => scene.ChapterId, (Guid?)null),
+                    setters => setters
+                        .SetProperty(scene => scene.ChapterId, (Guid?)null)
+                        .SetProperty(scene => scene.Version, scene => scene.Version + 1),
                     cancellationToken);
 
             chapter.DeletedAt = DateTime.UtcNow;

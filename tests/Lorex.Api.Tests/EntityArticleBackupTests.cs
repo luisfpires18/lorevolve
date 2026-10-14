@@ -188,7 +188,7 @@ public sealed class EntityArticleBackupTests(LorexApiFactory factory) : IClassFi
         await WriteArticle(client, universeId, warden, RichDocument);
         var rewritten = await WriteArticle(client, universeId, warden, Doc("Rewritten in anger."));
         var first = (await ArticleRevisions(client, universeId, warden)).Single(version => version.Number == 1);
-        (await RestoreArticle(client, universeId, warden, first.Id, rewritten.UpdatedAt)).EnsureSuccessStatusCode();
+        (await RestoreArticle(client, universeId, warden, first.Id, rewritten.Version)).EnsureSuccessStatusCode();
 
         await WriteArticle(client, universeId, cleared, Doc("A false start."));
         await WriteArticle(client, universeId, cleared, string.Empty);

@@ -161,11 +161,17 @@ export function getRevision(
 }
 
 /**
- * Puts a version back. A gated write like any other save, so a refusal arrives as the same
- * 409 the edit form already knows how to read.
+ * Puts a version back, naming the entry's version it was chosen over (ADR 0043). A gated write like any other save, so a
+ * refusal arrives as the same 409 the edit form already knows how to read - or `entity_changed` when the entry moved on.
  */
-export function restoreRevision(universeId: string, entityId: string, revisionId: string) {
+export function restoreRevision(
+  universeId: string,
+  entityId: string,
+  revisionId: string,
+  expectedVersion: number,
+) {
   return apiFetch<unknown>(`${base(universeId, entityId)}/${revisionId}/restore`, {
     method: 'POST',
+    body: JSON.stringify({ expectedVersion }),
   })
 }

@@ -329,6 +329,13 @@ test.describe('unified timeline', () => {
           chronology: { eraId: null, year: 130, month: null, day: null },
           entityIds: [],
           chapterId: null,
+          expectedVersion: (
+            (await (
+              await page.request.get(
+                `/api/universes/${w.u}/stories/${w.kingdom}/scenes/${w.aftermath}`,
+              )
+            ).json()) as { version: number }
+          ).version,
         },
       },
     )
@@ -345,9 +352,12 @@ test.describe('unified timeline', () => {
       fields: { fieldDefinitionId: string; name: string }[]
     }
     const born = entity.fields.find((one) => one.name === 'Born')!.fieldDefinitionId
-    const save = (fields: unknown[]) =>
-      page.request.put(`/api/universes/${w.u}/entities/${w.akron}`, {
+    const akron = `/api/universes/${w.u}/entities/${w.akron}`
+    const save = async (fields: unknown[]) =>
+      page.request.put(akron, {
         data: {
+          expectedVersion: ((await (await page.request.get(akron)).json()) as { version: number })
+            .version,
           entityTypeId: entity.entityTypeId,
           name: 'Akron Wright',
           summary: null,

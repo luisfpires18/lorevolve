@@ -57,7 +57,7 @@ public sealed class StoryEndpointTests(LorexApiFactory factory) : IClassFixture<
         var (client, universe) = await SignedInWithUniverse("storyupdate");
         var created = await CreateStory(client, universe.Id, new StoryRequest("Draft title", null, StoryStatus.Planning));
 
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PutVersionedAsync(
             Story(universe.Id, created.Id),
             new StoryRequest("The Council", "Nine voices, one vote.", StoryStatus.Complete));
         response.EnsureSuccessStatusCode();
@@ -171,7 +171,7 @@ public sealed class StoryEndpointTests(LorexApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync(Story(universe.Id, story.Id))).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await client.PutAsJsonAsync(Story(universe.Id, story.Id), new StoryRequest("Back", null, StoryStatus.Planning))).StatusCode);
+            (await client.PutVersionedAsync(Story(universe.Id, story.Id), new StoryRequest("Back", null, StoryStatus.Planning))).StatusCode);
         Assert.DoesNotContain(
             "Doomed", await client.GetStringAsync($"/api/universes/{universe.Id}/stories"), StringComparison.Ordinal);
 
@@ -226,7 +226,7 @@ public sealed class StoryEndpointTests(LorexApiFactory factory) : IClassFixture<
             pov: arlen.Id, entities: [arlen.Id], chronology: new ChronologyValue(null, -40, 2, 3),
             summary: "Arlen is killed at the gate.");
 
-        (await client.PutAsJsonAsync(
+        (await client.PutVersionedAsync(
             $"{Scenes(universe.Id, story.Id)}/{scene.Id}",
             new SceneRequest("Arlen lives", "He does not die after all.", "Undecided.", arlen.Id, null, [arlen.Id])))
             .EnsureSuccessStatusCode();
@@ -258,7 +258,7 @@ public sealed class StoryEndpointTests(LorexApiFactory factory) : IClassFixture<
             (await stranger.PostAsJsonAsync(Stories(universe.Id), new StoryRequest("Intruder", null, StoryStatus.Planning))).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await stranger.PutAsJsonAsync(Story(universe.Id, story.Id), new StoryRequest("Mine now", null, StoryStatus.Planning))).StatusCode);
+            (await stranger.PutVersionedAsync(Story(universe.Id, story.Id), new StoryRequest("Mine now", null, StoryStatus.Planning))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.DeleteAsync(Story(universe.Id, story.Id))).StatusCode);
 
         var read = (await owner.GetFromJsonAsync<StoryDetail>(Story(universe.Id, story.Id)))!;
@@ -276,7 +276,7 @@ public sealed class StoryEndpointTests(LorexApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Story(second.Id, story.Id))).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await client.PutAsJsonAsync(Story(second.Id, story.Id), new StoryRequest("Moved", null, StoryStatus.Planning))).StatusCode);
+            (await client.PutVersionedAsync(Story(second.Id, story.Id), new StoryRequest("Moved", null, StoryStatus.Planning))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync(Story(second.Id, story.Id))).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,

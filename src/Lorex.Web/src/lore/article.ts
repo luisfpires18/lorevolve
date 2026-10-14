@@ -12,19 +12,20 @@ export const ARTICLE_CHANGED = 'entity_article_changed'
 
 /**
  * An entry's article, read on its own route and never part of the entry, a listing or a search result. `content` is the
- * editor's document, or '' for an entry with no article; `updatedAt` is null until the first save, and goes back
- * untouched with the next one.
+ * editor's document, or '' for an entry with no article; `updatedAt` is null until the first save. `version` is what the
+ * next save names: 0 until the first save, then advanced by every save that changes the article (ADR 0043).
  */
 export interface EntityArticle {
   entityId: string
   content: string
   updatedAt: string | null
+  version: number
 }
 
-/** One save: the whole document, and the `updatedAt` it was written over - exactly as the API gave it, never parsed. */
+/** One save: the whole document, and the `version` it was written over. */
 export interface EntityArticleInput {
   content: string
-  expectedUpdatedAt: string | null
+  expectedVersion: number
 }
 
 /** A row in the article's own history. No text; `isEmpty` says the save cleared the article. */
@@ -58,7 +59,7 @@ export function getEntityArticle(universeId: string, entityId: string, signal?: 
   return apiFetch<EntityArticle>(article(universeId, entityId), { signal })
 }
 
-/** Replaces the article with exactly `input.content`, if `input.expectedUpdatedAt` is still the latest save. */
+/** Replaces the article with exactly `input.content`, if `input.expectedVersion` is still the latest save. */
 export function saveEntityArticle(universeId: string, entityId: string, input: EntityArticleInput) {
   return apiFetch<EntityArticle>(article(universeId, entityId), {
     method: 'PUT',
@@ -81,13 +82,13 @@ export function restoreArticleRevision(
   universeId: string,
   entityId: string,
   revisionId: string,
-  expectedUpdatedAt: string | null,
+  expectedVersion: number,
 ) {
   return apiFetch<EntityArticle>(
     `${article(universeId, entityId)}/revisions/${revisionId}/restore`,
     {
       method: 'POST',
-      body: JSON.stringify({ expectedUpdatedAt }),
+      body: JSON.stringify({ expectedVersion }),
     },
   )
 }

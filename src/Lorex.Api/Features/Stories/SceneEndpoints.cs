@@ -33,6 +33,9 @@ public static class SceneEndpoints
     /// <summary>The machine-readable marker on the 409 for a narrative order that moved underneath a write.</summary>
     public const string OrderChangedCode = "story_scene_order_changed";
 
+    /// <summary>The machine-readable marker on the 409 for a scene save written over a version that is no longer current.</summary>
+    public const string ChangedCode = "scene_changed";
+
     public static IEndpointRouteBuilder MapSceneEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/universes/{universeId:guid}/stories/{storyId:guid}/scenes")
@@ -208,6 +211,16 @@ public static class SceneEndpoints
             return Results.NotFound();
         }
 
+        // Inside the transaction the write commits in, so nothing can land between this comparison and the write (ADR 0043).
+        if (!EditVersion.Matches(scene.Version, request.ExpectedVersion))
+        {
+            return EditVersion.Changed(
+                ChangedCode,
+                "Scene changed",
+                "This scene was changed after it was opened here. Nothing was overwritten.",
+                scene.Version);
+        }
+
         var chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken);
 
         if (StoryValidation.ValidateScene(request, chronology) is { } errors)
@@ -233,6 +246,8 @@ public static class SceneEndpoints
         }
 
         var now = DateTime.UtcNow;
+        var version = scene.Version;
+        var before = Edited(scene);
         scene.Title = StoryValidation.Normalize(request.Title)!;
         Apply(scene, request);
         scene.UpdatedAt = now;
@@ -241,6 +256,10 @@ public static class SceneEndpoints
         // The request carries the whole set, so the stored links are made to match it: anything
         // absent is dropped, anything new is added, and a link already there keeps its row.
         var wanted = entityIds.ToHashSet();
+
+        // Only a save that changes what the form edits moves the version on, and only once - a move between chapters
+        // included, which the placement below would otherwise count again.
+        var changed = before != Edited(scene) || !wanted.SetEquals(stored) || request.ChapterId != scene.ChapterId;
 
         foreach (var link in scene.EntityLinks.Where(link => !wanted.Contains(link.EntityId)).ToList())
         {
@@ -268,6 +287,7 @@ public static class SceneEndpoints
                     cancellationToken);
             }
 
+            scene.Version = changed ? version + 1 : version;
             await db.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException failure) when (DatabaseFailures.IsConstraintViolation(failure))
@@ -507,6 +527,10 @@ public static class SceneEndpoints
     // ---------- Writing ----------
 
     /// <summary>Copies everything but the title, the chapter and the order across. The title is set by the caller.</summary>
+    /// <summary>What the scene form edits on the scene's own row, compared before and after a save.</summary>
+    private static (string, string?, string?, Guid?, Guid?, int?, int?, Guid?, int?) Edited(Scene scene) =>
+        (scene.Title, scene.Summary, scene.Notes, scene.PovEntityId, scene.EraId, scene.Year, scene.Month, scene.MonthId, scene.Day);
+
     private static void Apply(Scene scene, SceneRequest request)
     {
         scene.Summary = StoryValidation.Normalize(request.Summary);
@@ -610,7 +634,8 @@ public static class SceneEndpoints
         DateTime CreatedAt,
         DateTime UpdatedAt,
         Publishing.ContentVisibility Visibility,
-        Publishing.ContentVisibility ManuscriptVisibility);
+        Publishing.ContentVisibility ManuscriptVisibility,
+        int Version);
 
     private static async Task<SceneResponse?> LoadSceneAsync(
         LorexDbContext db,
@@ -665,7 +690,8 @@ public static class SceneEndpoints
                 scene.CreatedAt,
                 scene.UpdatedAt,
                 scene.Visibility,
-                scene.ManuscriptVisibility))
+                scene.ManuscriptVisibility,
+                scene.Version))
             .ToListAsync(cancellationToken);
 
         var referenced = rows
@@ -691,7 +717,8 @@ public static class SceneEndpoints
                 row.CreatedAt,
                 row.UpdatedAt,
                 row.Visibility,
-                row.ManuscriptVisibility)),
+                row.ManuscriptVisibility,
+                row.Version)),
         ];
     }
 }

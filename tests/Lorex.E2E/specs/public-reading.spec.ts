@@ -96,7 +96,7 @@ async function entry(page: Page, world: World, name: string, summary: string, pu
         { type: 'paragraph', content: [{ type: 'text', text: `The article of ${name}.` }] },
       ],
     }),
-    expectedUpdatedAt: null,
+    expectedVersion: 0,
   })
   if (publish) await api(page, 'POST', `/api/universes/${world.id}/entities/${id}/publish`)
   return id

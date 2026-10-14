@@ -231,3 +231,10 @@ carried, which is what the fixed band was for. An entry with no picture has no p
 
 The duplicate rule that ADR 0008 now carries is why an entry's Relations view cannot show the same connection twice,
 and why the family tree draws one line where a database written before the rule holds two. Nothing about an article.
+
+## Amendment - the version, not the moment (2026-10-14, ADR 0043)
+
+A save and a restore now name the stored `version` (0 before the first save) as `expectedVersion`, instead of
+`expectedUpdatedAt`; `updatedAt` is still read and still carried on the 409. A refused save no longer offers to write
+straight over the newer text: the author reviews the latest first, then keeps their own text - which the next save names
+the reviewed version over - or takes the latest. Everything else here is unchanged.

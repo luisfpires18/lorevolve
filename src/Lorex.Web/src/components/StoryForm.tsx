@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { ChangeList, EditConflict } from './EditConflict'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
+import { differing, isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
-import { createStory, updateStory } from '../stories/api'
+import { createStory, getStory, STORY_CHANGED, updateStory } from '../stories/api'
 import {
   STORY_STATUS_LABELS,
   STORY_STATUS_ORDER,
@@ -15,6 +17,14 @@ interface StoryDraft {
   title: string
   premise: string
   status: StoryStatusValue
+}
+
+function draftOf(story: StoryDetail | null): StoryDraft {
+  return {
+    title: story?.title ?? '',
+    premise: story?.premise ?? '',
+    status: story?.status ?? StoryStatus.Planning,
+  }
 }
 
 /** The draft as the save sends it. */
@@ -41,16 +51,16 @@ interface StoryFormProps {
 export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProps) {
   const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
-  // What the drawer opened on - the story as stored, or the blank form - which the draft is measured against.
-  const [initial] = useState<StoryDraft>(() => ({
-    title: story?.title ?? '',
-    premise: story?.premise ?? '',
-    status: story?.status ?? StoryStatus.Planning,
-  }))
+  // What the drawer opened on - the story as stored, or the blank form - which the draft is measured against, and the
+  // version its save names. After a refused save the author may adopt the latest they reviewed instead (ADR 0043).
+  const [base, setBase] = useState(() => ({ draft: draftOf(story), version: story?.version }))
+  const initial = base.draft
   const [draft, setDraft] = useState<StoryDraft>(initial)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [conflict, setConflict] = useState(false)
+  const saveButton = useRef<HTMLButtonElement>(null)
 
   const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
   const { close, dialogProps } = useDrawerGuard(
@@ -76,17 +86,20 @@ export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProp
   async function save() {
     setMessage(null)
     setFieldErrors({})
+    setConflict(false)
     setIsSaving(true)
 
     const input = inputOf(draft)
 
     try {
       const saved = story
-        ? await updateStory(universeId, story.id, input)
+        ? await updateStory(universeId, story.id, { ...input, expectedVersion: base.version })
         : await createStory(universeId, input)
       onSaved(saved)
     } catch (error: unknown) {
-      if (error instanceof ApiError) {
+      if (isChangedElsewhere(error, STORY_CHANGED)) {
+        setConflict(true)
+      } else if (error instanceof ApiError) {
         setFieldErrors(error.fieldErrors)
         setMessage(
           Object.keys(error.fieldErrors).length === 0
@@ -128,6 +141,39 @@ export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProp
             <p className="form__message" role="alert" data-testid="story-error">
               {message}
             </p>
+          ) : null}
+
+          {conflict && story ? (
+            <EditConflict
+              what="story"
+              read={() => getStory(universeId, story.id)}
+              renderLatest={(latest) => (
+                <ChangeList
+                  changes={differing([
+                    { label: 'Title', latest: latest.title, mine: draft.title.trim() },
+                    { label: 'Premise', latest: latest.premise ?? '', mine: draft.premise.trim() },
+                    {
+                      label: 'Status',
+                      latest: STORY_STATUS_LABELS[latest.status],
+                      mine: STORY_STATUS_LABELS[draft.status],
+                    },
+                  ])}
+                />
+              )}
+              onKeepMine={(latest) => {
+                // The form stays as typed, measured against the latest; the next save names the version reviewed.
+                setBase({ draft: draftOf(latest), version: latest.version })
+                setConflict(false)
+                requestAnimationFrame(() => saveButton.current?.focus())
+              }}
+              onUseLatest={(latest) => {
+                setBase({ draft: draftOf(latest), version: latest.version })
+                setDraft(draftOf(latest))
+                setConflict(false)
+                requestAnimationFrame(() => title.current?.focus())
+              }}
+              testId="story-conflict"
+            />
           ) : null}
 
           <div className="field">
@@ -193,7 +239,13 @@ export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProp
         </div>
 
         <footer className="drawer__actions">
-          <button className="button" type="submit" disabled={isSaving} data-testid="save-story">
+          <button
+            ref={saveButton}
+            className="button"
+            type="submit"
+            disabled={isSaving}
+            data-testid="save-story"
+          >
             {isSaving ? 'Saving' : story ? 'Save story' : 'Create story'}
           </button>
           <button

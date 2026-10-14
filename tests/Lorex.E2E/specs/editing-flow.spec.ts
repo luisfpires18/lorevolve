@@ -85,7 +85,7 @@ async function seedScene(page: Page, universeId: string) {
     page,
     'PUT',
     `/api/universes/${universeId}/stories/${story.id}/scenes/${scene.id}/manuscript`,
-    { content: 'A long-expected party.', expectedUpdatedAt: null },
+    { content: 'A long-expected party.', expectedVersion: 0 },
   )
   return `/app/universes/${universeId}/stories/${story.id}/manuscript/${scene.id}`
 }

@@ -68,7 +68,7 @@ public sealed class StoryTrashTests(LorexApiFactory factory) : IClassFixture<Lor
             (await client.PostAsJsonAsync($"{Story(u, story)}/scenes", new SceneRequest("Smuggled", null, null, null, null, null))).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await PutManuscript(client, u, story, gate, "Written into the Trash.", prose.UpdatedAt)).StatusCode);
+            (await PutManuscript(client, u, story, gate, "Written into the Trash.", prose.Version)).StatusCode);
 
         var listed = Assert.Single((await Trash(client, u)).Items);
         Assert.Equal((TrashItemKind.Story, story, "The Long Winter", (Guid?)story, TrashRestoreBlock.None), (listed.Kind, listed.Id, listed.Name, listed.StoryId, listed.BlockedBy));

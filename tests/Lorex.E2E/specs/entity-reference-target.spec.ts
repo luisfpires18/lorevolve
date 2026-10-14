@@ -179,9 +179,13 @@ test.describe('a link field limited to one type', () => {
     const kingdom = types
       .find((type) => type.id === w.character)!
       .fields.find((f) => f.name === 'Kingdom')!
-    const save = (referencedEntityId: string) =>
-      page.request.put(`/api/universes/${w.u}/entities/${w.mara}`, {
+    const mara = `/api/universes/${w.u}/entities/${w.mara}`
+    const version = async () =>
+      ((await (await page.request.get(mara)).json()) as { version: number }).version
+    const save = async (referencedEntityId: string) =>
+      page.request.put(mara, {
         data: {
+          expectedVersion: await version(),
           entityTypeId: w.character,
           name: 'Mara',
           summary: null,
@@ -263,6 +267,13 @@ test.describe('a link field limited to one type', () => {
       (
         await page.request.put(`/api/universes/${w.u}/entities/${w.mara}`, {
           data: {
+            expectedVersion: (
+              (await (
+                await page.request.get(`/api/universes/${w.u}/entities/${w.mara}`)
+              ).json()) as {
+                version: number
+              }
+            ).version,
             entityTypeId: w.character,
             name: 'Mara',
             summary: null,

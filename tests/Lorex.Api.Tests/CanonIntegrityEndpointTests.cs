@@ -966,7 +966,7 @@ public sealed class CanonIntegrityEndpointTests(LorexApiFactory factory) : IClas
         Guid fieldId,
         Guid referencedEntityId)
     {
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PutVersionedAsync(
             $"/api/universes/{universeId}/entities/{entity.Id}",
             new EntityRequest(
                 entity.EntityTypeId,
@@ -994,7 +994,7 @@ public sealed class CanonIntegrityEndpointTests(LorexApiFactory factory) : IClas
         string name,
         CanonStatus status)
     {
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PutVersionedAsync(
             $"/api/universes/{universeId}/entities/{entity.Id}",
             new EntityRequest(
                 entity.EntityTypeId,

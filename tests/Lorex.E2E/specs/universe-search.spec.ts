@@ -90,7 +90,7 @@ async function seedWorld(page: Page): Promise<World> {
   const articleEntity = await entry('Harbour Keeper')
   await api(page, 'PUT', `${u}/entities/${articleEntity.id}/article`, {
     content: doc('Long before the war the Tarrowmere lamps were lit by hand.'),
-    expectedUpdatedAt: null,
+    expectedVersion: 0,
   })
 
   const story = await api<{ id: string }>(page, 'POST', `${u}/stories`, {
@@ -124,7 +124,7 @@ async function seedWorld(page: Page): Promise<World> {
   })
   await api(page, 'PUT', `${s}/scenes/${proseScene.id}/manuscript`, {
     content: 'The hall had emptied long before the Hollowmere bells rang.',
-    expectedUpdatedAt: null,
+    expectedVersion: 0,
   })
   const arc = await api<{ id: string }>(page, 'POST', `${s}/plot-arcs`, {
     title: 'Fall of Cindervane',

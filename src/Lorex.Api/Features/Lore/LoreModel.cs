@@ -227,6 +227,12 @@ public sealed class LoreEntity : Publishing.IPublishable
 
     public DateTime UpdatedAt { get; set; }
 
+    /// <summary>
+    /// The edit version of the entry's structured lore - name, summary, type, status, aliases, tags and field values,: server-owned, 1 when created, advanced once by every write that changes the entry's structured lore - name, summary, type, status, aliases, tags and field values,.
+    /// A save names the version it was written over and is refused when it is no longer current (ADR 0043).
+    /// </summary>
+    public int Version { get; set; } = 1;
+
     public ICollection<EntityAlias> Aliases { get; set; } = [];
 
     public ICollection<EntityFieldValue> FieldValues { get; set; } = [];

@@ -163,10 +163,10 @@ public sealed class UniverseMembershipMigrationTests : IDisposable
         foreach (var table in tables)
         {
             // A scene's custom month (AddChronologyCalendars, 039), an account's storage allowance (AddAccountStorageQuota,
-            // ADR 0042) and a version's author (AddRevisionActors, 042) arrive after memberships, so a rollback past them
-            // takes them.
+            // ADR 0042), a version's author (AddRevisionActors, 042) and an edit version (AddContentEditVersions, ADR 0043)
+            // arrive after memberships, so a rollback past them takes them.
             var columns = (await Strings(db, $"SELECT name AS Value FROM pragma_table_info('{table}') ORDER BY cid"))
-                .Where(column => column is not "MonthId" and not "StorageQuotaBytes" and not "ActorUserId");
+                .Where(column => column is not "MonthId" and not "StorageQuotaBytes" and not "ActorUserId" and not "Version");
             var select = string.Join(" || '|' || ", columns.Select(column => $"COALESCE(CAST(\"{column}\" AS TEXT), '~')"));
             rows.AddRange(await Strings(db, $"SELECT '{table}:' || {select} AS Value FROM \"{table}\" ORDER BY 1"));
         }

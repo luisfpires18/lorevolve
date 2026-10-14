@@ -539,7 +539,7 @@ public sealed class CanonRelationshipAgeRuleTests(LorexApiFactory factory) : ICl
     }
 
     private static Task<HttpResponseMessage> SetBorn(World world, EntityDetail entity, double? born, Guid? era = null) =>
-        world.Client.PutAsJsonAsync(
+        world.Client.PutVersionedAsync(
             $"/api/universes/{world.UniverseId}/entities/{entity.Id}",
             new EntityRequest(
                 entity.EntityTypeId,

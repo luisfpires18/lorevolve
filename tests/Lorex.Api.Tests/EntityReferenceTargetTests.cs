@@ -191,7 +191,7 @@ public sealed class EntityReferenceTargetTests(LorexApiFactory factory) : IClass
 
         (await w.Client.DeleteAsync($"/api/universes/{w.U}/entities/{arkazia}")).EnsureSuccessStatusCode();
 
-        var renamed = await w.Client.PutAsJsonAsync(
+        var renamed = await w.Client.PutVersionedAsync(
             $"/api/universes/{w.U}/entities/{mara.Id}",
             new EntityRequest(w.Character, "Mara the Elder", null, CanonStatus.Canon, null, null, [Link(kingdom, arkazia)]));
         Assert.True(renamed.IsSuccessStatusCode, await renamed.Content.ReadAsStringAsync());

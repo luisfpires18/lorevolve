@@ -64,6 +64,12 @@ internal static class StoryOrder
         {
             foreach (var scene in container.Scenes)
             {
+                // A scene's chapter is on its form, so a move to another one makes an open form's copy out of date (ADR 0043).
+                if (scene.ChapterId != container.ChapterId)
+                {
+                    scene.Version++;
+                }
+
                 scene.ChapterId = container.ChapterId;
                 scene.SortOrder = parked--;
             }

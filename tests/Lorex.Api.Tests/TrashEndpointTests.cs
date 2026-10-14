@@ -79,7 +79,7 @@ public sealed class TrashEndpointTests(LorexApiFactory factory) : IClassFixture<
             (await client.GetAsync($"{Entity(universe.Id, entry.Id)}/revisions")).StatusCode);
 
         // And it is not editable while it is in the Trash.
-        var edit = await client.PutAsJsonAsync(
+        var edit = await client.PutVersionedAsync(
             Entity(universe.Id, entry.Id),
             new EntityRequest(type, "Renamed", null, CanonStatus.Idea, null, null, null));
 
@@ -703,7 +703,7 @@ public sealed class TrashEndpointTests(LorexApiFactory factory) : IClassFixture<
     /// <summary>Re-saves an entry from its own detail, which is what the client does.</summary>
     private static async Task<EntityDetail> Save(HttpClient client, Guid universeId, EntityDetail entity)
     {
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PutVersionedAsync(
             Entity(universeId, entity.Id),
             new EntityRequest(
                 entity.EntityTypeId,

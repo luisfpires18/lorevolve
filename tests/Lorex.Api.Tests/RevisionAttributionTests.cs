@@ -6,6 +6,8 @@ using static Lorex.Api.Tests.ArticleTestClient;
 using static Lorex.Api.Tests.CollaborationTestClient;
 using static Lorex.Api.Tests.PlotTestClient;
 
+using static Lorex.Api.Tests.VersionTestClient;
+
 namespace Lorex.Api.Tests;
 
 /// <summary>
@@ -34,7 +36,7 @@ public sealed class RevisionAttributionTests(LorexApiFactory factory) : IClassFi
         Assert.All(await ManuscriptHistory(w.Owner, w), version => Assert.Equal(Owner(tag), version.ActorName));
 
         // An Editor's writes are the Editor's.
-        await Ok(w.Editor.PutAsJsonAsync(
+        await Ok(w.Editor.PutVersionedAsync(
             $"{u}/entities/{w.Entry}",
             new EntityRequest(w.CharacterType, "Ember Vale", "Edited by an editor.", CanonStatus.Canon, null, null, null)));
         await WriteArticle(w.Editor, w.U, w.Entry, Doc("An editor's words."));
@@ -92,7 +94,7 @@ public sealed class RevisionAttributionTests(LorexApiFactory factory) : IClassFi
         var w = await NewSharedWorld(_factory, tag);
         var u = $"/api/universes/{w.U}";
 
-        await Ok(w.Editor.PostAsync($"{u}/entities/{w.Entry}/revisions/{w.EntryRevision}/restore", null));
+        await Ok(RestoreEntryVersion(w.Editor, $"{u}/entities/{w.Entry}", w.EntryRevision));
         var entry = await EntryHistory(w.Owner, w.U, w.Entry);
         Assert.Equal(EntityRevisionKind.Restored, entry[0].Kind);
         Assert.Equal(w.EntryRevision, entry[0].RestoredFromRevisionId);
@@ -100,7 +102,7 @@ public sealed class RevisionAttributionTests(LorexApiFactory factory) : IClassFi
         Assert.Equal(Owner(tag), entry.Single(version => version.Id == w.EntryRevision).ActorName);
 
         var current = await ReadArticle(w.Editor, w.U, w.Entry);
-        await Ok(RestoreArticle(w.Editor, w.U, w.Entry, w.ArticleRevision, current.UpdatedAt));
+        await Ok(RestoreArticle(w.Editor, w.U, w.Entry, w.ArticleRevision, current.Version));
         var article = await ArticleRevisions(w.Owner, w.U, w.Entry);
         Assert.Equal(EntityRevisionKind.Restored, article[0].Kind);
         Assert.Equal(Editor(tag), article[0].ActorName);
@@ -109,7 +111,7 @@ public sealed class RevisionAttributionTests(LorexApiFactory factory) : IClassFi
         var manuscript = await ManuscriptTestClient.ReadManuscript(w.Editor, w.U, w.Story, w.Scene);
         await Ok(w.Editor.PostAsJsonAsync(
             $"{ManuscriptTestClient.Manuscript(w.U, w.Story, w.Scene)}/revisions/{w.ManuscriptRevision}/restore",
-            new SceneManuscriptRestoreRequest(manuscript.UpdatedAt)));
+            new SceneManuscriptRestoreRequest(manuscript.Version)));
         var prose = await ManuscriptHistory(w.Owner, w);
         Assert.Equal(SceneManuscriptRevisionKind.Restored, prose[0].Kind);
         Assert.Equal(Editor(tag), prose[0].ActorName);
@@ -136,11 +138,11 @@ public sealed class RevisionAttributionTests(LorexApiFactory factory) : IClassFi
         foreach (var who in new[] { w.Reviewer, w.Viewer })
         {
             await AssertDenied(
-                await who.PutAsJsonAsync($"{u}/entities/{w.Entry}", new EntityRequest(w.CharacterType, "Taken", null, CanonStatus.Canon, null, null, null)),
+                await who.PutVersionedAsync($"{u}/entities/{w.Entry}", new EntityRequest(w.CharacterType, "Taken", null, CanonStatus.Canon, null, null, null)),
                 "entry edit");
             await AssertDenied(await PutArticle(who, w.U, w.Entry, Doc("Taken."), null), "article save");
             await AssertDenied(await who.PutAsJsonAsync(scene, new SceneManuscriptRequest("Taken.", null)), "manuscript save");
-            await AssertDenied(await who.PostAsync($"{u}/entities/{w.Entry}/revisions/{w.EntryRevision}/restore", null), "entry restore");
+            await AssertDenied(await who.PostAsJsonAsync($"{u}/entities/{w.Entry}/revisions/{w.EntryRevision}/restore", new EntityRevisionRestoreRequest(1)), "entry restore");
             await AssertDenied(await RestoreArticle(who, w.U, w.Entry, w.ArticleRevision, null), "article restore");
             await AssertDenied(await who.PostAsJsonAsync($"{scene}/revisions/{w.ManuscriptRevision}/restore", new SceneManuscriptRestoreRequest(null)), "manuscript restore");
 
@@ -168,7 +170,7 @@ public sealed class RevisionAttributionTests(LorexApiFactory factory) : IClassFi
             await AssertHidden(await a.Editor.GetAsync($"/api/universes/{universe}/entities/{b.Entry}/revisions"), "entry history");
             await AssertHidden(await a.Editor.GetAsync($"{ArticlePath(universe, b.Entry)}/revisions"), "article history");
             await AssertHidden(await a.Editor.GetAsync($"{ManuscriptTestClient.Manuscript(universe, b.Story, b.Scene)}/revisions"), "manuscript history");
-            await AssertHidden(await a.Editor.PostAsync($"/api/universes/{universe}/entities/{b.Entry}/revisions/{b.EntryRevision}/restore", null), "entry restore");
+            await AssertHidden(await a.Editor.PostAsJsonAsync($"/api/universes/{universe}/entities/{b.Entry}/revisions/{b.EntryRevision}/restore", new EntityRevisionRestoreRequest(1)), "entry restore");
         }
 
         // Nor is one of B's versions reachable through one of A's entries.
@@ -206,13 +208,13 @@ public sealed class RevisionAttributionTests(LorexApiFactory factory) : IClassFi
         Assert.Equal(w.ArticleRevision, (await ArticleRevision(w.Owner, w.U, w.Entry, w.ArticleRevision)).Id);
 
         // Putting one back records a new version, named; the old ones are left as they were.
-        await Ok(w.Owner.PostAsync($"/api/universes/{w.U}/entities/{w.Entry}/revisions/{w.EntryRevision}/restore", null));
+        await Ok(RestoreEntryVersion(w.Owner, $"/api/universes/{w.U}/entities/{w.Entry}", w.EntryRevision));
         var entry = await EntryHistory(w.Owner, w.U, w.Entry);
         Assert.Equal(Owner(tag), entry[0].ActorName);
         Assert.All(entry.Skip(1), version => Assert.Null(version.ActorName));
 
         var current = await ReadArticle(w.Owner, w.U, w.Entry);
-        await Ok(RestoreArticle(w.Owner, w.U, w.Entry, w.ArticleRevision, current.UpdatedAt));
+        await Ok(RestoreArticle(w.Owner, w.U, w.Entry, w.ArticleRevision, current.Version));
         Assert.Equal(Owner(tag), (await ArticleRevisions(w.Owner, w.U, w.Entry))[0].ActorName);
     }
 
@@ -248,7 +250,7 @@ public sealed class RevisionAttributionTests(LorexApiFactory factory) : IClassFi
     {
         const string tag = "attr-backup";
         var w = await NewSharedWorld(_factory, tag);
-        await Ok(w.Editor.PutAsJsonAsync(
+        await Ok(w.Editor.PutVersionedAsync(
             $"/api/universes/{w.U}/entities/{w.Entry}",
             new EntityRequest(w.CharacterType, "Ember Vale", "The editor was here.", CanonStatus.Canon, null, null, null)));
         await WriteArticle(w.Editor, w.U, w.Entry, Doc("The editor was here."));

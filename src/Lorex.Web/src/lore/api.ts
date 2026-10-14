@@ -202,6 +202,10 @@ export function bulkCreateEntities(universeId: string, entries: BulkEntityRow[])
   })
 }
 
+/** The code on the 409 an entry save or restore gets when the entry was saved somewhere else after it was opened (ADR 0043). */
+export const ENTRY_CHANGED = 'entity_changed'
+
+/** Saves the entry's structured lore over the version `input.expectedVersion` names, if that is still the latest. */
 export function updateEntity(universeId: string, entityId: string, input: EntityInput) {
   return apiFetch<EntityDetail>(`${base(universeId)}/entities/${entityId}`, {
     method: 'PUT',

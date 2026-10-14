@@ -16,6 +16,8 @@ using static Lorex.Api.Tests.ArticleTestClient;
 using static Lorex.Api.Tests.ManuscriptTestClient;
 using static Lorex.Api.Tests.PlotTestClient;
 
+using static Lorex.Api.Tests.VersionTestClient;
+
 namespace Lorex.Api.Tests;
 
 /// <summary>
@@ -204,7 +206,7 @@ public sealed partial class EntityArticleMigrationTests : IDisposable
             Assert.Equal(RichDocument, (await ArticleRevision(client, universeId, warden, baseline.Id)).Content);
 
             Assert.Equal(legacyArticle, (await ReadArticle(client, universeId, coast)).Content);
-            Assert.Equal(new EntityArticleResponse(cleared, string.Empty, null), await ReadArticle(client, universeId, cleared));
+            Assert.Equal(new EntityArticleResponse(cleared, string.Empty, null, 0), await ReadArticle(client, universeId, cleared));
 
             var found = (await client.GetFromJsonAsync<EntityPage>($"/api/universes/{universeId}/entities?search=older"))!;
             var hit = Assert.Single(found.Items);
@@ -227,7 +229,7 @@ public sealed partial class EntityArticleMigrationTests : IDisposable
             Assert.Equal([2, 1], (await ArticleRevisions(client, universeId, warden)).Select(version => version.Number));
 
             var wardenDetail = (await client.GetFromJsonAsync<EntityDetail>($"/api/universes/{universeId}/entities/{warden}"))!;
-            (await client.PutAsJsonAsync(
+            (await client.PutVersionedAsync(
                 $"/api/universes/{universeId}/entities/{warden}",
                 new EntityRequest(
                     wardenDetail.EntityTypeId, "Warden", "Keeper of the drowned coast.", CanonStatus.Canon, ["The Warden"], ["coast"], null)))
@@ -236,8 +238,7 @@ public sealed partial class EntityArticleMigrationTests : IDisposable
                 $"/api/universes/{universeId}/entities/{warden}/revisions"))!.First();
             Assert.Equal(EntityRevisionChange.Summary, newest.Changes);
 
-            (await client.PostAsync(
-                $"/api/universes/{universeId}/entities/{warden}/revisions/{first.Id}/restore", null)).EnsureSuccessStatusCode();
+            (await RestoreEntryVersion(client, $"/api/universes/{universeId}/entities/{warden}", first.Id)).EnsureSuccessStatusCode();
             var kept = await ReadArticle(client, universeId, warden);
             Assert.Equal(Doc("Rewritten after the move."), kept.Content);
             SameMoment(saved.UpdatedAt, kept.UpdatedAt);

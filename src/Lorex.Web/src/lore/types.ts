@@ -230,6 +230,8 @@ export interface EntityDetail extends EntitySummary {
   createdAt: string
   /** A live family link touches it, so its tree stays reachable whatever its type (ADR 0040). */
   hasFamilyConnections: boolean
+  /** What the entry form's save names as the version it was written over (ADR 0043). */
+  version: number
 }
 
 export interface EntityPage {
@@ -272,6 +274,8 @@ export interface EntityInput {
   aliases: string[]
   tags: string[]
   fields: FieldValueInput[]
+  /** The entry's version an edit was written over; left out on create. */
+  expectedVersion?: number
 }
 
 /** One row of a mass create: only what an entry's basic shell is. */
