@@ -8270,7 +8270,8 @@ html:has(.viewer[open]) {
   font-size: var(--text-item);
 }
 
-.story__stale {
+.story__stale,
+.story__sent {
   margin: 1rem 0 0;
 }
 
@@ -14594,6 +14595,37 @@ details.reviewsection > .reviewsection__list {
 
 .reviewthread__tools:empty {
   display: none;
+}
+
+/* ---------- Suggested changes (045) ----------
+
+   Comments and suggestions share the review drawer as two tabs; each tab's panel lays its parts out as the drawer's body
+   does. A suggestion is a card like a thread: who and when, a caution once the content was saved since, its changed
+   fields "Before" above "Suggested", then how it was decided. */
+
+.reviewdrawer .tabs {
+  /* A scrolling row in the body's column would otherwise shrink to nothing once the threads overflow it. */
+  flex: none;
+  margin: 0;
+}
+
+.reviewdrawer .tabs__panel:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.suggestion .reviewcomment__meta,
+.suggestion .reviewthread__resolved,
+.suggestion .reviewthread__tools,
+.suggestion__note {
+  margin: 0;
 }
 
 @media (max-width: 640px) {

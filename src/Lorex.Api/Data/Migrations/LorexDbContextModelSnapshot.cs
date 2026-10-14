@@ -1797,6 +1797,64 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("Stories", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Suggestions.SuggestedChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("BaseVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Before")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Proposed")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProposedByUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResolvedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SceneId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("StoryId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityId");
+
+                    b.HasIndex("SceneId");
+
+                    b.HasIndex("StoryId");
+
+                    b.ToTable("SuggestedChanges", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SuggestedChanges_Status", "\"Status\" IN (0, 1, 2)");
+
+                            t.HasCheckConstraint("CK_SuggestedChanges_Target", "(\"EntityId\" IS NOT NULL) + (\"StoryId\" IS NOT NULL) + (\"SceneId\" IS NOT NULL) = 1");
+                        });
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Timeline.TimelineEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2943,6 +3001,30 @@ namespace Lorex.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Suggestions.SuggestedChange", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
+                        .WithMany()
+                        .HasForeignKey("EntityId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Lorex.Api.Features.Stories.Scene", "Scene")
+                        .WithMany()
+                        .HasForeignKey("SceneId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Lorex.Api.Features.Stories.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Entity");
+
+                    b.Navigation("Scene");
+
+                    b.Navigation("Story");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Timeline.TimelineEntry", b =>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { BookPlus, Hourglass, Pencil, Plus, Trash } from 'lucide-react'
+import { BookPlus, FilePenLine, Hourglass, Pencil, Plus, Trash } from 'lucide-react'
 import {
   Link,
   NavLink,
@@ -46,6 +46,7 @@ import {
   sceneCountLabel,
   UNCHAPTERED,
 } from '../stories/format'
+import { storyChanges } from '../stories/changes'
 import { beatsByScene, readingOrder, scenesIn } from '../stories/structure'
 import {
   STORY_STATUS_LABELS,
@@ -64,7 +65,10 @@ type LoadState =
   | { kind: 'error' }
 
 type SceneFormState =
-  { mode: 'closed' } | { mode: 'new'; chapterId: string | null } | { mode: 'edit'; scene: Scene }
+  | { mode: 'closed' }
+  | { mode: 'new'; chapterId: string | null }
+  | { mode: 'edit'; scene: Scene }
+  | { mode: 'suggest'; scene: Scene }
 
 type ChapterFormState =
   { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; chapter: Chapter; index: number }
@@ -130,7 +134,9 @@ function StoryView({ view }: { view: StoryViewName }) {
   const [stale, setStale] = useState(false)
   const [sceneForm, setSceneForm] = useState<SceneFormState>({ mode: 'closed' })
   const [chapterForm, setChapterForm] = useState<ChapterFormState>({ mode: 'closed' })
-  const [isEditingStory, setIsEditingStory] = useState(false)
+  const [storyForm, setStoryForm] = useState<'closed' | 'edit' | 'suggest'>('closed')
+  // A suggestion just sent from this page, said where it can be seen (task 045).
+  const [sent, setSent] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const [reloads, setReloads] = useState(0)
 
@@ -561,6 +567,7 @@ function StoryView({ view }: { view: StoryViewName }) {
         onMove={(target, by) => void moveWithin(target, by)}
         onMoveTo={(target, chapterId) => void moveTo(target, chapterId)}
         onEdit={(target) => setSceneForm({ mode: 'edit', scene: target })}
+        onSuggest={(target) => setSceneForm({ mode: 'suggest', scene: target })}
         onDelete={(target) => void removeScene(target)}
         publication={
           access.publish ? (
@@ -649,6 +656,9 @@ function StoryView({ view }: { view: StoryViewName }) {
                 universeId={universe.id}
                 subject={{ kind: 'story', storyId: story.id }}
                 subjectName={story.title}
+                describeSuggestion={storyChanges}
+                onSuggestionAccepted={reload}
+                onSuggest={() => setStoryForm('suggest')}
               />
             </div>
           )
@@ -691,12 +701,23 @@ function StoryView({ view }: { view: StoryViewName }) {
               <ActionIcon icon={Hourglass} />
               View on timeline
             </Link>
+            {access.suggestChanges && !access.editContent ? (
+              <button
+                className="actionmenu__item"
+                type="button"
+                onClick={() => setStoryForm('suggest')}
+                data-testid="suggest-story"
+              >
+                <ActionIcon icon={FilePenLine} />
+                Suggest changes
+              </button>
+            ) : null}
             {access.editContent ? (
               <>
                 <button
                   className="actionmenu__item"
                   type="button"
-                  onClick={() => setIsEditingStory(true)}
+                  onClick={() => setStoryForm('edit')}
                   data-testid="edit-story"
                 >
                   <ActionIcon icon={Pencil} />
@@ -717,6 +738,12 @@ function StoryView({ view }: { view: StoryViewName }) {
           </ActionMenu>
         </div>
       </PageHeader>
+
+      {sent ? (
+        <p className="callout story__sent" role="status" data-testid="suggestion-sent">
+          Suggestion sent. It&rsquo;s waiting under Review.
+        </p>
+      ) : null}
 
       {stale ? (
         <div className="notice notice--error story__stale" role="alert" data-testid="story-stale">
@@ -774,6 +801,8 @@ function StoryView({ view }: { view: StoryViewName }) {
           chronology={chronology}
           sceneId={sceneId}
           onEditScene={(scene) => setSceneForm({ mode: 'edit', scene })}
+          onSuggestScene={(scene) => setSceneForm({ mode: 'suggest', scene })}
+          onSceneChanged={reload}
           manuscriptPublication={(scene) =>
             access.publish ? (
               <StoryPartPublication
@@ -898,7 +927,7 @@ function StoryView({ view }: { view: StoryViewName }) {
         <SceneForm
           universeId={universe.id}
           storyId={story.id}
-          scene={sceneForm.mode === 'edit' ? sceneForm.scene : null}
+          scene={sceneForm.mode === 'new' ? null : sceneForm.scene}
           chapters={chapters}
           chapterId={sceneForm.mode === 'new' ? sceneForm.chapterId : sceneForm.scene.chapterId}
           chronology={chronology}
@@ -908,6 +937,14 @@ function StoryView({ view }: { view: StoryViewName }) {
             setAnnouncement(`Saved “${saved.title}”.`)
             reload()
           }}
+          onSuggested={
+            sceneForm.mode === 'suggest'
+              ? () => {
+                  setSceneForm({ mode: 'closed' })
+                  setSent(true)
+                }
+              : undefined
+          }
         />
       ) : null}
 
@@ -926,13 +963,21 @@ function StoryView({ view }: { view: StoryViewName }) {
         />
       ) : null}
 
-      {isEditingStory ? (
+      {storyForm !== 'closed' ? (
         <StoryForm
           universeId={universe.id}
           story={story}
-          onClose={() => setIsEditingStory(false)}
+          onClose={() => setStoryForm('closed')}
+          onSuggested={
+            storyForm === 'suggest'
+              ? () => {
+                  setStoryForm('closed')
+                  setSent(true)
+                }
+              : undefined
+          }
           onSaved={(saved) => {
-            setIsEditingStory(false)
+            setStoryForm('closed')
             showStory(saved)
           }}
         />

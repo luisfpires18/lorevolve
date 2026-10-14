@@ -42,6 +42,15 @@ public enum UniverseCapability
 
     /// <summary>Resolve a review thread and reopen it.</summary>
     ResolveComments,
+
+    /// <summary>
+    /// Propose changes to an entry, story or scene for someone else to accept (task 045). Never a write to the content
+    /// itself. Reading suggestions is <see cref="Read"/>.
+    /// </summary>
+    SuggestChanges,
+
+    /// <summary>Accept a suggestion - which then saves it as an ordinary edit - or reject it.</summary>
+    ResolveSuggestedChanges,
 }
 
 /// <summary>
@@ -80,10 +89,10 @@ public static class UniverseAccess
     {
         UniverseCapability.Read =>
             role is UniverseRole.Owner or UniverseRole.Editor or UniverseRole.Reviewer or UniverseRole.Viewer,
-        UniverseCapability.Comment =>
+        UniverseCapability.Comment or UniverseCapability.SuggestChanges =>
             role is UniverseRole.Owner or UniverseRole.Editor or UniverseRole.Reviewer,
         UniverseCapability.EditContent or UniverseCapability.ManageTrash or UniverseCapability.ManageHistory
-            or UniverseCapability.ResolveComments =>
+            or UniverseCapability.ResolveComments or UniverseCapability.ResolveSuggestedChanges =>
             role is UniverseRole.Owner or UniverseRole.Editor,
         UniverseCapability.PermanentlyDelete or UniverseCapability.ManageUniverse or UniverseCapability.Publish
             or UniverseCapability.Backup or UniverseCapability.ManageCollaborators =>

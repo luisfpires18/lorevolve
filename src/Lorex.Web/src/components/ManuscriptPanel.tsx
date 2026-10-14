@@ -19,6 +19,10 @@ interface ManuscriptPanelProps {
   sceneId: string | undefined
   /** Opens a scene's own form, the same drawer the Scenes view uses. */
   onEditScene: (scene: Scene) => void
+  /** Opens a scene's form to send a suggestion instead (task 045). */
+  onSuggestScene: (scene: Scene) => void
+  /** An accepted suggestion changed a scene: the story is read again. */
+  onSceneChanged: () => void
   /** The open scene's prose publication control (ADR 0039), built by the story page. */
   manuscriptPublication?: (scene: Scene) => ReactNode
 }
@@ -55,6 +59,8 @@ export function ManuscriptPanel({
   chronology,
   sceneId,
   onEditScene,
+  onSuggestScene,
+  onSceneChanged,
   manuscriptPublication,
 }: ManuscriptPanelProps) {
   const listId = useId()
@@ -206,6 +212,9 @@ export function ManuscriptPanel({
               where={whereOf(chapters, scenes, selected)}
               beats={beatsByScene(arcs).get(selected.id) ?? []}
               onEditScene={onEditScene}
+              onSuggestScene={onSuggestScene}
+              chapters={chapters}
+              onSceneChanged={onSceneChanged}
               publication={manuscriptPublication?.(selected)}
             />
           ) : (

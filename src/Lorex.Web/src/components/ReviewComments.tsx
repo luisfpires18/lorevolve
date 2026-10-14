@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { MessageSquare } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { QueryTabList, TabPanel } from './QueryTabs'
+import { ReviewSuggestions } from './ReviewSuggestions'
 import {
   COMMENT_MAX_LENGTH,
   commentsPath,
@@ -14,14 +16,22 @@ import {
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
 import { useDrawerGuard } from '../lib/drawerGuard'
+import type { Change } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
+import { suggestionsPath } from '../suggestions/api'
 import { useUniverseAccess } from '../universes/access'
 
-interface ReviewCommentsProps {
+interface ReviewCommentsProps<T> {
   universeId: string
   subject: CommentSubject
   /** What the comments are about, as its title or name, for the drawer's heading. */
   subjectName: string
+  /** A suggestion's two sides as the subject's own form shows its fields (task 045). */
+  describeSuggestion: (before: T, proposed: T) => Change[]
+  /** An accepted suggestion changed the subject: the page reads it again. */
+  onSuggestionAccepted: () => void
+  /** Opens the subject's own form to write a suggestion; the drawer closes first. */
+  onSuggest: () => void
 }
 
 const SUBJECT_WORDS: Record<CommentSubject['kind'], string> = {
@@ -30,13 +40,28 @@ const SUBJECT_WORDS: Record<CommentSubject['kind'], string> = {
   scene: 'On this scene',
 }
 
+const REVIEW_TABS = [
+  { id: 'comments', label: 'Comments' },
+  { id: 'suggestions', label: 'Suggestions' },
+] as const
+
+type ReviewTab = (typeof REVIEW_TABS)[number]['id']
+
 /**
- * The review layer for one piece of content (task 043): a Comments button opening a drawer of threads about the content
- * as a whole. Nothing is read until the drawer opens, so a page holding many subjects asks for none of their comments.
- * Every member reads; who may write and who may resolve is the API's decision, mirrored here only to leave out controls
- * a role cannot use.
+ * The review layer for one piece of content: a Review button opening a drawer about the content as a whole, with its
+ * comment threads (task 043) and its suggested changes (task 045) on two tabs. Nothing is read until the drawer opens -
+ * comments then, suggestions only once their tab is chosen - so a page holding many subjects asks for none of either.
+ * Every member reads; who may write, resolve, suggest and decide is the API's decision, mirrored here only to leave out
+ * controls a role cannot use.
  */
-export function ReviewComments({ universeId, subject, subjectName }: ReviewCommentsProps) {
+export function ReviewComments<T>({
+  universeId,
+  subject,
+  subjectName,
+  describeSuggestion,
+  onSuggestionAccepted,
+  onSuggest,
+}: ReviewCommentsProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
   const path = commentsPath(universeId, subject)
 
@@ -46,12 +71,12 @@ export function ReviewComments({ universeId, subject, subjectName }: ReviewComme
         className="button button--text reviewtrigger"
         type="button"
         aria-haspopup="dialog"
-        title="Comments"
+        title="Review"
         onClick={() => setIsOpen(true)}
         data-testid="comments-trigger"
       >
         <ActionIcon icon={MessageSquare} />
-        <span className="reviewtrigger__label">Comments</span>
+        <span className="reviewtrigger__label">Review</span>
       </button>
 
       {isOpen ? (
@@ -59,8 +84,12 @@ export function ReviewComments({ universeId, subject, subjectName }: ReviewComme
           key={path}
           universeId={universeId}
           path={path}
+          suggestions={suggestionsPath(universeId, subject)}
           kind={subject.kind}
           subjectName={subjectName}
+          describeSuggestion={describeSuggestion}
+          onSuggestionAccepted={onSuggestionAccepted}
+          onSuggest={onSuggest}
           onClose={() => setIsOpen(false)}
         />
       ) : null}
@@ -68,20 +97,35 @@ export function ReviewComments({ universeId, subject, subjectName }: ReviewComme
   )
 }
 
-interface DrawerProps {
+interface DrawerProps<T> {
   universeId: string
   path: string
+  suggestions: string
   kind: CommentSubject['kind']
   subjectName: string
+  describeSuggestion: (before: T, proposed: T) => Change[]
+  onSuggestionAccepted: () => void
+  onSuggest: () => void
   onClose: () => void
 }
 
-/** Read once, when it opens; afterwards kept in step by what each post, reply, resolve and reopen answers. */
-function CommentsDrawer({ universeId, path, kind, subjectName, onClose }: DrawerProps) {
+/** Comments read once, when it opens; afterwards kept in step by what each post, reply, resolve and reopen answers. */
+function CommentsDrawer<T>({
+  universeId,
+  path,
+  suggestions,
+  kind,
+  subjectName,
+  describeSuggestion,
+  onSuggestionAccepted,
+  onSuggest,
+  onClose,
+}: DrawerProps<T>) {
   const access = useUniverseAccess()
   const dialog = useRef<HTMLDialogElement>(null)
   const headingId = useId()
   const newId = useId()
+  const [tab, setTab] = useState<ReviewTab>('comments')
   const [draft, setDraft] = useState('')
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const [reply, setReply] = useState('')
@@ -100,6 +144,15 @@ function CommentsDrawer({ universeId, path, kind, subjectName, onClose }: Drawer
   )
 
   useReturnFocus()
+
+  /** Leaves the drawer for the subject's form - asking first if a comment would be lost. */
+  function suggest() {
+    if (isDirty && !window.confirm("Your comment hasn't been posted. Leave without posting it?")) {
+      return
+    }
+    onClose()
+    onSuggest()
+  }
 
   useEffect(() => {
     dialog.current?.showModal()
@@ -322,7 +375,7 @@ function CommentsDrawer({ universeId, path, kind, subjectName, onClose }: Drawer
     >
       <div className="drawer__panel">
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Comments</p>
+          <p className="drawer__eyebrow">Review</p>
           <h2 className="drawer__title" id={headingId}>
             <bdi>{subjectName}</bdi>
           </h2>
@@ -330,93 +383,115 @@ function CommentsDrawer({ universeId, path, kind, subjectName, onClose }: Drawer
         </header>
 
         <div className="drawer__body">
-          {message ? (
-            <p className="form__message" role="alert" data-testid="comments-error">
-              {message}
-            </p>
-          ) : null}
+          <QueryTabList
+            label="Review"
+            idPrefix="review"
+            tabs={REVIEW_TABS}
+            tab={tab}
+            onChoose={setTab}
+          />
 
-          {access.comment ? (
-            <form
-              className="reviewform"
-              onSubmit={(event) => {
-                event.preventDefault()
-                void post()
-              }}
-            >
-              <label className="field__label" htmlFor={newId}>
-                New comment
-              </label>
-              <textarea
-                id={newId}
-                className="field__input field__input--area"
-                rows={3}
-                dir="auto"
-                maxLength={COMMENT_MAX_LENGTH}
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                aria-invalid={draftError ? true : undefined}
-                aria-describedby={draftError ? `${newId}-error` : undefined}
-                data-testid="comment-new-text"
-              />
-              {draftError ? (
-                <p className="field__error" id={`${newId}-error`}>
-                  {draftError}
-                </p>
-              ) : null}
-              <div>
-                <button
-                  className="button button--sm"
-                  type="submit"
-                  disabled={busy !== null}
-                  data-testid="comment-new-post"
-                >
-                  {busy === 'new' ? 'Posting' : 'Post comment'}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <p className="history__quiet" data-testid="comments-read-only">
-              You can read comments here, but your role can&rsquo;t add them.
-            </p>
-          )}
+          <TabPanel idPrefix="review" id="comments" tab={tab}>
+            {message ? (
+              <p className="form__message" role="alert" data-testid="comments-error">
+                {message}
+              </p>
+            ) : null}
 
-          {failed ? (
-            <p className="history__quiet" role="status">
-              The comments could not be read.
-            </p>
-          ) : threads === null ? (
-            <p className="history__quiet" role="status">
-              Opening&hellip;
-            </p>
-          ) : threads.length === 0 ? (
-            <p className="history__quiet" data-testid="comments-empty">
-              No comments yet.
-            </p>
-          ) : (
-            <>
-              {open.length > 0 ? (
-                <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
-                  <h3 className="reviewsection__title" id={`${headingId}-open`}>
-                    Open <span className="reviewsection__count">{open.length}</span>
-                  </h3>
-                  <ol className="reviewsection__list" data-testid="comments-open">
-                    {open.map(renderThread)}
-                  </ol>
-                </section>
-              ) : null}
-              {resolved.length > 0 ? (
-                <details className="reviewsection" data-testid="comments-resolved-group">
-                  <summary className="reviewsection__title">
-                    Resolved <span className="reviewsection__count">{resolved.length}</span>
-                  </summary>
-                  <ol className="reviewsection__list" data-testid="comments-resolved">
-                    {resolved.map(renderThread)}
-                  </ol>
-                </details>
-              ) : null}
-            </>
-          )}
+            {access.comment ? (
+              <form
+                className="reviewform"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  void post()
+                }}
+              >
+                <label className="field__label" htmlFor={newId}>
+                  New comment
+                </label>
+                <textarea
+                  id={newId}
+                  className="field__input field__input--area"
+                  rows={3}
+                  dir="auto"
+                  maxLength={COMMENT_MAX_LENGTH}
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  aria-invalid={draftError ? true : undefined}
+                  aria-describedby={draftError ? `${newId}-error` : undefined}
+                  data-testid="comment-new-text"
+                />
+                {draftError ? (
+                  <p className="field__error" id={`${newId}-error`}>
+                    {draftError}
+                  </p>
+                ) : null}
+                <div>
+                  <button
+                    className="button button--sm"
+                    type="submit"
+                    disabled={busy !== null}
+                    data-testid="comment-new-post"
+                  >
+                    {busy === 'new' ? 'Posting' : 'Post comment'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <p className="history__quiet" data-testid="comments-read-only">
+                You can read comments here, but your role can&rsquo;t add them.
+              </p>
+            )}
+
+            {failed ? (
+              <p className="history__quiet" role="status">
+                The comments could not be read.
+              </p>
+            ) : threads === null ? (
+              <p className="history__quiet" role="status">
+                Opening&hellip;
+              </p>
+            ) : threads.length === 0 ? (
+              <p className="history__quiet" data-testid="comments-empty">
+                No comments yet.
+              </p>
+            ) : (
+              <>
+                {open.length > 0 ? (
+                  <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
+                    <h3 className="reviewsection__title" id={`${headingId}-open`}>
+                      Open <span className="reviewsection__count">{open.length}</span>
+                    </h3>
+                    <ol className="reviewsection__list" data-testid="comments-open">
+                      {open.map(renderThread)}
+                    </ol>
+                  </section>
+                ) : null}
+                {resolved.length > 0 ? (
+                  <details className="reviewsection" data-testid="comments-resolved-group">
+                    <summary className="reviewsection__title">
+                      Resolved <span className="reviewsection__count">{resolved.length}</span>
+                    </summary>
+                    <ol className="reviewsection__list" data-testid="comments-resolved">
+                      {resolved.map(renderThread)}
+                    </ol>
+                  </details>
+                ) : null}
+              </>
+            )}
+          </TabPanel>
+
+          <TabPanel idPrefix="review" id="suggestions" tab={tab}>
+            <ReviewSuggestions
+              universeId={universeId}
+              path={suggestions}
+              what={kind}
+              active={tab === 'suggestions'}
+              describe={describeSuggestion}
+              onAccepted={onSuggestionAccepted}
+              onSuggest={suggest}
+            />
+          </TabPanel>
         </div>
 
         <footer className="drawer__actions">

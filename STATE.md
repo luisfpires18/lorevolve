@@ -50,6 +50,31 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   next numbered phase resumes only when the owner says so.
 - **Design refactor 001-007 done and merged** (007 at `cc798c1`, merged into `dev` at `a87b7da`; Deploy DEV #47 green).
   The contract is now an as-built reference. See Design refactor below.
+- **Roadmap task 045 - suggested changes** (`feat/suggested-changes` off `dev` at `d312bf3`; committed, not merged, not
+  pushed). One migration (`AddSuggestedChanges`), backup stays **22**. ADR 0044 (new); 0041 amendment.
+  - Capabilities `SuggestChanges` (owner, Editor, Reviewer) and `ResolveSuggestedChanges` (owner, Editor); reading is `Read`.
+  - `SuggestedChanges`: one of entry/story/scene (cascading keys, check constraint), `BaseVersion`, `Before`/`Proposed` as
+    JSON of the feature's own snapshot records (`EntrySuggestion`... with `SuggestedFieldValue`, `SuggestedLore`,
+    `SuggestedDate` - never API response types), status, raw proposer/resolver ids. Lists: `state=open|decided`, 20 a
+    page newest first, `before` cursor (time, id); the drawer reads one page of each and offers Show more.
+  - Propose = the target's own `PUT` body to `.../suggestions`: only the save's own checks and normalisation (extracted:
+    entry `CheckEntryAsync`/`NormalizedAliases`/`NormalizedTags`/`PrepareFieldValuesAsync`, scene `CheckAsync`, the three
+    `Changed` 409s), never the save path: same 409 (`entity_changed`...), validation and 404; empty = 400
+    `suggestion_unchanged`; the suggestion row is the only write (a test fails any other write command).
+  - Accept = `Proposed` replayed through the same path (entry under the Canon gate) as the resolver over `BaseVersion`, one
+    transaction: history author = resolver, version +1 once. Target saved since = 409 `suggestion_target_changed` (no
+    merge, no force; `targetChanged` derived). Decided = 409 `suggestion_resolved`. Reject touches nothing else.
+  - Trash hides (404), restore returns, permanent delete cascades; no backup. Entry/story/scene forms only: article and
+    manuscript prose deferred.
+  - UI: the review button is now **Review** (Comments | Suggestions tabs; suggestions read only when their tab opens). Each
+    suggestion: author, time, a caution once the content changed, fields "Before"/"Suggested" (`ChangeList`), Accept/Reject.
+    Reviewer: "Suggest changes" where Edit stands (entry, icon alone below 640px) and in the story/scene menus; everyone who
+    can suggest: Review > Suggestions > Suggest changes. The same forms in suggest mode ("Send suggestion"); a refused send
+    keeps the work through `EditConflict`. Owner/Editor menus unchanged.
+  - Tests: API 1462 -> 1485 (`SuggestionTests` 21, `SuggestionMigrationTests` 2 incl. a real-file accept race; matrix +8
+    routes). Playwright `suggested-changes.spec.ts` 4 (review-comments and collaboration moved to "Review" and the new
+    Reviewer line); focused + 13 neighbouring specs on a fresh DB, two workers: 66/66. Full suite not run locally;
+    delegated to GitHub Actions.
 - **Fix: entry tools on a phone** (`fix/entry-tools-phone-wrap` off `dev` at `a832393`). CI red since 043:
   `review-comments.spec.ts` "the entry menu wrapped under Edit" at 390px on Linux font metrics (Private, Edit, Family tree,
   ⋯ overflowed). Family tree is now its icon alone below 640px, still named, like Comments. Reproduced locally with a
@@ -1495,7 +1520,7 @@ tool has changed the picture.
   for personal use and for organisations under $1M revenue, which is true of Lorex today. Worth
   revisiting if that ever stops being true. ADR 0019.
 - **Collaboration, after 030** (ADR 0041) - not gaps: outbound email delivery of invitations (the link and model are
-  ready for it), notifications, suggestions (045), comment mentions/editing/anchors (comments done in 043),
+  ready for it), notifications, comment mentions/editing/anchors (comments done in 043), prose suggestions for articles and manuscripts, open-suggestion counts, replies on a suggestion (suggestions done in 045),
   trashed/restored-by and an activity feed (version authors done in 042), version checks for moments, relationships, chapters and plot (044 covers entries, articles, stories, scenes, manuscripts), ownership transfer, public
   collaborator credit; a collaborator's idea pointing into a shared universe; the public page's workspace link for
   members. An Editor restoring a previously public item from the Trash brings back the owner's selection as it was.

@@ -1,149 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChangeList, EditConflict } from './EditConflict'
-import {
-  ChronologyPointFields,
-  type ChronologyPointDraft,
-  type ChronologyPointPart,
-} from './ChronologyPointFields'
-import { EntityMultiPicker, EntityPicker, type EntityChoice } from './EntityPicker'
+import { ChronologyPointFields, type ChronologyPointPart } from './ChronologyPointFields'
+import { EntityMultiPicker, EntityPicker } from './EntityPicker'
 import { hasCalendar, namesEras } from '../chronology/format'
-import { differing, isChangedElsewhere, type Change } from '../lib/editConflict'
-import type { Chronology, ChronologyValue } from '../chronology/types'
+import { isChangedElsewhere } from '../lib/editConflict'
+import type { Chronology } from '../chronology/types'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { createScene, getScene, SCENE_CHANGED, updateScene } from '../stories/api'
-import { chapterLabel, sceneWhen, UNCHAPTERED } from '../stories/format'
-import type { Chapter, Scene, SceneLoreReference } from '../stories/types'
-
-const EMPTY_POINT: ChronologyPointDraft = { eraId: '', year: '', month: '', day: '' }
-
-interface SceneDraft {
-  title: string
-  summary: string
-  notes: string
-  pov: EntityChoice | null
-  point: ChronologyPointDraft
-  entities: EntityChoice[]
-  /** The chapter's id, or '' for Unchaptered - the select's own empty value. */
-  chapterId: string
-}
-
-/**
- * A reference as the pickers hold it. An entry in the Trash keeps its place - the form posts every
- * reference back, so dropping it would delete it on the next save - and says why it is unavailable.
- */
-function choiceOf(reference: SceneLoreReference): EntityChoice {
-  return {
-    id: reference.entityId,
-    name: reference.isTrashed ? `${reference.name} (in Trash)` : reference.name,
-  }
-}
-
-function numberText(value: number | null) {
-  return value === null ? '' : String(value)
-}
-
-function draftFrom(scene: Scene | null, chapterId: string | null): SceneDraft {
-  if (!scene) {
-    return {
-      title: '',
-      summary: '',
-      notes: '',
-      pov: null,
-      point: EMPTY_POINT,
-      entities: [],
-      chapterId: chapterId ?? '',
-    }
-  }
-
-  return {
-    chapterId: scene.chapterId ?? '',
-    title: scene.title,
-    summary: scene.summary ?? '',
-    notes: scene.notes ?? '',
-    pov: scene.pov ? choiceOf(scene.pov) : null,
-    point: scene.chronology
-      ? {
-          eraId: scene.chronology.eraId ?? '',
-          year: numberText(scene.chronology.year),
-          month: scene.chronology.monthId ?? numberText(scene.chronology.month),
-          day: numberText(scene.chronology.day),
-        }
-      : EMPTY_POINT,
-    entities: scene.entities.map(choiceOf),
-  }
-}
-
-/** An empty box is no claim at all; anything unreadable is left for the API to refuse. */
-function toNumber(value: string): number | null {
-  const trimmed = value.trim()
-  if (trimmed === '') return null
-  const parsed = Number(trimmed)
-  return Number.isFinite(parsed) ? Math.trunc(parsed) : null
-}
-
-function trimmed(value: string) {
-  const text = value.trim()
-  return text === '' ? null : text
-}
-
-/**
- * Nothing typed at all is a scene not placed in time. Anything typed is sent as it stands: a custom calendar's month by its
- * id, a simple month by its number.
- */
-function chronologyOf(
-  point: ChronologyPointDraft,
-  reckonsInEras: boolean,
-  custom: boolean,
-): ChronologyValue | null {
-  if (Object.values(point).every((part) => part.trim() === '')) return null
-
-  return {
-    eraId: reckonsInEras ? trimmed(point.eraId) : null,
-    year: toNumber(point.year),
-    month: custom ? null : toNumber(point.month),
-    day: toNumber(point.day),
-    monthId: custom ? trimmed(point.month) : null,
-  }
-}
-
-/** The draft as the save sends it: every reference as its id, nothing typed in the date as no date at all. */
-function inputOf(draft: SceneDraft, reckonsInEras: boolean, custom: boolean) {
-  return {
-    title: draft.title.trim(),
-    summary: trimmed(draft.summary),
-    notes: trimmed(draft.notes),
-    povEntityId: draft.pov?.id ?? null,
-    chronology: chronologyOf(draft.point, reckonsInEras, custom),
-    entityIds: draft.entities.map((choice) => choice.id),
-    chapterId: draft.chapterId === '' ? null : draft.chapterId,
-  }
-}
-
-/** What differs between two drafts of a scene, in the form's own words: its fields, as the form shows them. */
-function changesOf(
-  latest: SceneDraft,
-  mine: SceneDraft,
-  chapterName: (id: string) => string,
-  when: (draft: SceneDraft) => string,
-): Change[] {
-  const names = (choices: EntityChoice[]) =>
-    choices
-      .map((choice) => choice.name)
-      .sort()
-      .join(', ')
-
-  return differing([
-    { label: 'Title', latest: latest.title, mine: mine.title.trim() },
-    { label: 'Chapter', latest: chapterName(latest.chapterId), mine: chapterName(mine.chapterId) },
-    { label: 'Summary', latest: latest.summary, mine: mine.summary.trim() },
-    { label: 'Notes', latest: latest.notes, mine: mine.notes.trim() },
-    { label: 'Point of view', latest: latest.pov?.name ?? '', mine: mine.pov?.name ?? '' },
-    { label: 'When', latest: when(latest), mine: when(mine) },
-    { label: 'Lore', latest: names(latest.entities), mine: names(mine.entities) },
-  ])
-}
+import { suggestSceneChanges } from '../suggestions/api'
+import { chapterLabel, UNCHAPTERED } from '../stories/format'
+import {
+  draftFrom,
+  EMPTY_POINT,
+  inputOf,
+  sceneChangesIn,
+  type SceneDraft,
+} from '../stories/sceneDraft'
+import type { Chapter, Scene } from '../stories/types'
 
 interface SceneFormProps {
   universeId: string
@@ -157,6 +32,8 @@ interface SceneFormProps {
   chronology: Chronology
   onClose: () => void
   onSaved: (scene: Scene) => void
+  /** Sends the form as a suggestion instead of saving it (task 045); the scene itself is not changed. */
+  onSuggested?: () => void
 }
 
 /**
@@ -177,7 +54,9 @@ export function SceneForm({
   chronology,
   onClose,
   onSaved,
+  onSuggested,
 }: SceneFormProps) {
+  const suggesting = onSuggested !== undefined && scene !== null
   const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the scene as stored, or the blank form in its chapter - which the draft is measured
@@ -207,9 +86,11 @@ export function SceneForm({
     payloadKey(inputOf(initial, reckonsInEras, custom))
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
-    scene
-      ? `“${scene.title}” has unsaved changes. Leave without saving them?`
-      : 'This new scene has not been created. Leave without saving it?',
+    suggesting && scene
+      ? `Your suggestion for “${scene.title}” hasn’t been sent. Leave without sending it?`
+      : scene
+        ? `“${scene.title}” has unsaved changes. Leave without saving them?`
+        : 'This new scene has not been created. Leave without saving it?',
     onClose,
   )
 
@@ -221,18 +102,7 @@ export function SceneForm({
   }, [])
 
   /** The latest saved scene against the form, in the form's own words. */
-  function sceneChanges(latest: SceneDraft, mine: SceneDraft) {
-    return changesOf(
-      latest,
-      mine,
-      (id) => {
-        const index = chapters.findIndex((chapter) => chapter.id === id)
-        return index < 0 ? UNCHAPTERED : chapterLabel(index, chapters[index].title)
-      },
-      (point) =>
-        sceneWhen(chronology, chronologyOf(point.point, reckonsInEras, custom))?.text ?? '',
-    )
-  }
+  const sceneChanges = sceneChangesIn(chapters, chronology)
 
   function edit(change: Partial<SceneDraft>) {
     setDraft((current) => ({ ...current, ...change }))
@@ -251,6 +121,14 @@ export function SceneForm({
     const input = inputOf(draft, reckonsInEras, custom)
 
     try {
+      if (suggesting && scene && onSuggested) {
+        await suggestSceneChanges(universeId, storyId, scene.id, {
+          ...input,
+          expectedVersion: base.version,
+        })
+        onSuggested()
+        return
+      }
       const saved = scene
         ? await updateScene(universeId, storyId, scene.id, {
             ...input,
@@ -266,10 +144,14 @@ export function SceneForm({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be saved.',
+            : suggesting
+              ? 'Some details need a change before this can be sent.'
+              : 'Some details need a change before this can be saved.',
         )
       } else {
-        setMessage('That scene could not be saved.')
+        setMessage(
+          suggesting ? 'That suggestion couldn’t be sent.' : 'That scene could not be saved.',
+        )
       }
     } finally {
       setIsSaving(false)
@@ -292,13 +174,24 @@ export function SceneForm({
         }}
       >
         <header className="drawer__head">
-          {scene ? <p className="drawer__eyebrow">Editing a scene</p> : null}
+          {scene ? (
+            <p className="drawer__eyebrow">
+              {suggesting ? 'Suggesting changes to a scene' : 'Editing a scene'}
+            </p>
+          ) : null}
           <h2 className="drawer__title" id="scene-heading">
             {scene ? scene.title : 'New scene'}
           </h2>
         </header>
 
         <div className="drawer__body">
+          {suggesting ? (
+            <p className="callout" data-testid="scene-suggesting">
+              You&rsquo;re suggesting changes. The scene stays as it is until the owner or an Editor
+              accepts them.
+            </p>
+          ) : null}
+
           {message ? (
             <p className="form__message" role="alert" data-testid="scene-error">
               {message}
@@ -325,6 +218,7 @@ export function SceneForm({
                 requestAnimationFrame(() => title.current?.focus())
               }}
               testId="scene-conflict"
+              suggesting={suggesting}
             />
           ) : null}
 
@@ -483,10 +377,18 @@ export function SceneForm({
             ref={saveButton}
             className="button"
             type="submit"
-            disabled={isSaving}
+            disabled={isSaving || (suggesting && !isDirty)}
             data-testid="save-scene"
           >
-            {isSaving ? 'Saving' : scene ? 'Save scene' : 'Add scene'}
+            {suggesting
+              ? isSaving
+                ? 'Sending'
+                : 'Send suggestion'
+              : isSaving
+                ? 'Saving'
+                : scene
+                  ? 'Save scene'
+                  : 'Add scene'}
           </button>
           <button
             className="button button--secondary"

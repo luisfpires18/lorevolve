@@ -21,6 +21,8 @@ interface EditConflictProps<T> {
   /** The author lets their unsaved work go for the version they reviewed. Asked first. */
   onUseLatest: (latest: T) => void
   testId: string
+  /** The unsaved work is a suggestion being written (task 045): it is sent, not saved. */
+  suggesting?: boolean
 }
 
 /**
@@ -38,6 +40,7 @@ export function EditConflict<T>({
   onKeepMine,
   onUseLatest,
   testId,
+  suggesting = false,
 }: EditConflictProps<T>) {
   const reviewId = useId()
   const hintId = useId()
@@ -76,11 +79,25 @@ export function EditConflict<T>({
   return (
     <div className="editconflict" data-testid={testId} data-state={state.kind}>
       <div role="alert">
-        <p className="editconflict__title">This {what} changed while you were editing.</p>
-        <p className="editconflict__text">
-          Your changes are still here and haven&rsquo;t been saved. Lorex won&rsquo;t save over the
-          newer version. Look at it first, then decide what to keep.
-        </p>
+        {suggesting ? (
+          <>
+            <p className="editconflict__title">
+              This {what} changed while you were writing your suggestion.
+            </p>
+            <p className="editconflict__text">
+              Your suggestion is still here and hasn&rsquo;t been sent. Look at the latest version
+              first, then decide what to keep.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="editconflict__title">This {what} changed while you were editing.</p>
+            <p className="editconflict__text">
+              Your changes are still here and haven&rsquo;t been saved. Lorex won&rsquo;t save over
+              the newer version. Look at it first, then decide what to keep.
+            </p>
+          </>
+        )}
       </div>
 
       {state.kind === 'notice' || state.kind === 'failed' ? (
@@ -145,7 +162,9 @@ export function EditConflict<T>({
             </button>
           </div>
           <p className="editconflict__hint" id={hintId}>
-            Your changes stay where they are, unsaved. Save again when you&rsquo;re ready.
+            {suggesting
+              ? 'Your suggestion stays here, unsent. Send it again when you’re ready.'
+              : 'Your changes stay where they are, unsaved. Save again when you’re ready.'}
           </p>
         </section>
       ) : null}
@@ -154,28 +173,39 @@ export function EditConflict<T>({
 }
 
 /**
- * A structured form's changes: each changed field once, the saved value above the author's. Stacked rather than side by
- * side, so a phone reads it as easily as a desk. Authored words keep their own direction.
+ * A structured form's changes: each changed field once, one value above the other. Stacked rather than side by side, so a
+ * phone reads it as easily as a desk. Authored words keep their own direction. A conflict reads "Saved now" above "Yours";
+ * a suggestion (task 045) reads "Before" above "Suggested".
  */
-export function ChangeList({ changes }: { changes: Change[] }) {
+export function ChangeList({
+  changes,
+  sides = { latest: 'Saved now', mine: 'Yours' },
+  empty = 'The latest version matches your changes.',
+  testId = 'conflict',
+}: {
+  changes: Change[]
+  sides?: { latest: string; mine: string }
+  empty?: string
+  testId?: string
+}) {
   if (changes.length === 0) {
-    return <p className="editconflict__text">The latest version matches your changes.</p>
+    return <p className="editconflict__text">{empty}</p>
   }
 
   return (
     <dl className="changelist">
       {changes.map((change) => (
-        <div className="changelist__row" key={change.label} data-testid="conflict-change">
+        <div className="changelist__row" key={change.label} data-testid={`${testId}-change`}>
           <dt className="changelist__label">{change.label}</dt>
           <dd className="changelist__value" data-side="latest">
-            <span className="changelist__side">Saved now</span>
-            <span dir="auto" data-testid="conflict-latest-value">
+            <span className="changelist__side">{sides.latest}</span>
+            <span dir="auto" data-testid={`${testId}-latest-value`}>
               {change.latest || '—'}
             </span>
           </dd>
           <dd className="changelist__value" data-side="mine">
-            <span className="changelist__side">Yours</span>
-            <span dir="auto" data-testid="conflict-mine-value">
+            <span className="changelist__side">{sides.mine}</span>
+            <span dir="auto" data-testid={`${testId}-mine-value`}>
               {change.mine || '—'}
             </span>
           </dd>

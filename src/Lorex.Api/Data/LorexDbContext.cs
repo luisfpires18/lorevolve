@@ -10,6 +10,7 @@ using Lorex.Api.Features.Relationships;
 using Lorex.Api.Features.RuleValidation;
 using Lorex.Api.Features.Storage;
 using Lorex.Api.Features.Stories;
+using Lorex.Api.Features.Suggestions;
 using Lorex.Api.Features.Timeline;
 using Lorex.Api.Features.Universes;
 using Lorex.Api.Features.WorldRules;
@@ -126,6 +127,8 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
     public DbSet<CommentThread> CommentThreads => Set<CommentThread>();
 
     public DbSet<Comment> Comments => Set<Comment>();
+
+    public DbSet<SuggestedChange> SuggestedChanges => Set<SuggestedChange>();
 
     public DbSet<ValidationTerm> ValidationTerms => Set<ValidationTerm>();
 

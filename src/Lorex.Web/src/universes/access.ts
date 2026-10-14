@@ -30,6 +30,10 @@ export interface UniverseCapabilities {
   comment: boolean
   /** Resolve and reopen review threads. */
   resolveComments: boolean
+  /** Suggest changes to an entry, story or scene for someone else to accept. Every member reads suggestions. */
+  suggestChanges: boolean
+  /** Accept a suggestion, which saves it as an ordinary edit, or reject it. */
+  resolveSuggestions: boolean
   /**
    * Keep account ideas about this universe. Not an API capability but a consequence of one: an idea may point only into
    * a universe its author owns (ADR 0030 amendment), so a collaborator has nothing to keep here.
@@ -48,6 +52,8 @@ const NONE: UniverseCapabilities = {
   manageCollaborators: false,
   comment: false,
   resolveComments: false,
+  suggestChanges: false,
+  resolveSuggestions: false,
   keepIdeas: false,
 }
 
@@ -66,6 +72,8 @@ export function capabilitiesOf(role: UniverseRoleValue): UniverseCapabilities {
         manageCollaborators: true,
         comment: true,
         resolveComments: true,
+        suggestChanges: true,
+        resolveSuggestions: true,
         keepIdeas: true,
       }
     case UniverseRole.Editor:
@@ -76,9 +84,11 @@ export function capabilitiesOf(role: UniverseRoleValue): UniverseCapabilities {
         manageHistory: true,
         comment: true,
         resolveComments: true,
+        suggestChanges: true,
+        resolveSuggestions: true,
       }
     case UniverseRole.Reviewer:
-      return { ...NONE, comment: true }
+      return { ...NONE, comment: true, suggestChanges: true }
     case UniverseRole.Viewer:
       return NONE
     default:
@@ -128,6 +138,6 @@ export const ROLE_DESCRIPTIONS: Record<UniverseRoleValue, string> = {
   [UniverseRole.Owner]: 'Owns this universe.',
   [UniverseRole.Editor]:
     'Can create and edit content, use Trash and restore items. Cannot permanently delete, publish, or manage the universe.',
-  [UniverseRole.Reviewer]: 'Can read and comment. Cannot edit content.',
+  [UniverseRole.Reviewer]: 'Can read, comment and suggest changes. Cannot edit content directly.',
   [UniverseRole.Viewer]: 'Can read the shared universe.',
 }

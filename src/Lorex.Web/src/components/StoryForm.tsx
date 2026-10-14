@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { ChangeList, EditConflict } from './EditConflict'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
-import { differing, isChangedElsewhere } from '../lib/editConflict'
+import { isChangedElsewhere } from '../lib/editConflict'
+import { suggestStoryChanges } from '../suggestions/api'
 import { useReturnFocus } from '../lib/returnFocus'
 import { createStory, getStory, STORY_CHANGED, updateStory } from '../stories/api'
+import { storyChanges } from '../stories/changes'
 import {
   STORY_STATUS_LABELS,
   STORY_STATUS_ORDER,
@@ -42,13 +44,16 @@ interface StoryFormProps {
   story: StoryDetail | null
   onClose: () => void
   onSaved: (story: StoryDetail) => void
+  /** Sends the form as a suggestion instead of saving it (task 045); the story itself is not changed. */
+  onSuggested?: () => void
 }
 
 /**
  * A story's title, premise and status, in the same drawer every Lorex form uses. Deliberately small:
  * a story is a title and what it is about, and its scenes are written on its own page.
  */
-export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProps) {
+export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: StoryFormProps) {
+  const suggesting = onSuggested !== undefined && story !== null
   const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the story as stored, or the blank form - which the draft is measured against, and the
@@ -65,9 +70,11 @@ export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProp
   const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
-    story
-      ? `“${story.title}” has unsaved changes. Leave without saving them?`
-      : 'This new story has not been created. Leave without saving it?',
+    suggesting && story
+      ? `Your suggestion for “${story.title}” hasn’t been sent. Leave without sending it?`
+      : story
+        ? `“${story.title}” has unsaved changes. Leave without saving them?`
+        : 'This new story has not been created. Leave without saving it?',
     onClose,
   )
 
@@ -92,6 +99,11 @@ export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProp
     const input = inputOf(draft)
 
     try {
+      if (suggesting && story && onSuggested) {
+        await suggestStoryChanges(universeId, story.id, { ...input, expectedVersion: base.version })
+        onSuggested()
+        return
+      }
       const saved = story
         ? await updateStory(universeId, story.id, { ...input, expectedVersion: base.version })
         : await createStory(universeId, input)
@@ -104,10 +116,14 @@ export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProp
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be saved.',
+            : suggesting
+              ? 'Some details need a change before this can be sent.'
+              : 'Some details need a change before this can be saved.',
         )
       } else {
-        setMessage('That story could not be saved.')
+        setMessage(
+          suggesting ? 'That suggestion couldn’t be sent.' : 'That story could not be saved.',
+        )
       }
     } finally {
       setIsSaving(false)
@@ -130,13 +146,24 @@ export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProp
         }}
       >
         <header className="drawer__head">
-          {story ? <p className="drawer__eyebrow">Editing a story</p> : null}
+          {story ? (
+            <p className="drawer__eyebrow">
+              {suggesting ? 'Suggesting changes to a story' : 'Editing a story'}
+            </p>
+          ) : null}
           <h2 className="drawer__title" id="story-heading">
             {story ? story.title : 'New story'}
           </h2>
         </header>
 
         <div className="drawer__body">
+          {suggesting ? (
+            <p className="callout" data-testid="story-suggesting">
+              You&rsquo;re suggesting changes. The story stays as it is until the owner or an Editor
+              accepts them.
+            </p>
+          ) : null}
+
           {message ? (
             <p className="form__message" role="alert" data-testid="story-error">
               {message}
@@ -147,19 +174,8 @@ export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProp
             <EditConflict
               what="story"
               read={() => getStory(universeId, story.id)}
-              renderLatest={(latest) => (
-                <ChangeList
-                  changes={differing([
-                    { label: 'Title', latest: latest.title, mine: draft.title.trim() },
-                    { label: 'Premise', latest: latest.premise ?? '', mine: draft.premise.trim() },
-                    {
-                      label: 'Status',
-                      latest: STORY_STATUS_LABELS[latest.status],
-                      mine: STORY_STATUS_LABELS[draft.status],
-                    },
-                  ])}
-                />
-              )}
+              renderLatest={(latest) => <ChangeList changes={storyChanges(latest, draft)} />}
+              suggesting={suggesting}
               onKeepMine={(latest) => {
                 // The form stays as typed, measured against the latest; the next save names the version reviewed.
                 setBase({ draft: draftOf(latest), version: latest.version })
@@ -243,10 +259,18 @@ export function StoryForm({ universeId, story, onClose, onSaved }: StoryFormProp
             ref={saveButton}
             className="button"
             type="submit"
-            disabled={isSaving}
+            disabled={isSaving || (suggesting && !isDirty)}
             data-testid="save-story"
           >
-            {isSaving ? 'Saving' : story ? 'Save story' : 'Create story'}
+            {suggesting
+              ? isSaving
+                ? 'Sending'
+                : 'Send suggestion'
+              : isSaving
+                ? 'Saving'
+                : story
+                  ? 'Save story'
+                  : 'Create story'}
           </button>
           <button
             className="button button--secondary"

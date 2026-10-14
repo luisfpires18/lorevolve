@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Lorex.Api.Data;
+using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Universes;
@@ -192,7 +193,23 @@ public static class SceneEndpoints
             return denied;
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        return await UpdateCoreAsync(db, universeId, storyId, sceneId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The one write path for an existing scene's form, shared with an accepted suggestion (ADR 0044) so it is validated,
+    /// versioned, moved and saved exactly like an ordinary edit. Access is the caller's to prove first. Runs in the
+    /// caller's transaction when it has one.
+    /// </summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        Guid sceneId,
+        SceneRequest request,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null)
@@ -214,32 +231,13 @@ public static class SceneEndpoints
         // Inside the transaction the write commits in, so nothing can land between this comparison and the write (ADR 0043).
         if (!EditVersion.Matches(scene.Version, request.ExpectedVersion))
         {
-            return EditVersion.Changed(
-                ChangedCode,
-                "Scene changed",
-                "This scene was changed after it was opened here. Nothing was overwritten.",
-                scene.Version);
-        }
-
-        var chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken);
-
-        if (StoryValidation.ValidateScene(request, chronology) is { } errors)
-        {
-            return Results.ValidationProblem(errors);
-        }
-
-        if (request.ChapterId is { } chapterId
-            && chapterId != scene.ChapterId
-            && !await ChapterEndpoints.BelongsToStoryAsync(db, storyId, chapterId, cancellationToken))
-        {
-            return Results.ValidationProblem(ChapterEndpoints.ForeignChapter());
+            return Changed(scene.Version);
         }
 
         var entityIds = Requested(request);
         var stored = scene.EntityLinks.Select(link => link.EntityId).ToHashSet();
 
-        if (await CheckReferencesAsync(
-                db, universeId, request.PovEntityId, entityIds, scene.PovEntityId, stored, cancellationToken)
+        if (await CheckAsync(db, universeId, storyId, scene.ChapterId, scene.PovEntityId, stored, request, cancellationToken)
             is { } refused)
         {
             return Results.ValidationProblem(refused);
@@ -545,8 +543,49 @@ public static class SceneEndpoints
         scene.Day = point?.Day;
     }
 
+    /// <summary>The 409 for a scene save written over a version that is no longer current (ADR 0043).</summary>
+    internal static IResult Changed(int currentVersion) =>
+        EditVersion.Changed(
+            ChangedCode,
+            "Scene changed",
+            "This scene was changed after it was opened here. Nothing was overwritten.",
+            currentVersion);
+
+    /// <summary>
+    /// The scene form's own checks against the scene as stored - shape and date, a chapter of this story, lore of this
+    /// universe and nothing newly chosen from the Trash - or null when it may be saved. Reads only; shared by the save and
+    /// by a suggestion (ADR 0044), which writes nothing at all.
+    /// </summary>
+    internal static async Task<Dictionary<string, string[]>?> CheckAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        Guid? storedChapterId,
+        Guid? storedPov,
+        HashSet<Guid> storedLinks,
+        SceneRequest request,
+        CancellationToken cancellationToken)
+    {
+        var chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken);
+
+        if (StoryValidation.ValidateScene(request, chronology) is { } errors)
+        {
+            return errors;
+        }
+
+        if (request.ChapterId is { } chapterId
+            && chapterId != storedChapterId
+            && !await ChapterEndpoints.BelongsToStoryAsync(db, storyId, chapterId, cancellationToken))
+        {
+            return ChapterEndpoints.ForeignChapter();
+        }
+
+        return await CheckReferencesAsync(
+            db, universeId, request.PovEntityId, Requested(request), storedPov, storedLinks, cancellationToken);
+    }
+
     /// <summary>The linked lore asked for, each entry once. Repeating an id links it once, as it does on a moment.</summary>
-    private static List<Guid> Requested(SceneRequest request) =>
+    internal static List<Guid> Requested(SceneRequest request) =>
         request.EntityIds?.Distinct().ToList() ?? [];
 
     /// <summary>
@@ -637,7 +676,7 @@ public static class SceneEndpoints
         Publishing.ContentVisibility ManuscriptVisibility,
         int Version);
 
-    private static async Task<SceneResponse?> LoadSceneAsync(
+    internal static async Task<SceneResponse?> LoadSceneAsync(
         LorexDbContext db,
         Guid universeId,
         Guid storyId,

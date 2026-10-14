@@ -36,7 +36,7 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
         /// <summary>Every member: owner, Editor, Reviewer, Viewer.</summary>
         Read,
 
-        /// <summary>The owner, Editors and Reviewers: review comments (043).</summary>
+        /// <summary>The owner, Editors and Reviewers: review comments (043) and suggested changes (045).</summary>
         Comment,
 
         /// <summary>The owner and Editors.</summary>
@@ -253,6 +253,16 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("resolve thread", Post, $"{u}/comment-threads/{any}/resolve", May.Edit),
             new("reopen thread", Post, $"{u}/comment-threads/{any}/reopen", May.Edit),
 
+            // ---------- Suggested changes (045) ----------
+            new("entry suggestions", Get, $"{e}/suggestions", May.Read),
+            new("suggest entry changes", Post, $"{e}/suggestions", May.Comment, Json(entry)),
+            new("story suggestions", Get, $"{s}/suggestions", May.Read),
+            new("suggest story changes", Post, $"{s}/suggestions", May.Comment, Json(new StoryRequest("Retitled", null, StoryStatus.Drafting, 1))),
+            new("scene suggestions", Get, $"{scene}/suggestions", May.Read),
+            new("suggest scene changes", Post, $"{scene}/suggestions", May.Comment, Json(new SceneRequest("Retitled", null, null, null, null, null, w.Chapter, 1))),
+            new("accept suggestion", Post, $"{u}/suggestions/{any}/accept", May.Edit),
+            new("reject suggestion", Post, $"{u}/suggestions/{any}/reject", May.Edit),
+
             // ---------- Collaborators (030) ----------
             new("collaborators", Get, $"{u}/collaborators", May.Own),
             new("change collaborator role", Put, $"{u}/collaborators/{w.EditorId}", May.Own, Json(new CollaboratorRoleRequest(UniverseRole.Viewer))),
@@ -421,6 +431,9 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             parts.Add(await threads.CountAsync());
             parts.Add(await threads.CountAsync(row => row.ResolvedAt != null));
             parts.Add(await threads.SelectMany(row => row.Comments).CountAsync());
+            var suggestions = db.SuggestedChanges.Where(row => row.Entity!.UniverseId == u || row.Story!.UniverseId == u || row.Scene!.Story!.UniverseId == u);
+            parts.Add(await suggestions.CountAsync());
+            parts.Add(await suggestions.CountAsync(row => row.ResolvedAt != null));
         });
 
         return string.Join("|", parts);

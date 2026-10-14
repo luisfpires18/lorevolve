@@ -212,3 +212,12 @@ only, or null when no account answers to the id. A removed collaborator's commen
 
 **Not in a backup.** Comments are private collaboration metadata about accounts, like memberships: export carries none
 and a restore has none. Format stays **22**.
+
+## Amendment: suggested changes (2026-10-14, task 045)
+
+**Two more capabilities.** `SuggestChanges` (owner, Editor, Reviewer) proposes a change to an entry, story or scene;
+`ResolveSuggestedChanges` (owner, Editor) accepts or rejects one. Reading suggestions is `Read`, so a Viewer reads them as
+they read comments. Proposing writes nothing to content, so a Reviewer still has no edit. Model, proposal, acceptance
+and lifecycle: ADR 0044. Like comments, suggestions name people by username only, keep a removed collaborator's name, and
+are not in a backup; format stays **22**.
+
