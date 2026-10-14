@@ -324,7 +324,7 @@ public sealed partial class TrashPermanentDeleteTests
             fields: [new FieldValueInput(mentor, null, null, null, null, null, eldric.Id)]);
 
         // Eldric points back at Maelis: the two selected entries reference each other.
-        (await client.PutAsJsonAsync(EntityPath(u, eldric.Id), new EntityRequest(
+        (await client.PutVersionedAsync(EntityPath(u, eldric.Id), new EntityRequest(
             character, "Eldric", null, CanonStatus.Idea, null, null,
             [new FieldValueInput(mentor, null, null, null, null, null, maelis.Id)]))).EnsureSuccessStatusCode();
 

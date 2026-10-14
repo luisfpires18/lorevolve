@@ -292,7 +292,7 @@ public sealed class UniverseSearchTests(LorexApiFactory factory) : IClassFixture
         var current = await ReadManuscript(client, universe.Id, story, scene);
         (await client.PostAsJsonAsync(
             $"{Manuscript(universe.Id, story, scene)}/revisions/{versions!.Last().Id}/restore",
-            new SceneManuscriptRestoreRequest(current.UpdatedAt))).EnsureSuccessStatusCode();
+            new SceneManuscriptRestoreRequest(current.Version))).EnsureSuccessStatusCode();
         Assert.Single((await Search(client, universe.Id, "understood")).Results);
 
         // An old version on its own is never a result.
@@ -612,7 +612,7 @@ public sealed class UniverseSearchTests(LorexApiFactory factory) : IClassFixture
         var saved = await WriteManuscript(client, universe.Id, story, scene, "Kestrel prose.");
 
         // A stale save is refused inside its transaction: the prose, and so the index, keep what was saved.
-        var stale = await PutManuscript(client, universe.Id, story, scene, "Wyvern prose.", saved.UpdatedAt!.Value.AddMinutes(-5));
+        var stale = await PutManuscript(client, universe.Id, story, scene, "Wyvern prose.", saved.Version - 1);
         Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
 
         // A scene too long for its title is refused before anything is written.

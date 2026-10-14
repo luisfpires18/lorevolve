@@ -37,8 +37,9 @@ internal static class EntityRevisions
     /// something the author did.
     ///
     /// <paramref name="actorUserId"/> is the signed-in account whose write this is, recorded on the version it produces.
+    /// Answers whether a version was recorded - whether the write changed the entry.
     /// </summary>
-    internal static async Task CaptureAsync(
+    internal static async Task<bool> CaptureAsync(
         LorexDbContext db,
         Guid entityId,
         EntityRevisionKind kind,
@@ -51,7 +52,7 @@ internal static class EntityRevisions
 
         if (current is null)
         {
-            return;
+            return false;
         }
 
         var previous = await db.EntityRevisions.AsNoTracking()
@@ -73,7 +74,7 @@ internal static class EntityRevisions
 
         if (previous is not null && changes == EntityRevisionChange.None)
         {
-            return;
+            return false;
         }
 
         db.EntityRevisions.Add(Build(
@@ -86,6 +87,7 @@ internal static class EntityRevisions
             current));
 
         await db.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     /// <summary>The entry as stored, in the shape a revision records it.</summary>

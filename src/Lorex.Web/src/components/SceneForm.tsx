@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ChangeList, EditConflict } from './EditConflict'
 import {
   ChronologyPointFields,
   type ChronologyPointDraft,
@@ -6,12 +7,13 @@ import {
 } from './ChronologyPointFields'
 import { EntityMultiPicker, EntityPicker, type EntityChoice } from './EntityPicker'
 import { hasCalendar, namesEras } from '../chronology/format'
+import { differing, isChangedElsewhere, type Change } from '../lib/editConflict'
 import type { Chronology, ChronologyValue } from '../chronology/types'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
-import { createScene, updateScene } from '../stories/api'
-import { chapterLabel, UNCHAPTERED } from '../stories/format'
+import { createScene, getScene, SCENE_CHANGED, updateScene } from '../stories/api'
+import { chapterLabel, sceneWhen, UNCHAPTERED } from '../stories/format'
 import type { Chapter, Scene, SceneLoreReference } from '../stories/types'
 
 const EMPTY_POINT: ChronologyPointDraft = { eraId: '', year: '', month: '', day: '' }
@@ -119,6 +121,30 @@ function inputOf(draft: SceneDraft, reckonsInEras: boolean, custom: boolean) {
   }
 }
 
+/** What differs between two drafts of a scene, in the form's own words: its fields, as the form shows them. */
+function changesOf(
+  latest: SceneDraft,
+  mine: SceneDraft,
+  chapterName: (id: string) => string,
+  when: (draft: SceneDraft) => string,
+): Change[] {
+  const names = (choices: EntityChoice[]) =>
+    choices
+      .map((choice) => choice.name)
+      .sort()
+      .join(', ')
+
+  return differing([
+    { label: 'Title', latest: latest.title, mine: mine.title.trim() },
+    { label: 'Chapter', latest: chapterName(latest.chapterId), mine: chapterName(mine.chapterId) },
+    { label: 'Summary', latest: latest.summary, mine: mine.summary.trim() },
+    { label: 'Notes', latest: latest.notes, mine: mine.notes.trim() },
+    { label: 'Point of view', latest: latest.pov?.name ?? '', mine: mine.pov?.name ?? '' },
+    { label: 'When', latest: when(latest), mine: when(mine) },
+    { label: 'Lore', latest: names(latest.entities), mine: names(mine.entities) },
+  ])
+}
+
 interface SceneFormProps {
   universeId: string
   storyId: string
@@ -155,12 +181,19 @@ export function SceneForm({
   const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the scene as stored, or the blank form in its chapter - which the draft is measured
-  // against. Its chapter, point of view, date and lore all count; the order the lore was picked in does not.
-  const [initial] = useState<SceneDraft>(() => draftFrom(scene, chapterId))
+  // against, and the version its save names. Its chapter, point of view, date and lore all count; the order the lore was
+  // picked in does not. After a refused save the author may adopt the latest they reviewed instead (ADR 0043).
+  const [base, setBase] = useState(() => ({
+    draft: draftFrom(scene, chapterId),
+    version: scene?.version,
+  }))
+  const initial = base.draft
   const [draft, setDraft] = useState<SceneDraft>(initial)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [conflict, setConflict] = useState(false)
+  const saveButton = useRef<HTMLButtonElement>(null)
 
   const reckonsInEras = namesEras(chronology)
   const custom = hasCalendar(chronology)
@@ -187,6 +220,20 @@ export function SceneForm({
     title.current?.focus()
   }, [])
 
+  /** The latest saved scene against the form, in the form's own words. */
+  function sceneChanges(latest: SceneDraft, mine: SceneDraft) {
+    return changesOf(
+      latest,
+      mine,
+      (id) => {
+        const index = chapters.findIndex((chapter) => chapter.id === id)
+        return index < 0 ? UNCHAPTERED : chapterLabel(index, chapters[index].title)
+      },
+      (point) =>
+        sceneWhen(chronology, chronologyOf(point.point, reckonsInEras, custom))?.text ?? '',
+    )
+  }
+
   function edit(change: Partial<SceneDraft>) {
     setDraft((current) => ({ ...current, ...change }))
   }
@@ -198,17 +245,23 @@ export function SceneForm({
   async function save() {
     setMessage(null)
     setFieldErrors({})
+    setConflict(false)
     setIsSaving(true)
 
     const input = inputOf(draft, reckonsInEras, custom)
 
     try {
       const saved = scene
-        ? await updateScene(universeId, storyId, scene.id, input)
+        ? await updateScene(universeId, storyId, scene.id, {
+            ...input,
+            expectedVersion: base.version,
+          })
         : await createScene(universeId, storyId, input)
       onSaved(saved)
     } catch (error: unknown) {
-      if (error instanceof ApiError) {
+      if (isChangedElsewhere(error, SCENE_CHANGED)) {
+        setConflict(true)
+      } else if (error instanceof ApiError) {
         setFieldErrors(error.fieldErrors)
         setMessage(
           Object.keys(error.fieldErrors).length === 0
@@ -250,6 +303,29 @@ export function SceneForm({
             <p className="form__message" role="alert" data-testid="scene-error">
               {message}
             </p>
+          ) : null}
+
+          {conflict && scene ? (
+            <EditConflict
+              what="scene"
+              read={() => getScene(universeId, storyId, scene.id)}
+              renderLatest={(latest) => (
+                <ChangeList changes={sceneChanges(draftFrom(latest, null), draft)} />
+              )}
+              onKeepMine={(latest) => {
+                // The form stays as typed, measured against the latest; the next save names the version reviewed.
+                setBase({ draft: draftFrom(latest, null), version: latest.version })
+                setConflict(false)
+                requestAnimationFrame(() => saveButton.current?.focus())
+              }}
+              onUseLatest={(latest) => {
+                setBase({ draft: draftFrom(latest, null), version: latest.version })
+                setDraft(draftFrom(latest, null))
+                setConflict(false)
+                requestAnimationFrame(() => title.current?.focus())
+              }}
+              testId="scene-conflict"
+            />
           ) : null}
 
           <div className="field">
@@ -403,7 +479,13 @@ export function SceneForm({
         </div>
 
         <footer className="drawer__actions">
-          <button className="button" type="submit" disabled={isSaving} data-testid="save-scene">
+          <button
+            ref={saveButton}
+            className="button"
+            type="submit"
+            disabled={isSaving}
+            data-testid="save-scene"
+          >
             {isSaving ? 'Saving' : scene ? 'Save scene' : 'Add scene'}
           </button>
           <button

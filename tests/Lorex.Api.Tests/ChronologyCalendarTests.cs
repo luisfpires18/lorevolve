@@ -304,7 +304,7 @@ public sealed class ChronologyCalendarTests(LorexApiFactory factory) : IClassFix
 
         // Fix the two dates, and it goes.
         (await client.DeleteAsync($"/api/universes/{u}/timeline/{late.Id}")).EnsureSuccessStatusCode();
-        (await client.PutAsJsonAsync($"{Story(u, story)}/scenes/{longDay.Id}", SceneAt("Day forty", 7, day: 30, monthId: Id(on, "Month 2"))))
+        (await client.PutVersionedAsync($"{Story(u, story)}/scenes/{longDay.Id}", SceneAt("Day forty", 7, day: 30, monthId: Id(on, "Month 2"))))
             .EnsureSuccessStatusCode();
 
         var off = await client.DeleteAsync(Calendar(u));
@@ -523,11 +523,11 @@ public sealed class ChronologyCalendarTests(LorexApiFactory factory) : IClassFix
         Assert.Equal(["Arrival"], await Feed(client, u));
 
         // Edited to another month, then the month taken off - the year stands.
-        (await client.PutAsJsonAsync($"{Story(u, story)}/scenes/{scene.Id}", SceneAt("Arrival", 40, day: 18, monthId: Id(on, "Emberrise")))).EnsureSuccessStatusCode();
+        (await client.PutVersionedAsync($"{Story(u, story)}/scenes/{scene.Id}", SceneAt("Arrival", 40, day: 18, monthId: Id(on, "Emberrise")))).EnsureSuccessStatusCode();
         Assert.Equal(Id(on, "Emberrise"), (await ReadScene(client, u, story, scene.Id)).Chronology!.MonthId);
-        (await client.PutAsJsonAsync($"{Story(u, story)}/scenes/{scene.Id}", SceneAt("Arrival", 40))).EnsureSuccessStatusCode();
+        (await client.PutVersionedAsync($"{Story(u, story)}/scenes/{scene.Id}", SceneAt("Arrival", 40))).EnsureSuccessStatusCode();
         Assert.Null((await ReadScene(client, u, story, scene.Id)).Chronology!.MonthId);
-        (await client.PutAsJsonAsync($"{Story(u, story)}/scenes/{scene.Id}", SceneAt("Arrival", 40, day: 10, monthId: frost))).EnsureSuccessStatusCode();
+        (await client.PutVersionedAsync($"{Story(u, story)}/scenes/{scene.Id}", SceneAt("Arrival", 40, day: 10, monthId: frost))).EnsureSuccessStatusCode();
 
         // A rename reaches the scene at once: it holds the id, and the calendar says the name.
         var renamed = await Save(client, u, Keep(on, "Frostwane", rename: "Snowrest"), Keep(on, "Emberrise"));

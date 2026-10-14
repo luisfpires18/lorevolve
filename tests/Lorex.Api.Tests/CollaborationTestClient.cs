@@ -98,7 +98,7 @@ internal static class CollaborationTestClient
         var other = await CreateEntity(owner, u, "Ash Vale");
 
         // A second version of the entry, so it has history to read and restore.
-        (await owner.PutAsJsonAsync(
+        (await owner.PutVersionedAsync(
             $"/api/universes/{u}/entities/{entry}",
             new EntityRequest(character, "Ember Vale", "The heir.", CanonStatus.Canon, null, null, null))).EnsureSuccessStatusCode();
         var entryRevision = (await owner.GetFromJsonAsync<List<EntityRevisionSummary>>($"/api/universes/{u}/entities/{entry}/revisions"))!

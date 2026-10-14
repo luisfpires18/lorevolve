@@ -129,7 +129,7 @@ public sealed class TypeManagementTests(LorexApiFactory factory) : IClassFixture
             client, universe.Id, location.Id, "Gondor", [new FieldValueInput(climate.Id, "Temperate", null, null, null, null, null)]);
 
         // The move, as the entry form sends it: the new type and that type's (empty) field set.
-        var moved = await client.PutAsJsonAsync(
+        var moved = await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{gondor.Id}",
             new EntityRequest(kingdom.Id, "Gondor", null, CanonStatus.Idea, [], [], []));
         Assert.Equal(HttpStatusCode.OK, moved.StatusCode);
@@ -227,7 +227,7 @@ public sealed class TypeManagementTests(LorexApiFactory factory) : IClassFixture
         foreach (var entry in new[] { first, second })
         {
             (await client.PostAsync($"/api/universes/{universe.Id}/trash/{entry.Id}/restore", null)).EnsureSuccessStatusCode();
-            (await client.PutAsJsonAsync(
+            (await client.PutVersionedAsync(
                 $"/api/universes/{universe.Id}/entities/{entry.Id}",
                 new EntityRequest(kingdom.Id, entry.Name, null, CanonStatus.Idea, [], [], []))).EnsureSuccessStatusCode();
         }

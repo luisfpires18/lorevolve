@@ -14,6 +14,7 @@ import { ActionMenu } from '../components/ActionMenu'
 import { ReviewComments } from '../components/ReviewComments'
 import { ContentPublication } from '../components/ContentPublication'
 import { EntityArticleSection } from '../components/EntityArticle'
+import { ChangeList, EditConflict } from '../components/EditConflict'
 import { EntityHistory } from '../components/EntityHistory'
 import { EntityImageField, type PendingImage } from '../components/EntityImageField'
 import { FieldInput } from '../components/FieldInputs'
@@ -31,8 +32,16 @@ import type { Chronology } from '../chronology/types'
 import { CanonBlockNotice } from '../components/CanonBlockNotice'
 import { ApiError } from '../lib/api'
 import { formatDate } from '../lib/dates'
+import { differing, isChangedElsewhere, type Change } from '../lib/editConflict'
 import { useLeaveGuard } from '../lib/leaveGuard'
-import { createEntity, deleteEntity, getEntity, listEntityTypes, updateEntity } from '../lore/api'
+import {
+  createEntity,
+  deleteEntity,
+  ENTRY_CHANGED,
+  getEntity,
+  listEntityTypes,
+  updateEntity,
+} from '../lore/api'
 import {
   CANON_LABELS,
   CANON_ORDER,
@@ -139,6 +148,12 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
   const [message, setMessage] = useState<string | null>(null)
   const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  // The form's save was refused because the entry was saved somewhere else while it was open (ADR 0043). The form keeps
+  // every unsaved change until the author has reviewed the latest and chosen.
+  const [conflict, setConflict] = useState(false)
+  const [announcement, setAnnouncement] = useState('')
+  const saveButton = useRef<HTMLButtonElement>(null)
 
   // While the article is being written it has its own save bar, and the entry's actions step aside for it: one
   // editor, and one bar at the foot of a phone's screen, at a time.
@@ -253,6 +268,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
     setMessage(null)
     setFieldErrors({})
     setBlocked(null)
+    setConflict(false)
   }, [detail])
 
   useLeaveGuard(
@@ -290,6 +306,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
     setMessage(null)
     setFieldErrors({})
     setBlocked(null)
+    setConflict(false)
     setIsSaving(true)
 
     const definitions = selectedType?.fields ?? []
@@ -303,6 +320,8 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
       fields: definitions.map(
         (definition) => draft.fields[definition.id] ?? emptyValue(definition),
       ),
+      // The version the form was opened on - or the latest the author reviewed after a refusal.
+      expectedVersion: detail?.version,
     }
 
     try {
@@ -343,6 +362,8 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
       const blocking = blockingFindingsOf(error)
       if (blocking) {
         setBlocked(blocking)
+      } else if (isChangedElsewhere(error, ENTRY_CHANGED)) {
+        setConflict(true)
       } else if (error instanceof ApiError) {
         setFieldErrors(error.fieldErrors)
         setMessage(
@@ -356,7 +377,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
     } finally {
       setIsSaving(false)
     }
-  }, [draft, selectedType, isNew, universe.id, entityId, navigate, pendingImage])
+  }, [draft, selectedType, isNew, universe.id, entityId, navigate, pendingImage, detail?.version])
 
   /**
    * The one-click promotion, which saves on the spot rather than through the editor.
@@ -389,6 +410,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
         fields: definitions.map(
           (definition) => updated.fields[definition.id] ?? emptyValue(definition),
         ),
+        expectedVersion: detail?.version,
       })
       setDetail(saved)
       setDraft(draftFromDetail(saved))
@@ -399,12 +421,46 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
       const blocking = blockingFindingsOf(error)
       if (blocking) {
         setBlocked(blocking)
+      } else if (isChangedElsewhere(error, ENTRY_CHANGED) && entityId !== undefined) {
+        // Nothing unsaved is at stake here: the page reads the entry as it now is, and the author chooses again.
+        try {
+          const latest = await getEntity(universe.id, entityId)
+          setDetail(latest)
+          setDraft(draftFromDetail(latest))
+          setHistoryKey((key) => key + 1)
+        } catch {
+          /* The message below still holds; the page shows what it last read. */
+        }
+        setMessage(
+          'This entry changed after you opened it, so the status wasn’t changed. It now shows the latest version. Choose the status again if you still want it.',
+        )
       } else {
         setMessage('The status could not be changed.')
       }
     } finally {
       setIsSaving(false)
     }
+  }
+
+  /**
+   * The author has seen the latest entry and keeps their own changes: the form stays exactly as it is, now measured against
+   * the latest - and the next save names the version they reviewed, so it is refused again if that moved on too.
+   */
+  function keepMine(latest: EntityDetail) {
+    setDetail(latest)
+    setConflict(false)
+    setHistoryKey((key) => key + 1)
+    setAnnouncement('Your changes are still unsaved. Save when you’re ready.')
+    requestAnimationFrame(() => saveButton.current?.focus())
+  }
+
+  /** Lets the form's unsaved changes go for the latest entry, and keeps the form open on it. The notice has already asked. */
+  function takeLatest(latest: EntityDetail) {
+    setDetail(latest)
+    setDraft(draftFromDetail(latest))
+    setConflict(false)
+    setHistoryKey((key) => key + 1)
+    requestAnimationFrame(() => saveButton.current?.focus())
   }
 
   /** After a restore the stored lore is a version the page has not seen. Read it back. */
@@ -743,6 +799,23 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
         </p>
       ) : null}
 
+      {conflict && isEditing && !isNew && entityId !== undefined ? (
+        <EditConflict
+          what="entry"
+          read={() => getEntity(universe.id, entityId)}
+          renderLatest={(latest) => (
+            <ChangeList changes={entryChanges(latest, draft, types, chronology, detail)} />
+          )}
+          onKeepMine={keepMine}
+          onUseLatest={takeLatest}
+          testId="entry-conflict"
+        />
+      ) : null}
+
+      <p className="visually-hidden" role="status" data-testid="entry-announcer">
+        {announcement}
+      </p>
+
       {isEditing ? (
         <div className="entryform" data-testid="entry-form">
           <section className="entryform__section">
@@ -913,6 +986,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
             entityId={entityId!}
             chronology={chronology}
             reloadKey={historyKey}
+            currentVersion={detail?.version ?? 0}
             onRestored={() => void reloadAfterRestore()}
           />
         </div>
@@ -928,6 +1002,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
           </p>
           <div className="actionbar__actions">
             <button
+              ref={saveButton}
               className="button"
               type="button"
               onClick={save}
@@ -1017,6 +1092,96 @@ function heldReference(detail: EntityDetail | null, fieldDefinitionId: string) {
     id: held.referencedEntityId,
     name: held.referencedEntityIsTrashed ? `${name} (in Trash)` : name,
   }
+}
+
+/** One field as the reader sees it: the same words for the saved value and the author's unsaved one. */
+function factText(value: Parameters<typeof renderFact>[0], chronology: Chronology) {
+  return String(renderFact({ ...value, optionValues: [...value.optionValues].sort() }, chronology))
+}
+
+/**
+ * What differs between the latest saved entry and the form's unsaved changes, field by field, in the reader's words. A link
+ * the author newly chose is named only if the page already knows the entry; the picker does not hand its name back.
+ */
+function entryChanges(
+  latest: EntityDetail,
+  draft: Draft,
+  types: EntityType[],
+  chronology: Chronology,
+  opened: EntityDetail | null,
+): Change[] {
+  const sorted = (values: string[]) => [...values].sort().join(', ')
+  const rows: Change[] = [
+    { label: 'Name', latest: latest.name, mine: draft.name.trim() },
+    {
+      label: 'Type',
+      latest: latest.entityTypeName,
+      mine:
+        draft.entityTypeId === latest.entityTypeId
+          ? latest.entityTypeName
+          : (types.find((type) => type.id === draft.entityTypeId)?.name ?? ''),
+    },
+    {
+      label: 'Status',
+      latest: CANON_LABELS[latest.canonStatus],
+      mine: CANON_LABELS[draft.canonStatus],
+    },
+    { label: 'Summary', latest: latest.summary ?? '', mine: draft.summary.trim() },
+    { label: 'Also known as', latest: sorted(latest.aliases), mine: sorted(draft.aliases) },
+    { label: 'Tags', latest: sorted(latest.tags), mine: sorted(draft.tags) },
+  ]
+
+  const definitions = types.find((type) => type.id === draft.entityTypeId)?.fields ?? []
+  for (const definition of definitions) {
+    const saved = latest.fields.find((value) => value.fieldDefinitionId === definition.id)
+    const mine = draft.fields[definition.id] ?? emptyValue(definition)
+    const known = [
+      saved,
+      opened?.fields.find((value) => value.fieldDefinitionId === definition.id),
+    ].find(
+      (value) =>
+        value?.referencedEntityId != null && value.referencedEntityId === mine.referencedEntityId,
+    )
+
+    rows.push({
+      label: definition.name,
+      latest: saved
+        ? factText(saved, chronology)
+        : factText({ ...emptyFact, kind: definition.kind }, chronology),
+      mine: factText(
+        {
+          kind: definition.kind,
+          text: mine.text,
+          number: mine.number,
+          eraId: mine.eraId,
+          boolean: mine.boolean,
+          date: mine.date,
+          optionValues: (mine.optionIds ?? []).map(
+            (id) => definition.options.find((option) => option.id === id)?.value ?? '',
+          ),
+          referencedEntityName:
+            mine.referencedEntityId === null
+              ? null
+              : (known?.referencedEntityName ?? 'Another entry'),
+          referencedEntityIsTrashed: known?.referencedEntityIsTrashed ?? false,
+        },
+        chronology,
+      ),
+    })
+  }
+
+  return differing(rows)
+}
+
+const emptyFact = {
+  text: null,
+  number: null,
+  eraId: null,
+  boolean: null,
+  date: null,
+  optionValues: [],
+  referencedEntityName: null,
+  referencedEntityIsTrashed: false,
 }
 
 function renderFact(

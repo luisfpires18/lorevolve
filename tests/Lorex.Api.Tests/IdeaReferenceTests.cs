@@ -64,7 +64,7 @@ public sealed class IdeaReferenceTests(LorexApiFactory factory) : IClassFixture<
         Assert.Equal(5, (await ListIdeas(client)).Items.Single().ReferenceCount);
 
         // Names are read from the targets, never copied: a renamed story is renamed on the idea.
-        (await client.PutAsJsonAsync(Story(universe.Id, world.Story), new Lorex.Api.Features.Stories.StoryRequest(
+        (await client.PutVersionedAsync(Story(universe.Id, world.Story), new Lorex.Api.Features.Stories.StoryRequest(
             "The Longest Winter", null, Lorex.Api.Features.Stories.StoryStatus.Planning))).EnsureSuccessStatusCode();
         Assert.Equal(
             "The Longest Winter",

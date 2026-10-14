@@ -52,6 +52,12 @@ public sealed class Story : Publishing.IPublishable
     public DateTime UpdatedAt { get; set; }
 
     /// <summary>
+    /// The edit version of the story's own title, premise and status: server-owned, 1 when created, advanced once by every write that changes the story's own title, premise and status.
+    /// A save names the version it was written over and is refused when it is no longer current (ADR 0043).
+    /// </summary>
+    public int Version { get; set; } = 1;
+
+    /// <summary>
     /// When the story was moved to the Trash, or null while it is live. Only the story is marked: its chapters, scenes,
     /// prose and plot are left exactly as they were, unreachable while it is there and back with it on restore.
     /// </summary>
@@ -216,6 +222,13 @@ public sealed class Scene
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// The edit version of what the scene form edits - title, summary, notes, point of view, date, linked lore and chapter:
+    /// server-owned, 1 when created, advanced once by every write that changes any of it, a move to another chapter
+    /// included. A save names the version it was written over and is refused when it is no longer current (ADR 0043).
+    /// </summary>
+    public int Version { get; set; } = 1;
 
     /// <summary>
     /// When the scene was moved to the Trash, or null while it is live. Its prose, saved versions, lore

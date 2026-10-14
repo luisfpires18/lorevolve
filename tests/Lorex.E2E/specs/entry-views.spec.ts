@@ -116,7 +116,7 @@ async function seedArticle(page: Page, universeId: string, entityId: string) {
             content: [{ type: 'text', text: paragraph.repeat(3) }],
           })),
         }),
-        expectedUpdatedAt: null,
+        expectedVersion: 0,
       },
     },
   )

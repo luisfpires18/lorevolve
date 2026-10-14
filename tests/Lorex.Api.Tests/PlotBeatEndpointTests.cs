@@ -303,7 +303,7 @@ public sealed class PlotBeatEndpointTests(LorexApiFactory factory) : IClassFixtu
         await Unmoved();
 
         // Into a chapter by an edit, placed in the world at the same time.
-        (await client.PutAsJsonAsync(
+        (await client.PutVersionedAsync(
             $"{path}/scenes/{embers}",
             new SceneRequest("Embers", null, null, null, new ChronologyValue(null, 12, null, null), null, arrival)))
             .EnsureSuccessStatusCode();

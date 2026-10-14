@@ -338,7 +338,7 @@ public sealed class LoreEndpointTests(LorexApiFactory factory) : IClassFixture<L
 
         // Saving the same aliases and tags again must not collide with the rows already
         // stored for this entity.
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{created.Id}",
             new EntityRequest(type.Id, "Alenna Vance", "Now with a summary.",
                 CanonStatus.Draft, ["The Warden"], ["Coast"], null));
@@ -362,7 +362,7 @@ public sealed class LoreEndpointTests(LorexApiFactory factory) : IClassFixture<L
             aliases: ["Old Alias"],
             tags: ["Old Tag"]);
 
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{created.Id}",
             new EntityRequest(type.Id, "Shifting Name", null,
                 CanonStatus.Idea, ["New Alias"], ["New Tag"], null));
@@ -385,7 +385,7 @@ public sealed class LoreEndpointTests(LorexApiFactory factory) : IClassFixture<L
 
         foreach (var status in new[] { CanonStatus.Draft, CanonStatus.Canon })
         {
-            var response = await client.PutAsJsonAsync(
+            var response = await client.PutVersionedAsync(
                 $"/api/universes/{universe.Id}/entities/{created.Id}",
                 new EntityRequest(type.Id, "Rising Star", null, status, null, null, null));
 
@@ -429,7 +429,7 @@ public sealed class LoreEndpointTests(LorexApiFactory factory) : IClassFixture<L
             id = body.RootElement.GetProperty("id").GetGuid();
         }
 
-        var edited = await client.PutAsJsonAsync(
+        var edited = await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{id}",
             new { entityTypeId = type.Id, name = "Ledger Keeper", content = "not json at all", canonStatus = CanonStatus.Draft });
         Assert.Equal(HttpStatusCode.BadRequest, edited.StatusCode);
@@ -578,7 +578,7 @@ public sealed class LoreEndpointTests(LorexApiFactory factory) : IClassFixture<L
 
         using var attacker = await SignedInClient("attacker-write");
 
-        var update = await attacker.PutAsJsonAsync(
+        var update = await attacker.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{entity.Id}",
             new EntityRequest(type.Id, "Hijacked", null, CanonStatus.Canon, null, null, null));
         var delete = await attacker.DeleteAsync($"/api/universes/{universe.Id}/entities/{entity.Id}");

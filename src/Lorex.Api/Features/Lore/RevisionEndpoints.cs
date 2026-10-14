@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Lorex.Api.Data;
 using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Universes;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lorex.Api.Features.Lore;
@@ -119,11 +120,15 @@ public static class RevisionEndpoints
     /// the ordinary write silently drop an option or a reference that has since been deleted -
     /// which would put back something that is not what the author saw - the ids are checked
     /// first and a restore that cannot be exact is refused outright.
+    ///
+    /// The restore names the entry's version it was chosen over, exactly as a save does, and is refused the same way when
+    /// the entry has changed since (ADR 0043). A body that names none is refused as changed, never applied blind.
     /// </summary>
     private static async Task<IResult> RestoreAsync(
         Guid universeId,
         Guid entityId,
         Guid revisionId,
+        [FromBody] EntityRevisionRestoreRequest? body,
         ClaimsPrincipal principal,
         LorexDbContext db,
         CanonPromotionGate gate,
@@ -146,7 +151,7 @@ public static class RevisionEndpoints
             return NotRestorable(missing);
         }
 
-        var request = RequestFrom(revision);
+        var request = RequestFrom(revision) with { ExpectedVersion = body?.ExpectedVersion };
 
         return await gate.RunAsync(
             universeId,

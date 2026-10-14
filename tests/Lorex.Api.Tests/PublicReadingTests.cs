@@ -218,7 +218,7 @@ public sealed class PublicReadingTests(LorexApiFactory factory) : IClassFixture<
         (await SaveSummary(owner, u, story.Id, "Written on purpose.")).EnsureSuccessStatusCode();
         Assert.Equal(story.UpdatedAt, (await PlotTestClient.ReadStory(owner, u, story.Id)).UpdatedAt);
 
-        (await owner.PutAsJsonAsync(PlotTestClient.Story(u, story.Id), new Dictionary<string, object?>
+        (await owner.PutVersionedAsync(PlotTestClient.Story(u, story.Id), new Dictionary<string, object?>
         {
             ["title"] = "Sneaky tale",
             ["status"] = 0,

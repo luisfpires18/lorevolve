@@ -78,7 +78,7 @@ async function seedWorld(page: Page, name: string): Promise<Seeded> {
   })
   await api(page, 'PUT', `${u}/entities/${entity.id}/article`, {
     content: doc('The Orlamund lamp was never allowed to go out.'),
-    expectedUpdatedAt: null,
+    expectedVersion: 0,
   })
   const picture = await page.request.put(`${u}/entities/${entity.id}/image`, {
     multipart: {
@@ -113,7 +113,7 @@ async function seedWorld(page: Page, name: string): Promise<Seeded> {
   })
   await api(page, 'PUT', `${s}/scenes/${scene.id}/manuscript`, {
     content: 'Snow fell on the Vellmarch quay while the council argued.',
-    expectedUpdatedAt: null,
+    expectedVersion: 0,
   })
   const cut = await api<{ id: string }>(page, 'POST', `${s}/scenes`, {
     title: 'A Scene Cut Short',

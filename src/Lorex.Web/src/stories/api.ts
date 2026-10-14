@@ -102,6 +102,11 @@ export function createScene(universeId: string, storyId: string, input: SceneInp
   })
 }
 
+/** One live scene, as the scene form shows it. */
+export function getScene(universeId: string, storyId: string, sceneId: string) {
+  return apiFetch<Scene>(`${scenes(universeId, storyId)}/${sceneId}`)
+}
+
 export function updateScene(
   universeId: string,
   storyId: string,
@@ -138,6 +143,12 @@ export function reorderScenes(
 /** The code on the 409 a manuscript save gets when the prose was saved somewhere else after it was opened. */
 export const MANUSCRIPT_CHANGED = 'scene_manuscript_changed'
 
+/** The code on the 409 a story save gets when the story was saved somewhere else after its form opened (ADR 0043). */
+export const STORY_CHANGED = 'story_changed'
+
+/** The code on the 409 a scene save gets when the scene was saved or moved somewhere else after its form opened. */
+export const SCENE_CHANGED = 'scene_changed'
+
 function manuscript(universeId: string, storyId: string, sceneId: string) {
   return `${scenes(universeId, storyId)}/${sceneId}/manuscript`
 }
@@ -152,7 +163,7 @@ export function getSceneManuscript(
   return apiFetch<SceneManuscript>(manuscript(universeId, storyId, sceneId), { signal })
 }
 
-/** Replaces the scene's prose with exactly `input.content`, if `input.expectedUpdatedAt` is still the latest save. */
+/** Replaces the scene's prose with exactly `input.content`, if `input.expectedVersion` is still the latest save. */
 export function saveSceneManuscript(
   universeId: string,
   storyId: string,
@@ -196,11 +207,11 @@ export function restoreManuscriptRevision(
   storyId: string,
   sceneId: string,
   revisionId: string,
-  expectedUpdatedAt: string | null,
+  expectedVersion: number,
 ) {
   return apiFetch<SceneManuscript>(
     `${manuscript(universeId, storyId, sceneId)}/revisions/${revisionId}/restore`,
-    { method: 'POST', body: JSON.stringify({ expectedUpdatedAt }) },
+    { method: 'POST', body: JSON.stringify({ expectedVersion }) },
   )
 }
 

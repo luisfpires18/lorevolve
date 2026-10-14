@@ -97,7 +97,7 @@ async function story(page: Page, w: World, title: string, publish: boolean): Pro
   ]) {
     await api(page, 'PUT', `${base}/${id}/scenes/${scene}/manuscript`, {
       content: text,
-      expectedUpdatedAt: null,
+      expectedVersion: 0,
     })
   }
   const arc = (await api<{ id: string }>(page, 'POST', `${base}/${id}/plot-arcs`, {

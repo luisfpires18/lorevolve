@@ -28,6 +28,12 @@ public sealed class EntityArticle
 
     /// <summary>When the article was last saved - and what a save names to show it was written over the latest text.</summary>
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// The edit version of the article: server-owned, 1 when created, advanced once by every write that changes the article.
+    /// A save names the version it was written over and is refused when it is no longer current (ADR 0043).
+    /// </summary>
+    public int Version { get; set; } = 1;
 }
 
 /// <summary>

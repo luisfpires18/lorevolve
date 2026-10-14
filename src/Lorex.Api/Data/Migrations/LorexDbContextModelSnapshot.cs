@@ -474,6 +474,9 @@ namespace Lorex.Api.Data.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("EntityId");
 
                     b.ToTable("EntityArticles", (string)null);
@@ -1000,6 +1003,9 @@ namespace Lorex.Api.Data.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Visibility")
                         .HasColumnType("INTEGER");
@@ -1631,6 +1637,9 @@ namespace Lorex.Api.Data.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Visibility")
                         .HasColumnType("INTEGER");
 
@@ -1686,6 +1695,9 @@ namespace Lorex.Api.Data.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("SceneId");
 
@@ -1768,6 +1780,9 @@ namespace Lorex.Api.Data.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Visibility")
                         .HasColumnType("INTEGER");

@@ -168,3 +168,10 @@ only on its own route; a search result carries at most a sixteen-word excerpt.
 
 At 1100px and below the outline's disclosure names the open scene on one line, cut with an ellipsis: the scene's whole title
 is the heading just beneath it, and the line it gave back keeps the text box on a phone's first screen under the search bar.
+
+## Amendment - the version, not the moment (2026-10-14, ADR 0043)
+
+A save and a restore now name the stored `version` (0 before the first save) as `expectedVersion`, instead of
+`expectedUpdatedAt`; `updatedAt` is still read and still carried on the 409. A refused save no longer offers to write
+straight over the newer text: the author reviews the latest first, then keeps their own text - which the next save names
+the reviewed version over - or takes the latest. Everything else here is unchanged.

@@ -129,7 +129,8 @@ public sealed record EntityRequest(
     CanonStatus CanonStatus,
     IReadOnlyList<string>? Aliases,
     IReadOnlyList<string>? Tags,
-    IReadOnlyList<FieldValueInput>? Fields)
+    IReadOnlyList<FieldValueInput>? Fields,
+    int? ExpectedVersion = null)
 {
     /// <summary>
     /// The <c>content</c> member an entry request carried before the article moved to its own route (ADR 0028), declared
@@ -317,7 +318,8 @@ public sealed record EntityDetail(
     EntityImageRef? Image,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    bool HasFamilyConnections);
+    bool HasFamilyConnections,
+    int Version);
 
 public sealed record EntityPage(
     IReadOnlyList<EntitySummary> Items,

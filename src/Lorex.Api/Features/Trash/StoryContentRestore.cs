@@ -175,6 +175,12 @@ internal static class StoryContentRestore
             .InContainer(story.Id, container)
             .MaxAsync(candidate => (int?)candidate.SortOrder, cancellationToken);
 
+        // Back without its chapter, if that went to the Trash: the chapter on any form opened before is out of date (ADR 0043).
+        if (scene.ChapterId != container)
+        {
+            scene.Version++;
+        }
+
         scene.ChapterId = container;
         scene.SortOrder = (last ?? -1) + 1;
         scene.DeletedAt = null;

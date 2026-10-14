@@ -60,3 +60,6 @@ public sealed record EntityRevisionDetail(
     IReadOnlyList<string> Aliases,
     IReadOnlyList<string> Tags,
     IReadOnlyList<EntityRevisionFieldResponse> Fields);
+
+/// <summary>Puts an entry's older version back, naming the entry's version it was chosen over - as a save does (ADR 0043).</summary>
+public sealed record EntityRevisionRestoreRequest(int? ExpectedVersion);

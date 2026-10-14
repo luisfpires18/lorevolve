@@ -5,6 +5,7 @@ import { History, Info, LocateFixed, Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { EditConflict, LatestText } from './EditConflict'
 import { ManuscriptHistory } from './ManuscriptHistory'
 import { ReviewComments } from './ReviewComments'
 import { RecoveredDraft } from './RecoveredDraft'
@@ -12,12 +13,13 @@ import { SceneBeats, SceneLore, SceneStamp } from './SceneContext'
 import { useAuth } from '../auth/useAuth'
 import type { Chronology } from '../chronology/types'
 import { ApiError } from '../lib/api'
+import { isChangedElsewhere } from '../lib/editConflict'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { useLocalDraft } from '../lib/useLocalDraft'
 import { getSceneManuscript, MANUSCRIPT_CHANGED, saveSceneManuscript } from '../stories/api'
 import { sceneWhen } from '../stories/format'
 import type { SceneBeatReference } from '../stories/structure'
-import { MANUSCRIPT_MAX_LENGTH, type Scene } from '../stories/types'
+import { MANUSCRIPT_MAX_LENGTH, type Scene, type SceneManuscript } from '../stories/types'
 import { EmptyState } from './EmptyState'
 
 type LoadState =
@@ -27,12 +29,15 @@ type LoadState =
 interface Stored {
   content: string
   updatedAt: string | null
+  version: number
 }
 
-/** The stored moment a stale save's refusal reports, when it carries one. */
-function storedMomentOf(problem: unknown) {
-  const updatedAt = (problem as { updatedAt?: unknown } | null)?.updatedAt
-  return typeof updatedAt === 'string' ? updatedAt : null
+function storedOf(manuscript: SceneManuscript): Stored {
+  return {
+    content: manuscript.content,
+    updatedAt: manuscript.updatedAt,
+    version: manuscript.version,
+  }
 }
 
 const count = new Intl.NumberFormat('en')
@@ -67,9 +72,9 @@ interface ManuscriptEditorProps {
  *
  * Saving is explicit: the Save button, or Ctrl+S / Cmd+S from anywhere on the page. The text is unsaved until the API
  * confirms it, so a failed save changes nothing on screen and can simply be tried again. A save over prose that was saved
- * from another tab or device since this one opened is refused by the API, and the author decides what happens next -
- * keep this text, or load that one. While anything is unsaved, following a link, signing out or leaving the page asks
- * first.
+ * by someone else, or from another tab or device, since this one opened is refused by the API (ADR 0043): the prose stays
+ * in the box, the author reviews the latest saved prose, and then keeps their own - saving again over what they have seen
+ * - or takes the latest. While anything is unsaved, following a link, signing out or leaving the page asks first.
  *
  * Unsaved writing is also kept on this device as a recovery copy, never sent anywhere. If a scene opens with a copy that
  * differs from what is saved, the saved prose stays in the box, held, until the author recovers the copy or discards it.
@@ -101,12 +106,12 @@ export function ManuscriptEditor({
 
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
-  const [stored, setStored] = useState<Stored>({ content: '', updatedAt: null })
+  const [stored, setStored] = useState<Stored>({ content: '', updatedAt: null, version: 0 })
   const [draft, setDraft] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [saves, setSaves] = useState(0)
   const [failure, setFailure] = useState<string | null>(null)
-  const [conflict, setConflict] = useState<{ updatedAt: string | null } | null>(null)
+  const [conflict, setConflict] = useState(false)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   // On a phone the scene's planning folds behind Details, so the prose starts on the first screen. Wider, it is always shown.
   const [isContextOpen, setIsContextOpen] = useState(false)
@@ -121,7 +126,7 @@ export function ManuscriptEditor({
 
     getSceneManuscript(universeId, storyId, sceneId, controller.signal)
       .then((manuscript) => {
-        setStored({ content: manuscript.content, updatedAt: manuscript.updatedAt })
+        setStored(storedOf(manuscript))
         setDraft(manuscript.content)
         setLoad({ kind: 'ready' })
       })
@@ -168,28 +173,28 @@ export function ManuscriptEditor({
     discard,
   )
 
-  /** Saves the text as it stands, naming the stored manuscript it was written over. */
-  async function save(expectedUpdatedAt: string | null) {
+  /** Saves the text as it stands, naming the stored manuscript's version it was written over. */
+  async function save(expectedVersion: number) {
     if (inFlight.current || !isDirty || isTooLong) return
 
     const content = draft
     inFlight.current = true
     setIsSaving(true)
     setFailure(null)
-    setConflict(null)
+    setConflict(false)
 
     try {
       const saved = await saveSceneManuscript(universeId, storyId, sceneId, {
         content,
-        expectedUpdatedAt,
+        expectedVersion,
       })
       // Measured against what was sent, so anything typed while the save was in flight is still unsaved.
-      setStored({ content: saved.content, updatedAt: saved.updatedAt })
+      setStored(storedOf(saved))
       setHistoryKey((key) => key + 1)
       setSaves((count) => count + 1)
     } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409 && error.code === MANUSCRIPT_CHANGED) {
-        setConflict({ updatedAt: storedMomentOf(error.problem) })
+      if (isChangedElsewhere(error, MANUSCRIPT_CHANGED)) {
+        setConflict(true)
       } else if (error instanceof ApiError && error.status === 404) {
         setFailure(
           'This scene is no longer in the story, so its manuscript could not be saved. It may have been moved to the Trash in another window. Your text is still here: copy it before you leave.',
@@ -215,7 +220,7 @@ export function ManuscriptEditor({
   // focus - and never opens the browser's "Save page". The listener reads the latest save through a ref, so it is
   // added once rather than on every keystroke.
   useEffect(() => {
-    shortcut.current = () => void save(stored.updatedAt)
+    shortcut.current = () => void save(stored.version)
   })
 
   useEffect(() => {
@@ -233,21 +238,26 @@ export function ManuscriptEditor({
   }, [])
 
   function reread() {
-    setConflict(null)
+    setConflict(false)
     setFailure(null)
     setLoad({ kind: 'loading' })
     setReads((current) => current + 1)
   }
 
-  /** Throws away this window's unsaved text for the version saved elsewhere - only once the author says so. */
-  function loadSavedVersion() {
-    if (
-      !window.confirm(
-        'Replace the text here with the version saved elsewhere? What you wrote here since your last save will be lost.',
-      )
-    ) {
-      return
-    }
+  /**
+   * The author has seen the latest prose and keeps their own: it stays in the box, still unsaved, now measured against the
+   * latest - and the next save names the version they reviewed, so it is refused again if that moved on too.
+   */
+  function keepMine(latest: SceneManuscript) {
+    setStored(storedOf(latest))
+    setConflict(false)
+    setHistoryKey((key) => key + 1)
+    setAnnouncement('Your changes are still unsaved. Save when you’re ready.')
+    requestAnimationFrame(() => editor.current?.focus())
+  }
+
+  /** Lets this window's unsaved prose go for the latest. The conflict notice has already asked. */
+  function takeLatest() {
     discard()
     reread()
   }
@@ -400,7 +410,7 @@ export function ManuscriptEditor({
                   : null
           }
           onRestored={(restored) => {
-            setStored({ content: restored.content, updatedAt: restored.updatedAt })
+            setStored(storedOf(restored))
             setDraft(restored.content)
             setHistoryKey((key) => key + 1)
           }}
@@ -466,31 +476,25 @@ export function ManuscriptEditor({
           ) : null}
 
           {conflict ? (
-            <div className="manuscript__conflict" role="alert" data-testid="manuscript-conflict">
-              <p className="manuscript__conflicttext">
-                This manuscript was saved in another tab or on another device after you opened it
-                here. Nothing was overwritten, and your text below is not saved.
-              </p>
-              <div className="manuscript__conflictactions">
-                <button
-                  className="button button--secondary"
-                  type="button"
-                  disabled={isSaving}
-                  onClick={() => void save(conflict.updatedAt)}
-                  data-testid="manuscript-keep-mine"
-                >
-                  Save mine over it
-                </button>
-                <button
-                  className="button button--secondary"
-                  type="button"
-                  disabled={isSaving}
-                  onClick={loadSavedVersion}
-                  data-testid="manuscript-load-saved"
-                >
-                  Load the saved version
-                </button>
-              </div>
+            <div className="manuscript__conflict">
+              <EditConflict
+                what="manuscript"
+                read={() => getSceneManuscript(universeId, storyId, sceneId)}
+                renderLatest={(latest) => (
+                  <LatestText label="Latest saved manuscript">
+                    {latest.content === '' ? (
+                      <p className="entry__blank">No text in the latest version.</p>
+                    ) : (
+                      <div className="recovery__prose prose" dir="auto">
+                        {latest.content}
+                      </div>
+                    )}
+                  </LatestText>
+                )}
+                onKeepMine={keepMine}
+                onUseLatest={takeLatest}
+                testId="manuscript-conflict"
+              />
             </div>
           ) : null}
 
@@ -557,7 +561,7 @@ export function ManuscriptEditor({
                 statusTestId="manuscript-status"
                 testId="manuscript-save"
                 type="button"
-                onSave={() => void save(stored.updatedAt)}
+                onSave={() => void save(stored.version)}
                 keyShortcuts="Control+S Meta+S"
               />
             </div>

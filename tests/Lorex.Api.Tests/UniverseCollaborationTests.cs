@@ -56,7 +56,7 @@ public sealed class UniverseCollaborationTests(LorexApiFactory factory) : IClass
 
         // Lore, its taxonomy and its media.
         var created = await PostJson<EntityDetail>(c, $"{u}/entities", new EntityRequest(w.CharacterType, "Editor's heir", null, CanonStatus.Draft, null, null, null));
-        await Ok(c.PutAsJsonAsync($"{u}/entities/{created.Id}", new EntityRequest(w.CharacterType, "Editor's heir", "Now canon.", CanonStatus.Canon, null, null, null)));
+        await Ok(c.PutVersionedAsync($"{u}/entities/{created.Id}", new EntityRequest(w.CharacterType, "Editor's heir", "Now canon.", CanonStatus.Canon, null, null, null)));
         await Ok(c.PostAsJsonAsync($"{u}/entities/bulk", new BulkEntityRequest([new BulkEntityRow(w.CharacterType, "Bulk heir", CanonStatus.Canon)])));
         await WriteArticle(c, w.U, created.Id, Doc("Written by an editor."));
         await UploadImage(c, w.U, created.Id);
@@ -108,14 +108,14 @@ public sealed class UniverseCollaborationTests(LorexApiFactory factory) : IClass
         var e = $"/api/universes/{w.U}/entities/{w.Entry}";
 
         Assert.NotEmpty((await w.Editor.GetFromJsonAsync<List<EntityRevisionSummary>>($"{e}/revisions"))!);
-        await Ok(w.Editor.PostAsync($"{e}/revisions/{w.EntryRevision}/restore", null));
+        await Ok(VersionTestClient.RestoreEntryVersion(w.Editor, e, w.EntryRevision));
 
         var article = await ReadArticle(w.Editor, w.U, w.Entry);
-        await Ok(RestoreArticle(w.Editor, w.U, w.Entry, w.ArticleRevision, article.UpdatedAt));
+        await Ok(RestoreArticle(w.Editor, w.U, w.Entry, w.ArticleRevision, article.Version));
 
         var scene = ManuscriptTestClient.Manuscript(w.U, w.Story, w.Scene);
         var manuscript = await ManuscriptTestClient.ReadManuscript(w.Editor, w.U, w.Story, w.Scene);
-        await Ok(w.Editor.PostAsJsonAsync($"{scene}/revisions/{w.ManuscriptRevision}/restore", new SceneManuscriptRestoreRequest(manuscript.UpdatedAt)));
+        await Ok(w.Editor.PostAsJsonAsync($"{scene}/revisions/{w.ManuscriptRevision}/restore", new SceneManuscriptRestoreRequest(manuscript.Version)));
         Assert.Equal("She walked.", (await ManuscriptTestClient.ReadManuscript(w.Owner, w.U, w.Story, w.Scene)).Content);
     }
 
@@ -267,7 +267,7 @@ public sealed class UniverseCollaborationTests(LorexApiFactory factory) : IClass
 
         // The Editor edits the very entry they cannot publish.
         var entryType = (await owner.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{entry}"))!.EntityTypeId;
-        await Ok(editor.PutAsJsonAsync(
+        await Ok(editor.PutVersionedAsync(
             $"/api/universes/{u}/entities/{entry}",
             new EntityRequest(entryType, "Tidewarden", "Edited by the editor.", CanonStatus.Canon, null, null, null)));
 

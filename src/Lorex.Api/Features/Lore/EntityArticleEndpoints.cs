@@ -18,9 +18,9 @@ namespace Lorex.Api.Features.Lore;
 /// changes no field, status, relationship or timeline entry, and records no entry revision. It is as settled as the entry
 /// it belongs to and has no status of its own (ADR 0028).
 ///
-/// <b>No silent overwrite.</b> A save names the <c>updatedAt</c> it was written over; when the stored article has moved on
-/// since - saved from another tab or device - the save is refused and nothing is written. The same comparison as a scene's
-/// manuscript (ADR 0027), inside the write's own transaction.
+/// <b>No silent overwrite.</b> A save names the article's <c>version</c> it was written over; when the stored article has
+/// moved on since - saved by a collaborator, or from another tab or device - the save is refused and nothing is written. The
+/// same comparison as a scene's manuscript and every other protected save (ADR 0043), inside the write's own transaction.
 /// </summary>
 public static class EntityArticleEndpoints
 {
@@ -64,12 +64,12 @@ public static class EntityArticleEndpoints
 
         var stored = await db.EntityArticles.AsNoTracking()
             .Where(article => article.EntityId == entityId)
-            .Select(article => new { article.Content, article.UpdatedAt })
+            .Select(article => new { article.Content, article.UpdatedAt, article.Version })
             .FirstOrDefaultAsync(cancellationToken);
 
         return Results.Ok(stored is null
-            ? new EntityArticleResponse(entityId, string.Empty, null)
-            : new EntityArticleResponse(entityId, stored.Content, Utc(stored.UpdatedAt)));
+            ? new EntityArticleResponse(entityId, string.Empty, null, 0)
+            : new EntityArticleResponse(entityId, stored.Content, Utc(stored.UpdatedAt), stored.Version));
     }
 
     /// <summary>Replaces the article with the document sent, and records it as the article's next version.</summary>
@@ -103,7 +103,7 @@ public static class EntityArticleEndpoints
             db,
             entityId,
             request.Content!,
-            request.ExpectedUpdatedAt,
+            request.ExpectedVersion,
             EntityRevisionKind.Edited,
             null,
             principal.RequireUserId(),
@@ -219,7 +219,7 @@ public static class EntityArticleEndpoints
             db,
             entityId,
             revision.Content,
-            request.ExpectedUpdatedAt,
+            request.ExpectedVersion,
             EntityRevisionKind.Restored,
             revision.Id,
             principal.RequireUserId(),
@@ -238,7 +238,7 @@ public static class EntityArticleEndpoints
         LorexDbContext db,
         Guid entityId,
         string content,
-        DateTime? expectedUpdatedAt,
+        int? expectedVersion,
         EntityRevisionKind kind,
         Guid? restoredFromRevisionId,
         string actorUserId,
@@ -251,9 +251,17 @@ public static class EntityArticleEndpoints
             candidate => candidate.EntityId == entityId,
             cancellationToken);
 
-        if (!SameMoment(article?.UpdatedAt, expectedUpdatedAt))
+        // No article yet is version 0, so the first save names 0 and creates version 1.
+        var version = article?.Version ?? 0;
+
+        if (!EditVersion.Matches(version, expectedVersion))
         {
-            return Changed(article?.UpdatedAt);
+            return EditVersion.Changed(
+                ChangedCode,
+                "Article changed",
+                "This entry's article was saved somewhere else after it was opened here. Nothing was overwritten.",
+                version,
+                new Dictionary<string, object?> { ["updatedAt"] = article is null ? null : Utc(article.UpdatedAt) });
         }
 
         if (string.Equals(article?.Content ?? string.Empty, document, StringComparison.Ordinal))
@@ -261,19 +269,21 @@ public static class EntityArticleEndpoints
             return Results.Ok(new EntityArticleResponse(
                 entityId,
                 document,
-                article is null ? null : Utc(article.UpdatedAt)));
+                article is null ? null : Utc(article.UpdatedAt),
+                version));
         }
 
         var now = DateTime.UtcNow;
 
         if (article is null)
         {
-            db.EntityArticles.Add(new EntityArticle { EntityId = entityId, Content = document, UpdatedAt = now });
+            db.EntityArticles.Add(new EntityArticle { EntityId = entityId, Content = document, UpdatedAt = now, Version = 1 });
         }
         else
         {
             article.Content = document;
             article.UpdatedAt = now;
+            article.Version = version + 1;
         }
 
         var lastNumber = await db.EntityArticleRevisions
@@ -302,7 +312,7 @@ public static class EntityArticleEndpoints
 
         await EntitySearchIndex.ReindexAsync(db, entityId, cancellationToken);
 
-        return Results.Ok(new EntityArticleResponse(entityId, document, now));
+        return Results.Ok(new EntityArticleResponse(entityId, document, now, version + 1));
     }
 
     private static Task<bool> IsLiveAsync(
@@ -329,38 +339,11 @@ public static class EntityArticleEndpoints
                     && revision.Entity.DeletedAt == null,
                 cancellationToken);
 
-    /// <summary>
-    /// Whether a save names the article as it is stored: both "nothing saved yet", or the same instant. Compared as UTC
-    /// ticks, because SQLite hands a stored moment back with no kind and JSON may carry it with or without a zone.
-    /// </summary>
-    private static bool SameMoment(DateTime? stored, DateTime? expected) =>
-        (stored, expected) switch
-        {
-            (null, null) => true,
-            ({ } a, { } b) => Utc(a).Ticks == Utc(b).Ticks,
-            _ => false,
-        };
-
-    /// <summary>Stored as UTC; written out with its zone, so a client can send back exactly what it was given.</summary>
+    /// <summary>Stored as UTC; written out with its zone.</summary>
     private static DateTime Utc(DateTime value) => value.Kind switch
     {
         DateTimeKind.Utc => value,
         DateTimeKind.Local => value.ToUniversalTime(),
         _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
     };
-
-    /// <summary>
-    /// The refusal for a stale save. Carries the stored <c>updatedAt</c>, so a client whose author has seen the warning and
-    /// still means to keep their own text can name it and save again - a decision made by a person, never by a retry.
-    /// </summary>
-    private static IResult Changed(DateTime? current) =>
-        Results.Problem(
-            title: "Article changed",
-            detail: "This entry's article was saved somewhere else after it was opened here. Nothing was overwritten.",
-            statusCode: StatusCodes.Status409Conflict,
-            extensions: new Dictionary<string, object?>
-            {
-                ["code"] = ChangedCode,
-                ["updatedAt"] = current is { } moment ? Utc(moment) : null,
-            });
 }

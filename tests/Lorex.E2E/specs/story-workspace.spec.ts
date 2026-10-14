@@ -137,7 +137,7 @@ async function writeManuscript(
 ) {
   const saved = await page.request.put(
     `/api/universes/${universeId}/stories/${storyId}/scenes/${sceneId}/manuscript`,
-    { data: { content, expectedUpdatedAt: null } },
+    { data: { content, expectedVersion: 0 } },
   )
   expect(saved.status()).toBe(200)
 }

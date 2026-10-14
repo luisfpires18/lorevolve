@@ -958,7 +958,7 @@ test.describe('authored prose direction', () => {
               { type: 'blockquote', content: [paragraph(text(Prose.arabic))] },
             ],
           }),
-          expectedUpdatedAt: null,
+          expectedVersion: 0,
         },
       },
     )

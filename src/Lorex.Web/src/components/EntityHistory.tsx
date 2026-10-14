@@ -8,6 +8,8 @@ import type { CanonBlockingFinding } from '../canon/types'
 import { findEra, formatChronologyYear, formatSignedYear, withEraLabel } from '../chronology/format'
 import { EraLabelPosition, type Chronology } from '../chronology/types'
 import { ApiError } from '../lib/api'
+import { isChangedElsewhere } from '../lib/editConflict'
+import { ENTRY_CHANGED } from '../lore/api'
 import { formatDate, formatDateTime } from '../lib/dates'
 import { isEmptyDocument } from '../lore/document'
 import {
@@ -38,7 +40,10 @@ interface EntityHistoryProps {
    */
   reloadKey: number
 
-  /** Called after a restore lands, so the dossier can show the lore that is now stored. */
+  /** The entry's version as the page last read it: what a restore names as the version it was chosen over (ADR 0043). */
+  currentVersion: number
+
+  /** Called after a restore lands - or is refused because the entry moved on - so the dossier reads the entry again. */
   onRestored: () => void
 }
 
@@ -58,6 +63,7 @@ export function EntityHistory({
   entityId,
   chronology,
   reloadKey,
+  currentVersion,
   onRestored,
 }: EntityHistoryProps) {
   const [revisions, setRevisions] = useState<EntityRevisionSummary[]>([])
@@ -132,12 +138,17 @@ export function EntityHistory({
     setBusyId(revision.id)
 
     try {
-      await restoreRevision(universeId, entityId, revision.id)
+      await restoreRevision(universeId, entityId, revision.id, currentVersion)
       onRestored()
     } catch (error: unknown) {
       const blocking = blockingFindingsOf(error)
       if (blocking) {
         setBlocked(blocking)
+      } else if (isChangedElsewhere(error, ENTRY_CHANGED)) {
+        setMessage(
+          'This entry changed after you opened it, so nothing was put back. The history now shows the latest.',
+        )
+        onRestored()
       } else if (isNotRestorable(error) || error instanceof ApiError) {
         setMessage((error as ApiError).message)
       } else {

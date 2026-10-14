@@ -434,13 +434,13 @@ public sealed class ContentPublicationTests(LorexApiFactory factory) : IClassFix
         var created = await owner.PostAsJsonAsync($"/api/universes/{u}/entities", entryBody);
         created.EnsureSuccessStatusCode();
         var entry = (await created.Content.ReadFromJsonAsync<EntityDetail>())!.Id;
-        (await owner.PutAsJsonAsync($"/api/universes/{u}/entities/{entry}", entryBody)).EnsureSuccessStatusCode();
+        (await owner.PutVersionedAsync($"/api/universes/{u}/entities/{entry}", entryBody)).EnsureSuccessStatusCode();
 
         var storyBody = new Dictionary<string, object?>(sneaked) { ["title"] = "Sneaky story", ["status"] = 0 };
         var createdStory = await owner.PostAsJsonAsync(PlotTestClient.Stories(u), storyBody);
         createdStory.EnsureSuccessStatusCode();
         var story = (await createdStory.Content.ReadFromJsonAsync<StoryDetail>())!.Id;
-        (await owner.PutAsJsonAsync(PlotTestClient.Story(u, story), storyBody)).EnsureSuccessStatusCode();
+        (await owner.PutVersionedAsync(PlotTestClient.Story(u, story), storyBody)).EnsureSuccessStatusCode();
 
         var entryState = await EntryState(owner, u, entry);
         var storyState = await StoryState(owner, u, story);
@@ -475,9 +475,9 @@ public sealed class ContentPublicationTests(LorexApiFactory factory) : IClassFix
         Assert.Equal(storyBefore.UpdatedAt, (await PlotTestClient.ReadStory(owner, u, story)).UpdatedAt);
 
         // Renamed after publication: the address stays, the new name shows.
-        (await owner.PutAsJsonAsync($"/api/universes/{u}/entities/{entry}", new EntityRequest(
+        (await owner.PutVersionedAsync($"/api/universes/{u}/entities/{entry}", new EntityRequest(
             before.EntityTypeId, "Quiet keeper renamed", null, CanonStatus.Idea, null, null, null))).EnsureSuccessStatusCode();
-        (await owner.PutAsJsonAsync(PlotTestClient.Story(u, story), new StoryRequest("Quiet tale renamed", null, StoryStatus.Complete)))
+        (await owner.PutVersionedAsync(PlotTestClient.Story(u, story), new StoryRequest("Quiet tale renamed", null, StoryStatus.Complete)))
             .EnsureSuccessStatusCode();
 
         await Published(owner, u);

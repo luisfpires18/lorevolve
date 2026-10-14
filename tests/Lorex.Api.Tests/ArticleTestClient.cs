@@ -7,7 +7,7 @@ namespace Lorex.Api.Tests;
 
 /// <summary>
 /// The HTTP steps the article tests share: an entry's article address, reading and saving it the way the editor does -
-/// naming the <c>updatedAt</c> it was written over - its history, and reading a stale save's refusal. Not a test.
+/// naming the <c>version</c> it was written over - its history, and reading a stale save's refusal. Not a test.
 /// </summary>
 internal static class ArticleTestClient
 {
@@ -47,8 +47,8 @@ internal static class ArticleTestClient
         Guid universeId,
         Guid entityId,
         string? content,
-        DateTime? expectedUpdatedAt) =>
-        client.PutAsJsonAsync(ArticlePath(universeId, entityId), new EntityArticleRequest(content, expectedUpdatedAt));
+        int? expectedVersion) =>
+        client.PutAsJsonAsync(ArticlePath(universeId, entityId), new EntityArticleRequest(content, expectedVersion));
 
     /// <summary>Saves over whatever is stored now, as an editor that has just opened the entry would.</summary>
     public static async Task<EntityArticleResponse> WriteArticle(
@@ -58,7 +58,7 @@ internal static class ArticleTestClient
         string content)
     {
         var current = await ReadArticle(client, universeId, entityId);
-        var response = await PutArticle(client, universeId, entityId, content, current.UpdatedAt);
+        var response = await PutArticle(client, universeId, entityId, content, current.Version);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<EntityArticleResponse>())!;
     }
@@ -83,13 +83,13 @@ internal static class ArticleTestClient
         Guid universeId,
         Guid entityId,
         Guid revisionId,
-        DateTime? expectedUpdatedAt) =>
+        int? expectedVersion) =>
         client.PostAsJsonAsync(
             $"{ArticlePath(universeId, entityId)}/revisions/{revisionId}/restore",
-            new EntityArticleRestoreRequest(expectedUpdatedAt));
+            new EntityArticleRestoreRequest(expectedVersion));
 
-    /// <summary>The 409 a stale save is given: its code, and the <c>updatedAt</c> it says is stored now.</summary>
-    public static async Task<(string? Code, DateTime? UpdatedAt)> ArticleRefusal(HttpResponseMessage response)
+    /// <summary>The 409 a stale save is given: its code, the <c>updatedAt</c> and the <c>currentVersion</c> it says are stored now.</summary>
+    public static async Task<(string? Code, DateTime? UpdatedAt, int CurrentVersion)> ArticleRefusal(HttpResponseMessage response)
     {
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -97,6 +97,7 @@ internal static class ArticleTestClient
         var updatedAt = root.GetProperty("updatedAt");
         return (
             root.GetProperty("code").GetString(),
-            updatedAt.ValueKind == JsonValueKind.Null ? null : updatedAt.GetDateTime());
+            updatedAt.ValueKind == JsonValueKind.Null ? null : updatedAt.GetDateTime(),
+            root.GetProperty("currentVersion").GetInt32());
     }
 }

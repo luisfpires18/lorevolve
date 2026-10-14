@@ -198,7 +198,7 @@ public sealed class ContentRecoveryMigrationTests : IDisposable
             Assert.Equal(SceneManuscriptRevisionKind.Created, first.Kind);
 
             var rewritten = await WriteManuscript(client, universeId, storyId, gate, "Rewritten after the upgrade.");
-            (await client.PostAsJsonAsync($"{revisions}/{first.Id}/restore", new SceneManuscriptRestoreRequest(rewritten.UpdatedAt)))
+            (await client.PostAsJsonAsync($"{revisions}/{first.Id}/restore", new SceneManuscriptRestoreRequest(rewritten.Version)))
                 .EnsureSuccessStatusCode();
             Assert.Equal(Prose, (await ReadManuscript(client, universeId, storyId, gate)).Content, StringComparer.Ordinal);
             Assert.Equal(3, (await client.GetFromJsonAsync<List<SceneManuscriptRevisionSummary>>(revisions))!.Count);

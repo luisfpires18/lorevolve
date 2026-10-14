@@ -65,10 +65,10 @@ public sealed class SceneManuscriptRevisionTests(LorexApiFactory factory) : ICla
         var scene = await CreateScene(client, universe.Id, story, "The Council");
 
         // Nothing written and nothing sent: no row, no version, and the answer still says nothing was saved.
-        var nothing = await PutManuscript(client, universe.Id, story, scene, string.Empty, null);
+        var nothing = await PutManuscript(client, universe.Id, story, scene, string.Empty, 0);
         Assert.Equal(HttpStatusCode.OK, nothing.StatusCode);
         Assert.Equal(
-            new SceneManuscriptResponse(scene, string.Empty, null),
+            new SceneManuscriptResponse(scene, string.Empty, null, 0),
             await nothing.Content.ReadFromJsonAsync<SceneManuscriptResponse>());
 
         await WithDb(_factory, async db =>
@@ -81,7 +81,7 @@ public sealed class SceneManuscriptRevisionTests(LorexApiFactory factory) : ICla
         var storyBefore = await ReadStory(client, universe.Id, story);
 
         // The same text again: answered with the save that stands, and nothing recorded or touched.
-        var again = await PutManuscript(client, universe.Id, story, scene, "Once.", saved.UpdatedAt);
+        var again = await PutManuscript(client, universe.Id, story, scene, "Once.", saved.Version);
         Assert.Equal(HttpStatusCode.OK, again.StatusCode);
         SameMoment(saved.UpdatedAt, (await again.Content.ReadFromJsonAsync<SceneManuscriptResponse>())!.UpdatedAt);
         SameMoment(saved.UpdatedAt, (await ReadManuscript(client, universe.Id, story, scene)).UpdatedAt);
@@ -109,7 +109,7 @@ public sealed class SceneManuscriptRevisionTests(LorexApiFactory factory) : ICla
         var current = await ReadManuscript(client, universe.Id, story, scene);
         var storyBefore = await ReadStory(client, universe.Id, story);
 
-        var response = await Restore(client, universe.Id, story, scene, first.Id, current.UpdatedAt);
+        var response = await Restore(client, universe.Id, story, scene, first.Id, current.Version);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var restored = (await response.Content.ReadFromJsonAsync<SceneManuscriptResponse>())!;
 
@@ -130,7 +130,7 @@ public sealed class SceneManuscriptRevisionTests(LorexApiFactory factory) : ICla
 
         // Putting back what already stands writes nothing at all.
         var latest = await ReadManuscript(client, universe.Id, story, scene);
-        var same = await Restore(client, universe.Id, story, scene, first.Id, latest.UpdatedAt);
+        var same = await Restore(client, universe.Id, story, scene, first.Id, latest.Version);
         Assert.Equal(HttpStatusCode.OK, same.StatusCode);
         SameMoment(latest.UpdatedAt, (await same.Content.ReadFromJsonAsync<SceneManuscriptResponse>())!.UpdatedAt);
         Assert.Equal(4, (await History(client, universe.Id, story, scene)).Count);
@@ -150,8 +150,8 @@ public sealed class SceneManuscriptRevisionTests(LorexApiFactory factory) : ICla
         await WriteManuscript(client, universe.Id, story, scene, "Theirs.");
         var history = await History(client, universe.Id, story, scene);
 
-        var refused = await Restore(client, universe.Id, story, scene, history[1].Id, opened.UpdatedAt);
-        var (code, stored) = await Refusal(refused);
+        var refused = await Restore(client, universe.Id, story, scene, history[1].Id, opened.Version);
+        var (code, stored, _) = await Refusal(refused);
         Assert.Equal(SceneManuscriptEndpoints.ChangedCode, code);
 
         var kept = await ReadManuscript(client, universe.Id, story, scene);
@@ -165,7 +165,7 @@ public sealed class SceneManuscriptRevisionTests(LorexApiFactory factory) : ICla
             (await Refusal(await Restore(client, universe.Id, story, scene, history[1].Id, null))).Code);
 
         // Having seen the newer text, naming it is a deliberate restore.
-        var chosen = await Restore(client, universe.Id, story, scene, history[1].Id, kept.UpdatedAt);
+        var chosen = await Restore(client, universe.Id, story, scene, history[1].Id, kept.Version);
         Assert.Equal(HttpStatusCode.OK, chosen.StatusCode);
         Assert.Equal("Mine.", (await ReadManuscript(client, universe.Id, story, scene)).Content);
     }
@@ -194,7 +194,7 @@ public sealed class SceneManuscriptRevisionTests(LorexApiFactory factory) : ICla
             (await stranger.GetAsync($"{Revisions(universe.Id, story, scene)}/{version.Id}")).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await Restore(stranger, universe.Id, story, scene, version.Id, saved.UpdatedAt)).StatusCode);
+            (await Restore(stranger, universe.Id, story, scene, version.Id, saved.Version)).StatusCode);
 
         // Not even the shape of a refusal: a stranger's malformed body is the same 404.
         Assert.Equal(
@@ -215,7 +215,7 @@ public sealed class SceneManuscriptRevisionTests(LorexApiFactory factory) : ICla
                 (await owner.GetAsync($"{Revisions(universeId, storyId, sceneId)}/{revisionId}")).StatusCode);
             Assert.Equal(
                 HttpStatusCode.NotFound,
-                (await Restore(owner, universeId, storyId, sceneId, revisionId, saved.UpdatedAt)).StatusCode);
+                (await Restore(owner, universeId, storyId, sceneId, revisionId, saved.Version)).StatusCode);
         }
 
         Assert.Equal("Only mine.", (await ReadManuscript(owner, universe.Id, story, scene)).Content);
@@ -242,7 +242,7 @@ public sealed class SceneManuscriptRevisionTests(LorexApiFactory factory) : ICla
             (await client.GetAsync($"{Revisions(universe.Id, story, scene)}/{history[1].Id}")).StatusCode);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await Restore(client, universe.Id, story, scene, history[1].Id, saved.UpdatedAt)).StatusCode);
+            (await Restore(client, universe.Id, story, scene, history[1].Id, saved.Version)).StatusCode);
 
         (await client.PostAsync($"/api/universes/{universe.Id}/trash/scenes/{scene}/restore", content: null))
             .EnsureSuccessStatusCode();
@@ -309,8 +309,8 @@ public sealed class SceneManuscriptRevisionTests(LorexApiFactory factory) : ICla
         Guid storyId,
         Guid sceneId,
         Guid revisionId,
-        DateTime? expectedUpdatedAt) =>
+        int? expectedVersion) =>
         client.PostAsJsonAsync(
             $"{Revisions(universeId, storyId, sceneId)}/{revisionId}/restore",
-            new SceneManuscriptRestoreRequest(expectedUpdatedAt));
+            new SceneManuscriptRestoreRequest(expectedVersion));
 }

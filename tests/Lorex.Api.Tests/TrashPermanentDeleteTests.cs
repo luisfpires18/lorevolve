@@ -144,7 +144,7 @@ public sealed partial class TrashPermanentDeleteTests(LorexApiFactory factory) :
             fields: [new FieldValueInput(motto, "Hold the gate", null, null, null, null, null)]);
         await WriteArticle(client, u, eldric.Id, Doc("He kept the northern gate."));
         await WriteArticle(client, u, eldric.Id, Doc("He kept the northern gate, and lost it."));
-        (await client.PutAsJsonAsync(EntityPath(u, eldric.Id), new EntityRequest(
+        (await client.PutVersionedAsync(EntityPath(u, eldric.Id), new EntityRequest(
             character, "King Eldric", "The last king.", CanonStatus.Idea, ["The Old King"], ["royalty"],
             [new FieldValueInput(motto, "Hold the gate", null, null, null, null, null)]))).EnsureSuccessStatusCode();
 
@@ -685,7 +685,7 @@ public sealed partial class TrashPermanentDeleteTests(LorexApiFactory factory) :
             new EntityRequest(typeId, name, null, status, aliases, tags, fields));
 
     private static Task<HttpResponseMessage> Resave(HttpClient client, Guid universeId, EntityDetail entity) =>
-        client.PutAsJsonAsync(
+        client.PutVersionedAsync(
             EntityPath(universeId, entity.Id),
             new EntityRequest(
                 entity.EntityTypeId,

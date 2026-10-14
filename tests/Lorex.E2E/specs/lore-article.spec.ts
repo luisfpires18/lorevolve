@@ -74,14 +74,14 @@ function articlePath(universeId: string, entityId: string) {
 async function readArticle(page: Page, universeId: string, entityId: string) {
   const response = await page.request.get(articlePath(universeId, entityId))
   expect(response.status()).toBe(200)
-  return (await response.json()) as { content: string; updatedAt: string | null }
+  return (await response.json()) as { content: string; updatedAt: string | null; version: number }
 }
 
 /** Saves an article straight through the API, as another window or device would, over whatever is stored now. */
 async function writeArticle(page: Page, universeId: string, entityId: string, content: string) {
   const current = await readArticle(page, universeId, entityId)
   const saved = await page.request.put(articlePath(universeId, entityId), {
-    data: { content, expectedUpdatedAt: current.updatedAt },
+    data: { content, expectedVersion: current.version },
   })
   expect(saved.status()).toBe(200)
 }
@@ -298,9 +298,16 @@ test.describe('lore article', () => {
       doc('Written in another window.'),
     )
 
-    // Having seen that, the author keeps their own.
-    await saveWith(page, () => page.getByTestId('article-keep-mine').click())
+    // The author reviews the latest first, then keeps their own and saves it deliberately.
+    await conflict.getByTestId('article-conflict-review').click()
+    await expect(conflict.getByTestId('conflict-latest-text')).toContainText(
+      'Written in another window.',
+    )
+    await conflict.getByTestId('article-conflict-keep').click()
     await expect(conflict).toHaveCount(0)
+    await expect(editor).toContainText('And more. Mine.')
+    await expect(status).toHaveText('Unsaved changes')
+    await saveWith(page, () => save.click())
     expect((await readArticle(page, universeId, entityId)).content).toContain('Mine.')
 
     // Or takes the other one - once they confirm it.
@@ -308,8 +315,9 @@ test.describe('lore article', () => {
     await writeArticle(page, universeId, entityId, doc('Theirs again.'))
     await save.click()
     await expect(conflict).toBeVisible()
+    await conflict.getByTestId('article-conflict-review').click()
     page.once('dialog', (dialog) => void dialog.accept())
-    await page.getByTestId('article-load-saved').click()
+    await conflict.getByTestId('article-conflict-use-latest').click()
     await expect(editor).toHaveText('Theirs again.')
     await expect(status).toHaveText('Saved')
     await expect(conflict).toHaveCount(0)

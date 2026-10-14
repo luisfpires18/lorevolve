@@ -306,7 +306,7 @@ internal static partial class RestoreTestClient
         var first = await ArticleTestClient.WriteArticle(client, u, warden.Id, ArticleTestClient.Doc("The tide keeps its own ledger."));
         var second = await ArticleTestClient.WriteArticle(client, u, warden.Id, ArticleTestClient.Doc("The seawall remembers.", "Salt and ash."));
         var firstVersion = (await ArticleTestClient.ArticleRevisions(client, u, warden.Id)).First(revision => revision.Number == 1);
-        (await ArticleTestClient.RestoreArticle(client, u, warden.Id, firstVersion.Id, second.UpdatedAt)).EnsureSuccessStatusCode();
+        (await ArticleTestClient.RestoreArticle(client, u, warden.Id, firstVersion.Id, second.Version)).EnsureSuccessStatusCode();
         Assert.NotNull(first);
 
         // A framed picture.

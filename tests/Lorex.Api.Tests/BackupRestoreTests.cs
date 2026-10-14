@@ -293,7 +293,7 @@ public sealed class BackupRestoreTests(LorexApiFactory factory) : IClassFixture<
         Assert.Equal([3, 2, 1], articleVersions.Select(version => version.Number));
         var article = await ArticleTestClient.ReadArticle(client, r, warden);
         Assert.Contains("The tide keeps its own ledger.", article.Content, StringComparison.Ordinal);
-        var restoreOld = await ArticleTestClient.RestoreArticle(client, r, warden, articleVersions.First(version => version.Number == 2).Id, article.UpdatedAt);
+        var restoreOld = await ArticleTestClient.RestoreArticle(client, r, warden, articleVersions.First(version => version.Number == 2).Id, article.Version);
         restoreOld.EnsureSuccessStatusCode();
         Assert.Contains("The seawall remembers.", (await ArticleTestClient.ReadArticle(client, r, warden)).Content, StringComparison.Ordinal);
 

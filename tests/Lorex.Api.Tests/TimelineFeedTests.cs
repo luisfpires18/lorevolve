@@ -35,7 +35,7 @@ public sealed class TimelineFeedTests(LorexApiFactory factory) : IClassFixture<L
         (await PostJson<SceneResponse>(client, $"{Story(u, story)}/scenes", SceneAt(title, year, month, day, era, summary))).Id;
 
     private static Task<HttpResponseMessage> PutScene(HttpClient client, Guid u, Guid story, Guid scene, SceneRequest request) =>
-        client.PutAsJsonAsync($"{Story(u, story)}/scenes/{scene}", request);
+        client.PutVersionedAsync($"{Story(u, story)}/scenes/{scene}", request);
 
     private static TimelineEntryRequest Moment(
         string title,
@@ -265,7 +265,7 @@ public sealed class TimelineFeedTests(LorexApiFactory factory) : IClassFixture<L
         Assert.Equal(90, (await Feed(client, u)).Items[1].Date.StartYear);
 
         (await PutScene(client, u, story, scene, SceneAt("Crowning", 90))).EnsureSuccessStatusCode();
-        (await client.PutAsJsonAsync(Story(u, story), new StoryRequest("The Lost Kingdom", null, StoryStatus.Drafting))).EnsureSuccessStatusCode();
+        (await client.PutVersionedAsync(Story(u, story), new StoryRequest("The Lost Kingdom", null, StoryStatus.Drafting))).EnsureSuccessStatusCode();
         var renamed = (await Feed(client, u)).Items[1];
         Assert.Equal(("Crowning", "The Lost Kingdom"), (renamed.Title, renamed.Scene!.StoryTitle));
 
@@ -325,7 +325,7 @@ public sealed class TimelineFeedTests(LorexApiFactory factory) : IClassFixture<L
         Assert.Equal((akron, CanonStatus.Idea, 113), (only.LoreFact!.EntityId, only.LoreFact.CanonStatus, only.Date.StartYear));
 
         // The year changed, then a death added: it moves, and a second fact appears.
-        (await client.PutAsJsonAsync(
+        (await client.PutVersionedAsync(
             $"/api/universes/{u}/entities/{akron}",
             Person(fields, "Akron Wright", CanonStatus.Draft, Number(fields.Born, 120), Number(fields.Died, 170)))).EnsureSuccessStatusCode();
         var moved = await Feed(client, u);
@@ -333,7 +333,7 @@ public sealed class TimelineFeedTests(LorexApiFactory factory) : IClassFixture<L
         Assert.All(moved.Items, item => Assert.Equal(CanonStatus.Draft, item.LoreFact!.CanonStatus));
 
         // The value removed: gone.
-        (await client.PutAsJsonAsync(
+        (await client.PutVersionedAsync(
             $"/api/universes/{u}/entities/{akron}",
             Person(fields, "Akron Wright", CanonStatus.Draft, Number(fields.Died, 170)))).EnsureSuccessStatusCode();
         Assert.Equal([EntityFieldSemantic.DeathYear], (await Feed(client, u)).Items.Select(item => item.LoreFact!.Fact));

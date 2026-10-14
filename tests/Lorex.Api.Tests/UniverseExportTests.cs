@@ -16,6 +16,8 @@ using Lorex.Api.Features.Universes;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
+using static Lorex.Api.Tests.VersionTestClient;
+
 namespace Lorex.Api.Tests;
 
 /// <summary>
@@ -728,9 +730,7 @@ public sealed class UniverseExportTests(LorexApiFactory factory) : IClassFixture
             $"/api/universes/{universe.Id}/entities/{built.Warden.Id}/revisions"))!;
         var original = history.Single(revision => revision.Number == 1);
 
-        (await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{built.Warden.Id}/revisions/{original.Id}/restore",
-            null)).EnsureSuccessStatusCode();
+        (await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{built.Warden.Id}", original.Id)).EnsureSuccessStatusCode();
 
         var revisions = (await Backup(client, universe.Id)).Payload
             .Entities.Single(entity => entity.Id == built.Warden.Id).Revisions;
@@ -1509,7 +1509,7 @@ public sealed class UniverseExportTests(LorexApiFactory factory) : IClassFixture
     /// <summary>Re-saves an entry from its own detail, which is what the client does.</summary>
     private static async Task<EntityDetail> Save(HttpClient client, Guid universeId, EntityDetail entity)
     {
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PutVersionedAsync(
             $"/api/universes/{universeId}/entities/{entity.Id}",
             new EntityRequest(
                 entity.EntityTypeId,

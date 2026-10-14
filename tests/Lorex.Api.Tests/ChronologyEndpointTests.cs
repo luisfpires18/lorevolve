@@ -7,6 +7,8 @@ using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Timeline;
 using Lorex.Api.Features.Universes;
 
+using static Lorex.Api.Tests.VersionTestClient;
+
 namespace Lorex.Api.Tests;
 
 /// <summary>
@@ -401,8 +403,7 @@ public sealed class ChronologyEndpointTests(LorexApiFactory factory) : IClassFix
         Assert.Equal(eras[0].Id, remembered.EraId);
         Assert.Equal("BF", remembered.EraLabel);
 
-        (await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{aranel.Id}/revisions/{first.Id}/restore", null))
+        (await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{aranel.Id}", first.Id))
             .EnsureSuccessStatusCode();
 
         var value = (await Entity(client, universe.Id, aranel.Id)).Fields
@@ -427,8 +428,7 @@ public sealed class ChronologyEndpointTests(LorexApiFactory factory) : IClassFix
         await Save(client, universe.Id, After() with { Id = eras[1].Id });
 
         var first = (await Versions(client, universe.Id, aranel.Id)).Single(version => version.Number == 1);
-        var response = await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{aranel.Id}/revisions/{first.Id}/restore", null);
+        var response = await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{aranel.Id}", first.Id);
 
         // Refused, rather than put back as a plain 5 or a year in whichever era is left.
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
@@ -577,7 +577,7 @@ public sealed class ChronologyEndpointTests(LorexApiFactory factory) : IClassFix
         Guid universeId,
         EntityDetail entity,
         IReadOnlyList<FieldValueInput> fields) =>
-        (await client.PutAsJsonAsync(
+        (await client.PutVersionedAsync(
             $"/api/universes/{universeId}/entities/{entity.Id}",
             new EntityRequest(
                 entity.EntityTypeId, entity.Name, entity.Summary, entity.CanonStatus,

@@ -112,7 +112,7 @@ public sealed class ContentRecoveryBackupTests(LorexApiFactory factory) : IClass
         var current = await ReadManuscript(client, u, story, scene);
         (await client.PostAsJsonAsync(
                 $"{Manuscript(u, story, scene)}/revisions/{history[1].Id}/restore",
-                new SceneManuscriptRestoreRequest(current.UpdatedAt)))
+                new SceneManuscriptRestoreRequest(current.Version)))
             .EnsureSuccessStatusCode();
 
         var manuscript = Assert.Single(Assert.Single((await Backup(client, u)).Payload.Stories!).Scenes).Manuscript!;

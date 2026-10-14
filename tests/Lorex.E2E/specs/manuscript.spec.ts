@@ -132,7 +132,7 @@ function manuscriptPath(universeId: string, storyId: string, sceneId: string) {
 async function readManuscript(page: Page, universeId: string, storyId: string, sceneId: string) {
   const response = await page.request.get(manuscriptPath(universeId, storyId, sceneId))
   expect(response.status()).toBe(200)
-  return (await response.json()) as { content: string; updatedAt: string | null }
+  return (await response.json()) as { content: string; updatedAt: string | null; version: number }
 }
 
 /** Saves prose straight through the API, as another window or device would, over whatever is stored now. */
@@ -145,7 +145,7 @@ async function writeManuscript(
 ) {
   const current = await readManuscript(page, universeId, storyId, sceneId)
   const saved = await page.request.put(manuscriptPath(universeId, storyId, sceneId), {
-    data: { content, expectedUpdatedAt: current.updatedAt },
+    data: { content, expectedVersion: current.version },
   })
   expect(saved.status()).toBe(200)
 }
@@ -474,9 +474,16 @@ test.describe('manuscript', () => {
       'Written in another window.',
     )
 
-    // Having seen that, the author keeps their own.
-    await saveWith(page, () => page.getByTestId('manuscript-keep-mine').click())
+    // The author reviews the latest first, then keeps their own and saves it deliberately.
+    await conflict.getByTestId('manuscript-conflict-review').click()
+    await expect(conflict.getByTestId('conflict-latest-text')).toContainText(
+      'Written in another window.',
+    )
+    await conflict.getByTestId('manuscript-conflict-keep').click()
     await expect(conflict).toHaveCount(0)
+    await expect(editor).toHaveValue('Written in this window.')
+    await expect(status).toHaveText('Unsaved changes')
+    await saveWith(page, () => save.click())
     expect((await readManuscript(page, universeId, storyId, first)).content).toBe(
       'Written in this window.',
     )
@@ -486,8 +493,9 @@ test.describe('manuscript', () => {
     await writeManuscript(page, universeId, storyId, first, 'Theirs again.')
     await save.click()
     await expect(conflict).toBeVisible()
+    await conflict.getByTestId('manuscript-conflict-review').click()
     page.once('dialog', (dialog) => void dialog.accept())
-    await page.getByTestId('manuscript-load-saved').click()
+    await conflict.getByTestId('manuscript-conflict-use-latest').click()
     await expect(editor).toHaveValue('Theirs again.')
     await expect(status).toHaveText('Saved')
     await expect(conflict).toHaveCount(0)

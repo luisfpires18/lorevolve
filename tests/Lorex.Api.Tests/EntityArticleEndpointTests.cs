@@ -7,6 +7,8 @@ using static Lorex.Api.Tests.ArticleTestClient;
 using static Lorex.Api.Tests.ManuscriptTestClient;
 using static Lorex.Api.Tests.PlotTestClient;
 
+using static Lorex.Api.Tests.VersionTestClient;
+
 namespace Lorex.Api.Tests;
 
 /// <summary>
@@ -30,7 +32,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var (client, universe) = await SignedInWithUniverse(_factory, "artempty");
         var entity = await CreateEntity(client, universe.Id, "Arlen");
 
-        Assert.Equal(new EntityArticleResponse(entity, string.Empty, null), await ReadArticle(client, universe.Id, entity));
+        Assert.Equal(new EntityArticleResponse(entity, string.Empty, null, 0), await ReadArticle(client, universe.Id, entity));
         Assert.Empty(await ArticleRevisions(client, universe.Id, entity));
         await WithDb(_factory, async db => Assert.False(await db.EntityArticles.AnyAsync(row => row.EntityId == entity)));
     }
@@ -42,7 +44,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var entity = await CreateEntity(client, universe.Id, "Alenna Vance");
         var before = await Detail(client, universe.Id, entity);
 
-        var first = await PutArticle(client, universe.Id, entity, RichDocument, null);
+        var first = await PutArticle(client, universe.Id, entity, RichDocument, 0);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         var created = (await first.Content.ReadFromJsonAsync<EntityArticleResponse>())!;
         Assert.Equal(RichDocument, created.Content, StringComparer.Ordinal);
@@ -55,7 +57,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         await WithDb(_factory, async db =>
             Assert.Equal(RichDocument, (await db.EntityArticles.SingleAsync(row => row.EntityId == entity)).Content, StringComparer.Ordinal));
 
-        var second = await PutArticle(client, universe.Id, entity, Doc("Exiled to the salt marshes."), read.UpdatedAt);
+        var second = await PutArticle(client, universe.Id, entity, Doc("Exiled to the salt marshes."), read.Version);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
         Assert.Equal(Doc("Exiled to the salt marshes."), (await ReadArticle(client, universe.Id, entity)).Content);
         await WithDb(_factory, async db => Assert.Equal(1, await db.EntityArticles.CountAsync(row => row.EntityId == entity)));
@@ -73,9 +75,9 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var entity = await CreateEntity(client, universe.Id, "Second thoughts");
 
         // Nothing to clear: nothing is stored and nothing is recorded.
-        var nothing = await PutArticle(client, universe.Id, entity, "   ", null);
+        var nothing = await PutArticle(client, universe.Id, entity, "   ", 0);
         Assert.Equal(HttpStatusCode.OK, nothing.StatusCode);
-        Assert.Equal(new EntityArticleResponse(entity, string.Empty, null), await nothing.Content.ReadFromJsonAsync<EntityArticleResponse>());
+        Assert.Equal(new EntityArticleResponse(entity, string.Empty, null, 0), await nothing.Content.ReadFromJsonAsync<EntityArticleResponse>());
         await WithDb(_factory, async db => Assert.False(await db.EntityArticles.AnyAsync(row => row.EntityId == entity)));
         Assert.Empty(await ArticleRevisions(client, universe.Id, entity));
 
@@ -109,7 +111,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var saved = await WriteArticle(client, universe.Id, entity, full);
         Assert.Equal(LoreLimits.ContentMaxLength, saved.Content.Length);
 
-        var over = await PutArticle(client, universe.Id, entity, Doc(new string('a', padding + 1)), saved.UpdatedAt);
+        var over = await PutArticle(client, universe.Id, entity, Doc(new string('a', padding + 1)), saved.Version);
         Assert.Contains("\"content\"", await Errors(over), StringComparison.Ordinal);
 
         var kept = await ReadArticle(client, universe.Id, entity);
@@ -140,7 +142,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
 
         foreach (var content in refused)
         {
-            var response = await PutArticle(client, universe.Id, entity, content, saved.UpdatedAt);
+            var response = await PutArticle(client, universe.Id, entity, content, saved.Version);
             Assert.Contains("\"content\"", await Errors(response), StringComparison.Ordinal);
         }
 
@@ -162,7 +164,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var (client, universe) = await SignedInWithUniverse(_factory, $"artodd-{content.Length}-{(uint)content.GetHashCode()}");
         var entity = await CreateEntity(client, universe.Id, "Odd");
 
-        var response = await PutArticle(client, universe.Id, entity, content, null);
+        var response = await PutArticle(client, universe.Id, entity, content, 0);
 
         Assert.True(
             response.StatusCode is HttpStatusCode.OK or HttpStatusCode.BadRequest,
@@ -179,35 +181,40 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
 
         // Both windows open the entry with no article. The first saves.
         var opened = await ReadArticle(client, universe.Id, entity);
-        var first = await PutArticle(client, universe.Id, entity, Doc("From the first window."), opened.UpdatedAt);
+        var first = await PutArticle(client, universe.Id, entity, Doc("From the first window."), opened.Version);
         var firstSaved = (await first.Content.ReadFromJsonAsync<EntityArticleResponse>())!;
 
         // The second still believes nothing was saved, and is told otherwise - with what is stored now.
-        var second = await PutArticle(client, universe.Id, entity, Doc("From the second window."), opened.UpdatedAt);
-        var (code, current) = await ArticleRefusal(second);
+        var second = await PutArticle(client, universe.Id, entity, Doc("From the second window."), opened.Version);
+        var (code, current, currentVersion) = await ArticleRefusal(second);
         Assert.Equal(EntityArticleEndpoints.ChangedCode, code);
         SameMoment(firstSaved.UpdatedAt, current);
+        Assert.Equal((0, 1), (opened.Version, firstSaved.Version));
+        Assert.Equal(firstSaved.Version, currentVersion);
         Assert.Equal(Doc("From the first window."), (await ReadArticle(client, universe.Id, entity)).Content);
         Assert.Single(await ArticleRevisions(client, universe.Id, entity));
 
-        // Having seen that, its author keeps their own text: naming what is stored now is a deliberate overwrite.
-        var kept = await PutArticle(client, universe.Id, entity, Doc("From the second window."), current);
+        // Having seen that, its author keeps their own text: naming the version stored now is a deliberate save over it.
+        var kept = await PutArticle(client, universe.Id, entity, Doc("From the second window."), currentVersion);
         Assert.Equal(HttpStatusCode.OK, kept.StatusCode);
         var keptSaved = (await kept.Content.ReadFromJsonAsync<EntityArticleResponse>())!;
+        Assert.Equal(firstSaved.Version + 1, keptSaved.Version);
 
-        // A moment that is no longer the latest is just as stale, even for the same words.
-        var older = await PutArticle(client, universe.Id, entity, Doc("From the second window."), firstSaved.UpdatedAt);
-        SameMoment(keptSaved.UpdatedAt, (await ArticleRefusal(older)).UpdatedAt);
+        // A version that is no longer the latest is just as stale, even for the same words.
+        var older = await PutArticle(client, universe.Id, entity, Doc("From the second window."), firstSaved.Version);
+        var olderRefusal = await ArticleRefusal(older);
+        SameMoment(keptSaved.UpdatedAt, olderRefusal.UpdatedAt);
+        Assert.Equal(keptSaved.Version, olderRefusal.CurrentVersion);
 
-        // The same instant written with another zone is the same instant.
-        var local = await PutArticle(
-            client, universe.Id, entity, Doc("Same instant, local clock."), keptSaved.UpdatedAt!.Value.ToLocalTime());
-        Assert.Equal(HttpStatusCode.OK, local.StatusCode);
+        // A save naming no version, or one from the future, is refused the same way.
+        await ArticleRefusal(await PutArticle(client, universe.Id, entity, Doc("Unnamed."), null));
+        await ArticleRefusal(await PutArticle(client, universe.Id, entity, Doc("Ahead."), keptSaved.Version + 1));
+        Assert.Equal(Doc("From the second window."), (await ReadArticle(client, universe.Id, entity)).Content);
 
         // A save naming an article that was never written is refused, saying nothing is stored.
         var other = await CreateEntity(client, universe.Id, "Untouched");
-        var imagined = await PutArticle(client, universe.Id, other, Doc("Over nothing."), DateTime.UtcNow);
-        Assert.Equal((EntityArticleEndpoints.ChangedCode, (DateTime?)null), await ArticleRefusal(imagined));
+        var imagined = await PutArticle(client, universe.Id, other, Doc("Over nothing."), 1);
+        Assert.Equal((EntityArticleEndpoints.ChangedCode, (DateTime?)null, 0), await ArticleRefusal(imagined));
         await WithDb(_factory, async db => Assert.False(await db.EntityArticles.AnyAsync(row => row.EntityId == other)));
     }
 
@@ -226,10 +233,10 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var path = ArticlePath(universe.Id, entity);
 
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync(path)).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await PutArticle(stranger, universe.Id, entity, Doc("Mine now."), saved.UpdatedAt)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await PutArticle(stranger, universe.Id, entity, Doc("Mine now."), saved.Version)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync($"{path}/revisions")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync($"{path}/revisions/{version.Id}")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await RestoreArticle(stranger, universe.Id, entity, version.Id, saved.UpdatedAt)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await RestoreArticle(stranger, universe.Id, entity, version.Id, saved.Version)).StatusCode);
 
         // Not even the shape of a refusal: an invalid body from a stranger is the same 404, never a 400.
         Assert.Equal(HttpStatusCode.NotFound, (await PutArticle(stranger, universe.Id, entity, null, null)).StatusCode);
@@ -276,7 +283,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var current = await ReadArticle(client, first.Id, entity);
         Assert.Equal(
             HttpStatusCode.NotFound,
-            (await RestoreArticle(client, first.Id, entity, siblingVersion.Id, current.UpdatedAt)).StatusCode);
+            (await RestoreArticle(client, first.Id, entity, siblingVersion.Id, current.Version)).StatusCode);
 
         Assert.Equal(Doc("Where it belongs."), (await ReadArticle(client, first.Id, entity)).Content);
         Assert.Equal(string.Empty, (await ReadArticle(stranger, strangerUniverse.Id, strangerEntity)).Content);
@@ -333,12 +340,12 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var entity = await Detail(client, universe.Id, await CreateEntity(client, universe.Id, "Warden"));
         var saved = await WriteArticle(client, universe.Id, entity.Id, RichDocument);
 
-        var edited = await client.PutAsJsonAsync(
+        var edited = await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{entity.Id}",
             new EntityRequest(entity.EntityTypeId, "Warden of the Coast", "Now with a summary.", CanonStatus.Idea, null, null, null));
         Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
 
-        var promoted = await client.PutAsJsonAsync(
+        var promoted = await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{entity.Id}",
             new EntityRequest(entity.EntityTypeId, "Warden of the Coast", "Now with a summary.", CanonStatus.Canon, null, null, null));
         Assert.Equal(HttpStatusCode.OK, promoted.StatusCode);
@@ -431,13 +438,13 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var saved = await WriteArticle(client, universe.Id, entity.Id, Doc("Kept."));
         var path = $"/api/universes/{universe.Id}/entities/{entity.Id}";
 
-        var current = await client.PutAsJsonAsync(
+        var current = await client.PutVersionedAsync(
             path, new EntityRequest(entity.EntityTypeId, "Warden of the Coast", "A summary.", CanonStatus.Draft, null, null, null));
         Assert.Equal(HttpStatusCode.OK, current.StatusCode);
         var after = await Detail(client, universe.Id, entity.Id);
         Assert.Equal(("Warden of the Coast", "A summary.", CanonStatus.Draft), (after.Name, after.Summary, after.CanonStatus));
 
-        var unknown = await client.PutAsJsonAsync(
+        var unknown = await client.PutVersionedAsync(
             path,
             new { entityTypeId = entity.EntityTypeId, name = "Warden of the Coast", summary = "Another summary.", canonStatus = CanonStatus.Draft, contentType = "text/plain", notes = "Not a member." });
         Assert.Equal(HttpStatusCode.OK, unknown.StatusCode);
@@ -517,7 +524,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var history = await ArticleRevisions(client, universe.Id, entity);
         var (v2, v1) = (history[0], history[1]);
 
-        var restored = await RestoreArticle(client, universe.Id, entity, v1.Id, latest.UpdatedAt);
+        var restored = await RestoreArticle(client, universe.Id, entity, v1.Id, latest.Version);
         Assert.Equal(HttpStatusCode.OK, restored.StatusCode);
         var back = (await restored.Content.ReadFromJsonAsync<EntityArticleResponse>())!;
         Assert.Equal(Doc("Ashfall ledger."), back.Content);
@@ -535,11 +542,11 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         Assert.Empty(await SearchIds(client, universe.Id, "Tidewater"));
 
         // A restore naming an article that has moved on is refused like any stale save, and writes nothing.
-        var stale = await RestoreArticle(client, universe.Id, entity, v2.Id, latest.UpdatedAt);
+        var stale = await RestoreArticle(client, universe.Id, entity, v2.Id, latest.Version);
         Assert.Equal(EntityArticleEndpoints.ChangedCode, (await ArticleRefusal(stale)).Code);
 
         // Restoring what the article already says records nothing.
-        var same = await RestoreArticle(client, universe.Id, entity, v1.Id, back.UpdatedAt);
+        var same = await RestoreArticle(client, universe.Id, entity, v1.Id, back.Version);
         Assert.Equal(HttpStatusCode.OK, same.StatusCode);
         Assert.Equal(3, (await ArticleRevisions(client, universe.Id, entity)).Count);
     }
@@ -551,13 +558,12 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var entity = await Detail(client, universe.Id, await CreateEntity(client, universe.Id, "Before"));
         var saved = await WriteArticle(client, universe.Id, entity.Id, Doc("Written after the first version."));
 
-        (await client.PutAsJsonAsync(
+        (await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{entity.Id}",
             new EntityRequest(entity.EntityTypeId, "After", null, entity.CanonStatus, null, null, null))).EnsureSuccessStatusCode();
 
         var first = (await EntryRevisions(client, universe.Id, entity.Id)).Single(revision => revision.Number == 1);
-        (await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{first.Id}/restore", null)).EnsureSuccessStatusCode();
+        (await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id)).EnsureSuccessStatusCode();
 
         Assert.Equal("Before", (await Detail(client, universe.Id, entity.Id)).Name);
         var kept = await ReadArticle(client, universe.Id, entity.Id);
@@ -577,7 +583,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         var (client, universe) = await SignedInWithUniverse(_factory, "artlegacy");
         var entity = await Detail(client, universe.Id, await CreateEntity(client, universe.Id, "Elder"));
 
-        (await client.PutAsJsonAsync(
+        (await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{entity.Id}",
             new EntityRequest(entity.EntityTypeId, "Elder of the Coast", null, entity.CanonStatus, null, null, null))).EnsureSuccessStatusCode();
 
@@ -596,7 +602,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
             $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{first.Id}"))!;
         Assert.Equal(legacy, detail.Content);
 
-        (await client.PutAsJsonAsync(
+        (await client.PutVersionedAsync(
             $"/api/universes/{universe.Id}/entities/{entity.Id}",
             new EntityRequest(entity.EntityTypeId, "Elder of the Coast", "Now summarised.", entity.CanonStatus, null, null, null))).EnsureSuccessStatusCode();
 
@@ -604,8 +610,7 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
         Assert.Equal(3, newest.Number);
         Assert.Equal(EntityRevisionChange.Summary, newest.Changes);
 
-        (await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entity.Id}/revisions/{first.Id}/restore", null)).EnsureSuccessStatusCode();
+        (await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id)).EnsureSuccessStatusCode();
 
         var kept = await ReadArticle(client, universe.Id, entity.Id);
         Assert.Equal(Doc("The article as it stands."), kept.Content);
@@ -627,10 +632,10 @@ public sealed class EntityArticleEndpointTests(LorexApiFactory factory) : IClass
 
         var path = ArticlePath(universe.Id, entity);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(path)).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await PutArticle(client, universe.Id, entity, Doc("Rewritten."), saved.UpdatedAt)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await PutArticle(client, universe.Id, entity, Doc("Rewritten."), saved.Version)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"{path}/revisions")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"{path}/revisions/{version.Id}")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await RestoreArticle(client, universe.Id, entity, version.Id, saved.UpdatedAt)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await RestoreArticle(client, universe.Id, entity, version.Id, saved.Version)).StatusCode);
         Assert.Empty(await SearchIds(client, universe.Id, "Wyrmgate"));
 
         await WithDb(_factory, async db =>

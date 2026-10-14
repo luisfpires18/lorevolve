@@ -112,7 +112,7 @@ public sealed class SceneChapterTests(LorexApiFactory factory) : IClassFixture<L
         var a = await Create(client, universe.Id, story.Id, Scene("A", one.Id));
 
         await AssertRefused(
-            await client.PutAsJsonAsync(ScenePath(universe.Id, story.Id, a.Id), Scene("A", elsewhere.Id)),
+            await client.PutVersionedAsync(ScenePath(universe.Id, story.Id, a.Id), Scene("A", elsewhere.Id)),
             "chapterId");
         await AssertRefused(await Move(client, universe.Id, story.Id, a.Id, elsewhere.Id, null), "chapterId");
         await AssertRefused(await Move(client, universe.Id, story.Id, a.Id, theirs.Id, 0), "chapterId");
@@ -447,7 +447,7 @@ public sealed class SceneChapterTests(LorexApiFactory factory) : IClassFixture<L
 
     private static async Task<SceneResponse> Update(HttpClient client, Guid universeId, Guid storyId, Guid sceneId, SceneRequest request)
     {
-        var response = await client.PutAsJsonAsync(ScenePath(universeId, storyId, sceneId), request);
+        var response = await client.PutVersionedAsync(ScenePath(universeId, storyId, sceneId), request);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<SceneResponse>())!;
     }

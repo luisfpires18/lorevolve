@@ -121,7 +121,7 @@ public sealed class SceneManuscriptMigrationTests : IDisposable
             Assert.Equal(["Scenes.SceneId:CASCADE"], await ForeignKeys(db, Table));
             Assert.Equal(["SceneId"], await PrimaryKey(db, Table));
             Assert.Equal(
-                ["Content:TEXT:1", "SceneId:TEXT:1", "UpdatedAt:TEXT:1"],
+                ["Content:TEXT:1", "SceneId:TEXT:1", "UpdatedAt:TEXT:1", "Version:INTEGER:1"],
                 (await Columns(db, Table)).Order(StringComparer.Ordinal));
 
             // Nothing on a scene points at its prose, and no other table's delete actions moved.

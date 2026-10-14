@@ -16,6 +16,8 @@ using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
+using static Lorex.Api.Tests.VersionTestClient;
+
 namespace Lorex.Api.Tests;
 
 /// <summary>
@@ -807,7 +809,7 @@ public sealed class EntityImageTests(LorexApiFactory factory) : IClassFixture<Lo
         var entry = await Entry(client, universe.Id, type, "Alenna Vance");
 
         // A version written before there was ever a picture.
-        (await client.PutAsJsonAsync(
+        (await client.PutVersionedAsync(
             Entity(universe.Id, entry.Id),
             new EntityRequest(type, "Alenna of Tidewatch", null, CanonStatus.Idea, null, null, null)))
             .EnsureSuccessStatusCode();
@@ -820,9 +822,7 @@ public sealed class EntityImageTests(LorexApiFactory factory) : IClassFixture<Lo
         // And framed again after that, so there is a thumbnail history could be tempted to rewind.
         var stored = await Reframed(client, universe.Id, entry.Id, uploaded.AssetId, RightSquare);
 
-        var restore = await client.PostAsync(
-            $"/api/universes/{universe.Id}/entities/{entry.Id}/revisions/{beforeAnyPicture.Id}/restore",
-            null);
+        var restore = await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entry.Id}", beforeAnyPicture.Id);
         restore.EnsureSuccessStatusCode();
 
         var restored = (await restore.Content.ReadFromJsonAsync<EntityDetail>())!;

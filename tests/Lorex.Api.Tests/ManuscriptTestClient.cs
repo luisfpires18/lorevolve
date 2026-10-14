@@ -7,7 +7,7 @@ namespace Lorex.Api.Tests;
 
 /// <summary>
 /// The HTTP steps the manuscript tests share: a scene's manuscript address, reading it, saving it the way the editor does
-/// - naming the <c>updatedAt</c> it was written over - and reading a stale save's refusal. Not a test.
+/// - naming the <c>version</c> it was written over - and reading a stale save's refusal. Not a test.
 /// </summary>
 internal static class ManuscriptTestClient
 {
@@ -45,10 +45,10 @@ internal static class ManuscriptTestClient
         Guid storyId,
         Guid sceneId,
         string? content,
-        DateTime? expectedUpdatedAt) =>
+        int? expectedVersion) =>
         client.PutAsJsonAsync(
             Manuscript(universeId, storyId, sceneId),
-            new SceneManuscriptRequest(content, expectedUpdatedAt));
+            new SceneManuscriptRequest(content, expectedVersion));
 
     /// <summary>Saves over whatever is stored now, as an editor that has just opened the scene would.</summary>
     public static async Task<SceneManuscriptResponse> WriteManuscript(
@@ -59,13 +59,13 @@ internal static class ManuscriptTestClient
         string content)
     {
         var current = await ReadManuscript(client, universeId, storyId, sceneId);
-        var response = await PutManuscript(client, universeId, storyId, sceneId, content, current.UpdatedAt);
+        var response = await PutManuscript(client, universeId, storyId, sceneId, content, current.Version);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<SceneManuscriptResponse>())!;
     }
 
-    /// <summary>The 409 a stale save is given: its code, and the <c>updatedAt</c> it says is stored now.</summary>
-    public static async Task<(string? Code, DateTime? UpdatedAt)> Refusal(HttpResponseMessage response)
+    /// <summary>The 409 a stale save is given: its code, the <c>updatedAt</c> and the <c>currentVersion</c> it says are stored now.</summary>
+    public static async Task<(string? Code, DateTime? UpdatedAt, int CurrentVersion)> Refusal(HttpResponseMessage response)
     {
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -73,7 +73,8 @@ internal static class ManuscriptTestClient
         var updatedAt = root.GetProperty("updatedAt");
         return (
             root.GetProperty("code").GetString(),
-            updatedAt.ValueKind == JsonValueKind.Null ? null : updatedAt.GetDateTime());
+            updatedAt.ValueKind == JsonValueKind.Null ? null : updatedAt.GetDateTime(),
+            root.GetProperty("currentVersion").GetInt32());
     }
 
     /// <summary>The same instant, whatever kind each side came back with.</summary>
