@@ -50,6 +50,12 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   next numbered phase resumes only when the owner says so.
 - **Design refactor 001-007 done and merged** (007 at `cc798c1`, merged into `dev` at `a87b7da`; Deploy DEV #47 green).
   The contract is now an as-built reference. See Design refactor below.
+- **Fix: entry tools on a phone** (`fix/entry-tools-phone-wrap` off `dev` at `a832393`). CI red since 043:
+  `review-comments.spec.ts` "the entry menu wrapped under Edit" at 390px on Linux font metrics (Private, Edit, Family tree,
+  ⋯ overflowed). Family tree is now its icon alone below 640px, still named, like Comments. Reproduced locally with a
+  forced wide font (wrapped before, one line after at 390 and 360px).
+  Also the CI flake in `ideas-workspace.spec.ts` (flaky in 043.5 and 044): it pressed Back once the API had the body but
+  before the page knew its save landed, so the leave guard kept the editor. It now waits for the page's `Saved`; 50/50.
 - **Roadmap task 044 - concurrent edit protection** (`feat/concurrent-edit-protection` off `dev` at `5cfb34f`; committed, not
   merged, not pushed). One migration (`AddContentEditVersions`), backup stays **22**. ADR 0043 (new); 0027, 0028 amendments.
   - Server-owned integer `Version` on `Entities`, `EntityArticles`, `Stories`, `Scenes`, `SceneManuscripts` (existing rows 1;

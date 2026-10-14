@@ -14598,6 +14598,7 @@ details.reviewsection > .reviewsection__list {
 
 @media (max-width: 640px) {
   .entry__lenses .reviewtrigger__label,
+  .entry__tools .entry__toollabel,
   .manuscript__tools .reviewtrigger__label {
     position: absolute;
     width: 1px;
