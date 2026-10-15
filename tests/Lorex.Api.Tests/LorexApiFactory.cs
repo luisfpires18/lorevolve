@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Lorex.Api.Data;
+using Lorex.Api.Features.Assistant;
 using Lorex.Api.Features.Media;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -36,6 +37,12 @@ public sealed class LorexApiFactory : WebApplicationFactory<Program>
     /// <summary>The clock the host reads where it asks for one, which a test may move forward.</summary>
     public TestClock Clock { get; } = new();
 
+    /// <summary>
+    /// The assistant's model, when a test supplies one before the host is built. Unset, the host keeps what configuration
+    /// gives it - no provider in tests - so no test ever reaches a real model, and none needs a key.
+    /// </summary>
+    public IAssistantProvider? Assistant { get; init; }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -53,6 +60,12 @@ public sealed class LorexApiFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(Clock);
+
+            if (Assistant is not null)
+            {
+                services.RemoveAll<IAssistantProvider>();
+                services.AddSingleton(Assistant);
+            }
         });
     }
 

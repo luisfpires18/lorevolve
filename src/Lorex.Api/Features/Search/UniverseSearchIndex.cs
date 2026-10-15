@@ -180,6 +180,10 @@ public static class UniverseSearchIndex
         CancellationToken cancellationToken) =>
         ExcerptsAsync(db, "SceneManuscriptSearchIndex", "SceneId", 1, null, expression, sceneIds, cancellationToken);
 
+    /// <summary>The passage of a scene's prose around <paramref name="find"/> (ADR 0045). Column 1 is <c>Content</c>.</summary>
+    public static Task<string?> ManuscriptPassageAsync(LorexDbContext db, Guid sceneId, string? find, CancellationToken cancellationToken) =>
+        EntitySearchIndex.PassageAsync(db, "SceneManuscriptSearchIndex", "SceneId", 1, "Content", find, sceneId, cancellationToken);
+
     /// <summary>For ideas already chosen as results, the words around the match in their body (first). Column 2.</summary>
     public static Task<Dictionary<Guid, UniverseSearchExcerpts>> IdeaExcerptsAsync(
         LorexDbContext db,

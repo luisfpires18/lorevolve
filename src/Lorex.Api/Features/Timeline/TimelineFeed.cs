@@ -66,6 +66,26 @@ internal static class TimelineFeed
             });
         }
 
+        return Results.Ok(await ReadAsync(db, universeId, source, storyId, canonStatus, entityId, search, page, pageSize, cancellationToken));
+    }
+
+    /// <summary>
+    /// The feed itself, beneath the route: one page of the unified timeline with the route's filters. The caller has already
+    /// proved the universe may be read and that <paramref name="source"/> is a defined kind; every query names the universe.
+    /// Shared with the assistant's timeline reading (ADR 0045), so both read the same order and the same filters.
+    /// </summary>
+    internal static async Task<TimelineItemPage> ReadAsync(
+        LorexDbContext db,
+        Guid universeId,
+        TimelineSourceKind? source,
+        Guid? storyId,
+        CanonStatus? canonStatus,
+        Guid? entityId,
+        string? search,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
@@ -92,7 +112,7 @@ internal static class TimelineFeed
         // A status with only scenes asked for, or a story with only facts, leaves nothing to read.
         if (stream is null)
         {
-            return Results.Ok(new TimelineItemPage([], page, pageSize, 0, 0));
+            return new TimelineItemPage([], page, pageSize, 0, 0);
         }
 
         var totalCount = await stream.CountAsync(cancellationToken);
@@ -114,7 +134,7 @@ internal static class TimelineFeed
         var items = await EnrichAsync(db, rows, cancellationToken);
         var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
 
-        return Results.Ok(new TimelineItemPage(items, page, pageSize, totalCount, totalPages));
+        return new TimelineItemPage(items, page, pageSize, totalCount, totalPages);
     }
 
     private static IQueryable<FeedRow> Join(IQueryable<FeedRow>? stream, IQueryable<FeedRow> next) =>

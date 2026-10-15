@@ -1,4 +1,5 @@
 using Lorex.Api.Data;
+using Lorex.Api.Features.Assistant;
 using Lorex.Api.Features.Auth;
 using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Chronology;
@@ -40,6 +41,7 @@ builder.Services.AddHostedService<Lorex.Api.Features.Publishing.PublicAuthorBack
 builder.Services.AddLorexMedia(builder.Configuration);
 builder.Services.AddBackupRestore();
 builder.Services.AddLorexSeo(builder.Configuration);
+builder.Services.AddLorexAssistant(builder.Configuration);
 
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 if (corsOrigins.Length > 0)
@@ -75,6 +77,9 @@ app.UseLorexFrontend();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// After authorization: the assistant's limit is counted per signed-in account, and only for requests allowed to reach it.
+app.UseRateLimiter();
 
 app.MapHealthEndpoints();
 app.MapAuthEndpoints();
@@ -114,6 +119,7 @@ app.MapCommentEndpoints();
 app.MapSuggestionEndpoints();
 app.MapIdeaEndpoints();
 app.MapUniverseSearchEndpoints();
+app.MapAssistantEndpoints();
 app.MapUniverseExportEndpoints();
 app.MapBackupRestoreEndpoints();
 app.MapSeoEndpoints();

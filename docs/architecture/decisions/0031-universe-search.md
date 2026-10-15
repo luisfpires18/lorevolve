@@ -212,3 +212,11 @@ A universe's world rules (ADR 0033) are searched too. Nothing else about the bar
 - **Cost.** One kind query and one excerpt query more: at most fifteen queries, and at most 45 results (nine kinds of five).
 
 The backup changed at version 12 because rules are authored (ADR 0033), not because they became searchable.
+
+## Amendment - the search beneath the bar is shared (2026-10-14)
+
+The universe assistant (ADR 0045) searches with this search rather than a second one. The query moved, unchanged, from
+the route into `UniverseSearchEndpoints.RunAsync`; the route still proves access first and passes the signed-in account,
+so the bar's results, limits, order and ideas are exactly what they were. A caller that names no account searches no
+ideas at all. The assistant, through `UniverseReader`, also drops world rules. Nothing here answers questions: the bar
+stays recorded words, and natural-language answering is the assistant's, under its own ADR.

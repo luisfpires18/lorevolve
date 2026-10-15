@@ -175,9 +175,49 @@ public static class EntitySearchIndex
     /// match markers <see cref="ParseExcerpt"/> reads, an ellipsis where the fragment was cut, and <see cref="ExcerptWords"/>
     /// words. Shared so the lore index and the universe search's indexes cannot drift apart on what an excerpt is.
     /// </summary>
-    internal static string SnippetSql(string table, int column) =>
+    internal static string SnippetSql(string table, int column, int words = ExcerptWords) =>
         $"snippet({table}, {column.ToString(CultureInfo.InvariantCulture)}, char(57344), char(57345), '…', "
-        + $"{ExcerptWords.ToString(CultureInfo.InvariantCulture)})";
+        + $"{words.ToString(CultureInfo.InvariantCulture)})";
+
+    /// <summary>FTS5's widest fragment: <c>snippet</c> takes at most 64 tokens.</summary>
+    internal const int PassageWords = 64;
+
+    /// <summary>
+    /// The passage of one row's long text around what <paramref name="find"/> matches there: FTS5's own <c>snippet</c> at its
+    /// widest, over the index's copy of the text, with the search's own rules for reading words. Null when nothing typed is a
+    /// word or the column holds no match - the opening words FTS5 would otherwise return are not a passage about anything.
+    /// For a reader that already holds a live row by its id and needs more than an excerpt's few words (ADR 0045). The
+    /// table, key and column are written in code; the expression and the id are parameters.
+    /// </summary>
+    internal static async Task<string?> PassageAsync(
+        LorexDbContext db,
+        string table,
+        string key,
+        int column,
+        string columnName,
+        string? find,
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        if (BuildMatchExpression(find) is not { } expression)
+        {
+            return null;
+        }
+
+        var sql = $"SELECT {SnippetSql(table, column, PassageWords)} AS Value FROM {table} WHERE {table} MATCH {{0}} AND {key} = {{1}}";
+        var passage = await db.Database
+            .SqlQuery<string?>(FormattableStringFactory.Create(sql, ColumnFilter(columnName, expression), id))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return passage is not null && passage.Contains(MatchOpen)
+            ? passage.Replace(MatchOpen.ToString(), string.Empty, StringComparison.Ordinal)
+                .Replace(MatchClose.ToString(), string.Empty, StringComparison.Ordinal)
+            : null;
+    }
+
+    /// <summary>The passage of an entry's article around <paramref name="find"/>. Column 4 is <c>Article</c>.</summary>
+    public static Task<string?> ArticlePassageAsync(LorexDbContext db, Guid entityId, string? find, CancellationToken cancellationToken) =>
+        PassageAsync(db, "EntitySearchIndex", "EntityId", 4, "Article", find, entityId, cancellationToken);
 
     /// <summary>
     /// <paramref name="expression"/> restricted to <paramref name="columns"/> - a space-separated list of indexed columns. The

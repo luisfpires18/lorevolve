@@ -50,8 +50,39 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   next numbered phase resumes only when the owner says so.
 - **Design refactor 001-007 done and merged** (007 at `cc798c1`, merged into `dev` at `a87b7da`; Deploy DEV #47 green).
   The contract is now an as-built reference. See Design refactor below.
-- **Roadmap task 045 - suggested changes** (`feat/suggested-changes` off `dev` at `d312bf3`; committed, not merged, not
-  pushed). One migration (`AddSuggestedChanges`), backup stays **22**. ADR 0044 (new); 0041 amendment.
+- **Roadmap task 047 - universe AI assistant V1** (GitHub issue 5; `feat/universe-ai-assistant-v1` off `dev` at `3510ccd`;
+  committed, not merged, not pushed). No migration, backup unchanged. ADR 0045 (new); 0031 amendment. Task 046 (Global
+  Quick Find) skipped: the existing search bar already covers it.
+  - Strictly read-only, `Read` access (owner, Editor, Reviewer, Viewer); outsiders 404 before any read or model call; no
+    public route. `GET/POST /api/universes/{id}/assistant` (status, one question). Nothing stored; the browser keeps the
+    conversation while the universe is open and sends its last 6 messages.
+  - Shared read layer `Features/Reading/UniverseReader` over the screens' own queries: the bar's search, extracted beneath
+    its route as `UniverseSearchEndpoints.RunAsync` (bar unchanged; the reader searches no ideas, drops world rules), the
+    timeline feed as `TimelineFeed.ReadAsync`, and the entry, story, scene, moment and relationship loaders. Never ideas,
+    comments, suggestions, history, Trash, accounts or images.
+  - Eight read-only tools; ids parsed and read through the request's universe; invented tools `unknown_tool`. Answer =
+    JSON segments recorded/inference/suggestion/note citing ids; a source counts only if read this question, titled by
+    LoreX; recorded with no source shown as inference; anything else 502.
+  - Limits: 6 tool steps, 10 tools, 10k chars a result, 40k in all, question 1,000, history 6 x 1,500, 3,000 output
+    tokens a step, 90 s, 20 questions per account per 10 minutes (429 `assistant_rate_limited`). Closing cancels.
+  - Provider boundary `IAssistantProvider`: `Assistant:Provider` = `OpenAI` (Responses API, OpenAI 2.14.0, `store: false`;
+    `Assistant:OpenAI:ApiKey` + `:Model` required, no defaults, secret outside the repo), `Fake` (Development, Playwright),
+    unset = 503 `assistant_unavailable`, nothing else affected. Relevant universe content goes to the configured provider.
+  - UI: an Assistant button beside the search (icon on a phone), drawer with static starting points, labelled parts,
+    source links, retry and not-set-up states. Non-streaming.
+  - Follow-up (same branch): stateless reasoning - every request asks `include: reasoning.encrypted_content` and every
+    returned item goes back unchanged; `insufficient_quota` 429 is `assistant_failed`, not busy. Long prose: `get_lore` /
+    `get_scene` take `find`, the search index's own 64-token `snippet` of that row (no new index). Provider tests over a
+    stub transport; opt-in live smoke `AssistantOpenAISmokeTests` (skipped unless `LOREX_ASSISTANT_SMOKE_MODEL` +
+    `OPENAI_API_KEY`). **Blocker:** the live smoke reached OpenAI (key valid; the request accepted by
+    `responses/input_tokens` for `gpt-5.4-mini` and `gpt-4.1-mini`) but every Responses call answered 429
+    `insufficient_quota`. No deployment model chosen yet.
+  - Tests: API 1485 -> 1509 (`AssistantTests` 23, `AssistantUnconfiguredTests` 1, matrix +2 routes). Playwright
+    `universe-assistant.spec.ts` 5; focused + 26 neighbouring specs on a fresh DB: 182/183, the one a `Lorex could not be
+    reached` on universe creation in `manuscript.spec.ts` under four workers, green 3/3 alone. Full suite not run locally;
+    delegated to GitHub Actions.
+- **Roadmap task 045 - suggested changes** (`feat/suggested-changes` off `dev` at `d312bf3`; merged into `dev` at
+  `3510ccd`). One migration (`AddSuggestedChanges`), backup stays **22**. ADR 0044 (new); 0041 amendment.
   - Capabilities `SuggestChanges` (owner, Editor, Reviewer) and `ResolveSuggestedChanges` (owner, Editor); reading is `Read`.
   - `SuggestedChanges`: one of entry/story/scene (cascading keys, check constraint), `BaseVersion`, `Before`/`Proposed` as
     JSON of the feature's own snapshot records (`EntrySuggestion`... with `SuggestedFieldValue`, `SuggestedLore`,
