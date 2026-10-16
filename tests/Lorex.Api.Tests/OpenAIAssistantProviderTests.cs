@@ -47,8 +47,10 @@ public sealed class OpenAIAssistantProviderTests
         Assert.Empty(second.ToolCalls);
         Assert.Equal(Answer, second.Answer);
 
-        // Every request: nothing stored, the reasoning asked for encrypted, strict tools and a strict answer, bounded output.
+        // Every request: OpenAI's own endpoint, nothing stored, the reasoning asked for encrypted, strict tools and a strict
+        // answer, bounded output.
         Assert.Equal(2, openAi.Requests.Count);
+        Assert.All(openAi.Addresses, address => Assert.Equal("https://api.openai.com/v1/responses", address.ToString()));
         foreach (var request in openAi.Requests)
         {
             Assert.False(request.GetProperty("store").GetBoolean());
@@ -129,7 +131,7 @@ public sealed class OpenAIAssistantProviderTests
     private static OpenAIAssistantProvider Provider(StubOpenAI openAi) =>
         new(OpenAIAssistantProvider.CreateClient("test-only-not-a-key", new HttpClientPipelineTransport(new HttpClient(openAi))), "test-model");
 
-    private static string Message(string text) =>
+    internal static string Message(string text) =>
         JsonSerializer.Serialize(new
         {
             type = "message",
@@ -139,7 +141,7 @@ public sealed class OpenAIAssistantProviderTests
             content = new[] { new { type = "output_text", text, annotations = Array.Empty<object>() } },
         });
 
-    private static string Response(params string[] output) =>
+    internal static string Response(params string[] output) =>
         "{\"id\":\"resp_1\",\"object\":\"response\",\"created_at\":1760000000,\"status\":\"completed\",\"model\":\"test-model\","
         + "\"output\":[" + string.Join(',', output) + "],"
         + "\"parallel_tool_calls\":true,\"tool_choice\":\"auto\",\"tools\":[],\"store\":false,"
@@ -147,7 +149,7 @@ public sealed class OpenAIAssistantProviderTests
         + "\"output_tokens_details\":{\"reasoning_tokens\":3},\"total_tokens\":18}}";
 
     /// <summary>Answers the Responses endpoint from a script, in order - the last answer repeats, for the client's one retry.</summary>
-    private sealed class StubOpenAI : HttpMessageHandler
+    internal sealed class StubOpenAI : HttpMessageHandler
     {
         private readonly Queue<(HttpStatusCode Status, string Body)> _answers;
 
@@ -157,9 +159,15 @@ public sealed class OpenAIAssistantProviderTests
 
         public List<JsonElement> Requests { get; } = [];
 
+        public List<Uri> Addresses { get; } = [];
+
+        public List<string?> Authorizations { get; } = [];
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Assert.EndsWith("/responses", request.RequestUri!.AbsolutePath, StringComparison.Ordinal);
+            Addresses.Add(request.RequestUri);
+            Authorizations.Add(request.Headers.Authorization?.ToString());
             Requests.Add(JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).RootElement.Clone());
 
             var (status, body) = _answers.Count > 1 ? _answers.Dequeue() : _answers.Peek();

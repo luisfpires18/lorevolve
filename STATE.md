@@ -50,6 +50,11 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   next numbered phase resumes only when the owner says so.
 - **Design refactor 001-007 done and merged** (007 at `cc798c1`, merged into `dev` at `a87b7da`; Deploy DEV #47 green).
   The contract is now an as-built reference. See Design refactor below.
+- **Groq assistant provider** (`feat/groq-assistant-provider` off `dev` at `76c2abe`; committed, not merged, not pushed).
+  DEV's OpenAI account has no credit, so `Assistant:Provider` `Groq` (`Assistant:Groq:ApiKey`, `Assistant:Groq:Model`,
+  DEV `openai/gpt-oss-120b`) runs the same exchange on Groq's OpenAI-compatible Responses API. Shared
+  `ResponsesConversation`; OpenAI keeps `store: false` + encrypted reasoning, Groq omits `store` and `include`. No
+  behaviour, copy or limit change. ADR 0045 amendment. Tests: `GroqAssistantProviderTests` 16. Not yet run live on Groq.
 - **Roadmap task 047 - universe AI assistant V1** (GitHub issue 5; `feat/universe-ai-assistant-v1` off `dev` at `3510ccd`;
   committed, not merged, not pushed). No migration, backup unchanged. ADR 0045 (new); 0031 amendment. Task 046 (Global
   Quick Find) skipped: the existing search bar already covers it.
