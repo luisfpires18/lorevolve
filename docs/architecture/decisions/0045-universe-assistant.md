@@ -96,6 +96,24 @@ alone on a phone), opening a drawer in the moment drawer's frame. Opening it rea
 up?); nothing reaches a model until a question is sent. Each part of an answer is labelled Recorded, Inference or
 Suggestion (a note carries none), with its sources as links.
 
+## Amendment - Groq as a second Responses provider (2026-10-16)
+
+DEV's OpenAI account has no credit, and Groq's free tier serves an OpenAI-compatible Responses API. `Assistant:Provider`
+`Groq` chooses `GroqAssistantProvider`, with `Assistant:Groq:ApiKey` and `Assistant:Groq:Model` (DEV:
+`openai/gpt-oss-120b`), both required, neither defaulted; missing either is unset, as for OpenAI, and nothing ever falls
+back to Fake.
+
+- **One exchange, two servers.** The conversation, strict tools and answer schema, tool loop and failure classes moved,
+  unchanged, from `OpenAIAssistantProvider` into `ResponsesConversation`. Each provider owns only its endpoint and what
+  its requests carry about storage and reasoning.
+- **OpenAI is unchanged:** its own endpoint, `store: false`, `include: reasoning.encrypted_content`.
+- **Groq omits what it does not accept:** no `store` and no `include` - left out of the request, not sent empty. Groq's
+  endpoint is `https://api.groq.com/openai/v1`. Its reasoning models return reasoning as plain output items, which go
+  back with the next step as every item does, as Groq's own multi-turn examples send them.
+- **What Groq means for privacy:** with Groq chosen, the content a question needs goes to Groq under Groq's data policy;
+  there is no `store` to opt out with. The operator's choice, as the OpenAI one is.
+- Groq's free tier rate-limits by tokens per minute; a 429 is `assistant_busy`, as OpenAI's is.
+
 ## Deliberately unsupported
 
 - Any write, comment, suggestion, Trash, restore or other action; background or autonomous work.

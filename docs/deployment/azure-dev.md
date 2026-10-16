@@ -170,7 +170,9 @@ Accepted deliberately. Each one is a reason this topology is not a production to
 - **The universe assistant is off until it is given a model.** With no `Assistant__*` app settings it says it is not
   set up and nothing else is affected. To turn it on, set `Assistant__Provider=OpenAI`, `Assistant__OpenAI__Model` to
   the model to use and `Assistant__OpenAI__ApiKey` to the key, as app settings, never in a file. The universe content a
-  question needs is then sent to OpenAI (`store: false`). Never set `Assistant__Provider=Fake` on a deployed host: it
+  question needs is then sent to OpenAI (`store: false`). Groq instead, at no cost on its free tier:
+  `Assistant__Provider=Groq`, `Assistant__Groq__Model=openai/gpt-oss-120b` and `Assistant__Groq__ApiKey`; the content
+  then goes to Groq, whose Responses API takes no `store` setting, so none is sent. Never set `Assistant__Provider=Fake` on a deployed host: it
   is the test stand-in. An OpenAI account with no credit answers every question with "couldn't answer" (logged as
   `insufficient_quota`), not "busy". ADR 0045.
 - **A backup is a ZIP, and it does carry image bytes.** The per-universe export is

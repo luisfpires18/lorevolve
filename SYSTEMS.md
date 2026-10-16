@@ -208,9 +208,11 @@ Repository index. Paths and one-line responsibilities only.
 | `Features/Assistant/UniverseAssistant.cs` | The question's loop: the instructions, at most 6 tool steps and 10 tools, result and reading budgets, one last step without tools, and the answer checked - schema, sources only what was read, recorded without a source shown as inference. |
 | `Features/Assistant/AssistantTools.cs` | The eight read-only tools and their schemas, argument parsing, every id read through the request's universe, `unknown_tool` for anything else, and the record of what was read that sources must come from. |
 | `Features/Assistant/AssistantProvider.cs` | The provider boundary: `IAssistantProvider`, `IAssistantConversation`, LoreX's own message, tool and turn records, `AssistantProviderException`, and the not-set-up provider. |
-| `Features/Assistant/OpenAIAssistantProvider.cs` | The only OpenAI code: the Responses API client (key from configuration, 45 s network timeout, one retry), `store: false`, strict tool and answer schemas, failures mapped to busy, failed or timed out. |
+| `Features/Assistant/ResponsesConversation.cs` | One question's exchange with a Responses API server, shared by OpenAI and Groq: the client (key, endpoint, 45 s timeout, one retry), strict tool and answer schemas, every returned item carried to the next step, failures mapped to busy, failed or timed out. The provider applies what its own requests carry. |
+| `Features/Assistant/OpenAIAssistantProvider.cs` | OpenAI's endpoint and request rules: `store: false` and encrypted reasoning asked for. |
+| `Features/Assistant/GroqAssistantProvider.cs` | Groq's OpenAI-compatible endpoint (`https://api.groq.com/openai/v1`), no `store` and no `include`, which Groq does not accept. |
 | `Features/Assistant/FakeAssistantProvider.cs` | `Assistant:Provider` `Fake`: the local server and Playwright, no network; the real tools driven by plain rules, canned wording. |
-| `Features/Assistant/AssistantSetup.cs` | `Assistant:Provider` (`OpenAI` with `Assistant:OpenAI:ApiKey` and `:Model`, `Fake`, or unset), never failing startup, and the per-account rate limit (20 questions in 10 minutes). |
+| `Features/Assistant/AssistantSetup.cs` | `Assistant:Provider` (`OpenAI` or `Groq`, each with its own `:ApiKey` and `:Model`; `Fake` by name only; anything else or anything incomplete unset), never failing startup, and the per-account rate limit (20 questions in 10 minutes). |
 | `Features/Assistant/AssistantContracts.cs` | The question, its history, the status, and an answer's segments, kinds and sources. |
 | `Features/Profile/ProfileImageModel.cs` | `ProfileImage`: the one photo an account may have, keyed by the account; whether its owner chose to show it on their author page, reset by a replacement (ADR 0037). |
 | `Features/Profile/ProfileImageConfiguration.cs` | Profile photo schema: the user's id as both key and foreign key. |
@@ -317,6 +319,7 @@ Repository index. Paths and one-line responsibilities only.
 | Path | Responsibility |
 | --- | --- |
 | `Lorex.Api.Tests/LorexApiFactory.cs` | Boots the real host over in-memory SQLite; a command fault hook, what it fails with, and a movable clock. |
+| `Lorex.Api.Tests/GroqAssistantProviderTests.cs` | The Groq provider over the same stub: Groq's endpoint and model, the same tool loop with its reasoning carried, no `store` or `include`, failures named as Groq's; and which provider each configuration chooses, never Fake unless named. |
 | `Lorex.Api.Tests/OpenAIAssistantProviderTests.cs` | The OpenAI provider over a stub transport, through the library's real serialization: `store: false`, encrypted reasoning asked for and carried to the next step in order, strict tools and answer, tool choice, and each failure's class (rate limit busy; quota, key, schema and server failed; incomplete failed). |
 | `Lorex.Api.Tests/AssistantOpenAISmokeTests.cs` | Opt-in, real OpenAI: skipped unless `LOREX_ASSISTANT_SMOKE_MODEL` and `OPENAI_API_KEY` are set. A direct question, one read, several reads and a fact deep in an article, no write, with calls, tools, tokens and time in the test output. |
 | `Lorex.Api.Tests/ScriptedAssistantProvider.cs` | A model whose every step a test writes, recording what crossed the provider boundary; set on the factory's `Assistant` before the host is built. |
