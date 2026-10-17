@@ -1,5 +1,6 @@
 using System.ClientModel.Primitives;
 using System.Net;
+using System.Text.Json;
 using Lorex.Api.Features.Assistant;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,21 +56,62 @@ public sealed class GroqAssistantProviderTests
             Assert.False(request.TryGetProperty("include", out _));
             Assert.False(request.TryGetProperty("previous_response_id", out _));
 
-            // Everything else is the shared exchange: the same strict tools, the same strict answer, bounded output.
-            Assert.Equal(AssistantTools.Definitions.Select(tool => tool.Name), request.GetProperty("tools").EnumerateArray().Select(tool => tool.GetProperty("name").GetString()));
-            Assert.All(request.GetProperty("tools").EnumerateArray(), tool => Assert.True(tool.GetProperty("strict").GetBoolean()));
-            Assert.Equal("json_schema", request.GetProperty("text").GetProperty("format").GetProperty("type").GetString());
             Assert.Equal(UniverseAssistant.MaxOutputTokens, request.GetProperty("max_output_tokens").GetInt32());
         }
 
-        Assert.Equal("auto", groq.Requests[0].GetProperty("tool_choice").GetString());
-        Assert.Equal("none", groq.Requests[1].GetProperty("tool_choice").GetString());
+        // Groq refuses tools and structured output in one request, so they never share one.
+        AssertToolStep(groq.Requests[0]);
+        AssertAnswerStep(groq.Requests[1]);
 
         // The second step carries the question, Groq's reasoning, the call and its result, as Groq's own examples do.
         var input = groq.Requests[1].GetProperty("input").EnumerateArray().ToList();
         Assert.Equal(["message", "reasoning", "function_call", "function_call_output"], input.Select(item => item.GetProperty("type").GetString()));
         Assert.Equal("Look the name up.", input[1].GetProperty("content")[0].GetProperty("text").GetString());
         Assert.Equal("call_1", input[3].GetProperty("call_id").GetString());
+    }
+
+    [Fact]
+    public async Task A_groq_tool_step_that_answers_in_free_text_is_followed_at_once_by_the_answering_step()
+    {
+        var groq = new StubOpenAI(Response(Message("Arin is a smith.")), Response(Message(Answer)));
+        var conversation = Provider(groq).Begin(Brief);
+
+        var turn = await conversation.NextAsync([], toolsAllowed: true, CancellationToken.None);
+
+        // The caller gets the schema's JSON, never the free text, and both requests' tokens.
+        Assert.Empty(turn.ToolCalls);
+        Assert.Equal(Answer, turn.Answer);
+        Assert.Equal((22, 14), (turn.InputTokens, turn.OutputTokens));
+
+        Assert.Equal(2, groq.Requests.Count);
+        AssertToolStep(groq.Requests[0]);
+        AssertAnswerStep(groq.Requests[1]);
+    }
+
+    /// <summary>A step that allows tools: the strict tools, <c>tool_choice: auto</c>, and no answer schema.</summary>
+    private static void AssertToolStep(JsonElement request)
+    {
+        var tools = request.GetProperty("tools").EnumerateArray().ToList();
+        Assert.Equal(AssistantTools.Definitions.Select(tool => tool.Name), tools.Select(tool => tool.GetProperty("name").GetString()));
+        Assert.All(tools, tool => Assert.True(tool.GetProperty("strict").GetBoolean()));
+        Assert.Equal("auto", request.GetProperty("tool_choice").GetString());
+        Assert.False(request.TryGetProperty("text", out _));
+        Assert.False(request.TryGetProperty("response_format", out _));
+    }
+
+    /// <summary>The answering step: the strict LoreX answer schema, and no tools, no tool choice, nothing about tools.</summary>
+    private static void AssertAnswerStep(JsonElement request)
+    {
+        Assert.True(!request.TryGetProperty("tools", out var tools) || tools.GetArrayLength() == 0);
+        Assert.False(request.TryGetProperty("tool_choice", out _));
+        Assert.False(request.TryGetProperty("parallel_tool_calls", out _));
+
+        var format = request.GetProperty("text").GetProperty("format");
+        Assert.Equal("json_schema", format.GetProperty("type").GetString());
+        Assert.Equal("lorex_answer", format.GetProperty("name").GetString());
+        Assert.True(format.GetProperty("strict").GetBoolean());
+        using var schema = JsonDocument.Parse(UniverseAssistant.AnswerSchema);
+        Assert.True(JsonElement.DeepEquals(schema.RootElement, format.GetProperty("schema")));
     }
 
     [Theory]

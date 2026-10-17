@@ -12,8 +12,8 @@ namespace Lorex.Api.Features.Assistant;
 /// One question's exchange with a server that speaks OpenAI's Responses API - OpenAI itself, or Groq's compatible endpoint
 /// (ADR 0045). Everything the two share lives here: the conversation sent again each step, the strict tools and answer
 /// schema, the tool loop, and how a failure is classified. What differs between them - what a request may carry about
-/// storage and reasoning - is the provider's, applied through <c>serverOptions</c>, so neither server's rules leak into
-/// the other's requests.
+/// storage and reasoning, and whether tools and the answer schema may share a request - is the provider's, applied through
+/// <c>serverOptions</c> and <c>toolsWithAnswerSchema</c>, so neither server's rules leak into the other's requests.
 ///
 /// Every item a step returns - reasoning, function calls, messages - goes back unchanged with the next step, so a reasoning
 /// model keeps its reasoning across the tool loop. It stays inside the provider: never in a turn, a log or an answer.
@@ -25,22 +25,30 @@ internal sealed class ResponsesConversation : IAssistantConversation
     private readonly AssistantBrief _brief;
     private readonly string _server;
     private readonly Action<CreateResponseOptions> _serverOptions;
+    private readonly bool _toolsWithAnswerSchema;
     private readonly List<ResponseItem> _items = [];
 
     /// <param name="server">The server's name, for LoreX's own failure messages and the log. Never shown to a person.</param>
     /// <param name="serverOptions">What this server's requests carry beyond the shared ones.</param>
+    /// <param name="toolsWithAnswerSchema">
+    /// True when one request may carry both the tools and the strict answer schema (OpenAI). False when the server refuses
+    /// that pairing (Groq: "json mode cannot be combined with tool/function calling"): a step that allows tools then sends
+    /// the tools and no schema, and the step that answers sends the schema and no tools at all.
+    /// </param>
     public ResponsesConversation(
         ResponsesClient client,
         string model,
         AssistantBrief brief,
         string server,
-        Action<CreateResponseOptions> serverOptions)
+        Action<CreateResponseOptions> serverOptions,
+        bool toolsWithAnswerSchema = true)
     {
         _client = client;
         _model = model;
         _brief = brief;
         _server = server;
         _serverOptions = serverOptions;
+        _toolsWithAnswerSchema = toolsWithAnswerSchema;
 
         foreach (var message in brief.Messages)
         {
@@ -85,28 +93,38 @@ internal sealed class ResponsesConversation : IAssistantConversation
             _items.Add(ResponseItem.CreateFunctionCallOutputItem(result.CallId, result.Output));
         }
 
+        var sendTools = toolsAllowed || _toolsWithAnswerSchema;
+        var sendAnswerSchema = !toolsAllowed || _toolsWithAnswerSchema;
+
         var options = new CreateResponseOptions(_model, _items)
         {
             Instructions = _brief.Instructions,
             MaxOutputTokenCount = _brief.MaxOutputTokens,
-            ParallelToolCallsEnabled = true,
-            ToolChoice = toolsAllowed ? ResponseToolChoice.CreateAutoChoice() : ResponseToolChoice.CreateNoneChoice(),
-            TextOptions = new ResponseTextOptions
+        };
+
+        if (sendTools)
+        {
+            options.ParallelToolCallsEnabled = true;
+            options.ToolChoice = toolsAllowed ? ResponseToolChoice.CreateAutoChoice() : ResponseToolChoice.CreateNoneChoice();
+            foreach (var tool in _brief.Tools)
+            {
+                options.Tools.Add(ResponseTool.CreateFunctionTool(
+                    tool.Name,
+                    BinaryData.FromString(tool.ParametersSchema),
+                    strictModeEnabled: true,
+                    functionDescription: tool.Description));
+            }
+        }
+
+        if (sendAnswerSchema)
+        {
+            options.TextOptions = new ResponseTextOptions
             {
                 TextFormat = ResponseTextFormat.CreateJsonSchemaFormat(
                     "lorex_answer",
                     BinaryData.FromString(_brief.AnswerSchema),
                     jsonSchemaIsStrict: true),
-            },
-        };
-
-        foreach (var tool in _brief.Tools)
-        {
-            options.Tools.Add(ResponseTool.CreateFunctionTool(
-                tool.Name,
-                BinaryData.FromString(tool.ParametersSchema),
-                strictModeEnabled: true,
-                functionDescription: tool.Description));
+            };
         }
 
         _serverOptions(options);
@@ -156,10 +174,25 @@ internal sealed class ResponsesConversation : IAssistantConversation
                 .Select(call => new AssistantToolCall(call.CallId, call.FunctionName, call.FunctionArguments.ToString())),
         ];
 
+        var inputTokens = response.Usage?.InputTokenCount ?? 0;
+        var outputTokens = response.Usage?.OutputTokenCount ?? 0;
+
+        // A step without the schema that called nothing has answered in free text, which is not an answer. The answering
+        // step runs now - schema, no tools - so the caller still gets the schema's JSON and its loop stays as it is.
+        if (calls.Count == 0 && !sendAnswerSchema)
+        {
+            var answer = await NextAsync([], toolsAllowed: false, cancellationToken);
+            return answer with
+            {
+                InputTokens = inputTokens + answer.InputTokens,
+                OutputTokens = outputTokens + answer.OutputTokens,
+            };
+        }
+
         return new AssistantModelTurn(
             calls,
             calls.Count == 0 ? response.GetOutputText() : null,
-            response.Usage?.InputTokenCount ?? 0,
-            response.Usage?.OutputTokenCount ?? 0);
+            inputTokens,
+            outputTokens);
     }
 }
