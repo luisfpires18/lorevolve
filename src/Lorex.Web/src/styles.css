@@ -11869,6 +11869,9 @@ a.idearef__name {
   --portal-line: rgb(var(--portal-ink-rgb) / 0.1);
   --portal-line-strong: rgb(var(--portal-ink-rgb) / 0.24);
   --portal-width: 92rem;
+  /* The home page's measure. Here rather than on .landing: the footer is the layout's, outside .landing, and lines up
+     with it. */
+  --landing-width: 76rem;
   --portal-gutter: clamp(1rem, 2.5vw, 2rem);
   --portal-radius: 0.75rem;
 
@@ -13806,7 +13809,6 @@ a.idearef__name {
    as in the bar; the world cards keep the portal's radius. Nothing on the page moves by itself. */
 
 .landing {
-  --landing-width: 76rem;
   --landing-space: clamp(4.5rem, 9vw, 8rem);
 
   padding-bottom: var(--landing-space);

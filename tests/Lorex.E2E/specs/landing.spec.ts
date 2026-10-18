@@ -359,6 +359,7 @@ test.describe('Every width, both themes', () => {
     [1024, 768],
     [820, 1180],
     [640, 900],
+    [414, 896],
     [390, 844],
     [360, 780],
   ] as const) {
@@ -404,6 +405,16 @@ test.describe('Every width, both themes', () => {
       }
       await page.getByTestId('portal-footer').scrollIntoViewIfNeeded()
       expect(await sideways(page)).toBeLessThanOrEqual(0)
+
+      // The footer keeps the page's gutters and lines up with the sections above it, its version inside them.
+      const section = (await page.locator('.landing-section').first().boundingBox())!
+      const footer = (await page.getByTestId('portal-footer').boundingBox())!
+      expect(footer.x).toBeGreaterThanOrEqual(16)
+      expect(Math.abs(footer.x - section.x)).toBeLessThanOrEqual(1)
+      expect(Math.abs(footer.width - section.width)).toBeLessThanOrEqual(1)
+      const version = (await page.getByTestId('portal-footer-version').boundingBox())!
+      expect(version.x).toBeGreaterThanOrEqual(footer.x)
+      expect(version.x + version.width).toBeLessThanOrEqual(footer.x + footer.width + 1)
       await context.close()
     })
   }
