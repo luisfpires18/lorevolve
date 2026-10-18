@@ -136,6 +136,21 @@ public sealed class OpenAIAssistantProviderTests
     }
 
     [Fact]
+    public async Task OpenAI_sends_the_full_instructions_on_every_step_because_every_step_carries_the_schema()
+    {
+        var openAi = new StubOpenAI(
+            Response("""{"type":"function_call","id":"fc_1","call_id":"call_1","name":"get_universe_overview","arguments":"{}","status":"completed"}"""),
+            Response(Message(Answer)));
+        var conversation = Provider(openAi).Begin(GroqAssistantProviderTests.LorexBrief);
+
+        await conversation.NextAsync([], true, CancellationToken.None);
+        await conversation.NextAsync([new AssistantToolResult("call_1", "{}")], false, CancellationToken.None);
+
+        Assert.All(openAi.Requests, request =>
+            Assert.Equal(UniverseAssistant.Instructions("Emberfall"), request.GetProperty("instructions").GetString()));
+    }
+
+    [Fact]
     public async Task OpenAI_never_reports_a_turn_still_looking_and_classifies_nothing_new()
     {
         // Groq's answering-step refusal, as if OpenAI sent it: OpenAI keeps its own handling - one request, a plain failure.

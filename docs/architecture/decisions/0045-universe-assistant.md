@@ -136,6 +136,14 @@ back to Fake.
   refusal is reported as a turn that is `StillLooking`, never as an invented call or answer. When the tool budget is
   spent, the assistant gives its existing "ran out of room" note, incomplete, as it does for OpenAI. If the model reached
   the answering step early, after free text with lookups left, the question fails instead: the budget did not run out.
+- **Groq's tool steps are not told to reply with JSON** (Azure DEV: `tool_use_failed: unknown_tool after 2 of 2`;
+  live diagnosis 2026-10-18, fictional data). The tool steps carry no answer schema, but the instructions still ended
+  "Reply with JSON that follows the schema". When gpt-oss was ready to answer, it addressed that JSON to a tool called
+  `json`, which does not exist, and Groq refused the request. On the same history this happened 5/5 times with the
+  sentence and 0/5 without it: all five answered in prose, which the answering step then turns into the schema's JSON.
+  LoreX had sent all eight tools, with correct names and schemas, on every step. The instructions are now
+  `GroundRules` plus `AnswerFormat`, and the format goes only with the schema. For OpenAI that is every step, with
+  byte-identical text. For Groq it is the answering step only.
 
 ## Deliberately unsupported
 

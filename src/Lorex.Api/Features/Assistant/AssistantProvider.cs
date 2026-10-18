@@ -20,13 +20,18 @@ public sealed record AssistantToolDefinition(string Name, string Description, st
 /// <summary>
 /// What one conversation with the model starts from: the standing instructions, the messages so far ending with the
 /// question, the tools it may ask for, and the JSON schema its final answer must follow.
+///
+/// <paramref name="InstructionsWithoutSchema"/>: the instructions for a step that sends no answer schema, which must not
+/// ask for the schema's JSON. A provider that sends the schema on every step (OpenAI) never uses them. Null: the same as
+/// <paramref name="Instructions"/>.
 /// </summary>
 public sealed record AssistantBrief(
     string Instructions,
     IReadOnlyList<AssistantMessage> Messages,
     IReadOnlyList<AssistantToolDefinition> Tools,
     string AnswerSchema,
-    int MaxOutputTokens);
+    int MaxOutputTokens,
+    string? InstructionsWithoutSchema = null);
 
 /// <summary>A tool the model asked for. <paramref name="Arguments"/> is the model's JSON, untrusted until a tool parses it.</summary>
 public sealed record AssistantToolCall(string CallId, string Name, string Arguments);

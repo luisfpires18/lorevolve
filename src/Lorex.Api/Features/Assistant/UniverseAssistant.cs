@@ -48,10 +48,18 @@ internal static partial class UniverseAssistant
         """;
 
     /// <summary>
-    /// The standing instructions. Authored content never appears here - it reaches the model only as tool results, which
-    /// these instructions name as data - so nothing a writer typed can speak with the instructions' voice.
+    /// The standing instructions: the ground rules, then how to write the answer (<see cref="AnswerFormat"/>). Authored
+    /// content never appears here - it reaches the model only as tool results, which these instructions name as data - so
+    /// nothing a writer typed can speak with the instructions' voice.
     /// </summary>
-    public static string Instructions(string universeName) => $"""
+    public static string Instructions(string universeName) => $"{GroundRules(universeName)}\n\n{AnswerFormat}";
+
+    /// <summary>
+    /// The instructions without <see cref="AnswerFormat"/>, for a step that carries no answer schema (Groq's tool steps).
+    /// Told there to "reply with JSON", gpt-oss on Groq addresses its answer to a tool called "json" that does not exist,
+    /// and Groq refuses the request: measured live, 5/5 refused with it and 5/5 answered without it (ADR 0045).
+    /// </summary>
+    public static string GroundRules(string universeName) => $"""
         You are the assistant inside LoreX, a worldbuilding and writing app. You help a writer with one fictional universe, named {JsonSerializer.Serialize(universeName)}, using only what its authors recorded in LoreX.
 
         Ground rules:
@@ -66,7 +74,10 @@ internal static partial class UniverseAssistant
         9. Write dates exactly as the tool results write them. This universe may keep its own calendar; never convert its dates to real-world ones.
         10. Search with one or two distinctive words, usually a name. Read an object before relying on it.
         11. An entry's article and a scene's prose are read from their start. When a search found your words in an article or in prose, or the start does not answer the question, read the object again with find set to those words to get the passage around them before saying anything is not recorded.
+        """;
 
+    /// <summary>How to write the answer: what the answer schema's segments mean. Sent with the schema, never without it.</summary>
+    public const string AnswerFormat = """
         Reply with JSON that follows the schema. Split the answer into segments, each with a kind:
         - "recorded": what tool results state. In "sources", list the ids of the objects that state it.
         - "inference": a conclusion you draw from recorded facts that LoreX does not state itself. Say it is an inference, and list the ids it rests on.
@@ -90,7 +101,8 @@ internal static partial class UniverseAssistant
             messages,
             AssistantTools.Definitions,
             AnswerSchema,
-            MaxOutputTokens));
+            MaxOutputTokens,
+            GroundRules(universeName)));
 
         List<AssistantToolResult> results = [];
         var calls = 0;
