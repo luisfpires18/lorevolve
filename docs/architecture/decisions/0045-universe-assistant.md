@@ -120,9 +120,11 @@ back to Fake.
   without parallel tool use. The limits are unchanged, so a Groq question reads at most six times, one per tool round.
 - **An unparseable tool call is asked for once more** (live 400 `tool_use_failed`, "Failed to parse tool call
   arguments as JSON"). Groq returns it when the model's generated call is not valid JSON, and its tool-use guide
-  recommends sending the request again. Any provider gets one more identical request for that code and nothing else. A
-  second failure fails the question, and the log, never the person, gets up to 300 characters of Groq's
-  `failed_generation`.
+  recommends sending the request again. Groq only, and only on a step that allows tools: one more identical request for
+  that code and nothing else. OpenAI's failures are handled as before.
+- **What the model generated is never logged.** A Groq refusal that carries `failed_generation` may hold the universe's
+  own text, so it is logged as provider, status, error code and attempts (`Groq answered 400 (tool_use_failed) after 2
+  of 2 attempt(s).`), without the SDK exception that holds the body. The person sees the same generic error as before.
 
 ## Deliberately unsupported
 

@@ -22,6 +22,9 @@ namespace Lorex.Api.Features.Assistant;
 /// Groq's models table lists the gpt-oss models without parallel tool use, so a step with tools asks for one call at a
 /// time (<c>parallel_tool_calls: false</c>) rather than Groq's default of true. The loop is unchanged: a step's single call
 /// is answered and the next step may call again.
+///
+/// A tool call Groq could not parse (a 400 with code <c>tool_use_failed</c>) is sent once more, as Groq's tool-use guide
+/// advises, on a step that allows tools only. What the model wrote, Groq's <c>failed_generation</c>, is never logged.
 /// </summary>
 internal sealed class GroqAssistantProvider(ResponsesClient client, string model) : IAssistantProvider
 {
@@ -43,7 +46,8 @@ internal sealed class GroqAssistantProvider(ResponsesClient client, string model
                     options.ParallelToolCallsEnabled = false;
                 }
             },
-            toolsWithAnswerSchema: false);
+            toolsWithAnswerSchema: false,
+            retryUnparseableToolCall: true);
 
     /// <summary>The client a deployment uses: Groq's endpoint. A test hands it a <paramref name="transport"/>.</summary>
     public static ResponsesClient CreateClient(string apiKey, PipelineTransport? transport = null) =>

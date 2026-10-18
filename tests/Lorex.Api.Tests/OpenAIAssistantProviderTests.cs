@@ -1,3 +1,4 @@
+using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Net;
 using System.Text;
@@ -115,6 +116,23 @@ public sealed class OpenAIAssistantProviderTests
         Assert.Equal(failure, thrown.Failure);
         Assert.NotNull(thrown.InnerException);
         Assert.DoesNotContain("error", thrown.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task OpenAI_sends_nothing_again_whatever_the_refusal_says()
+    {
+        // Groq's tool_use_failed is retried for Groq only. Here it is any other 400: one request, classified as before.
+        var openAi = new StubOpenAI(
+            HttpStatusCode.BadRequest,
+            """{"error":{"message":"Failed to parse tool call arguments as JSON","type":"invalid_request_error","code":"tool_use_failed","failed_generation":"{"}}""");
+        var conversation = Provider(openAi).Begin(Brief);
+
+        var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], true, CancellationToken.None));
+
+        Assert.Single(openAi.Requests);
+        Assert.Equal(AssistantFailure.Failed, thrown.Failure);
+        Assert.Equal("OpenAI answered 400.", thrown.Message);
+        Assert.IsType<ClientResultException>(thrown.InnerException);
     }
 
     [Fact]
