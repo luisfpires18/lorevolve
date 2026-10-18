@@ -18,6 +18,10 @@ namespace Lorex.Api.Features.Assistant;
 /// Groq refuses structured output and tool calling in one request (HTTP 400 on <c>response_format</c>: "json mode cannot
 /// be combined with tool/function calling"). So a step that allows tools sends the tools and no answer schema, and the
 /// answering step sends the strict answer schema and no tools at all.
+///
+/// Groq's models table lists the gpt-oss models without parallel tool use, so a step with tools asks for one call at a
+/// time (<c>parallel_tool_calls: false</c>) rather than Groq's default of true. The loop is unchanged: a step's single call
+/// is answered and the next step may call again.
 /// </summary>
 internal sealed class GroqAssistantProvider(ResponsesClient client, string model) : IAssistantProvider
 {
@@ -27,7 +31,19 @@ internal sealed class GroqAssistantProvider(ResponsesClient client, string model
     public bool IsConfigured => true;
 
     public IAssistantConversation Begin(AssistantBrief brief) =>
-        new ResponsesConversation(client, model, brief, "Groq", _ => { }, toolsWithAnswerSchema: false);
+        new ResponsesConversation(
+            client,
+            model,
+            brief,
+            "Groq",
+            options =>
+            {
+                if (options.Tools.Count > 0)
+                {
+                    options.ParallelToolCallsEnabled = false;
+                }
+            },
+            toolsWithAnswerSchema: false);
 
     /// <summary>The client a deployment uses: Groq's endpoint. A test hands it a <paramref name="transport"/>.</summary>
     public static ResponsesClient CreateClient(string apiKey, PipelineTransport? transport = null) =>

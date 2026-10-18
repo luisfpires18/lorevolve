@@ -63,6 +63,7 @@ public sealed class OpenAIAssistantProviderTests
             Assert.Equal(AssistantTools.Definitions.Select(tool => tool.Name), tools.Select(tool => tool.GetProperty("name").GetString()));
             Assert.All(tools, tool => Assert.True(tool.GetProperty("strict").GetBoolean()));
             Assert.All(tools, tool => Assert.Equal("function", tool.GetProperty("type").GetString()));
+            Assert.True(request.GetProperty("parallel_tool_calls").GetBoolean());
 
             var format = request.GetProperty("text").GetProperty("format");
             Assert.Equal("json_schema", format.GetProperty("type").GetString());
@@ -156,6 +157,9 @@ public sealed class OpenAIAssistantProviderTests
         public StubOpenAI(params string[] bodies) => _answers = new([.. bodies.Select(body => (HttpStatusCode.OK, body))]);
 
         public StubOpenAI(HttpStatusCode status, string body) => _answers = new([(status, body)]);
+
+        /// <summary>Answers in this order; the last is repeated for any request after it.</summary>
+        public StubOpenAI(params (HttpStatusCode Status, string Body)[] answers) => _answers = new(answers);
 
         public List<JsonElement> Requests { get; } = [];
 

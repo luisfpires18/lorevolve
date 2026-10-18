@@ -1,5 +1,6 @@
 using System.ClientModel;
 using System.ClientModel.Primitives;
+using System.Text.Json;
 using OpenAI.Responses;
 
 // The OpenAI .NET library marks its Responses client experimental (OPENAI001). Only the Responses providers use it:
@@ -129,32 +130,11 @@ internal sealed class ResponsesConversation : IAssistantConversation
 
         _serverOptions(options);
 
-        ResponseResult response;
-        try
+        // Two attempts at most: only a first unparseable tool call asks for a second (see SendAsync).
+        ResponseResult? response = null;
+        for (var attempt = 1; response is null; attempt++)
         {
-            response = (await _client.CreateResponseAsync(options, cancellationToken)).Value;
-        }
-        // A 429 is also how OpenAI says the account has no credit left. That is not "busy": waiting never fixes it.
-        catch (ClientResultException exception) when (exception.Status == StatusCodes.Status429TooManyRequests
-            && exception.GetRawResponse()?.Content.ToString().Contains("insufficient_quota", StringComparison.Ordinal) == true)
-        {
-            throw new AssistantProviderException(AssistantFailure.Failed, $"The {_server} account has no quota left.", exception);
-        }
-        catch (ClientResultException exception) when (exception.Status == StatusCodes.Status429TooManyRequests)
-        {
-            throw new AssistantProviderException(AssistantFailure.Busy, $"{_server} is rate limiting this host.", exception);
-        }
-        catch (ClientResultException exception)
-        {
-            throw new AssistantProviderException(AssistantFailure.Failed, $"{_server} answered {exception.Status}.", exception);
-        }
-        catch (HttpRequestException exception)
-        {
-            throw new AssistantProviderException(AssistantFailure.Failed, $"{_server} could not be reached.", exception);
-        }
-        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
-        {
-            throw new AssistantProviderException(AssistantFailure.TimedOut, $"{_server} did not answer in time.", exception);
+            response = await SendAsync(options, attempt, cancellationToken);
         }
 
         if (response.Status is not ResponseStatus.Completed)
@@ -194,5 +174,86 @@ internal sealed class ResponsesConversation : IAssistantConversation
             calls.Count == 0 ? response.GetOutputText() : null,
             inputTokens,
             outputTokens);
+    }
+
+    /// <summary>
+    /// One request, its failures classified - or null to send it again, which only a first unparseable tool call earns.
+    /// </summary>
+    private async Task<ResponseResult?> SendAsync(CreateResponseOptions options, int attempt, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return (await _client.CreateResponseAsync(options, cancellationToken)).Value;
+        }
+        // A tool call the model wrote that the server could not parse (Groq's tool_use_failed). The generation is sampled,
+        // so the same request can succeed, and Groq's own guidance is to send it again. Once, and for nothing else.
+        catch (ClientResultException exception) when (attempt == 1 && FailedGeneration(exception) is not null)
+        {
+            return null;
+        }
+        // A 429 is also how OpenAI says the account has no credit left. That is not "busy": waiting never fixes it.
+        catch (ClientResultException exception) when (exception.Status == StatusCodes.Status429TooManyRequests
+            && exception.GetRawResponse()?.Content.ToString().Contains("insufficient_quota", StringComparison.Ordinal) == true)
+        {
+            throw new AssistantProviderException(AssistantFailure.Failed, $"The {_server} account has no quota left.", exception);
+        }
+        catch (ClientResultException exception) when (exception.Status == StatusCodes.Status429TooManyRequests)
+        {
+            throw new AssistantProviderException(AssistantFailure.Busy, $"{_server} is rate limiting this host.", exception);
+        }
+        // The log's only, never a person's: what the model wrote, so a live failure says why rather than just "400".
+        catch (ClientResultException exception) when (attempt > 1 && FailedGeneration(exception) is { } generation)
+        {
+            throw new AssistantProviderException(
+                AssistantFailure.Failed,
+                $"{_server} could not parse the model's tool call, twice (tool_use_failed). It wrote: {generation}",
+                exception);
+        }
+        catch (ClientResultException exception)
+        {
+            throw new AssistantProviderException(AssistantFailure.Failed, $"{_server} answered {exception.Status}.", exception);
+        }
+        catch (HttpRequestException exception)
+        {
+            throw new AssistantProviderException(AssistantFailure.Failed, $"{_server} could not be reached.", exception);
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new AssistantProviderException(AssistantFailure.TimedOut, $"{_server} did not answer in time.", exception);
+        }
+    }
+
+    /// <summary>
+    /// What the model wrote when the server refused its tool call as unparseable - a 400 whose error code is
+    /// <c>tool_use_failed</c>, with Groq's <c>failed_generation</c> cut short for the log - or null for any other failure.
+    /// </summary>
+    private static string? FailedGeneration(ClientResultException exception)
+    {
+        if (exception.Status != StatusCodes.Status400BadRequest || exception.GetRawResponse() is not { } raw)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var body = JsonDocument.Parse(raw.Content.ToString());
+            if (!body.RootElement.TryGetProperty("error", out var error)
+                || error.ValueKind != JsonValueKind.Object
+                || !error.TryGetProperty("code", out var code)
+                || code.ValueKind != JsonValueKind.String
+                || code.GetString() != "tool_use_failed")
+            {
+                return null;
+            }
+
+            var generation = error.TryGetProperty("failed_generation", out var failed) && failed.ValueKind == JsonValueKind.String
+                ? failed.GetString() ?? string.Empty
+                : string.Empty;
+            return generation.Length > 300 ? $"{generation[..300]}..." : generation;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 }
