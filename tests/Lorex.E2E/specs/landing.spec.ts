@@ -389,13 +389,14 @@ test.describe('Every width, both themes', () => {
       expect(tops).toHaveLength(4)
       expect(new Set(tops).size).toBe(width >= 768 ? 1 : 2)
 
-      // The bar keeps brand, Explore, Appearance and both ways in reachable, and nothing in it overlaps.
+      // The bar keeps brand, Explore, Appearance and both ways in reachable, and nothing in it touches: the brand keeps
+      // at least the session's own margin of air (--space-2) whatever faces the platform has.
       for (const id of ['portal-explore', 'portal-appearance', 'portal-login', 'portal-join']) {
         await expect(page.getByTestId(id)).toBeVisible()
       }
       const brand = (await page.locator('.portal__brand').boundingBox())!
       const session = (await page.getByTestId('portal-session').boundingBox())!
-      expect(brand.x + brand.width).toBeLessThan(session.x)
+      expect(session.x - (brand.x + brand.width)).toBeGreaterThanOrEqual(8)
       expect(session.x + session.width).toBeLessThanOrEqual(width)
 
       // The two hero actions keep one line each.
