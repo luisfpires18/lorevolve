@@ -2,15 +2,18 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { displayVersion } from './devVersion.ts'
 
 const apiTarget = process.env.LOREX_API_URL ?? 'http://localhost:5180'
 
-// The one application version: package.json's. Shown as "LoreX v…" and nowhere else written down.
-const { version } = JSON.parse(
+// The one application version: package.json's, or on a DEV deployment its next `-dev` patch (devVersion.ts). Shown as
+// "LoreX v…" and nowhere else written down.
+const { version: packageVersion } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 ) as {
   version: string
 }
+const version = displayVersion(packageVersion, process.env.LOREX_DEV_RUN)
 
 // Which build this is, fixed once per Vite start: a deployment's own id if it gives one, else the commit GitHub Actions
 // is building, else a fresh random one. The service worker names its cache after it, so every build starts clean.
