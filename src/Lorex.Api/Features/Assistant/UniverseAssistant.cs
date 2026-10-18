@@ -105,12 +105,19 @@ internal static partial class UniverseAssistant
             inputTokens += turn.InputTokens;
             outputTokens += turn.OutputTokens;
 
+            // A refused lookup only means "out of room" when this step allowed none; anywhere else it is a provider fault.
+            if (turn.StillLooking && toolsAllowed)
+            {
+                throw new AssistantProviderException(AssistantFailure.Failed, "The provider reported a refused lookup on a step that allowed tools.");
+            }
+
             if (turn.ToolCalls.Count == 0 || !toolsAllowed)
             {
                 LogAnswered(logger, round + 1, calls, inputTokens, outputTokens);
 
-                // Still asking for tools with none left: there is no answer to check, only the limit to own up to.
-                return turn.ToolCalls.Count > 0
+                // Still asking for tools with none left - as a call, or as a call the provider refused (StillLooking):
+                // there is no answer to check, only the limit to own up to.
+                return turn.ToolCalls.Count > 0 || turn.StillLooking
                     ? new AssistantAnswer(
                         [new AssistantSegment(AssistantSegmentKind.Note, "I ran out of room to look things up before I could answer. Try a narrower question.", [])],
                         [],

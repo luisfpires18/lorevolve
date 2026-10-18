@@ -37,12 +37,17 @@ public sealed record AssistantToolResult(string CallId, string Output);
 /// <summary>
 /// The model's reply to one step: the tools it asks for, or - when it asks for none - its answer as JSON text, still
 /// unchecked. Token counts are what the provider reported, for the log; zero when it reports none.
+///
+/// <paramref name="StillLooking"/>: on a step that allowed no tools, the model asked for another lookup anyway and the
+/// provider refused the request (Groq: "Tool choice is none, but model called a tool"). There is then no call to run and
+/// no answer - only the fact that it wanted to read more. Only ever set on a step called with tools not allowed.
 /// </summary>
 public sealed record AssistantModelTurn(
     IReadOnlyList<AssistantToolCall> ToolCalls,
     string? Answer,
     int InputTokens = 0,
-    int OutputTokens = 0);
+    int OutputTokens = 0,
+    bool StillLooking = false);
 
 /// <summary>
 /// A language model, as narrowly as the assistant needs one. The assistant's orchestration owns everything else: the

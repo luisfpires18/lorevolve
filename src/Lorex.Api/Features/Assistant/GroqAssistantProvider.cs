@@ -23,8 +23,12 @@ namespace Lorex.Api.Features.Assistant;
 /// time (<c>parallel_tool_calls: false</c>) rather than Groq's default of true. The loop is unchanged: a step's single call
 /// is answered and the next step may call again.
 ///
-/// A tool call Groq could not parse (a 400 with code <c>tool_use_failed</c>) is sent once more, as Groq's tool-use guide
-/// advises, on a step that allows tools only. What the model wrote, Groq's <c>failed_generation</c>, is never logged.
+/// A tool call Groq refuses (a 400 with code <c>tool_use_failed</c>) is sent once more, as Groq's tool-use guide advises,
+/// on a step that allows tools only. On the answering step, which sends no tools, gpt-oss still calls one whenever it wants
+/// to read more (measured live: every time after one lookup, never once the lookups were done), and Groq refuses with
+/// "Tool choice is none, but model called a tool". That is reported as a turn that is still looking, which the assistant
+/// already answers as having run out of room. Every refusal is logged by a fixed category, never by what Groq or the model
+/// wrote.
 /// </summary>
 internal sealed class GroqAssistantProvider(ResponsesClient client, string model) : IAssistantProvider
 {
@@ -47,7 +51,7 @@ internal sealed class GroqAssistantProvider(ResponsesClient client, string model
                 }
             },
             toolsWithAnswerSchema: false,
-            retryUnparseableToolCall: true);
+            handlesToolUseFailed: true);
 
     /// <summary>The client a deployment uses: Groq's endpoint. A test hands it a <paramref name="transport"/>.</summary>
     public static ResponsesClient CreateClient(string apiKey, PipelineTransport? transport = null) =>

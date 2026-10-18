@@ -122,9 +122,20 @@ back to Fake.
   arguments as JSON"). Groq returns it when the model's generated call is not valid JSON, and its tool-use guide
   recommends sending the request again. Groq only, and only on a step that allows tools: one more identical request for
   that code and nothing else. OpenAI's failures are handled as before.
-- **What the model generated is never logged.** A Groq refusal that carries `failed_generation` may hold the universe's
-  own text, so it is logged as provider, status, error code and attempts (`Groq answered 400 (tool_use_failed) after 2
-  of 2 attempt(s).`), without the SDK exception that holds the body. The person sees the same generic error as before.
+- **What the model generated is never logged.** A Groq `tool_use_failed` refusal, and any other refusal that carries
+  `failed_generation`, may hold the universe's own text, in the generation or quoted in Groq's message. It is logged
+  without the SDK exception that holds the body, as provider, status, code, a fixed category, attempts and whether tools
+  were sent, for example `Groq answered 400 (tool_use_failed: invalid_arguments) after 2 of 2 attempt(s), tools sent.`
+  The category comes from an allowlist matched against phrases Groq is known to use: `tool_requested_with_none_allowed`,
+  `invalid_arguments`, `unknown_tool`, `other`. Groq's own words are never logged. The person sees the same generic error.
+- **A tool the model calls on the answering step means it wanted to read more** (live diagnosis, 2026-10-18, fictional
+  data, `openai/gpt-oss-120b`). The answering step sends no tools, and Groq refuses with "Tool choice is none, but model
+  called a tool". It refused every time when the model still wanted information (11/11 after one lookup) and never when it
+  had what it needed (10/10 after three). This was the same over Chat Completions, with the tools listed and
+  `tool_choice: none`, and with an explicit "do not call any tool" instruction (0/5), so none of those is the fix. The
+  refusal is reported as a turn that is `StillLooking`, never as an invented call or answer. When the tool budget is
+  spent, the assistant gives its existing "ran out of room" note, incomplete, as it does for OpenAI. If the model reached
+  the answering step early, after free text with lookups left, the question fails instead: the budget did not run out.
 
 ## Deliberately unsupported
 

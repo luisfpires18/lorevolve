@@ -628,6 +628,41 @@ public sealed class AssistantTests(AssistantFixture fixture) : IClassFixture<Ass
     }
 
     [Fact]
+    public async Task A_lookup_refused_once_the_budget_is_spent_is_answered_as_out_of_room_not_as_a_failure()
+    {
+        var (client, universe) = await SignedInWithUniverse(_api, "asstill");
+        await CreateEntity(client, universe.Id, "Stillwen");
+
+        // Groq's answering step: the model wants to read more, and the provider reports the refused call (StillLooking).
+        _model.Use(step => step.ToolsAllowed
+            ? Calls((AssistantTools.SearchUniverse, new { query = "Stillwen" }))
+            : new AssistantModelTurn([], null, StillLooking: true));
+
+        var answer = await AnswerOf(await Ask(client, universe.Id, "Who is Stillwen?"));
+
+        Assert.Equal(UniverseAssistant.ToolRounds + 1, _model.Steps.Count);
+        Assert.True(answer.IsIncomplete);
+        var note = Assert.Single(answer.Segments);
+        Assert.Equal(AssistantSegmentKind.Note, note.Kind);
+        Assert.Equal("I ran out of room to look things up before I could answer. Try a narrower question.", note.Text);
+        Assert.Empty(answer.Sources);
+    }
+
+    [Fact]
+    public async Task A_refused_lookup_on_a_step_that_still_allowed_tools_fails_rather_than_claiming_the_budget_ran_out()
+    {
+        var (client, universe) = await SignedInWithUniverse(_api, "asstillearly");
+
+        _model.Use(_ => new AssistantModelTurn([], null, StillLooking: true));
+
+        var response = await Ask(client, universe.Id, "Who is anyone?");
+
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+        Assert.Equal(AssistantEndpoints.FailedCode, await Code(response));
+        Assert.Single(_model.Steps);
+    }
+
+    [Fact]
     public async Task No_more_than_the_tool_limit_runs_however_many_the_model_asks_for_at_once()
     {
         var (client, universe) = await SignedInWithUniverse(_api, "asflood");
