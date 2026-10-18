@@ -1,3 +1,4 @@
+using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Net;
 using System.Text;
@@ -63,6 +64,7 @@ public sealed class OpenAIAssistantProviderTests
             Assert.Equal(AssistantTools.Definitions.Select(tool => tool.Name), tools.Select(tool => tool.GetProperty("name").GetString()));
             Assert.All(tools, tool => Assert.True(tool.GetProperty("strict").GetBoolean()));
             Assert.All(tools, tool => Assert.Equal("function", tool.GetProperty("type").GetString()));
+            Assert.True(request.GetProperty("parallel_tool_calls").GetBoolean());
 
             var format = request.GetProperty("text").GetProperty("format");
             Assert.Equal("json_schema", format.GetProperty("type").GetString());
@@ -117,6 +119,23 @@ public sealed class OpenAIAssistantProviderTests
     }
 
     [Fact]
+    public async Task OpenAI_sends_nothing_again_whatever_the_refusal_says()
+    {
+        // Groq's tool_use_failed is retried for Groq only. Here it is any other 400: one request, classified as before.
+        var openAi = new StubOpenAI(
+            HttpStatusCode.BadRequest,
+            """{"error":{"message":"Failed to parse tool call arguments as JSON","type":"invalid_request_error","code":"tool_use_failed","failed_generation":"{"}}""");
+        var conversation = Provider(openAi).Begin(Brief);
+
+        var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], true, CancellationToken.None));
+
+        Assert.Single(openAi.Requests);
+        Assert.Equal(AssistantFailure.Failed, thrown.Failure);
+        Assert.Equal("OpenAI answered 400.", thrown.Message);
+        Assert.IsType<ClientResultException>(thrown.InnerException);
+    }
+
+    [Fact]
     public async Task A_response_that_did_not_complete_is_a_failure()
     {
         var incomplete = Response(Message(Answer)).Replace("\"status\":\"completed\",\"model\"", "\"status\":\"incomplete\",\"incomplete_details\":{\"reason\":\"max_output_tokens\"},\"model\"", StringComparison.Ordinal);
@@ -156,6 +175,9 @@ public sealed class OpenAIAssistantProviderTests
         public StubOpenAI(params string[] bodies) => _answers = new([.. bodies.Select(body => (HttpStatusCode.OK, body))]);
 
         public StubOpenAI(HttpStatusCode status, string body) => _answers = new([(status, body)]);
+
+        /// <summary>Answers in this order; the last is repeated for any request after it.</summary>
+        public StubOpenAI(params (HttpStatusCode Status, string Body)[] answers) => _answers = new(answers);
 
         public List<JsonElement> Requests { get; } = [];
 

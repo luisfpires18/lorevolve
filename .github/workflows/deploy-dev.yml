@@ -55,8 +55,15 @@ jobs:
 
       # One process serves both halves, so the built client is copied into the API's wwwroot
       # before publish. wwwroot is build output and is not in the repository.
+      #
+      # LOREX_DEV_RUN makes the shown version this run's DEV patch (src/Lorex.Web/devVersion.ts):
+      # it rises with every run and stays the same on a re-run. The build id names the service
+      # worker's cache, so it carries the attempt too: every build, re-runs included, starts clean.
       - name: Build the client
         working-directory: src/Lorex.Web
+        env:
+          LOREX_DEV_RUN: ${{ github.run_number }}
+          LOREX_BUILD_ID: dev-${{ github.run_number }}.${{ github.run_attempt }}-${{ github.sha }}
         run: |
           npm ci
           npm run build

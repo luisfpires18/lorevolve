@@ -113,6 +113,18 @@ back to Fake.
 - **What Groq means for privacy:** with Groq chosen, the content a question needs goes to Groq under Groq's data policy;
   there is no `store` to opt out with. The operator's choice, as the OpenAI one is.
 - Groq's free tier rate-limits by tokens per minute; a 429 is `assistant_busy`, as OpenAI's is.
+- **Groq never pairs tools with the answer schema** (live 400: "json mode cannot be combined with tool/function
+  calling"). A step that allows tools sends the tools and no `text.format`. The answering step sends the strict schema
+  and no tools. A tool step that answers in free text is followed by the answering step at once.
+- **One tool call per Groq step:** `parallel_tool_calls: false`, because Groq's models table lists the gpt-oss models
+  without parallel tool use. The limits are unchanged, so a Groq question reads at most six times, one per tool round.
+- **An unparseable tool call is asked for once more** (live 400 `tool_use_failed`, "Failed to parse tool call
+  arguments as JSON"). Groq returns it when the model's generated call is not valid JSON, and its tool-use guide
+  recommends sending the request again. Groq only, and only on a step that allows tools: one more identical request for
+  that code and nothing else. OpenAI's failures are handled as before.
+- **What the model generated is never logged.** A Groq refusal that carries `failed_generation` may hold the universe's
+  own text, so it is logged as provider, status, error code and attempts (`Groq answered 400 (tool_use_failed) after 2
+  of 2 attempt(s).`), without the SDK exception that holds the body. The person sees the same generic error as before.
 
 ## Deliberately unsupported
 

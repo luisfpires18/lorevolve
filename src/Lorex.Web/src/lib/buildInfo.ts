@@ -2,7 +2,7 @@
 declare const __LOREX_VERSION__: string
 declare const __LOREX_BUILD_ID__: string
 
-/** The application version, from package.json. */
+/** The application version: package.json's, or `MAJOR.MINOR.PATCH-dev` on a DEV deployment (devVersion.ts). */
 export const APP_VERSION = __LOREX_VERSION__
 
 /** Which build is running: a commit or deployment id, or a random one per local build. Not a version, and not shown. */

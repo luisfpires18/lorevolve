@@ -129,6 +129,22 @@ The keys are written **unencrypted at rest**, protected only by the file system 
 logs `No XML encryptor configured` on every start to say so. That is accepted for DEV. See
 Limitations.
 
+## Which version DEV is running
+
+The home page footer and the account menu show `LoreX v0.1.N-dev`. `N` comes from the Deploy DEV
+run number (`src/Lorex.Web/devVersion.ts`): run 101 is `0.1.1-dev`, run 102 is `0.1.2-dev`, and
+so on. Nobody bumps it and no commit records it.
+
+- Every run gets a new, higher number, including a failed run and a rollback run that builds an
+  older commit. A version that never reached Azure is skipped, never reused.
+- Re-running a run keeps its version. Only the build id changes
+  (`dev-<run>.<attempt>-<sha>`), so the service worker still starts a fresh cache.
+- Local builds and CI show `package.json`'s version unchanged, with no `-dev`. A release is
+  whatever `package.json` says.
+- When `package.json`'s version changes, set `DEV_RUN_BASELINE` in `devVersion.ts` to the
+  latest Deploy DEV run number in the same commit. If the baseline is not below the run number,
+  the build fails rather than show a version again.
+
 ## Redeploy and rollback
 
 - **Redeploy:** push to `dev`, or re-run the workflow. The site restarts; `/home/data` is

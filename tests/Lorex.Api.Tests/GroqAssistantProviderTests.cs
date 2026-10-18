@@ -88,6 +88,112 @@ public sealed class GroqAssistantProviderTests
         AssertAnswerStep(groq.Requests[1]);
     }
 
+    // ---------- A tool call Groq could not parse (tool_use_failed) ----------
+
+    private const string ToolUseFailed =
+        """{"error":{"message":"Failed to parse tool call arguments as JSON","type":"invalid_request_error","code":"tool_use_failed","failed_generation":"{\"query\": \"PRIVATE-LORE Arin's hidden heir"}}""";
+
+    /// <summary>What the model generated in <see cref="ToolUseFailed"/>: the universe's own text, never for a log.</summary>
+    private const string Generated = "PRIVATE-LORE";
+
+    private const string Search =
+        """{"type":"function_call","id":"fc_1","call_id":"call_1","name":"search_universe","arguments":"{\"query\":\"Arin\"}","status":"completed"}""";
+
+    [Fact]
+    public async Task A_tool_call_groq_could_not_parse_is_asked_for_once_more_unchanged_and_the_loop_goes_on()
+    {
+        var groq = new StubOpenAI(
+            (HttpStatusCode.BadRequest, ToolUseFailed),
+            (HttpStatusCode.OK, Response(Search)),
+            (HttpStatusCode.OK, Response(Message(Answer))));
+        var conversation = Provider(groq).Begin(Brief);
+
+        var first = await conversation.NextAsync([], toolsAllowed: true, CancellationToken.None);
+        Assert.Equal(("call_1", AssistantTools.SearchUniverse), (first.ToolCalls.Single().CallId, first.ToolCalls.Single().Name));
+
+        // The second request is the first sent again: same tools, same conversation, nothing invented in between.
+        Assert.Equal(2, groq.Requests.Count);
+        Assert.Equal(groq.Requests[0].GetRawText(), groq.Requests[1].GetRawText());
+        AssertToolStep(groq.Requests[1]);
+
+        // And the conversation continues from the call that did parse.
+        var second = await conversation.NextAsync(
+            [new AssistantToolResult("call_1", """{"results":[]}""")],
+            toolsAllowed: false,
+            CancellationToken.None);
+        Assert.Equal(Answer, second.Answer);
+        AssertAnswerStep(groq.Requests[2]);
+        var input = groq.Requests[2].GetProperty("input").EnumerateArray().Select(item => item.GetProperty("type").GetString());
+        Assert.Equal(["message", "function_call", "function_call_output"], input);
+    }
+
+    [Fact]
+    public async Task A_second_unparseable_tool_call_fails_the_question_and_logs_its_code_and_attempts_but_never_what_was_written()
+    {
+        var groq = new StubOpenAI(HttpStatusCode.BadRequest, ToolUseFailed);
+        var conversation = Provider(groq).Begin(Brief);
+
+        var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], true, CancellationToken.None));
+
+        // Two requests and no more, though the stub would refuse forever.
+        Assert.Equal(2, groq.Requests.Count);
+        Assert.Equal(AssistantFailure.Failed, thrown.Failure);
+        Assert.Equal("Groq answered 400 (tool_use_failed) after 2 of 2 attempt(s).", thrown.Message);
+
+        // The endpoint logs the message with the inner exception: none, so neither the SDK's message nor the body is logged.
+        Assert.Null(thrown.InnerException);
+        Assert.DoesNotContain(Generated, thrown.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("test-only-not-a-key", thrown.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_answering_step_is_never_sent_again_and_its_generation_is_not_logged_either()
+    {
+        var groq = new StubOpenAI(HttpStatusCode.BadRequest, ToolUseFailed);
+        var conversation = Provider(groq).Begin(Brief);
+
+        var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], false, CancellationToken.None));
+
+        Assert.Single(groq.Requests);
+        Assert.Equal("Groq answered 400 (tool_use_failed) after 1 of 1 attempt(s).", thrown.Message);
+        Assert.Null(thrown.InnerException);
+        Assert.DoesNotContain(Generated, thrown.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_cancelled_question_stays_cancelled_and_sends_nothing()
+    {
+        // The retry catches only a server's refusal: a cancellation is neither retried, nor a timeout, nor a failure.
+        using var cancel = new CancellationTokenSource();
+        await cancel.CancelAsync();
+        var groq = new StubOpenAI(HttpStatusCode.BadRequest, ToolUseFailed);
+        var conversation = Provider(groq).Begin(Brief);
+
+        var thrown = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => conversation.NextAsync([], true, cancel.Token));
+
+        Assert.Empty(groq.Requests);
+        Assert.Equal(cancel.Token, thrown.CancellationToken);
+    }
+
+    [Theory]
+    [InlineData(400, """{"error":{"message":"property 'store' is unsupported","type":"invalid_request_error","code":null}}""")]
+    [InlineData(400, """{"error":{"message":"json mode cannot be combined with tool/function calling","type":"invalid_request_error","param":"response_format"}}""")]
+    [InlineData(400, "not json")]
+    [InlineData(500, """{"error":{"message":"Failed to parse tool call arguments as JSON","type":"internal_server_error","code":"tool_use_failed"}}""")]
+    public async Task Any_other_refusal_is_not_sent_again(int status, string body)
+    {
+        var groq = new StubOpenAI((HttpStatusCode)status, body);
+        var conversation = Provider(groq).Begin(Brief);
+
+        var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], true, CancellationToken.None));
+
+        Assert.Equal(AssistantFailure.Failed, thrown.Failure);
+        Assert.Equal($"Groq answered {status}.", thrown.Message);
+        Assert.NotNull(thrown.InnerException);
+        // A 500 is the client pipeline's own single retry (ClientRetryPolicy), not this one.
+        Assert.Equal(status == 500 ? 2 : 1, groq.Requests.Count);
+    }
+
     /// <summary>A step that allows tools: the strict tools, <c>tool_choice: auto</c>, and no answer schema.</summary>
     private static void AssertToolStep(JsonElement request)
     {
@@ -95,6 +201,8 @@ public sealed class GroqAssistantProviderTests
         Assert.Equal(AssistantTools.Definitions.Select(tool => tool.Name), tools.Select(tool => tool.GetProperty("name").GetString()));
         Assert.All(tools, tool => Assert.True(tool.GetProperty("strict").GetBoolean()));
         Assert.Equal("auto", request.GetProperty("tool_choice").GetString());
+        // Groq lists the gpt-oss models without parallel tool use: one call per step, asked for explicitly.
+        Assert.False(request.GetProperty("parallel_tool_calls").GetBoolean());
         Assert.False(request.TryGetProperty("text", out _));
         Assert.False(request.TryGetProperty("response_format", out _));
     }

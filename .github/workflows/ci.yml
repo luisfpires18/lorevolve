@@ -79,6 +79,9 @@ jobs:
       - name: Format
         run: npm run format:check
 
+      - name: Version rule
+        run: npm test
+
       # The E2E project has no Prettier of its own: its specs are held to these settings, and
       # Prettier has to be pointed at this config explicitly to read them from outside the tree.
       - name: Format (end-to-end specs)
