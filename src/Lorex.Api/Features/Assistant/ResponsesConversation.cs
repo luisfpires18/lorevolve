@@ -108,7 +108,8 @@ internal sealed class ResponsesConversation : IAssistantConversation
 
         var options = new CreateResponseOptions(_model, _items)
         {
-            Instructions = _brief.Instructions,
+            // A step without the schema is not told to reply with the schema's JSON (see UniverseAssistant.GroundRules).
+            Instructions = sendAnswerSchema ? _brief.Instructions : _brief.InstructionsWithoutSchema ?? _brief.Instructions,
             MaxOutputTokenCount = _brief.MaxOutputTokens,
         };
 

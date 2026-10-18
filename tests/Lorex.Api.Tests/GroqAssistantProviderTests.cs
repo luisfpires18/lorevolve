@@ -70,6 +70,74 @@ public sealed class GroqAssistantProviderTests
         Assert.Equal("call_1", input[3].GetProperty("call_id").GetString());
     }
 
+    /// <summary>The brief LoreX itself sends: both forms of the instructions.</summary>
+    internal static readonly AssistantBrief LorexBrief = Brief with
+    {
+        Instructions = UniverseAssistant.Instructions("Emberfall"),
+        InstructionsWithoutSchema = UniverseAssistant.GroundRules("Emberfall"),
+    };
+
+    [Fact]
+    public async Task Tool_steps_are_never_told_to_reply_with_json_and_the_answering_step_is_told_how()
+    {
+        // Live: told "Reply with JSON" on a tool step, gpt-oss calls a tool named "json" and Groq refuses (unknown_tool).
+        var groq = new StubOpenAI(
+            Response("""{"type":"function_call","id":"fc_1","call_id":"call_1","name":"get_universe_overview","arguments":"{}","status":"completed"}"""),
+            Response(Message("Emberfall is a test universe.")),
+            Response(Message(Answer)));
+        var conversation = Provider(groq).Begin(LorexBrief);
+
+        await conversation.NextAsync([], toolsAllowed: true, CancellationToken.None);
+        var answered = await conversation.NextAsync([new AssistantToolResult("call_1", "{}")], toolsAllowed: true, CancellationToken.None);
+        Assert.Equal(Answer, answered.Answer);
+
+        // Two tool steps, then the answering step the free text led to.
+        Assert.Equal(3, groq.Requests.Count);
+        foreach (var toolStep in groq.Requests.Take(2))
+        {
+            AssertToolStep(toolStep);
+            Assert.Equal(UniverseAssistant.GroundRules("Emberfall"), toolStep.GetProperty("instructions").GetString());
+            Assert.DoesNotContain("JSON", toolStep.GetProperty("instructions").GetString(), StringComparison.Ordinal);
+        }
+
+        AssertAnswerStep(groq.Requests[2]);
+        Assert.Equal(UniverseAssistant.Instructions("Emberfall"), groq.Requests[2].GetProperty("instructions").GetString());
+        Assert.Contains("Reply with JSON that follows the schema.", groq.Requests[2].GetProperty("instructions").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_full_instructions_are_the_ground_rules_then_the_answer_format_and_only_the_format_mentions_json()
+    {
+        Assert.Equal($"{UniverseAssistant.GroundRules("E")}\n\n{UniverseAssistant.AnswerFormat}", UniverseAssistant.Instructions("E"));
+        Assert.DoesNotContain("JSON", UniverseAssistant.GroundRules("E"), StringComparison.Ordinal);
+        Assert.StartsWith("Reply with JSON that follows the schema.", UniverseAssistant.AnswerFormat, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Every_tool_step_after_tool_results_sends_the_same_eight_tools_and_the_whole_conversation()
+    {
+        var groq = new StubOpenAI(
+            Response("""{"type":"function_call","id":"fc_1","call_id":"call_1","name":"search_universe","arguments":"{\"query\":\"Arin\"}","status":"completed"}"""),
+            Response("""{"type":"function_call","id":"fc_2","call_id":"call_2","name":"get_relationships","arguments":"{\"id\":\"x\"}","status":"completed"}"""),
+            Response("""{"type":"function_call","id":"fc_3","call_id":"call_3","name":"get_lore","arguments":"{\"id\":\"x\",\"find\":null}","status":"completed"}"""),
+            Response(Message(Answer)));
+        var conversation = Provider(groq).Begin(Brief);
+
+        await conversation.NextAsync([], toolsAllowed: true, CancellationToken.None);
+        await conversation.NextAsync([new AssistantToolResult("call_1", "{}")], toolsAllowed: true, CancellationToken.None);
+        await conversation.NextAsync([new AssistantToolResult("call_2", "{}")], toolsAllowed: true, CancellationToken.None);
+        await conversation.NextAsync([new AssistantToolResult("call_3", "{}")], toolsAllowed: false, CancellationToken.None);
+
+        Assert.Equal(4, groq.Requests.Count);
+        for (var step = 0; step < 3; step++)
+        {
+            AssertToolStep(groq.Requests[step]);
+            Assert.Equal(1 + (2 * step), groq.Requests[step].GetProperty("input").GetArrayLength());
+        }
+
+        AssertAnswerStep(groq.Requests[3]);
+    }
+
     [Fact]
     public async Task A_groq_tool_step_that_answers_in_free_text_is_followed_at_once_by_the_answering_step()
     {
@@ -266,9 +334,19 @@ public sealed class GroqAssistantProviderTests
     /// <summary>A step that allows tools: the strict tools, <c>tool_choice: auto</c>, and no answer schema.</summary>
     private static void AssertToolStep(JsonElement request)
     {
+        // All eight, exactly as LoreX defines them: name, description and schema, as strict function tools.
         var tools = request.GetProperty("tools").EnumerateArray().ToList();
-        Assert.Equal(AssistantTools.Definitions.Select(tool => tool.Name), tools.Select(tool => tool.GetProperty("name").GetString()));
-        Assert.All(tools, tool => Assert.True(tool.GetProperty("strict").GetBoolean()));
+        Assert.Equal(AssistantTools.Definitions.Count, tools.Count);
+        foreach (var (definition, tool) in AssistantTools.Definitions.Zip(tools))
+        {
+            Assert.Equal("function", tool.GetProperty("type").GetString());
+            Assert.Equal(definition.Name, tool.GetProperty("name").GetString());
+            Assert.Equal(definition.Description, tool.GetProperty("description").GetString());
+            using var schema = JsonDocument.Parse(definition.ParametersSchema);
+            Assert.True(JsonElement.DeepEquals(schema.RootElement, tool.GetProperty("parameters")), definition.Name);
+            Assert.True(tool.GetProperty("strict").GetBoolean());
+        }
+
         Assert.Equal("auto", request.GetProperty("tool_choice").GetString());
         // Groq lists the gpt-oss models without parallel tool use: one call per step, asked for explicitly.
         Assert.False(request.GetProperty("parallel_tool_calls").GetBoolean());

@@ -556,6 +556,11 @@ public sealed class AssistantTests(AssistantFixture fixture) : IClassFixture<Ass
         // The content reached the model only inside tool results: never as instructions, never as the question.
         var brief = _model.Steps[0].Brief;
         Assert.DoesNotContain("SYSTEM OVERRIDE", brief.Instructions, StringComparison.Ordinal);
+        Assert.DoesNotContain("SYSTEM OVERRIDE", brief.InstructionsWithoutSchema, StringComparison.Ordinal);
+
+        // Both forms of the instructions travel with the brief; the one for steps without the schema asks for no JSON.
+        Assert.Equal(UniverseAssistant.Instructions(universe.Name), brief.Instructions);
+        Assert.Equal(UniverseAssistant.GroundRules(universe.Name), brief.InstructionsWithoutSchema);
         Assert.All(brief.Messages, message => Assert.DoesNotContain("SYSTEM OVERRIDE", message.Text, StringComparison.Ordinal));
         Assert.Contains("SYSTEM OVERRIDE", _model.Steps[1].Results[0].Output, StringComparison.Ordinal);
         Assert.Contains("SYSTEM OVERRIDE", _model.Steps[1].Results[1].Output, StringComparison.Ordinal);
