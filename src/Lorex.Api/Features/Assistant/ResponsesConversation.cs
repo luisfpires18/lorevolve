@@ -27,7 +27,7 @@ internal sealed class ResponsesConversation : IAssistantConversation
     private readonly string _server;
     private readonly Action<CreateResponseOptions> _serverOptions;
     private readonly bool _toolsWithAnswerSchema;
-    private readonly bool _retryUnparseableToolCall;
+    private readonly bool _handlesToolUseFailed;
     private readonly List<ResponseItem> _items = [];
 
     /// <param name="server">The server's name, for LoreX's own failure messages and the log. Never shown to a person.</param>
@@ -37,9 +37,11 @@ internal sealed class ResponsesConversation : IAssistantConversation
     /// that pairing (Groq: "json mode cannot be combined with tool/function calling"): a step that allows tools then sends
     /// the tools and no schema, and the step that answers sends the schema and no tools at all.
     /// </param>
-    /// <param name="retryUnparseableToolCall">
-    /// True when the server reports a tool call the model generated but it could not parse (Groq: a 400 with code
-    /// <c>tool_use_failed</c>) and says to send the request again. Only a step that allows tools is sent again, and once.
+    /// <param name="handlesToolUseFailed">
+    /// True for a server that refuses a tool call the model generated with a 400 and code <c>tool_use_failed</c> (Groq).
+    /// Then: a step that allows tools is sent once more, as Groq advises; on a step that allows none, a refusal because the
+    /// model called a tool anyway is a <see cref="AssistantModelTurn.StillLooking"/> turn, not a failure; and every such
+    /// refusal is logged by a fixed category (<see cref="ToolUseCategory"/>), never by what the server or the model wrote.
     /// </param>
     public ResponsesConversation(
         ResponsesClient client,
@@ -48,7 +50,7 @@ internal sealed class ResponsesConversation : IAssistantConversation
         string server,
         Action<CreateResponseOptions> serverOptions,
         bool toolsWithAnswerSchema = true,
-        bool retryUnparseableToolCall = false)
+        bool handlesToolUseFailed = false)
     {
         _client = client;
         _model = model;
@@ -56,7 +58,7 @@ internal sealed class ResponsesConversation : IAssistantConversation
         _server = server;
         _serverOptions = serverOptions;
         _toolsWithAnswerSchema = toolsWithAnswerSchema;
-        _retryUnparseableToolCall = retryUnparseableToolCall;
+        _handlesToolUseFailed = handlesToolUseFailed;
 
         foreach (var message in brief.Messages)
         {
@@ -138,12 +140,24 @@ internal sealed class ResponsesConversation : IAssistantConversation
         _serverOptions(options);
 
         // Two attempts at most: only a server that asks for it, on a step with tools, sends a second (see SendAsync).
-        var attempts = _retryUnparseableToolCall && toolsAllowed ? 2 : 1;
-        ResponseResult? response = null;
-        for (var attempt = 1; response is null; attempt++)
+        var attempts = _handlesToolUseFailed && toolsAllowed ? 2 : 1;
+        Sent sent;
+        for (var attempt = 1; ; attempt++)
         {
-            response = await SendAsync(options, attempt, attempts, cancellationToken);
+            sent = await SendAsync(options, attempt, attempts, sendTools, cancellationToken);
+            if (sent.Response is not null || sent.StillLooking)
+            {
+                break;
+            }
         }
+
+        // Nothing to add to the conversation: the server kept no part of the refused step.
+        if (sent.StillLooking)
+        {
+            return new AssistantModelTurn([], null, StillLooking: true);
+        }
+
+        var response = sent.Response!;
 
         if (response.Status is not ResponseStatus.Completed)
         {
@@ -170,6 +184,17 @@ internal sealed class ResponsesConversation : IAssistantConversation
         if (calls.Count == 0 && !sendAnswerSchema)
         {
             var answer = await NextAsync([], toolsAllowed: false, cancellationToken);
+
+            // The caller allowed tools, so its budget is not spent: wanting another lookup here is no "ran out of room".
+            // Nothing can run the refused call from here either, so the question fails as any provider fault does.
+            if (answer.StillLooking)
+            {
+                throw new AssistantProviderException(
+                    AssistantFailure.Failed,
+                    $"{_server} answered in free text with lookups left, then asked for a tool on the answering step "
+                    + $"({ToolUseFailed}: {ToolUseCategory.ToolRequestedWithNoneAllowed}).");
+            }
+
             return answer with
             {
                 InputTokens = inputTokens + answer.InputTokens,
@@ -184,30 +209,41 @@ internal sealed class ResponsesConversation : IAssistantConversation
             outputTokens);
     }
 
+    /// <summary>What one request came to: a response, a refused lookup on a step with no tools, or neither (send again).</summary>
+    private readonly record struct Sent(ResponseResult? Response, bool StillLooking);
+
     /// <summary>
-    /// One request, its failures classified - or null to send it again, which only an unparseable tool call earns, and only
-    /// while <paramref name="attempts"/> allows.
+    /// One request, its failures classified - or a <see cref="Sent"/> with no response to send it again, which only a
+    /// refused tool call on a step with tools earns, and only while <paramref name="attempts"/> allows.
     ///
     /// What the model generated never reaches a message or the log: a refused generation may carry the universe's own text.
-    /// So a refusal that carries one - Groq's <c>failed_generation</c> - is reported by its status and code alone, and
-    /// without the client's exception, whose message and body hold it.
+    /// So a <c>tool_use_failed</c> refusal is reported by status, code, category, attempts and whether tools were sent,
+    /// and so is any other refusal that carries a generation (Groq's <c>failed_generation</c>) - both without the client's
+    /// exception, whose message and body hold what the server and the model wrote.
     /// </summary>
-    private async Task<ResponseResult?> SendAsync(
+    private async Task<Sent> SendAsync(
         CreateResponseOptions options,
         int attempt,
         int attempts,
+        bool toolsSent,
         CancellationToken cancellationToken)
     {
         try
         {
-            return (await _client.CreateResponseAsync(options, cancellationToken)).Value;
+            return new Sent((await _client.CreateResponseAsync(options, cancellationToken)).Value, false);
         }
         // The generation is sampled, so the same request can succeed: Groq's own guidance is to send it again.
-        catch (ClientResultException exception) when (attempt < attempts
-            && exception.Status == StatusCodes.Status400BadRequest
-            && ErrorCode(exception) == ToolUseFailed)
+        catch (ClientResultException exception) when (attempt < attempts && IsToolUseFailed(exception))
         {
-            return null;
+            return new Sent(null, false);
+        }
+        // No tools were sent, and the model called one anyway: it wanted to read more. The caller decides what that means.
+        catch (ClientResultException exception) when (_handlesToolUseFailed
+            && !toolsSent
+            && IsToolUseFailed(exception)
+            && Category(exception) == ToolUseCategory.ToolRequestedWithNoneAllowed)
+        {
+            return new Sent(null, true);
         }
         // A 429 is also how OpenAI says the account has no credit left. That is not "busy": waiting never fixes it.
         catch (ClientResultException exception) when (exception.Status == StatusCodes.Status429TooManyRequests
@@ -219,7 +255,14 @@ internal sealed class ResponsesConversation : IAssistantConversation
         {
             throw new AssistantProviderException(AssistantFailure.Busy, $"{_server} is rate limiting this host.", exception);
         }
-        catch (ClientResultException exception) when (_retryUnparseableToolCall && CarriesGeneration(exception))
+        catch (ClientResultException exception) when (_handlesToolUseFailed && IsToolUseFailed(exception))
+        {
+            throw new AssistantProviderException(
+                AssistantFailure.Failed,
+                $"{_server} answered 400 ({ToolUseFailed}: {Category(exception)}) after {attempt} of {attempts} attempt(s), "
+                + $"tools {(toolsSent ? "sent" : "not sent")}.");
+        }
+        catch (ClientResultException exception) when (_handlesToolUseFailed && CarriesGeneration(exception))
         {
             throw new AssistantProviderException(
                 AssistantFailure.Failed,
@@ -240,6 +283,35 @@ internal sealed class ResponsesConversation : IAssistantConversation
     }
 
     private const string ToolUseFailed = "tool_use_failed";
+
+    /// <summary>
+    /// The only words a <c>tool_use_failed</c> refusal is logged with: one of these, matched from Groq's own error message
+    /// against phrases it is known to use. The message itself is never logged - it may quote what the model wrote.
+    /// </summary>
+    internal static class ToolUseCategory
+    {
+        public const string ToolRequestedWithNoneAllowed = "tool_requested_with_none_allowed";
+        public const string InvalidArguments = "invalid_arguments";
+        public const string UnknownTool = "unknown_tool";
+        public const string Other = "other";
+    }
+
+    private static bool IsToolUseFailed(ClientResultException exception) =>
+        exception.Status == StatusCodes.Status400BadRequest && ErrorCode(exception) == ToolUseFailed;
+
+    private static string Category(ClientResultException exception)
+    {
+        var message = Error(exception) is { } error && error.TryGetProperty("message", out var text) && text.ValueKind == JsonValueKind.String
+            ? text.GetString() ?? string.Empty
+            : string.Empty;
+
+        bool Says(string phrase) => message.Contains(phrase, StringComparison.OrdinalIgnoreCase);
+
+        return Says("Tool choice is none, but model called a tool") ? ToolUseCategory.ToolRequestedWithNoneAllowed
+            : Says("Failed to parse tool call arguments") || Says("did not match schema") ? ToolUseCategory.InvalidArguments
+            : Says("not in request.tools") ? ToolUseCategory.UnknownTool
+            : ToolUseCategory.Other;
+    }
 
     /// <summary>The error code of a refusal's JSON body (<c>error.code</c>), or null when it has none.</summary>
     private static string? ErrorCode(ClientResultException exception) =>

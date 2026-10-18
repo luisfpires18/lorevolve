@@ -136,6 +136,22 @@ public sealed class OpenAIAssistantProviderTests
     }
 
     [Fact]
+    public async Task OpenAI_never_reports_a_turn_still_looking_and_classifies_nothing_new()
+    {
+        // Groq's answering-step refusal, as if OpenAI sent it: OpenAI keeps its own handling - one request, a plain failure.
+        var openAi = new StubOpenAI(
+            HttpStatusCode.BadRequest,
+            """{"error":{"message":"Tool choice is none, but model called a tool","type":"invalid_request_error","code":"tool_use_failed"}}""");
+        var conversation = Provider(openAi).Begin(Brief);
+
+        var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], false, CancellationToken.None));
+
+        Assert.Single(openAi.Requests);
+        Assert.Equal("OpenAI answered 400.", thrown.Message);
+        Assert.IsType<ClientResultException>(thrown.InnerException);
+    }
+
+    [Fact]
     public async Task A_response_that_did_not_complete_is_a_failure()
     {
         var incomplete = Response(Message(Answer)).Replace("\"status\":\"completed\",\"model\"", "\"status\":\"incomplete\",\"incomplete_details\":{\"reason\":\"max_output_tokens\"},\"model\"", StringComparison.Ordinal);

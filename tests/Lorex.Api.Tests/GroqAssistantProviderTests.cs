@@ -138,7 +138,7 @@ public sealed class GroqAssistantProviderTests
         // Two requests and no more, though the stub would refuse forever.
         Assert.Equal(2, groq.Requests.Count);
         Assert.Equal(AssistantFailure.Failed, thrown.Failure);
-        Assert.Equal("Groq answered 400 (tool_use_failed) after 2 of 2 attempt(s).", thrown.Message);
+        Assert.Equal("Groq answered 400 (tool_use_failed: invalid_arguments) after 2 of 2 attempt(s), tools sent.", thrown.Message);
 
         // The endpoint logs the message with the inner exception: none, so neither the SDK's message nor the body is logged.
         Assert.Null(thrown.InnerException);
@@ -147,7 +147,7 @@ public sealed class GroqAssistantProviderTests
     }
 
     [Fact]
-    public async Task The_answering_step_is_never_sent_again_and_its_generation_is_not_logged_either()
+    public async Task Unparseable_arguments_on_the_answering_step_stay_a_failure_never_sent_again_and_not_logged()
     {
         var groq = new StubOpenAI(HttpStatusCode.BadRequest, ToolUseFailed);
         var conversation = Provider(groq).Begin(Brief);
@@ -155,7 +155,7 @@ public sealed class GroqAssistantProviderTests
         var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], false, CancellationToken.None));
 
         Assert.Single(groq.Requests);
-        Assert.Equal("Groq answered 400 (tool_use_failed) after 1 of 1 attempt(s).", thrown.Message);
+        Assert.Equal("Groq answered 400 (tool_use_failed: invalid_arguments) after 1 of 1 attempt(s), tools not sent.", thrown.Message);
         Assert.Null(thrown.InnerException);
         Assert.DoesNotContain(Generated, thrown.ToString(), StringComparison.Ordinal);
     }
@@ -173,6 +173,75 @@ public sealed class GroqAssistantProviderTests
 
         Assert.Empty(groq.Requests);
         Assert.Equal(cancel.Token, thrown.CancellationToken);
+    }
+
+    // ---------- The model calling a tool on the answering step (live: "Tool choice is none, but model called a tool") ----------
+
+    private const string ToolWithNoneAllowed =
+        """{"error":{"message":"Tool choice is none, but model called a tool","type":"invalid_request_error","code":"tool_use_failed","failed_generation":"{\"name\":\"get_lore\",\"arguments\":{\"id\":\"PRIVATE-LORE\"}}"}}""";
+
+    [Fact]
+    public async Task On_the_answering_step_a_tool_the_model_calls_anyway_is_a_turn_still_looking_not_a_failure_or_a_call()
+    {
+        var groq = new StubOpenAI(HttpStatusCode.BadRequest, ToolWithNoneAllowed);
+        var conversation = Provider(groq).Begin(Brief);
+
+        var turn = await conversation.NextAsync([], toolsAllowed: false, CancellationToken.None);
+
+        // Nothing invented: no call to run, no answer, only that it wanted to read more. One request, never sent again.
+        Assert.True(turn.StillLooking);
+        Assert.Empty(turn.ToolCalls);
+        Assert.Null(turn.Answer);
+        Assert.Single(groq.Requests);
+        AssertAnswerStep(groq.Requests[0]);
+        Assert.DoesNotContain(Generated, turn.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task After_free_text_with_lookups_left_a_tool_called_on_the_answering_step_fails_without_claiming_the_budget_ran_out()
+    {
+        var groq = new StubOpenAI(
+            (HttpStatusCode.OK, Response(Message("Arin is a smith."))),
+            (HttpStatusCode.BadRequest, ToolWithNoneAllowed));
+        var conversation = Provider(groq).Begin(Brief);
+
+        var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], toolsAllowed: true, CancellationToken.None));
+
+        Assert.Equal(2, groq.Requests.Count);
+        AssertToolStep(groq.Requests[0]);
+        AssertAnswerStep(groq.Requests[1]);
+        Assert.Equal(AssistantFailure.Failed, thrown.Failure);
+        Assert.Equal(
+            "Groq answered in free text with lookups left, then asked for a tool on the answering step (tool_use_failed: tool_requested_with_none_allowed).",
+            thrown.Message);
+        Assert.DoesNotContain("ran out", thrown.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(thrown.InnerException);
+        Assert.DoesNotContain(Generated, thrown.ToString(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Failed to parse tool call arguments as JSON", "invalid_arguments")]
+    [InlineData("tool call validation failed: parameters for tool get_lore did not match schema: errors: [PRIVATE-LORE]", "invalid_arguments")]
+    [InlineData("tool call validation failed: attempted to call tool 'PRIVATE-LORE' which was not in request.tools", "unknown_tool")]
+    [InlineData("Tool choice is none, but model called a tool", "tool_requested_with_none_allowed")]
+    [InlineData("Something Groq has never said before about PRIVATE-LORE", "other")]
+    public async Task A_tool_step_refusal_is_logged_by_a_fixed_category_never_by_what_groq_or_the_model_wrote(string message, string category)
+    {
+        var body = JsonSerializer.Serialize(new { error = new { message, type = "invalid_request_error", code = "tool_use_failed" } });
+        var groq = new StubOpenAI(HttpStatusCode.BadRequest, body);
+        var conversation = Provider(groq).Begin(Brief);
+
+        var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], toolsAllowed: true, CancellationToken.None));
+
+        // A tool step is still sent twice and no more, whatever the category - a refused call there is never "still looking".
+        Assert.Equal(2, groq.Requests.Count);
+        Assert.Equal(AssistantFailure.Failed, thrown.Failure);
+        Assert.Equal($"Groq answered 400 (tool_use_failed: {category}) after 2 of 2 attempt(s), tools sent.", thrown.Message);
+
+        // No failed_generation here, and still no inner exception: Groq's message itself can quote the model.
+        Assert.Null(thrown.InnerException);
+        Assert.DoesNotContain("PRIVATE-LORE", thrown.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(message, thrown.ToString(), StringComparison.Ordinal);
     }
 
     [Theory]
