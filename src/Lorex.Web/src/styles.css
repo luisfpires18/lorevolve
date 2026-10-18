@@ -12203,7 +12203,10 @@ a.idearef__name {
     grid-area: brand;
   }
 
-  .portal__session {
+  /* The brand's air, on every page: the home page's sibling rule above would otherwise make it auto, which a full row
+     resolves to nothing. */
+  .portal__session,
+  .portal__nav + .portal__session {
     grid-area: session;
     margin-left: var(--space-2);
   }
@@ -12230,9 +12233,9 @@ a.idearef__name {
   }
 }
 
-/* The narrowest phones: brand and the two ways in still share one row, with air between them - measured at 360px,
-   touch-sized controls included. */
-@media (max-width: 25rem) {
+/* The narrower phones: brand and the two ways in still share one row, with air between them - measured from 360px to
+   430px, touch-sized controls included, and with Linux's wider fallback faces (CI has neither Inter nor Segoe). */
+@media (max-width: 27rem) {
   .portal__brand {
     gap: 0.45rem;
   }
