@@ -5,6 +5,7 @@ import {
   type AssistantHistoryMessage,
   type AssistantSource,
   type AssistantStatus,
+  type AssistantUsage,
   type SourceKindValue,
 } from './types'
 
@@ -21,6 +22,11 @@ function assistantPath(universeId: string) {
 /** Whether the assistant can answer in this universe. Calls no model. */
 export function getAssistantStatus(universeId: string, signal?: AbortSignal) {
   return apiFetch<AssistantStatus>(assistantPath(universeId), { signal })
+}
+
+/** The account's own allowance: questions used in the current window. Counts nothing itself. */
+export function getAssistantUsage(signal?: AbortSignal) {
+  return apiFetch<AssistantUsage>('/api/profile/assistant-usage', { signal })
 }
 
 /** One question, with the conversation so far. Aborting it stops the work on the server too. */

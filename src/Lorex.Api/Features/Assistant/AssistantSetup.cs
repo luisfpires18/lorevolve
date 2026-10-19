@@ -1,6 +1,4 @@
-using System.Security.Claims;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Lorex.Api.Features.Assistant;
 
@@ -22,8 +20,6 @@ namespace Lorex.Api.Features.Assistant;
 /// </summary>
 public static class AssistantSetup
 {
-    public const string RateLimitPolicy = "assistant";
-
     /// <summary>
     /// How many questions one account may ask in <see cref="QuestionWindow"/>, across every universe. Each question is at
     /// most seven model calls, so this caps what one account can spend.
@@ -60,32 +56,8 @@ public static class AssistantSetup
             services.AddSingleton<IAssistantProvider, UnavailableAssistantProvider>();
         }
 
-        services.AddRateLimiter(options =>
-        {
-            options.AddPolicy(RateLimitPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
-                context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
-                _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = QuestionsPerWindow,
-                    Window = QuestionWindow,
-                    QueueLimit = 0,
-                }));
-
-            options.OnRejected = async (context, cancellationToken) =>
-            {
-                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-                {
-                    context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
-                }
-
-                await Results.Problem(
-                        title: "Too many questions",
-                        detail: "You've asked a lot in the last few minutes. Wait a little, then try again.",
-                        statusCode: StatusCodes.Status429TooManyRequests,
-                        extensions: new Dictionary<string, object?> { ["code"] = RateLimitedCode })
-                    .ExecuteAsync(context.HttpContext);
-            };
-        });
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<AssistantAllowance>();
 
         return services;
     }

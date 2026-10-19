@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/useAuth'
 import { AccountStorageSection } from '../components/AccountStorageSection'
+import { AccountUsageSection } from '../components/AccountUsageSection'
 import { ProfileAvatar } from '../components/ProfileAvatar'
 import { PublicAuthorSection } from '../components/PublicAuthorSection'
 import { PublicNameForm } from '../components/PublicNameForm'
@@ -75,6 +76,8 @@ export default function ProfilePage() {
       </dl>
 
       <AccountStorageSection />
+
+      <AccountUsageSection />
 
       <section className="profile__public" aria-labelledby="profile-public-heading">
         <h2 className="profile__subtitle" id="profile-public-heading">

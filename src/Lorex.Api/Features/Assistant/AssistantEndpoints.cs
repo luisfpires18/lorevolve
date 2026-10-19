@@ -36,10 +36,50 @@ public static partial class AssistantEndpoints
             .RequireAuthorization();
 
         group.MapGet("/", StatusAsync).WithName("GetAssistantStatus");
-        group.MapPost("/", AskAsync).WithName("AskAssistant").RequireRateLimiting(AssistantSetup.RateLimitPolicy);
+        group.MapPost("/", AskAsync).WithName("AskAssistant").WithMetadata(new AssistantQuestionMetadata());
+
+        // The signed-in account's own allowance, read from the session alone like the rest of /api/profile.
+        endpoints.MapGet("/api/profile/assistant-usage", (ClaimsPrincipal principal, AssistantAllowance allowance) =>
+                Results.Ok(allowance.Read(principal.RequireUserId())))
+            .WithTags("Assistant")
+            .WithName("GetAssistantUsage")
+            .RequireAuthorization();
 
         return endpoints;
     }
+
+    /// <summary>
+    /// Counts each question against the asking account's allowance (ADR 0045). Runs after authorization and before the
+    /// endpoint, so the body has not been read yet: a question counts whatever happens next - a body that is not JSON, a
+    /// refused question, an outsider's 404, a failed answer. Only endpoints marked <see cref="AssistantQuestionMetadata"/>
+    /// are counted, and only for a signed-in account; one past the allowance is refused with how long until the window
+    /// ends, and is not counted.
+    /// </summary>
+    public static IApplicationBuilder UseAssistantAllowance(this IApplicationBuilder app) =>
+        app.Use(async (http, next) =>
+        {
+            if (http.GetEndpoint()?.Metadata.GetMetadata<AssistantQuestionMetadata>() is null
+                || http.User.Identity?.IsAuthenticated != true)
+            {
+                await next(http);
+                return;
+            }
+
+            var allowance = http.RequestServices.GetRequiredService<AssistantAllowance>();
+            if (allowance.TryTake(http.User.RequireUserId()) is not { } wait)
+            {
+                await next(http);
+                return;
+            }
+
+            http.Response.Headers.RetryAfter = ((int)Math.Ceiling(wait.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            await Problem(
+                    StatusCodes.Status429TooManyRequests,
+                    AssistantSetup.RateLimitedCode,
+                    "Too many questions",
+                    "You've asked a lot in the last few minutes. Wait a little, then try again.")
+                .ExecuteAsync(http);
+        });
 
     private static async Task<IResult> StatusAsync(
         Guid universeId,
@@ -141,3 +181,6 @@ public static partial class AssistantEndpoints
             statusCode: status,
             extensions: new Dictionary<string, object?> { ["code"] = code });
 }
+
+/// <summary>Marks the one route whose requests are questions counted by <see cref="AssistantEndpoints.UseAssistantAllowance"/>.</summary>
+public sealed class AssistantQuestionMetadata;

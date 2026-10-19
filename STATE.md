@@ -50,6 +50,14 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   next numbered phase resumes only when the owner says so.
 - **Design refactor 001-007 done and merged** (007 at `cc798c1`, merged into `dev` at `a87b7da`; Deploy DEV #47 green).
   The contract is now an as-built reference. See Design refactor below.
+- **Assistant usage indicator V1** (`feat/assistant-usage-indicator` off `dev` at `f03823a`; committed, not merged, not
+  pushed). No migration. ADR 0045 amendment. Profile > Usage > AI Assistant: "N of 20 questions used", %, meter, left,
+  and when used up the time it comes back. `AssistantAllowance` (in-process fixed window per account) replaces the
+  framework limiter so enforcing and showing share one count; same 20/10 min, same 429, `Retry-After` now exact.
+  `GET /api/profile/assistant-usage` (session only). Counted by `UseAssistantAllowance` (metadata-scoped middleware after
+  authorization, before binding), so a malformed body counts. Tests: API 1566 passed (`AssistantUsageTests` 7). Playwright
+  `account-usage.spec.ts` 4; focused + 5 neighbouring specs on a fresh DB green. Full suite delegated to GitHub Actions.
+  Follow-up: fold the Profile's Storage section into Usage as a second item.
 - **Groq assistant provider** (`feat/groq-assistant-provider` off `dev` at `76c2abe`; committed, not merged, not pushed).
   DEV's OpenAI account has no credit, so `Assistant:Provider` `Groq` (`Assistant:Groq:ApiKey`, `Assistant:Groq:Model`,
   DEV `openai/gpt-oss-120b`) runs the same exchange on Groq's OpenAI-compatible Responses API. Shared

@@ -60,7 +60,7 @@ ids, through the same addresses the search uses.
 is cut at 10,000 characters and all of them at 40,000; the question at 1,000; the history at its last 6 messages of 1,500
 characters each; output at 3,000 tokens a step; the whole question at 90 seconds, and a closed request stops it.
 `UniverseReader` caps every list and text it returns (its constants). One account asks at most 20 questions in 10
-minutes (ASP.NET Core's rate limiter, partitioned by account; 429 `assistant_rate_limited`).
+minutes (`AssistantAllowance`, a fixed window per account; 429 `assistant_rate_limited`; see the usage amendment).
 
 **A narrow provider boundary.** `IAssistantProvider` and `IAssistantConversation` carry LoreX's own types: messages, tool
 definitions, tool calls and results, one turn. A provider never reads the database, runs a tool or sees a universe id.
@@ -144,6 +144,31 @@ back to Fake.
   LoreX had sent all eight tools, with correct names and schemas, on every step. The instructions are now
   `GroundRules` plus `AnswerFormat`, and the format goes only with the schema. For OpenAI that is every step, with
   byte-identical text. For Groq it is the answering step only.
+
+## Amendment - the allowance Settings shows (2026-10-19)
+
+The Profile's Usage section shows each account its own assistant allowance: "N of 20 questions used", the percentage, a
+meter, what is left, and when it is used up, when the next question can be asked. Groq's or OpenAI's own quotas are the
+host's, not a person's, and are never shown.
+
+- **One count for enforcing and showing.** ASP.NET Core's `FixedWindowRateLimiter` cannot say when an account's window
+  ends (its `Retry-After` was always the whole window), and its per-partition limiters live inside the middleware. So
+  the framework limiter is gone and `AssistantAllowance` (a singleton, one lock) both refuses and reports. No second
+  counter exists to disagree with it.
+- **Same allowance.** 20 questions per account per 10 minutes, a fixed window opened by the account's first question
+  after its last window ended; at the end all 20 come back at once. Same 429 body. `Retry-After` is now the seconds
+  until the window ends, rounded up.
+- **What counts.** Every question that reaches `POST .../assistant` as a signed-in account: answered, a body that is not
+  JSON (400), refused for its content (400), not found (404), not set up (503), failed (502/504) or cancelled. A question
+  refused for the allowance (429) is not counted, a signed-out request (401) counts against no one, and reading the
+  status or the usage counts nothing.
+- **Where it counts.** `UseAssistantAllowance`, a middleware right after `UseAuthorization`, where the framework limiter
+  stood: it acts only on endpoints carrying `AssistantQuestionMetadata` (the ask route alone) and runs before the body is
+  read. An endpoint filter would run after binding and let a malformed body through uncounted.
+- **Reading it.** `GET /api/profile/assistant-usage`: `used`, `limit`, `remaining`, `windowSeconds`, `resetsAt` (null with
+  no open window). From the session only; no account id is accepted. Nothing about questions or answers is kept.
+- **Limits.** In-process memory, as before: a restart resets every count, and two instances would each allow 20. DEV is
+  one App Service instance. `resetsAt` is formatted in the browser's clock, so a skewed clock shifts the time shown.
 
 ## Deliberately unsupported
 

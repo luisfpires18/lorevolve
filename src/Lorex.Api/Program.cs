@@ -78,8 +78,8 @@ app.UseLorexFrontend();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// After authorization: the assistant's limit is counted per signed-in account, and only for requests allowed to reach it.
-app.UseRateLimiter();
+// After authorization and before the endpoint reads its body: each assistant question counts against its account.
+app.UseAssistantAllowance();
 
 app.MapHealthEndpoints();
 app.MapAuthEndpoints();
