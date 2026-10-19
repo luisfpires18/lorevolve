@@ -149,6 +149,15 @@ and secrets in any case. No manuscript text is logged.
   9207 `iss`, which is sent), Claude Code (CIMD, loopback on any port), and DCR clients with HTTPS or loopback redirects.
   Not: clients needing a custom-scheme redirect, `private_key_jwt`, pre-registered clients, the legacy HTTP+SSE
   transport, server-to-client requests (sampling, elicitation), or a browser-based client on another origin.
+- Metadata re-checks trade fairness against a bound, deliberately. With callers indistinguishable behind App Service,
+  any pool one party can spend another can too: a per-host share alone lets outbound work grow with the number of hosts,
+  and a ceiling alone lets one publisher crowd out the rest. Both are kept. Reaching the ceiling (240 a minute) takes on
+  the order of 1,200 known clients on at least 8 hosts, each a valid public document that passed the 60-a-minute
+  new-client ration and was connected through LoreX consent (or it is swept within the hour), since each is checked
+  again at most once per freshness (at least 5 minutes). Its effect is a delay - a known client past its
+  publisher-allowed grace (at most 5 minutes) is asked to retry - never longer trust in an old document. Partitioning by
+  registrable domain (a public suffix list) or reserving a share for established clients would raise that cost, not
+  remove it; revisit if a real deployment ever sees contention.
 - Errors OpenIddict raises while validating a request (an unknown client, a bad redirect, missing PKCE) are its plain
   error answer, never redirected and not styled as a LoreX page.
 - The DEV limitations of ADR 0018 apply: SQLite's single writer (a refresh writes; "last used" writes at most every 5
