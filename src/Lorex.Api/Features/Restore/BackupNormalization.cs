@@ -50,6 +50,8 @@ namespace Lorex.Api.Features.Restore;
 /// A family meaning those versions could not hold is refused by validation, never read as a parent link.</item>
 /// <item>Versions 1-21: no custom calendar, even when the file carries one, so every date is a simple date with a numeric
 /// month. A month id in such a file names a calendar it does not have, and validation refuses it.</item>
+/// <item>Versions 1-22: no type groups, even when the file carries some, and none is ever inferred from type names. A group
+/// target in such a file is refused by validation, never read as open to any type.</item>
 /// </list>
 ///
 /// One thing is normalized for every version: the live rows of each ordered collection are numbered
@@ -110,6 +112,7 @@ internal static class BackupNormalization
                 : [.. payload.WorldRules.Select(rule => rule is null ? null! : rule with { Validation = null })],
         ValidationTerms = version >= 13 ? payload.ValidationTerms : null,
         ChronologyCalendar = version >= 22 ? payload.ChronologyCalendar : null,
+        EntityTypeGroups = version >= 23 ? payload.EntityTypeGroups : null,
     };
 
     /// <summary>Constraints from version 4, a family meaning from version 14 - never taken from what a kind is called.</summary>
@@ -188,6 +191,7 @@ internal static class BackupNormalization
         Ideas = payload.Ideas ?? [],
         WorldRules = [.. (payload.WorldRules ?? []).Select(rule => rule.Validation is { Kind: WorldRuleValidationKind.None } ? rule with { Validation = null } : rule)],
         ValidationTerms = payload.ValidationTerms ?? [],
+        EntityTypeGroups = payload.EntityTypeGroups ?? [],
         TimelineEntries =
         [
             .. payload.TimelineEntries.Select(entry =>

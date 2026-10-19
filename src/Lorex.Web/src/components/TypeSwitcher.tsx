@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react'
 import { Link, type To } from 'react-router-dom'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Layers } from 'lucide-react'
+import type { EntityTypeGroup } from '../lore/types'
 import type { TypeNode, TypeTree } from '../lore/typeTree'
 import { ActionMenu } from './ActionMenu'
 import { TypeIcon } from './TypeIcon'
@@ -26,6 +27,22 @@ function levelsFor(tree: TypeTree, selected: TypeNode | null): Level[] {
   return levels
 }
 
+/** Arrow keys, Home and End move along one row of links. */
+function move(event: KeyboardEvent<HTMLUListElement>) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+  const links = [...event.currentTarget.querySelectorAll<HTMLAnchorElement>('a')]
+  const at = links.indexOf(document.activeElement as HTMLAnchorElement)
+  if (at === -1) return
+  event.preventDefault()
+  const next =
+    event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? links.length - 1
+        : Math.min(links.length - 1, Math.max(0, at + (event.key === 'ArrowLeft' ? -1 : 1)))
+  links[next]?.focus()
+}
+
 /**
  * Lore's local navigation, in the hierarchy's own shape (Product refinement 028). The top row is the universe's top-level
  * categories; a category that holds others opens a quieter row beneath it - "All Runes" first, which is Runes itself and so
@@ -39,33 +56,30 @@ function levelsFor(tree: TypeTree, selected: TypeNode | null): Level[] {
  * Two presentations of the same levels, chosen by CSS alone: from 641px the rows themselves, each wrapping onto as many
  * lines as it needs; on a phone one compact menu per level - "Category", then "In Runes" - so nothing wraps and nothing
  * scrolls sideways.
+ *
+ * Semantic groups (Issue #36) are not types, so on a wide screen they are a navigation of their own (`GroupSwitcher`),
+ * outside this row; on a phone they follow the types in the Category menu, under a "Groups" heading, rather than adding
+ * one more control above the cards.
  */
 export function TypeSwitcher({
   tree,
   selected,
   hrefFor,
+  groups = [],
+  selectedGroupId = null,
+  groupHref,
 }: {
   tree: TypeTree
   selected: TypeNode | null
   hrefFor: (typeId: string) => To
+  groups?: EntityTypeGroup[]
+  selectedGroupId?: string | null
+  groupHref?: (groupId: string) => To
 }) {
+  const showGroups = groups.length > 0 && groupHref !== undefined
+  const chosenGroup = groups.find((group) => group.id === selectedGroupId) ?? null
   const levels = levelsFor(tree, selected)
   const onPath = new Set(selected?.path.map((type) => type.id) ?? [])
-
-  function move(event: KeyboardEvent<HTMLUListElement>) {
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
-    const links = [...event.currentTarget.querySelectorAll<HTMLAnchorElement>('a')]
-    const at = links.indexOf(document.activeElement as HTMLAnchorElement)
-    if (at === -1) return
-    event.preventDefault()
-    const next =
-      event.key === 'Home'
-        ? 0
-        : event.key === 'End'
-          ? links.length - 1
-          : Math.min(links.length - 1, Math.max(0, at + (event.key === 'ArrowLeft' ? -1 : 1)))
-    links[next]?.focus()
-  }
 
   function tint(node: TypeNode) {
     return node.type.accentColor
@@ -146,8 +160,14 @@ export function TypeSwitcher({
       </nav>
 
       {levels.map((level, depth) => {
-        const chosen = chosenOn(level)
-        const what = level.parent ? `In ${level.parent.type.name}` : 'Category'
+        // On a phone the groups live in the Category menu, after the types; a chosen group is what that menu names.
+        const groupHere = depth === 0 && chosenGroup !== null
+        const chosen = groupHere ? chosenGroup.name : chosenOn(level)
+        const what = groupHere
+          ? 'Group'
+          : level.parent
+            ? `In ${level.parent.type.name}`
+            : 'Category'
         return (
           <ActionMenu
             key={level.parent?.type.id ?? 'top'}
@@ -190,9 +210,76 @@ export function TypeSwitcher({
                 <bdi>{label}</bdi>
               </Link>
             ))}
+            {depth === 0 && showGroups ? (
+              <>
+                <p className="typemenu__heading" aria-hidden="true">
+                  Groups
+                </p>
+                {groups.map((group) => (
+                  <Link
+                    key={`group-${group.id}`}
+                    className="actionmenu__item typemenu__item"
+                    to={groupHref!(group.id)}
+                    aria-current={group.id === selectedGroupId ? 'page' : undefined}
+                    data-group-name={group.name}
+                  >
+                    <Layers className="typemenu__icon" aria-hidden="true" focusable="false" />
+                    <bdi>{group.name}</bdi>
+                    <span className="visually-hidden"> (group)</span>
+                  </Link>
+                ))}
+              </>
+            ) : null}
           </ActionMenu>
         )
       })}
     </>
+  )
+}
+
+/**
+ * Lore's semantic groups on a wide screen (Issue #36): one quiet row, "Groups", each a link to `?group=<id>` - the entries of
+ * every type in it. A group is marked as one by the row's label, its own icon and its accessible name, never by its name
+ * alone. Only drawn where there are groups; hidden on a phone, where the Category menu offers them.
+ */
+export function GroupSwitcher({
+  groups,
+  selectedGroupId,
+  groupHref,
+}: {
+  groups: EntityTypeGroup[]
+  selectedGroupId: string | null
+  groupHref: (groupId: string) => To
+}) {
+  if (groups.length === 0) return null
+  return (
+    <nav
+      className="typeswitch typeswitch--groups"
+      aria-label="Lore groups"
+      data-testid="lore-groups"
+    >
+      <ul className="typeswitch__row typeswitch__row--groups" onKeyDown={move}>
+        <li className="typeswitch__rowlabel" aria-hidden="true">
+          Groups
+        </li>
+        {groups.map((group) => (
+          <li key={group.id}>
+            <Link
+              className="typeswitch__link typeswitch__link--group"
+              to={groupHref(group.id)}
+              aria-current={group.id === selectedGroupId ? 'page' : undefined}
+              data-testid="lore-group"
+              data-group-name={group.name}
+            >
+              <Layers className="typeswitch__icon" aria-hidden="true" focusable="false" />
+              <span className="typeswitch__name">
+                <bdi>{group.name}</bdi>
+                <span className="visually-hidden"> (group)</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   )
 }

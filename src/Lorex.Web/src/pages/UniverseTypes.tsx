@@ -19,6 +19,7 @@ import { RelationshipTypeManager } from '../components/RelationshipTypeManager'
 import { TypeIcon } from '../components/TypeIcon'
 import { TypeIconPicker } from '../components/TypeIconPicker'
 import { TypeReorderHandle } from '../components/TypeReorderHandle'
+import { TypeGroupsField, type GroupChoice } from '../components/TypeGroupsField'
 import { ValidationTermManager } from '../components/ValidationTermManager'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
@@ -28,6 +29,7 @@ import {
   createEntityType,
   deleteEntityType,
   deleteField,
+  listEntityTypeGroups,
   listEntityTypes,
   moveEntityType,
   reorderEntityType,
@@ -41,6 +43,7 @@ import {
   FieldKind,
   semanticsFor,
   type EntityType,
+  type EntityTypeGroup,
   type FieldDefinition,
   type FieldKindValue,
   type FieldSemanticValue,
@@ -91,6 +94,7 @@ export default function UniverseTypes() {
   const [tab, chooseTab] = useQueryTab(TABS, { history: 'push' })
 
   const [types, setTypes] = useState<EntityType[] | null>(null)
+  const [groups, setGroups] = useState<EntityTypeGroup[]>([])
   const [message, setMessage] = useState<string | null>(null)
   // The type editor: a new type, or the existing one being edited. One drawer for both. A new type opened from a row's
   // Add child starts inside that row's type.
@@ -106,8 +110,9 @@ export default function UniverseTypes() {
   const [fieldRequired, setFieldRequired] = useState(false)
   const [fieldOptions, setFieldOptions] = useState('')
   const [fieldSemantic, setFieldSemantic] = useState<FieldSemanticValue | null>(null)
-  // A link field's allowed type: null is "Any Lore type", a real choice shown as one, never a blank that stands for it.
-  const [fieldTarget, setFieldTarget] = useState<string | null>(null)
+  // A link field's allowed target, as a select value (`targetValue`): '' is "Any Lore type", a real choice shown as one,
+  // never a blank that stands for it.
+  const [fieldTarget, setFieldTarget] = useState('')
   const [busyFieldId, setBusyFieldId] = useState<string | null>(null)
 
   const tree = useMemo(() => buildTypeTree(types ?? []), [types])
@@ -284,15 +289,48 @@ export default function UniverseTypes() {
         if (controller.signal.aborted) return
         setMessage('The types could not be loaded.')
       })
+    // Groups are an extra: without them the types still work, and the group controls simply have none to offer.
+    listEntityTypeGroups(universe.id, controller.signal)
+      .then(setGroups)
+      .catch(() => undefined)
     return () => {
       controller.abort()
     }
   }, [universe.id])
 
-  /** A link field's allowed type in words, from the types as they are now: a rename shows at once, nothing to repair. */
-  function targetLabel(targetEntityTypeId: string | null) {
-    const node = targetEntityTypeId ? tree.byId.get(targetEntityTypeId) : undefined
+  /** A link field's allowed target in words, from the types and groups as they are now: a rename shows at once. */
+  function targetLabel(field: Pick<FieldDefinition, 'targetEntityTypeId' | 'targetGroupId'>) {
+    if (field.targetGroupId) {
+      const group = groups.find((each) => each.id === field.targetGroupId)
+      return group ? `any type in the group ${group.name}` : 'a group'
+    }
+    const node = field.targetEntityTypeId ? tree.byId.get(field.targetEntityTypeId) : undefined
     return node ? typePathLabel(node) : 'any Lore type'
+  }
+
+  /** An allowed-target select's options: any type, then the groups (marked as groups), then every type by its path. */
+  function targetOptions() {
+    return (
+      <>
+        <option value="">Any Lore type</option>
+        {groups.length > 0 ? (
+          <optgroup label="Groups">
+            {groups.map((group) => (
+              <option key={group.id} value={`group:${group.id}`}>
+                {group.name} (group)
+              </option>
+            ))}
+          </optgroup>
+        ) : null}
+        <optgroup label="Types">
+          {tree.ordered.map((node) => (
+            <option key={node.type.id} value={`type:${node.type.id}`}>
+              {typePathLabel(node)}
+            </option>
+          ))}
+        </optgroup>
+      </>
+    )
   }
 
   function report(error: unknown, fallback: string) {
@@ -300,7 +338,16 @@ export default function UniverseTypes() {
   }
 
   async function refresh() {
-    setTypes(await listEntityTypes(universe.id))
+    const [nextTypes, nextGroups] = await Promise.all([
+      listEntityTypes(universe.id),
+      listEntityTypeGroups(universe.id),
+    ])
+    setTypes(nextTypes)
+    setGroups(nextGroups)
+  }
+
+  async function refreshGroups() {
+    setGroups(await listEntityTypeGroups(universe.id))
   }
 
   /** One place up or down among the type's own siblings; the list comes back from the move itself. */
@@ -406,13 +453,13 @@ export default function UniverseTypes() {
               .filter(Boolean)
           : null,
         semantic: fieldSemantic,
-        targetEntityTypeId: fieldKind === FieldKind.EntityReference ? fieldTarget : null,
+        ...parseTarget(fieldKind === FieldKind.EntityReference ? fieldTarget : ''),
       })
       setFieldName('')
       setFieldOptions('')
       setFieldRequired(false)
       setFieldSemantic(null)
-      setFieldTarget(null)
+      setFieldTarget('')
       await refresh()
     } catch (error: unknown) {
       report(error, 'That field could not be added.')
@@ -436,27 +483,18 @@ export default function UniverseTypes() {
   }
 
   /**
-   * Limits a link field to one type, or opens it to any. Narrowing is refused while an entry already links the field to an
-   * entry of another type; the refusal says so, and nothing is cleared to make it fit.
+   * Limits a link field to one type or one group, or opens it to any. Narrowing is refused while an entry already links
+   * the field to an entry the new limit would not allow; the refusal says so, and nothing is cleared to make it fit.
    */
-  async function changeTarget(
-    typeId: string,
-    field: FieldDefinition,
-    targetEntityTypeId: string | null,
-  ) {
-    await changeField(
-      typeId,
-      field,
-      { targetEntityTypeId },
-      'That allowed type could not be changed.',
-    )
+  async function changeTarget(typeId: string, field: FieldDefinition, value: string) {
+    await changeField(typeId, field, parseTarget(value), 'That allowed type could not be changed.')
   }
 
   /** One part of a field changed, and everything else about it sent back exactly as it stands. */
   async function changeField(
     typeId: string,
     field: FieldDefinition,
-    change: Partial<Pick<FieldInput, 'semantic' | 'targetEntityTypeId'>>,
+    change: Partial<Pick<FieldInput, 'semantic' | 'targetEntityTypeId' | 'targetGroupId'>>,
     fallback: string,
   ) {
     setMessage(null)
@@ -471,6 +509,7 @@ export default function UniverseTypes() {
         options: field.options.map((option) => option.value),
         semantic: field.semantic,
         targetEntityTypeId: field.targetEntityTypeId,
+        targetGroupId: field.targetGroupId,
         ...change,
       })
       await refresh()
@@ -522,6 +561,9 @@ export default function UniverseTypes() {
           tree={tree}
           type={editing === 'new' ? null : editing}
           initialParent={editing === 'new' ? childOf : null}
+          groups={groups}
+          types={types ?? []}
+          onGroupsChanged={refreshGroups}
           onClose={() => setEditing(null)}
           onSaved={async (savedName, parentId) => {
             const wasNew = editing === 'new'
@@ -833,30 +875,21 @@ export default function UniverseTypes() {
                                     <select
                                       className="types__meaning"
                                       aria-label={`Allowed type for ${field.name}`}
-                                      value={field.targetEntityTypeId ?? ''}
+                                      value={targetValue(field)}
                                       disabled={busyFieldId === field.id}
                                       onChange={(event) =>
-                                        void changeTarget(
-                                          type.id,
-                                          field,
-                                          event.target.value || null,
-                                        )
+                                        void changeTarget(type.id, field, event.target.value)
                                       }
                                       data-testid={`field-target-${field.name}`}
                                     >
-                                      <option value="">Any Lore type</option>
-                                      {tree.ordered.map((node) => (
-                                        <option key={node.type.id} value={node.type.id}>
-                                          {typePathLabel(node)}
-                                        </option>
-                                      ))}
+                                      {targetOptions()}
                                     </select>
                                   ) : (
                                     <span
                                       className="types__fieldkind"
                                       data-testid={`field-target-${field.name}`}
                                     >
-                                      Links to <bdi>{targetLabel(field.targetEntityTypeId)}</bdi>
+                                      Links to <bdi>{targetLabel(field)}</bdi>
                                     </span>
                                   )
                                 ) : null}
@@ -936,7 +969,7 @@ export default function UniverseTypes() {
                                       : null,
                                   )
                                   // An allowed type belongs to a link field alone: none is carried onto another kind.
-                                  if (kind !== FieldKind.EntityReference) setFieldTarget(null)
+                                  if (kind !== FieldKind.EntityReference) setFieldTarget('')
                                 }}
                               >
                                 {KIND_ORDER.map((kind) => (
@@ -965,21 +998,17 @@ export default function UniverseTypes() {
                                 <select
                                   id={`field-target-${type.id}`}
                                   className="field__input field__input--select"
-                                  value={fieldTarget ?? ''}
-                                  onChange={(event) => setFieldTarget(event.target.value || null)}
+                                  value={fieldTarget}
+                                  onChange={(event) => setFieldTarget(event.target.value)}
                                   aria-describedby={`field-target-hint-${type.id}`}
                                   data-testid={`new-field-target-${type.name}`}
                                 >
-                                  <option value="">Any Lore type</option>
-                                  {tree.ordered.map((node) => (
-                                    <option key={node.type.id} value={node.type.id}>
-                                      {typePathLabel(node)}
-                                    </option>
-                                  ))}
+                                  {targetOptions()}
                                 </select>
                                 <p className="field__hint" id={`field-target-hint-${type.id}`}>
-                                  The field links only to entries of this type. Types nested inside
-                                  it are not included.
+                                  {fieldTarget.startsWith('group:')
+                                    ? 'The field links to entries of any type in this group at the time the link is made.'
+                                    : 'The field links only to entries of this type. Types nested inside it are not included.'}
                                 </p>
                               </div>
                             ) : null}
@@ -1076,6 +1105,19 @@ export default function UniverseTypes() {
   )
 }
 
+/** A field's allowed target as one select value: '' for any type, `type:<id>` or `group:<id>`. */
+function targetValue(field: Pick<FieldDefinition, 'targetEntityTypeId' | 'targetGroupId'>) {
+  if (field.targetGroupId) return `group:${field.targetGroupId}`
+  return field.targetEntityTypeId ? `type:${field.targetEntityTypeId}` : ''
+}
+
+/** The other way: a select value as the two ids the API takes, never both set. */
+function parseTarget(value: string): Pick<FieldInput, 'targetEntityTypeId' | 'targetGroupId'> {
+  if (value.startsWith('group:')) return { targetEntityTypeId: null, targetGroupId: value.slice(6) }
+  if (value.startsWith('type:')) return { targetEntityTypeId: value.slice(5), targetGroupId: null }
+  return { targetEntityTypeId: null, targetGroupId: null }
+}
+
 /**
  * Why a type a link field is limited to cannot be deleted: the same sentence the API's refusal carries
  * (`EntityTypeEndpoints.DeleteAsync`), naming the first field by its type's and its own name and counting the rest.
@@ -1147,6 +1189,9 @@ function TypeDialog({
   tree,
   type,
   initialParent = null,
+  groups,
+  types,
+  onGroupsChanged,
   onClose,
   onSaved,
 }: {
@@ -1156,6 +1201,10 @@ function TypeDialog({
   type: EntityType | null
   /** For a new type: the type it starts inside (a row's Add child). Still only a starting choice - the select decides. */
   initialParent?: EntityType | null
+  /** Every group of the universe, and every type, for the Groups control. */
+  groups: EntityTypeGroup[]
+  types: EntityType[]
+  onGroupsChanged: () => Promise<void>
   onClose: () => void
   /** With the parent it was saved under, null at the top. */
   onSaved: (name: string, parentId: string | null) => Promise<void>
@@ -1166,6 +1215,10 @@ function TypeDialog({
     icon: type?.icon ?? null,
     familyTreeEligible: type?.familyTreeEligible ?? false,
     parentId: type ? type.parentId : (initialParent?.id ?? null),
+    // The groups the type was in when the drawer opened, by id: only a change to these is sent.
+    groupIds: type
+      ? groups.filter((group) => group.typeIds.includes(type.id)).map((group) => group.id)
+      : [],
   }
   const [name, setName] = useState(initial.name)
   const [parentId, setParentId] = useState<string | null>(initial.parentId)
@@ -1175,18 +1228,26 @@ function TypeDialog({
   const chosenParent = parentId ? (tree.byId.get(parentId)?.type ?? null) : null
   const [icon, setIcon] = useState<string | null>(initial.icon)
   const [familyTreeEligible, setFamilyTreeEligible] = useState(initial.familyTreeEligible)
+  const [groupChoices, setGroupChoices] = useState<GroupChoice[]>(() =>
+    initial.groupIds.map((id) => ({ id })),
+  )
+  const groupsChanged =
+    payloadKey(
+      groupChoices.map((choice) => ('id' in choice ? choice.id : `new:${choice.name}`)),
+    ) !== payloadKey(initial.groupIds)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   const isDirty =
+    groupsChanged ||
     payloadKey({ name: name.trim(), icon, familyTreeEligible, parentId }) !==
-    payloadKey({
-      name: initial.name,
-      icon: initial.icon,
-      familyTreeEligible: initial.familyTreeEligible,
-      parentId: initial.parentId,
-    })
+      payloadKey({
+        name: initial.name,
+        icon: initial.icon,
+        familyTreeEligible: initial.familyTreeEligible,
+        parentId: initial.parentId,
+      })
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     type
@@ -1221,6 +1282,7 @@ function TypeDialog({
           displayOrder: type.displayOrder,
           familyTreeEligible: type.familyTreeEligible,
           parent: { id: parentId },
+          ...(groupsChanged ? { groups: groupChoices } : {}),
         })
       } else {
         await createEntityType(universeId, {
@@ -1231,6 +1293,7 @@ function TypeDialog({
           displayOrder: null,
           familyTreeEligible,
           parent: { id: parentId },
+          ...(groupChoices.length > 0 ? { groups: groupChoices } : {}),
         })
       }
       await onSaved(name.trim(), parentId)
@@ -1341,6 +1404,16 @@ function TypeDialog({
               {fieldErrors.parent ? <p className="field__error">{fieldErrors.parent}</p> : null}
             </div>
           </section>
+
+          <TypeGroupsField
+            universeId={universeId}
+            groups={groups}
+            types={types}
+            value={groupChoices}
+            onChange={setGroupChoices}
+            onGroupsChanged={onGroupsChanged}
+          />
+          {fieldErrors.groups ? <p className="field__error">{fieldErrors.groups}</p> : null}
 
           {type ? null : (
             <section className="drawer__group" aria-labelledby="type-behaviour">

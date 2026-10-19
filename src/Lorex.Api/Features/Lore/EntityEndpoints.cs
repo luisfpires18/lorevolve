@@ -111,6 +111,7 @@ public static class EntityEndpoints
         CancellationToken cancellationToken,
         [FromQuery] string? search = null,
         [FromQuery] Guid? entityTypeId = null,
+        [FromQuery] Guid? entityTypeGroupId = null,
         [FromQuery] CanonStatus? canonStatus = null,
         [FromQuery] string? tag = null,
         [FromQuery] bool includeArchived = false,
@@ -161,6 +162,15 @@ public static class EntityEndpoints
         else if (entityTypeId is { } exactTypeId)
         {
             query = query.Where(entity => entity.EntityTypeId == exactTypeId);
+        }
+
+        // A semantic group (Issue #36): entries of every type in it, by its membership as it is now. The membership row is
+        // matched by the group's id and the entry's type, both indexed; a group of another universe can only name that
+        // universe's types, which this universe's entries never have - an empty page, like a foreign type id.
+        if (entityTypeGroupId is { } groupId)
+        {
+            query = query.Where(entity => db.EntityTypeGroupMembers.Any(member =>
+                member.EntityTypeGroupId == groupId && member.EntityTypeId == entity.EntityTypeId));
         }
 
         if (canonStatus is { } status)
@@ -1046,13 +1056,29 @@ public static class EntityEndpoints
                 .Where(candidate => candidate.UniverseId == universeId && wanted.Contains(candidate.Id))
                 .ToDictionaryAsync(candidate => candidate.Id, candidate => candidate.EntityTypeId, cancellationToken);
 
+        // The groups this type's link fields are limited to, as (group, member type) pairs: one read, only when needed.
+        var targetGroups = definitions
+            .Where(definition => definition.TargetGroupId is not null)
+            .Select(definition => definition.TargetGroupId!.Value)
+            .Distinct()
+            .ToList();
+
+        var members = targetGroups.Count == 0 || wanted.Count == 0
+            ? []
+            : (await db.EntityTypeGroupMembers.AsNoTracking()
+                .Where(member => targetGroups.Contains(member.EntityTypeGroupId))
+                .Select(member => new { member.EntityTypeGroupId, member.EntityTypeId })
+                .ToListAsync(cancellationToken))
+                .Select(member => (member.EntityTypeGroupId, member.EntityTypeId))
+                .ToHashSet();
+
         var rows = new List<EntityFieldValue>();
 
         foreach (var definition in definitions)
         {
             supplied.TryGetValue(definition.Id, out var input);
 
-            var built = BuildRows(entityId, definition, input, chronology, referenced, errors);
+            var built = BuildRows(entityId, definition, input, chronology, referenced, members, errors);
 
             if (definition.IsRequired && built.Count == 0)
             {
@@ -1072,6 +1098,7 @@ public static class EntityEndpoints
         FieldValueInput? input,
         UniverseChronology chronology,
         Dictionary<Guid, Guid> referenced,
+        HashSet<(Guid GroupId, Guid TypeId)> members,
         Dictionary<string, string[]> errors)
     {
         var rows = new List<EntityFieldValue>();
@@ -1203,15 +1230,23 @@ public static class EntityEndpoints
                 // A field limited to one type accepts entries of exactly that type, checked here whatever the picker
                 // offered. A trashed entry still has its type, so a kept link is checked like any other. An entry of
                 // another universe gets the same answer as one of the wrong type, and says nothing about itself.
+                // A field limited to a group accepts an entry whose type is in that group now: its membership when this is
+                // written, read inside the same kind of transaction a membership change takes.
                 if (!referenced.TryGetValue(referenceId, out var referencedType))
                 {
-                    errors[definition.Id.ToString()] = definition.TargetEntityTypeId is null
+                    errors[definition.Id.ToString()] = definition.TargetEntityTypeId is null && definition.TargetGroupId is null
                         ? [$"{definition.Name} must point at an entity in this universe."]
                         : [WrongTarget(definition)];
                     break;
                 }
 
                 if (definition.TargetEntityTypeId is { } target && referencedType != target)
+                {
+                    errors[definition.Id.ToString()] = [WrongTarget(definition)];
+                    break;
+                }
+
+                if (definition.TargetGroupId is { } group && !members.Contains((group, referencedType)))
                 {
                     errors[definition.Id.ToString()] = [WrongTarget(definition)];
                     break;
@@ -1232,7 +1267,9 @@ public static class EntityEndpoints
 
     /// <summary>The one refusal for a link a limited field does not allow: wrong type, missing or not this universe's.</summary>
     private static string WrongTarget(EntityFieldDefinition definition) =>
-        $"{definition.Name} can only link to an entry of the type it allows. Choose another entry.";
+        definition.TargetGroupId is null
+            ? $"{definition.Name} can only link to an entry of the type it allows. Choose another entry."
+            : $"{definition.Name} can only link to an entry whose type is in its group. Choose another entry.";
 
     /// <summary>
     /// What is wrong with the era a number arrived with, or null when nothing is.

@@ -90,7 +90,7 @@ public sealed class EntityReferenceTargetMigrationTests : IDisposable
 
             Assert.DoesNotContain("TargetEntityTypeId", await Columns(db, "EntityFieldDefinitions"));
             Assert.Empty(await ForeignKeyViolations(db));
-            Assert.Equal(triggers, await Triggers(db));
+            Assert.Equal(triggers.Where(LaterSchema.BeforeTypeGroups), await Triggers(db));
             Assert.Equal(indexes.Where(LaterSchema.BeforeReferenceTargets), await Indexes(db));
             Assert.Equal(fieldCount, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM \"EntityFieldDefinitions\"").SingleAsync());
             Assert.Equal(valueCount, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM \"EntityFieldValues\"").SingleAsync());

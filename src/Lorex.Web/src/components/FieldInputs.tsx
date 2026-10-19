@@ -86,6 +86,7 @@ export function FieldInput({
         }}
         excludeId={excludeId}
         entityTypeId={definition.targetEntityTypeId}
+        entityTypeGroupId={definition.targetGroupId}
         placeholder="Search for an entry"
       />
     )

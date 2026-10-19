@@ -100,12 +100,13 @@ public static class EntityFieldFilters
                 field.Id,
                 field.Kind,
                 field.TargetEntityTypeId,
+                field.TargetGroupId,
                 Options = field.Options.Select(option => option.Id).ToList(),
             })
             .ToDictionaryAsync(field => field.Id, cancellationToken);
 
         var errors = new Dictionary<string, string[]>();
-        var references = new Dictionary<int, (Guid EntityId, Guid? Target)>();
+        var references = new Dictionary<int, (Guid EntityId, Guid? Target, Guid? Group)>();
 
         for (var index = 0; index < raw.Length; index++)
         {
@@ -179,7 +180,7 @@ public static class EntityFieldFilters
                         break;
                     }
 
-                    references[index] = (entityId, field.TargetEntityTypeId);
+                    references[index] = (entityId, field.TargetEntityTypeId, field.TargetGroupId);
                     filters.Add(new(fieldId, field.Kind, op, Id: entityId));
                     break;
             }
@@ -195,15 +196,31 @@ public static class EntityFieldFilters
                 .Where(entity => entity.UniverseId == universeId && wanted.Contains(entity.Id))
                 .ToDictionaryAsync(entity => entity.Id, entity => entity.EntityTypeId, cancellationToken);
 
-            foreach (var (index, (entityId, target)) in references)
+            // A field limited to a group compares only with an entry whose type is in it now, by the same rule a save uses.
+            var groups = references.Values
+                .Where(reference => reference.Group is not null)
+                .Select(reference => reference.Group!.Value)
+                .Distinct()
+                .ToList();
+            var members = groups.Count == 0
+                ? []
+                : (await db.EntityTypeGroupMembers.AsNoTracking()
+                    .Where(member => groups.Contains(member.EntityTypeGroupId))
+                    .Select(member => new { member.EntityTypeGroupId, member.EntityTypeId })
+                    .ToListAsync(cancellationToken))
+                    .Select(member => (member.EntityTypeGroupId, member.EntityTypeId))
+                    .ToHashSet();
+
+            foreach (var (index, (entityId, target, group)) in references)
             {
                 if (!known.TryGetValue(entityId, out var typeOf))
                 {
-                    errors[$"field[{index}]"] = [target is null
+                    errors[$"field[{index}]"] = [target is null && group is null
                         ? "Choose an entry of this universe."
                         : "Choose an entry of the type this field allows."];
                 }
-                else if (target is { } allowed && typeOf != allowed)
+                else if ((target is { } allowed && typeOf != allowed)
+                    || (group is { } inGroup && !members.Contains((inGroup, typeOf))))
                 {
                     errors[$"field[{index}]"] = ["Choose an entry of the type this field allows."];
                 }

@@ -567,7 +567,8 @@ test.describe('lore types on a phone', () => {
     // Every type is in it, and focus lands on the first.
     await trigger.tap()
     const menu = page.getByTestId('lore-type-menu-panel')
-    await expect(menu.getByRole('link')).toHaveCount(7 + MANY_TYPES.length)
+    // The types; the starter groups follow them under their own heading (Issue #36).
+    await expect(menu.locator('a[data-type-name]')).toHaveCount(7 + MANY_TYPES.length)
     await expect(menu.getByRole('link', { name: 'Character', exact: true })).toBeFocused()
 
     // Choosing one closes the menu, goes there, and hands the focus back to the button.

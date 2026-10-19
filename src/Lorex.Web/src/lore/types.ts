@@ -109,6 +109,22 @@ export interface FieldDefinition {
    * explicit choice. Always null for every other kind. Never worked out from a name.
    */
   targetEntityTypeId: string | null
+  /**
+   * For a link to an entity: the semantic group its entries' types must be in, by id, or null. Never set beside
+   * `targetEntityTypeId`. Read by its membership as it is now, never by the group's name.
+   */
+  targetGroupId: string | null
+}
+
+/**
+ * A semantic group of Lore types (Issue #36): a creator's own classification - Runes, say - that several concrete types can
+ * belong to. Classification only: nothing is inherited, and Family Tree eligibility stays on each type.
+ */
+export interface EntityTypeGroup {
+  id: string
+  name: string
+  /** The member types' ids, in no meaningful order. */
+  typeIds: string[]
 }
 
 export interface EntityType {
@@ -302,6 +318,8 @@ export interface EntityQuery {
   pageSize?: number
   /** Only entries whose type is enabled for the Family Tree. */
   familyTreeEligible?: boolean
+  /** Only entries whose type is in this semantic group now. Used instead of `entityTypeId`. */
+  entityTypeGroupId?: string | null
   /** With `entityTypeId`: that type and every type nested beneath it - Lore's browsing. Absent is the exact type. */
   includeDescendants?: boolean
   /** With `entityTypeId`: custom-field filters on that type's own fields, all of which must hold (`lore/fieldFilters.ts`). */

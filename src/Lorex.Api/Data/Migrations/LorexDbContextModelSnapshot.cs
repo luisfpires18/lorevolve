@@ -552,9 +552,14 @@ namespace Lorex.Api.Data.Migrations
                     b.Property<Guid?>("TargetEntityTypeId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("TargetGroupId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("TargetEntityTypeId");
+
+                    b.HasIndex("TargetGroupId");
 
                     b.HasIndex("EntityTypeId", "Name")
                         .IsUnique();
@@ -959,6 +964,49 @@ namespace Lorex.Api.Data.Migrations
                     b.HasIndex("UniverseId", "ParentId");
 
                     b.ToTable("EntityTypes", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Lore.EntityTypeGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UniverseId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("EntityTypeGroups", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Lore.EntityTypeGroupMember", b =>
+                {
+                    b.Property<Guid>("EntityTypeGroupId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityTypeId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("EntityTypeGroupId", "EntityTypeId");
+
+                    b.HasIndex("EntityTypeId");
+
+                    b.ToTable("EntityTypeGroupMembers", (string)null);
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Lore.LoreEntity", b =>
@@ -2772,9 +2820,16 @@ namespace Lorex.Api.Data.Migrations
                         .HasForeignKey("TargetEntityTypeId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("Lorex.Api.Features.Lore.EntityTypeGroup", "TargetGroup")
+                        .WithMany()
+                        .HasForeignKey("TargetGroupId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("EntityType");
 
                     b.Navigation("TargetEntityType");
+
+                    b.Navigation("TargetGroup");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Lore.EntityFieldOption", b =>
@@ -2911,6 +2966,36 @@ namespace Lorex.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Lore.EntityTypeGroup", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Lore.EntityTypeGroupMember", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Lore.EntityTypeGroup", "Group")
+                        .WithMany("Members")
+                        .HasForeignKey("EntityTypeGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Lore.EntityType", "EntityType")
+                        .WithMany()
+                        .HasForeignKey("EntityTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EntityType");
+
+                    b.Navigation("Group");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Lore.LoreEntity", b =>
@@ -3553,6 +3638,11 @@ namespace Lorex.Api.Data.Migrations
             modelBuilder.Entity("Lorex.Api.Features.Lore.EntityType", b =>
                 {
                     b.Navigation("Fields");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Lore.EntityTypeGroup", b =>
+                {
+                    b.Navigation("Members");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Lore.LoreEntity", b =>

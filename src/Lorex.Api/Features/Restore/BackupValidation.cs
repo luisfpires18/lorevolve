@@ -294,6 +294,7 @@ internal static partial class BackupValidation
         private readonly Dictionary<Guid, BackupEntityType> _types = [];
         private readonly Dictionary<Guid, Guid> _fieldOwner = [];
         private readonly Dictionary<Guid, (BackupFieldDefinition Field, string What)> _fieldTargets = [];
+        private readonly Dictionary<Guid, HashSet<Guid>> _groupMembers = [];
         private readonly HashSet<Guid> _options = [];
         private readonly HashSet<Guid> _tags = [];
         private readonly Dictionary<Guid, BackupEntity> _entities = [];
@@ -330,6 +331,7 @@ internal static partial class BackupValidation
             var ideas = Required(payload.Ideas, "the list of ideas", since: 11);
             var worldRules = Required(payload.WorldRules, "the list of world rules", since: 12);
             var terms = Required(payload.ValidationTerms, "the list of event kinds and methods", since: 13);
+            var groups = Required(payload.EntityTypeGroups, "the list of type groups", since: 23);
 
             // Everything that can be referenced is listed first, so a reference checked below can
             // point anywhere in the file regardless of order.
@@ -337,6 +339,7 @@ internal static partial class BackupValidation
             RegisterCalendar(payload.ChronologyCalendar);
             RegisterTypes(types);
             CheckTypeHierarchy(types);
+            RegisterGroups(groups);
             CheckFieldTargets();
             RegisterTags(tags);
             RegisterEntities(entities);
@@ -611,13 +614,74 @@ internal static partial class BackupValidation
         }
 
         /// <summary>
-        /// A link field's type limit (version 20), once every type is known: a type of this file, on a link field, in a file
-        /// new enough to say it. The restore maps it to that type's new id, so anything else would name nothing.
+        /// The semantic groups (version 23), once every type is known: each with its own id, a unique name, and members that
+        /// are types of this file, each once. Membership is carried as written and never inferred from a name.
+        /// </summary>
+        private void RegisterGroups(IReadOnlyList<BackupEntityTypeGroup> groups)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var group in groups)
+            {
+                if (group is null)
+                {
+                    Missing("a type group");
+                    continue;
+                }
+
+                var what = $"The type group {Quote(group.Name)}";
+                Register(group.Id, what);
+
+                if (Text(group.Name, LoreLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(group.Name))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"Two type groups are both called {Quote(group.Name)}.");
+                }
+
+                var members = new HashSet<Guid>();
+                foreach (var typeId in Required(group.TypeIds, $"{what}'s types"))
+                {
+                    Reference(_types.ContainsKey(typeId), $"{what} holds an entry type the backup does not hold.");
+                    if (!members.Add(typeId))
+                    {
+                        Add(BackupIssueCodes.Duplicate, $"{what} lists the same entry type twice.");
+                    }
+                }
+
+                _groupMembers[group.Id] = members;
+            }
+        }
+
+        /// <summary>
+        /// A link field's type limit (version 20) or group limit (version 23), once every type and group is known: one of this
+        /// file, on a link field, never both, in a file new enough to say it. The restore maps it to the new id, so anything
+        /// else would name nothing - and a group target is never read as open to any type.
         /// </summary>
         private void CheckFieldTargets()
         {
             foreach (var (field, what) in _fieldTargets.Values)
             {
+                if (field.TargetGroupId is { } group)
+                {
+                    if (version < 23)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{what} is limited to a type group, which a backup this old cannot say. It was not written by Lorex.");
+                    }
+                    else if (field.Kind != EntityFieldKind.EntityReference)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{what} is limited to a type group but does not link to an entry.");
+                    }
+                    else if (field.TargetEntityTypeId is not null)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{what} is limited to both one type and a type group.");
+                    }
+                    else
+                    {
+                        Reference(_groupMembers.ContainsKey(group), $"{what} is limited to a type group the backup does not hold.");
+                    }
+
+                    continue;
+                }
+
                 if (version < 20)
                 {
                     Add(BackupIssueCodes.InvalidValue, $"{what} is limited to one type, which a backup this old cannot say. It was not written by Lorex.");
@@ -687,7 +751,7 @@ internal static partial class BackupValidation
                     Defined(field.Kind, $"{fieldWhat}'s kind");
                     Text(field.DefaultValue, LoreLimits.TextValueMaxLength, $"{fieldWhat}'s default value");
 
-                    if (field.TargetEntityTypeId is not null)
+                    if (field.TargetEntityTypeId is not null || field.TargetGroupId is not null)
                     {
                         _fieldTargets[field.Id] = (field, fieldWhat);
                     }
@@ -846,7 +910,9 @@ internal static partial class BackupValidation
                     // The limit holds in the file as it does in the app: a restore would otherwise write a link the field refuses.
                     if (_fieldTargets.TryGetValue(value.FieldDefinitionId, out var limited)
                         && _entities.TryGetValue(referenced, out var linked)
-                        && linked.EntityTypeId != limited.Field.TargetEntityTypeId)
+                        && (limited.Field.TargetGroupId is { } group
+                            ? _groupMembers.TryGetValue(group, out var members) && !members.Contains(linked.EntityTypeId)
+                            : linked.EntityTypeId != limited.Field.TargetEntityTypeId))
                     {
                         Add(BackupIssueCodes.InvalidValue, $"{what} links its field {Quote(limited.Field.Name)} to an entry of a type that field does not allow.");
                     }

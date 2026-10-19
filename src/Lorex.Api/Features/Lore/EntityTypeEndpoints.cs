@@ -157,6 +157,13 @@ public static class EntityTypeEndpoints
 
         db.EntityTypes.Add(entityType);
 
+        // Its groups go in with it, new ones included, so a refused create leaves no group behind.
+        if (request.Groups is { } groups
+            && await EntityTypeGroupEndpoints.ApplyMembershipAsync(db, universeId, entityType, groups, isNew: true, cancellationToken) is { } refusedGroups)
+        {
+            return refusedGroups;
+        }
+
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -222,6 +229,14 @@ public static class EntityTypeEndpoints
             && await ReparentAsync(db, universeId, entityType, parent.Id, cancellationToken) is { } refused)
         {
             return refused;
+        }
+
+        // Absent keeps the groups; present is the whole set. Leaving a group that links rely on is refused, and nothing of
+        // this save is written then.
+        if (request.Groups is { } groups
+            && await EntityTypeGroupEndpoints.ApplyMembershipAsync(db, universeId, entityType, groups, isNew: false, cancellationToken) is { } refusedGroups)
+        {
+            return refusedGroups;
         }
 
         try
@@ -599,6 +614,11 @@ public static class EntityTypeEndpoints
             return UnknownTarget();
         }
 
+        if (await UnknownGroupAsync(db, universeId, request.TargetGroupId, cancellationToken))
+        {
+            return UnknownGroup();
+        }
+
         var name = request.Name!.Trim();
 
         if (await db.EntityFieldDefinitions.AnyAsync(
@@ -629,6 +649,7 @@ public static class EntityTypeEndpoints
             DisplayOrder = order,
             DefaultValue = LoreValidation.Normalize(request.DefaultValue),
             TargetEntityTypeId = request.TargetEntityTypeId,
+            TargetGroupId = request.TargetGroupId,
         };
 
         AddOptions(definition, request.Options);
@@ -741,6 +762,11 @@ public static class EntityTypeEndpoints
             return UnknownTarget();
         }
 
+        if (await UnknownGroupAsync(db, universeId, request.TargetGroupId, cancellationToken))
+        {
+            return UnknownGroup();
+        }
+
         // Narrowing a link field - from any type to one, or from one type to another - is refused while any entry links it
         // to an entry of another type: nothing is cleared or rewritten behind the author's back. Entries in the Trash count,
         // since their values come back with them. Widening to any type is always safe.
@@ -760,8 +786,28 @@ public static class EntityTypeEndpoints
                 extensions: new Dictionary<string, object?> { ["code"] = TargetConflictCode });
         }
 
+        // The same for a group: a new group target is refused while any link points at an entry whose type is not in it -
+        // read as the group is now, inside the gate's transaction, so a membership change cannot slip between.
+        if (request.TargetGroupId is { } targetGroup
+            && targetGroup != definition.TargetGroupId
+            && await db.EntityFieldValues.AnyAsync(
+                value => value.FieldDefinitionId == fieldId
+                    && value.ReferencedEntityId != null
+                    && !db.EntityTypeGroupMembers.Any(member =>
+                        member.EntityTypeGroupId == targetGroup && member.EntityTypeId == value.ReferencedEntity!.EntityTypeId),
+                cancellationToken))
+        {
+            return Results.Problem(
+                title: "Field is in use",
+                detail: "Some entries link this field to entries whose type is not in that group. "
+                    + "Change those links, or add their types to the group, then limit the field to it.",
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = TargetConflictCode });
+        }
+
         definition.Name = name;
         definition.TargetEntityTypeId = request.TargetEntityTypeId;
+        definition.TargetGroupId = request.TargetGroupId;
         definition.Kind = request.Kind;
 
         // Meaning is metadata about the field, not about what is stored in it, so it may be
@@ -959,7 +1005,8 @@ public static class EntityTypeEndpoints
                             .Select(option => new FieldOptionResponse(option.Id, option.Value, option.DisplayOrder))
                             .ToList(),
                         field.Semantic,
-                        field.TargetEntityTypeId))
+                        field.TargetEntityTypeId,
+                        field.TargetGroupId))
                     .ToList(),
                 type.FamilyTreeEligible,
                 type.ParentId))
@@ -1018,6 +1065,21 @@ public static class EntityTypeEndpoints
         CancellationToken cancellationToken) =>
         target is { } typeId
         && !await db.EntityTypes.AnyAsync(type => type.Id == typeId && type.UniverseId == universeId, cancellationToken);
+
+    /// <summary>Whether a link field names a group that is not this universe's; the same answer for missing and foreign.</summary>
+    private static async Task<bool> UnknownGroupAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid? target,
+        CancellationToken cancellationToken) =>
+        target is { } groupId
+        && !await db.EntityTypeGroups.AnyAsync(group => group.Id == groupId && group.UniverseId == universeId, cancellationToken);
+
+    private static IResult UnknownGroup() =>
+        Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["targetGroupId"] = ["Choose a group from this universe, or any Lore type."],
+        });
 
     private static IResult UnknownTarget() =>
         Results.ValidationProblem(new Dictionary<string, string[]>

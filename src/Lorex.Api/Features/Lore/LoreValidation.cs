@@ -25,8 +25,32 @@ public static partial class LoreValidation
 
         ValidateAccent(errors, request.AccentColor);
 
+        // The group choices' shape only; whether an id is this universe's is the endpoint's, inside its transaction.
+        if (request.Groups is { } groups)
+        {
+            if (groups.Count > MaxGroupsPerType)
+            {
+                errors["groups"] = [$"A type can be in at most {MaxGroupsPerType} groups."];
+            }
+            else if (groups.Any(choice => choice is null
+                || (choice.Id is null) == string.IsNullOrWhiteSpace(choice.Name)))
+            {
+                errors["groups"] = ["Choose an existing group, or give a new one a name."];
+            }
+            else if (groups.Any(choice => choice.Name is { } name && name.Trim().Length > LoreLimits.NameMaxLength))
+            {
+                errors["groups"] = ["That group name is too long."];
+            }
+        }
+
         return errors.Count == 0 ? null : errors;
     }
+
+    /// <summary>
+    /// How many semantic groups one type may be in. One is the ordinary case and a handful is plenty; the bound keeps a
+    /// save's membership work small.
+    /// </summary>
+    public const int MaxGroupsPerType = 20;
 
     public static Dictionary<string, string[]>? ValidateField(FieldDefinitionRequest request)
     {
@@ -71,6 +95,15 @@ public static partial class LoreValidation
         if (request.TargetEntityTypeId is not null && request.Kind != EntityFieldKind.EntityReference)
         {
             errors["targetEntityTypeId"] = ["Only a field that links to an entry can be limited to a type."];
+        }
+
+        if (request.TargetGroupId is not null && request.Kind != EntityFieldKind.EntityReference)
+        {
+            errors["targetGroupId"] = ["Only a field that links to an entry can be limited to a group."];
+        }
+        else if (request.TargetGroupId is not null && request.TargetEntityTypeId is not null)
+        {
+            errors["targetGroupId"] = ["Choose one type or one group, not both."];
         }
 
         return errors.Count == 0 ? null : errors;

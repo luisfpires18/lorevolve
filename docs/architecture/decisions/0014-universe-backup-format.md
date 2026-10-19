@@ -426,3 +426,15 @@ Validation refuses a month id the file's calendar does not hold (unknown, anothe
 covers any month id in a file older than 22), a duplicate id, two months with one name or one place, a length outside 1 to
 1000, a day past its month's end, and a date naming its month both by number and by id. A version 21 or older file has no
 calendar; every date restores as the simple date it was. Nothing derived (a rank, a formatted date) is carried.
+
+## Amendment: version 23, semantic type groups (2026-10-19, Issue #36)
+
+`UniverseBackupPayload.EntityTypeGroups` carries every group (ADR 0007 amendment, Issue #36): id, name, timestamps and the
+ids of its member types of the same file, sorted by id; groups are listed by name then id, so two exports of unchanged lore
+are identical. `BackupFieldDefinition.TargetGroupId` names the group of the same file a link field is limited to. Not
+ignorable: a version 22 reader would restore every group-limited field open to any type. A restore gives each group a new
+id and points memberships and targets at it, so a restored universe never names its source's groups. Validation refuses a
+group with a missing or duplicate id or name, a member that is not a type of the file or is listed twice, a group target
+that names no group of the file, sits on a non-link field or beside an exact type, and a link outside its field's group. A
+version 22 or older file restores with no groups and nothing is inferred from names; groups such a file carries are
+ignored, and a group target in it is refused as not written by Lorex.

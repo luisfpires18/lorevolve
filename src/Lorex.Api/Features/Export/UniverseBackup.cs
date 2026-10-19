@@ -201,8 +201,16 @@ public sealed record UniverseBackup(
     /// calendar and every month new ids and points each date at its month's new id. Not ignorable: a version 21 reader would
     /// restore every custom date without its month. A file at version 21 or earlier has no calendar and no month ids; every
     /// date restores as the simple date it was, and one that carries them was not written by Lorex and is refused.
+    ///
+    /// 23 - Lore types may belong to semantic groups (ADR 0007 amendment, Issue #36).
+    /// <see cref="UniverseBackupPayload.EntityTypeGroups"/> carries each group - id, name and the ids of its member types of
+    /// this file - and <see cref="BackupFieldDefinition.TargetGroupId"/> names the group of this file a link field is limited
+    /// to. The restore gives every group a new id and points memberships and targets at it. Not ignorable: a version 22 reader
+    /// would restore every group-limited field open to any type. A file at version 22 or earlier has no groups and no
+    /// <c>targetGroupId</c>; it restores with no groups and nothing is inferred from names. Groups such a file carries are
+    /// ignored, and a group target in it was not written by Lorex and is refused.
     /// </summary>
-    public const int CurrentVersion = 22;
+    public const int CurrentVersion = 23;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -230,6 +238,9 @@ public sealed record UniverseBackup(
 /// 13). Empty means none; absent - null, in any earlier file - means the same thing.
 ///
 /// <paramref name="ChronologyCalendar"/> is the universe's custom calendar (since version 22), or null for simple dates.
+///
+/// <paramref name="EntityTypeGroups"/> is the universe's semantic groups by name (since version 23). Empty means none;
+/// absent - null, in any earlier file - means the same thing.
 /// </summary>
 public sealed record UniverseBackupPayload(
     BackupUniverse Universe,
@@ -245,7 +256,8 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupIdea>? Ideas,
     IReadOnlyList<BackupWorldRule>? WorldRules,
     IReadOnlyList<BackupValidationTerm>? ValidationTerms = null,
-    BackupChronologyCalendar? ChronologyCalendar = null);
+    BackupChronologyCalendar? ChronologyCalendar = null,
+    IReadOnlyList<BackupEntityTypeGroup>? EntityTypeGroups = null);
 
 /// <summary>
 /// The universe itself. <c>OwnerId</c> is deliberately absent: it names an Identity row that
@@ -339,6 +351,7 @@ public sealed record BackupEntityType(
 /// One custom field, with its declared meaning. <c>Semantic</c> is authored (ADR 0011) and
 /// nothing infers it from a name, so losing it would silently disarm the chronology rules.
 /// <paramref name="TargetEntityTypeId"/> (version 20) is the type of this file a link field is limited to, or null for any.
+/// <paramref name="TargetGroupId"/> (version 23) is the group of this file it is limited to instead, or null.
 /// </summary>
 public sealed record BackupFieldDefinition(
     Guid Id,
@@ -349,7 +362,19 @@ public sealed record BackupFieldDefinition(
     int DisplayOrder,
     string? DefaultValue,
     IReadOnlyList<BackupFieldOption> Options,
-    Guid? TargetEntityTypeId = null);
+    Guid? TargetEntityTypeId = null,
+    Guid? TargetGroupId = null);
+
+/// <summary>
+/// A semantic group (since version 23): its id, which fields and memberships name, its name, and the types of this file in
+/// it, sorted by id. Membership is the author's statement and is carried as it is, never derived again from names.
+/// </summary>
+public sealed record BackupEntityTypeGroup(
+    Guid Id,
+    string Name,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> TypeIds);
 
 public sealed record BackupFieldOption(Guid Id, string Value, int DisplayOrder);
 

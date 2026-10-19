@@ -22,12 +22,13 @@ import { EmptyState } from '../components/EmptyState'
 import { EntityCard } from '../components/EntityCard'
 import { LoreFieldFilters } from '../components/LoreFieldFilters'
 import { PageHeader } from '../components/PageHeader'
-import { TypeSwitcher } from '../components/TypeSwitcher'
+import { GroupSwitcher, TypeSwitcher } from '../components/TypeSwitcher'
 import { ApiError } from '../lib/api'
 import {
   LORE_PAGE_SIZES,
   bulkTrashEntities,
   listEntities,
+  listEntityTypeGroups,
   listEntityTypes,
   readLorePageSize,
   saveLorePageSize,
@@ -38,6 +39,7 @@ import {
   type CanonStatusValue,
   type EntityPage,
   type EntityType,
+  type EntityTypeGroup,
 } from '../lore/types'
 import {
   FIELD_FILTER_PARAM,
@@ -83,6 +85,10 @@ function readPage(value: string | null) {
  * how one is chosen: the same wrapped row (a menu on a phone) Lore always had, minus All, with nothing current. A chosen type shows its whole branch: its own entries and those of every type nested beneath it, each card
  * still naming its own type. A type id the universe does not have - deleted, mistyped, or another world's - is taken out of
  * the address, which leaves nothing chosen; it never widens to every entry.
+ *
+ * A semantic group (Issue #36) is the other way in: `?group=<id>` lists the entries of every type in the group, as it is
+ * now. A type and a group are never both chosen - choosing one drops the other - and field filters stay a type's, since a
+ * field belongs to one type. An unknown group is taken out of the address like an unknown type.
  */
 export default function LorePage() {
   const { universe } = useOutletContext<WorkspaceContext>()
@@ -105,6 +111,7 @@ export default function LorePage() {
   }, [location.state, location.search, navigate])
 
   const typeParam = params.get('type')
+  const groupParam = params.get('group')
   const canonStatus = readStatus(params.get('status'))
   const search = params.get('q') ?? ''
   const page = readPage(params.get('page'))
@@ -124,6 +131,7 @@ export default function LorePage() {
   const [trashed, setTrashed] = useState<{ text: string; list: string } | null>(null)
 
   const [types, setTypes] = useState<EntityType[] | null>(null)
+  const [groups, setGroups] = useState<EntityTypeGroup[] | null>(null)
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -139,6 +147,12 @@ export default function LorePage() {
         // Without its types Lore has nothing to choose from; the page says so rather than reading every entry.
         if (!controller.signal.aborted) setTypes([])
       })
+    // Groups are a second way in, not a requirement: if they cannot be read, Lore is browsed by type alone.
+    listEntityTypeGroups(universe.id, controller.signal)
+      .then(setGroups)
+      .catch(() => {
+        if (!controller.signal.aborted) setGroups([])
+      })
     return () => {
       controller.abort()
     }
@@ -148,6 +162,12 @@ export default function LorePage() {
   const selectedNode = (typeParam && tree.byId.get(typeParam)) || null
   const selectedType = selectedNode?.type ?? null
   const isUnknownType = typeParam !== null && types !== null && selectedType === null
+  // A type in the address wins over a group, so the two are never read together.
+  const selectedGroup =
+    (!typeParam && groupParam && groups?.find((group) => group.id === groupParam)) || null
+  const isUnknownGroup =
+    !typeParam && groupParam !== null && groups !== null && selectedGroup === null
+  const chosenName = selectedType?.name ?? selectedGroup?.name ?? null
 
   // A type this universe does not have is taken out of the address in place, which leaves nothing chosen.
   useEffect(() => {
@@ -163,6 +183,19 @@ export default function LorePage() {
       { replace: true },
     )
   }, [isUnknownType, setParams])
+
+  useEffect(() => {
+    if (!isUnknownGroup) return
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        next.delete('group')
+        next.delete('page')
+        return next
+      },
+      { replace: true },
+    )
+  }, [isUnknownGroup, setParams])
 
   // Field filters the chosen type can still answer. One the address carries that it cannot - a field since deleted or
   // changed, an option gone, a hand-edited value - is taken out in place, never read as another filter, and never sent.
@@ -185,9 +218,10 @@ export default function LorePage() {
 
   // Only a type of this universe is ever asked for, and only once the types are known.
   const entityTypeId = selectedType?.id ?? null
+  const entityTypeGroupId = selectedGroup?.id ?? null
 
   useEffect(() => {
-    if (entityTypeId === null) return
+    if (entityTypeId === null && entityTypeGroupId === null) return
     const controller = new AbortController()
     const timer = setTimeout(() => {
       listEntities(
@@ -195,6 +229,7 @@ export default function LorePage() {
         {
           search,
           entityTypeId,
+          entityTypeGroupId,
           includeDescendants: true,
           canonStatus,
           tag: null,
@@ -215,7 +250,17 @@ export default function LorePage() {
       controller.abort()
     }
     // fieldFilters is read through its key: a fresh array of the same filters is not a new list.
-  }, [universe.id, search, entityTypeId, canonStatus, page, pageSize, reads, fieldFiltersKey])
+  }, [
+    universe.id,
+    search,
+    entityTypeId,
+    entityTypeGroupId,
+    canonStatus,
+    page,
+    pageSize,
+    reads,
+    fieldFiltersKey,
+  ])
 
   /** The address with these changes, always back on the first page unless a page is given. */
   function changed(from: URLSearchParams, changes: Record<string, string | null>) {
@@ -247,14 +292,21 @@ export default function LorePage() {
 
   // Another type is another set of fields: its filters do not travel with the author.
   const hrefFor = (typeId: string | null): To => {
-    const next = withParams({ type: typeId, [FIELD_FILTER_PARAM]: null }).toString()
+    const next = withParams({ type: typeId, group: null, [FIELD_FILTER_PARAM]: null }).toString()
     return { search: next ? `?${next}` : '' }
   }
 
   const typeHref = (typeId: string) => hrefFor(typeId)
 
+  // A group drops the type, and with it the type's field filters.
+  const groupHref = (groupId: string): To => {
+    const next = withParams({ group: groupId, type: null, [FIELD_FILTER_PARAM]: null }).toString()
+    return { search: `?${next}` }
+  }
+
   // Nothing chosen is nothing read: whatever the last type's read left behind is not shown.
-  const view: LoadState = entityTypeId === null ? { kind: 'idle' } : state
+  const view: LoadState =
+    entityTypeId === null && entityTypeGroupId === null ? { kind: 'idle' } : state
   const result = view.kind === 'ready' ? view.page : null
 
   const scope = [location.search, pageSize].join('|')
@@ -394,7 +446,7 @@ export default function LorePage() {
             </span>
           ) : null
         }
-        title={selectedType ? <bdi>{selectedType.name}</bdi> : 'Lore'}
+        title={chosenName ? <bdi>{chosenName}</bdi> : 'Lore'}
         actions={
           access.editContent ? (
             <>
@@ -427,8 +479,15 @@ export default function LorePage() {
             list - Select, a page size - shares this row, so the types have the same width whichever type is open and their
             links never move from one row to another as the author goes between a type with entries and one without. */}
         <div className="lore__nav">
-          <TypeSwitcher tree={tree} selected={selectedNode} hrefFor={typeHref} />
-          {selectedType ? (
+          <TypeSwitcher
+            tree={tree}
+            selected={selectedNode}
+            hrefFor={typeHref}
+            groups={groups ?? []}
+            selectedGroupId={selectedGroup?.id ?? null}
+            groupHref={groupHref}
+          />
+          {chosenName ? (
             <button
               className="button button--secondary lore__filtertoggle"
               type="button"
@@ -445,12 +504,17 @@ export default function LorePage() {
             </button>
           ) : null}
         </div>
+        <GroupSwitcher
+          groups={groups ?? []}
+          selectedGroupId={selectedGroup?.id ?? null}
+          groupHref={groupHref}
+        />
       </PageHeader>
 
       {/* The list's own controls, under the navigation: what narrows the list (search and status, folded behind Filters on a
           phone), then what acts on it (the page size and Select), at the row's end. They wait for a type: nothing here can
           widen to the whole universe. Select is offered while there is something on the page to select. */}
-      <div className="lore__controls" hidden={!selectedType} data-testid="lore-controls">
+      <div className="lore__controls" hidden={!chosenName} data-testid="lore-controls">
         <div
           className="lore__filters"
           id={filtersId}
@@ -466,7 +530,7 @@ export default function LorePage() {
               id="lore-search"
               className="field__input lore__searchinput"
               type="search"
-              placeholder={selectedType ? `Search ${selectedType.name}` : 'Search'}
+              placeholder={chosenName ? `Search ${chosenName}` : 'Search'}
               title="Searches names, aliases, summaries and articles"
               value={search}
               onChange={(event) => update({ q: event.target.value }, true)}
@@ -559,7 +623,12 @@ export default function LorePage() {
 
       {/* Nothing chosen yet: the categories above are the way in, and this says so - with the one create action. Nothing is
           read for it (ADR 0007 amendment). */}
-      {types !== null && types.length > 0 && !selectedType && !isUnknownType ? (
+      {types !== null &&
+      types.length > 0 &&
+      !selectedType &&
+      !selectedGroup &&
+      !isUnknownType &&
+      !isUnknownGroup ? (
         <EmptyState
           testId="lore-no-category"
           title="Choose a category to browse your lore."
@@ -618,7 +687,7 @@ export default function LorePage() {
         </div>
       ) : null}
 
-      {selectedType && result && result.items.length > 0 ? (
+      {chosenName && result && result.items.length > 0 ? (
         <ul className="cardgrid lore__grid" data-testid="entity-grid">
           {result.items.map((entity) => (
             <li key={entity.id}>
@@ -636,14 +705,14 @@ export default function LorePage() {
         </ul>
       ) : null}
 
-      {selectedType && result && result.items.length === 0 && isFiltered ? (
+      {chosenName && result && result.items.length === 0 && isFiltered ? (
         <EmptyState
           testId="entity-empty"
           title="Nothing matches that."
           hint={
-            selectedType ? (
+            chosenName ? (
               <>
-                No <bdi>{selectedType.name}</bdi> entry matches these filters.
+                No <bdi>{chosenName}</bdi> entry matches these filters.
               </>
             ) : (
               'No entry matches these filters.'
@@ -667,6 +736,25 @@ export default function LorePage() {
             >
               Clear filters
             </Link>
+          }
+        />
+      ) : null}
+
+      {selectedGroup && result && result.items.length === 0 && !isFiltered ? (
+        <EmptyState
+          testId="entity-empty"
+          title="Nothing in this group yet."
+          hint={
+            selectedGroup.typeIds.length === 0 ? (
+              <>
+                No type is in <bdi>{selectedGroup.name}</bdi> yet. Add types to it from their
+                settings on <Link to={`/app/universes/${universe.id}/types`}>Types</Link>.
+              </>
+            ) : (
+              <>
+                None of the types in <bdi>{selectedGroup.name}</bdi> has an entry yet.
+              </>
+            )
           }
         />
       ) : null}
@@ -699,7 +787,7 @@ export default function LorePage() {
         />
       ) : null}
 
-      {selectedType && result && result.totalPages > 1 ? (
+      {chosenName && result && result.totalPages > 1 ? (
         <nav className="pager" aria-label="Pagination">
           <button
             className="button button--secondary"

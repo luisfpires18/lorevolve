@@ -192,3 +192,52 @@ of every entry and the Lore filter's picker searched the whole universe. A targe
   database narrows the search. The entry form's link control is now that picker - it searches instead of listing a page - and
   the 034 filter editor uses the same one. Types offers "Allowed type", "Any Lore type" first, then every type by its path.
 - Backup format 20 carries the target (ADR 0014 amendment).
+
+## Amendment - semantic groups of types (2026-10-19, Issue #36)
+
+A creator can gather several concrete types under one reusable classification - Elemental, Original and Corrupted Runes
+under **Runes** - and use it where one exact type is too narrow: a link field's allowed target and a Lore filter. A group is
+classification metadata, not an entity model, a parent type or an ontology.
+
+- **Schema.** `EntityTypeGroups` (id, universe, name unique per universe, timestamps) and `EntityTypeGroupMembers`
+  (group id + type id, composite key, index on the type), both cascading from their universe, group and type. No table per
+  group, no field on a group. A type is in zero, one or several groups; membership is explicit and never read from a type's
+  name, icon, description or parent. Triggers hold what keys cannot: a membership joins a group and a type of the same
+  universe, and a field's group target is a group of its own universe and never beside an exact type.
+- **Identity is the id.** Renaming a group or a member type changes no membership and no field that targets the group.
+- **Nothing is inherited.** A member type keeps its own fields, icon, accent, hierarchy and Family Tree eligibility. Joining a
+  group never makes a type Family Tree eligible: that stays the per-type `FamilyTreeEligible` (ADR 0040). Group-based Family
+  Tree configuration is deliberately not here; it is Issue #37.
+- **Membership is saved with the type.** `EntityTypeRequest.Groups` is the type's whole set - existing groups by id, new
+  ones by name, created in the same transaction - so creating a group and joining it is one action, and a cancelled or
+  refused save leaves no group behind. Absent keeps the stored set. There is no group-creation route of its own and no
+  separate management page: `GET`, `PUT` (rename) and `DELETE` on `/entity-type-groups` are all there is.
+- **Link fields.** `EntityFieldDefinitions.TargetGroupId` (nullable, keyed to `EntityTypeGroups`, no action on delete): a
+  link field allows any type, one exact type (036, unchanged) or one group - never two of these. A group target accepts an
+  entry whose type is in the group *when the link is written*; the entry save, the Lore field filter, the backup and the
+  picker all apply the same rule from one membership read. An old exact-type field keeps its meaning; nothing converts.
+- **Narrowing waits for the data, as for a type.** Changing a field's target to a group is refused (409
+  `entity_field_target_conflict`) while any link, Trash included, points at an entry whose type is not in it.
+- **Leaving a group waits for the data.** Taking a type out of a group is refused (409 `entity_type_group_in_use`) while a
+  link in a field limited to that group points at an entry of that type (Trash included). The refusal names the field, its
+  type and the link count; nothing is cleared, widened or grandfathered. A change that strands no link goes through.
+- **Deleting a group** a link field targets is refused (409 `entity_type_group_targeted`) with the list of fields; the
+  author changes them first. A target is never quietly opened to any type. Otherwise the group and its memberships go and
+  every type, field and entry stays.
+- **Concurrency.** Every one of these writes, and every entry write, runs in a transaction Microsoft.Data.Sqlite begins
+  IMMEDIATE, so a membership change, a group delete, a field's new target and an entry's new link are serialised and each
+  checks the state the other left. Checks are bounded: they read only the fields targeting the groups concerned and count
+  their values through the existing indexes.
+- **Lore.** The listing takes `entityTypeGroupId`: entries of every type in the group now, combined with search, status,
+  ordering and pages exactly as a type is. Lore offers groups as one more row ("Groups", a layers icon, an accessible name
+  ending in "(group)") and on a phone one more menu; a type and a group are never chosen together, and field filters stay a
+  type's. No group badge on cards or entries.
+- **Starter groups.** The one starter template (`EntityTypeDefaults`) creates, with its types, Characters (Character),
+  Places (Location), Factions (Organization) and Objects (Item) - data for that template, editable like any group. Only
+  types created in the same call join one. Existing universes are not classified by the migration
+  (`AddEntityTypeGroups`), by a restore or by anything else. There is no blank-universe template today; a universe whose
+  author deletes the starters keeps whatever groups they leave.
+- **Known limit, shared with 036.** Changing an entry's own type is not checked against fields that link to it: an entry
+  linked through a group (or an exact type) can still be moved to another type. That gap predates groups and is left for a
+  deliberate change.
+- Backup format 23 carries groups, memberships and group targets (ADR 0014 amendment).

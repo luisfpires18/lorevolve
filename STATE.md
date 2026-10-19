@@ -72,6 +72,21 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   own runner, API, Vite and `lorex-e2e-shard-N.db`), `fail-fast: false`, reports `playwright-report-shard-N-of-2`. Job
   timeouts added. No cache or build-reuse change (seconds at most). Partition checked locally: 246 + 245 = 491, no
   overlap. actionlint 1.7.7 clean. Not yet measured on GitHub; estimate merge-to-DEV ~27 min -> ~15 min.
+- **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; committed, not
+  merged, not pushed). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
+  - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);
+    same-universe triggers. Membership saved with the type (`EntityTypeRequest.Groups`, new groups by name, created only
+    if the save commits). Routes: `GET`/`PUT` rename/`DELETE` `/entity-type-groups`; Read to list, EditContent to change.
+  - Link fields: any type, one exact type, or one group (`TargetGroupId`), enforced on entry save, Lore field filters,
+    field retarget (409 `entity_field_target_conflict`) and restore. Leaving a group links rely on: 409
+    `entity_type_group_in_use`; deleting a targeted group: 409 `entity_type_group_targeted`. Nothing cleared or widened.
+  - Lore: `entityTypeGroupId` filter; a "Groups" nav row on desktop, folded into the Category menu on a phone. Type editor:
+    a small Groups control (select, Add another group, new group by name, rename/delete folded away). No badges.
+  - Starter template gets Characters, Places, Factions, Objects; existing universes and restores are never classified.
+    Family Tree untouched: per-type `FamilyTreeEligible` only; group-based eligibility is Issue #37.
+  - Known gap (predates #36): changing an entry's type is not checked against fields that link to it.
+  - Tests: API 1673 passed, 6 skipped (new: `EntityTypeGroupTests` 17, file-backed races 2 + migration walk 1). Playwright
+    `semantic-groups.spec.ts` 4; with neighbouring specs green on a fresh DB. Full Playwright delegated to CI.
 - **Roadmap task 049 - MCP V1** (GitHub issue 7; `feat/lorex-mcp-v1` off `dev` at `ac39b23`; committed, not merged, not
   pushed). One migration (`AddMcpConnections`: OpenIddict's four tables + `McpConnections`), backup unchanged (account-level
   state, never in a universe backup). ADR 0046 (new); 0005 amendment.
