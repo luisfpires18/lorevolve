@@ -318,7 +318,7 @@ public sealed class EntityReferenceTargetTests(LorexApiFactory factory) : IClass
 
         var archive = await RawArchive(w.Client, w.U);
         var backup = BackupOf(archive);
-        Assert.Equal(22, backup.FormatVersion);
+        Assert.Equal(23, backup.FormatVersion);
         var carried = backup.Payload.EntityTypes.Single(type => type.Id == w.Character).Fields;
         Assert.Equal(w.Kingdoms, carried.Single(field => field.Id == kingdom).TargetEntityTypeId);
         Assert.Null(carried.Single(field => field.Id == anything).TargetEntityTypeId);
@@ -338,7 +338,7 @@ public sealed class EntityReferenceTargetTests(LorexApiFactory factory) : IClass
         Assert.Equal(HttpStatusCode.BadRequest, (await PostEntry(restoredWorld, restoredWorld.Character, "Oren", Link(restoredField.Id, rune))).StatusCode);
 
         // A second export of the restored world says the same.
-        Assert.Equal(22, BackupOf(await RawArchive(w.Client, restored.Id)).FormatVersion);
+        Assert.Equal(23, BackupOf(await RawArchive(w.Client, restored.Id)).FormatVersion);
     }
 
     [Fact]

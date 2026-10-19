@@ -479,6 +479,20 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 23)
+        {
+            // Type groups, and a link field's group target, arrived in version 23.
+            Drop(payload, "entityTypeGroups");
+
+            foreach (var type in payload["entityTypes"]!.AsArray())
+            {
+                foreach (var field in type!["fields"]!.AsArray())
+                {
+                    Drop(field, "targetGroupId");
+                }
+            }
+        }
+
         if (version < 22)
         {
             // A custom calendar, and the month ids that name its months, arrived in version 22.

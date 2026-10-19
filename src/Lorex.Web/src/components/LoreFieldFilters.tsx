@@ -263,6 +263,7 @@ function FieldFilterEditor({
             value={entry}
             onChange={setEntry}
             entityTypeId={field.targetEntityTypeId}
+            entityTypeGroupId={field.targetGroupId}
             placeholder="Search for an entry"
           />
         ) : (

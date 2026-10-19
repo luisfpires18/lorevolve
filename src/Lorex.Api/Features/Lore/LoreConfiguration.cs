@@ -49,6 +49,49 @@ public sealed class EntityTypeConfiguration : IEntityTypeConfiguration<EntityTyp
     }
 }
 
+public sealed class EntityTypeGroupConfiguration : IEntityTypeConfiguration<EntityTypeGroup>
+{
+    public void Configure(EntityTypeBuilder<EntityTypeGroup> builder)
+    {
+        builder.ToTable("EntityTypeGroups");
+        builder.HasKey(group => group.Id);
+
+        builder.Property(group => group.Name).IsRequired().HasMaxLength(LoreLimits.NameMaxLength);
+
+        builder.HasOne(group => group.Universe)
+            .WithMany()
+            .HasForeignKey(group => group.UniverseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Names are unique per universe, like types: two groups both called Runes could not be told apart in a picker.
+        builder.HasIndex(group => new { group.UniverseId, group.Name }).IsUnique();
+    }
+}
+
+public sealed class EntityTypeGroupMemberConfiguration : IEntityTypeConfiguration<EntityTypeGroupMember>
+{
+    public void Configure(EntityTypeBuilder<EntityTypeGroupMember> builder)
+    {
+        builder.ToTable("EntityTypeGroupMembers");
+
+        // The key serves "which types are in this group" (filters, link checks); the index serves "which groups is this
+        // type in" (the type's own save).
+        builder.HasKey(member => new { member.EntityTypeGroupId, member.EntityTypeId });
+
+        builder.HasOne(member => member.Group)
+            .WithMany(group => group.Members)
+            .HasForeignKey(member => member.EntityTypeGroupId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(member => member.EntityType)
+            .WithMany()
+            .HasForeignKey(member => member.EntityTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(member => member.EntityTypeId);
+    }
+}
+
 public sealed class EntityFieldDefinitionConfiguration : IEntityTypeConfiguration<EntityFieldDefinition>
 {
     public void Configure(EntityTypeBuilder<EntityFieldDefinition> builder)
@@ -72,6 +115,13 @@ public sealed class EntityFieldDefinitionConfiguration : IEntityTypeConfiguratio
         builder.HasOne(field => field.TargetEntityType)
             .WithMany()
             .HasForeignKey(field => field.TargetEntityTypeId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // A group a reference field is restricted to is not deleted from under it: the group endpoint refuses first, with
+        // the reason. No action, for the same one-cascade universe delete as the type target above.
+        builder.HasOne(field => field.TargetGroup)
+            .WithMany()
+            .HasForeignKey(field => field.TargetGroupId)
             .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasIndex(field => new { field.EntityTypeId, field.Name }).IsUnique();

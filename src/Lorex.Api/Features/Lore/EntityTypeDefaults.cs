@@ -28,6 +28,20 @@ public static class EntityTypeDefaults
     ];
 
     /// <summary>
+    /// The starter template's semantic groups (Issue #36), each with the starter types it holds, named by the starter names
+    /// above. Data for this one template, not a taxonomy: the author renames, reshapes or deletes them like any group. Only
+    /// types created in the same call join one, so nothing is ever classified after the fact, and a type of any other name
+    /// joins nothing. Family Tree eligibility is unaffected; it stays on the type.
+    /// </summary>
+    public static readonly IReadOnlyList<(string Name, string[] Types)> StarterGroups =
+    [
+        ("Characters", ["Character"]),
+        ("Places", ["Location"]),
+        ("Factions", ["Organization"]),
+        ("Objects", ["Item"]),
+    ];
+
+    /// <summary>
     /// Whether a stored type is the starter Character exactly as seeded - name, description, icon and colour all untouched.
     /// The one rule that gives an existing type Family Tree eligibility it was not given by its author: the migration applies it
     /// to every row once, and a backup from before version 18 is read through it, so both upgrade paths agree. Anything
@@ -53,7 +67,7 @@ public static class EntityTypeDefaults
         var present = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
         var now = DateTime.UtcNow;
         var order = 0;
-        var created = 0;
+        var created = new Dictionary<string, Guid>(StringComparer.Ordinal);
 
         foreach (var (name, description, icon, accent, familyTree) in Defaults)
         {
@@ -63,9 +77,11 @@ public static class EntityTypeDefaults
                 continue;
             }
 
+            var id = Guid.NewGuid();
+            created[name] = id;
             db.EntityTypes.Add(new EntityType
             {
-                Id = Guid.NewGuid(),
+                Id = id,
                 UniverseId = universeId,
                 Name = name,
                 Description = description,
@@ -76,14 +92,31 @@ public static class EntityTypeDefaults
                 CreatedAt = now,
                 UpdatedAt = now,
             });
-            created++;
         }
 
-        if (created > 0)
+        // Only types written just now join a starter group, and only a group with a member is created.
+        foreach (var (groupName, typeNames) in StarterGroups)
+        {
+            var memberIds = typeNames.Where(created.ContainsKey).Select(typeName => created[typeName]).ToList();
+            if (memberIds.Count == 0
+                || await db.EntityTypeGroups.AnyAsync(group => group.UniverseId == universeId && group.Name == groupName, cancellationToken))
+            {
+                continue;
+            }
+
+            var group = new EntityTypeGroup { Id = Guid.NewGuid(), UniverseId = universeId, Name = groupName, CreatedAt = now, UpdatedAt = now };
+            db.EntityTypeGroups.Add(group);
+            foreach (var memberId in memberIds)
+            {
+                db.EntityTypeGroupMembers.Add(new EntityTypeGroupMember { EntityTypeGroupId = group.Id, EntityTypeId = memberId });
+            }
+        }
+
+        if (created.Count > 0)
         {
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        return created;
+        return created.Count;
     }
 }

@@ -48,7 +48,7 @@ public sealed class TimelineStoryBackupTests(LorexApiFactory factory) : IClassFi
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(22, backup.FormatVersion);
+        Assert.Equal(23, backup.FormatVersion);
         var both = backup.Payload.TimelineEntries.Single(entry => entry.Title == "Both");
         Assert.Equal(new[] { a, b }.Order(), both.StoryIds!.Order());
         Assert.Empty(backup.Payload.TimelineEntries.Single(entry => entry.Title == "Neither").StoryIds!);
@@ -152,7 +152,7 @@ public sealed class TimelineStoryMigrationTests : IDisposable
 
             Assert.Empty(await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE name = 'TimelineEntryStories'"));
             Assert.Equal(indexes.Where(LaterSchema.BeforeTimelineStories), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
-            Assert.Equal(triggers, await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
+            Assert.Equal(triggers.Where(LaterSchema.BeforeTypeGroups), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
             Assert.Equal(1, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM \"TimelineEntries\"").SingleAsync());
             Assert.Equal(1, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM \"Stories\"").SingleAsync());
         }

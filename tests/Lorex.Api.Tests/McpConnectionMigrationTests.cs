@@ -83,10 +83,10 @@ public sealed class McpConnectionMigrationTests : IDisposable
     private static async Task<List<string>> Tables(LorexDbContext db) =>
         await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND (name LIKE 'OpenIddict%' OR name = 'McpConnections') ORDER BY name");
 
-    /// <summary>Everything that was there before: every table but the new ones, with its row count.</summary>
+    /// <summary>Everything that was there before: every table but the new ones (and the later type groups), with its row count.</summary>
     private static async Task<string> Fingerprint(LorexDbContext db)
     {
-        var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'OpenIddict%' AND name <> 'McpConnections' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%SearchIndex%' AND name <> '__EFMigrationsHistory' ORDER BY name");
+        var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'OpenIddict%' AND name <> 'McpConnections' AND name NOT LIKE 'EntityTypeGroup%' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%SearchIndex%' AND name <> '__EFMigrationsHistory' ORDER BY name");
         var parts = new List<string>();
         foreach (var table in tables)
         {

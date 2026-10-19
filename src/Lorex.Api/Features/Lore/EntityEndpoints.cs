@@ -43,6 +43,9 @@ public static class EntityEndpoints
     /// <summary>The machine-readable marker on the 409 for an entry save written over a version that is no longer current.</summary>
     public const string ChangedCode = "entity_changed";
 
+    /// <summary>The marker on the 409 for moving an entry to a type that links to it from limited fields do not allow.</summary>
+    public const string TypeChangeLinkedCode = "entity_type_change_linked";
+
     /// <summary>
     /// The one grid-card projection, shared because the listing now has two orderings and only
     /// one shape: browsing reads it straight off the entity, searching reads it off the entity
@@ -111,6 +114,7 @@ public static class EntityEndpoints
         CancellationToken cancellationToken,
         [FromQuery] string? search = null,
         [FromQuery] Guid? entityTypeId = null,
+        [FromQuery] Guid? entityTypeGroupId = null,
         [FromQuery] CanonStatus? canonStatus = null,
         [FromQuery] string? tag = null,
         [FromQuery] bool includeArchived = false,
@@ -161,6 +165,15 @@ public static class EntityEndpoints
         else if (entityTypeId is { } exactTypeId)
         {
             query = query.Where(entity => entity.EntityTypeId == exactTypeId);
+        }
+
+        // A semantic group (Issue #36): entries of every type in it, by its membership as it is now. The membership row is
+        // matched by the group's id and the entry's type, both indexed; a group of another universe can only name that
+        // universe's types, which this universe's entries never have - an empty page, like a foreign type id.
+        if (entityTypeGroupId is { } groupId)
+        {
+            query = query.Where(entity => db.EntityTypeGroupMembers.Any(member =>
+                member.EntityTypeGroupId == groupId && member.EntityTypeId == entity.EntityTypeId));
         }
 
         if (canonStatus is { } status)
@@ -643,6 +656,12 @@ public static class EntityEndpoints
             return refused;
         }
 
+        if (entity.EntityTypeId != request.EntityTypeId
+            && await IncomingLinksRefusalAsync(db, entity, request.EntityTypeId, cancellationToken) is { } stranded)
+        {
+            return stranded;
+        }
+
         entity.EntityTypeId = request.EntityTypeId;
         entity.Name = request.Name!.Trim();
         entity.Summary = LoreValidation.Normalize(request.Summary);
@@ -693,6 +712,61 @@ public static class EntityEndpoints
 
         var detail = await LoadDetailAsync(db, universeId, entity.Id, cancellationToken);
         return Results.Ok(detail);
+    }
+
+    /// <summary>
+    /// The refusal for moving <paramref name="entity"/> to <paramref name="newTypeId"/> while other entries link to it through
+    /// fields limited to one type or one group that the new type does not satisfy - or null. Links from entries in the Trash
+    /// count, since their values come back with them. Read inside the write's own transaction (the promotion gate's, which
+    /// Microsoft.Data.Sqlite begins IMMEDIATE), so a membership change or a field's new target cannot slip between this check
+    /// and the save. Bounded by the reference index: only values pointing at this one entry are read.
+    /// </summary>
+    private static async Task<IResult?> IncomingLinksRefusalAsync(
+        LorexDbContext db,
+        LoreEntity entity,
+        Guid newTypeId,
+        CancellationToken cancellationToken)
+    {
+        var entityId = entity.Id;
+        var blocking = await db.EntityFieldValues.AsNoTracking()
+            .Where(value => value.ReferencedEntityId == entityId
+                && ((value.FieldDefinition!.TargetEntityTypeId != null && value.FieldDefinition.TargetEntityTypeId != newTypeId)
+                    || (value.FieldDefinition.TargetGroupId != null
+                        && !db.EntityTypeGroupMembers.Any(member =>
+                            member.EntityTypeGroupId == value.FieldDefinition.TargetGroupId && member.EntityTypeId == newTypeId))))
+            .GroupBy(value => new
+            {
+                value.FieldDefinitionId,
+                FieldName = value.FieldDefinition!.Name,
+                TypeId = value.FieldDefinition.EntityTypeId,
+                TypeName = value.FieldDefinition.EntityType!.Name,
+            })
+            .Select(group => new { group.Key.FieldDefinitionId, group.Key.FieldName, group.Key.TypeId, group.Key.TypeName, Links = group.Count() })
+            .ToListAsync(cancellationToken);
+
+        if (blocking.Count == 0)
+        {
+            return null;
+        }
+
+        var ordered = blocking.OrderBy(field => field.TypeName, StringComparer.Ordinal).ThenBy(field => field.FieldName, StringComparer.Ordinal).ToList();
+        var first = ordered[0];
+        var others = ordered.Count - 1;
+        var links = first.Links == 1 ? "1 entry links" : $"{first.Links} entries link";
+
+        return Results.Problem(
+            title: "Entry is linked",
+            detail: $"{entity.Name} can't change type because {links} to it through the field \"{first.FieldName}\" on {first.TypeName}"
+                + (others == 0 ? string.Empty : others == 1 ? ", and 1 other field does too" : $", and {others} other fields do too")
+                + ", which would not allow the new type. Change those links or the field first, then try again.",
+            statusCode: StatusCodes.Status409Conflict,
+            extensions: new Dictionary<string, object?>
+            {
+                ["code"] = TypeChangeLinkedCode,
+                ["fields"] = ordered
+                    .Select(field => new { FieldId = field.FieldDefinitionId, field.FieldName, field.TypeId, field.TypeName, field.Links })
+                    .ToList(),
+            });
     }
 
     /// <summary>
@@ -1046,13 +1120,29 @@ public static class EntityEndpoints
                 .Where(candidate => candidate.UniverseId == universeId && wanted.Contains(candidate.Id))
                 .ToDictionaryAsync(candidate => candidate.Id, candidate => candidate.EntityTypeId, cancellationToken);
 
+        // The groups this type's link fields are limited to, as (group, member type) pairs: one read, only when needed.
+        var targetGroups = definitions
+            .Where(definition => definition.TargetGroupId is not null)
+            .Select(definition => definition.TargetGroupId!.Value)
+            .Distinct()
+            .ToList();
+
+        var members = targetGroups.Count == 0 || wanted.Count == 0
+            ? []
+            : (await db.EntityTypeGroupMembers.AsNoTracking()
+                .Where(member => targetGroups.Contains(member.EntityTypeGroupId))
+                .Select(member => new { member.EntityTypeGroupId, member.EntityTypeId })
+                .ToListAsync(cancellationToken))
+                .Select(member => (member.EntityTypeGroupId, member.EntityTypeId))
+                .ToHashSet();
+
         var rows = new List<EntityFieldValue>();
 
         foreach (var definition in definitions)
         {
             supplied.TryGetValue(definition.Id, out var input);
 
-            var built = BuildRows(entityId, definition, input, chronology, referenced, errors);
+            var built = BuildRows(entityId, definition, input, chronology, referenced, members, errors);
 
             if (definition.IsRequired && built.Count == 0)
             {
@@ -1072,6 +1162,7 @@ public static class EntityEndpoints
         FieldValueInput? input,
         UniverseChronology chronology,
         Dictionary<Guid, Guid> referenced,
+        HashSet<(Guid GroupId, Guid TypeId)> members,
         Dictionary<string, string[]> errors)
     {
         var rows = new List<EntityFieldValue>();
@@ -1203,15 +1294,23 @@ public static class EntityEndpoints
                 // A field limited to one type accepts entries of exactly that type, checked here whatever the picker
                 // offered. A trashed entry still has its type, so a kept link is checked like any other. An entry of
                 // another universe gets the same answer as one of the wrong type, and says nothing about itself.
+                // A field limited to a group accepts an entry whose type is in that group now: its membership when this is
+                // written, read inside the same kind of transaction a membership change takes.
                 if (!referenced.TryGetValue(referenceId, out var referencedType))
                 {
-                    errors[definition.Id.ToString()] = definition.TargetEntityTypeId is null
+                    errors[definition.Id.ToString()] = definition.TargetEntityTypeId is null && definition.TargetGroupId is null
                         ? [$"{definition.Name} must point at an entity in this universe."]
                         : [WrongTarget(definition)];
                     break;
                 }
 
                 if (definition.TargetEntityTypeId is { } target && referencedType != target)
+                {
+                    errors[definition.Id.ToString()] = [WrongTarget(definition)];
+                    break;
+                }
+
+                if (definition.TargetGroupId is { } group && !members.Contains((group, referencedType)))
                 {
                     errors[definition.Id.ToString()] = [WrongTarget(definition)];
                     break;
@@ -1232,7 +1331,9 @@ public static class EntityEndpoints
 
     /// <summary>The one refusal for a link a limited field does not allow: wrong type, missing or not this universe's.</summary>
     private static string WrongTarget(EntityFieldDefinition definition) =>
-        $"{definition.Name} can only link to an entry of the type it allows. Choose another entry.";
+        definition.TargetGroupId is null
+            ? $"{definition.Name} can only link to an entry of the type it allows. Choose another entry."
+            : $"{definition.Name} can only link to an entry whose type is in its group. Choose another entry.";
 
     /// <summary>
     /// What is wrong with the era a number arrived with, or null when nothing is.

@@ -10,7 +10,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0004 | PowerShell launcher instead of a custom executable | [0004-local-launcher.md](0004-local-launcher.md) |
 | 0005 | Cookie sessions over token auth | [0005-cookie-authentication.md](0005-cookie-authentication.md) |
 | 0006 | Universe ownership is enforced in every query (access rule superseded by 0041) | [0006-universe-ownership.md](0006-universe-ownership.md) |
-| 0007 | One generic entity model, with relational custom fields (amended 020: starter types seeded once) | [0007-generic-entity-model.md](0007-generic-entity-model.md) |
+| 0007 | One generic entity model, with relational custom fields (amended 020: starter types seeded once; #36: semantic type groups) | [0007-generic-entity-model.md](0007-generic-entity-model.md) |
 | 0008 | A relationship is one row, read from either end | [0008-relationship-direction.md](0008-relationship-direction.md) |
 | 0009 | Fictional chronology is stored as signed integer components | [0009-fictional-chronology.md](0009-fictional-chronology.md) |
 | 0010 | Canon conflicts are derived findings keyed by a fingerprint | [0010-canon-conflict-lifecycle.md](0010-canon-conflict-lifecycle.md) |

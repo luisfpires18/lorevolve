@@ -103,6 +103,7 @@ app.MapPublicAuthorEndpoints();
 app.MapPublicStatsEndpoints();
 app.MapChronologyEndpoints();
 app.MapEntityTypeEndpoints();
+app.MapEntityTypeGroupEndpoints();
 app.MapEntityEndpoints();
 app.MapEntityImageEndpoints();
 app.MapEntityRevisionEndpoints();

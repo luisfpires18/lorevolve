@@ -70,7 +70,7 @@ public sealed class NestedTypeMigrationTests : IDisposable
 
             Assert.DoesNotContain("ParentId", await Columns(db, "EntityTypes"));
             Assert.Empty(await ForeignKeyViolations(db));
-            Assert.Equal(triggers.Except(HierarchyTriggers), await Triggers(db));
+            Assert.Equal(triggers.Except(HierarchyTriggers).Where(LaterSchema.BeforeTypeGroups), await Triggers(db));
             Assert.Equal(indexes.Where(LaterSchema.BeforeNestedTypes), await Indexes(db));
 
             await db.Database.ExecuteSqlRawAsync(

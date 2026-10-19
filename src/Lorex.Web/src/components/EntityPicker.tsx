@@ -23,6 +23,7 @@ function useEntitySearch(
   excludeIds: string[],
   familyTreeOnly = false,
   entityTypeId: string | null = null,
+  entityTypeGroupId: string | null = null,
 ) {
   const [results, setResults] = useState<EntitySummary[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -46,6 +47,7 @@ function useEntitySearch(
         {
           search: query,
           entityTypeId,
+          entityTypeGroupId,
           canonStatus: null,
           tag: null,
           page: 1,
@@ -69,7 +71,7 @@ function useEntitySearch(
       clearTimeout(timer)
       controller.abort()
     }
-  }, [universeId, query, excludeKey, isOpen, familyTreeOnly, entityTypeId])
+  }, [universeId, query, excludeKey, isOpen, familyTreeOnly, entityTypeId, entityTypeGroupId])
 
   return { results, isSearching, active, setActive }
 }
@@ -164,6 +166,8 @@ interface EntityPickerProps {
    * type. Null or left out offers every type.
    */
   entityTypeId?: string | null
+  /** Only entries whose type is in this semantic group: a link field limited to a group. */
+  entityTypeGroupId?: string | null
   placeholder?: string
   error?: string
 }
@@ -177,6 +181,7 @@ export function EntityPicker({
   excludeId,
   familyTreeOnly = false,
   entityTypeId = null,
+  entityTypeGroupId = null,
   placeholder = 'Search this universe',
   error,
 }: EntityPickerProps) {
@@ -197,6 +202,7 @@ export function EntityPicker({
     excludeId ? [excludeId] : [],
     familyTreeOnly,
     entityTypeId,
+    entityTypeGroupId,
   )
 
   useCloseOnOutside(wrapper, isOpen, () => setIsOpen(false))

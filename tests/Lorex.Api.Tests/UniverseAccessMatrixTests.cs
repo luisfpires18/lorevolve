@@ -98,6 +98,9 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("add field", Post, $"{u}/entity-types/{w.CharacterType}/fields", May.Edit, Json(new FieldDefinitionRequest("Motto", EntityFieldKind.ShortText, false, null, null, null))),
             new("edit field", Put, $"{u}/entity-types/{w.CharacterType}/fields/{any}", May.Edit, Json(new FieldDefinitionRequest("Motto", EntityFieldKind.ShortText, false, null, null, null))),
             new("delete field", Delete, $"{u}/entity-types/{w.CharacterType}/fields/{any}", May.Edit),
+            new("type groups", Get, $"{u}/entity-type-groups", May.Read),
+            new("rename type group", Put, $"{u}/entity-type-groups/{any}", May.Edit, Json(new EntityTypeGroupRenameRequest("Renamed group"))),
+            new("delete type group", Delete, $"{u}/entity-type-groups/{any}", May.Edit),
 
             new("image original", Get, $"{e}/image/{w.Image.AssetId}/original", May.Read),
             new("image thumbnail", Get, $"{e}/image/{w.Image.AssetId}/thumbnail/{w.Image.ThumbnailId}", May.Read),
@@ -410,6 +413,7 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             parts.Add(await db.EntityTypes.CountAsync(row => row.UniverseId == u));
             parts.Add(string.Join(",", await db.EntityTypes.Where(row => row.UniverseId == u).OrderBy(row => row.Id).Select(row => row.Name + row.DisplayOrder).ToListAsync()));
             parts.Add(await db.EntityFieldDefinitions.CountAsync(row => row.EntityType!.UniverseId == u));
+            parts.Add(string.Join(",", await db.EntityTypeGroups.Where(row => row.UniverseId == u).OrderBy(row => row.Id).Select(row => row.Name + row.Members.Count).ToListAsync()));
             parts.Add(await db.EntityImages.CountAsync(row => row.Entity!.UniverseId == u));
             parts.Add(await db.EntityArticleRevisions.CountAsync(row => row.Entity!.UniverseId == u));
             parts.Add(await db.EntityRevisions.CountAsync(row => row.Entity!.UniverseId == u));

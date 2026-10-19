@@ -4521,6 +4521,43 @@ a.button--danger:visited {
   --type-ink: color-mix(in srgb, var(--type-accent, var(--muted)) 65%, var(--ink));
 }
 
+/* Semantic groups (Issue #36): one quiet row after the types, led by its own label, each group with the layers icon, so a
+   group is never told from a type by its name alone. */
+.typeswitch--groups {
+  margin-top: var(--space-1);
+}
+
+.typeswitch__row--groups {
+  align-items: center;
+}
+
+/* On a phone the groups follow the types inside the Category menu, under their own small heading. */
+.typemenu__heading {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.typeswitch__rowlabel {
+  align-items: center;
+  margin-inline-end: var(--space-1);
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.typeswitch__link--group {
+  min-height: var(--control-sm);
+  font-size: var(--text-sm);
+}
+
 /* The phone's "Type" button, and the menu it opens: every type, the current one marked. */
 .typemenu {
   display: none;
@@ -6682,6 +6719,92 @@ html:has(.viewer[open]) {
 }
 
 /* Why a type cannot be deleted, under it, with the way to fix it. */
+/* A type's semantic groups, in its editor (Issue #36): the chosen ones as chips, one select to add, and renaming and deleting
+   folded away beneath. */
+.typegroups__lede {
+  margin: calc(var(--space-3) * -1) 0 0;
+}
+
+.typegroups__chosen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.typegroups__new {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.typegroups__another {
+  align-self: flex-start;
+}
+
+.typegroups__newrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.typegroups__newrow .field__input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.typegroups__manage > summary {
+  color: var(--muted);
+  font-size: var(--text-ui);
+  cursor: pointer;
+}
+
+.typegroups__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.typegroups__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.typegroups__name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.typegroups__usage {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+.typegroups__actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.typegroups__delete:not(:disabled) {
+  color: var(--danger);
+}
+
+.typegroups__fields {
+  margin: var(--space-2) 0 0;
+  padding-inline-start: var(--space-5);
+}
+
 .types__blocked {
   margin-top: var(--space-3);
 }

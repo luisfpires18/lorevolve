@@ -22,6 +22,11 @@ namespace Lorex.Api.Features.Lore;
 /// different: absent keeps the stored parent - an older client saving a name cannot detach a type - while
 /// <c>{ "id": null }</c> makes it a root and <c>{ "id": "…" }</c> puts it beneath that type, subtree and all. On a new type,
 /// absent and <c>{ "id": null }</c> both make a root.
+///
+/// <paramref name="Groups"/> is the type's whole set of semantic groups (Issue #36), saved with the type in one transaction:
+/// absent keeps the stored membership, so a client that predates groups cannot clear them, and an empty list leaves every
+/// group. Each choice names an existing group of the universe by id, or a new one by name, which is created with the save and
+/// only with it - a cancelled or refused save leaves no group behind.
 /// </summary>
 public sealed record EntityTypeRequest(
     string? Name,
@@ -30,7 +35,17 @@ public sealed record EntityTypeRequest(
     string? AccentColor,
     int? DisplayOrder,
     bool? FamilyTreeEligible = null,
-    EntityTypeParentChoice? Parent = null);
+    EntityTypeParentChoice? Parent = null,
+    IReadOnlyList<EntityTypeGroupChoice>? Groups = null);
+
+/// <summary>One group a type belongs to: an existing group by <paramref name="Id"/>, or a new one by <paramref name="Name"/>.</summary>
+public sealed record EntityTypeGroupChoice(Guid? Id, string? Name = null);
+
+/// <summary>A new name for a group. The group keeps its id, its members and every field that targets it.</summary>
+public sealed record EntityTypeGroupRenameRequest(string? Name);
+
+/// <summary>A semantic group and the ids of its member types, in no meaningful order.</summary>
+public sealed record EntityTypeGroupResponse(Guid Id, string Name, IReadOnlyList<Guid> TypeIds);
 
 /// <summary>Where a type sits: beneath <paramref name="Id"/>, or at the root when it is null.</summary>
 public sealed record EntityTypeParentChoice(Guid? Id);
@@ -74,6 +89,9 @@ public sealed record EntityTypeResponse(
 ///
 /// <paramref name="TargetEntityTypeId"/> is the one type a link-to-an-entry field accepts, by id; null accepts any
 /// type. Only a link field may carry one.
+///
+/// <paramref name="TargetGroupId"/> is the semantic group a link field accepts instead: an entry of any type in that group,
+/// by its membership when the link is written. Never sent with <paramref name="TargetEntityTypeId"/>.
 /// </summary>
 public sealed record FieldDefinitionRequest(
     string? Name,
@@ -83,7 +101,8 @@ public sealed record FieldDefinitionRequest(
     string? DefaultValue,
     IReadOnlyList<string>? Options,
     EntityFieldSemantic? Semantic = null,
-    Guid? TargetEntityTypeId = null);
+    Guid? TargetEntityTypeId = null,
+    Guid? TargetGroupId = null);
 
 public sealed record FieldOptionResponse(Guid Id, string Value, int DisplayOrder);
 
@@ -96,7 +115,8 @@ public sealed record FieldDefinitionResponse(
     string? DefaultValue,
     IReadOnlyList<FieldOptionResponse> Options,
     EntityFieldSemantic? Semantic,
-    Guid? TargetEntityTypeId = null);
+    Guid? TargetEntityTypeId = null,
+    Guid? TargetGroupId = null);
 
 // ---------- Entities ----------
 

@@ -79,7 +79,7 @@ public sealed class ChronologyCalendarBackupTests(LorexApiFactory factory) : ICl
 
         var archive = await RawArchive(client, w.U);
         var backup = BackupOf(archive);
-        Assert.Equal(22, backup.FormatVersion);
+        Assert.Equal(23, backup.FormatVersion);
 
         var calendar = backup.Payload.ChronologyCalendar!;
         Assert.Equal(w.Chronology.Calendar!.Id, calendar.Id);
@@ -230,7 +230,7 @@ public sealed class ChronologyCalendarMigrationTests : IDisposable
             Assert.DoesNotContain("MonthId", await Strings(db, "SELECT name AS Value FROM pragma_table_info('Scenes')"));
             Assert.DoesNotContain("StartMonthId", await Strings(db, "SELECT name AS Value FROM pragma_table_info('TimelineEntries')"));
             Assert.Equal(indexes.Where(LaterSchema.BeforeCalendars), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
-            Assert.Equal(triggers, await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
+            Assert.Equal(triggers.Where(LaterSchema.BeforeTypeGroups), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
             Assert.Empty(await Strings(db, "SELECT \"table\" AS Value FROM pragma_foreign_key_check"));
 
             // Each custom month is the number of its place, the day unchanged.

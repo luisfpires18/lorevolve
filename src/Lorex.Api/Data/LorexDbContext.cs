@@ -38,6 +38,10 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<EntityType> EntityTypes => Set<EntityType>();
 
+    public DbSet<EntityTypeGroup> EntityTypeGroups => Set<EntityTypeGroup>();
+
+    public DbSet<EntityTypeGroupMember> EntityTypeGroupMembers => Set<EntityTypeGroupMember>();
+
     public DbSet<EntityFieldDefinition> EntityFieldDefinitions => Set<EntityFieldDefinition>();
 
     public DbSet<EntityFieldOption> EntityFieldOptions => Set<EntityFieldOption>();

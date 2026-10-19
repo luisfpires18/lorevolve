@@ -97,6 +97,11 @@ internal sealed class RestoreIdentity
             }
         }
 
+        foreach (var group in payload.EntityTypeGroups ?? [])
+        {
+            yield return group.Id;
+        }
+
         foreach (var tag in payload.Tags)
         {
             yield return tag.Id;
@@ -578,6 +583,24 @@ internal sealed partial class UniverseRestore(
             }
         }
 
+        // Groups and their memberships under new ids; EF writes each after the rows it points at.
+        foreach (var group in payload.EntityTypeGroups ?? [])
+        {
+            db.EntityTypeGroups.Add(new EntityTypeGroup
+            {
+                Id = ids.Map(group.Id),
+                UniverseId = universeId,
+                Name = group.Name,
+                CreatedAt = group.CreatedAt,
+                UpdatedAt = group.UpdatedAt,
+            });
+
+            foreach (var typeId in group.TypeIds)
+            {
+                db.EntityTypeGroupMembers.Add(new EntityTypeGroupMember { EntityTypeGroupId = ids.Map(group.Id), EntityTypeId = ids.Map(typeId) });
+            }
+        }
+
         foreach (var type in payload.EntityTypes)
         {
             db.EntityTypes.Add(new EntityType
@@ -611,6 +634,9 @@ internal sealed partial class UniverseRestore(
 
                     // The type it was limited to, as that type's restored id: validation proved it is a type of this file.
                     TargetEntityTypeId = ids.Map(field.TargetEntityTypeId),
+
+                    // The group it was limited to, as that group's restored id: validation proved it is a group of this file.
+                    TargetGroupId = ids.Map(field.TargetGroupId),
                 });
 
                 foreach (var option in field.Options)

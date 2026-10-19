@@ -8,6 +8,7 @@ import type {
   EntityPage,
   EntityQuery,
   EntityType,
+  EntityTypeGroup,
   FieldKindValue,
   FieldSemanticValue,
   TagSummary,
@@ -64,6 +65,34 @@ export interface EntityTypeInput {
    * that is not about the hierarchy cannot move a type.
    */
   parent?: { id: string | null }
+  /**
+   * The type's whole set of semantic groups, saved with it: an existing group by `{ id }`, a new one by `{ name }`, created
+   * only if the save succeeds. Left out keeps the stored groups.
+   */
+  groups?: ({ id: string } | { name: string })[]
+}
+
+export function listEntityTypeGroups(universeId: string, signal?: AbortSignal) {
+  return apiFetch<EntityTypeGroup[]>(`${base(universeId)}/entity-type-groups`, { signal })
+}
+
+/** Renames a group. Its id, members and every field that links to it are unchanged. */
+export function renameEntityTypeGroup(universeId: string, groupId: string, name: string) {
+  return apiFetch<EntityTypeGroup>(`${base(universeId)}/entity-type-groups/${groupId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ name }),
+  })
+}
+
+/** The code on the 409 for deleting a group a link field is limited to. */
+export const GROUP_TARGETED = 'entity_type_group_targeted'
+
+/** The code on the 409 for taking a type out of a group that existing links rely on. */
+export const GROUP_IN_USE = 'entity_type_group_in_use'
+
+/** Deletes a group and its memberships. The types, fields and entries stay. Refused (409) while a field is limited to it. */
+export function deleteEntityTypeGroup(universeId: string, groupId: string) {
+  return apiFetch<void>(`${base(universeId)}/entity-type-groups/${groupId}`, { method: 'DELETE' })
 }
 
 export function createEntityType(universeId: string, input: EntityTypeInput) {
@@ -127,6 +156,9 @@ export interface FieldInput {
    * only means to change something else sends the field's own limit back rather than clearing it.
    */
   targetEntityTypeId: string | null
+
+  /** A link field's group instead of a type, or null. Required for the same reason. Never sent beside a type. */
+  targetGroupId: string | null
 }
 
 export function addField(universeId: string, typeId: string, input: FieldInput) {
@@ -168,6 +200,7 @@ export function listEntities(universeId: string, query: EntityQuery, signal?: Ab
   if (query.search.trim()) params.set('search', query.search.trim())
   if (query.entityTypeId) params.set('entityTypeId', query.entityTypeId)
   if (query.entityTypeId && query.includeDescendants) params.set('includeDescendants', 'true')
+  if (query.entityTypeGroupId) params.set('entityTypeGroupId', query.entityTypeGroupId)
   if (query.canonStatus !== null) params.set('canonStatus', String(query.canonStatus))
   if (query.tag) params.set('tag', query.tag)
   if (query.familyTreeEligible) params.set('familyTreeEligible', 'true')

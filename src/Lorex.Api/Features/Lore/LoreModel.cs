@@ -108,6 +108,41 @@ public sealed class EntityType
     public ICollection<EntityFieldDefinition> Fields { get; set; } = [];
 }
 
+/// <summary>
+/// A semantic group of Lore types (Issue #36): a named, creator-defined classification such as "Runes" that several concrete
+/// types can belong to. Classification metadata only - not an entity model, not a parent type. A type in a group inherits
+/// nothing from it: no field, no icon, no Family Tree eligibility. Identity is the id, so renaming the group or a member type
+/// changes no membership and no field that targets the group. Membership is explicit and never inferred from names.
+/// </summary>
+public sealed class EntityTypeGroup
+{
+    public Guid Id { get; set; }
+
+    public Guid UniverseId { get; set; }
+
+    public Universe? Universe { get; set; }
+
+    public required string Name { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
+
+    public ICollection<EntityTypeGroupMember> Members { get; set; } = [];
+}
+
+/// <summary>One type's membership of one group. Both are of the same universe, which a trigger enforces.</summary>
+public sealed class EntityTypeGroupMember
+{
+    public Guid EntityTypeGroupId { get; set; }
+
+    public EntityTypeGroup? Group { get; set; }
+
+    public Guid EntityTypeId { get; set; }
+
+    public EntityType? EntityType { get; set; }
+}
+
 /// <summary>One custom field on a type. No formulas, no nesting, no JSON.</summary>
 public sealed class EntityFieldDefinition
 {
@@ -145,6 +180,16 @@ public sealed class EntityFieldDefinition
     public Guid? TargetEntityTypeId { get; set; }
 
     public EntityType? TargetEntityType { get; set; }
+
+    /// <summary>
+    /// For an <see cref="EntityFieldKind.EntityReference"/> field, the semantic group its entries' types must belong to, or
+    /// null. Never set together with <see cref="TargetEntityTypeId"/>: a field allows any type, one exact type, or one group
+    /// (Issue #36). Membership is read as it is when a link is written, so adding a type to the group widens the field and
+    /// taking one out is refused while a link relies on it. A group of the same universe, which a trigger enforces.
+    /// </summary>
+    public Guid? TargetGroupId { get; set; }
+
+    public EntityTypeGroup? TargetGroup { get; set; }
 
     public ICollection<EntityFieldOption> Options { get; set; } = [];
 

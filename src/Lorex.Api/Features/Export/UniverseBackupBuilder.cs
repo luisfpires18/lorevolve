@@ -97,7 +97,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
             await IdeasAsync(universe.Id, universe.OwnerId, cancellationToken),
             await WorldRulesAsync(universeId, cancellationToken),
             await ValidationTermsAsync(universeId, cancellationToken),
-            await CalendarAsync(universeId, cancellationToken));
+            await CalendarAsync(universeId, cancellationToken),
+            await EntityTypeGroupsAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -192,6 +193,33 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
 
     // ---------- Types and fields ----------
 
+    /// <summary>
+    /// The universe's semantic groups, by name then id, each with its member type ids sorted - so two exports of unchanged lore
+    /// are identical.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupEntityTypeGroup>> EntityTypeGroupsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken)
+    {
+        var groups = await db.EntityTypeGroups.AsNoTracking()
+            .Where(group => group.UniverseId == universeId)
+            .Select(group => new { group.Id, group.Name, group.CreatedAt, group.UpdatedAt, TypeIds = group.Members.Select(member => member.EntityTypeId).ToList() })
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. groups
+                .OrderBy(group => group.Name, StringComparer.Ordinal)
+                .ThenBy(group => Key(group.Id), StringComparer.Ordinal)
+                .Select(group => new BackupEntityTypeGroup(
+                    group.Id,
+                    group.Name,
+                    Utc(group.CreatedAt),
+                    Utc(group.UpdatedAt),
+                    [.. group.TypeIds.OrderBy(Key, StringComparer.Ordinal)])),
+        ];
+    }
+
     private async Task<IReadOnlyList<BackupEntityType>> EntityTypesAsync(
         Guid universeId,
         CancellationToken cancellationToken)
@@ -241,7 +269,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                             field.DisplayOrder,
                             field.DefaultValue,
                             optionsByField.GetValueOrDefault(field.Id, []),
-                            field.TargetEntityTypeId)),
+                            field.TargetEntityTypeId,
+                            field.TargetGroupId)),
                 ]);
 
         // The hierarchy's own order, as the app lists it: a parent before its descendants, siblings by place, then name,

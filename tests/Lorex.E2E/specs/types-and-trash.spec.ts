@@ -402,7 +402,7 @@ test.describe('Lore types', () => {
         await expect(trigger).toHaveAccessibleName('Choose category')
         await trigger.click()
         const menu = page.getByTestId('lore-type-menu-panel')
-        await expect(menu.getByRole('link')).toHaveCount(all)
+        await expect(menu.locator('a[data-type-name]')).toHaveCount(all)
         await menu.getByRole('link', { name: 'Guild' }).click()
         await expect(page).toHaveURL(/\?type=/)
         await expect(trigger).toContainText('Guild')

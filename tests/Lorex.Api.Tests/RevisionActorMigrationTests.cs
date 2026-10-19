@@ -78,7 +78,7 @@ public sealed class RevisionActorMigrationTests : IDisposable
 
             Assert.Empty(await ForeignKeyViolations(db));
             Assert.Equal(indexes.Where(LaterSchema.BeforeComments), await Indexes(db));
-            Assert.Equal(triggers, await Triggers(db));
+            Assert.Equal(triggers.Where(LaterSchema.BeforeTypeGroups), await Triggers(db));
             Assert.Equal(counts, await Counts(db));
         }
 
