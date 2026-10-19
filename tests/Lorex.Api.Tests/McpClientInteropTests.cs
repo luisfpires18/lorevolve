@@ -385,6 +385,68 @@ public sealed class ClientMetadataFetchLimitTests
         Assert.Equal(7, documents.Requested.Count);
     }
 
+    [Theory]
+    [InlineData("no-store")]
+    [InlineData("no-cache")]
+    [InlineData("max-age=0")]
+    public async Task A_publisher_that_forbids_caching_is_asked_again_every_time(string cacheControl)
+    {
+        var documents = new StubDocuments();
+        using var api = new LorexApiFactory { ClientMetadata = documents };
+        var (browser, _) = await NewBrowser(api, "fetchnocache");
+        var u = (await CreateUniverse(browser, "Uncached world")).Id;
+        var (_, challenge) = Pkce();
+        const string client = "https://strict.example/client.json";
+        documents.Serve(client, () =>
+        {
+            var response = Document(client, maxAge: null)();
+            response.Headers.CacheControl = System.Net.Http.Headers.CacheControlHeaderValue.Parse(cacheControl);
+            return response;
+        });
+
+        // No minimum period of trust: each use, even a moment later, fetches the document again.
+        for (var i = 0; i < 3; i++)
+        {
+            Assert.Equal(HttpStatusCode.Redirect, (await StartAuthorization(browser, AuthorizeRequest(client, Resource(u), challenge))).StatusCode);
+        }
+
+        Assert.Equal(3, documents.Requested.Count(url => url == client));
+    }
+
+    [Fact]
+    public async Task A_document_that_fails_revalidation_is_not_trusted_from_before()
+    {
+        var documents = new StubDocuments();
+        using var api = new LorexApiFactory { ClientMetadata = documents };
+        var (browser, _) = await NewBrowser(api, "fetchfail");
+        var u = (await CreateUniverse(browser, "Failing world")).Id;
+        var (_, challenge) = Pkce();
+        const string client = "https://flaky.example/client.json";
+        documents.Serve(client, Document(client, maxAge: TimeSpan.FromMinutes(10)));
+        Assert.Equal(HttpStatusCode.Redirect, (await StartAuthorization(browser, AuthorizeRequest(client, Resource(u), challenge))).StatusCode);
+
+        // Stale, and its publisher now fails, sends something invalid, or has dropped the redirect URI: refused each time,
+        // never answered from the document LoreX held before - grace is for a spent ration, not for a failed check.
+        api.Clock.Offset = TimeSpan.FromMinutes(11);
+        foreach (var answer in new Func<HttpResponseMessage>[]
+                 {
+                     () => new HttpResponseMessage(HttpStatusCode.InternalServerError),
+                     () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("not json", System.Text.Encoding.UTF8, "application/json") },
+                     () => new HttpResponseMessage(HttpStatusCode.OK)
+                     {
+                         Content = new StringContent(JsonSerializer.Serialize(new { client_id = client, client_name = "Moved", redirect_uris = (string[])["https://moved.example/cb"] }), System.Text.Encoding.UTF8, "application/json"),
+                     },
+                 })
+        {
+            documents.Serve(client, answer);
+            var refused = await StartAuthorization(browser, AuthorizeRequest(client, Resource(u), challenge));
+            Assert.True(refused.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.BadRequest, refused.StatusCode.ToString());
+            Assert.Null(refused.Headers.Location);
+        }
+
+        Assert.Equal(4, documents.Requested.Count(url => url == client));
+    }
+
     [Fact]
     public async Task Re_checks_across_every_host_stop_at_one_ceiling()
     {

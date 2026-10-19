@@ -219,6 +219,49 @@ test.describe('Consent and connected apps', () => {
     expect((await profile.request.get('/api/auth/me')).status()).toBe(200)
   })
 
+  test('a post that rides the session without the consent token decides nothing', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const universe = await newUniverse(page)
+    const clientId = await registerClient(page.request)
+    const { challenge } = pkce()
+    const params = new URL(
+      authorizeUrl(clientId, await mcpUrlOf(page, universe.id), challenge),
+      'http://localhost',
+    ).searchParams
+    const left: string[] = []
+    page.on('request', (request) => {
+      if (request.url().startsWith(CALLBACK)) left.push(request.url())
+    })
+
+    // A forged same-site form: the browser sends the session cookie, but the page never read the consent token.
+    await page.goto('/app')
+    await page.evaluate(
+      (fields) => {
+        const form = document.createElement('form')
+        form.method = 'post'
+        form.action = '/oauth/authorize'
+        for (const [name, value] of [...fields, ['lorex_decision', 'approve']]) {
+          const input = document.createElement('input')
+          input.type = 'hidden'
+          input.name = name
+          input.value = value
+          form.append(input)
+        }
+        document.body.append(form)
+        form.submit()
+      },
+      [...params.entries()],
+    )
+
+    await page.waitForURL(/\/connect\/authorize\?/)
+    await expect(page.getByTestId('consent-approve')).toBeVisible()
+    expect(left).toEqual([])
+    const apps = await page.request.get('/api/profile/connected-apps')
+    expect(await apps.json()).toEqual([])
+  })
+
   test('denying sends the app away with nothing', async ({ page }) => {
     await signUp(page)
     const universe = await newUniverse(page)

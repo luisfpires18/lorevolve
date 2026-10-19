@@ -62,10 +62,13 @@ public sealed class LorexApiFactory : WebApplicationFactory<Program>
     /// <summary>The MCP origin every test host runs on: the test server's own base address.</summary>
     public const string Origin = "http://localhost";
 
+    /// <summary>The MCP origin this host is given; null for a host where MCP is not set up.</summary>
+    public string? McpOrigin { get; init; } = Origin;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
-        builder.UseSetting("Mcp:Origin", Origin);
+        builder.UseSetting("Mcp:Origin", McpOrigin ?? string.Empty);
         builder.UseSetting("Mcp:RegistrationsPerMinute", RegistrationsPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));
         if (MetadataRechecksPerHostPerMinute is { } rechecks)
         {

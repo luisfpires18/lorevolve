@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Lorex.Api.Features.Auth;
+using Lorex.Api.Features.Mcp;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.WebUtilities;
 using ModelContextProtocol.Client;
@@ -102,10 +103,26 @@ internal static class McpTestClient
         browser.GetAsync(QueryHelpers.AddQueryString("/oauth/authorize", request));
 
     /// <summary>The consent screen's post: the request as it arrived, and the person's decision.</summary>
-    public static Task<HttpResponseMessage> Decide(HttpClient browser, IDictionary<string, string?> request, string decision)
+    /// <summary>
+    /// The consent screen's post: the request as it arrived, the person's decision, and - as the screen does - the
+    /// antiforgery token it reads for the signed-in account (none for a browser that is not signed in).
+    /// </summary>
+    public static async Task<HttpResponseMessage> Decide(HttpClient browser, IDictionary<string, string?> request, string decision)
+    {
+        var token = await browser.GetAsync("/api/oauth/consent-token");
+        return await Post(browser, request, decision, token.IsSuccessStatusCode ? (await token.Content.ReadFromJsonAsync<ConsentToken>())!.Token : null);
+    }
+
+    /// <summary>A decision posted with exactly the antiforgery token given, or none.</summary>
+    public static Task<HttpResponseMessage> Post(HttpClient browser, IDictionary<string, string?> request, string decision, string? token)
     {
         var fields = request.Where(field => field.Value is not null).Select(field => new KeyValuePair<string, string>(field.Key, field.Value!)).ToList();
         fields.Add(new("lorex_decision", decision));
+        if (token is not null)
+        {
+            fields.Add(new("lorex_consent_token", token));
+        }
+
         return browser.PostAsync("/oauth/authorize", new FormUrlEncodedContent(fields));
     }
 

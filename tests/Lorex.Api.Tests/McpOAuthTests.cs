@@ -137,6 +137,56 @@ public sealed class McpOAuthTests(LorexApiFactory api) : IClassFixture<LorexApiF
     }
 
     [Fact]
+    public async Task A_post_riding_the_session_without_the_screen_s_token_approves_nothing()
+    {
+        var w = await NewSharedWorld(api, "oaforge");
+        var owner = await SignIn(api, "user-oaforge-owner");
+        var other = await SignIn(api, "user-oaforge-editor");
+        var client = await RegisterPublicClient(api.CreateClient());
+        var (_, challenge) = Pkce();
+        var request = AuthorizeRequest(client, Resource(w.U), challenge);
+
+        // What a forged same-site form can send: the session cookie, but no token, a made-up one, or another account's.
+        var othersToken = (await (await other.GetAsync("/api/oauth/consent-token")).Content.ReadFromJsonAsync<ConsentToken>())!.Token;
+        foreach (var token in new string?[] { null, "forged-token", othersToken })
+        {
+            var response = await McpTestClient.Post(owner, request, "approve", token);
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            var location = response.Headers.Location!.OriginalString;
+            Assert.StartsWith("/connect/authorize?", location, StringComparison.Ordinal);
+            Assert.DoesNotContain("lorex_decision", location, StringComparison.Ordinal);
+            Assert.DoesNotContain("lorex_consent_token", location, StringComparison.Ordinal);
+        }
+
+        // The token without its cookie - another browser's - is no better.
+        var cookieless = Browser(api);
+        (await cookieless.PostAsJsonAsync("/api/auth/login", new Lorex.Api.Features.Auth.LoginRequest("user-oaforge-owner", PublishingTestClient.Password))).EnsureSuccessStatusCode();
+        var ownersToken = (await (await owner.GetAsync("/api/oauth/consent-token")).Content.ReadFromJsonAsync<ConsentToken>())!.Token;
+        Assert.StartsWith("/connect/authorize?", (await McpTestClient.Post(cookieless, request, "approve", ownersToken)).Headers.Location!.OriginalString, StringComparison.Ordinal);
+
+        Assert.Equal(0, await Connections(w.U));
+
+        // The screen's own post, token and all, still connects.
+        Assert.True(RedirectParameters(await Decide(owner, request, "approve")).ContainsKey("code"));
+        Assert.Equal(1, await Connections(w.U));
+    }
+
+    [Fact]
+    public async Task The_consent_token_is_for_signed_in_accounts_and_never_cached()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Browser(api).GetAsync("/api/oauth/consent-token")).StatusCode);
+
+        var (browser, _) = await NewBrowser(api, "oatoken");
+        var response = await browser.GetAsync("/api/oauth/consent-token");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+        Assert.Equal("lorex_consent_token", (await response.Content.ReadFromJsonAsync<ConsentToken>())!.FieldName);
+        var cookie = Assert.Single(response.Headers.GetValues("Set-Cookie"), value => value.StartsWith("lorex.consent=", StringComparison.Ordinal));
+        Assert.Contains("samesite=strict", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Denying_grants_nothing_and_says_so_to_the_client()
     {
         var w = await NewSharedWorld(api, "oadeny");

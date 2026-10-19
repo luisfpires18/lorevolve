@@ -87,10 +87,12 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - UI: Connect to AI on the universe's Overview (the top bar stays the search's); Profile, Connected apps with
     Disconnect. Pinned `System.Security.Cryptography.Pkcs` and `.Xml` to 10.0.13 (OpenIddict's Data Protection reference
     brought 10.0.11, CVE-2026-84008).
-  - Tests: API 1646/1646; 6 skipped (opt-in OpenAI smoke; untracked local Groq diagnostics). 80 new MCP tests in 7 files,
+  - Review fixes (2026-10-19): without an origin no OAuth/MCP endpoint is mapped (registration included); consent posts
+    need an antiforgery token from `/api/oauth/consent-token`; CIMD caching honours no-store, no-cache and max-age=0.
+  - Tests: API 1653/1653; 6 skipped (opt-in OpenAI smoke; untracked local Groq diagnostics). 87 new MCP tests in 8 files,
     incl. the official MCP SDK client doing its own OAuth discovery, DCR and CIMD; 15 earlier migration walks taught the
     new indexes in `LaterSchema`; matrix +1 route.
-    Playwright `mcp-connect.spec.ts` 7; with 14 neighbouring specs on a fresh DB 113/114, the one `global-navigation`
+    Playwright `mcp-connect.spec.ts` 8; with 7 neighbouring specs 64/64 after the review fixes. Before them: with 14 neighbouring specs on a fresh DB 113/114, the one `global-navigation`
     focus test lost under load, green 42/42 alone x3. Full Playwright not run locally; delegated to GitHub Actions.
   - Not yet tried against a live Claude or ChatGPT: needs a public HTTPS origin (DEV with `Mcp__Origin`).
 - **Roadmap task 048 - Interactive Writing Workspace V1** (GitHub issue 6; `feat/interactive-writing-workspace-v1`

@@ -75,8 +75,6 @@ public static class McpLimits
     /// <summary>How long a fetched document is trusted when its response says nothing; its own max-age is held to the bounds.</summary>
     public static readonly TimeSpan MetadataCacheDefault = TimeSpan.FromHours(1);
 
-    public static readonly TimeSpan MetadataCacheMinimum = TimeSpan.FromMinutes(5);
-
     public static readonly TimeSpan MetadataCacheMaximum = TimeSpan.FromHours(24);
 
     /// <summary>
@@ -199,6 +197,16 @@ public static class McpSetup
                     .DisableAccessTokenExtractionFromBodyForm()
                     .DisableAccessTokenExtractionFromQueryString();
             });
+
+        // The consent form's antiforgery token (OAuthEndpoints): its cookie as strict as the session's.
+        services.AddAntiforgery(options =>
+        {
+            options.FormFieldName = OAuthEndpoints.ConsentTokenField;
+            options.Cookie.Name = OAuthEndpoints.ConsentTokenCookie;
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+            options.Cookie.SecurePolicy = plainHttpAllowed ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+        });
 
         services.AddRateLimiter(options =>
         {

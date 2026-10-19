@@ -59,6 +59,16 @@ export function describeConnectionRequest(params: URLSearchParams, signal?: Abor
   )
 }
 
+/** The consent form's antiforgery field and token, for the signed-in account. Paired with an HttpOnly cookie. */
+export interface ConsentToken {
+  fieldName: string
+  token: string
+}
+
+export function getConsentToken(signal?: AbortSignal) {
+  return apiFetch<ConsentToken>('/api/oauth/consent-token', { signal })
+}
+
 export function listConnectedApps(signal?: AbortSignal) {
   return apiFetch<ConnectedApp[]>('/api/profile/connected-apps', { signal })
 }

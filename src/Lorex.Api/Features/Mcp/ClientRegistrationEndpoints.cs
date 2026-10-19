@@ -44,6 +44,12 @@ public static class ClientRegistrationEndpoints
 
     public static IEndpointRouteBuilder MapClientRegistrationEndpoints(this IEndpointRouteBuilder endpoints)
     {
+        // Without an origin there is no authorization server, and no rate limiter either: no registration at all.
+        if (!endpoints.ServiceProvider.GetRequiredService<McpSite>().IsEnabled)
+        {
+            return endpoints;
+        }
+
         endpoints.MapPost(RegisterPath, RegisterAsync)
             .WithTags("MCP")
             .WithName("RegisterOAuthClient")

@@ -349,25 +349,28 @@ internal sealed partial class ClientMetadataDocuments(
         !root.TryGetProperty(name, out var list)
         || (list.ValueKind == JsonValueKind.Array && list.EnumerateArray().Any(item => item.ValueKind == JsonValueKind.String && item.GetString() == value));
 
-    /// <summary>The response's own max-age, held between the bounds; the default when it gives none or says not to store.</summary>
     /// <summary>
     /// How long to trust the document, and for how long after that it may still stand while it cannot be fetched again.
-    /// Trust is the response's own max-age held between the bounds (the default when it gives none; the minimum when it
-    /// says not to store). The grace exists only when the publisher allowed caching outright - a max-age, and neither
-    /// no-store, no-cache nor must-revalidate - and is never longer than that max-age or <see cref="McpLimits.MetadataStaleGrace"/>.
+    /// Trust is what the publisher said: none at all for no-store, no-cache or max-age=0 (fetched again on every use); its
+    /// max-age, up to <see cref="McpLimits.MetadataCacheMaximum"/>; the default when it said nothing. The grace exists only
+    /// when the publisher allowed caching outright - a max-age above zero, and neither no-store, no-cache nor
+    /// must-revalidate - and is never longer than that max-age or <see cref="McpLimits.MetadataStaleGrace"/>.
     /// </summary>
     private static (TimeSpan Fresh, TimeSpan Grace) Freshness(HttpResponseMessage response)
     {
         var cache = response.Headers.CacheControl;
-        if (cache is null || cache.NoStore || cache.NoCache)
+        if (cache is null)
         {
-            return (cache is null ? McpLimits.MetadataCacheDefault : McpLimits.MetadataCacheMinimum, TimeSpan.Zero);
+            return (McpLimits.MetadataCacheDefault, TimeSpan.Zero);
+        }
+
+        if (cache.NoStore || cache.NoCache || cache.MaxAge <= TimeSpan.Zero)
+        {
+            return (TimeSpan.Zero, TimeSpan.Zero);
         }
 
         var maxAge = cache.MaxAge ?? McpLimits.MetadataCacheDefault;
-        var fresh = maxAge < McpLimits.MetadataCacheMinimum ? McpLimits.MetadataCacheMinimum
-            : maxAge > McpLimits.MetadataCacheMaximum ? McpLimits.MetadataCacheMaximum
-            : maxAge;
+        var fresh = maxAge > McpLimits.MetadataCacheMaximum ? McpLimits.MetadataCacheMaximum : maxAge;
         var grace = cache.MaxAge is { } allowed && !cache.MustRevalidate
             ? (allowed < McpLimits.MetadataStaleGrace ? allowed : McpLimits.MetadataStaleGrace)
             : TimeSpan.Zero;

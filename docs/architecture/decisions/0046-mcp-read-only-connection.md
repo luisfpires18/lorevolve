@@ -28,7 +28,9 @@ cryptographic is hand-written: codes, tokens, PKCE, rotation and replay detectio
 **One universe per connection, named by the resource.** Each universe's MCP endpoint is
 `{origin}/mcp/universes/{id}`, and that URL is also its RFC 8707 resource. The URL is an address, not a credential. The
 origin is configured (`Mcp:Origin`, else `PublicSite:Origin`), never read from the `Host` header; unset, there is no MCP
-and no authorization server. Outside Development and the test host it must be HTTPS. An authorization request must name
+and no authorization server: discovery, `/oauth/*` (registration included), the consent screen's reads, protected
+resource metadata and `/mcp/*` are not mapped at all, so nothing answers without the protections an origin brings (the
+registration rate limiter among them). Connected apps can still be listed and revoked. Outside Development and the test host it must be HTTPS. An authorization request must name
 exactly one such resource (else `invalid_target`, sent back to the validated redirect URI); the token's audience is that
 resource and nothing else; a token request may name only it again. Protected resource metadata is served per universe at
 the RFC 9728 path-inserted well-known address, the same for any id, so it reveals nothing about which universes exist.
@@ -58,7 +60,9 @@ is a JWT.
   publisher allowed - a `max-age` without `no-store`, `no-cache` or `must-revalidate` - of at most that max-age and 5
   minutes; LoreX never extends it. The document's `client_id` must be its URL; it must
   name the client, list 1-10 redirect URIs each HTTPS or loopback, accept `none` at the token endpoint and the code flow.
-  A document is trusted for its `max-age` held to 5 min - 24 h (1 h by default) and fetched again after. Anything wrong
+  A document is trusted for what its publisher said: not at all for `no-store`, `no-cache` or `max-age=0` (fetched
+  again on every use), else its `max-age` up to 24 h, 1 h when it says nothing; then fetched again. A revalidation that
+  fails is a refusal: grace is only for a spent ration, never for a failed check. Anything wrong
   refuses the request as `invalid_client`, shown by LoreX, never redirected.
 - *Dynamic client registration*, at `POST /oauth/register`, for older clients: open by design, so bounded - a 16 KB body,
   30 registrations a minute across all callers (`Mcp:RegistrationsPerMinute`), the same redirect and name rules, only the
@@ -81,9 +85,12 @@ usually from another site, so the Strict session cookie is not sent and nothing 
 validated the client, redirect URI, PKCE and scope, the request goes unchanged to the SPA's consent screen
 (`/connect/authorize`, behind the existing sign-in; signing in returns to it). The screen reads `GET
 /api/oauth/authorization-request` (session) for what to show, and posts the same parameters back to `/oauth/authorize`
-with `lorex_decision=approve|deny`. That post is same-site, carries the session, and is validated by OpenIddict again.
-Only an explicit approval by a signed-in member who can read that universe creates anything; a post without the session
-goes back to the screen; deny is `access_denied`; `prompt=none` is `consent_required`. There is no remembered consent:
+with `lorex_decision=approve|deny` and an ASP.NET Core antiforgery token (`lorex_consent_token`) it reads from `GET
+/api/oauth/consent-token` - bound to the signed-in account and to an HttpOnly, `SameSite=Strict` cookie
+(`lorex.consent`). That post is same-site, carries the session, and is validated by OpenIddict and by the antiforgery
+check again. `SameSite=Strict` alone stops cross-site posts; the token also stops a same-site page that rides the
+session but could never read the token. Only an explicit approval by a signed-in member who can read that universe
+creates anything; a post without the session, or without a valid token, goes back to the screen; deny is `access_denied`; `prompt=none` is `consent_required`. There is no remembered consent:
 every connection is approved by a person. The screen and the OAuth endpoints refuse to be framed.
 
 **What an approval makes.** A permanent OpenIddict authorization (subject = account, client, scopes `lorex.read` and

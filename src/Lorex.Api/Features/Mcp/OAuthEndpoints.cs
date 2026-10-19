@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Lorex.Api.Data;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,9 @@ using OpenIddict.Server.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Lorex.Api.Features.Mcp;
+
+/// <summary>The consent form's antiforgery field and the token to put in it.</summary>
+public sealed record ConsentToken(string FieldName, string Token);
 
 /// <summary>What the consent screen shows about a request: the client as it claims to be, and the universe it asks for.</summary>
 public sealed record ConnectionRequestDetails(
@@ -46,8 +50,19 @@ public static class OAuthEndpoints
 
     public const string Approve = "approve";
 
+    /// <summary>The consent form's antiforgery field, and the cookie its token is paired with.</summary>
+    public const string ConsentTokenField = "lorex_consent_token";
+
+    public const string ConsentTokenCookie = "lorex.consent";
+
     public static IEndpointRouteBuilder MapOAuthEndpoints(this IEndpointRouteBuilder endpoints)
     {
+        // Without an origin there is no authorization server: none of its endpoints, nor the consent screen's reads.
+        if (!endpoints.ServiceProvider.GetRequiredService<McpSite>().IsEnabled)
+        {
+            return endpoints;
+        }
+
         endpoints.MapMethods("/oauth/authorize", [HttpMethods.Get, HttpMethods.Post], AuthorizeAsync)
             .WithTags("MCP")
             .WithName("AuthorizeConnection")
@@ -65,6 +80,18 @@ public static class OAuthEndpoints
             .WithName("DescribeConnectionRequest")
             .RequireAuthorization();
 
+        // The consent form's antiforgery token, bound to the signed-in account and to an HttpOnly cookie. Only a page that
+        // can read this answer - LoreX's own, same-origin - can make a decision the server accepts.
+        endpoints.MapGet("/api/oauth/consent-token", (HttpContext http, IAntiforgery antiforgery) =>
+            {
+                var tokens = antiforgery.GetAndStoreTokens(http);
+                http.Response.Headers.CacheControl = "no-store";
+                return Results.Ok(new ConsentToken(tokens.FormFieldName, tokens.RequestToken!));
+            })
+            .WithTags("MCP")
+            .WithName("GetConsentToken")
+            .RequireAuthorization();
+
         return endpoints;
     }
 
@@ -75,6 +102,7 @@ public static class OAuthEndpoints
         IOpenIddictApplicationManager applications,
         IOpenIddictAuthorizationManager authorizations,
         IOpenIddictTokenManager tokens,
+        IAntiforgery antiforgery,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
@@ -103,10 +131,19 @@ public static class OAuthEndpoints
 
         var form = await http.Request.ReadFormAsync(cancellationToken);
         var session = await http.AuthenticateAsync(IdentityConstants.ApplicationScheme);
-        if (!session.Succeeded || session.Principal is null)
+
+        // A decision counts only from LoreX's own consent screen: signed in, and carrying the antiforgery token that screen
+        // was given for this account. Anything else - a cross-site post without the session, or a same-site post that
+        // rides it but never read the token - goes back to the screen, where a person decides.
+        if (session.Succeeded && session.Principal is not null)
+        {
+            http.User = session.Principal;
+        }
+
+        if (!session.Succeeded || session.Principal is null || !await antiforgery.IsRequestValidAsync(http))
         {
             return Results.Redirect(ConsentPath + QueryString.Create(form
-                .Where(field => field.Key != DecisionField)
+                .Where(field => field.Key is not (DecisionField or ConsentTokenField))
                 .SelectMany(field => field.Value.Select(value => new KeyValuePair<string, string?>(field.Key, value)))).ToUriComponent());
         }
 
