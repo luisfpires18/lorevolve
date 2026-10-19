@@ -3,7 +3,7 @@ import { png } from './support/png'
 import { PASSWORD, post, seeder, unique } from './support/trash'
 
 /**
- * Refinement 040 (ADR 0042): the Profile's Storage section, as a person sees it. What counts, whose it is and when an
+ * Refinement 040 (ADR 0042): Storage in the Profile's Usage section, as a person sees it. What counts, whose it is and when an
  * upload is refused are proved by the API tests, which can set an allowance; this proves that the numbers reach the
  * screen in words, that the bar says the same to a screen reader, that a collaborator's upload shows up on the owner's
  * Profile and not their own, and that the section fits a phone. Nothing here fills a gigabyte.
@@ -51,9 +51,9 @@ async function upload(page: Page, universeId: string, entryId: string) {
 
 async function expectStorage(page: Page, text: string | RegExp) {
   await page.goto('/app/profile')
-  const section = page.getByTestId('profile-storage')
+  const section = page.getByTestId('profile-usage').getByTestId('usage-storage')
   await expect(section.getByRole('heading', { name: 'Storage' })).toBeVisible()
-  await expect(section.getByTestId('profile-storage-amount')).toHaveText(text)
+  await expect(section.getByTestId('usage-storage-amount')).toHaveText(text)
   return section
 }
 
@@ -65,8 +65,9 @@ test('the Profile shows what the account stores, and removing a picture gives it
   const empty = await expectStorage(page, '0 MB used of 1 GB')
   const meter = empty.getByRole('meter', { name: 'Storage' })
   await expect(meter).toHaveAttribute('aria-valuenow', '0')
-  await expect(meter).toHaveAttribute('aria-valuetext', '0 MB used of 1 GB')
-  await expect(empty.getByTestId('profile-storage-full')).toHaveCount(0)
+  await expect(meter).toHaveAttribute('aria-valuetext', '0 MB used of 1 GB, 0%')
+  await expect(empty.getByTestId('usage-storage-percent')).toHaveText('0%')
+  await expect(empty.getByTestId('usage-storage-full')).toHaveCount(0)
   await expect(empty).toContainText('universes you own')
 
   // Nothing to buy and nothing to raise: the section only reads.
@@ -80,8 +81,10 @@ test('the Profile shows what the account stores, and removing a picture gives it
   const used = await expectStorage(page, /^\d+(\.\d)? KB used of 1 GB$/)
   await expect(used.getByRole('meter', { name: 'Storage' })).toHaveAttribute(
     'aria-valuetext',
-    /^\d+(\.\d)? KB used of 1 GB$/,
+    /^\d+(\.\d)? KB used of 1 GB, Under 1%$/,
   )
+  // A few kilobytes of a gigabyte is never shown as nothing.
+  await expect(used.getByTestId('usage-storage-percent')).toHaveText('Under 1%')
 
   expect(
     (await page.request.delete(`/api/universes/${universeId}/entities/${entry.id}/image`)).status(),
@@ -114,7 +117,7 @@ test('an editor’s upload shows on the owner’s Profile and not the editor’s
   await editor.context().close()
 })
 
-test('the Storage section fits a phone', async ({ page }) => {
+test('Storage fits a phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 })
   await signUp(page, 'pocket')
 

@@ -57,7 +57,10 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `GET /api/profile/assistant-usage` (session only). Counted by `UseAssistantAllowance` (metadata-scoped middleware after
   authorization, before binding), so a malformed body counts. Tests: API 1566 passed (`AssistantUsageTests` 7). Playwright
   `account-usage.spec.ts` 4; focused + 5 neighbouring specs on a fresh DB green. Full suite delegated to GitHub Actions.
-  Follow-up: fold the Profile's Storage section into Usage as a second item.
+  Follow-up done: **unified Usage section** (`feat/unified-usage-section` off `dev` at `a00c750`; committed, not merged,
+  not pushed). Profile's Storage section folded into Usage: Storage, then AI Assistant, one heading, shared
+  `UsageItem`/`UsageMeter`/`useUsageLoad`. Frontend only, no API change. Storage now shows its percentage and, if its
+  read fails, an error with Try again instead of vanishing. Playwright usage + storage + neighbours 34/34.
 - **Groq assistant provider** (`feat/groq-assistant-provider` off `dev` at `76c2abe`; committed, not merged, not pushed).
   DEV's OpenAI account has no credit, so `Assistant:Provider` `Groq` (`Assistant:Groq:ApiKey`, `Assistant:Groq:Model`,
   DEV `openai/gpt-oss-120b`) runs the same exchange on Groq's OpenAI-compatible Responses API. Shared
