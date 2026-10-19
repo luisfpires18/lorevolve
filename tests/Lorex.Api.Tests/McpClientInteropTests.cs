@@ -385,6 +385,35 @@ public sealed class ClientMetadataFetchLimitTests
         Assert.Equal(7, documents.Requested.Count);
     }
 
+    [Fact]
+    public async Task Re_checks_across_every_host_stop_at_one_ceiling()
+    {
+        var documents = new StubDocuments();
+        using var api = new LorexApiFactory { ClientMetadata = documents, MetadataRechecksPerMinute = 2 };
+        var (browser, _) = await NewBrowser(api, "fetchceiling");
+        var u = (await CreateUniverse(browser, "Capped world")).Id;
+        var (_, challenge) = Pkce();
+
+        // Three publishers, one client each; each host's own share is far from spent.
+        string[] clients = ["https://one.example/client.json", "https://two.example/client.json", "https://three.example/client.json"];
+        foreach (var client in clients)
+        {
+            documents.Serve(client, Document(client, maxAge: TimeSpan.FromMinutes(10)));
+            Assert.Equal(HttpStatusCode.Redirect, (await StartAuthorization(browser, AuthorizeRequest(client, Resource(u), challenge))).StatusCode);
+        }
+
+        // All stale: the first two are checked again and reach the ceiling; the third is not fetched and stands within
+        // the grace its publisher allowed.
+        api.Clock.Offset = TimeSpan.FromMinutes(11);
+        foreach (var client in clients)
+        {
+            Assert.Equal(HttpStatusCode.Redirect, (await StartAuthorization(browser, AuthorizeRequest(client, Resource(u), challenge))).StatusCode);
+        }
+
+        Assert.Equal(5, documents.Requested.Count);
+        Assert.Equal(1, documents.Requested.Count(url => url == clients[2]));
+    }
+
     private static Func<HttpResponseMessage> Document(string clientId, TimeSpan? maxAge, bool noStore = false) => () =>
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK)

@@ -445,8 +445,10 @@ internal sealed partial class ClientMetadataDocuments(
 /// <summary>
 /// How many client metadata documents this host fetches (<see cref="McpLimits"/>), in two rations. Client ids never seen
 /// before - which anyone can make up, on any host - share one ration. Checking again a client LoreX has already accepted
-/// draws on a ration of that client's own host: one publisher, however many valid documents it hosts, spends only its own
-/// re-checks, never another publisher's. A fetch past its ration is refused, never queued.
+/// draws first on a ration of that client's own host - one publisher, however many valid documents it hosts, spends only
+/// its own share - and then on a ceiling for all re-checks together, so that how much LoreX fetches never depends on
+/// how many hosts exist. A fetch past either is refused, never queued; a host over its own share spends none of the
+/// ceiling.
 /// </summary>
 internal sealed class ClientMetadataFetchLimits(IConfiguration configuration) : IDisposable
 {
@@ -456,11 +458,16 @@ internal sealed class ClientMetadataFetchLimits(IConfiguration configuration) : 
         McpLimits.MetadataFetchesAtOnce,
         configuration.GetValue($"{McpSite.SectionName}:MetadataFetchesPerMinute", McpLimits.MetadataFetchesPerMinute));
 
-    /// <summary>Known clients, by the host that publishes their document.</summary>
-    public PartitionedRateLimiter<string> KnownClients { get; } = Ration(
-        host => host,
-        McpLimits.MetadataRechecksAtOncePerHost,
-        configuration.GetValue($"{McpSite.SectionName}:MetadataRechecksPerHostPerMinute", McpLimits.MetadataRechecksPerHostPerMinute));
+    /// <summary>Known clients: by the host that publishes their document, then all together.</summary>
+    public PartitionedRateLimiter<string> KnownClients { get; } = PartitionedRateLimiter.CreateChained(
+        Ration(
+            host => host,
+            McpLimits.MetadataRechecksAtOncePerHost,
+            configuration.GetValue($"{McpSite.SectionName}:MetadataRechecksPerHostPerMinute", McpLimits.MetadataRechecksPerHostPerMinute)),
+        Ration(
+            _ => string.Empty,
+            McpLimits.MetadataRechecksAtOnce,
+            configuration.GetValue($"{McpSite.SectionName}:MetadataRechecksPerMinute", McpLimits.MetadataRechecksPerMinute)));
 
     public void Dispose()
     {

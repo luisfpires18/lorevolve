@@ -87,7 +87,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - UI: Connect to AI on the universe's Overview (the top bar stays the search's); Profile, Connected apps with
     Disconnect. Pinned `System.Security.Cryptography.Pkcs` and `.Xml` to 10.0.13 (OpenIddict's Data Protection reference
     brought 10.0.11, CVE-2026-84008).
-  - Tests: API 1645/1645; 6 skipped (opt-in OpenAI smoke; untracked local Groq diagnostics). 79 new MCP tests in 7 files,
+  - Tests: API 1646/1646; 6 skipped (opt-in OpenAI smoke; untracked local Groq diagnostics). 80 new MCP tests in 7 files,
     incl. the official MCP SDK client doing its own OAuth discovery, DCR and CIMD; 15 earlier migration walks taught the
     new indexes in `LaterSchema`; matrix +1 route.
     Playwright `mcp-connect.spec.ts` 7; with 14 neighbouring specs on a fresh DB 113/114, the one `global-navigation`

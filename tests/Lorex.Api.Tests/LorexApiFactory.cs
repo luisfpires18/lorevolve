@@ -56,6 +56,9 @@ public sealed class LorexApiFactory : WebApplicationFactory<Program>
     /// <summary>Known clients' metadata documents checked again a minute, per host, when a test is about that ration.</summary>
     public int? MetadataRechecksPerHostPerMinute { get; init; }
 
+    /// <summary>Known clients' metadata documents checked again a minute, all hosts together, when a test is about that ceiling.</summary>
+    public int? MetadataRechecksPerMinute { get; init; }
+
     /// <summary>The MCP origin every test host runs on: the test server's own base address.</summary>
     public const string Origin = "http://localhost";
 
@@ -67,6 +70,11 @@ public sealed class LorexApiFactory : WebApplicationFactory<Program>
         if (MetadataRechecksPerHostPerMinute is { } rechecks)
         {
             builder.UseSetting("Mcp:MetadataRechecksPerHostPerMinute", rechecks.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        if (MetadataRechecksPerMinute is { } ceiling)
+        {
+            builder.UseSetting("Mcp:MetadataRechecksPerMinute", ceiling.ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
 
         builder.ConfigureServices(services =>

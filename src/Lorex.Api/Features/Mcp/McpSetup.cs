@@ -57,6 +57,15 @@ public static class McpLimits
     /// </summary>
     public const int MetadataRechecksPerHostPerMinute = 30;
 
+    /// <summary>Known clients' documents checked again at the same moment, all hosts together: the cap on outbound work.</summary>
+    public const int MetadataRechecksAtOnce = 8;
+
+    /// <summary>
+    /// Known clients' documents checked again in a minute, all hosts together (<c>Mcp:MetadataRechecksPerMinute</c>). Generous
+    /// beside what real publishers need - a handful of documents, each about hourly - and a ceiling all the same.
+    /// </summary>
+    public const int MetadataRechecksPerMinute = 240;
+
     /// <summary>
     /// The most a document past its freshness may still stand while its ration is spent - and only when its publisher
     /// allowed caching (a max-age, no no-store, no-cache or must-revalidate), and never longer than that max-age.
