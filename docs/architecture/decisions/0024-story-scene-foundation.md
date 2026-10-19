@@ -1,7 +1,7 @@
 # ADR 0024 - A story is authored narrative that references lore, told in its own order
 
 Status: accepted (2026-09-13), amended 2026-09-13 (chapters, ADR 0025: scene order is now per chapter or
-Unchaptered), amended 2026-09-14 (deleting moves to the Trash - ADR 0029), amended 2026-09-14 (universe search - ADR 0031)
+Unchaptered), amended 2026-09-14 (deleting moves to the Trash - ADR 0029), amended 2026-09-14 (universe search - ADR 0031), amended 2026-10-19 (Lore Context, task 048)
 
 ## Context
 
@@ -142,3 +142,15 @@ key, `ChronologyValue.MonthId`), validated by the same shared point check as a m
 There is no scene-only calendar logic. Turning the calendar on or off converts scenes in the Trash too, so a restored scene
 keeps a meaningful date. Scene chronology has no revision history (only manuscripts do), so nothing in a history snapshot
 holds a month id.
+
+## Amendment - Lore Context (2026-10-19, task 048)
+
+The manuscript gains a Lore drawer that links and unlinks entries on the open scene. It writes the same
+`SceneEntityLinks` through the scene's own `PUT`, not a route of its own: the client sends the scene exactly as
+stored, with only `entityIds` changed, and the `expectedVersion` the page holds (ADR 0043). That save already
+dedupes ids, reads them inside the universe, refuses newly linking a trashed entry and needs `EditContent`, so a
+link endpoint would only repeat it. A refused stale save is never retried for the author: the story is read again
+and they choose again. The prose is not involved; its own route and version are untouched.
+
+Search is the scene form picker's `entities?search=` (ADR 0016), the preview the entry's and its relationships'
+own reads. No new index, read model or permission.

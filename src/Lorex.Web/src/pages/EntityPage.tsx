@@ -27,7 +27,6 @@ import { TokenInput } from '../components/TokenInput'
 import { TypeIcon } from '../components/TypeIcon'
 import { blockingFindingsOf } from '../canon/blocked'
 import type { CanonBlockingFinding } from '../canon/types'
-import { formatChronologyYear } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { CanonBlockNotice } from '../components/CanonBlockNotice'
 import { ApiError } from '../lib/api'
@@ -46,12 +45,12 @@ import {
   CANON_LABELS,
   CANON_ORDER,
   CanonStatus,
-  FieldKind,
   type CanonStatusValue,
   type EntityDetail,
   type EntityType,
   type FieldValueInput,
 } from '../lore/types'
+import { renderFact } from '../lore/facts'
 import { typeChoices } from '../lore/typeTree'
 import { StatusBadge } from '../components/StatusBadge'
 import { suggestEntryChanges } from '../suggestions/api'
@@ -1290,47 +1289,4 @@ const emptyFact = {
   optionValues: [],
   referencedEntityName: null,
   referencedEntityIsTrashed: false,
-}
-
-function renderFact(
-  value: {
-    kind: number
-    text: string | null
-    number: number | null
-    eraId: string | null
-    boolean: boolean | null
-    date: string | null
-    optionValues: string[]
-    referencedEntityName: string | null
-    referencedEntityIsTrashed: boolean
-  },
-  chronology: Chronology,
-) {
-  switch (value.kind) {
-    case FieldKind.ShortText:
-    case FieldKind.LongText:
-      return value.text ?? '—'
-    case FieldKind.Number:
-      if (value.number === null) return '—'
-      // A year in an era reads the way the universe writes it; any other number stays as typed.
-      return value.eraId
-        ? formatChronologyYear(chronology, value.number, value.eraId)
-        : value.number
-    case FieldKind.Boolean:
-      return value.boolean ? 'Yes' : 'No'
-    case FieldKind.Date:
-      return value.date ? formatDate(value.date) : '—'
-    case FieldKind.Select:
-    case FieldKind.MultiSelect:
-      return value.optionValues.length > 0 ? value.optionValues.join(', ') : '—'
-    case FieldKind.EntityReference:
-      if (value.referencedEntityName === null) return '—'
-      // Named, not hidden: the entry is still there and still connected, it is simply in the
-      // Trash. Saying so is what stops the author reading it as lore that has gone missing.
-      return value.referencedEntityIsTrashed
-        ? `${value.referencedEntityName} (in Trash)`
-        : value.referencedEntityName
-    default:
-      return '—'
-  }
 }

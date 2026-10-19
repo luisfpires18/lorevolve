@@ -66,6 +66,20 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   DEV `openai/gpt-oss-120b`) runs the same exchange on Groq's OpenAI-compatible Responses API. Shared
   `ResponsesConversation`; OpenAI keeps `store: false` + encrypted reasoning, Groq omits `store` and `include`. No
   behaviour, copy or limit change. ADR 0045 amendment. Tests: `GroqAssistantProviderTests` 16. Not yet run live on Groq.
+- **Roadmap task 048 - Interactive Writing Workspace V1** (GitHub issue 6; `feat/interactive-writing-workspace-v1`
+  off `dev` at `b14fbf0`; committed, not merged, not pushed). Frontend only: no API, schema or backup change. ADR 0024
+  amendment.
+  - Manuscript tool row gains **Lore** (icon only on a phone), opening `LoreContext`: the shared `.drawer` modal, a side
+    sheet over the writing on a desktop and the full width on a phone. Lists the scene's linked lore, searches the
+    universe's lore (the scene picker's `entities?search=`), previews an entry in place (summary, aliases, non-empty
+    fields, up to 8 relationships, Open entry). Owner/Editor link and unlink; others read only.
+  - Link/unlink = the scene's own `PUT` with the stored scene and only `entityIds` changed, naming the page's version.
+    409 `scene_changed`: nothing written, the story is read again, author retries. Nothing shown linked until the API
+    answers. The prose, its recovery copy, Ctrl+S and the leave guard are untouched.
+  - `renderFact` moved from `EntityPage` to `lore/facts.ts` for the preview.
+  - Tests: Playwright `lore-context.spec.ts` 6; with 11 neighbouring specs 70/70 (against the running dev servers).
+    No backend change, so API tests not run. Full suite delegated to GitHub Actions.
+  - Out of scope, tracked apart: `@` mentions / inline references (issue 31), lore variants (issue 30).
 - **Roadmap task 047 - universe AI assistant V1** (GitHub issue 5; `feat/universe-ai-assistant-v1` off `dev` at `3510ccd`;
   committed, not merged, not pushed). No migration, backup unchanged. ADR 0045 (new); 0031 amendment. Task 046 (Global
   Quick Find) skipped: the existing search bar already covers it.

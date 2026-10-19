@@ -14669,7 +14669,8 @@ details.reviewsection > .reviewsection__list {
 @media (max-width: 640px) {
   .entry__lenses .reviewtrigger__label,
   .entry__tools .entry__toollabel,
-  .manuscript__tools .reviewtrigger__label {
+  .manuscript__tools .reviewtrigger__label,
+  .manuscript__tools .loretrigger__label {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -14680,6 +14681,104 @@ details.reviewsection > .reviewsection__list {
     white-space: nowrap;
     border: 0;
   }
+}
+
+/* ---------- Lore Context (task 048) ----------
+
+   The manuscript's Lore drawer: the moment drawer's frame, so a side sheet over the writing on a wide screen and the whole
+   width on a phone. Its rows are an entry's relation rows; its preview is the entry's facts, shortened. */
+
+.lorecontext__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.lorecontext__group > .sectionrule {
+  margin: 0;
+}
+
+.lorecontext__group > .sectionrule:focus {
+  outline: none;
+}
+
+.lorecontext__row {
+  align-items: center;
+}
+
+.lorecontext__name {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-family: var(--display);
+  font-size: var(--text-item);
+  text-align: start;
+  cursor: pointer;
+}
+
+.lorecontext__name--trashed {
+  color: var(--muted);
+}
+
+.lorecontext__action {
+  min-height: 2.75rem;
+}
+
+.lorepreview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.lorepreview__back {
+  align-self: flex-start;
+  min-height: 2.75rem;
+}
+
+.lorepreview__head {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.lorepreview__tile {
+  border-radius: var(--radius-sm);
+}
+
+.lorepreview__name {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: var(--text-section);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.lorepreview__summary {
+  margin: 0;
+}
+
+.lorepreview__relations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.lorepreview__list {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.lorepreview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 /* ---------- The universe assistant (ADR 0045) ----------

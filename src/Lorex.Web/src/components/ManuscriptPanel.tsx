@@ -23,6 +23,8 @@ interface ManuscriptPanelProps {
   onSuggestScene: (scene: Scene) => void
   /** An accepted suggestion changed a scene: the story is read again. */
   onSceneChanged: () => void
+  /** Lore Context saved the open scene's links: the story shows the scene the API answered with. */
+  onSceneSaved: (scene: Scene) => void
   /** The open scene's prose publication control (ADR 0039), built by the story page. */
   manuscriptPublication?: (scene: Scene) => ReactNode
 }
@@ -61,6 +63,7 @@ export function ManuscriptPanel({
   onEditScene,
   onSuggestScene,
   onSceneChanged,
+  onSceneSaved,
   manuscriptPublication,
 }: ManuscriptPanelProps) {
   const listId = useId()
@@ -215,6 +218,7 @@ export function ManuscriptPanel({
               onSuggestScene={onSuggestScene}
               chapters={chapters}
               onSceneChanged={onSceneChanged}
+              onSceneSaved={onSceneSaved}
               publication={manuscriptPublication?.(selected)}
             />
           ) : (
