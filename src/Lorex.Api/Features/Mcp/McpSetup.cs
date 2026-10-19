@@ -41,14 +41,21 @@ public static class McpLimits
     /// <summary>The whole fetch of a metadata document, body included.</summary>
     public static readonly TimeSpan MetadataFetchTimeout = TimeSpan.FromSeconds(5);
 
-    /// <summary>Metadata documents fetched at the same moment, per ration (new clients; known clients checked again).</summary>
+    /// <summary>Documents of never-seen clients fetched at the same moment, all together.</summary>
     public const int MetadataFetchesAtOnce = 4;
 
-    /// <summary>
-    /// Metadata documents fetched in a minute, per ration (<c>Mcp:MetadataFetchesPerMinute</c> overrides it). A known client
-    /// is fetched again about hourly.
-    /// </summary>
+    /// <summary>Documents of never-seen clients fetched in a minute, all together (<c>Mcp:MetadataFetchesPerMinute</c>).</summary>
     public const int MetadataFetchesPerMinute = 60;
+
+    /// <summary>Known clients' documents checked again at the same moment, per publishing host.</summary>
+    public const int MetadataRechecksAtOncePerHost = 2;
+
+    /// <summary>
+    /// Known clients' documents checked again in a minute, per publishing host (<c>Mcp:MetadataRechecksPerHostPerMinute</c>).
+    /// One document is checked again at most once per freshness (at least five minutes), so this is room for a host that
+    /// publishes several.
+    /// </summary>
+    public const int MetadataRechecksPerHostPerMinute = 30;
 
     /// <summary>
     /// The most a document past its freshness may still stand while its ration is spent - and only when its publisher

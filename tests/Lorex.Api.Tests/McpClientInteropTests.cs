@@ -337,42 +337,52 @@ public sealed class ClientMetadataFetchLimitTests
     }
 
     [Fact]
-    public async Task With_its_own_ration_spent_a_known_client_stands_only_for_the_grace_its_publisher_allowed()
+    public async Task A_publisher_spends_only_its_own_re_checks_and_a_stale_document_stands_only_for_its_grace()
     {
         var documents = new StubDocuments();
-        using var api = new LorexApiFactory { ClientMetadata = documents, MetadataFetchesPerMinute = 2 };
+        using var api = new LorexApiFactory { ClientMetadata = documents, MetadataRechecksPerHostPerMinute = 2 };
         var (browser, _) = await NewBrowser(api, "fetchgrace");
         var u = (await CreateUniverse(browser, "Graceful world")).Id;
         var (_, challenge) = Pkce();
 
-        // One publisher allows caching for ten minutes; the other says not to store.
-        const string cached = "https://cached.example/client.json";
-        const string uncached = "https://uncached.example/client.json";
+        // One publisher with two clients - one cacheable for ten minutes, one it says not to store - and another publisher.
+        const string cached = "https://pub.example/cached.json";
+        const string uncached = "https://pub.example/uncached.json";
+        const string elsewhere = "https://other.example/client.json";
         documents.Serve(cached, Document(cached, maxAge: TimeSpan.FromMinutes(10)));
         documents.Serve(uncached, Document(uncached, maxAge: null, noStore: true));
+        documents.Serve(elsewhere, Document(elsewhere, maxAge: TimeSpan.FromMinutes(10)));
 
         async Task<HttpStatusCode> Authorize(string clientId) =>
             (await StartAuthorization(browser, AuthorizeRequest(clientId, Resource(u), challenge))).StatusCode;
 
-        Assert.Equal(HttpStatusCode.Redirect, await Authorize(cached));
-        Assert.Equal(HttpStatusCode.Redirect, await Authorize(uncached));
+        foreach (var client in new[] { cached, uncached, elsewhere })
+        {
+            Assert.Equal(HttpStatusCode.Redirect, await Authorize(client));
+        }
 
-        // Both stale: both checked again, which spends the known clients' ration.
+        // All stale: all checked again, which spends pub.example's re-checks for the minute.
         api.Clock.Offset = TimeSpan.FromMinutes(11);
-        Assert.Equal(HttpStatusCode.Redirect, await Authorize(cached));
-        Assert.Equal(HttpStatusCode.Redirect, await Authorize(uncached));
-        Assert.Equal(4, documents.Requested.Count);
+        foreach (var client in new[] { cached, uncached, elsewhere })
+        {
+            Assert.Equal(HttpStatusCode.Redirect, await Authorize(client));
+        }
 
-        // Stale again with the ration spent: the cacheable one stands within its five minutes of grace, unfetched; the
-        // one whose publisher said not to store has no grace at all.
+        Assert.Equal(6, documents.Requested.Count);
+
+        // Stale again. pub.example's ration is spent: its cacheable client stands within its five minutes of grace,
+        // unfetched; the one its publisher said not to store has no grace. The other publisher is checked as usual.
         api.Clock.Offset = TimeSpan.FromMinutes(22);
         Assert.Equal(HttpStatusCode.Redirect, await Authorize(cached));
         Assert.Equal(HttpStatusCode.Unauthorized, await Authorize(uncached));
+        Assert.Equal(HttpStatusCode.Redirect, await Authorize(elsewhere));
+        Assert.Equal(7, documents.Requested.Count);
+        Assert.Equal(elsewhere, documents.Requested[^1]);
 
         // Past the grace, nothing stands on an old document.
         api.Clock.Offset = TimeSpan.FromMinutes(27);
         Assert.Equal(HttpStatusCode.Unauthorized, await Authorize(cached));
-        Assert.Equal(4, documents.Requested.Count);
+        Assert.Equal(7, documents.Requested.Count);
     }
 
     private static Func<HttpResponseMessage> Document(string clientId, TimeSpan? maxAge, bool noStore = false) => () =>

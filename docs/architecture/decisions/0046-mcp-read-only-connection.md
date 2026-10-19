@@ -47,12 +47,14 @@ is a JWT.
   SSRF-hardened: HTTPS on the default port, a DNS host (no IP literal), a path, no query, fragment or user info, the
   normal form only; every address the host resolves to must be public, and the connection is made to a checked address
   (`ConnectCallback`); no redirect, no proxy, no cookies, one 5 s deadline for the whole exchange (body included, so a
-  byte-at-a-time answer is cut off), 32 KB. Fetches are rationed in two pools, each 4 at once and 60 a minute
-  (`Mcp:MetadataFetchesPerMinute`), refused rather than queued: one for client ids never seen before, which anyone can
-  make up before signing in, and one for checking again a client LoreX has already accepted. Callers cannot be told
-  apart behind App Service, so the split is what keeps a flood of made-up ids from blocking known clients. A known
-  client whose own pool is spent may stand on its last document only for a grace its publisher allowed - a `max-age`
-  without `no-store`, `no-cache` or `must-revalidate` - of at most that max-age and 5 minutes; LoreX never extends it. The document's `client_id` must be its URL; it must
+  byte-at-a-time answer is cut off), 32 KB. Fetches are rationed and refused rather than queued. Client ids never seen
+  before, which anyone can make up before signing in, share one ration: 4 at once, 60 a minute
+  (`Mcp:MetadataFetchesPerMinute`). Checking again a client LoreX has already accepted draws on a ration of its own
+  publishing host: 2 at once, 30 a minute (`Mcp:MetadataRechecksPerHostPerMinute`). Callers cannot be told apart behind
+  App Service, so this is what keeps a flood of made-up ids, or one publisher's many valid documents, from blocking
+  another publisher's clients. A known client whose host's ration is spent may stand on its last document only for a
+  grace its publisher allowed - a `max-age` without `no-store`, `no-cache` or `must-revalidate` - of at most that max-age
+  and 5 minutes; LoreX never extends it. The document's `client_id` must be its URL; it must
   name the client, list 1-10 redirect URIs each HTTPS or loopback, accept `none` at the token endpoint and the code flow.
   A document is trusted for its `max-age` held to 5 min - 24 h (1 h by default) and fetched again after. Anything wrong
   refuses the request as `invalid_client`, shown by LoreX, never redirected.

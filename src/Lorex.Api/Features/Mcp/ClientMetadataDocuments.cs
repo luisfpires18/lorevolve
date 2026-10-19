@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text.Json;
+using System.Threading.RateLimiting;
 using Lorex.Api.Features.Publishing;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -171,13 +172,12 @@ internal sealed partial class ClientMetadataDocuments(
 
         // Fetching is LoreX making a request on a stranger's say-so, before anyone has signed in: rationed, and refused
         // rather than queued when the ration is spent. Callers cannot be told apart (behind App Service the address is the
-        // proxy's, ADR 0018), and anyone can name made-up client ids, so a client never seen before draws on a ration of
-        // its own: a flood of them cannot keep a client LoreX has already checked from being checked again. A known client
-        // whose own ration is spent may stand on its last document only for the short grace its publisher's caching allowed.
-        var ration = existing is null ? limits.NewClients : limits.KnownClients;
-        using var concurrent = ration.Concurrent.AttemptAcquire();
-        using var budget = concurrent.IsAcquired ? ration.PerMinute.AttemptAcquire() : null;
-        if (budget?.IsAcquired != true)
+        // proxy's, ADR 0018), and anyone can name made-up client ids, so a client never seen before draws on one shared
+        // ration, and a client LoreX has already checked on its own host's: neither a flood of made-up ids nor another
+        // publisher's documents can keep it from being checked again. A known client whose host's ration is spent may
+        // stand on its last document only for the short grace its publisher's caching allowed.
+        using var lease = existing is null ? limits.NewClients.AttemptAcquire(string.Empty) : limits.KnownClients.AttemptAcquire(url.Host);
+        if (!lease.IsAcquired)
         {
             var standing = When(properties, ClientRules.StaleUntilProperty) > now;
             LogRefused(logger, url.Host, standing
@@ -443,15 +443,24 @@ internal sealed partial class ClientMetadataDocuments(
 }
 
 /// <summary>
-/// How many client metadata documents this host fetches (<see cref="McpLimits"/>), in two rations: one for client ids
-/// never seen before, which anyone can make up, and one for checking again a client LoreX has already accepted, which
-/// only a document LoreX validated could have made. A fetch past its ration is refused, never queued.
+/// How many client metadata documents this host fetches (<see cref="McpLimits"/>), in two rations. Client ids never seen
+/// before - which anyone can make up, on any host - share one ration. Checking again a client LoreX has already accepted
+/// draws on a ration of that client's own host: one publisher, however many valid documents it hosts, spends only its own
+/// re-checks, never another publisher's. A fetch past its ration is refused, never queued.
 /// </summary>
 internal sealed class ClientMetadataFetchLimits(IConfiguration configuration) : IDisposable
 {
-    public FetchRation NewClients { get; } = new(McpLimits.MetadataFetchesAtOnce, PerMinute(configuration));
+    /// <summary>Never-seen clients, all together: the key is ignored.</summary>
+    public PartitionedRateLimiter<string> NewClients { get; } = Ration(
+        _ => string.Empty,
+        McpLimits.MetadataFetchesAtOnce,
+        configuration.GetValue($"{McpSite.SectionName}:MetadataFetchesPerMinute", McpLimits.MetadataFetchesPerMinute));
 
-    public FetchRation KnownClients { get; } = new(McpLimits.MetadataFetchesAtOnce, PerMinute(configuration));
+    /// <summary>Known clients, by the host that publishes their document.</summary>
+    public PartitionedRateLimiter<string> KnownClients { get; } = Ration(
+        host => host,
+        McpLimits.MetadataRechecksAtOncePerHost,
+        configuration.GetValue($"{McpSite.SectionName}:MetadataRechecksPerHostPerMinute", McpLimits.MetadataRechecksPerHostPerMinute));
 
     public void Dispose()
     {
@@ -459,29 +468,11 @@ internal sealed class ClientMetadataFetchLimits(IConfiguration configuration) : 
         KnownClients.Dispose();
     }
 
-    private static int PerMinute(IConfiguration configuration) =>
-        configuration.GetValue($"{McpSite.SectionName}:MetadataFetchesPerMinute", McpLimits.MetadataFetchesPerMinute);
-}
-
-/// <summary>One ration: so many fetches at once, so many a minute.</summary>
-internal sealed class FetchRation(int atOnce, int perMinute) : IDisposable
-{
-    public System.Threading.RateLimiting.ConcurrencyLimiter Concurrent { get; } = new(new()
-    {
-        PermitLimit = atOnce,
-        QueueLimit = 0,
-    });
-
-    public System.Threading.RateLimiting.FixedWindowRateLimiter PerMinute { get; } = new(new()
-    {
-        PermitLimit = perMinute,
-        Window = TimeSpan.FromMinutes(1),
-        QueueLimit = 0,
-    });
-
-    public void Dispose()
-    {
-        Concurrent.Dispose();
-        PerMinute.Dispose();
-    }
+    /// <summary>So many at once and so many a minute, for each partition the key names.</summary>
+    private static PartitionedRateLimiter<string> Ration(Func<string, string> partition, int atOnce, int perMinute) =>
+        PartitionedRateLimiter.CreateChained(
+            PartitionedRateLimiter.Create<string, string>(key => RateLimitPartition.GetConcurrencyLimiter(
+                partition(key), _ => new ConcurrencyLimiterOptions { PermitLimit = atOnce, QueueLimit = 0 })),
+            PartitionedRateLimiter.Create<string, string>(key => RateLimitPartition.GetFixedWindowLimiter(
+                partition(key), _ => new FixedWindowRateLimiterOptions { PermitLimit = perMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })));
 }
