@@ -27,6 +27,7 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
@@ -55,6 +56,7 @@ jobs:
   web:
     name: Web
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: src/Lorex.Web
@@ -92,9 +94,20 @@ jobs:
       - name: Build
         run: npm run build
 
+  # The suite is split across two runners with Playwright's own sharding: each shard is a
+  # complementary half of the whole suite (fullyParallel, so Playwright partitions by test, and
+  # no spec list is kept here). Each runner has its own API, Vite server and fresh database, so
+  # sharding adds no concurrency against any one SQLite file: two browsers per database, as before.
+  # fail-fast is off so a failing shard does not cancel the other and hide its evidence; any
+  # failing shard still fails this job, and with it the deployment that needs it.
   e2e:
-    name: End to end
+    name: End to end (shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v7
 
@@ -129,22 +142,23 @@ jobs:
 
       # Playwright starts the API and the Vite dev server itself; see playwright.config.ts.
       #
-      # Two browsers share that one API and one database the run builds for itself. The database
-      # is named explicitly, under this job's own temporary directory, rather than left to the
-      # runner happening to be fresh: a fresh database is the condition parallel browsers were
-      # proved on, and a long-lived one is where SQLite contention showed (README.md, "How many
-      # browsers at once"). The whole suite runs; retries are unchanged (playwright.config.ts).
-      - name: Run Playwright
-        run: npx playwright test
+      # Two browsers share that one API and one database this shard builds for itself. The
+      # database is named explicitly, under this runner's own temporary directory, rather than left
+      # to the runner happening to be fresh: a fresh database is the condition parallel browsers
+      # were proved on, and a long-lived one is where SQLite contention showed (README.md, "How many
+      # browsers at once"). Retries, traces and screenshots are unchanged (playwright.config.ts).
+      - name: Run Playwright (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+        run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
         working-directory: tests/Lorex.E2E
         env:
           LOREX_E2E_WORKERS: '2'
-          LOREX_E2E_DB: ${{ runner.temp }}/lorex-e2e.db
+          LOREX_E2E_DB: ${{ runner.temp }}/lorex-e2e-shard-${{ matrix.shard }}.db
 
+      # One report per shard, named for it, so neither overwrites the other.
       - name: Upload report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report
+          name: playwright-report-shard-${{ matrix.shard }}-of-${{ strategy.job-total }}
           path: tests/Lorex.E2E/playwright-report
           retention-days: 7

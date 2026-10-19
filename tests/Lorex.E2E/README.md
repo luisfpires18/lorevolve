@@ -73,11 +73,26 @@ before any request reached the API - the dev server failing to deliver the page'
 load, the same flake recorded in `STATE.md` since 013 - and it was green three times out of three
 alone. Nothing in either run was SQLite contention or a server error.
 
-**Why not two shards.** Native `--shard=1/2` and `--shard=2/2` on two runners would give each half
-a database of its own - isolation the evidence above shows is not needed - at the price of the
-whole job's setup twice over (.NET, Node, two `npm ci`, Chromium with its system packages, the API
-build) and double the runner minutes for roughly the same wall clock. It remains the next step if
-two workers on one runner ever show contention, and it needs no spec list: Playwright partitions.
+### CI: two shards, two browsers each, a fresh database per shard
+
+At 491 tests the single job took about 22 minutes of Playwright and was the whole critical path
+from a merge into `dev` to DEV. `ci.yml` now runs the `e2e` job as a matrix of two shards
+(`--shard=1/2`, `--shard=2/2`), each on its own runner:
+
+- **Coverage.** Playwright partitions the suite itself (`fullyParallel`, so by test, not by
+  file); no spec list is kept. Checked with `npx playwright test --list`: 246 + 245 = 491, no test
+  in both, none missing.
+- **Isolation.** Each shard starts its own API and Vite server and builds its own database,
+  `LOREX_E2E_DB=$RUNNER_TEMP/lorex-e2e-shard-N.db`. Nothing is shared between runners, so the
+  concurrency against any one SQLite file is unchanged: two workers, as proved above.
+- **Failures.** `fail-fast: false`, so one failing shard does not cancel the other and lose its
+  evidence. Any failing shard fails the job, and the deployment `needs` it.
+- **Reports.** One HTML report per shard, `playwright-report-shard-N-of-2`, kept 7 days. They are
+  not merged: that needs the blob reporter and a merge job, more machinery than two links.
+- Retries, traces and screenshots are unchanged (`playwright.config.ts`).
+
+The cost is the job's setup twice over (about a minute: .NET, Node, two `npm ci`, Chromium with
+its system packages, the API build), in parallel, and double the runner minutes for the tests.
 
 Local runs are not CI's clock. How long CI takes now is measured on the next GitHub-hosted run.
 
