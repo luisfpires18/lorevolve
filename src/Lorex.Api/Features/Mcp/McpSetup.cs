@@ -38,7 +38,14 @@ public static class McpLimits
     /// <summary>A client metadata document is a few hundred bytes; anything past this is refused unread.</summary>
     public const int MetadataDocumentBytes = 32 * 1024;
 
+    /// <summary>The whole fetch of a metadata document, body included.</summary>
     public static readonly TimeSpan MetadataFetchTimeout = TimeSpan.FromSeconds(5);
+
+    /// <summary>Metadata documents fetched at the same moment, across every request.</summary>
+    public const int MetadataFetchesAtOnce = 4;
+
+    /// <summary>Metadata documents fetched in a minute, across every request. A known client is fetched about hourly.</summary>
+    public const int MetadataFetchesPerMinute = 60;
 
     /// <summary>How long a fetched document is trusted when its response says nothing; its own max-age is held to the bounds.</summary>
     public static readonly TimeSpan MetadataCacheDefault = TimeSpan.FromHours(1);
@@ -55,7 +62,10 @@ public static class McpLimits
 
     public const int RegistrationBodyBytes = 16 * 1024;
 
-    /// <summary>A dynamically registered client never used for a connection is removed after this.</summary>
+    /// <summary>
+    /// A dynamically registered client never used for a connection is removed after this. A metadata-document client
+    /// with no connection is removed at the next sweep: it is fetched again the next time anyone connects it.
+    /// </summary>
     public static readonly TimeSpan UnusedRegistrationLifetime = TimeSpan.FromDays(1);
 
     public static readonly TimeSpan MaintenanceInterval = TimeSpan.FromHours(1);
@@ -193,6 +203,7 @@ public static class McpSetup
                 MaxResponseHeadersLength = 16,
                 ConnectCallback = ClientMetadataDocuments.ConnectToPublicAddressAsync,
             });
+        services.AddSingleton<ClientMetadataFetchLimits>();
         services.AddScoped<ClientMetadataDocuments>();
 
         services.AddMcpServer(options =>

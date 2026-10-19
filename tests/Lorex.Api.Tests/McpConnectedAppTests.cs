@@ -199,13 +199,18 @@ public sealed class McpConnectedAppTests : IDisposable
         (await owner.PostAsync($"/api/universes/{u}/archive", null)).EnsureSuccessStatusCode();
         (await owner.DeleteAsync($"/api/universes/{u}")).EnsureSuccessStatusCode();
 
+        // A day later, one more registration: too young to go.
         _api.Clock.Offset = McpLimits.UnusedRegistrationLifetime + TimeSpan.FromHours(1);
+        var young = await RegisterPublicClient(_api.CreateClient(), "Just registered");
+        Assert.True(string.CompareOrdinal(unused, young) < 0, "Registration ids sort by when they were made.");
+
         await _api.Services.GetServices<IHostedService>().OfType<McpMaintenance>().Single().SweepAsync(CancellationToken.None);
 
         await WithDb(_api, async db =>
         {
             var applications = db.Set<OpenIddictEntityFrameworkCoreApplication>();
             Assert.False(await applications.AnyAsync(application => application.ClientId == unused));
+            Assert.True(await applications.AnyAsync(application => application.ClientId == young));
             Assert.True(await applications.AnyAsync(application => application.ClientId == used.ClientId));
             Assert.False(await db.Set<OpenIddictEntityFrameworkCoreAuthorization>().AnyAsync(authorization => authorization.Status == "valid"));
         });

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Lorex.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
@@ -15,8 +14,8 @@ namespace Lorex.Api.Features.Mcp;
 /// refresh it even past the token endpoint's own check;</item>
 /// <item>OpenIddict's own pruning removes expired, redeemed and revoked tokens and dead authorizations a while after they
 /// stopped mattering;</item>
-/// <item>a dynamic registration never used for a connection is removed after a day, so open registration cannot grow the
-/// table without bound.</item>
+/// <item>a dynamic registration never used for a connection is removed after a day, and a metadata-document client with
+/// no connection at once, so neither open registration nor fetching can grow the table without bound.</item>
 /// </list>
 ///
 /// Best effort: a failed sweep is logged and the next one tries again. Nothing a request relies on waits for it.
@@ -30,8 +29,8 @@ internal sealed partial class McpMaintenance(
     /// <summary>How long after they stopped mattering OpenIddict's dead rows are kept, for diagnosing a refused refresh.</summary>
     private static readonly TimeSpan PruneAfter = TimeSpan.FromDays(7);
 
-    /// <summary>The most unused registrations looked at in one sweep.</summary>
-    private const int RegistrationBatch = 500;
+    /// <summary>Unused clients removed per round of a sweep; a sweep goes round until none are left.</summary>
+    private const int UnusedBatch = 500;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -81,33 +80,34 @@ internal sealed partial class McpMaintenance(
         await tokens.PruneAsync(now - PruneAfter, cancellationToken);
         await authorizations.PruneAsync(now - PruneAfter, cancellationToken);
 
-        var unused = await db.Set<OpenIddictEntityFrameworkCoreApplication>().AsNoTracking()
-            .Where(application => application.ClientId!.StartsWith(ClientRegistrationEndpoints.ClientIdPrefix)
-                && !db.Set<OpenIddictEntityFrameworkCoreAuthorization>().Any(authorization => authorization.Application!.Id == application.Id))
-            .Select(application => new { application.ClientId, application.Properties })
-            .Take(RegistrationBatch)
-            .ToListAsync(cancellationToken);
-
-        foreach (var candidate in unused.Where(candidate => RegisteredBefore(candidate.Properties, now - McpLimits.UnusedRegistrationLifetime)))
+        // Clients nobody connected: registrations older than a day (their ids sort by when they were made), and every
+        // metadata-document client - it is fetched again when someone connects it. In batches, until none are left, so a
+        // sweep removes at least as many as open registration and fetching can make in an hour.
+        var registrationsFrom = ClientRegistrationEndpoints.ClientIdPrefix;
+        var registrationsBefore = ClientRegistrationEndpoints.AgeBound(now - McpLimits.UnusedRegistrationLifetime);
+        while (true)
         {
-            if (await applications.FindByClientIdAsync(candidate.ClientId!, cancellationToken) is { } application)
+            var unused = await db.Set<OpenIddictEntityFrameworkCoreApplication>().AsNoTracking()
+                .Where(application => ((application.ClientId!.CompareTo(registrationsFrom) >= 0 && application.ClientId.CompareTo(registrationsBefore) < 0)
+                        || application.ClientId.StartsWith("https://"))
+                    && !db.Set<OpenIddictEntityFrameworkCoreAuthorization>().Any(authorization => authorization.Application!.Id == application.Id))
+                .Select(application => application.ClientId!)
+                .Take(UnusedBatch)
+                .ToListAsync(cancellationToken);
+
+            foreach (var clientId in unused)
             {
-                await applications.DeleteAsync(application, cancellationToken);
+                if (await applications.FindByClientIdAsync(clientId, cancellationToken) is { } application)
+                {
+                    await applications.DeleteAsync(application, cancellationToken);
+                }
+            }
+
+            if (unused.Count < UnusedBatch)
+            {
+                return;
             }
         }
-    }
-
-    private static bool RegisteredBefore(string? properties, DateTimeOffset threshold)
-    {
-        if (string.IsNullOrEmpty(properties))
-        {
-            return true;
-        }
-
-        using var json = JsonDocument.Parse(properties);
-        return !json.RootElement.TryGetProperty(ClientRules.RegisteredAtProperty, out var registered)
-            || !registered.TryGetDateTimeOffset(out var at)
-            || at < threshold;
     }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The MCP maintenance sweep failed; the next one will try again.")]

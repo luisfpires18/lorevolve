@@ -167,6 +167,25 @@ public sealed class McpClientInteropTests(McpInteropFixture fixture) : IClassFix
         }
     }
 
+    [Fact]
+    public async Task A_document_sent_too_slowly_is_cut_off_at_the_deadline()
+    {
+        var (browser, _) = await NewBrowser(Api, "interop-slow");
+        var u = (await CreateUniverse(browser, "Patient world")).Id;
+        var (_, challenge) = Pkce();
+        const string slow = "https://slow.example/client.json";
+        fixture.Documents.Serve(slow, () => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new DripStream()) { Headers = { ContentType = new("application/json") } },
+        });
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var response = await StartAuthorization(browser, AuthorizeRequest(slow, Resource(u), challenge));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.InRange(clock.Elapsed, McpLimits.MetadataFetchTimeout - TimeSpan.FromSeconds(1), McpLimits.MetadataFetchTimeout + TimeSpan.FromSeconds(10));
+    }
+
     [Theory]
     [InlineData("8.8.8.8", true)]
     [InlineData("1.1.1.1", true)]
@@ -240,4 +259,70 @@ public sealed class McpClientInteropTests(McpInteropFixture fixture) : IClassFix
         response_types = CodeOnly,
         token_endpoint_auth_method = "none",
     });
+}
+
+/// <summary>A body that sends its first byte, then nothing more until it is given up on: a server answering a byte at a time.</summary>
+internal sealed class DripStream : Stream
+{
+    private bool _sent;
+
+    public override bool CanRead => true;
+
+    public override bool CanSeek => false;
+
+    public override bool CanWrite => false;
+
+    public override long Length => throw new NotSupportedException();
+
+    public override long Position { get => 0; set => throw new NotSupportedException(); }
+
+    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        if (!_sent)
+        {
+            _sent = true;
+            buffer.Span[0] = (byte)'{';
+            return 1;
+        }
+
+        await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken);
+        return 0;
+    }
+
+    public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+    public override void Flush()
+    {
+    }
+
+    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+    public override void SetLength(long value) => throw new NotSupportedException();
+
+    public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+}
+
+/// <summary>The ration of metadata fetches, on a host of its own so no other test spends it.</summary>
+public sealed class ClientMetadataFetchLimitTests
+{
+    [Fact]
+    public async Task Fetches_past_the_minute_s_budget_are_refused_without_a_request()
+    {
+        var documents = new StubDocuments();
+        using var api = new LorexApiFactory { ClientMetadata = documents };
+        var (browser, _) = await NewBrowser(api, "fetchlimit");
+        var u = (await CreateUniverse(browser, "Rationed world")).Id;
+        var (_, challenge) = Pkce();
+
+        for (var i = 0; i <= McpLimits.MetadataFetchesPerMinute; i++)
+        {
+            await StartAuthorization(browser, AuthorizeRequest($"https://many.example/client-{i}.json", Resource(u), challenge));
+        }
+
+        Assert.Equal(McpLimits.MetadataFetchesPerMinute, documents.Requested.Count);
+        var refused = await StartAuthorization(browser, AuthorizeRequest("https://many.example/one-more.json", Resource(u), challenge));
+        Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);
+        Assert.Contains("busy", await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Equal(McpLimits.MetadataFetchesPerMinute, documents.Requested.Count);
+    }
 }

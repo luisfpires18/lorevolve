@@ -31,6 +31,17 @@ public static class ClientRegistrationEndpoints
     /// <summary>LoreX's own client ids carry this prefix, so they can never be taken for a metadata document's URL.</summary>
     public const string ClientIdPrefix = "lorex-dcr-";
 
+    /// <summary>
+    /// A registration's id: the prefix, when it was made (Unix seconds as ten hex digits, so ids sort by age as plain
+    /// strings and the sweep can ask the database for the old ones), then 128 random bits.
+    /// </summary>
+    public static string ClientIdFor(DateTimeOffset issuedAt) =>
+        AgeBound(issuedAt) + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(16));
+
+    /// <summary>Every id issued before <paramref name="moment"/> sorts below this string, every later one at or above it.</summary>
+    public static string AgeBound(DateTimeOffset moment) =>
+        ClientIdPrefix + moment.ToUnixTimeSeconds().ToString("x10", System.Globalization.CultureInfo.InvariantCulture) + "-";
+
     public static IEndpointRouteBuilder MapClientRegistrationEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost(RegisterPath, RegisterAsync)
@@ -112,13 +123,11 @@ public static class ClientRegistrationEndpoints
             return Refuse("invalid_client_metadata", "Only the code response type is supported.");
         }
 
-        var clientId = ClientIdPrefix + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(16));
-        var secret = method == ClientAuthenticationMethods.None ? null : Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
         var issuedAt = clock.GetUtcNow();
+        var clientId = ClientIdFor(issuedAt);
+        var secret = method == ClientAuthenticationMethods.None ? null : Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
 
-        var descriptor = ClientRules.Describe(clientId, name, redirects, ClientRules.RegistrationSource, secret);
-        descriptor.Properties[ClientRules.RegisteredAtProperty] = JsonSerializer.SerializeToElement(issuedAt);
-        await applications.CreateAsync(descriptor, cancellationToken);
+        await applications.CreateAsync(ClientRules.Describe(clientId, name, redirects, ClientRules.RegistrationSource, secret), cancellationToken);
 
         // The secret is hashed by OpenIddict as it is stored: this answer is the only place it is ever written out.
         var answer = new Dictionary<string, object?>

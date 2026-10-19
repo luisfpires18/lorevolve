@@ -21,9 +21,6 @@ internal static class ClientRules
 
     public const string RegistrationSource = "registration";
 
-    /// <summary>When a dynamic registration was made, for removing the ones never used.</summary>
-    public const string RegisteredAtProperty = "lorex_registered_at";
-
     /// <summary>Until when a fetched metadata document is trusted without fetching it again.</summary>
     public const string FreshUntilProperty = "lorex_fresh_until";
 
@@ -114,6 +111,7 @@ internal static class ClientRules
 internal sealed partial class ClientMetadataDocuments(
     IHttpClientFactory clients,
     IOpenIddictApplicationManager applications,
+    ClientMetadataFetchLimits limits,
     TimeProvider clock,
     ILogger<ClientMetadataDocuments> logger)
 {
@@ -167,6 +165,16 @@ internal sealed partial class ClientMetadataDocuments(
             return null;
         }
 
+        // Fetching is LoreX making a request on a stranger's say-so, before anyone has signed in: rationed, and refused
+        // rather than queued when the ration is spent.
+        using var concurrent = limits.Concurrent.AttemptAcquire();
+        using var budget = limits.PerMinute.AttemptAcquire();
+        if (!concurrent.IsAcquired || !budget.IsAcquired)
+        {
+            LogRefused(logger, url.Host, "was not fetched: too many client documents are being fetched right now");
+            return "LoreX is busy checking other apps. Try connecting again in a minute.";
+        }
+
         var (document, lifetime, problem) = await FetchAsync(url, cancellationToken);
         if (document is null)
         {
@@ -204,13 +212,18 @@ internal sealed partial class ClientMetadataDocuments(
     /// <summary>The document, how long to trust it, or why not. Never throws for anything the remote end does.</summary>
     private async Task<(Document? Document, TimeSpan Lifetime, string? Problem)> FetchAsync(Uri url, CancellationToken cancellationToken)
     {
+        // One deadline for the whole exchange - connecting, headers and every byte of the body - so a server that answers
+        // slowly, a byte at a time, holds nothing open past it. The client's own timeout ends at the headers.
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(McpLimits.MetadataFetchTimeout);
+
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
             using var response = await clients.CreateClient(HttpClientName)
-                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, deadline.Token);
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
@@ -228,11 +241,11 @@ internal sealed partial class ClientMetadataDocuments(
                 return (null, default, "answered with too large a document");
             }
 
-            await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
+            await using var body = await response.Content.ReadAsStreamAsync(deadline.Token);
             var buffer = new byte[McpLimits.MetadataDocumentBytes + 1];
             var length = 0;
             int read;
-            while (length < buffer.Length && (read = await body.ReadAsync(buffer.AsMemory(length), cancellationToken)) > 0)
+            while (length < buffer.Length && (read = await body.ReadAsync(buffer.AsMemory(length), deadline.Token)) > 0)
             {
                 length += read;
             }
@@ -399,4 +412,30 @@ internal sealed partial class ClientMetadataDocuments(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Client metadata document from {Host} refused: it {Problem}.")]
     private static partial void LogRefused(ILogger logger, string host, string problem);
+}
+
+/// <summary>
+/// How many client metadata documents this host fetches at once and in a minute (<see cref="McpLimits"/>). One per host,
+/// shared by every request: a fetch past either is refused, never queued.
+/// </summary>
+internal sealed class ClientMetadataFetchLimits : IDisposable
+{
+    public System.Threading.RateLimiting.ConcurrencyLimiter Concurrent { get; } = new(new()
+    {
+        PermitLimit = McpLimits.MetadataFetchesAtOnce,
+        QueueLimit = 0,
+    });
+
+    public System.Threading.RateLimiting.FixedWindowRateLimiter PerMinute { get; } = new(new()
+    {
+        PermitLimit = McpLimits.MetadataFetchesPerMinute,
+        Window = TimeSpan.FromMinutes(1),
+        QueueLimit = 0,
+    });
+
+    public void Dispose()
+    {
+        Concurrent.Dispose();
+        PerMinute.Dispose();
+    }
 }

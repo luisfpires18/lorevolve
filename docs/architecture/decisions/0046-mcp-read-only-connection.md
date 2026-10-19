@@ -46,14 +46,17 @@ is a JWT.
   OpenIddict looks the client up, checked, and kept as an ordinary OpenIddict application under that id. The fetch is
   SSRF-hardened: HTTPS on the default port, a DNS host (no IP literal), a path, no query, fragment or user info, the
   normal form only; every address the host resolves to must be public, and the connection is made to a checked address
-  (`ConnectCallback`); no redirect, no proxy, no cookies, 5 s, 32 KB. The document's `client_id` must be its URL; it must
+  (`ConnectCallback`); no redirect, no proxy, no cookies, one 5 s deadline for the whole exchange (body included, so a
+  byte-at-a-time answer is cut off), 32 KB; at most 4 fetches at once and 60 a minute per host, refused rather than
+  queued. The document's `client_id` must be its URL; it must
   name the client, list 1-10 redirect URIs each HTTPS or loopback, accept `none` at the token endpoint and the code flow.
   A document is trusted for its `max-age` held to 5 min - 24 h (1 h by default) and fetched again after. Anything wrong
   refuses the request as `invalid_client`, shown by LoreX, never redirected.
 - *Dynamic client registration*, at `POST /oauth/register`, for older clients: open by design, so bounded - a 16 KB body,
   30 registrations a minute across all callers (`Mcp:RegistrationsPerMinute`), the same redirect and name rules, only the
   code and refresh grants, a secret only when asked for (hashed by OpenIddict, written out once), no RFC 7592 management.
-  A registration never used for a connection is removed after a day.
+  A registration never used for a connection is removed after a day; its id carries its issue time (Unix seconds,
+  fixed-width hex) so the sweep asks the database for the old ones.
 - Pre-registration is not offered in V1.
 
 Redirect URIs are HTTPS or `http` on a loopback address: never a custom scheme (any installed program could claim it).
@@ -123,7 +126,8 @@ connection is a 404. The session and other connections are untouched. `GET /api/
 URL to copy (`Read`, all four roles; outsiders 404), shown by Connect to AI, the action on the universe's Overview.
 
 **Upkeep.** An hourly sweep revokes authorizations whose connection is gone, lets OpenIddict prune what stopped mattering
-a week ago, and removes unused registrations. OpenIddict and the MCP SDK log at Warning; OpenIddict redacts tokens, codes
+a week ago, and removes, in rounds until none are left, registrations unused for a day and metadata-document clients
+with no connection (fetched again when someone connects them). OpenIddict and the MCP SDK log at Warning; OpenIddict redacts tokens, codes
 and secrets in any case. No manuscript text is logged.
 
 ## Consequences
