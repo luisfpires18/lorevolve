@@ -36,9 +36,38 @@ public static partial class AssistantEndpoints
             .RequireAuthorization();
 
         group.MapGet("/", StatusAsync).WithName("GetAssistantStatus");
-        group.MapPost("/", AskAsync).WithName("AskAssistant").RequireRateLimiting(AssistantSetup.RateLimitPolicy);
+        group.MapPost("/", AskAsync).WithName("AskAssistant").AddEndpointFilter(CountQuestionAsync);
+
+        // The signed-in account's own allowance, read from the session alone like the rest of /api/profile.
+        endpoints.MapGet("/api/profile/assistant-usage", (ClaimsPrincipal principal, AssistantAllowance allowance) =>
+                Results.Ok(allowance.Read(principal.RequireUserId())))
+            .WithTags("Assistant")
+            .WithName("GetAssistantUsage")
+            .RequireAuthorization();
 
         return endpoints;
+    }
+
+    /// <summary>
+    /// Counts the question against the account's allowance before anything else looks at it, so every question that
+    /// reaches the route counts - an outsider's 404, a refused question and a failed answer included - and one past the
+    /// allowance is refused with how long until the window ends.
+    /// </summary>
+    private static async ValueTask<object?> CountQuestionAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        var http = context.HttpContext;
+        var allowance = http.RequestServices.GetRequiredService<AssistantAllowance>();
+        if (allowance.TryTake(http.User.RequireUserId()) is not { } wait)
+        {
+            return await next(context);
+        }
+
+        http.Response.Headers.RetryAfter = ((int)Math.Ceiling(wait.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return Problem(
+            StatusCodes.Status429TooManyRequests,
+            AssistantSetup.RateLimitedCode,
+            "Too many questions",
+            "You've asked a lot in the last few minutes. Wait a little, then try again.");
     }
 
     private static async Task<IResult> StatusAsync(

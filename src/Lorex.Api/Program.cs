@@ -78,9 +78,6 @@ app.UseLorexFrontend();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// After authorization: the assistant's limit is counted per signed-in account, and only for requests allowed to reach it.
-app.UseRateLimiter();
-
 app.MapHealthEndpoints();
 app.MapAuthEndpoints();
 app.MapProfileImageEndpoints();

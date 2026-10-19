@@ -11681,6 +11681,60 @@ a.idearef__name {
   margin-top: var(--space-3);
 }
 
+/* Usage on the Profile: one item per allowance that refills on its own, each a name, the amount in words with its
+   percentage, the shared progress bar as a meter, and what is left. Full is said in words; the danger ink only repeats it. */
+.usage__item + .usage__item {
+  margin-top: var(--space-5);
+}
+
+.usage__name {
+  margin: 0 0 var(--space-2);
+  font-size: 0.925rem;
+  font-weight: 600;
+}
+
+.usage__amount {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-size: 0.925rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage__percent {
+  color: var(--muted);
+}
+
+.usage__meter[data-state='full'] .progressbar__fill {
+  background: var(--danger);
+}
+
+.usage__left,
+.usage__full,
+.usage__status {
+  margin: var(--space-3) 0 0;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage__status {
+  color: var(--muted);
+}
+
+.usage__full {
+  color: var(--danger);
+}
+
+.usage__error {
+  margin: var(--space-3) 0 0;
+}
+
+.usage .settings__note {
+  margin-top: var(--space-3);
+}
+
 /* The public name on the Profile screen: a form of its own under the circle. */
 .profile__public {
   margin-top: var(--space-7);

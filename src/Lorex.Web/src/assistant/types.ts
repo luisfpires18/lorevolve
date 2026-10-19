@@ -62,3 +62,15 @@ export interface AssistantHistoryMessage {
   role: AssistantRoleValue
   text: string
 }
+
+/**
+ * The signed-in account's assistant allowance, read from the same count that refuses a question. `resetsAt` is when the
+ * current window ends and `used` drops back to zero; null when no window is open.
+ */
+export interface AssistantUsage {
+  used: number
+  limit: number
+  remaining: number
+  windowSeconds: number
+  resetsAt: string | null
+}
