@@ -513,6 +513,10 @@ public static class EntityTypeEndpoints
             return denied;
         }
 
+        // One writer at a time (IMMEDIATE): an entry, a nested type or a field that names this type, written at the same
+        // moment, is either seen below or waits until the type is gone and is then refused.
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
         var entityType = await FindTypeAsync(db, universeId, typeId, cancellationToken);
         if (entityType is null)
         {
@@ -581,6 +585,7 @@ public static class EntityTypeEndpoints
 
         db.EntityTypes.Remove(entityType);
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return Results.NoContent();
     }
@@ -608,6 +613,10 @@ public static class EntityTypeEndpoints
         {
             return Results.ValidationProblem(errors);
         }
+
+        // One writer at a time from here (IMMEDIATE), so the target checked below cannot be deleted before the field that
+        // names it is written: a type or group delete racing this one either sees the field or is seen as gone.
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
         if (await UnknownTargetAsync(db, universeId, request.TargetEntityTypeId, cancellationToken))
         {
@@ -664,6 +673,8 @@ public static class EntityTypeEndpoints
         {
             return FieldNameTaken();
         }
+
+        await transaction.CommitAsync(cancellationToken);
 
         var types = await LoadTypesAsync(db, universeId, cancellationToken);
         return Results.Ok(types.First(type => type.Id == typeId));

@@ -43,6 +43,9 @@ public static class EntityEndpoints
     /// <summary>The machine-readable marker on the 409 for an entry save written over a version that is no longer current.</summary>
     public const string ChangedCode = "entity_changed";
 
+    /// <summary>The marker on the 409 for moving an entry to a type that links to it from limited fields do not allow.</summary>
+    public const string TypeChangeLinkedCode = "entity_type_change_linked";
+
     /// <summary>
     /// The one grid-card projection, shared because the listing now has two orderings and only
     /// one shape: browsing reads it straight off the entity, searching reads it off the entity
@@ -653,6 +656,12 @@ public static class EntityEndpoints
             return refused;
         }
 
+        if (entity.EntityTypeId != request.EntityTypeId
+            && await IncomingLinksRefusalAsync(db, entity, request.EntityTypeId, cancellationToken) is { } stranded)
+        {
+            return stranded;
+        }
+
         entity.EntityTypeId = request.EntityTypeId;
         entity.Name = request.Name!.Trim();
         entity.Summary = LoreValidation.Normalize(request.Summary);
@@ -703,6 +712,61 @@ public static class EntityEndpoints
 
         var detail = await LoadDetailAsync(db, universeId, entity.Id, cancellationToken);
         return Results.Ok(detail);
+    }
+
+    /// <summary>
+    /// The refusal for moving <paramref name="entity"/> to <paramref name="newTypeId"/> while other entries link to it through
+    /// fields limited to one type or one group that the new type does not satisfy - or null. Links from entries in the Trash
+    /// count, since their values come back with them. Read inside the write's own transaction (the promotion gate's, which
+    /// Microsoft.Data.Sqlite begins IMMEDIATE), so a membership change or a field's new target cannot slip between this check
+    /// and the save. Bounded by the reference index: only values pointing at this one entry are read.
+    /// </summary>
+    private static async Task<IResult?> IncomingLinksRefusalAsync(
+        LorexDbContext db,
+        LoreEntity entity,
+        Guid newTypeId,
+        CancellationToken cancellationToken)
+    {
+        var entityId = entity.Id;
+        var blocking = await db.EntityFieldValues.AsNoTracking()
+            .Where(value => value.ReferencedEntityId == entityId
+                && ((value.FieldDefinition!.TargetEntityTypeId != null && value.FieldDefinition.TargetEntityTypeId != newTypeId)
+                    || (value.FieldDefinition.TargetGroupId != null
+                        && !db.EntityTypeGroupMembers.Any(member =>
+                            member.EntityTypeGroupId == value.FieldDefinition.TargetGroupId && member.EntityTypeId == newTypeId))))
+            .GroupBy(value => new
+            {
+                value.FieldDefinitionId,
+                FieldName = value.FieldDefinition!.Name,
+                TypeId = value.FieldDefinition.EntityTypeId,
+                TypeName = value.FieldDefinition.EntityType!.Name,
+            })
+            .Select(group => new { group.Key.FieldDefinitionId, group.Key.FieldName, group.Key.TypeId, group.Key.TypeName, Links = group.Count() })
+            .ToListAsync(cancellationToken);
+
+        if (blocking.Count == 0)
+        {
+            return null;
+        }
+
+        var ordered = blocking.OrderBy(field => field.TypeName, StringComparer.Ordinal).ThenBy(field => field.FieldName, StringComparer.Ordinal).ToList();
+        var first = ordered[0];
+        var others = ordered.Count - 1;
+        var links = first.Links == 1 ? "1 entry links" : $"{first.Links} entries link";
+
+        return Results.Problem(
+            title: "Entry is linked",
+            detail: $"{entity.Name} can't change type because {links} to it through the field \"{first.FieldName}\" on {first.TypeName}"
+                + (others == 0 ? string.Empty : others == 1 ? ", and 1 other field does too" : $", and {others} other fields do too")
+                + ", which would not allow the new type. Change those links or the field first, then try again.",
+            statusCode: StatusCodes.Status409Conflict,
+            extensions: new Dictionary<string, object?>
+            {
+                ["code"] = TypeChangeLinkedCode,
+                ["fields"] = ordered
+                    .Select(field => new { FieldId = field.FieldDefinitionId, field.FieldName, field.TypeId, field.TypeName, field.Links })
+                    .ToList(),
+            });
     }
 
     /// <summary>

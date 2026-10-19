@@ -292,6 +292,88 @@ public sealed class EntityTypeGroupTests(LorexApiFactory factory) : IClassFixtur
         Assert.DoesNotContain(w.Elemental, (await GroupNamed(w, "Runes")).TypeIds);
     }
 
+    // ---------- Changing a linked entry's own type ----------
+
+    [Fact]
+    public async Task An_entry_linked_through_a_group_cannot_change_to_a_type_outside_it_and_nothing_moves()
+    {
+        var w = await NewWorld("etg-retype-group");
+        var runes = await GroupNamed(w, "Runes");
+        var field = await AddField(w, w.Character, "Required Rune", groupId: runes.Id);
+        var lava = await Entry(w, w.Elemental, "Lava Rune");
+        await Entry(w, w.Character, "Mage", Link(field, lava));
+        var before = await Snapshot(lava);
+
+        var refused = await Retype(w, lava, w.Kingdoms);
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Equal(EntityEndpoints.TypeChangeLinkedCode, await CodeOf(refused));
+        var detail = await DetailOf(refused);
+        Assert.Contains("\"Required Rune\" on Character", detail, StringComparison.Ordinal);
+        using (var problem = JsonDocument.Parse(await refused.Content.ReadAsStringAsync()))
+        {
+            Assert.Equal(field, problem.RootElement.GetProperty("fields")[0].GetProperty("fieldId").GetGuid());
+        }
+
+        // The entry keeps its type, version and history; the link stays.
+        Assert.Equal(before, await Snapshot(lava));
+        Assert.Equal(1, await LinkCount(field));
+
+        // Within the group the move is an ordinary edit.
+        Assert.Equal(HttpStatusCode.OK, (await Retype(w, lava, w.Corrupted)).StatusCode);
+        Assert.Equal(w.Corrupted, (await w.Client.GetFromJsonAsync<EntityDetail>(EntryRoute(w, lava)))!.EntityTypeId);
+    }
+
+    [Fact]
+    public async Task An_entry_linked_through_an_exact_type_field_keeps_that_type_and_an_open_field_never_blocks()
+    {
+        var w = await NewWorld("etg-retype-exact");
+        var kingdom = await PostField(w, w.Character, Definition("Kingdom", typeId: w.Kingdoms));
+        Assert.True(kingdom.IsSuccessStatusCode);
+        var kingdomField = (await kingdom.Content.ReadFromJsonAsync<EntityTypeResponse>())!.Fields.Single(one => one.Name == "Kingdom").Id;
+        var anything = await AddField(w, w.Character, "Anything", groupId: null);
+
+        var arkazia = await Entry(w, w.Kingdoms, "Arkazia");
+        var zandres = await Entry(w, w.Kingdoms, "Zandres");
+        await Entry(w, w.Character, "Knight", Link(kingdomField, arkazia));
+        await Entry(w, w.Character, "Wanderer", Link(anything, zandres));
+
+        var refused = await Retype(w, arkazia, w.Elemental);
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Contains("\"Kingdom\" on Character", await DetailOf(refused), StringComparison.Ordinal);
+        Assert.Equal(w.Kingdoms, (await w.Client.GetFromJsonAsync<EntityDetail>(EntryRoute(w, arkazia)))!.EntityTypeId);
+
+        // Linked only through a field open to any type: free to move.
+        Assert.Equal(HttpStatusCode.OK, (await Retype(w, zandres, w.Elemental)).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_link_from_an_entry_in_the_Trash_still_holds_the_type_it_needs()
+    {
+        var w = await NewWorld("etg-retype-trash");
+        var field = await AddField(w, w.Character, "Required Rune", groupId: (await GroupNamed(w, "Runes")).Id);
+        var lava = await Entry(w, w.Elemental, "Lava Rune");
+        var mage = await Entry(w, w.Character, "Mage", Link(field, lava));
+        Assert.Equal(HttpStatusCode.NoContent, (await w.Client.DeleteAsync(EntryRoute(w, mage.Id))).StatusCode);
+
+        Assert.Equal(HttpStatusCode.Conflict, (await Retype(w, lava, w.Kingdoms)).StatusCode);
+        Assert.Equal(1, await LinkCount(field));
+    }
+
+    [Fact]
+    public async Task A_backup_taken_after_an_allowed_retype_restores()
+    {
+        var w = await NewWorld("etg-retype-backup");
+        var field = await AddField(w, w.Character, "Required Rune", groupId: (await GroupNamed(w, "Runes")).Id);
+        var lava = await Entry(w, w.Elemental, "Lava Rune");
+        await Entry(w, w.Character, "Mage", Link(field, lava));
+        Assert.Equal(HttpStatusCode.OK, (await Retype(w, lava, w.Corrupted)).StatusCode);
+
+        var restored = await RestoreArchive(w.Client, await RawArchive(w.Client, w.U), "etg-retype-backup restored");
+        var mage = (await w.Client.GetFromJsonAsync<EntityPage>($"/api/universes/{restored.Id}/entities?search=Mage&pageSize=50"))!.Items.Single();
+        var restoredMage = (await w.Client.GetFromJsonAsync<EntityDetail>($"/api/universes/{restored.Id}/entities/{mage.Id}"))!;
+        Assert.NotNull(restoredMage.Fields.Single(value => value.Name == "Required Rune").ReferencedEntityId);
+    }
+
     // ---------- Deleting a group ----------
 
     [Fact]
@@ -519,6 +601,29 @@ public sealed class EntityTypeGroupTests(LorexApiFactory factory) : IClassFixtur
     }
 
     // ---------- Steps ----------
+
+    private static string EntryRoute(World w, Guid entityId) => $"/api/universes/{w.U}/entities/{entityId}";
+
+    /// <summary>Saves the entry exactly as it is, under another type.</summary>
+    private static async Task<HttpResponseMessage> Retype(World w, Guid entityId, Guid typeId)
+    {
+        var entry = (await w.Client.GetFromJsonAsync<EntityDetail>(EntryRoute(w, entityId)))!;
+        return await w.Client.PutAsJsonAsync(
+            EntryRoute(w, entityId),
+            new EntityRequest(typeId, entry.Name, entry.Summary, entry.CanonStatus, null, null, [], ExpectedVersion: entry.Version));
+    }
+
+    /// <summary>An entry's type, version and number of saved versions, read from the database.</summary>
+    private async Task<string> Snapshot(Guid entityId)
+    {
+        var snapshot = string.Empty;
+        await WithDb(_factory, async db =>
+        {
+            var entry = await db.Entities.AsNoTracking().SingleAsync(one => one.Id == entityId);
+            snapshot = $"{entry.EntityTypeId}:{entry.Version}:{await db.EntityRevisions.CountAsync(one => one.EntityId == entityId)}";
+        });
+        return snapshot;
+    }
 
     /// <summary>
     /// A world with Character (the starter), two rune types in a group called Runes - made by the first type's own save, and

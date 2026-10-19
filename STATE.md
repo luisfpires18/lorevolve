@@ -84,8 +84,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     a small Groups control (select, Add another group, new group by name, rename/delete folded away). No badges.
   - Starter template gets Characters, Places, Factions, Objects; existing universes and restores are never classified.
     Family Tree untouched: per-type `FamilyTreeEligible` only; group-based eligibility is Issue #37.
-  - Known gap (predates #36): changing an entry's type is not checked against fields that link to it.
-  - Tests: API 1673 passed, 6 skipped (new: `EntityTypeGroupTests` 17, file-backed races 2 + migration walk 1). Playwright
+  - Review fix: retyping an entry is refused (409 `entity_type_change_linked`) while limited fields (exact type or group,
+    Trash included) link to it; field add and type delete now each run in one IMMEDIATE transaction.
+  - Tests: API 1679 passed, 6 skipped (new: `EntityTypeGroupTests` 21, file-backed races 4 + migration walk 1). Playwright
     `semantic-groups.spec.ts` 4; with neighbouring specs green on a fresh DB. Full Playwright delegated to CI.
 - **Roadmap task 049 - MCP V1** (GitHub issue 7; `feat/lorex-mcp-v1` off `dev` at `ac39b23`; committed, not merged, not
   pushed). One migration (`AddMcpConnections`: OpenIddict's four tables + `McpConnections`), backup unchanged (account-level

@@ -204,6 +204,70 @@ public sealed class EntityTypeGroupRaceTests : IDisposable
             && !db.EntityTypeGroupMembers.Any(member => member.EntityTypeGroupId == runes && member.EntityTypeId == value.ReferencedEntity!.EntityTypeId)));
     }
 
+    [Fact]
+    public async Task An_entry_changing_type_and_a_link_relying_on_its_type_never_both_land()
+    {
+        Directory.CreateDirectory(_directory);
+        await using var host = new GroupFileHost(DataSource);
+        var client = await GroupFileHost.Register(host, "user-etgretype", "etgretype@example.test");
+        var u = (await PlotTestClient.CreateUniverse(client, "Race world")).Id;
+        var elemental = (await PlotTestClient.PostJson<EntityTypeResponse>(client, $"/api/universes/{u}/entity-types",
+            new EntityTypeRequest("Elemental Runes", null, null, null, null, Groups: [new(null, "Runes")]))).Id;
+        var kingdoms = (await PlotTestClient.PostJson<EntityTypeResponse>(client, $"/api/universes/{u}/entity-types",
+            new EntityTypeRequest("Kingdoms", null, null, null, null))).Id;
+        var runes = (await client.GetFromJsonAsync<List<EntityTypeGroupResponse>>($"/api/universes/{u}/entity-type-groups"))!.Single(group => group.Name == "Runes").Id;
+        var character = (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{u}/entity-types"))!.Single(type => type.Name == "Character").Id;
+        var field = (await PlotTestClient.PostJson<EntityTypeResponse>(client, $"/api/universes/{u}/entity-types/{character}/fields",
+            new FieldDefinitionRequest("Required Rune", EntityFieldKind.EntityReference, false, null, null, null, TargetGroupId: runes))).Fields.Single(one => one.Name == "Required Rune").Id;
+
+        for (var round = 0; round < 6; round++)
+        {
+            var rune = await PlotTestClient.PostJson<EntityDetail>(client, $"/api/universes/{u}/entities",
+                new EntityRequest(elemental, $"Rune {round}", null, CanonStatus.Canon, null, null, null));
+
+            var results = await Task.WhenAll(
+                client.PutAsJsonAsync($"/api/universes/{u}/entities/{rune.Id}", new EntityRequest(
+                    kingdoms, rune.Name, null, CanonStatus.Canon, null, null, [], ExpectedVersion: rune.Version)),
+                client.PostAsJsonAsync($"/api/universes/{u}/entities", new EntityRequest(
+                    character, $"Mage {round}", null, CanonStatus.Canon, null, null, [new FieldValueInput(field, null, null, null, null, null, rune.Id)])));
+
+            Assert.False(results[0].IsSuccessStatusCode && results[1].IsSuccessStatusCode, $"round {round}: retyped and linked");
+            Assert.True(results[0].IsSuccessStatusCode || results[1].IsSuccessStatusCode, $"round {round}: neither went through");
+        }
+
+        SqliteConnection.ClearAllPools();
+        await using var db = new LorexDbContext(new DbContextOptionsBuilder<LorexDbContext>().UseSqlite($"Data Source={DataSource}").Options);
+        Assert.False(await db.EntityFieldValues.AnyAsync(value =>
+            value.FieldDefinitionId == field
+            && !db.EntityTypeGroupMembers.Any(member => member.EntityTypeGroupId == runes && member.EntityTypeId == value.ReferencedEntity!.EntityTypeId)));
+    }
+
+    [Fact]
+    public async Task A_field_created_against_a_group_being_deleted_gets_an_answer_not_a_server_error()
+    {
+        Directory.CreateDirectory(_directory);
+        await using var host = new GroupFileHost(DataSource);
+        var client = await GroupFileHost.Register(host, "user-etgfield", "etgfield@example.test");
+        var u = (await PlotTestClient.CreateUniverse(client, "Race world")).Id;
+        var character = (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{u}/entity-types"))!.Single(type => type.Name == "Character").Id;
+
+        for (var round = 0; round < 6; round++)
+        {
+            await PlotTestClient.PostJson<EntityTypeResponse>(client, $"/api/universes/{u}/entity-types",
+                new EntityTypeRequest($"Runes {round}", null, null, null, null, Groups: [new(null, $"Group {round}")]));
+            var group = (await client.GetFromJsonAsync<List<EntityTypeGroupResponse>>($"/api/universes/{u}/entity-type-groups"))!.Single(one => one.Name == $"Group {round}").Id;
+
+            var results = await Task.WhenAll(
+                client.PostAsJsonAsync($"/api/universes/{u}/entity-types/{character}/fields", new FieldDefinitionRequest(
+                    $"Rune {round}", EntityFieldKind.EntityReference, false, null, null, null, TargetGroupId: group)),
+                client.DeleteAsync($"/api/universes/{u}/entity-type-groups/{group}"));
+
+            // Field first: the delete is refused (409). Delete first: the field is refused (400). Never a 500, never both.
+            Assert.All(results, result => Assert.True((int)result.StatusCode < 500, $"round {round}: {(int)result.StatusCode}"));
+            Assert.True(results[0].IsSuccessStatusCode ^ results[1].IsSuccessStatusCode, $"round {round}: {results[0].StatusCode} / {results[1].StatusCode}");
+        }
+    }
+
     public void Dispose() => GroupFileHost.Clean(_directory);
 }
 

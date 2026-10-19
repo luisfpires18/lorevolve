@@ -237,7 +237,10 @@ classification metadata, not an entity model, a parent type or an ontology.
   types created in the same call join one. Existing universes are not classified by the migration
   (`AddEntityTypeGroups`), by a restore or by anything else. There is no blank-universe template today; a universe whose
   author deletes the starters keeps whatever groups they leave.
-- **Known limit, shared with 036.** Changing an entry's own type is not checked against fields that link to it: an entry
-  linked through a group (or an exact type) can still be moved to another type. That gap predates groups and is left for a
-  deliberate change.
+- **An entry's own type is held by the links to it.** Changing an entry's type is refused (409
+  `entity_type_change_linked`) while another entry - one in the Trash included - links to it through a field limited to an
+  exact type or a group the new type does not satisfy. The refusal names the fields (`fields[]`); the entry, its type, its
+  history and every link stay as they were. Checked inside the save's own promotion-gate transaction, through the reference
+  index. This closes the same gap for 036's exact-type targets. Adding a field and deleting a type or group are also each one
+  IMMEDIATE transaction now, so a field can never name a target deleted in between.
 - Backup format 23 carries groups, memberships and group targets (ADR 0014 amendment).
