@@ -24,6 +24,7 @@ import UniverseWorkspace from './pages/UniverseWorkspace'
  * dependency Lorex has and is needed on exactly one screen.
  */
 const CanonPage = lazy(() => import('./pages/CanonPage'))
+const ConnectAuthorizePage = lazy(() => import('./pages/ConnectAuthorizePage'))
 const EntityPage = lazy(() => import('./pages/EntityPage'))
 const ExplorePage = lazy(() => import('./pages/ExplorePage'))
 const FamilyTreePage = lazy(() => import('./pages/FamilyTreePage'))
@@ -132,6 +133,12 @@ function Root() {
           </Route>
 
           <Route element={<RequireAuth />}>
+            {/* An AI app's request to read a universe (ADR 0046), handed here by the authorization endpoint. Signed in,
+                because only a member can approve; outside the workspace, because it is a decision, not a place. */}
+            <Route
+              path="/connect/authorize"
+              element={asScreen('connect', <ConnectAuthorizePage />)}
+            />
             {/* My workspace's account-level screens share one frame (`WorkspaceLayout`). A universe, below, is a level
                 deeper and keeps its own rail and sidebar instead. */}
             <Route element={<WorkspaceLayout />}>

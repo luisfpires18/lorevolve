@@ -72,6 +72,26 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   own runner, API, Vite and `lorex-e2e-shard-N.db`), `fail-fast: false`, reports `playwright-report-shard-N-of-2`. Job
   timeouts added. No cache or build-reuse change (seconds at most). Partition checked locally: 246 + 245 = 491, no
   overlap. actionlint 1.7.7 clean. Not yet measured on GitHub; estimate merge-to-DEV ~27 min -> ~15 min.
+- **Roadmap task 049 - MCP V1** (GitHub issue 7; `feat/lorex-mcp-v1` off `dev` at `ac39b23`; committed, not merged, not
+  pushed). One migration (`AddMcpConnections`: OpenIddict's four tables + `McpConnections`), backup unchanged (account-level
+  state, never in a universe backup). ADR 0046 (new); 0005 amendment.
+  - An outside AI app (Claude, ChatGPT, any Streamable HTTP + OAuth 2.1 MCP client) reads **one universe**, as one member,
+    read-only, at `{origin}/mcp/universes/{id}` - also its RFC 8707 resource. Origin `Mcp:Origin`, else
+    `PublicSite:Origin`; unset = off. **DEV is off until the owner sets `Mcp__Origin`** (runbook).
+  - OpenIddict 7.7.2 is the authorization server and validator (code + PKCE S256, refresh rotation with replay revocation,
+    reference tokens hashed with Data Protection payloads, RFC 9207 `iss`); the MCP C# SDK 2.2.0 serves stateless
+    Streamable HTTP. Clients by CIMD (SSRF-held fetch) or DCR (rate-limited); HTTPS or loopback redirects only.
+  - Consent at `/connect/authorize` behind the existing sign-in; approve/deny posted back same-site; unverified and
+    device-only warnings. Every request and refresh re-checks the connection and `Read` access, so revoke, removal and
+    deletion stop at once. Ten read-only tools over `UniverseReader`; prose only on request, in exact bounded chunks.
+  - UI: Connect to AI on the universe's Overview (the top bar stays the search's); Profile, Connected apps with
+    Disconnect. Pinned `System.Security.Cryptography.Pkcs` and `.Xml` to 10.0.13 (OpenIddict's Data Protection reference
+    brought 10.0.11, CVE-2026-84008).
+  - Tests: API 1642/1642, 6 skipped as before (76 new MCP tests in 7 files, incl. the official MCP SDK client doing its own
+    OAuth discovery, DCR and CIMD; 15 earlier migration walks taught the new indexes in `LaterSchema`; matrix +1 route).
+    Playwright `mcp-connect.spec.ts` 7; with 14 neighbouring specs on a fresh DB 113/114, the one `global-navigation`
+    focus test lost under load, green 42/42 alone x3. Full Playwright not run locally; delegated to GitHub Actions.
+  - Not yet tried against a live Claude or ChatGPT: needs a public HTTPS origin (DEV with `Mcp__Origin`).
 - **Roadmap task 048 - Interactive Writing Workspace V1** (GitHub issue 6; `feat/interactive-writing-workspace-v1`
   off `dev` at `b14fbf0`; merged into `dev` at `b6f0850`). Frontend only: no API, schema or backup change. ADR 0024
   amendment.
@@ -1591,6 +1611,9 @@ tool has changed the picture.
   trashed/restored-by and an activity feed (version authors done in 042), version checks for moments, relationships, chapters and plot (044 covers entries, articles, stories, scenes, manuscripts), ownership transfer, public
   collaborator credit; a collaborator's idea pointing into a shared universe; the public page's workspace link for
   members. An Editor restoring a previously public item from the Trash brings back the owner's selection as it was.
+- **MCP (049, ADR 0046).** Owner step: set `Mcp__Origin` on DEV and connect Claude or ChatGPT once (runbook). Later, not
+  gaps: any write through MCP (issue 32), AI-assisted import (issue 17), pre-registered clients, custom-scheme redirects,
+  a LoreX-styled page for the requests OpenIddict refuses before trusting a redirect.
 - **Permanent deletion.** Deferred by Phase 019, so nothing removes an entry - or, since content recovery, a story,
   chapter, scene, arc or beat - for good short of deleting the universe. Two dead ends follow: a type used only by trashed
   entries cannot be deleted until the entry is restored, moved to another type and trashed again (ADR 0015), and an era a

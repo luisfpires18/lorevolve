@@ -50,8 +50,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0043 | A protected save names the version it was written over, and a save over a newer one is refused (entries, articles, stories, scenes, manuscripts) | [0043-concurrent-edit-protection.md](0043-concurrent-edit-protection.md) |
 | 0044 | A suggestion is bound to the version it was made over, and is accepted only through the target's own save | [0044-suggested-changes.md](0044-suggested-changes.md) |
 | 0045 | The universe assistant reads through permission-safe tools over a shared read layer, behind a narrow provider boundary | [0045-universe-assistant.md](0045-universe-assistant.md) |
+| 0046 | An outside AI app reads one universe over MCP, as one member, through OAuth 2.1 issued by LoreX itself | [0046-mcp-read-only-connection.md](0046-mcp-read-only-connection.md) |
 
-All accepted. Next number: `0046`.
+All accepted. Next number: `0047`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's
@@ -83,4 +84,4 @@ recall - a copy a visitor already has - and the slug a deleted world frees, and 
 reveals was once taken, in 0036, and the author address a second author of one name gets, in 0037, and the body a non-rendering crawler cannot see and
 the copies search engines keep after an unpublish, in 0038, and the unpublished chapter headings, the one-page story reader and
 the Trash restore that asks nothing for a story part, in 0039, and the Family Tree's own kind dialog that leaves Canon constraints to
-the Relation Kinds tab, and the relation editor that still links an entry of any type, in 0040, and the bucket objects no storage total counts and nothing reconciles, in 0042, and the whole-form save that keeping one's changes still is, and the editors that keep their own stale-save check or have none, in 0043, and the suggestion an intervening save to any field makes unacceptable, and the prose that cannot be suggested yet, in 0044, and what the universe assistant deliberately is not - a writer, a memory, a web search or a second search - and the universe content it sends to its provider, in 0045.
+the Relation Kinds tab, and the relation editor that still links an entry of any type, in 0040, and the bucket objects no storage total counts and nothing reconciles, in 0042, and the whole-form save that keeping one's changes still is, and the editors that keep their own stale-save check or have none, in 0043, and the suggestion an intervening save to any field makes unacceptable, and the prose that cannot be suggested yet, in 0044, and what the universe assistant deliberately is not - a writer, a memory, a web search or a second search - and the universe content it sends to its provider, in 0045, and the clients MCP V1 cannot serve - custom-scheme redirects, signed client assertions, pre-registration, legacy SSE, server-to-client requests - and the plain error answer OpenIddict gives a request it refuses before its redirect is trusted, in 0046.

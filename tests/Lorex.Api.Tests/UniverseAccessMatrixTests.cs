@@ -157,6 +157,7 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("search", Get, $"{u}/search?q=Ember", May.Read),
             new("assistant status", Get, $"{u}/assistant", May.Read),
             new("ask assistant", Post, $"{u}/assistant", May.Read, Json(new AssistantRequest("Who is Ember Vale?", null))),
+            new("mcp connect info", Get, $"{u}/mcp", May.Read),
 
             // ---------- Stories ----------
             new("stories", Get, $"{u}/stories", May.Read),

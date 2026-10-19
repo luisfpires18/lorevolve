@@ -35,3 +35,9 @@ reports that a username or email is taken.
   Production needs a persisted key ring; that is a deployment concern, not a code one.
 - A move to a third-party or mobile client later would need a token surface added
   alongside this one.
+
+## Amendment (2026-10-19, ADR 0046)
+
+The token surface foreseen above now exists, beside the cookie and for one purpose: an outside AI app reading one
+universe over MCP. OpenIddict issues OAuth 2.1 tokens only to apps a signed-in person approves; the cookie session is
+unchanged and is never an MCP credential, and a token is never a session.
