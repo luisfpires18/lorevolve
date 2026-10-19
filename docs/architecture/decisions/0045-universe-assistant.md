@@ -158,10 +158,13 @@ host's, not a person's, and are never shown.
 - **Same allowance.** 20 questions per account per 10 minutes, a fixed window opened by the account's first question
   after its last window ended; at the end all 20 come back at once. Same 429 body. `Retry-After` is now the seconds
   until the window ends, rounded up.
-- **What counts.** Every question that reaches `POST .../assistant` as a signed-in account: answered, refused for its
-  content (400), not found (404), not set up (503), failed (502/504) or cancelled. A refused question (429) is not
-  counted, and reading the status or the usage counts nothing. The check runs as an endpoint filter, so a body that is not
-  JSON at all is now refused by binding before it is counted; the framework limiter counted it.
+- **What counts.** Every question that reaches `POST .../assistant` as a signed-in account: answered, a body that is not
+  JSON (400), refused for its content (400), not found (404), not set up (503), failed (502/504) or cancelled. A question
+  refused for the allowance (429) is not counted, a signed-out request (401) counts against no one, and reading the
+  status or the usage counts nothing.
+- **Where it counts.** `UseAssistantAllowance`, a middleware right after `UseAuthorization`, where the framework limiter
+  stood: it acts only on endpoints carrying `AssistantQuestionMetadata` (the ask route alone) and runs before the body is
+  read. An endpoint filter would run after binding and let a malformed body through uncounted.
 - **Reading it.** `GET /api/profile/assistant-usage`: `used`, `limit`, `remaining`, `windowSeconds`, `resetsAt` (null with
   no open window). From the session only; no account id is accepted. Nothing about questions or answers is kept.
 - **Limits.** In-process memory, as before: a restart resets every count, and two instances would each allow 20. DEV is

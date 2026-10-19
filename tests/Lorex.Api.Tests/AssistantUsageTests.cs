@@ -53,6 +53,45 @@ public sealed class AssistantUsageTests(AssistantFixture fixture) : IClassFixtur
     }
 
     [Fact]
+    public async Task A_body_that_is_not_json_counts_before_it_is_read()
+    {
+        var w = await NewSharedWorld(_api, "usebadjson");
+        _model.Use(_ => Answer(("note", "Yes.", [])));
+
+        // Counted before binding: the first malformed body is a 400 and one question.
+        var first = await AskRaw(w.Owner, w.U, "{\"question\": ");
+        Assert.Equal(HttpStatusCode.BadRequest, first.StatusCode);
+        Assert.Equal(1, (await Usage(w.Owner)).Used);
+
+        for (var asked = 2; asked <= AssistantSetup.QuestionsPerWindow; asked++)
+        {
+            Assert.Equal(HttpStatusCode.BadRequest, (await AskRaw(w.Owner, w.U, "not json at all")).StatusCode);
+        }
+
+        Assert.Equal(AssistantSetup.QuestionsPerWindow, (await Usage(w.Owner)).Used);
+
+        // Past the allowance, malformed and well-formed alike are refused, uncounted, with the real wait.
+        var malformed = await AskRaw(w.Owner, w.U, "{");
+        var wellFormed = await Ask(w.Owner, w.U, "And now?");
+        Assert.Equal(HttpStatusCode.TooManyRequests, malformed.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, wellFormed.StatusCode);
+        Assert.InRange(wellFormed.Headers.RetryAfter!.Delta!.Value.TotalSeconds, 1, AssistantSetup.QuestionWindow.TotalSeconds);
+        var full = await Usage(w.Owner);
+        Assert.Equal(AssistantSetup.QuestionsPerWindow, full.Used);
+        Assert.Equal(0, full.Remaining);
+
+        // Another member of the same universe is untouched and may still ask; a signed-out malformed post is a 401 that
+        // counts against no one.
+        Assert.Equal(0, (await Usage(w.Viewer)).Used);
+        using var anonymous = _api.CreateClient();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await AskRaw(anonymous, w.U, "{")).StatusCode);
+        Assert.Equal(0, (await Usage(w.Viewer)).Used);
+        Assert.Equal(AssistantSetup.QuestionsPerWindow, (await Usage(w.Owner)).Used);
+        (await Ask(w.Viewer, w.U, "Me?")).EnsureSuccessStatusCode();
+        Assert.Equal(1, (await Usage(w.Viewer)).Used);
+    }
+
+    [Fact]
     public async Task Usage_matches_the_limit_that_refuses_the_next_question()
     {
         var (client, universe) = await SignedInWithUniverse(_api, "usefull");
@@ -137,6 +176,9 @@ public sealed class AssistantUsageTests(AssistantFixture fixture) : IClassFixtur
 
     private static Task<HttpResponseMessage> Ask(HttpClient client, Guid universeId, string question) =>
         client.PostAsJsonAsync(Path(universeId), new AssistantRequest(question, null));
+
+    private static Task<HttpResponseMessage> AskRaw(HttpClient client, Guid universeId, string body) =>
+        client.PostAsync(Path(universeId), new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
 
     private static async Task<AssistantUsage> Usage(HttpClient client, string query = "")
     {

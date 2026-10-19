@@ -54,7 +54,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   pushed). No migration. ADR 0045 amendment. Profile > Usage > AI Assistant: "N of 20 questions used", %, meter, left,
   and when used up the time it comes back. `AssistantAllowance` (in-process fixed window per account) replaces the
   framework limiter so enforcing and showing share one count; same 20/10 min, same 429, `Retry-After` now exact.
-  `GET /api/profile/assistant-usage` (session only). Tests: API 1565 passed (`AssistantUsageTests` 6). Playwright
+  `GET /api/profile/assistant-usage` (session only). Counted by `UseAssistantAllowance` (metadata-scoped middleware after
+  authorization, before binding), so a malformed body counts. Tests: API 1566 passed (`AssistantUsageTests` 7). Playwright
   `account-usage.spec.ts` 4; focused + 5 neighbouring specs on a fresh DB green. Full suite delegated to GitHub Actions.
   Follow-up: fold the Profile's Storage section into Usage as a second item.
 - **Groq assistant provider** (`feat/groq-assistant-provider` off `dev` at `76c2abe`; committed, not merged, not pushed).
