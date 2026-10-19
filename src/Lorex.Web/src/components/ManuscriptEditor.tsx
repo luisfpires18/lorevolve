@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EditConflict, LatestText } from './EditConflict'
+import { LoreContext } from './LoreContext'
 import { ManuscriptHistory } from './ManuscriptHistory'
 import { ReviewComments } from './ReviewComments'
 import { describeSceneSuggestion } from '../stories/sceneDraft'
@@ -65,6 +66,8 @@ interface ManuscriptEditorProps {
   chapters: Chapter[]
   /** An accepted suggestion changed the scene: the story is read again. */
   onSceneChanged: () => void
+  /** Lore Context saved the scene's links: the story page shows the scene as the API answered. */
+  onSceneSaved: (scene: Scene) => void
   /** The prose's publication control (ADR 0039), in the save bar beside Save: where the prose is kept is where it is published. */
   publication?: ReactNode
 }
@@ -74,7 +77,7 @@ interface ManuscriptEditorProps {
  * typed. No formatting, no Markdown and no reading of the text - a name written here links to nothing.
  *
  * Above it, where the scene is told, its title, and the manuscript's own history - the one tool beside the title, because
- * recovering a version is part of writing. Edit scene, which opens the scene's own drawer in place, and Show in Scenes,
+ * recovering a version is part of writing - and Lore, the scene's lore in a drawer over the prose (task 048). Edit scene, which opens the scene's own drawer in place, and Show in Scenes,
  * which leads back to the scene's place in the story's structure, are in the scene's ⋯ menu. Under the title, read-only,
  * the scene's planning as the Scenes view draws it - when and through whose eyes, its lore and its beats, each a link to
  * where it is edited - folded behind Details on a phone, where every line above the prose is a line of prose gone.
@@ -102,6 +105,7 @@ export function ManuscriptEditor({
   onSuggestScene,
   chapters,
   onSceneChanged,
+  onSceneSaved,
   publication,
 }: ManuscriptEditorProps) {
   const access = useUniverseAccess()
@@ -352,6 +356,14 @@ export function ManuscriptEditor({
                 </span>
               </button>
             ) : null}
+            <LoreContext
+              universeId={universeId}
+              storyId={storyId}
+              scene={scene}
+              chronology={chronology}
+              onSceneSaved={onSceneSaved}
+              onSceneChanged={onSceneChanged}
+            />
             <ReviewComments
               universeId={universeId}
               subject={{ kind: 'scene', storyId, sceneId: scene.id }}

@@ -803,6 +803,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           onEditScene={(scene) => setSceneForm({ mode: 'edit', scene })}
           onSuggestScene={(scene) => setSceneForm({ mode: 'suggest', scene })}
           onSceneChanged={reload}
+          onSceneSaved={(saved) => patchScene(saved.id, saved)}
           manuscriptPublication={(scene) =>
             access.publish ? (
               <StoryPartPublication
