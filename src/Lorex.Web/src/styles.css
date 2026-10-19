@@ -11659,32 +11659,11 @@ a.idearef__name {
   height: 3.25rem;
 }
 
-/* Storage on the Profile (ADR 0042): the amount in words, then the shared progress bar as a meter. Full is said in
-   a sentence; the bar's ink turns to the danger colour only as a second signal, never the only one. */
-.storage__amount {
-  margin: 0 0 var(--space-2);
-  font-size: 0.925rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.storage__meter[data-state='full'] .progressbar__fill {
-  background: var(--danger);
-}
-
-.storage__full {
-  margin: var(--space-3) 0 0;
-  font-size: 0.875rem;
-  color: var(--danger);
-}
-
-.storage .settings__note {
-  margin-top: var(--space-3);
-}
-
-/* Usage on the Profile: one item per allowance that refills on its own, each a name, the amount in words with its
-   percentage, the shared progress bar as a meter, and what is left. Full is said in words; the danger ink only repeats it. */
+/* Usage on the Profile (ADR 0042, 0045): one section, one item per allowance - Storage, then the AI Assistant - each a
+   name, the amount in words with its percentage, the shared progress bar as a meter, and what is left. Items are told
+   apart by space alone, no card or rule. Full is said in words; the danger ink only repeats it. */
 .usage__item + .usage__item {
-  margin-top: var(--space-5);
+  margin-top: var(--space-6);
 }
 
 .usage__name {

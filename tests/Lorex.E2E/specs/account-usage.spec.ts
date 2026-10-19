@@ -2,13 +2,16 @@ import { expect, test, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
 
 /**
- * The Profile's Usage section (ADR 0045): the account's AI Assistant allowance as the server counts it. What counts, the
+ * The Profile's Usage section (ADR 0042, 0045): Storage, then the account's AI Assistant allowance as the server counts
+ * it. Storage's own numbers are proved in `account-storage.spec.ts`. What counts, the
  * window, and that one account never sees another's are proved by the API tests; this proves that the server's numbers
  * reach the screen in words and as a meter, that asking updates them without reloading the app, and that the loading,
  * full and failed states read properly on a desktop and a phone. Stubbed responses are fictional numbers.
  */
 
 const usagePath = '**/api/profile/assistant-usage'
+const storagePath = '**/api/profile/storage'
+const GiB = 1024 * 1024 * 1024
 
 function unique(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`
@@ -146,7 +149,7 @@ test('loading is announced, and a failed read offers to try again', async ({ pag
 
   const item = assistantUsage(page)
   await expect(item.getByRole('status')).toHaveText('Checking your usage…')
-  await expect(page.getByTestId('profile-usage')).toHaveAttribute('aria-busy', 'true')
+  await expect(item).toHaveAttribute('aria-busy', 'true')
   release()
 
   const error = item.getByTestId('usage-assistant-error')
@@ -156,7 +159,7 @@ test('loading is announced, and a failed read offers to try again', async ({ pag
   await error.getByRole('button', { name: 'Try again' }).click()
 
   await expectUsage(page, 7, 35, '13 questions left')
-  await expect(page.getByTestId('profile-usage')).toHaveAttribute('aria-busy', 'false')
+  await expect(item).toHaveAttribute('aria-busy', 'false')
 })
 
 test('the Usage section fits a phone', async ({ page }) => {
@@ -175,3 +178,133 @@ test('the Usage section fits a phone', async ({ page }) => {
   expect(box.x).toBeGreaterThanOrEqual(0)
   expect(box.x + box.width).toBeLessThanOrEqual(360)
 })
+
+test('one Usage section holds Storage, then the AI Assistant', async ({ page }) => {
+  await signUp(page)
+  await page.goto('/app/profile')
+
+  const section = page.getByTestId('profile-usage')
+  await expect(page.getByRole('heading', { level: 2, name: 'Usage' })).toHaveCount(1)
+  await expect(page.getByRole('heading', { level: 2, name: 'Storage' })).toHaveCount(0)
+  await expect(section.getByRole('heading', { level: 3 })).toHaveText(['Storage', 'AI Assistant'])
+  await expect(section.getByRole('meter')).toHaveCount(2)
+  await expect(section.getByRole('meter', { name: 'Storage' })).toHaveAttribute(
+    'aria-valuetext',
+    '0 MB used of 1 GB, 0%',
+  )
+  await expect(section.getByRole('meter', { name: 'AI Assistant' })).toHaveAttribute(
+    'aria-valuetext',
+    '0 of 20 questions used, 0%',
+  )
+})
+
+test('one usage that fails to load leaves the other in place', async ({ page }) => {
+  await signUp(page)
+  const section = page.getByTestId('profile-usage')
+
+  // Storage fails; the Assistant still shows, and Storage comes back with Try again.
+  let storageFails = true
+  await page.route(storagePath, (route) =>
+    storageFails
+      ? route.fulfill({ status: 500, json: { title: 'Synthetic failure' } })
+      : route.fallback(),
+  )
+  await stubUsage(page, { used: 3, limit: 20, remaining: 17, windowSeconds: 600, resetsAt: null })
+  await page.goto('/app/profile')
+
+  const storageError = section.getByTestId('usage-storage-error')
+  await expect(storageError).toHaveRole('alert')
+  await expect(section.getByTestId('usage-assistant-error')).toHaveCount(0)
+  await expectUsage(page, 3, 15, '17 questions left')
+
+  storageFails = false
+  await storageError.getByRole('button', { name: 'Try again' }).click()
+  await expect(section.getByTestId('usage-storage-amount')).toHaveText('0 MB used of 1 GB')
+
+  // The Assistant fails; Storage still shows.
+  await page.unroute(usagePath)
+  await page.route(usagePath, (route) =>
+    route.fulfill({ status: 500, json: { title: 'Synthetic failure' } }),
+  )
+  await page.reload()
+  await expect(section.getByTestId('usage-assistant-error')).toHaveRole('alert')
+  await expect(section.getByTestId('usage-storage-error')).toHaveCount(0)
+  await expect(section.getByTestId('usage-storage-amount')).toHaveText('0 MB used of 1 GB')
+})
+
+test('both allowances used up say so in words', async ({ page }) => {
+  await signUp(page)
+  await page.route(storagePath, (route) =>
+    route.fulfill({
+      json: { usedBytes: GiB, quotaBytes: GiB, remainingBytes: 0, loreImagesBytes: GiB },
+    }),
+  )
+  await stubUsage(page, {
+    used: 20,
+    limit: 20,
+    remaining: 0,
+    windowSeconds: 600,
+    resetsAt: new Date(Date.now() + 5 * 60_000),
+  })
+  await page.goto('/app/profile')
+
+  const section = page.getByTestId('profile-usage')
+  await expect(section.getByTestId('usage-storage-amount')).toHaveText('1 GB used of 1 GB')
+  await expect(section.getByTestId('usage-storage-percent')).toHaveText('100%')
+  await expect(section.getByTestId('usage-storage-full')).toHaveText(
+    'Your storage is full. Remove some images to add new ones.',
+  )
+  await expect(section.getByRole('meter', { name: 'Storage' })).toHaveAttribute(
+    'data-state',
+    'full',
+  )
+  await expect(section.getByTestId('usage-assistant-left')).toContainText('No questions left.')
+  await expect(section.getByRole('meter', { name: 'AI Assistant' })).toHaveAttribute(
+    'data-state',
+    'full',
+  )
+})
+
+for (const theme of ['light', 'dark'] as const) {
+  for (const [device, width] of [
+    ['desktop', 1280],
+    ['phone', 390],
+  ] as const) {
+    test(`the Usage section reads in the ${theme} theme on a ${device}`, async ({ page }) => {
+      await page.addInitScript((chosen) => localStorage.setItem('lorex-theme', chosen), theme)
+      await page.setViewportSize({ width, height: 900 })
+      await signUp(page)
+      await stubUsage(page, {
+        used: 7,
+        limit: 20,
+        remaining: 13,
+        windowSeconds: 600,
+        resetsAt: null,
+      })
+      await page.goto('/app/profile')
+
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+      await expectUsage(page, 7, 35, '13 questions left')
+      const section = page.getByTestId('profile-usage')
+      await expect(section.getByTestId('usage-storage-amount')).toHaveText('0 MB used of 1 GB')
+
+      // The two items stack in order, inside the page, with nothing pushed sideways.
+      const storage = (await section.getByTestId('usage-storage').boundingBox())!
+      const assistant = (await section.getByTestId('usage-assistant').boundingBox())!
+      expect(assistant.y).toBeGreaterThan(storage.y + storage.height - 1)
+      expect(assistant.x).toBe(storage.x)
+      expect(storage.x + storage.width).toBeLessThanOrEqual(width)
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      )
+      expect(overflow).toBe(0)
+
+      // The fill is drawn in a theme colour, not left transparent.
+      const fill = await section
+        .getByTestId('usage-assistant-meter')
+        .locator('.progressbar__fill')
+        .evaluate((element) => getComputedStyle(element).backgroundColor)
+      expect(fill).not.toBe('rgba(0, 0, 0, 0)')
+    })
+  }
+}

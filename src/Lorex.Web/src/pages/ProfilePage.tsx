@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/useAuth'
-import { AccountStorageSection } from '../components/AccountStorageSection'
-import { AccountUsageSection } from '../components/AccountUsageSection'
+import { AssistantUsage } from '../components/AssistantUsage'
 import { ProfileAvatar } from '../components/ProfileAvatar'
 import { PublicAuthorSection } from '../components/PublicAuthorSection'
 import { PublicNameForm } from '../components/PublicNameForm'
+import { StorageUsage } from '../components/StorageUsage'
 import { ThemeSwitch } from '../components/ThemeSwitch'
 import { listUniverses } from '../universes/api'
 
@@ -75,9 +75,17 @@ export default function ProfilePage() {
         </div>
       </dl>
 
-      <AccountStorageSection />
-
-      <AccountUsageSection />
+      <section
+        className="profile__public usage"
+        aria-labelledby="profile-usage-heading"
+        data-testid="profile-usage"
+      >
+        <h2 className="profile__subtitle" id="profile-usage-heading">
+          Usage
+        </h2>
+        <StorageUsage />
+        <AssistantUsage />
+      </section>
 
       <section className="profile__public" aria-labelledby="profile-public-heading">
         <h2 className="profile__subtitle" id="profile-public-heading">
