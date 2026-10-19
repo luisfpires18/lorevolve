@@ -53,6 +53,9 @@ public sealed class LorexApiFactory : WebApplicationFactory<Program>
     /// <summary>Open client registrations a minute. Tests register freely unless a test is about the limit.</summary>
     public int RegistrationsPerMinute { get; init; } = 100_000;
 
+    /// <summary>Client metadata documents fetched a minute, per ration, when a test is about the ration.</summary>
+    public int? MetadataFetchesPerMinute { get; init; }
+
     /// <summary>The MCP origin every test host runs on: the test server's own base address.</summary>
     public const string Origin = "http://localhost";
 
@@ -61,6 +64,10 @@ public sealed class LorexApiFactory : WebApplicationFactory<Program>
         builder.UseEnvironment("Testing");
         builder.UseSetting("Mcp:Origin", Origin);
         builder.UseSetting("Mcp:RegistrationsPerMinute", RegistrationsPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (MetadataFetchesPerMinute is { } fetches)
+        {
+            builder.UseSetting("Mcp:MetadataFetchesPerMinute", fetches.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
 
         builder.ConfigureServices(services =>
         {

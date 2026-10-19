@@ -25,6 +25,12 @@ internal static class ClientRules
     public const string FreshUntilProperty = "lorex_fresh_until";
 
     /// <summary>
+    /// Until when the document may still stand if it cannot be fetched again for want of a ration: a short grace the
+    /// publisher's own caching allowed, never one LoreX extends.
+    /// </summary>
+    public const string StaleUntilProperty = "lorex_stale_until";
+
+    /// <summary>
     /// MCP: a redirect URI is HTTPS, or a loopback address (a program on the user's own device). Never a fragment, user
     /// info, or a custom scheme - a custom scheme can be claimed by any installed program.
     /// </summary>
@@ -157,34 +163,30 @@ internal sealed partial class ClientMetadataDocuments(
 
         var existing = await applications.FindByClientIdAsync(clientId, cancellationToken);
         var now = clock.GetUtcNow();
-        DateTimeOffset? freshUntil = existing is not null
-            && (await applications.GetPropertiesAsync(existing, cancellationToken)).TryGetValue(ClientRules.FreshUntilProperty, out var until)
-            && until.TryGetDateTimeOffset(out var stored)
-                ? stored
-                : null;
-        if (freshUntil > now)
+        var properties = existing is null ? null : await applications.GetPropertiesAsync(existing, cancellationToken);
+        if (When(properties, ClientRules.FreshUntilProperty) > now)
         {
             return null;
         }
 
         // Fetching is LoreX making a request on a stranger's say-so, before anyone has signed in: rationed, and refused
-        // rather than queued when the ration is spent. Anyone can spend the ration with made-up client ids, so a client
-        // LoreX has already checked goes on with its last document for a while instead: only a client never seen before
-        // waits. (Callers cannot be told apart here: behind App Service the address is the proxy's, ADR 0018.)
-        var staleAllowed = freshUntil + McpLimits.MetadataCacheMaximum > now;
-        using var concurrent = limits.Concurrent.AttemptAcquire();
-        if (!concurrent.IsAcquired)
+        // rather than queued when the ration is spent. Callers cannot be told apart (behind App Service the address is the
+        // proxy's, ADR 0018), and anyone can name made-up client ids, so a client never seen before draws on a ration of
+        // its own: a flood of them cannot keep a client LoreX has already checked from being checked again. A known client
+        // whose own ration is spent may stand on its last document only for the short grace its publisher's caching allowed.
+        var ration = existing is null ? limits.NewClients : limits.KnownClients;
+        using var concurrent = ration.Concurrent.AttemptAcquire();
+        using var budget = concurrent.IsAcquired ? ration.PerMinute.AttemptAcquire() : null;
+        if (budget?.IsAcquired != true)
         {
-            return Rationed(url, staleAllowed);
+            var standing = When(properties, ClientRules.StaleUntilProperty) > now;
+            LogRefused(logger, url.Host, standing
+                ? "was not fetched again while fetches are rationed; its last document stands within its grace"
+                : "was not fetched: too many client documents are being fetched right now");
+            return standing ? null : "LoreX is busy checking other apps. Try connecting again in a minute.";
         }
 
-        using var budget = limits.PerMinute.AttemptAcquire();
-        if (!budget.IsAcquired)
-        {
-            return Rationed(url, staleAllowed);
-        }
-
-        var (document, lifetime, problem) = await FetchAsync(url, cancellationToken);
+        var (document, freshness, problem) = await FetchAsync(url, cancellationToken);
         if (document is null)
         {
             LogRefused(logger, url.Host, problem!);
@@ -192,7 +194,8 @@ internal sealed partial class ClientMetadataDocuments(
         }
 
         var descriptor = ClientRules.Describe(clientId, document.Name, document.RedirectUris, ClientRules.MetadataDocumentSource);
-        descriptor.Properties[ClientRules.FreshUntilProperty] = JsonSerializer.SerializeToElement(now + lifetime);
+        descriptor.Properties[ClientRules.FreshUntilProperty] = JsonSerializer.SerializeToElement(now + freshness.Fresh);
+        descriptor.Properties[ClientRules.StaleUntilProperty] = JsonSerializer.SerializeToElement(now + freshness.Fresh + freshness.Grace);
 
         if (existing is null)
         {
@@ -216,18 +219,16 @@ internal sealed partial class ClientMetadataDocuments(
         return null;
     }
 
-    private string? Rationed(Uri url, bool staleAllowed)
-    {
-        LogRefused(logger, url.Host, staleAllowed
-            ? "was not fetched again while fetches are rationed; its last document stands"
-            : "was not fetched: too many client documents are being fetched right now");
-        return staleAllowed ? null : "LoreX is busy checking other apps. Try connecting again in a minute.";
-    }
+    /// <summary>A moment stored among an application's properties, or null.</summary>
+    private static DateTimeOffset? When(System.Collections.Immutable.ImmutableDictionary<string, JsonElement>? properties, string name) =>
+        properties is not null && properties.TryGetValue(name, out var value) && value.TryGetDateTimeOffset(out var moment)
+            ? moment
+            : null;
 
     private sealed record Document(string Name, IReadOnlyList<Uri> RedirectUris);
 
     /// <summary>The document, how long to trust it, or why not. Never throws for anything the remote end does.</summary>
-    private async Task<(Document? Document, TimeSpan Lifetime, string? Problem)> FetchAsync(Uri url, CancellationToken cancellationToken)
+    private async Task<(Document? Document, (TimeSpan Fresh, TimeSpan Grace) Freshness, string? Problem)> FetchAsync(Uri url, CancellationToken cancellationToken)
     {
         // One deadline for the whole exchange - connecting, headers and every byte of the body - so a server that answers
         // slowly, a byte at a time, holds nothing open past it. The client's own timeout ends at the headers.
@@ -274,7 +275,7 @@ internal sealed partial class ClientMetadataDocuments(
 
             using var json = JsonDocument.Parse(buffer.AsMemory(0, length), new JsonDocumentOptions { MaxDepth = 8 });
             var (document, problem) = Read(json.RootElement, url.AbsoluteUri);
-            return (document, Lifetime(response), problem);
+            return (document, Freshness(response), problem);
         }
         catch (Exception exception) when (exception is HttpRequestException or JsonException or SocketException
             || (exception is OperationCanceledException && !cancellationToken.IsCancellationRequested))
@@ -349,18 +350,28 @@ internal sealed partial class ClientMetadataDocuments(
         || (list.ValueKind == JsonValueKind.Array && list.EnumerateArray().Any(item => item.ValueKind == JsonValueKind.String && item.GetString() == value));
 
     /// <summary>The response's own max-age, held between the bounds; the default when it gives none or says not to store.</summary>
-    private static TimeSpan Lifetime(HttpResponseMessage response)
+    /// <summary>
+    /// How long to trust the document, and for how long after that it may still stand while it cannot be fetched again.
+    /// Trust is the response's own max-age held between the bounds (the default when it gives none; the minimum when it
+    /// says not to store). The grace exists only when the publisher allowed caching outright - a max-age, and neither
+    /// no-store, no-cache nor must-revalidate - and is never longer than that max-age or <see cref="McpLimits.MetadataStaleGrace"/>.
+    /// </summary>
+    private static (TimeSpan Fresh, TimeSpan Grace) Freshness(HttpResponseMessage response)
     {
         var cache = response.Headers.CacheControl;
         if (cache is null || cache.NoStore || cache.NoCache)
         {
-            return McpLimits.MetadataCacheMinimum;
+            return (cache is null ? McpLimits.MetadataCacheDefault : McpLimits.MetadataCacheMinimum, TimeSpan.Zero);
         }
 
         var maxAge = cache.MaxAge ?? McpLimits.MetadataCacheDefault;
-        return maxAge < McpLimits.MetadataCacheMinimum ? McpLimits.MetadataCacheMinimum
+        var fresh = maxAge < McpLimits.MetadataCacheMinimum ? McpLimits.MetadataCacheMinimum
             : maxAge > McpLimits.MetadataCacheMaximum ? McpLimits.MetadataCacheMaximum
             : maxAge;
+        var grace = cache.MaxAge is { } allowed && !cache.MustRevalidate
+            ? (allowed < McpLimits.MetadataStaleGrace ? allowed : McpLimits.MetadataStaleGrace)
+            : TimeSpan.Zero;
+        return (fresh, grace);
     }
 
     /// <summary>
@@ -432,20 +443,38 @@ internal sealed partial class ClientMetadataDocuments(
 }
 
 /// <summary>
-/// How many client metadata documents this host fetches at once and in a minute (<see cref="McpLimits"/>). One per host,
-/// shared by every request: a fetch past either is refused, never queued.
+/// How many client metadata documents this host fetches (<see cref="McpLimits"/>), in two rations: one for client ids
+/// never seen before, which anyone can make up, and one for checking again a client LoreX has already accepted, which
+/// only a document LoreX validated could have made. A fetch past its ration is refused, never queued.
 /// </summary>
-internal sealed class ClientMetadataFetchLimits : IDisposable
+internal sealed class ClientMetadataFetchLimits(IConfiguration configuration) : IDisposable
+{
+    public FetchRation NewClients { get; } = new(McpLimits.MetadataFetchesAtOnce, PerMinute(configuration));
+
+    public FetchRation KnownClients { get; } = new(McpLimits.MetadataFetchesAtOnce, PerMinute(configuration));
+
+    public void Dispose()
+    {
+        NewClients.Dispose();
+        KnownClients.Dispose();
+    }
+
+    private static int PerMinute(IConfiguration configuration) =>
+        configuration.GetValue($"{McpSite.SectionName}:MetadataFetchesPerMinute", McpLimits.MetadataFetchesPerMinute);
+}
+
+/// <summary>One ration: so many fetches at once, so many a minute.</summary>
+internal sealed class FetchRation(int atOnce, int perMinute) : IDisposable
 {
     public System.Threading.RateLimiting.ConcurrencyLimiter Concurrent { get; } = new(new()
     {
-        PermitLimit = McpLimits.MetadataFetchesAtOnce,
+        PermitLimit = atOnce,
         QueueLimit = 0,
     });
 
     public System.Threading.RateLimiting.FixedWindowRateLimiter PerMinute { get; } = new(new()
     {
-        PermitLimit = McpLimits.MetadataFetchesPerMinute,
+        PermitLimit = perMinute,
         Window = TimeSpan.FromMinutes(1),
         QueueLimit = 0,
     });

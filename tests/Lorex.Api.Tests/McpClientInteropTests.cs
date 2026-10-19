@@ -302,25 +302,23 @@ internal sealed class DripStream : Stream
     public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 }
 
-/// <summary>The ration of metadata fetches, on a host of its own so no other test spends it.</summary>
+/// <summary>The rations of metadata fetches, each test on a host of its own so no other test spends them.</summary>
 public sealed class ClientMetadataFetchLimitTests
 {
     [Fact]
-    public async Task Past_the_minute_s_budget_a_new_client_waits_and_a_known_one_keeps_its_last_document()
+    public async Task Made_up_client_ids_spend_only_the_new_clients_ration()
     {
         var documents = new StubDocuments();
         using var api = new LorexApiFactory { ClientMetadata = documents };
-        var (browser, _) = await NewBrowser(api, "fetchlimit");
+        var (browser, _) = await NewBrowser(api, "fetchnew");
         var u = (await CreateUniverse(browser, "Rationed world")).Id;
         var (_, challenge) = Pkce();
 
-        // A real client, checked once and then left to go stale.
         const string known = "https://known.example/client.json";
-        documents.Serve(known, JsonSerializer.Serialize(new { client_id = known, client_name = "Known", redirect_uris = new[] { Redirect }, token_endpoint_auth_method = "none" }));
+        documents.Serve(known, Document(known, maxAge: null));
         Assert.Equal(HttpStatusCode.Redirect, (await StartAuthorization(browser, AuthorizeRequest(known, Resource(u), challenge))).StatusCode);
-        api.Clock.Offset = McpLimits.MetadataCacheDefault + TimeSpan.FromMinutes(5);
 
-        // Made-up client ids spend the rest of the minute's fetches.
+        // Made-up client ids spend the rest of the new clients' minute; the next one is refused unfetched.
         for (var i = 1; i < McpLimits.MetadataFetchesPerMinute; i++)
         {
             await StartAuthorization(browser, AuthorizeRequest($"https://many.example/client-{i}.json", Resource(u), challenge));
@@ -330,9 +328,67 @@ public sealed class ClientMetadataFetchLimitTests
         var refused = await StartAuthorization(browser, AuthorizeRequest("https://many.example/one-more.json", Resource(u), challenge));
         Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);
         Assert.Contains("busy", await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
-
-        // The known client is not locked out by them: it goes on with what was checked before, unfetched.
-        Assert.Equal(HttpStatusCode.Redirect, (await StartAuthorization(browser, AuthorizeRequest(known, Resource(u), challenge))).StatusCode);
         Assert.Equal(McpLimits.MetadataFetchesPerMinute, documents.Requested.Count);
+
+        // The known client, gone stale, is still checked again: from its own ration, with its current document.
+        api.Clock.Offset = McpLimits.MetadataCacheDefault + TimeSpan.FromMinutes(5);
+        Assert.Equal(HttpStatusCode.Redirect, (await StartAuthorization(browser, AuthorizeRequest(known, Resource(u), challenge))).StatusCode);
+        Assert.Equal(2, documents.Requested.Count(url => url == known));
     }
+
+    [Fact]
+    public async Task With_its_own_ration_spent_a_known_client_stands_only_for_the_grace_its_publisher_allowed()
+    {
+        var documents = new StubDocuments();
+        using var api = new LorexApiFactory { ClientMetadata = documents, MetadataFetchesPerMinute = 2 };
+        var (browser, _) = await NewBrowser(api, "fetchgrace");
+        var u = (await CreateUniverse(browser, "Graceful world")).Id;
+        var (_, challenge) = Pkce();
+
+        // One publisher allows caching for ten minutes; the other says not to store.
+        const string cached = "https://cached.example/client.json";
+        const string uncached = "https://uncached.example/client.json";
+        documents.Serve(cached, Document(cached, maxAge: TimeSpan.FromMinutes(10)));
+        documents.Serve(uncached, Document(uncached, maxAge: null, noStore: true));
+
+        async Task<HttpStatusCode> Authorize(string clientId) =>
+            (await StartAuthorization(browser, AuthorizeRequest(clientId, Resource(u), challenge))).StatusCode;
+
+        Assert.Equal(HttpStatusCode.Redirect, await Authorize(cached));
+        Assert.Equal(HttpStatusCode.Redirect, await Authorize(uncached));
+
+        // Both stale: both checked again, which spends the known clients' ration.
+        api.Clock.Offset = TimeSpan.FromMinutes(11);
+        Assert.Equal(HttpStatusCode.Redirect, await Authorize(cached));
+        Assert.Equal(HttpStatusCode.Redirect, await Authorize(uncached));
+        Assert.Equal(4, documents.Requested.Count);
+
+        // Stale again with the ration spent: the cacheable one stands within its five minutes of grace, unfetched; the
+        // one whose publisher said not to store has no grace at all.
+        api.Clock.Offset = TimeSpan.FromMinutes(22);
+        Assert.Equal(HttpStatusCode.Redirect, await Authorize(cached));
+        Assert.Equal(HttpStatusCode.Unauthorized, await Authorize(uncached));
+
+        // Past the grace, nothing stands on an old document.
+        api.Clock.Offset = TimeSpan.FromMinutes(27);
+        Assert.Equal(HttpStatusCode.Unauthorized, await Authorize(cached));
+        Assert.Equal(4, documents.Requested.Count);
+    }
+
+    private static Func<HttpResponseMessage> Document(string clientId, TimeSpan? maxAge, bool noStore = false) => () =>
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new { client_id = clientId, client_name = "Rationed", redirect_uris = (string[])[Redirect], token_endpoint_auth_method = "none" }),
+                System.Text.Encoding.UTF8,
+                "application/json"),
+        };
+        if (maxAge is not null || noStore)
+        {
+            response.Headers.CacheControl = new() { MaxAge = maxAge, NoStore = noStore };
+        }
+
+        return response;
+    };
 }

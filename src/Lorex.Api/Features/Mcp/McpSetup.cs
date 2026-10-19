@@ -41,11 +41,20 @@ public static class McpLimits
     /// <summary>The whole fetch of a metadata document, body included.</summary>
     public static readonly TimeSpan MetadataFetchTimeout = TimeSpan.FromSeconds(5);
 
-    /// <summary>Metadata documents fetched at the same moment, across every request.</summary>
+    /// <summary>Metadata documents fetched at the same moment, per ration (new clients; known clients checked again).</summary>
     public const int MetadataFetchesAtOnce = 4;
 
-    /// <summary>Metadata documents fetched in a minute, across every request. A known client is fetched about hourly.</summary>
+    /// <summary>
+    /// Metadata documents fetched in a minute, per ration (<c>Mcp:MetadataFetchesPerMinute</c> overrides it). A known client
+    /// is fetched again about hourly.
+    /// </summary>
     public const int MetadataFetchesPerMinute = 60;
+
+    /// <summary>
+    /// The most a document past its freshness may still stand while its ration is spent - and only when its publisher
+    /// allowed caching (a max-age, no no-store, no-cache or must-revalidate), and never longer than that max-age.
+    /// </summary>
+    public static readonly TimeSpan MetadataStaleGrace = TimeSpan.FromMinutes(5);
 
     /// <summary>How long a fetched document is trusted when its response says nothing; its own max-age is held to the bounds.</summary>
     public static readonly TimeSpan MetadataCacheDefault = TimeSpan.FromHours(1);
