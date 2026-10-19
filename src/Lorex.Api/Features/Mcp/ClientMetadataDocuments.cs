@@ -157,22 +157,31 @@ internal sealed partial class ClientMetadataDocuments(
 
         var existing = await applications.FindByClientIdAsync(clientId, cancellationToken);
         var now = clock.GetUtcNow();
-        if (existing is not null
+        DateTimeOffset? freshUntil = existing is not null
             && (await applications.GetPropertiesAsync(existing, cancellationToken)).TryGetValue(ClientRules.FreshUntilProperty, out var until)
-            && until.TryGetDateTimeOffset(out var freshUntil)
-            && freshUntil > now)
+            && until.TryGetDateTimeOffset(out var stored)
+                ? stored
+                : null;
+        if (freshUntil > now)
         {
             return null;
         }
 
         // Fetching is LoreX making a request on a stranger's say-so, before anyone has signed in: rationed, and refused
-        // rather than queued when the ration is spent.
+        // rather than queued when the ration is spent. Anyone can spend the ration with made-up client ids, so a client
+        // LoreX has already checked goes on with its last document for a while instead: only a client never seen before
+        // waits. (Callers cannot be told apart here: behind App Service the address is the proxy's, ADR 0018.)
+        var staleAllowed = freshUntil + McpLimits.MetadataCacheMaximum > now;
         using var concurrent = limits.Concurrent.AttemptAcquire();
-        using var budget = limits.PerMinute.AttemptAcquire();
-        if (!concurrent.IsAcquired || !budget.IsAcquired)
+        if (!concurrent.IsAcquired)
         {
-            LogRefused(logger, url.Host, "was not fetched: too many client documents are being fetched right now");
-            return "LoreX is busy checking other apps. Try connecting again in a minute.";
+            return Rationed(url, staleAllowed);
+        }
+
+        using var budget = limits.PerMinute.AttemptAcquire();
+        if (!budget.IsAcquired)
+        {
+            return Rationed(url, staleAllowed);
         }
 
         var (document, lifetime, problem) = await FetchAsync(url, cancellationToken);
@@ -205,6 +214,14 @@ internal sealed partial class ClientMetadataDocuments(
 
         await applications.UpdateAsync(existing, descriptor, cancellationToken);
         return null;
+    }
+
+    private string? Rationed(Uri url, bool staleAllowed)
+    {
+        LogRefused(logger, url.Host, staleAllowed
+            ? "was not fetched again while fetches are rationed; its last document stands"
+            : "was not fetched: too many client documents are being fetched right now");
+        return staleAllowed ? null : "LoreX is busy checking other apps. Try connecting again in a minute.";
     }
 
     private sealed record Document(string Name, IReadOnlyList<Uri> RedirectUris);

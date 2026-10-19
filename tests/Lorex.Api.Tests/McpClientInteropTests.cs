@@ -306,7 +306,7 @@ internal sealed class DripStream : Stream
 public sealed class ClientMetadataFetchLimitTests
 {
     [Fact]
-    public async Task Fetches_past_the_minute_s_budget_are_refused_without_a_request()
+    public async Task Past_the_minute_s_budget_a_new_client_waits_and_a_known_one_keeps_its_last_document()
     {
         var documents = new StubDocuments();
         using var api = new LorexApiFactory { ClientMetadata = documents };
@@ -314,7 +314,14 @@ public sealed class ClientMetadataFetchLimitTests
         var u = (await CreateUniverse(browser, "Rationed world")).Id;
         var (_, challenge) = Pkce();
 
-        for (var i = 0; i <= McpLimits.MetadataFetchesPerMinute; i++)
+        // A real client, checked once and then left to go stale.
+        const string known = "https://known.example/client.json";
+        documents.Serve(known, JsonSerializer.Serialize(new { client_id = known, client_name = "Known", redirect_uris = new[] { Redirect }, token_endpoint_auth_method = "none" }));
+        Assert.Equal(HttpStatusCode.Redirect, (await StartAuthorization(browser, AuthorizeRequest(known, Resource(u), challenge))).StatusCode);
+        api.Clock.Offset = McpLimits.MetadataCacheDefault + TimeSpan.FromMinutes(5);
+
+        // Made-up client ids spend the rest of the minute's fetches.
+        for (var i = 1; i < McpLimits.MetadataFetchesPerMinute; i++)
         {
             await StartAuthorization(browser, AuthorizeRequest($"https://many.example/client-{i}.json", Resource(u), challenge));
         }
@@ -323,6 +330,9 @@ public sealed class ClientMetadataFetchLimitTests
         var refused = await StartAuthorization(browser, AuthorizeRequest("https://many.example/one-more.json", Resource(u), challenge));
         Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);
         Assert.Contains("busy", await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        // The known client is not locked out by them: it goes on with what was checked before, unfetched.
+        Assert.Equal(HttpStatusCode.Redirect, (await StartAuthorization(browser, AuthorizeRequest(known, Resource(u), challenge))).StatusCode);
         Assert.Equal(McpLimits.MetadataFetchesPerMinute, documents.Requested.Count);
     }
 }

@@ -48,7 +48,9 @@ is a JWT.
   normal form only; every address the host resolves to must be public, and the connection is made to a checked address
   (`ConnectCallback`); no redirect, no proxy, no cookies, one 5 s deadline for the whole exchange (body included, so a
   byte-at-a-time answer is cut off), 32 KB; at most 4 fetches at once and 60 a minute per host, refused rather than
-  queued. The document's `client_id` must be its URL; it must
+  queued. Anyone can spend that ration with made-up client ids before signing in, and callers cannot be told apart
+  behind App Service, so while it is spent a client LoreX has already checked keeps its last document (up to 24 h past
+  its freshness) and only a never-seen client is asked to try again in a minute. The document's `client_id` must be its URL; it must
   name the client, list 1-10 redirect URIs each HTTPS or loopback, accept `none` at the token endpoint and the code flow.
   A document is trusted for its `max-age` held to 5 min - 24 h (1 h by default) and fetched again after. Anything wrong
   refuses the request as `invalid_client`, shown by LoreX, never redirected.
