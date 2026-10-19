@@ -16,6 +16,8 @@
     <PackageReference Include="coverlet.collector" />
     <!-- Tests make their own images and read the thumbnails back, rather than shipping fixtures. -->
     <PackageReference Include="SixLabors.ImageSharp" />
+    <!-- The MCP SDK's own client, so the MCP endpoint is tested over the real Streamable HTTP transport. -->
+    <PackageReference Include="ModelContextProtocol.Core" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,6 +9,7 @@ using Lorex.Api.Features.FamilyTrees;
 using Lorex.Api.Features.Health;
 using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Mcp;
 using Lorex.Api.Features.Media;
 using Lorex.Api.Features.Profile;
 using Lorex.Api.Features.Publishing;
@@ -42,6 +43,7 @@ builder.Services.AddLorexMedia(builder.Configuration);
 builder.Services.AddBackupRestore();
 builder.Services.AddLorexSeo(builder.Configuration);
 builder.Services.AddLorexAssistant(builder.Configuration);
+builder.Services.AddLorexMcp(builder.Configuration, builder.Environment);
 
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 if (corsOrigins.Length > 0)
@@ -80,6 +82,10 @@ app.UseAuthorization();
 
 // After authorization and before the endpoint reads its body: each assistant question counts against its account.
 app.UseAssistantAllowance();
+
+// After authorization: the MCP endpoint's own gate (bearer tokens only, checked against the live connection), and the
+// rate limit on open client registration.
+app.UseLorexMcp();
 
 app.MapHealthEndpoints();
 app.MapAuthEndpoints();
@@ -120,6 +126,10 @@ app.MapSuggestionEndpoints();
 app.MapIdeaEndpoints();
 app.MapUniverseSearchEndpoints();
 app.MapAssistantEndpoints();
+app.MapOAuthEndpoints();
+app.MapClientRegistrationEndpoints();
+app.MapConnectedAppEndpoints();
+app.MapLorexMcpEndpoints();
 app.MapUniverseExportEndpoints();
 app.MapBackupRestoreEndpoints();
 app.MapSeoEndpoints();

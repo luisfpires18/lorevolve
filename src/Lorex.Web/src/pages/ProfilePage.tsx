@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/useAuth'
 import { AssistantUsage } from '../components/AssistantUsage'
+import { ConnectedApps } from '../components/ConnectedApps'
 import { ProfileAvatar } from '../components/ProfileAvatar'
 import { PublicAuthorSection } from '../components/PublicAuthorSection'
 import { PublicNameForm } from '../components/PublicNameForm'
@@ -86,6 +87,8 @@ export default function ProfilePage() {
         <StorageUsage />
         <AssistantUsage />
       </section>
+
+      <ConnectedApps />
 
       <section className="profile__public" aria-labelledby="profile-public-heading">
         <h2 className="profile__subtitle" id="profile-public-heading">

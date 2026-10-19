@@ -4,6 +4,7 @@ using Lorex.Api.Features.Comments;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Mcp;
 using Lorex.Api.Features.Profile;
 using Lorex.Api.Features.Publishing;
 using Lorex.Api.Features.Relationships;
@@ -136,9 +137,14 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<TimelineEntryValidation> TimelineEntryValidations => Set<TimelineEntryValidation>();
 
+    public DbSet<McpConnection> McpConnections => Set<McpConnection>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(LorexDbContext).Assembly);
+
+        // OpenIddict's applications, authorizations, scopes and tokens (ADR 0046), on the one context.
+        builder.UseOpenIddict();
     }
 }

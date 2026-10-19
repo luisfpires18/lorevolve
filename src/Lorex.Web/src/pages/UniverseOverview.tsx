@@ -1,5 +1,6 @@
 import { Link, useOutletContext } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
+import { ConnectToAi } from '../components/ConnectToAi'
 import { PageHeader } from '../components/PageHeader'
 import { formatDate } from '../lib/dates'
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, useUniverseAccess } from '../universes/access'
@@ -39,6 +40,9 @@ export default function UniverseOverview() {
         title={<bdi>{universe.name}</bdi>}
         titleTestId="overview-name"
         titleClassName="titlerule"
+        // An outside AI app reading this universe over MCP (ADR 0046): any member may connect their own, so every
+        // member's front page offers it.
+        actions={<ConnectToAi universeId={universe.id} universeName={universe.name} />}
         lede={
           <>
             {universe.description ? (

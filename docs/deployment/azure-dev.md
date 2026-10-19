@@ -199,9 +199,41 @@ Accepted deliberately. Each one is a reason this topology is not a production to
   then goes to Groq, whose Responses API takes no `store` setting, so none is sent. Never set `Assistant__Provider=Fake` on a deployed host: it
   is the test stand-in. An OpenAI account with no credit answers every question with "couldn't answer" (logged as
   `insufficient_quota`), not "busy". ADR 0045.
+- **Connect to AI is off until `Mcp__Origin` is set** (see below). Its OAuth tables share the one SQLite writer: a
+  token refresh writes, and "last used" writes at most every five minutes per connection. Whoever can read
+  `/home/data/keys` can read token payloads, as they can already forge a session.
 - **A backup is a ZIP, and it does carry image bytes.** The per-universe export is
   `backup.json` plus every entry's original picture, so it does not depend on R2 surviving -
   ADR 0014. It is still a manual, per-universe download and still not a disaster-recovery story.
+
+## Connect to AI over MCP (ADR 0046)
+
+Off until DEV is given its own origin. With no `Mcp__Origin` (and no `PublicSite__Origin`), Connect to AI says it is not
+set up, no MCP, OAuth or discovery endpoint exists (those paths fall through to the app shell like any unknown page),
+and nothing else is affected.
+
+To turn it on, set one app setting, never in a file:
+
+- `Mcp__Origin=https://<app-name>.azurewebsites.net` - the site's own HTTPS origin, no path. It becomes the OAuth issuer
+  and the start of every universe's MCP URL. Setting it does not touch indexing or canonical URLs (that is
+  `PublicSite__Origin`). A custom domain later means changing it, and every app connected before has to connect again.
+
+Nothing else is needed: no secret, no certificate, no extra resource. Tokens are protected by the Data Protection key ring
+already on `/home/data/keys`, and the OAuth tables live in the same SQLite file, so connections survive restarts and
+redeploys. `Hosting__UseForwardedHeaders=true` (already set) is what lets the authorization server see HTTPS behind App
+Service; without it every OAuth request is refused as plain HTTP. Optional: `Mcp__RegistrationsPerMinute` (default 30).
+
+Check it after a deploy:
+
+- `curl -s https://<host>/.well-known/oauth-authorization-server` names `https://<host>/` as `issuer`.
+- `curl -si -X POST https://<host>/mcp/universes/00000000-0000-0000-0000-000000000000` answers `401` with
+  `WWW-Authenticate: Bearer resource_metadata="https://<host>/.well-known/oauth-protected-resource/mcp/universes/..."`.
+- In a universe, Connect to AI shows `https://<host>/mcp/universes/<id>`. Add it in Claude (Settings, Connectors, Add
+  custom connector) or ChatGPT (a connector in developer mode); the browser opens LoreX's consent screen; approve; ask
+  the app to call `get_universe_overview`. Profile, Connected apps lists it; Disconnect ends it.
+
+The site must be reachable from the internet for Claude and ChatGPT: their servers fetch the discovery documents and call
+the MCP endpoint (Anthropic from `160.79.104.0/21`). Access restrictions on the App Service would break that.
 
 ## Search indexing (ADR 0038)
 

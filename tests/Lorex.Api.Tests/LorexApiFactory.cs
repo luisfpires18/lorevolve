@@ -1,6 +1,7 @@
 using System.Data.Common;
 using Lorex.Api.Data;
 using Lorex.Api.Features.Assistant;
+using Lorex.Api.Features.Mcp;
 using Lorex.Api.Features.Media;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -43,9 +44,41 @@ public sealed class LorexApiFactory : WebApplicationFactory<Program>
     /// </summary>
     public IAssistantProvider? Assistant { get; init; }
 
+    /// <summary>
+    /// What answers when the authorization server fetches a client metadata document, when a test supplies it. Unset, a
+    /// fetch goes nowhere a test controls - so a test of a metadata-document client always supplies one.
+    /// </summary>
+    public HttpMessageHandler? ClientMetadata { get; init; }
+
+    /// <summary>Open client registrations a minute. Tests register freely unless a test is about the limit.</summary>
+    public int RegistrationsPerMinute { get; init; } = 100_000;
+
+    /// <summary>Known clients' metadata documents checked again a minute, per host, when a test is about that ration.</summary>
+    public int? MetadataRechecksPerHostPerMinute { get; init; }
+
+    /// <summary>Known clients' metadata documents checked again a minute, all hosts together, when a test is about that ceiling.</summary>
+    public int? MetadataRechecksPerMinute { get; init; }
+
+    /// <summary>The MCP origin every test host runs on: the test server's own base address.</summary>
+    public const string Origin = "http://localhost";
+
+    /// <summary>The MCP origin this host is given; null for a host where MCP is not set up.</summary>
+    public string? McpOrigin { get; init; } = Origin;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.UseSetting("Mcp:Origin", McpOrigin ?? string.Empty);
+        builder.UseSetting("Mcp:RegistrationsPerMinute", RegistrationsPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (MetadataRechecksPerHostPerMinute is { } rechecks)
+        {
+            builder.UseSetting("Mcp:MetadataRechecksPerHostPerMinute", rechecks.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        if (MetadataRechecksPerMinute is { } ceiling)
+        {
+            builder.UseSetting("Mcp:MetadataRechecksPerMinute", ceiling.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
 
         builder.ConfigureServices(services =>
         {
@@ -65,6 +98,11 @@ public sealed class LorexApiFactory : WebApplicationFactory<Program>
             {
                 services.RemoveAll<IAssistantProvider>();
                 services.AddSingleton(Assistant);
+            }
+
+            if (ClientMetadata is not null)
+            {
+                services.AddHttpClient(ClientMetadataDocuments.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => ClientMetadata);
             }
         });
     }

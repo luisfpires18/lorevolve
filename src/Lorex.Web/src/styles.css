@@ -15053,3 +15053,172 @@ details.reviewsection > .reviewsection__list {
     border: 0;
   }
 }
+
+/* ---------- Connect to AI, the consent screen and Connected apps (ADR 0046) ----------
+   Connect to AI is the Assistant's twin beside the search: the same button, folding to its icon on a phone, and the
+   same drawer frame, holding the address with its copy button, the steps, and what the app may read. The consent screen
+   sits on the sign-in plate, one part after another, each named by a small label; a caution is the warning callout.
+   Connected apps are rows like the collaborators', each with its own inline confirmation. */
+
+.connect__body {
+  gap: var(--space-5);
+}
+
+.connect__copyrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.connect__input {
+  flex: 1 1 16rem;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.connect__hint,
+.connect__status,
+.connect__manage {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.connect__status:empty {
+  display: none;
+}
+
+.connect__heading {
+  margin: 0 0 var(--space-2);
+  font-size: 0.925rem;
+  font-weight: 600;
+}
+
+.connect__steps,
+.connect__list,
+.consent__list {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.connect__section .settings__note {
+  margin-top: var(--space-3);
+}
+
+.consent {
+  display: grid;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.consent__part {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.consent__part + .consent__part {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+}
+
+.consent__label {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.consent__app,
+.consent__universe {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.consent__identity {
+  margin: 0;
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.consent__warning {
+  margin: 0;
+  font-size: var(--text-ui);
+}
+
+.consent__part--notes .settings__note {
+  margin: 0;
+}
+
+.consent__actions {
+  flex-wrap: wrap;
+}
+
+.connectedapps__list {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.connectedapps__empty {
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+}
+
+.connectedapps__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.connectedapps__who {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.connectedapps__name {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.connectedapps__meta,
+.connectedapps__status {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.connectedapps__status {
+  color: var(--ink);
+}
+
+.connectedapps__status--off {
+  color: var(--warning);
+}
+
+.connectedapps__confirm,
+.connectedapps__error {
+  flex: 1 1 100%;
+}
+
+.profile__subtitle:focus {
+  outline: none;
+}
+
+.profile__subtitle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
