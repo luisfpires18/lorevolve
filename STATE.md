@@ -66,8 +66,14 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   DEV `openai/gpt-oss-120b`) runs the same exchange on Groq's OpenAI-compatible Responses API. Shared
   `ResponsesConversation`; OpenAI keeps `store: false` + encrypted reasoning, Groq omits `store` and `include`. No
   behaviour, copy or limit change. ADR 0045 amendment. Tests: `GroqAssistantProviderTests` 16. Not yet run live on Groq.
+- **CI format fix + E2E sharding** (`fix/ci-format-and-pipeline-performance` off `dev` at `b6f0850`; committed, not
+  merged, not pushed). Run 39239505293 failed only on Prettier for `lore-context.spec.ts` (formatted without the web
+  `.prettierrc.json`); reformatted, no behaviour change. `ci.yml` E2E is now a 2-shard matrix (`--shard=N/2`, 2 workers,
+  own runner, API, Vite and `lorex-e2e-shard-N.db`), `fail-fast: false`, reports `playwright-report-shard-N-of-2`. Job
+  timeouts added. No cache or build-reuse change (seconds at most). Partition checked locally: 246 + 245 = 491, no
+  overlap. actionlint 1.7.7 clean. Not yet measured on GitHub; estimate merge-to-DEV ~27 min -> ~15 min.
 - **Roadmap task 048 - Interactive Writing Workspace V1** (GitHub issue 6; `feat/interactive-writing-workspace-v1`
-  off `dev` at `b14fbf0`; committed, not merged, not pushed). Frontend only: no API, schema or backup change. ADR 0024
+  off `dev` at `b14fbf0`; merged into `dev` at `b6f0850`). Frontend only: no API, schema or backup change. ADR 0024
   amendment.
   - Manuscript tool row gains **Lore** (icon only on a phone), opening `LoreContext`: the shared `.drawer` modal, a side
     sheet over the writing on a desktop and the full width on a phone. Lists the scene's linked lore, searches the
