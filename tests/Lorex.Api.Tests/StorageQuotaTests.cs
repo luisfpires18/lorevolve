@@ -658,7 +658,7 @@ public sealed class StorageQuotaTests(LorexApiFactory factory) : IClassFixture<L
         var document = RestoreTestClient.DocumentOf(archive);
         Assert.DoesNotContain("quota", document, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("reservation", document, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(23, RestoreTestClient.BackupOf(archive).FormatVersion);
+        Assert.Equal(24, RestoreTestClient.BackupOf(archive).FormatVersion);
 
         // One byte short of room for both pictures again: refused, nothing made, the upload still waiting.
         await SetQuota(userId, used + used - 1);

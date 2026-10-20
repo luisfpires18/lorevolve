@@ -11372,7 +11372,7 @@ a.idearef__name {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 2.75rem;
   min-width: max-content;
   padding: 0.5rem 0.25rem 1rem;
 }
@@ -11386,7 +11386,7 @@ a.idearef__name {
 .familytree__line {
   fill: none;
   stroke: var(--rule-strong);
-  stroke-width: 1.5;
+  stroke-width: 1.25;
 }
 
 /* Adoptive connections are dashed, and anything that is not Canon yet is faded - the same distinction
@@ -11419,119 +11419,138 @@ a.idearef__name {
 
 .familytree__members {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   justify-content: center;
-  gap: 1rem;
+  gap: var(--familynode-gap);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* ---------- A family member: a portrait in a circle, the name beneath, an eye for the details (Issue #37) ----------
+
+   The circle is the size the window allows - about 7.5rem on a comfortable desktop, less on a tablet, less again on a
+   phone - in rem, so a larger text size grows it with the name. The width of a member is the circle and a little room
+   for the name, which wraps to three lines at most and is never wider than its member, so it cannot reach a neighbour.
+   The thumbnail is the author's square crop, drawn round by CSS: nothing is cut. */
+
+.familytree {
+  --familynode-size: clamp(5.5rem, 3.5rem + 4vw, 7.5rem);
+  --familynode-gap: clamp(1rem, 0.25rem + 1.5vw, 2rem);
 }
 
 .familynode {
   position: relative;
   display: flex;
+  flex: none;
   flex-direction: column;
-  gap: 0.4rem;
-  width: 12rem;
-  padding: 0.75rem;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
-  background: var(--raised);
-}
-
-.familynode--focal {
-  border-color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
-
-.familynode__head {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 0.55rem;
-  margin: 0;
-  text-align: left;
+  gap: 0.5rem;
+  width: calc(var(--familynode-size) + 2.5rem);
+}
+
+.familynode__face {
+  display: block;
+  width: var(--familynode-size);
+  height: var(--familynode-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  box-shadow: 0 0 0 1px var(--rule);
 }
 
 .familynode__button {
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  color: inherit;
   cursor: pointer;
+  transition: box-shadow var(--duration-1) var(--ease);
 }
 
-.familynode__button:hover .familynode__name {
-  text-decoration: underline;
+.familynode__button:hover {
+  box-shadow: 0 0 0 2px var(--rule-strong);
+}
+
+.familynode__button:focus-visible {
+  outline-offset: 3px;
 }
 
 .familynode__tile {
-  flex: none;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: var(--radius-sm);
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: var(--radius-full);
+}
+
+/* The entry the family is shown for: the same member, held by a ring of the accent. */
+.familynode--focal .familynode__face {
+  box-shadow:
+    0 0 0 2px var(--raised),
+    0 0 0 4px var(--accent);
+}
+
+/* Not Canon yet: the ring is dashed, as a line not Canon yet is faded. The words are in the details. */
+.familynode[data-canon='0'] .familynode__face,
+.familynode[data-canon='1'] .familynode__face {
+  box-shadow: none;
+  outline: 1.5px dashed var(--rule-strong);
+  outline-offset: 2px;
+}
+
+.familynode--focal[data-canon='0'] .familynode__face,
+.familynode--focal[data-canon='1'] .familynode__face {
+  outline-color: var(--accent);
+}
+
+/* The eye is centred on the circle's edge at its lower right (cos 45° from the centre), inside the member: it never
+   covers a neighbour, a line or the name beneath, at any circle size. */
+.familynode__eye {
+  --familynode-eye: var(--control-sm);
+  position: absolute;
+  top: calc(var(--familynode-size) * 0.854 - var(--familynode-eye) / 2);
+  left: calc(50% + var(--familynode-size) * 0.354 - var(--familynode-eye) / 2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--familynode-eye);
+  height: var(--familynode-eye);
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-full);
+  background: var(--raised);
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-1) var(--ease),
+    color var(--duration-1) var(--ease);
+}
+
+.familynode__eye:hover,
+.familynode__eye[aria-expanded='true'] {
+  background: var(--hover-wash);
+  color: var(--ink);
+}
+
+.familynode__eye svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .familynode__name {
-  flex: 1 1 0;
-  min-width: 0;
+  display: -webkit-box;
+  width: 100%;
   margin: 0;
+  overflow: hidden;
   font-family: var(--display);
-  font-size: 1rem;
-  line-height: 1.25;
+  font-size: var(--text-ui);
+  line-height: 1.3;
+  text-align: center;
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
-.familynode__action {
-  flex-basis: 100%;
-  font-size: 0.7rem;
-  color: var(--muted);
-}
-
-.familynode__kind {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  margin: 0;
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
-.familynode__focusmark {
-  flex-basis: 100%;
-  font-size: var(--text-xs);
-  color: var(--accent);
-}
-
-.familynode__roles {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 0.78rem;
-}
-
-.familynode__roles li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  overflow-wrap: anywhere;
-}
-
-.familynode__position {
+.familynode--focal .familynode__name {
   font-weight: 600;
-}
-
-.familynode__draft {
-  color: var(--muted);
-}
-
-.familynode__open {
-  font-size: 0.78rem;
 }
 
 .familytree__legend {
@@ -11547,7 +11566,7 @@ a.idearef__name {
 .familytree__key {
   display: inline-block;
   width: 1.6rem;
-  border-top: 2px solid var(--rule-strong);
+  border-top: 1.5px solid var(--rule-strong);
 }
 
 .familytree__key[data-semantic='2'] {
@@ -11562,12 +11581,14 @@ a.idearef__name {
   margin: 1.25rem 0;
 }
 
-/* The entry in focus is given the room its name needs. */
-.familynode--focal {
-  width: 15rem;
-}
-
+/* A phone: no lines, since members wrap; the rows and the details say who is who. Smaller circles, three or four
+   to a line, and the entry in focus leading its own row, before its siblings. */
 @media (max-width: 640px) {
+  .familytree {
+    --familynode-size: 4.5rem;
+    --familynode-gap: 0.75rem;
+  }
+
   .familytree__scroll {
     overflow: visible;
   }
@@ -11583,18 +11604,255 @@ a.idearef__name {
   }
 
   .familytree__members {
-    flex-direction: column;
-    gap: 0.6rem;
+    flex-wrap: wrap;
+    row-gap: 1.25rem;
   }
 
   .familynode {
-    width: auto;
+    width: calc(var(--familynode-size) + 1.5rem);
   }
 
-  /* The entry in focus leads its own row, before its siblings. */
   .familynode--focal {
     order: -1;
   }
+}
+
+/* ---------- A member's details: a popover held against the node, a sheet on a phone (Issue #37) ----------
+
+   Lorex's modal dialog, as every drawer is: the page behind is inert, Escape and a press outside close it. The
+   popover is placed by script against its node; the sheet rises from the bottom of the screen. The heading and the
+   actions keep their place and only the middle scrolls, so a long family never pushes the way out of reach. */
+
+.familydetails {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: min(32rem, calc(100dvh - 2rem));
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+}
+
+.familydetails::backdrop {
+  background: transparent;
+}
+
+.familydetails--sheet {
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: 85dvh;
+  border-width: 1px 0 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.familydetails--sheet::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .familydetails[open] {
+    animation: familydetails-in var(--duration-2) var(--ease);
+  }
+
+  .familydetails--sheet[open] {
+    animation: familydetails-rise var(--duration-3) var(--ease);
+  }
+}
+
+@keyframes familydetails-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+}
+
+@keyframes familydetails-rise {
+  from {
+    transform: translateY(2rem);
+    opacity: 0;
+  }
+}
+
+.familydetails__panel {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+}
+
+.familydetails__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.familydetails__tile {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-full);
+}
+
+.familydetails__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.familydetails__name {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.15rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.familydetails__name:focus {
+  outline: none;
+}
+
+.familydetails__name:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.familydetails__kind {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  margin: 0.25rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.familydetails__close {
+  margin: -0.25rem -0.25rem 0 0;
+}
+
+.familydetails__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  font-size: var(--text-ui);
+}
+
+.familydetails__heading {
+  margin: 0 0 0.35rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.familydetails__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+
+.familydetails__position {
+  font-weight: 600;
+}
+
+.familydetails__label,
+.familydetails__draft {
+  color: var(--muted);
+}
+
+.familydetails__note {
+  margin: 0.35rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.familydetails__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--rule);
+}
+
+/* ---------- Which types the Family Tree is offered for (Issue #37) ----------
+
+   A folded section at the foot of the page: the types enabled one by one, and the groups an author may enable as a
+   whole. Each group says the types it covers, so the effect of the switch is read before it is pressed. */
+
+.family__setup {
+  max-width: 62rem;
+  margin: 2rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.family__setup > summary {
+  width: fit-content;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.family__setupbody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.family__setupbody p {
+  margin: 0;
+}
+
+.family__setupheading {
+  margin: 0 0 0.35rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.family__grouplist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.family__grouplist .check {
+  align-items: flex-start;
+}
+
+.family__grouplist input {
+  margin-top: 0.2rem;
+}
+
+.family__groupname {
+  display: block;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.family__groupcovers {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 /* ---------- Publishing: Settings' Public portal section (ADR 0036) ----------

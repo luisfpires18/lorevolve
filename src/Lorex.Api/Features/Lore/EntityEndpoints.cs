@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Lorex.Api.Data;
 using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Chronology;
+using Lorex.Api.Features.FamilyTrees;
 using Lorex.Api.Features.Relationships;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -184,10 +185,12 @@ public static class EntityEndpoints
         // Before the count, the order and the page, like every other condition here (ADR 0007 amendment, 034).
         query = EntityFieldFilters.Apply(query, fieldFilters);
 
-        // The Family Tree's pickers: only entries whose type the author made eligible, never by what the type is called.
+        // The Family Tree's pickers: only entries whose type the author made eligible - itself or through a group enabled for
+        // the tree - never by what the type or group is called.
         if (familyTreeEligible)
         {
-            query = query.Where(entity => entity.EntityType!.FamilyTreeEligible);
+            var eligible = FamilyTreeEligibility.TypeIds(db, universeId);
+            query = query.Where(entity => eligible.Contains(entity.EntityTypeId));
         }
 
         if (!string.IsNullOrWhiteSpace(tag))

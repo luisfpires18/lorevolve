@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
+import { expectDetails, openDetails } from './support/familyTree'
 
 /**
  * The Family Tree, end to end (ADR 0035). Each test registers its own account and builds its own universe, so
@@ -217,8 +218,7 @@ test.describe('family tree', () => {
     // The link that was already there is read the moment the kind means something.
     await page.goto(treeUrl(universeId, lia))
     await expect(node(page, 'Mara')).toBeVisible()
-    await expect(node(page, 'Mara')).toContainText('Parent')
-    await expect(node(page, 'Mara')).toContainText('Biological parent')
+    await expectDetails(page, 'Mara', 'Parent', 'Biological parent')
 
     // And taking the meaning away takes it out of the tree again, without touching the link.
     await page.goto(typesUrl(universeId))
@@ -245,15 +245,17 @@ test.describe('family tree', () => {
     await page.goto(treeUrl(universeId, household.lia))
     await expect(page.getByTestId('family-tree')).toBeVisible()
 
-    await expect(node(page, 'Mara')).toContainText('Biological parent')
-    await expect(node(page, 'Oren')).toContainText('Adoptive parent')
-    await expect(node(page, 'Nana')).toContainText("Mara's biological parent")
-    await expect(node(page, 'Tam')).toContainText('Shares Mara (biological for both)')
-    await expect(node(page, 'Tam')).toContainText(
+    await expectDetails(page, 'Mara', 'Biological parent')
+    await expectDetails(page, 'Oren', 'Adoptive parent')
+    await expectDetails(page, 'Nana', "Mara's biological parent")
+    await expectDetails(
+      page,
+      'Tam',
+      'Shares Mara (biological for both)',
       'Shares Oren (adoptive for Lia, biological for Tam)',
     )
-    await expect(node(page, 'Cai')).toContainText('Biological child')
-    await expect(node(page, 'Pip')).toContainText("Cai's adoptive child")
+    await expectDetails(page, 'Cai', 'Biological child')
+    await expectDetails(page, 'Pip', "Cai's adoptive child")
     await expect(page.getByTestId('family-loop')).toHaveCount(0)
 
     // Nothing was written to get any of that: the sibling is derived from the two parent links.
@@ -265,24 +267,24 @@ test.describe('family tree', () => {
     // Another family member takes the focus, and the address follows.
     await node(page, 'Tam').getByTestId('family-focus-Tam').click()
     await page.waitForURL(`**/family-tree/${household.tam}`)
-    await expect(node(page, 'Lia')).toContainText('Sibling')
+    await expectDetails(page, 'Lia', 'Sibling')
 
     // Back returns to the family that was open before it.
     await page.goBack()
     await page.waitForURL(`**/family-tree/${household.lia}`)
-    await expect(node(page, 'Tam')).toContainText('Sibling')
+    await expectDetails(page, 'Tam', 'Sibling')
 
     // A reload of the deep link opens the same family.
     await page.reload()
-    await expect(node(page, 'Mara')).toContainText('Biological parent')
+    await expectDetails(page, 'Mara', 'Biological parent')
 
     // And an entry is one click away, from the tree and back again.
-    await node(page, 'Mara').getByRole('link', { name: 'Open entry' }).click()
+    await (await openDetails(page, 'Mara')).getByRole('link', { name: 'Open entry' }).click()
     await page.waitForURL(`**/lore/${household.mara}**`)
     await expect(page.getByTestId('entry-name')).toHaveText('Mara')
     await page.getByTestId('entity-family-tree').click()
     await page.waitForURL(`**/family-tree/${household.mara}`)
-    await expect(node(page, 'Lia')).toContainText('Biological child')
+    await expectDetails(page, 'Lia', 'Biological child')
   })
 
   test('a family connection can be added from the tree, as an ordinary relation', async ({
@@ -308,7 +310,7 @@ test.describe('family tree', () => {
     await page.getByTestId('save-family-link').click()
 
     await expect(page.getByTestId('family-link-form')).toHaveCount(0)
-    await expect(node(page, 'Wren')).toContainText('Biological child')
+    await expectDetails(page, 'Wren', 'Biological child')
 
     // One ordinary relationship, of the kind that carries the meaning. There is no second kind of family link.
     const relations = (await (
@@ -339,8 +341,7 @@ test.describe('family tree', () => {
     await expect(loop).toContainText('Brin bore Arlen')
 
     // Both positions are still drawn, and nothing was changed to say so.
-    await expect(node(page, 'Brin')).toContainText('Parent')
-    await expect(node(page, 'Brin')).toContainText('Child')
+    await expectDetails(page, 'Brin', 'Parent', 'Child')
 
     // Canon reports the same circle on the review screen.
     await page.goto(`/app/universes/${universeId}/canon`)
@@ -359,7 +360,7 @@ test.describe('family tree', () => {
     await seedLink(page, universeId, bore, mara, lia, Canon.draft)
 
     await page.goto(treeUrl(universeId, lia))
-    await expect(node(page, 'Mara')).toContainText('Draft connection')
+    await expectDetails(page, 'Mara', 'Draft connection')
   })
 
   test('the tree fits a phone and a desktop, light and dark, with many relatives and long names', async ({
@@ -450,9 +451,9 @@ test.describe('family tree', () => {
     expect(lia).not.toBe(household.lia)
 
     await page.goto(treeUrl(restoredId, lia))
-    await expect(node(page, 'Mara')).toContainText('Biological parent')
-    await expect(node(page, 'Oren')).toContainText('Adoptive parent')
-    await expect(node(page, 'Tam')).toContainText('Shares Mara (biological for both)')
-    await expect(node(page, 'Nana')).toContainText("Mara's biological parent")
+    await expectDetails(page, 'Mara', 'Biological parent')
+    await expectDetails(page, 'Oren', 'Adoptive parent')
+    await expectDetails(page, 'Tam', 'Shares Mara (biological for both)')
+    await expectDetails(page, 'Nana', "Mara's biological parent")
   })
 })

@@ -479,6 +479,15 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 24)
+        {
+            // A group's Family Tree switch arrived in version 24.
+            foreach (var group in payload["entityTypeGroups"]?.AsArray() ?? [])
+            {
+                Drop(group, "familyTreeEnabled");
+            }
+        }
+
         if (version < 23)
         {
             // Type groups, and a link field's group target, arrived in version 23.

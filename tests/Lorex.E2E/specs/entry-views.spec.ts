@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openDetails } from './support/familyTree'
 
 /**
  * An entry's three views, and the header above them.
@@ -350,12 +351,9 @@ test.describe('entry views', () => {
     await expect(page.getByTestId('entry-view-article')).toHaveAttribute('aria-current', 'page')
     await expect(page.getByTestId('article')).toBeVisible()
 
-    // And the family tree's Open entry.
+    // And the family tree's Open entry, in a member's details.
     await page.goto(`/app/universes/${universeId}/family-tree/${mara}`)
-    await page
-      .getByTestId('family-node-Lia Wright')
-      .getByRole('link', { name: 'Open entry' })
-      .click()
+    await (await openDetails(page, 'Lia Wright')).getByRole('link', { name: 'Open entry' }).click()
     await page.waitForURL(entryUrl(universeId, lia))
     await expect(page.getByTestId('entry-name')).toHaveText('Lia Wright')
     await expect(page.getByTestId('article')).toBeVisible()

@@ -86,7 +86,8 @@ public sealed class EntityType
     /// Whether entries of this type normally take part in the Family Tree: offered by its picker and given its action.
     /// Set by the author, and by the starter Character type, and never inferred from <see cref="Name"/> or
     /// <see cref="Icon"/>. It gates where the tree is offered, never what an entry may hold: an entry of any type keeps the
-    /// family links already recorded on it (ADR 0040).
+    /// family links already recorded on it (ADR 0040). The type's own switch: a group enabled for the Family Tree offers it
+    /// as well (<see cref="EntityTypeGroup.FamilyTreeEnabled"/>, read through <c>FamilyTreeEligibility</c>).
     /// </summary>
     public bool FamilyTreeEligible { get; set; }
 
@@ -111,8 +112,8 @@ public sealed class EntityType
 /// <summary>
 /// A semantic group of Lore types (Issue #36): a named, creator-defined classification such as "Runes" that several concrete
 /// types can belong to. Classification metadata only - not an entity model, not a parent type. A type in a group inherits
-/// nothing from it: no field, no icon, no Family Tree eligibility. Identity is the id, so renaming the group or a member type
-/// changes no membership and no field that targets the group. Membership is explicit and never inferred from names.
+/// nothing from it: no field, no icon. Identity is the id, so renaming the group or a member type changes no membership and
+/// no field that targets the group. Membership is explicit and never inferred from names.
 /// </summary>
 public sealed class EntityTypeGroup
 {
@@ -123,6 +124,14 @@ public sealed class EntityTypeGroup
     public Universe? Universe { get; set; }
 
     public required string Name { get; set; }
+
+    /// <summary>
+    /// Whether the author enabled this group for the Family Tree (Issue #37, ADR 0040 amendment): every type in it is then
+    /// offered there, beside the types enabled one by one (<see cref="EntityType.FamilyTreeEligible"/>). Off unless the author
+    /// turns it on - never for a new, seeded or restored-from-older-file group, and never because of what the group is called.
+    /// Being in a group that is off gives a type nothing.
+    /// </summary>
+    public bool FamilyTreeEnabled { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

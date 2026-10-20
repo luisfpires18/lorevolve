@@ -17,8 +17,9 @@ namespace Lorex.Api.Features.FamilyTrees;
 /// An entry may be several relatives at once. The focal entry is never its own relative: a circle of links is named in
 /// <see cref="Loops"/> instead.
 ///
-/// <see cref="Connections"/> are the focal entry's authored non-structural family links - "uncle of", "married to" - read
-/// from its side. They are listed, never walked: nothing in the positions above comes from one (ADR 0040).
+/// <see cref="Connections"/> are the authored non-structural family links - "uncle of", "married to" - of the focal entry and of
+/// every relative drawn, each read from that member's side (Issue #37). They are listed, never walked: nothing in the positions
+/// above comes from one (ADR 0040), and a related entry they name is in <see cref="Nodes"/> without being drawn.
 /// </summary>
 public sealed record FamilyTreeResponse(
     Guid FocalEntityId,
@@ -35,8 +36,8 @@ public sealed record FamilyTreeResponse(
 
 /// <summary>
 /// An entry in the tree: enough to recognise it, and its thumbnail's identity. Never a URL, an article or a field.
-/// <paramref name="EntityTypeFamilyTreeEligible"/> is its type's capability, so the page can say when an entry recorded
-/// in a family is of a type not enabled for it.
+/// <paramref name="EntityTypeFamilyTreeEligible"/> is its type's capability - its own switch or an enabled group
+/// (<see cref="FamilyTreeEligibility"/>) - so the page can say when an entry recorded in a family is of a type not enabled for it.
 /// </summary>
 public sealed record FamilyTreeNode(
     Guid EntityId,
@@ -92,9 +93,10 @@ public sealed record FamilyDiscoveryItem(
 public sealed record FamilyDiscoveryMember(Guid EntityId, string Name);
 
 /// <summary>
-/// One authored non-structural family link touching the focal entry, read from the focal entry's side the way a relation is
-/// everywhere else: <paramref name="Label"/> is the kind's name when the focal entry is the source, its inverse when it is the
-/// target, and the one name either way for a symmetric kind.
+/// One authored non-structural family link touching a drawn member, <paramref name="EntityId"/>, read from that member's side the
+/// way a relation is everywhere else: <paramref name="Label"/> is the kind's name when the member is the source, its inverse
+/// when it is the target, and the one name either way for a symmetric kind. A link between two drawn members comes once from
+/// each side.
 /// </summary>
 public sealed record FamilyTreeConnection(
     Guid RelationshipId,
@@ -102,4 +104,5 @@ public sealed record FamilyTreeConnection(
     RelationshipPerspective Perspective,
     string Label,
     CanonStatus CanonStatus,
-    Guid RelationshipTypeId);
+    Guid RelationshipTypeId,
+    Guid EntityId);

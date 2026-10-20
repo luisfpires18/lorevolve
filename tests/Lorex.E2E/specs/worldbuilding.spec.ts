@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { expectDetails } from './support/familyTree'
 
 /**
  * The worldbuilding workspaces as Design Refactor 006 left them: one direct verb per row and the rest behind ⋯, a
@@ -269,8 +270,8 @@ test.describe('worldbuilding workspaces', () => {
     )
 
     // What each connection is, in words: biological and adoptive as configured, the name in its own direction.
-    await expect(page.getByTestId('family-node-Ilsa Varn')).toContainText('Biological parent')
-    await expect(page.getByTestId('family-node-رامي الحداد')).toContainText('Adoptive parent')
+    await expectDetails(page, 'Ilsa Varn', 'Biological parent')
+    await expectDetails(page, 'رامي الحداد', 'Adoptive parent')
     await expect(page.getByTestId('family-node-رامي الحداد').locator('bdi').first()).toHaveText(
       'رامي الحداد',
     )

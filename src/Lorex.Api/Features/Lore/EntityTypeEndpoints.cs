@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Lorex.Api.Data;
 using Lorex.Api.Features.CanonIntegrity;
+using Lorex.Api.Features.FamilyTrees;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -988,8 +989,11 @@ public static class EntityTypeEndpoints
     internal static async Task<List<EntityTypeResponse>> LoadTypesAsync(
         LorexDbContext db,
         Guid universeId,
-        CancellationToken cancellationToken) =>
-        EntityTypeHierarchy.Preorder(
+        CancellationToken cancellationToken)
+    {
+        var familyTree = FamilyTreeEligibility.TypeIds(db, universeId);
+
+        return EntityTypeHierarchy.Preorder(
             await db.EntityTypes.AsNoTracking()
             .Where(type => type.UniverseId == universeId)
             .Select(type => new EntityTypeResponse(
@@ -1020,12 +1024,14 @@ public static class EntityTypeEndpoints
                         field.TargetGroupId))
                     .ToList(),
                 type.FamilyTreeEligible,
-                type.ParentId))
+                type.ParentId,
+                familyTree.Contains(type.Id)))
             .ToListAsync(cancellationToken),
             type => type.Id,
             type => type.ParentId,
             type => type.DisplayOrder,
             type => type.Name);
+    }
 
     private static IResult NameTaken() =>
         Results.ValidationProblem(new Dictionary<string, string[]>

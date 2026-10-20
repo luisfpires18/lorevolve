@@ -266,7 +266,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
   const offersFamilyTree =
     !!detail &&
     (detail.hasFamilyConnections ||
-      !!types.find((type) => type.id === detail.entityTypeId)?.familyTreeEligible)
+      !!types.find((type) => type.id === detail.entityTypeId)?.familyTreeOffered)
 
   // Whether the open form differs from what is stored, or for a new entry from the blank form - said in the
   // form's bar, in words, and asked about before the author leaves it. A change put back is no change. A new
