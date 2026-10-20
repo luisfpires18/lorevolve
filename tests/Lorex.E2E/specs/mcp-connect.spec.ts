@@ -370,6 +370,29 @@ test.describe('Consent and connected apps', () => {
       await expect(page.getByTestId('consent-approve')).toBeInViewport({ ratio: 1 })
       await expect(page.getByTestId('consent-deny')).toBeInViewport({ ratio: 1 })
       expect(await hasSideScroll(page)).toBe(false)
+
+      // The gist is on screen before the decision, even in this request's long case (unverified and loopback): who,
+      // which universe, read-only, manuscripts, and where the content goes - none of it under the pinned buttons.
+      const summary = page.getByTestId('consent-summary')
+      await expect(summary).toContainText('read-only')
+      await expect(summary).toContainText('manuscripts')
+      await expect(summary).toContainText('AI service behind it')
+      const actionsTop = (await page.locator('.consent__actions').boundingBox())!.y
+      for (const id of [
+        'consent-summary',
+        'consent-app',
+        'consent-unverified',
+        'consent-universe',
+      ]) {
+        await expect(page.getByTestId(id), `${id} at ${width}x${height}`).toBeInViewport({
+          ratio: 1,
+        })
+        const box = (await page.getByTestId(id).boundingBox())!
+        expect(
+          box.y + box.height,
+          `${id} above the actions at ${width}x${height}`,
+        ).toBeLessThanOrEqual(actionsTop)
+      }
     }
   })
 

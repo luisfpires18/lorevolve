@@ -146,7 +146,15 @@ export default function ConnectAuthorizePage() {
   return (
     <ConsentLayout
       heading="Connect an AI app"
-      intro="An app wants to read one of your universes. Check who is asking before you approve."
+      intro={
+        // The gist, above the fold even when the warnings below are long (issue 38): read-only, manuscripts included,
+        // and where the content goes. The full list and notes follow unchanged.
+        <>
+          This app wants <strong>read-only</strong> access to one of your universes: its lore
+          entries, relationships, stories, scene manuscripts and timeline. What it reads goes to the
+          AI service behind it. Check who is asking before you approve.
+        </>
+      }
       footer={
         user ? (
           <>
@@ -191,7 +199,7 @@ function ConsentLayout({
   children,
 }: {
   heading: string
-  intro: string
+  intro: ReactNode
   footer: ReactNode
   children: ReactNode
 }) {
@@ -210,7 +218,9 @@ function ConsentLayout({
         <h1 className="auth__heading consent-card__heading" data-testid="auth-heading">
           {heading}
         </h1>
-        <p className="consent-card__intro">{intro}</p>
+        <p className="consent-card__intro" data-testid="consent-summary">
+          {intro}
+        </p>
         {children}
         {footer ? <p className="consent-card__footer">{footer}</p> : null}
       </main>

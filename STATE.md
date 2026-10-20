@@ -127,7 +127,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 - **Issue 38 - compact MCP consent card** (`improve/mcp-oauth-consent` off `dev` at `80db857`; committed, not merged,
   not pushed). Frontend only: `/connect/authorize` drops the sign-in plate for a centred card (max 32rem); Approve/Deny
   stick to the screen's foot when the viewport is at least 34rem tall. Consent copy, form fields, antiforgery and OAuth
-  untouched; Login/Register/Invitation keep `AuthLayout`. Playwright `mcp-connect` +2 (10); with 3 neighbours 49/49.
+  untouched; Login/Register/Invitation keep `AuthLayout`. The intro is now the gist (read-only, manuscripts, goes to the
+  AI service), on screen at 1280x720 with the longest warnings. Playwright `mcp-connect` +2 (10); with 3 neighbours 49/49.
 - **Roadmap task 049 - MCP V1** (GitHub issue 7; `feat/lorex-mcp-v1` off `dev` at `ac39b23`; committed, not merged, not
   pushed). One migration (`AddMcpConnections`: OpenIddict's four tables + `McpConnections`), backup unchanged (account-level
   state, never in a universe backup). ADR 0046 (new); 0005 amendment.
