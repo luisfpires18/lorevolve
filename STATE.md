@@ -323,6 +323,15 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - **Owner decision outstanding:** give relationships and timeline moments a Trash (own roadmap item); AI removal of them
     stays blocked until then.
   - Tests: see the review archive. Full Playwright not run locally; delegated to CI.
+- **Roadmap task 050 - Contextual Quick Create** (GitHub issue 25; `feat/contextual-quick-create` off `dev` at `bd88d6c`;
+  committed, not merged, not pushed). Frontend only: no API, schema or backup change. ADR 0007 amendment.
+  - An entry form's link fields and a relation's Connected to offer Create "<name>" after the matches, to `editContent`
+    only and never while suggesting. Opt-in `quickCreate` on `EntityPicker`; every other picker unchanged.
+  - `QuickCreateDialog`: name, the type (taken when the limit is one type; chosen among a group's members or every type),
+    the type's active required fields, a similar-name warning with Use this one. Posts the ordinary `createEntity`: an Idea.
+  - The entry exists once created; the parent stays open and unsaved with only that field or target changed, and its
+    Cancel keeps the entry. Note under the choice: "<name> was created. Save ... " + Open full entry (new tab).
+  - Tests: API `QuickCreateTests` 5; Playwright `contextual-quick-create.spec.ts` 6.
 - **Issue 38 - compact MCP consent card** (`improve/mcp-oauth-consent` off `dev` at `80db857`; committed, not merged,
   not pushed). Frontend only: `/connect/authorize` drops the sign-in plate for a centred card (max 32rem); Approve/Deny
   stick to the screen's foot when the viewport is at least 34rem tall. Consent copy, form fields, antiforgery and OAuth

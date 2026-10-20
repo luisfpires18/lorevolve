@@ -399,6 +399,16 @@ function EntityScreen({ view }: { view: EntryView }) {
     )
   }, [types, detail])
 
+  // Quick Create on the form's link fields (Issue #25): only for someone who may create Lore, and never while suggesting -
+  // a suggestion writes nothing until it is accepted, so it must not make an entry on the side.
+  const quickCreate = useMemo(
+    () =>
+      access.editContent && !isSuggesting
+        ? { chronology, keepHint: 'Save this entry to keep the link.' }
+        : null,
+    [access.editContent, isSuggesting, chronology],
+  )
+
   const offersFamilyTree =
     !!detail &&
     (detail.hasFamilyConnections ||
@@ -807,6 +817,7 @@ function EntityScreen({ view }: { view: EntryView }) {
         excludeId={entityId}
         heldReference={heldReference(detail ?? source?.detail ?? null, definition.id)}
         chronology={chronology}
+        quickCreate={quickCreate}
         onChange={(next) =>
           setDraft((current) =>
             current

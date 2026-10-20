@@ -7698,6 +7698,68 @@ html:has(.viewer[open]) {
   color: var(--muted);
 }
 
+/* Quick Create (Issue #25): the last row of a picker that offers it, ruled off from the matches and in the accent, so
+   it reads as an action rather than one more entry. The note under a choice it made, and its small form. */
+.picker__create {
+  border-top: 1px solid var(--rule);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.picker__created:empty {
+  display: none;
+}
+
+.picker__created {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.quickcreate__note,
+.quickcreate__type {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.quickcreate__type bdi {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.quickcreate__similar p {
+  margin: 0 0 var(--space-2);
+}
+
+.quickcreate__matches {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.quickcreate__matches li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.quickcreate__match {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.quickcreate__fields {
+  display: grid;
+  gap: var(--space-4);
+}
+
 /* ---------- Relation kinds ---------- */
 
 .reltypes {

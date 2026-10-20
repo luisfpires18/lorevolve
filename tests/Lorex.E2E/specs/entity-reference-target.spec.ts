@@ -100,8 +100,9 @@ async function selectedText(select: Locator) {
 async function offered(scope: Locator) {
   const list = scope.getByRole('listbox')
   await expect(scope.locator('.picker__none', { hasText: 'Looking' })).toHaveCount(0)
+  // Entries only: an entry form's picker also offers Create "…" as a last option (Issue #25).
   const names = await list
-    .getByRole('option')
+    .locator('[data-testid^="picker-option-"]')
     .evaluateAll((options) =>
       options.map((option) =>
         (option.getAttribute('data-testid') ?? '').replace('picker-option-', ''),

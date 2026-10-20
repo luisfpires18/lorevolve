@@ -320,3 +320,21 @@ A type's fields may be arranged in author-named sections, each starting open or 
 "Reordering fields" #39 left out. Presentation only: no field id, value, setting, required check, target, filter or Canon
 reading changes, and sections are not semantic groups. One layout save replaces sections and order, under a version of its
 own; a field edit keeps the field's place. ADR 0055.
+## Amendment - Quick Create from a link field or a relation (2026-10-20, Issue #25)
+
+A creator can make a missing entry from the picker that needs it, without leaving the form the picker is in.
+
+- **Where.** Only an entry form's link fields and a relation's Connected to, and only for someone who may edit content, never
+  while suggesting. `EntityPicker` offers it only when given `quickCreate`; Family Tree, Timeline, scene, plot, manuscript,
+  search and every other picker are unchanged.
+- **No new route, state or rule.** The small form posts the ordinary create with the same payload shape the entry form
+  sends: an Idea, no summary, aliases or tags, every active field with only the required ones filled. The server checks the
+  type, required fields, links, universe and role as it always does. There is no incomplete or draft entry.
+- **Types.** The picker's own limit as it is now: one type is taken without asking; a group offers its current members; no
+  limit offers every type. Nothing is chosen from a name, and the parent's field is checked again when the parent is saved.
+- **Independent.** The entry exists once created. The parent stays open and unsaved with only that field, or the relation's
+  target, changed; cancelling the parent or the relation keeps the entry. The picker says so beside the choice, with Open
+  full entry in a new tab.
+- **Duplicates are advice.** Entries with a like name, among those the picker would offer, are listed with Use this one;
+  creating another of the same name is allowed and nothing is merged.
+- **Not done (V1).** Quick Create inside its own form's link fields, in other pickers, or for more than one entry at once.
