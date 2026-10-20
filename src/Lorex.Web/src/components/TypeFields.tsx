@@ -565,7 +565,9 @@ function FieldDialog({
   const [message, setMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
-  const kindLocked = field !== null && (latest ?? field).entryCount > 0
+  // The kind is frozen while any entry holds a value, or any older version recorded one (Issue #39).
+  const held = field === null ? null : (latest ?? field)
+  const kindLocked = held !== null && (held.entryCount > 0 || held.usedInHistory)
   const hasOptions = kind === FieldKind.Select || kind === FieldKind.MultiSelect
   const isLink = kind === FieldKind.EntityReference
   const isText = kind === FieldKind.ShortText || kind === FieldKind.LongText
@@ -776,9 +778,10 @@ function FieldDialog({
               ))}
             </select>
             {kindLocked ? (
-              <p className="field__hint" id="field-kind-hint">
-                {entries(field.entryCount)} already{' '}
-                {field.entryCount === 1 ? 'has a value' : 'have values'}, so the kind can't change.
+              <p className="field__hint" id="field-kind-hint" data-testid="field-kind-hint">
+                {held.entryCount > 0
+                  ? `${entries(held.entryCount)} already ${held.entryCount === 1 ? 'has a value' : 'have values'}, so the kind can't change.`
+                  : "Older versions of entries recorded values here, so the kind can't change."}{' '}
                 Add a new field for a different kind.
               </p>
             ) : null}

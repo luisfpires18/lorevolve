@@ -424,12 +424,6 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
         var recorded = (await w.Client.GetFromJsonAsync<EntityRevisionDetail>($"{EntryRoute(w, mara.Id)}/revisions/{first.Id}"))!;
         Assert.Equal("Princess", recorded.Fields.Single().Text);
 
-        // Putting back version 1 while the field is archived leaves the archived value as it is now.
-        var current = await Detail(w, mara.Id);
-        var restoring = await w.Client.PostAsJsonAsync(
-            $"{EntryRoute(w, mara.Id)}/revisions/{first.Id}/restore", new EntityRevisionRestoreRequest(current.Version));
-        Assert.True(restoring.IsSuccessStatusCode, await restoring.Content.ReadAsStringAsync());
-
         // Through the Trash and back.
         (await w.Client.DeleteAsync(EntryRoute(w, mara.Id))).EnsureSuccessStatusCode();
         Assert.Equal(1, (await ArchivedFieldOf(w, w.Character, title)).TrashedEntryCount);
@@ -437,6 +431,106 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
 
         await Restore(w, w.Character, title);
         Assert.Equal("Queen", (await Detail(w, mara.Id)).Fields.Single().Text);
+    }
+
+    [Fact]
+    public async Task Princess_then_Queen_then_archived_refuses_putting_back_Princess_until_the_field_is_restored()
+    {
+        var w = await NewWorld("efl-rev-princess");
+        var title = await AddField(w, w.Character, Definition("Title", EntityFieldKind.ShortText));
+        var mara = await Entry(w, w.Character, "Mara", Text(title, "Princess"));
+        await Save(w, mara.Id, w.Character, "Mara", fields: [Text(title, "Queen")]);
+        await Archive(w, w.Character, title);
+        var before = await Detail(w, mara.Id);
+        var history = (await Revisions(w, mara.Id)).Count;
+
+        var refused = await RestoreVersion(w, mara.Id, 1);
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Equal(RevisionEndpoints.ArchivedFieldConflictCode, await CodeOf(refused));
+        Assert.Contains("\"Title\"", await DetailOf(refused), StringComparison.Ordinal);
+
+        // Nothing moved: the entry, its version, its archived value and its history.
+        Assert.Equal(before.Version, (await Detail(w, mara.Id)).Version);
+        Assert.Equal(history, (await Revisions(w, mara.Id)).Count);
+        await WithDb(_factory, async db => Assert.Equal(
+            "Queen", await db.EntityFieldValues.Where(value => value.FieldDefinitionId == title).Select(value => value.TextValue).SingleAsync()));
+
+        // Restored first, the field is an ordinary one again and version 1 applies whole.
+        await Restore(w, w.Character, title);
+        Assert.Equal(HttpStatusCode.OK, (await RestoreVersion(w, mara.Id, 1)).StatusCode);
+        Assert.Equal("Princess", (await Detail(w, mara.Id)).Fields.Single().Text);
+    }
+
+    [Fact]
+    public async Task A_version_whose_archived_value_matches_what_is_kept_restores()
+    {
+        var w = await NewWorld("efl-rev-match");
+        var title = await AddField(w, w.Character, Definition("Title", EntityFieldKind.ShortText));
+        var mara = await Entry(w, w.Character, "Mara", Text(title, "Queen"));
+        await Save(w, mara.Id, w.Character, "Mara", fields: [Text(title, "Queen")], summary: "Later words.");
+        await Archive(w, w.Character, title);
+
+        Assert.Equal(HttpStatusCode.OK, (await RestoreVersion(w, mara.Id, 1)).StatusCode);
+        Assert.Null((await Detail(w, mara.Id)).Summary);
+
+        await Restore(w, w.Character, title);
+        Assert.Equal("Queen", (await Detail(w, mara.Id)).Fields.Single().Text);
+    }
+
+    [Fact]
+    public async Task An_archived_value_on_one_side_only_refuses_the_restore()
+    {
+        var w = await NewWorld("efl-rev-oneside");
+        var title = await AddField(w, w.Character, Definition("Title", EntityFieldKind.ShortText));
+
+        // Only now: version 1 had no title, the entry keeps one.
+        var mara = await Entry(w, w.Character, "Mara", []);
+        await Save(w, mara.Id, w.Character, "Mara", fields: [Text(title, "Queen")]);
+
+        // Only in the version: version 1 had a title, the entry keeps none.
+        var oren = await Entry(w, w.Character, "Oren", Text(title, "Scribe"));
+        await Save(w, oren.Id, w.Character, "Oren");
+
+        await Archive(w, w.Character, title);
+
+        foreach (var entry in new[] { mara.Id, oren.Id })
+        {
+            var version = (await Detail(w, entry)).Version;
+            var refused = await RestoreVersion(w, entry, 1);
+            Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+            Assert.Equal(RevisionEndpoints.ArchivedFieldConflictCode, await CodeOf(refused));
+            Assert.Equal(version, (await Detail(w, entry)).Version);
+        }
+
+        await Restore(w, w.Character, title);
+        Assert.Equal(HttpStatusCode.OK, (await RestoreVersion(w, mara.Id, 1)).StatusCode);
+        Assert.Empty((await Detail(w, mara.Id)).Fields);
+        Assert.Equal(HttpStatusCode.OK, (await RestoreVersion(w, oren.Id, 1)).StatusCode);
+        Assert.Equal("Scribe", (await Detail(w, oren.Id)).Fields.Single().Text);
+    }
+
+    [Fact]
+    public async Task A_kind_change_is_refused_while_only_older_versions_hold_values_and_allowed_when_none_ever_did()
+    {
+        var w = await NewWorld("efl-kind-history");
+        var title = await AddField(w, w.Character, Definition("Title", EntityFieldKind.ShortText));
+        var mara = await Entry(w, w.Character, "Mara", Text(title, "Queen"));
+        await Save(w, mara.Id, w.Character, "Mara");
+        var cleared = await FieldOf(w, w.Character, title);
+        Assert.Equal((0, true), (cleared.EntryCount, cleared.UsedInHistory));
+
+        var refused = await w.Client.PutFieldAsync(w.U, w.Character, title, Definition("Title", EntityFieldKind.Number));
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Equal(EntityTypeEndpoints.KindLockedCode, await CodeOf(refused));
+        Assert.Contains("Older versions", await DetailOf(refused), StringComparison.Ordinal);
+        var kept = await FieldOf(w, w.Character, title);
+        Assert.Equal((EntityFieldKind.ShortText, cleared.Version), (kept.Kind, kept.Version));
+
+        // Never held anywhere: the kind may change.
+        var spare = await AddField(w, w.Character, Definition("Spare", EntityFieldKind.ShortText));
+        await Save(w, mara.Id, w.Character, "Mara", summary: "Saved without it.");
+        (await w.Client.PutFieldAsync(w.U, w.Character, spare, Definition("Spare", EntityFieldKind.Number))).EnsureSuccessStatusCode();
+        Assert.Equal(EntityFieldKind.Number, (await FieldOf(w, w.Character, spare)).Kind);
     }
 
     [Fact]
@@ -883,6 +977,15 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
         var response = await w.Client.PutAsJsonAsync(EntryRoute(w, entityId), new EntityRequest(
             typeId, name, summary, CanonStatus.Canon, null, null, fields ?? [], version));
         Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+    }
+
+    /// <summary>Puts version <paramref name="number"/> of an entry back over its current version.</summary>
+    private static async Task<HttpResponseMessage> RestoreVersion(World w, Guid entityId, int number)
+    {
+        var revision = (await Revisions(w, entityId)).Single(one => one.Number == number);
+        return await w.Client.PostAsJsonAsync(
+            $"{EntryRoute(w, entityId)}/revisions/{revision.Id}/restore",
+            new EntityRevisionRestoreRequest((await Detail(w, entityId)).Version));
     }
 
     private static async Task<List<EntityRevisionSummary>> Revisions(World w, Guid entityId) =>

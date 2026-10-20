@@ -122,6 +122,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     the draft and offers the saved settings or Keep my changes); a field or choice an older version records cannot be
     deleted (409 `entity_field_in_history` / `entity_field_option_in_history`). Migration `AddEntityFieldVersion`. ADR
     0013 and 0043 amendments.
+  - History consistency: kind change refused while older versions hold values (409 `entity_field_kind_locked`); a revision
+    restore refused while its archived-field values differ from the entry's (409 `entity_revision_archived_field`).
 - **Roadmap task 049 - MCP V1** (GitHub issue 7; `feat/lorex-mcp-v1` off `dev` at `ac39b23`; committed, not merged, not
   pushed). One migration (`AddMcpConnections`: OpenIddict's four tables + `McpConnections`), backup unchanged (account-level
   state, never in a universe backup). ADR 0046 (new); 0005 amendment.

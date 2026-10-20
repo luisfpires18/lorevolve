@@ -450,6 +450,13 @@ test.describe('a type’s fields', () => {
       "Older versions of entries still use this field, so it can't be deleted.",
     )
     await expect(page.getByTestId('field-row-Motto')).toBeVisible()
+
+    // Its kind is locked for the same reason, and the drawer says so.
+    await page.getByTestId('edit-field-Motto').click()
+    await expect(fieldDialog(page).getByTestId('field-kind')).toBeDisabled()
+    await expect(fieldDialog(page).getByTestId('field-kind-hint')).toContainText(
+      "Older versions of entries recorded values here, so the kind can't change.",
+    )
   })
 
   for (const width of [390, 360]) {

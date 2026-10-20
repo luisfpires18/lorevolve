@@ -74,6 +74,9 @@ public static class EntityTypeEndpoints
     /// <summary>The marker on the 409 for removing a choice an older version of an entry still records.</summary>
     public const string OptionInHistoryCode = "entity_field_option_in_history";
 
+    /// <summary>The marker on the 409 for changing the kind of a field that holds values now or in an older version.</summary>
+    public const string KindLockedCode = "entity_field_kind_locked";
+
     /// <summary>The marker on the 409 for a field edit made over a version that is no longer current (ADR 0043).</summary>
     public const string FieldChangedCode = "entity_field_changed";
 
@@ -781,14 +784,30 @@ public static class EntityTypeEndpoints
             cancellationToken);
 
         // Changing the kind would reinterpret every stored value, so it is refused while
-        // any exist. Renaming and reordering stay safe.
-        if (hasValues && definition.Kind != request.Kind)
+        // any exist. Renaming and reordering stay safe. An older version's values count too: restoring
+        // that version would otherwise write a value of the old kind into a field of the new one, or
+        // nothing at all (Issue #39). Read inside the gate's transaction, like every check here.
+        if (definition.Kind != request.Kind)
         {
-            return Results.Problem(
-                title: "Field is in use",
-                detail: "This field already holds values, so its type cannot change. "
-                    + "Add a new field instead.",
-                statusCode: StatusCodes.Status409Conflict);
+            if (hasValues)
+            {
+                return Results.Problem(
+                    title: "Field is in use",
+                    detail: "This field already holds values, so its type cannot change. "
+                        + "Add a new field instead.",
+                    statusCode: StatusCodes.Status409Conflict,
+                    extensions: new Dictionary<string, object?> { ["code"] = KindLockedCode });
+            }
+
+            if (await db.EntityRevisionFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken))
+            {
+                return Results.Problem(
+                    title: "Field is in older versions",
+                    detail: "Older versions of entries recorded values in this field, so its type cannot change. "
+                        + "Add a new field instead.",
+                    statusCode: StatusCodes.Status409Conflict,
+                    extensions: new Dictionary<string, object?> { ["code"] = KindLockedCode });
+            }
         }
 
         var name = request.Name!.Trim();

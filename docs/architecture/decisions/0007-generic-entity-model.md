@@ -285,6 +285,9 @@ field nothing uses.
   entry, Trash included, holds a value, active or archived, and (409 `entity_field_in_history`) while an older version of
   any entry records one; removing a choice an older version records is refused the same way (ADR 0013 amendment). One
   IMMEDIATE transaction. No force-delete and no cascade.
+- **The kind is frozen by history too.** A kind change is refused (409 `entity_field_kind_locked`) while any entry holds a
+  value or any older version recorded one, so restoring that version can never write a value of the old kind into the
+  new one. A field nothing ever held may change kind. The drawer locks Kind and says which reason applies.
 - **Edits are versioned** (ADR 0043 amendment): `PUT .../fields/{id}` names `expectedVersion` and a stale or missing one is
   refused (409 `entity_field_changed`); archive and restore move the version on. Each field reports `version` and
   `usedInHistory`.
@@ -292,7 +295,5 @@ field nothing uses.
   still reads a missing target as any type, so older clients and the starter template are unchanged.
 - **Not done (V1).** Reordering fields, renaming an option in place (a rename is a remove and an add, refused while the old
   one is chosen or recorded), adding a required field to a type with entries (still allowed, as before), and a "has no
-  value" Lore filter to list the entries a required restore is waiting on. Changing the kind of a field with no current
-  value is still allowed when older versions recorded values of the old kind; restoring such a version then writes nothing
-  for that field.
+  value" Lore filter to list the entries a required restore is waiting on.
 - Backup format 25 carries `archivedAt` (ADR 0014 amendment).

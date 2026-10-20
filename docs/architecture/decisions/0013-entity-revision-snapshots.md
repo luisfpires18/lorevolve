@@ -153,3 +153,13 @@ value for it, even once no entry holds one now, active or archived; removing a c
 this, clearing a value and then deleting its field or choice made every older version naming it unrestorable. Two indexes
 (`EntityRevisionFieldValues` by field and by choice, migration `AddEntityFieldVersion`) keep the checks to one index read.
 A version naming an entry erased for good from the Trash, or a removed date period, is still refused on restore as before.
+
+The same holds for a field's kind: it cannot change while any version recorded a value for the field (409
+`entity_field_kind_locked`).
+
+A version is not put back over archived fields it disagrees with. Restoring is refused (409
+`entity_revision_archived_field`, with the field names) when the version's values for any archived field differ from the
+values the entry keeps for it now - a value on one side only included - because a save never writes an archived field and
+the restore would otherwise record a change it did not make. Nothing is written. Restoring the field first makes it an
+ordinary field again, and the version then applies whole. A version whose archived values already match restores as usual.
+Checked inside the promotion gate's transaction, beside the existing missing-reference check.

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Lorex.Api.Data;
 using Lorex.Api.Features.CanonIntegrity;
@@ -155,16 +156,101 @@ public static class RevisionEndpoints
 
         return await gate.RunAsync(
             universeId,
-            token => EntityEndpoints.UpdateCoreAsync(
-                universeId,
-                entityId,
-                request,
-                principal.RequireUserId(),
-                db,
-                token,
-                EntityRevisionKind.Restored,
-                revision.Id),
+            async token =>
+                await ArchivedFieldConflictAsync(db, entityId, revision, token)
+                ?? await EntityEndpoints.UpdateCoreAsync(
+                    universeId,
+                    entityId,
+                    request,
+                    principal.RequireUserId(),
+                    db,
+                    token,
+                    EntityRevisionKind.Restored,
+                    revision.Id),
             cancellationToken);
+    }
+
+    /// <summary>The marker on the 409 for a version whose archived fields' values differ from what the entry keeps now.</summary>
+    public const string ArchivedFieldConflictCode = "entity_revision_archived_field";
+
+    /// <summary>
+    /// The refusal for putting back a version whose values for an archived field differ from the values the entry keeps for
+    /// it now - a value on one side only included - or null (Issue #39). A save never writes an archived field, so applying
+    /// such a version would leave the archived values as they are and record a restore that did not happen. Nothing is
+    /// written; the author restores the field first, and the version then applies whole. Read inside the gate's
+    /// transaction, so an archive or restore of the field cannot slip between this and the write.
+    /// </summary>
+    private static async Task<IResult?> ArchivedFieldConflictAsync(
+        LorexDbContext db,
+        Guid entityId,
+        EntityRevision revision,
+        CancellationToken cancellationToken)
+    {
+        var current = await db.EntityFieldValues.AsNoTracking()
+            .Where(value => value.EntityId == entityId && value.FieldDefinition!.ArchivedAt != null)
+            .Select(value => new
+            {
+                value.FieldDefinitionId,
+                value.TextValue,
+                value.NumberValue,
+                value.EraId,
+                value.BooleanValue,
+                value.DateValue,
+                value.OptionId,
+                value.ReferencedEntityId,
+            })
+            .ToListAsync(cancellationToken);
+
+        var recorded = revision.FieldValues.Select(value => value.FieldDefinitionId).Distinct().ToList();
+        var archived = await db.EntityFieldDefinitions.AsNoTracking()
+            .Where(field => field.ArchivedAt != null && recorded.Contains(field.Id))
+            .Select(field => field.Id)
+            .ToListAsync(cancellationToken);
+
+        var fieldIds = archived.Concat(current.Select(value => value.FieldDefinitionId)).ToHashSet();
+        var differing = fieldIds
+            .Where(fieldId => !Same(
+                current.Where(value => value.FieldDefinitionId == fieldId)
+                    .Select(value => Key(value.TextValue, value.NumberValue, value.EraId, value.BooleanValue, value.DateValue, value.OptionId, value.ReferencedEntityId)),
+                revision.FieldValues.Where(value => value.FieldDefinitionId == fieldId)
+                    .Select(value => Key(value.TextValue, value.NumberValue, value.EraId, value.BooleanValue, value.DateValue, value.OptionId, value.ReferencedEntityId))))
+            .ToList();
+
+        if (differing.Count == 0)
+        {
+            return null;
+        }
+
+        var names = (await db.EntityFieldDefinitions.AsNoTracking()
+                .Where(field => differing.Contains(field.Id))
+                .Select(field => field.Name)
+                .ToListAsync(cancellationToken))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        var named = names.Count == 1
+            ? $"the archived field \"{names[0]}\""
+            : $"{names.Count} archived fields, \"{names[0]}\" among them";
+
+        return Results.Problem(
+            title: "Version holds archived values",
+            detail: $"This version records a different value in {named} than the entry keeps now, and an archived field is never "
+                + "changed by a restore. Restore the field on its type first, then restore this version. Nothing was changed.",
+            statusCode: StatusCodes.Status409Conflict,
+            extensions: new Dictionary<string, object?> { ["code"] = ArchivedFieldConflictCode, ["fields"] = names });
+
+        static string Key(string? text, double? number, Guid? era, bool? flag, DateTime? date, Guid? option, Guid? reference) =>
+            string.Join(
+                '\u001f',
+                text,
+                number?.ToString("R", CultureInfo.InvariantCulture),
+                era?.ToString("N"),
+                flag?.ToString(CultureInfo.InvariantCulture),
+                date?.ToString("O", CultureInfo.InvariantCulture),
+                option?.ToString("N"),
+                reference?.ToString("N"));
+
+        static bool Same(IEnumerable<string> a, IEnumerable<string> b) =>
+            a.Order(StringComparer.Ordinal).SequenceEqual(b.Order(StringComparer.Ordinal), StringComparer.Ordinal);
     }
 
     // ---------- Reading ----------
