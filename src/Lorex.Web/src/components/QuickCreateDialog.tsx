@@ -1,4 +1,12 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type SyntheticEvent,
+} from 'react'
 import type { Chronology } from '../chronology/types'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
@@ -71,8 +79,12 @@ export function QuickCreateDialog({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  // A second press while the first is on its way is not sent: one create per press, however fast.
+  // A create on its way. Read synchronously, so a second press, Escape or a press on the backdrop in the same instant as
+  // Create is still refused: the request is out and its answer decides what happens next, not the author.
   const sending = useRef(false)
+  // Gone - closed by leaving the page while a create was out. Its late answer then chooses nothing.
+  const gone = useRef(false)
+  const messageRef = useRef<HTMLParagraphElement>(null)
 
   // A type taken because it was the only one is not a change the author made.
   const takenTypeId =
@@ -86,10 +98,39 @@ export function QuickCreateDialog({
     onCancel,
   )
 
+  // While a create is out there is nothing to close: Cancel is disabled with the rest of the form, and Escape and the
+  // backdrop are swallowed here before the drawer guard sees them.
+  const guardedProps = {
+    onKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
+      if (sending.current && event.key === 'Escape') event.preventDefault()
+      else dialogProps.onKeyDown(event)
+    },
+    onCancel(event: SyntheticEvent<HTMLDialogElement>) {
+      if (sending.current) event.preventDefault()
+      else dialogProps.onCancel(event)
+    },
+    onClick(event: MouseEvent<HTMLDialogElement>) {
+      if (!sending.current) dialogProps.onClick(event)
+    },
+  }
+
   useEffect(() => {
     dialog.current?.showModal()
     document.getElementById(nameId)?.focus()
   }, [nameId])
+
+  // Set again on every mount: development's double mount runs the cleanup once in between.
+  useEffect(() => {
+    gone.current = false
+    return () => {
+      gone.current = true
+    }
+  }, [])
+
+  // A refusal or a failure takes the focus to what it says, since the button that was pressed was disabled under it.
+  useEffect(() => {
+    if (message) messageRef.current?.focus()
+  }, [message])
 
   // The types as they are now, read when the form opens: a group's members today, never its name.
   useEffect(() => {
@@ -182,9 +223,12 @@ export function QuickCreateDialog({
           (definition) => values[definition.id] ?? emptyValue(definition),
         ),
       })
-      onCreated({ id: created.id, name: created.name, typeName: created.entityTypeName })
+      // Exactly the entry the server made, from its answer. Nothing is chosen for a form that has already gone.
+      if (!gone.current)
+        onCreated({ id: created.id, name: created.name, typeName: created.entityTypeName })
     } catch (error: unknown) {
       sending.current = false
+      if (gone.current) return
       if (error instanceof ApiError) {
         setFieldErrors(error.fieldErrors)
         setMessage(
@@ -196,7 +240,7 @@ export function QuickCreateDialog({
         setMessage('The entry couldn’t be created. Check your connection and try again.')
       }
     } finally {
-      setIsSaving(false)
+      if (!gone.current) setIsSaving(false)
     }
   }
 
@@ -205,7 +249,7 @@ export function QuickCreateDialog({
       className="drawer quickcreate"
       ref={dialog}
       aria-labelledby={headingId}
-      {...dialogProps}
+      {...guardedProps}
       data-testid="quick-create-dialog"
     >
       <form
@@ -227,131 +271,146 @@ export function QuickCreateDialog({
 
         <div className="drawer__body">
           {message ? (
-            <p className="form__message" role="alert" data-testid="quick-create-error">
+            <p
+              className="form__message"
+              role="alert"
+              tabIndex={-1}
+              ref={messageRef}
+              data-testid="quick-create-error"
+            >
               {message}
             </p>
           ) : null}
 
-          <p className="quickcreate__note">
-            It’s saved as soon as you create it. Add its article and other details later from its
-            own page.
+          <p className="quickcreate__pending" role="status" data-testid="quick-create-pending">
+            {isSaving ? 'Creating the entry. This can’t be closed until LoreX answers.' : null}
           </p>
 
-          <Field
-            label="Name"
-            name={nameId}
-            dir="auto"
-            autoComplete="off"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            error={fieldErrors.name}
-            data-testid="quick-create-name"
-          />
+          {/* Everything the create was sent with stays as it was sent until the answer comes. */}
+          <fieldset className="quickcreate__inputs" disabled={isSaving}>
+            <p className="quickcreate__note">
+              It’s saved as soon as you create it. Add its article and other details later from its
+              own page.
+            </p>
 
-          {shownSimilar.length > 0 ? (
-            <div
-              className="callout callout--warning quickcreate__similar"
-              data-testid="quick-create-similar"
-            >
-              <p className="callout__title">Something with this name is already here</p>
-              <p>Choose it instead, or create a new entry anyway. Two entries can share a name.</p>
-              <ul className="quickcreate__matches">
-                {shownSimilar.map((item) => (
-                  <li key={item.id}>
-                    <span className="quickcreate__match">
-                      <bdi>{item.name}</bdi>{' '}
-                      <span className="picker__kind">
-                        <bdi>{item.entityTypeName}</bdi>
-                      </span>
-                    </span>
-                    <button
-                      className="button button--secondary button--sm"
-                      type="button"
-                      onClick={() =>
-                        onChooseExisting({
-                          id: item.id,
-                          name: item.name,
-                          typeName: item.entityTypeName,
-                        })
-                      }
-                      aria-label={`Use ${item.name}, ${item.entityTypeName}`}
-                      data-testid={`quick-create-use-${item.name}`}
-                    >
-                      Use this one
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+            <Field
+              label="Name"
+              name={nameId}
+              dir="auto"
+              autoComplete="off"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              error={fieldErrors.name}
+              data-testid="quick-create-name"
+            />
 
-          {types.kind === 'loading' ? (
-            <p className="field__hint" role="status">
-              Reading the types…
-            </p>
-          ) : types.kind === 'error' ? (
-            <p className="form__message" role="alert">
-              The types couldn’t be read. Close this and try again.
-            </p>
-          ) : eligible.length === 0 ? (
-            <p className="form__message" role="alert" data-testid="quick-create-no-types">
-              No type can be created here. This field only takes entries of a type that no longer
-              exists, or of a group with no types in it. Change that under Types.
-            </p>
-          ) : eligible.length === 1 ? (
-            <p className="quickcreate__type" data-testid="quick-create-type">
-              <span className="field__label">Type</span> <bdi>{eligible[0].name}</bdi>
-            </p>
-          ) : (
-            <div className="field">
-              <label className="field__label" htmlFor={typeId}>
-                Type
-              </label>
-              <select
-                id={typeId}
-                className="field__input field__input--select"
-                value={chosenTypeId}
-                onChange={(event) => {
-                  setChosenTypeId(event.target.value)
-                  setFieldErrors({})
-                }}
-                aria-invalid={fieldErrors.entitytypeid ? true : undefined}
-                data-testid="quick-create-type-select"
+            {shownSimilar.length > 0 ? (
+              <div
+                className="callout callout--warning quickcreate__similar"
+                data-testid="quick-create-similar"
               >
-                <option value="">Choose a type</option>
-                {eligible.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
-              {fieldErrors.entitytypeid ? (
-                <p className="field__error">{fieldErrors.entitytypeid}</p>
-              ) : null}
-            </div>
-          )}
+                <p className="callout__title">Something with this name is already here</p>
+                <p>
+                  Choose it instead, or create a new entry anyway. Two entries can share a name.
+                </p>
+                <ul className="quickcreate__matches">
+                  {shownSimilar.map((item) => (
+                    <li key={item.id}>
+                      <span className="quickcreate__match">
+                        <bdi>{item.name}</bdi>{' '}
+                        <span className="picker__kind">
+                          <bdi>{item.entityTypeName}</bdi>
+                        </span>
+                      </span>
+                      <button
+                        className="button button--secondary button--sm"
+                        type="button"
+                        onClick={() =>
+                          onChooseExisting({
+                            id: item.id,
+                            name: item.name,
+                            typeName: item.entityTypeName,
+                          })
+                        }
+                        aria-label={`Use ${item.name}, ${item.entityTypeName}`}
+                        data-testid={`quick-create-use-${item.name}`}
+                      >
+                        Use this one
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
-          {required.length > 0 ? (
-            <div className="quickcreate__fields" data-testid="quick-create-fields">
-              {required.map((definition) => (
-                <div key={definition.id}>
-                  {/* No quick create in here: a link field picks an existing entry. */}
-                  <FieldInput
-                    definition={definition}
-                    value={values[definition.id] ?? emptyValue(definition)}
-                    universeId={universeId}
-                    chronology={chronology}
-                    onChange={(next) =>
-                      setValues((current) => ({ ...current, [definition.id]: next }))
-                    }
-                  />
-                  {fieldErrors[definition.id] ? (
-                    <p className="field__error">{fieldErrors[definition.id]}</p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          ) : null}
+            {types.kind === 'loading' ? (
+              <p className="field__hint" role="status">
+                Reading the types…
+              </p>
+            ) : types.kind === 'error' ? (
+              <p className="form__message" role="alert">
+                The types couldn’t be read. Close this and try again.
+              </p>
+            ) : eligible.length === 0 ? (
+              <p className="form__message" role="alert" data-testid="quick-create-no-types">
+                No type can be created here. This field only takes entries of a type that no longer
+                exists, or of a group with no types in it. Change that under Types.
+              </p>
+            ) : eligible.length === 1 ? (
+              <p className="quickcreate__type" data-testid="quick-create-type">
+                <span className="field__label">Type</span> <bdi>{eligible[0].name}</bdi>
+              </p>
+            ) : (
+              <div className="field">
+                <label className="field__label" htmlFor={typeId}>
+                  Type
+                </label>
+                <select
+                  id={typeId}
+                  className="field__input field__input--select"
+                  value={chosenTypeId}
+                  onChange={(event) => {
+                    setChosenTypeId(event.target.value)
+                    setFieldErrors({})
+                  }}
+                  aria-invalid={fieldErrors.entitytypeid ? true : undefined}
+                  data-testid="quick-create-type-select"
+                >
+                  <option value="">Choose a type</option>
+                  {eligible.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.entitytypeid ? (
+                  <p className="field__error">{fieldErrors.entitytypeid}</p>
+                ) : null}
+              </div>
+            )}
+
+            {required.length > 0 ? (
+              <div className="quickcreate__fields" data-testid="quick-create-fields">
+                {required.map((definition) => (
+                  <div key={definition.id}>
+                    {/* No quick create in here: a link field picks an existing entry. */}
+                    <FieldInput
+                      definition={definition}
+                      value={values[definition.id] ?? emptyValue(definition)}
+                      universeId={universeId}
+                      chronology={chronology}
+                      onChange={(next) =>
+                        setValues((current) => ({ ...current, [definition.id]: next }))
+                      }
+                    />
+                    {fieldErrors[definition.id] ? (
+                      <p className="field__error">{fieldErrors[definition.id]}</p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </fieldset>
         </div>
 
         <footer className="drawer__actions">
@@ -367,6 +426,7 @@ export function QuickCreateDialog({
             className="button button--secondary"
             type="button"
             onClick={close}
+            disabled={isSaving}
             data-testid="quick-create-cancel"
           >
             Cancel

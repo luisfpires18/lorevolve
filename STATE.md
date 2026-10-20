@@ -331,7 +331,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     the type's active required fields, a similar-name warning with Use this one. Posts the ordinary `createEntity`: an Idea.
   - The entry exists once created; the parent stays open and unsaved with only that field or target changed, and its
     Cancel keeps the entry. Note under the choice: "<name> was created. Save ... " + Open full entry (new tab).
-  - Tests: API `QuickCreateTests` 5; Playwright `contextual-quick-create.spec.ts` 6.
+  - A create on its way cannot be dismissed or changed (Escape, backdrop, Cancel, Use this one, inputs); its answer
+    alone chooses; a failure gives the form back. Review fix after `4f85419`.
+  - Tests: API `QuickCreateTests` 5; Playwright `contextual-quick-create.spec.ts` 9.
 - **Issue 38 - compact MCP consent card** (`improve/mcp-oauth-consent` off `dev` at `80db857`; committed, not merged,
   not pushed). Frontend only: `/connect/authorize` drops the sign-in plate for a centred card (max 32rem); Approve/Deny
   stick to the screen's foot when the viewport is at least 34rem tall. Consent copy, form fields, antiforgery and OAuth

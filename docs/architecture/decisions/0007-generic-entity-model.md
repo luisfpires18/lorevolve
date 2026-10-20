@@ -337,4 +337,7 @@ A creator can make a missing entry from the picker that needs it, without leavin
   full entry in a new tab.
 - **Duplicates are advice.** Entries with a like name, among those the picker would offer, are listed with Use this one;
   creating another of the same name is allowed and nothing is merged.
+- **A create on its way is not dismissed.** Until the server answers, Escape, the backdrop, Cancel, Use this one and every
+  input are refused, and a status says why; the answer alone chooses, with the entry it returns. A failure gives the form
+  back. A lost answer still cannot say whether the entry was made, as with every create.
 - **Not done (V1).** Quick Create inside its own form's link fields, in other pickers, or for more than one entry at once.
