@@ -15483,7 +15483,8 @@ details.reviewsection > .reviewsection__list {
 /* ---------- Connect to AI, the consent screen and Connected apps (ADR 0046) ----------
    Connect to AI is the Assistant's twin beside the search: the same button, folding to its icon on a phone, and the
    same drawer frame, holding the address with its copy button, the steps, and what the app may read. The consent screen
-   sits on the sign-in plate, one part after another, each named by a small label; a caution is the warning callout.
+   is one centred card (issue 38), not the sign-in plate: one part after another, each named by a small label; a caution
+   is the warning callout.
    Connected apps are rows like the collaborators', each with its own inline confirmation. */
 
 .connect__body {
@@ -15534,10 +15535,66 @@ details.reviewsection > .reviewsection__list {
   margin-top: var(--space-3);
 }
 
+/* The page is paper; the card is the surface. Auto margins centre it while it fits and let it start at the top, never
+   clipped, when it does not - a zoomed page or a long request simply scrolls. */
+.consent-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  padding: max(var(--space-7), env(safe-area-inset-top))
+    max(var(--space-4), env(safe-area-inset-right)) max(var(--space-7), env(safe-area-inset-bottom))
+    max(var(--space-4), env(safe-area-inset-left));
+}
+
+.consent-card {
+  width: 100%;
+  max-width: 32rem;
+  margin: auto;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-7) var(--space-7) var(--space-6);
+}
+
+.consent-card:focus {
+  outline: none;
+}
+
+.consent-card__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  color: inherit;
+  text-decoration: none;
+}
+
+.consent-card__brand .brandmark {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.consent-card__heading {
+  font-size: 1.625rem;
+}
+
+.consent-card__intro {
+  margin: var(--space-1) 0 var(--space-5);
+  color: var(--muted);
+  font-size: var(--text-ui);
+}
+
+.consent-card__footer {
+  margin: var(--space-4) 0 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
 .consent {
   display: grid;
-  gap: var(--space-5);
-  margin-bottom: var(--space-5);
+  gap: var(--space-3);
 }
 
 .consent__part {
@@ -15546,8 +15603,14 @@ details.reviewsection > .reviewsection__list {
 }
 
 .consent__part + .consent__part {
-  padding-top: var(--space-4);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--rule);
+}
+
+/* A label sits with its value rather than a gap's width away. */
+.consent__label + .consent__app,
+.consent__label + .consent__universe {
+  margin-top: calc(-1 * var(--space-1));
 }
 
 .consent__label {
@@ -15573,8 +15636,14 @@ details.reviewsection > .reviewsection__list {
   overflow-wrap: anywhere;
 }
 
+.consent .consent__list {
+  gap: 0.125rem;
+  font-size: var(--text-ui);
+}
+
 .consent__warning {
   margin: 0;
+  padding: var(--space-2) var(--space-3);
   font-size: var(--text-ui);
 }
 
@@ -15582,8 +15651,38 @@ details.reviewsection > .reviewsection__list {
   margin: 0;
 }
 
+/* Approve and Deny follow the request, and on a screen tall enough to spare the room they stay pinned to its foot while a
+   long request scrolls past, so the decision is never below the fold. A short or zoomed screen keeps them in the flow
+   instead, rather than give up a third of it to two buttons. */
 .consent__actions {
-  flex-wrap: wrap;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+@media (min-height: 34rem) {
+  .consent__actions {
+    position: sticky;
+    bottom: 0;
+    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+    margin-bottom: calc(-1 * var(--space-4));
+  }
+}
+
+@media (max-width: 30rem) {
+  .consent-page {
+    padding-top: max(var(--space-4), env(safe-area-inset-top));
+    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  }
+
+  .consent-card {
+    padding: var(--space-6) var(--space-5) var(--space-5);
+  }
+
+  .consent__actions .button {
+    flex: 1 1 6rem;
+  }
 }
 
 .connectedapps__list {

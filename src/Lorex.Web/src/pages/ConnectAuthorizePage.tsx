@@ -1,6 +1,8 @@
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { AuthLayout } from '../components/AuthLayout'
+import { BRAND_LINK_LABEL, BrandMark } from '../components/BrandMark'
+import { MAIN_CONTENT_ID } from '../components/SkipLink'
+import { Wordmark } from '../components/Wordmark'
 import { useAuth } from '../auth/useAuth'
 import { ApiError } from '../lib/api'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -88,7 +90,9 @@ export default function ConnectAuthorizePage() {
     setDeciding(true)
   }
 
-  const decision = (
+  // The form holds what is being decided as well as the decision, so its buttons can stay pinned to the foot of the
+  // screen while a long request scrolls past them (`.consent__actions`).
+  const decide = (content: ReactNode) => (
     <form
       className="consent__form"
       method="post"
@@ -101,6 +105,7 @@ export default function ConnectAuthorizePage() {
         <input key={`${name}-${index}`} type="hidden" name={name} value={value} />
       ))}
       {token ? <input type="hidden" name={token.fieldName} value={token.token} /> : null}
+      {content}
       <div className="form__actions consent__actions">
         {load.kind === 'ready' ? (
           <button
@@ -127,8 +132,19 @@ export default function ConnectAuthorizePage() {
     </form>
   )
 
+  // A request to decide on, or one to turn down: either way the decision waits for the antiforgery token.
+  const request =
+    load.kind === 'no-access' ? (
+      <div className="notice notice--error" role="alert" data-testid="consent-no-access">
+        <p>You don&rsquo;t have access to the universe this app asked for.</p>
+        <p>Nothing was connected. Going back tells the app it wasn&rsquo;t approved.</p>
+      </div>
+    ) : load.kind === 'ready' ? (
+      <ConsentDetails details={load.details} id={detailsId} />
+    ) : null
+
   return (
-    <AuthLayout
+    <ConsentLayout
       heading="Connect an AI app"
       intro="An app wants to read one of your universes. Check who is asking before you approve."
       footer={
@@ -154,21 +170,51 @@ export default function ConnectAuthorizePage() {
         <div className="notice notice--error" role="alert" data-testid="consent-error">
           <p>LoreX couldn&rsquo;t check this request. Reload the page to try again.</p>
         </div>
-      ) : load.kind === 'no-access' ? (
-        <>
-          <div className="notice notice--error" role="alert" data-testid="consent-no-access">
-            <p>You don&rsquo;t have access to the universe this app asked for.</p>
-            <p>Nothing was connected. Going back tells the app it wasn&rsquo;t approved.</p>
-          </div>
-          {token ? decision : null}
-        </>
+      ) : token ? (
+        decide(request)
       ) : (
-        <>
-          <ConsentDetails details={load.details} id={detailsId} />
-          {token ? decision : null}
-        </>
+        request
       )}
-    </AuthLayout>
+    </ConsentLayout>
+  )
+}
+
+/**
+ * The consent screen's own frame (issue 38): one card, centred, with the brand kept small. It is a decision, not a
+ * landing page, so it does not take the sign-in plate's artwork - the request and its two buttons are the page. A card
+ * taller than the screen grows down and scrolls with the page; nothing inside it scrolls on its own.
+ */
+function ConsentLayout({
+  heading,
+  intro,
+  footer,
+  children,
+}: {
+  heading: string
+  intro: string
+  footer: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <div className="consent-page">
+      <main className="consent-card" id={MAIN_CONTENT_ID} tabIndex={-1} data-testid="consent-card">
+        <Link
+          className="consent-card__brand"
+          to="/"
+          aria-label={BRAND_LINK_LABEL}
+          data-testid="auth-brand"
+        >
+          <BrandMark />
+          <Wordmark />
+        </Link>
+        <h1 className="auth__heading consent-card__heading" data-testid="auth-heading">
+          {heading}
+        </h1>
+        <p className="consent-card__intro">{intro}</p>
+        {children}
+        {footer ? <p className="consent-card__footer">{footer}</p> : null}
+      </main>
+    </div>
   )
 }
 
