@@ -123,6 +123,10 @@ export interface FieldDefinition {
   entryCount: number
   /** How many of those entries are in the Trash. */
   trashedEntryCount: number
+  /** Whether an older version of any entry recorded a value for it: that keeps it from being deleted too. */
+  usedInHistory: boolean
+  /** The definition's edit version, which an edit names as `expectedVersion` (ADR 0043). */
+  version: number
 }
 
 /**

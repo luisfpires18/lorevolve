@@ -177,6 +177,12 @@ export interface FieldInput {
 
   /** A link field's group instead of a type, or null. Required for the same reason. Never sent beside a type. */
   targetGroupId: string | null
+
+  /**
+   * The field's version this edit was made over (ADR 0043). Required by an edit, which is refused (409, `FIELD_CHANGED_CODE`)
+   * when it is no longer current; ignored when adding a field.
+   */
+  expectedVersion?: number
 }
 
 export function addField(universeId: string, typeId: string, input: FieldInput) {
@@ -214,6 +220,9 @@ export function deleteField(universeId: string, typeId: string, fieldId: string)
 
 /** The code on the 409 for deleting a field that holds values. */
 export const FIELD_IN_USE_CODE = 'entity_field_in_use'
+
+/** The code on the 409 for a field edit made over a version that is no longer current. */
+export const FIELD_CHANGED_CODE = 'entity_field_changed'
 
 /** The code on the 409 for making a field required, or restoring it required, while live entries have no value for it. */
 export const FIELD_REQUIRED_MISSING_CODE = 'entity_field_required_missing'

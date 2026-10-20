@@ -66,7 +66,7 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
         // A rune among the links keeps a second field open to any type.
         var other = await AddField(w, w.Character, Definition("Other", EntityFieldKind.EntityReference));
         await Entry(w, w.Character, "Tam", Link(other, rune));
-        var refused = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, other), Definition("Other", EntityFieldKind.EntityReference, group: realms));
+        var refused = await w.Client.PutFieldAsync(w.U, w.Character, other, Definition("Other", EntityFieldKind.EntityReference, group: realms));
         Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
         Assert.Equal(EntityTypeEndpoints.TargetConflictCode, await CodeOf(refused));
         Assert.Null((await FieldOf(w, w.Character, other)).TargetGroupId);
@@ -82,7 +82,7 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
         var trashed = await Entry(w, w.Character, "Tam", []);
         (await w.Client.DeleteAsync(EntryRoute(w, trashed.Id))).EnsureSuccessStatusCode();
 
-        var refused = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, title), Definition("Title", EntityFieldKind.ShortText, required: true));
+        var refused = await w.Client.PutFieldAsync(w.U, w.Character, title, Definition("Title", EntityFieldKind.ShortText, required: true));
         Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
         Assert.Equal(EntityTypeEndpoints.RequiredMissingCode, await CodeOf(refused));
         using (var problem = JsonDocument.Parse(await refused.Content.ReadAsStringAsync()))
@@ -115,7 +115,7 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
         Assert.Equal(ash, after.Options.Single(option => option.Value == "Ash").Id);
         Assert.Equal([ash], (await Detail(w, mara.Id)).Fields.Single().OptionIds);
 
-        var removing = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, house), Definition("House", EntityFieldKind.Select, options: ["Oak", "Elm"]));
+        var removing = await w.Client.PutFieldAsync(w.U, w.Character, house, Definition("House", EntityFieldKind.Select, options: ["Oak", "Elm"]));
         Assert.Equal(HttpStatusCode.Conflict, removing.StatusCode);
         Assert.Contains((await FieldOf(w, w.Character, house)).Options, option => option.Id == ash);
 
@@ -132,10 +132,10 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
         var title = await AddField(w, w.Character, Definition("Title", EntityFieldKind.ShortText));
         await Entry(w, w.Character, "Mara", new FieldValueInput(born, null, 12, null, null, null, null));
 
-        Assert.Equal(HttpStatusCode.Conflict, (await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, born), Definition("Born", EntityFieldKind.ShortText))).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await w.Client.PutFieldAsync(w.U, w.Character, born, Definition("Born", EntityFieldKind.ShortText))).StatusCode);
         Assert.Equal(EntityFieldKind.Number, (await FieldOf(w, w.Character, born)).Kind);
 
-        var twin = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, title), Definition("Born", EntityFieldKind.ShortText));
+        var twin = await w.Client.PutFieldAsync(w.U, w.Character, title, Definition("Born", EntityFieldKind.ShortText));
         Assert.Equal(HttpStatusCode.BadRequest, twin.StatusCode);
         Assert.Equal("This type already has a field with that name.", await ErrorOf(twin, "name"));
 
@@ -144,6 +144,159 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
         var archivedTwin = await PostField(w, w.Character, Definition("Born", EntityFieldKind.Number));
         Assert.Equal(HttpStatusCode.BadRequest, archivedTwin.StatusCode);
         Assert.Contains("archived field", await ErrorOf(archivedTwin, "name"), StringComparison.Ordinal);
+    }
+
+    // ---------- Two editors ----------
+
+    [Fact]
+    public async Task A_stale_editor_cannot_widen_a_target_another_editor_narrowed()
+    {
+        var w = await NewWorld("efl-stale-target");
+        var erandor = await Entry(w, w.Kingdoms, "Erandor");
+        var kingdom = await AddField(w, w.Character, Definition("Kingdom", EntityFieldKind.EntityReference));
+        await Entry(w, w.Character, "Mara", Link(kingdom, erandor));
+
+        // Both open Kingdom at the same version.
+        var opened = (await FieldOf(w, w.Character, kingdom)).Version;
+
+        // A limits it to Kingdoms.
+        var narrowed = await w.Client.PutAsJsonAsync(
+            FieldRoute(w, w.Character, kingdom),
+            Definition("Kingdom", EntityFieldKind.EntityReference, target: w.Kingdoms) with { ExpectedVersion = opened });
+        Assert.Equal(HttpStatusCode.OK, narrowed.StatusCode);
+
+        // B, still showing Any Lore type, renames it: that save would have opened the target again. Refused, nothing changed.
+        var stale = await w.Client.PutAsJsonAsync(
+            FieldRoute(w, w.Character, kingdom),
+            Definition("Realm", EntityFieldKind.EntityReference) with { ExpectedVersion = opened });
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        Assert.Equal(EntityTypeEndpoints.FieldChangedCode, await CodeOf(stale));
+        using (var problem = JsonDocument.Parse(await stale.Content.ReadAsStringAsync()))
+        {
+            Assert.Equal(opened + 1, problem.RootElement.GetProperty("currentVersion").GetInt32());
+        }
+
+        var kept = await FieldOf(w, w.Character, kingdom);
+        Assert.Equal(("Kingdom", w.Kingdoms, opened + 1), (kept.Name, kept.TargetEntityTypeId, kept.Version));
+
+        // B reloads, keeps A's limit, and renames over the version it now reads.
+        var retried = await w.Client.PutAsJsonAsync(
+            FieldRoute(w, w.Character, kingdom),
+            Definition("Realm", EntityFieldKind.EntityReference, target: w.Kingdoms) with { ExpectedVersion = kept.Version });
+        Assert.Equal(HttpStatusCode.OK, retried.StatusCode);
+        Assert.Equal(("Realm", w.Kingdoms), ((await FieldOf(w, w.Character, kingdom)).Name, (await FieldOf(w, w.Character, kingdom)).TargetEntityTypeId));
+    }
+
+    [Fact]
+    public async Task Concurrent_edits_to_different_settings_never_silently_overwrite_each_other()
+    {
+        var w = await NewWorld("efl-two-editors");
+        var house = await AddField(w, w.Character, Definition("House", EntityFieldKind.Select, options: ["Ash"]));
+        var born = await AddField(w, w.Character, Definition("Born", EntityFieldKind.Number));
+        var v1 = (await FieldOf(w, w.Character, house)).Version;
+        Assert.Equal(1, v1);
+
+        // A makes it required and adds a choice; B, from the same version, renames it.
+        (await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, house),
+            Definition("House", EntityFieldKind.Select, required: true, options: ["Ash", "Oak"]) with { ExpectedVersion = v1 })).EnsureSuccessStatusCode();
+        var renamed = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, house),
+            Definition("Lineage", EntityFieldKind.Select, options: ["Ash"]) with { ExpectedVersion = v1 });
+        Assert.Equal(HttpStatusCode.Conflict, renamed.StatusCode);
+        var house2 = await FieldOf(w, w.Character, house);
+        Assert.Equal(("House", true, 2), (house2.Name, house2.IsRequired, house2.Options.Count));
+
+        // A meaning is protected the same way, and so is a kind change.
+        var bornV = (await FieldOf(w, w.Character, born)).Version;
+        (await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, born),
+            Definition("Born", EntityFieldKind.Number, semantic: EntityFieldSemantic.BirthYear) with { ExpectedVersion = bornV })).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.Conflict, (await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, born),
+            Definition("Born", EntityFieldKind.ShortText) with { ExpectedVersion = bornV })).StatusCode);
+        var born2 = await FieldOf(w, w.Character, born);
+        Assert.Equal((EntityFieldKind.Number, EntityFieldSemantic.BirthYear), (born2.Kind, born2.Semantic));
+
+        // An edit that names no version is refused like a stale one: there is no unprotected way in.
+        var unnamed = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, born), Definition("Year of birth", EntityFieldKind.Number));
+        Assert.Equal(HttpStatusCode.Conflict, unnamed.StatusCode);
+        Assert.Equal(EntityTypeEndpoints.FieldChangedCode, await CodeOf(unnamed));
+
+        // A save that changes nothing leaves the version, and every other open drawer, current.
+        (await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, born),
+            Definition("Born", EntityFieldKind.Number, semantic: EntityFieldSemantic.BirthYear) with { ExpectedVersion = born2.Version })).EnsureSuccessStatusCode();
+        Assert.Equal(born2.Version, (await FieldOf(w, w.Character, born)).Version);
+    }
+
+    [Fact]
+    public async Task Archiving_and_restoring_move_the_field_version_so_an_old_drawer_cannot_save_over_it()
+    {
+        var w = await NewWorld("efl-version-archive");
+        var title = await AddField(w, w.Character, Definition("Title", EntityFieldKind.ShortText));
+        var opened = (await FieldOf(w, w.Character, title)).Version;
+
+        await Archive(w, w.Character, title);
+        Assert.Equal(opened + 1, (await ArchivedFieldOf(w, w.Character, title)).Version);
+        await Restore(w, w.Character, title);
+        var restored = await FieldOf(w, w.Character, title);
+        Assert.Equal(opened + 2, restored.Version);
+
+        // A drawer opened before the archive is stale now, even for a change the field would otherwise accept.
+        var stale = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, title),
+            Definition("Rank", EntityFieldKind.ShortText) with { ExpectedVersion = opened });
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        Assert.Equal(EntityTypeEndpoints.FieldChangedCode, await CodeOf(stale));
+        Assert.Equal("Title", (await FieldOf(w, w.Character, title)).Name);
+
+        // Opened again, it saves.
+        (await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, title),
+            Definition("Rank", EntityFieldKind.ShortText) with { ExpectedVersion = restored.Version })).EnsureSuccessStatusCode();
+        Assert.Equal(("Rank", restored.Version + 1), ((await FieldOf(w, w.Character, title)).Name, (await FieldOf(w, w.Character, title)).Version));
+    }
+
+    // ---------- History ----------
+
+    [Fact]
+    public async Task A_field_an_older_version_used_is_not_deleted_once_its_value_is_cleared()
+    {
+        var w = await NewWorld("efl-history-delete");
+        var title = await AddField(w, w.Character, Definition("Title", EntityFieldKind.ShortText));
+        var mara = await Entry(w, w.Character, "Mara", Text(title, "Queen"));
+
+        // Cleared: no entry holds a value now, but version 1 recorded one.
+        await Save(w, mara.Id, w.Character, "Mara");
+        var cleared = await FieldOf(w, w.Character, title);
+        Assert.Equal((0, true), (cleared.EntryCount, cleared.UsedInHistory));
+
+        var refused = await w.Client.DeleteAsync(FieldRoute(w, w.Character, title));
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Equal(EntityTypeEndpoints.FieldInHistoryCode, await CodeOf(refused));
+        Assert.Equal(
+            "Older versions of 1 entry still use this field, so it can't be deleted. Archive it to hide it and keep that history.",
+            await DetailOf(refused));
+
+        // Archived, the same: history keeps it either way, and nothing about it changed.
+        await Archive(w, w.Character, title);
+        Assert.Equal(HttpStatusCode.Conflict, (await w.Client.DeleteAsync(FieldRoute(w, w.Character, title))).StatusCode);
+        await WithDb(_factory, async db => Assert.Equal(
+            "Queen",
+            await db.EntityRevisionFieldValues.Where(value => value.FieldDefinitionId == title).Select(value => value.TextValue).SingleAsync()));
+
+        // Restored, version 1 still puts Queen back.
+        await Restore(w, w.Character, title);
+        var first = (await Revisions(w, mara.Id)).Single(revision => revision.Number == 1);
+        (await w.Client.PostAsJsonAsync($"{EntryRoute(w, mara.Id)}/revisions/{first.Id}/restore",
+            new EntityRevisionRestoreRequest((await Detail(w, mara.Id)).Version))).EnsureSuccessStatusCode();
+        Assert.Equal("Queen", (await Detail(w, mara.Id)).Fields.Single().Text);
+    }
+
+    [Fact]
+    public async Task A_field_no_version_ever_recorded_is_still_deleted()
+    {
+        var w = await NewWorld("efl-history-free");
+        var title = await AddField(w, w.Character, Definition("Title", EntityFieldKind.ShortText));
+        var mara = await Entry(w, w.Character, "Mara", []);
+        await Save(w, mara.Id, w.Character, "Mara", summary: "Saved again, still without a title.");
+
+        Assert.False((await FieldOf(w, w.Character, title)).UsedInHistory);
+        Assert.Equal(HttpStatusCode.NoContent, (await w.Client.DeleteAsync(FieldRoute(w, w.Character, title))).StatusCode);
     }
 
     // ---------- Archiving ----------
@@ -203,7 +356,7 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
         Assert.Equal("This is not a field of the chosen type.", await ErrorOf(filtered, "field[0]"));
 
         // Its settings wait for a restore.
-        var edit = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, title), Definition("Rank", EntityFieldKind.ShortText));
+        var edit = await w.Client.PutFieldAsync(w.U, w.Character, title, Definition("Rank", EntityFieldKind.ShortText));
         Assert.Equal(HttpStatusCode.Conflict, edit.StatusCode);
         Assert.Equal(EntityTypeEndpoints.FieldArchivedCode, await CodeOf(edit));
 
@@ -680,7 +833,7 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
 
     private static async Task UpdateField(World w, Guid typeId, Guid fieldId, FieldDefinitionRequest request)
     {
-        var response = await w.Client.PutAsJsonAsync(FieldRoute(w, typeId, fieldId), request);
+        var response = await w.Client.PutFieldAsync(w.U, typeId, fieldId, request);
         Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
     }
 

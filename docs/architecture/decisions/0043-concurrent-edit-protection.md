@@ -81,3 +81,14 @@ Archiving or restoring a field advances the version of every entry that holds a 
 revision: the entry's form has changed shape though none of its lore did. A form or suggestion over the old version is then
 refused as `entity_changed` / stale. Without it, a form opened while a field was archived, saved after the restore, would
 replace that field's values with none. Entries with no value for the field keep their version.
+
+## Amendment - field definitions are versioned too (2026-10-20, Issue #39 review)
+
+`EntityFieldDefinitions.Version` (migration `AddEntityFieldVersion`, every existing field at 1): an edit of a field names
+`expectedVersion` and is refused (409 `entity_field_changed`, `currentVersion`) when it is missing or no longer current,
+inside the promotion gate's transaction, before anything is validated or written. An edit that changes something -
+name, kind, required, default, order, options, meaning, link target - moves it on once; an unchanged save does not.
+Archiving and restoring move it on too, so a drawer opened before either cannot save over the field afterwards. Adding a
+field needs no version. The field drawer keeps its draft on the refusal, shows the field as saved now, and offers "Use the
+saved settings" or "Keep my changes" (which takes the new version, so the next Save deliberately replaces what is saved).
+Field definitions joined this ADR's protected set; types, groups and relation kinds still have no version.

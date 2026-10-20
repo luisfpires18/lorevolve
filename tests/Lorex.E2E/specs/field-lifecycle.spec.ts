@@ -347,6 +347,111 @@ test.describe('a type’s fields', () => {
     await expect(page.getByTestId('field-actions-Liege')).toBeFocused()
   })
 
+  test('a drawer opened before someone else’s change keeps its draft and lets the author choose', async ({
+    page,
+  }) => {
+    await account(page)
+    const w = await world(page)
+    await openFields(page, w.u, 'Character')
+
+    // The drawer opens over Kingdom open to any type.
+    await page.getByTestId('edit-field-Kingdom').click()
+    const dialog = fieldDialog(page)
+    await expect(dialog.getByTestId('field-target')).toHaveValue('any')
+
+    // Meanwhile another editor limits it to Kingdoms.
+    const types = (await (await page.request.get(`/api/universes/${w.u}/entity-types`)).json()) as {
+      id: string
+      fields: { id: string; version: number }[]
+    }[]
+    const version = types
+      .find((type) => type.id === w.character)!
+      .fields.find((f) => f.id === w.kingdom)!.version
+    const narrowed = await page.request.put(
+      `/api/universes/${w.u}/entity-types/${w.character}/fields/${w.kingdom}`,
+      {
+        data: {
+          name: 'Kingdom',
+          kind: 7,
+          isRequired: true,
+          displayOrder: null,
+          defaultValue: null,
+          options: null,
+          targetEntityTypeId: w.kingdoms,
+          targetGroupId: null,
+          expectedVersion: version,
+        },
+      },
+    )
+    expect(narrowed.ok()).toBe(true)
+
+    // This drawer's rename would have opened the target again: refused, with the draft kept and the saved settings shown.
+    await dialog.getByTestId('field-name').fill('Realm')
+    await dialog.getByTestId('save-field').click()
+    await expect(dialog.getByTestId('field-dialog-error')).toContainText(
+      'Someone changed this field after you opened it. Nothing was saved',
+    )
+    await expect(dialog.getByTestId('field-name')).toHaveValue('Realm')
+    await expect(dialog.getByTestId('field-dialog-stale')).toContainText(
+      'Kingdom: Link to an entity · Required · Links to Kingdoms',
+    )
+
+    // Taking the saved settings brings Kingdoms in; the rename is made again over them.
+    await dialog.getByTestId('field-use-saved').click()
+    await expect(dialog.getByTestId('field-name')).toHaveValue('Kingdom')
+    await expect(dialog.getByTestId('field-target')).toHaveValue(`type:${w.kingdoms}`)
+    await dialog.getByTestId('field-name').fill('Realm')
+    await dialog.getByTestId('save-field').click()
+    await expect(dialog).toHaveCount(0)
+    await expect(fieldSummary(page, 'Realm')).toHaveText(
+      'Link to an entity · Required · Links to Kingdoms',
+    )
+  })
+
+  test('a field an older version used is not offered for deletion once its value is cleared', async ({
+    page,
+  }) => {
+    await account(page)
+    const w = await world(page)
+    const motto = await w.field('Motto', 0, false)
+    const oren = await w.entry(w.character, 'Oren', [
+      w.link(w.erandor),
+      {
+        fieldDefinitionId: motto,
+        text: 'Salt and iron',
+        number: null,
+        boolean: null,
+        date: null,
+        optionIds: null,
+        referencedEntityId: null,
+      },
+    ])
+    const current = (await (
+      await page.request.get(`/api/universes/${w.u}/entities/${oren}`)
+    ).json()) as { version: number }
+    const cleared = await page.request.put(`/api/universes/${w.u}/entities/${oren}`, {
+      data: {
+        entityTypeId: w.character,
+        name: 'Oren',
+        summary: null,
+        canonStatus: 2,
+        aliases: [],
+        tags: [],
+        fields: [w.link(w.erandor)],
+        expectedVersion: current.version,
+      },
+    })
+    expect(cleared.ok()).toBe(true)
+
+    await openFields(page, w.u, 'Character')
+    await page.getByTestId('field-actions-Motto').click()
+    await page.getByTestId('delete-field-Motto').click()
+    await expect(page.getByTestId('field-blocked-Motto')).toContainText(
+      "Older versions of entries still use this field, so it can't be deleted.",
+    )
+    await expect(page.getByTestId('field-row-Motto')).toBeVisible()
+  })
+
   for (const width of [390, 360]) {
     test(`at ${width}px the field list, its menu and the field drawer fit`, async ({ browser }) => {
       const context = await browser.newContext({ viewport: { width, height: 800 } })

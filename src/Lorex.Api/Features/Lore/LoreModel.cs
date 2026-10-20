@@ -210,6 +210,14 @@ public sealed class EntityFieldDefinition
     /// </summary>
     public DateTime? ArchivedAt { get; set; }
 
+    /// <summary>
+    /// The definition's edit version (ADR 0043 amendment, Issue #39): 1 when created, advanced once by every edit that changes
+    /// it and by archiving and restoring it. An edit names the version it was made over and is refused when that is no longer
+    /// current, so two people editing one field never quietly undo each other - a stale drawer cannot widen a target someone
+    /// has since narrowed, or overwrite settings after the field was archived and restored.
+    /// </summary>
+    public int Version { get; set; } = 1;
+
     public ICollection<EntityFieldOption> Options { get; set; } = [];
 
     public ICollection<EntityFieldValue> Values { get; set; } = [];

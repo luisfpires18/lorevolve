@@ -558,6 +558,9 @@ namespace Lorex.Api.Data.Migrations
                     b.Property<Guid?>("TargetGroupId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("TargetEntityTypeId");
@@ -845,6 +848,10 @@ namespace Lorex.Api.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FieldDefinitionId");
+
+                    b.HasIndex("OptionId");
 
                     b.HasIndex("RevisionId");
 

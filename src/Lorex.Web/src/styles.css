@@ -7014,6 +7014,12 @@ html:has(.viewer[open]) {
   margin-top: var(--space-4);
 }
 
+/* In the field drawer, after a stale save: the field as someone else saved it. */
+.fieldconflict__saved {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .fieldarchive {
   margin-top: var(--space-5);
   padding-top: var(--space-4);

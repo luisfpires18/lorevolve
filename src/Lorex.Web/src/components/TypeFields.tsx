@@ -8,6 +8,7 @@ import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import {
+  FIELD_CHANGED_CODE,
   FIELD_REQUIRED_MISSING_CODE,
   addField,
   archiveField,
@@ -162,8 +163,9 @@ export function TypeFields({
   }
 
   /**
-   * Permanent deletion. A field holding values anywhere, the Trash included, is not offered a confirmation it could only
-   * fail: the author is told why, and where archiving is. An empty one asks once and is gone.
+   * Permanent deletion. A field holding values anywhere, the Trash included, or recorded by an older version of an entry,
+   * is not offered a confirmation it could only fail: the author is told why, and where archiving is. An empty one asks
+   * once and is gone.
    */
   async function remove(field: FieldDefinition) {
     clear()
@@ -171,6 +173,13 @@ export function TypeFields({
       setBlocked({
         fieldId: field.id,
         text: fieldInUseDetail(field.entryCount, field.trashedEntryCount),
+      })
+      return
+    }
+    if (field.usedInHistory) {
+      setBlocked({
+        fieldId: field.id,
+        text: "Older versions of entries still use this field, so it can't be deleted. Archive it to hide it and keep that history.",
       })
       return
     }
@@ -378,7 +387,7 @@ export function TypeFields({
                       <ActionIcon icon={ArchiveRestore} />
                       Restore
                     </button>
-                    {field.entryCount === 0 ? (
+                    {field.entryCount === 0 && !field.usedInHistory ? (
                       <button
                         className="button button--text button--sm fieldlist__delete"
                         type="button"
@@ -427,6 +436,12 @@ export function TypeFields({
           universeId={universeId}
           type={type}
           field={editing === 'new' ? null : editing}
+          latest={
+            editing === 'new'
+              ? undefined
+              : [...type.fields, ...archived].find((each) => each.id === editing.id)
+          }
+          describe={summary}
           tree={tree}
           groups={groups}
           onClose={() => setEditing(null)}
@@ -493,28 +508,9 @@ function splitOptions(text: string) {
  * target until the author picks one, "Any Lore type" included: nothing is chosen for them, and nothing from the name.
  * The kind of a field that holds values is shown but cannot change, because the API refuses it.
  */
-function FieldDialog({
-  universeId,
-  type,
-  field,
-  tree,
-  groups,
-  onClose,
-  onChanged,
-  onSaved,
-}: {
-  universeId: string
-  type: EntityType
-  /** The field being edited, or null for a new one. */
-  field: FieldDefinition | null
-  tree: TypeTree
-  groups: EntityTypeGroup[]
-  onClose: () => void
-  onChanged: () => Promise<void>
-  onSaved: (name: string, wasNew: boolean) => Promise<void>
-}) {
-  const dialog = useRef<HTMLDialogElement>(null)
-  const initial = {
+/** What the drawer edits, as it reads for a field (or a new one). */
+function draftOf(field: FieldDefinition | null) {
+  return {
     name: field?.name ?? '',
     kind: field?.kind ?? FieldKind.ShortText,
     isRequired: field?.isRequired ?? false,
@@ -523,6 +519,41 @@ function FieldDialog({
     defaultValue: field?.defaultValue ?? '',
     target: (field ? targetChoice(field) : null) as TargetChoice,
   }
+}
+
+function FieldDialog({
+  universeId,
+  type,
+  field,
+  latest,
+  describe,
+  tree,
+  groups,
+  onClose,
+  onChanged,
+  onSaved,
+}: {
+  universeId: string
+  type: EntityType
+  /** The field being edited, as it read when the drawer opened, or null for a new one. */
+  field: FieldDefinition | null
+  /** The same field as the list reads it now, after any reload; undefined once it is gone. */
+  latest: FieldDefinition | undefined
+  /** A field's one-line summary, as the list says it. */
+  describe: (field: FieldDefinition) => string
+  tree: TypeTree
+  groups: EntityTypeGroup[]
+  onClose: () => void
+  onChanged: () => Promise<void>
+  onSaved: (name: string, wasNew: boolean) => Promise<void>
+}) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  // What this drawer was opened over: the settings an unsaved change is measured against, and the version an edit names.
+  // A refused stale save moves it on only when the author chooses (ADR 0043).
+  const [base, setBase] = useState(() => ({ draft: draftOf(field), version: field?.version ?? 0 }))
+  const initial = base.draft
+  // Someone else saved this field after the drawer opened; the draft is kept until the author decides.
+  const [stale, setStale] = useState(false)
   const [name, setName] = useState(initial.name)
   const [kind, setKind] = useState<FieldKindValue>(initial.kind)
   const [isRequired, setIsRequired] = useState(initial.isRequired)
@@ -534,7 +565,7 @@ function FieldDialog({
   const [message, setMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
-  const kindLocked = field !== null && field.entryCount > 0
+  const kindLocked = field !== null && (latest ?? field).entryCount > 0
   const hasOptions = kind === FieldKind.Select || kind === FieldKind.MultiSelect
   const isLink = kind === FieldKind.EntityReference
   const isText = kind === FieldKind.ShortText || kind === FieldKind.LongText
@@ -566,9 +597,35 @@ function FieldDialog({
     if (next !== FieldKind.EntityReference) setTarget(field ? targetChoice(field) : null)
   }
 
+  /** Puts the saved settings in the drawer, the version with them, and drops the draft. */
+  function takeSaved(saved: FieldDefinition) {
+    const next = draftOf(saved)
+    setBase({ draft: next, version: saved.version })
+    setName(next.name)
+    setKind(next.kind)
+    setIsRequired(next.isRequired)
+    setOptions(next.options)
+    setSemantic(next.semantic)
+    setDefaultValue(next.defaultValue)
+    setTarget(next.target)
+    setStale(false)
+    setMessage(null)
+    setFieldErrors({})
+  }
+
+  /** Keeps the draft and takes the saved version, so the next Save deliberately replaces what is saved now. */
+  function keepMine(saved: FieldDefinition) {
+    setBase((current) => ({ ...current, version: saved.version }))
+    setStale(false)
+    setMessage(
+      'Your changes are kept. Saving now replaces what someone else saved with everything this drawer shows.',
+    )
+  }
+
   async function save() {
     setMessage(null)
     setFieldErrors({})
+    setStale(false)
     const errors: Record<string, string> = {}
     if (!name.trim()) errors.name = 'Give the field a name.'
     if (hasOptions && splitOptions(options).length === 0)
@@ -589,6 +646,7 @@ function FieldDialog({
       options: hasOptions ? splitOptions(options) : null,
       semantic,
       ...parseTarget(isLink ? target : null),
+      ...(field ? { expectedVersion: base.version } : {}),
     }
 
     setIsSaving(true)
@@ -597,7 +655,15 @@ function FieldDialog({
       else await addField(universeId, type.id, input)
       await onSaved(input.name, field === null)
     } catch (error: unknown) {
-      if (error instanceof ApiError) {
+      if (error instanceof ApiError && error.code === FIELD_CHANGED_CODE) {
+        // Saved by someone else since this opened: nothing was written, the draft stays, and the latest is read so the
+        // author can compare and choose.
+        setMessage(
+          'Someone changed this field after you opened it. Nothing was saved, and your changes are still here.',
+        )
+        setStale(true)
+        await onChanged().catch(() => undefined)
+      } else if (error instanceof ApiError) {
         const mapped: Record<string, string> = {}
         for (const [key, text] of Object.entries(error.fieldErrors)) {
           mapped[key === 'targetentitytypeid' || key === 'targetgroupid' ? 'target' : key] = text
@@ -648,6 +714,36 @@ function FieldDialog({
             <p className="form__message" role="alert" data-testid="field-dialog-error">
               {message}
             </p>
+          ) : null}
+
+          {stale && latest ? (
+            <div className="callout callout--warning" data-testid="field-dialog-stale">
+              <p className="callout__title">Saved now</p>
+              <p className="fieldconflict__saved">
+                <bdi>{latest.name}</bdi>: {describe(latest)}
+                {latest.archivedAt !== null ? '. Archived.' : ''}
+              </p>
+              <p className="types__blockedlinks">
+                <button
+                  className="button button--secondary button--sm"
+                  type="button"
+                  onClick={() => takeSaved(latest)}
+                  data-testid="field-use-saved"
+                >
+                  Use the saved settings
+                </button>
+                {latest.archivedAt === null ? (
+                  <button
+                    className="button button--text button--sm"
+                    type="button"
+                    onClick={() => keepMine(latest)}
+                    data-testid="field-keep-mine"
+                  >
+                    Keep my changes
+                  </button>
+                ) : null}
+              </p>
+            </div>
           ) : null}
 
           <Field

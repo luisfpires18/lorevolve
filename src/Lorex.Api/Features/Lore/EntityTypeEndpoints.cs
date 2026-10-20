@@ -68,6 +68,15 @@ public static class EntityTypeEndpoints
     /// <summary>The marker on the 409 for permanently deleting a field that holds values, the Trash included.</summary>
     public const string FieldInUseCode = "entity_field_in_use";
 
+    /// <summary>The marker on the 409 for permanently deleting a field an older version of an entry still records.</summary>
+    public const string FieldInHistoryCode = "entity_field_in_history";
+
+    /// <summary>The marker on the 409 for removing a choice an older version of an entry still records.</summary>
+    public const string OptionInHistoryCode = "entity_field_option_in_history";
+
+    /// <summary>The marker on the 409 for a field edit made over a version that is no longer current (ADR 0043).</summary>
+    public const string FieldChangedCode = "entity_field_changed";
+
     /// <summary>The machine-readable marker on the refusal of a parent or a move that would put a type inside itself.</summary>
     public const string ParentCycleCode = "entity_type_parent_cycle";
 
@@ -755,6 +764,13 @@ public static class EntityTypeEndpoints
                 extensions: new Dictionary<string, object?> { ["code"] = FieldArchivedCode });
         }
 
+        // Read inside the gate's transaction, so nothing can land between this comparison and the write. A missing version is
+        // refused like an old one: an edit that cannot say what it was made over is never trusted to be current (ADR 0043).
+        if (!EditVersion.Matches(definition.Version, request.ExpectedVersion))
+        {
+            return FieldChanged(definition.Version);
+        }
+
         if (LoreValidation.ValidateField(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -856,6 +872,17 @@ public static class EntityTypeEndpoints
                         statusCode: StatusCodes.Status409Conflict);
                 }
 
+                // An older version that chose it could no longer be restored as it was written, so the choice stays.
+                if (await db.EntityRevisionFieldValues.AnyAsync(value => value.OptionId == option.Id, cancellationToken))
+                {
+                    return Results.Problem(
+                        title: "Option is in an older version",
+                        detail: $"The option \"{option.Value}\" is recorded in an older version of an entry. "
+                            + "Keep it, so that version can still be restored.",
+                        statusCode: StatusCodes.Status409Conflict,
+                        extensions: new Dictionary<string, object?> { ["code"] = OptionInHistoryCode });
+                }
+
                 definition.Options.Remove(option);
             }
 
@@ -884,6 +911,13 @@ public static class EntityTypeEndpoints
             }
         }
 
+        // An edit that changed something moves the version on, exactly once; an unchanged save leaves every other open
+        // drawer current.
+        if (db.ChangeTracker.HasChanges())
+        {
+            definition.Version++;
+        }
+
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -897,11 +931,21 @@ public static class EntityTypeEndpoints
         return Results.Ok(types.First(type => type.Id == typeId));
     }
 
+    /// <summary>The 409 for a field edit made over a version that is no longer current.</summary>
+    private static IResult FieldChanged(int currentVersion) =>
+        EditVersion.Changed(
+            FieldChangedCode,
+            "Field changed",
+            "This field was changed after it was opened here. Nothing was saved.",
+            currentVersion);
+
     /// <summary>
     /// Permanent deletion, for a field that holds nothing (Issue #39). Refused while any entry - in Lore or in the Trash - has a
     /// value for it, whether the field is active or archived: archiving is the way to put a populated field away, and nothing
-    /// here cascades into authored values. One writer at a time (IMMEDIATE), so an entry save that would add the first value
-    /// either lands first and is counted, or waits until the field is gone and is then ignored like any unknown field.
+    /// here cascades into authored values. Refused too while an older version of any entry recorded a value for it, since that
+    /// version could no longer be restored as it was written; the snapshot itself is never touched. One writer at a time
+    /// (IMMEDIATE), so an entry save that would add the first value either lands first and is counted, or waits until the
+    /// field is gone and is then ignored like any unknown field.
     /// </summary>
     private static async Task<IResult> DeleteFieldAsync(
         Guid universeId,
@@ -953,12 +997,36 @@ public static class EntityTypeEndpoints
                 });
         }
 
+        var historic = await db.EntityRevisionFieldValues.AsNoTracking()
+            .Where(value => value.FieldDefinitionId == fieldId)
+            .Select(value => value.Revision!.EntityId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        if (historic > 0)
+        {
+            return Results.Problem(
+                title: "Field is in older versions",
+                detail: FieldInHistoryDetail(historic),
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["code"] = FieldInHistoryCode,
+                    ["entryCount"] = historic,
+                });
+        }
+
         db.EntityFieldDefinitions.Remove(definition);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
         return Results.NoContent();
     }
+
+    /// <summary>Why a field older versions recorded cannot be deleted. Mirrored by the Types screen, which has no count.</summary>
+    internal static string FieldInHistoryDetail(int entries) =>
+        $"Older versions of {(entries == 1 ? "1 entry" : $"{entries} entries")} still use this field, so it can't be deleted. "
+            + "Archive it to hide it and keep that history.";
 
     /// <summary>Why a field holding values cannot be deleted, in the author's terms. Mirrored by the Types screen.</summary>
     internal static string FieldInUseDetail(int entries, int trashed)
@@ -1014,6 +1082,7 @@ public static class EntityTypeEndpoints
                 if (definition.ArchivedAt is null)
                 {
                     definition.ArchivedAt = DateTime.UtcNow;
+                    definition.Version++;
                     await db.SaveChangesAsync(token);
                     await InvalidateOpenFormsAsync(db, fieldId, token);
                 }
@@ -1088,6 +1157,7 @@ public static class EntityTypeEndpoints
                     }
 
                     definition.ArchivedAt = null;
+                    definition.Version++;
                     await db.SaveChangesAsync(token);
                     await InvalidateOpenFormsAsync(db, fieldId, token);
                 }
@@ -1230,10 +1300,11 @@ public static class EntityTypeEndpoints
     }
 
     /// <summary>
-    /// One field as the types list reads it, active or archived, with how many entries hold a value for it and how many of
-    /// those are in the Trash - what decides whether it can be deleted, and what an archived field still keeps.
+    /// One field as the types list reads it, active or archived, with how many entries hold a value for it, how many of
+    /// those are in the Trash and whether an older version records one - what decides whether it can be deleted, and what an
+    /// archived field still keeps. The history check reads one index row per field at most.
     /// </summary>
-    private static readonly Expression<Func<EntityFieldDefinition, FieldDefinitionResponse>> ToFieldResponse =
+    private static Expression<Func<EntityFieldDefinition, FieldDefinitionResponse>> ToFieldResponse(LorexDbContext db) =>
         field => new FieldDefinitionResponse(
             field.Id,
             field.Name,
@@ -1250,7 +1321,9 @@ public static class EntityTypeEndpoints
             field.TargetGroupId,
             field.ArchivedAt,
             field.Values.Select(value => value.EntityId).Distinct().Count(),
-            field.Values.Where(value => value.Entity!.DeletedAt != null).Select(value => value.EntityId).Distinct().Count());
+            field.Values.Where(value => value.Entity!.DeletedAt != null).Select(value => value.EntityId).Distinct().Count(),
+            db.EntityRevisionFieldValues.Any(value => value.FieldDefinitionId == field.Id),
+            field.Version);
 
     internal static async Task<List<EntityTypeResponse>> LoadTypesAsync(
         LorexDbContext db,
@@ -1258,6 +1331,7 @@ public static class EntityTypeEndpoints
         CancellationToken cancellationToken)
     {
         var familyTree = FamilyTreeEligibility.TypeIds(db, universeId);
+        var toField = ToFieldResponse(db);
 
         return EntityTypeHierarchy.Preorder(
             await db.EntityTypes.AsNoTracking()
@@ -1275,7 +1349,7 @@ public static class EntityTypeEndpoints
                     .Where(field => field.ArchivedAt == null)
                     .OrderBy(field => field.DisplayOrder)
                     .ThenBy(field => field.Name)
-                    .Select(ToFieldResponse)
+                    .Select(toField)
                     .ToList(),
                 type.FamilyTreeEligible,
                 type.ParentId,
@@ -1284,7 +1358,7 @@ public static class EntityTypeEndpoints
                     .Where(field => field.ArchivedAt != null)
                     .OrderBy(field => field.DisplayOrder)
                     .ThenBy(field => field.Name)
-                    .Select(ToFieldResponse)
+                    .Select(toField)
                     .ToList()))
             .ToListAsync(cancellationToken),
             type => type.Id,

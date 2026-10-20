@@ -89,8 +89,11 @@ public sealed class EntityRevisionFieldValueConfiguration
             .OnDelete(DeleteBehavior.Cascade);
 
         // No key on FieldDefinitionId, OptionId, ReferencedEntityId or EraId on purpose: a
-        // snapshot must never keep a live definition or era from being deleted, nor be rewritten
-        // when one is.
+        // snapshot is never rewritten when what it names changes or goes. Since Issue #39 a field
+        // definition or a choice a snapshot names is still never deleted - the API refuses it, read
+        // through these two indexes - but that is a check, not a key, so the snapshot stays plain data.
         builder.HasIndex(value => value.RevisionId);
+        builder.HasIndex(value => value.FieldDefinitionId);
+        builder.HasIndex(value => value.OptionId);
     }
 }

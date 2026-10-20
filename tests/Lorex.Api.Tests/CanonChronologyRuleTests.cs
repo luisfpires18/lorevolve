@@ -123,9 +123,7 @@ public sealed class CanonChronologyRuleTests(LorexApiFactory factory) : IClassFi
         await AddField(client, universe.Id, type.Id, "Born", EntityFieldKind.Number, EntityFieldSemantic.BirthYear);
         var other = await AddField(client, universe.Id, type.Id, "Height", EntityFieldKind.Number);
 
-        var response = await client.PutAsJsonAsync(
-            $"/api/universes/{universe.Id}/entity-types/{type.Id}/fields/{other.Id}",
-            new FieldDefinitionRequest(
+        var response = await client.PutFieldAsync(universe.Id, type.Id, other.Id, new FieldDefinitionRequest(
                 "Height", EntityFieldKind.Number, false, null, null, null, EntityFieldSemantic.BirthYear));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -697,9 +695,7 @@ public sealed class CanonChronologyRuleTests(LorexApiFactory factory) : IClassFi
         await Evaluate(client, universe.Id);
         var before = Assert.Single(await Conflicts(client, universe.Id, "CANON-LIFE-001"));
 
-        await client.PutAsJsonAsync(
-            $"/api/universes/{universe.Id}/entity-types/{type.Id}/fields/{fields.Birth.Id}",
-            new FieldDefinitionRequest(
+        await client.PutFieldAsync(universe.Id, type.Id, fields.Birth.Id, new FieldDefinitionRequest(
                 "Year of birth", EntityFieldKind.Number, false, null, null, null, EntityFieldSemantic.BirthYear));
 
         await Evaluate(client, universe.Id);
@@ -742,9 +738,7 @@ public sealed class CanonChronologyRuleTests(LorexApiFactory factory) : IClassFi
         var before = Assert.Single(await Conflicts(client, universe.Id, "CANON-LIFE-001"));
 
         // The old field keeps its number and loses its meaning; a new field takes both.
-        await client.PutAsJsonAsync(
-            $"/api/universes/{universe.Id}/entity-types/{type.Id}/fields/{fields.Birth.Id}",
-            new FieldDefinitionRequest("Born", EntityFieldKind.Number, false, null, null, null));
+        await client.PutFieldAsync(universe.Id, type.Id, fields.Birth.Id, new FieldDefinitionRequest("Born", EntityFieldKind.Number, false, null, null, null));
 
         var replacement = await AddField(
             client, universe.Id, type.Id, "Year of birth", EntityFieldKind.Number, EntityFieldSemantic.BirthYear);

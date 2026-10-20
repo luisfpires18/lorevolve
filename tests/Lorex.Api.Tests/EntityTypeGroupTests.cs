@@ -682,7 +682,7 @@ public sealed class EntityTypeGroupTests(LorexApiFactory factory) : IClassFixtur
         w.Client.PostAsJsonAsync($"{TypeRoute(w, typeId)}/fields", request);
 
     private static Task<HttpResponseMessage> PutField(World w, Guid typeId, Guid fieldId, FieldDefinitionRequest request) =>
-        w.Client.PutAsJsonAsync($"{TypeRoute(w, typeId)}/fields/{fieldId}", request);
+        w.Client.PutFieldAsync(w.U, typeId, fieldId, request);
 
     private static async Task<Guid> AddField(World w, Guid typeId, string name, Guid? groupId)
     {

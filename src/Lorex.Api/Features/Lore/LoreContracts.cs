@@ -106,6 +106,9 @@ public sealed record EntityTypeResponse(
 ///
 /// <paramref name="TargetGroupId"/> is the semantic group a link field accepts instead: an entry of any type in that group,
 /// by its membership when the link is written. Never sent with <paramref name="TargetEntityTypeId"/>.
+///
+/// <paramref name="ExpectedVersion"/> is the definition's version the edit was made over (ADR 0043). An edit of an existing
+/// field must send it: one that does not, or names an older one, is refused with nothing changed. Adding a field ignores it.
 /// </summary>
 public sealed record FieldDefinitionRequest(
     string? Name,
@@ -116,7 +119,8 @@ public sealed record FieldDefinitionRequest(
     IReadOnlyList<string>? Options,
     EntityFieldSemantic? Semantic = null,
     Guid? TargetEntityTypeId = null,
-    Guid? TargetGroupId = null);
+    Guid? TargetGroupId = null,
+    int? ExpectedVersion = null);
 
 public sealed record FieldOptionResponse(Guid Id, string Value, int DisplayOrder);
 
@@ -124,7 +128,9 @@ public sealed record FieldOptionResponse(Guid Id, string Value, int DisplayOrder
 /// One field definition. <paramref name="ArchivedAt"/> is when it was archived, null while active (Issue #39); an archived
 /// field keeps <paramref name="IsRequired"/> as it was, which is what "previously required" means. <paramref name="EntryCount"/>
 /// is how many entries hold a value for it, the Trash included, and <paramref name="TrashedEntryCount"/> how many of those are
-/// in the Trash: a field with any is never deleted, only archived.
+/// in the Trash: a field with any is never deleted, only archived. <paramref name="UsedInHistory"/> says whether an older version
+/// of any entry recorded a value for it, which keeps it from being deleted too. <paramref name="Version"/> is what an edit names
+/// as its <c>expectedVersion</c>.
 /// </summary>
 public sealed record FieldDefinitionResponse(
     Guid Id,
@@ -139,7 +145,9 @@ public sealed record FieldDefinitionResponse(
     Guid? TargetGroupId = null,
     DateTime? ArchivedAt = null,
     int EntryCount = 0,
-    int TrashedEntryCount = 0);
+    int TrashedEntryCount = 0,
+    bool UsedInHistory = false,
+    int Version = 1);
 
 /// <summary>
 /// Restoring an archived field. <paramref name="AsOptional"/> is the author's explicit choice to bring a required field back

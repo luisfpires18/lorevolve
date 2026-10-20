@@ -282,11 +282,17 @@ field nothing uses.
   `canRestoreOptional`. Only an explicit `asOptional: true` brings it back optional. Nothing is widened or cleared to make
   a restore fit. Archive and restore are idempotent.
 - **Deleting** (`DELETE .../fields/{id}`) is refused (409 `entity_field_in_use`, `entryCount`, `trashedCount`) while any
-  entry, Trash included, holds a value, active or archived; one IMMEDIATE transaction. No force-delete and no cascade.
+  entry, Trash included, holds a value, active or archived, and (409 `entity_field_in_history`) while an older version of
+  any entry records one; removing a choice an older version records is refused the same way (ADR 0013 amendment). One
+  IMMEDIATE transaction. No force-delete and no cascade.
+- **Edits are versioned** (ADR 0043 amendment): `PUT .../fields/{id}` names `expectedVersion` and a stale or missing one is
+  refused (409 `entity_field_changed`); archive and restore move the version on. Each field reports `version` and
+  `usedInHistory`.
 - **New link fields** start with no target in the editor until the author picks one, Any Lore type included. The API
   still reads a missing target as any type, so older clients and the starter template are unchanged.
 - **Not done (V1).** Reordering fields, renaming an option in place (a rename is a remove and an add, refused while the old
-  one is chosen), adding a required field to a type with entries (still allowed, as before), a stale-edit check on the
-  field definition itself (last write wins, under the same validation), and a "has no value" Lore filter to list the
-  entries a required restore is waiting on.
+  one is chosen or recorded), adding a required field to a type with entries (still allowed, as before), and a "has no
+  value" Lore filter to list the entries a required restore is waiting on. Changing the kind of a field with no current
+  value is still allowed when older versions recorded values of the old kind; restoring such a version then writes nothing
+  for that field.
 - Backup format 25 carries `archivedAt` (ADR 0014 amendment).
