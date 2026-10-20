@@ -84,6 +84,24 @@ export function renameEntityTypeGroup(universeId: string, groupId: string, name:
   })
 }
 
+/**
+ * Enables a group for the Family Tree, or turns that off (Issue #37). Only that changes: no type's own switch, no
+ * membership and no relationship.
+ */
+export function setEntityTypeGroupFamilyTree(
+  universeId: string,
+  groupId: string,
+  enabled: boolean,
+) {
+  return apiFetch<EntityTypeGroup>(
+    `${base(universeId)}/entity-type-groups/${groupId}/family-tree`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ enabled }),
+    },
+  )
+}
+
 /** The code on the 409 for deleting a group a link field is limited to. */
 export const GROUP_TARGETED = 'entity_type_group_targeted'
 

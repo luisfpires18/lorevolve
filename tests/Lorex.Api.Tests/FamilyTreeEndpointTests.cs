@@ -453,6 +453,7 @@ public sealed class FamilyTreeEndpointTests(LorexApiFactory factory) : IClassFix
     {
         var family = await NewFamily(_factory, "ftqueries");
         var bore = await Kind(family, "bore", RelationshipFamilySemantic.BiologicalParent, "born to");
+        var married = await Kind(family, "married to", RelationshipFamilySemantic.NonStructuralFamily, "married to, the other way");
         var focal = await Person(family, "Focal");
 
         foreach (var index in Enumerable.Range(1, 4))
@@ -460,10 +461,16 @@ public sealed class FamilyTreeEndpointTests(LorexApiFactory factory) : IClassFix
             var parent = await Person(family, $"Parent {index}");
             await Link(family, bore, parent, focal);
 
+            // Authored family on members drawn far from the focal entry, each listed in that member's details.
+            var spouses = new List<Guid>();
             foreach (var above in Enumerable.Range(1, 2))
             {
-                await Link(family, bore, await Person(family, $"Grandparent {index}.{above}"), parent);
+                var grandparent = await Person(family, $"Grandparent {index}.{above}");
+                spouses.Add(grandparent);
+                await Link(family, bore, grandparent, parent);
             }
+
+            await Link(family, married, spouses[0], spouses[1]);
 
             foreach (var beside in Enumerable.Range(1, 3))
             {
@@ -491,7 +498,8 @@ public sealed class FamilyTreeEndpointTests(LorexApiFactory factory) : IClassFix
         Assert.Equal(12, tree.Siblings.Count);
         Assert.Equal(5, tree.Children.Count);
         Assert.Equal(10, tree.Grandchildren.Count);
-        Assert.InRange(queries, 1, 5);
+        Assert.Equal(8, tree.Connections.Count);
+        Assert.InRange(queries, 1, 6);
 
         // No more for an entry with nobody around it: the walk is bounded, not proportional.
         var alone = await Person(family, "Alone");

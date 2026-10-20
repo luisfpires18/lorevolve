@@ -7,19 +7,27 @@ import { EntityPicker, type EntityChoice } from '../components/EntityPicker'
 import { FamilyDiscovery, type FamiliesReturn } from '../components/FamilyDiscovery'
 import { FamilyKindDialog } from '../components/FamilyKindDialog'
 import { FamilyLinkForm } from '../components/FamilyLinkForm'
+import { FamilyTreeTypes } from '../components/FamilyTreeTypes'
 import { FamilyTreeView } from '../components/FamilyTreeView'
 import { StatusBadge } from '../components/StatusBadge'
 import { getFamilyTree } from '../familyTree/api'
 import { confirmLeaving } from '../lib/leaveGuard'
 import { linkSentence } from '../familyTree/reading'
 import type { FamilyTree } from '../familyTree/types'
-import { listEntityTypes } from '../lore/api'
-import { CANON_LABELS, CanonStatus } from '../lore/types'
-import { listRelationshipTypes } from '../relationships/api'
-import { FamilySemantic, type RelationshipType } from '../relationships/types'
+import { listEntityTypeGroups, listEntityTypes } from '../lore/api'
+import { CANON_LABELS, CanonStatus, type EntityType, type EntityTypeGroup } from '../lore/types'
+import { listEntityRelationships, listRelationshipTypes } from '../relationships/api'
+import {
+  FamilySemantic,
+  type RelationshipType,
+  type RelationshipView,
+} from '../relationships/types'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { EmptyState } from '../components/EmptyState'
+
+/** The types and groups the page reads to say where the tree is offered: none yet, read, or not readable. */
+type Setup = { types: EntityType[]; groups: EntityTypeGroup[] } | 'failed' | null
 
 /**
  * Every answered state carries the entry it is about, so a tree, a refusal or a failure that belongs to the
@@ -38,9 +46,13 @@ type LoadState =
  * the same family. Nothing here is stored: every relative on screen is derived from explicit links whose kind
  * an author gave a parent meaning, and this page reads them rather than being a second place to keep them.
  *
- * Since ADR 0040 the picker offers only entries of a type the author enabled for the Family Tree, and the focal
- * entry's other family - "uncle of", "married to" - is listed apart, as the authored links they are. An entry of
- * a type not enabled still opens here by its address, with a note that says so: nothing recorded is hidden.
+ * Since ADR 0040 the picker offers only entries of a type the author enabled for the Family Tree - itself, or
+ * through a group enabled for it (Issue #37, "Types in Family Tree" at the foot of the page). An entry of a type
+ * not enabled still opens here by its address, with a note that says so: nothing recorded is hidden.
+ *
+ * Each member's other family - "uncle of", "married to" - is in that member's details, as the authored links they
+ * are. The focal entry's ordinary relationships, which are not family, are listed apart below the tree and touch
+ * nothing in it.
  *
  * Without an entry in the address the page opens on the families already recorded (`FamilyDiscovery`, 035): a few
  * names and a size each, opening the tree on one of them. "Browse families" on a tree goes back to that list.
@@ -55,7 +67,9 @@ export default function FamilyTreePage() {
 
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [kinds, setKinds] = useState<RelationshipType[] | null>(null)
-  const [hasEligibleType, setHasEligibleType] = useState<boolean | null>(null)
+  const [setup, setSetup] = useState<Setup>(null)
+  const [setupReads, setSetupReads] = useState(0)
+  const [others, setOthers] = useState<{ entityId: string; views: RelationshipView[] } | null>(null)
   const [addingFor, setAddingFor] = useState<string | null>(null)
   const [isCreatingKind, setIsCreatingKind] = useState(false)
   const [reads, setReads] = useState(0)
@@ -63,17 +77,19 @@ export default function FamilyTreePage() {
   useEffect(() => {
     const controller = new AbortController()
 
-    listEntityTypes(universe.id, controller.signal)
-      .then((types) => setHasEligibleType(types.some((type) => type.familyTreeEligible)))
+    Promise.all([
+      listEntityTypes(universe.id, controller.signal),
+      listEntityTypeGroups(universe.id, controller.signal),
+    ])
+      .then(([types, groups]) => setSetup({ types, groups }))
       .catch(() => {
-        // Unknown is not "none": say nothing rather than send the author to Types for no reason.
-        if (!controller.signal.aborted) setHasEligibleType(true)
+        if (!controller.signal.aborted) setSetup('failed')
       })
 
     return () => {
       controller.abort()
     }
-  }, [universe.id])
+  }, [universe.id, setupReads])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -111,6 +127,24 @@ export default function FamilyTreePage() {
     }
   }, [universe.id, entityId, reads])
 
+  // The focal entry's relationships, for the ones that are not family. Read beside the tree, never into it.
+  useEffect(() => {
+    if (!entityId) return
+
+    const controller = new AbortController()
+
+    listEntityRelationships(universe.id, entityId, controller.signal)
+      .then((views) => setOthers({ entityId, views }))
+      .catch(() => {
+        // Not readable is left unsaid: the tree above is complete without it.
+        if (!controller.signal.aborted) setOthers({ entityId, views: [] })
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [universe.id, entityId, reads])
+
   // Worked out while rendering rather than stored: no entry in the address is the empty state, and an answer
   // about another entry is a tree still on its way.
   const view: LoadState | { kind: 'idle' } = !entityId
@@ -123,6 +157,25 @@ export default function FamilyTreePage() {
     () => (kinds ?? []).filter((kind) => kind.familySemantic !== FamilySemantic.None),
     [kinds],
   )
+
+  // Unknown is not "none": when the types cannot be read, say nothing rather than send the author to Types for no reason.
+  const hasEligibleType =
+    setup === null ? null : setup === 'failed' || setup.types.some((type) => type.familyTreeOffered)
+
+  // Only a kind with no family meaning; one whose kind is not known yet waits rather than being guessed at.
+  const plainKinds = useMemo(
+    () =>
+      new Set(
+        (kinds ?? [])
+          .filter((kind) => kind.familySemantic === FamilySemantic.None)
+          .map((kind) => kind.id),
+      ),
+    [kinds],
+  )
+  const otherRelations =
+    others && others.entityId === entityId
+      ? others.views.filter((view) => plainKinds.has(view.relationshipTypeId))
+      : []
 
   const tree = view.kind === 'ready' ? view.tree : null
   const focal = tree?.nodes.find((node) => node.entityId === tree.focalEntityId) ?? null
@@ -183,8 +236,9 @@ export default function FamilyTreePage() {
 
       {hasEligibleType === false ? (
         <p className="notice" data-testid="family-no-types">
-          No Lore Type is enabled for Family Tree yet. A type is enabled for it when it is created,
-          under <Link to={typesPath}>Types → Lore Types</Link>.
+          No Lore Type is enabled for Family Tree yet. You can enable a type when you create it,
+          under <Link to={typesPath}>Types → Lore Types</Link>, or turn on a group of types under
+          Types in Family Tree, below.
         </p>
       ) : null}
 
@@ -226,7 +280,12 @@ export default function FamilyTreePage() {
       {view.kind === 'idle' &&
       hasEligibleType !== false &&
       !(kinds !== null && familyKinds.length === 0) ? (
-        <FamilyDiscovery universeId={universe.id} canEdit={access.editContent} onChoose={show} />
+        <FamilyDiscovery
+          key={setupReads}
+          universeId={universe.id}
+          canEdit={access.editContent}
+          onChoose={show}
+        />
       ) : null}
 
       {/* No family kind yet means no family to discover: someone can still be opened, as before, while one is made. */}
@@ -318,47 +377,46 @@ export default function FamilyTreePage() {
           <p className="family__note">
             Relatives are worked out from the parent connections themselves, every time this page is
             opened. Nothing on it is stored as a connection of its own, and a sibling here means one
-            shared parent that somebody wrote down, and nothing more.
+            shared parent that somebody wrote down, and nothing more. Other family you recorded,
+            like a spouse or a guardian, is listed in each person&rsquo;s details and puts nobody in
+            the tree.
           </p>
 
-          {tree.connections.length > 0 ? (
+          {otherRelations.length > 0 ? (
             <section
               className="family__others"
               aria-labelledby={`${headingId}-others`}
-              data-testid="family-other-connections"
+              data-testid="family-other-relationships"
             >
               <h2 className="settings__heading" id={`${headingId}-others`}>
-                Other family connections
+                Other relationships
               </h2>
               <p className="settings__note">
-                Recorded as you wrote them. They place nobody in the tree above, and imply no other
-                relative.
+                <bdi>{focal.name}</bdi>&rsquo;s relationships that are not family. They are not part
+                of the tree above.{' '}
+                <Link to={`/app/universes/${universe.id}/lore/${focal.entityId}/relations`}>
+                  All relations
+                </Link>
               </p>
               <ul className="family__otherlist">
-                {tree.connections.map((connection) => {
-                  const other = nodes.get(connection.relatedEntityId)
-                  return (
-                    <li key={connection.relationshipId} data-testid="family-other-connection">
-                      <bdi className="family__othername">{focal.name}</bdi>{' '}
-                      <bdi className="family__otherlabel">{connection.label}</bdi>{' '}
-                      {other ? (
-                        <button
-                          className="button button--text family__otherlink"
-                          type="button"
-                          onClick={() => show({ id: other.entityId, name: other.name })}
-                        >
-                          <bdi>{other.name}</bdi>
-                        </button>
-                      ) : null}
-                      {connection.canonStatus === CanonStatus.Canon ? null : (
-                        <StatusBadge
-                          step={connection.canonStatus}
-                          label={`${CANON_LABELS[connection.canonStatus]} connection`}
-                        />
-                      )}
-                    </li>
-                  )
-                })}
+                {otherRelations.map((relation) => (
+                  <li key={relation.id} data-testid="family-other-relationship">
+                    <bdi className="family__othername">{focal.name}</bdi>{' '}
+                    <bdi className="family__otherlabel">{relation.label}</bdi>{' '}
+                    <Link
+                      className="family__otherlink"
+                      to={`/app/universes/${universe.id}/lore/${relation.relatedEntityId}`}
+                    >
+                      <bdi>{relation.relatedEntityName}</bdi>
+                    </Link>
+                    {relation.canonStatus === CanonStatus.Canon ? null : (
+                      <StatusBadge
+                        step={relation.canonStatus}
+                        label={`${CANON_LABELS[relation.canonStatus]} relationship`}
+                      />
+                    )}
+                  </li>
+                ))}
               </ul>
             </section>
           ) : null}
@@ -389,6 +447,32 @@ export default function FamilyTreePage() {
             )
           ) : null}
         </>
+      ) : null}
+
+      {typeof setup === 'object' && setup !== null ? (
+        <FamilyTreeTypes
+          universeId={universe.id}
+          types={setup.types}
+          groups={setup.groups}
+          canEdit={access.editContent}
+          defaultOpen={hasEligibleType === false}
+          onChanged={(changed) => {
+            // Shown at once as the API answered; what it changes - the types offered, the families listing and the open
+            // tree's notes - is read again.
+            setSetup((current) =>
+              typeof current === 'object' && current !== null
+                ? {
+                    ...current,
+                    groups: current.groups.map((group) =>
+                      group.id === changed.id ? changed : group,
+                    ),
+                  }
+                : current,
+            )
+            setSetupReads((current) => current + 1)
+            setReads((current) => current + 1)
+          }}
+        />
       ) : null}
     </section>
   )

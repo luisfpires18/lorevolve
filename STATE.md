@@ -88,6 +88,22 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     Trash included) link to it; field add and type delete now each run in one IMMEDIATE transaction.
   - Tests: API 1679 passed, 6 skipped (new: `EntityTypeGroupTests` 21, file-backed races 4 + migration walk 1). Playwright
     `semantic-groups.spec.ts` 4; with neighbouring specs green on a fresh DB. Full Playwright delegated to CI.
+- **Issue #37 - Family Tree redesign** (P1; `feat/family-tree-redesign` off `dev` at `74773fe`, #36 verified merged;
+  committed, not merged, not pushed). One migration (`AddEntityTypeGroupFamilyTree`), backup format 24. ADR 0040 and 0014
+  amendments.
+  - Members are circular portraits (about 7.5rem desktop, 4.5rem phone) with the name beneath and an eye that opens
+    `FamilyMemberDetails`: the shared modal `<dialog>` as a popover by the node, a bottom sheet at 640px and below. Type,
+    Canon status, derived positions, drawn parent links, that member's authored family, Open entry, Show this family.
+  - Authored non-structural links are now read for every drawn member (`FamilyTreeConnection.EntityId`), at most six
+    queries; still never walked, no lines, no peripheral nodes. "Other family connections" section removed; "Other
+    relationships" (focal entry's no-meaning links) added below the tree.
+  - Group eligibility: `EntityTypeGroups.FamilyTreeEnabled`, off by default; effective = own switch OR enabled group
+    (`FamilyTreeEligibility.TypeIds`, used by picker, families, nodes, `EntityTypeResponse.familyTreeOffered`).
+    `PUT /entity-type-groups/{id}/family-tree` (EditContent); deleting an enabled group 409
+    `entity_type_group_family_tree`. UI: "Types in Family Tree" at the foot of the Family Tree page.
+  - Tests: API 1689 passed, 6 skipped (new: `FamilyTreeRedesignTests` 10; query bound now 6; matrix +1 route). Playwright
+    `family-tree-redesign.spec.ts` 8; with the updated family specs and 10 neighbouring specs green on a fresh DB. Full
+    Playwright delegated to CI.
 - **Roadmap task 049 - MCP V1** (GitHub issue 7; `feat/lorex-mcp-v1` off `dev` at `ac39b23`; committed, not merged, not
   pushed). One migration (`AddMcpConnections`: OpenIddict's four tables + `McpConnections`), backup unchanged (account-level
   state, never in a universe backup). ADR 0046 (new); 0005 amendment.

@@ -209,8 +209,14 @@ public sealed record UniverseBackup(
     /// would restore every group-limited field open to any type. A file at version 22 or earlier has no groups and no
     /// <c>targetGroupId</c>; it restores with no groups and nothing is inferred from names. Groups such a file carries are
     /// ignored, and a group target in it was not written by Lorex and is refused.
+    ///
+    /// 24 - A group may be enabled for the Family Tree (ADR 0040 amendment, Issue #37). <see cref="BackupEntityTypeGroup.FamilyTreeEnabled"/>
+    /// is the author's choice, carried on the group, so a restore that gives the group a new id keeps it with no reference to
+    /// remap. Not ignorable: a version 23 reader would restore every enabled group off, and the tree would quietly stop being
+    /// offered for the types it covered. A file at version 23 or earlier reads every group as not enabled, even if it carries a
+    /// value: nothing is enabled because of a group's name, and a restored universe offers the tree exactly where its file says.
     /// </summary>
-    public const int CurrentVersion = 23;
+    public const int CurrentVersion = 24;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -368,13 +374,16 @@ public sealed record BackupFieldDefinition(
 /// <summary>
 /// A semantic group (since version 23): its id, which fields and memberships name, its name, and the types of this file in
 /// it, sorted by id. Membership is the author's statement and is carried as it is, never derived again from names.
+/// <paramref name="FamilyTreeEnabled"/> (since version 24) is whether the author enabled it for the Family Tree; false in an
+/// older file, whatever it carries.
 /// </summary>
 public sealed record BackupEntityTypeGroup(
     Guid Id,
     string Name,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    IReadOnlyList<Guid> TypeIds);
+    IReadOnlyList<Guid> TypeIds,
+    bool FamilyTreeEnabled = false);
 
 public sealed record BackupFieldOption(Guid Id, string Value, int DisplayOrder);
 

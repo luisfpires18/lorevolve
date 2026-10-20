@@ -591,6 +591,7 @@ internal sealed partial class UniverseRestore(
                 Id = ids.Map(group.Id),
                 UniverseId = universeId,
                 Name = group.Name,
+                FamilyTreeEnabled = group.FamilyTreeEnabled,
                 CreatedAt = group.CreatedAt,
                 UpdatedAt = group.UpdatedAt,
             });

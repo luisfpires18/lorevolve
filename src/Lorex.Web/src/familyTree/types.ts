@@ -48,9 +48,10 @@ export interface FamilyTreeLoop {
 }
 
 /**
- * One authored non-structural family link touching the focal entry - "uncle of", "married to" - read from the
- * focal entry's side: `label` is already the right wording. Listed, never derived from: it places nobody in the
- * tree above.
+ * One authored non-structural family link touching a drawn member, `entityId` - "uncle of", "married to" - read
+ * from that member's side: `label` is already the right wording. A link between two drawn members comes once from
+ * each side. Listed, never derived from: it places nobody in the tree. The related entry is among the nodes
+ * whether or not it is drawn.
  */
 export interface FamilyTreeConnection {
   relationshipId: string
@@ -59,6 +60,7 @@ export interface FamilyTreeConnection {
   label: string
   canonStatus: CanonStatusValue
   relationshipTypeId: string
+  entityId: string
 }
 
 export interface FamilyTree {

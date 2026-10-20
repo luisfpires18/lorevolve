@@ -44,8 +44,14 @@ public sealed record EntityTypeGroupChoice(Guid? Id, string? Name = null);
 /// <summary>A new name for a group. The group keeps its id, its members and every field that targets it.</summary>
 public sealed record EntityTypeGroupRenameRequest(string? Name);
 
-/// <summary>A semantic group and the ids of its member types, in no meaningful order.</summary>
-public sealed record EntityTypeGroupResponse(Guid Id, string Name, IReadOnlyList<Guid> TypeIds);
+/// <summary>Whether a group is enabled for the Family Tree (Issue #37). Required: nothing is assumed from a missing value.</summary>
+public sealed record EntityTypeGroupFamilyTreeRequest(bool? Enabled);
+
+/// <summary>
+/// A semantic group and the ids of its member types, in no meaningful order. <paramref name="FamilyTreeEnabled"/> is whether the
+/// author enabled it for the Family Tree, which offers the tree for every type in it.
+/// </summary>
+public sealed record EntityTypeGroupResponse(Guid Id, string Name, IReadOnlyList<Guid> TypeIds, bool FamilyTreeEnabled = false);
 
 /// <summary>Where a type sits: beneath <paramref name="Id"/>, or at the root when it is null.</summary>
 public sealed record EntityTypeParentChoice(Guid? Id);
@@ -66,6 +72,9 @@ public sealed record EntityTypeReorderRequest(int? Index, Guid? ParentId);
 /// the type's own entries only, never its descendants'. <paramref name="ParentId"/> is the type it sits beneath, or null for
 /// a root. A list of types is always in the hierarchy's order - a parent before its descendants, siblings by
 /// <paramref name="DisplayOrder"/> - but a client builds the tree from the ids, never from positions.
+/// <paramref name="FamilyTreeEligible"/> is the type's own switch, the one a save writes; <paramref name="FamilyTreeOffered"/>
+/// is whether the Family Tree is offered for its entries - that switch, or a group enabled for the tree that the type is in
+/// (Issue #37). Read only: it is changed on the type or on the group, never here.
 /// </summary>
 public sealed record EntityTypeResponse(
     Guid Id,
@@ -78,7 +87,8 @@ public sealed record EntityTypeResponse(
     int TrashedEntityCount,
     IReadOnlyList<FieldDefinitionResponse> Fields,
     bool FamilyTreeEligible,
-    Guid? ParentId = null);
+    Guid? ParentId = null,
+    bool FamilyTreeOffered = false);
 
 // ---------- Field definitions ----------
 

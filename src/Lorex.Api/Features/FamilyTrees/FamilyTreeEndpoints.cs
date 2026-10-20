@@ -15,10 +15,11 @@ namespace Lorex.Api.Features.FamilyTrees;
 /// Ownership first, then the focal entry must be live in this universe. Another account's universe, another universe's entry,
 /// a guessed id and an entry in the Trash are all the same 404, and nothing about them is read.
 ///
-/// Bounded around the focal entry: at most five queries, whatever the family's size - the universe, the focal entry, the links
-/// touching it, the links one step further out from its parents and children, and every entry named, with its type and
-/// thumbnail. Only relationships whose type has a family meaning are read, only with both ends live, and never an article,
-/// field, alias or date. Nothing is written: no relationship, finding, moment, revision or search row.
+/// Bounded around the focal entry: at most six queries, whatever the family's size - the universe, the focal entry, the parent
+/// links touching it, the parent links one step further out from its parents and children, the authored family links touching
+/// anyone drawn (Issue #37), and every entry named, with its type and thumbnail. Only relationships whose type has a family
+/// meaning are read, only with both ends live, and never an article, field, alias or date. Nothing is written: no
+/// relationship, finding, moment, revision or search row.
 /// </summary>
 public static class FamilyTreeEndpoints
 {
@@ -72,11 +73,12 @@ public static class FamilyTreeEndpoints
 
         var ids = edges.SelectMany(edge => new[] { edge.SourceEntityId, edge.TargetEntityId }).Distinct().ToList();
 
+        var eligible = FamilyTreeEligibility.TypeIds(db, universeId);
         var members = ids.Count == 0
             ? []
             : await db.Entities.AsNoTracking()
                 .Where(entity => entity.UniverseId == universeId && entity.DeletedAt == null && ids.Contains(entity.Id))
-                .Select(entity => new FamilyDiscovery.Member(entity.Id, entity.Name, entity.EntityType!.FamilyTreeEligible))
+                .Select(entity => new FamilyDiscovery.Member(entity.Id, entity.Name, eligible.Contains(entity.EntityTypeId)))
                 .ToListAsync(cancellationToken);
 
         var families = FamilyDiscovery.Families(edges, members, q);
@@ -108,13 +110,12 @@ public static class FamilyTreeEndpoints
             return Results.NotFound();
         }
 
-        // Every family link touching the focal entry, in one query: parent links to derive from, and non-structural ones to list.
-        var touching = await LiveLinks(db, universeId)
+        // Every parent link touching the focal entry, in one query.
+        var near = await LiveLinks(db, universeId)
+            .Where(relationship => RelationshipFamilySemantics.Parent.Contains(relationship.RelationshipType!.FamilySemantic))
             .Where(relationship => relationship.SourceEntityId == entityId || relationship.TargetEntityId == entityId)
             .Select(ToRow)
             .ToListAsync(cancellationToken);
-        var near = touching.Where(row => row.Semantic.IsParent()).ToList();
-        var authored = touching.Where(row => row.Semantic == RelationshipFamilySemantic.NonStructuralFamily).ToList();
 
         var parents = near.Where(row => row.ChildEntityId == entityId).Select(row => row.ParentEntityId).Distinct().ToList();
         var children = near.Where(row => row.ParentEntityId == entityId).Select(row => row.ChildEntityId).Distinct().ToList();
@@ -146,6 +147,19 @@ public static class FamilyTreeEndpoints
         var shown = rows.Where(row => used.Contains(row.RelationshipId)).ToList();
         var loops = FamilyTreeDerivation.Loops(links.Where(link => used.Contains(link.RelationshipId)));
 
+        // Everyone drawn, and in one query every authored non-structural family link touching any of them, so each member's
+        // details can list its own (Issue #37). Listed, never walked: the positions above are already settled.
+        var drawn = new[] { family.Parents, family.Grandparents, family.Siblings, family.Children, family.Grandchildren }
+            .SelectMany(relatives => relatives.Select(relative => relative.EntityId))
+            .Append(entityId)
+            .ToHashSet();
+        var drawnIds = drawn.ToList();
+        var authored = await LiveLinks(db, universeId)
+            .Where(relationship => relationship.RelationshipType!.FamilySemantic == RelationshipFamilySemantic.NonStructuralFamily)
+            .Where(relationship => drawnIds.Contains(relationship.SourceEntityId) || drawnIds.Contains(relationship.TargetEntityId))
+            .Select(ToRow)
+            .ToListAsync(cancellationToken);
+
         var nodeIds = shown
             .Concat(authored)
             .SelectMany(row => new[] { row.ParentEntityId, row.ChildEntityId })
@@ -155,7 +169,7 @@ public static class FamilyTreeEndpoints
 
         var nodes = await db.Entities.AsNoTracking()
             .Where(entity => entity.UniverseId == universeId && entity.DeletedAt == null && nodeIds.Contains(entity.Id))
-            .Select(ToNode)
+            .Select(ToNode(FamilyTreeEligibility.TypeIds(db, universeId)))
             .ToListAsync(cancellationToken);
 
         var names = nodes.ToDictionary(node => node.EntityId, node => node.Name);
@@ -197,30 +211,41 @@ public static class FamilyTreeEndpoints
                     [.. loop.EntityIds.OrderBy(NameOf, StringComparer.Ordinal).ThenBy(id => id)],
                     loop.RelationshipIds)),
             ],
-            [.. Connections(entityId, authored, NameOf)]));
+            [.. Connections(drawn, entityId, authored, NameOf)]));
     }
 
     /// <summary>
-    /// The focal entry's non-structural family links, each read from its side with the kind's own wording - the same
-    /// <see cref="RelationshipValidation.LabelFor"/> every relation list uses. A link to itself is left to the relation list.
+    /// Every drawn member's non-structural family links, each read from that member's side with the kind's own wording - the
+    /// same <see cref="RelationshipValidation.LabelFor"/> every relation list uses. A link between two drawn members is listed
+    /// once from each side. A link to itself is left to the relation list. The focal entry's come first, then by member name.
     /// </summary>
-    private static IEnumerable<FamilyTreeConnection> Connections(Guid entityId, List<LinkRow> authored, Func<Guid, string> nameOf) =>
+    private static IEnumerable<FamilyTreeConnection> Connections(
+        HashSet<Guid> drawn,
+        Guid focalEntityId,
+        List<LinkRow> authored,
+        Func<Guid, string> nameOf) =>
         authored
             .Where(row => row.ParentEntityId != row.ChildEntityId)
-            .Select(row =>
-            {
-                // For these rows "parent" and "child" are only the stored source and target: nobody is a parent here.
-                var perspective = row.ParentEntityId == entityId ? RelationshipPerspective.Forward : RelationshipPerspective.Inverse;
-                return new FamilyTreeConnection(
+            .SelectMany(row => new[]
+                {
+                    // For these rows "parent" and "child" are only the stored source and target: nobody is a parent here.
+                    (Member: row.ParentEntityId, Perspective: RelationshipPerspective.Forward, Related: row.ChildEntityId),
+                    (Member: row.ChildEntityId, Perspective: RelationshipPerspective.Inverse, Related: row.ParentEntityId),
+                }
+                .Where(side => drawn.Contains(side.Member))
+                .Select(side => new FamilyTreeConnection(
                     row.RelationshipId,
-                    perspective == RelationshipPerspective.Forward ? row.ChildEntityId : row.ParentEntityId,
-                    perspective,
+                    side.Related,
+                    side.Perspective,
                     RelationshipValidation.LabelFor(
-                        row.RelationshipTypeName, row.RelationshipTypeInverseName, row.IsSymmetric, perspective),
+                        row.RelationshipTypeName, row.RelationshipTypeInverseName, row.IsSymmetric, side.Perspective),
                     row.CanonStatus,
-                    row.RelationshipTypeId);
-            })
-            .OrderBy(connection => connection.Label, StringComparer.Ordinal)
+                    row.RelationshipTypeId,
+                    side.Member)))
+            .OrderBy(connection => connection.EntityId != focalEntityId)
+            .ThenBy(connection => nameOf(connection.EntityId), StringComparer.Ordinal)
+            .ThenBy(connection => connection.EntityId)
+            .ThenBy(connection => connection.Label, StringComparer.Ordinal)
             .ThenBy(connection => nameOf(connection.RelatedEntityId), StringComparer.Ordinal)
             .ThenBy(connection => connection.RelationshipId);
 
@@ -251,7 +276,8 @@ public static class FamilyTreeEndpoints
         relationship.RelationshipType.InverseName,
         relationship.RelationshipType.IsSymmetric);
 
-    private static readonly Expression<Func<LoreEntity, FamilyTreeNode>> ToNode = entity => new FamilyTreeNode(
+    /// <summary>A node, with whether its type is eligible by the one rule, <see cref="FamilyTreeEligibility"/>.</summary>
+    private static Expression<Func<LoreEntity, FamilyTreeNode>> ToNode(IQueryable<Guid> eligible) => entity => new FamilyTreeNode(
         entity.Id,
         entity.Name,
         entity.EntityTypeId,
@@ -277,7 +303,7 @@ public static class FamilyTreeEndpoints
                         entity.Image.CropY!.Value,
                         entity.Image.CropWidth!.Value,
                         entity.Image.CropHeight!.Value)),
-        entity.EntityType.FamilyTreeEligible);
+        eligible.Contains(entity.EntityTypeId));
 
     private sealed record LinkRow(
         Guid RelationshipId,

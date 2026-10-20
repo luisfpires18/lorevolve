@@ -118,13 +118,16 @@ export interface FieldDefinition {
 
 /**
  * A semantic group of Lore types (Issue #36): a creator's own classification - Runes, say - that several concrete types can
- * belong to. Classification only: nothing is inherited, and Family Tree eligibility stays on each type.
+ * belong to. Classification only: nothing is inherited. Being in a group offers the Family Tree only when the author has
+ * enabled the group for it (`familyTreeEnabled`, Issue #37).
  */
 export interface EntityTypeGroup {
   id: string
   name: string
   /** The member types' ids, in no meaningful order. */
   typeIds: string[]
+  /** The author enabled this group for the Family Tree: every type in it is offered there. Never set by a name. */
+  familyTreeEnabled: boolean
 }
 
 export interface EntityType {
@@ -140,8 +143,15 @@ export interface EntityType {
   /** How many of those are in the Trash. */
   trashedEntityCount: number
   fields: FieldDefinition[]
-  /** Entries of this type are offered by the Family Tree. Set by the author, never read from the name (ADR 0040). */
+  /**
+   * The type's own Family Tree switch, the one a save writes. Set by the author, never read from the name (ADR 0040).
+   */
   familyTreeEligible: boolean
+  /**
+   * Whether the Family Tree is offered for this type's entries: its own switch, or a group enabled for the tree that it is in
+   * (Issue #37). Worked out by the API; read only.
+   */
+  familyTreeOffered: boolean
   /**
    * The type this one sits beneath, or null for a root. Organisation only - nothing is inherited. A list of types arrives
    * parent before descendants, but the tree is always built from these ids (`lore/typeTree.ts`), never from positions.

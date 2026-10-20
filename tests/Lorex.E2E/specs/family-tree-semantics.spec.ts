@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
+import { expectDetails, openDetails } from './support/familyTree'
 
 /**
  * Family Tree eligibility, family that defines no ancestry, and the Types screen's three tabs (ADR 0040). Each test
@@ -166,7 +167,7 @@ test.describe('family tree semantics', () => {
     await expect(page.getByTestId('family-type-not-enabled')).toContainText(
       'is not currently enabled for Family Tree',
     )
-    await expect(node(page, 'Aragorn')).toContainText('Biological child')
+    await expectDetails(page, 'Aragorn', 'Biological child')
 
     // No way out to a switch the Types screen does not offer for an existing type.
     await expect(page.getByTestId('family-type-not-enabled').getByRole('link')).toHaveCount(0)
@@ -175,7 +176,7 @@ test.describe('family tree semantics', () => {
     // It is not offered for new connections.
     await page.goto(treeUrl(universeId, aragorn))
     await expect(page.getByTestId('family-type-not-enabled')).toHaveCount(0)
-    await expect(node(page, 'Men')).toContainText('Biological parent')
+    await expectDetails(page, 'Men', 'Biological parent')
     // The family is found from Aragorn's side, and the character picker beside it does not offer Men either.
     await page.goto(treeUrl(universeId))
     await expect(page.getByTestId('family-card')).toHaveText(['Aragorn, Men2 members'])
@@ -386,7 +387,7 @@ test.describe('family tree semantics', () => {
     const character = (await typeIds(page, universeId)).get('Character')!.id
     await seedKind(page, universeId, 'raised', 'raised by', Family.adoptive)
     const bilbo = await seedEntry(page, universeId, character, 'Bilbo')
-    await seedEntry(page, universeId, character, 'Frodo')
+    const frodo = await seedEntry(page, universeId, character, 'Frodo')
 
     await page.goto(treeUrl(universeId, bilbo))
     await page.getByTestId('add-family-link').click()
@@ -431,21 +432,30 @@ test.describe('family tree semantics', () => {
     await page.getByTestId('save-family-link').click()
     await expect(form).toHaveCount(0)
 
-    // ---- Listed, and nowhere in the tree ----
+    // ---- In Bilbo's details, and nowhere in the tree ----
 
-    const others = page.getByTestId('family-other-connections')
-    await expect(others).toContainText('Other family connections')
+    // No separate list below the tree any more: the link is with the member it belongs to.
+    await expect(page.getByTestId('family-other-connections')).toHaveCount(0)
+    let details = await openDetails(page, 'Bilbo')
     // Written as an Idea, the form's default, and said so in words.
-    await expect(others.getByTestId('family-other-connection')).toHaveText([
-      'Bilbo uncle of FrodoIdea connection',
+    await expect(details.getByTestId('family-details-connection')).toHaveText([
+      'uncle of Frodo (Idea connection)',
     ])
+    await expect(details).toContainText('These links put nobody in the tree')
+    await page.keyboard.press('Escape')
+    await expect(details).toHaveCount(0)
     await expect(node(page, 'Frodo')).toHaveCount(0)
 
-    await others.getByRole('button', { name: 'Frodo' }).click()
-    await page.waitForURL(/\/family-tree\/[0-9a-f-]+$/)
-    await expect(page.getByTestId('family-other-connection')).toHaveText([
-      'Frodo nephew or niece of BilboIdea connection',
+    await page.goto(treeUrl(universeId, frodo))
+    details = await openDetails(page, 'Frodo')
+    await expect(details.getByTestId('family-details-connection')).toHaveText([
+      'nephew or niece of Bilbo (Idea connection)',
     ])
+    // The relative not drawn in the tree is one link away, at its entry.
+    await details.getByRole('link', { name: 'Bilbo' }).click()
+    await page.waitForURL(`**/lore/${bilbo}**`)
+    await expect(page.getByTestId('entry-name')).toHaveText('Bilbo')
+    await page.goBack()
     await expect(node(page, 'Bilbo')).toHaveCount(0)
     // The tree holds the entry in focus and nobody else.
     await expect(page.locator('.familynode')).toHaveCount(1)
@@ -493,8 +503,9 @@ test.describe('family tree semantics', () => {
     await form.getByTestId('picker-input').fill('Rosie')
     await form.getByTestId('picker-option-Rosie').click()
     await page.getByTestId('save-family-link').click()
-    await expect(page.getByTestId('family-other-connection')).toHaveText([
-      'Samwise married to RosieIdea connection',
+    const details = await openDetails(page, 'Samwise')
+    await expect(details.getByTestId('family-details-connection')).toHaveText([
+      'married to Rosie (Idea connection)',
     ])
   })
 
@@ -538,9 +549,13 @@ test.describe('family tree semantics', () => {
       await page.keyboard.press('Escape')
 
       await page.goto(treeUrl(universeId, bilbo))
-      const others = page.getByTestId('family-other-connections')
-      await expect(others.getByTestId('family-other-connection')).toHaveCount(3)
-      await expect(others.locator('bdi', { hasText: 'بيلبو باجنز' }).first()).toBeVisible()
+      const details = await openDetails(page, 'بيلبو باجنز')
+      await expect(details.getByTestId('family-details-connection')).toHaveCount(3)
+      await expect(details.locator('bdi', { hasText: 'بيلبو باجنز' }).first()).toBeVisible()
+      await expect(details.getByRole('link', { name: 'Open entry' })).toBeInViewport()
+      expect(await scrollsSideways(page), `family details at ${at}`).toBe(false)
+      await page.keyboard.press('Escape')
+      await expect(details).toHaveCount(0)
       expect(await scrollsSideways(page), `family tree at ${at}`).toBe(false)
 
       await page.getByTestId('add-family-link').click()

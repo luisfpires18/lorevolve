@@ -203,7 +203,7 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
     {
         var groups = await db.EntityTypeGroups.AsNoTracking()
             .Where(group => group.UniverseId == universeId)
-            .Select(group => new { group.Id, group.Name, group.CreatedAt, group.UpdatedAt, TypeIds = group.Members.Select(member => member.EntityTypeId).ToList() })
+            .Select(group => new { group.Id, group.Name, group.CreatedAt, group.UpdatedAt, group.FamilyTreeEnabled, TypeIds = group.Members.Select(member => member.EntityTypeId).ToList() })
             .ToListAsync(cancellationToken);
 
         return
@@ -216,7 +216,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                     group.Name,
                     Utc(group.CreatedAt),
                     Utc(group.UpdatedAt),
-                    [.. group.TypeIds.OrderBy(Key, StringComparer.Ordinal)])),
+                    [.. group.TypeIds.OrderBy(Key, StringComparer.Ordinal)],
+                    group.FamilyTreeEnabled)),
         ];
     }
 

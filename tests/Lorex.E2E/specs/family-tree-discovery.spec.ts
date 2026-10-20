@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
+import { expectDetails } from './support/familyTree'
 
 /**
  * Family discovery (035): the Family Tree opens on the families already recorded, worked out from family links, so the
@@ -202,8 +203,8 @@ test.describe('family discovery', () => {
     // Opening it is the tree as it always was, on Lia.
     await cards(page).first().click()
     await page.waitForURL(`**/family-tree/${ids.Lia}`)
-    await expect(page.getByTestId('family-node-Mara')).toContainText('Biological parent')
-    await expect(page.getByTestId('family-node-Pip')).toContainText("Cai's adoptive child")
+    await expectDetails(page, 'Mara', 'Biological parent')
+    await expectDetails(page, 'Pip', "Cai's adoptive child")
 
     // Back is the search it came from.
     await page.goBack()
@@ -215,7 +216,7 @@ test.describe('family discovery', () => {
     await cards(page).first().click()
     await page.getByTestId('family-focus-Tam').click()
     await page.waitForURL(`**/family-tree/${ids.Tam}`)
-    await expect(page.getByTestId('family-node-Lia')).toContainText('Sibling')
+    await expectDetails(page, 'Lia', 'Sibling')
     await page.goBack()
     await page.waitForURL(`**/family-tree/${ids.Lia}`)
     await page.goBack()
@@ -229,7 +230,7 @@ test.describe('family discovery', () => {
 
     // A deep link to an entry is unchanged.
     await page.goto(`${familiesUrl(world.id)}/${ids.Oren}`)
-    await expect(page.getByTestId('family-node-Tam')).toContainText('Biological child')
+    await expectDetails(page, 'Tam', 'Biological child')
     await page.getByTestId('family-browse').click()
     await expect(page).toHaveURL(/\/family-tree$/)
     await expect(cards(page)).toHaveCount(3)
@@ -314,9 +315,7 @@ test.describe('family discovery', () => {
     await form.getByTestId('picker-input').fill('Rosie')
     await form.getByTestId('picker-option-Rosie').click()
     await page.getByTestId('save-family-link').click()
-    await expect(page.getByTestId('family-other-connection')).toContainText(
-      'Samwise married to Rosie',
-    )
+    await expectDetails(page, 'Samwise', 'married to Rosie')
 
     await page.getByTestId('family-browse').click()
     await expect(cards(page)).toHaveText(['Rosie, Samwise2 members'])
@@ -346,7 +345,7 @@ test.describe('family discovery', () => {
       await expect(cards(member)).toHaveText(['Lia, Tam, Cai7 members'])
       await cards(member).first().click()
       await member.waitForURL(`**/family-tree/${ids.Lia}`)
-      await expect(member.getByTestId('family-node-Tam')).toContainText('Sibling')
+      await expectDetails(member, 'Tam', 'Sibling')
       await expect(member.getByTestId('add-family-link')).toHaveCount(canEdit ? 1 : 0)
       await context.close()
     }

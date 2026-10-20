@@ -438,3 +438,12 @@ group with a missing or duplicate id or name, a member that is not a type of the
 that names no group of the file, sits on a non-link field or beside an exact type, and a link outside its field's group. A
 version 22 or older file restores with no groups and nothing is inferred from names; groups such a file carries are
 ignored, and a group target in it is refused as not written by Lorex.
+
+## Amendment: version 24, a group enabled for the Family Tree (2026-10-20, Issue #37)
+
+`BackupEntityTypeGroup.FamilyTreeEnabled` carries whether the author enabled a group for the Family Tree (ADR 0040
+amendment). The choice lives on the group row, so a restore that gives the group a new id keeps it with no reference to
+remap, and a restored universe never points at its source's groups. Not ignorable: a version 23 reader would restore every
+enabled group off, and the tree would quietly stop being offered for the types it covered. A version 23 or older file reads
+every group as not enabled, even when it carries the member: nothing is enabled by a group's name, and a legacy restore
+offers the tree exactly where its types' own switches say. Types' own `familyTreeEligible` is unchanged in meaning.

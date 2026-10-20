@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Eye } from 'lucide-react'
 import { EntityTile } from './EntityTile'
-import { readFamilyTree, type FamilyMember } from '../familyTree/reading'
+import { FamilyMemberDetails } from './FamilyMemberDetails'
+import { readFamilyTree } from '../familyTree/reading'
 import { POSITION_LABELS, type FamilyPosition, type FamilyTree } from '../familyTree/types'
-import { CANON_LABELS, CanonStatus } from '../lore/types'
-import { StatusBadge } from './StatusBadge'
+import type { FamilyTreeNode } from '../familyTree/types'
 import { FamilySemantic } from '../relationships/types'
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
   onFocus: (entityId: string) => void
 }
 
-/** One drawn line between two cards. */
+/** One drawn line between two members. */
 interface Edge {
   id: string
   d: string
@@ -34,9 +34,14 @@ const ROWS: { position: FamilyPosition; label: string }[] = [
  * A family, drawn as generations rather than as a graph: grandparents and parents above, the focal entry and
  * its siblings in the middle, children and grandchildren below.
  *
- * The lines are decoration - they are measured from the cards and drawn in an `aria-hidden` SVG - so the
- * structure a screen reader or a keyboard follows is the headings, lists and text of the cards themselves,
- * where every position and every biological or adoptive link is written out in words.
+ * Each member is a portrait in a circle with the name beneath (Issue #37). Everything else a member's old card
+ * carried - its type, its Canon status, every position it holds and the links that put it there, and the family
+ * its author recorded that is not parentage - is one press away on the eye, in `FamilyMemberDetails`. The portrait
+ * takes the focus to that member's family, as the card's name did.
+ *
+ * The lines are decoration - they are measured from the members and drawn in an `aria-hidden` SVG - so the
+ * structure a screen reader or a keyboard follows is the row headings, the lists, and the details, where every
+ * position and every biological or adoptive link is written out in words.
  */
 export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
   const family = useMemo(() => readFamilyTree(tree), [tree])
@@ -46,6 +51,13 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
   const cards = useRef(new Map<string, HTMLLIElement | null>())
   const [edges, setEdges] = useState<Edge[]>([])
   const [size, setSize] = useState({ width: 0, height: 0 })
+  // Whose details are open, from which eye, in which family: another family's tree closes them.
+  const [open, setOpen] = useState<{
+    focal: string
+    entityId: string
+    anchor: HTMLButtonElement
+  } | null>(null)
+  const shown = open?.focal === tree.focalEntityId ? open : null
 
   const measure = useCallback(() => {
     const root = canvas.current
@@ -63,7 +75,7 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
       const child = to.getBoundingClientRect()
 
       // Normally a parent sits above its child. When it does not - two positions in one row, or a circle of
-      // links - the line leaves and arrives on the other edge instead of cutting through the cards.
+      // links - the line leaves and arrives on the other edge instead of cutting through the members.
       const downwards = child.top >= parent.bottom
       const x1 = parent.left + parent.width / 2 - bounds.left
       const x2 = child.left + child.width / 2 - bounds.left
@@ -102,7 +114,7 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
   }, [measure])
 
   // A wide family scrolls sideways inside its own box; the entry being looked at starts in view. Only that box
-  // moves - scrolling the card into view would move the page under the reader as well.
+  // moves - scrolling the member into view would move the page under the reader as well.
   useEffect(() => {
     const box = scroller.current
     const card = focalCard.current
@@ -112,6 +124,70 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
   }, [tree.focalEntityId])
 
   const focal = family.focal
+
+  function node(member: FamilyTreeNode, isFocal: boolean) {
+    const portrait = (
+      <EntityTile
+        universeId={universeId}
+        entityId={member.entityId}
+        image={member.image}
+        typeIcon={member.entityTypeIcon}
+        typeAccent={member.entityTypeAccentColor}
+        className="familynode__tile"
+      />
+    )
+
+    return (
+      <li
+        key={member.entityId}
+        className={isFocal ? 'familynode familynode--focal' : 'familynode'}
+        ref={(element) => {
+          if (isFocal) focalCard.current = element
+          register(member.entityId, element)
+        }}
+        data-testid={`family-node-${member.name}`}
+        data-focal={isFocal ? 'true' : undefined}
+        data-canon={member.canonStatus}
+        aria-current={isFocal ? 'true' : undefined}
+      >
+        {isFocal ? (
+          <div className="familynode__face">{portrait}</div>
+        ) : (
+          <button
+            className="familynode__face familynode__button"
+            type="button"
+            onClick={() => onFocus(member.entityId)}
+            data-testid={`family-focus-${member.name}`}
+          >
+            {portrait}
+            <span className="visually-hidden">Show the family of {member.name}</span>
+          </button>
+        )}
+        <button
+          className="familynode__eye"
+          type="button"
+          onClick={(event) =>
+            setOpen({
+              focal: tree.focalEntityId,
+              entityId: member.entityId,
+              anchor: event.currentTarget,
+            })
+          }
+          aria-haspopup="dialog"
+          aria-expanded={shown?.entityId === member.entityId}
+          aria-label={`Details for ${member.name}`}
+          title={`Details for ${member.name}`}
+          data-testid={`family-details-${member.name}`}
+        >
+          <Eye aria-hidden="true" focusable="false" strokeWidth={1.75} />
+        </button>
+        <p className="familynode__name" title={member.name}>
+          <bdi>{member.name}</bdi>
+          {isFocal ? <span className="visually-hidden"> (family shown for this entry)</span> : null}
+        </p>
+      </li>
+    )
+  }
 
   return (
     <div className="familytree" data-testid="family-tree">
@@ -154,67 +230,9 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
               >
                 <h2 className="familytree__rowlabel">{row.label}</h2>
                 <ul className="familytree__members">
-                  {before.map((member) => (
-                    <Card
-                      key={member.node.entityId}
-                      member={member}
-                      universeId={universeId}
-                      onFocus={onFocus}
-                      register={register}
-                    />
-                  ))}
-
-                  {isFocalRow && focal ? (
-                    <li
-                      className="familynode familynode--focal"
-                      ref={(node) => {
-                        focalCard.current = node
-                        register(focal.entityId, node)
-                      }}
-                      data-testid={`family-node-${focal.name}`}
-                      data-focal="true"
-                    >
-                      <div className="familynode__head">
-                        <EntityTile
-                          universeId={universeId}
-                          entityId={focal.entityId}
-                          image={focal.image}
-                          typeIcon={focal.entityTypeIcon}
-                          typeAccent={focal.entityTypeAccentColor}
-                          className="familynode__tile"
-                        />
-                        <p className="familynode__name">
-                          <bdi>{focal.name}</bdi>
-                        </p>
-                      </div>
-                      <p className="familynode__kind">
-                        <span className="familynode__focusmark">Family shown for this entry</span>
-                        <span>{focal.entityTypeName}</span>
-                        {focal.canonStatus === CanonStatus.Canon ? null : (
-                          <StatusBadge
-                            step={focal.canonStatus}
-                            label={CANON_LABELS[focal.canonStatus]}
-                          />
-                        )}
-                      </p>
-                      <Link
-                        className="familynode__open"
-                        to={`/app/universes/${universeId}/lore/${focal.entityId}`}
-                      >
-                        Open entry
-                      </Link>
-                    </li>
-                  ) : null}
-
-                  {after.map((member) => (
-                    <Card
-                      key={member.node.entityId}
-                      member={member}
-                      universeId={universeId}
-                      onFocus={onFocus}
-                      register={register}
-                    />
-                  ))}
+                  {before.map((member) => node(member.node, false))}
+                  {isFocalRow && focal ? node(focal, true) : null}
+                  {after.map((member) => node(member.node, false))}
                 </ul>
               </section>
             )
@@ -236,82 +254,28 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
         />
         <span>Adoptive</span>
         <span className="familytree__legendnote">
-          A faded line is a connection that is not Canon yet. Every connection is written out on the
-          cards as well as drawn.
+          Faded lines and dashed rings mark what is not Canon yet. Open the eye beside a portrait to
+          see that person&rsquo;s details, with every connection written out.
         </span>
       </p>
+
+      {shown ? (
+        <FamilyMemberDetails
+          key={shown.entityId}
+          universeId={universeId}
+          tree={tree}
+          family={family}
+          entityId={shown.entityId}
+          anchor={shown.anchor}
+          onClose={() => setOpen(null)}
+          onFocus={onFocus}
+        />
+      ) : null}
     </div>
   )
 
-  function register(entityId: string, node: HTMLLIElement | null) {
-    if (node) cards.current.set(entityId, node)
+  function register(entityId: string, element: HTMLLIElement | null) {
+    if (element) cards.current.set(entityId, element)
     else cards.current.delete(entityId)
   }
-}
-
-interface CardProps {
-  member: FamilyMember
-  universeId: string
-  onFocus: (entityId: string) => void
-  register: (entityId: string, node: HTMLLIElement | null) => void
-}
-
-/** One relative: who they are, every position they hold here, and the two things that can be done with them. */
-function Card({ member, universeId, onFocus, register }: CardProps) {
-  const { node, relations } = member
-
-  return (
-    <li
-      className="familynode"
-      ref={(element) => register(node.entityId, element)}
-      data-testid={`family-node-${node.name}`}
-    >
-      <button
-        className="familynode__head familynode__button"
-        type="button"
-        onClick={() => onFocus(node.entityId)}
-        data-testid={`family-focus-${node.name}`}
-      >
-        <EntityTile
-          universeId={universeId}
-          entityId={node.entityId}
-          image={node.image}
-          typeIcon={node.entityTypeIcon}
-          typeAccent={node.entityTypeAccentColor}
-          className="familynode__tile"
-        />
-        <span className="familynode__name">
-          <bdi>{node.name}</bdi>
-        </span>
-        <span className="familynode__action">Show this family</span>
-      </button>
-
-      <ul className="familynode__roles">
-        {relations.flatMap((relation) =>
-          relation.paths.map((path) => (
-            <li key={`${relation.position}-${path.linkIds.join('-')}`}>
-              <span className="familynode__position">{POSITION_LABELS[relation.position].one}</span>
-              <span dir="auto">{path.text}</span>
-              {path.canonStatus === CanonStatus.Canon ? null : (
-                <span className="familynode__draft">
-                  {CANON_LABELS[path.canonStatus]} connection
-                </span>
-              )}
-            </li>
-          )),
-        )}
-      </ul>
-
-      <p className="familynode__kind">
-        <span>{node.entityTypeName}</span>
-        {node.canonStatus === CanonStatus.Canon ? null : (
-          <StatusBadge step={node.canonStatus} label={CANON_LABELS[node.canonStatus]} />
-        )}
-      </p>
-
-      <Link className="familynode__open" to={`/app/universes/${universeId}/lore/${node.entityId}`}>
-        Open entry
-      </Link>
-    </li>
-  )
 }

@@ -100,3 +100,56 @@ type through the starter rule above, even if it carries a value; a file at versi
 - Canon constraints on a kind made from the Family Tree dialog: set on the Relation Kinds tab afterwards.
 - Reusing the Family Tree dialog as the Relation Kinds tab's create form: that form carries Canon constraints the dialog
   deliberately leaves out, so the two stay separate.
+
+## Amendment: portrait nodes with details, and groups enabled for the tree (2026-10-20, Issue #37)
+
+Real use found the tree's cards hard to scan, and the focal entry's authored family listed apart from the people it
+belongs to. Nine owner decisions (1A-9A on the issue) settle the redesign.
+
+**A member is a portrait in a circle, with the name beneath and an eye for its details.** About 7.5rem across on a
+comfortable desktop, less on a tablet and 4.5rem on a phone, all in rem so a larger text size grows them; the name wraps to
+three lines at most, inside its member. The thumbnail is the author's square crop drawn round by CSS, and an entry with no
+picture keeps its type's placeholder. The focal member is the same node with an accent ring and `aria-current`; an entry
+not Canon yet has a dashed ring, as a link not Canon yet is a faded line. Nothing else is on the node: type, status,
+positions and links are one press away. The portrait still takes the focus to that member's family.
+
+**The details are Lorex's modal `<dialog>`, as every drawer is** (`FamilyMemberDetails`, through `useDrawerGuard`): a
+small popover held against its node on a wide screen, a sheet from the bottom of the screen at the tree's phone width
+(640px), placed and focused before it is painted. Escape and a press outside close it, the focus starts on its heading and
+goes back to the eye. The heading and actions keep their place and only the middle scrolls. It holds the name, type and
+Canon status; *In this family*, the positions derived for that member and the drawn parent links touching it, in the same
+words the cards used; *Other family*, that member's authored non-structural links, each linking to the related entry
+whether or not it is drawn; and Open entry, and for a relative, Show this family.
+
+**Authored family is read for every drawn member, not only the focal one.** `FamilyTreeConnection` gains `EntityId`, the
+member whose side it is read from; a link between two drawn members is listed once from each side. One more query reads
+every `NonStructuralFamily` link touching anyone drawn, so the tree costs at most six queries. Still listed, never walked:
+a "brother of" makes nobody a sibling or a parent, and the derivation is unchanged. No line is drawn for it and no node is
+added for a relative outside the ancestry: that entry is in `Nodes`, by name, without being placed. The separate *Other
+family connections* section is gone; its links are in the members' details.
+
+**Ordinary relationships stay apart.** Below the tree, *Other relationships* lists the focal entry's links whose kind has
+no family meaning, read from the existing relation list and filtered on the kind. They make no node, line, generation or
+detail.
+
+**A group may be enabled for the Family Tree.** `EntityTypeGroups.FamilyTreeEnabled`, false for every group, starter
+groups included (migration `AddEntityTypeGroupFamilyTree`, additive). A type is offered the tree when its own switch is on
+**or** it is in a group its author enabled; being in a group enables nothing, and nothing reads a group's or a type's
+name. `FamilyTreeEligibility.TypeIds` is that one rule, composed as a subquery into every reader: the picker's
+`familyTreeEligible=true`, the families listing, the tree's nodes, and the type list's new read-only `familyTreeOffered`
+(the type's own `familyTreeEligible` keeps its meaning and is still what a save writes). A type in several enabled groups is
+one type. `PUT .../entity-type-groups/{id}/family-tree` (`{ enabled }`, EditContent; Reviewer and Viewer 403, another
+universe's group 404) changes only that flag. Renaming keeps it, since it lives on the group by id. Deleting an enabled
+group is refused (409 `entity_type_group_family_tree`) until it is turned off, beside #36's other refusals. A type leaving
+an enabled group, or an empty enabled group, simply offers nothing; no relationship or parentage is rewritten either way,
+and a recorded family stays readable through the not-enabled note as before. Backup format 24 (ADR 0014 amendment).
+
+The setting is *Types in Family Tree*, folded at the foot of the Family Tree page and open when nothing is enabled yet: the
+types enabled one by one, then each group with a switch and the types it covers. Every member reads it; only those who may
+edit types switch it.
+
+### Deferred
+
+Spouses, siblings and other authored family drawn as lines or peripheral nodes; a switch for an existing type's own
+eligibility on the Types screen (still set at creation, or through a group); a group's Family Tree state shown in the type
+editor.

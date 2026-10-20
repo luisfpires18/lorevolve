@@ -7,9 +7,10 @@ using Microsoft.EntityFrameworkCore;
 namespace Lorex.Api.Features.Lore;
 
 /// <summary>
-/// Semantic groups of Lore types (Issue #36, ADR 0007 amendment). Read by every member; renamed and deleted by those who
-/// may edit types. Membership is not a route of its own: it is part of the type's save (<see cref="ApplyMembershipAsync"/>),
-/// so choosing a group, or creating one and choosing it, is one transaction with the rest of the type.
+/// Semantic groups of Lore types (Issue #36, ADR 0007 amendment). Read by every member; renamed, deleted and enabled for the
+/// Family Tree (Issue #37) by those who may edit types. Membership is not a route of its own: it is part of the type's save
+/// (<see cref="ApplyMembershipAsync"/>), so choosing a group, or creating one and choosing it, is one transaction with the rest
+/// of the type.
 ///
 /// Every write runs in a transaction Microsoft.Data.Sqlite begins IMMEDIATE, as an entry save does, so a membership change,
 /// a group delete, a field's new target and an entry's new link are serialised: none can check a state another is about to
@@ -23,6 +24,9 @@ public static class EntityTypeGroupEndpoints
     /// <summary>The marker on the 409 for taking a type out of a group that existing links rely on.</summary>
     public const string GroupInUseCode = "entity_type_group_in_use";
 
+    /// <summary>The marker on the 409 for deleting a group enabled for the Family Tree.</summary>
+    public const string GroupFamilyTreeCode = "entity_type_group_family_tree";
+
     public static IEndpointRouteBuilder MapEntityTypeGroupEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/universes/{universeId:guid}/entity-type-groups")
@@ -32,6 +36,7 @@ public static class EntityTypeGroupEndpoints
         group.MapGet("/", ListAsync).WithName("ListEntityTypeGroups");
         group.MapPut("/{groupId:guid}", RenameAsync).WithName("RenameEntityTypeGroup");
         group.MapDelete("/{groupId:guid}", DeleteAsync).WithName("DeleteEntityTypeGroup");
+        group.MapPut("/{groupId:guid}/family-tree", SetFamilyTreeAsync).WithName("SetEntityTypeGroupFamilyTree");
 
         return endpoints;
     }
@@ -105,9 +110,59 @@ public static class EntityTypeGroupEndpoints
     }
 
     /// <summary>
+    /// Enables a group for the Family Tree, or turns that off (Issue #37): every type in the group is then offered the tree, as a
+    /// type enabled on its own is. Only this flag changes - no type's own switch, no membership, no relationship - so turning it
+    /// off narrows where the tree is offered and loses no family a link records. The group is matched by id within this
+    /// universe; another universe's group is the same 404 as one that does not exist.
+    /// </summary>
+    private static async Task<IResult> SetFamilyTreeAsync(
+        Guid universeId,
+        Guid groupId,
+        [FromBody] EntityTypeGroupFamilyTreeRequest request,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        if (request.Enabled is not { } enabled)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["enabled"] = ["Say whether the group is enabled for Family Tree."],
+            });
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var group = await db.EntityTypeGroups
+            .FirstOrDefaultAsync(candidate => candidate.Id == groupId && candidate.UniverseId == universeId, cancellationToken);
+        if (group is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (group.FamilyTreeEnabled != enabled)
+        {
+            group.FamilyTreeEnabled = enabled;
+            group.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+
+        return Results.Ok((await LoadGroupsAsync(db, universeId, cancellationToken)).First(each => each.Id == groupId));
+    }
+
+    /// <summary>
     /// Deletes a group and with it every membership - the types themselves, their fields and entries are untouched. Refused
     /// while a link field is limited to the group: the field would otherwise be left limited to nothing, and it is never
-    /// quietly opened to any type instead. The refusal names the fields so the author can change them first.
+    /// quietly opened to any type instead. The refusal names the fields so the author can change them first. Refused too while
+    /// the group is enabled for the Family Tree, so deleting it never quietly takes the tree away from its types: the author
+    /// turns that off first, and sees what it covered.
     /// </summary>
     private static async Task<IResult> DeleteAsync(
         Guid universeId,
@@ -154,6 +209,15 @@ public static class EntityTypeGroupEndpoints
                         .Select(field => new { field.FieldId, field.FieldName, TypeId = field.EntityTypeId, field.TypeName })
                         .ToList(),
                 });
+        }
+
+        if (group.FamilyTreeEnabled)
+        {
+            return Results.Problem(
+                title: "Group is in use",
+                detail: $"{group.Name} can't be deleted while it is enabled for Family Tree. Turn that off on the Family Tree page first.",
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = GroupFamilyTreeCode });
         }
 
         db.EntityTypeGroups.Remove(group);
@@ -303,7 +367,8 @@ public static class EntityTypeGroupEndpoints
             .Select(group => new EntityTypeGroupResponse(
                 group.Id,
                 group.Name,
-                group.Members.Select(member => member.EntityTypeId).ToList()))
+                group.Members.Select(member => member.EntityTypeId).ToList(),
+                group.FamilyTreeEnabled))
             .ToListAsync(cancellationToken);
 
         return [.. groups.OrderBy(group => group.Name, StringComparer.OrdinalIgnoreCase).ThenBy(group => group.Name, StringComparer.Ordinal)];
