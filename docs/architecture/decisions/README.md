@@ -10,13 +10,13 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0004 | PowerShell launcher instead of a custom executable | [0004-local-launcher.md](0004-local-launcher.md) |
 | 0005 | Cookie sessions over token auth | [0005-cookie-authentication.md](0005-cookie-authentication.md) |
 | 0006 | Universe ownership is enforced in every query (access rule superseded by 0041) | [0006-universe-ownership.md](0006-universe-ownership.md) |
-| 0007 | One generic entity model, with relational custom fields (amended 020: starter types seeded once; #36: semantic type groups) | [0007-generic-entity-model.md](0007-generic-entity-model.md) |
+| 0007 | One generic entity model, with relational custom fields (amended 020: starter types seeded once; #36: semantic type groups; #39: fields edited, archived and restored) | [0007-generic-entity-model.md](0007-generic-entity-model.md) |
 | 0008 | A relationship is one row, read from either end | [0008-relationship-direction.md](0008-relationship-direction.md) |
 | 0009 | Fictional chronology is stored as signed integer components | [0009-fictional-chronology.md](0009-fictional-chronology.md) |
 | 0010 | Canon conflicts are derived findings keyed by a fingerprint | [0010-canon-conflict-lifecycle.md](0010-canon-conflict-lifecycle.md) |
 | 0011 | A field declares what it means, in a closed enum, on Number only | [0011-semantic-field-codes.md](0011-semantic-field-codes.md) |
 | 0012 | High conflicts block only the write that introduces them (amended for mass create: a batch is one all-or-nothing candidate) | [0012-canon-promotion-gate.md](0012-canon-promotion-gate.md) |
-| 0013 | An entry's history is a full snapshot per accepted write | [0013-entity-revision-snapshots.md](0013-entity-revision-snapshots.md) |
+| 0013 | An entry's history is a full snapshot per accepted write (amended #39: a field or choice a version records is kept) | [0013-entity-revision-snapshots.md](0013-entity-revision-snapshots.md) |
 | 0014 | A backup is one versioned archive holding a universe's authored data | [0014-universe-backup-format.md](0014-universe-backup-format.md) |
 | 0015 | An entry is trashed by a marker, and nothing that points at it is destroyed (amended 020: bulk move, all or nothing) | [0015-entity-trash-and-restore.md](0015-entity-trash-and-restore.md) |
 | 0016 | Lore is searched by a SQLite FTS5 index the write path keeps in step | [0016-sqlite-full-text-search.md](0016-sqlite-full-text-search.md) |
@@ -47,7 +47,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 
 | 0041 | A universe has one owner and may have collaborators, and one gate decides what each may do (supersedes 0006's access rule; amended 030: invitations by email and collaborator management; 042: history names who made each version; 043: review comments; 045: suggested changes) | [0041-universe-collaboration-access.md](0041-universe-collaboration-access.md) |
 | 0042 | An account has a storage allowance (1 GiB), counted from the originals of the Lore pictures in the universes it owns and held during uploads | [0042-account-storage-quota.md](0042-account-storage-quota.md) |
-| 0043 | A protected save names the version it was written over, and a save over a newer one is refused (entries, articles, stories, scenes, manuscripts) | [0043-concurrent-edit-protection.md](0043-concurrent-edit-protection.md) |
+| 0043 | A protected save names the version it was written over, and a save over a newer one is refused (entries, articles, stories, scenes, manuscripts; #39: field definitions) | [0043-concurrent-edit-protection.md](0043-concurrent-edit-protection.md) |
 | 0044 | A suggestion is bound to the version it was made over, and is accepted only through the target's own save | [0044-suggested-changes.md](0044-suggested-changes.md) |
 | 0045 | The universe assistant reads through permission-safe tools over a shared read layer, behind a narrow provider boundary | [0045-universe-assistant.md](0045-universe-assistant.md) |
 | 0046 | An outside AI app reads one universe over MCP, as one member, through OAuth 2.1 issued by LoreX itself | [0046-mcp-read-only-connection.md](0046-mcp-read-only-connection.md) |

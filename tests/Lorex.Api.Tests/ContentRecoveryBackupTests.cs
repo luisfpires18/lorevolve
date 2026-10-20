@@ -49,7 +49,7 @@ public sealed class ContentRecoveryBackupTests(LorexApiFactory factory) : IClass
         (await client.DeleteAsync(Story(u, gone))).EnsureSuccessStatusCode();
 
         var backup = await Backup(client, u);
-        Assert.Equal(24, backup.FormatVersion);
+        Assert.Equal(25, backup.FormatVersion);
         Assert.Equal(UniverseBackup.CurrentVersion, backup.FormatVersion);
 
         var stories = backup.Payload.Stories!;

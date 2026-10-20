@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
+import { fieldDialog, fieldSummary, fillField, showFields } from './support/typeFields'
 
 /**
  * Semantic groups of Lore types (Issue #36): chosen, created, renamed and deleted inside a type's own editor; used by a link
@@ -182,15 +183,16 @@ test.describe('semantic groups', () => {
     await makeRunes(page, w)
 
     // ---------- The field: the group is offered as a group, not by its name alone ----------
-    await page.getByTestId('fields-Character').click()
-    const list = page.getByTestId('type-list')
-    await list.getByLabel('Field name').fill('Required Rune')
-    await list.getByLabel('Kind', { exact: true }).selectOption({ label: 'Link to an entity' })
-    const target = page.getByTestId('new-field-target-Character')
+    await showFields(page, 'Character')
+    await page.getByTestId('new-field-Character').click()
+    const dialog = fieldDialog(page)
+    await fillField(dialog, { name: 'Required Rune', kind: 'Link to an entity' })
+    const target = dialog.getByTestId('field-target')
     await expect(target.locator('optgroup[label="Groups"] option')).toContainText(['Runes (group)'])
     await target.selectOption({ label: 'Runes (group)' })
-    await page.getByTestId('add-field-Character').click()
-    await expect(page.getByTestId('field-target-Required Rune')).toBeVisible()
+    await dialog.getByTestId('save-field').click()
+    await expect(dialog).toHaveCount(0)
+    await expect(fieldSummary(page, 'Required Rune')).toContainText('Links to any type in Runes')
 
     // ---------- The entry's picker offers both rune types and nothing else ----------
     await page.goto(`/app/universes/${w.u}/lore/${w.mara}`)

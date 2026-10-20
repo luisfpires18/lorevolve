@@ -50,7 +50,7 @@ public sealed class BackupRoundTripTests(LorexApiFactory factory) : IClassFixtur
 
         // And the thing that was described really is a world of this breadth, not an empty one that matched itself.
         var counts = validated.Preview.Counts;
-        Assert.Equal(24, validated.Preview.FormatVersion);
+        Assert.Equal(25, validated.Preview.FormatVersion);
         Assert.True(counts.Entries >= 4 && counts.EntriesInTrash == 1 && counts.EntryVersions >= 5);
         Assert.Equal((1, 3, 1), (counts.Images, counts.ArticleVersions, counts.Articles));
         Assert.Equal((2, 3, 2), (counts.Eras, counts.RelationshipTypes, counts.Relationships));

@@ -67,7 +67,7 @@ public sealed class EntityReferenceTargetTests(LorexApiFactory factory) : IClass
 
         // And on an edit, the same rules.
         var kingdom = await AddField(w, w.Character, "Kingdom", null);
-        var edit = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, kingdom), new FieldDefinitionRequest(
+        var edit = await w.Client.PutFieldAsync(w.U, w.Character, kingdom, new FieldDefinitionRequest(
             "Kingdom", EntityFieldKind.EntityReference, false, null, null, null, TargetEntityTypeId: elsewhere.Runes));
         Assert.Equal(HttpStatusCode.BadRequest, edit.StatusCode);
         Assert.Null((await FieldOf(w, w.Character, kingdom)).TargetEntityTypeId);
@@ -114,7 +114,7 @@ public sealed class EntityReferenceTargetTests(LorexApiFactory factory) : IClass
         await Entry(w, w.Character, "Mara", Link(kingdom, arkazia));
         await UpdateField(w, w.Character, kingdom, "Kingdom", w.Kingdoms);
 
-        var toRunes = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, kingdom), Definition("Kingdom", w.Runes));
+        var toRunes = await w.Client.PutFieldAsync(w.U, w.Character, kingdom, Definition("Kingdom", w.Runes));
         Assert.Equal(HttpStatusCode.Conflict, toRunes.StatusCode);
         Assert.Equal(EntityTypeEndpoints.TargetConflictCode, await CodeOf(toRunes));
         Assert.Equal(w.Kingdoms, (await FieldOf(w, w.Character, kingdom)).TargetEntityTypeId);
@@ -128,7 +128,7 @@ public sealed class EntityReferenceTargetTests(LorexApiFactory factory) : IClass
         await Entry(w, w.Character, "Tam", Link(mixed, nanite));
         (await w.Client.DeleteAsync($"/api/universes/{w.U}/entities/{nanite}")).EnsureSuccessStatusCode();
 
-        var narrowing = await w.Client.PutAsJsonAsync(FieldRoute(w, w.Character, mixed), Definition("Allegiance", w.Kingdoms));
+        var narrowing = await w.Client.PutFieldAsync(w.U, w.Character, mixed, Definition("Allegiance", w.Kingdoms));
         Assert.Equal(HttpStatusCode.Conflict, narrowing.StatusCode);
         var detail = await narrowing.Content.ReadAsStringAsync();
         Assert.DoesNotContain(nanite.ToString(), detail, StringComparison.OrdinalIgnoreCase);
@@ -318,7 +318,7 @@ public sealed class EntityReferenceTargetTests(LorexApiFactory factory) : IClass
 
         var archive = await RawArchive(w.Client, w.U);
         var backup = BackupOf(archive);
-        Assert.Equal(24, backup.FormatVersion);
+        Assert.Equal(25, backup.FormatVersion);
         var carried = backup.Payload.EntityTypes.Single(type => type.Id == w.Character).Fields;
         Assert.Equal(w.Kingdoms, carried.Single(field => field.Id == kingdom).TargetEntityTypeId);
         Assert.Null(carried.Single(field => field.Id == anything).TargetEntityTypeId);
@@ -338,7 +338,7 @@ public sealed class EntityReferenceTargetTests(LorexApiFactory factory) : IClass
         Assert.Equal(HttpStatusCode.BadRequest, (await PostEntry(restoredWorld, restoredWorld.Character, "Oren", Link(restoredField.Id, rune))).StatusCode);
 
         // A second export of the restored world says the same.
-        Assert.Equal(24, BackupOf(await RawArchive(w.Client, restored.Id)).FormatVersion);
+        Assert.Equal(25, BackupOf(await RawArchive(w.Client, restored.Id)).FormatVersion);
     }
 
     [Fact]
@@ -438,7 +438,7 @@ public sealed class EntityReferenceTargetTests(LorexApiFactory factory) : IClass
 
     private static async Task UpdateField(World w, Guid typeId, Guid fieldId, string name, Guid? target)
     {
-        var response = await w.Client.PutAsJsonAsync(FieldRoute(w, typeId, fieldId), Definition(name, target));
+        var response = await w.Client.PutFieldAsync(w.U, typeId, fieldId, Definition(name, target));
         Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
     }
 

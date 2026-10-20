@@ -525,6 +525,9 @@ namespace Lorex.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("DefaultValue")
                         .HasMaxLength(4000)
                         .HasColumnType("TEXT");
@@ -554,6 +557,9 @@ namespace Lorex.Api.Data.Migrations
 
                     b.Property<Guid?>("TargetGroupId")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -842,6 +848,10 @@ namespace Lorex.Api.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FieldDefinitionId");
+
+                    b.HasIndex("OptionId");
 
                     b.HasIndex("RevisionId");
 

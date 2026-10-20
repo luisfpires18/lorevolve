@@ -98,6 +98,8 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("add field", Post, $"{u}/entity-types/{w.CharacterType}/fields", May.Edit, Json(new FieldDefinitionRequest("Motto", EntityFieldKind.ShortText, false, null, null, null))),
             new("edit field", Put, $"{u}/entity-types/{w.CharacterType}/fields/{any}", May.Edit, Json(new FieldDefinitionRequest("Motto", EntityFieldKind.ShortText, false, null, null, null))),
             new("delete field", Delete, $"{u}/entity-types/{w.CharacterType}/fields/{any}", May.Edit),
+            new("archive field", Post, $"{u}/entity-types/{w.CharacterType}/fields/{any}/archive", May.Edit),
+            new("restore field", Post, $"{u}/entity-types/{w.CharacterType}/fields/{any}/restore", May.Edit, Json(new FieldRestoreRequest())),
             new("type groups", Get, $"{u}/entity-type-groups", May.Read),
             new("rename type group", Put, $"{u}/entity-type-groups/{any}", May.Edit, Json(new EntityTypeGroupRenameRequest("Renamed group"))),
             new("delete type group", Delete, $"{u}/entity-type-groups/{any}", May.Edit),

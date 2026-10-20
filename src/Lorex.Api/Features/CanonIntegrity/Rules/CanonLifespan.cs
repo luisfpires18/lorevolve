@@ -82,7 +82,10 @@ internal static class CanonLifespanReader
                 && value.Entity.DeletedAt == null
                 && value.Entity.CanonStatus == CanonStatus.Canon
                 && value.NumberValue != null
-                && (value.FieldDefinition!.Semantic == EntityFieldSemantic.BirthYear
+
+                // An archived field declares nothing either (Issue #39): its years are kept, and read again once it is restored.
+                && value.FieldDefinition!.ArchivedAt == null
+                && (value.FieldDefinition.Semantic == EntityFieldSemantic.BirthYear
                     || value.FieldDefinition.Semantic == EntityFieldSemantic.DeathYear))
             .Select(value => new Row(
                 value.EntityId,

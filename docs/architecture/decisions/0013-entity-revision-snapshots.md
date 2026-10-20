@@ -142,3 +142,24 @@ three statements above.
   the article as it read at those versions, and `Article` is still flagged on them. Both are
   read-only history: shown on the version, labelled, never compared and never applied. Every
   version recorded since has a null there, which says nothing about the article.
+
+## Amendment - a field or choice a version records is kept (2026-10-20, Issue #39 review)
+
+Snapshots still hold field ids and choice ids as plain data, with no key, and are never rewritten. What changed is the
+other direction: the API no longer deletes what a snapshot names when the author asks it to. Permanently deleting a field
+definition is refused (409 `entity_field_in_history`, with how many entries' versions use it) while any version records a
+value for it, even once no entry holds one now, active or archived; removing a choice is refused (409
+`entity_field_option_in_history`) while any version records it. Archiving is the way to put such a field away. Without
+this, clearing a value and then deleting its field or choice made every older version naming it unrestorable. Two indexes
+(`EntityRevisionFieldValues` by field and by choice, migration `AddEntityFieldVersion`) keep the checks to one index read.
+A version naming an entry erased for good from the Trash, or a removed date period, is still refused on restore as before.
+
+The same holds for a field's kind: it cannot change while any version recorded a value for the field (409
+`entity_field_kind_locked`).
+
+A version is not put back over archived fields it disagrees with. Restoring is refused (409
+`entity_revision_archived_field`, with the field names) when the version's values for any archived field differ from the
+values the entry keeps for it now - a value on one side only included - because a save never writes an archived field and
+the restore would otherwise record a change it did not make. Nothing is written. Restoring the field first makes it an
+ordinary field again, and the version then applies whole. A version whose archived values already match restores as usual.
+Checked inside the promotion gate's transaction, beside the existing missing-reference check.

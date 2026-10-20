@@ -41,5 +41,34 @@ internal static class VersionTestClient
         return await client.PutAsJsonAsync(path, json);
     }
 
+    /// <summary>The <c>version</c> a field definition reads with now in its type's list, active or archived; null when unread.</summary>
+    public static async Task<int?> FieldVersion(HttpClient client, Guid universeId, Guid typeId, Guid fieldId)
+    {
+        var read = await client.GetAsync($"/api/universes/{universeId}/entity-types");
+        if (!read.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        var type = (await read.Content.ReadFromJsonAsync<List<EntityTypeResponse>>())!.FirstOrDefault(one => one.Id == typeId);
+        return type?.Fields.Concat(type.ArchivedFields ?? []).FirstOrDefault(field => field.Id == fieldId)?.Version;
+    }
+
+    /// <summary>
+    /// Edits a field definition the way the field drawer does: naming the version it reads with now (ADR 0043 amendment, Issue
+    /// #39), unless the request already names one. A caller that cannot read it sends the request as it is, to be refused as before.
+    /// </summary>
+    public static async Task<HttpResponseMessage> PutFieldAsync(
+        this HttpClient client,
+        Guid universeId,
+        Guid typeId,
+        Guid fieldId,
+        FieldDefinitionRequest request) =>
+        await client.PutAsJsonAsync(
+            $"/api/universes/{universeId}/entity-types/{typeId}/fields/{fieldId}",
+            request.ExpectedVersion is null
+                ? request with { ExpectedVersion = await FieldVersion(client, universeId, typeId, fieldId) }
+                : request);
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 }

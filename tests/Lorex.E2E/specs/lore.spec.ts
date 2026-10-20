@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { clickSignOut } from './support/account'
+import { addField, showFields } from './support/typeFields'
 
 /**
  * Each test registers its own account and builds its own universe, so nothing depends on
@@ -79,18 +80,20 @@ test.describe('lore', () => {
     await page.getByTestId('save-type').click()
     await expect(page.locator('[data-type-name="Starship"]')).toBeVisible()
 
-    await page.getByTestId('fields-Starship').click()
-    await page.getByLabel('Field name').fill('Registry')
-    await page.getByTestId('add-field-Starship').click()
-    await expect(page.getByText('Registry')).toBeVisible()
+    // Fields lists what the type has - nothing yet - and the form opens only from Add field.
+    const fields = await showFields(page, 'Starship')
+    await expect(fields).toContainText('No custom fields yet.')
+    await expect(page.getByTestId('field-dialog')).toHaveCount(0)
 
-    await page.getByLabel('Field name').fill('Class')
-    // Exact: the Relation kinds section on this page is labelled "Relation kinds", which
-    // a loose match would also pick up.
-    await page.getByLabel('Kind', { exact: true }).selectOption({ label: 'Choose one' })
-    await page.getByLabel('Options, separated by commas').fill('Courier, Hauler')
-    await page.getByTestId('add-field-Starship').click()
-    await expect(page.getByText('Class')).toBeVisible()
+    await addField(page, 'Starship', { name: 'Registry' })
+    await expect(page.getByTestId('field-row-Registry')).toBeVisible()
+
+    await addField(page, 'Starship', {
+      name: 'Class',
+      kind: 'Choose one',
+      options: 'Courier, Hauler',
+    })
+    await expect(page.getByTestId('field-row-Class')).toBeVisible()
 
     // Write the entry.
     await openLore(page)

@@ -244,3 +244,56 @@ classification metadata, not an entity model, a parent type or an ontology.
   index. This closes the same gap for 036's exact-type targets. Adding a field and deleting a type or group are also each one
   IMMEDIATE transaction now, so a field can never name a target deleted in between.
 - Backup format 23 carries groups, memberships and group targets (ADR 0014 amendment).
+
+## Amendment - editing, archiving and restoring fields (2026-10-20, Issue #39)
+
+A type's Fields is now a list a creator manages: each field has Edit, and Archive and Delete in its menu; Add field opens
+the editor on request. A field that holds data is put away by archiving it, which is reversible; deletion is only for a
+field nothing uses.
+
+- **Schema.** One nullable column, `EntityFieldDefinitions.ArchivedAt` (migration `AddEntityFieldArchive`, no backfill:
+  every existing field is active). Archived is a state of the same row, never a second table: the field keeps its id,
+  name, kind, options, meaning, target, `IsRequired` and every `EntityFieldValues` row, in Lore and in the Trash.
+- **Reads.** `EntityTypeResponse.Fields` is active fields only, so every form, filter and picker that reads it meets no
+  archived field by accident; `ArchivedFields` carries the rest. Each field reports `entryCount` and `trashedEntryCount`.
+  An entry's own read (`LoadDetailAsync`, so the entry page, MCP, the assistant and a suggestion's "before") leaves archived
+  values out; its history still shows them as recorded.
+- **Writes never touch archived values.** `UpdateCoreAsync` is the one writer of an existing entry's values (an ordinary
+  save, a restored version, an accepted suggestion) and replaces only the active fields' rows; `PrepareFieldValuesAsync`
+  addresses active fields only, so a value sent for an archived one is ignored like any unknown field. Required checks
+  (single and mass create) ignore archived fields. Backup restore writes them as the file holds them.
+- **Stale forms.** Archiving and restoring move on the edit version (ADR 0043) of every entry holding a value for the
+  field, Trash included. A form or suggestion opened before is refused as stale rather than saved over a field set it never
+  showed; this is what stops a form opened while a field was archived from dropping the values a restore brought back.
+- **Active consumers.** The Canon lifespan readers and `CANON-FIELD-001`, the timeline's birth and death years, the
+  chronology's "unplaced years" count and Lore field filters read active fields only. Archiving is reconciled, not gated
+  (it only removes facts); restoring is gated, so a restored death year that would open a High finding is refused.
+- **Protections still count archived data.** Deleting a type or group a field is limited to, leaving a group a link relies
+  on, retyping an entry an archived field links to, removing a date period a year is written in: all read every field and
+  value, archived ones included, and name an archived field as "(archived)". An entry holding values in archived fields of
+  its own type cannot change type (409 `entity_type_change_archived`): the move would discard values no form shows.
+- **Editing.** `PUT .../fields/{id}` keeps its rules (kind frozen while values exist, narrowing refused while a link does
+  not fit, an option in use kept, one meaning per type) and adds two: an archived field is refused (409
+  `entity_field_archived`, restore first), and Optional to Required is refused while a live entry of the type has no value
+  (409 `entity_field_required_missing`, with `missingCount`). An edit keeps the field's place. Name and meaning stay unique
+  per type across archived fields, so a restore can never meet a twin; the clash says when the other field is archived.
+- **Restoring** (`POST .../restore`, body `{ asOptional }`) checks the field's links still fit its target, then, for a
+  required field, that no live entry is missing a value; otherwise 409 `entity_field_required_missing` with
+  `canRestoreOptional`. Only an explicit `asOptional: true` brings it back optional. Nothing is widened or cleared to make
+  a restore fit. Archive and restore are idempotent.
+- **Deleting** (`DELETE .../fields/{id}`) is refused (409 `entity_field_in_use`, `entryCount`, `trashedCount`) while any
+  entry, Trash included, holds a value, active or archived, and (409 `entity_field_in_history`) while an older version of
+  any entry records one; removing a choice an older version records is refused the same way (ADR 0013 amendment). One
+  IMMEDIATE transaction. No force-delete and no cascade.
+- **The kind is frozen by history too.** A kind change is refused (409 `entity_field_kind_locked`) while any entry holds a
+  value or any older version recorded one, so restoring that version can never write a value of the old kind into the
+  new one. A field nothing ever held may change kind. The drawer locks Kind and says which reason applies.
+- **Edits are versioned** (ADR 0043 amendment): `PUT .../fields/{id}` names `expectedVersion` and a stale or missing one is
+  refused (409 `entity_field_changed`); archive and restore move the version on. Each field reports `version` and
+  `usedInHistory`.
+- **New link fields** start with no target in the editor until the author picks one, Any Lore type included. The API
+  still reads a missing target as any type, so older clients and the starter template are unchanged.
+- **Not done (V1).** Reordering fields, renaming an option in place (a rename is a remove and an add, refused while the old
+  one is chosen or recorded), adding a required field to a type with entries (still allowed, as before), and a "has no
+  value" Lore filter to list the entries a required restore is waiting on.
+- Backup format 25 carries `archivedAt` (ADR 0014 amendment).

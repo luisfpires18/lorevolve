@@ -215,8 +215,15 @@ public sealed record UniverseBackup(
     /// remap. Not ignorable: a version 23 reader would restore every enabled group off, and the tree would quietly stop being
     /// offered for the types it covered. A file at version 23 or earlier reads every group as not enabled, even if it carries a
     /// value: nothing is enabled because of a group's name, and a restored universe offers the tree exactly where its file says.
+    ///
+    /// 25 - A field may be archived (Issue #39). <see cref="BackupFieldDefinition.ArchivedAt"/> is when its author archived it,
+    /// null while it is active. An archived field travels whole - its id, options, meaning, target, required flag and every
+    /// value an entry holds for it, in Lore and in the Trash - and restores archived. Not ignorable: a version 24 reader would
+    /// restore every archived field active, back in every entry form and, if it was required, refusing every save of an entry
+    /// without it. A file at version 24 or earlier has no <c>archivedAt</c>; every field restores active, even if it carries a
+    /// value.
     /// </summary>
-    public const int CurrentVersion = 24;
+    public const int CurrentVersion = 25;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -358,6 +365,7 @@ public sealed record BackupEntityType(
 /// nothing infers it from a name, so losing it would silently disarm the chronology rules.
 /// <paramref name="TargetEntityTypeId"/> (version 20) is the type of this file a link field is limited to, or null for any.
 /// <paramref name="TargetGroupId"/> (version 23) is the group of this file it is limited to instead, or null.
+/// <paramref name="ArchivedAt"/> (version 25) is when the field was archived, or null for an active field.
 /// </summary>
 public sealed record BackupFieldDefinition(
     Guid Id,
@@ -369,7 +377,8 @@ public sealed record BackupFieldDefinition(
     string? DefaultValue,
     IReadOnlyList<BackupFieldOption> Options,
     Guid? TargetEntityTypeId = null,
-    Guid? TargetGroupId = null);
+    Guid? TargetGroupId = null,
+    DateTime? ArchivedAt = null);
 
 /// <summary>
 /// A semantic group (since version 23): its id, which fields and memberships name, its name, and the types of this file in

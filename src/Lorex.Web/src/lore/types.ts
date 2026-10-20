@@ -114,6 +114,19 @@ export interface FieldDefinition {
    * `targetEntityTypeId`. Read by its membership as it is now, never by the group's name.
    */
   targetGroupId: string | null
+  /**
+   * When the field was archived, or null while it is active (Issue #39). An archived field keeps everything - its values,
+   * options, meaning, limit and `isRequired` - and is out of every form, read and filter until it is restored.
+   */
+  archivedAt: string | null
+  /** How many entries hold a value for this field, the Trash included. A field with any is archived, never deleted. */
+  entryCount: number
+  /** How many of those entries are in the Trash. */
+  trashedEntryCount: number
+  /** Whether an older version of any entry recorded a value for it: that keeps it from being deleted too. */
+  usedInHistory: boolean
+  /** The definition's edit version, which an edit names as `expectedVersion` (ADR 0043). */
+  version: number
 }
 
 /**
@@ -142,7 +155,10 @@ export interface EntityType {
   entityCount: number
   /** How many of those are in the Trash. */
   trashedEntityCount: number
+  /** The type's active fields: the ones entry forms, filters and Lore read. */
   fields: FieldDefinition[]
+  /** Its archived fields (Issue #39), apart so nothing that reads `fields` can meet one by accident. */
+  archivedFields: FieldDefinition[]
   /**
    * The type's own Family Tree switch, the one a save writes. Set by the author, never read from the name (ADR 0040).
    */

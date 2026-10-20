@@ -450,9 +450,7 @@ public sealed class CanonPromotionGateTests(LorexApiFactory factory) : IClassFix
             client, universe.Id, "Gil-galad", CanonStatus.Canon,
             [NumberValue(born.Id, 3300), NumberValue(ended.Id, 3200)]);
 
-        var response = await client.PutAsJsonAsync(
-            $"/api/universes/{universe.Id}/entity-types/{type.Id}/fields/{ended.Id}",
-            new FieldDefinitionRequest(
+        var response = await client.PutFieldAsync(universe.Id, type.Id, ended.Id, new FieldDefinitionRequest(
                 "Ended", EntityFieldKind.Number, false, null, null, null, EntityFieldSemantic.DeathYear));
 
         var blocked = await Blocked(response);

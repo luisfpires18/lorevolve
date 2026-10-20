@@ -252,7 +252,7 @@ public sealed class LoreEndpointTests(LorexApiFactory factory) : IClassFixture<L
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Contains(
-            "1 entity has a value for this field. Clear that value before deleting it.",
+            "This field contains a value in 1 entry. Archive it to hide it without losing its data.",
             await response.Content.ReadAsStringAsync(),
             StringComparison.Ordinal);
     }
@@ -280,9 +280,7 @@ public sealed class LoreEndpointTests(LorexApiFactory factory) : IClassFixture<L
         await CreateEntity(client, universe.Id, type.Id, "Someone", fields:
             [new FieldValueInput(field.Id, "A title", null, null, null, null, null)]);
 
-        var response = await client.PutAsJsonAsync(
-            $"/api/universes/{universe.Id}/entity-types/{type.Id}/fields/{field.Id}",
-            new FieldDefinitionRequest("Title", EntityFieldKind.Number, false, null, null, null));
+        var response = await client.PutFieldAsync(universe.Id, type.Id, field.Id, new FieldDefinitionRequest("Title", EntityFieldKind.Number, false, null, null, null));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -633,9 +631,7 @@ public sealed class LoreEndpointTests(LorexApiFactory factory) : IClassFixture<L
         var add = await attacker.PostAsJsonAsync(
             $"/api/universes/{victimUniverse.Id}/entity-types/{victimType.Id}/fields",
             new FieldDefinitionRequest("Planted", EntityFieldKind.ShortText, false, null, null, null));
-        var update = await attacker.PutAsJsonAsync(
-            $"/api/universes/{victimUniverse.Id}/entity-types/{victimType.Id}/fields/{victimField.Id}",
-            new FieldDefinitionRequest("Hijacked", EntityFieldKind.ShortText, false, null, null, null));
+        var update = await attacker.PutFieldAsync(victimUniverse.Id, victimType.Id, victimField.Id, new FieldDefinitionRequest("Hijacked", EntityFieldKind.ShortText, false, null, null, null));
         var delete = await attacker.DeleteAsync(
             $"/api/universes/{victimUniverse.Id}/entity-types/{victimType.Id}/fields/{victimField.Id}");
 

@@ -499,7 +499,7 @@ public sealed class EntityTypeGroupTests(LorexApiFactory factory) : IClassFixtur
 
         var archive = await RawArchive(w.Client, w.U);
         var backup = BackupOf(archive);
-        Assert.Equal(24, backup.FormatVersion);
+        Assert.Equal(25, backup.FormatVersion);
         var carried = backup.Payload.EntityTypeGroups!.Single(group => group.Id == runes.Id);
         Assert.Equal(new[] { w.Corrupted, w.Elemental }.Order(), carried.TypeIds.Order());
         Assert.Equal(runes.Id, backup.Payload.EntityTypes.Single(type => type.Id == w.Character).Fields.Single(one => one.Id == field).TargetGroupId);
@@ -682,7 +682,7 @@ public sealed class EntityTypeGroupTests(LorexApiFactory factory) : IClassFixtur
         w.Client.PostAsJsonAsync($"{TypeRoute(w, typeId)}/fields", request);
 
     private static Task<HttpResponseMessage> PutField(World w, Guid typeId, Guid fieldId, FieldDefinitionRequest request) =>
-        w.Client.PutAsJsonAsync($"{TypeRoute(w, typeId)}/fields/{fieldId}", request);
+        w.Client.PutFieldAsync(w.U, typeId, fieldId, request);
 
     private static async Task<Guid> AddField(World w, Guid typeId, string name, Guid? groupId)
     {

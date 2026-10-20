@@ -140,9 +140,7 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
         var field = await AddField(client, universe.Id, type.Id, "Born", EntityFieldKind.Number);
         var entity = await CreateEntity(client, universe.Id, "Turgon", fields: [Number(field, 100)]);
 
-        var renamed = await client.PutAsJsonAsync(
-            $"/api/universes/{universe.Id}/entity-types/{type.Id}/fields/{field.Id}",
-            new FieldDefinitionRequest("Year of birth", EntityFieldKind.Number, false, null, null, null));
+        var renamed = await client.PutFieldAsync(universe.Id, type.Id, field.Id, new FieldDefinitionRequest("Year of birth", EntityFieldKind.Number, false, null, null, null));
         renamed.EnsureSuccessStatusCode();
 
         await Put(client, universe.Id, entity, fields: [Number(field, 100)]);
@@ -444,33 +442,26 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
     /// dangling part quietly would restore something the author never wrote, so the whole
     /// restore is refused and says what is missing.
     ///
-    /// The dangling part is a removed *choice*. Since Phase 019 an entry the author removes is
-    /// not deleted, so a snapshot's entity reference can no longer dangle by that route - the
-    /// case below covers what happens instead. An option is still genuinely removable once
-    /// nothing holds it, so it is what this refusal is now proved with.
+    /// The dangling part is an entry erased for good from the Trash: the snapshot still names it,
+    /// and nothing live does. A removed choice used to serve here, but since Issue #39 a choice an
+    /// older version records cannot be removed at all - the second case below.
     /// </summary>
     [Fact]
     public async Task A_restore_naming_lore_that_is_gone_is_refused_rather_than_partly_applied()
     {
         var (client, universe) = await SignedInWithUniverse("revrestoregone");
         var type = await CharacterType(client, universe.Id);
-        var house = await AddField(
-            client, universe.Id, type.Id, "House", EntityFieldKind.Select, options: ["Swallow", "Arch"]);
+        var mentor = await AddField(client, universe.Id, type.Id, "Mentor", EntityFieldKind.EntityReference);
 
+        var elder = await CreateEntity(client, universe.Id, "Turgon");
         var entity = await CreateEntity(
             client, universe.Id, "Egalmoth",
-            fields: [new FieldValueInput(house.Id, null, null, null, null, [Option(house, "Swallow")], null)]);
+            fields: [new FieldValueInput(mentor.Id, null, null, null, null, null, elder.Id)]);
 
-        // Move off the choice, then take the choice away. Removing it is only allowed because
-        // nothing holds it any more - but version 1 still names it.
-        await Put(
-            client, universe.Id, entity with { Name = "Egalmoth of the Arch" },
-            fields: [new FieldValueInput(house.Id, null, null, null, null, [Option(house, "Arch")], null)]);
-
-        (await client.PutAsJsonAsync(
-            $"/api/universes/{universe.Id}/entity-types/{type.Id}/fields/{house.Id}",
-            new FieldDefinitionRequest("House", EntityFieldKind.Select, false, null, null, ["Arch"])))
-            .EnsureSuccessStatusCode();
+        // Move off the link, then erase the entry it named for good. Version 1 still names it.
+        await Put(client, universe.Id, entity with { Name = "Egalmoth of the Arch" }, fields: []);
+        (await client.DeleteAsync($"/api/universes/{universe.Id}/entities/{elder.Id}")).EnsureSuccessStatusCode();
+        (await client.DeleteAsync($"/api/universes/{universe.Id}/trash/{elder.Id}")).EnsureSuccessStatusCode();
 
         var first = (await Revisions(client, universe.Id, entity.Id)).Single(r => r.Number == 1);
         var response = await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id);
@@ -478,10 +469,47 @@ public sealed class EntityRevisionTests(LorexApiFactory factory) : IClassFixture
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         var problem = await response.Content.ReadAsStringAsync();
         Assert.Contains(RevisionEndpoints.NotRestorableCode, problem, StringComparison.Ordinal);
-        Assert.Contains("Swallow", problem, StringComparison.Ordinal);
+        Assert.Contains("Turgon", problem, StringComparison.Ordinal);
 
         Assert.Equal("Egalmoth of the Arch", (await Entity(client, universe.Id, entity.Id)).Name);
         Assert.Equal(2, (await Revisions(client, universe.Id, entity.Id)).Count);
+    }
+
+    /// <summary>
+    /// A choice an older version records stays (Issue #39): removing it is refused even once no entry holds it, so that version
+    /// can still be put back exactly as it was. A choice nothing ever recorded goes as before.
+    /// </summary>
+    [Fact]
+    public async Task A_choice_an_older_version_records_cannot_be_removed_and_that_version_still_restores()
+    {
+        var (client, universe) = await SignedInWithUniverse("revoptionkept");
+        var type = await CharacterType(client, universe.Id);
+        var house = await AddField(
+            client, universe.Id, type.Id, "House", EntityFieldKind.Select, options: ["Swallow", "Arch", "Unused"]);
+
+        var entity = await CreateEntity(
+            client, universe.Id, "Egalmoth",
+            fields: [new FieldValueInput(house.Id, null, null, null, null, [Option(house, "Swallow")], null)]);
+        await Put(
+            client, universe.Id, entity with { Name = "Egalmoth of the Arch" },
+            fields: [new FieldValueInput(house.Id, null, null, null, null, [Option(house, "Arch")], null)]);
+
+        // Nothing holds Swallow now, but version 1 does.
+        var refused = await client.PutFieldAsync(
+            universe.Id, type.Id, house.Id, new FieldDefinitionRequest("House", EntityFieldKind.Select, false, null, null, ["Arch", "Unused"]));
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        var problem = await refused.Content.ReadAsStringAsync();
+        Assert.Contains(EntityTypeEndpoints.OptionInHistoryCode, problem, StringComparison.Ordinal);
+        Assert.Contains("Swallow", problem, StringComparison.Ordinal);
+
+        // Unused was never recorded anywhere: it goes.
+        (await client.PutFieldAsync(
+            universe.Id, type.Id, house.Id, new FieldDefinitionRequest("House", EntityFieldKind.Select, false, null, null, ["Swallow", "Arch"])))
+            .EnsureSuccessStatusCode();
+
+        var first = (await Revisions(client, universe.Id, entity.Id)).Single(r => r.Number == 1);
+        (await RestoreEntryVersion(client, $"/api/universes/{universe.Id}/entities/{entity.Id}", first.Id)).EnsureSuccessStatusCode();
+        Assert.Equal(["Swallow"], (await Entity(client, universe.Id, entity.Id)).Fields.Single().OptionValues);
     }
 
     /// <summary>

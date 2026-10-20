@@ -339,14 +339,10 @@ public sealed class TimelineFeedTests(LorexApiFactory factory) : IClassFixture<L
         Assert.Equal([EntityFieldSemantic.DeathYear], (await Feed(client, u)).Items.Select(item => item.LoreFact!.Fact));
 
         // The field no longer means a death year: gone, though the number is still stored.
-        (await client.PutAsJsonAsync(
-            $"/api/universes/{u}/entity-types/{fields.TypeId}/fields/{fields.Died}",
-            new FieldDefinitionRequest("Died", EntityFieldKind.Number, false, null, null, null, null))).EnsureSuccessStatusCode();
+        (await client.PutFieldAsync(u, fields.TypeId, fields.Died, new FieldDefinitionRequest("Died", EntityFieldKind.Number, false, null, null, null, null))).EnsureSuccessStatusCode();
         Assert.Empty((await Feed(client, u)).Items);
 
-        (await client.PutAsJsonAsync(
-            $"/api/universes/{u}/entity-types/{fields.TypeId}/fields/{fields.Died}",
-            new FieldDefinitionRequest("Died", EntityFieldKind.Number, false, null, null, null, EntityFieldSemantic.DeathYear))).EnsureSuccessStatusCode();
+        (await client.PutFieldAsync(u, fields.TypeId, fields.Died, new FieldDefinitionRequest("Died", EntityFieldKind.Number, false, null, null, null, EntityFieldSemantic.DeathYear))).EnsureSuccessStatusCode();
         Assert.Single((await Feed(client, u)).Items);
 
         // The entry to the Trash and back.

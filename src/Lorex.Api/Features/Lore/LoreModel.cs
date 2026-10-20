@@ -200,6 +200,24 @@ public sealed class EntityFieldDefinition
 
     public EntityTypeGroup? TargetGroup { get; set; }
 
+    /// <summary>
+    /// When the author archived this field, or null while it is active (Issue #39). Archiving hides a field and keeps it whole:
+    /// the definition, its id, options, meaning, target, <see cref="IsRequired"/> and every stored value - Trash included -
+    /// stay exactly as they were, and restoring clears this marker. While it is set the field is out of entry forms, entry
+    /// reads, filters, required checks and every Canon and timeline reading, and an entry save neither writes nor removes its
+    /// values. Every protection that counts links - deleting a type or group, leaving a group, retyping an entry - still
+    /// counts its values, so nothing an archived field holds can be invalidated behind it.
+    /// </summary>
+    public DateTime? ArchivedAt { get; set; }
+
+    /// <summary>
+    /// The definition's edit version (ADR 0043 amendment, Issue #39): 1 when created, advanced once by every edit that changes
+    /// it and by archiving and restoring it. An edit names the version it was made over and is refused when that is no longer
+    /// current, so two people editing one field never quietly undo each other - a stale drawer cannot widen a target someone
+    /// has since narrowed, or overwrite settings after the field was archived and restored.
+    /// </summary>
+    public int Version { get; set; } = 1;
+
     public ICollection<EntityFieldOption> Options { get; set; } = [];
 
     public ICollection<EntityFieldValue> Values { get; set; } = [];

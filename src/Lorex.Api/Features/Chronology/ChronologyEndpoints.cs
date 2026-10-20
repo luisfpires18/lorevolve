@@ -291,7 +291,8 @@ public static class ChronologyEndpoints
                 value => value.Entity!.UniverseId == universeId
                     && value.NumberValue != null
                     && value.EraId == null
-                    && (value.FieldDefinition!.Semantic == EntityFieldSemantic.BirthYear
+                    && value.FieldDefinition!.ArchivedAt == null
+                    && (value.FieldDefinition.Semantic == EntityFieldSemantic.BirthYear
                         || value.FieldDefinition.Semantic == EntityFieldSemantic.DeathYear),
                 cancellationToken);
 
