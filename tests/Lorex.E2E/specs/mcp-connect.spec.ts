@@ -28,9 +28,9 @@ async function signUp(page: Page) {
   return { username, password }
 }
 
-async function newUniverse(page: Page) {
+async function newUniverse(page: Page, name = unique('Connected ')) {
   const response = await page.request.post('/api/universes', {
-    data: { name: unique('Connected '), description: null, accentColor: null },
+    data: { name, description: null, accentColor: null },
   })
   expect(response.ok()).toBe(true)
   return (await response.json()) as { id: string; name: string }
@@ -342,5 +342,96 @@ test.describe('Consent and connected apps', () => {
     await page.goto(authorizeUrl(clientId, await mcpUrlOf(page, universe.id), challenge))
     await expect(page.getByTestId('consent-approve')).toBeVisible()
     expect(await hasSideScroll(page)).toBe(false)
+  })
+
+  // Issue 38: a compact card, centred, with the decision on screen - not the sign-in plate with its artwork.
+  test('the consent screen is a centred card whose decision is on screen at desktop sizes', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const universe = await newUniverse(page)
+    const clientId = await registerClient(page.request)
+    const { challenge } = pkce()
+    await page.goto(authorizeUrl(clientId, await mcpUrlOf(page, universe.id), challenge))
+    await expect(page.getByTestId('consent-approve')).toBeVisible()
+    await expect(page.locator('.auth__plate')).toHaveCount(0)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connect an AI app')
+
+    for (const [width, height] of [
+      [1440, 900],
+      [1280, 720],
+    ]) {
+      await page.setViewportSize({ width, height })
+      const card = (await page.getByTestId('consent-card').boundingBox())!
+      const left = card.x
+      const right = width - (card.x + card.width)
+      expect(Math.abs(left - right), `centred at ${width}x${height}`).toBeLessThan(2)
+      expect(card.width, `compact at ${width}x${height}`).toBeLessThanOrEqual(520)
+      await expect(page.getByTestId('consent-approve')).toBeInViewport({ ratio: 1 })
+      await expect(page.getByTestId('consent-deny')).toBeInViewport({ ratio: 1 })
+      expect(await hasSideScroll(page)).toBe(false)
+
+      // The gist is on screen before the decision, even in this request's long case (unverified and loopback): who,
+      // which universe, read-only, manuscripts, and where the content goes - none of it under the pinned buttons.
+      const summary = page.getByTestId('consent-summary')
+      await expect(summary).toContainText('read-only')
+      await expect(summary).toContainText('manuscripts')
+      await expect(summary).toContainText('AI service behind it')
+      const actionsTop = (await page.locator('.consent__actions').boundingBox())!.y
+      for (const id of [
+        'consent-summary',
+        'consent-app',
+        'consent-unverified',
+        'consent-universe',
+      ]) {
+        await expect(page.getByTestId(id), `${id} at ${width}x${height}`).toBeInViewport({
+          ratio: 1,
+        })
+        const box = (await page.getByTestId(id).boundingBox())!
+        expect(
+          box.y + box.height,
+          `${id} above the actions at ${width}x${height}`,
+        ).toBeLessThanOrEqual(actionsTop)
+      }
+    }
+  })
+
+  test('long names wrap on a narrow phone in both themes, and nothing is lost', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const universe = await newUniverse(
+      page,
+      `${unique('Universe')}${'Averyverylongname'.repeat(5)}`,
+    )
+    const clientId = await registerClient(
+      page.request,
+      `An app named ${'Unbrokenwordwithoutanyspaces'.repeat(2)}`,
+    )
+    const { challenge } = pkce()
+    const url = authorizeUrl(clientId, await mcpUrlOf(page, universe.id), challenge)
+
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.evaluate((theme) => localStorage.setItem('lorex-theme', theme), colorScheme)
+      for (const width of [320, 390]) {
+        await page.setViewportSize({ width, height: 700 })
+        await page.goto(url)
+        await expect(page.getByTestId('consent-universe')).toHaveText(universe.name)
+        await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme)
+        expect(await hasSideScroll(page), `${width}px ${colorScheme}`).toBe(false)
+        for (const id of ['consent-app', 'consent-universe']) {
+          const box = (await page.getByTestId(id).boundingBox())!
+          expect(box.x + box.width, `${id} at ${width}px`).toBeLessThanOrEqual(width)
+        }
+        await expect(page.getByTestId('consent-unverified')).toBeVisible()
+        await expect(page.getByTestId('consent-scope')).toContainText(
+          'Scenes and their manuscripts',
+        )
+        await expect(page.getByTestId('consent-details')).toContainText('AI service behind it')
+        // Pinned to the foot of the screen while the request scrolls past.
+        await expect(page.getByTestId('consent-approve')).toBeInViewport({ ratio: 1 })
+        await expect(page.getByTestId('consent-deny')).toBeInViewport({ ratio: 1 })
+      }
+    }
   })
 })
