@@ -74,3 +74,10 @@ start at 1 under new ids (ADR 0032), so no open form can name them.
 - A schema-level change made under an open form - a field definition removed, a calendar turned on - does not move any
   version; the form's save is refused by validation instead, as before.
 - Comments (ADR 0041 amendment, task 043) are untouched and keep working while an item is in conflict.
+
+## Amendment - archiving and restoring a field moves entry versions on (2026-10-20, Issue #39)
+
+Archiving or restoring a field advances the version of every entry that holds a value for it, Trash included, with no
+revision: the entry's form has changed shape though none of its lore did. A form or suggestion over the old version is then
+refused as `entity_changed` / stale. Without it, a form opened while a field was archived, saved after the restore, would
+replace that field's values with none. Entries with no value for the field keep their version.

@@ -54,6 +54,7 @@ namespace Lorex.Api.Features.Restore;
 /// target in such a file is refused by validation, never read as open to any type.</item>
 /// <item>Versions 1-23: no group is enabled for the Family Tree, even when the file says one is (Issue #37). A group's name
 /// enables nothing.</item>
+/// <item>Versions 1-24: every field is active, even when the file says one is archived (Issue #39).</item>
 /// </list>
 ///
 /// One thing is normalized for every version: the live rows of each ordered collection are numbered
@@ -76,19 +77,9 @@ internal static class BackupNormalization
                     ? payload.Universe with { OriginalCreator = null, OriginalWork = null }
                     : payload.Universe with { PublicSummary = null, Category = null, Genres = null, Artwork = null, OriginalCreator = null, OriginalWork = null },
         ChronologyEras = version >= 4 ? payload.ChronologyEras : null,
-        // Before 19 there is no hierarchy: every type is a root, in its stored order, whatever it is called.
-        EntityTypes = version >= 19 || payload.EntityTypes is null
+        EntityTypes = version >= 25 || payload.EntityTypes is null
             ? payload.EntityTypes!
-            : [.. payload.EntityTypes.Select(type => type is null
-                ? null!
-                : version >= 18
-                    ? type with { ParentId = null }
-                    : type with
-                    {
-                        ParentId = null,
-                        FamilyTreeEligible = type.Name is not null
-                            && EntityTypeDefaults.IsUntouchedStarterCharacter(type.Name, type.Description, type.Icon, type.AccentColor),
-                    })],
+            : [.. payload.EntityTypes.Select(type => type is null ? null! : ProjectType(type, version))],
         Entities = payload.Entities is null ? null! : [.. payload.Entities.Select(entity => entity is null ? null! : ProjectEntity(entity, version))],
         RelationshipTypes = version >= 14 || payload.RelationshipTypes is null
             ? payload.RelationshipTypes!
@@ -119,6 +110,22 @@ internal static class BackupNormalization
             : version >= 23
                 ? [.. payload.EntityTypeGroups.Select(group => group is null ? null! : group with { FamilyTreeEnabled = false })]
                 : null,
+    };
+
+    /// <summary>
+    /// Before 25 every field is active (Issue #39). Before 19 there is no hierarchy: every type is a root, in its stored order,
+    /// whatever it is called. Before 18 the Family Tree is the untouched starter Character's alone.
+    /// </summary>
+    private static BackupEntityType ProjectType(BackupEntityType type, int version) => type with
+    {
+        ParentId = version >= 19 ? type.ParentId : null,
+        FamilyTreeEligible = version >= 18
+            ? type.FamilyTreeEligible
+            : type.Name is not null
+                && EntityTypeDefaults.IsUntouchedStarterCharacter(type.Name, type.Description, type.Icon, type.AccentColor),
+        Fields = type.Fields is null
+            ? type.Fields!
+            : [.. type.Fields.Select(field => field is null ? null! : field with { ArchivedAt = null })],
     };
 
     /// <summary>Constraints from version 4, a family meaning from version 14 - never taken from what a kind is called.</summary>

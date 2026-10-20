@@ -479,6 +479,18 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 25)
+        {
+            // A field's archived marker arrived in version 25.
+            foreach (var type in payload["entityTypes"]!.AsArray())
+            {
+                foreach (var field in type!["fields"]!.AsArray())
+                {
+                    Drop(field, "archivedAt");
+                }
+            }
+        }
+
         if (version < 24)
         {
             // A group's Family Tree switch arrived in version 24.

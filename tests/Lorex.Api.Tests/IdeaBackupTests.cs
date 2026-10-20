@@ -55,7 +55,7 @@ public sealed class IdeaBackupTests(LorexApiFactory factory) : IClassFixture<Lor
         var raw = DocumentText(archive);
         var backup = JsonSerializer.Deserialize<UniverseBackup>(raw, UniverseBackupJson.Options)!;
 
-        Assert.Equal(24, backup.FormatVersion);
+        Assert.Equal(25, backup.FormatVersion);
         Assert.Equal(UniverseBackup.CurrentVersion, backup.FormatVersion);
 
         var ideas = backup.Payload.Ideas!;

@@ -447,3 +447,12 @@ remap, and a restored universe never points at its source's groups. Not ignorabl
 enabled group off, and the tree would quietly stop being offered for the types it covered. A version 23 or older file reads
 every group as not enabled, even when it carries the member: nothing is enabled by a group's name, and a legacy restore
 offers the tree exactly where its types' own switches say. Types' own `familyTreeEligible` is unchanged in meaning.
+
+## Amendment: version 25, archived fields (2026-10-20, Issue #39)
+
+`BackupFieldDefinition.ArchivedAt` carries when a field was archived, null for an active one (ADR 0007 amendment). An
+archived field travels whole, as an active one does: its id, options, meaning, target, required flag, and every value
+entries hold for it, in Lore and in the Trash, including links, which a restore points at the restored entries like any
+other. A restore keeps it archived. Not ignorable: a version 24 reader would restore every archived field active, back in
+every form and, if it was required, refusing every save of an entry without it. A version 24 or older file restores every
+field active, even when it carries the member.

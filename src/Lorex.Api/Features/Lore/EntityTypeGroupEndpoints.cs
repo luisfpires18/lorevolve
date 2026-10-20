@@ -189,7 +189,7 @@ public static class EntityTypeGroupEndpoints
             .Where(field => field.TargetGroupId == groupId)
             .OrderBy(field => field.EntityType!.Name)
             .ThenBy(field => field.Name)
-            .Select(field => new { FieldId = field.Id, FieldName = field.Name, field.EntityTypeId, TypeName = field.EntityType!.Name })
+            .Select(field => new { FieldId = field.Id, FieldName = field.Name, field.EntityTypeId, TypeName = field.EntityType!.Name, Archived = field.ArchivedAt != null })
             .ToListAsync(cancellationToken);
 
         if (targeting.Count > 0)
@@ -198,7 +198,7 @@ public static class EntityTypeGroupEndpoints
             var others = targeting.Count - 1;
             return Results.Problem(
                 title: "Group is in use",
-                detail: $"{group.Name} can't be deleted because the field \"{first.FieldName}\" on {first.TypeName}"
+                detail: $"{group.Name} can't be deleted because the field \"{first.FieldName}\"{EntityTypeEndpoints.ArchivedMark(first.Archived)} on {first.TypeName}"
                     + (others == 0 ? string.Empty : others == 1 ? " and 1 other field" : $" and {others} other fields")
                     + " can only link to entries in this group. Change those fields to allow something else first.",
                 statusCode: StatusCodes.Status409Conflict,
@@ -326,6 +326,7 @@ public static class EntityTypeGroupEndpoints
                 TypeName = field.EntityType!.Name,
                 GroupId = field.TargetGroupId!.Value,
                 GroupName = field.TargetGroup!.Name,
+                Archived = field.ArchivedAt != null,
                 Links = field.Values.Count(value => value.ReferencedEntityId != null && value.ReferencedEntity!.EntityTypeId == typeId),
             })
             .Where(field => field.Links > 0)
@@ -343,7 +344,7 @@ public static class EntityTypeGroupEndpoints
 
         return Results.Problem(
             title: "Group is in use",
-            detail: $"{entityType.Name} can't leave {first.GroupName} because the field \"{first.FieldName}\" on {first.TypeName} "
+            detail: $"{entityType.Name} can't leave {first.GroupName} because the field \"{first.FieldName}\"{EntityTypeEndpoints.ArchivedMark(first.Archived)} on {first.TypeName} "
                 + $"has {links} to {entityType.Name} entries that rely on that group"
                 + (others == 0 ? string.Empty : others == 1 ? ", and 1 other field does too" : $", and {others} other fields do too")
                 + ". Change those links first, then try again.",

@@ -75,6 +75,9 @@ public sealed record EntityTypeReorderRequest(int? Index, Guid? ParentId);
 /// <paramref name="FamilyTreeEligible"/> is the type's own switch, the one a save writes; <paramref name="FamilyTreeOffered"/>
 /// is whether the Family Tree is offered for its entries - that switch, or a group enabled for the tree that the type is in
 /// (Issue #37). Read only: it is changed on the type or on the group, never here.
+/// <paramref name="Fields"/> are the type's active fields, the ones entry forms, filters and rules read;
+/// <paramref name="ArchivedFields"/> are its archived ones (Issue #39), apart so that no reader of the active list can meet
+/// one by accident.
 /// </summary>
 public sealed record EntityTypeResponse(
     Guid Id,
@@ -88,7 +91,8 @@ public sealed record EntityTypeResponse(
     IReadOnlyList<FieldDefinitionResponse> Fields,
     bool FamilyTreeEligible,
     Guid? ParentId = null,
-    bool FamilyTreeOffered = false);
+    bool FamilyTreeOffered = false,
+    IReadOnlyList<FieldDefinitionResponse>? ArchivedFields = null);
 
 // ---------- Field definitions ----------
 
@@ -116,6 +120,12 @@ public sealed record FieldDefinitionRequest(
 
 public sealed record FieldOptionResponse(Guid Id, string Value, int DisplayOrder);
 
+/// <summary>
+/// One field definition. <paramref name="ArchivedAt"/> is when it was archived, null while active (Issue #39); an archived
+/// field keeps <paramref name="IsRequired"/> as it was, which is what "previously required" means. <paramref name="EntryCount"/>
+/// is how many entries hold a value for it, the Trash included, and <paramref name="TrashedEntryCount"/> how many of those are
+/// in the Trash: a field with any is never deleted, only archived.
+/// </summary>
 public sealed record FieldDefinitionResponse(
     Guid Id,
     string Name,
@@ -126,7 +136,16 @@ public sealed record FieldDefinitionResponse(
     IReadOnlyList<FieldOptionResponse> Options,
     EntityFieldSemantic? Semantic,
     Guid? TargetEntityTypeId = null,
-    Guid? TargetGroupId = null);
+    Guid? TargetGroupId = null,
+    DateTime? ArchivedAt = null,
+    int EntryCount = 0,
+    int TrashedEntryCount = 0);
+
+/// <summary>
+/// Restoring an archived field. <paramref name="AsOptional"/> is the author's explicit choice to bring a required field back
+/// as optional, offered when live entries made while it was archived have no value for it; never assumed.
+/// </summary>
+public sealed record FieldRestoreRequest(bool AsOptional = false);
 
 // ---------- Entities ----------
 

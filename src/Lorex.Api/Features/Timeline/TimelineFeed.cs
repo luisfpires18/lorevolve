@@ -267,7 +267,8 @@ internal static class TimelineFeed
     }
 
     /// <summary>
-    /// Live entries' birth and death years: a whole-number value of a field that means one, nothing else. Age is not a moment,
+    /// Live entries' birth and death years: a whole-number value of an active field that means one, nothing else (an archived
+    /// field's years are kept and read again once it is restored, Issue #39). Age is not a moment,
     /// and a Date field holds a real-world calendar date, not a year of this world, so neither is read.
     /// </summary>
     private static IQueryable<FeedRow> Facts(
@@ -282,7 +283,8 @@ internal static class TimelineFeed
             && value.Entity.DeletedAt == null
             && value.NumberValue != null
             && value.NumberValue == (double)(int)value.NumberValue
-            && (value.FieldDefinition!.Semantic == EntityFieldSemantic.BirthYear
+            && value.FieldDefinition!.ArchivedAt == null
+            && (value.FieldDefinition.Semantic == EntityFieldSemantic.BirthYear
                 || value.FieldDefinition.Semantic == EntityFieldSemantic.DeathYear));
 
         if (canonStatus is { } status)

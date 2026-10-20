@@ -72,8 +72,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   own runner, API, Vite and `lorex-e2e-shard-N.db`), `fail-fast: false`, reports `playwright-report-shard-N-of-2`. Job
   timeouts added. No cache or build-reuse change (seconds at most). Partition checked locally: 246 + 245 = 491, no
   overlap. actionlint 1.7.7 clean. Not yet measured on GitHub; estimate merge-to-DEV ~27 min -> ~15 min.
-- **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; committed, not
-  merged, not pushed). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
+- **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
+  at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);
     same-universe triggers. Membership saved with the type (`EntityTypeRequest.Groups`, new groups by name, created only
     if the save commits). Routes: `GET`/`PUT` rename/`DELETE` `/entity-type-groups`; Read to list, EditContent to change.
@@ -88,8 +88,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     Trash included) link to it; field add and type delete now each run in one IMMEDIATE transaction.
   - Tests: API 1679 passed, 6 skipped (new: `EntityTypeGroupTests` 21, file-backed races 4 + migration walk 1). Playwright
     `semantic-groups.spec.ts` 4; with neighbouring specs green on a fresh DB. Full Playwright delegated to CI.
-- **Issue #37 - Family Tree redesign** (P1; `feat/family-tree-redesign` off `dev` at `74773fe`, #36 verified merged;
-  committed, not merged, not pushed). One migration (`AddEntityTypeGroupFamilyTree`), backup format 24. ADR 0040 and 0014
+- **Issue #37 - Family Tree redesign** (P1; `feat/family-tree-redesign` off `dev` at `74773fe`; merged into `dev` at
+  `2df01fc`). One migration (`AddEntityTypeGroupFamilyTree`), backup format 24. ADR 0040 and 0014
   amendments.
   - Members are circular portraits (about 7.5rem desktop, 4.5rem phone) with the name beneath and an eye that opens
     `FamilyMemberDetails`: the shared modal `<dialog>` as a popover by the node, a bottom sheet at 640px and below. Type,
@@ -104,6 +104,20 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - Tests: API 1689 passed, 6 skipped (new: `FamilyTreeRedesignTests` 10; query bound now 6; matrix +1 route). Playwright
     `family-tree-redesign.spec.ts` 8; with the updated family specs and 10 neighbouring specs green on a fresh DB. Full
     Playwright delegated to CI.
+- **Issue #39 - edit, archive and restore Lore type fields** (P1; `feat/lore-field-lifecycle` off `dev` at `2df01fc`, #36
+  and #37 merged there; committed, not merged, not pushed). One migration (`AddEntityFieldArchive`), backup format 25. ADR
+  0007, 0014 and 0043 amendments.
+  - Types -> Fields lists the active fields (kind, Required/Optional, link target, Canon meaning) with Edit and a menu of
+    Archive and Delete; Add field opens the drawer on request. The drawer edits name, kind (locked while values exist),
+    options, link target (Any, one type, one group; a new link field picks one), meaning, default text, Required.
+  - Archive keeps the row, id and every value (Trash too); `EntityTypeResponse.Fields` is active only, `ArchivedFields`
+    apart. Entry saves, restored versions and accepted suggestions replace only active values; archive/restore bump the
+    holders' entry versions so a stale form or suggestion is refused instead of dropping restored values.
+  - Restore rechecks links and Required; a required field missing on live entries comes back only via explicit
+    "Restore as optional". Optional to Required is refused while live entries lack a value. Delete only with no values.
+  - Archived links still block type/group delete, group leave and retype; an entry with archived values cannot retype.
+    Canon lifespan, CANON-FIELD-001, timeline years, unplaced-years count and Lore filters read active fields only.
+  - Fix found on the way: adding an option while editing a field threw a concurrency error (EF updated a new row).
 - **Roadmap task 049 - MCP V1** (GitHub issue 7; `feat/lorex-mcp-v1` off `dev` at `ac39b23`; committed, not merged, not
   pushed). One migration (`AddMcpConnections`: OpenIddict's four tables + `McpConnections`), backup unchanged (account-level
   state, never in a universe backup). ADR 0046 (new); 0005 amendment.

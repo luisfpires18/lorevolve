@@ -271,7 +271,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                             field.DefaultValue,
                             optionsByField.GetValueOrDefault(field.Id, []),
                             field.TargetEntityTypeId,
-                            field.TargetGroupId)),
+                            field.TargetGroupId,
+                            field.ArchivedAt)),
                 ]);
 
         // The hierarchy's own order, as the app lists it: a parent before its descendants, siblings by place, then name,

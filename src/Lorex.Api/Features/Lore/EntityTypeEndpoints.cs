@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Security.Claims;
 using Lorex.Api.Data;
 using Lorex.Api.Features.CanonIntegrity;
@@ -58,6 +59,15 @@ public static class EntityTypeEndpoints
     /// <summary>The marker on the 409 for limiting a link field to a type some of its links are not of.</summary>
     public const string TargetConflictCode = "entity_field_target_conflict";
 
+    /// <summary>The marker on the 409 for editing an archived field: it is restored first (Issue #39).</summary>
+    public const string FieldArchivedCode = "entity_field_archived";
+
+    /// <summary>The marker on the 409 for making a field required - by an edit or a restore - while live entries of its type have no value for it.</summary>
+    public const string RequiredMissingCode = "entity_field_required_missing";
+
+    /// <summary>The marker on the 409 for permanently deleting a field that holds values, the Trash included.</summary>
+    public const string FieldInUseCode = "entity_field_in_use";
+
     /// <summary>The machine-readable marker on the refusal of a parent or a move that would put a type inside itself.</summary>
     public const string ParentCycleCode = "entity_type_parent_cycle";
 
@@ -80,6 +90,8 @@ public static class EntityTypeEndpoints
         group.MapPost("/{typeId:guid}/fields", AddFieldAsync).WithName("AddEntityField");
         group.MapPut("/{typeId:guid}/fields/{fieldId:guid}", UpdateFieldAsync).WithName("UpdateEntityField");
         group.MapDelete("/{typeId:guid}/fields/{fieldId:guid}", DeleteFieldAsync).WithName("DeleteEntityField");
+        group.MapPost("/{typeId:guid}/fields/{fieldId:guid}/archive", ArchiveFieldAsync).WithName("ArchiveEntityField");
+        group.MapPost("/{typeId:guid}/fields/{fieldId:guid}/restore", RestoreFieldAsync).WithName("RestoreEntityField");
 
         return endpoints;
     }
@@ -559,12 +571,12 @@ public static class EntityTypeEndpoints
 
         // A link field on another type limited to this one would be left pointing at nothing. Named, so the author knows
         // which field to change; one is enough to say what to do, and the count says how many. A field of this type that
-        // links to its own kind goes with it.
+        // links to its own kind goes with it. An archived field counts and says so (Issue #39): its limit and links are kept.
         var targeting = await db.EntityFieldDefinitions.AsNoTracking()
             .Where(field => field.TargetEntityTypeId == typeId && field.EntityTypeId != typeId)
             .OrderBy(field => field.EntityType!.Name)
             .ThenBy(field => field.Name)
-            .Select(field => new { field.Name, TypeName = field.EntityType!.Name })
+            .Select(field => new { field.Name, TypeName = field.EntityType!.Name, Archived = field.ArchivedAt != null })
             .ToListAsync(cancellationToken);
 
         if (targeting.Count > 0)
@@ -573,7 +585,7 @@ public static class EntityTypeEndpoints
             var others = targeting.Count - 1;
             return Results.Problem(
                 title: "Type is in use",
-                detail: $"{entityType.Name} can't be deleted because the field \"{first.Name}\" on {first.TypeName}"
+                detail: $"{entityType.Name} can't be deleted because the field \"{first.Name}\"{ArchivedMark(first.Archived)} on {first.TypeName}"
                     + (others == 0 ? string.Empty : others == 1 ? " and 1 other field" : $" and {others} other fields")
                     + " can only link to it. Change those fields to allow another type first.",
                 statusCode: StatusCodes.Status409Conflict,
@@ -631,16 +643,14 @@ public static class EntityTypeEndpoints
 
         var name = request.Name!.Trim();
 
-        if (await db.EntityFieldDefinitions.AnyAsync(
-                field => field.EntityTypeId == typeId && field.Name == name,
-                cancellationToken))
+        if (await NameClashAsync(db, typeId, null, name, cancellationToken) is { } nameClash)
         {
-            return FieldNameTaken();
+            return FieldNameTaken(nameClash);
         }
 
-        if (await SemanticTakenAsync(db, typeId, null, request.Semantic, cancellationToken))
+        if (await SemanticClashAsync(db, typeId, null, request.Semantic, cancellationToken) is { } semanticClash)
         {
-            return SemanticTaken(request.Semantic!.Value);
+            return SemanticTaken(request.Semantic!.Value, semanticClash);
         }
 
         var order = request.DisplayOrder
@@ -672,7 +682,7 @@ public static class EntityTypeEndpoints
         }
         catch (DbUpdateException failure) when (DatabaseFailures.IsUniqueViolation(failure))
         {
-            return FieldNameTaken();
+            return FieldNameTaken(archived: false);
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -734,6 +744,17 @@ public static class EntityTypeEndpoints
             return Results.NotFound();
         }
 
+        // An archived field is kept exactly as it was archived, so its restore checks what was there. Editing it would be
+        // editing something no form shows (Issue #39).
+        if (definition.ArchivedAt is not null)
+        {
+            return Results.Problem(
+                title: "Field is archived",
+                detail: $"\"{definition.Name}\" is archived. Restore it before changing its settings.",
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = FieldArchivedCode });
+        }
+
         if (LoreValidation.ValidateField(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -757,16 +778,14 @@ public static class EntityTypeEndpoints
         var name = request.Name!.Trim();
 
         if (!string.Equals(definition.Name, name, StringComparison.Ordinal)
-            && await db.EntityFieldDefinitions.AnyAsync(
-                other => other.EntityTypeId == typeId && other.Name == name && other.Id != fieldId,
-                cancellationToken))
+            && await NameClashAsync(db, typeId, fieldId, name, cancellationToken) is { } nameClash)
         {
-            return FieldNameTaken();
+            return FieldNameTaken(nameClash);
         }
 
-        if (await SemanticTakenAsync(db, typeId, fieldId, request.Semantic, cancellationToken))
+        if (await SemanticClashAsync(db, typeId, fieldId, request.Semantic, cancellationToken) is { } semanticClash)
         {
-            return SemanticTaken(request.Semantic!.Value);
+            return SemanticTaken(request.Semantic!.Value, semanticClash);
         }
 
         if (await UnknownTargetAsync(db, universeId, request.TargetEntityTypeId, cancellationToken))
@@ -779,42 +798,22 @@ public static class EntityTypeEndpoints
             return UnknownGroup();
         }
 
-        // Narrowing a link field - from any type to one, or from one type to another - is refused while any entry links it
-        // to an entry of another type: nothing is cleared or rewritten behind the author's back. Entries in the Trash count,
-        // since their values come back with them. Widening to any type is always safe.
-        if (request.TargetEntityTypeId is { } target
-            && target != definition.TargetEntityTypeId
-            && await db.EntityFieldValues.AnyAsync(
-                value => value.FieldDefinitionId == fieldId
-                    && value.ReferencedEntityId != null
-                    && value.ReferencedEntity!.EntityTypeId != target,
-                cancellationToken))
+        // Narrowing a link field - from any type to one, from one type to another, or to a group - is refused while any entry
+        // links it to an entry the new limit would not allow: nothing is cleared or rewritten behind the author's back.
+        // Widening to any type is always safe.
+        if (((request.TargetEntityTypeId is { } target && target != definition.TargetEntityTypeId)
+                || (request.TargetGroupId is { } group && group != definition.TargetGroupId))
+            && await TargetConflictAsync(db, fieldId, request.TargetEntityTypeId, request.TargetGroupId, cancellationToken) is { } conflict)
         {
-            return Results.Problem(
-                title: "Field is in use",
-                detail: "Some entries link this field to entries of another type. "
-                    + "Change those links first, then limit the field to this type.",
-                statusCode: StatusCodes.Status409Conflict,
-                extensions: new Dictionary<string, object?> { ["code"] = TargetConflictCode });
+            return conflict;
         }
 
-        // The same for a group: a new group target is refused while any link points at an entry whose type is not in it -
-        // read as the group is now, inside the gate's transaction, so a membership change cannot slip between.
-        if (request.TargetGroupId is { } targetGroup
-            && targetGroup != definition.TargetGroupId
-            && await db.EntityFieldValues.AnyAsync(
-                value => value.FieldDefinitionId == fieldId
-                    && value.ReferencedEntityId != null
-                    && !db.EntityTypeGroupMembers.Any(member =>
-                        member.EntityTypeGroupId == targetGroup && member.EntityTypeId == value.ReferencedEntity!.EntityTypeId),
-                cancellationToken))
+        // Making a field required is refused while a live entry of the type has no value for it: the next save of each would
+        // fail, so the author fills them in first. An entry in the Trash is not checked until it is back and saved again.
+        if (request.IsRequired && !definition.IsRequired
+            && await MissingRequiredAsync(db, typeId, fieldId, cancellationToken) is > 0 and var missing)
         {
-            return Results.Problem(
-                title: "Field is in use",
-                detail: "Some entries link this field to entries whose type is not in that group. "
-                    + "Change those links, or add their types to the group, then limit the field to it.",
-                statusCode: StatusCodes.Status409Conflict,
-                extensions: new Dictionary<string, object?> { ["code"] = TargetConflictCode });
+            return RequiredMissing(definition.Name, await TypeNameAsync(db, typeId, cancellationToken), missing, restoring: false);
         }
 
         definition.Name = name;
@@ -873,7 +872,9 @@ public static class EntityTypeEndpoints
                     continue;
                 }
 
-                definition.Options.Add(new EntityFieldOption
+                // Added through the set, not the tracked collection: a new option arrives with its id already set, and EF
+                // Core would take one found in the collection that way for an existing row and update nothing.
+                db.EntityFieldOptions.Add(new EntityFieldOption
                 {
                     Id = Guid.NewGuid(),
                     FieldDefinitionId = fieldId,
@@ -889,13 +890,19 @@ public static class EntityTypeEndpoints
         }
         catch (DbUpdateException failure) when (DatabaseFailures.IsUniqueViolation(failure))
         {
-            return FieldNameTaken();
+            return FieldNameTaken(archived: false);
         }
 
         var types = await LoadTypesAsync(db, universeId, cancellationToken);
         return Results.Ok(types.First(type => type.Id == typeId));
     }
 
+    /// <summary>
+    /// Permanent deletion, for a field that holds nothing (Issue #39). Refused while any entry - in Lore or in the Trash - has a
+    /// value for it, whether the field is active or archived: archiving is the way to put a populated field away, and nothing
+    /// here cascades into authored values. One writer at a time (IMMEDIATE), so an entry save that would add the first value
+    /// either lands first and is counted, or waits until the field is gone and is then ignored like any unknown field.
+    /// </summary>
     private static async Task<IResult> DeleteFieldAsync(
         Guid universeId,
         Guid typeId,
@@ -915,6 +922,8 @@ public static class EntityTypeEndpoints
             return Results.NotFound();
         }
 
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
         var definition = await db.EntityFieldDefinitions
             .FirstOrDefaultAsync(field => field.Id == fieldId && field.EntityTypeId == typeId, cancellationToken);
 
@@ -923,28 +932,262 @@ public static class EntityTypeEndpoints
             return Results.NotFound();
         }
 
-        var valueCount = await db.EntityFieldValues.CountAsync(
-            value => value.FieldDefinitionId == fieldId,
-            cancellationToken);
+        var holders = await db.EntityFieldValues.AsNoTracking()
+            .Where(value => value.FieldDefinitionId == fieldId)
+            .Select(value => new { value.EntityId, Trashed = value.Entity!.DeletedAt != null })
+            .Distinct()
+            .ToListAsync(cancellationToken);
 
-        // Deleting a field that holds values would destroy authored content, so it is
-        // refused until the author clears it deliberately.
-        if (valueCount > 0)
+        if (holders.Count > 0)
         {
+            var trashed = holders.Count(holder => holder.Trashed);
             return Results.Problem(
                 title: "Field is in use",
-                detail: valueCount == 1
-                    ? "1 entity has a value for this field. Clear that value before deleting it."
-                    : $"{valueCount} entities have a value for this field. "
-                        + "Clear those values before deleting it.",
-                statusCode: StatusCodes.Status409Conflict);
+                detail: FieldInUseDetail(holders.Count, trashed),
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["code"] = FieldInUseCode,
+                    ["entryCount"] = holders.Count,
+                    ["trashedCount"] = trashed,
+                });
         }
 
         db.EntityFieldDefinitions.Remove(definition);
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return Results.NoContent();
     }
+
+    /// <summary>Why a field holding values cannot be deleted, in the author's terms. Mirrored by the Types screen.</summary>
+    internal static string FieldInUseDetail(int entries, int trashed)
+    {
+        var where = trashed == 0
+            ? string.Empty
+            : trashed == entries
+                ? entries == 1 ? ", and it is in the Trash" : ", all of them in the Trash"
+                : $", {trashed} of them in the Trash";
+        var holds = entries == 1 ? "a value in 1 entry" : $"values in {entries} entries";
+        return $"This field contains {holds}{where}. Archive it to hide it without losing its data.";
+    }
+
+    /// <summary>
+    /// Archives a field (Issue #39): it leaves entry forms, entry reads, filters and required checks, and every Canon and
+    /// timeline reading, and keeps everything - definition, id, options, meaning, target, required flag, and every value in
+    /// Lore and in the Trash. Nothing is cleared, moved or rewritten, so restoring it is the same field with the same data.
+    ///
+    /// Reconciled, not gated: archiving only takes facts away from the rules (a birth year, a link), so it can close findings
+    /// and never open one. Archiving an archived field is the same field back, unchanged.
+    /// </summary>
+    private static async Task<IResult> ArchiveFieldAsync(
+        Guid universeId,
+        Guid typeId,
+        Guid fieldId,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CanonPromotionGate canon,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        if (await FindTypeAsync(db, universeId, typeId, cancellationToken) is null)
+        {
+            return Results.NotFound();
+        }
+
+        return await canon.RecordAsync(
+            universeId,
+            async token =>
+            {
+                var definition = await db.EntityFieldDefinitions
+                    .FirstOrDefaultAsync(field => field.Id == fieldId && field.EntityTypeId == typeId, token);
+
+                if (definition is null)
+                {
+                    return Results.NotFound();
+                }
+
+                if (definition.ArchivedAt is null)
+                {
+                    definition.ArchivedAt = DateTime.UtcNow;
+                    await db.SaveChangesAsync(token);
+                    await InvalidateOpenFormsAsync(db, fieldId, token);
+                }
+
+                var types = await LoadTypesAsync(db, universeId, token);
+                return Results.Ok(types.First(type => type.Id == typeId));
+            },
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Restores an archived field (Issue #39): the same definition, id, options, meaning and target, with every value it kept.
+    /// Checked first, inside the gate's transaction: its links must still fit its limit (they always should - every retype and
+    /// group change counts them - but a restore never takes that on trust), and a required field comes back required only
+    /// when no live entry of its type is missing a value. Otherwise the 409 says how many are, and the author may restore it
+    /// as optional instead - explicitly, with <see cref="FieldRestoreRequest.AsOptional"/>; it is never relaxed silently. No
+    /// limit is widened and no value is cleared to make a restore succeed.
+    ///
+    /// Gated, because a restored birth year or link is read by the Canon rules again, and that can open a High finding. A
+    /// restore that would is refused like any gated write. Restoring an active field is the same field back, unchanged.
+    /// </summary>
+    private static async Task<IResult> RestoreFieldAsync(
+        Guid universeId,
+        Guid typeId,
+        Guid fieldId,
+        [FromBody] FieldRestoreRequest? request,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CanonPromotionGate gate,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        if (await FindTypeAsync(db, universeId, typeId, cancellationToken) is not { } entityType)
+        {
+            return Results.NotFound();
+        }
+
+        var asOptional = request?.AsOptional == true;
+
+        return await gate.RunAsync(
+            universeId,
+            async token =>
+            {
+                var definition = await db.EntityFieldDefinitions
+                    .FirstOrDefaultAsync(field => field.Id == fieldId && field.EntityTypeId == typeId, token);
+
+                if (definition is null)
+                {
+                    return Results.NotFound();
+                }
+
+                if (definition.ArchivedAt is not null)
+                {
+                    if (await TargetConflictAsync(db, fieldId, definition.TargetEntityTypeId, definition.TargetGroupId, token) is { } conflict)
+                    {
+                        return conflict;
+                    }
+
+                    if (definition.IsRequired && !asOptional
+                        && await MissingRequiredAsync(db, typeId, fieldId, token) is > 0 and var missing)
+                    {
+                        return RequiredMissing(definition.Name, entityType.Name, missing, restoring: true);
+                    }
+
+                    if (asOptional)
+                    {
+                        definition.IsRequired = false;
+                    }
+
+                    definition.ArchivedAt = null;
+                    await db.SaveChangesAsync(token);
+                    await InvalidateOpenFormsAsync(db, fieldId, token);
+                }
+
+                var types = await LoadTypesAsync(db, universeId, token);
+                return Results.Ok(types.First(type => type.Id == typeId));
+            },
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Moves on the edit version (ADR 0043) of every entry - Trash included - holding a value for the field, when it is archived
+    /// or restored. A form opened before the change, or a suggestion made over the old version, is then refused as stale
+    /// rather than saved over a field set it never showed. This is what keeps a restore safe: a form opened while the field was
+    /// archived does not carry it, and saving that form after the restore would otherwise remove the values the restore
+    /// brought back. Entries with no value for the field have nothing such a save could lose.
+    /// </summary>
+    private static Task<int> InvalidateOpenFormsAsync(LorexDbContext db, Guid fieldId, CancellationToken cancellationToken) =>
+        db.Entities
+            .Where(entity => entity.FieldValues.Any(value => value.FieldDefinitionId == fieldId))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(entity => entity.Version, entity => entity.Version + 1), cancellationToken);
+
+    /// <summary>How many live entries of the type have no value for the field: what making it required would leave invalid.</summary>
+    private static Task<int> MissingRequiredAsync(LorexDbContext db, Guid typeId, Guid fieldId, CancellationToken cancellationToken) =>
+        db.Entities.CountAsync(
+            entity => entity.EntityTypeId == typeId
+                && entity.DeletedAt == null
+                && !entity.FieldValues.Any(value => value.FieldDefinitionId == fieldId),
+            cancellationToken);
+
+    private static Task<string> TypeNameAsync(LorexDbContext db, Guid typeId, CancellationToken cancellationToken) =>
+        db.EntityTypes.Where(type => type.Id == typeId).Select(type => type.Name).SingleAsync(cancellationToken);
+
+    private static IResult RequiredMissing(string fieldName, string typeName, int missing, bool restoring)
+    {
+        var entries = missing == 1 ? $"1 {typeName} entry has" : $"{missing} {typeName} entries have";
+        var extensions = new Dictionary<string, object?> { ["code"] = RequiredMissingCode, ["missingCount"] = missing };
+        if (restoring)
+        {
+            extensions["canRestoreOptional"] = true;
+        }
+
+        return Results.Problem(
+            title: restoring ? "Field can't come back as required" : "Field can't be required yet",
+            detail: restoring
+                ? $"{entries} no {fieldName}, so it can't come back as required. Restore it as optional, fill those in, then make it required again."
+                : $"{entries} no {fieldName} yet, so it can't be required. Fill it in on those entries first, or keep it optional.",
+            statusCode: StatusCodes.Status409Conflict,
+            extensions: extensions);
+    }
+
+    /// <summary>
+    /// The 409 for a link field limited to <paramref name="targetType"/> or <paramref name="targetGroup"/> while any of its
+    /// stored links - the Trash included, since those values come back with their entries - points at an entry the limit
+    /// would not allow; null when every link fits, or for no limit. Group membership is read as it is now, inside the caller's
+    /// transaction, so a retype or a membership change cannot slip between. Shared by an edit that narrows a field and a restore.
+    /// </summary>
+    private static async Task<IResult?> TargetConflictAsync(
+        LorexDbContext db,
+        Guid fieldId,
+        Guid? targetType,
+        Guid? targetGroup,
+        CancellationToken cancellationToken)
+    {
+        if (targetType is { } type
+            && await db.EntityFieldValues.AnyAsync(
+                value => value.FieldDefinitionId == fieldId
+                    && value.ReferencedEntityId != null
+                    && value.ReferencedEntity!.EntityTypeId != type,
+                cancellationToken))
+        {
+            return Results.Problem(
+                title: "Field is in use",
+                detail: "Some entries link this field to entries of another type. "
+                    + "Change those links first, then limit the field to this type.",
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = TargetConflictCode });
+        }
+
+        if (targetGroup is { } group
+            && await db.EntityFieldValues.AnyAsync(
+                value => value.FieldDefinitionId == fieldId
+                    && value.ReferencedEntityId != null
+                    && !db.EntityTypeGroupMembers.Any(member =>
+                        member.EntityTypeGroupId == group && member.EntityTypeId == value.ReferencedEntity!.EntityTypeId),
+                cancellationToken))
+        {
+            return Results.Problem(
+                title: "Field is in use",
+                detail: "Some entries link this field to entries whose type is not in that group. "
+                    + "Change those links, or add their types to the group, then limit the field to it.",
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = TargetConflictCode });
+        }
+
+        return null;
+    }
+
+    /// <summary>" (archived)" after a field's quoted name in a refusal, so the author knows to look among the archived fields.</summary>
+    internal static string ArchivedMark(bool archived) => archived ? " (archived)" : string.Empty;
 
     // ---------- Helpers ----------
 
@@ -986,6 +1229,29 @@ public static class EntityTypeEndpoints
         }
     }
 
+    /// <summary>
+    /// One field as the types list reads it, active or archived, with how many entries hold a value for it and how many of
+    /// those are in the Trash - what decides whether it can be deleted, and what an archived field still keeps.
+    /// </summary>
+    private static readonly Expression<Func<EntityFieldDefinition, FieldDefinitionResponse>> ToFieldResponse =
+        field => new FieldDefinitionResponse(
+            field.Id,
+            field.Name,
+            field.Kind,
+            field.IsRequired,
+            field.DisplayOrder,
+            field.DefaultValue,
+            field.Options
+                .OrderBy(option => option.DisplayOrder)
+                .Select(option => new FieldOptionResponse(option.Id, option.Value, option.DisplayOrder))
+                .ToList(),
+            field.Semantic,
+            field.TargetEntityTypeId,
+            field.TargetGroupId,
+            field.ArchivedAt,
+            field.Values.Select(value => value.EntityId).Distinct().Count(),
+            field.Values.Where(value => value.Entity!.DeletedAt != null).Select(value => value.EntityId).Distinct().Count());
+
     internal static async Task<List<EntityTypeResponse>> LoadTypesAsync(
         LorexDbContext db,
         Guid universeId,
@@ -1005,27 +1271,21 @@ public static class EntityTypeEndpoints
                 type.DisplayOrder,
                 db.Entities.Count(entity => entity.EntityTypeId == type.Id),
                 db.Entities.Count(entity => entity.EntityTypeId == type.Id && entity.DeletedAt != null),
-                type.Fields
+                type.Fields.AsQueryable()
+                    .Where(field => field.ArchivedAt == null)
                     .OrderBy(field => field.DisplayOrder)
                     .ThenBy(field => field.Name)
-                    .Select(field => new FieldDefinitionResponse(
-                        field.Id,
-                        field.Name,
-                        field.Kind,
-                        field.IsRequired,
-                        field.DisplayOrder,
-                        field.DefaultValue,
-                        field.Options
-                            .OrderBy(option => option.DisplayOrder)
-                            .Select(option => new FieldOptionResponse(option.Id, option.Value, option.DisplayOrder))
-                            .ToList(),
-                        field.Semantic,
-                        field.TargetEntityTypeId,
-                        field.TargetGroupId))
+                    .Select(ToFieldResponse)
                     .ToList(),
                 type.FamilyTreeEligible,
                 type.ParentId,
-                familyTree.Contains(type.Id)))
+                familyTree.Contains(type.Id),
+                type.Fields.AsQueryable()
+                    .Where(field => field.ArchivedAt != null)
+                    .OrderBy(field => field.DisplayOrder)
+                    .ThenBy(field => field.Name)
+                    .Select(ToFieldResponse)
+                    .ToList()))
             .ToListAsync(cancellationToken),
             type => type.Id,
             type => type.ParentId,
@@ -1040,35 +1300,57 @@ public static class EntityTypeEndpoints
         });
 
     /// <summary>
-    /// Whether some other field on this type already claims that meaning. Checked here so
-    /// the author gets a readable error rather than a unique-index violation, and enforced
-    /// again by the index so a race cannot leave a rule with two birth years to choose from.
+    /// Whether some other field on this type already claims that meaning - null when none does, else whether that field is
+    /// archived. Checked here so the author gets a readable error rather than a unique-index violation, and enforced again by
+    /// the index so a race cannot leave a rule with two birth years to choose from. An archived field keeps its meaning, so it
+    /// still holds it (Issue #39): restoring it can then never meet a second birth year.
     /// </summary>
-    private static async Task<bool> SemanticTakenAsync(
+    private static async Task<bool?> SemanticClashAsync(
         LorexDbContext db,
         Guid typeId,
         Guid? excludingFieldId,
         EntityFieldSemantic? semantic,
         CancellationToken cancellationToken) =>
         semantic is { } value
-        && await db.EntityFieldDefinitions.AnyAsync(
-            field => field.EntityTypeId == typeId
-                && field.Semantic == value
-                && field.Id != excludingFieldId,
-            cancellationToken);
+            ? await db.EntityFieldDefinitions
+                .Where(field => field.EntityTypeId == typeId && field.Semantic == value && field.Id != excludingFieldId)
+                .Select(field => (bool?)(field.ArchivedAt != null))
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
 
-    private static IResult SemanticTaken(EntityFieldSemantic semantic) =>
+    private static IResult SemanticTaken(EntityFieldSemantic semantic, bool archived) =>
         Results.ValidationProblem(new Dictionary<string, string[]>
         {
             ["semantic"] = [
-                $"Another field on this type is already {LoreValidation.SemanticWord(semantic)}. "
-                    + "Only one field may mean it."],
+                archived
+                    ? $"An archived field on this type is already {LoreValidation.SemanticWord(semantic)}. "
+                        + "Only one field may mean it. Restore that field, or choose no meaning here."
+                    : $"Another field on this type is already {LoreValidation.SemanticWord(semantic)}. "
+                        + "Only one field may mean it."],
         });
 
-    private static IResult FieldNameTaken() =>
+    /// <summary>
+    /// Whether another field on this type already has the name - null when none does, else whether that field is archived. An
+    /// archived field keeps its name, so a restore can never meet a twin.
+    /// </summary>
+    private static Task<bool?> NameClashAsync(
+        LorexDbContext db,
+        Guid typeId,
+        Guid? excludingFieldId,
+        string name,
+        CancellationToken cancellationToken) =>
+        db.EntityFieldDefinitions
+            .Where(field => field.EntityTypeId == typeId && field.Name == name && field.Id != excludingFieldId)
+            .Select(field => (bool?)(field.ArchivedAt != null))
+            .FirstOrDefaultAsync(cancellationToken);
+
+    private static IResult FieldNameTaken(bool archived) =>
         Results.ValidationProblem(new Dictionary<string, string[]>
         {
-            ["name"] = ["This type already has a field with that name."],
+            ["name"] = [
+                archived
+                    ? "An archived field on this type already has that name. Restore it, or choose another name."
+                    : "This type already has a field with that name."],
         });
 
     /// <summary>

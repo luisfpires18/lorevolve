@@ -252,7 +252,7 @@ public sealed class LoreEndpointTests(LorexApiFactory factory) : IClassFixture<L
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Contains(
-            "1 entity has a value for this field. Clear that value before deleting it.",
+            "This field contains a value in 1 entry. Archive it to hide it without losing its data.",
             await response.Content.ReadAsStringAsync(),
             StringComparison.Ordinal);
     }

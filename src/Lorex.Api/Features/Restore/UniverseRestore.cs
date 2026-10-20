@@ -638,6 +638,9 @@ internal sealed partial class UniverseRestore(
 
                     // The group it was limited to, as that group's restored id: validation proved it is a group of this file.
                     TargetGroupId = ids.Map(field.TargetGroupId),
+
+                    // Archived stays archived, with every value below it (Issue #39); null in a file before version 25.
+                    ArchivedAt = field.ArchivedAt,
                 });
 
                 foreach (var option in field.Options)

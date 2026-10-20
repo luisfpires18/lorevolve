@@ -1,5 +1,13 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
+import {
+  discardField,
+  editField,
+  fieldDialog,
+  fieldSummary,
+  fillField,
+  showFields,
+} from './support/typeFields'
 
 /**
  * A link-to-an-entity field limited to one type (036): a Character's "Kingdom" that offers, accepts and filters by Kingdoms
@@ -105,16 +113,20 @@ async function offered(scope: Locator) {
 
 async function addKingdomField(page: Page, w: World, allowed: string) {
   await page.goto(typesUrl(w))
-  await page.getByTestId('fields-Character').click()
-  const list = page.getByTestId('type-list')
-  await list.getByLabel('Field name').fill('Kingdom')
-  await list.getByLabel('Kind', { exact: true }).selectOption({ label: 'Link to an entity' })
-  const allowedType = page.getByTestId('new-field-target-Character')
-  // Any Lore type is a visible choice from the moment the kind is picked, never a blank.
-  expect(await selectedText(allowedType)).toBe('Any Lore type')
+  await showFields(page, 'Character')
+  await page.getByTestId('new-field-Character').click()
+  const dialog = fieldDialog(page)
+  await fillField(dialog, { name: 'Kingdom', kind: 'Link to an entity' })
+  const allowedType = dialog.getByTestId('field-target')
+  // A new link field has no target until the author picks one - Any Lore type included - and nothing is picked from the
+  // field's name. Saving before then says so and keeps the draft.
+  expect(await selectedText(allowedType)).toBe('Choose what it can link to…')
+  await dialog.getByTestId('save-field').click()
+  await expect(dialog).toContainText('Choose what this field can link to.')
   await allowedType.selectOption({ label: allowed })
-  await page.getByTestId('add-field-Character').click()
-  await expect(page.getByTestId('field-target-Kingdom')).toBeVisible()
+  await dialog.getByTestId('save-field').click()
+  await expect(dialog).toHaveCount(0)
+  await expect(page.getByTestId('field-row-Kingdom')).toBeVisible()
 }
 
 function noSideways(page: Page) {
@@ -133,8 +145,8 @@ test.describe('a link field limited to one type', () => {
     // ---------- The field, on the Types screen ----------
     await addKingdomField(page, w, 'Kingdoms')
     await page.reload()
-    await page.getByTestId('fields-Character').click()
-    expect(await selectedText(page.getByTestId('field-target-Kingdom'))).toBe('Kingdoms')
+    await showFields(page, 'Character')
+    await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to Kingdoms')
 
     // ---------- The entry's own picker ----------
     await page.goto(`/app/universes/${w.u}/lore/${w.mara}`)
@@ -214,11 +226,9 @@ test.describe('a link field limited to one type', () => {
 
     // ---------- Opened to any type, explicitly ----------
     await page.goto(typesUrl(w))
-    await page.getByTestId('fields-Character').click()
-    await page.getByTestId('field-target-Kingdom').selectOption({ label: 'Any Lore type' })
-    await expect
-      .poll(() => selectedText(page.getByTestId('field-target-Kingdom')))
-      .toBe('Any Lore type')
+    await showFields(page, 'Character')
+    await editField(page, 'Kingdom', { target: 'Any Lore type' })
+    await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to any Lore type')
 
     await page.goto(`/app/universes/${w.u}/lore/${w.mara}`)
     await page.getByTestId('edit-entity').click()
@@ -228,9 +238,9 @@ test.describe('a link field limited to one type', () => {
 
     // ---------- Back to Kingdoms, then the type renamed: the field follows the type, not its name ----------
     await page.goto(typesUrl(w))
-    await page.getByTestId('fields-Character').click()
-    await page.getByTestId('field-target-Kingdom').selectOption({ label: 'Kingdoms' })
-    await expect.poll(() => selectedText(page.getByTestId('field-target-Kingdom'))).toBe('Kingdoms')
+    await showFields(page, 'Character')
+    await editField(page, 'Kingdom', { target: 'Kingdoms' })
+    await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to Kingdoms')
     expect(
       (
         await page.request.put(`/api/universes/${w.u}/entity-types/${w.kingdoms}`, {
@@ -245,8 +255,8 @@ test.describe('a link field limited to one type', () => {
       ).ok(),
     ).toBe(true)
     await page.reload()
-    await page.getByTestId('fields-Character').click()
-    expect(await selectedText(page.getByTestId('field-target-Kingdom'))).toBe('Realms')
+    await showFields(page, 'Character')
+    await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to Realms')
   })
 
   test('a field limited to a type cannot be narrowed past the links it holds, and says why', async ({
@@ -297,14 +307,15 @@ test.describe('a link field limited to one type', () => {
     ).toBe(true)
 
     await page.reload()
-    await page.getByTestId('fields-Character').click()
-    await page.getByTestId('field-target-Kingdom').selectOption({ label: 'Kingdoms' })
-    await expect(page.getByTestId('types-error')).toContainText(
+    await showFields(page, 'Character')
+    const refused = await editField(page, 'Kingdom', { target: 'Kingdoms' }, { saved: false })
+    await expect(refused.getByTestId('field-dialog-error')).toContainText(
       'Some entries link this field to entries of another type.',
     )
-    await expect
-      .poll(() => selectedText(page.getByTestId('field-target-Kingdom')))
-      .toBe('Any Lore type')
+    // The draft is kept until the author lets it go; the field is as it was.
+    expect(await selectedText(refused.getByTestId('field-target'))).toBe('Kingdoms')
+    await discardField(page)
+    await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to any Lore type')
   })
 
   for (const width of [390, 360]) {

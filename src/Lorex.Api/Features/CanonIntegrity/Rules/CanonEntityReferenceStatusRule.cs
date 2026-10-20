@@ -31,6 +31,7 @@ public sealed class CanonEntityReferenceStatusRule : ICanonIntegrityRule
                 && value.Entity.DeletedAt == null
                 && value.Entity.CanonStatus == CanonStatus.Canon
                 && value.FieldDefinition!.Kind == EntityFieldKind.EntityReference
+                && value.FieldDefinition.ArchivedAt == null
                 && value.ReferencedEntityId != null
                 && value.ReferencedEntity!.DeletedAt == null
                 && value.ReferencedEntity.CanonStatus != CanonStatus.Canon)

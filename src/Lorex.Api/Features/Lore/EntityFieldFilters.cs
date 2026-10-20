@@ -94,7 +94,9 @@ public static class EntityFieldFilters
         }
 
         var fields = await db.EntityFieldDefinitions.AsNoTracking()
-            .Where(field => field.EntityTypeId == typeId && field.EntityType!.UniverseId == universeId)
+            // Active fields only: an archived one is out of Lore's filters as it is out of every form (Issue #39), so a filter
+            // naming it is refused like any field this type does not have.
+            .Where(field => field.EntityTypeId == typeId && field.EntityType!.UniverseId == universeId && field.ArchivedAt == null)
             .Select(field => new
             {
                 field.Id,

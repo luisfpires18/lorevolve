@@ -47,6 +47,9 @@ public static class EntityEndpoints
     /// <summary>The marker on the 409 for moving an entry to a type that links to it from limited fields do not allow.</summary>
     public const string TypeChangeLinkedCode = "entity_type_change_linked";
 
+    /// <summary>The marker on the 409 for moving an entry to another type while it holds values in archived fields of its own (Issue #39).</summary>
+    public const string TypeChangeArchivedCode = "entity_type_change_archived";
+
     /// <summary>
     /// The one grid-card projection, shared because the listing now has two orderings and only
     /// one shape: browsing reads it straight off the entity, searching reads it off the entity
@@ -443,7 +446,7 @@ public static class EntityEndpoints
         // A type from elsewhere is simply absent here, so it is refused exactly like an unknown one and discloses nothing.
         var types = await db.EntityTypes.AsNoTracking()
             .Where(type => type.UniverseId == universeId)
-            .Select(type => new { type.Id, type.Name, HasRequiredFields = type.Fields.Any(field => field.IsRequired) })
+            .Select(type => new { type.Id, type.Name, HasRequiredFields = type.Fields.Any(field => field.IsRequired && field.ArchivedAt == null) })
             .ToDictionaryAsync(type => type.Id, cancellationToken);
 
         var errors = new Dictionary<string, string[]>();
@@ -665,6 +668,12 @@ public static class EntityEndpoints
             return stranded;
         }
 
+        if (entity.EntityTypeId != request.EntityTypeId
+            && await ArchivedValuesRefusalAsync(db, entity, cancellationToken) is { } archivedValues)
+        {
+            return archivedValues;
+        }
+
         entity.EntityTypeId = request.EntityTypeId;
         entity.Name = request.Name!.Trim();
         entity.Summary = LoreValidation.Normalize(request.Summary);
@@ -683,7 +692,12 @@ public static class EntityEndpoints
             .ExecuteDeleteAsync(cancellationToken);
         await db.EntityTags.Where(link => link.EntityId == entityId)
             .ExecuteDeleteAsync(cancellationToken);
-        await db.EntityFieldValues.Where(value => value.EntityId == entityId)
+
+        // Only the active fields' values are replaced. An archived field is in no form, so no request carries it - an
+        // ordinary save, a restored version, an accepted suggestion alike - and its values stay exactly as they were until
+        // the field is restored (Issue #39). Every writer of an entry's values comes through here.
+        await db.EntityFieldValues
+            .Where(value => value.EntityId == entityId && value.FieldDefinition!.ArchivedAt == null)
             .ExecuteDeleteAsync(cancellationToken);
 
         if (await ApplyAliasesTagsAndFieldsAsync(db, universeId, entity, request, cancellationToken)
@@ -743,8 +757,9 @@ public static class EntityEndpoints
                 FieldName = value.FieldDefinition!.Name,
                 TypeId = value.FieldDefinition.EntityTypeId,
                 TypeName = value.FieldDefinition.EntityType!.Name,
+                Archived = value.FieldDefinition.ArchivedAt != null,
             })
-            .Select(group => new { group.Key.FieldDefinitionId, group.Key.FieldName, group.Key.TypeId, group.Key.TypeName, Links = group.Count() })
+            .Select(group => new { group.Key.FieldDefinitionId, group.Key.FieldName, group.Key.TypeId, group.Key.TypeName, group.Key.Archived, Links = group.Count() })
             .ToListAsync(cancellationToken);
 
         if (blocking.Count == 0)
@@ -759,7 +774,7 @@ public static class EntityEndpoints
 
         return Results.Problem(
             title: "Entry is linked",
-            detail: $"{entity.Name} can't change type because {links} to it through the field \"{first.FieldName}\" on {first.TypeName}"
+            detail: $"{entity.Name} can't change type because {links} to it through the field \"{first.FieldName}\"{EntityTypeEndpoints.ArchivedMark(first.Archived)} on {first.TypeName}"
                 + (others == 0 ? string.Empty : others == 1 ? ", and 1 other field does too" : $", and {others} other fields do too")
                 + ", which would not allow the new type. Change those links or the field first, then try again.",
             statusCode: StatusCodes.Status409Conflict,
@@ -770,6 +785,45 @@ public static class EntityEndpoints
                     .Select(field => new { FieldId = field.FieldDefinitionId, field.FieldName, field.TypeId, field.TypeName, field.Links })
                     .ToList(),
             });
+    }
+
+    /// <summary>
+    /// The refusal for moving <paramref name="entity"/> to another type while it holds values in archived fields of its current
+    /// type, or null (Issue #39). A move keeps only the new type's fields, and an archived field's values are in no form, so
+    /// the author could not see what the move would discard. Restoring the field shows them; the move is then the ordinary,
+    /// visible one. Only this one entry's values are read.
+    /// </summary>
+    private static async Task<IResult?> ArchivedValuesRefusalAsync(
+        LorexDbContext db,
+        LoreEntity entity,
+        CancellationToken cancellationToken)
+    {
+        var entityId = entity.Id;
+        var typeId = entity.EntityTypeId;
+        var fields = await db.EntityFieldValues.AsNoTracking()
+            .Where(value => value.EntityId == entityId
+                && value.FieldDefinition!.EntityTypeId == typeId
+                && value.FieldDefinition.ArchivedAt != null)
+            .Select(value => value.FieldDefinition!.Name)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (fields.Count == 0)
+        {
+            return null;
+        }
+
+        fields.Sort(StringComparer.Ordinal);
+        var named = fields.Count == 1
+            ? $"the archived field \"{fields[0]}\""
+            : $"{fields.Count} archived fields, \"{fields[0]}\" among them";
+
+        return Results.Problem(
+            title: "Entry holds archived values",
+            detail: $"{entity.Name} can't change type because it still holds a value in {named}. Changing its type would "
+                + "discard it. Restore the field on its type to see the value, then try again.",
+            statusCode: StatusCodes.Status409Conflict,
+            extensions: new Dictionary<string, object?> { ["code"] = TypeChangeArchivedCode, ["fields"] = fields });
     }
 
     /// <summary>
@@ -1085,11 +1139,14 @@ public static class EntityEndpoints
             EntityRequest request,
             CancellationToken cancellationToken)
     {
-        // Only fields belonging to the chosen type, in this universe, are addressable.
+        // Only active fields belonging to the chosen type, in this universe, are addressable. A value sent for an archived
+        // one - a form opened before it was archived, a version restored, a suggestion - is ignored like any unknown field,
+        // and the value it holds is left alone by the save (Issue #39).
         var definitions = await db.EntityFieldDefinitions.AsNoTracking()
             .Include(field => field.Options)
             .Where(field => field.EntityTypeId == request.EntityTypeId
-                && field.EntityType!.UniverseId == universeId)
+                && field.EntityType!.UniverseId == universeId
+                && field.ArchivedAt == null)
             .ToListAsync(cancellationToken);
 
         var byId = definitions.ToDictionary(field => field.Id);
@@ -1407,7 +1464,8 @@ public static class EntityEndpoints
                     .Select(alias => alias.Value).ToList(),
                 Tags = candidate.EntityTags.Select(link => link.Tag!.Name)
                     .OrderBy(name => name).ToList(),
-                Values = candidate.FieldValues.Select(value => new
+                // An archived field's values stay stored and in history, and out of the entry's read (Issue #39).
+                Values = candidate.FieldValues.Where(value => value.FieldDefinition!.ArchivedAt == null).Select(value => new
                 {
                     value.FieldDefinitionId,
                     FieldName = value.FieldDefinition!.Name,

@@ -6954,50 +6954,90 @@ html:has(.viewer[open]) {
   background: var(--paper);
 }
 
-.types__fieldlist {
+/* A type's fields (Issue #39): one row each, the name over a quiet line of what it is, Edit and a menu at the end. On a
+   phone the actions drop under the text rather than squeezing it. Archived fields fold away beneath, in the same rows. */
+.fieldlist {
   list-style: none;
-  margin: 0 0 1rem;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
 }
 
-.types__fieldlist li {
+.fieldlist__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.fieldlist__row:first-child {
+  padding-top: 0;
+}
+
+.fieldlist__text {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fieldlist__name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.fieldlist__meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.fieldlist__actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-1);
 }
 
-.types__fieldname {
-  flex: 1;
-  font-size: 0.925rem;
+.fieldlist__delete:not(:disabled) {
+  color: var(--danger);
 }
 
-.types__fieldkind {
-  font-size: 0.72rem;
+.fieldlist__note {
+  flex-basis: 100%;
+}
+
+.fieldlist__add {
+  margin-top: var(--space-4);
+}
+
+.fieldarchive {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+}
+
+.fieldarchive > summary {
   color: var(--muted);
-  border: 1px solid var(--rule);
-  padding: 0.05rem 0.4rem;
+  font-size: var(--text-ui);
+  cursor: pointer;
 }
 
-/* The meaning a field carries, edited where the field is listed. Sized to the chips beside
-   it rather than to the form below, because it annotates the row it sits on. */
-.types__meaning {
-  font-family: inherit;
-  font-size: 0.72rem;
+.fieldarchive__lede {
+  margin: var(--space-2) 0 var(--space-3);
   color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  padding: 0.05rem 0.3rem;
-  max-width: 9rem;
+  font-size: var(--text-sm);
 }
 
-.types__meaning:disabled {
-  opacity: 0.55;
+@media (max-width: 640px) {
+  .fieldlist__actions {
+    flex-basis: 100%;
+  }
 }
 
-.types__add,
 .types__new {
   display: flex;
   flex-direction: column;
@@ -7012,8 +7052,7 @@ html:has(.viewer[open]) {
   max-width: 26rem;
 }
 
-.types__new .field,
-.types__add .field {
+.types__new .field {
   width: 100%;
   max-width: 22rem;
 }

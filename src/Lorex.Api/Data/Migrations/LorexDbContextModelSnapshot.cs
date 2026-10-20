@@ -525,6 +525,9 @@ namespace Lorex.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("DefaultValue")
                         .HasMaxLength(4000)
                         .HasColumnType("TEXT");

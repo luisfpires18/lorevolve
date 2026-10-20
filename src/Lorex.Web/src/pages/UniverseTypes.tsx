@@ -19,35 +19,22 @@ import { RelationshipTypeManager } from '../components/RelationshipTypeManager'
 import { TypeIcon } from '../components/TypeIcon'
 import { TypeIconPicker } from '../components/TypeIconPicker'
 import { TypeReorderHandle } from '../components/TypeReorderHandle'
+import { TypeFields } from '../components/TypeFields'
 import { TypeGroupsField, type GroupChoice } from '../components/TypeGroupsField'
 import { ValidationTermManager } from '../components/ValidationTermManager'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import {
-  addField,
   createEntityType,
   deleteEntityType,
-  deleteField,
   listEntityTypeGroups,
   listEntityTypes,
   moveEntityType,
   reorderEntityType,
   updateEntityType,
-  updateField,
-  type FieldInput,
 } from '../lore/api'
-import {
-  FIELD_KIND_LABELS,
-  FIELD_SEMANTIC_LABELS,
-  FieldKind,
-  semanticsFor,
-  type EntityType,
-  type EntityTypeGroup,
-  type FieldDefinition,
-  type FieldKindValue,
-  type FieldSemanticValue,
-} from '../lore/types'
+import { type EntityType, type EntityTypeGroup } from '../lore/types'
 import {
   buildTypeTree,
   branchIds,
@@ -57,17 +44,6 @@ import {
 } from '../lore/typeTree'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
-
-const KIND_ORDER: FieldKindValue[] = [
-  FieldKind.ShortText,
-  FieldKind.LongText,
-  FieldKind.Number,
-  FieldKind.Boolean,
-  FieldKind.Date,
-  FieldKind.Select,
-  FieldKind.MultiSelect,
-  FieldKind.EntityReference,
-]
 
 /** Three vocabularies, one screen: kept apart as tabs so none of them is a long scroll below another. */
 const TABS = [
@@ -104,16 +80,6 @@ export default function UniverseTypes() {
   // Why one type cannot be deleted, said under it: counted from the list, or the API's own words if it refused.
   const [blocked, setBlocked] = useState<{ typeId: string; text: string } | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-
-  const [fieldName, setFieldName] = useState('')
-  const [fieldKind, setFieldKind] = useState<FieldKindValue>(FieldKind.ShortText)
-  const [fieldRequired, setFieldRequired] = useState(false)
-  const [fieldOptions, setFieldOptions] = useState('')
-  const [fieldSemantic, setFieldSemantic] = useState<FieldSemanticValue | null>(null)
-  // A link field's allowed target, as a select value (`targetValue`): '' is "Any Lore type", a real choice shown as one,
-  // never a blank that stands for it.
-  const [fieldTarget, setFieldTarget] = useState('')
-  const [busyFieldId, setBusyFieldId] = useState<string | null>(null)
 
   const tree = useMemo(() => buildTypeTree(types ?? []), [types])
   // One move at a time; the button that asked keeps the focus once its row has moved (React moves the row's node, which
@@ -298,41 +264,6 @@ export default function UniverseTypes() {
     }
   }, [universe.id])
 
-  /** A link field's allowed target in words, from the types and groups as they are now: a rename shows at once. */
-  function targetLabel(field: Pick<FieldDefinition, 'targetEntityTypeId' | 'targetGroupId'>) {
-    if (field.targetGroupId) {
-      const group = groups.find((each) => each.id === field.targetGroupId)
-      return group ? `any type in the group ${group.name}` : 'a group'
-    }
-    const node = field.targetEntityTypeId ? tree.byId.get(field.targetEntityTypeId) : undefined
-    return node ? typePathLabel(node) : 'any Lore type'
-  }
-
-  /** An allowed-target select's options: any type, then the groups (marked as groups), then every type by its path. */
-  function targetOptions() {
-    return (
-      <>
-        <option value="">Any Lore type</option>
-        {groups.length > 0 ? (
-          <optgroup label="Groups">
-            {groups.map((group) => (
-              <option key={group.id} value={`group:${group.id}`}>
-                {group.name} (group)
-              </option>
-            ))}
-          </optgroup>
-        ) : null}
-        <optgroup label="Types">
-          {tree.ordered.map((node) => (
-            <option key={node.type.id} value={`type:${node.type.id}`}>
-              {typePathLabel(node)}
-            </option>
-          ))}
-        </optgroup>
-      </>
-    )
-  }
-
   function report(error: unknown, fallback: string) {
     setMessage(error instanceof ApiError ? error.message : fallback)
   }
@@ -393,13 +324,18 @@ export default function UniverseTypes() {
       return
     }
 
-    // A link field on another type limited to this one: the same refusal the API gives, said before asking.
+    // A link field on another type limited to this one - archived ones too, which keep their limit - is the same refusal the
+    // API gives, said before asking.
     const targeting = (types ?? []).flatMap((owner) =>
       owner.id === type.id
         ? []
-        : owner.fields
+        : [...owner.fields, ...(owner.archivedFields ?? [])]
             .filter((field) => field.targetEntityTypeId === type.id)
-            .map((field) => ({ field: field.name, owner: owner.name })),
+            .map((field) => ({
+              field: field.name,
+              archived: field.archivedAt !== null,
+              owner: owner.name,
+            })),
     )
     if (targeting.length > 0) {
       setBlocked({ typeId: type.id, text: targetedDetail(type.name, targeting) })
@@ -432,102 +368,6 @@ export default function UniverseTypes() {
     setBlocked(null)
     setChildOf(parent)
     setEditing('new')
-  }
-
-  async function submitField(typeId: string) {
-    if (!fieldName.trim()) return
-    setMessage(null)
-
-    const needsOptions = fieldKind === FieldKind.Select || fieldKind === FieldKind.MultiSelect
-    try {
-      await addField(universe.id, typeId, {
-        name: fieldName.trim(),
-        kind: fieldKind,
-        isRequired: fieldRequired,
-        displayOrder: null,
-        defaultValue: null,
-        options: needsOptions
-          ? fieldOptions
-              .split(',')
-              .map((option) => option.trim())
-              .filter(Boolean)
-          : null,
-        semantic: fieldSemantic,
-        ...parseTarget(fieldKind === FieldKind.EntityReference ? fieldTarget : ''),
-      })
-      setFieldName('')
-      setFieldOptions('')
-      setFieldRequired(false)
-      setFieldSemantic(null)
-      setFieldTarget('')
-      await refresh()
-    } catch (error: unknown) {
-      report(error, 'That field could not be added.')
-    }
-  }
-
-  /**
-   * Declares, changes or withdraws what one existing field means. Everything else about the
-   * definition is sent back as it stands: this control edits the meaning and nothing else.
-   *
-   * The route is gated, so pointing a meaning at a field a hundred Canon entries have
-   * already filled in can be refused. That refusal, and the "only one field may mean it"
-   * validation, both arrive as ordinary API errors and are reported like any other.
-   */
-  async function changeMeaning(
-    typeId: string,
-    field: FieldDefinition,
-    semantic: FieldSemanticValue | null,
-  ) {
-    await changeField(typeId, field, { semantic }, 'That meaning could not be changed.')
-  }
-
-  /**
-   * Limits a link field to one type or one group, or opens it to any. Narrowing is refused while an entry already links
-   * the field to an entry the new limit would not allow; the refusal says so, and nothing is cleared to make it fit.
-   */
-  async function changeTarget(typeId: string, field: FieldDefinition, value: string) {
-    await changeField(typeId, field, parseTarget(value), 'That allowed type could not be changed.')
-  }
-
-  /** One part of a field changed, and everything else about it sent back exactly as it stands. */
-  async function changeField(
-    typeId: string,
-    field: FieldDefinition,
-    change: Partial<Pick<FieldInput, 'semantic' | 'targetEntityTypeId' | 'targetGroupId'>>,
-    fallback: string,
-  ) {
-    setMessage(null)
-    setBusyFieldId(field.id)
-    try {
-      await updateField(universe.id, typeId, field.id, {
-        name: field.name,
-        kind: field.kind,
-        isRequired: field.isRequired,
-        displayOrder: field.displayOrder,
-        defaultValue: field.defaultValue,
-        options: field.options.map((option) => option.value),
-        semantic: field.semantic,
-        targetEntityTypeId: field.targetEntityTypeId,
-        targetGroupId: field.targetGroupId,
-        ...change,
-      })
-      await refresh()
-    } catch (error: unknown) {
-      report(error, fallback)
-    } finally {
-      setBusyFieldId(null)
-    }
-  }
-
-  async function removeField(typeId: string, fieldId: string) {
-    setMessage(null)
-    try {
-      await deleteField(universe.id, typeId, fieldId)
-      await refresh()
-    } catch (error: unknown) {
-      report(error, 'That field could not be deleted.')
-    }
   }
 
   return (
@@ -858,217 +698,14 @@ export default function UniverseTypes() {
                     ) : null}
 
                     {openTypeId === type.id ? (
-                      <div className="types__fields">
-                        {type.fields.length > 0 ? (
-                          <ul className="types__fieldlist">
-                            {type.fields.map((field) => (
-                              <li key={field.id} data-field-name={field.name}>
-                                <span className="types__fieldname">{field.name}</span>
-                                <span className="types__fieldkind">
-                                  {FIELD_KIND_LABELS[field.kind]}
-                                </span>
-                                {field.isRequired ? (
-                                  <span className="types__fieldkind">required</span>
-                                ) : null}
-                                {field.kind === FieldKind.EntityReference ? (
-                                  access.editContent ? (
-                                    <select
-                                      className="types__meaning"
-                                      aria-label={`Allowed type for ${field.name}`}
-                                      value={targetValue(field)}
-                                      disabled={busyFieldId === field.id}
-                                      onChange={(event) =>
-                                        void changeTarget(type.id, field, event.target.value)
-                                      }
-                                      data-testid={`field-target-${field.name}`}
-                                    >
-                                      {targetOptions()}
-                                    </select>
-                                  ) : (
-                                    <span
-                                      className="types__fieldkind"
-                                      data-testid={`field-target-${field.name}`}
-                                    >
-                                      Links to <bdi>{targetLabel(field)}</bdi>
-                                    </span>
-                                  )
-                                ) : null}
-                                {!access.editContent ? (
-                                  field.semantic !== null && field.semantic !== undefined ? (
-                                    <span className="types__fieldkind">
-                                      {FIELD_SEMANTIC_LABELS[field.semantic]}
-                                    </span>
-                                  ) : null
-                                ) : semanticsFor(field.kind).length > 0 ? (
-                                  <select
-                                    className="types__meaning"
-                                    aria-label={`Canon meaning of ${field.name}`}
-                                    value={field.semantic ?? ''}
-                                    disabled={busyFieldId === field.id}
-                                    onChange={(event) =>
-                                      void changeMeaning(
-                                        type.id,
-                                        field,
-                                        event.target.value === ''
-                                          ? null
-                                          : (Number(event.target.value) as FieldSemanticValue),
-                                      )
-                                    }
-                                    data-testid={`field-meaning-${field.name}`}
-                                  >
-                                    <option value="">No meaning</option>
-                                    {semanticsFor(field.kind).map((semantic) => (
-                                      <option key={semantic} value={semantic}>
-                                        {FIELD_SEMANTIC_LABELS[semantic]}
-                                      </option>
-                                    ))}
-                                  </select>
-                                ) : null}
-                                {access.editContent ? (
-                                  <button
-                                    className="token__remove"
-                                    type="button"
-                                    aria-label={`Delete ${field.name}`}
-                                    onClick={() => removeField(type.id, field.id)}
-                                  >
-                                    &times;
-                                  </button>
-                                ) : null}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="settings__note">No custom fields yet.</p>
-                        )}
-
-                        {access.editContent ? (
-                          <div className="types__add">
-                            <Field
-                              label="Field name"
-                              name={`field-name-${type.id}`}
-                              value={fieldName}
-                              onChange={(event) => setFieldName(event.target.value)}
-                            />
-
-                            <div className="field">
-                              <label className="field__label" htmlFor={`field-kind-${type.id}`}>
-                                Kind
-                              </label>
-                              <select
-                                id={`field-kind-${type.id}`}
-                                className="field__input field__input--select"
-                                value={fieldKind}
-                                onChange={(event) => {
-                                  const kind = Number(event.target.value) as FieldKindValue
-                                  setFieldKind(kind)
-                                  // A meaning belongs to a shape. Switching away from one that can
-                                  // carry it drops it rather than sending a pair the API refuses.
-                                  setFieldSemantic((current) =>
-                                    current !== null && semanticsFor(kind).includes(current)
-                                      ? current
-                                      : null,
-                                  )
-                                  // An allowed type belongs to a link field alone: none is carried onto another kind.
-                                  if (kind !== FieldKind.EntityReference) setFieldTarget('')
-                                }}
-                              >
-                                {KIND_ORDER.map((kind) => (
-                                  <option key={kind} value={kind}>
-                                    {FIELD_KIND_LABELS[kind]}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            {fieldKind === FieldKind.Select ||
-                            fieldKind === FieldKind.MultiSelect ? (
-                              <Field
-                                label="Options, separated by commas"
-                                name={`field-options-${type.id}`}
-                                value={fieldOptions}
-                                onChange={(event) => setFieldOptions(event.target.value)}
-                              />
-                            ) : null}
-
-                            {fieldKind === FieldKind.EntityReference ? (
-                              <div className="field">
-                                <label className="field__label" htmlFor={`field-target-${type.id}`}>
-                                  Allowed type
-                                </label>
-                                <select
-                                  id={`field-target-${type.id}`}
-                                  className="field__input field__input--select"
-                                  value={fieldTarget}
-                                  onChange={(event) => setFieldTarget(event.target.value)}
-                                  aria-describedby={`field-target-hint-${type.id}`}
-                                  data-testid={`new-field-target-${type.name}`}
-                                >
-                                  {targetOptions()}
-                                </select>
-                                <p className="field__hint" id={`field-target-hint-${type.id}`}>
-                                  {fieldTarget.startsWith('group:')
-                                    ? 'The field links to entries of any type in this group at the time the link is made.'
-                                    : 'The field links only to entries of this type. Types nested inside it are not included.'}
-                                </p>
-                              </div>
-                            ) : null}
-
-                            {semanticsFor(fieldKind).length > 0 ? (
-                              <div className="field">
-                                <label
-                                  className="field__label"
-                                  htmlFor={`field-semantic-${type.id}`}
-                                >
-                                  Canon meaning
-                                </label>
-                                <select
-                                  id={`field-semantic-${type.id}`}
-                                  className="field__input field__input--select"
-                                  value={fieldSemantic ?? ''}
-                                  onChange={(event) =>
-                                    setFieldSemantic(
-                                      event.target.value === ''
-                                        ? null
-                                        : (Number(event.target.value) as FieldSemanticValue),
-                                    )
-                                  }
-                                  data-testid={`field-semantic-${type.name}`}
-                                >
-                                  <option value="">None</option>
-                                  {semanticsFor(fieldKind).map((semantic) => (
-                                    <option key={semantic} value={semantic}>
-                                      {FIELD_SEMANTIC_LABELS[semantic]}
-                                    </option>
-                                  ))}
-                                </select>
-                                <p className="field__hint">
-                                  Read by the deterministic Canon Integrity rules, never by a
-                                  reader, and never guessed from the field&rsquo;s name. Most fields
-                                  need none.
-                                </p>
-                              </div>
-                            ) : null}
-
-                            <label className="check">
-                              <input
-                                type="checkbox"
-                                checked={fieldRequired}
-                                onChange={(event) => setFieldRequired(event.target.checked)}
-                              />
-                              <span>Required</span>
-                            </label>
-
-                            <button
-                              className="button"
-                              type="button"
-                              onClick={() => submitField(type.id)}
-                              data-testid={`add-field-${type.name}`}
-                            >
-                              Add field
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
+                      <TypeFields
+                        universeId={universe.id}
+                        type={type}
+                        tree={tree}
+                        groups={groups}
+                        canEdit={access.editContent}
+                        onChanged={refresh}
+                      />
                     ) : null}
                   </li>
                 )
@@ -1105,24 +742,14 @@ export default function UniverseTypes() {
   )
 }
 
-/** A field's allowed target as one select value: '' for any type, `type:<id>` or `group:<id>`. */
-function targetValue(field: Pick<FieldDefinition, 'targetEntityTypeId' | 'targetGroupId'>) {
-  if (field.targetGroupId) return `group:${field.targetGroupId}`
-  return field.targetEntityTypeId ? `type:${field.targetEntityTypeId}` : ''
-}
-
-/** The other way: a select value as the two ids the API takes, never both set. */
-function parseTarget(value: string): Pick<FieldInput, 'targetEntityTypeId' | 'targetGroupId'> {
-  if (value.startsWith('group:')) return { targetEntityTypeId: null, targetGroupId: value.slice(6) }
-  if (value.startsWith('type:')) return { targetEntityTypeId: value.slice(5), targetGroupId: null }
-  return { targetEntityTypeId: null, targetGroupId: null }
-}
-
 /**
  * Why a type a link field is limited to cannot be deleted: the same sentence the API's refusal carries
  * (`EntityTypeEndpoints.DeleteAsync`), naming the first field by its type's and its own name and counting the rest.
  */
-function targetedDetail(name: string, targeting: { field: string; owner: string }[]) {
+function targetedDetail(
+  name: string,
+  targeting: { field: string; archived: boolean; owner: string }[],
+) {
   const ordered = [...targeting].sort((a, b) =>
     a.owner === b.owner ? (a.field < b.field ? -1 : 1) : a.owner < b.owner ? -1 : 1,
   )
@@ -1130,7 +757,8 @@ function targetedDetail(name: string, targeting: { field: string; owner: string 
   const others = ordered.length - 1
   const rest =
     others === 0 ? '' : others === 1 ? ' and 1 other field' : ` and ${others} other fields`
-  return `${name} can't be deleted because the field "${first.field}" on ${first.owner}${rest} can only link to it. Change those fields to allow another type first.`
+  const mark = first.archived ? ' (archived)' : ''
+  return `${name} can't be deleted because the field "${first.field}"${mark} on ${first.owner}${rest} can only link to it. Change those fields to allow another type first.`
 }
 
 /**
