@@ -180,8 +180,8 @@ V1's read grant is unchanged and still read-only. A second scope, `lorex.propose
 to review in LoreX; it never writes. Discovery, the protected resource metadata and the 401 challenge now list both scopes;
 the consent screen offers proposing as its own unticked choice, only when the app asked for it and the person's role can
 stage changes, and grants it only on that tick (`lorex_propose=allow`), recorded on the connection as `CanPropose`. A
-refresh never widens a grant. Per-client scope permissions are ignored, so clients registered before the scope existed can
-ask for it; consent decides. The gate passes `CanPropose` (token scope and connection both) to the tools; the three
+refresh never widens a grant. Per-client scope permissions stay enforced: registrations list both scopes, and clients
+registered before the scope existed were given it by the data-only `UpgradeMcpClientScopes` migration; consent decides. The gate passes `CanPropose` (token scope and connection both) to the tools; the three
 proposal tools are hidden and refused without it. Connected Apps lists it and turns it off without disconnecting
 (`DELETE /api/profile/connected-apps/{id}/proposals`). "V1 grants read only; a later write permission would be a new scope
 and a new approval" - this is that scope, and it is still not a write.

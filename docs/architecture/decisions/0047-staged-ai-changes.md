@@ -70,8 +70,11 @@ create just made; then the changes are marked committed with what they made, and
 transaction. Any refusal - a check, a write path, a High Canon finding the batch would introduce, an exception - rolls all
 of it back and leaves every selected change pending: nothing is ever marked applied before its write succeeded, and a
 selected set is never partly applied. Unselected changes stay pending. SQLite's single writer serialises two approvers:
-the second finds the changes decided (409). Sending the same `approvalId` again - after a lost answer - finds what it
-applied and answers the same receipt, applying nothing twice. History names the approver as each edit's author.
+the second finds the changes decided (409). Sending the same approval again - after a lost answer, or while the first is
+still running - is answered with the same receipt and applies nothing twice, but only when it is exactly the same
+approval: the same `approvalId`, the same person who approved it, and exactly the set of changes it applied. A subset, a
+superset, or another approver reusing the id is refused, 409 `ai_change_approval_id_reused`, with nothing applied,
+nothing re-attributed and no receipt. History names the approver as each edit's author.
 
 **Rejecting takes what depends on it.** Rejecting a change also rejects every pending change that needs it, however far
 down, noted `needs_rejected`, so selective approval can never leave a dangling reference. A reviewer rejects any change;
@@ -99,8 +102,15 @@ Discovery, protected resource metadata and the 401 challenge list both, so a cli
 offers proposing as its own choice, unticked, only when the app asked and the person's role can stage anything, and
 explains it ("propose changes for you to review"). Only a tick on that very screen grants it - the token's scopes and the
 connection's `CanPropose` - never a default, never an earlier approval: a read-only connection's refresh cannot widen it.
-Per-client scope permissions are ignored (`IgnoreScopePermissions`): a registered client declares its own anyway, consent
-decides what a token carries, and clients registered before this scope keep working. Three tools, listed only for a
+Per-client scope permissions stay enforced: a client may only *ask* for the scopes its registration lists. New
+registrations (dynamic and metadata-document clients alike, `ClientRules.Describe`) list `lorex.read` and
+`lorex.propose`; a metadata-document client is re-described whenever its document is fetched again. Clients registered
+before this decision were given `lorex.propose` by a data-only migration, `UpgradeMcpClientScopes` - the same list a
+registration gets today, nothing more - so they keep working when the challenge asks for both; its rollback takes it back.
+This cannot grant more than the person authorizes: the permission lets a client ask; a token carries `lorex.propose` only
+after the tick on the consent screen from a role that can stage, and the gate also requires the connection's
+`CanPropose`. A client whose list lacks it (as before the migration) is refused by OpenIddict with a 400 before any
+consent, and still reads when it asks for `lorex.read` alone. No client is singled out by name or vendor. Three tools, listed only for a
 connection whose token carries the scope and whose connection still allows it (a list-tools filter; a call-tool filter
 refuses them otherwise; each tool checks the role again): `get_change_options` (the role's allowed changes, lore types
 with active fields and choices, relationship kinds, stories with chapters, date periods and months), `propose_changes`
@@ -145,14 +155,23 @@ articles, images, ideas, world rules, accounts, roles, publishing, imports, perm
 
 ## Consequences
 
+- A second, data-only migration, `UpgradeMcpClientScopes`, lets clients registered before this decision ask for
+  `lorex.propose` (no schema; rollback removes it).
 - One additive migration, `AddAiChangeProposals`: two tables and `McpConnections.CanPropose` (default false, so every
   existing connection stays read-only). Rollback drops them.
 - **Backups carry no proposals** and restore none: they are review state about accounts and connections, like comments
   and suggestions (ADR 0014, 0044). Pending AI changes never travel into another universe as something approvable. The
   backup format is unchanged.
 - **Removing a relationship or a timeline moment through an AI is a reported blocker, not a substitute.** Both are hard
-  deletes today with no Trash; giving them one touches every read of them (family trees, Canon rules, the reader, backups).
-  An AI is told so, and a person removes them by hand.
+  deletes today with no Trash, and a reversible lifecycle was assessed (review fix, 2026-10-23) and not built: relationships
+  are read in about 46 places across 27 files - seven Canon rules, Family Tree derivation and discovery, the entry's
+  Relations view, the read layer behind the assistant and MCP, backups, restore and its validation, the Trash's permanent
+  delete - and moments in about 40 places across 15 - the Canon lifespan rules, the timeline feed, chronology's unplaced
+  counts, the reader, backups and restore. A Trash for either needs a `DeletedAt` filter in every one of them, two new
+  Trash kinds with restore routes and UI, a backup format change, and restore rules for links whose ends were trashed
+  separately. That is a feature of its own, not a fix inside this one. An AI is told so, and a person removes them by hand.
+  **Owner decision outstanding:** whether relationships and timeline moments get a Trash (its own roadmap item), after
+  which AI removal is a small addition here.
 - A proposal is checked by the save's checks, not proven by its write: anything only the write itself finds (a High Canon
   finding the batch introduces, an ordering race) refuses the approval at commit, whole, with the change it stopped at named.
 - A change staged against an older version is never applied, even when the intervening save touched another field: it is

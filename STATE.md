@@ -135,15 +135,20 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     **Blocked, reported:** removing a relationship or a moment (hard deletes, no Trash); an AI is told so.
   - Approval = one transaction under the Canon gate, selected changes in dependency order through each resource's own core
     write path (extracted for chapters, scenes, stories, manuscripts), all or none; revision, roles (approver and proposer),
-    app permission, dependencies, versions/stored forms rechecked inside it; `approvalId` makes a repeat apply nothing twice.
+    app permission, dependencies, versions/stored forms rechecked inside it; `approvalId` makes an exact repeat (same person, same changes) apply nothing twice; any other reuse is 409.
     Reject cascades to what depends on it. Edit before approval moves the revision.
   - Roles: owner/Editor stage and approve what they write; Reviewer stages only entry/story/scene edits (SuggestChanges),
     approves nothing; Viewer nothing. Decision routes are session-only.
   - MCP: opt-in scope `lorex.propose`, unticked consent choice, `CanPropose` on the connection, three tools hidden without it,
     turned off from Connected apps. Read-only V1 unchanged (challenge/discovery now list both scopes; per-client scope lists
-    ignored so older registrations can ask). Assistant: explicit Propose changes switch (`mode: "propose"`).
+    enforced; older registrations upgraded by a data-only migration). Assistant: explicit Propose changes switch (`mode: "propose"`).
   - UI: Pending AI Changes (`/app/ai-changes`, bar count; universe section "AI changes"), review page, drawer switch, consent
     choice, Connected apps "Stop proposals".
+  - Review fixes: an approval id answers only the exact same approval by the same person (else 409
+    `ai_change_approval_id_reused`); per-client OAuth scope permissions enforced again, older clients upgraded by the
+    data-only `UpgradeMcpClientScopes` migration; a Trash for relationships/moments assessed and not built (ADR 0047).
+  - **Owner decision outstanding:** give relationships and timeline moments a Trash (own roadmap item); AI removal of them
+    stays blocked until then.
   - Tests: see the review archive. Full Playwright not run locally; delegated to CI.
 - **Issue 38 - compact MCP consent card** (`improve/mcp-oauth-consent` off `dev` at `80db857`; committed, not merged,
   not pushed). Frontend only: `/connect/authorize` drops the sign-in plate for a centred card (max 32rem); Approve/Deny

@@ -65,7 +65,8 @@ internal static class ClientRules
     }
 
     /// <summary>
-    /// The one application a client becomes: the authorization code flow with PKCE and refresh, for the read scope only.
+    /// The one application a client becomes: the authorization code flow with PKCE and refresh, allowed to ask for the read
+    /// scope and the proposal scope (ADR 0047) - asking only; consent decides what a token carries.
     /// Loopback redirect URIs make it a native application, so OpenIddict accepts them on any port (RFC 8252 section
     /// 7.3) - a desktop or command-line client picks a free port each time.
     /// </summary>

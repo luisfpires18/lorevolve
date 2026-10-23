@@ -103,6 +103,7 @@ public static class AiChangeCodes
     // ---------- The refusals of the review routes ----------
     public const string ProposalChanged = "ai_change_proposal_changed";
     public const string AlreadyDecided = "ai_change_already_decided";
+    public const string ApprovalMismatch = "ai_change_approval_id_reused";
     public const string NotOpen = "ai_change_not_open";
     public const string MissingDependency = "ai_change_missing_dependency";
     public const string CannotApprove = "ai_change_cannot_approve";

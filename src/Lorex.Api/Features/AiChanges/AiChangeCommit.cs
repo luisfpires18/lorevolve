@@ -84,15 +84,35 @@ internal static class AiChangeCommit
             .ThenBy(operation => operation.Sequence)
             .ToListAsync(cancellationToken);
 
-        if (applied.Count == 0 || !selected.All(id => applied.Any(operation => operation.Id == id)))
+        if (applied.Count == 0)
         {
             return null;
+        }
+
+        if (Mismatch(applied, selected, approverId) is { } refused)
+        {
+            return refused;
         }
 
         var role = await UniverseAccess.RoleAsync(db, universeId, approverId, cancellationToken);
         var proposal = role is { } effective ? await AiChangeViews.ReadAsync(db, universeId, proposalId, approverId, effective, cancellationToken) : null;
         return proposal is null ? Results.NotFound() : Results.Ok(new AiChangeReceipt(approvalId, Receipt(applied), proposal));
     }
+
+    /// <summary>
+    /// Whether a request naming an approval id already used is that same approval sent again, or a refusal. A retry must name
+    /// exactly the changes that approval applied - no fewer, no more - and come from the person who approved them; anything
+    /// else is a different request reusing the id, refused with 409 <see cref="AiChangeCodes.ApprovalMismatch"/> so it can
+    /// neither apply anything nor be answered with someone else's receipt.
+    /// </summary>
+    private static IResult? Mismatch(List<AiChangeOperation> applied, IReadOnlyList<Guid> selected, string approverId) =>
+        applied.Select(operation => operation.Id).ToHashSet().SetEquals(selected)
+            && applied.All(operation => operation.ResolvedByUserId == approverId)
+            ? null
+            : Refused(
+                AiChangeCodes.ApprovalMismatch,
+                "Approval id already used",
+                "That approval id was already used for a different approval. Nothing was applied. Approve again with a new id.");
 
     /// <summary>Inside the gate's transaction: everything checked again, then every selected change applied, or none.</summary>
     private static async Task<IResult> ApplyAsync(
@@ -120,10 +140,16 @@ internal static class AiChangeCommit
             return Results.NotFound();
         }
 
-        // Read again in here: a second request with this id that waited behind the first finds its receipt.
+        // Read again in here: a second request with this id that waited behind the first finds its receipt - only when it
+        // is the very same request, by the same person.
         var mine = proposal.Operations.Where(operation => operation.ApprovalId == approvalId).ToList();
-        if (mine.Count > 0 && selected.All(id => mine.Any(operation => operation.Id == id)))
+        if (mine.Count > 0)
         {
+            if (Mismatch(mine, selected, approverId) is { } refused)
+            {
+                return refused;
+            }
+
             return Results.Ok(new AiChangeReceipt(approvalId, Receipt(mine), (await AiChangeViews.ReadAsync(db, universeId, proposalId, approverId, approver, cancellationToken))!));
         }
 

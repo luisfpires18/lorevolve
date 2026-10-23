@@ -116,6 +116,57 @@ public sealed class AiChangeAccessTests(LorexApiFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task An_approval_id_answers_only_the_same_approval_by_the_same_person()
+    {
+        var w = await NewSharedWorld(_factory, "aiidem2");
+        var id = await Staged(_factory, w.U, w.OwnerId, NewLore("a", w.CharacterType, "Idem A"), NewLore("b", w.CharacterType, "Idem B"), NewLore("c", w.CharacterType, "Idem C"));
+        var proposal = await Read(w.Owner, w.U, id);
+        var approval = Guid.NewGuid();
+
+        var first = await Approve(w.Owner, w.U, proposal, ["a", "b"], approval);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        var receipt = (await first.Content.ReadFromJsonAsync<AiChangeReceipt>())!;
+        var before = await Snapshot(w.U, id);
+
+        // The same request again - a lost answer - gets the same receipt and applies nothing.
+        var retry = await Approve(w.Owner, w.U, proposal, ["a", "b"], approval);
+        Assert.Equal(HttpStatusCode.OK, retry.StatusCode);
+        Assert.Equal(
+            receipt.Applied.Select(line => (line.Key, line.ResultId)),
+            (await retry.Content.ReadFromJsonAsync<AiChangeReceipt>())!.Applied.Select(line => (line.Key, line.ResultId)));
+
+        // A subset, a superset, or another approver reusing the id: refused, and nothing moves.
+        foreach (var (client, keys, what) in new[]
+        {
+            (w.Owner, new[] { "a" }, "subset"),
+            (w.Owner, new[] { "a", "b", "c" }, "superset"),
+            (w.Editor, new[] { "a", "b" }, "another approver"),
+        })
+        {
+            var refused = await Approve(client, w.U, proposal, keys, approval);
+            Assert.True(refused.StatusCode == HttpStatusCode.Conflict, $"{what}: {(int)refused.StatusCode}");
+            Assert.Equal(AiChangeCodes.ApprovalMismatch, await Code(refused));
+        }
+
+        Assert.Equal(before, await Snapshot(w.U, id));
+        var after = await Read(w.Owner, w.U, id);
+        Assert.Equal(AiChangeOperationStatus.Pending, after.Operations.Single(operation => operation.Key == "c").Status);
+    }
+
+    /// <summary>What an approval could have changed: the entries, their history, and every change's decision and author.</summary>
+    private async Task<string> Snapshot(Guid universeId, Guid proposalId)
+    {
+        var parts = new List<object?>();
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LorexDbContext>();
+        parts.Add(await db.Entities.CountAsync(row => row.UniverseId == universeId));
+        parts.Add(await db.EntityRevisions.CountAsync(row => row.Entity!.UniverseId == universeId));
+        parts.AddRange((await db.AiChangeOperations.AsNoTracking().Where(row => row.ProposalId == proposalId).OrderBy(row => row.Sequence)
+            .Select(row => new { row.Status, row.ResolvedByUserId, row.ResolvedAt, row.ApprovalId, row.ResultId }).ToListAsync()).Cast<object?>());
+        return string.Join("|", parts);
+    }
+
+    [Fact]
     public async Task A_role_changed_to_viewer_can_no_longer_approve()
     {
         var w = await NewSharedWorld(_factory, "aidemote");

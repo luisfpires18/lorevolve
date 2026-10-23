@@ -123,6 +123,75 @@ public sealed class AiChangeMigrationTests : IDisposable
         Assert.Equal(1, found.TotalCount);
     }
 
+    [Fact]
+    public async Task Four_copies_of_one_approval_at_once_apply_it_once_and_all_get_its_receipt()
+    {
+        Directory.CreateDirectory(_directory);
+        await using var host = new FileHost(DataSource);
+        var client = host.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+        var registered = await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest("user-aidup", "aidup@example.test", Password));
+        var userId = (await registered.Content.ReadFromJsonAsync<AuthUserResponse>())!.Id;
+        var u = (await PlotTestClient.CreateUniverse(client, "Duplicate world")).Id;
+        var character = await AiChangeTestClient.TypeId(client, u, "Character");
+
+        Guid proposalId;
+        using (var scope = host.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LorexDbContext>();
+            var staged = await AiChangeStaging.StageAsync(
+                db, TimeProvider.System, u, userId, new AiChangeOrigin(AiChangeSource.Assistant),
+                new AiChangeSubmission("Duplicate", [AiChangeTestClient.NewLore("a", character, "Doubled once")]), default);
+            proposalId = staged.Proposal!.Id;
+        }
+
+        var proposal = await AiChangeTestClient.Read(client, u, proposalId);
+        var request = new AiChangeApproveRequest(proposal.Revision, [proposal.Operations[0].Id], Guid.NewGuid());
+        var answers = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => client.PostAsJsonAsync($"{AiChangeTestClient.Path(u, proposalId)}/approve", request)));
+
+        Assert.All(answers, answer => Assert.Equal(HttpStatusCode.OK, answer.StatusCode));
+        var made = new HashSet<Guid?>();
+        foreach (var answer in answers)
+        {
+            made.Add((await answer.Content.ReadFromJsonAsync<AiChangeReceipt>())!.Applied.Single().ResultId);
+        }
+
+        Assert.Single(made);
+        Assert.Equal(1, (await client.GetFromJsonAsync<EntityPage>($"/api/universes/{u}/entities?search=Doubled"))!.TotalCount);
+    }
+
+    [Fact]
+    public async Task Clients_registered_before_proposals_are_allowed_to_ask_for_them_and_the_rollback_takes_it_back()
+    {
+        Directory.CreateDirectory(_directory);
+        await using (var host = new FileHost(DataSource))
+        {
+            _ = host.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+            using var scope = host.Services.CreateScope();
+            var applications = scope.ServiceProvider.GetRequiredService<OpenIddict.Abstractions.IOpenIddictApplicationManager>();
+            await applications.CreateAsync(Lorex.Api.Features.Mcp.ClientRules.Describe(
+                "lorex-dcr-old", "Old client", [new Uri("http://127.0.0.1:7777/callback")], Lorex.Api.Features.Mcp.ClientRules.RegistrationSource));
+        }
+
+        SqliteConnection.ClearAllPools();
+        const string permissions = "SELECT Permissions AS Value FROM OpenIddictApplications WHERE ClientId = 'lorex-dcr-old'";
+
+        await using (var db = Context())
+        {
+            Assert.Contains("\"scp:lorex.propose\"", (await Strings(db, permissions))[0], StringComparison.Ordinal);
+
+            // As it was stored before ADR 0047: read alone.
+            await db.GetService<IMigrator>().MigrateAsync("20261023082544_AddAiChangeProposals");
+            var old = (await Strings(db, permissions))[0];
+            Assert.Contains("\"scp:lorex.read\"", old, StringComparison.Ordinal);
+            Assert.DoesNotContain("lorex.propose", old, StringComparison.Ordinal);
+
+            await db.GetService<IMigrator>().MigrateAsync();
+            var upgraded = (await Strings(db, permissions))[0];
+            Assert.Contains("\"scp:lorex.read\",\"scp:lorex.propose\"", upgraded, StringComparison.Ordinal);
+            Assert.Single(System.Text.Json.JsonSerializer.Deserialize<string[]>(upgraded)!, permission => permission == "scp:lorex.propose");
+        }
+    }
+
     private LorexDbContext Context() => new(new DbContextOptionsBuilder<LorexDbContext>().UseSqlite($"Data Source={DataSource}").Options);
 
     private static async Task<List<string>> Tables(LorexDbContext db) =>

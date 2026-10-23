@@ -179,11 +179,10 @@ public static class McpSetup
                 // resource is checked against this deployment's own shape instead (OAuthServerEvents).
                 server.DisableResourceValidation().IgnoreResourcePermissions();
 
-                // Which scopes a client may ask for is not a boundary here: a registered client declares its own, and
-                // what a token carries is decided at consent - read always, proposing only when the person ticks it and
-                // their role allows (ADR 0047). Ignoring per-client scope lists keeps clients registered before
-                // lorex.propose existed working when they ask for it.
-                server.IgnoreScopePermissions();
+                // Scope permissions stay enforced per client: a client may only ask for the scopes its registration lists
+                // (ClientRules.Describe: read and propose). Asking is all a permission allows - what a token carries is
+                // decided at consent (ADR 0047). Clients registered before lorex.propose existed were given it by the
+                // UpgradeMcpClientScopes migration, the same list a registration gets today.
 
                 OAuthServerEvents.Register(server);
 
