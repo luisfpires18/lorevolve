@@ -488,7 +488,7 @@ public static class EntityEndpoints
     /// then indexed for search and given its Created version. Runs inside the caller's promotion-gate transaction, so a
     /// refused or failed write takes the entry, its index row and its first version down together.
     /// </summary>
-    private static async Task<(LoreEntity? Entity, IResult? Problem)> CreateEntryAsync(
+    internal static async Task<(LoreEntity? Entity, IResult? Problem)> CreateEntryAsync(
         LorexDbContext db,
         Guid universeId,
         EntityRequest request,

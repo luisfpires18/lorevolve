@@ -24,7 +24,10 @@ public enum ConnectedAppStatus
     Expired,
 }
 
-/// <summary>One of the signed-in account's connections, as Profile -> Connected Apps lists it. No token, secret or code.</summary>
+/// <summary>
+/// One of the signed-in account's connections, as Profile -> Connected Apps lists it. No token, secret or code.
+/// <paramref name="CanPropose"/>: the person also let it propose changes for review (ADR 0047).
+/// </summary>
 public sealed record ConnectedApp(
     Guid Id,
     string ClientName,
@@ -33,7 +36,8 @@ public sealed record ConnectedApp(
     string UniverseName,
     DateTime CreatedAt,
     DateTime? LastUsedAt,
-    ConnectedAppStatus Status);
+    ConnectedAppStatus Status,
+    bool CanPropose = false);
 
 /// <summary>Where a universe's MCP server is, for Connect to AI: the URL to copy, or null when MCP is not set up here.</summary>
 public sealed record McpConnectInfo(string? McpUrl);
@@ -50,6 +54,7 @@ public static class ConnectedAppEndpoints
         var group = endpoints.MapGroup("/api/profile/connected-apps").WithTags("MCP").RequireAuthorization();
         group.MapGet("/", ListAsync).WithName("ListConnectedApps");
         group.MapDelete("/{connectionId:guid}", RevokeConnectionAsync).WithName("RevokeConnectedApp");
+        group.MapDelete("/{connectionId:guid}/proposals", StopProposalsAsync).WithName("StopConnectedAppProposals");
 
         // Connect to AI: any member may connect their own client, so this is a Read.
         endpoints.MapGet("/api/universes/{universeId:guid}/mcp", ConnectInfoAsync)
@@ -86,6 +91,7 @@ public static class ConnectedAppEndpoints
                 UniverseName = connection.Universe!.Name,
                 connection.CreatedAt,
                 connection.LastUsedAt,
+                connection.CanPropose,
                 HasAccess = connection.Universe.OwnerId == userId
                     || db.UniverseMemberships.Any(membership => membership.UniverseId == connection.UniverseId && membership.UserId == userId),
                 CanRefresh = connection.CreatedAt > exchanging
@@ -104,7 +110,8 @@ public static class ConnectedAppEndpoints
             row.UniverseName,
             row.CreatedAt,
             row.LastUsedAt,
-            !row.HasAccess ? ConnectedAppStatus.NoAccess : row.CanRefresh ? ConnectedAppStatus.Active : ConnectedAppStatus.Expired)));
+            !row.HasAccess ? ConnectedAppStatus.NoAccess : row.CanRefresh ? ConnectedAppStatus.Active : ConnectedAppStatus.Expired,
+            row.CanPropose)));
     }
 
     private static async Task<IResult> RevokeConnectionAsync(
@@ -129,6 +136,24 @@ public static class ConnectedAppEndpoints
         await RevokeAsync(db, authorizations, tokens, connection, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Takes back one connection's permission to propose changes (ADR 0047) and keeps it reading. Checked on every proposal
+    /// tool call, so it stops at the next one; proposals it already staged can then only be rejected. Getting it back means
+    /// connecting again and ticking it on the consent screen - the old grant is never revived.
+    /// </summary>
+    private static async Task<IResult> StopProposalsAsync(
+        Guid connectionId,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var userId = principal.RequireUserId();
+        var changed = await db.McpConnections
+            .Where(row => row.Id == connectionId && row.UserId == userId)
+            .ExecuteUpdateAsync(set => set.SetProperty(row => row.CanPropose, false), cancellationToken);
+        return changed == 0 ? Results.NotFound() : Results.NoContent();
     }
 
     private static async Task<IResult> ConnectInfoAsync(

@@ -29,16 +29,24 @@ export function getAssistantUsage(signal?: AbortSignal) {
   return apiFetch<AssistantUsage>('/api/profile/assistant-usage', { signal })
 }
 
-/** One question, with the conversation so far. Aborting it stops the work on the server too. */
+/**
+ * One question, with the conversation so far. Aborting it stops the work on the server too. `propose` is the person's own
+ * explicit request for changes (ADR 0047): only then may the assistant stage a proposal, and never apply one.
+ */
 export function askAssistant(
   universeId: string,
   question: string,
   history: AssistantHistoryMessage[],
   signal?: AbortSignal,
+  propose = false,
 ) {
   return apiFetch<AssistantAnswer>(assistantPath(universeId), {
     method: 'POST',
-    body: JSON.stringify({ question, history: history.slice(-HISTORY_SENT) }),
+    body: JSON.stringify({
+      question,
+      history: history.slice(-HISTORY_SENT),
+      ...(propose ? { mode: 'propose' } : {}),
+    }),
     signal,
   })
 }

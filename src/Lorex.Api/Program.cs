@@ -1,4 +1,5 @@
 using Lorex.Api.Data;
+using Lorex.Api.Features.AiChanges;
 using Lorex.Api.Features.Assistant;
 using Lorex.Api.Features.Auth;
 using Lorex.Api.Features.CanonIntegrity;
@@ -124,6 +125,7 @@ app.MapCanonIntegrityEndpoints();
 app.MapTrashEndpoints();
 app.MapCommentEndpoints();
 app.MapSuggestionEndpoints();
+app.MapAiChangeEndpoints();
 app.MapIdeaEndpoints();
 app.MapUniverseSearchEndpoints();
 app.MapAssistantEndpoints();

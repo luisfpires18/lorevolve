@@ -21,7 +21,7 @@ namespace Lorex.Api.Features.Assistant;
 /// <b>Sources are what was read.</b> Every object a tool returns is remembered with its kind and title as Lorex holds them.
 /// An answer may cite only those - so a cited id is always real, readable here, and titled by Lorex rather than by the model.
 /// </summary>
-internal sealed class AssistantTools(LorexDbContext db, Guid universeId)
+internal sealed class AssistantTools(LorexDbContext db, Guid universeId, AssistantProposing? proposing = null)
 {
     public const string SearchUniverse = "search_universe";
     public const string GetLore = "get_lore";
@@ -131,6 +131,9 @@ internal sealed class AssistantTools(LorexDbContext db, Guid universeId)
             GetTimelineItem => await ReadAsync(arguments, "id", id => UniverseReader.GetTimelineItemAsync(db, universeId, id, cancellationToken), Remember),
             BrowseTimeline => await BrowseAsync(arguments, cancellationToken),
             GetUniverseOverview => Write(Remember(await UniverseReader.GetOverviewAsync(db, universeId, cancellationToken))),
+
+            // Only in propose mode, which the person turned on for this question (ADR 0047); otherwise no such tool exists.
+            AssistantProposing.OptionsTool or AssistantProposing.ProposeTool when proposing is not null => await proposing.RunAsync(call, cancellationToken),
             _ => Error("unknown_tool", "There is no such tool. Only the listed read-only tools exist."),
         };
     }

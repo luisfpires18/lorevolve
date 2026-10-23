@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Lorex.Api.Data;
+using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -99,8 +100,24 @@ public static class SceneManuscriptEndpoints
             return denied;
         }
 
+        return await SaveCoreAsync(db, universeId, storyId, sceneId, request, principal.RequireUserId(), cancellationToken);
+    }
+
+    /// <summary>
+    /// The one save of a scene's prose, shared with an approved AI change (ADR 0047): the version compared and the text
+    /// stored inside one transaction - the caller's when it has one. Access is the caller's to prove first.
+    /// </summary>
+    internal static async Task<IResult> SaveCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        Guid sceneId,
+        SceneManuscriptRequest request,
+        string actorUserId,
+        CancellationToken cancellationToken)
+    {
         // One transaction for the comparison and the write, so nothing can land between them: SQLite has one writer.
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null || !await SceneInStoryAsync(db, storyId, sceneId, cancellationToken))
@@ -121,7 +138,7 @@ public static class SceneManuscriptEndpoints
             request.ExpectedVersion,
             SceneManuscriptRevisionKind.Edited,
             null,
-            principal.RequireUserId(),
+            actorUserId,
             cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);

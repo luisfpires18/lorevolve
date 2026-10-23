@@ -16,7 +16,11 @@ namespace Lorex.Api.Features.Mcp;
 /// <summary>The consent form's antiforgery field and the token to put in it.</summary>
 public sealed record ConsentToken(string FieldName, string Token);
 
-/// <summary>What the consent screen shows about a request: the client as it claims to be, and the universe it asks for.</summary>
+/// <summary>
+/// What the consent screen shows about a request: the client as it claims to be, and the universe it asks for.
+/// <paramref name="ProposalsRequested"/>: the app also asked to propose changes (ADR 0047); <paramref name="CanPropose"/>:
+/// the person's role could grant that. The screen offers the choice only when both are true, unticked.
+/// </summary>
 public sealed record ConnectionRequestDetails(
     string ClientName,
     string? VerifiedHost,
@@ -24,7 +28,9 @@ public sealed record ConnectionRequestDetails(
     bool LoopbackOnly,
     Guid UniverseId,
     string UniverseName,
-    UniverseRole Role);
+    UniverseRole Role,
+    bool ProposalsRequested = false,
+    bool CanPropose = false);
 
 /// <summary>
 /// The two OAuth endpoints LoreX answers itself, after OpenIddict has validated the request (ADR 0046), and the consent
@@ -49,6 +55,11 @@ public static class OAuthEndpoints
     public const string DecisionField = "lorex_decision";
 
     public const string Approve = "approve";
+
+    /// <summary>The consent form's separate choice to let the app propose changes for review (ADR 0047), and its one value.</summary>
+    public const string ProposeField = "lorex_propose";
+
+    public const string AllowProposals = "allow";
 
     /// <summary>The consent form's antiforgery field, and the cookie its token is paired with.</summary>
     public const string ConsentTokenField = "lorex_consent_token";
@@ -143,7 +154,7 @@ public static class OAuthEndpoints
         if (!session.Succeeded || session.Principal is null || !await antiforgery.IsRequestValidAsync(http))
         {
             return Results.Redirect(ConsentPath + QueryString.Create(form
-                .Where(field => field.Key is not (DecisionField or ConsentTokenField))
+                .Where(field => field.Key is not (DecisionField or ConsentTokenField or ProposeField))
                 .SelectMany(field => field.Value.Select(value => new KeyValuePair<string, string?>(field.Key, value)))).ToUriComponent());
         }
 
@@ -170,8 +181,15 @@ public static class OAuthEndpoints
 
         var principal = new ClaimsPrincipal(identity);
 
-        // Read, and the refresh that keeps the connection between conversations - whatever else was asked for, nothing more.
-        principal.SetScopes(McpLimits.ReadScope, Scopes.OfflineAccess);
+        // Read, and the refresh that keeps the connection between conversations. Proposing only when the app asked for it, the
+        // person ticked it on this very screen, and their role can propose at all - never by default, never from an earlier
+        // approval (ADR 0047). Whatever else was asked for, nothing more.
+        var canPropose = request.HasScope(McpLimits.ProposeScope)
+            && form[ProposeField] == AllowProposals
+            && AiChanges.AiChangePermissions.MayStageAnything(role);
+        principal.SetScopes(canPropose
+            ? [McpLimits.ReadScope, McpLimits.ProposeScope, Scopes.OfflineAccess]
+            : [McpLimits.ReadScope, Scopes.OfflineAccess]);
         principal.SetResources(site.ResourceFor(universeId));
         principal.SetDestinations(static _ => [Destinations.AccessToken]);
 
@@ -203,6 +221,7 @@ public static class OAuthEndpoints
             UserId = userId,
             UniverseId = universeId,
             CreatedAt = clock.GetUtcNow().UtcDateTime,
+            CanPropose = canPropose,
         });
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -259,6 +278,7 @@ public static class OAuthEndpoints
         [Microsoft.AspNetCore.Mvc.FromQuery(Name = Parameters.ClientId)] string? clientId,
         [Microsoft.AspNetCore.Mvc.FromQuery(Name = Parameters.RedirectUri)] string? redirectUri,
         [Microsoft.AspNetCore.Mvc.FromQuery(Name = Parameters.Resource)] string? resource,
+        [Microsoft.AspNetCore.Mvc.FromQuery(Name = Parameters.Scope)] string? scope,
         ClaimsPrincipal principal,
         LorexDbContext db,
         McpSite site,
@@ -299,7 +319,9 @@ public static class OAuthEndpoints
             redirects.All(uri => Uri.TryCreate(uri, UriKind.Absolute, out var parsed) && parsed.IsLoopback),
             universe.Id,
             universe.Name,
-            effective));
+            effective,
+            (scope ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains(McpLimits.ProposeScope, StringComparer.Ordinal),
+            AiChanges.AiChangePermissions.MayStageAnything(effective)));
     }
 
     /// <summary>An OAuth error, which OpenIddict writes back to the client's validated redirect URI or token response.</summary>

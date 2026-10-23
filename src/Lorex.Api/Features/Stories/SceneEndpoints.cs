@@ -105,6 +105,17 @@ public static class SceneEndpoints
             return denied;
         }
 
+        return await CreateCoreAsync(db, universeId, storyId, request, cancellationToken);
+    }
+
+    /// <summary>The one way a scene comes into being, shared with an approved AI change (ADR 0047). Access is the caller's.</summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        SceneRequest request,
+        CancellationToken cancellationToken)
+    {
         var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null)
         {
@@ -404,7 +415,21 @@ public static class SceneEndpoints
             return denied;
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        return await TrashCoreAsync(db, universeId, storyId, sceneId, cancellationToken);
+    }
+
+    /// <summary>
+    /// The scene to the Trash and its container closed up, shared with an approved AI change (ADR 0047). In the caller's
+    /// transaction when it has one, else its own. Access is the caller's.
+    /// </summary>
+    internal static async Task<IResult> TrashCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        Guid sceneId,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null)

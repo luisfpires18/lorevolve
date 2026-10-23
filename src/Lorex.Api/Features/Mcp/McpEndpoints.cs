@@ -23,11 +23,26 @@ public sealed class McpCaller
 
     public bool IsAllowed { get; private set; }
 
-    internal void Allow(Guid universeId, string userId, string universeName)
+    /// <summary>The connection the request came through, for a proposal's attribution.</summary>
+    public Guid ConnectionId { get; private set; }
+
+    /// <summary>The app's name as it registered it: self-declared unless its host was verified.</summary>
+    public string? ClientName { get; private set; }
+
+    /// <summary>
+    /// The token carries the proposal scope and the connection still allows proposing (ADR 0047). The person's role is
+    /// checked again by every proposal tool; nothing here ever writes to the universe.
+    /// </summary>
+    public bool CanPropose { get; private set; }
+
+    internal void Allow(Guid universeId, string userId, string universeName, Guid connectionId, string? clientName, bool canPropose)
     {
         UniverseId = universeId;
         UserId = userId;
         UniverseName = universeName;
+        ConnectionId = connectionId;
+        ClientName = clientName;
+        CanPropose = canPropose;
         IsAllowed = true;
     }
 }
@@ -54,7 +69,10 @@ public static class McpEndpoints
     /// <summary>What a Streamable HTTP session would use, and a stateless server answers 405.</summary>
     private static readonly string[] SessionMethods = [HttpMethods.Get, HttpMethods.Delete];
 
-    private static readonly string[] Scopes = [McpLimits.ReadScope];
+    private static readonly string[] Scopes = [McpLimits.ReadScope, McpLimits.ProposeScope];
+
+    /// <summary>What a challenge asks a client to request: read, and the separate, opt-in permission to propose (ADR 0047).</summary>
+    private static readonly string ChallengeScope = string.Join(' ', Scopes);
 
     private static readonly string[] BearerMethods = ["header"];
 
@@ -75,7 +93,7 @@ public static class McpEndpoints
                     ["authorization_servers"] = (string[])[site.Issuer.AbsoluteUri],
                     ["scopes_supported"] = Scopes,
                     ["bearer_methods_supported"] = BearerMethods,
-                    ["resource_name"] = "LoreX universe (read-only)",
+                    ["resource_name"] = "LoreX universe",
                 }))
             .WithTags("MCP")
             .WithName("GetMcpResourceMetadata")
@@ -150,7 +168,20 @@ public static class McpEndpoints
         var db = http.RequestServices.GetRequiredService<LorexDbContext>();
         var connection = await db.McpConnections.AsNoTracking()
             .Where(row => row.AuthorizationId == authorizationId)
-            .Select(row => new { row.Id, row.UniverseId, row.UserId, row.ClientId, row.LastUsedAt, UniverseName = row.Universe!.Name })
+            .Select(row => new
+            {
+                row.Id,
+                row.UniverseId,
+                row.UserId,
+                row.ClientId,
+                row.LastUsedAt,
+                row.CanPropose,
+                UniverseName = row.Universe!.Name,
+                ClientName = db.Set<OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication>()
+                    .Where(application => application.ClientId == row.ClientId)
+                    .Select(application => application.DisplayName)
+                    .FirstOrDefault(),
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (connection is null || connection.UniverseId != universeId || connection.UserId != userId
@@ -172,7 +203,13 @@ public static class McpEndpoints
                 .ExecuteUpdateAsync(update => update.SetProperty(row => row.LastUsedAt, now), cancellationToken);
         }
 
-        http.RequestServices.GetRequiredService<McpCaller>().Allow(universeId, connection.UserId, connection.UniverseName);
+        http.RequestServices.GetRequiredService<McpCaller>().Allow(
+            universeId,
+            connection.UserId,
+            connection.UniverseName,
+            connection.Id,
+            connection.ClientName,
+            principal.HasScope(McpLimits.ProposeScope) && connection.CanPropose);
 
         // The MCP endpoint is not a cookie-session endpoint: whatever else the request carried, the caller is the token.
         http.User = new ClaimsPrincipal(principal.Identity!);
@@ -183,12 +220,12 @@ public static class McpEndpoints
     private static ChallengeResult Challenge(McpSite site, Guid universeId, string? invalidToken) => new ChallengeResult(
         StatusCodes.Status401Unauthorized,
         invalidToken is null
-            ? $"Bearer resource_metadata=\"{site.ResourceMetadataFor(universeId)}\", scope=\"{McpLimits.ReadScope}\""
-            : $"Bearer error=\"invalid_token\", error_description=\"{invalidToken}\", resource_metadata=\"{site.ResourceMetadataFor(universeId)}\", scope=\"{McpLimits.ReadScope}\"");
+            ? $"Bearer resource_metadata=\"{site.ResourceMetadataFor(universeId)}\", scope=\"{ChallengeScope}\""
+            : $"Bearer error=\"invalid_token\", error_description=\"{invalidToken}\", resource_metadata=\"{site.ResourceMetadataFor(universeId)}\", scope=\"{ChallengeScope}\"");
 
     private static ChallengeResult InsufficientScope(McpSite site, Guid universeId) => new ChallengeResult(
         StatusCodes.Status403Forbidden,
-        $"Bearer error=\"insufficient_scope\", scope=\"{McpLimits.ReadScope}\", resource_metadata=\"{site.ResourceMetadataFor(universeId)}\"");
+        $"Bearer error=\"insufficient_scope\", scope=\"{ChallengeScope}\", resource_metadata=\"{site.ResourceMetadataFor(universeId)}\"");
 
     private sealed class ChallengeResult(int status, string header) : IResult
     {

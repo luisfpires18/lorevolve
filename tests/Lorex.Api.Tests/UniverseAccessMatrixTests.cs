@@ -165,6 +165,12 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("ask assistant", Post, $"{u}/assistant", May.Read, Json(new AssistantRequest("Who is Ember Vale?", null))),
             new("mcp connect info", Get, $"{u}/mcp", May.Read),
 
+            // ---------- Pending AI Changes (ADR 0047): ids the gate passes are random, so past it a member is told it is not there ----------
+            new("ai change", Get, $"{u}/ai-changes/{any}", May.Read),
+            new("edit ai change", Put, $"{u}/ai-changes/{any}/operations/{any}", May.Edit, Json(new Lorex.Api.Features.AiChanges.AiChangeEditRequest(1, new(Name: "x")))),
+            new("approve ai change", Post, $"{u}/ai-changes/{any}/approve", May.Edit, Json(new Lorex.Api.Features.AiChanges.AiChangeApproveRequest(1, [any], any))),
+            new("reject ai change", Post, $"{u}/ai-changes/{any}/reject", May.Read, Json(new Lorex.Api.Features.AiChanges.AiChangeRejectRequest(null, true))),
+
             // ---------- Stories ----------
             new("stories", Get, $"{u}/stories", May.Read),
             new("story", Get, s, May.Read),
@@ -349,7 +355,7 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
                 var response = await w.Client(who).SendAsync(call.Request(call.Path));
 
                 // A finding id is random: past the gate, a member is told it is not there - the same as the owner is.
-                var expected = call.Name == "canon finding" ? HttpStatusCode.NotFound : HttpStatusCode.OK;
+                var expected = call.Name is "canon finding" or "ai change" ? HttpStatusCode.NotFound : HttpStatusCode.OK;
                 Assert.True(response.StatusCode == expected, $"{who}: {call.Name} answered {(int)response.StatusCode}");
             }
         }

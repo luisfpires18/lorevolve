@@ -42,7 +42,8 @@ public sealed class McpOAuthTests(LorexApiFactory api) : IClassFixture<LorexApiF
         Assert.Equal(["S256"], Strings(root, "code_challenge_methods_supported"));
         Assert.Equal(["code"], Strings(root, "response_types_supported"));
         Assert.Equal(["authorization_code", "refresh_token"], Strings(root, "grant_types_supported").Order());
-        Assert.Equal(["lorex.read", "offline_access"], Strings(root, "scopes_supported").Order());
+        // Read, the separate permission to propose changes for review (ADR 0047), and refresh.
+        Assert.Equal(["lorex.propose", "lorex.read", "offline_access"], Strings(root, "scopes_supported").Order());
         Assert.Contains("none", Strings(root, "token_endpoint_auth_methods_supported"));
         Assert.DoesNotContain("private_key_jwt", Strings(root, "token_endpoint_auth_methods_supported"));
         Assert.True(root.GetProperty("client_id_metadata_document_supported").GetBoolean());
@@ -58,7 +59,7 @@ public sealed class McpOAuthTests(LorexApiFactory api) : IClassFixture<LorexApiF
         using var json = JsonDocument.Parse(await api.CreateClient().GetStringAsync($"/.well-known/oauth-protected-resource/mcp/universes/{u}"));
         Assert.Equal(Resource(u), json.RootElement.GetProperty("resource").GetString());
         Assert.Equal(["http://localhost/"], Strings(json.RootElement, "authorization_servers"));
-        Assert.Equal(["lorex.read"], Strings(json.RootElement, "scopes_supported"));
+        Assert.Equal(["lorex.read", "lorex.propose"], Strings(json.RootElement, "scopes_supported"));
         Assert.Equal(["header"], Strings(json.RootElement, "bearer_methods_supported"));
     }
 
@@ -71,7 +72,8 @@ public sealed class McpOAuthTests(LorexApiFactory api) : IClassFixture<LorexApiF
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         var challenge = response.Headers.WwwAuthenticate.ToString();
         Assert.Contains($"resource_metadata=\"http://localhost/.well-known/oauth-protected-resource/mcp/universes/{u}\"", challenge, StringComparison.Ordinal);
-        Assert.Contains("scope=\"lorex.read\"", challenge, StringComparison.Ordinal);
+        // Both are asked for; proposing is still only granted when the person ticks it at consent (ADR 0047).
+        Assert.Contains("scope=\"lorex.read lorex.propose\"", challenge, StringComparison.Ordinal);
         Assert.DoesNotContain("error=", challenge, StringComparison.Ordinal);
     }
 

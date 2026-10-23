@@ -41,6 +41,13 @@ public sealed class McpConnection
     /// window, so a busy client does not write on every call. Null until the first read.
     /// </summary>
     public DateTime? LastUsedAt { get; set; }
+
+    /// <summary>
+    /// Whether the person also let this app propose changes for review (ADR 0047): granted only by an explicit choice on the
+    /// consent screen, never by an earlier read-only approval, and turned off from Connected Apps without disconnecting.
+    /// Checked on every proposal tool call beside the token's own scope.
+    /// </summary>
+    public bool CanPropose { get; set; }
 }
 
 public sealed class McpConnectionConfiguration : IEntityTypeConfiguration<McpConnection>

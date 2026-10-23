@@ -68,9 +68,9 @@ test.describe('the shell', () => {
     const base = await newUniverse(page)
 
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
-    // The way up, then thirteen sections: Publish joined the foot in 014, and Chronology left Settings for a section of
-    // its own. All universes shares the landmark since refinement 024.
-    await expect(sections.getByRole('link')).toHaveCount(14)
+    // The way up, then fourteen sections: Publish joined the foot in 014, Chronology left Settings for a section of its
+    // own, and AI changes joined the keeping group (ADR 0047). All universes shares the landmark since refinement 024.
+    await expect(sections.getByRole('link')).toHaveCount(15)
     await expect(sections.getByRole('link').first()).toHaveText('All universes')
 
     // One h1 per screen, and it is the screen's title - the universe name in the sidebar is not it.

@@ -17,13 +17,97 @@ namespace Lorex.Api.Features.Assistant;
 /// "Is" or "Was" as an inference; anything else as recorded, from the object's own summary.</item>
 /// </list>
 /// Every answer cites the one object it read. Nothing it reads is ever followed as an instruction.
+///
+/// In propose mode (ADR 0047) it reads the change options, then stages one new lore entry for every name the question puts
+/// in double quotes - of the first type with no required fields - and, for two or more, a relationship of the first kind
+/// from the first to the second, referring to them by their change ids. Then it says the changes wait for review.
 /// </summary>
 public sealed partial class FakeAssistantProvider : IAssistantProvider
 {
     public bool IsConfigured => true;
 
-    public IAssistantConversation Begin(AssistantBrief brief) =>
-        new Conversation(brief.Messages.LastOrDefault(message => message.Role == AssistantRole.User)?.Text ?? string.Empty);
+    public IAssistantConversation Begin(AssistantBrief brief)
+    {
+        var question = brief.Messages.LastOrDefault(message => message.Role == AssistantRole.User)?.Text ?? string.Empty;
+        return brief.Tools.Any(tool => tool.Name == AssistantProposing.ProposeTool)
+            ? new Proposing(question)
+            : new Conversation(question);
+    }
+
+    [GeneratedRegex("\"([^\"]{1,80})\"")]
+    private static partial Regex QuotedName();
+
+    private sealed class Proposing(string question) : IAssistantConversation
+    {
+        private int _step;
+
+        public Task<AssistantModelTurn> NextAsync(
+            IReadOnlyList<AssistantToolResult> results,
+            bool toolsAllowed,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _step++;
+            var names = QuotedName().Matches(question).Select(match => match.Groups[1].Value.Trim()).Where(name => name.Length > 0).Distinct().ToList();
+
+            if (_step == 1)
+            {
+                return Task.FromResult(names.Count == 0
+                    ? Answer(Segment("note", "Tell me what to create, with each name in double quotes, and I'll prepare it for you to review."))
+                    : Call(AssistantProposing.OptionsTool, new { }));
+            }
+
+            using var document = JsonDocument.Parse(results.Count > 0 ? results[0].Output : "{}");
+            var root = document.RootElement;
+
+            if (_step == 2)
+            {
+                var type = root.GetProperty("loreTypes").EnumerateArray()
+                    .FirstOrDefault(candidate => candidate.GetProperty("fields").EnumerateArray().All(field => !field.GetProperty("required").GetBoolean()));
+                if (type.ValueKind != JsonValueKind.Object)
+                {
+                    return Task.FromResult(Answer(Segment("note", "Every lore type here has required fields, so I can't prepare these on my own.")));
+                }
+
+                var typeId = type.GetProperty("id").GetString();
+                var operations = names.Select((name, index) => (object)new
+                {
+                    id = $"entry-{index + 1}",
+                    action = "create",
+                    resource = "lore_entry",
+                    lore = new { typeId, name },
+                }).ToList();
+
+                var kinds = root.GetProperty("relationshipTypes").EnumerateArray().ToList();
+                if (names.Count >= 2 && kinds.Count > 0)
+                {
+                    operations.Add(new
+                    {
+                        id = "link-1",
+                        action = "create",
+                        resource = "relationship",
+                        relationship = new
+                        {
+                            typeId = kinds[0].GetProperty("id").GetString(),
+                            source = new { @ref = "entry-1" },
+                            target = new { @ref = "entry-2" },
+                        },
+                    });
+                }
+
+                return Task.FromResult(Call(AssistantProposing.ProposeTool, new { summary = $"New lore: {string.Join(", ", names)}", operations }));
+            }
+
+            return Task.FromResult(root.TryGetProperty("proposalId", out _)
+                ? Answer(Segment("note", $"I've prepared {root.GetProperty("changes").GetInt32()} changes for you to review in Pending AI Changes. Nothing changes until you approve them."))
+                : Answer(Segment("note", "I couldn't prepare those changes. LoreX found a problem with them.")));
+        }
+
+        private int _calls;
+
+        private AssistantModelTurn Call(string tool, object arguments) =>
+            new([new AssistantToolCall($"fake-propose-{++_calls}", tool, JsonSerializer.Serialize(arguments))], null);
+    }
 
     [GeneratedRegex(@"\p{Lu}[\p{L}\p{N}]*")]
     private static partial Regex CapitalisedWord();
@@ -112,9 +196,10 @@ public sealed partial class FakeAssistantProvider : IAssistantProvider
         private AssistantModelTurn Call(string tool, object arguments) =>
             new([new AssistantToolCall($"fake-{++_calls}", tool, JsonSerializer.Serialize(arguments))], null);
 
-        private static AssistantModelTurn Answer(object segment) =>
-            new([], JsonSerializer.Serialize(new { segments = new[] { segment } }));
-
-        private static object Segment(string kind, string text, params string[] sources) => new { kind, text, sources };
     }
+
+    private static AssistantModelTurn Answer(object segment) =>
+        new([], JsonSerializer.Serialize(new { segments = new[] { segment } }));
+
+    private static object Segment(string kind, string text, params string[] sources) => new { kind, text, sources };
 }

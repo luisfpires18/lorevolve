@@ -29,6 +29,9 @@ public static partial class AssistantEndpoints
     public const string BusyCode = "assistant_busy";
     public const string TimedOutCode = "assistant_timeout";
 
+    /// <summary>The request mode in which the assistant may stage a proposal for review (ADR 0047).</summary>
+    public const string ProposeMode = "propose";
+
     public static IEndpointRouteBuilder MapAssistantEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/universes/{universeId:guid}/assistant")
@@ -103,11 +106,34 @@ public static partial class AssistantEndpoints
         LorexDbContext db,
         IAssistantProvider provider,
         ILoggerFactory loggers,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
-        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.Read, cancellationToken) is { } denied)
+        var (denied, role) = await UniverseAccess.AuthorizeAsync(db, universeId, principal, UniverseCapability.Read, cancellationToken);
+        if (denied is not null)
         {
             return denied;
+        }
+
+        // Propose mode is the person's explicit request for changes (ADR 0047): asked for by name, and only by a role that can
+        // propose any. Anything else is an ordinary, read-only question.
+        var proposing = request.Mode switch
+        {
+            null or "ask" => (AssistantProposing?)null,
+            ProposeMode when AiChanges.AiChangePermissions.MayStageAnything(role) =>
+                new AssistantProposing(db, clock, universeId, principal.RequireUserId(), role),
+            ProposeMode => null,
+            _ => null,
+        };
+
+        if (request.Mode == ProposeMode && proposing is null)
+        {
+            return UniverseAccess.PermissionDenied();
+        }
+
+        if (request.Mode is not (null or "ask" or ProposeMode))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]> { ["mode"] = ["Ask a question, or propose changes."] });
         }
 
         var question = request.Question?.Trim() ?? string.Empty;
@@ -145,7 +171,7 @@ public static partial class AssistantEndpoints
 
         try
         {
-            return Results.Ok(await UniverseAssistant.AskAsync(provider, db, universeId, universeName, messages, logger, timeout.Token));
+            return Results.Ok(await UniverseAssistant.AskAsync(provider, db, universeId, universeName, messages, logger, timeout.Token, proposing));
         }
         catch (AssistantProviderException exception)
         {

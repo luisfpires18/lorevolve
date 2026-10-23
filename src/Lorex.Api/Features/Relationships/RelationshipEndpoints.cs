@@ -132,7 +132,7 @@ public static class RelationshipEndpoints
             cancellationToken);
     }
 
-    private static async Task<IResult> CreateCoreAsync(
+    internal static async Task<IResult> CreateCoreAsync(
         Guid universeId,
         RelationshipRequest request,
         LorexDbContext db,
@@ -198,7 +198,7 @@ public static class RelationshipEndpoints
             cancellationToken);
     }
 
-    private static async Task<IResult> UpdateCoreAsync(
+    internal static async Task<IResult> UpdateCoreAsync(
         Guid universeId,
         Guid relationshipId,
         RelationshipRequest request,
@@ -331,7 +331,7 @@ public static class RelationshipEndpoints
     /// Scoped to the universe the caller has already been proved to own, so a tuple stored in another
     /// universe - or another account's - is not a conflict here and its existence is never disclosed.
     /// </remarks>
-    private static async Task<Guid?> FindDuplicateAsync(
+    internal static async Task<Guid?> FindDuplicateAsync(
         LorexDbContext db,
         Guid universeId,
         RelationshipRequest request,

@@ -11,6 +11,7 @@ import {
   Network,
   Scale,
   Settings,
+  Sparkles,
   StickyNote,
   Trash2,
   type LucideIcon,
@@ -114,6 +115,14 @@ export const KEEPING: readonly Section[] = [
     testId: 'workspace-types',
     icon: Blocks,
     purpose: 'The kinds of entry and relation this world uses.',
+  },
+  {
+    segment: 'ai-changes',
+    label: 'AI changes',
+    testId: 'workspace-ai-changes',
+    icon: Sparkles,
+    purpose: 'Changes an AI proposed, waiting for someone to approve or reject them.',
+    requires: 'suggestChanges',
   },
 ]
 

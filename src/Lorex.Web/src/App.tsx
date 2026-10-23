@@ -23,6 +23,8 @@ import UniverseWorkspace from './pages/UniverseWorkspace'
  * `EntityPage` is why this is worth doing: it carries the rich-text editor, which is the largest
  * dependency Lorex has and is needed on exactly one screen.
  */
+const AiChangePage = lazy(() => import('./pages/AiChangePage'))
+const AiChangesPage = lazy(() => import('./pages/AiChangesPage'))
 const CanonPage = lazy(() => import('./pages/CanonPage'))
 const ConnectAuthorizePage = lazy(() => import('./pages/ConnectAuthorizePage'))
 const EntityPage = lazy(() => import('./pages/EntityPage'))
@@ -145,6 +147,7 @@ function Root() {
               <Route path="/app" element={asSection('universes', <UniversesPage />)} />
               <Route path="/app/profile" element={asSection('profile', <ProfilePage />)} />
               <Route path="/app/ideas" element={asSection('ideas', <IdeasPage />)} />
+              <Route path="/app/ai-changes" element={asSection('ai-changes', <AiChangesPage />)} />
               <Route path="/app/ideas/new" element={asSection('idea', <IdeaPage isNew />)} />
               <Route path="/app/ideas/:ideaId" element={asSection('idea', <IdeaPage />)} />
             </Route>
@@ -267,6 +270,14 @@ function Root() {
                 )}
               />
               <Route path="canon" element={asSection('canon', <CanonPage />)} />
+              <Route
+                path="ai-changes"
+                element={asSection('ai-changes', <AiChangesPage inUniverse />)}
+              />
+              <Route
+                path="ai-changes/:proposalId"
+                element={asSection('ai-change', <AiChangePage />)}
+              />
               <Route path="types" element={asSection('types', <UniverseTypes />)} />
               <Route
                 path="trash"

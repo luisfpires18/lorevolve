@@ -9,8 +9,14 @@ namespace Lorex.Api.Features.Mcp;
 /// <summary>The numbers of the MCP connection (ADR 0046), in one place.</summary>
 public static class McpLimits
 {
-    /// <summary>The one permission V1 grants: read the connected universe. Nothing writes.</summary>
+    /// <summary>The permission every connection has: read the connected universe.</summary>
     public const string ReadScope = "lorex.read";
+
+    /// <summary>
+    /// A separate permission to propose changes for a person to review in LoreX (ADR 0047). Never a write: nothing it
+    /// allows changes the universe. Granted only when the person ticks it at consent, and only to a role that can propose.
+    /// </summary>
+    public const string ProposeScope = "lorex.propose";
 
     /// <summary>Short-lived (MCP: SHOULD). Every request is checked against the live authorization anyway.</summary>
     public static readonly TimeSpan AccessTokenLifetime = TimeSpan.FromMinutes(15);
@@ -140,7 +146,7 @@ public static class McpSetup
                 // PKCE on every request, S256 only (OAuth 2.1, MCP).
                 server.RequireProofKeyForCodeExchange();
 
-                server.RegisterScopes(McpLimits.ReadScope, Scopes.OfflineAccess);
+                server.RegisterScopes(McpLimits.ReadScope, McpLimits.ProposeScope, Scopes.OfflineAccess);
                 server.Configure(options =>
                 {
                     options.CodeChallengeMethods.Remove(CodeChallengeMethods.Plain);
@@ -172,6 +178,11 @@ public static class McpSetup
                 // A resource is one universe, so the set of resources is not a list to register: each request's
                 // resource is checked against this deployment's own shape instead (OAuthServerEvents).
                 server.DisableResourceValidation().IgnoreResourcePermissions();
+
+                // Scope permissions stay enforced per client: a client may only ask for the scopes its registration lists
+                // (ClientRules.Describe: read and propose). Asking is all a permission allows - what a token carries is
+                // decided at consent (ADR 0047). Clients registered before lorex.propose existed were given it by the
+                // UpgradeMcpClientScopes migration, the same list a registration gets today.
 
                 OAuthServerEvents.Register(server);
 
@@ -245,7 +256,9 @@ public static class McpSetup
                 options.ServerInstructions = LorexMcpTools.Instructions;
             })
             .WithHttpTransport(transport => transport.SessionMode = ModelContextProtocol.AspNetCore.HttpServerSessionMode.Stateless)
-            .WithTools<LorexMcpTools>();
+            .WithTools<LorexMcpTools>()
+            .WithTools<LorexMcpProposalTools>()
+            .WithRequestFilters(LorexMcpProposalTools.Filters);
 
         services.AddHostedService<McpMaintenance>();
 
