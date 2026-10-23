@@ -337,8 +337,8 @@ test.describe('workspace navigation', () => {
 
     const world = ['Lore', 'Family Tree', 'Timeline', 'Chronology', 'World Rules']
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
-    // All universes, Overview, then the world's five.
-    await expect(sections.getByRole('link')).toHaveCount(14)
+    // All universes, Overview, then the world's five - whatever the groups below them hold.
+    await expect(sections.getByRole('link')).toContainText(['All universes', 'Overview', ...world])
     await expect(page.locator('[data-testid="overview-lore"]')).toBeVisible()
     const links = (await sections.getByRole('link').allTextContents()).map((text) => text.trim())
     expect(links.slice(2, 7)).toEqual(world)

@@ -124,6 +124,13 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     0013 and 0043 amendments.
   - History consistency: kind change refused while older versions hold values (409 `entity_field_kind_locked`); a revision
     restore refused while its archived-field values differ from the entry's (409 `entity_revision_archived_field`).
+- **Fix: CI after MCP V2 merge** (`fix/ai-changes-e2e-ci` off `dev` at `4d4678b`; committed, not pushed). Run
+  39963588195 failed on stale nav assertions (14 links; AI changes made 15). `editing-flow` and `workspace-settings` now
+  check order and the upkeep row, not a bare count; the owner's full list includes AI changes; `ai-changes` adds a
+  reviewer (offered) beside the viewer (not). Two CI flakes were one race - the address moves before the route commits:
+  `content-recovery` now waits for the Lore list before `goto` (the empty dialog was `beforeunload`), `family-tree`
+  waits for the new focal node. No production code changed. Full Playwright, two shards on fresh DBs: 530/530, one
+  retry in untouched `types-and-trash` (pagination checkbox).
 - **Roadmap 052 - MCP V2 · Controlled AI CRUD** (GitHub issue 32, temporarily ahead of #27 by owner decision;
   `feat/controlled-ai-crud` off `dev` at `bd88d6c`; committed, not merged, not pushed). One migration
   (`AddAiChangeProposals`: two tables + `McpConnections.CanPropose`), backup format unchanged (proposals never in a backup).

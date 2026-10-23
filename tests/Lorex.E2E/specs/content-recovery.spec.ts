@@ -408,6 +408,9 @@ test.describe('content recovery', () => {
     })
     await tab.locator('.entry__crumbs').getByRole('link', { name: 'Lore' }).click()
     await tab.waitForURL(new RegExp(`/universes/${universeId}/lore[?]type=[0-9a-f-]+$`))
+    // The address changes before the Lore list replaces the entry; until it does, the entry's guard still holds the
+    // page, and the navigation below would meet the browser's own leave prompt.
+    await expect(tab.getByTestId('lore-path')).toBeVisible()
     expect(questions).toHaveLength(1)
     expect(questions[0]).toContain('has unsaved changes')
     await expect.poll(async () => (await recoveryCopies(tab)).length).toBe(0)

@@ -249,26 +249,42 @@ test.describe('Pending AI Changes', () => {
     await expect(page.getByLabel('Name')).toHaveValue('Half-written entry')
   })
 
-  test('a viewer is offered no proposing and no AI changes section', async ({ browser }) => {
+  test('a viewer is offered no proposing and no AI changes section; a reviewer is offered the section', async ({
+    browser,
+  }) => {
     const owner = await newPerson(browser, 'aiowner')
     const viewer = await newPerson(browser, 'aiviewer')
+    const reviewer = await newPerson(browser, 'aireviewer')
     const universeId = await seed(owner.page)
-    const invitationId = (
-      await api<{ id: string }>(
-        owner.page.request,
-        'POST',
-        `/api/universes/${universeId}/invitations`,
-        {
-          email: viewer.email,
-          role: 1,
-        },
+    for (const [person, role] of [
+      [viewer, 1],
+      [reviewer, 2],
+    ] as const) {
+      const invitationId = (
+        await api<{ id: string }>(
+          owner.page.request,
+          'POST',
+          `/api/universes/${universeId}/invitations`,
+          { email: person.email, role },
+        )
+      ).id
+      expect((await person.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(
+        true,
       )
-    ).id
-    expect((await viewer.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(
-      true,
-    )
+    }
 
+    // A reviewer may suggest changes, so AI changes follows Types; Trash needs more than a reviewer has.
+    await reviewer.page.goto(`/app/universes/${universeId}`)
+    const reviewerSections = reviewer.page.getByRole('navigation', {
+      name: 'Universe',
+      exact: true,
+    })
+    await expect(reviewerSections.getByRole('link')).toContainText(['Types', 'AI changes'])
+    await expect(reviewer.page.getByTestId('workspace-trash')).toHaveCount(0)
+
+    // The sections are on screen before the absence is read, so it is not the empty sidebar of a page still loading.
     await viewer.page.goto(`/app/universes/${universeId}`)
+    await expect(viewer.page.getByTestId('workspace-types')).toBeVisible()
     await expect(viewer.page.getByTestId('workspace-ai-changes')).toHaveCount(0)
     await viewer.page.getByRole('button', { name: 'Assistant' }).click()
     await expect(viewer.page.getByTestId('assistant-drawer')).toBeVisible()
