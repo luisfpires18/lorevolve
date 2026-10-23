@@ -27,7 +27,8 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
         new(
             OptionsTool,
             "Read what changes can be proposed in this universe: the changes the writer's role allows, the lore types with the ids of "
-            + "their fields and choices, the relationship kinds, the stories with their chapters, and the date periods. Use only these ids.",
+            + "their fields and choices, the relationship kinds, the stories with their chapters and plot arcs, the date periods, the world "
+            + "rules, the event kinds and methods, and - for the universe owner only - their ideas here. Use only these ids.",
             """{"type":"object","properties":{},"required":[],"additionalProperties":false}"""),
         new(
             ProposeTool,
@@ -42,8 +43,9 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
         The writer turned on Propose changes and asked you for changes. To prepare them:
         - Read what you need first. Call get_change_options for the ids of types, fields, choices, relationship kinds, stories and chapters.
         - Then call propose_changes once with every change. Give each change a short id; a later change refers to what an earlier one creates with {"ref": "<its id>"}.
-        - create needs the values; update needs targetId and only the values that change; remove moves a lore entry, story, chapter or scene to the Trash.
-        - For a manuscript, use mode "append" to add prose after what is there.
+        - create needs the values; update needs targetId and only the values that change; remove moves an item to the Trash (an idea to the owner's deleted ideas); reorder takes a container's whole order in order.items.
+        - For a manuscript, use mode "append" to add prose after what is there. An article is written as blocks of plain text, in article.blocks.
+        - Ideas are the universe owner's own; propose one only when the writer asked for an idea.
         - If propose_changes lists problems, fix them and call it again.
         When it is staged, answer in a note that the changes are waiting for the writer to review in Pending AI Changes, and say briefly what they are.
         """;
@@ -118,6 +120,10 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
             ("entry", Or(reference)),
             ("eraId", Nullable("string")),
             ("clear", Nullable("boolean")));
+        var details = Object(("eventKindId", Nullable("string")), ("methodId", Nullable("string")), ("participant", Or(reference)));
+        var block = Object(("kind", Text("paragraph, heading, bullet_list, numbered_list or quote")), ("text", Nullable("string")), ("level", Nullable("integer")), ("items", NullableArray(Text())));
+        var check = Object(("eventKindId", Nullable("string")), ("methodId", Nullable("string")), ("maxOccurrences", Nullable("integer")));
+        var ideaReference = Object(("kind", Text("lore_entry, story, scene, plot_arc or plot_beat")), ("id", Nullable("string")), ("ref", Nullable("string")));
         var date = Object(
             ("kind", Nullable("string")),
             ("startYear", Nullable("integer")),
@@ -134,8 +140,8 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
 
         var operation = Object(
             ("id", Text()),
-            ("action", Text("create, update or remove")),
-            ("resource", Text("lore_entry, relationship, story, chapter, scene, manuscript or timeline_event")),
+            ("action", Text("create, update, remove or reorder")),
+            ("resource", Text("lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea")),
             ("targetId", Nullable("string")),
             ("expectedVersion", Nullable("integer")),
             ("lore", Or(Object(
@@ -151,7 +157,11 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
                 ("source", Or(reference)),
                 ("target", Or(reference)),
                 ("canonStatus", Nullable("string")),
-                ("notes", Nullable("string"))))),
+                ("notes", Nullable("string")),
+                ("startDate", Nullable("string")),
+                ("endDate", Nullable("string")),
+                ("clearStartDate", Nullable("boolean")),
+                ("clearEndDate", Nullable("boolean"))))),
             ("story", Or(Object(("title", Nullable("string")), ("premise", Nullable("string")), ("status", Nullable("string"))))),
             ("chapter", Or(Object(("story", Or(reference)), ("title", Nullable("string")), ("summary", Nullable("string")), ("notes", Nullable("string"))))),
             ("scene", Or(Object(
@@ -169,7 +179,27 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
                 ("description", Nullable("string")),
                 ("canonStatus", Nullable("string")),
                 ("date", Or(date)),
-                ("participants", NullableArray(reference))))));
+                ("participants", NullableArray(reference)),
+                ("stories", NullableArray(reference)),
+                ("details", Or(details)),
+                ("clearDetails", Nullable("boolean"))))),
+            ("article", Or(Object(("entry", Or(reference)), ("mode", Nullable("string")), ("blocks", NullableArray(block))))),
+            ("plotArc", Or(Object(("story", Or(reference)), ("title", Nullable("string")), ("description", Nullable("string")), ("notes", Nullable("string"))))),
+            ("plotBeat", Or(Object(
+                ("arc", Or(reference)),
+                ("title", Nullable("string")),
+                ("description", Nullable("string")),
+                ("notes", Nullable("string")),
+                ("scenes", NullableArray(reference)),
+                ("lore", NullableArray(reference))))),
+            ("worldRule", Or(Object(("title", Nullable("string")), ("description", Nullable("string")), ("check", Or(check)), ("removeCheck", Nullable("boolean"))))),
+            ("idea", Or(Object(("title", Nullable("string")), ("body", Nullable("string")), ("references", NullableArray(ideaReference))))),
+            ("order", Or(Object(
+                ("story", Or(reference)),
+                ("chapter", Or(reference)),
+                ("unchaptered", Nullable("boolean")),
+                ("arc", Or(reference)),
+                ("items", NullableArray(reference))))));
 
         return Object(("summary", Nullable("string")), ("operations", new JsonObject { ["type"] = "array", ["items"] = operation })).ToJsonString();
     }

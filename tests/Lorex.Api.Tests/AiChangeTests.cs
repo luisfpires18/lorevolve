@@ -68,7 +68,7 @@ public sealed class AiChangeTests(LorexApiFactory factory) : IClassFixture<Lorex
             new AiChangeOperationInput("s", "create", "story", Story: new AiStoryInput("A tale")),
             new AiChangeOperationInput("c", "create", "relationship", Relationship: new AiRelationshipInput(Guid.NewGuid(), Ref("nowhere"), Ref("s"))),
             new AiChangeOperationInput("d", "explode", "lore_entry"),
-            Remove("e", "relationship", Guid.NewGuid()));
+            Remove("e", "manuscript", Guid.NewGuid()));
 
         Assert.Null(staged.Proposal);
         var codes = staged.Issues.Select(issue => (issue.Id, issue.Code)).ToList();
@@ -368,7 +368,7 @@ public sealed class AiChangeTests(LorexApiFactory factory) : IClassFixture<Lorex
     }
 
     [Fact]
-    public async Task Timeline_moments_are_created_and_updated_but_relationships_and_moments_are_never_removed()
+    public async Task Timeline_moments_are_created_updated_and_removed_only_to_the_Trash()
     {
         var (owner, ownerId, u, character, _) = await World("aitime");
         var id = await Staged(
@@ -387,8 +387,14 @@ public sealed class AiChangeTests(LorexApiFactory factory) : IClassFixture<Lorex
         await ApproveAll(owner, u, edit);
         Assert.Equal("The longest war", (await owner.GetFromJsonAsync<TimelineEntryResponse>($"/api/universes/{u}/timeline/{made["war"]}"))!.Title);
 
-        var removal = await Stage(_factory, u, ownerId, Remove("w", "timeline_event", made["war"]));
-        Assert.Equal(AiChangeCodes.Unsupported, Assert.Single(removal.Issues).Code);
+        // Removal is reversible since ADR 0048: the moment goes to the Trash, and comes back from it whole.
+        var removal = await Staged(_factory, u, ownerId, Remove("w", "timeline_event", made["war"]));
+        await ApproveAll(owner, u, removal);
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync($"/api/universes/{u}/timeline/{made["war"]}")).StatusCode);
+        await WithDb(_factory, async db => Assert.NotNull((await db.TimelineEntries.SingleAsync(row => row.Id == made["war"])).DeletedAt));
+
+        (await owner.PostAsync($"/api/universes/{u}/trash/timeline/{made["war"]}/restore", null)).EnsureSuccessStatusCode();
+        Assert.Equal("The longest war", (await owner.GetFromJsonAsync<TimelineEntryResponse>($"/api/universes/{u}/timeline/{made["war"]}"))!.Title);
     }
 
     [Fact]

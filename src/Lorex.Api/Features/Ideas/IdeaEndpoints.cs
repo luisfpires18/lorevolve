@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Lorex.Api.Data;
+using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -206,8 +207,19 @@ public static class IdeaEndpoints
         LorexDbContext db,
         CancellationToken cancellationToken)
     {
-        var ownerId = principal.RequireUserId();
+        return await CreateCoreAsync(db, principal.RequireUserId(), request, cancellationToken);
+    }
 
+    /// <summary>
+    /// The create itself, for <paramref name="ownerId"/> - the signed-in account, or the approver of an AI change who must be
+    /// that same account (ADR 0048). In the caller's transaction when it has one.
+    /// </summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorexDbContext db,
+        string ownerId,
+        IdeaRequest request,
+        CancellationToken cancellationToken)
+    {
         if (Validate(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -215,7 +227,7 @@ public static class IdeaEndpoints
 
         var references = Requested(request.References);
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         if (await CheckAssociationAsync(db, ownerId, request.UniverseId, references, [], cancellationToken) is { } refused)
         {
@@ -254,10 +266,19 @@ public static class IdeaEndpoints
         LorexDbContext db,
         CancellationToken cancellationToken)
     {
-        var ownerId = principal.RequireUserId();
+        return await UpdateCoreAsync(db, principal.RequireUserId(), id, request, cancellationToken);
+    }
 
+    /// <summary>The save itself, for <paramref name="ownerId"/> as on <see cref="CreateCoreAsync"/>.</summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorexDbContext db,
+        string ownerId,
+        Guid id,
+        IdeaRequest request,
+        CancellationToken cancellationToken)
+    {
         // One transaction for the comparison and the write, so nothing can land between them: SQLite has one writer.
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         // Ownership before anything about the request is answered, so another account's idea is only ever a 404.
         var idea = await db.Ideas.FirstOrDefaultAsync(
@@ -319,8 +340,16 @@ public static class IdeaEndpoints
         LorexDbContext db,
         CancellationToken cancellationToken)
     {
-        var ownerId = principal.RequireUserId();
+        return await DeleteCoreAsync(db, principal.RequireUserId(), id, cancellationToken);
+    }
 
+    /// <summary>The idea into the account's deleted ideas, for <paramref name="ownerId"/> as on <see cref="CreateCoreAsync"/>.</summary>
+    internal static async Task<IResult> DeleteCoreAsync(
+        LorexDbContext db,
+        string ownerId,
+        Guid id,
+        CancellationToken cancellationToken)
+    {
         var idea = await db.Ideas.FirstOrDefaultAsync(
             candidate => candidate.Id == id && candidate.OwnerId == ownerId && candidate.DeletedAt == null,
             cancellationToken);
@@ -392,7 +421,7 @@ public static class IdeaEndpoints
     // ---------- Reading ----------
 
     /// <summary>One live idea of this account, whole, with its references resolved - or null.</summary>
-    private static async Task<IdeaDetail?> LoadDetailAsync(
+    internal static async Task<IdeaDetail?> LoadDetailAsync(
         LorexDbContext db,
         Guid id,
         string ownerId,

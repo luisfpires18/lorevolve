@@ -39,7 +39,9 @@ public sealed record FieldReading(string Name, string Value, Guid? LoreId);
 /// point of view, and <paramref name="Moments"/> the timeline moments it takes part in, each list bounded; the
 /// <c>More</c> flags say a list was cut. Relationships are read on their own (<see cref="RelationshipsReading"/>).
 /// <paramref name="ArticlePassage"/> is the passage of the article around words asked for - wherever in the article they
-/// are - or null when none were asked for or the article does not hold them.
+/// are - or null when none were asked for or the article does not hold them. <paramref name="Version"/> and
+/// <paramref name="ArticleVersion"/> are the entry's and its article's edit versions (ADR 0043), which a proposed change
+/// names to say what it was written over (ADR 0048).
 /// </summary>
 public sealed record LoreReading(
     Guid Id,
@@ -57,7 +59,9 @@ public sealed record LoreReading(
     IReadOnlyList<MomentMention> Moments,
     bool MoreMoments,
     int RelationshipCount,
-    string? ArticlePassage = null);
+    string? ArticlePassage = null,
+    int? Version = null,
+    int? ArticleVersion = null);
 
 /// <summary>A chapter of a story, numbered from 1 in the story's order.</summary>
 public sealed record ChapterReading(Guid Id, int Number, string Title, string? Summary);

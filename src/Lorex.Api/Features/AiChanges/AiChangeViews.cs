@@ -16,13 +16,22 @@ namespace Lorex.Api.Features.AiChanges;
 /// </summary>
 internal static class AiChangeViews
 {
-    /// <summary>The proposals a reader is shown: every one in a universe where they could approve, and their own elsewhere - only while they can still read it.</summary>
+    /// <summary>
+    /// The proposals a reader is shown: every one in a universe where they could approve, and their own elsewhere - only while
+    /// they can still read it. A proposal holding an idea change is its proposer's alone (ADR 0048): an idea is the owner's
+    /// account data, which no collaborator reads, so no one else is shown the proposal at all.
+    /// </summary>
     public static IQueryable<AiChangeProposal> Visible(LorexDbContext db, string userId) =>
         db.AiChangeProposals.Where(proposal =>
-            proposal.Universe!.OwnerId == userId
-            || db.UniverseMemberships.Any(membership => membership.UniverseId == proposal.UniverseId
-                && membership.UserId == userId
-                && (membership.Role == UniverseRole.Editor || proposal.ProposedByUserId == userId)));
+            (proposal.ProposedByUserId == userId || !proposal.Operations.Any(operation => operation.Resource == AiChangeResource.Idea))
+            && (proposal.Universe!.OwnerId == userId
+                || db.UniverseMemberships.Any(membership => membership.UniverseId == proposal.UniverseId
+                    && membership.UserId == userId
+                    && (membership.Role == UniverseRole.Editor || proposal.ProposedByUserId == userId))));
+
+    /// <summary>Whether a loaded proposal may be shown to, or decided by, this reader at all: one with an idea change is its proposer's alone.</summary>
+    public static bool MayRead(AiChangeProposal proposal, string userId) =>
+        proposal.ProposedByUserId == userId || proposal.Operations.All(operation => operation.Resource != AiChangeResource.Idea);
 
     public static IQueryable<AiChangeProposalSummary> Summaries(LorexDbContext db, IQueryable<AiChangeProposal> proposals, string userId) =>
         proposals.Select(proposal => new AiChangeProposalSummary(
@@ -80,14 +89,14 @@ internal static class AiChangeViews
                 && row.UniverseId == universeId
                 && (mayReview || row.ProposedByUserId == userId), cancellationToken);
 
-        if (proposal is null)
+        if (proposal is null || !MayRead(proposal, userId))
         {
             return null;
         }
 
         var summary = await Summaries(db, db.AiChangeProposals.Where(row => row.Id == proposalId), userId).SingleAsync(cancellationToken);
         var works = proposal.Operations.OrderBy(operation => operation.Sequence).Select(AiChangeWork.From).ToList();
-        await new AiChangeChecker(db, universeId).CheckAsync(works, cancellationToken);
+        await new AiChangeChecker(db, universeId, proposal.ProposedByUserId).CheckAsync(works, cancellationToken);
 
         var names = await Names.LoadAsync(db, universeId, works, cancellationToken);
         var resolvers = (await db.AiChangeOperations.AsNoTracking()
@@ -125,7 +134,7 @@ internal static class AiChangeViews
                 work.IsPending && work.IsConflict,
                 work.Action == AiChangeAction.Remove && work.IsPending ? await ImpactAsync(db, universeId, work, cancellationToken) : null,
                 work.IsPending && open && mayReview && !work.IsConflict ? Editable(work.Proposed) : null,
-                await ProseAsync(db, work, cancellationToken),
+                await ProseAsync(db, universeId, work, cancellationToken),
                 row.ResultId,
                 resolvers.GetValueOrDefault(row.Id),
                 row.ResolvedAt is { } at ? DateTime.SpecifyKind(at, DateTimeKind.Utc) : null,
@@ -173,9 +182,91 @@ internal static class AiChangeViews
                     StoryValues story => story.Title,
                     ChapterValues chapter => chapter.Title,
                     SceneValues scene => scene.Title,
+                    RelationshipValues relationship => $"{names.Entry(relationship.Source)} {names.RelationshipType(relationship.TypeId)} {names.Entry(relationship.Target)}",
+                    TimelineValues moment => moment.Title,
+                    PlotArcValues arc => arc.Title,
+                    PlotBeatValues beat => beat.Title,
+                    WorldRuleValues rule => rule.Title,
+                    IdeaValues idea => idea.Title,
                     _ => "this",
                 };
-                return ($"Move {Noun(work.Resource)} {named} to the Trash", lines);
+                return (work.Resource == AiChangeResource.Idea
+                    ? $"Delete the idea {named} (it stays in your deleted ideas)"
+                    : $"Move {Noun(work.Resource)} {named} to the Trash", lines);
+
+            case (OrderValues order, var before):
+            {
+                var was = before as OrderValues;
+                var container = work.Resource switch
+                {
+                    AiChangeResource.Chapter => $"the chapters of {names.Story(order.Story)}",
+                    AiChangeResource.PlotArc => $"the plot arcs of {names.Story(order.Story)}",
+                    AiChangeResource.PlotBeat => $"the beats of {names.Arc(order.Arc!)}",
+                    _ => order.Chapter is { } chapter
+                        ? $"the scenes of {names.Chapter(chapter)} in {names.Story(order.Story)}"
+                        : $"the unchaptered scenes of {names.Story(order.Story)}",
+                };
+                string Item(AiRef item) => work.Resource switch
+                {
+                    AiChangeResource.Chapter => names.Chapter(item)!,
+                    AiChangeResource.PlotArc => names.Arc(item),
+                    AiChangeResource.PlotBeat => names.Beat(item),
+                    _ => names.Scene(item),
+                };
+                lines.Add(new AiChangeLine(
+                    "Order",
+                    was is null ? null : Numbered(was.Items.Select(Item)),
+                    Numbered(order.Items.Select(Item))));
+                return ($"Reorder {container}", lines);
+            }
+
+            case (ArticleValues article, _):
+                lines.Add(new AiChangeLine("Entry", null, names.Entry(article.Entry)));
+                return (article.Append
+                    ? $"Add to the article of {names.Entry(article.Entry)}"
+                    : article.Blocks.Count == 0
+                        ? $"Clear the article of {names.Entry(article.Entry)}"
+                        : $"Rewrite the article of {names.Entry(article.Entry)}", lines);
+
+            case (PlotArcValues arc, var before):
+            {
+                var old = before as PlotArcValues;
+                Line("Story", old is null ? null : names.Story(old.Story), names.Story(arc.Story));
+                Line("Title", old?.Title, arc.Title);
+                Line("Description", old?.Description, arc.Description);
+                Line("Notes", old?.Notes, arc.Notes);
+                return (work.Action == AiChangeAction.Create ? $"New plot arc: {arc.Title}" : $"Edit plot arc: {old?.Title ?? arc.Title}", lines);
+            }
+
+            case (PlotBeatValues beat, var before):
+            {
+                var old = before as PlotBeatValues;
+                Line("Arc", old is null ? null : names.Arc(old.Arc), names.Arc(beat.Arc));
+                Line("Title", old?.Title, beat.Title);
+                Line("Description", old?.Description, beat.Description);
+                Line("Notes", old?.Notes, beat.Notes);
+                Line("Scenes", Join(old?.Scenes.Select(names.Scene)), Join(beat.Scenes.Select(names.Scene)));
+                Line("Lore", Join(old?.Lore.Select(names.Entry)), Join(beat.Lore.Select(names.Entry)));
+                return (work.Action == AiChangeAction.Create ? $"New plot beat: {beat.Title}" : $"Edit plot beat: {old?.Title ?? beat.Title}", lines);
+            }
+
+            case (WorldRuleValues rule, var before):
+            {
+                var old = before as WorldRuleValues;
+                Line("Title", old?.Title, rule.Title);
+                Line("Description", old is null ? null : Blank(old.Description), Blank(rule.Description));
+                Line("Check", old is null ? null : names.Check(old.Check), names.Check(rule.Check));
+                return (work.Action == AiChangeAction.Create ? $"New world rule: {rule.Title}" : $"Edit world rule: {old?.Title ?? rule.Title}", lines);
+            }
+
+            case (IdeaValues idea, var before):
+            {
+                var old = before as IdeaValues;
+                Line("Title", old?.Title, idea.Title);
+                Line("Idea", old is null ? null : Blank(old.Body), Blank(idea.Body));
+                Line("Refers to", Join(old?.References.Select(names.Reference)), Join(idea.References.Select(names.Reference)));
+                return (work.Action == AiChangeAction.Create ? $"New idea: {idea.Title}" : $"Edit idea: {old?.Title ?? idea.Title}", lines);
+            }
 
             case (LoreValues lore, var before):
             {
@@ -207,6 +298,8 @@ internal static class AiChangeViews
                 Line("From", old is null ? null : names.Entry(old.Source), names.Entry(relationship.Source));
                 Line("To", old is null ? null : names.Entry(old.Target), names.Entry(relationship.Target));
                 Line("Canon status", old is null ? null : Canon(old.CanonStatus), Canon(relationship.CanonStatus));
+                Line("Began", Day(old?.StartDate), Day(relationship.StartDate));
+                Line("Ended", Day(old?.EndDate), Day(relationship.EndDate));
                 Line("Notes", old?.Notes, relationship.Notes);
                 var reads = $"{names.Entry(relationship.Source)} {names.RelationshipType(relationship.TypeId)} {names.Entry(relationship.Target)}";
                 return (work.Action == AiChangeAction.Create ? $"New relationship: {reads}" : $"Edit relationship: {reads}", lines);
@@ -259,6 +352,11 @@ internal static class AiChangeViews
                 Line("Canon status", old is null ? null : Canon(old.CanonStatus), Canon(moment.CanonStatus));
                 Line("When", old is null ? null : names.When(old), names.When(moment));
                 Line("Taking part", Join(old?.Participants.Select(names.Entry)), Join(moment.Participants.Select(names.Entry)));
+                if (moment.Stories is not null)
+                {
+                    Line("Stories", Join(old?.Stories?.Select(names.Story)), Join(moment.Stories.Select(names.Story)));
+                    Line("Details", old is null ? null : names.Details(old.Details), names.Details(moment.Details));
+                }
                 return (work.Action == AiChangeAction.Create ? $"New timeline moment: {moment.Title}" : $"Edit timeline moment: {old?.Title ?? moment.Title}", lines);
             }
 
@@ -274,6 +372,9 @@ internal static class AiChangeViews
         ChapterValues chapter => chapter.Story.Id,
         SceneValues scene => scene.Story.Id,
         ManuscriptValues manuscript => manuscript.StoryId ?? names.StoryOfScene(manuscript.Scene),
+        PlotArcValues arc => arc.Story.Id,
+        PlotBeatValues beat => beat.Story?.Id,
+        OrderValues order => order.Story.Id,
         _ => null,
     };
 
@@ -286,12 +387,31 @@ internal static class AiChangeViews
         RelationshipValues relationship => new AiChangeEditable(Notes: relationship.Notes ?? string.Empty, CanonStatus: relationship.CanonStatus),
         TimelineValues moment => new AiChangeEditable(Title: moment.Title, Description: moment.Description ?? string.Empty, CanonStatus: moment.CanonStatus),
         ManuscriptValues manuscript => new AiChangeEditable(Text: manuscript.Text),
+        PlotArcValues arc => new AiChangeEditable(Title: arc.Title, Description: arc.Description ?? string.Empty, Notes: arc.Notes ?? string.Empty),
+        PlotBeatValues beat => new AiChangeEditable(Title: beat.Title, Description: beat.Description ?? string.Empty, Notes: beat.Notes ?? string.Empty),
+        WorldRuleValues rule => new AiChangeEditable(Title: rule.Title, Description: rule.Description),
+        IdeaValues idea => new AiChangeEditable(Title: idea.Title, Text: idea.Body),
         _ => null,
     };
 
-    /// <summary>A manuscript change's prose, with the prose stored now while the change still applies to it.</summary>
-    private static async Task<AiChangeProse?> ProseAsync(LorexDbContext db, AiChangeWork work, CancellationToken cancellationToken)
+    /// <summary>
+    /// A manuscript change's prose, or an article change's text, with what is stored now while the change still applies to it.
+    /// An article is shown as its plain text - the same extraction search reads - never as the document.
+    /// </summary>
+    private static async Task<AiChangeProse?> ProseAsync(LorexDbContext db, Guid universeId, AiChangeWork work, CancellationToken cancellationToken)
     {
+        if (work.Proposed is ArticleValues article)
+        {
+            string? stored = null;
+            if (work.IsPending && !work.IsConflict && article.Entry.Id is { } entityId
+                && await AiChangeSnapshots.ArticleAsync(db, universeId, entityId, cancellationToken) is { } now)
+            {
+                stored = LoreArticleText.Extract(now.Content);
+            }
+
+            return new AiChangeProse(article.Append, stored, AiChangeArticles.Text(article.Blocks));
+        }
+
         if (work.Proposed is not ManuscriptValues manuscript)
         {
             return null;
@@ -355,6 +475,31 @@ internal static class AiChangeViews
                     ? "It has no prose yet."
                     : $"Its prose ({prose.ToString("N0", CultureInfo.InvariantCulture)} characters) and saved versions go with it.");
                 break;
+
+            case AiChangeResource.Relationship:
+                notes.Add("Only the relationship goes: the two entries it connects stay as they are.");
+                break;
+
+            case AiChangeResource.TimelineEvent:
+                notes.Add("It leaves the timeline; its participants, stories and details are kept with it, and the entries and stories stay as they are.");
+                break;
+
+            case AiChangeResource.PlotArc:
+                var beats = await db.PlotBeats.CountAsync(beat => beat.PlotArcId == id && beat.DeletedAt == null, cancellationToken);
+                notes.Add($"Its {Count(beats, "beat")} and their links go with it and come back with it. No scene, chapter or entry is touched.");
+                break;
+
+            case AiChangeResource.PlotBeat:
+                notes.Add("Its links to scenes and lore are kept with it. The beats after it in its arc move up one place.");
+                break;
+
+            case AiChangeResource.WorldRule:
+                notes.Add("Its check, if it has one, goes with it and stops counting until it is restored.");
+                break;
+
+            case AiChangeResource.Idea:
+                notes[0] = "It goes to your deleted ideas, not away for good: it can be restored from there with its references.";
+                break;
         }
 
         return new AiChangeImpact(notes);
@@ -368,8 +513,22 @@ internal static class AiChangeViews
         AiChangeResource.Story => "story",
         AiChangeResource.Chapter => "chapter",
         AiChangeResource.Scene => "scene",
+        AiChangeResource.Relationship => "relationship",
+        AiChangeResource.TimelineEvent => "timeline moment",
+        AiChangeResource.PlotArc => "plot arc",
+        AiChangeResource.PlotBeat => "plot beat",
+        AiChangeResource.WorldRule => "world rule",
         _ => "item",
     };
+
+    /// <summary>"1. Arrival · 2. The Omen": an order as the review lists it.</summary>
+    private static string? Numbered(IEnumerable<string> items) =>
+        items.ToList() is { Count: > 0 } list ? string.Join(" · ", list.Select((item, index) => $"{index + 1}. {item}")) : null;
+
+    /// <summary>Plain text stored as "" when there is none, shown as nothing.</summary>
+    private static string? Blank(string text) => text.Length == 0 ? null : text;
+
+    private static string? Day(DateTime? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static string Canon(CanonStatus status) => status switch
     {
@@ -390,6 +549,9 @@ internal static class AiChangeViews
         private Dictionary<Guid, string> _stories = [];
         private Dictionary<Guid, string> _chapters = [];
         private Dictionary<Guid, (string Title, Guid StoryId)> _scenes = [];
+        private Dictionary<Guid, string> _arcs = [];
+        private Dictionary<Guid, string> _beats = [];
+        private Dictionary<Guid, string> _terms = [];
         private Dictionary<string, AiChangeWork> _pending = [];
         private UniverseChronology _chronology = UniverseChronology.Plain;
 
@@ -417,6 +579,9 @@ internal static class AiChangeViews
                 _stories = await db.Stories.AsNoTracking().Where(story => story.UniverseId == universeId && ids.Contains(story.Id)).ToDictionaryAsync(story => story.Id, story => story.Title, cancellationToken),
                 _chapters = await db.Chapters.AsNoTracking().Where(chapter => chapter.Story!.UniverseId == universeId && ids.Contains(chapter.Id)).ToDictionaryAsync(chapter => chapter.Id, chapter => chapter.Title, cancellationToken),
                 _scenes = await db.Scenes.AsNoTracking().Where(scene => scene.Story!.UniverseId == universeId && ids.Contains(scene.Id)).ToDictionaryAsync(scene => scene.Id, scene => (scene.Title, scene.StoryId), cancellationToken),
+                _arcs = await db.PlotArcs.AsNoTracking().Where(arc => arc.Story!.UniverseId == universeId && ids.Contains(arc.Id)).ToDictionaryAsync(arc => arc.Id, arc => arc.Title, cancellationToken),
+                _beats = await db.PlotBeats.AsNoTracking().Where(beat => beat.PlotArc!.Story!.UniverseId == universeId && ids.Contains(beat.Id)).ToDictionaryAsync(beat => beat.Id, beat => beat.Title, cancellationToken),
+                _terms = await db.ValidationTerms.AsNoTracking().Where(term => term.UniverseId == universeId).ToDictionaryAsync(term => term.Id, term => term.Name, cancellationToken),
                 _pending = works.ToDictionary(work => work.Key, StringComparer.Ordinal),
                 _chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken),
             };
@@ -441,6 +606,37 @@ internal static class AiChangeViews
             : Named(reference, [], work => (work.Proposed as SceneValues)?.Title);
 
         public Guid? StoryOfScene(AiRef reference) => reference.Id is { } id && _scenes.TryGetValue(id, out var scene) ? scene.StoryId : null;
+
+        public string Arc(AiRef reference) => Named(reference, _arcs, work => (work.Proposed as PlotArcValues)?.Title);
+
+        public string Beat(AiRef reference) => Named(reference, _beats, work => (work.Proposed as PlotBeatValues)?.Title);
+
+        private string Term(Guid id) => _terms.GetValueOrDefault(id) ?? "(unknown term)";
+
+        /// <summary>A rule's check in words: what it counts and how many it allows.</summary>
+        public string? Check(RuleCheckValues? check) => check is null
+            ? null
+            : $"At most {check.MaxOccurrences} Canon \"{Term(check.EventKindId)}\" by \"{Term(check.MethodId)}\" for each participant";
+
+        /// <summary>A moment's details in words.</summary>
+        public string? Details(MomentDetailsValues? details) => details is null
+            ? null
+            : string.Join(", ", new[]
+            {
+                details.EventKindId is { } kind ? $"event kind \"{Term(kind)}\"" : null,
+                details.MethodId is { } method ? $"method \"{Term(method)}\"" : null,
+                details.Participant is { } participant ? $"participant {Entry(participant)}" : null,
+            }.OfType<string>());
+
+        /// <summary>What an idea refers to, by name.</summary>
+        public string Reference(IdeaReferenceValue reference) => reference.Kind switch
+        {
+            Ideas.IdeaReferenceKind.Story => Story(reference.Target),
+            Ideas.IdeaReferenceKind.Scene => Scene(reference.Target),
+            Ideas.IdeaReferenceKind.PlotArc => Arc(reference.Target),
+            Ideas.IdeaReferenceKind.PlotBeat => Beat(reference.Target),
+            _ => Entry(reference.Target),
+        };
 
         /// <summary>An existing item's name, or a create of this proposal's own: "Arin (new)". Once applied, what it made.</summary>
         private string Named(AiRef reference, Dictionary<Guid, string> existing, Func<AiChangeWork, string?> proposed)

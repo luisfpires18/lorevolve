@@ -257,6 +257,55 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
     }
 
     [Fact]
+    public async Task Both_entry_points_stage_the_issue_45_resources_through_the_one_contract()
+    {
+        var (browser, _, u, character) = await OwnerAsync("mcpcontent");
+        var story = await PlotTestClient.CreateStory(browser, u, "The Forging");
+
+        // Over MCP: an article, an arc with a beat, and a world rule, with refs between them.
+        var (connection, _) = await ConnectAsync(browser, u, allowProposals: true);
+        var options = Body(await CallAsync(connection, LorexMcpProposalTools.OptionsTool, new { }));
+        Assert.Contains(options.GetProperty("allowed").EnumerateArray(), allowed => allowed.GetString() == "reorder plot_beat");
+        var staged = await CallAsync(connection, LorexMcpProposalTools.ProposeTool, new
+        {
+            summary = "Plot and prose",
+            operations = new object[]
+            {
+                new { id = "smith", action = "create", resource = "lore_entry", lore = new { typeId = character, name = "Smith" } },
+                new { id = "life", action = "update", resource = "article", article = new { entry = new { @ref = "smith" }, mode = "replace", blocks = new object[] { new { kind = "paragraph", text = "Forges blades." } } } },
+                new { id = "arc", action = "create", resource = "plot_arc", plotArc = new { story = new { id = story }, title = "Rise" } },
+                new { id = "beat", action = "create", resource = "plot_beat", plotBeat = new { arc = new { @ref = "arc" }, title = "First spark", lore = new object[] { new { @ref = "smith" } } } },
+                new { id = "rule", action = "create", resource = "world_rule", worldRule = new { title = "Steel remembers", description = "Every blade keeps a name." } },
+            },
+        });
+        Assert.False(staged.TryGetProperty("isError", out var error) && error.GetBoolean(), staged.ToString());
+        var receipt = await AiChangeTestClient.ApproveAll(browser, u, Body(staged).GetProperty("proposalId").GetGuid());
+        Assert.Equal(5, receipt.Applied.Count);
+        Assert.Equal(["First spark"], (await PlotTestClient.Plot(browser, u, story)).Single().Beats.Select(beat => beat.Title));
+
+        // From the assistant: the owner's own idea, through the same staging, as the strict schema shapes it.
+        _model.Use(step => step.Number == 1
+            ? ScriptedAssistantProvider.Calls((AssistantProposing.ProposeTool, new
+            {
+                summary = "An idea",
+                operations = new object[] { new { id = "i", action = "create", resource = "idea", idea = new { title = "What if steel lies?", body = "", references = new object[] { new { kind = "lore_entry", id = receipt.Applied.Single(line => line.Key == "smith").ResultId } } } } },
+            }))
+            : ScriptedAssistantProvider.Answer(("note", "Your idea is waiting for review.", [])));
+        var asked = await browser.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Keep an idea about steel.", null, AssistantEndpoints.ProposeMode));
+        var answer = (await asked.Content.ReadFromJsonAsync<AssistantAnswer>())!;
+        Assert.NotNull(answer.Proposal);
+        await AiChangeTestClient.ApproveAll(browser, u, answer.Proposal!.Id);
+        await PlotTestClient.WithDb(_factory, async db => Assert.True(await db.Ideas.AnyAsync(idea => idea.UniverseId == u && idea.Title == "What if steel lies?")));
+
+        // The assistant's propose schema carries every resource the contract does.
+        var schema = _model.Steps[0].Brief.Tools.Single(tool => tool.Name == AssistantProposing.ProposeTool).ParametersSchema;
+        foreach (var member in new[] { "\"article\"", "\"plotArc\"", "\"plotBeat\"", "\"worldRule\"", "\"idea\"", "\"order\"", "\"stories\"", "\"details\"", "\"startDate\"" })
+        {
+            Assert.Contains(member, schema, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public async Task A_viewer_cannot_ask_the_assistant_to_propose()
     {
         var (_, _, u, _) = await OwnerAsync("assistviewer");

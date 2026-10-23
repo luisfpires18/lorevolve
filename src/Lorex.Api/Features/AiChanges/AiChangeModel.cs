@@ -47,7 +47,10 @@ public enum AiChangeOperationStatus
     Rejected = 2,
 }
 
-/// <summary>What an operation changes. Exactly the resources issue 32 approved, and no schema.</summary>
+/// <summary>
+/// What an operation changes: the resources issue 32 approved, and the rest of a universe's authored content issue 45 added
+/// (ADR 0048). Never schema: no type, field, choice, relationship kind, calendar or vocabulary.
+/// </summary>
 public enum AiChangeResource
 {
     LoreEntry = 0,
@@ -57,6 +60,16 @@ public enum AiChangeResource
     Scene = 4,
     Manuscript = 5,
     TimelineEvent = 6,
+
+    /// <summary>An entry's rich-text article, kept apart from its structured lore (ADR 0028).</summary>
+    Article = 7,
+
+    PlotArc = 8,
+    PlotBeat = 9,
+    WorldRule = 10,
+
+    /// <summary>One of the universe owner's own ideas linked to this universe - never another account's (ADR 0030).</summary>
+    Idea = 11,
 }
 
 public enum AiChangeAction
@@ -66,6 +79,9 @@ public enum AiChangeAction
 
     /// <summary>To the Trash, through the resource's own lifecycle. Never a permanent delete.</summary>
     Remove = 2,
+
+    /// <summary>A container's whole order - a story's chapters or arcs, a chapter's scenes, an arc's beats - through its own order route.</summary>
+    Reorder = 3,
 }
 
 /// <summary>
@@ -243,8 +259,8 @@ public sealed class AiChangeOperationConfiguration : IEntityTypeConfiguration<Ai
         builder.ToTable("AiChangeOperations", table =>
         {
             table.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
-            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6)");
-            table.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2)");
+            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)");
+            table.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
         });
         builder.HasKey(operation => operation.Id);
 

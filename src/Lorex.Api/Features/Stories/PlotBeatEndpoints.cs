@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Lorex.Api.Data;
+using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -81,6 +82,18 @@ public static class PlotBeatEndpoints
             return denied;
         }
 
+        return await CreateCoreAsync(db, universeId, storyId, plotArcId, request, cancellationToken);
+    }
+
+    /// <summary>The create itself, shared with an approved AI change (ADR 0048). Access is the caller's.</summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        Guid plotArcId,
+        PlotBeatRequest request,
+        CancellationToken cancellationToken)
+    {
         var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null || !await PlotArcEndpoints.BelongsToStoryAsync(db, storyId, plotArcId, cancellationToken))
         {
@@ -166,7 +179,22 @@ public static class PlotBeatEndpoints
             return denied;
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        return await UpdateCoreAsync(db, universeId, storyId, plotBeatId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The update itself, shared with an approved AI change (ADR 0048). In the caller's transaction when it has one, else its
+    /// own. Access is the caller's.
+    /// </summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        Guid plotBeatId,
+        PlotBeatRequest request,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null)
@@ -290,7 +318,21 @@ public static class PlotBeatEndpoints
             return denied;
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        return await TrashCoreAsync(db, universeId, storyId, plotBeatId, cancellationToken);
+    }
+
+    /// <summary>
+    /// The beat to the Trash and its arc closed up, shared with an approved AI change (ADR 0048). In the caller's transaction
+    /// when it has one, else its own. Access is the caller's.
+    /// </summary>
+    internal static async Task<IResult> TrashCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        Guid plotBeatId,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null)
@@ -351,7 +393,22 @@ public static class PlotBeatEndpoints
             return denied;
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        return await ReorderCoreAsync(db, universeId, storyId, plotArcId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The reorder itself, shared with an approved AI change (ADR 0048). In the caller's transaction when it has one, else
+    /// its own. Access is the caller's.
+    /// </summary>
+    internal static async Task<IResult> ReorderCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        Guid plotArcId,
+        PlotBeatOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null || !await PlotArcEndpoints.BelongsToStoryAsync(db, storyId, plotArcId, cancellationToken))

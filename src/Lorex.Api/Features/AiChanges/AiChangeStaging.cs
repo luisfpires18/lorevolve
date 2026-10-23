@@ -108,38 +108,47 @@ internal static partial class AiChangeStaging
 
             if (Action(input.Action) is not { } action || Resource(input.Resource) is not { } resource)
             {
-                Problem(AiChangeCodes.Invalid, "Say what the change does (create, update or remove) and to what (lore_entry, relationship, story, chapter, scene, manuscript or timeline_event).");
+                Problem(AiChangeCodes.Invalid, "Say what the change does (create, update, remove or reorder) and to what (lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea).");
                 continue;
             }
 
-            // Prose has one change: written over the manuscript there is, which the first save creates.
-            if (resource == AiChangeResource.Manuscript && action == AiChangeAction.Create)
+            // Prose has one change: written over the manuscript or article there is, which the first save creates.
+            if (resource is AiChangeResource.Manuscript or AiChangeResource.Article && action == AiChangeAction.Create)
             {
                 action = AiChangeAction.Update;
             }
 
-            if (action == AiChangeAction.Remove && resource is AiChangeResource.Relationship or AiChangeResource.TimelineEvent or AiChangeResource.Manuscript)
+            if (action == AiChangeAction.Remove && resource is AiChangeResource.Manuscript or AiChangeResource.Article)
             {
                 Problem(AiChangeCodes.Unsupported, AiChangeText.NoTrash(resource));
                 continue;
             }
 
-            if (!AiChangePermissions.MayStage(effective, resource, action))
+            if (action == AiChangeAction.Reorder
+                && resource is not (AiChangeResource.Chapter or AiChangeResource.Scene or AiChangeResource.PlotArc or AiChangeResource.PlotBeat))
             {
-                Problem(AiChangeCodes.NotAllowed, effective == UniverseRole.Reviewer
-                    ? "As a Reviewer, you can only have an AI suggest edits to existing lore entries, stories and scenes."
-                    : "Your role in this universe doesn't allow this change.");
+                Problem(AiChangeCodes.Unsupported, "Only a story's chapters or plot arcs, a chapter's scenes and an arc's beats have an order to set.");
                 continue;
             }
 
-            var built = new Builder(db, universeId, key, index, resource, action, input, Problem);
+            if (!AiChangePermissions.MayStage(effective, resource, action))
+            {
+                Problem(AiChangeCodes.NotAllowed, resource == AiChangeResource.Idea
+                    ? "Ideas are the universe owner's own, so only the owner can have an AI propose them."
+                    : effective == UniverseRole.Reviewer
+                        ? "As a Reviewer, you can only have an AI suggest edits to existing lore entries, stories and scenes."
+                        : "Your role in this universe doesn't allow this change.");
+                continue;
+            }
+
+            var built = new Builder(db, universeId, userId, key, index, resource, action, input, Problem);
             if (await built.BuildAsync(cancellationToken) is { } work)
             {
                 works.Add(work);
             }
         }
 
-        await new AiChangeChecker(db, universeId).CheckAsync(works, cancellationToken);
+        await new AiChangeChecker(db, universeId, userId).CheckAsync(works, cancellationToken);
         foreach (var work in works)
         {
             foreach (var issue in work.Issues)
@@ -200,6 +209,7 @@ internal static partial class AiChangeStaging
         "create" => AiChangeAction.Create,
         "update" => AiChangeAction.Update,
         "remove" or "delete" or "trash" => AiChangeAction.Remove,
+        "reorder" or "order" => AiChangeAction.Reorder,
         _ => null,
     };
 
@@ -212,6 +222,11 @@ internal static partial class AiChangeStaging
         "scene" => AiChangeResource.Scene,
         "manuscript" => AiChangeResource.Manuscript,
         "timeline_event" or "timeline_moment" or "moment" => AiChangeResource.TimelineEvent,
+        "article" => AiChangeResource.Article,
+        "plot_arc" or "arc" => AiChangeResource.PlotArc,
+        "plot_beat" or "beat" => AiChangeResource.PlotBeat,
+        "world_rule" or "rule" => AiChangeResource.WorldRule,
+        "idea" => AiChangeResource.Idea,
         _ => null,
     };
 
@@ -220,9 +235,10 @@ internal static partial class AiChangeStaging
     /// only what the input sets changed, bound to the version (or the form) it was staged over; a removal's target, as it
     /// is now. Problems go to <c>problem</c>; nothing is built while any is found.
     /// </summary>
-    private sealed class Builder(
+    private sealed partial class Builder(
         LorexDbContext db,
         Guid universeId,
+        string userId,
         string key,
         int index,
         AiChangeResource resource,
@@ -240,7 +256,9 @@ internal static partial class AiChangeStaging
 
         public async Task<AiChangeWork?> BuildAsync(CancellationToken cancellationToken)
         {
-            if (action != AiChangeAction.Create && resource != AiChangeResource.Manuscript && input.TargetId is null)
+            if (action is AiChangeAction.Update or AiChangeAction.Remove
+                && resource is not (AiChangeResource.Manuscript or AiChangeResource.Article)
+                && input.TargetId is null)
             {
                 Fail(AiChangeCodes.Invalid, "Say which item this changes: its id goes in targetId.", "targetId");
                 return null;
@@ -248,6 +266,13 @@ internal static partial class AiChangeStaging
 
             var built = (resource, action) switch
             {
+                (_, AiChangeAction.Reorder) => await OrderAsync(cancellationToken),
+                (AiChangeResource.Article, _) => await ArticleAsync(cancellationToken),
+                (AiChangeResource.PlotArc, _) => await PlotArcAsync(cancellationToken),
+                (AiChangeResource.PlotBeat, _) => await PlotBeatAsync(cancellationToken),
+                (AiChangeResource.WorldRule, _) => await WorldRuleAsync(cancellationToken),
+                (AiChangeResource.Idea, _) => await IdeaAsync(cancellationToken),
+
                 (AiChangeResource.LoreEntry, AiChangeAction.Create) => Work(null, null, Lore(input.Lore, null)),
                 (AiChangeResource.LoreEntry, AiChangeAction.Update) => await StoredAsync(
                     () => AiChangeSnapshots.LoreAsync(db, universeId, input.TargetId!.Value, cancellationToken),
@@ -257,9 +282,12 @@ internal static partial class AiChangeStaging
                     stored => Work(stored.Form, stored.Version, new RemoveValues(null))),
 
                 (AiChangeResource.Relationship, AiChangeAction.Create) => Work(null, null, Relationship(input.Relationship, null)),
-                (AiChangeResource.Relationship, _) => await StoredAsync(
+                (AiChangeResource.Relationship, AiChangeAction.Update) => await StoredAsync(
                     () => AiChangeSnapshots.RelationshipAsync(db, universeId, input.TargetId!.Value, cancellationToken),
                     stored => Work(stored, null, Relationship(input.Relationship, stored))),
+                (AiChangeResource.Relationship, _) => await StoredAsync(
+                    () => AiChangeSnapshots.RelationshipAsync(db, universeId, input.TargetId!.Value, cancellationToken),
+                    stored => Work(stored, null, new RemoveValues(null))),
 
                 (AiChangeResource.Story, AiChangeAction.Create) => Work(null, null, Story(input.Story, null)),
                 (AiChangeResource.Story, AiChangeAction.Update) => await StoredAsync(
@@ -288,9 +316,12 @@ internal static partial class AiChangeStaging
                 (AiChangeResource.Manuscript, _) => await ManuscriptAsync(cancellationToken),
 
                 (_, AiChangeAction.Create) => Work(null, null, Moment(input.Timeline, null)),
-                _ => await StoredAsync(
+                (_, AiChangeAction.Update) => await StoredAsync(
                     () => AiChangeSnapshots.MomentAsync(db, universeId, input.TargetId!.Value, cancellationToken),
                     stored => Work(stored, null, Moment(input.Timeline, stored))),
+                _ => await StoredAsync(
+                    () => AiChangeSnapshots.MomentAsync(db, universeId, input.TargetId!.Value, cancellationToken),
+                    stored => Work(stored, null, new RemoveValues(null))),
             };
 
             if (_failed || built is null)
@@ -300,7 +331,7 @@ internal static partial class AiChangeStaging
 
             // An expected version the AI read is held to what is stored now; without one, the change is bound to now.
             if (input.ExpectedVersion is { } expected && built.BaseVersion is { } stored && expected != stored
-                && resource != AiChangeResource.Manuscript)
+                && resource is not (AiChangeResource.Manuscript or AiChangeResource.Article))
             {
                 Fail(AiChangeCodes.ChangedSince, $"This was saved after you read it (you read version {expected}; it is now {stored}). Read it again, then propose the change.", "expectedVersion");
                 return null;
@@ -324,7 +355,9 @@ internal static partial class AiChangeStaging
                     Sequence = index,
                     Resource = resource,
                     Action = action,
-                    TargetId = action == AiChangeAction.Create || resource == AiChangeResource.Manuscript ? null : input.TargetId,
+                    TargetId = action is AiChangeAction.Create or AiChangeAction.Reorder || resource is AiChangeResource.Manuscript or AiChangeResource.Article
+                        ? null
+                        : input.TargetId,
                     BaseVersion = version,
                     Before = before,
                     Proposed = proposed,
@@ -441,7 +474,9 @@ internal static partial class AiChangeStaging
             }
 
             var canon = relationship.CanonStatus is null ? before?.CanonStatus ?? CanonStatus.Idea : Canon(relationship.CanonStatus, "relationship.canonStatus");
-            return new RelationshipValues(typeId.Value, source, target, canon ?? CanonStatus.Idea, before?.StartDate, before?.EndDate, Cleared(relationship.Notes, before?.Notes));
+            var start = relationship.ClearStartDate == true ? null : Day(relationship.StartDate) ?? before?.StartDate;
+            var end = relationship.ClearEndDate == true ? null : Day(relationship.EndDate) ?? before?.EndDate;
+            return new RelationshipValues(typeId.Value, source, target, canon ?? CanonStatus.Idea, start, end, Cleared(relationship.Notes, before?.Notes));
         }
 
         private StoryValues? Story(AiStoryInput? story, StoryValues? before)
@@ -606,13 +641,25 @@ internal static partial class AiChangeStaging
                 : moment.Participants.Select(reference => Ref(reference, "timeline.participants")).OfType<AiRef>().Distinct().ToList();
             var title = (moment.Title ?? before?.Title ?? string.Empty).Trim();
             var description = Cleared(moment.Description, before?.Description);
-            var ordered = participants.OrderBy(reference => reference.Id).ThenBy(reference => reference.Key, StringComparer.Ordinal).ToList();
+            var ordered = Sorted(participants);
+            var stories = moment.Stories is null
+                ? before?.Stories ?? []
+                : Sorted(moment.Stories.Select(reference => Ref(reference, "timeline.stories")).OfType<AiRef>().Distinct());
+            var details = moment.ClearDetails == true
+                ? null
+                : moment.Details is { } asked
+                    ? new MomentDetailsValues(asked.EventKindId, asked.MethodId, Ref(asked.Participant, "timeline.details.participant"))
+                    : before?.Details;
+            if (details is { EventKindId: null, MethodId: null, Participant: null })
+            {
+                details = null;
+            }
 
             if (moment.Date is not { } date)
             {
                 return before is null
-                    ? new TimelineValues(title, description, canon ?? CanonStatus.Idea, TimelineDateKind.Unknown, null, null, null, null, null, null, null, null, null, null, null, ordered)
-                    : before with { Title = title, Description = description, CanonStatus = canon ?? before.CanonStatus, Participants = ordered };
+                    ? new TimelineValues(title, description, canon ?? CanonStatus.Idea, TimelineDateKind.Unknown, null, null, null, null, null, null, null, null, null, null, null, ordered, stories, details)
+                    : before with { Title = title, Description = description, CanonStatus = canon ?? before.CanonStatus, Participants = ordered, Stories = stories, Details = details };
             }
 
             TimelineDateKind? kind = date.Kind?.Trim().ToLowerInvariant() switch
@@ -646,7 +693,9 @@ internal static partial class AiChangeStaging
                 date.EndEraId,
                 date.StartMonthId,
                 date.EndMonthId,
-                ordered);
+                ordered,
+                stories,
+                details);
         }
 
         // ---------- Shared pieces ----------
@@ -690,5 +739,12 @@ internal static partial class AiChangeStaging
         /// <summary>An optional text on an update: left out keeps it, an empty one clears it.</summary>
         private static string? Cleared(string? text, string? before) =>
             text is null ? before : string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
+        /// <summary>A set of references in the fixed order a stored form holds them, so two equal sets compare equal.</summary>
+        private static List<AiRef> Sorted(IEnumerable<AiRef> references) =>
+            [.. references.OrderBy(reference => reference.Id).ThenBy(reference => reference.Key, StringComparer.Ordinal)];
+
+        /// <summary>A calendar date, as a relationship stores it: the day, in UTC.</summary>
+        private static DateTime? Day(DateTime? date) => date is { } value ? DateTime.SpecifyKind(value.Date, DateTimeKind.Utc) : null;
     }
 }

@@ -1,10 +1,13 @@
 using Lorex.Api.Data;
 using Lorex.Api.Features.CanonIntegrity;
+using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Relationships;
+using Lorex.Api.Features.RuleValidation;
 using Lorex.Api.Features.Stories;
 using Lorex.Api.Features.Timeline;
 using Lorex.Api.Features.Universes;
+using Lorex.Api.Features.WorldRules;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -129,7 +132,7 @@ internal static class AiChangeCommit
         var proposal = await db.AiChangeProposals
             .Include(row => row.Operations)
             .FirstOrDefaultAsync(row => row.Id == proposalId && row.UniverseId == universeId, cancellationToken);
-        if (proposal is null)
+        if (proposal is null || !AiChangeViews.MayRead(proposal, approverId))
         {
             return Results.NotFound();
         }
@@ -175,7 +178,7 @@ internal static class AiChangeCommit
             return Refused(AiChangeCodes.AlreadyDecided, "Already decided", "Someone already approved or rejected some of these changes. Nothing was applied.");
         }
 
-        if (chosen.Any(operation => !AiChangePermissions.MayApprove(approver, operation.Action)))
+        if (chosen.Any(operation => !AiChangePermissions.MayApprove(approver, operation.Resource, operation.Action)))
         {
             return UniverseAccess.PermissionDenied();
         }
@@ -193,7 +196,7 @@ internal static class AiChangeCommit
         }
 
         var works = proposal.Operations.OrderBy(operation => operation.Sequence).Select(AiChangeWork.From).ToList();
-        await new AiChangeChecker(db, universeId).CheckAsync(works, cancellationToken);
+        await new AiChangeChecker(db, universeId, proposal.ProposedByUserId).CheckAsync(works, cancellationToken);
         var worksById = works.ToDictionary(work => work.OperationId);
         var byKey = works.ToDictionary(work => work.Key, StringComparer.Ordinal);
         var picked = chosen.Select(operation => worksById[operation.Id]).ToList();
@@ -296,14 +299,82 @@ internal static class AiChangeCommit
         switch (work.Proposed)
         {
             case RemoveValues remove:
+                // To the Trash - or an idea to its owner's deleted ideas - through each resource's own lifecycle; never a
+                // permanent delete (ADR 0048).
                 var trashed = work.Resource switch
                 {
                     AiChangeResource.LoreEntry => await EntityEndpoints.TrashCoreAsync(universeId, target!.Value, db, cancellationToken),
                     AiChangeResource.Story => await StoryEndpoints.TrashCoreAsync(db, universeId, target!.Value, cancellationToken),
                     AiChangeResource.Chapter => await ChapterEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
-                    _ => await SceneEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
+                    AiChangeResource.Scene => await SceneEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
+                    AiChangeResource.Relationship => await RelationshipEndpoints.TrashCoreAsync(universeId, target!.Value, db, cancellationToken),
+                    AiChangeResource.TimelineEvent => await TimelineEndpoints.TrashCoreAsync(universeId, target!.Value, db, cancellationToken),
+                    AiChangeResource.PlotArc => await PlotArcEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
+                    AiChangeResource.PlotBeat => await PlotBeatEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
+                    AiChangeResource.WorldRule => await WorldRuleEndpoints.TrashCoreAsync(db, null, universeId, target!.Value, cancellationToken),
+                    AiChangeResource.Idea => await IdeaEndpoints.DeleteCoreAsync(db, approverId, target!.Value, cancellationToken),
+                    _ => throw new InvalidOperationException($"A {work.Resource} change is never a removal."),
                 };
                 return Done(trashed, target);
+
+            case OrderValues order:
+                return Done(await ReorderAsync(db, universeId, work.Resource, order, Id, cancellationToken), work.Resource == AiChangeResource.PlotBeat ? Id(order.Arc!) : order.Story.Id);
+
+            case ArticleValues article:
+                var entityId = Id(article.Entry);
+                var (written, _) = (await AiChangeSnapshots.ArticleAsync(db, universeId, entityId, cancellationToken)) ?? (string.Empty, 0);
+                return Done(
+                    await EntityArticleEndpoints.SaveCoreAsync(
+                        db,
+                        universeId,
+                        entityId,
+                        new EntityArticleRequest(AiChangeArticles.Document(written, article.Append, article.Blocks), work.BaseVersion),
+                        approverId,
+                        cancellationToken),
+                    entityId);
+
+            case PlotArcValues arc:
+                var plotArc = new PlotArcRequest(arc.Title, arc.Description, arc.Notes);
+                return work.Action == AiChangeAction.Create
+                    ? Made<PlotArcResponse>(await PlotArcEndpoints.CreateCoreAsync(db, universeId, Id(arc.Story), plotArc, cancellationToken), detail => detail.Id)
+                    : Done(await PlotArcEndpoints.UpdateCoreAsync(db, universeId, Id(arc.Story), target!.Value, plotArc, cancellationToken), target);
+
+            case PlotBeatValues beat:
+                var arcId = Id(beat.Arc);
+                var beatStory = beat.Story?.Id ?? await db.PlotArcs.Where(row => row.Id == arcId).Select(row => row.StoryId).SingleAsync(cancellationToken);
+                var plotBeat = new PlotBeatRequest(beat.Title, beat.Description, beat.Notes, [.. beat.Scenes.Select(Id)], [.. beat.Lore.Select(Id)], arcId);
+                return work.Action == AiChangeAction.Create
+                    ? Made<PlotBeatResponse>(await PlotBeatEndpoints.CreateCoreAsync(db, universeId, beatStory, arcId, plotBeat, cancellationToken), detail => detail.Id)
+                    : Done(await PlotBeatEndpoints.UpdateCoreAsync(db, universeId, beatStory, target!.Value, plotBeat, cancellationToken), target);
+
+            case WorldRuleValues rule:
+                var stated = new WorldRuleRequest(
+                    rule.Title,
+                    rule.Description,
+                    work.Action == AiChangeAction.Create
+                        ? null
+                        : await db.WorldRules.Where(row => row.Id == target).Select(row => (DateTime?)row.UpdatedAt).SingleAsync(cancellationToken),
+                    rule.Check is { } check
+                        ? new WorldRuleValidationRequest(WorldRuleValidationKind.MaxOccurrencesPerParticipantAndMethod, check.EventKindId, check.MethodId, check.MaxOccurrences)
+                        : new WorldRuleValidationRequest(WorldRuleValidationKind.None, null, null, null));
+                return work.Action == AiChangeAction.Create
+                    ? Made<WorldRuleDetail>(await WorldRuleEndpoints.CreateCoreAsync(db, null, universeId, stated, cancellationToken), detail => detail.Id)
+                    : Done(await WorldRuleEndpoints.UpdateCoreAsync(db, null, universeId, target!.Value, stated, cancellationToken), target);
+
+            case IdeaValues idea:
+                // Always the approver's own idea, in this universe: the approval already required the approver to be the
+                // owner who asked for it (ADR 0048).
+                var kept = new IdeaRequest(
+                    idea.Title,
+                    idea.Body,
+                    universeId,
+                    [.. idea.References.Select(reference => new IdeaReferenceInput(reference.Kind, Id(reference.Target)))],
+                    work.Action == AiChangeAction.Create
+                        ? null
+                        : await db.Ideas.Where(row => row.Id == target).Select(row => (DateTime?)row.UpdatedAt).SingleAsync(cancellationToken));
+                return work.Action == AiChangeAction.Create
+                    ? Made<IdeaDetail>(await IdeaEndpoints.CreateCoreAsync(db, approverId, kept, cancellationToken), detail => detail.Id)
+                    : Done(await IdeaEndpoints.UpdateCoreAsync(db, approverId, target!.Value, kept, cancellationToken), target);
 
             case LoreValues lore:
                 var entry = new EntityRequest(
@@ -367,7 +438,14 @@ internal static class AiChangeCommit
                     sceneId);
 
             case TimelineValues moment:
-                var dated = AiChangeRequests.Moment(moment, [.. moment.Participants.Select(Id)]);
+                // A change from before issue 45 holds no stories or details, and keeps what is stored (ADR 0048).
+                var dated = AiChangeRequests.Moment(
+                    moment,
+                    [.. moment.Participants.Select(Id)],
+                    moment.Stories is { } stories ? [.. stories.Select(Id)] : null,
+                    moment.Stories is null
+                        ? null
+                        : new TimelineValidationRequest(moment.Details?.EventKindId, moment.Details?.MethodId, moment.Details?.Participant is { } participant ? Id(participant) : null));
                 return work.Action == AiChangeAction.Create
                     ? Made<TimelineEntryResponse>(await TimelineEndpoints.CreateCoreAsync(universeId, dated, db, cancellationToken), detail => detail.Id)
                     : Done(await TimelineEndpoints.UpdateCoreAsync(universeId, target!.Value, dated, db, cancellationToken), target);
@@ -375,6 +453,26 @@ internal static class AiChangeCommit
             default:
                 throw new InvalidOperationException("An AI change of an unknown shape.");
         }
+    }
+
+    /// <summary>A whole order through its container's own order route, every item resolved to a real id.</summary>
+    private static async Task<IResult> ReorderAsync(
+        LorexDbContext db,
+        Guid universeId,
+        AiChangeResource resource,
+        OrderValues order,
+        Func<AiRef, Guid> id,
+        CancellationToken cancellationToken)
+    {
+        List<Guid> items = [.. order.Items.Select(id)];
+        return resource switch
+        {
+            AiChangeResource.Chapter => await ChapterEndpoints.ReorderCoreAsync(db, universeId, id(order.Story), new ChapterOrderRequest(items), cancellationToken),
+            AiChangeResource.Scene => await SceneEndpoints.ReorderCoreAsync(
+                db, universeId, id(order.Story), new SceneOrderRequest(items, order.Chapter is { } chapter ? id(chapter) : null), cancellationToken),
+            AiChangeResource.PlotArc => await PlotArcEndpoints.ReorderCoreAsync(db, universeId, id(order.Story), new PlotArcOrderRequest(items), cancellationToken),
+            _ => await PlotBeatEndpoints.ReorderCoreAsync(db, universeId, id(order.Story), id(order.Arc!), new PlotBeatOrderRequest(items), cancellationToken),
+        };
     }
 
     private static (Guid? Id, IResult? Problem) Done(IResult result, Guid? id) => Succeeded(result) ? (id, null) : (null, result);
@@ -430,7 +528,7 @@ internal static class AiChangeCommit
             .Include(row => row.Operations)
             .FirstOrDefaultAsync(row => row.Id == proposalId && row.UniverseId == universeId, cancellationToken);
         var mayReview = AiChangePermissions.MayReview(role);
-        if (proposal is null || (!mayReview && proposal.ProposedByUserId != userId))
+        if (proposal is null || (!mayReview && proposal.ProposedByUserId != userId) || !AiChangeViews.MayRead(proposal, userId))
         {
             return Results.NotFound();
         }
@@ -506,7 +604,7 @@ internal static class AiChangeCommit
             .Include(row => row.Operations)
             .FirstOrDefaultAsync(row => row.Id == proposalId && row.UniverseId == universeId, cancellationToken);
         var row = proposal?.Operations.FirstOrDefault(operation => operation.Id == operationId);
-        if (proposal is null || row is null)
+        if (proposal is null || row is null || !AiChangeViews.MayRead(proposal, userId) || !AiChangePermissions.MayReview(role))
         {
             return Results.NotFound();
         }
@@ -529,7 +627,7 @@ internal static class AiChangeCommit
         }
 
         work.Proposed = edited;
-        await new AiChangeChecker(db, universeId).CheckAsync(works, cancellationToken);
+        await new AiChangeChecker(db, universeId, proposal.ProposedByUserId).CheckAsync(works, cancellationToken);
         if (work.IsConflict)
         {
             return Refused(AiChangeCodes.CannotApprove, "Can't be edited", "This changed in LoreX after the AI suggested it, so it can only be rejected.");
@@ -593,6 +691,28 @@ internal static class AiChangeCommit
                 CanonStatus = values.CanonStatus ?? moment.CanonStatus,
             },
             ManuscriptValues manuscript => manuscript with { Text = values.Text ?? manuscript.Text },
+            PlotArcValues arc => arc with
+            {
+                Title = Required(values.Title, arc.Title),
+                Description = Optional(values.Description, arc.Description),
+                Notes = Optional(values.Notes, arc.Notes),
+            },
+            PlotBeatValues beat => beat with
+            {
+                Title = Required(values.Title, beat.Title),
+                Description = Optional(values.Description, beat.Description),
+                Notes = Optional(values.Notes, beat.Notes),
+            },
+            WorldRuleValues rule => rule with
+            {
+                Title = Required(values.Title, rule.Title),
+                Description = values.Description is null ? rule.Description : values.Description.Trim().Length == 0 ? string.Empty : values.Description,
+            },
+            IdeaValues idea => idea with
+            {
+                Title = Required(values.Title, idea.Title),
+                Body = values.Text is null ? idea.Body : values.Text.Trim().Length == 0 ? string.Empty : values.Text,
+            },
             _ => null,
         };
     }

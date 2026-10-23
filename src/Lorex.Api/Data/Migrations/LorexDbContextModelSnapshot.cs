@@ -87,9 +87,9 @@ namespace Lorex.Api.Data.Migrations
 
                     b.ToTable("AiChangeOperations", null, t =>
                         {
-                            t.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2)");
+                            t.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
 
-                            t.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6)");
+                            t.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)");
 
                             t.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
                         });
