@@ -228,18 +228,29 @@ public static class RelationshipTypeEndpoints
         }
 
         // Deleting a type in use would erase the links it describes, so it is refused until
-        // the author clears them deliberately.
+        // the author clears them deliberately. A link in the Trash still uses its type - it comes
+        // back with it - so it counts until it is erased from the Trash (ADR 0048).
         var inUse = await db.Relationships.CountAsync(
             relationship => relationship.RelationshipTypeId == typeId,
             cancellationToken);
 
         if (inUse > 0)
         {
+            var trashed = await db.Relationships.CountAsync(
+                relationship => relationship.RelationshipTypeId == typeId && relationship.DeletedAt != null,
+                cancellationToken);
+            var where = trashed == 0
+                ? string.Empty
+                : trashed == inUse
+                    ? inUse == 1 ? ", and it is in the Trash" : ", all of them in the Trash"
+                    : $", {trashed} of them in the Trash";
+
             return Results.Problem(
                 title: "Relationship type is in use",
-                detail: inUse == 1
-                    ? "1 relationship still uses this type. Delete it first."
-                    : $"{inUse} relationships still use this type. Delete them first.",
+                detail: (inUse == 1
+                    ? $"1 relationship still uses this type{where}. Delete it first"
+                    : $"{inUse} relationships still use this type{where}. Delete them first")
+                    + (trashed == 0 ? "." : ", and erase what is in the Trash."),
                 statusCode: StatusCodes.Status409Conflict);
         }
 

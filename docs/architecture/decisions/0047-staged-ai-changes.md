@@ -162,6 +162,8 @@ articles, images, ideas, world rules, accounts, roles, publishing, imports, perm
 - **Backups carry no proposals** and restore none: they are review state about accounts and connections, like comments
   and suggestions (ADR 0014, 0044). Pending AI changes never travel into another universe as something approvable. The
   backup format is unchanged.
+- **Superseded by ADR 0048 (issue 45):** relationships and moments now have a Trash, AI removal of both is supported, and
+  the out-of-scope resources above except schema, media, accounts, roles and publishing are covered.
 - **Removing a relationship or a timeline moment through an AI is a reported blocker, not a substitute.** Both are hard
   deletes today with no Trash, and a reversible lifecycle was assessed (review fix, 2026-10-23) and not built: relationships
   are read in about 46 places across 27 files - seven Canon rules, Family Tree derivation and discovery, the entry's

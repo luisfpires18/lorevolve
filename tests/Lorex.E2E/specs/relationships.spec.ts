@@ -265,6 +265,14 @@ test.describe('relationships', () => {
     await page.getByTestId('delete-relationship-Gondor').click()
     await expect(page.getByTestId('relations-empty')).toBeVisible()
 
+    // Removed, the link waits in the Trash and still uses its kind; erased from there, it frees it.
+    await page.goto(`/app/universes/${universeId}/types?tab=relations`)
+    await expect(row).toContainText('1 relation')
+    await page.goto(`/app/universes/${universeId}/trash`)
+    await page.getByTestId('erase-Aragorn rules Gondor').click()
+    await page.getByTestId('trash-erase-confirm').getByTestId('trash-erase-delete').click()
+    await expect(page.getByTestId('trash-row-Aragorn rules Gondor')).toHaveCount(0)
+
     await page.goto(`/app/universes/${universeId}/types?tab=relations`)
     await expect(row).toContainText('0 relations')
     await page.getByTestId('delete-reltype-rules').click()

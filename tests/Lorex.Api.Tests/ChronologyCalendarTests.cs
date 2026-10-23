@@ -304,6 +304,7 @@ public sealed class ChronologyCalendarTests(LorexApiFactory factory) : IClassFix
 
         // Fix the two dates, and it goes.
         (await client.DeleteAsync($"/api/universes/{u}/timeline/{late.Id}")).EnsureSuccessStatusCode();
+        (await client.DeleteAsync($"/api/universes/{u}/trash/timeline/{late.Id}")).EnsureSuccessStatusCode();
         (await client.PutVersionedAsync($"{Story(u, story)}/scenes/{longDay.Id}", SceneAt("Day forty", 7, day: 30, monthId: Id(on, "Month 2"))))
             .EnsureSuccessStatusCode();
 
