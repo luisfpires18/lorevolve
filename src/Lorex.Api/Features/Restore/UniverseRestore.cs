@@ -707,6 +707,7 @@ internal sealed partial class UniverseRestore(
                 Notes = relationship.Notes,
                 CreatedAt = relationship.CreatedAt,
                 UpdatedAt = relationship.UpdatedAt,
+                DeletedAt = relationship.DeletedAt,
             });
         }
 
@@ -735,6 +736,7 @@ internal sealed partial class UniverseRestore(
                 EraLabel = entry.EraLabel,
                 CreatedAt = entry.CreatedAt,
                 UpdatedAt = entry.UpdatedAt,
+                DeletedAt = entry.DeletedAt,
             });
 
             foreach (var participant in entry.ParticipantEntityIds)

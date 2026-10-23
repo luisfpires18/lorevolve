@@ -138,12 +138,21 @@ public sealed class TimelineValidationDetailsTests(LorexApiFactory factory) : IC
     }
 
     [Fact]
-    public async Task Deleting_a_moment_takes_its_details_and_leaves_the_terms_and_the_participant()
+    public async Task Deleting_a_moment_keeps_its_details_in_the_Trash_and_erasing_it_takes_them_and_leaves_the_terms_and_the_participant()
     {
         var world = await NewCheckedWorld(_factory, "tvddelete");
         var moment = await world.Occurrence("A return", world.Arlen);
 
         await DeleteMoment(world.Client, world.Universe, moment.Id);
+
+        // In the Trash (ADR 0048): the moment and its details are kept, to come back whole.
+        await WithDb(_factory, async db =>
+        {
+            Assert.True(await db.TimelineEntries.AnyAsync(entry => entry.Id == moment.Id && entry.DeletedAt != null));
+            Assert.True(await db.TimelineEntryValidations.AnyAsync(details => details.TimelineEntryId == moment.Id));
+        });
+
+        (await world.Client.DeleteAsync($"/api/universes/{world.Universe}/trash/timeline/{moment.Id}")).EnsureSuccessStatusCode();
 
         await WithDb(_factory, async db =>
         {

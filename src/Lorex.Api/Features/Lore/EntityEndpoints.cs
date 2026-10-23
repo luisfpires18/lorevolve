@@ -1507,6 +1507,7 @@ public static class EntityEndpoints
                 // Whatever its type, an entry that already holds a live family link keeps its way into the Family Tree (ADR 0040).
                 HasFamilyConnections = db.Relationships.Any(relationship =>
                     relationship.UniverseId == universeId
+                    && relationship.DeletedAt == null
                     && relationship.RelationshipType!.FamilySemantic != RelationshipFamilySemantic.None
                     && ((relationship.SourceEntityId == candidate.Id && relationship.TargetEntity!.DeletedAt == null)
                         || (relationship.TargetEntityId == candidate.Id && relationship.SourceEntity!.DeletedAt == null))),

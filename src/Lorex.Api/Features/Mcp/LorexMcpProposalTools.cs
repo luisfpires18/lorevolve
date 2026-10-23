@@ -56,8 +56,9 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
 
     [McpServerTool(Name = OptionsTool, Title = "What changes can be proposed", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Before proposing changes, read what can be proposed in this universe for this person: the changes their role allows, "
-        + "the lore types with the ids of their fields and choices, the relationship kinds, the stories with their chapters, and the "
-        + "date periods. Use only these ids. Types, fields and kinds themselves can't be created or changed.")]
+        + "the lore types with the ids of their fields and choices, the relationship kinds, the stories with their chapters and plot arcs, the "
+        + "date periods and months, the world rules, the event kinds and methods, and - for the universe owner only - their ideas here. "
+        + "Use only these ids. Types, fields, kinds, calendars and terms themselves can't be created or changed.")]
     public async Task<CallToolResult> GetChangeOptionsAsync(CancellationToken cancellationToken)
     {
         if (await RoleAsync(cancellationToken) is not { } role)
@@ -71,8 +72,10 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
     [McpServerTool(Name = ProposeTool, Title = "Propose changes for review", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
     [Description("Stage changes to this universe for the person to review in LoreX. Only do this when the person asked for these changes. "
         + "Nothing changes until they approve it in LoreX's Pending AI Changes; this tool cannot approve or apply anything. "
-        + "Send up to 100 changes: create, update or remove (to the Trash) lore entries, relationships, stories, chapters, scenes, scene "
-        + "manuscripts and timeline moments. A change can refer to what an earlier change creates with {\"ref\": \"<its id>\"}. "
+        + "Send up to 100 changes: create, update or remove (to the Trash) lore entries, relationships, stories, chapters, scenes, plot arcs, "
+        + "plot beats, timeline moments, world rules and - for the universe owner - their ideas; write scene manuscripts and entry articles; "
+        + "reorder a story's chapters or arcs, a chapter's scenes or an arc's beats. A change can refer to what an earlier change creates "
+        + "with {\"ref\": \"<its id>\"}. Nothing is ever deleted for good. "
         + "Every change is checked first: if any has a problem, nothing is staged and every problem is listed so you can fix them and send again. "
         + "Returns the proposal's id and the address where the person reviews it.")]
     public async Task<CallToolResult> ProposeChangesAsync(

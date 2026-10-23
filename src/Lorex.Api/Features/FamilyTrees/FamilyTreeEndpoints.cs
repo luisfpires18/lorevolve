@@ -257,6 +257,7 @@ public static class FamilyTreeEndpoints
     private static IQueryable<LoreRelationship> LiveLinks(LorexDbContext db, Guid universeId) =>
         db.Relationships.AsNoTracking()
             .Where(relationship => relationship.UniverseId == universeId
+                && relationship.DeletedAt == null
                 && relationship.RelationshipType!.UniverseId == universeId
                 && relationship.RelationshipType.FamilySemantic != RelationshipFamilySemantic.None
                 && relationship.SourceEntity!.UniverseId == universeId

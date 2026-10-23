@@ -55,7 +55,7 @@ public static class TimelineEndpoints
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
         var query = db.TimelineEntries.AsNoTracking()
-            .Where(entry => entry.UniverseId == universeId);
+            .Where(entry => entry.UniverseId == universeId && entry.DeletedAt == null);
 
         if (canonStatus is { } status)
         {
@@ -229,7 +229,7 @@ public static class TimelineEndpoints
             .Include(candidate => candidate.StoryLinks)
             .Include(candidate => candidate.Validation)
             .FirstOrDefaultAsync(
-                candidate => candidate.Id == entryId && candidate.UniverseId == universeId,
+                candidate => candidate.Id == entryId && candidate.UniverseId == universeId && candidate.DeletedAt == null,
                 cancellationToken);
 
         if (entry is null)
@@ -321,8 +321,8 @@ public static class TimelineEndpoints
     }
 
     /// <summary>
-    /// Reconciled but not gated: removing a moment removes the only findings it could
-    /// contribute to, so there is nothing to refuse and everything to resolve.
+    /// Moves the moment to the Trash (ADR 0048). Reconciled but not gated: taking a moment off the timeline removes the only
+    /// findings it could contribute to, so there is nothing to refuse and everything to resolve.
     /// </summary>
     private static async Task<IResult> DeleteAsync(
         Guid universeId,
@@ -332,25 +332,29 @@ public static class TimelineEndpoints
         CanonPromotionGate canon,
         CancellationToken cancellationToken)
     {
-        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.ManageTrash, cancellationToken) is { } denied)
         {
             return denied;
         }
 
         return await canon.RecordAsync(
             universeId,
-            token => DeleteCoreAsync(universeId, entryId, db, token),
+            token => TrashCoreAsync(universeId, entryId, db, token),
             cancellationToken);
     }
 
-    private static async Task<IResult> DeleteCoreAsync(
+    /// <summary>
+    /// The moment to the Trash, shared with an approved AI change. Only the marker moves: participants, stories and details
+    /// stay stored and come back with it. Access and the Canon reconciliation are the caller's.
+    /// </summary>
+    internal static async Task<IResult> TrashCoreAsync(
         Guid universeId,
         Guid entryId,
         LorexDbContext db,
         CancellationToken cancellationToken)
     {
         var entry = await db.TimelineEntries.FirstOrDefaultAsync(
-            candidate => candidate.Id == entryId && candidate.UniverseId == universeId,
+            candidate => candidate.Id == entryId && candidate.UniverseId == universeId && candidate.DeletedAt == null,
             cancellationToken);
 
         if (entry is null)
@@ -358,10 +362,49 @@ public static class TimelineEndpoints
             return Results.NotFound();
         }
 
-        db.TimelineEntries.Remove(entry);
+        entry.DeletedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
 
         return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Brings a moment back from the Trash exactly as it was, mapped by the Trash under its own typed route. Gated, as a create
+    /// is: a Canon moment coming back can sit outside a Canon lifespan again, and a restore must not bring back a contradiction
+    /// the universe no longer has. Participants and stories in the Trash stay linked and marked, as on any moment.
+    /// </summary>
+    public static async Task<IResult> RestoreAsync(
+        Guid universeId,
+        Guid timelineEntryId,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CanonPromotionGate gate,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.ManageTrash, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        return await gate.RunAsync(
+            universeId,
+            async token =>
+            {
+                var entry = await db.TimelineEntries.FirstOrDefaultAsync(
+                    candidate => candidate.Id == timelineEntryId && candidate.UniverseId == universeId && candidate.DeletedAt != null,
+                    token);
+
+                if (entry is null)
+                {
+                    return Results.NotFound();
+                }
+
+                entry.DeletedAt = null;
+                await db.SaveChangesAsync(token);
+
+                return Results.Ok(await LoadAsync(db, universeId, entry.Id, token));
+            },
+            cancellationToken);
     }
 
     // ---------- Writing ----------
@@ -500,7 +543,7 @@ public static class TimelineEndpoints
         CancellationToken cancellationToken)
     {
         var row = await db.TimelineEntries.AsNoTracking()
-            .Where(entry => entry.Id == entryId && entry.UniverseId == universeId)
+            .Where(entry => entry.Id == entryId && entry.UniverseId == universeId && entry.DeletedAt == null)
             .Select(Projection())
             .FirstOrDefaultAsync(cancellationToken);
 

@@ -217,7 +217,11 @@ export default function TimelinePage() {
   const storyPath = (id: string) => `/app/universes/${universe.id}/stories/${id}`
 
   async function remove(entry: TimelineEntry) {
-    if (!window.confirm(`Delete “${entry.title}”? The moment goes, the entries it names stay.`)) {
+    if (
+      !window.confirm(
+        `Move “${entry.title}” to the Trash? The entries it names stay, and you can restore it from the Trash.`,
+      )
+    ) {
       return
     }
 
@@ -232,7 +236,9 @@ export default function TimelinePage() {
         reload()
       }
     } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That moment could not be deleted.')
+      setMessage(
+        error instanceof ApiError ? error.message : 'That moment could not be moved to the Trash.',
+      )
     }
   }
 

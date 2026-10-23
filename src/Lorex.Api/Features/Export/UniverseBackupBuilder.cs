@@ -619,7 +619,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                     Utc(relationship.EndDate),
                     relationship.Notes,
                     Utc(relationship.CreatedAt),
-                    Utc(relationship.UpdatedAt))),
+                    Utc(relationship.UpdatedAt),
+                    Utc(relationship.DeletedAt))),
         ];
     }
 
@@ -689,7 +690,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                         : null,
                     storiesByEntry.GetValueOrDefault(entry.Id, []),
                     entry.StartMonthId,
-                    entry.EndMonthId)),
+                    entry.EndMonthId,
+                    Utc(entry.DeletedAt))),
         ];
     }
 

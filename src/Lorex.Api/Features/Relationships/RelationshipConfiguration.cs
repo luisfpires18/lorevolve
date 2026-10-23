@@ -71,5 +71,8 @@ public sealed class LoreRelationshipConfiguration : IEntityTypeConfiguration<Lor
         builder.HasIndex(relationship => new { relationship.UniverseId, relationship.SourceEntityId });
         builder.HasIndex(relationship => new { relationship.UniverseId, relationship.TargetEntityId });
         builder.HasIndex(relationship => relationship.RelationshipTypeId);
+
+        // The Trash lists a universe's trashed links, newest first (ADR 0048).
+        builder.HasIndex(relationship => new { relationship.UniverseId, relationship.DeletedAt });
     }
 }

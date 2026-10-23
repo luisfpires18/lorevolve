@@ -21,6 +21,10 @@ namespace Lorex.Api.Features.Assistant;
 /// In propose mode (ADR 0047) it reads the change options, then stages one new lore entry for every name the question puts
 /// in double quotes - of the first type with no required fields - and, for two or more, a relationship of the first kind
 /// from the first to the second, referring to them by their change ids. Then it says the changes wait for review.
+///
+/// Words in the question add issue 45's resources (ADR 0048), each only when the options allow it: "article" writes each new
+/// entry a one-paragraph article; "rule" proposes a world rule named after the first name; "arc" a plot arc of that name in
+/// the first story, with one beat about the first entry; "idea" an idea of that name about the first entry.
 /// </summary>
 public sealed partial class FakeAssistantProvider : IAssistantProvider
 {
@@ -92,6 +96,54 @@ public sealed partial class FakeAssistantProvider : IAssistantProvider
                             source = new { @ref = "entry-1" },
                             target = new { @ref = "entry-2" },
                         },
+                    });
+                }
+
+                var allowed = root.GetProperty("allowed").EnumerateArray().Select(item => item.GetString()).ToHashSet();
+                bool Asked(string word) => question.Contains(word, StringComparison.OrdinalIgnoreCase);
+
+                if (Asked("article") && allowed.Contains("update article"))
+                {
+                    operations.AddRange(names.Select((name, index) => (object)new
+                    {
+                        id = $"article-{index + 1}",
+                        action = "update",
+                        resource = "article",
+                        article = new
+                        {
+                            entry = new { @ref = $"entry-{index + 1}" },
+                            mode = "append",
+                            blocks = new object[] { new { kind = "paragraph", text = $"{name}, as the assistant wrote it." } },
+                        },
+                    }));
+                }
+
+                if (Asked("rule") && allowed.Contains("create world_rule"))
+                {
+                    operations.Add(new { id = "rule-1", action = "create", resource = "world_rule", worldRule = new { title = $"The rule of {names[0]}", description = "Kept as written." } });
+                }
+
+                var story = root.GetProperty("stories").EnumerateArray().FirstOrDefault();
+                if (Asked("arc") && allowed.Contains("create plot_arc") && story.ValueKind == JsonValueKind.Object)
+                {
+                    operations.Add(new { id = "arc-1", action = "create", resource = "plot_arc", plotArc = new { story = new { id = story.GetProperty("id").GetString() }, title = names[0] } });
+                    operations.Add(new
+                    {
+                        id = "beat-1",
+                        action = "create",
+                        resource = "plot_beat",
+                        plotBeat = new { arc = new { @ref = "arc-1" }, title = $"{names[0]} begins", lore = new object[] { new { @ref = "entry-1" } } },
+                    });
+                }
+
+                if (Asked("idea") && allowed.Contains("create idea"))
+                {
+                    operations.Add(new
+                    {
+                        id = "idea-1",
+                        action = "create",
+                        resource = "idea",
+                        idea = new { title = $"What if {names[0]}?", body = "", references = new object[] { new { kind = "lore_entry", @ref = "entry-1" } } },
                     });
                 }
 

@@ -479,6 +479,20 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 26)
+        {
+            // A relationship's and a moment's Trash marker arrived in version 26 (ADR 0048).
+            foreach (var relationship in payload["relationships"]!.AsArray())
+            {
+                Drop(relationship, "deletedAt");
+            }
+
+            foreach (var entry in payload["timelineEntries"]!.AsArray())
+            {
+                Drop(entry, "deletedAt");
+            }
+        }
+
         if (version < 25)
         {
             // A field's archived marker arrived in version 25.

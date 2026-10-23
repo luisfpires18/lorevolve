@@ -76,7 +76,7 @@ internal sealed class AiChangeWork
         Action = row.Action,
         TargetId = row.TargetId,
         BaseVersion = row.BaseVersion,
-        Before = row.Before is null ? null : AiChangeJson.ReadBefore(row.Resource, row.Before),
+        Before = row.Before is null ? null : AiChangeJson.ReadBefore(row.Resource, row.Action, row.Before),
         Proposed = AiChangeJson.ReadProposed(row.Resource, row.Action, row.Proposed),
         Status = row.Status,
         ResultId = row.ResultId,
@@ -119,9 +119,11 @@ internal static class AiChangeJson
     public static string Write(object value) => JsonSerializer.Serialize(value, value.GetType(), Options);
 
     public static object ReadProposed(AiChangeResource resource, AiChangeAction action, string json) =>
-        action == AiChangeAction.Remove
-            ? Read<RemoveValues>(json)
-            : resource switch
+        action switch
+        {
+            AiChangeAction.Remove => Read<RemoveValues>(json),
+            AiChangeAction.Reorder => Read<OrderValues>(json),
+            _ => resource switch
             {
                 AiChangeResource.LoreEntry => Read<LoreValues>(json),
                 AiChangeResource.Relationship => Read<RelationshipValues>(json),
@@ -129,17 +131,28 @@ internal static class AiChangeJson
                 AiChangeResource.Chapter => Read<ChapterValues>(json),
                 AiChangeResource.Scene => Read<SceneValues>(json),
                 AiChangeResource.Manuscript => Read<ManuscriptValues>(json),
+                AiChangeResource.Article => Read<ArticleValues>(json),
+                AiChangeResource.PlotArc => Read<PlotArcValues>(json),
+                AiChangeResource.PlotBeat => Read<PlotBeatValues>(json),
+                AiChangeResource.WorldRule => Read<WorldRuleValues>(json),
+                AiChangeResource.Idea => Read<IdeaValues>(json),
                 _ => Read<TimelineValues>(json),
-            };
+            },
+        };
 
-    public static object ReadBefore(AiChangeResource resource, string json) => resource switch
+    public static object ReadBefore(AiChangeResource resource, AiChangeAction action, string json) => (resource, action) switch
     {
-        AiChangeResource.LoreEntry => Read<LoreValues>(json),
-        AiChangeResource.Relationship => Read<RelationshipValues>(json),
-        AiChangeResource.Story => Read<StoryValues>(json),
-        AiChangeResource.Chapter => Read<ChapterValues>(json),
-        AiChangeResource.Scene => Read<SceneValues>(json),
-        AiChangeResource.TimelineEvent => Read<TimelineValues>(json),
+        (_, AiChangeAction.Reorder) => Read<OrderValues>(json),
+        (AiChangeResource.LoreEntry, _) => Read<LoreValues>(json),
+        (AiChangeResource.Relationship, _) => Read<RelationshipValues>(json),
+        (AiChangeResource.Story, _) => Read<StoryValues>(json),
+        (AiChangeResource.Chapter, _) => Read<ChapterValues>(json),
+        (AiChangeResource.Scene, _) => Read<SceneValues>(json),
+        (AiChangeResource.TimelineEvent, _) => Read<TimelineValues>(json),
+        (AiChangeResource.PlotArc, _) => Read<PlotArcValues>(json),
+        (AiChangeResource.PlotBeat, _) => Read<PlotBeatValues>(json),
+        (AiChangeResource.WorldRule, _) => Read<WorldRuleValues>(json),
+        (AiChangeResource.Idea, _) => Read<IdeaValues>(json),
         _ => throw new InvalidOperationException($"A {resource} change keeps no stored form."),
     };
 
@@ -152,7 +165,7 @@ internal static class AiChangeJson
 /// every list in a fixed order - so a form read twice is equal exactly when nothing it shows was changed in between.
 /// That equality is the only edit check chapters, relationships and moments have (they carry no edit version, ADR 0043).
 /// </summary>
-internal static class AiChangeSnapshots
+internal static partial class AiChangeSnapshots
 {
     public static async Task<(LoreValues Form, int Version)?> LoreAsync(LorexDbContext db, Guid universeId, Guid entityId, CancellationToken cancellationToken)
     {
@@ -189,6 +202,7 @@ internal static class AiChangeSnapshots
         db.Relationships.AsNoTracking()
             .Where(row => row.Id == relationshipId
                 && row.UniverseId == universeId
+                && row.DeletedAt == null
                 && row.SourceEntity!.DeletedAt == null
                 && row.TargetEntity!.DeletedAt == null)
             .Select(row => new RelationshipValues(
@@ -263,7 +277,7 @@ internal static class AiChangeSnapshots
     public static async Task<TimelineValues?> MomentAsync(LorexDbContext db, Guid universeId, Guid entryId, CancellationToken cancellationToken)
     {
         var row = await db.TimelineEntries.AsNoTracking()
-            .Where(entry => entry.Id == entryId && entry.UniverseId == universeId)
+            .Where(entry => entry.Id == entryId && entry.UniverseId == universeId && entry.DeletedAt == null)
             .Select(entry => new
             {
                 entry.Title,
@@ -282,6 +296,11 @@ internal static class AiChangeSnapshots
                 entry.StartMonthId,
                 entry.EndMonthId,
                 Participants = entry.EntityLinks.Select(link => link.EntityId).ToList(),
+                Stories = entry.StoryLinks.Select(link => link.StoryId).ToList(),
+                HasDetails = entry.Validation != null,
+                EventKindId = entry.Validation != null ? entry.Validation.EventKindTermId : null,
+                MethodId = entry.Validation != null ? entry.Validation.MethodTermId : null,
+                ParticipantId = entry.Validation != null ? entry.Validation.ParticipantEntityId : null,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -303,8 +322,19 @@ internal static class AiChangeSnapshots
                 row.EndEraId,
                 row.StartMonthId,
                 row.EndMonthId,
-                [.. row.Participants.Order().Select(AiRef.To)]);
+                [.. row.Participants.Order().Select(AiRef.To)],
+                [.. row.Stories.Order().Select(AiRef.To)],
+                row.HasDetails
+                    ? new MomentDetailsValues(row.EventKindId, row.MethodId, row.ParticipantId is { } participant ? AiRef.To(participant) : null)
+                    : null);
     }
+
+    /// <summary>
+    /// Whether a moment is as a change staged over it found it. A change stored before issue 45 holds no stories or details
+    /// (ADR 0048): it is compared, and applied, without them.
+    /// </summary>
+    public static bool SameMoment(TimelineValues stored, TimelineValues? before) =>
+        before is not null && Same(before.Stories is null ? stored with { Stories = null, Details = null } : stored, before);
 
     public static async Task<(string Content, int Version)?> ManuscriptAsync(LorexDbContext db, Guid sceneId, CancellationToken cancellationToken)
     {
@@ -324,6 +354,9 @@ internal static class AiChangeSnapshots
 /// Who may stage and who may apply which change - the universe's own permission matrix (ADR 0041), never a rule of this
 /// feature's. An owner or Editor stages and approves what their role writes. A Reviewer stages only what Suggested Changes
 /// already lets them propose (ADR 0044): edits to an entry, a story or a scene. A Viewer stages nothing.
+///
+/// An idea is account data, not universe content (ADR 0030): only the universe's owner keeps ideas in it, so only the owner
+/// stages or approves an idea change, and only over their own ideas (ADR 0048). No collaborator role reaches one.
 /// </summary>
 internal static class AiChangePermissions
 {
@@ -331,16 +364,19 @@ internal static class AiChangePermissions
         action == AiChangeAction.Remove ? UniverseCapability.ManageTrash : UniverseCapability.EditContent;
 
     public static bool MayStage(UniverseRole role, AiChangeResource resource, AiChangeAction action) =>
-        UniverseAccess.Allows(role, ToApply(action))
-        || (action == AiChangeAction.Update
-            && resource is AiChangeResource.LoreEntry or AiChangeResource.Story or AiChangeResource.Scene
-            && UniverseAccess.Allows(role, UniverseCapability.SuggestChanges));
+        resource == AiChangeResource.Idea
+            ? role == UniverseRole.Owner
+            : UniverseAccess.Allows(role, ToApply(action))
+                || (action == AiChangeAction.Update
+                    && resource is AiChangeResource.LoreEntry or AiChangeResource.Story or AiChangeResource.Scene
+                    && UniverseAccess.Allows(role, UniverseCapability.SuggestChanges));
 
     /// <summary>Whether a role can stage anything at all: what an AI's propose tools and the consent screen ask first.</summary>
     public static bool MayStageAnything(UniverseRole role) =>
         UniverseAccess.Allows(role, UniverseCapability.EditContent) || UniverseAccess.Allows(role, UniverseCapability.SuggestChanges);
 
-    public static bool MayApprove(UniverseRole role, AiChangeAction action) => UniverseAccess.Allows(role, ToApply(action));
+    public static bool MayApprove(UniverseRole role, AiChangeResource resource, AiChangeAction action) =>
+        resource == AiChangeResource.Idea ? role == UniverseRole.Owner : UniverseAccess.Allows(role, ToApply(action));
 
     /// <summary>Reads every proposal in the universe, and edits and rejects their changes: the people who could approve them.</summary>
     public static bool MayReview(UniverseRole role) => UniverseAccess.Allows(role, UniverseCapability.EditContent);
@@ -352,8 +388,11 @@ internal static class AiChangePermissions
 /// inside this universe - plus what a batch needs: references to other changes of the proposal, of the right kind and
 /// not rejected; no duplicates inside the batch; and, for a change to something that already exists, that nothing saved
 /// it since the change was staged. Reads only. The save path itself checks everything once more when it runs.
+///
+/// <paramref name="proposerId"/> is the account the proposal was staged for: an idea change is held to that account's own
+/// ideas, and to that account still owning the universe (ADR 0048).
 /// </summary>
-internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
+internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId, string proposerId)
 {
     private readonly Dictionary<string, AiChangeWork> _byKey = new(StringComparer.Ordinal);
 
@@ -372,6 +411,10 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
     private Dictionary<Guid, (Guid StoryId, bool Trashed)> _scenes = [];
 
     private HashSet<(Guid GroupId, Guid TypeId)> _groupMembers = [];
+
+    private Dictionary<Guid, (Guid StoryId, bool Trashed)> _arcs = [];
+
+    private Dictionary<Guid, (Guid ArcId, Guid StoryId, bool Trashed)> _beats = [];
 
     public async Task CheckAsync(IReadOnlyList<AiChangeWork> works, CancellationToken cancellationToken)
     {
@@ -392,6 +435,24 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
             {
                 case (_, AiChangeAction.Remove):
                     await CheckRemoveAsync(work, cancellationToken);
+                    break;
+                case (_, AiChangeAction.Reorder):
+                    await CheckOrderAsync(work, works, cancellationToken);
+                    break;
+                case (AiChangeResource.Article, _):
+                    await CheckArticleAsync(work, cancellationToken);
+                    break;
+                case (AiChangeResource.PlotArc, _):
+                    await CheckPlotArcAsync(work, cancellationToken);
+                    break;
+                case (AiChangeResource.PlotBeat, _):
+                    await CheckPlotBeatAsync(work, cancellationToken);
+                    break;
+                case (AiChangeResource.WorldRule, _):
+                    await CheckWorldRuleAsync(work, cancellationToken);
+                    break;
+                case (AiChangeResource.Idea, _):
+                    await CheckIdeaAsync(work, cancellationToken);
                     break;
                 case (AiChangeResource.LoreEntry, _):
                     await CheckLoreAsync(work, cancellationToken);
@@ -428,10 +489,9 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
     private static void CheckTargets(IReadOnlyList<AiChangeWork> works)
     {
         var seen = new HashSet<(AiChangeResource, Guid)>();
-        foreach (var work in works.Where(work => work.IsPending && work.Action != AiChangeAction.Create && work.TargetId is not null).OrderBy(work => work.Sequence))
+        foreach (var work in works.Where(work => work.IsPending && work.Action is AiChangeAction.Update or AiChangeAction.Remove && work.TargetId is not null).OrderBy(work => work.Sequence))
         {
-            var family = work.Resource == AiChangeResource.Manuscript ? AiChangeResource.Manuscript : work.Resource;
-            if (!seen.Add((family, work.TargetId!.Value)))
+            if (!seen.Add((work.Resource, work.TargetId!.Value)))
             {
                 work.Problem(AiChangeCodes.Duplicate, "Another change in this proposal already changes this. Put both in one change.");
             }
@@ -459,8 +519,39 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
             .. scene.Lore.Select(lore => (lore, AiChangeResource.LoreEntry, "lore")),
         ],
         ManuscriptValues manuscript => [(manuscript.Scene, AiChangeResource.Scene, "scene")],
-        TimelineValues moment => moment.Participants.Select(participant => (participant, AiChangeResource.LoreEntry, "participants")),
+        TimelineValues moment =>
+        [
+            .. moment.Participants.Select(participant => (participant, AiChangeResource.LoreEntry, "participants")),
+            .. (moment.Stories ?? []).Select(story => (story, AiChangeResource.Story, "stories")),
+            .. moment.Details?.Participant is { } participant ? [(participant, AiChangeResource.LoreEntry, "details.participant")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
+        ],
+        ArticleValues article => [(article.Entry, AiChangeResource.LoreEntry, "entry")],
+        PlotArcValues arc => [(arc.Story, AiChangeResource.Story, "story")],
+        PlotBeatValues beat =>
+        [
+            (beat.Arc, AiChangeResource.PlotArc, "arc"),
+            .. beat.Scenes.Select(scene => (scene, AiChangeResource.Scene, "scenes")),
+            .. beat.Lore.Select(lore => (lore, AiChangeResource.LoreEntry, "lore")),
+        ],
+        IdeaValues idea => idea.References.Select(reference => (reference.Target, IdeaKind(reference.Kind), "references")),
+        OrderValues order =>
+        [
+            (order.Story, AiChangeResource.Story, "story"),
+            .. order.Chapter is { } chapter ? [(chapter, AiChangeResource.Chapter, "chapter")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
+            .. order.Arc is { } arc ? [(arc, AiChangeResource.PlotArc, "arc")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
+            .. order.Items.Select(item => (item, work.Resource, "items")),
+        ],
         _ => [],
+    };
+
+    /// <summary>The kind of change that creates what an idea reference names.</summary>
+    internal static AiChangeResource IdeaKind(Ideas.IdeaReferenceKind kind) => kind switch
+    {
+        Ideas.IdeaReferenceKind.Story => AiChangeResource.Story,
+        Ideas.IdeaReferenceKind.Scene => AiChangeResource.Scene,
+        Ideas.IdeaReferenceKind.PlotArc => AiChangeResource.PlotArc,
+        Ideas.IdeaReferenceKind.PlotBeat => AiChangeResource.PlotBeat,
+        _ => AiChangeResource.LoreEntry,
     };
 
     private static IEnumerable<AiRef> References(AiChangeWork work) => Typed(work).Select(reference => reference.Ref);
@@ -902,21 +993,26 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
         var moment = (TimelineValues)work.Proposed;
         var kept = new HashSet<Guid>();
 
+        var keptStories = new HashSet<Guid>();
+        Guid? keptParticipant = null;
+
         if (work.Action == AiChangeAction.Update)
         {
             var stored = await AiChangeSnapshots.MomentAsync(db, universeId, work.TargetId!.Value, cancellationToken);
             if (stored is null)
             {
-                work.Problem(AiChangeCodes.NotFound, "This timeline moment isn't in this universe any more.");
+                work.Problem(AiChangeCodes.NotFound, "This timeline moment isn't in this universe any more. It may be in the Trash.");
                 return;
             }
 
-            if (!AiChangeSnapshots.Same(stored, work.Before))
+            if (!AiChangeSnapshots.SameMoment(stored, work.Before as TimelineValues))
             {
                 work.Conflict("Someone changed this moment after the AI suggested this change, so it can't be applied. Reject it, or ask for the change again.");
             }
 
             kept = [.. stored.Participants.Select(participant => participant.Id).OfType<Guid>()];
+            keptStories = [.. (stored.Stories ?? []).Select(story => story.Id).OfType<Guid>()];
+            keptParticipant = stored.Details?.Participant?.Id;
         }
 
         foreach (var participant in moment.Participants)
@@ -924,8 +1020,43 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
             CheckEntry(work, participant, "participants", kept);
         }
 
+        // Stories of this universe: live, or in the Trash and already linked, as the moment's own save allows.
+        var stories = moment.Stories ?? [];
+        if (stories.Count > TimelineLimits.MaxLinkedStories)
+        {
+            work.Problem(AiChangeCodes.Invalid, $"A moment can be linked to up to {TimelineLimits.MaxLinkedStories} stories.", "stories");
+        }
+
+        foreach (var story in stories)
+        {
+            if (Resolve(story).Id is { } storyId && !keptStories.Contains(storyId))
+            {
+                CheckStory(work, story, "stories");
+            }
+        }
+
+        if (moment.Details is { } details)
+        {
+            var participantId = details.Participant is { } participantRef ? Resolve(participantRef).Id : null;
+            if (details.Participant is { } named)
+            {
+                CheckEntry(work, named, "details.participant", keptParticipant is { } held ? [held] : null);
+            }
+
+            // The terms are checked by the moment's own rule; an entry this proposal creates is checked above instead.
+            if (await RuleValidation.RuleValidationInput.ValidateMomentAsync(
+                    db,
+                    universeId,
+                    new RuleValidation.TimelineValidationRequest(details.EventKindId, details.MethodId, participantId),
+                    keptParticipant,
+                    cancellationToken) is { } errors)
+            {
+                work.Problems(errors.Where(error => error.Key != "participantEntityId").ToDictionary(error => error.Key, error => error.Value));
+            }
+        }
+
         _chronology ??= await UniverseChronology.LoadAsync(db, universeId, cancellationToken);
-        work.Problems(TimelineValidation.Validate(AiChangeRequests.Moment(moment, [.. moment.Participants.Select(_ => Guid.NewGuid())]), _chronology));
+        work.Problems(TimelineValidation.Validate(AiChangeRequests.Moment(moment, [.. moment.Participants.Select(_ => Guid.NewGuid())], null, null), _chronology));
     }
 
     private async Task CheckRemoveAsync(AiChangeWork work, CancellationToken cancellationToken)
@@ -933,6 +1064,24 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
         var target = work.TargetId!.Value;
         var (exists, version, same) = work.Resource switch
         {
+            AiChangeResource.Relationship => await AiChangeSnapshots.RelationshipAsync(db, universeId, target, cancellationToken) is { } relationship
+                ? (true, (int?)null, AiChangeSnapshots.Same(relationship, work.Before))
+                : (false, null, true),
+            AiChangeResource.TimelineEvent => await AiChangeSnapshots.MomentAsync(db, universeId, target, cancellationToken) is { } moment
+                ? (true, null, AiChangeSnapshots.SameMoment(moment, work.Before as TimelineValues))
+                : (false, null, true),
+            AiChangeResource.PlotArc => await AiChangeSnapshots.PlotArcAsync(db, universeId, target, cancellationToken) is { } arc
+                ? (true, null, AiChangeSnapshots.Same(arc, work.Before))
+                : (false, null, true),
+            AiChangeResource.PlotBeat => await AiChangeSnapshots.PlotBeatAsync(db, universeId, target, cancellationToken) is { } beat
+                ? (true, null, AiChangeSnapshots.Same(beat, work.Before))
+                : (false, null, true),
+            AiChangeResource.WorldRule => await AiChangeSnapshots.WorldRuleAsync(db, universeId, target, cancellationToken) is { } rule
+                ? (true, null, AiChangeSnapshots.Same(rule, work.Before))
+                : (false, null, true),
+            AiChangeResource.Idea => await AiChangeSnapshots.IdeaAsync(db, universeId, proposerId, target, cancellationToken) is { } idea
+                ? (true, null, AiChangeSnapshots.Same(idea, work.Before))
+                : (false, null, true),
             AiChangeResource.LoreEntry => await AiChangeSnapshots.LoreAsync(db, universeId, target, cancellationToken) is { } lore
                 ? (true, (int?)lore.Version, true)
                 : (false, null, true),
@@ -948,10 +1097,15 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
             _ => (false, null, true),
         };
 
-        if (work.Resource is AiChangeResource.Relationship or AiChangeResource.TimelineEvent or AiChangeResource.Manuscript)
+        if (work.Resource is AiChangeResource.Manuscript or AiChangeResource.Article)
         {
             work.Problem(AiChangeCodes.Unsupported, AiChangeText.NoTrash(work.Resource));
             return;
+        }
+
+        if (work.Resource == AiChangeResource.Idea)
+        {
+            await CheckIdeaOwnerAsync(work, cancellationToken);
         }
 
         if (!exists)
@@ -1063,6 +1217,24 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
                 .Select(scene => new { scene.Id, scene.StoryId, Trashed = scene.DeletedAt != null || scene.Story!.DeletedAt != null })
                 .ToListAsync(cancellationToken))
             .ToDictionary(scene => scene.Id, scene => (scene.StoryId, scene.Trashed));
+
+        _arcs = (await db.PlotArcs.AsNoTracking()
+                .Where(arc => arc.Story!.UniverseId == universeId && all.Contains(arc.Id))
+                .Select(arc => new { arc.Id, arc.StoryId, Trashed = arc.DeletedAt != null || arc.Story!.DeletedAt != null })
+                .ToListAsync(cancellationToken))
+            .ToDictionary(arc => arc.Id, arc => (arc.StoryId, arc.Trashed));
+
+        _beats = (await db.PlotBeats.AsNoTracking()
+                .Where(beat => beat.PlotArc!.Story!.UniverseId == universeId && all.Contains(beat.Id))
+                .Select(beat => new
+                {
+                    beat.Id,
+                    beat.PlotArcId,
+                    beat.PlotArc!.StoryId,
+                    Trashed = beat.DeletedAt != null || beat.PlotArc.DeletedAt != null || beat.PlotArc.Story!.DeletedAt != null,
+                })
+                .ToListAsync(cancellationToken))
+            .ToDictionary(beat => beat.Id, beat => (beat.PlotArcId, beat.StoryId, beat.Trashed));
     }
 
     private static string Article(AiChangeResource kind) => kind switch
@@ -1071,6 +1243,8 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
         AiChangeResource.Story => "a story",
         AiChangeResource.Chapter => "a chapter",
         AiChangeResource.Scene => "a scene",
+        AiChangeResource.PlotArc => "a plot arc",
+        AiChangeResource.PlotBeat => "a plot beat",
         _ => "that",
     };
 }
@@ -1078,7 +1252,15 @@ internal sealed class AiChangeChecker(LorexDbContext db, Guid universeId)
 /// <summary>Builds the resources' own request records from stored values, with every reference resolved to a real id.</summary>
 internal static class AiChangeRequests
 {
-    public static TimelineEntryRequest Moment(TimelineValues moment, List<Guid> participants) => new(
+    /// <summary>
+    /// The moment's request. <paramref name="stories"/> and <paramref name="details"/> are what to store - null keeps what is
+    /// stored, which is how a change from before issue 45, holding neither, is applied (ADR 0048).
+    /// </summary>
+    public static TimelineEntryRequest Moment(
+        TimelineValues moment,
+        List<Guid> participants,
+        List<Guid>? stories,
+        RuleValidation.TimelineValidationRequest? details) => new(
         moment.Title,
         moment.Description,
         moment.CanonStatus,
@@ -1093,8 +1275,8 @@ internal static class AiChangeRequests
         participants,
         moment.StartEraId,
         moment.EndEraId,
-        null,
-        null,
+        details,
+        stories,
         moment.StartMonthId,
         moment.EndMonthId);
 }
@@ -1108,10 +1290,7 @@ internal static class AiChangeText
 
     public static string NoTrash(AiChangeResource resource) => resource switch
     {
-        AiChangeResource.Relationship =>
-            "LoreX has no Trash for relationships yet, so an AI can't remove one: removing it would erase it for good. Remove it yourself in LoreX if you mean to.",
-        AiChangeResource.TimelineEvent =>
-            "LoreX has no Trash for timeline moments yet, so an AI can't remove one: removing it would erase it for good. Remove it yourself in LoreX if you mean to.",
+        AiChangeResource.Article => "An article isn't removed. To empty one, replace it with no blocks, and its saved versions keep the old article.",
         _ => "A manuscript isn't removed. To empty one, replace its text, and its saved versions keep the old prose.",
     };
 }

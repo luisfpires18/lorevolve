@@ -29,10 +29,16 @@ export const ChangeResource = {
   Scene: 4,
   Manuscript: 5,
   TimelineEvent: 6,
+  Article: 7,
+  PlotArc: 8,
+  PlotBeat: 9,
+  WorldRule: 10,
+  /** One of the universe owner's own ideas (ADR 0048). Only its proposer ever sees such a change. */
+  Idea: 11,
 } as const
 export type ChangeResourceValue = (typeof ChangeResource)[keyof typeof ChangeResource]
 
-export const ChangeAction = { Create: 0, Update: 1, Remove: 2 } as const
+export const ChangeAction = { Create: 0, Update: 1, Remove: 2, Reorder: 3 } as const
 export type ChangeActionValue = (typeof ChangeAction)[keyof typeof ChangeAction]
 
 export interface ProposalSummary {
@@ -219,23 +225,41 @@ export function editChange(
 export function itemPath(universeId: string, change: Change) {
   const id = change.resultId ?? change.targetId
   const universe = `/app/universes/${universeId}`
+  const story = change.storyId ? `${universe}/stories/${change.storyId}` : null
+  if (change.action === ChangeAction.Remove) {
+    // Everything removed waits in the Trash - an idea in its owner's deleted ideas - from where it comes back.
+    return change.resource === ChangeResource.Idea ? '/app/ideas' : `${universe}/trash`
+  }
+  if (change.action === ChangeAction.Reorder) {
+    if (!story) return null
+    return change.resource === ChangeResource.PlotArc || change.resource === ChangeResource.PlotBeat
+      ? `${story}/plot`
+      : story
+  }
   if (!id) return null
   switch (change.resource) {
     case ChangeResource.LoreEntry:
-      return change.action === ChangeAction.Remove ? `${universe}/trash` : `${universe}/lore/${id}`
+    case ChangeResource.Article:
+      return `${universe}/lore/${id}`
     case ChangeResource.Relationship:
       return null
     case ChangeResource.Story:
-      return change.action === ChangeAction.Remove
-        ? `${universe}/trash`
-        : `${universe}/stories/${id}`
+      return `${universe}/stories/${id}`
     case ChangeResource.Chapter:
-      return change.storyId ? `${universe}/stories/${change.storyId}#chapter-${id}` : null
+      return story ? `${story}#chapter-${id}` : null
     case ChangeResource.Scene:
-      return change.storyId ? `${universe}/stories/${change.storyId}#scene-${id}` : null
+      return story ? `${story}#scene-${id}` : null
     case ChangeResource.Manuscript:
-      return change.storyId ? `${universe}/stories/${change.storyId}/manuscript/${id}` : null
+      return story ? `${story}/manuscript/${id}` : null
     case ChangeResource.TimelineEvent:
       return `${universe}/timeline?moment=${id}`
+    case ChangeResource.PlotArc:
+      return story ? `${story}/plot#arc-${id}` : null
+    case ChangeResource.PlotBeat:
+      return story ? `${story}/plot#beat-${id}` : null
+    case ChangeResource.WorldRule:
+      return `${universe}/world-rules/${id}`
+    case ChangeResource.Idea:
+      return `/app/ideas/${id}`
   }
 }

@@ -326,7 +326,21 @@ public static class ChapterEndpoints
             return denied;
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        return await ReorderCoreAsync(db, universeId, storyId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The reorder itself, shared with an approved AI change (ADR 0048). In the caller's transaction when it has one, else
+    /// its own. Access is the caller's.
+    /// </summary>
+    internal static async Task<IResult> ReorderCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        ChapterOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null)

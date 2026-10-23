@@ -225,7 +225,12 @@ export function RelationshipSection({
   }
 
   async function remove(view: RelationshipView) {
-    if (!window.confirm(`Remove "${view.label} ${view.relatedEntityName}"?`)) return
+    if (
+      !window.confirm(
+        `Move "${view.label} ${view.relatedEntityName}" to the Trash? You can restore it from the Trash.`,
+      )
+    )
+      return
 
     setMessage(null)
     try {

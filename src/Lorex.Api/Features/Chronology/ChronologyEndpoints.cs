@@ -282,6 +282,7 @@ public static class ChronologyEndpoints
         var unplacedMoments = await db.TimelineEntries.AsNoTracking()
             .CountAsync(
                 entry => entry.UniverseId == universeId
+                    && entry.DeletedAt == null
                     && entry.DateKind != TimelineDateKind.Unknown
                     && entry.StartEraId == null,
                 cancellationToken);

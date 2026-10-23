@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Lorex.Api.Data;
+using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -86,8 +87,23 @@ public static class EntityArticleEndpoints
             return denied;
         }
 
+        return await SaveCoreAsync(db, universeId, entityId, request, principal.RequireUserId(), cancellationToken);
+    }
+
+    /// <summary>
+    /// The save itself, shared with an approved AI change (ADR 0048): a live entry of this universe, the document's own
+    /// validation, then the one write, all in one transaction - the caller's when it has one. Access is the caller's.
+    /// </summary>
+    internal static async Task<IResult> SaveCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid entityId,
+        EntityArticleRequest request,
+        string actorUserId,
+        CancellationToken cancellationToken)
+    {
         // One transaction for the comparison and the write, so nothing can land between them: SQLite has one writer.
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         if (!await IsLiveAsync(db, universeId, entityId, cancellationToken))
         {
@@ -106,7 +122,7 @@ public static class EntityArticleEndpoints
             request.ExpectedVersion,
             EntityRevisionKind.Edited,
             null,
-            principal.RequireUserId(),
+            actorUserId,
             cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);

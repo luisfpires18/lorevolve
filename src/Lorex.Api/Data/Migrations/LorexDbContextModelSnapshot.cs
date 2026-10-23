@@ -87,9 +87,9 @@ namespace Lorex.Api.Data.Migrations
 
                     b.ToTable("AiChangeOperations", null, t =>
                         {
-                            t.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2)");
+                            t.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
 
-                            t.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6)");
+                            t.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)");
 
                             t.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
                         });
@@ -1426,6 +1426,9 @@ namespace Lorex.Api.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("TEXT");
 
@@ -1458,6 +1461,8 @@ namespace Lorex.Api.Data.Migrations
                     b.HasIndex("SourceEntityId");
 
                     b.HasIndex("TargetEntityId");
+
+                    b.HasIndex("UniverseId", "DeletedAt");
 
                     b.HasIndex("UniverseId", "SourceEntityId");
 
@@ -2110,6 +2115,9 @@ namespace Lorex.Api.Data.Migrations
                     b.Property<int>("DateKind")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("TEXT");
@@ -2170,6 +2178,8 @@ namespace Lorex.Api.Data.Migrations
                     b.HasIndex("StartMonthId");
 
                     b.HasIndex("UniverseId", "CanonStatus");
+
+                    b.HasIndex("UniverseId", "DeletedAt");
 
                     b.HasIndex("UniverseId", "DateKind", "StartYear", "StartMonth", "StartDay");
 

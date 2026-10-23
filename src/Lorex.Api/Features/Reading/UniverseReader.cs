@@ -99,10 +99,11 @@ public static class UniverseReader
 
         var chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken);
 
-        var article = await db.EntityArticles.AsNoTracking()
+        var stored = await db.EntityArticles.AsNoTracking()
             .Where(candidate => candidate.EntityId == loreId)
-            .Select(candidate => candidate.Content)
+            .Select(candidate => new { candidate.Content, candidate.Version })
             .FirstOrDefaultAsync(cancellationToken);
+        var article = stored?.Content;
 
         var scenes = await db.Scenes.AsNoTracking()
             .Where(scene => scene.DeletedAt == null
@@ -122,6 +123,7 @@ public static class UniverseReader
 
         var relationshipCount = await db.Relationships.CountAsync(
             relationship => relationship.UniverseId == universeId
+                && relationship.DeletedAt == null
                 && relationship.SourceEntity!.DeletedAt == null
                 && relationship.TargetEntity!.DeletedAt == null
                 && (relationship.SourceEntityId == loreId || relationship.TargetEntityId == loreId),
@@ -150,7 +152,9 @@ public static class UniverseReader
             [.. moments.Items.Select(item => new MomentMention(item.SourceId, item.Title, ReadingText.Date(chronology, item.Date)))],
             moments.TotalPages > 1,
             relationshipCount,
-            await EntitySearchIndex.ArticlePassageAsync(db, loreId, find, cancellationToken));
+            await EntitySearchIndex.ArticlePassageAsync(db, loreId, find, cancellationToken),
+            detail.Version,
+            stored?.Version ?? 0);
     }
 
     /// <summary>One live story of this universe, or null: its chapters, its scenes in reading order and its plot.</summary>
@@ -404,7 +408,7 @@ public static class UniverseReader
             .ToListAsync(cancellationToken);
 
         var examples = recent.ToLookup(entity => entity.TypeName);
-        var moments = await db.TimelineEntries.CountAsync(entry => entry.UniverseId == universeId, cancellationToken);
+        var moments = await db.TimelineEntries.CountAsync(entry => entry.UniverseId == universeId && entry.DeletedAt == null, cancellationToken);
 
         return new UniverseOverview(
             universe.Name,

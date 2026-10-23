@@ -124,7 +124,16 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     0013 and 0043 amendments.
   - History consistency: kind change refused while older versions hold values (409 `entity_field_kind_locked`); a revision
     restore refused while its archived-field values differ from the entry's (409 `entity_revision_archived_field`).
-- **Fix: CI after MCP V2 merge** (`fix/ai-changes-e2e-ci` off `dev` at `4d4678b`; committed, not pushed). Run
+- **Issue #45 - MCP V2 completion** (`feat/mcp-v2-content-coverage` off `dev` at `b8e5156`; committed, not pushed, not
+  merged). ADR 0048. Relationships and timeline moments now go to the Trash (`DeletedAt`, migration
+  `AddRelationshipAndTimelineTrash`, restore routes, Trash kinds 7/8, backup format 26) and are hidden from every read, Canon
+  rule and rule count while there. The one AI proposal contract now covers articles (plain-text blocks only), plot arcs and
+  beats, world rules (with checks), the owner's own ideas (proposer-only proposals; owner alone stages and approves),
+  relationship dates, a moment's stories and details, and `reorder` for chapters, scenes, arcs and beats - MCP and Assistant
+  alike (migration `WidenAiChangeResources`). Removals only ever reach the Trash or deleted ideas.
+  - A relation kind stays undeletable while a trashed link uses it (erase it from the Trash first).
+  - Tests: see the review archive. **Azure DEV not verified** - owner's manual pass outstanding.
+- **Fix: CI after MCP V2 merge** (`fix/ai-changes-e2e-ci` off `dev` at `4d4678b`; merged into `dev` at `b8e5156`). Run
   39963588195 failed on stale nav assertions (14 links; AI changes made 15). `editing-flow` and `workspace-settings` now
   check order and the upkeep row, not a bare count; the owner's full list includes AI changes; `ai-changes` adds a
   reviewer (offered) beside the viewer (not). Two CI flakes were one race - the address moves before the route commits:

@@ -142,6 +142,21 @@ public static class WorldRuleEndpoints
             return denied;
         }
 
+        return await CreateCoreAsync(db, evaluator, universeId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The create itself, shared with an approved AI change (ADR 0048). <paramref name="evaluator"/> is null when the caller
+    /// reconciles Canon itself - an approval under the promotion gate does, once, for everything it applied. Access is the
+    /// caller's.
+    /// </summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorexDbContext db,
+        CanonIntegrityEvaluator? evaluator,
+        Guid universeId,
+        WorldRuleRequest request,
+        CancellationToken cancellationToken)
+    {
         if (await ValidateAsync(db, universeId, request, cancellationToken) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -186,8 +201,23 @@ public static class WorldRuleEndpoints
             return denied;
         }
 
+        return await UpdateCoreAsync(db, evaluator, universeId, id, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The save itself, shared with an approved AI change (ADR 0048), in the caller's transaction when it has one.
+    /// <paramref name="evaluator"/> as for <see cref="CreateCoreAsync"/>. Access is the caller's.
+    /// </summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorexDbContext db,
+        CanonIntegrityEvaluator? evaluator,
+        Guid universeId,
+        Guid id,
+        WorldRuleRequest request,
+        CancellationToken cancellationToken)
+    {
         // One transaction for the comparison and the write, so nothing can land between them: SQLite has one writer.
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         // The rule before anything about the request is answered, so a rule of another universe is only ever a 404.
         var rule = await db.WorldRules
@@ -255,6 +285,20 @@ public static class WorldRuleEndpoints
             return denied;
         }
 
+        return await TrashCoreAsync(db, evaluator, universeId, id, cancellationToken);
+    }
+
+    /// <summary>
+    /// The rule to the Trash, shared with an approved AI change (ADR 0048). <paramref name="evaluator"/> as for
+    /// <see cref="CreateCoreAsync"/>. Access is the caller's.
+    /// </summary>
+    internal static async Task<IResult> TrashCoreAsync(
+        LorexDbContext db,
+        CanonIntegrityEvaluator? evaluator,
+        Guid universeId,
+        Guid id,
+        CancellationToken cancellationToken)
+    {
         var rule = await db.WorldRules
             .Include(candidate => candidate.Validation)
             .FirstOrDefaultAsync(
@@ -310,11 +354,12 @@ public static class WorldRuleEndpoints
 
     /// <summary>
     /// Saves, and - only for a rule whose check is involved - reconciles Canon in the same transaction, joining the caller's when
-    /// there is one. A rule that is words only reconciles nothing, exactly as before checks existed (ADR 0033).
+    /// there is one. A rule that is words only reconciles nothing, exactly as before checks existed (ADR 0033). With no
+    /// <paramref name="evaluator"/> the caller reconciles: an approval under the promotion gate (ADR 0048).
     /// </summary>
     private static async Task SaveAsync(
         LorexDbContext db,
-        CanonIntegrityEvaluator evaluator,
+        CanonIntegrityEvaluator? evaluator,
         Guid universeId,
         bool reconcile,
         CancellationToken cancellationToken)
@@ -323,7 +368,7 @@ public static class WorldRuleEndpoints
 
         await db.SaveChangesAsync(cancellationToken);
 
-        if (reconcile)
+        if (reconcile && evaluator is not null)
         {
             await evaluator.EvaluateAsync(universeId, cancellationToken);
         }

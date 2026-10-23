@@ -276,8 +276,10 @@ test.describe('custom calendar', () => {
     await page.reload()
     await expect(page.getByTestId('calendar-mode-custom')).toHaveAttribute('aria-pressed', 'true')
 
-    // With the long day gone, it switches, and each month is its number again.
+    // With the long day gone - out of the Trash too, where a moment keeps its date - it switches, and each month is its
+    // number again.
     await api(page, 'DELETE', `/api/universes/${u}/timeline/${long.id}`)
+    await api(page, 'DELETE', `/api/universes/${u}/trash/timeline/${long.id}`)
     await page.getByTestId('calendar-mode-simple').click()
     page.once('dialog', (dialog) => void dialog.accept())
     await page.getByTestId('save-calendar').click()

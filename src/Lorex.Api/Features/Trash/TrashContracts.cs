@@ -12,6 +12,12 @@ public enum TrashItemKind
     PlotArc = 4,
     PlotBeat = 5,
     WorldRule = 6,
+
+    /// <summary>A relationship between two entries (ADR 0048).</summary>
+    Relationship = 7,
+
+    /// <summary>A timeline moment (ADR 0048).</summary>
+    TimelineEvent = 8,
 }
 
 /// <summary>Why a row in the Trash cannot be put back yet, if it cannot. Never inferred from a name.</summary>
@@ -25,6 +31,9 @@ public enum TrashRestoreBlock
 
     /// <summary>The arc a beat belongs to is in the Trash as well: the arc comes back first.</summary>
     ArcInTrash = 2,
+
+    /// <summary>An entry a relationship connects is in the Trash: that entry comes back first (ADR 0048).</summary>
+    EntryInTrash = 3,
 }
 
 /// <summary>
@@ -51,8 +60,10 @@ public enum TrashRestorePublication
 /// it, and when". Nothing a row held - an article, fields, prose, notes, links - is reported here, and every word of it is
 /// readable again the moment it is restored.
 ///
-/// <paramref name="Kind"/> says what it is. The entry members - type and Canon status - are set for an entry only; a world
-/// rule carries none of the context members, because it sits in nothing but its universe.
+/// <paramref name="Kind"/> says what it is. The entry members - type and Canon status - are set for an entry only (and the
+/// status for a moment); a world rule, a relationship and a moment carry none of the context members, because each sits in
+/// nothing but its universe. A relationship's <paramref name="Name"/> reads it whole - "Arin rules Varn" - and a moment's is
+/// its title; <paramref name="EntryId"/> is the entry a relationship starts from, where a client opens it once it is back.
 /// <paramref name="StoryId"/> is set for everything from a story: the story itself, and the chapter, scene, arc or beat's
 /// own story, whose <paramref name="StoryTitle"/> says where it was. <paramref name="PlotArcId"/> and
 /// <paramref name="PlotArcTitle"/> are a beat's arc. <paramref name="BlockedBy"/> says the row cannot come back until what
@@ -73,7 +84,8 @@ public sealed record TrashItem(
     Guid? PlotArcId,
     string? PlotArcTitle,
     TrashRestoreBlock BlockedBy,
-    TrashRestorePublication Publication);
+    TrashRestorePublication Publication,
+    Guid? EntryId = null);
 
 public sealed record TrashPage(
     IReadOnlyList<TrashItem> Items,

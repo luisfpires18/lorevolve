@@ -33,6 +33,8 @@ const ROUTES: Record<Exclude<TrashItem['kind'], typeof TrashKind.Entry>, string>
   [TrashKind.PlotArc]: 'plot-arcs',
   [TrashKind.PlotBeat]: 'plot-beats',
   [TrashKind.WorldRule]: 'world-rules',
+  [TrashKind.Relationship]: 'relationships',
+  [TrashKind.TimelineEvent]: 'timeline',
 }
 
 /**
@@ -40,7 +42,9 @@ const ROUTES: Record<Exclude<TrashItem['kind'], typeof TrashKind.Entry>, string>
  *
  * An entry's restore is gated on the API like any other lore write, so it can fail with the Canon promotion gate's 409 -
  * read it with `blockingFindingsOf` - and a refused restore is atomic. Story content passes no gate; it can be refused
- * with `TRASH_PARENT_IN_TRASH` while its story, or a beat's arc, is in the Trash too. A world rule waits for nothing.
+ * with `TRASH_PARENT_IN_TRASH` while its story, or a beat's arc, is in the Trash too. A world rule waits for nothing. A
+ * relationship waits for its entries, and is refused as a duplicate if the same link was made again meanwhile; a timeline
+ * moment is gated as an entry is.
  */
 export function restoreFromTrash(universeId: string, item: TrashItem) {
   const path =
@@ -107,5 +111,9 @@ export function restoredPath(universeId: string, item: TrashItem) {
       return `${story}/plot#beat-${item.id}`
     case TrashKind.WorldRule:
       return `${universe}/world-rules/${item.id}`
+    case TrashKind.Relationship:
+      return item.entryId ? `${universe}/lore/${item.entryId}/relations` : `${universe}/lore`
+    case TrashKind.TimelineEvent:
+      return `${universe}/timeline`
   }
 }

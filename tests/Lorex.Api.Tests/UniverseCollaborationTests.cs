@@ -188,6 +188,8 @@ public sealed class UniverseCollaborationTests(LorexApiFactory factory) : IClass
             $"{t}/plot-arcs/{w.Trash.Arc}",
             $"{t}/plot-beats/{w.Trash.Beat}",
             $"{t}/world-rules/{w.Trash.Rule}",
+            $"{t}/relationships/{w.Trash.Relationship}",
+            $"{t}/timeline/{w.Trash.Moment}",
         };
 
         var mixed = new BulkTrashDeleteRequest(
@@ -200,6 +202,8 @@ public sealed class UniverseCollaborationTests(LorexApiFactory factory) : IClass
             new TrashSelection(TrashItemKind.PlotArc, w.Trash.Arc),
             new TrashSelection(TrashItemKind.PlotBeat, w.Trash.Beat),
             new TrashSelection(TrashItemKind.WorldRule, w.Trash.Rule),
+            new TrashSelection(TrashItemKind.Relationship, w.Trash.Relationship),
+            new TrashSelection(TrashItemKind.TimelineEvent, w.Trash.Moment),
         ]);
 
         foreach (var who in new[] { w.Editor, w.Reviewer, w.Viewer })
@@ -212,7 +216,7 @@ public sealed class UniverseCollaborationTests(LorexApiFactory factory) : IClass
             await AssertDenied(await who.PostAsJsonAsync($"{t}/bulk-delete", mixed), "bulk erase");
         }
 
-        Assert.Equal(8, (await w.Owner.GetFromJsonAsync<TrashPage>($"{t}?pageSize=50"))!.TotalCount);
+        Assert.Equal(10, (await w.Owner.GetFromJsonAsync<TrashPage>($"{t}?pageSize=50"))!.TotalCount);
 
         // The owner erases one alone and the rest in one mixed bulk.
         await Ok(w.Owner.DeleteAsync(routes[0]));
@@ -320,8 +324,8 @@ public sealed class UniverseCollaborationTests(LorexApiFactory factory) : IClass
 
         var archive = await RawArchive(w.Owner, w.U);
         var document = DocumentText(archive);
-        Assert.Equal(25, UniverseBackup.CurrentVersion);
-        Assert.Equal(25, (await Backup(w.Owner, w.U)).FormatVersion);
+        Assert.Equal(26, UniverseBackup.CurrentVersion);
+        Assert.Equal(26, (await Backup(w.Owner, w.U)).FormatVersion);
         foreach (var id in new[] { w.OwnerId, w.EditorId, w.ReviewerId, w.ViewerId })
         {
             Assert.DoesNotContain(id, document, StringComparison.OrdinalIgnoreCase);

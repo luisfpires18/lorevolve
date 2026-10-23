@@ -74,6 +74,9 @@ public sealed class TimelineEntryConfiguration : IEntityTypeConfiguration<Timeli
         });
 
         builder.HasIndex(entry => new { entry.UniverseId, entry.CanonStatus });
+
+        // The Trash lists a universe's trashed moments, newest first (ADR 0048).
+        builder.HasIndex(entry => new { entry.UniverseId, entry.DeletedAt });
     }
 }
 

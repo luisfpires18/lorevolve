@@ -333,8 +333,9 @@ function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
         </label>
       </div>
       <p className="consent__identity" id="consent-propose-what">
-        It could send new or changed lore, relationships, stories, scenes, prose and timeline
-        moments to Pending AI Changes in LoreX, as you. Nothing changes until you, or the
+        It could send new or changed lore, articles, relationships, stories, scenes, prose, plot,
+        timeline moments, world rules and - if you own this universe - your ideas to Pending AI
+        Changes in LoreX, as you. Removals only go to the Trash. Nothing changes until you, or the
         universe&rsquo;s owner or an Editor, approves it there. You can turn this off in Connected
         apps.
       </p>

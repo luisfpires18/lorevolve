@@ -161,7 +161,10 @@ public sealed class ChronologyEndpointTests(LorexApiFactory factory) : IClassFix
 
         Assert.Equal(HttpStatusCode.Conflict, (await Put(client, universe.Id)).StatusCode);
 
+        // In the Trash, a moment keeps its date to come back with (ADR 0048), so it still holds the era until erased.
         (await client.DeleteAsync($"/api/universes/{universe.Id}/timeline/{moment.Id}")).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.Conflict, (await Put(client, universe.Id)).StatusCode);
+        (await client.DeleteAsync($"/api/universes/{universe.Id}/trash/timeline/{moment.Id}")).EnsureSuccessStatusCode();
 
         Assert.Empty((await Save(client, universe.Id)).Eras);
     }

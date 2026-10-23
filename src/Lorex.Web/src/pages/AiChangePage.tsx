@@ -35,7 +35,12 @@ const ACTION_WORDS = {
   [ChangeAction.Create]: 'New',
   [ChangeAction.Update]: 'Edit',
   [ChangeAction.Remove]: 'To the Trash',
+  [ChangeAction.Reorder]: 'Order',
 } as const
+
+/** Prose changes - a scene's manuscript, an entry's article - are shown as prose, never as before-and-after lines. */
+const isProse = (change: Change) =>
+  change.resource === ChangeResource.Manuscript || change.resource === ChangeResource.Article
 
 /** Changes that can be chosen for approval: waiting, with nothing wrong with them now. */
 function approvable(change: Change) {
@@ -462,7 +467,7 @@ function ChangeItem({
         ) : null}
         <div className="aichangeitem__heading">
           <span className="aichangeitem__action" data-action={change.action}>
-            {change.resource === ChangeResource.Manuscript ? 'Prose' : ACTION_WORDS[change.action]}
+            {isProse(change) ? 'Prose' : ACTION_WORDS[change.action]}
           </span>
           <h2 className="aichangeitem__title" id={titleId} dir="auto">
             {change.title}
@@ -492,8 +497,9 @@ function ChangeItem({
               <div className="aichangeitem__line" key={`${line.label}-${index}`}>
                 <dt>{line.label}</dt>
                 <dd>
-                  {change.action === ChangeAction.Update &&
-                  change.resource !== ChangeResource.Manuscript ? (
+                  {(change.action === ChangeAction.Update ||
+                    change.action === ChangeAction.Reorder) &&
+                  !isProse(change) ? (
                     <>
                       <span className="aichangeitem__before" dir="auto">
                         <span className="visually-hidden">Now: </span>
@@ -718,7 +724,15 @@ function EditChange({
       {text('premise', 'Premise', true)}
       {text('notes', 'Notes', true)}
       {text('description', 'Description', true)}
-      {text('text', change.resource === ChangeResource.Manuscript ? 'Prose' : 'Text', true)}
+      {text(
+        'text',
+        change.resource === ChangeResource.Manuscript
+          ? 'Prose'
+          : change.resource === ChangeResource.Idea
+            ? 'Idea'
+            : 'Text',
+        true,
+      )}
       {draft.canonStatus !== undefined && draft.canonStatus !== null ? (
         <div className="field">
           <label className="field__label" htmlFor={`${id}-canon`}>

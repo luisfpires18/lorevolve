@@ -58,6 +58,7 @@ internal static class CanonRelationshipAgeReader
         var candidates = context.Db.Relationships.AsNoTracking()
             .Where(relationship =>
                 relationship.UniverseId == context.UniverseId
+                && relationship.DeletedAt == null
                 && relationship.RelationshipType!.UniverseId == context.UniverseId
                 && relationship.CanonStatus == CanonStatus.Canon
                 && relationship.SourceEntity!.DeletedAt == null

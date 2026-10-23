@@ -270,7 +270,7 @@ public sealed class FamilyTreeTypeSemanticsTests(LorexApiFactory factory) : ICla
         var raw = DocumentText(archive);
         var backup = BackupOf(archive);
 
-        Assert.Equal(25, backup.FormatVersion);
+        Assert.Equal(26, backup.FormatVersion);
         Assert.Equal(
             ["Character", "God", "Species"],
             backup.Payload.EntityTypes.Where(type => type.FamilyTreeEligible).Select(type => type.Name).Order(StringComparer.Ordinal));

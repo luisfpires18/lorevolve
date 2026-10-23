@@ -155,7 +155,7 @@ internal static class TimelineFeed
         Guid? entityId,
         string? pattern)
     {
-        var query = db.TimelineEntries.Where(entry => entry.UniverseId == universeId);
+        var query = db.TimelineEntries.Where(entry => entry.UniverseId == universeId && entry.DeletedAt == null);
 
         if (storyId is { } story)
         {
@@ -347,7 +347,8 @@ internal static class TimelineFeed
         var events = eventIds.Count == 0
             ? []
             : (await db.TimelineEntries.AsNoTracking()
-                .Where(entry => eventIds.Contains(entry.Id))
+                // Live again here: a moment put in the Trash after the page was chosen is left out, not shown (ADR 0048).
+                .Where(entry => eventIds.Contains(entry.Id) && entry.DeletedAt == null)
                 .Select(TimelineEndpoints.Projection())
                 .ToListAsync(cancellationToken))
             .ToDictionary(row => row.Id, TimelineEndpoints.Map);

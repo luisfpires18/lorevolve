@@ -222,8 +222,14 @@ public sealed record UniverseBackup(
     /// restore every archived field active, back in every entry form and, if it was required, refusing every save of an entry
     /// without it. A file at version 24 or earlier has no <c>archivedAt</c>; every field restores active, even if it carries a
     /// value.
+    ///
+    /// 26 - A relationship and a timeline moment may be in the Trash (ADR 0048, Issue #45).
+    /// <see cref="BackupRelationship.DeletedAt"/> and <see cref="BackupTimelineEntry.DeletedAt"/> are when each was moved there,
+    /// null while live; each travels whole and restores into the Trash, still restorable. Not ignorable: a version 25 reader
+    /// would restore every trashed link and moment live, back in Canon and on the timeline. A file at version 25 or earlier
+    /// has no <c>deletedAt</c> on either; every link and moment restores live, even if it carries a value.
     /// </summary>
-    public const int CurrentVersion = 25;
+    public const int CurrentVersion = 26;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -612,7 +618,10 @@ public sealed record BackupRelationshipType(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
-/// <summary>One link, stored once and read from either end (ADR 0008).</summary>
+/// <summary>
+/// One link, stored once and read from either end (ADR 0008). <paramref name="DeletedAt"/> is when it went to the Trash, or
+/// null while it is live (since version 26).
+/// </summary>
 public sealed record BackupRelationship(
     Guid Id,
     Guid RelationshipTypeId,
@@ -623,7 +632,8 @@ public sealed record BackupRelationship(
     DateTime? EndDate,
     string? Notes,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    DateTime? DeletedAt = null);
 
 /// <summary>
 /// One moment. The date components stay integers with their eras beside them, so a year survives
@@ -636,7 +646,8 @@ public sealed record BackupRelationship(
 /// <paramref name="Validation"/> is the moment's structured details for world rule checks, or null for a moment with none (since
 /// version 13). <paramref name="StoryIds"/> are the stories of this file it is linked to (since version 21), null in an older
 /// file. <paramref name="StartMonthId"/> and <paramref name="EndMonthId"/> are months of the file's custom calendar, in place
-/// of the numeric months (since version 22).
+/// of the numeric months (since version 22). <paramref name="DeletedAt"/> is when the moment went to the Trash, or null while
+/// it is live (since version 26).
 /// </summary>
 public sealed record BackupTimelineEntry(
     Guid Id,
@@ -659,7 +670,8 @@ public sealed record BackupTimelineEntry(
     BackupTimelineValidation? Validation = null,
     IReadOnlyList<Guid>? StoryIds = null,
     Guid? StartMonthId = null,
-    Guid? EndMonthId = null);
+    Guid? EndMonthId = null,
+    DateTime? DeletedAt = null);
 
 /// <summary>
 /// A moment's structured details for world rule checks (since version 13): an event kind and a method from this file's
