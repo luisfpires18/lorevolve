@@ -3992,7 +3992,24 @@ a.button--danger:visited {
   color: var(--muted);
 }
 
+/* Clear filters sits with search and status, on their row; the filters in force and the notes about them come after
+   (Issue #49). */
+.lore__clearfilters {
+  min-height: var(--control-sm);
+  padding-block: 0;
+  font-size: var(--text-ui);
+}
+
+.lore__fieldhint {
+  flex: 1 1 100%;
+  order: 2;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
 .lore__fieldfilters {
+  order: 1;
   display: flex;
   flex: 1 1 100%;
   flex-direction: column;

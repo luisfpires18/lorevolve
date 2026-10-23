@@ -378,6 +378,94 @@ test.describe('Lore field filters', () => {
     await expect(page.getByTestId('lore-add-field-filter')).toHaveCount(0)
   })
 
+  test('scope and narrowing stay apart: a branch and a group say what field filters can do, and Clear filters is one move Back undoes', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const w = await world(page)
+
+    // Hero holds Squire: once a field filter is on, it says it matches Hero's own entries only (Issue #49).
+    await openLore(page, w)
+    await expect(page.getByTestId('lore-branch-field-hint')).toHaveCount(0)
+    await expect(page.getByTestId('lore-reset-filters')).toHaveCount(0)
+    await addFilter(page, 'Age', 'is more than', '30')
+    await page.getByRole('group', { name: 'Status' }).getByRole('button', { name: 'Idea' }).click()
+    await expectNames(page, ['Aria', 'Cato'])
+    await expect(page.getByTestId('lore-branch-field-hint')).toHaveText(
+      'Field filters match Hero entries only. Types filed inside it have their own fields.',
+    )
+
+    // Clear filters: status and fields gone at once, the type kept, the focus on the search - and Back brings them back.
+    await page.getByTestId('lore-reset-filters').click()
+    await expect.poll(() => addressFilters(page)).toEqual([])
+    const cleared = new URL(page.url()).searchParams
+    expect([cleared.get('type'), cleared.get('status')]).toEqual([w.hero, null])
+    await expect(page.getByLabel('Filter entries')).toBeFocused()
+    await expect(page.getByTestId('lore-reset-filters')).toHaveCount(0)
+    await page.goBack()
+    await expect(page.getByTestId('lore-field-filter')).toHaveText(['Age is more than 30'])
+    expect(new URL(page.url()).searchParams.get('status')).toBe('0')
+    await expectNames(page, ['Aria', 'Cato'])
+
+    // Champions: Knight, with a field, and Herald, with none.
+    const typeBody = { description: null, icon: null, accentColor: null, displayOrder: null }
+    const knight = (
+      await post(page, `/api/universes/${w.u}/entity-types`, {
+        ...typeBody,
+        name: 'Knight',
+        groups: [{ id: null, name: 'Champions' }],
+      })
+    ).id
+    const groups = (await (
+      await page.request.get(`/api/universes/${w.u}/entity-type-groups`)
+    ).json()) as { id: string; name: string }[]
+    const champions = groups.find((group) => group.name === 'Champions')!.id
+    await post(page, `/api/universes/${w.u}/entity-types`, {
+      ...typeBody,
+      name: 'Herald',
+      groups: [{ id: champions }],
+    })
+    await post(page, `/api/universes/${w.u}/entity-types/${knight}/fields`, {
+      name: 'Oath',
+      kind: 0,
+      isRequired: false,
+      displayOrder: null,
+      defaultValue: null,
+      options: null,
+    })
+    await post(page, `/api/universes/${w.u}/entities`, {
+      entityTypeId: knight,
+      name: 'Kara',
+      summary: null,
+      canonStatus: 0,
+      aliases: [],
+      tags: [],
+      fields: [],
+    })
+
+    // A field filter left in a group's address is taken out in place, never silently ignored; the group offers no Add
+    // field filter, and says which of its types can be filtered by fields instead.
+    const field = encodeURIComponent(`${w.age.id}:gt:30`)
+    await page.goto(`/app/universes/${w.u}/lore?group=${champions}&status=0&q=Kara&field=${field}`)
+    await expectNames(page, ['Kara'])
+    await expect.poll(() => addressFilters(page)).toEqual([])
+    await expect(page.getByTestId('lore-add-field-filter')).toHaveCount(0)
+    const hint = page.getByTestId('lore-group-field-hint')
+    await expect(hint).toHaveText('To filter by fields, choose one type: Knight.')
+
+    // The member type is the new scope, search and status kept.
+    await hint.getByRole('link', { name: 'Knight' }).click()
+    await expect(page.getByTestId('lore-add-field-filter')).toBeVisible()
+    await expectNames(page, ['Kara'])
+    const scoped = new URL(page.url()).searchParams
+    expect(['type', 'group', 'status', 'q'].map((key) => scoped.get(key))).toEqual([
+      knight,
+      null,
+      '0',
+      'Kara',
+    ])
+  })
+
   test('an address with filters the type cannot answer is cleaned in place, keeping the ones it can', async ({
     page,
   }) => {

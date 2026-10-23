@@ -16,6 +16,7 @@ import {
   ListPlus,
   Plus,
   Trash2,
+  X,
 } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
 import { EmptyState } from '../components/EmptyState'
@@ -44,6 +45,7 @@ import {
 import {
   FIELD_FILTER_PARAM,
   encodeFieldFilter,
+  filterableFields,
   isValidFor,
   readFieldFilters,
   withFieldFilters,
@@ -89,6 +91,12 @@ function readPage(value: string | null) {
  * A semantic group (Issue #36) is the other way in: `?group=<id>` lists the entries of every type in the group, as it is
  * now. A type and a group are never both chosen - choosing one drops the other - and field filters stay a type's, since a
  * field belongs to one type. An unknown group is taken out of the address like an unknown type.
+ *
+ * Two kinds of control, kept apart (Issue #49). The type and group navigation is the scope - which entries are browsed - and
+ * keeps search and status when it changes. Search, status and field filters narrow that scope, in one row with one Clear
+ * filters. Under a group the row says field filters need one type and links its member types that have fields; a `field`
+ * left in a group's address is taken out, never silently ignored. Under a type that holds others, a field filter says it
+ * matches that type's own entries only.
  */
 export default function LorePage() {
   const { universe } = useOutletContext<WorkspaceContext>()
@@ -202,14 +210,19 @@ export default function LorePage() {
   const fieldFilters: FieldFilter[] = selectedType
     ? addressFilters.filter((filter) => isValidFor(filter, selectedType))
     : []
-  const hasStaleFilters = selectedType !== null && fieldFilters.length !== addressFilters.length
+  // A group has no fields of its own, so every field filter in its address is stale too.
+  const hasStaleFilters =
+    (selectedType !== null || selectedGroup !== null) &&
+    fieldFilters.length !== addressFilters.length
   useEffect(() => {
-    if (!hasStaleFilters || !selectedType) return
+    if (!hasStaleFilters) return
     setParams(
       (current) =>
         withFieldFilters(
           current,
-          readFieldFilters(current).filter((filter) => isValidFor(filter, selectedType)),
+          selectedType
+            ? readFieldFilters(current).filter((filter) => isValidFor(filter, selectedType))
+            : [],
         ),
       { replace: true },
     )
@@ -288,6 +301,13 @@ export default function LorePage() {
   /** Field filters are a move, like a page: Back undoes one. */
   function setFieldFilters(next: FieldFilter[]) {
     setParams((current) => withFieldFilters(current, next))
+  }
+
+  // Everything that narrows, gone at once and the scope kept. A move, so Back brings the filters back.
+  const searchRef = useRef<HTMLInputElement>(null)
+  const clearedSearch = (): To => {
+    const next = withParams({ q: null, status: null, [FIELD_FILTER_PARAM]: null }).toString()
+    return { search: next ? `?${next}` : '' }
   }
 
   // Another type is another set of fields: its filters do not travel with the author.
@@ -420,6 +440,12 @@ export default function LorePage() {
   const isFiltered = search.trim().length > 0 || canonStatus !== null || fieldFilters.length > 0
   const activeFilters =
     (search.trim() ? 1 : 0) + (canonStatus !== null ? 1 : 0) + fieldFilters.length
+  // Under a group, the member types a field filter could be added from - each a link to that type, search and status kept.
+  const fieldTypes = selectedGroup
+    ? (types ?? []).filter(
+        (type) => selectedGroup.typeIds.includes(type.id) && filterableFields(type).length > 0,
+      )
+    : []
   const createTo = selectedType ? `new?type=${selectedType.id}` : 'new'
   const massCreateTo = selectedType ? `mass-create?type=${selectedType.id}` : 'mass-create'
 
@@ -518,6 +544,8 @@ export default function LorePage() {
         <div
           className="lore__filters"
           id={filtersId}
+          role="group"
+          aria-label="Filters"
           data-open={filtersOpen ? 'true' : 'false'}
           data-testid="lore-filters"
         >
@@ -528,6 +556,7 @@ export default function LorePage() {
             <ListFilter className="lore__searchicon" aria-hidden="true" focusable="false" />
             <input
               id="lore-search"
+              ref={searchRef}
               className="field__input lore__searchinput"
               type="search"
               placeholder={chosenName ? `Search ${chosenName}` : 'Search'}
@@ -566,6 +595,41 @@ export default function LorePage() {
               filters={fieldFilters}
               onChange={setFieldFilters}
             />
+          ) : null}
+
+          {/* Offered where the empty state does not offer it already. The focus goes to the search, which stays. */}
+          {isFiltered && !(result && result.items.length === 0) ? (
+            <Link
+              className="button button--text lore__clearfilters"
+              to={clearedSearch()}
+              onClick={() => searchRef.current?.focus()}
+              data-testid="lore-reset-filters"
+            >
+              <ActionIcon icon={X} />
+              Clear filters
+            </Link>
+          ) : null}
+
+          {selectedGroup && fieldTypes.length > 0 ? (
+            <p className="lore__fieldhint" data-testid="lore-group-field-hint">
+              To filter by fields, choose one type:{' '}
+              {fieldTypes.map((type, index) => (
+                <Fragment key={type.id}>
+                  {index > 0 ? ', ' : null}
+                  <Link to={hrefFor(type.id)} data-testid="lore-group-field-type">
+                    <bdi>{type.name}</bdi>
+                  </Link>
+                </Fragment>
+              ))}
+              .
+            </p>
+          ) : null}
+
+          {selectedNode && selectedNode.children.length > 0 && fieldFilters.length > 0 ? (
+            <p className="lore__fieldhint" data-testid="lore-branch-field-hint">
+              Field filters match <bdi>{selectedNode.type.name}</bdi> entries only. Types filed
+              inside it have their own fields.
+            </p>
           ) : null}
         </div>
 
@@ -721,17 +785,7 @@ export default function LorePage() {
           action={
             <Link
               className="button button--secondary"
-              to={{
-                search: (() => {
-                  const next = withParams({
-                    q: null,
-                    status: null,
-                    [FIELD_FILTER_PARAM]: null,
-                  }).toString()
-                  return next ? `?${next}` : ''
-                })(),
-              }}
-              replace
+              to={clearedSearch()}
               data-testid="lore-clear-filters"
             >
               Clear filters
