@@ -581,6 +581,7 @@ Repository index. Paths and one-line responsibilities only.
 | `Lorex.Common.ps1` | Shared launcher helpers: ports, process tracking, readiness. |
 | `Start-Lorex.ps1` | Starts API + web, waits, opens the browser. |
 | `Stop-Lorex.ps1` | Stops launcher-owned processes. |
+| `dotnet-test-shard.py` | CI only: runs one shard of the backend suite (`N/M`), test classes dealt round-robin by name, and fails unless the shard's own results show exactly its classes ran. |
 | `render-icons.py` | Renders every icon and favicon from `assets/brand/lorex-icon.png`: trim, pad, area-average, write. Standard library only. Its header holds the one ffmpeg command that makes `launch-logo.webp`. |
 
 ## `docs`

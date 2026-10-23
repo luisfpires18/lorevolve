@@ -93,17 +93,17 @@ the federated credential and gives the owner a place to add a required reviewer 
 
 | File | Runs on | Does |
 | --- | --- | --- |
-| [`ci.yml`](../../.github/workflows/ci.yml) | Pull requests into `dev`; called by the deploy workflow | Backend Release build, tests, pending-model check; web typecheck, lint, format, build; Playwright in four parallel shards inside Playwright's container image, each with its own fresh database and report (`tests/Lorex.E2E/README.md`) |
-| [`deploy-dev.yml`](../../.github/workflows/deploy-dev.yml) | Push to `dev`, or manual | Calls `ci.yml`, then builds the client, publishes the API, deploys, and waits for `/health` |
+| [`ci.yml`](../../.github/workflows/ci.yml) | Pull requests into `dev`; called by the deploy workflow | Backend Release build, tests in three shards by test class (`scripts/dotnet-test-shard.py`), pending-model check; web typecheck, lint, format, build; Playwright in six parallel shards inside Playwright's container image, each with its own fresh database and report (`tests/Lorex.E2E/README.md`) |
+| [`deploy-dev.yml`](../../.github/workflows/deploy-dev.yml) | Push to `dev`, or manual | Calls `ci.yml` and, alongside it, builds the client and publishes the API into an artifact (Package); once both pass, Deploy uploads that artifact and waits for `/health` |
 
 `dev` is the only branch that deploys, and the job is additionally guarded by
 `if: github.ref == 'refs/heads/dev'`.
 
-Every job has a `timeout-minutes` well above its usual run (Backend 30, Web 20, each E2E shard 45,
-Deploy 30), so a hung runner fails instead of holding the queue for GitHub's six hours. Each step
+Every job has a `timeout-minutes` well above its usual run (each Backend shard 30, Web 20, each E2E shard 45,
+Package 20, Deploy 30), so a hung runner fails instead of holding the queue for GitHub's six hours. Each step
 is named for one thing - install, build, test, publish, deploy, health check - so the run's own
 step timings show where the time went. Caching stays with `setup-node`'s npm cache: NuGet restore
-takes seconds, Chromium comes with the Playwright image, and the client is built again on purpose in Deploy,
+takes seconds, Chromium comes with the Playwright image, and the client is built again on purpose in Package,
 because its version and service-worker cache id come from that run (`LOREX_DEV_RUN`,
 `LOREX_BUILD_ID`).
 
