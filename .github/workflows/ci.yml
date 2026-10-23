@@ -94,20 +94,34 @@ jobs:
       - name: Build
         run: npm run build
 
-  # The suite is split across two runners with Playwright's own sharding: each shard is a
-  # complementary half of the whole suite (fullyParallel, so Playwright partitions by test, and
+  # The suite is split across four runners with Playwright's own sharding: each shard is a
+  # complementary quarter of the whole suite (fullyParallel, so Playwright partitions by test, and
   # no spec list is kept here). Each runner has its own API, Vite server and fresh database, so
   # sharding adds no concurrency against any one SQLite file: two browsers per database, as before.
-  # fail-fast is off so a failing shard does not cancel the other and hide its evidence; any
+  # fail-fast is off so a failing shard does not cancel the others and hide their evidence; any
   # failing shard still fails this job, and with it the deployment that needs it.
+  #
+  # The job runs in Playwright's own image, which carries Chromium and every system package it
+  # needs, so no runner downloads them: `playwright install --with-deps` was ~20 s on a good day
+  # and 8-11 minutes when the Ubuntu mirror crawled. The tag must match @playwright/test in
+  # tests/Lorex.E2E/package-lock.json - bump both together. A mismatch fails at the first browser
+  # launch, with Playwright naming the image it wants.
   e2e:
     name: End to end (shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
+      # The image has no DejaVu, which the runner itself draws sans-serif and serif text in; layout
+      # assertions were written against that geometry (tests/Lorex.E2E/README.md). Lending the
+      # runner's own fonts keeps it without an apt download.
+      volumes:
+        - /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/dejavu:ro
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v7
 
@@ -115,6 +129,7 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      # The image ships its own Node; this pins the one the rest of the pipeline uses.
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -123,16 +138,18 @@ jobs:
             src/Lorex.Web/package-lock.json
             tests/Lorex.E2E/package-lock.json
 
+      # Fails here, rather than in a layout spec, if the fonts above did not arrive.
+      - name: Check the runner's fonts are in use
+        run: |
+          fc-match sans-serif | grep DejaVu
+          fc-match serif | grep DejaVu
+
       - name: Install web dependencies
         run: npm ci
         working-directory: src/Lorex.Web
 
       - name: Install test dependencies
         run: npm ci
-        working-directory: tests/Lorex.E2E
-
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
         working-directory: tests/Lorex.E2E
 
       # Built ahead of time so the API is already compiled when Playwright's webServer runs
@@ -147,14 +164,17 @@ jobs:
       # to the runner happening to be fresh: a fresh database is the condition parallel browsers
       # were proved on, and a long-lived one is where SQLite contention showed (README.md, "How many
       # browsers at once"). Retries, traces and screenshots are unchanged (playwright.config.ts).
+      # $RUNNER_TEMP, not the runner.temp context: in a container job only the variable holds the
+      # path as the container sees it.
       - name: Run Playwright (shard ${{ matrix.shard }}/${{ strategy.job-total }})
-        run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+        run: >
+          LOREX_E2E_DB="$RUNNER_TEMP/lorex-e2e-shard-${{ matrix.shard }}.db"
+          npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
         working-directory: tests/Lorex.E2E
         env:
           LOREX_E2E_WORKERS: '2'
-          LOREX_E2E_DB: ${{ runner.temp }}/lorex-e2e-shard-${{ matrix.shard }}.db
 
-      # One report per shard, named for it, so neither overwrites the other.
+      # One report per shard, named for it, so none overwrites another.
       - name: Upload report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
