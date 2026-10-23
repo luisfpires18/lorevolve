@@ -420,6 +420,12 @@ public static class PublicationEndpoints
         var artwork = await db.UniverseArtworks.AsNoTracking()
             .FirstOrDefaultAsync(candidate => candidate.UniverseId == universeId, cancellationToken);
 
+        var selectedLore = await db.Entities.CountAsync(
+            entity => entity.UniverseId == universeId
+                && entity.Visibility == ContentVisibility.Public
+                && entity.DeletedAt == null,
+            cancellationToken);
+
         return new PublicationState(
             universe.Name,
             universe.Visibility,
@@ -433,6 +439,7 @@ public static class PublicationEndpoints
             PublicationRules.Missing(
                 universe.PublicSummary, universe.Category, universe.Genres, artwork is not null, universe.Author),
             universe.OriginalCreator,
-            universe.OriginalWork);
+            universe.OriginalWork,
+            selectedLore);
     }
 }

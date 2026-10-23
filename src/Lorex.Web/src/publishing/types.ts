@@ -133,6 +133,11 @@ export interface PublicationState {
    */
   originalCreator: string | null
   originalWork: string | null
+  /**
+   * Live lore entries already selected for publication (Issue #47). Readers see them as soon as the universe is public,
+   * and a private universe's entry pages do not show that choice, so the publish confirmation says how many there are.
+   */
+  selectedLore: number
 }
 
 export interface PublicationDetails {

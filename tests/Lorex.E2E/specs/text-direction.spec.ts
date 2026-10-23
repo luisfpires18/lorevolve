@@ -628,15 +628,15 @@ test.describe('text direction', () => {
         page.getByTestId(id),
       )
       expect(isIncreasing(await lefts(...views))).toBe(true)
-      const [publication, edit, family] = await lefts(
-        page.getByTestId('entry-publication'),
+      // The universe is private, so the entry offers no publication pill (Issue #47) and Edit leads the tools.
+      await expect(page.getByTestId('entry-publication')).toHaveCount(0)
+      const [edit, family] = await lefts(
         page.getByTestId('edit-entity'),
         page.getByTestId('entity-family-tree'),
       )
-      expect(isIncreasing([publication, edit, family])).toBe(true)
-      // The first tool - the entry's publication, since 010 - starts where the header starts, as on any entry:
-      // nothing was pushed to the other side.
-      expect(Math.abs(publication - heading.x)).toBeLessThan(1)
+      expect(isIncreasing([edit, family])).toBe(true)
+      // The first tool starts where the header starts, as on any entry: nothing was pushed to the other side.
+      expect(Math.abs(edit - heading.x)).toBeLessThan(1)
       await expectLorexStaysLeftToRight(page, [
         page.locator('.rail'),
         page.getByTestId('entry-views'),

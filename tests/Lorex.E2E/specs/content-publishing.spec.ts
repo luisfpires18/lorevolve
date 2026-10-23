@@ -154,23 +154,24 @@ test.describe('publishing lore and stories', () => {
     )
     expect(await listed(anonymous, universe.slug!, 'lore')).toEqual([name])
 
-    // The universe made private: gone for anyone, still chosen - and the page says which half is private.
+    // The universe made private: gone for anyone, still chosen - and a private universe's entry offers no pill (Issue
+    // #47), while Edit stays where it was.
     await api(page, 'POST', `/api/universes/${universe.id}/unpublish`)
     expect(await listed(anonymous, universe.slug!, 'lore')).toBeNull()
     await page.reload()
-    await expect(page.getByTestId('entry-publication-state')).toHaveText('Selected')
-    await pill.click()
-    await expect(panel).toContainText(
-      'This entry is selected for publication, but it will remain hidden until the universe is public.',
-    )
-    await page.keyboard.press('Escape')
-    await expect(panel).toHaveCount(0)
-    await expect(pill).toBeFocused()
+    await expect(page.getByTestId('edit-entity')).toBeVisible()
+    await expect(pill).toHaveCount(0)
 
-    // Published again: exactly the chosen entry comes back.
-    await api(page, 'POST', `/api/universes/${universe.id}/publish`)
+    // Published again from the Publish page: its confirmation counts the entry still chosen, and exactly it comes back.
+    await page.goto(`/app/universes/${universe.id}/publish`)
+    await page.getByTestId('publish').click()
+    await expect(page.getByTestId('publish-confirm-selected-lore')).toContainText(
+      '1 lore entry you selected for publication earlier.',
+    )
+    await page.getByTestId('confirm-publish').click()
+    await expect(page.getByTestId('publication-status')).toContainText('Public')
     expect(await listed(anonymous, universe.slug!, 'lore')).toEqual([name])
-    await page.reload()
+    await page.goto(`/app/universes/${universe.id}/lore/${id}`)
     await expect(page.getByTestId('entry-publication-state')).toHaveText('Public')
 
     // Made private from its page: gone at the next read.
@@ -305,6 +306,39 @@ test.describe('publishing lore and stories', () => {
 
     expect(await listed(anonymous, universe.slug!, 'lore')).toEqual([])
     expect(await listed(anonymous, universe.slug!, 'stories')).toEqual([])
+  })
+
+  test('a private universe offers no entry pill on any width, keeps the tools on one line, and a public one does', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const universe = await world(page, false)
+    const entryId = await entry(page, universe.id, unique('Quiet warden '))
+
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto(`/app/universes/${universe.id}/lore/${entryId}`)
+      const edit = page.getByTestId('edit-entity')
+      await expect(edit).toBeVisible()
+      await expect(page.getByTestId('entry-publication')).toHaveCount(0)
+      // Edit leads the tools: no space is kept where the pill would be.
+      const tools = (await page.locator('.entry__tools').boundingBox())!
+      expect(Math.abs((await edit.boundingBox())!.x - tools.x)).toBeLessThan(1)
+      await noSidewaysScroll(page)
+    }
+
+    await api(page, 'POST', `/api/universes/${universe.id}/publish`)
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto(`/app/universes/${universe.id}/lore/${entryId}`)
+      await expect(page.getByTestId('entry-publication-state')).toHaveText('Private')
+      const [pill, edit] = [page.getByTestId('entry-publication'), page.getByTestId('edit-entity')]
+      // Pill and Edit share one line.
+      expect(Math.abs((await pill.boundingBox())!.y - (await edit.boundingBox())!.y)).toBeLessThan(
+        8,
+      )
+      await noSidewaysScroll(page)
+    }
   })
 
   test('on a phone: the state reads, the panel fits, and publishing works by keyboard', async ({

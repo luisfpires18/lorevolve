@@ -85,6 +85,11 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   (High, unreachable) and gwg2/wmxv (Moderate, reachable: ICC CLUT allocation, BigTIFF loop). Uploads now decode with a
   JPEG/PNG/WebP-only configuration, so a TIFF or BMP never reaches its decoder. API 1781 passed / 6 skipped; E2E image,
   profile, restore, artwork specs 27 passed. H-1 is on its own branch, `fix/invitation-link-only`.
+- **Issue #47 - entry pill only in public universes** (`feat/lore-visibility-public-universes` off `dev` at `a7f5e99`;
+  committed, not merged, not pushed). No migration. ADR 0036 amendment. A private universe's entry header shows no
+  publication pill (any width); stored selections untouched; `PublicationState.selectedLore` feeds a line in the publish
+  confirmation. Server rules unchanged (`PublicLore`). Tests: `ContentPublicationTests` +1; Playwright content-publishing
+  +1, publishing, text-direction updated; focused 20/20, neighbours 43/43.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);

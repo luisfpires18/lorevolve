@@ -26,6 +26,8 @@ public sealed record PublicationDetailsRequest(
 /// One universe's public face as its owner sees it in Settings: what is saved, whether it is public,
 /// and what publishing it still needs (<see cref="Missing"/>, keyed as a validation problem is, in the
 /// order a screen lists them). <see cref="AuthorDisplayName"/> is the owner's own public name.
+/// <see cref="SelectedLore"/> counts the live entries already selected for publication: readers see them the moment the
+/// universe is public, and a private universe's entry pages no longer show that choice (Issue #47), so publishing says it.
 /// </summary>
 public sealed record PublicationState(
     string Name,
@@ -39,7 +41,8 @@ public sealed record PublicationState(
     UniverseArtworkRef? Artwork,
     IReadOnlyDictionary<string, string[]> Missing,
     string? OriginalCreator = null,
-    string? OriginalWork = null);
+    string? OriginalWork = null,
+    int SelectedLore = 0);
 
 /// <summary>
 /// The artwork as its owner's client needs it: ids to compose the owner-only addresses of the

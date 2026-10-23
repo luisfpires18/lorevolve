@@ -366,6 +366,37 @@ public sealed class ContentPublicationTests(LorexApiFactory factory) : IClassFix
         Assert.Equal(ContentVisibility.Public, (await EntryState(owner, u, entry)).Visibility);
     }
 
+    [Fact]
+    public async Task A_private_universe_hides_its_selected_entries_from_every_public_read_and_its_publication_counts_them()
+    {
+        var (owner, _) = await Account(_factory, "cp-selected-count");
+        var universe = await Ready(owner, "Cp selected count");
+        var u = universe.Id;
+        var chosen = await Entry(owner, u, "Chosen warden", null);
+        await Entry(owner, u, "Unchosen warden", null);
+        var trashed = await Entry(owner, u, "Trashed warden", null);
+        await PublishEntry(owner, u, chosen);
+        await PublishEntry(owner, u, trashed);
+        (await owner.DeleteAsync($"/api/universes/{u}/entities/{trashed}")).EnsureSuccessStatusCode();
+
+        // What publishing the universe would show (Issue #47): the live selected entry only, read before and after.
+        Assert.Equal(1, (await State(owner, u)).SelectedLore);
+        var slug = (await Published(owner, u)).PublicSlug!;
+        var anonymous = Anonymous(_factory);
+        Assert.Equal("chosen-warden", Assert.Single((await Lore(anonymous, slug)).Items).Slug);
+
+        // Private again: every public way to the selected entry answers as if nothing were there, and nothing is rewritten.
+        var unpublished = await Unpublish(owner, u);
+        unpublished.EnsureSuccessStatusCode();
+        Assert.Equal(1, (await unpublished.Content.ReadFromJsonAsync<PublicationState>())!.SelectedLore);
+        Assert.Null(await PublicBySlug(anonymous, slug));
+        Assert.DoesNotContain(await PublicListing(anonymous), world => world.Slug == slug);
+        Assert.Equal(HttpStatusCode.NotFound, (await anonymous.GetAsync(LoreRoute(slug))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await anonymous.GetAsync($"{LoreRoute(slug)}/chosen-warden")).StatusCode);
+        var kept = await EntryState(owner, u, chosen);
+        Assert.Equal((ContentVisibility.Public, false), (kept.Visibility, kept.UniverseIsPublic));
+    }
+
     // ---------- Who may ----------
 
     [Fact]

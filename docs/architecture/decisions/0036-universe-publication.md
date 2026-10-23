@@ -82,6 +82,18 @@ Public portal section in Settings; the public page does not yet know its viewer 
   authenticated owner-scoped route, never anonymously.
 - An archived universe stays public; archive is the owner's list, not visibility.
 
+## Amendment (2026-10-23, Issue #47) - an entry's pill only in a public universe
+
+- **A private universe's entry pages show no publication pill.** `ContentPublication` renders nothing for an entry
+  whose `universeIsPublic` is false; Edit leads the tools. Stories keep their pill (out of scope). The API is unchanged:
+  `POST .../entities/{id}/publish` still selects an entry in a private universe, and the Trash restore question still
+  offers "Restore as private" there.
+- **No stored selection is rewritten.** Entries selected earlier stay selected, and `PublicationRules.PublicLore` still
+  hides them until the universe is public.
+- **Publishing says what comes with it.** `PublicationState.SelectedLore` counts live entries with `Visibility =
+  Public` (one `COUNT`); the publish confirmation names that number when it is above zero, since the pill that would have
+  shown them is gone. Making an entry private again stays on its page once the world is public.
+
 ## Amendment (2026-10-05, fix/universe-artwork-loading) - the artwork's card arrives with the universe
 
 Measured first: a card and the workspace used to paint the fallback, then ask `GET /api/universes/{id}/artwork` for

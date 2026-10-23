@@ -395,6 +395,15 @@ export default function UniversePublish() {
                   </div>
                 )}
               </dl>
+              {confirming.state.selectedLore > 0 ? (
+                <p className="settings__note" data-testid="publish-confirm-selected-lore">
+                  <strong>Also public:</strong>{' '}
+                  {confirming.state.selectedLore === 1
+                    ? '1 lore entry you selected for publication earlier.'
+                    : `${confirming.state.selectedLore} lore entries you selected for publication earlier.`}{' '}
+                  Once the world is public, each entry's page lets you make it private again.
+                </p>
+              ) : null}
               <p className="settings__note">
                 <strong>Not published:</strong> {STAYS_PRIVATE}
               </p>
