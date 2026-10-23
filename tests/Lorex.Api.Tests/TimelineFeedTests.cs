@@ -516,4 +516,52 @@ public sealed class TimelineFeedTests(LorexApiFactory factory) : IClassFixture<L
         Assert.Equal(7, counts[1].Queries);
         Assert.Equal(7, counts[2].Queries);
     }
+
+    [Fact]
+    public async Task A_moment_trashed_between_choosing_the_page_and_reading_it_is_left_out()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "feedtrashrace");
+        var u = universe.Id;
+        await CreateMoment(client, u, Moment("Kept", 1));
+        var late = await CreateMoment(client, u, Moment("Trashed late", 2));
+
+        // The feed reads twice: the page of ids, then each moment whole. Right after the page is chosen, before the moments
+        // are read, the moment goes to the Trash - on the same connection, as another request's write would land between.
+        var paged = false;
+        var trashed = false;
+        _factory.Commands.FailWhen = command =>
+        {
+            if (paged && !trashed)
+            {
+                trashed = true;
+                using var update = command.Connection!.CreateCommand();
+                update.Transaction = command.Transaction;
+                update.CommandText = "UPDATE \"TimelineEntries\" SET \"DeletedAt\" = $now WHERE \"Id\" = $id";
+                update.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$now", DateTime.UtcNow));
+                update.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$id", late.Id));
+                update.ExecuteNonQuery();
+            }
+            else if (command.CommandText.Contains("UNION ALL", StringComparison.Ordinal)
+                && command.CommandText.Contains("LIMIT", StringComparison.Ordinal))
+            {
+                paged = true;
+            }
+
+            return false;
+        };
+
+        TimelineItemPage page;
+        try
+        {
+            page = await Feed(client, u);
+        }
+        finally
+        {
+            _factory.Commands.FailWhen = null;
+        }
+
+        Assert.True(trashed, "The race was never staged: no read followed the page query.");
+        Assert.Equal(["Kept"], page.Items.Select(item => item.Title));
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/universes/{u}/timeline/{late.Id}")).StatusCode);
+    }
 }
