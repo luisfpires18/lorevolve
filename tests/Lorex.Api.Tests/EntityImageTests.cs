@@ -217,6 +217,33 @@ public sealed class EntityImageTests(LorexApiFactory factory) : IClassFixture<Lo
     }
 
     [Fact]
+    public async Task A_tiff_or_bmp_never_reaches_its_decoder()
+    {
+        var (client, universe, type) = await World("imgtiff");
+        var entry = await Entry(client, universe.Id, type, "Alenna Vance");
+
+        // Only the three accepted decoders are configured (issue #33, M-1), so these are unreadable from the first byte,
+        // rather than identified by their own decoder - where a BigTIFF can loop - and then refused for their format.
+        using var source = new Image<Rgba32>(64, 64);
+        foreach (var (save, name, contentType) in new (Action<Stream>, string, string)[]
+        {
+            (stream => source.SaveAsTiff(stream), "portrait.tiff", "image/tiff"),
+            (stream => source.SaveAsBmp(stream), "portrait.bmp", "image/bmp"),
+        })
+        {
+            using var buffer = new MemoryStream();
+            save(buffer);
+
+            var response = await Upload(client, universe.Id, entry.Id, buffer.ToArray(), name, contentType);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Contains("not an image Lorex can read", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        }
+
+        Assert.False(await HasImage(entry.Id));
+    }
+
+    [Fact]
     public async Task An_oversized_upload_is_refused()
     {
         var (client, universe, type) = await World("imgbig");

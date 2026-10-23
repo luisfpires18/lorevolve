@@ -80,6 +80,11 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   classes from TRX; local 567+629+590 = 1786 = unsharded). E2E `--shard=N/6`: 89x5+88 = 533. `deploy-dev.yml` builds
   the package alongside validation; Deploy still `needs` validate. Expected ~10 min to healthy DEV, ~+12 billed min.
   Not yet measured on GitHub.
+- **Issue #33 M-1: ImageSharp advisories** (`fix/imagesharp-advisories` off `dev` at `b149158`; committed, not merged,
+  not pushed). `SixLabors.ImageSharp` 3.1.12 -> 4.1.3 (same Six Labors Split License text); clears GHSA-j3p4/j9gm/jjfr
+  (High, unreachable) and gwg2/wmxv (Moderate, reachable: ICC CLUT allocation, BigTIFF loop). Uploads now decode with a
+  JPEG/PNG/WebP-only configuration, so a TIFF or BMP never reaches its decoder. API 1781 passed / 6 skipped; E2E image,
+  profile, restore, artwork specs 27 passed. H-1 is on its own branch, `fix/invitation-link-only`.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);

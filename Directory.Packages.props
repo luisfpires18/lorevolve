@@ -17,7 +17,7 @@
     <!-- R2 speaks the S3 API. Apache-2.0, and the only mature signer worth trusting. -->
     <PackageVersion Include="AWSSDK.S3" Version="4.0.103.1" />
     <!-- Fully managed: no native asset to carry onto a Linux App Service. See ADR 0019. -->
-    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <PackageVersion Include="SixLabors.ImageSharp" Version="4.1.3" />
   </ItemGroup>
 
   <ItemGroup Label="Assistant">

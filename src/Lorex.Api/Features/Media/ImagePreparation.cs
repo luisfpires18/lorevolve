@@ -113,6 +113,19 @@ internal static class ImagePreparation
     };
 
     /// <summary>
+    /// The only decoders an upload ever reaches: the three accepted formats, and one frame. ImageSharp's default
+    /// configuration also carries TIFF, BMP, GIF and more, whose decoders a refused file would otherwise run while it is
+    /// still being identified - a BigTIFF can hold a decoder in a loop there (issue #33, M-1). Anything else is simply not
+    /// an image Lorex can read.
+    /// </summary>
+    private static readonly DecoderOptions Decoding = new()
+    {
+        Configuration = new Configuration(
+            new JpegConfigurationModule(), new PngConfigurationModule(), new WebpConfigurationModule()),
+        MaxFrames = 1,
+    };
+
+    /// <summary>
     /// Deterministic by construction: a fixed sampler, a fixed encoder and a size derived only
     /// from the square being cut, so the same original and the same crop always produce the same
     /// thumbnail bytes - which is what lets an importer regenerate one rather than carry it.
@@ -195,7 +208,7 @@ internal static class ImagePreparation
         ImageInfo info;
         try
         {
-            info = await Image.IdentifyAsync(upload, cancellationToken);
+            info = await Image.IdentifyAsync(Decoding, upload, cancellationToken);
         }
         catch (Exception exception) when (exception is UnknownImageFormatException or InvalidImageContentException)
         {
@@ -233,10 +246,7 @@ internal static class ImagePreparation
             // One frame. An animated WebP is accepted as a picture, not as an animation, and
             // decoding only the first frame is also what stops a many-thousand-frame file from
             // multiplying the pixel ceiling that was just checked against a single frame.
-            decoded = await Image.LoadAsync(
-                new DecoderOptions { MaxFrames = 1 },
-                upload,
-                cancellationToken);
+            decoded = await Image.LoadAsync(Decoding, upload, cancellationToken);
         }
         catch (Exception exception) when (exception is UnknownImageFormatException
             or InvalidImageContentException
