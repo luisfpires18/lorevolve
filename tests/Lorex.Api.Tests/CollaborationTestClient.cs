@@ -64,7 +64,7 @@ internal sealed record SharedWorld(
 }
 
 /// <summary>One thing of every kind the Trash holds, put there by the owner.</summary>
-internal sealed record Trashed(Guid Entry, Guid Story, Guid Chapter, Guid Scene, Guid Arc, Guid Beat, Guid Rule);
+internal sealed record Trashed(Guid Entry, Guid Story, Guid Chapter, Guid Scene, Guid Arc, Guid Beat, Guid Rule, Guid Relationship, Guid Moment);
 
 internal enum Who
 {
@@ -178,7 +178,18 @@ internal static class CollaborationTestClient
         var rule = await WorldRuleTestClient.CreateRule(client, u, $"Forgotten rule {Guid.NewGuid():n}");
         await Ok(client.DeleteAsync(WorldRuleTestClient.Rule(u, rule.Id)));
 
-        return new Trashed(entry, story, chapter, scene, arc.Id, beat.Id, rule.Id);
+        // A relationship and a moment (ADR 0048), between and about entries that stay live.
+        var kind = await PostJson<RelationshipTypeResponse>(
+            client, $"/api/universes/{u}/relationship-types", new RelationshipTypeRequest($"Once bound {Guid.NewGuid():n}", null, true, null, null));
+        var first = await CreateEntity(client, u, $"Bound {Guid.NewGuid():n}");
+        var second = await CreateEntity(client, u, $"Bound {Guid.NewGuid():n}");
+        var link = await PostJson<RelationshipDetail>(
+            client, $"/api/universes/{u}/relationships", new RelationshipRequest(kind.Id, first, second, CanonStatus.Draft, null, null, null));
+        await Ok(client.DeleteAsync($"/api/universes/{u}/relationships/{link.Id}"));
+        var moment = await RuleValidationTestClient.CreateMoment(client, u, RuleValidationTestClient.Moment("A forgotten flood", null));
+        await Ok(client.DeleteAsync($"/api/universes/{u}/timeline/{moment.Id}"));
+
+        return new Trashed(entry, story, chapter, scene, arc.Id, beat.Id, rule.Id, link.Id, moment.Id);
     }
 
     public static async Task<EntityImageRef> UploadImage(HttpClient client, Guid u, Guid entityId)

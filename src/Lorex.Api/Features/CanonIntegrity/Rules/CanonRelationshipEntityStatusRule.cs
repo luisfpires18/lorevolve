@@ -25,6 +25,7 @@ public sealed class CanonRelationshipEntityStatusRule : ICanonIntegrityRule
         var rows = await context.Db.Relationships.AsNoTracking()
             .Where(relationship =>
                 relationship.UniverseId == context.UniverseId
+                && relationship.DeletedAt == null
                 && relationship.CanonStatus == CanonStatus.Canon
 
                 // Both ends live. The row survives its endpoint being trashed - that is the

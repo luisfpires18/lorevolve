@@ -62,6 +62,7 @@ internal static class WorldRuleOccurrences
 
         var moments = await db.TimelineEntryValidations.AsNoTracking()
             .Where(details => details.TimelineEntry!.UniverseId == universeId
+                && details.TimelineEntry.DeletedAt == null
                 && ((details.EventKindTermId != null && eventKinds.Contains(details.EventKindTermId.Value))
                     || (details.MethodTermId != null && methods.Contains(details.MethodTermId.Value))))
             .Select(details => new MomentRow(

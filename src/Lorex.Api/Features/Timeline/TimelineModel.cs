@@ -116,6 +116,14 @@ public sealed class TimelineEntry
 
     public DateTime UpdatedAt { get; set; }
 
+    /// <summary>
+    /// When the moment was moved to the Trash, or null while it is live (ADR 0048). Only the marker moves: its participants,
+    /// stories and details stay stored and come back with a restore. A moment in the Trash is on no timeline, in no Canon rule
+    /// and in no world rule's count. Not a query filter, for the reason <see cref="LoreEntity.DeletedAt"/> gives: every read
+    /// says which it wants.
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
+
     public ICollection<TimelineEntryLink> EntityLinks { get; } = [];
 
     /// <summary>

@@ -149,6 +149,30 @@ internal static class TrashPermanentDelete
         EraseOneAsync(
             new(TrashItemKind.WorldRule, worldRuleId), universeId, principal, db, canon, store, loggerFactory, _ => Results.NoContent(), cancellationToken);
 
+    public static Task<IResult> DeleteRelationshipAsync(
+        Guid universeId,
+        Guid relationshipId,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CanonPromotionGate canon,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken) =>
+        EraseOneAsync(
+            new(TrashItemKind.Relationship, relationshipId), universeId, principal, db, canon, store, loggerFactory, _ => Results.NoContent(), cancellationToken);
+
+    public static Task<IResult> DeleteTimelineEntryAsync(
+        Guid universeId,
+        Guid timelineEntryId,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CanonPromotionGate canon,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken) =>
+        EraseOneAsync(
+            new(TrashItemKind.TimelineEvent, timelineEntryId), universeId, principal, db, canon, store, loggerFactory, _ => Results.NoContent(), cancellationToken);
+
     /// <summary>
     /// Erases a selection of Trash rows of any kinds together, all or none, and answers 200 with
     /// <see cref="TrashBulkErased"/>: how many selected rows went, and the ids of every entry and scene that went - a story's
@@ -323,6 +347,8 @@ internal static class TrashPermanentDelete
         var arcs = Of(TrashItemKind.PlotArc);
         var beats = Of(TrashItemKind.PlotBeat);
         var rules = Of(TrashItemKind.WorldRule);
+        var links = Of(TrashItemKind.Relationship);
+        var moments = Of(TrashItemKind.TimelineEvent);
 
         // 1. Every row, as exactly the kind it was selected as, in this universe, in the Trash. Ids are distinct per kind, so a
         //    count says whether all of them are. Nothing is written until every kind has answered.
@@ -333,7 +359,9 @@ internal static class TrashPermanentDelete
             && await Resolve(db.Scenes.Where(row => row.Story!.UniverseId == universeId && row.DeletedAt != null && scenes.Contains(row.Id)), scenes)
             && await Resolve(db.PlotArcs.Where(row => row.Story!.UniverseId == universeId && row.DeletedAt != null && arcs.Contains(row.Id)), arcs)
             && await Resolve(db.PlotBeats.Where(row => row.PlotArc!.Story!.UniverseId == universeId && row.DeletedAt != null && beats.Contains(row.Id)), beats)
-            && await Resolve(db.WorldRules.Where(row => row.UniverseId == universeId && row.DeletedAt != null && rules.Contains(row.Id)), rules);
+            && await Resolve(db.WorldRules.Where(row => row.UniverseId == universeId && row.DeletedAt != null && rules.Contains(row.Id)), rules)
+            && await Resolve(db.Relationships.Where(row => row.UniverseId == universeId && row.DeletedAt != null && links.Contains(row.Id)), links)
+            && await Resolve(db.TimelineEntries.Where(row => row.UniverseId == universeId && row.DeletedAt != null && moments.Contains(row.Id)), moments);
 
         if (!resolves)
         {
@@ -393,6 +421,20 @@ internal static class TrashPermanentDelete
         {
             await db.WorldRules.Where(row => rules.Contains(row.Id)).ExecuteDeleteAsync(cancellationToken);
             await ForgetFindingsAsync(db, universeId, CanonSubjectKind.WorldRule, rules, cancellationToken);
+        }
+
+        // 6. Relationships and moments in the Trash (ADR 0048): a link selected with one of its entries already went with it.
+        //    Neither contributes a finding while it is there, so what was recorded about them is simply forgotten.
+        if (links.Count > 0)
+        {
+            await db.Relationships.Where(row => links.Contains(row.Id)).ExecuteDeleteAsync(cancellationToken);
+            await ForgetFindingsAsync(db, universeId, CanonSubjectKind.Relationship, links, cancellationToken);
+        }
+
+        if (moments.Count > 0)
+        {
+            await db.TimelineEntries.Where(row => moments.Contains(row.Id)).ExecuteDeleteAsync(cancellationToken);
+            await ForgetFindingsAsync(db, universeId, CanonSubjectKind.TimelineEntry, moments, cancellationToken);
         }
 
         return new Erased(entries, sceneIds, objectKeys);

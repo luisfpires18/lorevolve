@@ -24,6 +24,7 @@ public sealed class CanonTimelineEntityStatusRule : ICanonIntegrityRule
         var rows = await context.Db.TimelineEntries.AsNoTracking()
             .Where(entry =>
                 entry.UniverseId == context.UniverseId
+                && entry.DeletedAt == null
                 && entry.CanonStatus == CanonStatus.Canon
                 && entry.EntityLinks.Any(link =>
                     link.Entity!.DeletedAt == null

@@ -9,6 +9,8 @@ export const TrashKind = {
   PlotArc: 4,
   PlotBeat: 5,
   WorldRule: 6,
+  Relationship: 7,
+  TimelineEvent: 8,
 } as const
 
 export type TrashKindValue = (typeof TrashKind)[keyof typeof TrashKind]
@@ -22,6 +24,8 @@ export const TRASH_KIND_LABELS: Record<TrashKindValue, string> = {
   [TrashKind.PlotArc]: 'Arc',
   [TrashKind.PlotBeat]: 'Beat',
   [TrashKind.WorldRule]: 'World rule',
+  [TrashKind.Relationship]: 'Relationship',
+  [TrashKind.TimelineEvent]: 'Timeline moment',
 }
 
 /** Mirrors the backend enum. Why a row cannot be restored yet, if it cannot. */
@@ -29,6 +33,8 @@ export const TrashBlock = {
   None: 0,
   StoryInTrash: 1,
   ArcInTrash: 2,
+  /** An entry a relationship connects is in the Trash: that entry comes back first. */
+  EntryInTrash: 3,
 } as const
 
 export type TrashBlockValue = (typeof TrashBlock)[keyof typeof TrashBlock]
@@ -51,8 +57,9 @@ export type TrashPublicationValue = (typeof TrashPublication)[keyof typeof Trash
  * One row in the Trash. Deliberately thin: it answers what was thrown away, where it was and when, and everything it
  * held is readable again the moment it comes back.
  *
- * The entry members are set for an entry only. `storyId` is set for everything from a story - a story's own id for a
- * story - and `storyTitle` for what sits inside one; `plotArcId` and `plotArcTitle` for a beat.
+ * The entry members are set for an entry only (and `canonStatus` for a moment). `storyId` is set for everything from a
+ * story - a story's own id for a story - and `storyTitle` for what sits inside one; `plotArcId` and `plotArcTitle` for a
+ * beat. A relationship's `name` reads it whole, and `entryId` is the entry it starts from, where it is opened once back.
  */
 export interface TrashItem {
   kind: TrashKindValue
@@ -70,6 +77,7 @@ export interface TrashItem {
   plotArcTitle: string | null
   blockedBy: TrashBlockValue
   publication: TrashPublicationValue
+  entryId?: string | null
 }
 
 export interface TrashPage {

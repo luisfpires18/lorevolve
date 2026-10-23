@@ -315,10 +315,10 @@ internal static class AiChangeViews
         switch (work.Resource)
         {
             case AiChangeResource.LoreEntry:
-                var relationships = await db.Relationships.CountAsync(row => row.UniverseId == universeId && (row.SourceEntityId == id || row.TargetEntityId == id), cancellationToken);
+                var relationships = await db.Relationships.CountAsync(row => row.UniverseId == universeId && row.DeletedAt == null && (row.SourceEntityId == id || row.TargetEntityId == id), cancellationToken);
                 var links = await db.EntityFieldValues.CountAsync(value => value.ReferencedEntityId == id && value.Entity!.DeletedAt == null, cancellationToken);
                 var scenes = await db.Scenes.CountAsync(scene => scene.DeletedAt == null && (scene.PovEntityId == id || scene.EntityLinks.Any(link => link.EntityId == id)), cancellationToken);
-                var moments = await db.TimelineEntryLinks.CountAsync(link => link.EntityId == id, cancellationToken);
+                var moments = await db.TimelineEntryLinks.CountAsync(link => link.EntityId == id && link.TimelineEntry!.DeletedAt == null, cancellationToken);
                 if (relationships > 0)
                 {
                     notes.Add($"{Count(relationships, "relationship")} are hidden while it's in the Trash, and come back when it's restored.");

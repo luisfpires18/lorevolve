@@ -134,6 +134,7 @@ internal static class CanonLifespanReader
         var rows = await context.Db.TimelineEntries.AsNoTracking()
             .Where(entry =>
                 entry.UniverseId == context.UniverseId
+                && entry.DeletedAt == null
                 && entry.CanonStatus == CanonStatus.Canon
                 && (entry.DateKind == TimelineDateKind.Exact || entry.DateKind == TimelineDateKind.Range)
                 && entry.EntityLinks.Any(link =>
@@ -168,7 +169,7 @@ internal static class CanonLifespanReader
         CanonRuleContext context,
         CancellationToken cancellationToken) =>
         await context.Db.TimelineEntries.AsNoTracking()
-            .Where(entry => context.UniverseId == entry.UniverseId && entry.EraLabel != null && entry.EraLabel != "")
+            .Where(entry => context.UniverseId == entry.UniverseId && entry.DeletedAt == null && entry.EraLabel != null && entry.EraLabel != "")
             .Select(entry => entry.EraLabel)
             .Distinct()
             .CountAsync(cancellationToken) <= 1;

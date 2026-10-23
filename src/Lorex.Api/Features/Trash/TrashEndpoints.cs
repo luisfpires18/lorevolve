@@ -3,6 +3,8 @@ using Lorex.Api.Data;
 using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Publishing;
+using Lorex.Api.Features.Relationships;
+using Lorex.Api.Features.Timeline;
 using Lorex.Api.Features.Universes;
 using Lorex.Api.Features.WorldRules;
 using Microsoft.AspNetCore.Mvc;
@@ -18,9 +20,10 @@ namespace Lorex.Api.Features.Trash;
 /// lore entry, whose deletion took its article, values, aliases, history and every relationship and timeline appearance
 /// that rested on it (ADR 0015). And a story's content - a story, a chapter, a scene, an arc or a beat - whose deletion took
 /// prose, planning and every link inside it (ADR 0029). A world rule is the third: authored text about how the world works,
-/// whose deletion would otherwise lose it outright (ADR 0033). Everything else the API deletes is one small row a deliberate
-/// action removed (a relationship, a moment), a derived record nothing authors (a Canon conflict), or a configuration
-/// object whose deletion is already refused while anything depends on it.
+/// whose deletion would otherwise lose it outright (ADR 0033). A relationship and a timeline moment are the fourth and fifth:
+/// small rows, but authored ones, and an AI change may remove them, so removing one must be reversible too (ADR 0048).
+/// Everything else the API deletes is a derived record nothing authors (a Canon conflict), or a configuration object whose
+/// deletion is already refused while anything depends on it.
 ///
 /// Universe-scoped and gated on every route by <see cref="UniverseAccess"/> (ADR 0041): Editors and the owner list,
 /// restore and trash; erasing for good is the owner's alone, because the Trash is the owner's recovery copy. A Viewer or
@@ -53,6 +56,10 @@ public static class TrashEndpoints
             .WithName("RestoreTrashedPlotBeat");
         group.MapPost("/world-rules/{worldRuleId:guid}/restore", WorldRuleEndpoints.RestoreAsync)
             .WithName("RestoreTrashedWorldRule");
+        group.MapPost("/relationships/{relationshipId:guid}/restore", RelationshipEndpoints.RestoreAsync)
+            .WithName("RestoreTrashedRelationship");
+        group.MapPost("/timeline/{timelineEntryId:guid}/restore", TimelineEndpoints.RestoreAsync)
+            .WithName("RestoreTrashedTimelineEntry");
 
         group.MapDelete("/{entityId:guid}", TrashPermanentDelete.DeleteEntryAsync).WithName("DeleteTrashedEntity");
         group.MapDelete("/stories/{storyId:guid}", TrashPermanentDelete.DeleteStoryAsync).WithName("DeleteTrashedStory");
@@ -65,6 +72,10 @@ public static class TrashEndpoints
             .WithName("DeleteTrashedPlotBeat");
         group.MapDelete("/world-rules/{worldRuleId:guid}", TrashPermanentDelete.DeleteWorldRuleAsync)
             .WithName("DeleteTrashedWorldRule");
+        group.MapDelete("/relationships/{relationshipId:guid}", TrashPermanentDelete.DeleteRelationshipAsync)
+            .WithName("DeleteTrashedRelationship");
+        group.MapDelete("/timeline/{timelineEntryId:guid}", TrashPermanentDelete.DeleteTimelineEntryAsync)
+            .WithName("DeleteTrashedTimelineEntry");
         group.MapPost("/bulk-delete", TrashPermanentDelete.BulkDeleteAsync).WithName("BulkDeleteTrash");
 
         return endpoints;
@@ -78,9 +89,9 @@ public static class TrashEndpoints
     /// Only what was itself thrown away is listed. What sits inside a story in the Trash is not a row of its own, because
     /// it comes back with the story; a scene thrown away before its story was is, and says it must wait for the story.
     ///
-    /// Seven compact reads - one per kind, names and places only, never an article, prose, notes or a rule's description -
+    /// Nine compact reads - one per kind, names and places only, never an article, prose, notes or a rule's description -
     /// merged and paged here. A Trash is thrown away by hand, so it stays small next to what a page of it costs; a union
-    /// across seven tables in SQL is the first change if one ever does not.
+    /// across nine tables in SQL is the first change if one ever does not.
     /// </summary>
     private static async Task<IResult> ListAsync(
         Guid universeId,
@@ -245,6 +256,51 @@ public static class TrashEndpoints
                 null,
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
+                TrashRestoreBlock.None,
+                TrashRestorePublication.None))
+            .ToListAsync(cancellationToken));
+
+        // A relationship reads whole, as its entries' Relations views read it. One whose end is in the Trash waits for that end.
+        rows.AddRange(await db.Relationships.AsNoTracking()
+            .Where(relationship => relationship.UniverseId == universeId && relationship.DeletedAt != null)
+            .Select(relationship => new TrashItem(
+                TrashItemKind.Relationship,
+                relationship.Id,
+                relationship.SourceEntity!.Name + " " + relationship.RelationshipType!.Name + " " + relationship.TargetEntity!.Name,
+                relationship.DeletedAt!.Value,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                relationship.SourceEntity.DeletedAt != null || relationship.TargetEntity.DeletedAt != null
+                    ? TrashRestoreBlock.EntryInTrash
+                    : TrashRestoreBlock.None,
+                TrashRestorePublication.None,
+                relationship.SourceEntityId))
+            .ToListAsync(cancellationToken));
+
+        // A moment belongs to its universe directly: its participants and stories are links, kept, and wait for nothing.
+        rows.AddRange(await db.TimelineEntries.AsNoTracking()
+            .Where(entry => entry.UniverseId == universeId && entry.DeletedAt != null)
+            .Select(entry => new TrashItem(
+                TrashItemKind.TimelineEvent,
+                entry.Id,
+                entry.Title,
+                entry.DeletedAt!.Value,
+                null,
+                null,
+                null,
+                null,
+                entry.CanonStatus,
                 null,
                 null,
                 null,

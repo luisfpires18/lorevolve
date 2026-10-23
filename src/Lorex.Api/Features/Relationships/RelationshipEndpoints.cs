@@ -43,11 +43,18 @@ namespace Lorex.Api.Features.Relationships;
 /// duplicate and both write. SQLite takes one writer at a time, so the window is the gap between this
 /// read and that write, on a database one person is authoring into. A duplicate that does land is a
 /// stored row like any other - shown, editable, removable, and drawn once by a family tree.
+///
+/// <b>Removing a link moves it to the Trash</b> (ADR 0048), as removing an entry, a story or a rule does: the row keeps
+/// everything it says and is read nowhere until the Trash restores it. Only the Trash erases one for good, and only a person
+/// does that - an AI change can only ever move a link there.
 /// </summary>
 public static class RelationshipEndpoints
 {
     /// <summary>The refusal an exact duplicate gets, so a client can tell it from any other conflict.</summary>
     public const string DuplicateCode = "relationship_already_exists";
+
+    /// <summary>The refusal a restore gets while one of the link's ends is still in the Trash.</summary>
+    public const string EndInTrashCode = "relationship_end_in_trash";
 
     public static IEndpointRouteBuilder MapRelationshipEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -255,25 +262,28 @@ public static class RelationshipEndpoints
         CanonPromotionGate canon,
         CancellationToken cancellationToken)
     {
-        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.ManageTrash, cancellationToken) is { } denied)
         {
             return denied;
         }
 
         return await canon.RecordAsync(
             universeId,
-            token => DeleteCoreAsync(universeId, relationshipId, db, token),
+            token => TrashCoreAsync(universeId, relationshipId, db, token),
             cancellationToken);
     }
 
-    private static async Task<IResult> DeleteCoreAsync(
+    /// <summary>
+    /// Moves the link to the Trash (ADR 0048), shared with an approved AI change. Only the marker moves; one row holds both
+    /// readings, so the link leaves both ends at once. A link with an end in the Trash is not reachable either: it is not the
+    /// author's to act on until they decide what to do with that end. Access and the Canon reconciliation are the caller's.
+    /// </summary>
+    internal static async Task<IResult> TrashCoreAsync(
         Guid universeId,
         Guid relationshipId,
         LorexDbContext db,
         CancellationToken cancellationToken)
     {
-        // A link with an end in the Trash is not deletable either. Letting one go here would
-        // destroy dependent lore on the author's behalf for a link they cannot even see.
         var relationship = await FindLiveAsync(db, universeId, relationshipId, cancellationToken);
 
         if (relationship is null)
@@ -281,16 +291,80 @@ public static class RelationshipEndpoints
             return Results.NotFound();
         }
 
-        // One row holds both readings, so removing it clears the link from either end.
-        db.Relationships.Remove(relationship);
+        relationship.DeletedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
 
         return Results.NoContent();
     }
 
     /// <summary>
-    /// One relationship, only while both of its ends are live. Every read hides a link whose
-    /// endpoint is in the Trash, so every write refuses the same one.
+    /// Brings a link back from the Trash exactly as it was, mapped by the Trash under its own typed route. Refused while one of
+    /// its ends is in the Trash (that entry comes back first), and as a duplicate when the same link was made again meanwhile -
+    /// the one that is there is named, never overwritten. Reconciled, as every relationship write is. A link of another
+    /// universe, one not in the Trash, or a guessed id answers as missing.
+    /// </summary>
+    public static async Task<IResult> RestoreAsync(
+        Guid universeId,
+        Guid relationshipId,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CanonPromotionGate canon,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.ManageTrash, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        return await canon.RecordAsync(
+            universeId,
+            token => RestoreCoreAsync(universeId, relationshipId, db, token),
+            cancellationToken);
+    }
+
+    private static async Task<IResult> RestoreCoreAsync(
+        Guid universeId,
+        Guid relationshipId,
+        LorexDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var relationship = await db.Relationships
+            .Include(candidate => candidate.SourceEntity)
+            .Include(candidate => candidate.TargetEntity)
+            .FirstOrDefaultAsync(
+                candidate => candidate.Id == relationshipId && candidate.UniverseId == universeId && candidate.DeletedAt != null,
+                cancellationToken);
+
+        if (relationship is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (relationship.SourceEntity!.DeletedAt is not null || relationship.TargetEntity!.DeletedAt is not null)
+        {
+            return Results.Problem(
+                title: "Entry in the Trash",
+                detail: "One of the entries this relationship connects is in the Trash. Restore that entry first.",
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = EndInTrashCode });
+        }
+
+        var same = new RelationshipRequest(
+            relationship.RelationshipTypeId, relationship.SourceEntityId, relationship.TargetEntityId, relationship.CanonStatus, null, null, null);
+        if (await FindDuplicateAsync(db, universeId, same, relationship.Id, cancellationToken) is { } existing)
+        {
+            return AlreadyExists(existing);
+        }
+
+        relationship.DeletedAt = null;
+        await db.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(await LoadDetailAsync(db, universeId, relationship.Id, cancellationToken));
+    }
+
+    /// <summary>
+    /// One relationship, only while it and both of its ends are live. Every read hides a link in
+    /// the Trash or whose endpoint is, so every write refuses the same one.
     /// </summary>
     private static Task<LoreRelationship?> FindLiveAsync(
         LorexDbContext db,
@@ -300,6 +374,7 @@ public static class RelationshipEndpoints
         db.Relationships.FirstOrDefaultAsync(
             candidate => candidate.Id == relationshipId
                 && candidate.UniverseId == universeId
+                && candidate.DeletedAt == null
                 && candidate.SourceEntity!.DeletedAt == null
                 && candidate.TargetEntity!.DeletedAt == null,
             cancellationToken);
@@ -339,6 +414,7 @@ public static class RelationshipEndpoints
         CancellationToken cancellationToken) =>
         await db.Relationships.AsNoTracking()
             .Where(candidate => candidate.UniverseId == universeId
+                && candidate.DeletedAt == null
                 && candidate.RelationshipTypeId == request.RelationshipTypeId
                 && (excluding == null || candidate.Id != excluding)
                 && ((candidate.SourceEntityId == request.SourceEntityId
@@ -423,6 +499,7 @@ public static class RelationshipEndpoints
         await db.Relationships.AsNoTracking()
             .Where(relationship => relationship.Id == relationshipId
                 && relationship.UniverseId == universeId
+                && relationship.DeletedAt == null
                 && relationship.SourceEntity!.DeletedAt == null
                 && relationship.TargetEntity!.DeletedAt == null)
             .Select(relationship => new RelationshipDetail(
@@ -461,6 +538,7 @@ public static class RelationshipEndpoints
         // wholesale on every save and which are therefore shown and marked instead.
         var rows = await db.Relationships.AsNoTracking()
             .Where(relationship => relationship.UniverseId == universeId
+                && relationship.DeletedAt == null
                 && relationship.SourceEntity!.DeletedAt == null
                 && relationship.TargetEntity!.DeletedAt == null
                 && (relationship.SourceEntityId == entityId || relationship.TargetEntityId == entityId))

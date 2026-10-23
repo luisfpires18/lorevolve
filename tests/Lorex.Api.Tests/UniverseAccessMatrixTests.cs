@@ -216,6 +216,8 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("restore arc", Post, $"{t}/plot-arcs/{w.Trash.Arc}/restore", May.Edit),
             new("restore beat", Post, $"{t}/plot-beats/{w.Trash.Beat}/restore", May.Edit),
             new("restore rule", Post, $"{t}/world-rules/{w.Trash.Rule}/restore", May.Edit),
+            new("restore relationship", Post, $"{t}/relationships/{w.Trash.Relationship}/restore", May.Edit),
+            new("restore moment", Post, $"{t}/timeline/{w.Trash.Moment}/restore", May.Edit),
             new("erase entry", Delete, $"{t}/{w.Trash.Entry}", May.Own),
             new("erase story", Delete, $"{t}/stories/{w.Trash.Story}", May.Own),
             new("erase chapter", Delete, $"{t}/chapters/{w.Trash.Chapter}", May.Own),
@@ -223,6 +225,8 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("erase arc", Delete, $"{t}/plot-arcs/{w.Trash.Arc}", May.Own),
             new("erase beat", Delete, $"{t}/plot-beats/{w.Trash.Beat}", May.Own),
             new("erase rule", Delete, $"{t}/world-rules/{w.Trash.Rule}", May.Own),
+            new("erase relationship", Delete, $"{t}/relationships/{w.Trash.Relationship}", May.Own),
+            new("erase moment", Delete, $"{t}/timeline/{w.Trash.Moment}", May.Own),
             new("erase in bulk", Post, $"{t}/bulk-delete", May.Own, Json(new BulkTrashDeleteRequest(
             [
                 new TrashSelection(TrashItemKind.Entry, w.Trash.Entry),

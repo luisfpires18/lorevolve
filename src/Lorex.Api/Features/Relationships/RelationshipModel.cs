@@ -149,4 +149,12 @@ public sealed class LoreRelationship
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// When the link was moved to the Trash, or null while it is live (ADR 0048). Only the marker moves: the row keeps its
+    /// kind, ends, dates and notes, and a restore puts it back as it was. A link in the Trash is read nowhere - no entry, family
+    /// tree or Canon rule sees it - exactly like one whose end is in the Trash. Not a query filter (see
+    /// <see cref="LoreEntity.DeletedAt"/>): every read says which it wants.
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
 }

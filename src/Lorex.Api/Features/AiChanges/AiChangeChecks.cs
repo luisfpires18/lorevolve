@@ -189,6 +189,7 @@ internal static class AiChangeSnapshots
         db.Relationships.AsNoTracking()
             .Where(row => row.Id == relationshipId
                 && row.UniverseId == universeId
+                && row.DeletedAt == null
                 && row.SourceEntity!.DeletedAt == null
                 && row.TargetEntity!.DeletedAt == null)
             .Select(row => new RelationshipValues(
@@ -263,7 +264,7 @@ internal static class AiChangeSnapshots
     public static async Task<TimelineValues?> MomentAsync(LorexDbContext db, Guid universeId, Guid entryId, CancellationToken cancellationToken)
     {
         var row = await db.TimelineEntries.AsNoTracking()
-            .Where(entry => entry.Id == entryId && entry.UniverseId == universeId)
+            .Where(entry => entry.Id == entryId && entry.UniverseId == universeId && entry.DeletedAt == null)
             .Select(entry => new
             {
                 entry.Title,

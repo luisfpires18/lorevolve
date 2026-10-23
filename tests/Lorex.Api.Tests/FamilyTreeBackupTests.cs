@@ -29,7 +29,7 @@ public sealed class FamilyTreeBackupTests(LorexApiFactory factory) : IClassFixtu
         var raw = DocumentText(await RawArchive(household.Client, household.Universe));
         var backup = JsonSerializer.Deserialize<UniverseBackup>(raw, UniverseBackupJson.Options)!;
 
-        Assert.Equal(25, backup.FormatVersion);
+        Assert.Equal(26, backup.FormatVersion);
         Assert.Equal(
             [
                 ("bore", RelationshipFamilySemantic.BiologicalParent),

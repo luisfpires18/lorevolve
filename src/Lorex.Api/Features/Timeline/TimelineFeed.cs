@@ -155,7 +155,7 @@ internal static class TimelineFeed
         Guid? entityId,
         string? pattern)
     {
-        var query = db.TimelineEntries.Where(entry => entry.UniverseId == universeId);
+        var query = db.TimelineEntries.Where(entry => entry.UniverseId == universeId && entry.DeletedAt == null);
 
         if (storyId is { } story)
         {

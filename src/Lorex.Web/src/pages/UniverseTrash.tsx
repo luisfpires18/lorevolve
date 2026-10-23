@@ -6,7 +6,9 @@ import {
   CircleDot,
   Feather,
   FileText,
+  Hourglass,
   ListChecks,
+  Network,
   Scale,
   Spline,
   type LucideIcon,
@@ -81,6 +83,14 @@ function whereItWas(item: TrashItem) {
       )
     case TrashKind.WorldRule:
       return 'In World Rules'
+    case TrashKind.Relationship:
+      return 'A relationship between two entries'
+    case TrashKind.TimelineEvent:
+      return item.canonStatus === null ? (
+        'On the timeline'
+      ) : (
+        <>On the timeline · {CANON_LABELS[item.canonStatus]}</>
+      )
     default:
       return (
         <>
@@ -99,6 +109,9 @@ function blockedText(item: TrashItem) {
         first.
       </>
     )
+  }
+  if (item.blockedBy === TrashBlock.EntryInTrash) {
+    return <>One of the entries it connects is in the Trash too. Restore that entry first.</>
   }
   if (item.blockedBy === TrashBlock.ArcInTrash) {
     return (
@@ -145,6 +158,10 @@ function backText(item: TrashItem) {
       )
     case TrashKind.WorldRule:
       return <>The world rule {name} is back in World Rules.</>
+    case TrashKind.Relationship:
+      return <>The relationship {name} is back on both of its entries.</>
+    case TrashKind.TimelineEvent:
+      return <>The moment {name} is back on the timeline.</>
   }
 }
 
@@ -168,6 +185,10 @@ function eraseText(kind: TrashKindValue) {
       return 'Its links to scenes, lore and ideas are removed.'
     case TrashKind.WorldRule:
       return 'Its check goes with it, if it has one.'
+    case TrashKind.Relationship:
+      return 'Only the relationship goes. The two entries it connects stay as they are.'
+    case TrashKind.TimelineEvent:
+      return 'Its participants, story links and details go with it. The entries and stories it named stay as they are.'
   }
 }
 
@@ -1146,6 +1167,8 @@ const KIND_ICONS: Record<TrashKindValue, LucideIcon> = {
   [TrashKind.PlotArc]: Spline,
   [TrashKind.PlotBeat]: CircleDot,
   [TrashKind.WorldRule]: Scale,
+  [TrashKind.Relationship]: Network,
+  [TrashKind.TimelineEvent]: Hourglass,
 }
 
 /** A story part's or a rule's square: its kind's icon on the sunken paper, the shape an entry's tile has. */

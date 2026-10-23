@@ -122,6 +122,7 @@ public static class UniverseReader
 
         var relationshipCount = await db.Relationships.CountAsync(
             relationship => relationship.UniverseId == universeId
+                && relationship.DeletedAt == null
                 && relationship.SourceEntity!.DeletedAt == null
                 && relationship.TargetEntity!.DeletedAt == null
                 && (relationship.SourceEntityId == loreId || relationship.TargetEntityId == loreId),
@@ -404,7 +405,7 @@ public static class UniverseReader
             .ToListAsync(cancellationToken);
 
         var examples = recent.ToLookup(entity => entity.TypeName);
-        var moments = await db.TimelineEntries.CountAsync(entry => entry.UniverseId == universeId, cancellationToken);
+        var moments = await db.TimelineEntries.CountAsync(entry => entry.UniverseId == universeId && entry.DeletedAt == null, cancellationToken);
 
         return new UniverseOverview(
             universe.Name,

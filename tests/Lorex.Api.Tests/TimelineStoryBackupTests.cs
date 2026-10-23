@@ -48,7 +48,7 @@ public sealed class TimelineStoryBackupTests(LorexApiFactory factory) : IClassFi
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(25, backup.FormatVersion);
+        Assert.Equal(26, backup.FormatVersion);
         var both = backup.Payload.TimelineEntries.Single(entry => entry.Title == "Both");
         Assert.Equal(new[] { a, b }.Order(), both.StoryIds!.Order());
         Assert.Empty(backup.Payload.TimelineEntries.Single(entry => entry.Title == "Neither").StoryIds!);
