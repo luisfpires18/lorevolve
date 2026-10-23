@@ -52,6 +52,8 @@ export interface AssistantAnswer {
   sources: AssistantSource[]
   /** The assistant reached its reading limit before it finished looking. */
   isIncomplete: boolean
+  /** In propose mode: the proposal it staged for review (ADR 0047). Never applied by the assistant. */
+  proposal?: { id: string; changeCount: number } | null
 }
 
 export interface AssistantStatus {

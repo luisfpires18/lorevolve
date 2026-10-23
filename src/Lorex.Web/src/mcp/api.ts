@@ -17,6 +17,10 @@ export interface ConnectionRequestDetails {
   universeId: string
   universeName: string
   role: UniverseRoleValue
+  /** The app also asked to propose changes for review (ADR 0047). */
+  proposalsRequested: boolean
+  /** The person's role could allow that. The screen offers it, unticked, only when both are true. */
+  canPropose: boolean
 }
 
 /** Mirrors the backend enum, sent as its number like every enum this API sends. */
@@ -38,6 +42,8 @@ export interface ConnectedApp {
   createdAt: string
   lastUsedAt: string | null
   status: ConnectedAppStatusValue
+  /** The person also let it propose changes for review (ADR 0047). */
+  canPropose: boolean
 }
 
 export function getMcpConnectInfo(universeId: string, signal?: AbortSignal) {
@@ -47,7 +53,7 @@ export function getMcpConnectInfo(universeId: string, signal?: AbortSignal) {
 /** The consent screen's read of the request it was handed, by the parameters that name the app, its return and the universe. */
 export function describeConnectionRequest(params: URLSearchParams, signal?: AbortSignal) {
   const query = new URLSearchParams()
-  for (const name of ['client_id', 'redirect_uri', 'resource']) {
+  for (const name of ['client_id', 'redirect_uri', 'resource', 'scope']) {
     const value = params.get(name)
     if (value !== null) query.set(name, value)
   }
@@ -76,6 +82,16 @@ export function listConnectedApps(signal?: AbortSignal) {
 export function disconnectApp(connectionId: string) {
   return apiFetch<void>(`/api/profile/connected-apps/${connectionId}`, { method: 'DELETE' })
 }
+
+/** Takes back one connection's permission to propose changes, and keeps it reading. */
+export function stopProposals(connectionId: string) {
+  return apiFetch<void>(`/api/profile/connected-apps/${connectionId}/proposals`, {
+    method: 'DELETE',
+  })
+}
+
+/** The consent form's separate, unticked choice to let the app propose changes. Read by `OAuthEndpoints` on the server. */
+export const PROPOSE_FIELD = 'lorex_propose'
 
 /** What the connection lets an app read, in the words the screens use. */
 export const READABLE = [

@@ -16,14 +16,16 @@ import {
   type AssistantHistoryMessage,
   type SegmentKindValue,
 } from '../assistant/types'
+import { reviewPath } from '../aiChanges/api'
 import { ApiError } from '../lib/api'
 import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 
-/** One question and what became of it. */
+/** One question and what became of it. `propose`: asked with Propose changes on. */
 interface Turn {
   id: number
   question: string
+  propose: boolean
   answer: AssistantAnswer | null
   error: string | null
 }
@@ -74,9 +76,12 @@ function answerText(answer: AssistantAnswer) {
 export function UniverseAssistant({
   universeId,
   universeName,
+  canPropose = false,
 }: {
   universeId: string
   universeName: string
+  /** The role can propose changes for review (ADR 0047). Presentation only: the API decides. */
+  canPropose?: boolean
 }) {
   const location = useLocation()
   // Open for one address only: following a source (or any link) closes the drawer, as the phone's Sections sheet closes.
@@ -86,6 +91,7 @@ export function UniverseAssistant({
   const [turns, setTurns] = useState<Turn[]>([])
   const [draft, setDraft] = useState('')
   const [pending, setPending] = useState<number | null>(null)
+  const [propose, setPropose] = useState(false)
   const inFlight = useRef<AbortController | null>(null)
   const nextId = useRef(1)
 
@@ -96,7 +102,7 @@ export function UniverseAssistant({
 
   useEffect(() => () => inFlight.current?.abort(), [])
 
-  async function run(turnId: number, question: string, earlier: Turn[]) {
+  async function run(turnId: number, question: string, earlier: Turn[], asProposal: boolean) {
     const history: AssistantHistoryMessage[] = earlier.flatMap((turn) =>
       turn.answer
         ? [
@@ -111,7 +117,13 @@ export function UniverseAssistant({
     setPending(turnId)
 
     try {
-      const answer = await askAssistant(universeId, question, history, controller.signal)
+      const answer = await askAssistant(
+        universeId,
+        question,
+        history,
+        controller.signal,
+        asProposal,
+      )
       setTurns((current) =>
         current.map((turn) => (turn.id === turnId ? { ...turn, answer, error: null } : turn)),
       )
@@ -141,11 +153,18 @@ export function UniverseAssistant({
     const text = question.trim()
     if (text === '' || pending !== null) return
 
-    const turn: Turn = { id: nextId.current++, question: text, answer: null, error: null }
+    const asProposal = canPropose && propose
+    const turn: Turn = {
+      id: nextId.current++,
+      question: text,
+      propose: asProposal,
+      answer: null,
+      error: null,
+    }
     const earlier = turns
     setTurns([...earlier, turn])
     setDraft('')
-    void run(turn.id, text, earlier)
+    void run(turn.id, text, earlier, asProposal)
   }
 
   function retry(turn: Turn) {
@@ -157,6 +176,7 @@ export function UniverseAssistant({
       turn.id,
       turn.question,
       turns.filter((one) => one.id < turn.id),
+      turn.propose,
     )
   }
 
@@ -186,6 +206,9 @@ export function UniverseAssistant({
           onAsk={ask}
           onRetry={retry}
           onClose={() => setOpenAt(null)}
+          canPropose={canPropose}
+          propose={propose}
+          onPropose={setPropose}
         />
       ) : null}
     </>
@@ -204,6 +227,9 @@ interface DrawerProps {
   onAsk: (question: string) => void
   onRetry: (turn: Turn) => void
   onClose: () => void
+  canPropose: boolean
+  propose: boolean
+  onPropose: (next: boolean) => void
 }
 
 function AssistantDrawer({
@@ -218,6 +244,9 @@ function AssistantDrawer({
   onAsk,
   onRetry,
   onClose,
+  canPropose,
+  propose,
+  onPropose,
 }: DrawerProps) {
   const dialog = useRef<HTMLDialogElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
@@ -225,6 +254,8 @@ function AssistantDrawer({
   const headingId = useId()
   const inputId = useId()
   const hintId = useId()
+  const proposeId = useId()
+  const proposing = canPropose && propose
   // The question is kept by the button's owner, so closing loses nothing and there is nothing to ask about.
   const { close, dialogProps } = useDrawerGuard(false, '', onClose)
 
@@ -293,7 +324,11 @@ function AssistantDrawer({
           <h2 className="drawer__title" id={headingId}>
             <bdi>{universeName}</bdi>
           </h2>
-          <p className="drawer__context">It reads this universe and never changes it.</p>
+          <p className="drawer__context">
+            {proposing
+              ? 'It can prepare changes you ask for. They wait for your review, and nothing changes until you approve them.'
+              : 'It reads this universe and never changes it.'}
+          </p>
         </header>
 
         <div className="drawer__body assistant__body">
@@ -331,7 +366,9 @@ function AssistantDrawer({
               {turns.map((turn) => (
                 <li className="assistantturn" key={turn.id} data-testid="assistant-turn">
                   <div className="assistantturn__question">
-                    <p className="assistantturn__who">You</p>
+                    <p className="assistantturn__who">
+                      {turn.propose ? 'You, asking for changes' : 'You'}
+                    </p>
                     <p className="assistantturn__text" dir="auto">
                       {turn.question}
                     </p>
@@ -370,8 +407,26 @@ function AssistantDrawer({
         <footer className="drawer__actions assistant__actions">
           {availability !== 'unavailable' ? (
             <form className="assistantform" onSubmit={submit}>
+              {canPropose ? (
+                <div className="assistantform__mode">
+                  <input
+                    id={proposeId}
+                    type="checkbox"
+                    checked={propose}
+                    onChange={(event) => onPropose(event.target.checked)}
+                    aria-describedby={`${proposeId}-hint`}
+                    data-testid="assistant-propose"
+                  />
+                  <label htmlFor={proposeId}>Propose changes</label>
+                  <span className="assistantform__modehint" id={`${proposeId}-hint`}>
+                    {propose
+                      ? 'Say exactly what to create or change. It goes to Pending AI Changes for you to review.'
+                      : 'Off: the Assistant only reads.'}
+                  </span>
+                </div>
+              ) : null}
               <label className="field__label" htmlFor={inputId}>
-                Your question
+                {proposing ? 'The changes you want' : 'Your question'}
               </label>
               <textarea
                 id={inputId}
@@ -396,7 +451,13 @@ function AssistantDrawer({
                   disabled={busy || draft.trim() === ''}
                   data-testid="assistant-ask"
                 >
-                  {busy ? 'Asking' : 'Ask'}
+                  {busy
+                    ? proposing
+                      ? 'Preparing'
+                      : 'Asking'
+                    : proposing
+                      ? 'Prepare changes'
+                      : 'Ask'}
                 </button>
                 <button
                   className="button button--secondary"
@@ -456,6 +517,25 @@ function Answer({
           </div>
         )
       })}
+
+      {answer.proposal ? (
+        <div className="assistantproposal" data-testid="assistant-proposal">
+          <p>
+            {answer.proposal.changeCount === 1
+              ? '1 change is waiting for your review.'
+              : `${answer.proposal.changeCount} changes are waiting for your review.`}{' '}
+            Nothing has changed yet.
+          </p>
+          <Link
+            className="button button--sm"
+            to={reviewPath(universeId, answer.proposal.id)}
+            onClick={onFollow}
+            data-testid="assistant-proposal-review"
+          >
+            Review the changes
+          </Link>
+        </div>
+      ) : null}
 
       {answer.isIncomplete ? (
         <p className="assistantanswer__incomplete">

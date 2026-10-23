@@ -335,6 +335,7 @@ export default function UniverseWorkspace() {
             key={universe.id}
             universeId={universe.id}
             universeName={universe.name}
+            canPropose={access.suggestChanges}
           />
         </div>
 

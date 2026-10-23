@@ -126,7 +126,7 @@ public static class TimelineEndpoints
             cancellationToken);
     }
 
-    private static async Task<IResult> CreateCoreAsync(
+    internal static async Task<IResult> CreateCoreAsync(
         Guid universeId,
         TimelineEntryRequest request,
         LorexDbContext db,
@@ -217,7 +217,7 @@ public static class TimelineEndpoints
             cancellationToken);
     }
 
-    private static async Task<IResult> UpdateCoreAsync(
+    internal static async Task<IResult> UpdateCoreAsync(
         Guid universeId,
         Guid entryId,
         TimelineEntryRequest request,

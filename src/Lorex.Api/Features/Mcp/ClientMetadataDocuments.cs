@@ -93,6 +93,7 @@ internal static class ClientRules
                 Permissions.GrantTypes.RefreshToken,
                 Permissions.ResponseTypes.Code,
                 Permissions.Prefixes.Scope + McpLimits.ReadScope,
+                Permissions.Prefixes.Scope + McpLimits.ProposeScope,
             },
             Requirements = { Requirements.Features.ProofKeyForCodeExchange },
         };

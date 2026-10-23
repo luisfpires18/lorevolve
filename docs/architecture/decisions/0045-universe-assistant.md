@@ -198,3 +198,11 @@ host's, not a person's, and are never shown.
   `LOREX_ASSISTANT_SMOKE_MODEL` and `OPENAI_API_KEY` are set in the environment).
 - The OpenAI library marks its Responses client experimental (`OPENAI001`); the suppression sits in the one file that
   uses it.
+
+## Amendment (2026-10-23, roadmap 052, ADR 0047): propose mode
+
+A question sent with `mode: "propose"` - the drawer's explicit Propose changes switch - by a role that can stage changes
+(else 403) may stage one proposal for review through the shared staging service: only then are `get_change_options` and
+`propose_changes` among its tools, and rule 6 says what it may do instead of "you can only read". An ordinary question is
+handed neither tool and is unchanged. Nothing is applied from a tool call; the answer carries the staged proposal's id and
+the drawer links to its review. Same allowance and limits, 8,000 output tokens a step in propose mode.

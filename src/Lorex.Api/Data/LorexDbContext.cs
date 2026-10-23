@@ -1,3 +1,4 @@
+using Lorex.Api.Features.AiChanges;
 using Lorex.Api.Features.Auth;
 using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Comments;
@@ -142,6 +143,10 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
     public DbSet<TimelineEntryValidation> TimelineEntryValidations => Set<TimelineEntryValidation>();
 
     public DbSet<McpConnection> McpConnections => Set<McpConnection>();
+
+    public DbSet<AiChangeProposal> AiChangeProposals => Set<AiChangeProposal>();
+
+    public DbSet<AiChangeOperation> AiChangeOperations => Set<AiChangeOperation>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

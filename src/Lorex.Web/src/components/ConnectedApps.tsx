@@ -5,6 +5,7 @@ import {
   ConnectedAppStatus,
   disconnectApp,
   listConnectedApps,
+  stopProposals,
   type ConnectedApp,
   type ConnectedAppStatusValue,
 } from '../mcp/api'
@@ -112,7 +113,10 @@ export function ConnectedApps() {
   )
 }
 
-function ConnectedAppRow({ app, onRemoved }: { app: ConnectedApp; onRemoved: () => void }) {
+function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemoved: () => void }) {
+  const [app, setApp] = useState(listed)
+  const [stopping, setStopping] = useState(false)
+  const [stopped, setStopped] = useState(false)
   const id = useId()
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -148,6 +152,20 @@ function ConnectedAppRow({ app, onRemoved }: { app: ConnectedApp; onRemoved: () 
     }
   }
 
+  async function stop() {
+    setStopping(true)
+    setError(null)
+    try {
+      await stopProposals(app.id)
+      setApp({ ...app, canPropose: false })
+      setStopped(true)
+    } catch {
+      setError('Proposals couldn’t be turned off. Try again.')
+    } finally {
+      setStopping(false)
+    }
+  }
+
   return (
     <li className="connectedapps__row" data-testid="connected-app" data-status={app.status}>
       <div className="connectedapps__who">
@@ -162,7 +180,8 @@ function ConnectedAppRow({ app, onRemoved }: { app: ConnectedApp; onRemoved: () 
           ) : (
             'Unverified app'
           )}
-          {' · '}Read-only
+          {' · '}
+          {app.canPropose ? 'Reads, and can propose changes for review' : 'Read-only'}
         </p>
         <p className="connectedapps__meta">
           Reads <bdi>{app.universeName}</bdi>
@@ -184,6 +203,18 @@ function ConnectedAppRow({ app, onRemoved }: { app: ConnectedApp; onRemoved: () 
         </p>
       </div>
       <div className="connectedapps__controls">
+        {app.canPropose ? (
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => void stop()}
+            disabled={busy || stopping}
+            aria-label={`Stop ${app.clientName} proposing changes to ${app.universeName}`}
+            data-testid="stop-app-proposals"
+          >
+            {stopping ? 'Stopping' : 'Stop proposals'}
+          </button>
+        ) : null}
         <button
           ref={button}
           className="button button--secondary button--danger-quiet"
@@ -232,6 +263,12 @@ function ConnectedAppRow({ app, onRemoved }: { app: ConnectedApp; onRemoved: () 
             </button>
           </div>
         </div>
+      ) : null}
+      {stopped ? (
+        <p className="connectedapps__meta" role="status" data-testid="app-proposals-stopped">
+          It can&rsquo;t propose changes any more, and can still read. What it already proposed can
+          only be rejected.
+        </p>
       ) : null}
       {error ? (
         <p className="form__message connectedapps__error" role="alert">

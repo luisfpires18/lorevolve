@@ -173,3 +173,15 @@ and secrets in any case. No manuscript text is logged.
 - Not in V1: writes of any kind, Suggested Changes, AI-generated content or imports (issues 32, 17), cross-universe
   search, account-wide discovery, resources or prompts, a per-universe switch, rate limits on MCP reads beyond the read
   layer's bounds, and an admin view of all registrations.
+
+## Amendment (2026-10-23, roadmap 052, ADR 0047): a separate permission to propose
+
+V1's read grant is unchanged and still read-only. A second scope, `lorex.propose`, lets an app stage changes for a person
+to review in LoreX; it never writes. Discovery, the protected resource metadata and the 401 challenge now list both scopes;
+the consent screen offers proposing as its own unticked choice, only when the app asked for it and the person's role can
+stage changes, and grants it only on that tick (`lorex_propose=allow`), recorded on the connection as `CanPropose`. A
+refresh never widens a grant. Per-client scope permissions are ignored, so clients registered before the scope existed can
+ask for it; consent decides. The gate passes `CanPropose` (token scope and connection both) to the tools; the three
+proposal tools are hidden and refused without it. Connected Apps lists it and turns it off without disconnecting
+(`DELETE /api/profile/connected-apps/{id}/proposals`). "V1 grants read only; a later write permission would be a new scope
+and a new approval" - this is that scope, and it is still not a write.

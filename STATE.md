@@ -124,6 +124,27 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     0013 and 0043 amendments.
   - History consistency: kind change refused while older versions hold values (409 `entity_field_kind_locked`); a revision
     restore refused while its archived-field values differ from the entry's (409 `entity_revision_archived_field`).
+- **Roadmap 052 - MCP V2 · Controlled AI CRUD** (GitHub issue 32, temporarily ahead of #27 by owner decision;
+  `feat/controlled-ai-crud` off `dev` at `bd88d6c`; committed, not merged, not pushed). One migration
+  (`AddAiChangeProposals`: two tables + `McpConnections.CanPropose`), backup format unchanged (proposals never in a backup).
+  ADR 0047 (new); 0014, 0044, 0045, 0046 amendments.
+  - An AI proposes, a person approves in LoreX, only approved changes are applied. One staging/validation/commit service for
+    both entry points (`Features/AiChanges`); MCP and the assistant only parse into its contract. Nothing staged writes content.
+  - Covered: lore entries + field values (create, update, Trash), relationships (create, update), stories, chapters, scenes
+    (create, update, Trash), manuscripts (append; replace naming the version read), timeline moments (create, update).
+    **Blocked, reported:** removing a relationship or a moment (hard deletes, no Trash); an AI is told so.
+  - Approval = one transaction under the Canon gate, selected changes in dependency order through each resource's own core
+    write path (extracted for chapters, scenes, stories, manuscripts), all or none; revision, roles (approver and proposer),
+    app permission, dependencies, versions/stored forms rechecked inside it; `approvalId` makes a repeat apply nothing twice.
+    Reject cascades to what depends on it. Edit before approval moves the revision.
+  - Roles: owner/Editor stage and approve what they write; Reviewer stages only entry/story/scene edits (SuggestChanges),
+    approves nothing; Viewer nothing. Decision routes are session-only.
+  - MCP: opt-in scope `lorex.propose`, unticked consent choice, `CanPropose` on the connection, three tools hidden without it,
+    turned off from Connected apps. Read-only V1 unchanged (challenge/discovery now list both scopes; per-client scope lists
+    ignored so older registrations can ask). Assistant: explicit Propose changes switch (`mode: "propose"`).
+  - UI: Pending AI Changes (`/app/ai-changes`, bar count; universe section "AI changes"), review page, drawer switch, consent
+    choice, Connected apps "Stop proposals".
+  - Tests: see the review archive. Full Playwright not run locally; delegated to CI.
 - **Issue 38 - compact MCP consent card** (`improve/mcp-oauth-consent` off `dev` at `80db857`; committed, not merged,
   not pushed). Frontend only: `/connect/authorize` drops the sign-in plate for a centred card (max 32rem); Approve/Deny
   stick to the screen's foot when the viewport is at least 34rem tall. Consent copy, form fields, antiforgery and OAuth

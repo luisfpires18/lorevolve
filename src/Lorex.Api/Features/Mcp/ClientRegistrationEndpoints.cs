@@ -145,7 +145,7 @@ public static class ClientRegistrationEndpoints
             ["grant_types"] = new[] { GrantTypes.AuthorizationCode, GrantTypes.RefreshToken },
             ["response_types"] = new[] { ResponseTypes.Code },
             ["token_endpoint_auth_method"] = method,
-            ["scope"] = McpLimits.ReadScope,
+            ["scope"] = $"{McpLimits.ReadScope} {McpLimits.ProposeScope}",
         };
 
         if (secret is not null)

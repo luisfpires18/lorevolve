@@ -90,3 +90,10 @@ experience of its own, and is deferred.
   The resolver rejects it or makes the change by hand; the proposer can suggest again over the latest.
 - A schema change that does not move the target's version (a field definition removed) leaves a suggestion acceptable in
   appearance; its accept is then refused by validation.
+
+## Amendment (2026-10-23, roadmap 052, ADR 0047)
+
+A Reviewer's AI proposals reuse this capability, not a new rule: `SuggestChanges` lets a Reviewer stage, through an AI,
+exactly what it lets them suggest here - edits to an entry, a story or a scene - and nothing else. Those proposals are
+reviewed in Pending AI Changes, not in a target's Suggestions tab, and applied by an owner or Editor through the same write
+paths an accepted suggestion uses.

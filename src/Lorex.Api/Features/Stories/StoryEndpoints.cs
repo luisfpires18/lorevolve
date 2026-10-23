@@ -101,6 +101,19 @@ public static class StoryEndpoints
             return denied;
         }
 
+        return await CreateCoreAsync(db, universeId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The one way a story comes into being, shared with an approved AI change (ADR 0047). Access is the caller's to prove
+    /// first.
+    /// </summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        StoryRequest request,
+        CancellationToken cancellationToken)
+    {
         if (StoryValidation.ValidateStory(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -219,6 +232,16 @@ public static class StoryEndpoints
             return denied;
         }
 
+        return await TrashCoreAsync(db, universeId, storyId, cancellationToken);
+    }
+
+    /// <summary>Marks one live story as trashed, shared with an approved AI change (ADR 0047). Access is the caller's.</summary>
+    internal static async Task<IResult> TrashCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid storyId,
+        CancellationToken cancellationToken)
+    {
         var story = await FindAsync(db, universeId, storyId, cancellationToken);
         if (story is null)
         {

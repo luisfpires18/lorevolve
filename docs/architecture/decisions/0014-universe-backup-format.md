@@ -456,3 +456,9 @@ entries hold for it, in Lore and in the Trash, including links, which a restore 
 other. A restore keeps it archived. Not ignorable: a version 24 reader would restore every archived field active, back in
 every form and, if it was required, refusing every save of an entry without it. A version 24 or older file restores every
 field active, even when it carries the member.
+
+## Amendment (2026-10-23, roadmap 052, ADR 0047)
+
+Pending AI Changes are not in a backup and are never restored: proposals and their changes are review state about
+accounts and connections, like comments and suggestions. A restored universe starts with none, so nothing approvable
+travels into another universe. The format is unchanged.

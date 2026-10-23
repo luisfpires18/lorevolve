@@ -17,6 +17,141 @@ namespace Lorex.Api.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
 
+            modelBuilder.Entity("Lorex.Api.Features.AiChanges.AiChangeOperation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("ApprovalId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("BaseVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Before")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DependsOn")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProposalId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Proposed")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResolutionNote")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResolvedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Resource")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("ResultId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("TargetId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProposalId", "Key")
+                        .IsUnique();
+
+                    b.HasIndex("ProposalId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("AiChangeOperations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2)");
+
+                            t.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6)");
+
+                            t.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
+                        });
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.AiChanges.AiChangeProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClientName")
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("McpConnectionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProposedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProposedByUserId", "Status");
+
+                    b.HasIndex("UniverseId", "Status", "CreatedAt");
+
+                    b.ToTable("AiChangeProposals", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AiChangeProposals_Source", "\"Source\" IN (0, 1)");
+
+                            t.HasCheckConstraint("CK_AiChangeProposals_Status", "\"Status\" IN (0, 1, 2, 3, 4)");
+                        });
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Auth.LorexUser", b =>
                 {
                     b.Property<string>("Id")
@@ -1124,6 +1259,9 @@ namespace Lorex.Api.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("CanPropose")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("ClientId")
                         .IsRequired()
@@ -2584,6 +2722,28 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("OpenIddictTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.AiChanges.AiChangeOperation", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.AiChanges.AiChangeProposal", "Proposal")
+                        .WithMany("Operations")
+                        .HasForeignKey("ProposalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Proposal");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.AiChanges.AiChangeProposal", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Universe");
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.CanonIntegrity.CanonConflict", b =>
                 {
                     b.HasOne("Lorex.Api.Features.Universes.Universe", "Universe")
@@ -3602,6 +3762,11 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("Application");
 
                     b.Navigation("Authorization");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.AiChanges.AiChangeProposal", b =>
+                {
+                    b.Navigation("Operations");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.CanonIntegrity.CanonConflict", b =>

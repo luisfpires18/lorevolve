@@ -4,7 +4,10 @@ namespace Lorex.Api.Features.Assistant;
 /// One question, with the conversation so far as the browser holds it. Nothing is stored: the history is whatever the
 /// client sends, cut to the assistant's bounds, and the universe is read afresh for every question.
 /// </summary>
-public sealed record AssistantRequest(string? Question, IReadOnlyList<AssistantHistoryMessage>? History);
+public sealed record AssistantRequest(string? Question, IReadOnlyList<AssistantHistoryMessage>? History, string? Mode = null);
+
+/// <summary>A proposal a propose-mode question staged (ADR 0047): reviewed and decided in Pending AI Changes, never applied here.</summary>
+public sealed record AssistantProposal(Guid Id, int ChangeCount);
 
 /// <summary>One earlier message: what the person asked, or the text of what the assistant answered.</summary>
 public sealed record AssistantHistoryMessage(AssistantRole Role, string? Text);
@@ -56,4 +59,5 @@ public sealed record AssistantSegment(AssistantSegmentKind Kind, string Text, IR
 public sealed record AssistantAnswer(
     IReadOnlyList<AssistantSegment> Segments,
     IReadOnlyList<AssistantSource> Sources,
-    bool IsIncomplete);
+    bool IsIncomplete,
+    AssistantProposal? Proposal = null);

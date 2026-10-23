@@ -9,6 +9,7 @@ import { useDocumentTitle } from '../lib/useDocumentTitle'
 import {
   describeConnectionRequest,
   getConsentToken,
+  PROPOSE_FIELD,
   READABLE,
   type ConnectionRequestDetails,
   type ConsentToken,
@@ -153,6 +154,9 @@ export default function ConnectAuthorizePage() {
           This app wants <strong>read-only</strong> access to one of your universes: its lore
           entries, relationships, stories, scene manuscripts and timeline. What it reads goes to the
           AI service behind it. Check who is asking before you approve.
+          {load.kind === 'ready' && load.details.proposalsRequested && load.details.canPropose
+            ? ' It also asks to propose changes for you to review, which you can allow below.'
+            : null}
         </>
       }
       footer={
@@ -279,6 +283,8 @@ function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id
         <p className="consent__identity">It can&rsquo;t create, edit or delete anything.</p>
       </section>
 
+      {details.proposalsRequested ? <ProposalChoice details={details} /> : null}
+
       <section className="consent__part consent__part--notes" aria-label="Before you approve">
         <p className="settings__note">
           What the app reads goes to the AI service behind it, which handles it under its own terms.
@@ -291,6 +297,48 @@ function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id
         </p>
       </section>
     </div>
+  )
+}
+
+/**
+ * The separate permission to propose changes (ADR 0047), offered only when the app asked and the role could allow it -
+ * and never ticked for the person. Proposing is not writing: what the app sends waits in Pending AI Changes.
+ */
+function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
+  if (!details.canPropose) {
+    return (
+      <section className="consent__part" aria-label="Proposing changes">
+        <p className="consent__identity" data-testid="consent-propose-unavailable">
+          The app also asked to propose changes. Your role here only reads, so it gets read-only
+          access.
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="consent__part consent__propose" aria-label="Proposing changes">
+      <p className="consent__label">Optional</p>
+      <div className="consent__check">
+        <input
+          id="consent-propose"
+          type="checkbox"
+          name={PROPOSE_FIELD}
+          value="allow"
+          aria-describedby="consent-propose-what"
+          data-testid="consent-propose"
+        />
+        <label htmlFor="consent-propose">
+          Also let <bdi>{details.clientName}</bdi> propose changes for you to review
+        </label>
+      </div>
+      <p className="consent__identity" id="consent-propose-what">
+        It could send new or changed lore, relationships, stories, scenes, prose and timeline
+        moments to Pending AI Changes in LoreX, as you. Nothing changes until you, or the
+        universe&rsquo;s owner or an Editor, approves it there. You can turn this off in Connected
+        apps.
+      </p>
+    </section>
   )
 }
 
