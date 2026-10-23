@@ -72,6 +72,12 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   own runner, API, Vite and `lorex-e2e-shard-N.db`), `fail-fast: false`, reports `playwright-report-shard-N-of-2`. Job
   timeouts added. No cache or build-reuse change (seconds at most). Partition checked locally: 246 + 245 = 491, no
   overlap. actionlint 1.7.7 clean. Not yet measured on GitHub; estimate merge-to-DEV ~27 min -> ~15 min.
+- **CI: Playwright image + 4 E2E shards** (`chore/ci-playwright-image-shards` off `dev` at `4ca9361`; committed, not
+  merged, not pushed). E2E job runs in `mcr.microsoft.com/playwright:v1.63.0-noble` (chromium-1243, matches lock);
+  `playwright install --with-deps` gone (20 s typical, 489-691 s on 3 of 16 recent shards: apt mirror at 46 kB/s).
+  Runner's DejaVu mounted read-only + `fc-match` guard (image has none; layout specs need it). `$RUNNER_TEMP` for the DB.
+  `--shard=N/4`: 134+133+133+133 = 533, no overlap. actionlint 1.7.7 clean. Not yet measured on GitHub; expect E2E
+  ~10-12 min/shard, Backend (17 min last run) becomes the critical path. Image tag must be bumped with `@playwright/test`.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);
