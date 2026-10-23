@@ -73,25 +73,27 @@ before any request reached the API - the dev server failing to deliver the page'
 load, the same flake recorded in `STATE.md` since 013 - and it was green three times out of three
 alone. Nothing in either run was SQLite contention or a server error.
 
-### CI: four shards, two browsers each, a fresh database per shard
+### CI: six shards, two browsers each, a fresh database per shard
 
 At 491 tests the single job took about 22 minutes of Playwright and was the whole critical path
-from a merge into `dev` to DEV. Two shards brought that to 10-18 minutes; at 533 tests `ci.yml`
-runs the `e2e` job as a matrix of four (`--shard=N/4`), each on its own runner:
+from a merge into `dev` to DEV. Two shards brought that to 10-18 minutes and four to 5.4-9.4 (run 40013082234). Playwright
+deals tests out by count, in file order, so the slow specs bunch up; at 533 tests `ci.yml` runs
+the `e2e` job as a matrix of six (`--shard=N/6`), each on its own runner. Simulated from that
+run's per-test durations, the slowest shard drops from about 11.8 to 8.9 minutes:
 
 - **Coverage.** Playwright partitions the suite itself (`fullyParallel`, so by test, not by
-  file); no spec list is kept. Checked with `npx playwright test --list --shard=N/4`:
-  134 + 133 + 133 + 133 = 533, no test in two shards, none missing.
+  file); no spec list is kept. Checked with `npx playwright test --list --shard=N/6`:
+  89 x 5 + 88 = 533, no test in two shards, none missing.
 - **Isolation.** Each shard starts its own API and Vite server and builds its own database,
   `LOREX_E2E_DB=$RUNNER_TEMP/lorex-e2e-shard-N.db`. Nothing is shared between runners, so the
   concurrency against any one SQLite file is unchanged: two workers, as proved above.
 - **Failures.** `fail-fast: false`, so one failing shard does not cancel the others and lose their
   evidence. Any failing shard fails the job, and the deployment `needs` it.
-- **Reports.** One HTML report per shard, `playwright-report-shard-N-of-4`, kept 7 days. They are
-  not merged: that needs the blob reporter and a merge job, more machinery than four links.
+- **Reports.** One HTML report per shard, `playwright-report-shard-N-of-6`, kept 7 days. They are
+  not merged: that needs the blob reporter and a merge job, more machinery than six links.
 - Retries, traces and screenshots are unchanged (`playwright.config.ts`).
 
-The cost is the job's setup four times over (about two minutes each: image pull, .NET, Node, two
+The cost is the job's setup six times over (about two minutes each: image pull, .NET, Node, two
 `npm ci`, the API build), in parallel, and those minutes billed per shard.
 
 **The job runs in Playwright's image**, `mcr.microsoft.com/playwright:v<version>-noble` at the

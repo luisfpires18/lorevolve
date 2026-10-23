@@ -24,10 +24,18 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
 
 jobs:
+  # The backend suite is CPU-bound, so it is split across three runners by test class
+  # (scripts/dotnet-test-shard.py): each class runs whole, with its own host and in-memory
+  # database, in exactly one shard, and each shard proves from its own results that it ran exactly
+  # the classes dealt to it. fail-fast is off so one failing shard does not hide another's.
   backend:
-    name: Backend
+    name: Backend (shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v7
 
@@ -41,13 +49,15 @@ jobs:
       - name: Build (Release)
         run: dotnet build Lorex.slnx -c Release --no-restore
 
-      - name: Test
-        run: dotnet test Lorex.slnx -c Release --no-build
+      - name: Test (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+        run: python3 scripts/dotnet-test-shard.py ${{ matrix.shard }}/${{ strategy.job-total }}
 
       # The schema and the model have to agree. Raw-SQL migrations are invisible to this check
       # by design - see ADR 0016 - so a green result means "no EF Core model change is owed",
-      # not "the schema is certainly complete".
+      # not "the schema is certainly complete". It reads the build, not the tests, so one shard
+      # runs it.
       - name: Check for pending model changes
+        if: matrix.shard == 1
         run: |
           dotnet tool restore
           dotnet ef migrations has-pending-model-changes \
@@ -94,8 +104,8 @@ jobs:
       - name: Build
         run: npm run build
 
-  # The suite is split across four runners with Playwright's own sharding: each shard is a
-  # complementary quarter of the whole suite (fullyParallel, so Playwright partitions by test, and
+  # The suite is split across six runners with Playwright's own sharding: each shard is a
+  # complementary sixth of the whole suite (fullyParallel, so Playwright partitions by test, and
   # no spec list is kept here). Each runner has its own API, Vite server and fresh database, so
   # sharding adds no concurrency against any one SQLite file: two browsers per database, as before.
   # fail-fast is off so a failing shard does not cancel the others and hide their evidence; any
@@ -121,7 +131,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@v7
 

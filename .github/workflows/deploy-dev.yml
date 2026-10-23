@@ -29,18 +29,14 @@ jobs:
     name: Validate
     uses: ./.github/workflows/ci.yml
 
-  deploy:
-    name: Deploy
-    needs: validate
+  # The deployable is built while validation runs rather than after it, so the deployment itself
+  # is only sign-in, upload and the health check. Nothing leaves this job but an artifact: Deploy
+  # still needs validate, so an unvalidated build is never published.
+  package:
+    name: Package
     if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    environment:
-      name: dev
-      url: ${{ steps.deploy.outputs.webapp-url }}
-    permissions:
-      contents: read
-      id-token: write
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -60,6 +56,8 @@ jobs:
       # LOREX_DEV_RUN makes the shown version this run's DEV patch (src/Lorex.Web/devVersion.ts):
       # it rises with every run and stays the same on a re-run. The build id names the service
       # worker's cache, so it carries the attempt too: every build, re-runs included, starts clean.
+      # Re-running only a failed Deploy reuses this attempt's package, and with it its build id:
+      # the same bytes under the same cache name.
       - name: Build the client
         working-directory: src/Lorex.Web
         env:
@@ -77,6 +75,34 @@ jobs:
 
       - name: Publish the API
         run: dotnet publish src/Lorex.Api -c Release -o publish
+
+      - name: Upload the package
+        uses: actions/upload-artifact@v7
+        with:
+          name: dev-package
+          path: publish
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    name: Deploy
+    needs: [validate, package]
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: dev
+      url: ${{ steps.deploy.outputs.webapp-url }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download the package
+        uses: actions/download-artifact@v7
+        with:
+          name: dev-package
+          path: publish
 
       - name: Sign in to Azure
         uses: azure/login@v3
