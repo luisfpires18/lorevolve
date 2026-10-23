@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { chooseFromMenu } from './support/rowMenu'
+import { answerConfirms } from './support/confirm'
 
 /**
  * The five story drawers - story, chapter, scene, arc and beat - never let unsaved changes go without asking, and never
@@ -99,13 +100,15 @@ async function seedStory(page: Page, universeId: string) {
  * Every dialog the page raises, in order, each answered by the next answer queued - dismissed when none is queued. So a
  * test says what it expects to be asked, and a question nobody expected shows up in `asked`.
  */
-function dialogs(page: Page) {
+async function dialogs(page: Page) {
   const asked: string[] = []
   const answers: boolean[] = []
+  // A reload or a closed tab is the browser's own prompt; everything else is LoreX's confirmation (Issue #50).
   page.on('dialog', (dialog) => {
     asked.push(dialog.type() === 'beforeunload' ? 'beforeunload' : dialog.message())
     void (answers.shift() ? dialog.accept() : dialog.dismiss())
   })
+  await answerConfirms(page, () => answers.shift() ?? false, asked)
   return {
     asked,
     answer(...next: boolean[]) {
@@ -124,7 +127,7 @@ test.describe('story drawers', () => {
   }) => {
     await signUp(page)
     const universeId = await newUniverse(page, unique('New Tales '))
-    const { asked, answer } = dialogs(page)
+    const { asked, answer } = await dialogs(page)
 
     await page.goto(`/app/universes/${universeId}/stories`)
     const form = page.getByTestId('story-form')
@@ -136,7 +139,7 @@ test.describe('story drawers', () => {
     await page.getByTestId('new-story').click()
     await page.keyboard.press('Escape')
     await expect(form).toHaveCount(0)
-    expect(asked).toEqual([])
+    await expect.poll(() => asked).toEqual([])
 
     // With a title typed, each way out asks once; staying keeps the title and the focus in the drawer.
     await page.getByTestId('new-story').click()
@@ -165,7 +168,7 @@ test.describe('story drawers', () => {
     await title.fill('')
     await page.getByTestId('cancel-story').click()
     await expect(form).toHaveCount(0)
-    expect(asked).toHaveLength(4)
+    await expect.poll(() => asked).toHaveLength(4)
 
     // Discarding closes it, asked once - and the next new story starts blank.
     await page.getByTestId('new-story').click()
@@ -173,7 +176,7 @@ test.describe('story drawers', () => {
     answer(true)
     await page.getByTestId('cancel-story').click()
     await expect(form).toHaveCount(0)
-    expect(asked).toHaveLength(5)
+    await expect.poll(() => asked).toHaveLength(5)
     await page.getByTestId('new-story').click()
     await expect(title).toHaveValue('')
   })
@@ -184,7 +187,7 @@ test.describe('story drawers', () => {
     await signUp(page)
     const universeId = await newUniverse(page, unique('Held Back '))
     const storyUrl = await seedStory(page, universeId)
-    const { asked, answer } = dialogs(page)
+    const { asked, answer } = await dialogs(page)
 
     // A real page to go back to.
     await page.goto(`/app/universes/${universeId}/stories`)
@@ -199,7 +202,9 @@ test.describe('story drawers', () => {
     // Back asks the leave question; staying keeps the address, the drawer and the draft.
     await page.goBack()
     await expect.poll(() => asked.length).toBe(1)
-    expect(asked[0]).toBe('“The Long Winter” has unsaved changes. Leave without saving them?')
+    await expect
+      .poll(() => asked[0])
+      .toBe('“The Long Winter” has unsaved changes. Leave without saving them?')
     await expect(page).toHaveURL(storyUrl)
     await expect(form).toBeVisible()
     await expect(premise).toHaveValue('A siege, told backwards.')
@@ -207,7 +212,7 @@ test.describe('story drawers', () => {
     // Reload or close asks through the browser's own prompt while anything is unsaved.
     await page.close({ runBeforeUnload: true })
     await expect.poll(() => asked.length).toBe(2)
-    expect(asked[1]).toBe('beforeunload')
+    await expect.poll(() => asked[1]).toBe('beforeunload')
     await expect(form).toBeVisible()
 
     // Saved, nothing is left to ask about: the drawer closes and Back goes straight back.
@@ -217,7 +222,7 @@ test.describe('story drawers', () => {
     await page.goBack()
     await page.waitForURL(/\/stories$/)
     await expect(page.getByTestId('story-row')).toBeVisible()
-    expect(asked).toHaveLength(2)
+    await expect.poll(() => asked).toHaveLength(2)
 
     // Leaving an unsaved edit by Back, once confirmed, goes - once - and closes the drawer.
     await page.goForward()
@@ -241,7 +246,7 @@ test.describe('story drawers', () => {
     await signUp(page)
     const universeId = await newUniverse(page, unique('Failed Saves '))
     const storyUrl = await seedStory(page, universeId)
-    const { asked, answer } = dialogs(page)
+    const { asked, answer } = await dialogs(page)
 
     await page.goto(`/app/universes/${universeId}/stories`)
     await page.getByTestId('story-row').getByRole('link').click()
@@ -253,7 +258,7 @@ test.describe('story drawers', () => {
     const form = page.getByTestId('chapter-form')
     await page.getByTestId('cancel-chapter').click()
     await expect(form).toHaveCount(0)
-    expect(asked).toEqual([])
+    await expect.poll(() => asked).toEqual([])
 
     await chooseFromMenu(chapter, 'chapter-edit')
     await page.getByTestId('chapter-summary-input').fill('Where it begins.')
@@ -270,10 +275,12 @@ test.describe('story drawers', () => {
     await expect(page.getByTestId('chapter-summary-input')).toHaveValue('Where it begins.')
 
     await page.getByTestId('cancel-chapter').click()
-    expect(asked).toEqual([DISCARD])
+    await expect.poll(() => asked).toEqual([DISCARD])
     await page.goBack()
     await expect.poll(() => asked.length).toBe(2)
-    expect(asked[1]).toBe('“Arrival” has unsaved changes. Leave without saving them?')
+    await expect
+      .poll(() => asked[1])
+      .toBe('“Arrival” has unsaved changes. Leave without saving them?')
     await expect(page).toHaveURL(storyUrl)
     await expect(form).toBeVisible()
 
@@ -284,7 +291,7 @@ test.describe('story drawers', () => {
     await expect(chapter.getByTestId('chapter-summary')).toHaveText('Where it begins.')
     await page.goBack()
     await page.waitForURL(/\/stories$/)
-    expect(asked).toHaveLength(2)
+    await expect.poll(() => asked).toHaveLength(2)
 
     // A new chapter asks too, and discarding it creates nothing.
     await page.goForward()
@@ -294,7 +301,7 @@ test.describe('story drawers', () => {
     answer(true)
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('chapter-form')).toHaveCount(0)
-    expect(asked).toEqual([DISCARD, asked[1], DISCARD])
+    await expect.poll(() => asked).toEqual([DISCARD, asked[1], DISCARD])
     await expect(page.getByTestId('chapter')).toHaveCount(2)
   })
 
@@ -304,7 +311,7 @@ test.describe('story drawers', () => {
     await signUp(page)
     const universeId = await newUniverse(page, unique('Scene Drafts '))
     const storyUrl = await seedStory(page, universeId)
-    const { asked, answer } = dialogs(page)
+    const { asked, answer } = await dialogs(page)
     // Reached in the app, so Back has a page of Lorex's own to go to.
     await page.goto(`/app/universes/${universeId}/stories`)
     await page.getByTestId('story-row').getByRole('link').click()
@@ -318,20 +325,20 @@ test.describe('story drawers', () => {
     await title.fill('The Gates')
     await page.getByTestId('cancel-scene').click()
     await expect(form).toHaveCount(0)
-    expect(asked).toEqual([])
+    await expect.poll(() => asked).toEqual([])
 
     // Moving it to another chapter is a change.
     await chooseFromMenu(scene(page, 'The Gates'), 'scene-edit')
     await page.getByTestId('scene-chapter-select').selectOption({ label: 'Chapter 2: Ashes' })
     await page.getByTestId('cancel-scene').click()
-    expect(asked).toEqual([DISCARD])
+    await expect.poll(() => asked).toEqual([DISCARD])
     await expect(form).toBeVisible()
 
     // So is letting go of an entry it links; choosing the chapter back leaves only that change.
     await page.getByTestId('scene-chapter-select').selectOption({ label: 'Chapter 1: Arrival' })
     await form.getByTestId('participant-remove-Arlen').click()
     await page.keyboard.press('Escape')
-    expect(asked).toEqual([DISCARD, DISCARD])
+    await expect.poll(() => asked).toEqual([DISCARD, DISCARD])
     await expect(form).toBeVisible()
 
     // Discarded, the edit is gone: the next scene opened shows only its own stored values.
@@ -349,25 +356,27 @@ test.describe('story drawers', () => {
     await expect(title).toHaveValue('The Gates')
     await expect(form.getByTestId('participant-remove-Arlen')).toBeVisible()
     await page.getByTestId('cancel-scene').click()
-    expect(asked).toHaveLength(3)
+    await expect.poll(() => asked).toHaveLength(3)
 
     // A new scene, untouched, closes quietly; with a title, Back asks and staying keeps it.
     await page.getByTestId('new-scene').click()
     await page.keyboard.press('Escape')
     await expect(form).toHaveCount(0)
-    expect(asked).toHaveLength(3)
+    await expect.poll(() => asked).toHaveLength(3)
     await page.getByTestId('new-scene').click()
     await title.fill('The Breach')
     await page.goBack()
     await expect.poll(() => asked.length).toBe(4)
-    expect(asked[3]).toBe('This new scene has not been created. Leave without saving it?')
+    await expect
+      .poll(() => asked[3])
+      .toBe('This new scene has not been created. Leave without saving it?')
     await expect(title).toHaveValue('The Breach')
 
     // Saved, it closes without a word, and the scene is there.
     await page.getByTestId('save-scene').click()
     await expect(form).toHaveCount(0)
     await expect(scene(page, 'The Breach')).toHaveCount(1)
-    expect(asked).toHaveLength(4)
+    await expect.poll(() => asked).toHaveLength(4)
   })
 
   test("an arc and a beat ask before their drafts go, a beat's scenes count, and a saved one asks nothing", async ({
@@ -376,7 +385,7 @@ test.describe('story drawers', () => {
     await signUp(page)
     const universeId = await newUniverse(page, unique('Plot Drafts '))
     const storyUrl = await seedStory(page, universeId)
-    const { asked, answer } = dialogs(page)
+    const { asked, answer } = await dialogs(page)
     await page.goto(`${storyUrl}/plot`)
     const arc = page.locator('[data-testid="plot-arc"][data-title="The siege"]')
     const beat = page.locator('[data-testid="plot-beat"][data-title="The wall holds"]')
@@ -390,7 +399,7 @@ test.describe('story drawers', () => {
     answer(true)
     await page.getByTestId('cancel-plot-arc').click()
     await expect(page.getByTestId('plot-arc-form')).toHaveCount(0)
-    expect(asked).toEqual([DISCARD])
+    await expect.poll(() => asked).toEqual([DISCARD])
     await expect(page.getByTestId('plot-arc')).toHaveCount(1)
 
     // An edited arc, saved, asks nothing - neither on closing nor on leaving for another view.
@@ -408,24 +417,24 @@ test.describe('story drawers', () => {
     )
     await council.check()
     await page.getByTestId('cancel-plot-beat').click()
-    expect(asked).toEqual([DISCARD, DISCARD])
+    await expect.poll(() => asked).toEqual([DISCARD, DISCARD])
     await expect(beatForm).toBeVisible()
     await council.uncheck()
     await page.getByTestId('cancel-plot-beat').click()
     await expect(beatForm).toHaveCount(0)
-    expect(asked).toHaveLength(2)
+    await expect.poll(() => asked).toHaveLength(2)
 
     // A new beat asks too; saved, it is simply there.
     await arc.getByTestId('plot-arc-new-beat').click()
     await page.getByTestId('plot-beat-title-input').fill('The gate falls')
     await page.keyboard.press('Escape')
-    expect(asked).toEqual([DISCARD, DISCARD, DISCARD])
+    await expect.poll(() => asked).toEqual([DISCARD, DISCARD, DISCARD])
     await page.getByTestId('save-plot-beat').click()
     await expect(beatForm).toHaveCount(0)
     await expect(page.getByTestId('plot-beat')).toHaveCount(2)
 
     await page.getByTestId('story-view-scenes').click()
     await page.waitForURL(storyUrl)
-    expect(asked).toHaveLength(3)
+    await expect.poll(() => asked).toHaveLength(3)
   })
 })

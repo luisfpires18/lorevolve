@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Refinement 018: Chronology explains itself in date periods. Authors see "date period"; the API still says era
@@ -223,8 +224,8 @@ test.describe('chronology date periods', () => {
     await page.getByTestId('moment-kind-range').click()
     await expect(page.getByLabel('Starts in period')).toBeVisible()
     await expect(page.getByLabel('Ends in period')).toBeVisible()
-    page.once('dialog', (dialog) => void dialog.accept())
     await page.getByTestId('cancel-moment').click()
+    await acceptConfirm(page)
 
     // A scene's date is placed the same way.
     const story = await api<{ id: string }>(page, 'POST', `/api/universes/${id}/stories`, {

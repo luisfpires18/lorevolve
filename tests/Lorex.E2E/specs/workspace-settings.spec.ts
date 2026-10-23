@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { png } from './support/png'
+import { answerConfirms } from './support/confirm'
 
 /**
  * UI refinement 014: the workspace's information architecture. Lorex's brand leads to the portal from everywhere;
@@ -463,22 +464,19 @@ test.describe('Settings', () => {
     const w = await universe(page)
     const asked: string[] = []
     let leave = false
-    page.on('dialog', (dialog) => {
-      asked.push(dialog.message())
-      void (leave ? dialog.accept() : dialog.dismiss())
-    })
+    await answerConfirms(page, () => leave, asked)
 
     await page.goto(`/app/universes/${w.id}/settings`)
     await page.getByLabel('Description').fill('Half a thought.')
     await page.getByRole('tab', { name: 'Appearance' }).click()
-    expect(asked).toEqual([])
+    await expect.poll(() => asked).toEqual([])
     await page.getByTestId('universe-colour-hex').fill('#336699')
     await page.getByRole('tab', { name: 'General' }).click()
     await expect(page.getByLabel('Description')).toHaveValue('Half a thought.')
 
     // Leaving for the portal asks once, for both, and staying keeps both.
     await page.locator('.rail__mark').click()
-    expect(asked).toHaveLength(1)
+    await expect.poll(() => asked).toHaveLength(1)
     await expect(page).toHaveURL(/\/settings$/)
     await page.getByRole('tab', { name: 'Appearance' }).click()
     await expect(page.getByTestId('universe-colour-hex')).toHaveValue('#336699')
@@ -486,7 +484,7 @@ test.describe('Settings', () => {
     leave = true
     await page.getByTestId('workspace-lore').click()
     await page.waitForURL(/\/lore$/)
-    expect(asked).toHaveLength(2)
+    await expect.poll(() => asked).toHaveLength(2)
   })
 
   test('Settings and Publish reflow on a phone and at 200% zoom, light and dark', async ({

@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Issue 45 (ADR 0048), on the local Fake provider: the Assistant stages an entry's article, a world rule, a plot arc and beat,
@@ -200,16 +201,16 @@ test.describe('AI changes to every authored resource', () => {
       entityIds: [arin.id],
     })
 
-    page.on('dialog', (dialog) => void dialog.accept())
-
     await page.goto(`/app/universes/${universeId}/lore/${arin.id}/relations`)
     await page.getByTestId('relationship-actions-Varn').click()
     await page.getByTestId('delete-relationship-Varn').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('relations-empty')).toBeVisible()
 
     await page.goto(`/app/universes/${universeId}/timeline`)
     await page.getByTestId('moment-actions-The crowning').click()
     await page.getByTestId('delete-moment-The crowning').click()
+    await acceptConfirm(page)
     await expect(page.getByText('The crowning')).toHaveCount(0)
 
     await page.goto(`/app/universes/${universeId}/trash`)

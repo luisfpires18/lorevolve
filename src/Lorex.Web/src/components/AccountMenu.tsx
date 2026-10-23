@@ -54,7 +54,7 @@ export function AccountMenu({
 
   async function signOut() {
     // A way out of whatever is open, and a button rather than a link, so the leave guard's link check never sees it.
-    if (!confirmLeaving()) return
+    if (!(await confirmLeaving())) return
 
     setBusy(true)
     try {

@@ -8,6 +8,7 @@ import {
   fieldSummary,
   openFields,
 } from './support/typeFields'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Managing a Lore type's fields (Issue #39): Fields lists what the type has and opens no form on its own; Edit changes a
@@ -289,15 +290,10 @@ test.describe('a type’s fields', () => {
     await expect(page.getByTestId('field-row-Kingdom')).toBeVisible()
 
     // Motto holds nothing: one confirmation, and it is gone.
-    let asked = ''
-    page.once('dialog', (dialog) => {
-      asked = dialog.message()
-      void dialog.accept()
-    })
     await page.getByTestId('field-actions-Motto').click()
     await page.getByTestId('delete-field-Motto').click()
+    await acceptConfirm(page, "This can't be undone.")
     await expect(page.getByTestId('field-row-Motto')).toHaveCount(0)
-    expect(asked).toContain("This can't be undone.")
     await expect(page.getByTestId('fields-notice-Character')).toHaveText(
       'Deleted the field “Motto”.',
     )
@@ -305,8 +301,8 @@ test.describe('a type’s fields', () => {
     // Archive instead, from the refusal itself.
     await page.getByTestId('field-actions-Kingdom').click()
     await page.getByTestId('delete-field-Kingdom').click()
-    page.once('dialog', (dialog) => void dialog.accept())
     await page.getByTestId('archive-instead-Kingdom').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('field-row-Kingdom')).toHaveCount(0)
     await expect(page.getByTestId('archived-fields-Character')).toBeVisible()
   })

@@ -6,6 +6,7 @@ import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import type { UniverseInput } from '../universes/types'
+import { confirmDiscard } from '../lib/confirm'
 
 /**
  * A universe's colour is the author's own (UI refinement 014): any `#rrggbb` - the one shape the API accepts - or none.
@@ -84,8 +85,8 @@ export function UniverseForm({
       : null,
   )
 
-  function cancel() {
-    if (isDirty && !window.confirm('Close without saving your changes? They will be lost.')) return
+  async function cancel() {
+    if (isDirty && !(await confirmDiscard())) return
     onCancel?.()
   }
 

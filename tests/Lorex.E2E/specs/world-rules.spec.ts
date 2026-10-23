@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { acceptConfirm, answerConfirms, confirmDialog } from './support/confirm'
 
 /**
  * World Rules, end to end (ADR 0033): explicit statements, in the author's words, about how one universe works.
@@ -248,8 +249,8 @@ test.describe('world rules', () => {
     await page.getByTestId('world-rule-save').click()
     await expect(conflict).toBeVisible()
 
-    page.once('dialog', (dialog) => void dialog.accept())
     await page.getByTestId('world-rule-load-saved').click()
+    await acceptConfirm(page)
     await expect(description).toHaveValue('The other window wins.')
     await expect(page.getByTestId('world-rule-status')).toHaveText('Saved')
   })
@@ -265,10 +266,7 @@ test.describe('world rules', () => {
 
     const questions: string[] = []
     let answer: 'stay' | 'leave' = 'stay'
-    page.on('dialog', (dialog) => {
-      questions.push(dialog.message())
-      void (answer === 'leave' ? dialog.accept() : dialog.dismiss())
-    })
+    await answerConfirms(page, () => answer === 'leave', questions)
 
     await page.goto(`${base}/world-rules`)
     await page
@@ -284,7 +282,9 @@ test.describe('world rules', () => {
     // A link.
     await page.getByTestId('workspace-timeline').click()
     await expect.poll(() => questions.length).toBe(1)
-    expect(questions[0]).toBe('“Magic has a cost” has unsaved changes. Leave without saving them?')
+    await expect
+      .poll(() => questions[0])
+      .toBe('“Magic has a cost” has unsaved changes. Leave without saving them?')
     await expect(description).toHaveValue('Always, and it is paid in years.')
     expect(pathname(page)).toBe(here)
 
@@ -305,7 +305,7 @@ test.describe('world rules', () => {
     answer = 'leave'
     await page.getByTestId('workspace-timeline').click()
     await page.waitForURL(`${base}/timeline`)
-    expect(questions).toHaveLength(4)
+    await expect.poll(() => questions).toHaveLength(4)
     expect((await readRule(page, universeId, rule.id)).description).toBe('Always.')
   })
 
@@ -320,15 +320,13 @@ test.describe('world rules', () => {
     const rule = await seedRule(page, universeId, name, 'The bond is one life.')
 
     await page.goto(`${base}/world-rules/${rule.id}`)
-    let question = ''
-    page.once('dialog', (dialog) => {
-      question = dialog.message()
-      void dialog.accept()
-    })
     await page.getByTestId('world-rule-actions').click()
     await page.getByTestId('world-rule-delete').click()
+    await expect(confirmDialog(page).locator('.confirm__title')).toHaveText(
+      `Move “${name}” to the Trash?`,
+    )
+    await acceptConfirm(page, 'You can restore it from the Trash.')
     await page.waitForURL(`${base}/world-rules`)
-    expect(question).toBe(`Move “${name}” to the Trash? You can restore it from the Trash.`)
     await expect(page.getByTestId('world-rules-deleted-notice')).toContainText(
       `“${name}” was moved to the Trash.`,
     )

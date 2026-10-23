@@ -123,14 +123,14 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
     setOpened('')
   }
 
-  function open(result: SearchResult, by: 'keyboard' | 'pointer') {
+  async function open(result: SearchResult, by: 'keyboard' | 'pointer') {
     const to = resultPath(universeId, result)
     const next = new URL(to, window.location.origin)
     const samePage =
       next.pathname === window.location.pathname && next.search === window.location.search
 
     // Another page is a way out of this one: the leave question first, as a link asks it. Staying changes nothing here.
-    if (!samePage && !confirmLeaving()) return
+    if (!samePage && !(await confirmLeaving())) return
 
     setOpenAt(null)
     setOpened(`Opened ${SEARCH_KIND_LABELS[result.kind]} “${result.title}”.`)
@@ -174,7 +174,7 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
       case 'Enter': {
         if (!showList) return
         event.preventDefault()
-        open(results[activeIndex < 0 ? 0 : activeIndex], 'keyboard')
+        void open(results[activeIndex < 0 ? 0 : activeIndex], 'keyboard')
         return
       }
 
@@ -307,7 +307,7 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
                     aria-selected={index === activeIndex}
                     data-kind={result.kind}
                     data-testid="universe-search-result"
-                    onClick={() => open(result, 'pointer')}
+                    onClick={() => void open(result, 'pointer')}
                   >
                     <span className="unisearch__kind">{SEARCH_KIND_LABELS[result.kind]}</span>
                     <span className="unisearch__body">

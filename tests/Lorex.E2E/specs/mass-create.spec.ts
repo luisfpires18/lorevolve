@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { chooseLoreType } from './support/lore'
+import { acceptConfirm, answerConfirms, confirmDialog } from './support/confirm'
 
 /**
  * Mass create: "I have 40 names. Put them in Lorex." A secondary action on Lore opens one page inside the workspace:
@@ -129,14 +130,9 @@ test.describe('Mass create', () => {
     await expect(page.getByTestId('mass-create-status')).toHaveText('Nothing to create yet.')
 
     // Blank, so leaving asks nothing.
-    const asked: string[] = []
-    page.on('dialog', (dialog) => {
-      asked.push(dialog.message())
-      void dialog.dismiss()
-    })
     await page.getByTestId('mass-create-back').click()
     await page.waitForURL(new RegExp(`/universes/${w.id}/lore$`))
-    expect(asked).toEqual([])
+    await expect(confirmDialog(page)).toHaveCount(0)
 
     // Opened from a type, that type is the default, and Back returns to it.
     await chooseLoreType(page, 'Location')
@@ -208,17 +204,11 @@ test.describe('Mass create', () => {
       }
     })
     // A successful create leaves nothing unsaved behind it, so nothing asks.
-    const asked: string[] = []
-    page.on('dialog', (dialog) => {
-      asked.push(dialog.message())
-      void dialog.dismiss()
-    })
-
     await submit(page).click()
     await page.waitForURL(new RegExp(`/universes/${w.id}/lore$`))
     await expect(page.getByTestId('lore-mass-created')).toHaveText('Created 40 entries.')
     expect(writes).toEqual([`/api/universes/${w.id}/entities/bulk`])
-    expect(asked).toEqual([])
+    await expect(confirmDialog(page)).toHaveCount(0)
 
     // All of them, as Location and Draft; the grid shows the newest; the filter finds any one of them.
     expect(await entryCount(page, w.id)).toBe(40)
@@ -502,11 +492,9 @@ test.describe('Mass create', () => {
     await paste(page, 'Frodo Baggins')
     await expect(rows(page)).toHaveCount(1)
 
+    // Stays twice, then leaves: a question is recorded once it has been answered.
     const asked: string[] = []
-    page.on('dialog', (dialog) => {
-      asked.push(dialog.message())
-      void (asked.length < 3 ? dialog.dismiss() : dialog.accept())
-    })
+    await answerConfirms(page, () => asked.length >= 2, asked)
 
     await page.getByTestId('mass-create-back').click()
     await expect(page).toHaveURL(/\/lore\/mass-create$/)
@@ -531,7 +519,7 @@ test.describe('Mass create', () => {
     await signUp(page)
     const w = await world(page)
     await typeNamed(page, w.id, 'Ancient Order of the Long-Remembered Northern Watchtowers')
-    page.on('dialog', (dialog) => void dialog.accept())
+    await answerConfirms(page, () => true, [])
 
     const ten = [
       'Character\tFrodo Baggins\tCanon',

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * A universe's own chronology, end to end. Each test registers its own account and builds its
@@ -215,8 +216,8 @@ test.describe('chronology', () => {
     await expect(page.getByTestId('moment-form')).toContainText(
       'Choose the date period this year is counted in.',
     )
-    page.once('dialog', (dialog) => void dialog.accept())
     await page.getByTestId('cancel-moment').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('moment-form')).toHaveCount(0)
 
     // Relabelling a date period rewords every date written in it and moves none of them.

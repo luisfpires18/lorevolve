@@ -32,6 +32,7 @@ import { useLeaveGuard } from '../lib/leaveGuard'
 import { useLocalDraft } from '../lib/useLocalDraft'
 import type { UniverseSummary } from '../universes/types'
 import { EmptyState } from './EmptyState'
+import { confirmAction } from '../lib/confirm'
 
 type LoadState =
   | { kind: 'loading' }
@@ -205,7 +206,6 @@ export function IdeaEditor({
   const [universes, setUniverses] = useState<UniverseSummary[] | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saves, setSaves] = useState(0)
-  const [isDeleting, setIsDeleting] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [conflict, setConflict] = useState<{ updatedAt: string | null } | null>(null)
@@ -403,11 +403,15 @@ export function IdeaEditor({
     setReads((current) => current + 1)
   }
 
-  function loadSavedVersion() {
+  async function loadSavedVersion() {
     if (
-      !window.confirm(
-        'Replace this idea with the version saved elsewhere? What you changed here since your last save will be lost.',
-      )
+      !(await confirmAction({
+        title: 'Replace this idea with the version saved elsewhere?',
+        message: 'What you changed here since your last save will be lost.',
+        confirmLabel: 'Use the saved version',
+        cancelLabel: 'Keep my changes',
+        variant: 'destructive',
+      }))
     ) {
       return
     }
@@ -444,12 +448,15 @@ export function IdeaEditor({
     requestAnimationFrame(() => titleInput.current?.focus())
   }
 
-  function changeUniverse(next: string | null) {
+  async function changeUniverse(next: string | null) {
     if (next === draft.universeId) return
     if (draft.references.length > 0) {
-      const confirmed = window.confirm(
-        `An idea's references stay inside its universe. Changing the universe takes this idea's ${referenceCountLabel(draft.references.length)} out of it. Nothing is saved until you save.`,
-      )
+      const confirmed = await confirmAction({
+        title: "Change this idea's universe?",
+        message: `An idea's references stay inside its universe. Changing the universe takes this idea's ${referenceCountLabel(draft.references.length)} out of it. Nothing is saved until you save.`,
+        confirmLabel: 'Change universe',
+        variant: 'warning',
+      })
       if (!confirmed) return
       edit({ universeId: next, references: [] })
       setAnnouncement('Universe changed. Its references were taken out of the unsaved idea.')
@@ -478,27 +485,30 @@ export function IdeaEditor({
   }
 
   async function remove() {
-    if (isNew || isDeleting) return
+    if (isNew) return
     const title = stored.title
-    const question = isDirty
-      ? `Delete “${title}”? Your unsaved changes will be lost. The idea as last saved goes to Recently deleted, where you can restore it.`
-      : `Delete “${title}”? It goes to Recently deleted, where you can restore it.`
-    if (!window.confirm(question)) return
-
-    setIsDeleting(true)
     setFailure(null)
-    try {
-      await deleteIdea(ideaId)
-      discard()
-      onDeleted({ id: ideaId, title })
-    } catch (error: unknown) {
-      setFailure(
+    const deleted = await confirmAction({
+      title: (
+        <>
+          Delete “<bdi>{title}</bdi>”?
+        </>
+      ),
+      message: isDirty
+        ? 'Your unsaved changes will be lost. The idea as last saved goes to Recently deleted, where you can restore it.'
+        : 'It goes to Recently deleted, where you can restore it.',
+      confirmLabel: 'Delete idea',
+      busyLabel: 'Deleting…',
+      variant: isDirty ? 'destructive' : 'warning',
+      failure: (error) =>
         error instanceof ApiError && error.status === 404
           ? 'This idea is no longer here. It may already have been deleted in another window.'
           : 'The idea could not be deleted. Try again.',
-      )
-      setIsDeleting(false)
-    }
+      action: () => deleteIdea(ideaId),
+    })
+    if (!deleted) return
+    discard()
+    onDeleted({ id: ideaId, title })
   }
 
   if (load.kind === 'loading') {
@@ -578,12 +588,12 @@ export function IdeaEditor({
               <button
                 className="actionmenu__item actionmenu__item--danger"
                 type="button"
-                disabled={isDeleting || isSaving}
+                disabled={isSaving}
                 onClick={() => void remove()}
                 data-testid="idea-delete"
               >
                 <ActionIcon icon={Trash2} />
-                {isDeleting ? 'Deleting…' : 'Delete idea'}
+                Delete idea
               </button>
             </ActionMenu>
           ) : null}

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { clickSignOut } from './support/account'
+import { answerConfirms } from './support/confirm'
 
 /**
  * Relationships, end to end. Each test registers its own account and builds its own
@@ -165,7 +166,7 @@ test.describe('relationships', () => {
     expect(views[0].endDate).toContain('2021-03-04')
 
     // Removing it from the target clears it from both entries: one row, one delete.
-    page.on('dialog', (dialog) => dialog.accept())
+    await answerConfirms(page, () => true, [])
     await page.goto(entryUrl(universeId, gondor))
     await page.getByTestId('relationship-actions-Aragorn').click()
     await page.getByTestId('delete-relationship-Aragorn').click()
@@ -259,7 +260,7 @@ test.describe('relationships', () => {
     expect(await refused.text()).toContain('1 relationship still uses this type. Delete it first.')
 
     // Clear the link and the kind becomes deletable.
-    page.on('dialog', (dialog) => dialog.accept())
+    await answerConfirms(page, () => true, [])
     await page.goto(entryUrl(universeId, aragorn))
     await page.getByTestId('relationship-actions-Gondor').click()
     await page.getByTestId('delete-relationship-Gondor').click()

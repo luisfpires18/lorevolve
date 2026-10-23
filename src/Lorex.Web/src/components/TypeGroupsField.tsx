@@ -4,6 +4,7 @@ import { ActionIcon } from './ActionIcon'
 import { ApiError } from '../lib/api'
 import { deleteEntityTypeGroup, renameEntityTypeGroup } from '../lore/api'
 import type { EntityType, EntityTypeGroup } from '../lore/types'
+import { confirmAction } from '../lib/confirm'
 
 /** One group a type is in, as the editor holds it: an existing group by id, or a new one by name, created on Save. */
 export type GroupChoice = { id: string } | { name: string }
@@ -304,7 +305,18 @@ function ManageGroups({
       names.length === 0
         ? 'No type is in it.'
         : `${names.join(', ')} will no longer be in it. The types, their fields and their entries stay as they are.`
-    if (!window.confirm(`Delete the group “${group.name}”?\n\n${effect} This cannot be undone.`)) {
+    if (
+      !(await confirmAction({
+        title: (
+          <>
+            Delete the group “<bdi>{group.name}</bdi>”?
+          </>
+        ),
+        message: `${effect} This cannot be undone.`,
+        confirmLabel: 'Delete group',
+        variant: 'destructive',
+      }))
+    ) {
       return
     }
     setBusy(true)

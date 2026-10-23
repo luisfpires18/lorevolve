@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * One journey through the history surface, and no more than that.
@@ -79,8 +80,8 @@ test.describe('history', () => {
     )
 
     // Putting it back changes the entry and is recorded as a version of its own.
-    page.once('dialog', (dialog) => void dialog.accept())
     await version(page, 1).getByTestId('version-restore').click()
+    await acceptConfirm(page)
 
     await expect(page.getByTestId('entry-summary')).toHaveText('Warden of the drowned coast.')
     await expect(page.getByTestId('history-list').locator('li')).toHaveCount(3)

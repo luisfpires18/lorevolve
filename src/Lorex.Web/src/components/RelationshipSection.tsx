@@ -25,6 +25,7 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EntityTile } from './EntityTile'
 import { Pencil, Plus, Trash } from 'lucide-react'
+import { confirmAction, confirmDiscard } from '../lib/confirm'
 
 interface RelationDraft {
   typeId: string
@@ -42,8 +43,6 @@ interface RelationshipSectionProps {
   entityId: string
   entityName: string
 }
-
-const DISCARD = 'Close without saving your changes? They will be lost.'
 
 /** A draft as it would be saved, for telling whether anything changed since the form opened. */
 function draftKey(draft: RelationDraft) {
@@ -141,8 +140,8 @@ export function RelationshipSection({
   }
 
   /** Cancel, or opening another relation over this one: asks once, only when there is something to lose. */
-  function mayDiscard() {
-    return !isDirty || window.confirm(DISCARD)
+  async function mayDiscard() {
+    return !isDirty || (await confirmDiscard())
   }
 
   function begin(next: RelationDraft) {
@@ -150,8 +149,8 @@ export function RelationshipSection({
     setOpened(draftKey(next))
   }
 
-  function openAdd() {
-    if (types.length === 0 || !mayDiscard()) return
+  async function openAdd() {
+    if (types.length === 0 || !(await mayDiscard())) return
     setMessage(null)
     setFieldErrors({})
     setEditingId(null)
@@ -167,8 +166,8 @@ export function RelationshipSection({
     })
   }
 
-  function openEdit(view: RelationshipView) {
-    if (!mayDiscard()) return
+  async function openEdit(view: RelationshipView) {
+    if (!(await mayDiscard())) return
     setMessage(null)
     setFieldErrors({})
     setIsAdding(false)
@@ -225,21 +224,23 @@ export function RelationshipSection({
   }
 
   async function remove(view: RelationshipView) {
-    if (
-      !window.confirm(
-        `Move "${view.label} ${view.relatedEntityName}" to the Trash? You can restore it from the Trash.`,
-      )
-    )
-      return
-
     setMessage(null)
-    try {
-      await deleteRelationship(universeId, view.id)
-      if (editingId === view.id) close()
-      await load()
-    } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That relation could not be removed.')
-    }
+    const removed = await confirmAction({
+      title: (
+        <>
+          Move “<bdi>{view.label}</bdi> <bdi>{view.relatedEntityName}</bdi>” to the Trash?
+        </>
+      ),
+      message: 'You can restore it from the Trash.',
+      confirmLabel: 'Move to Trash',
+      busyLabel: 'Moving…',
+      variant: 'warning',
+      failure: 'That relation could not be removed.',
+      action: () => deleteRelationship(universeId, view.id),
+    })
+    if (!removed) return
+    if (editingId === view.id) close()
+    await load()
   }
 
   const choices = labelChoices(types)
@@ -383,7 +384,7 @@ export function RelationshipSection({
           className="button button--secondary"
           type="button"
           onClick={() => {
-            if (mayDiscard()) close()
+            void mayDiscard().then((discarding) => discarding && close())
           }}
         >
           Cancel

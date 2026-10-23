@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { chooseLoreType } from './support/lore'
+import { acceptConfirm, confirmDialog } from './support/confirm'
 
 /**
  * One journey through the Trash, and no more than that.
@@ -79,13 +80,10 @@ test.describe('trash', () => {
     await page.goto(`/app/universes/${universeId}/lore/${gate}`)
     await expect(page.getByRole('button', { name: 'Delete' })).toHaveCount(0)
 
-    page.once('dialog', (dialog) => {
-      expect(dialog.message()).toContain('Trash')
-      expect(dialog.message()).toContain('restore')
-      void dialog.accept()
-    })
     await page.getByTestId('entity-actions').click()
     await page.getByTestId('trash-entity').click()
+    await expect(confirmDialog(page)).toContainText('Trash')
+    await acceptConfirm(page, 'restore')
 
     // Removing it lands on the Trash, where it is listed as recoverable.
     await page.waitForURL(/\/trash$/)

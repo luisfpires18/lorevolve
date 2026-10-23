@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { expectDetails } from './support/familyTree'
+import { answerConfirms } from './support/confirm'
 
 /**
  * The worldbuilding workspaces as Design Refactor 006 left them: one direct verb per row and the rest behind ⋯, a
@@ -279,16 +280,15 @@ test.describe('worldbuilding workspaces', () => {
     // A connection being added is asked about before another family opens, and staying keeps it.
     const asked: string[] = []
     const answers: boolean[] = []
-    page.on('dialog', (dialog) => {
-      asked.push(dialog.message())
-      void (answers.shift() ? dialog.accept() : dialog.dismiss())
-    })
+    await answerConfirms(page, () => answers.shift() ?? false, asked)
     await page.getByTestId('add-family-link').click()
     const form = page.getByTestId('family-link-form')
     await form.getByTestId('family-link-side').selectOption('child')
     await page.getByTestId('family-focus-Ilsa Varn').click()
     await expect.poll(() => asked.length).toBe(1)
-    expect(asked[0]).toBe('This family connection has not been added. Leave without saving it?')
+    await expect
+      .poll(() => asked[0])
+      .toBe('This family connection has not been added. Leave without saving it?')
     await expect(form).toBeVisible()
     await expect(form.getByTestId('family-link-side')).toHaveValue('child')
 
@@ -298,11 +298,11 @@ test.describe('worldbuilding workspaces', () => {
     answers.push(true)
     await form.getByRole('button', { name: 'Cancel' }).click()
     await expect(form).toHaveCount(0)
-    expect(asked).toEqual([asked[0], DISCARD])
+    await expect.poll(() => asked).toEqual([asked[0], DISCARD])
 
     // With nothing unsaved, another family opens at once.
     await page.getByTestId('family-focus-Ilsa Varn').click()
     await page.waitForURL(new RegExp(`/family-tree/${mother}$`))
-    expect(asked).toHaveLength(2)
+    await expect.poll(() => asked).toHaveLength(2)
   })
 })

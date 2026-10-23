@@ -57,6 +57,7 @@ import {
 } from '../stories/types'
 import { StatusBadge } from '../components/StatusBadge'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { confirmAction } from '../lib/confirm'
 
 type LoadState =
   | { kind: 'loading' }
@@ -78,13 +79,6 @@ const sceneMenu = (sceneId: string) => `#scene-${sceneId} [data-testid="scene-ac
 
 /** How long a scene or beat reached by a link stays marked, so the eye can pick it out from its neighbours. */
 const ARRIVAL_MS = 2400
-
-/** "a", "a and b", "a, b and c". */
-function listed(parts: string[]) {
-  return parts.length < 2
-    ? (parts[0] ?? '')
-    : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`
-}
 
 type StoryViewName = 'scenes' | 'plot' | 'manuscript' | 'ideas'
 
@@ -479,22 +473,23 @@ function StoryView({ view }: { view: StoryViewName }) {
             beats === 1 ? 'does the plot beat' : `do the ${beats} plot beats`
           } that point at it.`
 
-    if (
-      !window.confirm(
-        `Move the scene “${scene.title}” to the Trash? ${stays} You can restore it from the Trash.`,
-      )
-    ) {
-      return
-    }
-
     setMessage(null)
-    try {
-      await deleteScene(universe.id, story.id, scene.id)
-      setAnnouncement(`Moved “${scene.title}” to the Trash.`)
-      reload()
-    } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That scene could not be deleted.')
-    }
+    const removed = await confirmAction({
+      title: (
+        <>
+          Move the scene “<bdi>{scene.title}</bdi>” to the Trash?
+        </>
+      ),
+      message: `${stays} You can restore it from the Trash.`,
+      confirmLabel: 'Move scene to Trash',
+      busyLabel: 'Moving…',
+      variant: 'warning',
+      failure: 'That scene could not be deleted.',
+      action: () => deleteScene(universe.id, story.id, scene.id),
+    })
+    if (!removed) return
+    setAnnouncement(`Moved “${scene.title}” to the Trash.`)
+    reload()
   }
 
   /** Removes the chapter only. Its scenes move, in order, to the end of Unchaptered. */
@@ -505,51 +500,51 @@ function StoryView({ view }: { view: StoryViewName }) {
         ? 'It holds no scenes.'
         : `Its ${sceneCountLabel(count)} will be moved to Unchaptered. Their manuscripts and plot links go with them. No scene is deleted.`
 
-    if (
-      !window.confirm(
-        `Delete ${chapterLabel(index, chapter.title)}? The chapter will be removed. ${consequence} The chapter goes to the Trash, and restoring it brings it back without moving any scene.`,
-      )
-    ) {
-      return
-    }
-
     setMessage(null)
-    try {
-      await deleteChapter(universe.id, story.id, chapter.id)
-      setAnnouncement(
-        count === 0
-          ? `Moved the chapter “${chapter.title}” to the Trash.`
-          : `Moved the chapter “${chapter.title}” to the Trash. Its ${sceneCountLabel(count)} ${
-              count === 1 ? 'is' : 'are'
-            } now in Unchaptered.`,
-      )
-      reload()
-    } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That chapter could not be deleted.')
-    }
+    const removed = await confirmAction({
+      title: `Delete ${chapterLabel(index, chapter.title)}?`,
+      message: `The chapter will be removed. ${consequence} The chapter goes to the Trash, and restoring it brings it back without moving any scene.`,
+      confirmLabel: 'Move chapter to Trash',
+      busyLabel: 'Moving…',
+      variant: 'warning',
+      failure: 'That chapter could not be deleted.',
+      action: () => deleteChapter(universe.id, story.id, chapter.id),
+    })
+    if (!removed) return
+    setAnnouncement(
+      count === 0
+        ? `Moved the chapter “${chapter.title}” to the Trash.`
+        : `Moved the chapter “${chapter.title}” to the Trash. Its ${sceneCountLabel(count)} ${
+            count === 1 ? 'is' : 'are'
+          } now in Unchaptered.`,
+    )
+    reload()
   }
 
   async function removeStory() {
-    const holds = listed([
+    // What goes with the story, one line each, so its size is read before it is moved (Issue #50).
+    const details = [
       ...(hasChapters ? [chapterCountLabel(chapters.length)] : []),
-      sceneCountLabel(scenes.length),
+      `${sceneCountLabel(scenes.length)}, with every manuscript`,
       ...(arcs.length > 0 ? [arcCountLabel(arcs.length)] : []),
-    ])
-    if (
-      !window.confirm(
-        `Move “${story.title}” and its ${holds}, with every manuscript, to the Trash? You can restore the whole story from the Trash. The lore it draws on stays.`,
-      )
-    ) {
-      return
-    }
-
+    ]
     setMessage(null)
-    try {
-      await deleteStory(universe.id, story.id)
-      navigate(`/app/universes/${universe.id}/stories`)
-    } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That story could not be deleted.')
-    }
+    const removed = await confirmAction({
+      title: (
+        <>
+          Move “<bdi>{story.title}</bdi>” to the Trash?
+        </>
+      ),
+      message:
+        'Everything below goes with it. You can restore the whole story from the Trash. The lore it draws on stays.',
+      details,
+      confirmLabel: 'Move story to Trash',
+      busyLabel: 'Moving…',
+      variant: 'warning',
+      failure: 'That story could not be deleted.',
+      action: () => deleteStory(universe.id, story.id),
+    })
+    if (removed) navigate(`/app/universes/${universe.id}/stories`)
   }
 
   function sceneCards(container: Scene[], titleLevel: 3 | 4) {

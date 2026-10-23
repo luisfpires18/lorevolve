@@ -27,6 +27,7 @@ import {
 } from '../lore/article'
 import { isEmptyDocument } from '../lore/document'
 import { RevisionKind } from '../lore/revisions'
+import { confirmAction, confirmDiscard } from '../lib/confirm'
 
 type LoadState = { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error' }
 
@@ -278,11 +279,8 @@ export function EntityArticleSection({
     setIsEditing(true)
   }
 
-  function finishEditing() {
-    if (
-      isDirty &&
-      !window.confirm('Close the article without saving your changes? They will be lost.')
-    ) {
+  async function finishEditing() {
+    if (isDirty && !(await confirmDiscard('Close the article without saving your changes?'))) {
       return
     }
 
@@ -684,9 +682,11 @@ function ArticleHistory({
 
   async function restore(revision: ArticleRevisionSummary) {
     if (
-      !window.confirm(
-        `Put version ${revision.number} of the article back? It becomes the newest version, and nothing in the history is lost.`,
-      )
+      !(await confirmAction({
+        title: `Put version ${revision.number} of the article back?`,
+        message: 'It becomes the newest version, and nothing in the history is lost.',
+        confirmLabel: 'Put this version back',
+      }))
     ) {
       return
     }

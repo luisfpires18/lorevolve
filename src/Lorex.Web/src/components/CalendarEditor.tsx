@@ -10,6 +10,7 @@ import type {
 } from '../chronology/types'
 import { ApiError } from '../lib/api'
 import { useLeaveGuard } from '../lib/leaveGuard'
+import { confirmAction, confirmDiscard } from '../lib/confirm'
 
 type Mode = 'simple' | 'custom'
 
@@ -167,8 +168,8 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
     setMoved(`${month.name.trim() || 'New month'} removed.`)
   }
 
-  function discard() {
-    if (!window.confirm('Discard your changes to the calendar? They will be lost.')) return
+  async function discard() {
+    if (!(await confirmDiscard('Discard your changes to the calendar?'))) return
     touched.current = false
     setMode(storedMode)
     setDrafts(draftsFrom(stored))
@@ -179,9 +180,13 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
   async function save() {
     if (
       mode === 'simple' &&
-      !window.confirm(
-        'Switch to simple dates? This removes month names and lengths. Each date keeps its month as a number: its place in the year.',
-      )
+      !(await confirmAction({
+        title: 'Switch to simple dates?',
+        message:
+          'This removes month names and lengths. Each date keeps its month as a number: its place in the year.',
+        confirmLabel: 'Switch to simple dates',
+        variant: 'destructive',
+      }))
     ) {
       return
     }

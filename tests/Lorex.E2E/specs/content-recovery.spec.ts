@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { clickSignOut } from './support/account'
 import { entryText } from './support/zip'
 import { chooseFromMenu } from './support/rowMenu'
+import { acceptConfirm, confirmDialog } from './support/confirm'
 
 /**
  * Content recovery, end to end (ADR 0029): the three ways Lorex gives writing back, kept apart.
@@ -320,13 +321,8 @@ test.describe('content recovery', () => {
     await expect.poll(() => copyTexts(tab)).toContain('Thrown away.')
     tab = await crashAndReopen(tab, entryUrl)
 
-    let asked = ''
-    tab.once('dialog', (dialog) => {
-      asked = dialog.message()
-      void dialog.accept()
-    })
     await tab.getByTestId('article-recovery-discard').click()
-    await expect.poll(() => asked).toContain('Discard the recovered draft')
+    await acceptConfirm(tab, 'Discard the recovered draft')
     await expect(tab.getByTestId('article-recovery')).toHaveCount(0)
     await expect(tab.getByTestId('article-edit')).toBeFocused()
     await expect(tab.getByTestId('article').getByTestId('lore-article')).not.toContainText(
@@ -393,32 +389,27 @@ test.describe('content recovery', () => {
     await tab.getByTestId('article-save').click()
     await expect(tab.getByTestId('article-conflict')).toBeVisible()
     await tab.getByTestId('article-conflict-review').click()
-    tab.once('dialog', (dialog) => void dialog.accept())
     await tab.getByTestId('article-conflict-use-latest').click()
+    await acceptConfirm(tab)
     await expect(tab.getByTestId('lore-editor')).toHaveText('Third.')
     await expect.poll(async () => (await recoveryCopies(tab)).length).toBe(0)
 
     // Leaving by choice is a choice: asked once, and the copy goes with the text.
     await typeAtEnd(tab, ' Abandoned.')
     await expect.poll(() => copyTexts(tab)).toContain('Abandoned.')
-    const questions: string[] = []
-    tab.on('dialog', (dialog) => {
-      questions.push(dialog.message())
-      void dialog.accept()
-    })
     await tab.locator('.entry__crumbs').getByRole('link', { name: 'Lore' }).click()
+    await acceptConfirm(tab, 'has unsaved changes')
     await tab.waitForURL(new RegExp(`/universes/${universeId}/lore[?]type=[0-9a-f-]+$`))
     // The address changes before the Lore list replaces the entry; until it does, the entry's guard still holds the
     // page, and the navigation below would meet the browser's own leave prompt.
     await expect(tab.getByTestId('lore-path')).toBeVisible()
-    expect(questions).toHaveLength(1)
-    expect(questions[0]).toContain('has unsaved changes')
+    await expect(confirmDialog(tab)).toHaveCount(0)
     await expect.poll(async () => (await recoveryCopies(tab)).length).toBe(0)
 
     await tab.goto(entryUrl)
     await expect(tab.getByTestId('article-edit')).toBeEnabled()
     await expect(tab.getByTestId('article-recovery')).toHaveCount(0)
-    expect(questions).toHaveLength(1)
+    await expect(confirmDialog(tab)).toHaveCount(0)
   })
 
   test('a manuscript keeps its saved versions to read and put back, a stale restore changes nothing, and unsaved prose comes back as a recovered draft', async ({
@@ -460,14 +451,9 @@ test.describe('content recovery', () => {
     await expect(first.getByTestId('manuscript-version-restore')).toBeEnabled()
 
     // Put back: saved again as the newest version, recorded as such, and nothing lost.
-    let question = ''
-    page.once('dialog', (dialog) => {
-      question = dialog.message()
-      void dialog.accept()
-    })
     await first.getByTestId('manuscript-version-restore').click()
+    await acceptConfirm(page, 'nothing in the history is lost')
     await expect(page.getByTestId('manuscript-history-message')).toContainText('Version 1 is back')
-    expect(question).toContain('nothing in the history is lost')
     await expect(editor).toHaveValue('First saved version.')
     await expect(status).toHaveText('Saved')
     await expect(list.locator('li')).toHaveCount(3)
@@ -478,8 +464,8 @@ test.describe('content recovery', () => {
 
     // Saved from another window meanwhile: a restore from this page is refused, and nothing is put back.
     await writeManuscript(page, universeId, storyId, sceneId, 'Saved in another window.')
-    page.once('dialog', (dialog) => void dialog.accept())
     await list.locator('[data-version="2"]').getByTestId('manuscript-version-restore').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('manuscript-history-message')).toContainText(
       'saved somewhere else',
     )
@@ -550,8 +536,8 @@ test.describe('content recovery', () => {
     await expect(recovery).toHaveAttribute('data-saved-since', 'true')
     await expect(tab.getByTestId('manuscript-editor')).toHaveValue('Theirs.')
 
-    tab.once('dialog', (dialog) => void dialog.accept())
     await recovery.getByTestId('manuscript-recovery-discard').click()
+    await acceptConfirm(tab)
     await expect(recovery).toHaveCount(0)
     await expect(tab.getByTestId('manuscript-editor')).toHaveValue('Theirs.')
     await expect(tab.getByTestId('manuscript-editor')).toBeFocused()
@@ -561,20 +547,15 @@ test.describe('content recovery', () => {
     // Choosing to leave: asked once, and the copy does not come back.
     await tab.getByTestId('manuscript-editor').fill('Left behind.')
     await expect.poll(() => copyTexts(tab)).toContain('Left behind.')
-    const questions: string[] = []
-    tab.on('dialog', (dialog) => {
-      questions.push(dialog.message())
-      void dialog.accept()
-    })
     await tab.locator('[data-testid="manuscript-outline-scene"][data-title="Second"]').click()
+    await acceptConfirm(tab, '“First” has unsaved changes. Leave without saving them?')
     await tab.waitForURL(new RegExp(`/manuscript/${second}$`))
-    expect(questions).toEqual(['“First” has unsaved changes. Leave without saving them?'])
     await expect.poll(async () => (await recoveryCopies(tab)).length).toBe(0)
 
     await tab.goto(url)
     await expect(tab.getByTestId('manuscript-editor')).toHaveValue('Theirs.')
     await expect(tab.getByTestId('manuscript-recovery')).toHaveCount(0)
-    expect(questions).toHaveLength(1)
+    await expect(confirmDialog(tab)).toHaveCount(0)
   })
 
   test('a scene and a whole story go to the Trash, leave the story, and come back whole where they can be opened', async ({
@@ -591,15 +572,10 @@ test.describe('content recovery', () => {
 
     // A scene deleted says where it goes.
     await page.goto(storyUrl)
-    let confirmation = ''
-    page.once('dialog', (dialog) => {
-      confirmation = dialog.message()
-      void dialog.accept()
-    })
     await chooseFromMenu(scene(page, 'The Council'), 'scene-delete')
+    await expect(confirmDialog(page)).toContainText('to the Trash')
+    await acceptConfirm(page, 'restore it from the Trash')
     await expect(scene(page, 'The Council')).toHaveCount(0)
-    expect(confirmation).toContain('to the Trash')
-    expect(confirmation).toContain('restore it from the Trash')
 
     // Gone from the story's manuscript too.
     await page.goto(`${storyUrl}/manuscript/${gates}`)
@@ -634,13 +610,9 @@ test.describe('content recovery', () => {
       ).status(),
     ).toBe(204)
     await page.goto(storyUrl)
-    page.once('dialog', (dialog) => {
-      confirmation = dialog.message()
-      void dialog.accept()
-    })
     await chooseFromMenu(page, 'delete-story')
+    await acceptConfirm(page, 'to the Trash')
     await page.waitForURL(/\/stories$/)
-    expect(confirmation).toContain('to the Trash')
     await expect(
       page.locator('[data-testid="story-row"][data-title="The Long Winter"]'),
     ).toHaveCount(0)

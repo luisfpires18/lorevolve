@@ -8,6 +8,7 @@ import {
   fieldSummary,
   openFields,
 } from './support/typeFields'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Canon integrity, end to end. Each test registers its own account and builds its own
@@ -664,9 +665,9 @@ test.describe('canon integrity', () => {
 
     // Deleting the relationship takes the finding away with it, without an Evaluate.
     await page.goto(relationsUrl(universeId, warden))
-    page.once('dialog', (dialog) => void dialog.accept())
     await page.getByTestId('relationship-actions-Hollow Gate').click()
     await page.getByTestId('delete-relationship-Hollow Gate').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('relations-empty')).toBeVisible()
 
     const afterDelete = await conflictsOf(page, universeId)
@@ -699,9 +700,9 @@ test.describe('canon integrity', () => {
 
     // Remove the entry the finding rests on. The conflict closes, and the subject is said
     // plainly rather than linked into nothing: it is in the Trash, so it has no page to open.
-    page.once('dialog', (dialog) => void dialog.accept())
     await page.getByTestId('entity-actions').click()
     await page.getByTestId('trash-entity').click()
+    await acceptConfirm(page)
     await page.waitForURL(/\/trash$/)
 
     await openCanon(page, universeId)

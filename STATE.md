@@ -85,6 +85,13 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   (High, unreachable) and gwg2/wmxv (Moderate, reachable: ICC CLUT allocation, BigTIFF loop). Uploads now decode with a
   JPEG/PNG/WebP-only configuration, so a TIFF or BMP never reaches its decoder. API 1781 passed / 6 skipped; E2E image,
   profile, restore, artwork specs 27 passed. H-1 is on its own branch, `fix/invitation-link-only`.
+- **Issue #50 - shared confirmation dialog** (`feat/shared-confirmation-dialog` off `dev` at `a7f5e99`; committed, not
+  merged, not pushed). Frontend only. ADR 0049 (new). `confirmAction()` (`lib/confirm.ts`) + `ConfirmHost`: one modal
+  `<dialog>`, neutral/warning/destructive, safe initial focus, Escape/backdrop cancel, focus return; `action` runs inside it
+  (busy lock, stays open with the reason on failure). All 37 `window.confirm` calls migrated, leave guard included;
+  `beforeunload` and the article link `alert` kept. E2E helpers `support/confirm.ts`; new `confirm-dialog.spec.ts` 3.
+  Playwright on fresh DBs: 37 migrated specs 219 (215, + 4 green alone: 3 `EADDRINUSE`, 1 timeout); 27 neighbouring
+  specs 177 (175, + 2 green alone). Full suite delegated to CI.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);

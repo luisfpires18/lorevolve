@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Route, RouterProvider, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthProvider'
+import { ConfirmHost } from './components/ConfirmDialog'
 import { RequireAuth, RequireGuest } from './auth/routes'
 import { PublicLayout } from './components/PublicLayout'
 import { RoleGate } from './components/RoleGate'
@@ -327,5 +328,10 @@ function Root() {
 const router = createBrowserRouter([{ path: '*', element: <Root /> }])
 
 export default function App() {
-  return <RouterProvider router={router} />
+  return (
+    <>
+      <RouterProvider router={router} />
+      <ConfirmHost />
+    </>
+  )
 }

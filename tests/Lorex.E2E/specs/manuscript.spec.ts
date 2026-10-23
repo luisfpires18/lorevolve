@@ -1,5 +1,6 @@
-import { expect, test, type Dialog, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { chooseFromMenu, openMenuFor } from './support/rowMenu'
+import { acceptConfirm, confirmDialog, dismissConfirm } from './support/confirm'
 
 /**
  * A story's manuscript, end to end: the prose an author writes, scene by scene, on the story's Manuscript view. Each
@@ -322,8 +323,8 @@ test.describe('manuscript', () => {
 
     // Arrival is deleted: The Gates goes to Unchaptered with every word it had.
     await page.goto(storyUrl)
-    page.once('dialog', (dialog) => void dialog.accept())
     await chooseFromMenu(chapter(page, 'Arrival'), 'chapter-delete')
+    await acceptConfirm(page)
     await expect(page.getByTestId('chapter')).toHaveCount(1)
 
     await page.goto(`${storyUrl}/manuscript/${gates}`)
@@ -338,8 +339,8 @@ test.describe('manuscript', () => {
 
     // The Gates is deleted, and its prose with it. Its old address opens nothing.
     await page.goto(storyUrl)
-    page.once('dialog', (dialog) => void dialog.accept())
     await chooseFromMenu(scene(page, 'The Gates'), 'scene-delete')
+    await acceptConfirm(page)
     await expect(scene(page, 'The Gates')).toHaveCount(0)
 
     await page.goto(`${storyUrl}/manuscript/${gates}`)
@@ -379,26 +380,17 @@ test.describe('manuscript', () => {
     await expect(save).toBeEnabled()
 
     // Choosing another scene asks, naming the scene; staying keeps the address and the text.
-    let question = ''
-    page.once('dialog', (dialog) => {
-      question = dialog.message()
-      void dialog.dismiss()
-    })
     await outlineScene(page, 'Second').click()
-    await expect.poll(() => question).toContain('“First” has unsaved changes')
+    await dismissConfirm(page, '“First” has unsaved changes')
     await expect(page).toHaveURL(firstUrl)
     await expect(outlineScene(page, 'First')).toHaveAttribute('aria-current', 'page')
     await expect(editor).toHaveValue('Saved words. And more.')
 
     // So does leaving for another view of the story, or another section of the universe.
     for (const control of ['story-view-plot', 'story-view-scenes', 'workspace-lore']) {
-      let asked = false
-      page.once('dialog', (dialog) => {
-        asked = true
-        void dialog.dismiss()
-      })
       await page.getByTestId(control).click()
-      await expect.poll(() => asked, { message: control }).toBe(true)
+      await expect(confirmDialog(page), control).toBeVisible()
+      await dismissConfirm(page)
       await expect(page).toHaveURL(firstUrl)
       await expect(editor).toHaveValue('Saved words. And more.')
     }
@@ -424,35 +416,23 @@ test.describe('manuscript', () => {
     )
 
     // Saved, so choosing another scene asks nothing.
-    let askedAfterSaving = false
-    const noted = (dialog: Dialog) => {
-      askedAfterSaving = true
-      void dialog.dismiss()
-    }
-    page.on('dialog', noted)
     await outlineScene(page, 'Second').click()
     await page.waitForURL(new RegExp(`/manuscript/${second}$`))
     await expect(page.getByTestId('manuscript-scene-title')).toHaveText('Second')
-    page.off('dialog', noted)
-    expect(askedAfterSaving).toBe(false)
+    await expect(confirmDialog(page)).toHaveCount(0)
     await expect(editor).toHaveValue('')
 
     // Choosing to leave does leave, and what was unsaved is gone - from the screen and from the API alike.
     await editor.fill('A draft that is never saved.')
 
     // The browser's Back button asks too, once; staying keeps the scene, its address and the draft.
-    let backQuestions = 0
-    page.once('dialog', (dialog) => {
-      backQuestions += 1
-      void dialog.dismiss()
-    })
     await page.goBack()
-    await expect.poll(() => backQuestions).toBe(1)
+    await dismissConfirm(page)
     await expect(page).toHaveURL(new RegExp(`/manuscript/${second}$`))
     await expect(editor).toHaveValue('A draft that is never saved.')
 
-    page.once('dialog', (dialog) => void dialog.accept())
     await outlineScene(page, 'First').click()
+    await acceptConfirm(page)
     await page.waitForURL(firstUrl)
     await expect(editor).toHaveValue('Saved words. And more.')
     await outlineScene(page, 'Second').click()
@@ -494,8 +474,8 @@ test.describe('manuscript', () => {
     await save.click()
     await expect(conflict).toBeVisible()
     await conflict.getByTestId('manuscript-conflict-review').click()
-    page.once('dialog', (dialog) => void dialog.accept())
     await conflict.getByTestId('manuscript-conflict-use-latest').click()
+    await acceptConfirm(page)
     await expect(editor).toHaveValue('Theirs again.')
     await expect(status).toHaveText('Saved')
     await expect(conflict).toHaveCount(0)
@@ -588,8 +568,8 @@ test.describe('manuscript', () => {
     expect((await readManuscript(page, universeId, storyId, council)).content).toBe('')
 
     // A plot chip leads out of the page, so it asks first; once saved, it simply goes.
-    page.once('dialog', (dialog) => void dialog.dismiss())
     await beatChip.click()
+    await dismissConfirm(page)
     await expect(page).toHaveURL(new RegExp(`/manuscript/${council}$`))
 
     await saveWith(page, () => page.getByTestId('manuscript-save').click())

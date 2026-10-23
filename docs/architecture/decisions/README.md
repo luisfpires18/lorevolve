@@ -53,6 +53,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0046 | An outside AI app reads one universe over MCP, as one member, through OAuth 2.1 issued by LoreX itself (amended 052: a separate, opt-in proposal scope) | [0046-mcp-read-only-connection.md](0046-mcp-read-only-connection.md) |
 | 0047 | An AI proposes changes; a person approves them in LoreX; only approved changes are applied, together, through each resource's own write path | [0047-staged-ai-changes.md](0047-staged-ai-changes.md) |
 | 0048 | Relationships and timeline moments get a Trash; AI proposals reach every creator-authored resource | [0048-ai-changes-content-coverage.md](0048-ai-changes-content-coverage.md) |
+| 0049 | One LoreX confirmation replaces the browser's confirm(); only beforeunload stays the browser's | [0049-shared-confirmation-dialog.md](0049-shared-confirmation-dialog.md) |
 
 All accepted. Next number: `0049`.
 

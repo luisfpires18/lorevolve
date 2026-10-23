@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test'
 import { png } from './support/png'
+import { confirmDialog } from './support/confirm'
 
 /**
  * Public portal 010: a lore entry or a story is private until its owner publishes it, publishing a universe publishes
@@ -186,6 +187,7 @@ test.describe('publishing lore and stories', () => {
       .click()
     await page.waitForURL(new RegExp(`/app/universes/${universe.id}/lore[?]type=[0-9a-f-]+$`))
     expect(asked).toEqual([])
+    await expect(confirmDialog(page)).toHaveCount(0)
   })
 
   test('a story is chosen while its universe is private, stays hidden, and appears when the universe is published', async ({
@@ -270,6 +272,7 @@ test.describe('publishing lore and stories', () => {
       .click()
     await page.waitForURL(`/app/universes/${universe.id}/stories`)
     expect(asked).toEqual([])
+    await expect(confirmDialog(page)).toHaveCount(0)
   })
 
   test('another account can neither read nor change what an owner publishes', async ({

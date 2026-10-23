@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { answerConfirms } from './support/confirm'
 
 /**
  * Design refactor 007, the closing polish: the last authored forms that could lose writing without asking - a
@@ -56,13 +57,15 @@ async function seedEntity(page: Page, universeId: string, name: string) {
  * Every dialog the page raises, in order, each answered by the next answer queued - dismissed when none is queued. So a
  * test says what it expects to be asked, and a question nobody expected shows up in `asked`.
  */
-function dialogs(page: Page) {
+async function dialogs(page: Page) {
   const asked: string[] = []
   const answers: boolean[] = []
+  // A reload or a closed tab is the browser's own prompt; everything else is LoreX's confirmation (Issue #50).
   page.on('dialog', (dialog) => {
     asked.push(dialog.type() === 'beforeunload' ? 'beforeunload' : dialog.message())
     void (answers.shift() ? dialog.accept() : dialog.dismiss())
   })
+  await answerConfirms(page, () => answers.shift() ?? false, asked)
   return {
     asked,
     answer(...next: boolean[]) {
@@ -79,7 +82,7 @@ test.describe('product-wide polish', () => {
     const universeId = await newUniverse(page)
     const settingsUrl = `/app/universes/${universeId}/chronology`
     const LEAVE = 'The chronology has unsaved changes. Leave without saving them?'
-    const { asked, answer } = dialogs(page)
+    const { asked, answer } = await dialogs(page)
 
     await page.goto(settingsUrl)
     const chronology = page.getByTestId('chronology-settings')
@@ -89,31 +92,33 @@ test.describe('product-wide polish', () => {
     await page.waitForURL(/\/timeline$/)
     await page.getByTestId('workspace-chronology').click()
     await page.waitForURL(/\/chronology$/)
-    expect(asked).toEqual([])
+    await expect.poll(() => asked).toEqual([])
 
     // An era being named is unsaved work: a link asks, and staying keeps it.
     await page.getByTestId('add-era').click()
     await page.getByTestId('era-name').fill('After the Fall')
     await page.getByTestId('workspace-timeline').click()
-    expect(asked).toEqual([LEAVE])
+    await expect.poll(() => asked).toEqual([LEAVE])
     await expect(page).toHaveURL(/\/chronology$/)
     await expect(page.getByTestId('era-name')).toHaveValue('After the Fall')
 
     // Back asks too, once, and staying keeps the address and the draft.
     await page.goBack()
     await expect.poll(() => asked.length).toBe(2)
-    expect(asked).toEqual([LEAVE, LEAVE])
+    await expect.poll(() => asked).toEqual([LEAVE, LEAVE])
     await expect(page).toHaveURL(/\/chronology$/)
     await expect(page.getByTestId('era-name')).toHaveValue('After the Fall')
 
     // Leaving the page itself is the browser's own question.
     await page.goto(`/app/universes/${universeId}/lore`).catch(() => undefined)
-    expect(asked).toEqual([LEAVE, LEAVE, 'beforeunload'])
+    await expect.poll(() => asked).toEqual([LEAVE, LEAVE, 'beforeunload'])
     await expect(page.getByTestId('era-name')).toHaveValue('After the Fall')
 
     // Discarding asks, once; refused, nothing is lost.
     await page.getByRole('button', { name: 'Discard changes' }).click()
-    expect(asked.at(-1)).toBe('Discard your changes to the chronology? They will be lost.')
+    await expect
+      .poll(() => asked.at(-1))
+      .toBe('Discard your changes to the chronology? They will be lost.')
     await expect(page.getByTestId('era-name')).toHaveValue('After the Fall')
 
     // Removed again, the list is what is stored: clean, and leaving asks nothing.
@@ -122,7 +127,7 @@ test.describe('product-wide polish', () => {
     const settled = asked.length
     await page.getByTestId('workspace-lore').click()
     await page.waitForURL(/\/lore$/)
-    expect(asked).toHaveLength(settled)
+    await expect.poll(() => asked).toHaveLength(settled)
 
     // A failed save keeps the draft and the question; a saved one lets both go.
     await page.goto(settingsUrl)
@@ -130,7 +135,7 @@ test.describe('product-wide polish', () => {
     await page.getByTestId('save-chronology').click()
     await expect(page.getByTestId('chronology-error')).toBeVisible()
     await page.getByTestId('workspace-lore').click()
-    expect(asked.at(-1)).toBe(LEAVE)
+    await expect.poll(() => asked.at(-1)).toBe(LEAVE)
     await expect(page).toHaveURL(/\/chronology$/)
 
     await page.getByTestId('era-name').fill('After the Fall')
@@ -139,7 +144,7 @@ test.describe('product-wide polish', () => {
     const saved = asked.length
     await page.getByTestId('workspace-lore').click()
     await page.waitForURL(/\/lore$/)
-    expect(asked).toHaveLength(saved)
+    await expect.poll(() => asked).toHaveLength(saved)
 
     // Answered yes, the author leaves.
     await page.goto(settingsUrl)
@@ -155,7 +160,7 @@ test.describe('product-wide polish', () => {
     await signUp(page)
     const name = unique('Harbour ')
     const universeId = await newUniverse(page, name)
-    const { asked } = dialogs(page)
+    const { asked } = await dialogs(page)
 
     await page.goto(`/app/universes/${universeId}/settings`)
     const nameField = page.getByLabel('Name', { exact: true }).first()
@@ -164,31 +169,33 @@ test.describe('product-wide polish', () => {
 
     await page.getByLabel('Description').fill('A town built on the bones of a whale.')
     await page.getByTestId('workspace-lore').click()
-    expect(asked).toEqual([`“${name}” has unsaved changes. Leave without saving them?`])
+    await expect
+      .poll(() => asked)
+      .toEqual([`“${name}” has unsaved changes. Leave without saving them?`])
     await expect(page).toHaveURL(/\/settings$/)
 
     // Put back, it is clean again.
     await page.getByLabel('Description').fill('')
     await page.getByTestId('workspace-lore').click()
     await page.waitForURL(/\/lore$/)
-    expect(asked).toHaveLength(1)
+    await expect.poll(() => asked).toHaveLength(1)
 
     // A new universe's form asks on Cancel only once something is written, and creating it asks nothing.
     await page.goto('/app')
     await page.getByTestId('new-universe').click()
     await page.getByRole('button', { name: 'Cancel' }).click()
-    expect(asked).toHaveLength(1)
+    await expect.poll(() => asked).toHaveLength(1)
     await page.getByTestId('new-universe').click()
     await page.getByLabel('Name').fill(unique('Salt '))
     await page.getByRole('button', { name: 'Cancel' }).click()
-    expect(asked.at(-1)).toBe(DISCARD)
+    await expect.poll(() => asked.at(-1)).toBe(DISCARD)
     await expect(page.getByLabel('Name')).toBeVisible()
 
     await page.getByRole('button', { name: 'Create universe' }).click()
     await page.waitForURL(/\/app\/universes\/[0-9a-f-]+$/)
     const created = asked.length
     await page.goto('/app')
-    expect(asked).toHaveLength(created)
+    await expect.poll(() => asked).toHaveLength(created)
   })
 
   test('a relation being written asks before its notes are thrown away', async ({ page }) => {
@@ -206,7 +213,7 @@ test.describe('product-wide polish', () => {
     })
     const entityId = await seedEntity(page, universeId, 'Maren Ashvale')
     const LEAVE = 'This relation has unsaved changes. Leave without saving it?'
-    const { asked, answer } = dialogs(page)
+    const { asked, answer } = await dialogs(page)
 
     await page.goto(`/app/universes/${universeId}/lore/${entityId}/relations`)
 
@@ -214,19 +221,19 @@ test.describe('product-wide polish', () => {
     await page.getByTestId('add-relationship').click()
     await page.getByTestId('relationship-form').getByRole('button', { name: 'Cancel' }).click()
     await expect(page.getByTestId('relationship-form')).toHaveCount(0)
-    expect(asked).toEqual([])
+    await expect.poll(() => asked).toEqual([])
 
     await page.getByTestId('add-relationship').click()
     await page.getByTestId('relation-notes').fill('Sworn at the Spire.')
 
     // Leaving by a link asks, and staying keeps the notes.
     await page.getByTestId('workspace-lore').click()
-    expect(asked).toEqual([LEAVE])
+    await expect.poll(() => asked).toEqual([LEAVE])
     await expect(page.getByTestId('relation-notes')).toHaveValue('Sworn at the Spire.')
 
     // Cancel asks once; refused, the notes stay.
     await page.getByTestId('relationship-form').getByRole('button', { name: 'Cancel' }).click()
-    expect(asked).toEqual([LEAVE, DISCARD])
+    await expect.poll(() => asked).toEqual([LEAVE, DISCARD])
     await expect(page.getByTestId('relation-notes')).toHaveValue('Sworn at the Spire.')
 
     // Accepted, the form closes and nothing is left standing.
@@ -235,7 +242,7 @@ test.describe('product-wide polish', () => {
     await expect(page.getByTestId('relationship-form')).toHaveCount(0)
     await page.getByTestId('workspace-lore').click()
     await page.waitForURL(/\/lore$/)
-    expect(asked).toHaveLength(3)
+    await expect.poll(() => asked).toHaveLength(3)
   })
 
   test("the Trash says what each thing was in words beside a decorative tile, and a scene's point of view is a tile, not an initial", async ({

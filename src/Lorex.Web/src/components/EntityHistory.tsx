@@ -26,6 +26,7 @@ import {
   type RevisionFieldValue,
 } from '../lore/revisions'
 import { CANON_LABELS, FieldKind } from '../lore/types'
+import { confirmAction } from '../lib/confirm'
 
 interface EntityHistoryProps {
   universeId: string
@@ -123,12 +124,14 @@ export function EntityHistory({
   const carriesImages = mentionsImage(revisions)
 
   async function restore(revision: EntityRevisionSummary) {
-    const warning = carriesImages ? `\n\n${IMAGES_NOT_RESTORED}` : ''
-
     if (
-      !window.confirm(
-        `Put version ${revision.number} back? It becomes the newest version. The article stays as it is: it keeps its own history.${warning}`,
-      )
+      !(await confirmAction({
+        title: `Put version ${revision.number} back?`,
+        message:
+          'It becomes the newest version. The article stays as it is: it keeps its own history.',
+        details: carriesImages ? [IMAGES_NOT_RESTORED] : undefined,
+        confirmLabel: 'Put this version back',
+      }))
     ) {
       return
     }

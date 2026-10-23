@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { PASSWORD, post, unique } from './support/trash'
+import { acceptConfirm, dismissConfirm } from './support/confirm'
 
 /**
  * Lore Context (task 048): the manuscript's Lore drawer. Each test builds its own account and universe.
@@ -222,13 +223,13 @@ test.describe('Lore Context', () => {
     await drawer.getByTestId('lore-context-linked').getByTestId('lore-context-preview').click()
 
     // Staying keeps the drawer, the page and the prose.
-    page.once('dialog', (dialog) => void dialog.dismiss())
     await drawer.getByTestId('lore-preview-open').click()
+    await dismissConfirm(page)
     await expect(page).toHaveURL(/\/manuscript\//)
     await expect(page.getByTestId('manuscript-editor')).toHaveValue('Not saved yet.')
 
-    page.once('dialog', (dialog) => void dialog.accept())
     await drawer.getByTestId('lore-preview-open').click()
+    await acceptConfirm(page)
     await expect(page).toHaveURL(new RegExp(`/lore/${w.akron}$`))
   })
 

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { ApiError } from '../lib/api'
 import type { Change } from '../lib/editConflict'
+import { confirmAction } from '../lib/confirm'
 
 type ReviewState<T> =
   | { kind: 'notice' }
@@ -65,11 +66,15 @@ export function EditConflict<T>({
     }
   }
 
-  function chooseLatest(latest: T) {
+  async function chooseLatest(latest: T) {
     if (
-      !window.confirm(
-        'Replace your unsaved changes with the latest version? Your changes will be lost.',
-      )
+      !(await confirmAction({
+        title: 'Replace your unsaved changes with the latest version?',
+        message: 'Your changes will be lost.',
+        confirmLabel: 'Use the latest version',
+        cancelLabel: 'Keep my changes',
+        variant: 'destructive',
+      }))
     ) {
       return
     }

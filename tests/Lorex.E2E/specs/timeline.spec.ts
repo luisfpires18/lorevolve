@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { clickSignOut } from './support/account'
+import { answerConfirms } from './support/confirm'
 
 /**
  * The timeline, end to end. Each test registers its own account and builds its own
@@ -554,7 +555,7 @@ test.describe('timeline', () => {
     await expect.poll(() => momentOrder(page)).toEqual(first)
 
     // A delete on the first page pulls the thirteenth up rather than leaving a hole.
-    page.on('dialog', (dialog) => dialog.accept())
+    await answerConfirms(page, () => true, [])
     await page.getByTestId('moment-actions-Year 3005').click()
     await page.getByTestId('delete-moment-Year 3005').click()
     await expect(moment(page, 'Year 3005')).toHaveCount(0)
@@ -592,7 +593,7 @@ test.describe('timeline', () => {
 
     // The page it stood alone on has nothing left to show, so the author is put back on
     // the one before it rather than on an empty stream.
-    page.on('dialog', (dialog) => dialog.accept())
+    await answerConfirms(page, () => true, [])
     await page.getByTestId('moment-actions-Year 3013').click()
     await page.getByTestId('delete-moment-Year 3013').click()
 
@@ -626,10 +627,7 @@ test.describe('timeline', () => {
     // yes leaves nothing behind.
     const asked: string[] = []
     const answers: boolean[] = []
-    page.on('dialog', (dialog) => {
-      asked.push(dialog.message())
-      void (answers.shift() ? dialog.accept() : dialog.dismiss())
-    })
+    await answerConfirms(page, () => answers.shift() ?? false, asked)
     const discard = 'Close without saving your changes? They will be lost.'
 
     await page.getByTestId('new-moment').click()
@@ -652,7 +650,7 @@ test.describe('timeline', () => {
     await page.mouse.click(20, panel.y + panel.height / 2)
     await expect(page.getByTestId('moment-form')).toHaveCount(0)
     await expect(page.getByTestId('chron-empty')).toBeVisible()
-    expect(asked).toHaveLength(3)
+    await expect.poll(() => asked).toHaveLength(3)
 
     // Cancelling an edit leaves the stored moment exactly as it was; a title typed and put back is no change.
     await addMoment(page, { title: 'Written once', kind: 'exact', startYear: '3018' })
@@ -661,13 +659,13 @@ test.describe('timeline', () => {
     await page.getByTestId('moment-title').fill('Written once')
     await page.getByTestId('cancel-moment').click()
     await expect(page.getByTestId('moment-form')).toHaveCount(0)
-    expect(asked).toHaveLength(3)
+    await expect.poll(() => asked).toHaveLength(3)
     await page.getByTestId('edit-moment-Written once').click()
     await page.getByTestId('moment-title').fill('Renamed by accident')
     answers.push(true)
     await page.getByTestId('cancel-moment').click()
     await expect(page.getByTestId('moment-form')).toHaveCount(0)
-    expect(asked).toHaveLength(4)
+    await expect.poll(() => asked).toHaveLength(4)
     await expect(moment(page, 'Written once')).toBeVisible()
     await expect(moment(page, 'Renamed by accident')).toHaveCount(0)
 

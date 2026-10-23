@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { chooseLoreType } from './support/lore'
 import { clickSignOut } from './support/account'
+import { acceptConfirm, answerConfirms, dismissConfirm } from './support/confirm'
 
 /**
  * An entry's article, end to end: the long-form prose an author writes about a piece of lore, on the entry itself. Each
@@ -211,8 +212,8 @@ test.describe('lore article', () => {
     await expect(snapshot).not.toContainText('Still writing')
     await expect(snapshot).not.toContainText('outlived')
 
-    page.once('dialog', (dialog) => void dialog.accept())
     await first.getByTestId('article-version-restore').click()
+    await acceptConfirm(page)
     await expect(versions).toHaveCount(4)
     await expect(
       page.locator('[data-testid="article-history-list"] [data-version="4"]'),
@@ -243,31 +244,21 @@ test.describe('lore article', () => {
     await expect(status).toHaveText('Unsaved changes')
 
     // Following a link asks, naming the entry; staying keeps the address and the text.
-    let question = ''
-    page.once('dialog', (dialog) => {
-      question = dialog.message()
-      void dialog.dismiss()
-    })
     await page.locator('.entry__crumbs').getByRole('link', { name: 'Lore' }).click()
-    await expect.poll(() => question).toContain('“Gatewarden” has unsaved changes')
+    await dismissConfirm(page, '“Gatewarden” has unsaved changes')
     await expect(page).toHaveURL(entryUrl)
     await expect(editor).toContainText('Saved words. And more.')
 
     // So does signing out.
-    let askedOnSignOut = false
-    page.once('dialog', (dialog) => {
-      askedOnSignOut = true
-      void dialog.dismiss()
-    })
     await clickSignOut(page)
-    await expect.poll(() => askedOnSignOut).toBe(true)
+    await dismissConfirm(page)
     await page.keyboard.press('Escape')
     await expect(page).toHaveURL(entryUrl)
     await expect(editor).toContainText('Saved words. And more.')
 
     // And closing the article with Done.
-    page.once('dialog', (dialog) => void dialog.dismiss())
     await page.getByTestId('article-done').click()
+    await dismissConfirm(page)
     await expect(editor).toContainText('Saved words. And more.')
 
     // A save the server fails changes nothing on screen, says so, and can be tried again.
@@ -316,8 +307,8 @@ test.describe('lore article', () => {
     await save.click()
     await expect(conflict).toBeVisible()
     await conflict.getByTestId('article-conflict-review').click()
-    page.once('dialog', (dialog) => void dialog.accept())
     await conflict.getByTestId('article-conflict-use-latest').click()
+    await acceptConfirm(page)
     await expect(editor).toHaveText('Theirs again.')
     await expect(status).toHaveText('Saved')
     await expect(conflict).toHaveCount(0)
@@ -358,10 +349,7 @@ test.describe('lore article', () => {
     // Every question the page asks is counted and answered as the step says.
     const questions: string[] = []
     let answer: 'stay' | 'leave' = 'stay'
-    page.on('dialog', (dialog) => {
-      questions.push(dialog.message())
-      void (answer === 'leave' ? dialog.accept() : dialog.dismiss())
-    })
+    await answerConfirms(page, () => answer === 'leave', questions)
 
     // In-app history: the Lore browser, then the entry, reached by its card.
     await page.goto(`/app/universes/${universeId}/lore`)
@@ -382,7 +370,7 @@ test.describe('lore article', () => {
     await page.waitForURL(loreUrl)
     await page.goBack()
     await page.waitForURL(entryUrl)
-    expect(questions).toEqual([])
+    await expect.poll(() => questions).toEqual([])
 
     await page.getByTestId('article-edit').click()
     await expect(editor).toBeFocused()
@@ -392,7 +380,7 @@ test.describe('lore article', () => {
     // Back, and stay: asked once, still on the entry, still writing, the text intact and still editable.
     await page.goBack()
     await expect.poll(() => questions.length).toBe(1)
-    expect(questions[0]).toContain('“Wayfarer” has unsaved changes')
+    await expect.poll(() => questions[0]).toContain('“Wayfarer” has unsaved changes')
     await expect(page).toHaveURL(entryUrl)
     await expect(article).toHaveAttribute('data-state', 'editing')
     await expect(editor).toHaveText('Saved words. And more.')
@@ -425,7 +413,7 @@ test.describe('lore article', () => {
     await page.goBack()
     await page.waitForURL(entryUrl)
     await expect(article.getByTestId('lore-article')).toHaveText('Saved words.')
-    expect(questions).toHaveLength(4)
+    await expect.poll(() => questions).toHaveLength(4)
 
     // Back, and leave, from unsaved text again: one question, and the Lore browser.
     await page.getByTestId('article-edit').click()
@@ -445,7 +433,7 @@ test.describe('lore article', () => {
     await page.goBack()
     await page.waitForURL(loreUrl)
     await expect(page.getByTestId('entity-grid')).toBeVisible()
-    expect(questions).toHaveLength(5)
+    await expect.poll(() => questions).toHaveLength(5)
   })
 
   test('the article reads and writes from a phone to a wide desktop, light and dark', async ({

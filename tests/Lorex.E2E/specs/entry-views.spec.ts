@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { openDetails } from './support/familyTree'
+import { acceptConfirm, confirmDialog, dismissConfirm } from './support/confirm'
 
 /**
  * An entry's three views, and the header above them.
@@ -272,24 +273,14 @@ test.describe('entry views', () => {
     await expect(page.getByTestId('article-status')).toHaveText('Unsaved changes')
 
     // Staying: one question, the address unchanged, and every word still there.
-    const asked: string[] = []
-    page.once('dialog', (dialog) => {
-      asked.push(dialog.message())
-      void dialog.dismiss()
-    })
     await page.getByTestId('entry-view-relations').click()
-    await expect.poll(() => asked.length).toBe(1)
-    expect(asked[0]).toContain('“Gatewarden” has unsaved changes')
+    await dismissConfirm(page, '“Gatewarden” has unsaved changes')
     await expect(page).toHaveURL(url)
     await expect(page.getByTestId('lore-editor')).toContainText('Half a sentence about the wall')
 
     // History asks the same question, once.
-    page.once('dialog', (dialog) => {
-      asked.push(dialog.message())
-      void dialog.dismiss()
-    })
     await page.getByTestId('entry-view-history').click()
-    await expect.poll(() => asked.length).toBe(2)
+    await dismissConfirm(page)
     await expect(page).toHaveURL(url)
 
     // While the article is being written the entry's own tools step aside: one editor at a time,
@@ -299,13 +290,11 @@ test.describe('entry views', () => {
     await expect(page.getByTestId('entity-actions')).toHaveCount(0)
 
     // Leaving: asked once, not twice, and the view changes.
-    page.once('dialog', (dialog) => {
-      asked.push(dialog.message())
-      void dialog.accept()
-    })
     await page.getByTestId('entry-view-relations').click()
+    await acceptConfirm(page)
     await page.waitForURL(`${url}/relations`)
-    expect(asked, 'the author was asked more than once about one departure').toHaveLength(3)
+    // Asked once, not twice, about one departure.
+    await expect(confirmDialog(page)).toHaveCount(0)
 
     // Gone with the article that was left, and the entry's tools are back where they belong. So the
     // one way out of the entry that is not a link - Move to Trash - can never be taken while there

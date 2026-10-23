@@ -57,6 +57,7 @@ import { suggestEntryChanges } from '../suggestions/api'
 import { useUniverseAccess } from '../universes/access'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { EmptyState } from '../components/EmptyState'
+import { confirmAction } from '../lib/confirm'
 
 interface Draft {
   entityTypeId: string
@@ -522,15 +523,18 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
    * the fields, the history and every connection stay stored, and Trash restores them whole.
    */
   async function moveToTrash() {
-    const confirmed = window.confirm(
-      'Move this entry to the Trash?\n\n' +
-        'It leaves your lore, your search and your pickers, but nothing is erased. ' +
-        'Its article, fields, history and connections are kept, and you can restore it ' +
-        'from Trash at any time.',
-    )
-    if (isNew || !confirmed) return
-    await deleteEntity(universe.id, entityId)
-    await navigate(`/app/universes/${universe.id}/trash`, { replace: true })
+    if (isNew) return
+    const trashed = await confirmAction({
+      title: 'Move this entry to the Trash?',
+      message:
+        'It leaves your lore, your search and your pickers, but nothing is erased. Its article, fields, history and connections are kept, and you can restore it from Trash at any time.',
+      confirmLabel: 'Move to Trash',
+      busyLabel: 'Moving…',
+      variant: 'warning',
+      failure: 'This entry could not be moved to the Trash.',
+      action: () => deleteEntity(universe.id, entityId),
+    })
+    if (trashed) await navigate(`/app/universes/${universe.id}/trash`, { replace: true })
   }
 
   // Order matters here. A load that failed leaves the draft null, so a loading guard placed
@@ -1122,15 +1126,19 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
               <button
                 className="button button--secondary"
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   // Cancel is the choice to discard, so it asks once, and only when there is something to lose.
                   if (
                     isDirty &&
-                    !window.confirm(
-                      suggesting
-                        ? 'Close the form without sending your suggestion? It will be lost.'
-                        : 'Close the form without saving your changes? They will be lost.',
-                    )
+                    !(await confirmAction({
+                      title: suggesting
+                        ? 'Close the form without sending your suggestion?'
+                        : 'Close the form without saving your changes?',
+                      message: suggesting ? 'It will be lost.' : 'They will be lost.',
+                      confirmLabel: suggesting ? 'Discard suggestion' : 'Discard changes',
+                      cancelLabel: 'Keep editing',
+                      variant: 'destructive',
+                    }))
                   ) {
                     return
                   }
