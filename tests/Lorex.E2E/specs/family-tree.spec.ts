@@ -267,11 +267,14 @@ test.describe('family tree', () => {
     // Another family member takes the focus, and the address follows.
     await node(page, 'Tam').getByTestId('family-focus-Tam').click()
     await page.waitForURL(`**/family-tree/${household.tam}`)
+    // The address moves before the tree does: read Lia only once Tam's family is the one drawn.
+    await expect(node(page, 'Tam')).toHaveAttribute('data-focal', 'true')
     await expectDetails(page, 'Lia', 'Sibling')
 
     // Back returns to the family that was open before it.
     await page.goBack()
     await page.waitForURL(`**/family-tree/${household.lia}`)
+    await expect(node(page, 'Lia')).toHaveAttribute('data-focal', 'true')
     await expectDetails(page, 'Tam', 'Sibling')
 
     // A reload of the deep link opens the same family.
@@ -284,6 +287,7 @@ test.describe('family tree', () => {
     await expect(page.getByTestId('entry-name')).toHaveText('Mara')
     await page.getByTestId('entity-family-tree').click()
     await page.waitForURL(`**/family-tree/${household.mara}`)
+    await expect(node(page, 'Mara')).toHaveAttribute('data-focal', 'true')
     await expectDetails(page, 'Lia', 'Biological child')
   })
 
