@@ -85,6 +85,11 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   (High, unreachable) and gwg2/wmxv (Moderate, reachable: ICC CLUT allocation, BigTIFF loop). Uploads now decode with a
   JPEG/PNG/WebP-only configuration, so a TIFF or BMP never reaches its decoder. API 1781 passed / 6 skipped; E2E image,
   profile, restore, artwork specs 27 passed. H-1 is on its own branch, `fix/invitation-link-only`.
+  - **Version reverted** (`fix/revert-imagesharp-4` off `dev` at `a7f5e99`; committed, not merged, not pushed).
+    ImageSharp 4.x refuses a Release build without a Six Labors license key, so Deploy DEV failed on `a7f5e99` (backend
+    shards and Package). Back to 3.1.12 by owner decision, to settle the key later; its five advisories are open again.
+    The JPEG/PNG/WebP-only decoding stays (it builds on 3.x), so a TIFF or BMP still never reaches a decoder. Release
+    build green; API image, artwork, profile, backup and restore tests 338 passed.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);
