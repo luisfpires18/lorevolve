@@ -98,6 +98,8 @@ test.describe('an entry page', () => {
     await expect(more).toHaveAccessibleName('More actions for Brannoch Hale')
     await more.focus()
     await page.keyboard.press('Enter')
+    await expect(page.getByTestId('duplicate-entity')).toBeFocused()
+    await page.keyboard.press('End')
     await expect(page.getByTestId('trash-entity')).toBeFocused()
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('trash-entity')).toHaveCount(0)
