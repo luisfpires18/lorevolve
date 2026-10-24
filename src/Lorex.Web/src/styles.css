@@ -16682,6 +16682,57 @@ details.reviewsection > .reviewsection__list {
   height: 4rem;
 }
 
+/* ---------- Entry: the progression profile (Issue #44) ----------
+
+   The main profile opens on the entry's own summary and a quiet line of what its progression holds, with the
+   way back to the article. An era's page ends with a row of links through the eras in order: earlier, the
+   main profile, later - wrapping on a phone. */
+
+.progoverview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.progoverview__summary {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.progoverview__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.erapanel__title:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.erarelations__unplaced {
+  margin-top: var(--space-2);
+}
+
+.erarelations__unplaced > summary {
+  cursor: pointer;
+}
+
+.erasteps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+}
+
+.erasteps__link {
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Relations: when a relation holds (Issue #18) ----------
 
    Periods sit in the relation form under its status, each a quiet row of its own - Dates or An era, then

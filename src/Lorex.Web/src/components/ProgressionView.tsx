@@ -6,6 +6,7 @@ import { ActionMenu } from './ActionMenu'
 import { AppearanceList } from './AppearanceList'
 import { EmptyState } from './EmptyState'
 import { EraForm } from './EraForm'
+import { EraRelations } from './EraRelations'
 import { ProgressionItemForm } from './ProgressionItemForm'
 import { VersionActor } from './VersionActor'
 import type { Chronology } from '../chronology/types'
@@ -319,7 +320,7 @@ export function ProgressionView({
     >
       <div className="progression__head">
         <h2 className="sectiontitle" id="progression-heading">
-          Eras
+          Progression
         </h2>
         {access.editContent ? (
           <button
@@ -339,6 +340,10 @@ export function ProgressionView({
           {message}
         </p>
       ) : null}
+
+      {selected ? null : (
+        <Overview universeId={universeId} entry={entry} progression={progression} />
+      )}
 
       {progression.eras.length === 0 ? (
         <EmptyState
@@ -386,6 +391,9 @@ export function ProgressionView({
               busy={busy}
               isFirst={progression.eras[0].id === selected.id}
               isLast={progression.eras[progression.eras.length - 1].id === selected.id}
+              previous={progression.eras[progression.eras.indexOf(selected) - 1] ?? null}
+              next={progression.eras[progression.eras.indexOf(selected) + 1] ?? null}
+              params={params}
               onEdit={() => setEditing(selected)}
               onMove={(by) => move(selected, by)}
               onRemove={() => void remove(selected)}
@@ -531,6 +539,9 @@ function EraPanel({
   busy,
   isFirst,
   isLast,
+  previous,
+  next,
+  params,
   onEdit,
   onMove,
   onRemove,
@@ -544,10 +555,21 @@ function EraPanel({
   busy: boolean
   isFirst: boolean
   isLast: boolean
+  /** The eras before and after this one in the author's order, for reading the progression straight through. */
+  previous: Era | null
+  next: Era | null
+  params: URLSearchParams
   onEdit: () => void
   onMove: (by: number) => void
   onRemove: () => void
 }) {
+  const title = useRef<HTMLHeadingElement>(null)
+  const shown = useRef(era.id)
+  useEffect(() => {
+    if (shown.current === era.id) return
+    shown.current = era.id
+    title.current?.focus()
+  }, [era.id])
   const access = useUniverseAccess()
   const span = formatSpan(chronology, era.start, era.end)
   const fields = resolveFields(definitions, entry.fields, era)
@@ -564,7 +586,13 @@ function EraPanel({
       <header className="erapanel__head">
         <div>
           <p className="erapanel__eyebrow">Era of {entry.name}</p>
-          <h3 className="erapanel__title" id="era-title" data-testid="era-title">
+          <h3
+            className="erapanel__title"
+            id="era-title"
+            ref={title}
+            tabIndex={-1}
+            data-testid="era-title"
+          >
             {era.name}
           </h3>
           {span ? (
@@ -722,7 +750,78 @@ function EraPanel({
           </ul>
         </div>
       ) : null}
+
+      {/* Read again whenever the progression is saved or restored: an era's dates decide what holds in it. */}
+      <EraRelations
+        key={progression.version}
+        universeId={universeId}
+        entityId={entry.id}
+        eraId={era.id}
+      />
+
+      <nav className="erasteps" aria-label={`Other eras of ${entry.name}`} data-testid="era-steps">
+        {previous ? (
+          <Link className="erasteps__link" to={{ search: withEra(params, previous.id) }} rel="prev">
+            <span aria-hidden="true">← </span>
+            <span className="visually-hidden">Earlier era: </span>
+            <bdi>{previous.name}</bdi>
+          </Link>
+        ) : null}
+        <Link
+          className="erasteps__link"
+          to={{ search: withoutEra(params) }}
+          data-testid="era-steps-main"
+        >
+          Main profile
+        </Link>
+        {next ? (
+          <Link className="erasteps__link" to={{ search: withEra(params, next.id) }} rel="next">
+            <span className="visually-hidden">Later era: </span>
+            <bdi>{next.name}</bdi>
+            <span aria-hidden="true"> →</span>
+          </Link>
+        ) : null}
+      </nav>
     </article>
+  )
+}
+
+/**
+ * The present-day profile's head (Issue #44): what the entry is, in its own summary, how much of its story is told here - eras,
+ * forms, abilities, appearances - and the way back to the article, which stays the entry's one source of truth.
+ */
+function Overview({
+  universeId,
+  entry,
+  progression,
+}: {
+  universeId: string
+  entry: EntityDetail
+  progression: Progression
+}) {
+  const counts = [
+    [progression.eras.length, 'era', 'eras'],
+    [progression.forms.length, 'form', 'forms'],
+    [progression.abilities.length, 'ability', 'abilities'],
+    [progression.appearances.length, 'appearance', 'appearances'],
+  ] as const
+  const told = counts
+    .filter(([count]) => count > 0)
+    .map(([count, one, many]) => `${count} ${count === 1 ? one : many}`)
+
+  return (
+    <div className="progoverview" data-testid="progression-overview">
+      {entry.summary ? <p className="progoverview__summary prose">{entry.summary}</p> : null}
+      <p className="progoverview__meta">
+        {told.length > 0 ? <span data-testid="progression-counts">{told.join(' · ')}</span> : null}
+        <Link
+          to={`/app/universes/${universeId}/lore/${entry.id}`}
+          data-testid="progression-article"
+        >
+          Read the article
+        </Link>
+      </p>
+    </div>
   )
 }
 

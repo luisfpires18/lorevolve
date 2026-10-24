@@ -773,14 +773,14 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
               <NavLink to={entryPath} end className="views__link" data-testid="entry-view-article">
                 Article
               </NavLink>
-              {/* An entry's eras (Issue #30): offered to whoever can add one, and to everyone once it has any. */}
+              {/* An entry's progression (Issue #30): offered to whoever can add to it, and to everyone once it has any. */}
               {access.editContent || detail?.hasProgression ? (
                 <NavLink
                   to={`${entryPath}/progression`}
                   className="views__link"
                   data-testid="entry-view-progression"
                 >
-                  Eras
+                  Progression
                 </NavLink>
               ) : null}
               <NavLink

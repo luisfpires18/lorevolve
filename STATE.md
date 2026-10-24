@@ -157,6 +157,13 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     404 and deleting a trashed entry's picture 409; confirmations say looks lose the era or form.
     Tests: API 1831 passed / 6 skipped before review fixes (`EntityAppearanceTests` 7 after; matrix +5 routes);
     Playwright `entry-appearances.spec.ts` 2 with entry-forms, entry-eras, entity-image, restore green.
+  - **#44 Unified Wiki-Style Profile** (`feat/lore-progression-profile`, cut from the #43 tip). Frontend only; ADR 0050
+    amendment. The fourth entry view is now "Progression": the main profile opens on the entry's summary, what its
+    progression holds and "Read the article"; an era's page adds "Relations in this era" (`?era=`, unplaced listed apart)
+    and Earlier / Main profile / Later links. Era pages show only what is ticked for them, so no later state leaks back.
+    No comparison view, no public surface. Independent review (1 high, 4 medium) handled: unplaced relations stay listed
+    apart (owner decision for #18) but folded under a count; relations re-read after a save or restore; stepping to an era
+    focuses its title; E2E covers an unplaced dated link and an entry with no progression.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);

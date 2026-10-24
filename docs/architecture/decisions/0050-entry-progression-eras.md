@@ -78,3 +78,13 @@ names is refused unless the same save sends them without it.
 The progression also holds the entry's appearances, under the same version, history and restore; their pictures are not part
 of it. A save or restore that would remove an appearance still holding pictures is refused (409
 `entity_appearance_has_pictures`).
+
+## Amendment (2026-10-24, Issue #44)
+
+The entry's fourth view is named Progression and reads as one profile of the one entry, not a second record: on the main
+profile, the entry's summary, what its progression holds and the way back to the article; then its eras, forms, abilities and
+appearances. An era's page shows its own details, only the forms, abilities and appearances ticked for it - so a later era's
+state never shows in an earlier one unless the author said so - and the relations that hold then, read from
+`.../relationships?era=` (ADR 0051), with those that cannot be placed listed apart, folded under a count and never among
+what holds. It ends with links to the era before, the
+main profile and the era after. Members only, as the progression always was: nothing reaches Explore or a public page.
