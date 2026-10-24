@@ -5334,6 +5334,14 @@ a.button--danger:visited {
   gap: var(--space-4);
 }
 
+/* Article, Progression, Relations, History and the comments button: one row at 390px only with the
+   phone's tighter gaps, in the widest font a phone draws them in (DejaVu). */
+@media (max-width: 640px) {
+  .entry__lenses {
+    gap: var(--space-2);
+  }
+}
+
 .entry__tools {
   display: flex;
   flex-wrap: wrap;
@@ -8989,7 +8997,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
    History. Links, not tabs, because each view has its own address - so Back, a reload and a shared
    link all land where the reader was, and `aria-current` says which one that is without a
    tablist's keyboard contract. Current is ink over a 2px accent rule; the rest are muted until
-   pointed at. One row on a phone: three views fit at 390px. Filters that are a choice on the page
+   pointed at. One row on a phone: four views fit at 390px. Filters that are a choice on the page
    rather than a place use `.segmented` instead. */
 .views {
   display: flex;
@@ -9012,7 +9020,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
 
 @media (max-width: 640px) {
   .views {
-    column-gap: var(--space-4);
+    column-gap: var(--space-3);
   }
 }
 

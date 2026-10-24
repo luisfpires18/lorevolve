@@ -288,9 +288,12 @@ export default function LorePage() {
 
   const withParams = (changes: Record<string, string | null>) => changed(params, changes)
 
-  /** Written against the address as it is when the change lands, not as it was when drawn. */
+  /** Written against the address as it is when the change lands, not as it was when drawn. React Router hands a
+      functional update the last render's params, which a navigation still rendering has moved past: a status chosen
+      just after a field filter was applied would write the filter away. */
+  const liveParams = () => new URLSearchParams(window.location.search)
   const update = (changes: Record<string, string | null>, replace: boolean) =>
-    setParams((current) => changed(current, changes), { replace })
+    setParams(changed(liveParams(), changes), { replace })
 
   /** A page is a move: Back returns to the page before. */
   function goToPage(next: number) {
@@ -299,8 +302,12 @@ export default function LorePage() {
   }
 
   /** Field filters are a move, like a page: Back undoes one. */
-  function setFieldFilters(next: FieldFilter[]) {
-    setParams((current) => withFieldFilters(current, next))
+  function setFieldFilters(change: (current: FieldFilter[]) => FieldFilter[]) {
+    const live = liveParams()
+    const current = selectedType
+      ? readFieldFilters(live).filter((filter) => isValidFor(filter, selectedType))
+      : []
+    setParams(withFieldFilters(live, change(current)))
   }
 
   // Everything that narrows, gone at once and the scope kept. A move, so Back brings the filters back.
