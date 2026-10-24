@@ -235,8 +235,13 @@ public sealed record UniverseBackup(
     /// fields it overrides or leaves empty - with every saved version of them. Not ignorable: the eras and their overrides are
     /// authored, so a version 26 reader would restore every entry without them. A file at version 26 or earlier has no
     /// <c>progression</c>; every entry restores with no eras, even if it carries one.
+    ///
+    /// 28 - A relationship may hold during periods (Issue #18). <see cref="BackupRelationship.Periods"/> carries them in order,
+    /// each a dated span on the file's chronology or one era of either end, by the era's id in this file. Not ignorable: a
+    /// version 27 reader would restore every link timeless, true at every time its author said it was not. A file at version 27
+    /// or earlier has no <c>periods</c>; every link restores timeless, even if it carries some.
     /// </summary>
-    public const int CurrentVersion = 27;
+    public const int CurrentVersion = 28;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -674,7 +679,8 @@ public sealed record BackupRelationshipType(
 
 /// <summary>
 /// One link, stored once and read from either end (ADR 0008). <paramref name="DeletedAt"/> is when it went to the Trash, or
-/// null while it is live (since version 26).
+/// null while it is live (since version 26). <paramref name="Periods"/> are when it holds (since version 28), in order; empty
+/// for a timeless link.
 /// </summary>
 public sealed record BackupRelationship(
     Guid Id,
@@ -687,7 +693,14 @@ public sealed record BackupRelationship(
     string? Notes,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    DateTime? DeletedAt = null);
+    DateTime? DeletedAt = null,
+    IReadOnlyList<BackupRelationshipPeriod>? Periods = null);
+
+/// <summary>One period of a link (since version 28): a dated span, or one era of either end by its id in this file. Never both.</summary>
+public sealed record BackupRelationshipPeriod(
+    Guid? EntityEraId,
+    BackupChronologyValue? Start,
+    BackupChronologyValue? End);
 
 /// <summary>
 /// One moment. The date components stay integers with their eras beside them, so a year survives

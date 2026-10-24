@@ -99,3 +99,9 @@ field. A duplicate already stored is a stored row like any other: both are liste
 editable, and either can be removed, by the author, deliberately. The one thing that changes for them is the
 family tree, which collapses links that say the same thing when it derives a family, so a duplicate is drawn
 once and a child is listed once. That is a read, decided the same way on every read, and it deletes nothing.
+
+## Amendment (2026-10-24, Issue #18, ADR 0051)
+
+A link may hold during periods (`RelationshipPeriods`): dated spans on the universe's chronology or eras of either end. They
+are part of the one row - a link that ended and resumed is a second period, never a second row - so the duplicate refusal
+is unchanged. The real-world `StartDate`/`EndDate` keep their meaning and are no longer offered by the client.

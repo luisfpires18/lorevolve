@@ -1105,6 +1105,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
             universeId={universe.id}
             entityId={entityId!}
             entityName={detail?.name ?? ''}
+            chronology={chronology}
           />
         </div>
       ) : (

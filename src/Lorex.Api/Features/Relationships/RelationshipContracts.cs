@@ -1,3 +1,4 @@
+using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Lore;
 
 namespace Lorex.Api.Features.Relationships;
@@ -51,6 +52,11 @@ public sealed record RelationshipTypeCanonConstraints(
 
 // ---------- Relationships ----------
 
+/// <summary>
+/// <paramref name="StartDate"/> and <paramref name="EndDate"/> are the older real-world dates: sent back as they were read, or
+/// null to clear them. <paramref name="Periods"/> is when the link holds on the universe's own time (Issue #18): left out keeps
+/// the stored periods - so a client that predates them cannot clear them - and an empty list makes the link timeless.
+/// </summary>
 public sealed record RelationshipRequest(
     Guid RelationshipTypeId,
     Guid SourceEntityId,
@@ -58,7 +64,41 @@ public sealed record RelationshipRequest(
     CanonStatus CanonStatus,
     DateTime? StartDate,
     DateTime? EndDate,
-    string? Notes);
+    string? Notes,
+    IReadOnlyList<RelationshipPeriodInput?>? Periods = null);
+
+/// <summary>
+/// One period: a dated span on the universe's chronology - <paramref name="Start"/>, <paramref name="End"/> or both, each as
+/// precise as written - or the whole of one era of either end (<paramref name="EntityEraId"/>). Never both.
+/// </summary>
+public sealed record RelationshipPeriodInput(ChronologyValue? Start, ChronologyValue? End, Guid? EntityEraId = null);
+
+/// <summary>
+/// One period as read. For an era, its name, whose era it is, and its own span when it has one - read live from the era, never
+/// copied onto the period.
+/// </summary>
+public sealed record RelationshipPeriodResponse(
+    Guid Id,
+    ChronologyValue? Start,
+    ChronologyValue? End,
+    Guid? EntityEraId,
+    string? EraName,
+    Guid? EraEntityId,
+    string? EraEntityName,
+    ChronologyValue? EraStart,
+    ChronologyValue? EraEnd);
+
+/// <summary>
+/// Whether a link holds at the time asked about (Issue #18): always (no period), during it (a period covers it), or cannot be
+/// placed (a period that the time asked about cannot be compared with - an era with no dates, say). A link that holds at some
+/// other time is not listed at all.
+/// </summary>
+public enum RelationshipValidity
+{
+    Timeless = 0,
+    During = 1,
+    Unplaced = 2,
+}
 
 /// <summary>Which reading of a link a row is being shown under.</summary>
 public enum RelationshipPerspective
@@ -86,7 +126,8 @@ public sealed record RelationshipDetail(
     DateTime? EndDate,
     string? Notes,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    IReadOnlyList<RelationshipPeriodResponse>? Periods = null);
 
 /// <summary>
 /// One link seen from one entity. <see cref="Label"/> is already resolved for that
@@ -116,4 +157,6 @@ public sealed record RelationshipView(
     DateTime? EndDate,
     string? Notes,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    IReadOnlyList<RelationshipPeriodResponse>? Periods = null,
+    RelationshipValidity? Validity = null);

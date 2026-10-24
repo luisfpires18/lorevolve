@@ -25,7 +25,8 @@ public sealed record ChronologyEraRequest(
 /// entries that start or end in it, <paramref name="YearCount"/> counts years on entries, the
 /// Trash included, and <paramref name="SceneCount"/> counts story scenes placed in it - any of
 /// them keeps the era from being removed. <paramref name="EntryEraCount"/> counts entries' eras that start or end in it (Issue
-/// #41); <paramref name="YearCount"/> includes the years those eras' overrides hold.
+/// #41); <paramref name="YearCount"/> includes the years those eras' overrides hold. <paramref name="PeriodCount"/> counts relationship
+/// periods that start or end in it (Issue #18).
 /// </summary>
 public sealed record ChronologyEraResponse(
     Guid Id,
@@ -37,7 +38,8 @@ public sealed record ChronologyEraResponse(
     int MomentCount,
     int YearCount,
     int SceneCount,
-    int EntryEraCount = 0);
+    int EntryEraCount = 0,
+    int PeriodCount = 0);
 
 /// <summary>
 /// One point on a universe's line that is not a timeline moment: the era its year is counted in -

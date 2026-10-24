@@ -184,6 +184,33 @@ public static class ChronologyCalendarEndpoints
                         .SetProperty(era => era.EndMonthId, (Guid?)null),
                     cancellationToken);
 
+            // And a relationship's period (Issue #18), the Trash included.
+            await db.RelationshipPeriods
+                .Where(period => period.Relationship!.UniverseId == universeId && period.StartMonthId != null)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(
+                            period => period.StartMonth,
+                            period => db.ChronologyCalendarMonths
+                                .Where(month => month.Id == period.StartMonthId)
+                                .Select(month => (int?)(month.SortOrder + 1))
+                                .FirstOrDefault())
+                        .SetProperty(period => period.StartMonthId, (Guid?)null),
+                    cancellationToken);
+
+            await db.RelationshipPeriods
+                .Where(period => period.Relationship!.UniverseId == universeId && period.EndMonthId != null)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(
+                            period => period.EndMonth,
+                            period => db.ChronologyCalendarMonths
+                                .Where(month => month.Id == period.EndMonthId)
+                                .Select(month => (int?)(month.SortOrder + 1))
+                                .FirstOrDefault())
+                        .SetProperty(period => period.EndMonthId, (Guid?)null),
+                    cancellationToken);
+
             await db.ChronologyCalendarMonths.Where(month => month.CalendarId == calendarId).ExecuteDeleteAsync(cancellationToken);
             await db.ChronologyCalendars.Where(calendar => calendar.Id == calendarId).ExecuteDeleteAsync(cancellationToken);
         }
@@ -316,6 +343,32 @@ public static class ChronologyCalendarEndpoints
                     .SetProperty(era => era.EndMonth, (int?)null),
                 cancellationToken);
 
+        await db.RelationshipPeriods
+            .Where(period => period.Relationship!.UniverseId == universeId && period.StartMonth != null)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(
+                        period => period.StartMonthId,
+                        period => db.ChronologyCalendarMonths
+                            .Where(month => month.CalendarId == calendarId && month.SortOrder + 1 == period.StartMonth)
+                            .Select(month => (Guid?)month.Id)
+                            .FirstOrDefault())
+                    .SetProperty(period => period.StartMonth, (int?)null),
+                cancellationToken);
+
+        await db.RelationshipPeriods
+            .Where(period => period.Relationship!.UniverseId == universeId && period.EndMonth != null)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(
+                        period => period.EndMonthId,
+                        period => db.ChronologyCalendarMonths
+                            .Where(month => month.CalendarId == calendarId && month.SortOrder + 1 == period.EndMonth)
+                            .Select(month => (Guid?)month.Id)
+                            .FirstOrDefault())
+                    .SetProperty(period => period.EndMonth, (int?)null),
+                cancellationToken);
+
         return null;
     }
 
@@ -422,6 +475,20 @@ public static class ChronologyCalendarEndpoints
                 era.EndMonthId,
                 era.EndDay,
             })
+            .Concat(db.RelationshipPeriods.AsNoTracking()
+                .Where(period => period.Relationship!.UniverseId == universeId && period.StartMonthId != null && period.EndMonthId != null)
+                .Select(period => new
+                {
+                    Title = period.Relationship!.SourceEntity!.Name + " – " + period.Relationship.TargetEntity!.Name,
+                    period.StartEraId,
+                    period.StartYear,
+                    period.StartMonthId,
+                    period.StartDay,
+                    period.EndEraId,
+                    period.EndYear,
+                    period.EndMonthId,
+                    period.EndDay,
+                }))
             .ToListAsync(cancellationToken);
 
         var reversed = ranges
@@ -500,7 +567,8 @@ public static class ChronologyCalendarEndpoints
         int DayCount,
         int UseCount,
         int? MaxDayUsed,
-        int EntryEraCount = 0);
+        int EntryEraCount = 0,
+        int PeriodCount = 0);
 
     /// <summary>
     /// The calendar's months in order, each with its use: one query however many months, the counts and latest days as
@@ -530,6 +598,9 @@ public static class ChronologyCalendarEndpoints
                 EntryEras = db.EntityEras.Count(era => era.StartMonthId == month.Id || era.EndMonthId == month.Id),
                 EraStartDay = db.EntityEras.Where(era => era.StartMonthId == month.Id).Max(era => era.StartDay),
                 EraEndDay = db.EntityEras.Where(era => era.EndMonthId == month.Id).Max(era => era.EndDay),
+                Periods = db.RelationshipPeriods.Count(period => period.StartMonthId == month.Id || period.EndMonthId == month.Id),
+                PeriodStartDay = db.RelationshipPeriods.Where(period => period.StartMonthId == month.Id).Max(period => period.StartDay),
+                PeriodEndDay = db.RelationshipPeriods.Where(period => period.EndMonthId == month.Id).Max(period => period.EndDay),
             })
             .ToListAsync(cancellationToken);
 
@@ -542,9 +613,10 @@ public static class ChronologyCalendarEndpoints
                 row.Abbreviation,
                 row.SortOrder,
                 row.DayCount,
-                row.Moments + row.Scenes + row.EntryEras,
-                new[] { row.StartDay, row.EndDay, row.SceneDay, row.EraStartDay, row.EraEndDay }.Max(),
-                row.EntryEras)),
+                row.Moments + row.Scenes + row.EntryEras + row.Periods,
+                new[] { row.StartDay, row.EndDay, row.SceneDay, row.EraStartDay, row.EraEndDay, row.PeriodStartDay, row.PeriodEndDay }.Max(),
+                row.EntryEras,
+                row.Periods)),
         ];
     }
 
@@ -584,8 +656,20 @@ public static class ChronologyCalendarEndpoints
             .Select(group => new { Month = group.Key, Day = group.Max(era => era.EndDay) ?? 0 })
             .ToListAsync(cancellationToken);
 
+        var periodStarts = await db.RelationshipPeriods.AsNoTracking()
+            .Where(period => period.Relationship!.UniverseId == universeId && period.StartMonth != null)
+            .GroupBy(period => period.StartMonth!.Value)
+            .Select(group => new { Month = group.Key, Day = group.Max(period => period.StartDay) ?? 0 })
+            .ToListAsync(cancellationToken);
+
+        var periodEnds = await db.RelationshipPeriods.AsNoTracking()
+            .Where(period => period.Relationship!.UniverseId == universeId && period.EndMonth != null)
+            .GroupBy(period => period.EndMonth!.Value)
+            .Select(group => new { Month = group.Key, Day = group.Max(period => period.EndDay) ?? 0 })
+            .ToListAsync(cancellationToken);
+
         var used = new Dictionary<int, int>();
-        foreach (var row in starts.Concat(ends).Concat(scenes).Concat(eraStarts).Concat(eraEnds))
+        foreach (var row in starts.Concat(ends).Concat(scenes).Concat(eraStarts).Concat(eraEnds).Concat(periodStarts).Concat(periodEnds))
         {
             used[row.Month] = Math.Max(used.GetValueOrDefault(row.Month), row.Day);
         }
@@ -625,12 +709,25 @@ public static class ChronologyCalendarEndpoints
     /// <summary>What dates a month: scenes and moments as it always said, and entries' eras when any are (Issue #41).</summary>
     private static string Uses(MonthUse month)
     {
-        var others = month.UseCount - month.EntryEraCount;
-        var eras = Count(month.EntryEraCount, "era of an entry", "eras of entries");
+        var others = month.UseCount - month.EntryEraCount - month.PeriodCount;
+        var parts = new List<string>();
 
-        return others == 0 ? eras
-            : month.EntryEraCount == 0 ? Count(others, "dated scene or timeline moment", "dated scenes or timeline moments")
-            : $"{Count(others, "dated scene or timeline moment", "dated scenes or timeline moments")} and {eras}";
+        if (others > 0)
+        {
+            parts.Add(Count(others, "dated scene or timeline moment", "dated scenes or timeline moments"));
+        }
+
+        if (month.EntryEraCount > 0)
+        {
+            parts.Add(Count(month.EntryEraCount, "era of an entry", "eras of entries"));
+        }
+
+        if (month.PeriodCount > 0)
+        {
+            parts.Add(Count(month.PeriodCount, "period of a relation", "periods of relations"));
+        }
+
+        return string.Join(" and ", parts);
     }
 
     private static IResult Incompatible(string detail) =>

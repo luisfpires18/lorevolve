@@ -138,7 +138,10 @@ public sealed class LoreRelationship
 
     public CanonStatus CanonStatus { get; set; }
 
-    /// <summary>UTC. Optional; real-world calendar only, no fantasy calendars yet.</summary>
+    /// <summary>
+    /// UTC. Optional; a real-world date, from before a link could be placed in the universe's own time (<see cref="Periods"/>,
+    /// Issue #18). Kept exactly as it is, shown, and clearable; no longer offered for new links.
+    /// </summary>
     public DateTime? StartDate { get; set; }
 
     /// <summary>UTC. Optional. Never earlier than <see cref="StartDate"/> when both are set.</summary>
@@ -157,4 +160,11 @@ public sealed class LoreRelationship
     /// <see cref="LoreEntity.DeletedAt"/>): every read says which it wants.
     /// </summary>
     public DateTime? DeletedAt { get; set; }
+
+    /// <summary>
+    /// When the link holds (Issue #18), on the universe's own chronology or as an era of either end; none means always, as
+    /// every link was before. <see cref="StartDate"/> and <see cref="EndDate"/> are the older real-world dates, kept as they
+    /// are and no longer offered.
+    /// </summary>
+    public ICollection<RelationshipPeriod> Periods { get; } = [];
 }

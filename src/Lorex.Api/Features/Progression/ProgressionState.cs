@@ -420,6 +420,22 @@ internal static class ProgressionState
                     extensions: new Dictionary<string, object?> { ["code"] = ProgressionEndpoints.EraArchivedValuesCode });
             }
 
+            // A relationship's period that is this era (Issue #18) would lose what it means; the author changes the link first.
+            var anchoring = await db.RelationshipPeriods.AsNoTracking()
+                .Where(period => period.EntityEraId != null && removed.Contains(period.EntityEraId.Value))
+                .Select(period => period.EntityEra!.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (anchoring is not null)
+            {
+                return Results.Problem(
+                    title: "Era is in use",
+                    detail: $"\"{anchoring}\" can't be removed because a relation holds during it. Change that relation's period first, "
+                        + "counting any in the Trash.",
+                    statusCode: StatusCodes.Status409Conflict,
+                    extensions: new Dictionary<string, object?> { ["code"] = ProgressionEndpoints.EraInRelationshipCode });
+            }
+
             await db.EntityEras.Where(era => removed.Contains(era.Id)).ExecuteDeleteAsync(cancellationToken);
         }
 

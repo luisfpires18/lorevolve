@@ -113,7 +113,7 @@ public sealed class UniverseAttributionTests(LorexApiFactory factory) : IClassFi
 
         var archive = await PlotTestClient.RawArchive(owner, u);
         var backup = BackupOf(archive);
-        Assert.Equal(27, backup.FormatVersion);
+        Assert.Equal(28, backup.FormatVersion);
         Assert.Equal(("Odile Varnas", "The Salt Cycle"), (backup.Payload.Universe.OriginalCreator, backup.Payload.Universe.OriginalWork));
         Assert.DoesNotContain("visibility", DocumentOf(archive), StringComparison.OrdinalIgnoreCase);
 

@@ -122,6 +122,17 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     blocks field delete/kind change/option removal; backup refuses required-cleared, valueless and reversed spans.
     Tests: API 1807 passed / 6 skipped (`EntityProgressionTests` 24; matrix +5 routes); Playwright `entry-eras.spec.ts` 3;
     neighbouring specs green (view count now 4 in entry-views and mobile; restore version 27).
+  - **#18 Temporal Relationships** (`feat/lore-temporal-relationships`, cut from the #41 tip). Migration
+    `AddRelationshipPeriods`, backup 28. ADR 0051 (new); 0008, 0014, 0022, 0050 amendments. A link holds during 0..n periods
+    (dates on the universe's chronology, or an era of either end); none = timeless, unchanged. Left-out periods are kept;
+    real-world dates kept, shown, clearable, no longer offered. `.../relationships?era=` / `?atYear=...` return only what holds
+    then with `validity` Timeless / During / Unplaced. Eras named by a period cannot be removed. Family Tree and Canon ignore
+    periods. UI: periods in the relation form, "Show the relations at a time".
+    Independent review (9 findings, 2 questions) fixed: periods replaced in one SaveChanges; real-world dates sent back
+    verbatim; moved end with kept era periods = 409 + AI staging check; time filter needs a year, keeps the list on failure,
+    says when nothing holds, moves focus; era choices show reading/failed states and stored eras; From/To grouped.
+    Tests: API 1817 passed / 6 skipped (`RelationshipPeriodTests` 10); Playwright `relation-periods.spec.ts` 2, relationships
+    spec moved to periods; neighbouring specs green.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);

@@ -61,3 +61,8 @@ switch on and off converts entry eras' months, its edits count them as uses and 
 - "Set for this era" with no value is refused (`eras[i].fields.{id}`), never stored as a blank that hides the entry's value.
 - A backup is held to the same rules: a required field left empty, an override with no value or a span ending before it
   starts is refused at validation.
+
+## Amendment (2026-10-24, Issue #18, ADR 0051)
+
+A relationship's period may name an era. Removing that era - by a save or by restoring an older version - is refused while
+any period names it, a link in the Trash included (409 `entity_era_in_relationship`).

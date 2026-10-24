@@ -1,3 +1,4 @@
+import type { ChronologyValue } from '../chronology/types'
 import type { CanonStatusValue } from '../lore/types'
 
 /** Mirrors the backend enum. Which reading of a link a row is being shown under. */
@@ -97,6 +98,37 @@ export interface RelationshipTypeInput {
   familySemantic: FamilySemanticValue | null
 }
 
+/**
+ * When a link holds (Issue #18): a dated span on the universe's own chronology - either end may be open, each as precise as
+ * written - or the whole of one era of either end. For an era, its name, whose it is and its own dates, read live.
+ */
+export interface RelationshipPeriod {
+  id: string
+  start: ChronologyValue | null
+  end: ChronologyValue | null
+  entityEraId: string | null
+  eraName: string | null
+  eraEntityId: string | null
+  eraEntityName: string | null
+  eraStart: ChronologyValue | null
+  eraEnd: ChronologyValue | null
+}
+
+export interface RelationshipPeriodInput {
+  start: ChronologyValue | null
+  end: ChronologyValue | null
+  entityEraId: string | null
+}
+
+/** Mirrors the backend enum: how a link holds at the time asked about. */
+export const Validity = {
+  Timeless: 0,
+  During: 1,
+  Unplaced: 2,
+} as const
+
+export type ValidityValue = (typeof Validity)[keyof typeof Validity]
+
 /** The stored link as it is, used when creating, editing and reading one row. */
 export interface RelationshipDetail {
   id: string
@@ -114,6 +146,7 @@ export interface RelationshipDetail {
   notes: string | null
   createdAt: string
   updatedAt: string
+  periods: RelationshipPeriod[]
 }
 
 /**
@@ -144,8 +177,15 @@ export interface RelationshipView {
   notes: string | null
   createdAt: string
   updatedAt: string
+  periods: RelationshipPeriod[]
+  /** Set only when the list was read for a time: how the link holds then. */
+  validity: ValidityValue | null
 }
 
+/**
+ * One save. `startDate` and `endDate` are the older real-world dates, sent back as read or null to clear them; `periods`
+ * left out keeps the stored ones, an empty list makes the link timeless.
+ */
 export interface RelationshipInput {
   relationshipTypeId: string
   sourceEntityId: string
@@ -154,6 +194,7 @@ export interface RelationshipInput {
   startDate: string | null
   endDate: string | null
   notes: string | null
+  periods?: RelationshipPeriodInput[]
 }
 
 /**

@@ -20,7 +20,7 @@ public static class BackupFormatSupport
 {
     public const int MinVersion = 1;
 
-    public const int MaxVersion = 27;
+    public const int MaxVersion = 28;
 
     /// <summary>Versions 1 and 2 were a single JSON file; from 3 a backup is a ZIP holding it (ADR 0014).</summary>
     public const int FirstArchiveVersion = 3;
