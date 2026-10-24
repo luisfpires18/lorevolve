@@ -165,7 +165,7 @@ public sealed class EntityAppearanceTests(LorexApiFactory factory) : IClassFixtu
         await AddPicture(w, armour.Id, Png(30, 10));
 
         var backup = await Backup(w.Client, w.U);
-        Assert.Equal(31, backup.FormatVersion);
+        Assert.Equal(32, backup.FormatVersion);
         var look = backup.Payload.Entities.Single(entity => entity.Id == w.Goku).Progression!.Appearances!.Single();
         Assert.Equal("Battle armour", look.Label);
         Assert.Single(look.Images);

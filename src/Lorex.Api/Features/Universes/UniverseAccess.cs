@@ -51,6 +51,12 @@ public enum UniverseCapability
 
     /// <summary>Accept a suggestion - which then saves it as an ordinary edit - or reject it.</summary>
     ResolveSuggestedChanges,
+
+    /// <summary>
+    /// Read and write the owner's private note on an entry (issue 23). The owner's alone: a note is author-only context
+    /// that no collaborator, public page, search, assistant or outside app may read.
+    /// </summary>
+    PrivateNotes,
 }
 
 /// <summary>
@@ -95,7 +101,7 @@ public static class UniverseAccess
             or UniverseCapability.ResolveComments or UniverseCapability.ResolveSuggestedChanges =>
             role is UniverseRole.Owner or UniverseRole.Editor,
         UniverseCapability.PermanentlyDelete or UniverseCapability.ManageUniverse or UniverseCapability.Publish
-            or UniverseCapability.Backup or UniverseCapability.ManageCollaborators =>
+            or UniverseCapability.Backup or UniverseCapability.ManageCollaborators or UniverseCapability.PrivateNotes =>
             role is UniverseRole.Owner,
         _ => false,
     };

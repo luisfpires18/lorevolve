@@ -171,6 +171,8 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<WorldRule> WorldRules => Set<WorldRule>();
 
+    public DbSet<EntityPrivateNote> EntityPrivateNotes => Set<EntityPrivateNote>();
+
     public DbSet<CommentThread> CommentThreads => Set<CommentThread>();
 
     public DbSet<Comment> Comments => Set<Comment>();

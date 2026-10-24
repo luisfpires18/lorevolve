@@ -15320,6 +15320,22 @@ a.idearef__name {
   gap: var(--space-2);
 }
 
+/* The owner's private note (issue 23): one tall box and its save under it, inside the shared drawer. */
+.privatenote__text {
+  min-height: 16rem;
+  resize: vertical;
+  font-family: var(--font-prose, inherit);
+  line-height: 1.6;
+}
+
+.privatenote__bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
 .reviewsection {
   display: flex;
   flex-direction: column;

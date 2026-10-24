@@ -877,6 +877,27 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("EntityImages", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Lore.EntityPrivateNote", b =>
+                {
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("EntityId");
+
+                    b.ToTable("EntityPrivateNotes", (string)null);
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Lore.EntityRevision", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3663,6 +3684,17 @@ namespace Lorex.Api.Data.Migrations
                     b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
                         .WithOne("Image")
                         .HasForeignKey("Lorex.Api.Features.Lore.EntityImage", "EntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Entity");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Lore.EntityPrivateNote", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
+                        .WithOne()
+                        .HasForeignKey("Lorex.Api.Features.Lore.EntityPrivateNote", "EntityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

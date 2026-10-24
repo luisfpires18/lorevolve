@@ -105,3 +105,10 @@ progression that overrides that field.
 A type's field layout is protected on its own: `EntityTypes.FieldLayoutVersion`, named as `expectedVersion` by every layout
 save, refused with 409 `entity_field_layout_changed`. It is apart from each field's version: saving sections never makes an
 open field drawer stale, and editing, archiving or restoring a field never makes an open Sections drawer stale.
+
+## Amendment (2026-10-24, issue 23, ADR 0056)
+
+An entry's private note is protected like its article: `EntityPrivateNotes.Version`, named as `expectedVersion` by every
+save, refused stale or missing with 409 `entity_private_note_changed` and `currentVersion`. It is the note's only
+protection - by the owner's decision there are no saved versions and no device recovery copy - so the drawer keeps the
+unsaved text, offers the latest for review, and saves again only on the owner's say.

@@ -174,6 +174,20 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   image or Story options in V1; links listed). Tests: Playwright `entity-duplicate.spec.ts` 3; `entity-page` (menu order),
   `collaboration` (Editor sees Duplicate) updated; with lore, lore-article, field-lifecycle, entity-reference-target,
   history 46/46 on a fresh DB. No API change, so no API run.
+- **Issue #23 - Private Author Notes** (`feat/private-author-notes` off `dev` at `fbbe4b2`; committed, not merged, not
+  pushed). Migration `AddEntityPrivateNotes` (one additive table), backup format 32. ADR 0056 (new); ADR 0014, 0041, 0043
+  amended. Owner decisions 2026-10-24: a dedicated `PrivateNotes` capability held by the owner alone; no saved versions and
+  no device recovery copy; the version check kept; notes in the owner's backup; nothing readable by the assistant, MCP or an
+  AI proposal; nothing in any public page, API, search, preview or error. `EntityPrivateNotes` is its own row with no
+  navigation from the entry, so no entry projection can carry it; `GET`/`PUT .../entities/{id}/private-note` is the only
+  reader (403 for every other role with nothing of the note, 404 for outsiders and trashed entries, 409
+  `entity_private_note_changed`, null and over-long refused, an unchanged save writes nothing, no entry `UpdatedAt`,
+  history, Canon or search write). Restore gives the new owner the note at version 1; a version 31 file restores none.
+  UI: a "Private note" tool on the entry's bar beside Family tree (owner only; icon alone on a phone), a drawer with one text box, Save and Ctrl+S,
+  the shared conflict review; nothing read until it opens. Not done on purpose: notes on stories or scenes, Editor
+  access, history, a recovery copy. Tests: API `EntityPrivateNoteTests` 8, `EntityPrivateNoteMigrationTests` 1, matrix
+  +2 owner-only routes, every `FormatVersion` assert at 32; Playwright `private-notes.spec.ts` 2 with neighbouring specs
+  on a fresh DB (see the commit message for counts). Full Playwright not run locally; delegated to GitHub Actions.
 - **Issue #26 - Lore Type Field Groups / Progressive Forms** (`feat/lore-field-groups` off `dev` at `26c38a8`; committed,
   not merged, not pushed). Migration `AddEntityFieldSections`, backup format 31. ADR 0055 (new); ADR 0007, 0014, 0043
   amended. Optional author-named sections for a type's fields, presentation only: no field id, value, order, setting,

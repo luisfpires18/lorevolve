@@ -221,3 +221,10 @@ they read comments. Proposing writes nothing to content, so a Reviewer still has
 and lifecycle: ADR 0044. Like comments, suggestions name people by username only, keep a removed collaborator's name, and
 are not in a backup; format stays **22**.
 
+## Amendment: private notes (2026-10-24, issue 23, ADR 0056)
+
+**One more capability, the owner's alone.** `PrivateNotes` reads and writes the owner's private note on an entry
+(`GET`/`PUT .../entities/{id}/private-note`). No role but `Owner` holds it: an Editor, Reviewer or Viewer gets the one 403
+every capability refuses with, and nothing of the note; an outsider the same 404 as for a missing universe. Unlike comments
+and suggestions, a note is the owner's authored text rather than collaboration metadata, so it travels in the owner's backup
+(ADR 0014, version 32).
