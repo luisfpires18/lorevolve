@@ -29,6 +29,9 @@ public static class ProgressionEndpoints
     /// <summary>The 409 for removing an era a relationship's period names (Issue #18).</summary>
     public const string EraInRelationshipCode = "entity_era_in_relationship";
 
+    /// <summary>The 409 for removing, by a save or a restore, an appearance that still holds pictures (Issue #43).</summary>
+    public const string AppearanceHoldsPicturesCode = "entity_appearance_has_pictures";
+
     /// <summary>
     /// The 409 for restoring a version that can no longer be put back exactly as it was saved: it overrides a field that is
     /// archived now or that the entry's type no longer has, chooses an option since removed, or names a story, scene or entry
@@ -147,6 +150,7 @@ public static class ProgressionEndpoints
         var snapshot = ProgressionState.Deserialize(revision.Snapshot);
         var actor = await db.Users.Where(user => user.Id == revision.ActorUserId).Select(user => user.UserName).FirstOrDefaultAsync(cancellationToken);
         var (forms, abilities) = await ProgressionForms.DescribeAsync(db, universeId, snapshot, cancellationToken);
+        var appearances = await ProgressionAppearances.DescribeAsync(db, universeId, snapshot, withImages: false, cancellationToken);
 
         return Results.Ok(new ProgressionRevisionDetail(
             revision.Id,
@@ -157,7 +161,8 @@ public static class ProgressionEndpoints
             actor,
             await ProgressionState.DescribeAsync(db, universeId, snapshot.Eras, cancellationToken),
             forms,
-            abilities));
+            abilities,
+            appearances));
     }
 
     /// <summary>
@@ -248,6 +253,7 @@ public static class ProgressionEndpoints
             {
                 Forms = exactly.Forms ?? wanted.Forms,
                 Abilities = exactly.Abilities ?? wanted.Abilities,
+                Appearances = exactly.Appearances ?? wanted.Appearances,
             })))
         {
             return Results.Problem(
@@ -323,6 +329,7 @@ public static class ProgressionEndpoints
 
         var state = await ProgressionState.ReadAsync(db, entityId, cancellationToken);
         var (forms, abilities) = await ProgressionForms.DescribeAsync(db, universeId, state, cancellationToken);
+        var appearances = await ProgressionAppearances.DescribeAsync(db, universeId, state, withImages: true, cancellationToken);
 
         return new ProgressionResponse(
             entityId,
@@ -330,7 +337,8 @@ public static class ProgressionEndpoints
             stored is null ? null : Utc(stored.UpdatedAt),
             stored?.Version ?? 0,
             forms,
-            abilities);
+            abilities,
+            appearances);
     }
 
     /// <summary>The type of a live entry of this universe, or null when there is none - so a trashed entry is not reachable.</summary>

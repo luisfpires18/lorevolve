@@ -57,8 +57,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0050 | An entry's progression is its own aggregate, and an era holds only what differs then (#41) | [0050-entry-progression-eras.md](0050-entry-progression-eras.md) |
 | 0051 | A relationship holds during periods of its own, on the universe's time or an entry's era (#18) | [0051-temporal-relationships.md](0051-temporal-relationships.md) |
 | 0052 | An entry's forms and abilities are available exactly in the eras the author ticks (#42) | [0052-entry-forms-and-abilities.md](0052-entry-forms-and-abilities.md) |
+| 0053 | An entry's appearances are one record each, with a gallery stored like the entry's own picture (#43) | [0053-entry-appearances.md](0053-entry-appearances.md) |
 
-All accepted. Next number: `0053`.
+All accepted. Next number: `0054`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

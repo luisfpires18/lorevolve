@@ -16611,6 +16611,77 @@ details.reviewsection > .reviewsection__list {
   list-style: none;
 }
 
+/* ---------- Entry: appearances (Issue #43) ----------
+
+   An appearance is a ruled row like a form, with its gallery beneath its notes: square thumbnails in the
+   author's order, each a button that opens the original whole, its menu beside it. The gallery wraps on a
+   phone. An era's page shows each look it has with its first picture. */
+
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gallery__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.gallery__open {
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-xs);
+  background: var(--raised);
+  cursor: zoom-in;
+  line-height: 0;
+}
+
+.gallery__open:focus-visible,
+.gallery__open:hover {
+  border-color: var(--accent);
+}
+
+.gallery__thumb {
+  display: block;
+  width: 6rem;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: var(--radius-xs);
+}
+
+.gallery__add {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.eralooks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eralooks__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.eralooks__item .gallery__thumb {
+  width: 4rem;
+  height: 4rem;
+}
+
 /* ---------- Relations: when a relation holds (Issue #18) ----------
 
    Periods sit in the relation form under its status, each a quiet row of its own - Dates or An era, then

@@ -99,6 +99,16 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<EntityAbilityForm> EntityAbilityForms => Set<EntityAbilityForm>();
 
+    public DbSet<EntityAppearance> EntityAppearances => Set<EntityAppearance>();
+
+    public DbSet<EntityAppearanceEra> EntityAppearanceEras => Set<EntityAppearanceEra>();
+
+    public DbSet<EntityAppearanceForm> EntityAppearanceForms => Set<EntityAppearanceForm>();
+
+    public DbSet<EntityAppearanceScene> EntityAppearanceScenes => Set<EntityAppearanceScene>();
+
+    public DbSet<EntityAppearanceImage> EntityAppearanceImages => Set<EntityAppearanceImage>();
+
     public DbSet<RelationshipType> RelationshipTypes => Set<RelationshipType>();
 
     public DbSet<LoreRelationship> Relationships => Set<LoreRelationship>();

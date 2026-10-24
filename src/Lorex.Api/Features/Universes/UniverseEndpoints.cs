@@ -342,6 +342,11 @@ public static partial class UniverseEndpoints
                 .Select(image => new { image.OriginalKey, image.ThumbnailKey })
                 .ToListAsync(cancellationToken))
             .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey })
+            .Concat((await db.EntityAppearanceImages
+                    .Where(image => image.Appearance!.Entity!.UniverseId == universe.Id)
+                    .Select(image => new { image.OriginalKey, image.ThumbnailKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey }))
             .ToArray();
 
         var artworkKeys = (await db.UniverseArtworks

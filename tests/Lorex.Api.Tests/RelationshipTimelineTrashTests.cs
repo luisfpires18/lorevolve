@@ -181,7 +181,7 @@ public sealed class RelationshipTimelineTrashTests(LorexApiFactory factory) : IC
 
         var archive = await RawArchive(family.Client, family.Universe);
         var payload = BackupOf(archive).Payload;
-        Assert.Equal(29, BackupOf(archive).FormatVersion);
+        Assert.Equal(30, BackupOf(archive).FormatVersion);
         Assert.NotNull(payload.Relationships.Single(row => row.Id == gone).DeletedAt);
         Assert.Null(payload.Relationships.Single(row => row.Id == kept).DeletedAt);
         Assert.NotNull(payload.TimelineEntries.Single(row => row.Id == moment.Id).DeletedAt);

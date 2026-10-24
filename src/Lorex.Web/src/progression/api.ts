@@ -2,6 +2,9 @@ import { apiFetch } from '../lib/api'
 import type {
   Ability,
   AbilityInput,
+  Appearance,
+  AppearanceImage,
+  AppearanceInput,
   Era,
   EraInput,
   Form,
@@ -114,4 +117,78 @@ export function abilityInputOf(
     ...formInputOf(ability, dropping),
     formIds: ability.forms.map((form) => form.id).filter((id) => !droppingForms.has(id)),
   }
+}
+
+/** An appearance as read, sent back as it is - or without the eras and forms being removed with the same save. */
+export function appearanceInputOf(
+  appearance: Appearance,
+  dropping: Set<string> = new Set(),
+  droppingForms: Set<string> = new Set(),
+): AppearanceInput {
+  return {
+    id: appearance.id,
+    label: appearance.label,
+    notes: appearance.notes,
+    eraIds: appearance.eras.map((era) => era.id).filter((id) => !dropping.has(id)),
+    formIds: appearance.forms.map((form) => form.id).filter((id) => !droppingForms.has(id)),
+    sceneIds: appearance.scenes.map((scene) => scene.id),
+  }
+}
+
+/** The 409 for removing an appearance that still holds pictures, which history cannot bring back. */
+export const APPEARANCE_HOLDS_PICTURES = 'entity_appearance_has_pictures'
+
+function images(universeId: string, entityId: string, appearanceId: string) {
+  return `/api/universes/${universeId}/entities/${entityId}/appearances/${appearanceId}/images`
+}
+
+/** Where one picture is served from: same-origin, members only, and immutable - a picture's id is never reused. */
+export function appearanceImageUrl(
+  universeId: string,
+  entityId: string,
+  appearanceId: string,
+  imageId: string,
+  variant: 'original' | 'thumbnail',
+) {
+  return `${images(universeId, entityId, appearanceId)}/${imageId}/${variant}`
+}
+
+/** Adds one picture at the end of the gallery. PUT, as the entry picture's upload, so a cross-site form cannot send it. */
+export function addAppearanceImage(
+  universeId: string,
+  entityId: string,
+  appearanceId: string,
+  file: File,
+) {
+  const body = new FormData()
+  body.append('file', file)
+  return apiFetch<AppearanceImage>(images(universeId, entityId, appearanceId), {
+    method: 'PUT',
+    body,
+  })
+}
+
+/** The gallery in a new order: exactly its pictures, each once. */
+export function orderAppearanceImages(
+  universeId: string,
+  entityId: string,
+  appearanceId: string,
+  imageIds: string[],
+) {
+  return apiFetch<void>(`${images(universeId, entityId, appearanceId)}/order`, {
+    method: 'PUT',
+    body: JSON.stringify({ imageIds }),
+  })
+}
+
+/** Deletes one picture for good. */
+export function removeAppearanceImage(
+  universeId: string,
+  entityId: string,
+  appearanceId: string,
+  imageId: string,
+) {
+  return apiFetch<void>(`${images(universeId, entityId, appearanceId)}/${imageId}`, {
+    method: 'DELETE',
+  })
 }

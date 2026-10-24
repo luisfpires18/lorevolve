@@ -96,6 +96,40 @@ export interface Progression {
   version: number
   forms: Form[]
   abilities: Ability[]
+  appearances: Appearance[]
+}
+
+/** One picture of an appearance's gallery (Issue #43), served to members only. */
+export interface AppearanceImage {
+  id: string
+  contentType: string
+  width: number
+  height: number
+  fileName: string | null
+}
+
+/**
+ * One look of an entry (Issue #43): a label, notes, its pictures in order, and the eras, forms and scenes it belongs to - each
+ * exactly as ticked. Its pictures are not part of the progression's history.
+ */
+export interface Appearance {
+  id: string
+  label: string
+  notes: string | null
+  sortOrder: number
+  eras: NamedRef[]
+  forms: NamedRef[]
+  scenes: EraScene[]
+  images: AppearanceImage[]
+}
+
+export interface AppearanceInput {
+  id: string | null
+  label: string
+  notes: string | null
+  eraIds: string[]
+  formIds: string[]
+  sceneIds: string[]
 }
 
 export interface FormInput {
@@ -143,6 +177,7 @@ export interface ProgressionInput {
   expectedVersion: number
   forms?: FormInput[]
   abilities?: AbilityInput[]
+  appearances?: AppearanceInput[]
 }
 
 export interface ProgressionRevisionSummary {
@@ -158,4 +193,5 @@ export interface ProgressionRevisionDetail extends ProgressionRevisionSummary {
   eras: Era[]
   forms: Form[]
   abilities: Ability[]
+  appearances: Appearance[]
 }

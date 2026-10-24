@@ -123,6 +123,11 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("progression history", Get, $"{e}/progression/revisions", May.Edit),
             new("progression version", Get, $"{e}/progression/revisions/{w.ProgressionRevision}", May.Edit),
             new("restore progression version", Post, $"{e}/progression/revisions/{w.ProgressionRevision}/restore", May.Edit, Json(new ProgressionRestoreRequest(1))),
+            new("appearance picture original", Get, $"{e}/appearances/{w.Appearance}/images/{w.AppearanceImage}/original", May.Read),
+            new("appearance picture thumbnail", Get, $"{e}/appearances/{w.Appearance}/images/{w.AppearanceImage}/thumbnail", May.Read),
+            new("add appearance picture", Put, $"{e}/appearances/{w.Appearance}/images", May.Edit, PngForm),
+            new("order appearance pictures", Put, $"{e}/appearances/{w.Appearance}/images/order", May.Edit, Json(new AppearanceImageOrderRequest([w.AppearanceImage]))),
+            new("remove appearance picture", Delete, $"{e}/appearances/{w.Appearance}/images/{w.AppearanceImage}", May.Edit),
 
             new("entry history", Get, $"{e}/revisions", May.Edit),
             new("entry version", Get, $"{e}/revisions/{w.EntryRevision}", May.Edit),

@@ -42,7 +42,8 @@ internal sealed record RestorableBackup(
     IReadOnlyDictionary<Guid, ValidatedImage> Images,
     int RecordCount,
     BackupPreviewCounts Counts,
-    ValidatedImage? Artwork = null);
+    ValidatedImage? Artwork = null,
+    IReadOnlyDictionary<Guid, ValidatedImage>? AppearanceImages = null);
 
 /// <summary>
 /// Decides whether a parsed backup can be reconstructed, without writing anything anywhere.
@@ -91,6 +92,7 @@ internal static partial class BackupValidation
         }
 
         var images = await CheckImagesAsync(payload, opened, issues, cancellationToken);
+        var appearanceImages = await CheckAppearanceImagesAsync(payload, opened, issues, cancellationToken);
         var artwork = await CheckArtworkAsync(payload.Universe, opened, issues, cancellationToken);
         issues.ThrowIfAny();
 
@@ -100,8 +102,9 @@ internal static partial class BackupValidation
             payload,
             images,
             records,
-            BackupPreviewCounts.Of(payload, images.Count),
-            artwork);
+            BackupPreviewCounts.Of(payload, images.Count + appearanceImages.Count),
+            artwork,
+            appearanceImages);
     }
 
     /// <summary>
@@ -237,6 +240,80 @@ internal static partial class BackupValidation
         return results;
     }
 
+    /// <summary>
+    /// Every appearance picture (since version 30), decoded in full and cut into its centred square by the same gate an upload
+    /// goes through. Keyed by the picture's id in the file.
+    /// </summary>
+    private static async Task<Dictionary<Guid, ValidatedImage>> CheckAppearanceImagesAsync(
+        UniverseBackupPayload payload,
+        OpenedBackup opened,
+        BackupIssueList issues,
+        CancellationToken cancellationToken)
+    {
+        var pictures = payload.Entities
+            .SelectMany(entity => (entity.Progression?.Appearances ?? [])
+                .SelectMany(appearance => appearance.Images.Select(image => (Entity: entity, Appearance: appearance, Image: image))))
+            .ToList();
+        var results = new Dictionary<Guid, ValidatedImage>();
+        using var gate = new SemaphoreSlim(BackupRestoreLimits.ImageConcurrency);
+
+        await Task.WhenAll(pictures.Select(async picture =>
+        {
+            await gate.WaitAsync(cancellationToken);
+            try
+            {
+                var bytes = await opened.ReadMediaAsync(picture.Image.MediaPath, cancellationToken);
+                using var stream = new MemoryStream(bytes, writable: false);
+                PreparedImage? prepared;
+                ImageRejection? rejection;
+
+                try
+                {
+                    (prepared, rejection) = await ImagePreparation.PrepareAsync(stream, bytes.Length, null, cancellationToken);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    (prepared, rejection) = (null, new ImageRejection(ImagePreparation.FileField, "That image could not be read."));
+                }
+
+                var what = $"A picture of the appearance {Quote(picture.Appearance.Label)} of {Entry(picture.Entity)}";
+                lock (results)
+                {
+                    if (prepared is null)
+                    {
+                        issues.Add(BackupIssueCodes.InvalidImage, $"{what} could not be used: {rejection!.Message}");
+                    }
+                    else if (!string.Equals(prepared.ContentType, picture.Image.ContentType, StringComparison.Ordinal))
+                    {
+                        issues.Add(BackupIssueCodes.InvalidImage, $"{what} is not the kind of image the backup says it is.");
+                    }
+                    else if (bytes.Length != picture.Image.ByteSize)
+                    {
+                        issues.Add(BackupIssueCodes.InvalidImage, $"{what} is not the size the backup says it is.");
+                    }
+                    else
+                    {
+                        results[picture.Image.Id] = new ValidatedImage(
+                            picture.Entity.Id,
+                            picture.Image.MediaPath,
+                            prepared.ContentType,
+                            prepared.Extension,
+                            prepared.Width,
+                            prepared.Height,
+                            bytes.Length,
+                            prepared.Thumbnail);
+                    }
+                }
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }));
+
+        return results;
+    }
+
     private static int CountRecords(UniverseBackupPayload payload)
     {
         long count = 1 + payload.ChronologyEras!.Count + (payload.ChronologyCalendar is { } calendar ? 1 + calendar.Months.Count : 0) + payload.Tags.Count + payload.RelationshipTypes.Count
@@ -254,6 +331,8 @@ internal static partial class BackupValidation
 
             if (entity.Progression is { } progression)
             {
+                count += (progression.Appearances ?? []).Sum(appearance => appearance is null ? 0L
+                    : 1L + (appearance.EraIds?.Count ?? 0) + (appearance.FormIds?.Count ?? 0) + (appearance.SceneIds?.Count ?? 0) + (appearance.Images?.Count ?? 0));
                 count += (progression.Forms ?? []).Sum(form => form is null ? 0L : 1L + (form.EraIds?.Count ?? 0) + (form.SceneIds?.Count ?? 0))
                     + (progression.Abilities ?? []).Sum(ability => ability is null ? 0L
                         : 1L + (ability.EraIds?.Count ?? 0) + (ability.SceneIds?.Count ?? 0) + (ability.FormIds?.Count ?? 0));
@@ -902,6 +981,22 @@ internal static partial class BackupValidation
                         Register(ability.Id, $"The ability {Quote(ability.Name)} of {Entry(entity)}");
                     }
                 }
+
+                foreach (var appearance in entity.Progression?.Appearances ?? [])
+                {
+                    if (appearance is not null)
+                    {
+                        Register(appearance.Id, $"The appearance {Quote(appearance.Label)} of {Entry(entity)}");
+
+                        foreach (var image in appearance.Images ?? [])
+                        {
+                            if (image is not null)
+                            {
+                                Register(image.Id, $"A picture of the appearance {Quote(appearance.Label)} of {Entry(entity)}");
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -1130,6 +1225,7 @@ internal static partial class BackupValidation
             }
 
             CheckForms(entity, progression, what);
+            CheckAppearances(entity, progression, what);
 
             var numbers = new HashSet<int>();
             foreach (var revision in Required(progression.Revisions, $"{what}'s saved versions of its eras"))
@@ -2138,6 +2234,107 @@ internal static partial class BackupValidation
             {
                 Add(BackupIssueCodes.InvalidValue, $"{what} has more forms or abilities than Lorex keeps.");
             }
+        }
+
+        /// <summary>
+        /// An entry's appearances (since version 30) held to what a save allows - labelled, each label once, eras and forms of
+        /// this entry, scenes of this file - and each picture to what an upload allows, at exactly the path Lorex would write.
+        /// </summary>
+        private void CheckAppearances(BackupEntity entity, BackupProgression progression, string what)
+        {
+            var eras = (progression.Eras ?? []).OfType<BackupEntityEra>().Select(era => era.Id).ToHashSet();
+            var forms = (progression.Forms ?? []).OfType<BackupForm>().Select(form => form.Id).ToHashSet();
+            var labels = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
+
+            foreach (var appearance in progression.Appearances ?? [])
+            {
+                if (appearance is null)
+                {
+                    Missing($"an appearance of {Entry(entity)}");
+                    continue;
+                }
+
+                var label = $"The appearance {Quote(appearance.Label)} of {Entry(entity)}";
+                if (Text(appearance.Label, ProgressionLimits.NameMaxLength, $"{label}'s label", required: true) && !labels.Add(appearance.Label!.Trim()))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{what} has two appearances labelled {Quote(appearance.Label)}.");
+                }
+
+                Text(appearance.Notes, ProgressionLimits.DescriptionMaxLength, $"{label}'s notes");
+
+                foreach (var era in Required(appearance.EraIds, $"{label}'s eras"))
+                {
+                    Reference(eras.Contains(era), $"{label} belongs to an era its entry does not have.");
+                }
+
+                foreach (var form in Required(appearance.FormIds, $"{label}'s forms"))
+                {
+                    Reference(forms.Contains(form), $"{label} is a look of a form its entry does not have.");
+                }
+
+                foreach (var scene in Required(appearance.SceneIds, $"{label}'s scenes"))
+                {
+                    Reference(_sceneStory.ContainsKey(scene), $"{label} is seen in a scene the backup does not hold.");
+                }
+
+                var images = Required(appearance.Images, $"{label}'s pictures").ToList();
+                if (images.Count > ProgressionLimits.MaxImagesPerAppearance)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{label} holds more pictures than Lorex keeps.");
+                }
+
+                foreach (var image in images)
+                {
+                    if (image is null)
+                    {
+                        Missing($"a picture of {label}");
+                        continue;
+                    }
+
+                    CheckAppearanceImage(entity, image, label);
+                }
+            }
+
+            if ((progression.Appearances?.Count ?? 0) > ProgressionLimits.MaxAppearances)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} has more appearances than Lorex keeps.");
+            }
+        }
+
+        private void CheckAppearanceImage(BackupEntity entity, BackupAppearanceImage image, string label)
+        {
+            if (image.ContentType is not ("image/jpeg" or "image/png" or "image/webp"))
+            {
+                Add(BackupIssueCodes.InvalidImage, $"{label} has a picture of a kind Lorex does not store.");
+                return;
+            }
+
+            var expected = BackupArchive.AppearanceMediaPathFor(entity.Id, image.Id, image.ContentType);
+            if (!string.Equals(image.MediaPath, expected, StringComparison.Ordinal))
+            {
+                Add(BackupIssueCodes.InvalidImage, $"{label} names a picture at a place Lorex would not have put it.");
+                return;
+            }
+
+            _referencedMedia.Add(expected);
+
+            if (opened.MediaLength(expected) is not { } length)
+            {
+                Add(BackupIssueCodes.MissingMedia, $"A picture of {label} is missing from the archive.");
+                return;
+            }
+
+            if (length != image.ByteSize || image.ByteSize <= 0 || image.ByteSize > BackupRestoreLimits.MaxMediaBytes)
+            {
+                Add(BackupIssueCodes.InvalidImage, $"A picture of {label} is not the size the backup says it is.");
+            }
+
+            if (image.Width <= 0 || image.Height <= 0 || image.Width > ImagePreparation.MaxSide || image.Height > ImagePreparation.MaxSide)
+            {
+                Add(BackupIssueCodes.InvalidImage, $"A picture of {label} has dimensions Lorex does not accept.");
+            }
+
+            Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of a picture of {label}");
         }
 
         private static ChronologyValue Value(BackupChronologyValue point) =>

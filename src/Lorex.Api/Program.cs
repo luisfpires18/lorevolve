@@ -111,6 +111,7 @@ app.MapEntityImageEndpoints();
 app.MapEntityRevisionEndpoints();
 app.MapEntityArticleEndpoints();
 app.MapProgressionEndpoints();
+app.MapAppearanceImageEndpoints();
 app.MapRelationshipTypeEndpoints();
 app.MapRelationshipEndpoints();
 app.MapFamilyTreeEndpoints();

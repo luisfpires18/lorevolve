@@ -209,32 +209,47 @@ internal static class LaterSchema
         "IX_EntityForms_UnlockTimelineEntryId",
     ];
 
+    /// <summary>Appearances (AddEntityAppearances, 2026-10-24, Issue #43): five tables, their keys' indexes and five indexes.</summary>
+    private static readonly string[] Looks =
+    [
+        "sqlite_autoindex_EntityAppearanceEras_1",
+        "sqlite_autoindex_EntityAppearanceForms_1",
+        "sqlite_autoindex_EntityAppearanceImages_1",
+        "sqlite_autoindex_EntityAppearanceScenes_1",
+        "sqlite_autoindex_EntityAppearances_1",
+        "IX_EntityAppearanceEras_EntityEraId",
+        "IX_EntityAppearanceForms_EntityFormId",
+        "IX_EntityAppearanceImages_EntityAppearanceId_SortOrder",
+        "IX_EntityAppearanceScenes_SceneId",
+        "IX_EntityAppearances_EntityId_SortOrder",
+    ];
+
     /// <summary>Whether an index or trigger name predates semantic type groups.</summary>
     public static bool BeforeTypeGroups(string name) =>
-        !TypeGroups.Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !TypeGroups.Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name (or "name on table") predates nested types - and so everything after them.</summary>
     public static bool BeforeNestedTypes(string name) =>
-        !NestedTypes.Concat(Memberships).Concat(ReferenceTargets).Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms)
+        !NestedTypes.Concat(Memberships).Concat(ReferenceTargets).Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks)
             .Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates the link field's allowed type - and so everything after it.</summary>
     public static bool BeforeReferenceTargets(string name) =>
-        !ReferenceTargets.Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !ReferenceTargets.Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates a moment's stories - and so everything after it.</summary>
     public static bool BeforeTimelineStories(string name) =>
-        !TimelineStories.Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !TimelineStories.Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates custom calendars - and so everything after them.</summary>
     public static bool BeforeCalendars(string name) =>
-        !Calendars.Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !Calendars.Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates review comments - and so everything after them.</summary>
     public static bool BeforeComments(string name) =>
-        !Comments.Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !Comments.Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates suggested changes.</summary>
     public static bool BeforeSuggestions(string name) =>
-        !Suggestions.Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !Suggestions.Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 }

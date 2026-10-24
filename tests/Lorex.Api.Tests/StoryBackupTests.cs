@@ -37,7 +37,7 @@ public sealed class StoryBackupTests(LorexApiFactory factory) : IClassFixture<Lo
 
         var backup = await Backup(client, universe.Id);
 
-        Assert.Equal(29, backup.FormatVersion);
+        Assert.Equal(30, backup.FormatVersion);
         var stories = backup.Payload.Stories!;
 
         // By title, ordinally: "Aftermath" before "The Long Winter".
@@ -81,7 +81,7 @@ public sealed class StoryBackupTests(LorexApiFactory factory) : IClassFixture<Lo
 
         var backup = await Backup(client, universe.Id);
 
-        Assert.Equal(29, backup.FormatVersion);
+        Assert.Equal(30, backup.FormatVersion);
         var story = Assert.Single(backup.Payload.Stories!);
         var chapters = story.Chapters!;
 

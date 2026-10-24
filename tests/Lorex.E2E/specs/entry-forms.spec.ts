@@ -169,6 +169,20 @@ test('a form is available only in the eras ticked, and its first unlock reads in
   await page.getByTestId('era-nav-Saiyan Saga').click()
   await expect(page.getByTestId('era-panel')).toBeVisible()
   await expect(forms).toHaveCount(0)
+
+  // The author's order is the author's: Super Saiyan 3 moved first stays first.
+  await page.getByTestId('era-nav-main').click()
+  await page.getByTestId('form-actions-Super Saiyan 3').click()
+  await page.getByRole('button', { name: 'Move earlier' }).click()
+  await expect(page.getByTestId('form-list').locator('.progitems__name')).toHaveText([
+    'Super Saiyan 3',
+    'Super Saiyan',
+  ])
+  await page.reload()
+  await expect(page.getByTestId('form-list').locator('.progitems__name')).toHaveText([
+    'Super Saiyan 3',
+    'Super Saiyan',
+  ])
 })
 
 test('removing an era or a form takes only its references with it', async ({ page }) => {

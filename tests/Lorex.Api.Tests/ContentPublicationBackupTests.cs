@@ -27,7 +27,7 @@ public sealed class ContentPublicationBackupTests(LorexApiFactory factory) : ICl
         await Published(client, universe.Id);
 
         var archive = await PlotTestClient.RawArchive(client, universe.Id);
-        Assert.Equal(29, BackupOf(archive).FormatVersion);
+        Assert.Equal(30, BackupOf(archive).FormatVersion);
 
         var text = DocumentOf(archive);
         foreach (var absent in new[] { "visibility", "publicSlug", "publishedAt", "backed-heir", "backed-tale" })

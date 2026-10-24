@@ -117,3 +117,9 @@ delete never looks for objects nobody has committed. The same check makes an upl
 decides an outcome; every put, get and sweep - its own cleanup after losing a race or a lapsed hold included - runs only
 once that transaction has been disposed, so a slow or failing bucket never holds SQLite's single writer lock. A real-file
 test pauses each such sweep and proves another connection can write meanwhile.
+
+## Amendment (2026-10-24, Issue #43, ADR 0053)
+
+An appearance's pictures are Lore pictures too: their originals count against the universe owner beside the entries' own
+pictures, live and trashed alike, held before the bucket is touched and consumed by the commit that adds the row, exactly as an
+entry picture's upload is. A gallery picture is always new bytes, so every upload holds its whole size.

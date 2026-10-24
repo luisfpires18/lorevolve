@@ -1577,7 +1577,8 @@ public static class EntityEndpoints
                         || (relationship.TargetEntityId == candidate.Id && relationship.SourceEntity!.DeletedAt == null))),
                 HasProgression = db.EntityEras.Any(era => era.EntityId == candidate.Id)
                     || db.EntityForms.Any(form => form.EntityId == candidate.Id)
-                    || db.EntityAbilities.Any(ability => ability.EntityId == candidate.Id),
+                    || db.EntityAbilities.Any(ability => ability.EntityId == candidate.Id)
+                    || db.EntityAppearances.Any(appearance => appearance.EntityId == candidate.Id),
             })
             .FirstOrDefaultAsync(cancellationToken);
 

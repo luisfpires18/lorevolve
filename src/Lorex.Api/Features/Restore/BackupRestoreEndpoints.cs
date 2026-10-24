@@ -240,7 +240,8 @@ public static partial class BackupRestoreEndpoints
                 // The restored universe is the restorer's, so its entries' pictures are their storage, held before
                 // a byte of them is stored and consumed by the commit that writes the universe (ADR 0042). The
                 // artwork is not a Lore picture and does not count.
-                var imageBytes = restorable.Images.Values.Sum(image => image.ByteSize);
+                var imageBytes = restorable.Images.Values.Sum(image => image.ByteSize)
+                    + (restorable.AppearanceImages?.Values.Sum(image => image.ByteSize) ?? 0);
                 StorageHold? hold = null;
 
                 if (imageBytes > 0)

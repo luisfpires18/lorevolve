@@ -12,7 +12,37 @@ public sealed record ProgressionRequest(
     IReadOnlyList<EraInput?>? Eras,
     int? ExpectedVersion = null,
     IReadOnlyList<FormInput?>? Forms = null,
-    IReadOnlyList<AbilityInput?>? Abilities = null);
+    IReadOnlyList<AbilityInput?>? Abilities = null,
+    IReadOnlyList<AppearanceInput?>? Appearances = null);
+
+/// <summary>
+/// One appearance as saved (Issue #43): a label, notes, and the eras, forms and scenes of this entry and universe it belongs to,
+/// exactly as ticked. Its pictures are not part of a save.
+/// </summary>
+public sealed record AppearanceInput(
+    Guid? Id,
+    string? Label,
+    string? Notes,
+    IReadOnlyList<Guid>? EraIds,
+    IReadOnlyList<Guid>? FormIds,
+    IReadOnlyList<Guid>? SceneIds);
+
+/// <summary>One picture of an appearance's gallery: its id names its address.</summary>
+public sealed record AppearanceImageRef(Guid Id, string ContentType, int Width, int Height, string? FileName);
+
+/// <summary>One appearance, read, with the pictures it holds now in their order.</summary>
+public sealed record AppearanceResponse(
+    Guid Id,
+    string Label,
+    string? Notes,
+    int SortOrder,
+    IReadOnlyList<EraRef> Eras,
+    IReadOnlyList<EraRef> Forms,
+    IReadOnlyList<EraSceneRef> Scenes,
+    IReadOnlyList<AppearanceImageRef> Images);
+
+/// <summary>An appearance's gallery in a new order: exactly its pictures, each once.</summary>
+public sealed record AppearanceImageOrderRequest(IReadOnlyList<Guid>? ImageIds);
 
 /// <summary>
 /// One form as saved (Issue #42). <paramref name="Id"/> names one of this entry's forms, or null for a new one. The first
@@ -85,12 +115,14 @@ public sealed record EraFieldInput(
 public sealed record ProgressionSnapshot(
     IReadOnlyList<EraInput> Eras,
     IReadOnlyList<FormInput>? Forms = null,
-    IReadOnlyList<AbilityInput>? Abilities = null)
+    IReadOnlyList<AbilityInput>? Abilities = null,
+    IReadOnlyList<AppearanceInput>? Appearances = null)
 {
-    public static ProgressionSnapshot Empty { get; } = new([], [], []);
+    public static ProgressionSnapshot Empty { get; } = new([], [], [], []);
 
     public ProgressionRequest ToRequest(int? expectedVersion) =>
-        new([.. Eras ?? []], expectedVersion, Forms is null ? null : [.. Forms], Abilities is null ? null : [.. Abilities]);
+        new([.. Eras ?? []], expectedVersion, Forms is null ? null : [.. Forms], Abilities is null ? null : [.. Abilities],
+            Appearances is null ? null : [.. Appearances]);
 }
 
 public sealed record ProgressionResponse(
@@ -99,7 +131,8 @@ public sealed record ProgressionResponse(
     DateTime? UpdatedAt,
     int Version,
     IReadOnlyList<FormResponse>? Forms = null,
-    IReadOnlyList<AbilityResponse>? Abilities = null);
+    IReadOnlyList<AbilityResponse>? Abilities = null,
+    IReadOnlyList<AppearanceResponse>? Appearances = null);
 
 /// <summary>An era named by a form or ability, as it reads now.</summary>
 public sealed record EraRef(Guid Id, string Name);
@@ -185,6 +218,7 @@ public sealed record ProgressionRevisionDetail(
     string? ActorName,
     IReadOnlyList<EraResponse> Eras,
     IReadOnlyList<FormResponse>? Forms = null,
-    IReadOnlyList<AbilityResponse>? Abilities = null);
+    IReadOnlyList<AbilityResponse>? Abilities = null,
+    IReadOnlyList<AppearanceResponse>? Appearances = null);
 
 public sealed record ProgressionRestoreRequest(int? ExpectedVersion);
