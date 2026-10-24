@@ -446,6 +446,33 @@ public sealed class EntityTypeGroupTests(LorexApiFactory factory) : IClassFixtur
         Assert.Equal(3, (await Page(w, $"entityTypeGroupId={runes.Id}")).TotalCount);
     }
 
+    [Fact]
+    public async Task A_group_narrows_by_status_and_search_like_a_type_and_refuses_a_field_filter_rather_than_ignoring_it()
+    {
+        var w = await NewWorld("etg-scope");
+        var runes = await GroupNamed(w, "Runes");
+        var bond = await AddField(w, w.Elemental, "Bond", null);
+        var kingdom = await Entry(w, w.Kingdoms, "Ember Kingdom");
+        await Entry(w, w.Elemental, "Ember Lava", Link(bond, kingdom));
+        await Entry(w, w.Corrupted, "Ember Blight");
+        (await w.Client.PostAsJsonAsync($"/api/universes/{w.U}/entities",
+            new EntityRequest(w.Corrupted, "Ember Draft", null, CanonStatus.Draft, null, null, []))).EnsureSuccessStatusCode();
+
+        // Status and search narrow the group across both member types, as they narrow a type (Issue #49).
+        Assert.Equal(
+            ["Ember Blight", "Ember Lava"],
+            (await Listed(w, $"entityTypeGroupId={runes.Id}", "canonStatus=2", "search=Ember")).Select(item => item.Name).Order(StringComparer.Ordinal));
+        Assert.Equal("Ember Draft", Assert.Single(await Listed(w, $"entityTypeGroupId={runes.Id}", "canonStatus=1")).Name);
+
+        // A field belongs to one member type: under the group it is refused, never dropped to answer with every entry.
+        var filter = Uri.EscapeDataString($"{bond}:is:{kingdom}");
+        var refused = await w.Client.GetAsync($"/api/universes/{w.U}/entities?entityTypeGroupId={runes.Id}&field={filter}");
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+
+        // The same filter on the member type finds exactly the entry holding the link.
+        Assert.Equal("Ember Lava", Assert.Single(await Listed(w, $"entityTypeId={w.Elemental}", $"field={filter}")).Name);
+    }
+
     // ---------- Family Tree stays per type ----------
 
     [Fact]

@@ -297,3 +297,19 @@ field nothing uses.
   one is chosen or recorded), adding a required field to a type with entries (still allowed, as before), and a "has no
   value" Lore filter to list the entries a required restore is waiting on.
 - Backup format 25 carries `archivedAt` (ADR 0014 amendment).
+
+## Amendment - Lore's scope and its narrowing (2026-10-24, Issue #49)
+
+Frontend only; the listing's query semantics are unchanged.
+
+- **Scope is navigation, narrowing is the filter row.** The type rows and the Groups row choose which entries are browsed
+  (links, history entries; search and status are kept, field filters are not). Search, status and field filters narrow that
+  scope in one row, which now offers **Clear filters** whenever one is on (a history entry, so Back restores them; the focus
+  goes to the search). The empty state's Clear filters is the same move.
+- **A group says what field filters need.** Fields belong to one type, so a group offers no Add field filter (the API
+  answers 400, never an unfiltered list). It says so instead - "To filter by fields, choose one type:" - and links each
+  member type that has filterable fields. A `field` in a group's address is taken out in place, like a stale one.
+- **A branch says what a field filter matches.** On a type that holds others, an active field filter notes that it matches
+  that type's own entries only; nested types carry other fields (as the 034 amendment already stated).
+- Not done: one merged scope control (types and groups in one menu on a wide screen) and folding status behind Filters on
+  a wide screen. Both cost more re-learning than the clutter they remove; revisit if the rows themselves grow.
