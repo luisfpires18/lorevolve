@@ -1,4 +1,5 @@
 import type { KeyboardEvent, MouseEvent, SyntheticEvent } from 'react'
+import { confirmDiscard } from './confirm'
 import { useLeaveGuard } from './leaveGuard'
 
 /**
@@ -30,8 +31,8 @@ export function payloadKey(payload: object) {
 export function useDrawerGuard(isDirty: boolean, message: string, onClose: () => void) {
   useLeaveGuard(isDirty ? message : null, onClose)
 
-  function close() {
-    if (isDirty && !window.confirm('Close without saving your changes? They will be lost.')) return
+  async function close() {
+    if (isDirty && !(await confirmDiscard())) return
     onClose()
   }
 
@@ -39,15 +40,15 @@ export function useDrawerGuard(isDirty: boolean, message: string, onClose: () =>
     onKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
       if (event.key !== 'Escape' || event.defaultPrevented) return
       event.preventDefault()
-      close()
+      void close()
     },
     onCancel(event: SyntheticEvent<HTMLDialogElement>) {
       event.preventDefault()
-      close()
+      void close()
     },
     onClick(event: MouseEvent<HTMLDialogElement>) {
       // Only a press on the backdrop itself lands on the dialog element.
-      if (event.target === event.currentTarget) close()
+      if (event.target === event.currentTarget) void close()
     },
   }
 

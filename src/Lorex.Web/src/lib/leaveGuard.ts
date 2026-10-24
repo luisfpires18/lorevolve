@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { NavigationType, useBlocker } from 'react-router-dom'
+import { confirmAction } from './confirm'
 
 /** One editor's unsaved work: the question it asks, and what it lets go of when the author leaves it anyway. */
 interface Question {
@@ -10,6 +11,19 @@ interface Question {
 /** Every leave question standing right now, newest last: one per editor holding unsaved work. */
 const standing: Question[] = []
 
+/** True while a link the author chose to follow anyway is clicked again, so no guard asks a second time. */
+let passing = false
+
+/** The leave question, in LoreX's confirmation (Issue #50): staying is the safe choice, so it has the focus. */
+function askToLeave(message: string) {
+  return confirmAction({
+    title: message,
+    confirmLabel: 'Leave without saving',
+    cancelLabel: 'Stay',
+    variant: 'destructive',
+  })
+}
+
 /**
  * Asks the newest standing leave question, if there is one, and says whether to go ahead.
  *
@@ -17,10 +31,10 @@ const standing: Question[] = []
  * cannot see, and for the browser's Back and Forward through `HistoryLeaveGuard`. With nothing unsaved anywhere it asks
  * nothing and answers yes. When the author chooses to leave, every editor being left lets its recovery copy go.
  */
-export function confirmLeaving() {
+export async function confirmLeaving() {
   const newest = standing[standing.length - 1]
   if (newest === undefined) return true
-  if (!window.confirm(newest.message)) return false
+  if (!(await askToLeave(newest.message))) return false
 
   for (const question of [...standing]) question.leave()
   return true
@@ -34,9 +48,10 @@ export function confirmLeaving() {
  * Signing out, which is a button, through `confirmLeaving`. The browser's Back and Forward, through `HistoryLeaveGuard`.
  * And leaving the page itself, by reload, close or a typed address, through the browser's own prompt.
  *
- * The link check listens on the document in the capture phase, so it runs before React Router's own click handler and
- * can cancel the click outright when the author chooses to stay. The question is the browser's own dialog, which a
- * keyboard and a screen reader already know how to answer.
+ * The link check listens on the document in the capture phase, so it runs before React Router's own click handler. It
+ * holds the click, asks in LoreX's confirmation, and - when the author chooses to leave - clicks the same link again,
+ * which every guard lets through. Only `beforeunload` is the browser's own prompt: a page being unloaded cannot show
+ * anything of its own (Issue #50).
  *
  * `onLeave` runs when the author answers that they do mean to leave without saving - a choice made in the app, so the
  * editor's recovery copy goes with the writing rather than coming back next time as something to recover. Leaving the
@@ -59,6 +74,7 @@ export function useLeaveGuard(message: string | null, onLeave?: () => void) {
     function onClick(event: MouseEvent) {
       // A modified click opens a new tab or window, which leaves nothing behind.
       if (
+        passing ||
         event.defaultPrevented ||
         event.button !== 0 ||
         event.metaKey ||
@@ -87,12 +103,22 @@ export function useLeaveGuard(message: string | null, onLeave?: () => void) {
       // them, as `confirmLeaving` does, and leaving lets every one of them go.
       if (standing[standing.length - 1] !== question) return
 
-      if (window.confirm(question.message)) {
+      event.preventDefault()
+      event.stopPropagation()
+      void askToLeave(question.message).then((leaving) => {
+        if (!leaving) return
         for (const each of [...standing]) each.leave()
-      } else {
-        event.preventDefault()
-        event.stopPropagation()
-      }
+        if (!anchor.isConnected) {
+          window.location.assign(anchor.href)
+          return
+        }
+        passing = true
+        try {
+          anchor.click()
+        } finally {
+          passing = false
+        }
+      })
     }
 
     function onBeforeUnload(event: BeforeUnloadEvent) {
@@ -130,15 +156,25 @@ export function HistoryLeaveGuard() {
   const blocker = useBlocker(
     ({ historyAction }) => historyAction === NavigationType.Pop && standing.length > 0,
   )
+  // The question is answered later than it is asked: the answer goes to the blocker as it is then, and one held move
+  // asks once however often this renders meanwhile.
+  const latest = useRef(blocker)
+  const asking = useRef(false)
 
   useEffect(() => {
-    if (blocker.state !== 'blocked') return
+    latest.current = blocker
+  })
 
-    if (confirmLeaving()) {
-      blocker.proceed()
-    } else {
-      blocker.reset()
-    }
+  useEffect(() => {
+    if (blocker.state !== 'blocked' || asking.current) return
+    asking.current = true
+    void confirmLeaving().then((leaving) => {
+      asking.current = false
+      const held = latest.current
+      if (held.state !== 'blocked') return
+      if (leaving) held.proceed()
+      else held.reset()
+    })
   }, [blocker])
 
   return null

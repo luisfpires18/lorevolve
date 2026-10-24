@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test'
+import { acceptConfirm, confirmDialog } from './confirm'
 
 /**
  * A type's fields on the Types screen (Issue #39): Fields lists what the type has, Add field and each field's Edit open the
@@ -87,8 +88,8 @@ export async function editField(
 
 /** Closes the drawer without saving, saying yes to losing the draft. */
 export async function discardField(page: Page) {
-  page.once('dialog', (dialog) => void dialog.accept())
   await fieldDialog(page).getByTestId('cancel-field').click()
+  await acceptConfirm(page)
   await expect(fieldDialog(page)).toHaveCount(0)
 }
 
@@ -99,13 +100,11 @@ export function fieldSummary(page: Page, fieldName: string) {
 
 /** Archives a listed field from its menu, saying yes to the confirmation, and hands back what the confirmation said. */
 export async function archiveField(page: Page, fieldName: string) {
-  let said = ''
-  page.once('dialog', (dialog) => {
-    said = dialog.message()
-    void dialog.accept()
-  })
   await page.getByTestId(`field-actions-${fieldName}`).click()
   await page.getByTestId(`archive-field-${fieldName}`).click()
+  await expect(confirmDialog(page)).toBeVisible()
+  const said = await confirmDialog(page).innerText()
+  await acceptConfirm(page)
   await expect(page.getByTestId(`field-row-${fieldName}`)).toHaveCount(0)
   return said
 }

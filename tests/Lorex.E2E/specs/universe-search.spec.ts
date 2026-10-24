@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { answerConfirms } from './support/confirm'
 
 /**
  * The universe's persistent search bar (ADR 0031): on every screen of a universe and on none outside one; lore and
@@ -480,10 +481,7 @@ test.describe('universe search', () => {
     // Unsaved writing in one idea: an idea result elsewhere asks first, staying keeps everything, leaving opens it.
     const questions: string[] = []
     let answer: 'stay' | 'leave' = 'stay'
-    page.on('dialog', (dialog) => {
-      questions.push(dialog.message())
-      void (answer === 'leave' ? dialog.accept() : dialog.dismiss())
-    })
+    await answerConfirms(page, () => answer === 'leave', questions)
 
     const second = await api<{ id: string }>(page, 'POST', '/api/ideas', {
       title: 'Glassmere drowns',
@@ -500,7 +498,7 @@ test.describe('universe search', () => {
     await search(page, 'Glassmere')
     await result(page, 'Idea', 'Glassmere drowns').click()
     await expect.poll(() => questions.length).toBe(1)
-    expect(questions[0]).toContain('unsaved')
+    await expect.poll(() => questions[0]).toContain('unsaved')
     await expect(page).toHaveURL(`${base}/ideas/${world.ideaId}`)
     await expect(page.getByTestId('idea-body')).toHaveValue('Maybe - unsaved.')
 
@@ -700,10 +698,7 @@ test.describe('universe search', () => {
 
     const questions: string[] = []
     let answer: 'stay' | 'leave' = 'stay'
-    page.on('dialog', (dialog) => {
-      questions.push(dialog.message())
-      void (answer === 'leave' ? dialog.accept() : dialog.dismiss())
-    })
+    await answerConfirms(page, () => answer === 'leave', questions)
 
     // A manuscript with unsaved prose. A click on a result asks; staying keeps the prose, the page and the list.
     await page.goto(`${base}/stories/${world.storyId}/manuscript/${world.proseSceneId}`)
@@ -715,7 +710,7 @@ test.describe('universe search', () => {
     await search(page, 'Quennell')
     await result(page, 'Lore', 'Quennell of the Salt Road').click()
     await expect.poll(() => questions.length).toBe(1)
-    expect(questions[0]).toContain('unsaved')
+    await expect.poll(() => questions[0]).toContain('unsaved')
     await expect(page).toHaveURL(
       `${base}/stories/${world.storyId}/manuscript/${world.proseSceneId}`,
     )
@@ -749,7 +744,7 @@ test.describe('universe search', () => {
     await search(page, 'Tarrowmere')
     await result(page, 'Lore', 'Harbour Keeper').click()
     await page.waitForURL(`${base}/lore/${world.articleEntityId}#article`)
-    expect(questions).toHaveLength(3)
+    await expect.poll(() => questions).toHaveLength(3)
     await expect(page.getByTestId('article')).toHaveAttribute('data-state', 'editing')
     await expect(page.getByTestId('lore-editor')).toContainText('Unsaved words.')
 

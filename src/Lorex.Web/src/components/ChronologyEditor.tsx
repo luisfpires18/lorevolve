@@ -19,6 +19,7 @@ import {
 import { ApiError } from '../lib/api'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { PageHeader } from './PageHeader'
+import { confirmDiscard } from '../lib/confirm'
 
 /**
  * One date period as it is being edited. Text stays text until it is sent; counts ride along for display.
@@ -203,8 +204,8 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
     ])
   }
 
-  function discard() {
-    if (!window.confirm('Discard your changes to the chronology? They will be lost.')) return
+  async function discard() {
+    if (!(await confirmDiscard('Discard your changes to the chronology?'))) return
     touched.current = false
     setDrafts(draftsFrom(stored))
     setFieldErrors({})

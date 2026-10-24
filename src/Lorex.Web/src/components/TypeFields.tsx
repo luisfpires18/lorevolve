@@ -29,6 +29,7 @@ import {
   type FieldSemanticValue,
 } from '../lore/types'
 import { typePathLabel, type TypeTree } from '../lore/typeTree'
+import { confirmAction } from '../lib/confirm'
 
 const KIND_ORDER: FieldKindValue[] = [
   FieldKind.ShortText,
@@ -108,7 +109,7 @@ export function TypeFields({
 
   async function archive(field: FieldDefinition) {
     clear()
-    const lines = [`Archive “${field.name}”?`, `${type.name} entries will stop showing it.`]
+    const lines = [`${type.name} entries will stop showing it.`]
     lines.push(
       field.entryCount === 0
         ? 'No entry has a value for it yet. You can restore it at any time.'
@@ -124,7 +125,20 @@ export function TypeFields({
     } else if (field.kind === FieldKind.EntityReference) {
       lines.push('Canon checks stop reading its links until you restore it.')
     }
-    if (!window.confirm(lines.join('\n\n'))) return
+    if (
+      !(await confirmAction({
+        title: (
+          <>
+            Archive “<bdi>{field.name}</bdi>”?
+          </>
+        ),
+        message: lines.join(' '),
+        confirmLabel: 'Archive field',
+        variant: 'warning',
+      }))
+    ) {
+      return
+    }
 
     setBusyFieldId(field.id)
     try {
@@ -184,9 +198,16 @@ export function TypeFields({
       return
     }
     if (
-      !window.confirm(
-        `Delete the field “${field.name}” for good?\n\nNo entry has a value for it. This can't be undone.`,
-      )
+      !(await confirmAction({
+        title: (
+          <>
+            Delete the field “<bdi>{field.name}</bdi>” for good?
+          </>
+        ),
+        message: "No entry has a value for it. This can't be undone.",
+        confirmLabel: 'Delete field',
+        variant: 'destructive',
+      }))
     ) {
       return
     }

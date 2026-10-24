@@ -13,6 +13,7 @@ import {
   type RelationshipType,
 } from '../relationships/types'
 import { CANON_LABELS, CANON_ORDER, CanonStatus, type CanonStatusValue } from '../lore/types'
+import { confirmDiscard } from '../lib/confirm'
 
 interface Props {
   universeId: string
@@ -76,8 +77,8 @@ export function FamilyLinkForm({
     isDirty ? 'This family connection has not been added. Leave without saving it?' : null,
   )
 
-  function cancel() {
-    if (isDirty && !window.confirm('Close without saving your changes? They will be lost.')) return
+  async function cancel() {
+    if (isDirty && !(await confirmDiscard())) return
     onCancel()
   }
 

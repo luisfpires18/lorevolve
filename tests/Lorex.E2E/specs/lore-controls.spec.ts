@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Product refinement 027: Lore's type navigation has a row of its own. Select - and the page size - act on the list, so they
@@ -191,8 +192,8 @@ test.describe('Lore controls: the types keep their row whatever the list holds',
     await expect(page.getByTestId('lore-select')).toHaveAttribute('aria-pressed', 'true')
     await cards.first().click()
     await expect(page.getByTestId('lore-selected-count')).toHaveText('1 selected')
-    page.once('dialog', (question) => void question.accept())
     await page.getByTestId('lore-trash-selected').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('lore-trashed')).toContainText('1 entry moved to the Trash.')
     await expect(cards).toHaveCount(13)
     await expect(page.getByTestId('lore-select')).toHaveAttribute('aria-pressed', 'false')

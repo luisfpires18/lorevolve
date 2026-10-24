@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
 import { fieldDialog, fieldSummary, fillField, showFields } from './support/typeFields'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Semantic groups of Lore types (Issue #36): chosen, created, renamed and deleted inside a type's own editor; used by a link
@@ -161,8 +162,8 @@ test.describe('semantic groups', () => {
     await expect(editor.getByTestId('type-group-chosen')).toHaveCount(2)
 
     // Cancelled: the drawer asks first, then nothing is created.
-    page.once('dialog', (dialog) => void dialog.accept())
     await editor.getByTestId('cancel-type').click()
+    await acceptConfirm(page)
     await expect(editor).toHaveCount(0)
     expect((await groups(page, w)).map((group) => group.name)).not.toContain('Temporary')
 
@@ -271,11 +272,8 @@ test.describe('semantic groups', () => {
 
     // Deleting the group: asked, refused, and the field named.
     await editor.getByTestId('type-groups-manage').locator('summary').click()
-    page.once('dialog', (dialog) => {
-      expect(dialog.message()).toContain('Corrupted Runes')
-      void dialog.accept()
-    })
     await editor.getByTestId('type-group-delete-Runes').click()
+    await acceptConfirm(page, 'Corrupted Runes')
     await expect(editor.getByTestId('type-group-problem')).toContainText('Required Rune')
     expect((await groups(page, w)).map((group) => group.name)).toContain('Runes')
 

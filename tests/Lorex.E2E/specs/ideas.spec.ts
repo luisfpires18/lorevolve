@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { clickSignOut } from './support/account'
+import { acceptConfirm, answerConfirms } from './support/confirm'
 
 /**
  * Ideas, end to end (ADR 0030): possibilities kept apart from lore, owned by the account.
@@ -423,13 +424,8 @@ test.describe('ideas', () => {
 
     // Moving the idea out of its universe asks, and takes the reference out of the unsaved idea in plain sight.
     await page.goto(`/app/universes/${worldA}/ideas/${ideaId}`)
-    let asked = ''
-    page.once('dialog', (dialog) => {
-      asked = dialog.message()
-      void dialog.accept()
-    })
     await page.getByTestId('idea-universe').selectOption('')
-    await expect.poll(() => asked).toContain('references stay inside its universe')
+    await acceptConfirm(page, 'references stay inside its universe')
     await expect(page.getByTestId('idea-reference')).toHaveCount(0)
     await expect(page.getByTestId('idea-references-need-universe')).toBeVisible()
     expect((await readIdea(page, ideaId)).references).toHaveLength(1)
@@ -513,8 +509,8 @@ test.describe('ideas', () => {
     await expect(recovery.getByTestId('idea-recovery-preview')).toContainText('北の門')
 
     // Discarded: the saved idea stays, and the copy goes.
-    tab.once('dialog', (dialog) => void dialog.accept())
     await recovery.getByTestId('idea-recovery-discard').click()
+    await acceptConfirm(tab)
     await expect(recovery).toHaveCount(0)
     await expect(tab.getByTestId('idea-body')).toHaveValue('Saved body.')
     await expect.poll(async () => (await ideaCopies(tab)).length).toBe(0)
@@ -610,15 +606,10 @@ test.describe('ideas', () => {
     await seedIdea(page, 'Still here', '', world)
 
     await page.goto(`/app/universes/${world}/ideas/${idea.id}`)
-    let asked = ''
-    page.once('dialog', (dialog) => {
-      asked = dialog.message()
-      void dialog.accept()
-    })
     await page.getByTestId('idea-actions').click()
     await page.getByTestId('idea-delete').click()
+    await acceptConfirm(page, 'goes to Recently deleted')
     await page.waitForURL(`/app/universes/${world}/ideas`)
-    expect(asked).toContain('goes to Recently deleted')
     await expect(page.getByTestId('ideas-deleted-notice')).toContainText('was deleted')
     await expect(row(page, 'What if Mira betrays Arlen?')).toHaveCount(0)
     await expect(row(page, 'Still here')).toBeVisible()
@@ -686,10 +677,7 @@ test.describe('ideas', () => {
 
     const questions: string[] = []
     let answer: 'stay' | 'leave' = 'stay'
-    page.on('dialog', (dialog) => {
-      questions.push(dialog.message())
-      void (answer === 'leave' ? dialog.accept() : dialog.dismiss())
-    })
+    await answerConfirms(page, () => answer === 'leave', questions)
 
     await page.goto('/app/ideas')
     await row(page, 'Guarded').getByTestId('idea-open').click()
@@ -700,14 +688,14 @@ test.describe('ideas', () => {
     await page.waitForURL('/app/ideas')
     await page.goForward()
     await page.waitForURL(ideaUrl)
-    expect(questions).toEqual([])
+    await expect.poll(() => questions).toEqual([])
 
     await page.getByTestId('idea-title').fill('Guarded, and changed')
     await expect(page.getByTestId('idea-status')).toHaveText('Unsaved changes')
 
     await page.getByTestId('idea-back').click()
     await expect.poll(() => questions.length).toBe(1)
-    expect(questions[0]).toContain('“Guarded, and changed” has unsaved changes')
+    await expect.poll(() => questions[0]).toContain('“Guarded, and changed” has unsaved changes')
     await expect(page).toHaveURL(ideaUrl)
 
     await page.goBack()
@@ -728,7 +716,7 @@ test.describe('ideas', () => {
     await expect(page).toHaveURL('/app/ideas')
     expect((await readIdea(page, idea.id)).title).toBe('Guarded')
     await expect.poll(async () => (await ideaCopies(page)).length).toBe(0)
-    expect(questions).toHaveLength(4)
+    await expect.poll(() => questions).toHaveLength(4)
   })
 
   test('ideas read from a phone to a wide desktop, light and dark, with long words and other scripts', async ({

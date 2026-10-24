@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { openAccountMenu } from './support/account'
 import { chooseFromMenu, openMenuFor } from './support/rowMenu'
+import { acceptConfirm, dismissConfirm } from './support/confirm'
 
 /**
  * The Story workspace as one product rather than three screens: Scenes, Plot and Manuscript under one header, reached
@@ -300,25 +301,15 @@ test.describe('story workspace', () => {
     await editor.fill('The hall had emptied.')
 
     // Going back to the scene's place in the story asks first, and staying keeps every word.
-    let asked = ''
-    page.once('dialog', (dialog) => {
-      asked = dialog.message()
-      void dialog.dismiss()
-    })
     await chooseFromMenu(page, 'manuscript-show-scene')
-    await expect.poll(() => asked).toContain('“The Council” has unsaved changes')
+    await dismissConfirm(page, '“The Council” has unsaved changes')
     await expect(page).toHaveURL(new RegExp(`/manuscript/${council}$`))
     await expect(editor).toHaveValue('The hall had emptied.')
 
     // So does signing out, which is a button rather than a link.
-    asked = ''
     await openAccountMenu(page)
-    page.once('dialog', (dialog) => {
-      asked = dialog.message()
-      void dialog.dismiss()
-    })
     await page.getByRole('button', { name: 'Sign out' }).click()
-    await expect.poll(() => asked).toContain('“The Council” has unsaved changes')
+    await dismissConfirm(page, '“The Council” has unsaved changes')
     await expect(page).toHaveURL(new RegExp(`/manuscript/${council}$`))
     await expect(editor).toHaveValue('The hall had emptied.')
     await page.keyboard.press('Escape')
@@ -381,8 +372,8 @@ test.describe('story workspace', () => {
     await page.goto(`${storyUrl}/manuscript/${council}`)
     await editor.fill('Written, and let go.')
     await openAccountMenu(page)
-    page.once('dialog', (dialog) => void dialog.accept())
     await page.getByRole('button', { name: 'Sign out' }).click()
+    await acceptConfirm(page)
     await page.waitForURL('/login')
   })
 

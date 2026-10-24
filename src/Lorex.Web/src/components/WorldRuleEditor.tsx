@@ -31,6 +31,7 @@ import {
   type WorldRuleDetail,
 } from '../worldRules/types'
 import { EmptyState } from './EmptyState'
+import { confirmAction } from '../lib/confirm'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error'; message: string }
@@ -134,7 +135,6 @@ export function WorldRuleEditor({
   const [draft, setDraft] = useState<Fields>(fieldsOf(EMPTY_STORED))
   const [isSaving, setIsSaving] = useState(false)
   const [saves, setSaves] = useState(0)
-  const [isDeleting, setIsDeleting] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [conflict, setConflict] = useState<{ updatedAt: string | null } | null>(null)
@@ -295,11 +295,15 @@ export function WorldRuleEditor({
     setReads((current) => current + 1)
   }
 
-  function loadSavedVersion() {
+  async function loadSavedVersion() {
     if (
-      !window.confirm(
-        'Replace this rule with the version saved elsewhere? What you changed here since your last save will be lost.',
-      )
+      !(await confirmAction({
+        title: 'Replace this rule with the version saved elsewhere?',
+        message: 'What you changed here since your last save will be lost.',
+        confirmLabel: 'Use the saved version',
+        cancelLabel: 'Keep my changes',
+        variant: 'destructive',
+      }))
     ) {
       return
     }
@@ -308,26 +312,28 @@ export function WorldRuleEditor({
   }
 
   async function remove() {
-    if (isNew || isDeleting) return
+    if (isNew) return
     const title = stored.title
-    const question = isDirty
-      ? `Move “${title}” to the Trash? Your unsaved changes will be lost. The rule as last saved goes to the Trash, where you can restore it.`
-      : `Move “${title}” to the Trash? You can restore it from the Trash.`
-    if (!window.confirm(question)) return
-
-    setIsDeleting(true)
     setFailure(null)
-    try {
-      await deleteWorldRule(universeId, ruleId)
-      onDeleted({ id: ruleId, title })
-    } catch (error: unknown) {
-      setFailure(
+    const trashed = await confirmAction({
+      title: (
+        <>
+          Move “<bdi>{title}</bdi>” to the Trash?
+        </>
+      ),
+      message: isDirty
+        ? 'Your unsaved changes will be lost. The rule as last saved goes to the Trash, where you can restore it.'
+        : 'You can restore it from the Trash.',
+      confirmLabel: 'Move to Trash',
+      busyLabel: 'Moving…',
+      variant: isDirty ? 'destructive' : 'warning',
+      failure: (error) =>
         error instanceof ApiError && error.status === 404
           ? 'This rule is no longer here. It may already be in the Trash.'
           : 'The rule could not be moved to the Trash. Try again.',
-      )
-      setIsDeleting(false)
-    }
+      action: () => deleteWorldRule(universeId, ruleId),
+    })
+    if (trashed) onDeleted({ id: ruleId, title })
   }
 
   if (load.kind === 'loading') {
@@ -388,12 +394,12 @@ export function WorldRuleEditor({
               <button
                 className="actionmenu__item actionmenu__item--danger"
                 type="button"
-                disabled={isDeleting || isSaving}
+                disabled={isSaving}
                 onClick={() => void remove()}
                 data-testid="world-rule-delete"
               >
                 <ActionIcon icon={Trash2} />
-                {isDeleting ? 'Moving to the Trash…' : 'Delete rule'}
+                Delete rule
               </button>
             </ActionMenu>
           ) : null}

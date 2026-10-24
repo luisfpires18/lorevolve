@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { chooseFromMenu, openMenuFor } from './support/rowMenu'
+import { acceptConfirm, confirmDialog } from './support/confirm'
 
 /**
  * Stories, their chapters and their scenes, end to end. Each test registers its own account and builds
@@ -408,8 +409,8 @@ test.describe('stories', () => {
       .toEqual(['Childhood', 'Aftermath at the Gate', 'The Battle'])
 
     // Deleted: the rest keep their order, and the entry it linked is still in the world.
-    page.once('dialog', (dialog) => void dialog.accept())
     await chooseFromMenu(scene(page, 'The Battle'), 'scene-delete')
+    await acceptConfirm(page)
     await expect.poll(() => sceneOrder(page)).toEqual(['Childhood', 'Aftermath at the Gate'])
 
     await page.getByTestId('workspace-stories').click()
@@ -539,21 +540,16 @@ test.describe('stories', () => {
     await expect(page.getByTestId('story-chapter-count')).toHaveText('2 chapters')
 
     // Deleting a chapter says plainly what happens to its scenes, and does exactly that.
-    let confirmation = ''
-    page.once('dialog', (dialog) => {
-      confirmation = dialog.message()
-      void dialog.accept()
-    })
     await chooseFromMenu(chapter(page, 'Arrival'), 'chapter-delete')
+    await expect(confirmDialog(page)).toContainText('The chapter will be removed.')
+    await expect(confirmDialog(page)).not.toContainText(/scenes will be deleted/i)
+    await acceptConfirm(page, 'Its 2 scenes will be moved to Unchaptered.')
     await expect
       .poll(() => structure(page))
       .toEqual([
         'Unchaptered | At the gate | Loose thread',
         'Chapter 1: Ashes | Embers | Inside the walls',
       ])
-    expect(confirmation).toContain('The chapter will be removed.')
-    expect(confirmation).toContain('Its 2 scenes will be moved to Unchaptered.')
-    expect(confirmation).not.toMatch(/scenes will be deleted/i)
 
     await page.reload()
     await expect

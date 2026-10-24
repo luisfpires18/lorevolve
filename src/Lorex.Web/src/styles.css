@@ -8162,6 +8162,114 @@ html:has(.viewer[open]) {
   list-style: none;
 }
 
+/* ---------- Confirmation (Issue #50) ---------- */
+
+/* One question before something consequential: a centred card on the drawers' veil, at the foot of a phone's screen in
+   reach of a thumb. The variant shows in a rule along its top, never in colour alone - the title and the verb say it. */
+.confirm {
+  width: min(30rem, calc(100% - 2 * var(--space-4)));
+  max-width: 100%;
+  max-height: calc(100dvh - 2 * var(--space-4));
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow: var(--shadow-3);
+  overflow-y: auto;
+}
+
+.confirm--warning {
+  border-top-color: var(--warning);
+}
+
+.confirm--destructive {
+  border-top-color: var(--danger);
+}
+
+.confirm::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .confirm[open] {
+    animation: confirm-in var(--duration-3) var(--ease);
+  }
+
+  .confirm[open]::backdrop {
+    animation: drawer-veil var(--duration-3) var(--ease);
+  }
+}
+
+@keyframes confirm-in {
+  from {
+    transform: translateY(0.5rem);
+    opacity: 0;
+  }
+}
+
+.confirm__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.confirm__title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: var(--text-section);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.confirm__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.confirm__message {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.confirm__details {
+  margin: 0;
+  padding-left: var(--space-5);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.confirm__failure {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+.confirm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+@media (max-width: 640px) {
+  .confirm {
+    margin: auto auto var(--space-4);
+  }
+
+  .confirm__panel {
+    padding: var(--space-5);
+  }
+
+  .confirm__actions > .button {
+    flex: 1 1 100%;
+  }
+}
+
 /* ---------- Moment drawer ---------- */
 
 .drawer {

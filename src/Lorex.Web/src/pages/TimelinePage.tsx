@@ -27,6 +27,7 @@ import { PageHeader } from '../components/PageHeader'
 import { StatusBadge } from '../components/StatusBadge'
 import { TypeIcon } from '../components/TypeIcon'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { confirmAction } from '../lib/confirm'
 
 type LoadState =
   | { kind: 'loading' }
@@ -217,28 +218,27 @@ export default function TimelinePage() {
   const storyPath = (id: string) => `/app/universes/${universe.id}/stories/${id}`
 
   async function remove(entry: TimelineEntry) {
-    if (
-      !window.confirm(
-        `Move “${entry.title}” to the Trash? The entries it names stay, and you can restore it from the Trash.`,
-      )
-    ) {
-      return
-    }
-
     setMessage(null)
-    try {
-      await deleteTimelineEntry(universe.id, entry.id)
+    const removed = await confirmAction({
+      title: (
+        <>
+          Move “<bdi>{entry.title}</bdi>” to the Trash?
+        </>
+      ),
+      message: 'The entries it names stay, and you can restore it from the Trash.',
+      confirmLabel: 'Move to Trash',
+      busyLabel: 'Moving…',
+      variant: 'warning',
+      failure: 'That moment could not be moved to the Trash.',
+      action: () => deleteTimelineEntry(universe.id, entry.id),
+    })
+    if (!removed) return
 
-      // Stepping back off a page that just emptied, rather than showing nothing at all.
-      if (result && result.items.length === 1 && page > 1) {
-        update({ page: String(page - 1) })
-      } else {
-        reload()
-      }
-    } catch (error: unknown) {
-      setMessage(
-        error instanceof ApiError ? error.message : 'That moment could not be moved to the Trash.',
-      )
+    // Stepping back off a page that just emptied, rather than showing nothing at all.
+    if (result && result.items.length === 1 && page > 1) {
+      update({ page: String(page - 1) })
+    } else {
+      reload()
     }
   }
 

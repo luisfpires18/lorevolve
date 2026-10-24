@@ -55,6 +55,7 @@ import { buildTypeTree } from '../lore/typeTree'
 import type { MassCreatedState } from './MassCreatePage'
 import { useUniverseAccess } from '../universes/access'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { confirmAction } from '../lib/confirm'
 
 type LoadState =
   { kind: 'idle' } | { kind: 'loading' } | { kind: 'ready'; page: EntityPage } | { kind: 'error' }
@@ -135,7 +136,6 @@ export default function LorePage() {
   })
   const [isTrashing, setIsTrashing] = useState(false)
   const trashing = useRef(false)
-  const [trashFailure, setTrashFailure] = useState<string | null>(null)
   const [trashed, setTrashed] = useState<{ text: string; list: string } | null>(null)
 
   const [types, setTypes] = useState<EntityType[] | null>(null)
@@ -343,7 +343,6 @@ export default function LorePage() {
   const selected = pageItems.filter((item) => selectedIds.has(item.id))
 
   function toggle(entityId: string) {
-    setTrashFailure(null)
     setSelection(() => {
       const next = new Set(selectedIds)
       if (next.has(entityId)) next.delete(entityId)
@@ -353,12 +352,10 @@ export default function LorePage() {
   }
 
   function selectPage() {
-    setTrashFailure(null)
     setSelection({ scope, ids: new Set(pageItems.map((item) => item.id)) })
   }
 
   function clearSelection() {
-    setTrashFailure(null)
     setSelection({ scope, ids: new Set() })
   }
 
@@ -376,35 +373,38 @@ export default function LorePage() {
     if (trashing.current || count === 0) return
 
     const noun = count === 1 ? 'entry' : 'entries'
-    const names = count <= 5 ? `\n\n${selected.map((item) => `“${item.name}”`).join('\n')}` : ''
-    if (
-      !window.confirm(
-        `Move ${count} ${noun} to the Trash?${names}\n\n` +
+    trashing.current = true
+    try {
+      const moved = await confirmAction({
+        title: `Move ${count} ${noun} to the Trash?`,
+        message:
           `${count === 1 ? 'It leaves' : 'They leave'} Lore, search and pickers, but nothing is erased: ` +
           'articles, fields, history and connections are kept, and each one can be restored from the Trash.',
-      )
-    ) {
-      return
-    }
-
-    trashing.current = true
-    setIsTrashing(true)
-    setTrashFailure(null)
-    try {
-      await bulkTrashEntities(
-        universe.id,
-        selected.map((item) => item.id),
-      )
+        details:
+          count <= 5 ? selected.map((item) => <bdi key={item.id}>{item.name}</bdi>) : undefined,
+        confirmLabel: `Move ${count} to Trash`,
+        busyLabel: 'Moving…',
+        variant: 'warning',
+        failure: (error) =>
+          `Nothing was moved. ${error instanceof ApiError ? error.message : 'Try again.'}`,
+        action: async () => {
+          setIsTrashing(true)
+          try {
+            await bulkTrashEntities(
+              universe.id,
+              selected.map((item) => item.id),
+            )
+          } finally {
+            setIsTrashing(false)
+          }
+        },
+      })
+      if (!moved) return
       setTrashed({ text: `${count} ${noun} moved to the Trash.`, list: listKey })
       stopSelecting()
       setReads((reads) => reads + 1)
-    } catch (error: unknown) {
-      setTrashFailure(
-        `Nothing was moved. ${error instanceof ApiError ? error.message : 'Try again.'}`,
-      )
     } finally {
       trashing.current = false
-      setIsTrashing(false)
     }
   }
 
@@ -917,11 +917,6 @@ export default function LorePage() {
               Done
             </button>
           </div>
-          {trashFailure ? (
-            <p className="lore__trashfailure" role="alert" data-testid="lore-trash-failure">
-              {trashFailure}
-            </p>
-          ) : null}
         </footer>
       ) : null}
     </article>

@@ -18,6 +18,7 @@ import {
   type ValidationTerm,
   type ValidationTermKindValue,
 } from '../ruleValidation/types'
+import { confirmAction } from '../lib/confirm'
 
 function usage(term: ValidationTerm) {
   if (term.ruleCount === 0 && term.momentCount === 0) return 'Not used'
@@ -92,21 +93,28 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
   }
 
   async function remove(term: ValidationTerm) {
-    if (
-      !window.confirm(`Delete the ${TERM_KIND_WORDS[term.kind]} “${term.name}”? Nothing names it.`)
-    )
-      return
     setMessage(null)
-    setBusyId(term.id)
-    try {
-      await deleteValidationTerm(universeId, term.id)
-      await refresh()
-    } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That could not be deleted.')
-      await refresh().catch(() => undefined)
-    } finally {
-      setBusyId(null)
-    }
+    const deleted = await confirmAction({
+      title: (
+        <>
+          Delete the {TERM_KIND_WORDS[term.kind]} “<bdi>{term.name}</bdi>”?
+        </>
+      ),
+      message: 'Nothing names it.',
+      confirmLabel: 'Delete',
+      busyLabel: 'Deleting…',
+      variant: 'destructive',
+      failure: 'That could not be deleted.',
+      action: async () => {
+        try {
+          await deleteValidationTerm(universeId, term.id)
+        } catch (error: unknown) {
+          await refresh().catch(() => undefined)
+          throw error
+        }
+      },
+    })
+    if (deleted) await refresh()
   }
 
   async function add() {

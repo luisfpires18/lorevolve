@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test'
 import { png } from './support/png'
+import { answerConfirms } from './support/confirm'
 
 /**
  * Public portal 008: a universe is private until its owner publishes it, publishing needs everything a public
@@ -78,13 +79,15 @@ function artworkFile(name: string) {
   }
 }
 
-function dialogs(page: Page) {
+async function dialogs(page: Page) {
   const asked: string[] = []
   const answers: boolean[] = []
+  // A reload or a closed tab is the browser's own prompt; everything else is LoreX's confirmation (Issue #50).
   page.on('dialog', (dialog) => {
     asked.push(dialog.type() === 'beforeunload' ? 'beforeunload' : dialog.message())
     void (answers.shift() ? dialog.accept() : dialog.dismiss())
   })
+  await answerConfirms(page, () => answers.shift() ?? false, asked)
   return {
     asked,
     answer(...next: boolean[]) {
@@ -180,7 +183,7 @@ test.describe('publishing a universe', () => {
     const name = unique('The Nail Ark ')
     const universeId = await newUniverse(page, name)
     const publishUrl = `/app/universes/${universeId}/publish`
-    const { asked } = dialogs(page)
+    const { asked } = await dialogs(page)
     await page.goto(publishUrl)
     const section = page.getByTestId('public-portal')
 
@@ -294,7 +297,7 @@ test.describe('publishing a universe', () => {
     // details included - asks on the way out.
     await section.getByTestId('view-public-page').click()
     await page.waitForURL(`/worlds/${slug}`)
-    expect(asked).toEqual([])
+    await expect.poll(() => asked).toEqual([])
     const world = page.getByTestId('public-world')
     await expect(world.getByRole('heading', { level: 1 })).toHaveText(name)
     await expect(world).toContainText(`by ${author}`)
@@ -353,7 +356,7 @@ test.describe('publishing a universe', () => {
     await signUp(page)
     const universeId = await newUniverse(page, unique('Guarded '))
     const publishUrl = `/app/universes/${universeId}/publish`
-    const { asked, answer } = dialogs(page)
+    const { asked, answer } = await dialogs(page)
     await page.goto(publishUrl)
     const section = page.getByTestId('public-portal')
     const summary = section.getByLabel('Public summary')
@@ -362,12 +365,12 @@ test.describe('publishing a universe', () => {
     await page.getByTestId('workspace-lore').click()
     await page.waitForURL(/\/lore$/)
     await page.goto(publishUrl)
-    expect(asked).toEqual([])
+    await expect.poll(() => asked).toEqual([])
 
     // Written, a link asks, and staying keeps the draft.
     await summary.fill('A lake that remembers.')
     await page.getByTestId('workspace-lore').click()
-    expect(asked).toEqual([LEAVE_DETAILS])
+    await expect.poll(() => asked).toEqual([LEAVE_DETAILS])
     await expect(page).toHaveURL(/\/publish$/)
     await expect(summary).toHaveValue('A lake that remembers.')
 
@@ -381,7 +384,7 @@ test.describe('publishing a universe', () => {
     await summary.fill('')
     await page.getByTestId('workspace-lore').click()
     await page.waitForURL(/\/lore$/)
-    expect(asked).toHaveLength(1)
+    await expect.poll(() => asked).toHaveLength(1)
 
     // A failed save keeps the draft and the question.
     await page.goto(publishUrl)
@@ -400,7 +403,7 @@ test.describe('publishing a universe', () => {
       'The public details could not be saved.',
     )
     await page.getByTestId('workspace-lore').click()
-    expect(asked.at(-1)).toBe(LEAVE_DETAILS)
+    await expect.poll(() => asked.at(-1)).toBe(LEAVE_DETAILS)
     await expect(page).toHaveURL(/\/publish$/)
 
     // A saved one lets it go.
@@ -410,7 +413,7 @@ test.describe('publishing a universe', () => {
     const settled = asked.length
     await page.getByTestId('workspace-lore').click()
     await page.waitForURL(/\/lore$/)
-    expect(asked).toHaveLength(settled)
+    await expect.poll(() => asked).toHaveLength(settled)
 
     // Answered yes, the author leaves.
     await page.goto(publishUrl)

@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Product refinement 027: a type is dragged to a new place among its own siblings on a wide screen - by its grip, in one
@@ -352,9 +353,9 @@ test.describe('reordering types on a wide screen', () => {
     await page.getByTestId('fields-Shadow Runes').click()
     await expect(page.getByTestId('fields-Shadow Runes')).toHaveAttribute('aria-expanded', 'true')
 
-    page.once('dialog', (question) => void question.accept())
     await page.getByTestId('type-actions-Nature Runes').click()
     await page.getByTestId('delete-type-Nature Runes').click()
+    await acceptConfirm(page)
     await expect(row(page, 'Nature Runes')).toHaveCount(0)
   })
 })

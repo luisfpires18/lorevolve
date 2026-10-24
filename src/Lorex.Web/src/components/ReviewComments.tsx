@@ -20,6 +20,7 @@ import type { Change } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import { suggestionsPath } from '../suggestions/api'
 import { useUniverseAccess } from '../universes/access'
+import { confirmAction } from '../lib/confirm'
 
 interface ReviewCommentsProps<T> {
   universeId: string
@@ -146,8 +147,16 @@ function CommentsDrawer<T>({
   useReturnFocus()
 
   /** Leaves the drawer for the subject's form - asking first if a comment would be lost. */
-  function suggest() {
-    if (isDirty && !window.confirm("Your comment hasn't been posted. Leave without posting it?")) {
+  async function suggest() {
+    if (
+      isDirty &&
+      !(await confirmAction({
+        title: "Your comment hasn't been posted. Leave without posting it?",
+        confirmLabel: 'Leave without posting',
+        cancelLabel: 'Keep writing',
+        variant: 'destructive',
+      }))
+    ) {
       return
     }
     onClose()
@@ -329,13 +338,16 @@ function CommentsDrawer<T>({
                 className="button button--text button--sm"
                 type="button"
                 disabled={busy !== null}
-                onClick={() => {
+                onClick={async () => {
                   if (
                     replyTo !== null &&
                     reply.trim() !== '' &&
-                    !window.confirm(
-                      "Your reply hasn't been posted. Leave it and reply here instead?",
-                    )
+                    !(await confirmAction({
+                      title: "Your reply hasn't been posted. Leave it and reply here instead?",
+                      confirmLabel: 'Reply here instead',
+                      cancelLabel: 'Keep writing',
+                      variant: 'destructive',
+                    }))
                   ) {
                     return
                   }

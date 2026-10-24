@@ -2,6 +2,7 @@ import { useId, useState, type ReactNode } from 'react'
 import { formatDateTime } from '../lib/dates'
 import type { LocalDraft } from '../lib/localDrafts'
 import { sameSave } from '../lib/useLocalDraft'
+import { confirmAction } from '../lib/confirm'
 
 interface RecoveredDraftProps {
   /** What the copy is of, as it reads in a sentence: "this article", "this scene's manuscript". */
@@ -43,11 +44,14 @@ export function RecoveredDraft({
 
   const savedSince = !sameSave(draft.baseUpdatedAt, savedUpdatedAt)
 
-  function discard() {
+  async function discard() {
     if (
-      window.confirm(
-        `Discard the recovered draft of ${what}? The changes in it were never saved, and cannot be brought back.`,
-      )
+      await confirmAction({
+        title: `Discard the recovered draft of ${what}?`,
+        message: 'The changes in it were never saved, and cannot be brought back.',
+        confirmLabel: 'Discard draft',
+        variant: 'destructive',
+      })
     ) {
       onDiscard()
     }

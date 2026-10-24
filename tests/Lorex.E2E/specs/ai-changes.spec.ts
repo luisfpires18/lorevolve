@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test'
 import { createHash, randomBytes } from 'node:crypto'
 import { makeTestPassword } from './support/account'
+import { dismissConfirm } from './support/confirm'
 
 /**
  * Pending AI Changes (ADR 0047), on the local Fake provider: the Assistant asked, with Propose changes on, prepares changes
@@ -238,13 +239,8 @@ test.describe('Pending AI Changes', () => {
     await expect(drawer.getByTestId('assistant-proposal-review')).toBeVisible()
 
     // Following the review link asks first, and staying keeps the draft exactly as it was.
-    const asked: string[] = []
-    page.once('dialog', (dialog) => {
-      asked.push(dialog.message())
-      void dialog.dismiss()
-    })
     await drawer.getByTestId('assistant-proposal-review').click()
-    await expect.poll(() => asked.length).toBe(1)
+    await dismissConfirm(page)
     await expect(page).toHaveURL(new RegExp(`/app/universes/${universeId}/lore/new$`))
     await expect(page.getByLabel('Name')).toHaveValue('Half-written entry')
   })

@@ -44,6 +44,7 @@ import {
 } from '../lore/typeTree'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { confirmAction } from '../lib/confirm'
 
 /** Three vocabularies, one screen: kept apart as tabs so none of them is a long scroll below another. */
 const TABS = [
@@ -343,7 +344,16 @@ export default function UniverseTypes() {
     }
 
     if (
-      !window.confirm(`Delete the type “${type.name}”?\n\nNo entry uses it. This cannot be undone.`)
+      !(await confirmAction({
+        title: (
+          <>
+            Delete the type “<bdi>{type.name}</bdi>”?
+          </>
+        ),
+        message: 'No entry uses it. This cannot be undone.',
+        confirmLabel: 'Delete type',
+        variant: 'destructive',
+      }))
     ) {
       return
     }

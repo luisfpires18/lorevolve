@@ -197,8 +197,8 @@ export default function FamilyTreePage() {
 
   /** Another entry's family. A button rather than a link, so it asks the leave question itself: an unsaved connection
    *  being added here goes with the family it belonged to. */
-  function show(choice: EntityChoice | null) {
-    if (!choice || !confirmLeaving()) return
+  async function show(choice: EntityChoice | null) {
+    if (!choice || !(await confirmLeaving())) return
     navigate(`/app/universes/${universe.id}/family-tree/${choice.id}`)
   }
 

@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * World rule checks against the timeline, end to end (ADR 0034).
@@ -551,8 +552,8 @@ test.describe('world rule checks', () => {
     await page.keyboard.press('Enter')
     await expect(terms.locator('[data-term-name="Rite of Embers"]')).toBeVisible()
 
-    page.once('dialog', (dialog) => void dialog.accept())
     await terms.getByRole('button', { name: 'Delete Rite of Embers' }).click()
+    await acceptConfirm(page)
     await expect(terms.locator('[data-term-name="Rite of Embers"]')).toHaveCount(0)
 
     // Renaming a term in use changes no match: the rule names it by id, and reads the new name.
@@ -620,8 +621,8 @@ test.describe('world rule checks', () => {
     await page.keyboard.press('Enter')
     await expect(section.locator('.picker__chosenname')).toHaveText('Mirabel')
     await expectInsideScreen(section.locator('.picker__chosen'), 390, 'chosen participant')
-    page.once('dialog', (dialog) => void dialog.accept())
     await drawer.getByTestId('cancel-moment').click()
+    await acceptConfirm(page)
     await expect(drawer).toHaveCount(0)
 
     // The finding on a phone.

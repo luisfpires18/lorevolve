@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { png } from './support/png'
+import { acceptConfirm, confirmDialog, dismissConfirm } from './support/confirm'
 
 /**
  * An entry's page as a page: its one heading, the type it links back to, its actions with the
@@ -131,8 +132,8 @@ test.describe('an entry page', () => {
     const save = page.getByTestId('save-entity')
     const cancel = page.getByRole('button', { name: 'Cancel' })
     expect((await save.boundingBox())!.x).toBeLessThan((await cancel.boundingBox())!.x)
-    page.once('dialog', (dialog) => void dialog.accept())
     await cancel.click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('entry-summary')).toHaveText('Keeper of the tide ledger.')
   })
 
@@ -200,17 +201,6 @@ test.describe('an entry page', () => {
   })
 
   test.describe('with unsaved changes in the form', () => {
-    /** Every question the page asks, answered as the step says - stay unless told to leave. */
-    function answering(page: Page) {
-      const questions: string[] = []
-      const state = { answer: 'stay' as 'stay' | 'leave', questions }
-      page.on('dialog', (dialog) => {
-        questions.push(dialog.message())
-        void (state.answer === 'leave' ? dialog.accept() : dialog.dismiss())
-      })
-      return state
-    }
-
     const sidebarLink = (page: Page, name: string) =>
       page.getByRole('navigation', { name: 'Universe', exact: true }).getByRole('link', { name })
 
@@ -219,7 +209,6 @@ test.describe('an entry page', () => {
       const world = await seedWorld(page)
       const id = await world.entry('Tovin Marsh')
       await page.goto(entryUrl(world.universeId, id))
-      const asked = answering(page)
 
       await page.getByTestId('edit-entity').click()
       const status = page.getByTestId('entry-form-status')
@@ -229,16 +218,15 @@ test.describe('an entry page', () => {
 
       // Stay: still on the form, the edit intact.
       await sidebarLink(page, 'Timeline').click()
-      await expect.poll(() => asked.questions.length).toBe(1)
-      expect(asked.questions[0]).toContain('“Tovin Marsh” has unsaved changes')
+      await dismissConfirm(page, '“Tovin Marsh” has unsaved changes')
       await expect(page).toHaveURL(entryUrl(world.universeId, id))
       await expect(page.getByLabel('Summary')).toHaveValue('Ferryman of the salt road.')
 
       // Leave: asked once more, and the destination opens.
-      asked.answer = 'leave'
       await sidebarLink(page, 'Timeline').click()
+      await acceptConfirm(page)
       await page.waitForURL(`/app/universes/${world.universeId}/timeline`)
-      expect(asked.questions).toHaveLength(2)
+      await expect(confirmDialog(page)).toHaveCount(0)
 
       // Nothing was saved.
       await page.goto(entryUrl(world.universeId, id))
@@ -253,29 +241,27 @@ test.describe('an entry page', () => {
       await page.goto(loreUrl)
       await page.locator('[data-testid="entity-card"][data-entity-name="Wren Allard"]').click()
       await page.waitForURL(entryUrl(world.universeId, id))
-      const asked = answering(page)
 
       await page.getByTestId('edit-entity').click()
       await page.getByLabel('Summary').fill('Cartographer of the fens.')
 
       await page.goBack()
-      await expect.poll(() => asked.questions.length).toBe(1)
+      await dismissConfirm(page)
       await expect(page).toHaveURL(entryUrl(world.universeId, id))
       await expect(page.getByLabel('Summary')).toHaveValue('Cartographer of the fens.')
       await expect(page.getByTestId('entry-form-status')).toHaveText('Unsaved changes')
 
-      asked.answer = 'leave'
       await page.goBack()
+      await acceptConfirm(page)
       await page.waitForURL(loreUrl)
       await expect(page.getByTestId('entity-grid')).toBeVisible()
-      expect(asked.questions).toHaveLength(2)
 
       // Forward returns to the entry, not to a form nobody chose to keep, and nothing asks.
       await page.goForward()
       await page.waitForURL(entryUrl(world.universeId, id))
       await expect(page.getByTestId('entry-summary')).toHaveText('Keeper of the tide ledger.')
       await expect(page.getByTestId('entry-form')).toHaveCount(0)
-      expect(asked.questions).toHaveLength(2)
+      await expect(confirmDialog(page)).toHaveCount(0)
     })
 
     test('Cancel asks once only when there is something to lose', async ({ page }) => {
@@ -283,7 +269,6 @@ test.describe('an entry page', () => {
       const world = await seedWorld(page)
       const id = await world.entry('Ossery Vane')
       await page.goto(entryUrl(world.universeId, id))
-      const asked = answering(page)
       const status = page.getByTestId('entry-form-status')
       const cancel = page.getByTestId('cancel-entity')
 
@@ -291,24 +276,23 @@ test.describe('an entry page', () => {
       await page.getByTestId('edit-entity').click()
       await cancel.click()
       await expect(page.getByTestId('entry-form')).toHaveCount(0)
-      expect(asked.questions).toHaveLength(0)
+      await expect(confirmDialog(page)).toHaveCount(0)
 
       // Dirty: stay keeps the change.
       await page.getByTestId('edit-entity').click()
       await page.getByLabel('Summary').fill('Lampwright.')
       await cancel.click()
-      await expect.poll(() => asked.questions.length).toBe(1)
+      await dismissConfirm(page)
       await expect(status).toHaveText('Unsaved changes')
       await expect(page.getByLabel('Summary')).toHaveValue('Lampwright.')
 
       // Discard: one question, and the entry as stored. Nothing asks on the way out after.
-      asked.answer = 'leave'
       await cancel.click()
+      await acceptConfirm(page)
       await expect(page.getByTestId('entry-summary')).toHaveText('Keeper of the tide ledger.')
-      expect(asked.questions).toHaveLength(2)
       await sidebarLink(page, 'Timeline').click()
       await page.waitForURL(`/app/universes/${world.universeId}/timeline`)
-      expect(asked.questions).toHaveLength(2)
+      await expect(confirmDialog(page)).toHaveCount(0)
     })
 
     test('a change put back is no change, and a saved form leaves freely', async ({ page }) => {
@@ -316,7 +300,6 @@ test.describe('an entry page', () => {
       const world = await seedWorld(page)
       const id = await world.entry('Hesper Coyle')
       await page.goto(entryUrl(world.universeId, id))
-      const asked = answering(page)
       const status = page.getByTestId('entry-form-status')
 
       // Reverting: every kind of change back to what is stored reads clean again.
@@ -353,7 +336,7 @@ test.describe('an entry page', () => {
       await expect(page.getByTestId('entry-summary')).toHaveText('Harbourmaster.')
       await sidebarLink(page, 'Timeline').click()
       await page.waitForURL(`/app/universes/${world.universeId}/timeline`)
-      expect(asked.questions).toHaveLength(0)
+      await expect(confirmDialog(page)).toHaveCount(0)
     })
 
     test('a save that fails stays dirty and still asks', async ({ page }) => {
@@ -361,7 +344,6 @@ test.describe('an entry page', () => {
       const world = await seedWorld(page)
       const id = await world.entry('Corvin Pell')
       await page.goto(entryUrl(world.universeId, id))
-      const asked = answering(page)
 
       await page.getByTestId('edit-entity').click()
       await page.getByLabel('Name').fill('')
@@ -370,7 +352,7 @@ test.describe('an entry page', () => {
       await expect(page.getByTestId('entry-form-status')).toHaveText('Unsaved changes')
 
       await sidebarLink(page, 'Timeline').click()
-      await expect.poll(() => asked.questions.length).toBe(1)
+      await dismissConfirm(page)
       await expect(page).toHaveURL(entryUrl(world.universeId, id))
     })
 
@@ -380,30 +362,31 @@ test.describe('an entry page', () => {
       await signUp(page)
       const world = await seedWorld(page)
       await page.goto(`/app/universes/${world.universeId}/lore/new`)
-      const asked = answering(page)
       const status = page.getByTestId('entry-form-status')
 
       // Blank: leaving asks nothing.
       await expect(status).toHaveText('New entry')
       await sidebarLink(page, 'Timeline').click()
       await page.waitForURL(`/app/universes/${world.universeId}/timeline`)
-      expect(asked.questions).toHaveLength(0)
+      await expect(confirmDialog(page)).toHaveCount(0)
 
       // A name is worth asking about.
       await page.goto(`/app/universes/${world.universeId}/lore/new`)
       await page.getByLabel('Name').fill('Isolde Brack')
       await expect(status).toHaveText('Unsaved changes')
       await sidebarLink(page, 'Timeline').click()
-      await expect.poll(() => asked.questions.length).toBe(1)
-      expect(asked.questions[0]).toContain('new entry has not been created')
+      await dismissConfirm(page, 'new entry has not been created')
       await expect(page.getByLabel('Name')).toHaveValue('Isolde Brack')
 
       // So is a picture framed and accepted - but not the cropper opened and closed. Typing an address
-      // leaves the page itself, so the browser asks too.
-      asked.answer = 'leave'
+      // leaves the page itself, so the browser asks too: its own prompt, the one LoreX cannot draw.
+      const unloading: string[] = []
+      page.once('dialog', (dialog) => {
+        unloading.push(dialog.type())
+        void dialog.accept()
+      })
       await page.goto(`/app/universes/${world.universeId}/lore/new`)
-      expect(asked.questions).toHaveLength(2)
-      asked.answer = 'stay'
+      expect(unloading).toEqual(['beforeunload'])
       const file = {
         name: 'portrait.png',
         mimeType: 'image/png',

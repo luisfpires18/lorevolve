@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Refinement 039: a universe's own calendar (ADR 0022 amendment). Simple dates by default; a custom calendar of named
@@ -265,8 +266,8 @@ test.describe('custom calendar', () => {
     await page.getByTestId('calendar-mode-simple').click()
     await expect(page.getByTestId('calendar-note')).toContainText('12 months of up to 31 days')
     await expect(page.getByTestId('save-calendar')).toHaveText('Switch to simple dates')
-    page.once('dialog', (dialog) => void dialog.accept())
     await page.getByTestId('save-calendar').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('calendar-error')).toContainText(
       'a date in "Highsun" uses day 40',
     )
@@ -281,8 +282,8 @@ test.describe('custom calendar', () => {
     await api(page, 'DELETE', `/api/universes/${u}/timeline/${long.id}`)
     await api(page, 'DELETE', `/api/universes/${u}/trash/timeline/${long.id}`)
     await page.getByTestId('calendar-mode-simple').click()
-    page.once('dialog', (dialog) => void dialog.accept())
     await page.getByTestId('save-calendar').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('calendar-note')).toContainText('months 1 to 12, days 1 to 31')
     await expect(months(page)).toHaveCount(0)
 

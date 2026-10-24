@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { acceptConfirm, answerConfirms, confirmDialog, dismissConfirm } from './support/confirm'
 
 /**
  * Product refinement 020. The Lore Types list reads as types - a picture, a name, a count, Edit, Fields and a menu - with
@@ -88,14 +89,10 @@ function sideways(page: Page) {
   )
 }
 
-/** Answers every browser question with `accept` and records what it said. */
-function answer(page: Page, accept: boolean | (() => boolean)) {
+/** Answers every confirmation with `accept` and records what it said. */
+async function answer(page: Page, accept: boolean | (() => boolean)) {
   const asked: string[] = []
-  page.on('dialog', (dialog) => {
-    asked.push(dialog.message())
-    const yes = typeof accept === 'function' ? accept() : accept
-    void (yes ? dialog.accept() : dialog.dismiss())
-  })
+  await answerConfirms(page, () => (typeof accept === 'function' ? accept() : accept), asked)
   return asked
 }
 
@@ -163,10 +160,10 @@ test.describe('Lore types', () => {
 
     // Cancel after a change asks, and leaving it stores nothing.
     await name.fill('Somewhere else')
-    const asked = answer(page, true)
+    const asked = await answer(page, true)
     await dialog.getByTestId('cancel-type').click()
     await expect(dialog).toHaveCount(0)
-    expect(asked).toHaveLength(1)
+    await expect.poll(() => asked).toHaveLength(1)
     await expect(edit).toBeFocused()
     expect((await typeNamed(page, universeId, 'Location')).icon).toBe('location')
 
@@ -235,10 +232,10 @@ test.describe('Lore types', () => {
 
     // Declined, nothing happens; accepted, it goes, and a reload does not bring it back.
     const decisions = [false, true]
-    const asked = answer(page, () => decisions.shift() ?? false)
+    const asked = await answer(page, () => decisions.shift() ?? false)
     await page.getByTestId('type-actions-Location').click()
     await page.getByTestId('delete-type-Location').click()
-    expect(asked[0]).toContain('Delete the type “Location”?')
+    await expect.poll(() => asked[0]).toContain('Delete the type “Location”?')
     await expect(row(page, 'Location')).toBeVisible()
 
     await page.getByTestId('type-actions-Location').click()
@@ -290,7 +287,7 @@ test.describe('Lore types', () => {
     )
     await page.goto(`/app/universes/${universeId}/types`)
     let accept = false
-    const asked = answer(page, () => accept)
+    const asked = await answer(page, () => accept)
 
     await expect(row(page, 'Location').getByTestId('type-count-Location')).toHaveText(
       '2 entries, 1 in the Trash',
@@ -308,7 +305,7 @@ test.describe('Lore types', () => {
     )
     await expect(blocked.getByRole('link', { name: 'Open the Trash' })).toBeVisible()
     // No confirmation it could only fail, and nothing sent.
-    expect(asked).toEqual([])
+    await expect.poll(() => asked).toEqual([])
     await expect(row(page, 'Location')).toBeVisible()
 
     // Out of Lore is not unused: every entry in the Trash still blocks it.
@@ -488,14 +485,14 @@ test.describe('moving Lore to the Trash together', () => {
       }
     })
     const decisions = [false, true]
-    const asked = answer(page, () => decisions.shift() ?? false)
+    const asked = await answer(page, () => decisions.shift() ?? false)
 
     await page.getByTestId('lore-select').click()
     await page.getByTestId('lore-select-page').click()
     await page.getByTestId('lore-trash-selected').click()
-    expect(asked[0]).toContain('Move 1 entry to the Trash?')
-    expect(asked[0]).toContain('nothing is erased')
-    expect(asked[0]).toContain('restored from the Trash')
+    await expect.poll(() => asked[0]).toContain('Move 1 entry to the Trash?')
+    await expect.poll(() => asked[0]).toContain('nothing is erased')
+    await expect.poll(() => asked[0]).toContain('restored from the Trash')
     expect(writes).toEqual([])
     await expect(checks(page).first()).toBeChecked()
 
@@ -513,8 +510,8 @@ test.describe('moving Lore to the Trash together', () => {
     await page.getByTestId('lore-select-page').click()
     decisions.push(true)
     await page.getByTestId('lore-trash-selected').click()
-    expect(asked[2]).toContain('Move 12 entries to the Trash?')
-    expect(asked[2]).not.toContain('“')
+    await expect.poll(() => asked[2]).toContain('Move 12 entries to the Trash?')
+    await expect.poll(() => asked[2]).not.toContain('“')
     await expect(page.getByTestId('lore-trashed')).toContainText('12 entries moved to the Trash.')
     await expect(page.getByTestId('entity-empty')).toBeVisible()
     expect(await liveCount(page, universeId)).toBe(0)
@@ -530,7 +527,6 @@ test.describe('moving Lore to the Trash together', () => {
   }) => {
     const universeId = await seeded(page, 14)
     await page.goto(await lore(page, universeId))
-    answer(page, true)
 
     await page.getByTestId('lore-select').click()
     await checks(page).nth(0).check()
@@ -544,7 +540,12 @@ test.describe('moving Lore to the Trash together', () => {
       }),
     )
     await page.getByTestId('lore-trash-selected').click()
-    await expect(page.getByTestId('lore-trash-failure')).toContainText('Nothing was moved.')
+    // The confirmation stays open and says why (Issue #50); Cancel leaves everything as it was.
+    await acceptConfirm(page)
+    await expect(confirmDialog(page).getByTestId('confirm-dialog-error')).toContainText(
+      'Nothing was moved.',
+    )
+    await dismissConfirm(page)
     await expect(checks(page).nth(0)).toBeChecked()
     await expect(checks(page).nth(1)).toBeChecked()
     await expect(cards(page)).toHaveCount(12)
@@ -567,7 +568,7 @@ test.describe('moving Lore to the Trash together', () => {
   }) => {
     test.setTimeout(120_000)
     const universeId = await seeded(page, 0, ['فرودو باغنز', 'Samwise Gamgee', 'Peregrin Took'])
-    answer(page, true)
+    await answer(page, true)
 
     for (const [width, height, colorScheme] of [
       [1440, 900, 'dark'],

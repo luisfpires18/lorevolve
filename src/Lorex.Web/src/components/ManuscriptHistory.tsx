@@ -14,6 +14,7 @@ import {
   type ManuscriptRevisionSummary,
   type SceneManuscript,
 } from '../stories/types'
+import { confirmAction } from '../lib/confirm'
 
 interface ManuscriptHistoryProps {
   /** The panel's id, which the toggle that opens it controls. */
@@ -118,9 +119,11 @@ export function ManuscriptHistory({
   async function restore(revision: ManuscriptRevisionSummary) {
     if (inFlight.current || blocked !== null) return
     if (
-      !window.confirm(
-        `Put version ${revision.number} of the manuscript back? It becomes the newest saved version, and nothing in the history is lost.`,
-      )
+      !(await confirmAction({
+        title: `Put version ${revision.number} of the manuscript back?`,
+        message: 'It becomes the newest saved version, and nothing in the history is lost.',
+        confirmLabel: 'Put this version back',
+      }))
     ) {
       return
     }

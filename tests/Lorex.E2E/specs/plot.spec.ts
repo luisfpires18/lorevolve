@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { chooseFromMenu, openMenuFor } from './support/rowMenu'
+import { acceptConfirm, confirmDialog } from './support/confirm'
 
 /**
  * A story's plot, end to end: arcs, the beats in each, and what they point at. Each test registers its own account
@@ -424,19 +425,14 @@ test.describe('plot', () => {
 
     // Deleting a beat says what stays, and takes nothing else.
     await page.goto(`${storyUrl}/plot`)
-    let confirmation = ''
-    page.once('dialog', (dialog) => {
-      confirmation = dialog.message()
-      void dialog.accept()
-    })
     await chooseFromMenu(beat(page, 'Learns of the conspiracy'), 'plot-beat-delete')
+    await acceptConfirm(page, 'Its linked scenes and lore stay.')
     await expect
       .poll(() => plotStructure(page))
       .toEqual([
         "Arc 1: Mira's Betrayal | Reveals the gate route",
         'Arc 2: Fall of the King | Capital is breached | Accepts exile',
       ])
-    expect(confirmation).toContain('Its linked scenes and lore stay.')
 
     for (const id of Object.values(lore)) {
       expect((await page.request.get(`/api/universes/${universeId}/entities/${id}`)).status()).toBe(
@@ -450,17 +446,13 @@ test.describe('plot', () => {
 
     // Deleting an arc says it takes its beats and no scene, chapter or lore - and does exactly that.
     await page.getByTestId('story-view-plot').click()
-    page.once('dialog', (dialog) => {
-      confirmation = dialog.message()
-      void dialog.accept()
-    })
     await chooseFromMenu(arc(page, "Mira's Betrayal"), 'plot-arc-delete')
+    await expect(confirmDialog(page)).toContainText('Its 1 beat will go with it.')
+    await expect(confirmDialog(page)).toContainText('No scene, chapter or lore is deleted.')
+    await acceptConfirm(page, 'restore the arc from the Trash')
     await expect
       .poll(() => plotStructure(page))
       .toEqual(['Arc 1: Fall of the King | Capital is breached | Accepts exile'])
-    expect(confirmation).toContain('Its 1 beat will go with it.')
-    expect(confirmation).toContain('No scene, chapter or lore is deleted.')
-    expect(confirmation).toContain('restore the arc from the Trash')
 
     await page.reload()
     await expect

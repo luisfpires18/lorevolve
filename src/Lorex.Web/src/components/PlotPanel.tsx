@@ -12,6 +12,7 @@ import { ApiError } from '../lib/api'
 import { deletePlotArc, deletePlotBeat, reorderPlotArcs, reorderPlotBeats } from '../stories/api'
 import { arcLabel, arcNumber, beatCountLabel } from '../stories/format'
 import type { PlotArc, PlotBeat, StoryDetail } from '../stories/types'
+import { confirmAction } from '../lib/confirm'
 
 type ArcFormState =
   { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; arc: PlotArc; index: number }
@@ -156,41 +157,39 @@ export function PlotPanel({
     const consequence =
       count === 0 ? 'It holds no beats.' : `Its ${beatCountLabel(count)} will go with it.`
 
-    if (
-      !window.confirm(
-        `Delete ${arcLabel(index, arc.title)}? The arc will be removed. ${consequence} No scene, chapter or lore is deleted. You can restore the arc from the Trash.`,
-      )
-    ) {
-      return
-    }
-
     setMessage(null)
-    try {
-      await deletePlotArc(universeId, story.id, arc.id)
-      announce(`Moved the arc “${arc.title}” to the Trash.`)
-      onReload()
-    } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That arc could not be deleted.')
-    }
+    const removed = await confirmAction({
+      title: `Delete ${arcLabel(index, arc.title)}?`,
+      message: `The arc will be removed. ${consequence} No scene, chapter or lore is deleted. You can restore the arc from the Trash.`,
+      confirmLabel: 'Move arc to Trash',
+      busyLabel: 'Moving…',
+      variant: 'warning',
+      failure: 'That arc could not be deleted.',
+      action: () => deletePlotArc(universeId, story.id, arc.id),
+    })
+    if (!removed) return
+    announce(`Moved the arc “${arc.title}” to the Trash.`)
+    onReload()
   }
 
   async function removeBeat(beat: PlotBeat) {
-    if (
-      !window.confirm(
-        `Delete the beat “${beat.title}”? Its linked scenes and lore stay. You can restore the beat from the Trash.`,
-      )
-    ) {
-      return
-    }
-
     setMessage(null)
-    try {
-      await deletePlotBeat(universeId, story.id, beat.id)
-      announce(`Moved the beat “${beat.title}” to the Trash.`)
-      onReload()
-    } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That beat could not be deleted.')
-    }
+    const removed = await confirmAction({
+      title: (
+        <>
+          Delete the beat “<bdi>{beat.title}</bdi>”?
+        </>
+      ),
+      message: 'Its linked scenes and lore stay. You can restore the beat from the Trash.',
+      confirmLabel: 'Move beat to Trash',
+      busyLabel: 'Moving…',
+      variant: 'warning',
+      failure: 'That beat could not be deleted.',
+      action: () => deletePlotBeat(universeId, story.id, beat.id),
+    })
+    if (!removed) return
+    announce(`Moved the beat “${beat.title}” to the Trash.`)
+    onReload()
   }
 
   const newArc = (
