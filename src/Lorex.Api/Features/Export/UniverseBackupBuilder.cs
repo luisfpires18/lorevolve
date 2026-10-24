@@ -446,8 +446,25 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
             .Where(revision => revision.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
+        var forms = await db.EntityForms.AsNoTracking()
+            .Where(form => form.Entity!.UniverseId == universeId)
+            .Include(form => form.Eras)
+            .Include(form => form.Scenes)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+
+        var abilities = await db.EntityAbilities.AsNoTracking()
+            .Where(ability => ability.Entity!.UniverseId == universeId)
+            .Include(ability => ability.Eras)
+            .Include(ability => ability.Scenes)
+            .Include(ability => ability.Forms)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+
         var erasByEntity = eras.ToLookup(era => era.EntityId);
         var revisionsByEntity = revisions.ToLookup(revision => revision.EntityId);
+        var formsByEntity = forms.ToLookup(form => form.EntityId);
+        var abilitiesByEntity = abilities.ToLookup(ability => ability.EntityId);
 
         return progressions.ToDictionary(
             progression => progression.EntityId,
@@ -492,6 +509,35 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                             revision.RestoredFromRevisionId,
                             Utc(revision.CreatedAt),
                             ProgressionState.Deserialize(revision.Snapshot))),
+                ],
+                [
+                    .. formsByEntity[progression.EntityId]
+                        .OrderBy(form => form.SortOrder)
+                        .Select(form => new BackupForm(
+                            form.Id,
+                            form.Name,
+                            form.Description,
+                            form.SortOrder,
+                            form.UnlockEntityEraId,
+                            form.UnlockSceneId,
+                            form.UnlockTimelineEntryId,
+                            [.. form.Eras.Select(link => link.EntityEraId).OrderBy(Key, StringComparer.Ordinal)],
+                            [.. form.Scenes.Select(link => link.SceneId).OrderBy(Key, StringComparer.Ordinal)])),
+                ],
+                [
+                    .. abilitiesByEntity[progression.EntityId]
+                        .OrderBy(ability => ability.SortOrder)
+                        .Select(ability => new BackupAbility(
+                            ability.Id,
+                            ability.Name,
+                            ability.Description,
+                            ability.SortOrder,
+                            ability.UnlockEntityEraId,
+                            ability.UnlockSceneId,
+                            ability.UnlockTimelineEntryId,
+                            [.. ability.Eras.Select(link => link.EntityEraId).OrderBy(Key, StringComparer.Ordinal)],
+                            [.. ability.Scenes.Select(link => link.SceneId).OrderBy(Key, StringComparer.Ordinal)],
+                            [.. ability.Forms.Select(link => link.EntityFormId).OrderBy(Key, StringComparer.Ordinal)])),
                 ]));
     }
 

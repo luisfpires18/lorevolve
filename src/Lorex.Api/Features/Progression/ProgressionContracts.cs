@@ -8,7 +8,39 @@ namespace Lorex.Api.Features.Progression;
 /// what is stored - so a client that predates a part of it cannot clear that part - and an empty list removes it all.
 /// The list's order is the order saved.
 /// </summary>
-public sealed record ProgressionRequest(IReadOnlyList<EraInput?>? Eras, int? ExpectedVersion = null);
+public sealed record ProgressionRequest(
+    IReadOnlyList<EraInput?>? Eras,
+    int? ExpectedVersion = null,
+    IReadOnlyList<FormInput?>? Forms = null,
+    IReadOnlyList<AbilityInput?>? Abilities = null);
+
+/// <summary>
+/// One form as saved (Issue #42). <paramref name="Id"/> names one of this entry's forms, or null for a new one. The first
+/// unlock - an era of this entry, a scene, a timeline moment - is each optional and none is derived from another.
+/// <paramref name="EraIds"/> are the eras of this entry it is available in, exactly as ticked; <paramref name="SceneIds"/> the
+/// scenes it is used in.
+/// </summary>
+public sealed record FormInput(
+    Guid? Id,
+    string? Name,
+    string? Description,
+    Guid? UnlockEraId,
+    Guid? UnlockSceneId,
+    Guid? UnlockMomentId,
+    IReadOnlyList<Guid>? EraIds,
+    IReadOnlyList<Guid>? SceneIds);
+
+/// <summary>One ability as saved (Issue #42): what a form has, and <paramref name="FormIds"/>, the forms of this entry it belongs to.</summary>
+public sealed record AbilityInput(
+    Guid? Id,
+    string? Name,
+    string? Description,
+    Guid? UnlockEraId,
+    Guid? UnlockSceneId,
+    Guid? UnlockMomentId,
+    IReadOnlyList<Guid>? EraIds,
+    IReadOnlyList<Guid>? SceneIds,
+    IReadOnlyList<Guid>? FormIds);
 
 /// <summary>
 /// One era as saved. <paramref name="Id"/> names one of this entry's eras, kept with its id; null makes a new one.
@@ -47,21 +79,57 @@ public sealed record EraFieldInput(
 
 /// <summary>
 /// The stored form of one saved version: the save's own request, normalised - eras in order with their ids, links sorted,
-/// overrides by field. A restore replays it as a save. A member absent from an older version's JSON reads as empty: that
-/// part had nothing then.
+/// overrides by field. A restore replays it as a save. A member absent from an older version's JSON is null - that part did
+/// not exist then - and a restore keeps it as stored, exactly as a save that leaves it out does.
 /// </summary>
-public sealed record ProgressionSnapshot(IReadOnlyList<EraInput> Eras)
+public sealed record ProgressionSnapshot(
+    IReadOnlyList<EraInput> Eras,
+    IReadOnlyList<FormInput>? Forms = null,
+    IReadOnlyList<AbilityInput>? Abilities = null)
 {
-    public static ProgressionSnapshot Empty { get; } = new([]);
+    public static ProgressionSnapshot Empty { get; } = new([], [], []);
 
-    public ProgressionRequest ToRequest(int? expectedVersion) => new([.. Eras ?? []], expectedVersion);
+    public ProgressionRequest ToRequest(int? expectedVersion) =>
+        new([.. Eras ?? []], expectedVersion, Forms is null ? null : [.. Forms], Abilities is null ? null : [.. Abilities]);
 }
 
 public sealed record ProgressionResponse(
     Guid EntityId,
     IReadOnlyList<EraResponse> Eras,
     DateTime? UpdatedAt,
-    int Version);
+    int Version,
+    IReadOnlyList<FormResponse>? Forms = null,
+    IReadOnlyList<AbilityResponse>? Abilities = null);
+
+/// <summary>An era named by a form or ability, as it reads now.</summary>
+public sealed record EraRef(Guid Id, string Name);
+
+/// <summary>A timeline moment named as a milestone, as it reads now.</summary>
+public sealed record MomentRef(Guid Id, string Title, bool IsTrashed);
+
+/// <summary>When a form or ability was first unlocked: each part optional, none derived from another.</summary>
+public sealed record UnlockMilestone(EraRef? Era, EraSceneRef? Scene, MomentRef? Moment);
+
+/// <summary>One form, read (Issue #42): what it is, its first unlock, the eras it is available in and the scenes it is used in.</summary>
+public sealed record FormResponse(
+    Guid Id,
+    string Name,
+    string? Description,
+    int SortOrder,
+    UnlockMilestone Unlock,
+    IReadOnlyList<EraRef> Eras,
+    IReadOnlyList<EraSceneRef> Scenes);
+
+/// <summary>One ability, read (Issue #42), with the forms it belongs to.</summary>
+public sealed record AbilityResponse(
+    Guid Id,
+    string Name,
+    string? Description,
+    int SortOrder,
+    UnlockMilestone Unlock,
+    IReadOnlyList<EraRef> Eras,
+    IReadOnlyList<EraSceneRef> Scenes,
+    IReadOnlyList<EraRef> Forms);
 
 /// <summary>
 /// One era, with what it links to named as it reads now. <paramref name="Fields"/> are only the overrides; every other field
@@ -115,6 +183,8 @@ public sealed record ProgressionRevisionDetail(
     Guid? RestoredFromRevisionId,
     DateTime CreatedAt,
     string? ActorName,
-    IReadOnlyList<EraResponse> Eras);
+    IReadOnlyList<EraResponse> Eras,
+    IReadOnlyList<FormResponse>? Forms = null,
+    IReadOnlyList<AbilityResponse>? Abilities = null);
 
 public sealed record ProgressionRestoreRequest(int? ExpectedVersion);

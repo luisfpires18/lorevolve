@@ -50,12 +50,67 @@ export interface Era {
   fields: EraField[]
 }
 
+/** An era or form named by a form or ability, as it reads now. */
+export interface NamedRef {
+  id: string
+  name: string
+}
+
+export interface MomentRef {
+  id: string
+  title: string
+  isTrashed: boolean
+}
+
+/** When a form or ability was first unlocked (Issue #42): each part optional, none derived from another. */
+export interface UnlockMilestone {
+  era: NamedRef | null
+  scene: EraScene | null
+  moment: MomentRef | null
+}
+
+/**
+ * One form an entry can take (Issue #42): available exactly in the eras ticked - nothing follows from era order or from where it
+ * was first unlocked - and used in the scenes listed, which nothing checks against availability.
+ */
+export interface Form {
+  id: string
+  name: string
+  description: string | null
+  sortOrder: number
+  unlock: UnlockMilestone
+  eras: NamedRef[]
+  scenes: EraScene[]
+}
+
+/** One significant ability, with the forms it belongs to - none, one or several. */
+export interface Ability extends Form {
+  forms: NamedRef[]
+}
+
 /** An entry's progression, read on its own route. `version` is what the next save names: 0 until the first save. */
 export interface Progression {
   entityId: string
   eras: Era[]
   updatedAt: string | null
   version: number
+  forms: Form[]
+  abilities: Ability[]
+}
+
+export interface FormInput {
+  id: string | null
+  name: string
+  description: string | null
+  unlockEraId: string | null
+  unlockSceneId: string | null
+  unlockMomentId: string | null
+  eraIds: string[]
+  sceneIds: string[]
+}
+
+export interface AbilityInput extends FormInput {
+  formIds: string[]
 }
 
 export interface EraFieldInput {
@@ -82,10 +137,12 @@ export interface EraInput {
   fields: EraFieldInput[]
 }
 
-/** The whole progression, saved at once over the version it was read at. */
+/** The whole progression, saved at once over the version it was read at. A list left out keeps what is stored. */
 export interface ProgressionInput {
   eras: EraInput[]
   expectedVersion: number
+  forms?: FormInput[]
+  abilities?: AbilityInput[]
 }
 
 export interface ProgressionRevisionSummary {
@@ -99,4 +156,6 @@ export interface ProgressionRevisionSummary {
 
 export interface ProgressionRevisionDetail extends ProgressionRevisionSummary {
   eras: Era[]
+  forms: Form[]
+  abilities: Ability[]
 }

@@ -254,6 +254,9 @@ internal static partial class BackupValidation
 
             if (entity.Progression is { } progression)
             {
+                count += (progression.Forms ?? []).Sum(form => form is null ? 0L : 1L + (form.EraIds?.Count ?? 0) + (form.SceneIds?.Count ?? 0))
+                    + (progression.Abilities ?? []).Sum(ability => ability is null ? 0L
+                        : 1L + (ability.EraIds?.Count ?? 0) + (ability.SceneIds?.Count ?? 0) + (ability.FormIds?.Count ?? 0));
                 count += 1 + (progression.Revisions?.Count ?? 0)
                     + (progression.Eras ?? []).Sum(era => era is null ? 0L
                         : 1L + (era.StoryIds?.Count ?? 0) + (era.SceneIds?.Count ?? 0) + (era.FieldValues?.Count ?? 0));
@@ -303,6 +306,7 @@ internal static partial class BackupValidation
         private readonly Dictionary<Guid, Guid> _fieldOwner = [];
         private readonly HashSet<Guid> _requiredFields = [];
         private readonly Dictionary<Guid, Guid> _eraOwner = [];
+        private HashSet<Guid>? _momentIds;
         private UniverseChronology? _reckoning;
         private readonly Dictionary<Guid, (BackupFieldDefinition Field, string What)> _fieldTargets = [];
         private readonly Dictionary<Guid, HashSet<Guid>> _groupMembers = [];
@@ -882,6 +886,22 @@ internal static partial class BackupValidation
                         Register(revision.Id, $"A saved version of the eras of {Entry(entity)}");
                     }
                 }
+
+                foreach (var form in entity.Progression?.Forms ?? [])
+                {
+                    if (form is not null)
+                    {
+                        Register(form.Id, $"The form {Quote(form.Name)} of {Entry(entity)}");
+                    }
+                }
+
+                foreach (var ability in entity.Progression?.Abilities ?? [])
+                {
+                    if (ability is not null)
+                    {
+                        Register(ability.Id, $"The ability {Quote(ability.Name)} of {Entry(entity)}");
+                    }
+                }
             }
         }
 
@@ -1108,6 +1128,8 @@ internal static partial class BackupValidation
                     }
                 }
             }
+
+            CheckForms(entity, progression, what);
 
             var numbers = new HashSet<int>();
             foreach (var revision in Required(progression.Revisions, $"{what}'s saved versions of its eras"))
@@ -2019,6 +2041,102 @@ internal static partial class BackupValidation
                 {
                     Add(BackupIssueCodes.InvalidValue, $"{what} has a month or a day out of range.");
                 }
+            }
+        }
+
+        /// <summary>
+        /// An entry's forms and abilities (since version 29) held to what a save allows: named, each name once in its list,
+        /// places distinct, and every era, scene, moment and form they name one of this file's - eras and forms of this entry.
+        /// </summary>
+        private void CheckForms(BackupEntity entity, BackupProgression progression, string what)
+        {
+            var eras = (progression.Eras ?? []).OfType<BackupEntityEra>().Select(era => era.Id).ToHashSet();
+            var forms = (progression.Forms ?? []).OfType<BackupForm>().Select(form => form.Id).ToHashSet();
+            _momentIds ??= [.. (payload.TimelineEntries ?? []).OfType<BackupTimelineEntry>().Select(moment => moment.Id)];
+
+            void Common(string label, string? name, string? description, Guid? unlockEra, Guid? unlockScene, Guid? unlockMoment,
+                IReadOnlyList<Guid>? eraIds, IReadOnlyList<Guid>? sceneIds, HashSet<string> names)
+            {
+                if (Text(name, ProgressionLimits.NameMaxLength, $"{label}'s name", required: true) && !names.Add(name!.Trim()))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{what} has two of these named {Quote(name)}.");
+                }
+
+                Text(description, ProgressionLimits.DescriptionMaxLength, $"{label}'s description");
+
+                if (unlockEra is { } era)
+                {
+                    Reference(eras.Contains(era), $"{label} was first unlocked in an era its entry does not have.");
+                }
+
+                if (unlockScene is { } scene)
+                {
+                    Reference(_sceneStory.ContainsKey(scene), $"{label} was first unlocked in a scene the backup does not hold.");
+                }
+
+                if (unlockMoment is { } moment)
+                {
+                    Reference(_momentIds.Contains(moment), $"{label} was first unlocked at a moment the backup does not hold.");
+                }
+
+                foreach (var available in Required(eraIds, $"{label}'s eras"))
+                {
+                    Reference(eras.Contains(available), $"{label} is available in an era its entry does not have.");
+                }
+
+                foreach (var used in Required(sceneIds, $"{label}'s scenes"))
+                {
+                    Reference(_sceneStory.ContainsKey(used), $"{label} is used in a scene the backup does not hold.");
+                }
+            }
+
+            var formNames = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
+            var formPlaces = new HashSet<int>();
+            foreach (var form in progression.Forms ?? [])
+            {
+                if (form is null)
+                {
+                    Missing($"a form of {Entry(entity)}");
+                    continue;
+                }
+
+                if (form.SortOrder < 0 || !formPlaces.Add(form.SortOrder))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{what} has two forms in one place, or one in no place.");
+                }
+
+                Common($"The form {Quote(form.Name)} of {Entry(entity)}", form.Name, form.Description, form.UnlockEraId, form.UnlockSceneId,
+                    form.UnlockMomentId, form.EraIds, form.SceneIds, formNames);
+            }
+
+            var abilityNames = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
+            var abilityPlaces = new HashSet<int>();
+            foreach (var ability in progression.Abilities ?? [])
+            {
+                if (ability is null)
+                {
+                    Missing($"an ability of {Entry(entity)}");
+                    continue;
+                }
+
+                if (ability.SortOrder < 0 || !abilityPlaces.Add(ability.SortOrder))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{what} has two abilities in one place, or one in no place.");
+                }
+
+                var label = $"The ability {Quote(ability.Name)} of {Entry(entity)}";
+                Common(label, ability.Name, ability.Description, ability.UnlockEraId, ability.UnlockSceneId, ability.UnlockMomentId,
+                    ability.EraIds, ability.SceneIds, abilityNames);
+
+                foreach (var form in Required(ability.FormIds, $"{label}'s forms"))
+                {
+                    Reference(forms.Contains(form), $"{label} belongs to a form its entry does not have.");
+                }
+            }
+
+            if ((progression.Forms?.Count ?? 0) > ProgressionLimits.MaxForms || (progression.Abilities?.Count ?? 0) > ProgressionLimits.MaxAbilities)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} has more forms or abilities than Lorex keeps.");
             }
         }
 

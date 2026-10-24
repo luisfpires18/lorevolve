@@ -324,8 +324,8 @@ public sealed class UniverseCollaborationTests(LorexApiFactory factory) : IClass
 
         var archive = await RawArchive(w.Owner, w.U);
         var document = DocumentText(archive);
-        Assert.Equal(28, UniverseBackup.CurrentVersion);
-        Assert.Equal(28, (await Backup(w.Owner, w.U)).FormatVersion);
+        Assert.Equal(29, UniverseBackup.CurrentVersion);
+        Assert.Equal(29, (await Backup(w.Owner, w.U)).FormatVersion);
         foreach (var id in new[] { w.OwnerId, w.EditorId, w.ReviewerId, w.ViewerId })
         {
             Assert.DoesNotContain(id, document, StringComparison.OrdinalIgnoreCase);

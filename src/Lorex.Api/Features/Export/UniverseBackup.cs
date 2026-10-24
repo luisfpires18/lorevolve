@@ -240,8 +240,14 @@ public sealed record UniverseBackup(
     /// each a dated span on the file's chronology or one era of either end, by the era's id in this file. Not ignorable: a
     /// version 27 reader would restore every link timeless, true at every time its author said it was not. A file at version 27
     /// or earlier has no <c>periods</c>; every link restores timeless, even if it carries some.
+    ///
+    /// 29 - An entry may have forms and abilities (Issue #42). <see cref="BackupProgression.Forms"/> and
+    /// <see cref="BackupProgression.Abilities"/> carry them in the author's order - name, description, the first unlock (an era
+    /// of the entry, a scene, a moment of this file), the eras each is available in, the scenes it is used in, and an ability's
+    /// forms. Not ignorable: they are authored, so a version 28 reader would restore every entry without them. A file at version
+    /// 28 or earlier has neither; every entry restores with no forms or abilities, even if it carries some.
     /// </summary>
-    public const int CurrentVersion = 28;
+    public const int CurrentVersion = 29;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -486,7 +492,37 @@ public sealed record BackupArticleRevision(
 public sealed record BackupProgression(
     DateTime UpdatedAt,
     IReadOnlyList<BackupEntityEra> Eras,
-    IReadOnlyList<BackupProgressionRevision> Revisions);
+    IReadOnlyList<BackupProgressionRevision> Revisions,
+    IReadOnlyList<BackupForm>? Forms = null,
+    IReadOnlyList<BackupAbility>? Abilities = null);
+
+/// <summary>
+/// One form of one entry (since version 29): <paramref name="SortOrder"/> its place; the first unlock, each part optional - an
+/// era of this entry, a scene, a timeline moment of this file; the eras it is available in and the scenes it is used in, sorted.
+/// </summary>
+public sealed record BackupForm(
+    Guid Id,
+    string Name,
+    string? Description,
+    int SortOrder,
+    Guid? UnlockEraId,
+    Guid? UnlockSceneId,
+    Guid? UnlockMomentId,
+    IReadOnlyList<Guid> EraIds,
+    IReadOnlyList<Guid> SceneIds);
+
+/// <summary>One ability of one entry (since version 29): what a form carries, and the forms of this entry it belongs to.</summary>
+public sealed record BackupAbility(
+    Guid Id,
+    string Name,
+    string? Description,
+    int SortOrder,
+    Guid? UnlockEraId,
+    Guid? UnlockSceneId,
+    Guid? UnlockMomentId,
+    IReadOnlyList<Guid> EraIds,
+    IReadOnlyList<Guid> SceneIds,
+    IReadOnlyList<Guid> FormIds);
 
 /// <summary>
 /// One era of one entry: <paramref name="SortOrder"/> its place, from 0; <paramref name="Start"/> and <paramref name="End"/>

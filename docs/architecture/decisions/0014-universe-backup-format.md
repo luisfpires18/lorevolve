@@ -478,3 +478,12 @@ when it carries the member.
 either end by its id in the file. Not ignorable: a version 27 reader would restore every link timeless. A restore points
 each era at its restored id; validation refuses an era of neither end, a period with no bound or with both kinds, and a
 span ending before it starts. A version 27 or older file restores every link timeless, even when it carries the member.
+
+## Amendment: version 29, an entry's forms and abilities (2026-10-24, Issue #42, ADR 0052)
+
+`BackupProgression.Forms` and `.Abilities` carry an entry's forms and abilities in order - name, description, first unlock
+(an era of the entry, a scene and a timeline moment of the file, each optional), the eras each is available in, the scenes
+it is used in and, for an ability, the forms it belongs to. Not ignorable: a version 28 reader would restore every entry
+without them. A restore gives each a new id and translates them inside the snapshots; validation refuses an era of another
+entry, a scene or moment the file does not hold, a form of another entry and a repeated name. A version 28 or older file
+restores every entry with none, even when it carries the members.

@@ -146,6 +146,7 @@ public static class ProgressionEndpoints
 
         var snapshot = ProgressionState.Deserialize(revision.Snapshot);
         var actor = await db.Users.Where(user => user.Id == revision.ActorUserId).Select(user => user.UserName).FirstOrDefaultAsync(cancellationToken);
+        var (forms, abilities) = await ProgressionForms.DescribeAsync(db, universeId, snapshot, cancellationToken);
 
         return Results.Ok(new ProgressionRevisionDetail(
             revision.Id,
@@ -154,7 +155,9 @@ public static class ProgressionEndpoints
             revision.RestoredFromRevisionId,
             Utc(revision.CreatedAt),
             actor,
-            await ProgressionState.DescribeAsync(db, universeId, snapshot.Eras, cancellationToken)));
+            await ProgressionState.DescribeAsync(db, universeId, snapshot.Eras, cancellationToken),
+            forms,
+            abilities));
     }
 
     /// <summary>
@@ -195,7 +198,7 @@ public static class ProgressionEndpoints
             revision.Id,
             principal.RequireUserId(),
             cancellationToken,
-            exactly: ProgressionState.Serialize(snapshot));
+            exactly: snapshot);
 
         await transaction.CommitAsync(cancellationToken);
         return result;
@@ -215,7 +218,7 @@ public static class ProgressionEndpoints
         Guid? restoredFromRevisionId,
         string actorUserId,
         CancellationToken cancellationToken,
-        string? exactly = null)
+        ProgressionSnapshot? exactly = null)
     {
         if (await LiveTypeAsync(db, universeId, entityId, cancellationToken) is not { } typeId)
         {
@@ -240,7 +243,12 @@ public static class ProgressionEndpoints
 
         var json = ProgressionState.Serialize(wanted);
 
-        if (exactly is not null && (errors.Count > 0 || json != exactly))
+        // A restore lands exactly as recorded, or not at all. A part the version did not record is compared as it is kept.
+        if (exactly is not null && (errors.Count > 0 || json != ProgressionState.Serialize(exactly with
+            {
+                Forms = exactly.Forms ?? wanted.Forms,
+                Abilities = exactly.Abilities ?? wanted.Abilities,
+            })))
         {
             return Results.Problem(
                 title: "Version can't be put back as it was",
@@ -314,12 +322,15 @@ public static class ProgressionEndpoints
             .FirstOrDefaultAsync(cancellationToken);
 
         var state = await ProgressionState.ReadAsync(db, entityId, cancellationToken);
+        var (forms, abilities) = await ProgressionForms.DescribeAsync(db, universeId, state, cancellationToken);
 
         return new ProgressionResponse(
             entityId,
             await ProgressionState.DescribeAsync(db, universeId, state.Eras, cancellationToken),
             stored is null ? null : Utc(stored.UpdatedAt),
-            stored?.Version ?? 0);
+            stored?.Version ?? 0,
+            forms,
+            abilities);
     }
 
     /// <summary>The type of a live entry of this universe, or null when there is none - so a trashed entry is not reachable.</summary>

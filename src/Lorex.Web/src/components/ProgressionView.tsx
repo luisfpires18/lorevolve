@@ -5,6 +5,7 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
 import { EraForm } from './EraForm'
+import { ProgressionItemForm } from './ProgressionItemForm'
 import { VersionActor } from './VersionActor'
 import type { Chronology } from '../chronology/types'
 import { ApiError } from '../lib/api'
@@ -15,7 +16,9 @@ import { renderFact } from '../lore/facts'
 import { RevisionKind } from '../lore/revisions'
 import type { EntityDetail, FieldDefinition } from '../lore/types'
 import {
+  abilityInputOf,
   eraInputOf,
+  formInputOf,
   getProgression,
   getProgressionRevision,
   listProgressionRevisions,
@@ -25,10 +28,14 @@ import {
 } from '../progression/api'
 import { formatSpan, resolveFields, type FieldSource } from '../progression/eras'
 import type {
+  Ability,
   Era,
+  Form,
   Progression,
+  ProgressionInput,
   ProgressionRevisionDetail,
   ProgressionRevisionSummary,
+  UnlockMilestone,
 } from '../progression/types'
 import { useUniverseAccess } from '../universes/access'
 
@@ -66,6 +73,10 @@ export function ProgressionView({
   const [progression, setProgression] = useState<Progression | null>(null)
   const [failed, setFailed] = useState(false)
   const [editing, setEditing] = useState<Era | 'new' | null>(null)
+  const [editingItem, setEditingItem] = useState<{
+    kind: 'form' | 'ability'
+    item: Form | Ability | null
+  } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [historyKey, setHistoryKey] = useState(0)
   // One change at a time: a second press while one is saving would name the same version and be refused as stale.
@@ -121,7 +132,12 @@ export function ProgressionView({
     setParams(next)
   }
 
-  async function write(eras: Era[], done?: () => void) {
+  /** Saves the eras given; forms and abilities are sent only when `items` says so (a removal that takes references with it). */
+  async function write(
+    eras: Era[],
+    done?: () => void,
+    items?: Pick<ProgressionInput, 'forms' | 'abilities'>,
+  ) {
     if (!progression || busy) return
     setMessage(null)
     setBusy(true)
@@ -130,6 +146,7 @@ export function ProgressionView({
         await saveProgression(universeId, entry.id, {
           eras: eras.map(eraInputOf),
           expectedVersion: progression.version,
+          ...items,
         }),
       )
       done?.()
@@ -158,17 +175,48 @@ export function ProgressionView({
     if (
       !(await confirmAction({
         title: `Remove the era “${era.name}”?`,
-        message: `What it sets for ${entry.name} goes with it. The main profile is not changed. Era history can bring it back.`,
+        message: `What it sets for ${entry.name} goes with it, and forms and abilities stop being available in it. The main profile is not changed. Era history can bring it back.`,
         confirmLabel: 'Remove era',
         variant: 'destructive',
       }))
     ) {
       return
     }
+    const dropping = new Set([era.id])
     void write(
       progression!.eras.filter((one) => one.id !== era.id),
       () => choose(null),
+      {
+        forms: progression!.forms.map((form) => formInputOf(form, dropping)),
+        abilities: progression!.abilities.map((ability) => abilityInputOf(ability, dropping)),
+      },
     )
+  }
+
+  async function removeItem(kind: 'form' | 'ability', item: Form | Ability) {
+    const what = kind === 'form' ? 'form' : 'ability'
+    if (
+      !(await confirmAction({
+        title: `Remove the ${what} “${item.name}”?`,
+        message:
+          kind === 'form'
+            ? `Abilities stop belonging to it. Era history can bring it back.`
+            : `Era history can bring it back.`,
+        confirmLabel: `Remove ${what}`,
+        variant: 'destructive',
+      }))
+    ) {
+      return
+    }
+    const droppingForms = new Set(kind === 'form' ? [item.id] : [])
+    void write(progression!.eras, undefined, {
+      forms: progression!.forms
+        .filter((one) => one.id !== item.id)
+        .map((form) => formInputOf(form)),
+      abilities: progression!.abilities
+        .filter((one) => one.id !== item.id)
+        .map((ability) => abilityInputOf(ability, new Set(), droppingForms)),
+    })
   }
 
   return (
@@ -242,6 +290,7 @@ export function ProgressionView({
               definitions={definitions}
               chronology={chronology}
               universeId={universeId}
+              progression={progression}
               busy={busy}
               isFirst={progression.eras[0].id === selected.id}
               isLast={progression.eras[progression.eras.length - 1].id === selected.id}
@@ -277,6 +326,31 @@ export function ProgressionView({
         </>
       )}
 
+      {selected ? null : (
+        <>
+          <ItemList
+            kind="form"
+            items={progression.forms}
+            universeId={universeId}
+            entryName={entry.name}
+            busy={busy}
+            onAdd={() => setEditingItem({ kind: 'form', item: null })}
+            onEdit={(item) => setEditingItem({ kind: 'form', item })}
+            onRemove={(item) => void removeItem('form', item)}
+          />
+          <ItemList
+            kind="ability"
+            items={progression.abilities}
+            universeId={universeId}
+            entryName={entry.name}
+            busy={busy}
+            onAdd={() => setEditingItem({ kind: 'ability', item: null })}
+            onEdit={(item) => setEditingItem({ kind: 'ability', item })}
+            onRemove={(item) => void removeItem('ability', item)}
+          />
+        </>
+      )}
+
       {access.manageHistory && progression.version > 0 ? (
         <ProgressionHistory
           key={historyKey}
@@ -307,6 +381,22 @@ export function ProgressionView({
           }}
         />
       ) : null}
+
+      {editingItem ? (
+        <ProgressionItemForm
+          universeId={universeId}
+          entityId={entry.id}
+          entityName={entry.name}
+          progression={progression}
+          kind={editingItem.kind}
+          item={editingItem.item}
+          onClose={() => setEditingItem(null)}
+          onSaved={(saved) => {
+            setEditingItem(null)
+            changed(saved)
+          }}
+        />
+      ) : null}
     </section>
   )
 }
@@ -330,6 +420,7 @@ function EraPanel({
   definitions,
   chronology,
   universeId,
+  progression,
   busy,
   isFirst,
   isLast,
@@ -342,6 +433,7 @@ function EraPanel({
   definitions: FieldDefinition[]
   chronology: Chronology
   universeId: string
+  progression: Progression
   busy: boolean
   isFirst: boolean
   isLast: boolean
@@ -352,6 +444,10 @@ function EraPanel({
   const access = useUniverseAccess()
   const span = formatSpan(chronology, era.start, era.end)
   const fields = resolveFields(definitions, entry.fields, era)
+  const forms = progression.forms.filter((form) => form.eras.some((one) => one.id === era.id))
+  const abilities = progression.abilities.filter((ability) =>
+    ability.eras.some((one) => one.id === era.id),
+  )
 
   return (
     <article className="erapanel" aria-labelledby="era-title" data-testid="era-panel">
@@ -475,7 +571,206 @@ function EraPanel({
           ))}
         </dl>
       ) : null}
+
+      <EraItems heading="Forms in this era" era={era} items={forms} testId="era-forms" />
+      <EraItems
+        heading="Abilities in this era"
+        era={era}
+        items={abilities}
+        testId="era-abilities"
+      />
     </article>
+  )
+}
+
+/** What is available in one era - only what the author ticked for it - with where it was first unlocked, if here. */
+function EraItems({
+  heading,
+  era,
+  items,
+  testId,
+}: {
+  heading: string
+  era: Era
+  items: (Form | Ability)[]
+  testId: string
+}) {
+  if (items.length === 0) return null
+  return (
+    <div className="rail__block">
+      <h4 className="rail__heading">{heading}</h4>
+      <ul className="eracovers" data-testid={testId}>
+        {items.map((item) => (
+          <li key={item.id} data-testid={`${testId}-${item.name}`}>
+            <bdi>{item.name}</bdi>
+            {item.unlock.era?.id === era.id ? (
+              <span className="erasource erasource--era"> First unlocked here</span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function unlockParts(unlock: UnlockMilestone) {
+  return [
+    unlock.era ? `in ${unlock.era.name}` : null,
+    unlock.scene
+      ? `in the scene ${unlock.scene.title}${unlock.scene.isTrashed ? ' (in Trash)' : ''}`
+      : null,
+    unlock.moment
+      ? `at ${unlock.moment.title}${unlock.moment.isTrashed ? ' (in Trash)' : ''}`
+      : null,
+  ].filter((part): part is string => part !== null)
+}
+
+/** An entry's forms or abilities on the main profile: each as the author said it, nothing filled in. */
+function ItemList({
+  kind,
+  items,
+  universeId,
+  entryName,
+  busy,
+  onAdd,
+  onEdit,
+  onRemove,
+}: {
+  kind: 'form' | 'ability'
+  items: (Form | Ability)[]
+  universeId: string
+  entryName: string
+  busy: boolean
+  onAdd: () => void
+  onEdit: (item: Form | Ability) => void
+  onRemove: (item: Form | Ability) => void
+}) {
+  const access = useUniverseAccess()
+  const title = kind === 'form' ? 'Forms' : 'Abilities'
+  const one = kind === 'form' ? 'form' : 'ability'
+  const headingId = `${kind}-list-heading`
+
+  if (items.length === 0 && !access.editContent) return null
+
+  return (
+    <section className="progitems" aria-labelledby={headingId} data-testid={`${kind}-list`}>
+      <div className="progression__head">
+        <h3 className="rail__heading" id={headingId}>
+          {title}
+        </h3>
+        {access.editContent ? (
+          <button
+            className="button button--secondary button--sm"
+            type="button"
+            onClick={onAdd}
+            disabled={busy}
+            data-testid={`add-${kind}`}
+          >
+            <ActionIcon icon={Plus} />
+            Add {one}
+          </button>
+        ) : null}
+      </div>
+      {items.length === 0 ? (
+        <p className="muted">
+          {kind === 'form'
+            ? `No forms. A form is a state ${entryName} can take, like a transformation or a stage.`
+            : `No abilities. Add only the ones that matter to the story.`}
+        </p>
+      ) : (
+        <ul className="progitems__list">
+          {items.map((item) => {
+            const unlock = unlockParts(item.unlock)
+            return (
+              <li className="progitems__item" key={item.id} data-testid={`${kind}-${item.name}`}>
+                <div className="progitems__head">
+                  <h4 className="progitems__name">
+                    <bdi>{item.name}</bdi>
+                  </h4>
+                  {access.editContent ? (
+                    <ActionMenu
+                      label={`Actions for ${item.name}`}
+                      triggerTestId={`${kind}-actions-${item.name}`}
+                    >
+                      <button
+                        className="actionmenu__item"
+                        type="button"
+                        disabled={busy}
+                        onClick={() => onEdit(item)}
+                        data-testid={`edit-${kind}`}
+                      >
+                        <ActionIcon icon={Pencil} />
+                        Edit {one}
+                      </button>
+                      <button
+                        className="actionmenu__item actionmenu__item--danger"
+                        type="button"
+                        disabled={busy}
+                        onClick={() => onRemove(item)}
+                        data-testid={`remove-${kind}`}
+                      >
+                        <ActionIcon icon={Trash} />
+                        Remove {one}
+                      </button>
+                    </ActionMenu>
+                  ) : null}
+                </div>
+                {item.description ? (
+                  <p className="progitems__description prose">{item.description}</p>
+                ) : null}
+                <dl className="progitems__facts">
+                  {unlock.length > 0 ? (
+                    <div>
+                      <dt>First unlocked</dt>
+                      <dd data-testid={`${kind}-unlock`}>{unlock.join(', ')}</dd>
+                    </div>
+                  ) : null}
+                  <div>
+                    <dt>Available in</dt>
+                    <dd data-testid={`${kind}-available`}>
+                      {item.eras.length === 0
+                        ? 'No era ticked'
+                        : item.eras.map((era) => era.name).join(', ')}
+                    </dd>
+                  </div>
+                  {'forms' in item && item.forms.length > 0 ? (
+                    <div>
+                      <dt>Forms</dt>
+                      <dd data-testid="ability-forms-read">
+                        {item.forms.map((form) => form.name).join(', ')}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {item.scenes.length > 0 ? (
+                    <div>
+                      <dt>Used in</dt>
+                      <dd>
+                        <ul className="eracovers">
+                          {item.scenes.map((scene) => (
+                            <li key={scene.id}>
+                              {scene.isTrashed ? (
+                                <span>{scene.title} (in Trash)</span>
+                              ) : (
+                                <Link
+                                  to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
+                                >
+                                  {scene.title}
+                                </Link>
+                              )}
+                              <span className="muted"> · {scene.storyTitle}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </dd>
+                    </div>
+                  ) : null}
+                </dl>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </section>
   )
 }
 
@@ -527,7 +822,7 @@ function ProgressionHistory({
       !(await confirmAction({
         title: `Put version ${revision.number} of the eras back?`,
         message:
-          'The eras become exactly what they were then. This is saved as a new version, so it can be undone.',
+          'The eras, forms and abilities become exactly what they were then; a version from before forms existed leaves them as they are. This is saved as a new version, so it can be undone.',
         confirmLabel: 'Restore this version',
       }))
     ) {
@@ -615,6 +910,12 @@ function ProgressionHistory({
                   ) : (
                     opened.eras.map((era) => <li key={era.id}>{era.name}</li>)
                   )}
+                  {opened.forms.map((form) => (
+                    <li key={form.id}>Form: {form.name}</li>
+                  ))}
+                  {opened.abilities.map((ability) => (
+                    <li key={ability.id}>Ability: {ability.name}</li>
+                  ))}
                 </ul>
               ) : null}
             </li>

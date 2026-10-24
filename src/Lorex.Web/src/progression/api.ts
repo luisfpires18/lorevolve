@@ -1,7 +1,11 @@
 import { apiFetch } from '../lib/api'
 import type {
+  Ability,
+  AbilityInput,
   Era,
   EraInput,
+  Form,
+  FormInput,
   Progression,
   ProgressionInput,
   ProgressionRevisionDetail,
@@ -84,5 +88,30 @@ export function eraInputOf(era: Era): EraInput {
       referencedEntityId: field.referencedEntityId,
       eraId: field.eraId,
     })),
+  }
+}
+
+/** A form as read, sent back as it is - or without the eras in `dropping` (an era being removed with the same save). */
+export function formInputOf(form: Form, dropping: Set<string> = new Set()): FormInput {
+  return {
+    id: form.id,
+    name: form.name,
+    description: form.description,
+    unlockEraId: form.unlock.era && !dropping.has(form.unlock.era.id) ? form.unlock.era.id : null,
+    unlockSceneId: form.unlock.scene?.id ?? null,
+    unlockMomentId: form.unlock.moment?.id ?? null,
+    eraIds: form.eras.map((era) => era.id).filter((id) => !dropping.has(id)),
+    sceneIds: form.scenes.map((scene) => scene.id),
+  }
+}
+
+export function abilityInputOf(
+  ability: Ability,
+  dropping: Set<string> = new Set(),
+  droppingForms: Set<string> = new Set(),
+): AbilityInput {
+  return {
+    ...formInputOf(ability, dropping),
+    formIds: ability.forms.map((form) => form.id).filter((id) => !droppingForms.has(id)),
   }
 }

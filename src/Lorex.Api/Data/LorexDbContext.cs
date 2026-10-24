@@ -85,6 +85,20 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<EntityProgressionRevision> EntityProgressionRevisions => Set<EntityProgressionRevision>();
 
+    public DbSet<EntityForm> EntityForms => Set<EntityForm>();
+
+    public DbSet<EntityFormEra> EntityFormEras => Set<EntityFormEra>();
+
+    public DbSet<EntityFormScene> EntityFormScenes => Set<EntityFormScene>();
+
+    public DbSet<EntityAbility> EntityAbilities => Set<EntityAbility>();
+
+    public DbSet<EntityAbilityEra> EntityAbilityEras => Set<EntityAbilityEra>();
+
+    public DbSet<EntityAbilityScene> EntityAbilityScenes => Set<EntityAbilityScene>();
+
+    public DbSet<EntityAbilityForm> EntityAbilityForms => Set<EntityAbilityForm>();
+
     public DbSet<RelationshipType> RelationshipTypes => Set<RelationshipType>();
 
     public DbSet<LoreRelationship> Relationships => Set<LoreRelationship>();

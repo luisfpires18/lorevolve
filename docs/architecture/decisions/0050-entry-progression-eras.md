@@ -66,3 +66,9 @@ switch on and off converts entry eras' months, its edits count them as uses and 
 
 A relationship's period may name an era. Removing that era - by a save or by restoring an older version - is refused while
 any period names it, a link in the Trash included (409 `entity_era_in_relationship`).
+
+## Amendment (2026-10-24, Issue #42, ADR 0052)
+
+The progression also holds the entry's forms and abilities, under the same version, history and restore. They change no
+field: an era's values are still its override, none, or the main profile. A save that removes an era a form or ability still
+names is refused unless the same save sends them without it.
