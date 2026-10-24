@@ -254,8 +254,11 @@ test.describe('publishing a universe', () => {
     await expect(confirm).toContainText(
       'Not published: Any lore entry, story, scene, scene prose or plot arc you have not published where it is written, notes, ideas, the timeline, world rules, relationships, Canon, the Trash',
     )
-    // No entry was selected, so nothing else is said to become public (Issue #47).
-    await expect(confirm.getByTestId('publish-confirm-selected-lore')).toHaveCount(0)
+    // No entry was selected, and the confirmation says so rather than listing nothing (Issue #47).
+    await expect(confirm.getByTestId('publish-confirm-no-selected-lore')).toContainText(
+      'no entry is selected for publication, so none becomes public with the world.',
+    )
+    await expect(confirm.getByTestId('publish-confirm-selected-entry')).toHaveCount(0)
 
     // Keeping it private changes nothing.
     await confirm.getByRole('button', { name: 'Keep private' }).click()

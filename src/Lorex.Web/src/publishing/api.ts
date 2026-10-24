@@ -8,6 +8,7 @@ import type {
   PublicationDetails,
   PublicationState,
   PublicAuthorSettings,
+  SelectedLore,
   StoryPartKind,
   StoryPartPublicationState,
   UniverseArtworkRef,
@@ -17,6 +18,11 @@ const base = (universeId: string) => `/api/universes/${universeId}`
 
 export function getPublication(universeId: string, signal?: AbortSignal) {
   return apiFetch<PublicationState>(`${base(universeId)}/publication`, { signal })
+}
+
+/** The entries publishing would make public, for the owner to review in the confirmation. Reads only. */
+export function getSelectedLore(universeId: string, signal?: AbortSignal) {
+  return apiFetch<SelectedLore>(`${base(universeId)}/publication/selected-lore`, { signal })
 }
 
 /** Saves the public details. Visibility is never part of it: only publish and unpublish change that. */

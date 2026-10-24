@@ -7,13 +7,19 @@ import { PublicDetailsForm } from '../components/PublicDetailsForm'
 import { UniverseArtworkField } from '../components/UniverseArtworkField'
 import { ApiError } from '../lib/api'
 import { listPublicLore, listPublicStories, worldPath } from '../portal/api'
-import { getPublication, publishUniverse, unpublishUniverse } from '../publishing/api'
+import {
+  getPublication,
+  getSelectedLore,
+  publishUniverse,
+  unpublishUniverse,
+} from '../publishing/api'
 import {
   REQUIREMENTS,
   Visibility,
   categoryLabel,
   genreLabel,
   type PublicationState,
+  type SelectedLore,
 } from '../publishing/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
@@ -21,7 +27,8 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 const STAYS_PRIVATE =
   'Any lore entry, story, scene, scene prose or plot arc you have not published where it is written, notes, ideas, the timeline, world rules, relationships, Canon, the Trash, and everything else you edit in the workspace.'
 
-type Confirming = { kind: 'publish'; state: PublicationState } | { kind: 'unpublish' }
+type Confirming =
+  { kind: 'publish'; state: PublicationState; selected: SelectedLore } | { kind: 'unpublish' }
 
 /** How many entries and stories readers can see now - read from the public API itself, so it cannot disagree with it. */
 type Published = { slug: string; lore: number; stories: number } | null
@@ -159,8 +166,12 @@ export default function UniversePublish() {
 
     setBusy(true)
     try {
-      // Fresh, so the confirmation names exactly what is saved - including a name changed elsewhere.
-      const fresh = await getPublication(universeId)
+      // Fresh, so the confirmation names exactly what is saved - including a name changed elsewhere - and exactly the
+      // entries that would become public with it (Issue #47).
+      const [fresh, selected] = await Promise.all([
+        getPublication(universeId),
+        getSelectedLore(universeId),
+      ])
       setState(fresh)
 
       const stillMissing = REQUIREMENTS.filter((requirement) => requirement.key in fresh.missing)
@@ -169,7 +180,7 @@ export default function UniversePublish() {
         return
       }
 
-      setConfirming({ kind: 'publish', state: fresh })
+      setConfirming({ kind: 'publish', state: fresh, selected })
     } catch (error: unknown) {
       setProblem([error instanceof Error ? error.message : 'That could not be checked. Try again.'])
     } finally {
@@ -395,15 +406,7 @@ export default function UniversePublish() {
                   </div>
                 )}
               </dl>
-              {confirming.state.selectedLore > 0 ? (
-                <p className="settings__note" data-testid="publish-confirm-selected-lore">
-                  <strong>Also public:</strong>{' '}
-                  {confirming.state.selectedLore === 1
-                    ? '1 lore entry you selected for publication earlier.'
-                    : `${confirming.state.selectedLore} lore entries you selected for publication earlier.`}{' '}
-                  Once the world is public, each entry's page lets you make it private again.
-                </p>
-              ) : null}
+              <SelectedLoreReview selected={confirming.selected} />
               <p className="settings__note">
                 <strong>Not published:</strong> {STAYS_PRIVATE}
               </p>
@@ -549,6 +552,52 @@ export default function UniversePublish() {
         </Section>
       </div>
     </article>
+  )
+}
+
+/**
+ * The lore entries that become public with the world (Issue #47), by name and type: a private universe's entry pages do
+ * not show which were selected, so the owner reviews them here before saying yes. Nothing here changes a selection.
+ */
+function SelectedLoreReview({ selected }: { selected: SelectedLore }) {
+  const { totalCount, items } = selected
+  if (totalCount === 0) {
+    return (
+      <p className="settings__note" data-testid="publish-confirm-no-selected-lore">
+        <strong>Lore:</strong> no entry is selected for publication, so none becomes public with the
+        world.
+      </p>
+    )
+  }
+
+  return (
+    <div className="publication__selected" data-testid="publish-confirm-selected-lore">
+      <p className="settings__note" id="publish-confirm-lore">
+        <strong>Also public:</strong>{' '}
+        {totalCount === 1
+          ? 'the lore entry you selected for publication earlier.'
+          : `the ${totalCount} lore entries you selected for publication earlier.`}
+      </p>
+      {/* Focusable so a long list scrolls from the keyboard as well. */}
+      <ul className="publication__selectedlist" aria-labelledby="publish-confirm-lore" tabIndex={0}>
+        {items.map((entry) => (
+          <li key={entry.id} data-testid="publish-confirm-selected-entry">
+            <bdi>{entry.name}</bdi>{' '}
+            <span className="publication__selectedtype">
+              · <bdi>{entry.typeName}</bdi>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {totalCount > items.length ? (
+        <p className="settings__note" data-testid="publish-confirm-selected-more">
+          And {totalCount - items.length} more.
+        </p>
+      ) : null}
+      <p className="settings__note">
+        Once the world is public, each entry's page lets you make it private again.
+      </p>
+    </div>
   )
 }
 

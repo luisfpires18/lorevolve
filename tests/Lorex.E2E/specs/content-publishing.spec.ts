@@ -162,12 +162,12 @@ test.describe('publishing lore and stories', () => {
     await expect(page.getByTestId('edit-entity')).toBeVisible()
     await expect(pill).toHaveCount(0)
 
-    // Published again from the Publish page: its confirmation counts the entry still chosen, and exactly it comes back.
+    // Published again from the Publish page: its confirmation names the entry still chosen, and exactly it comes back.
     await page.goto(`/app/universes/${universe.id}/publish`)
     await page.getByTestId('publish').click()
-    await expect(page.getByTestId('publish-confirm-selected-lore')).toContainText(
-      '1 lore entry you selected for publication earlier.',
-    )
+    await expect(page.getByTestId('publish-confirm-selected-entry')).toHaveText([
+      new RegExp(`^${name} · `),
+    ])
     await page.getByTestId('confirm-publish').click()
     await expect(page.getByTestId('publication-status')).toContainText('Public')
     expect(await listed(anonymous, universe.slug!, 'lore')).toEqual([name])
@@ -271,6 +271,65 @@ test.describe('publishing lore and stories', () => {
       .click()
     await page.waitForURL(`/app/universes/${universe.id}/stories`)
     expect(asked).toEqual([])
+  })
+
+  test('publishing a world first names the entries it makes public, and neither answer changes what was chosen', async ({
+    page,
+    request: anonymous,
+  }) => {
+    await signUp(page)
+    const universe = await world(page, false)
+    const ash = await entry(page, universe.id, 'Ash Warden')
+    const brine = await entry(page, universe.id, 'Brine Oracle')
+    const unchosen = await entry(page, universe.id, 'Unchosen Seer')
+    for (const id of [ash, brine]) {
+      await api(page, 'POST', `/api/universes/${universe.id}/entities/${id}/publish`)
+    }
+    const selections = () =>
+      Promise.all(
+        [ash, brine, unchosen].map(
+          async (id) =>
+            (await api<{ visibility: number }>(
+              page,
+              'GET',
+              `/api/universes/${universe.id}/entities/${id}/publication`,
+            ))!.visibility,
+        ),
+      )
+
+    // The confirmation reads them fresh and names each with its type: the two chosen, not the third (Issue #47).
+    await page.goto(`/app/universes/${universe.id}/publish`)
+    await page.getByTestId('publish').click()
+    const confirm = page.getByTestId('publish-confirm')
+    await expect(confirm.getByTestId('publish-confirm-selected-lore')).toContainText(
+      'the 2 lore entries you selected for publication earlier.',
+    )
+    await expect(confirm.getByTestId('publish-confirm-selected-entry')).toHaveText([
+      /^Ash Warden · \S/,
+      /^Brine Oracle · \S/,
+    ])
+    await expect(confirm).not.toContainText('Unchosen Seer')
+
+    // Keep private: nothing published, nothing rewritten.
+    await confirm.getByRole('button', { name: 'Keep private' }).click()
+    await expect(confirm).toHaveCount(0)
+    expect(await selections()).toEqual([1, 1, 0])
+    expect(
+      (await api<{ visibility: number }>(page, 'GET', `/api/universes/${universe.id}/publication`))!
+        .visibility,
+    ).toBe(0)
+
+    // Publish world: readers find exactly the entries it named, and every choice is as it was.
+    await page.getByTestId('publish').click()
+    await page.getByTestId('confirm-publish').click()
+    await expect(page.getByTestId('publication-status')).toContainText('Public')
+    const slug = (await api<{ publicSlug: string }>(
+      page,
+      'GET',
+      `/api/universes/${universe.id}/publication`,
+    ))!.publicSlug
+    expect(await listed(anonymous, slug, 'lore')).toEqual(['Ash Warden', 'Brine Oracle'])
+    expect(await selections()).toEqual([1, 1, 0])
   })
 
   test('another account can neither read nor change what an owner publishes', async ({

@@ -133,11 +133,16 @@ export interface PublicationState {
    */
   originalCreator: string | null
   originalWork: string | null
-  /**
-   * Live lore entries already selected for publication (Issue #47). Readers see them as soon as the universe is public,
-   * and a private universe's entry pages do not show that choice, so the publish confirmation says how many there are.
-   */
-  selectedLore: number
+}
+
+/**
+ * The lore entries publishing a universe would make public, read fresh for its owner's confirmation (Issue #47): a private
+ * universe's entry pages do not show that choice, so this is where the owner reviews it. `items` are by name, at most 100;
+ * `totalCount` counts them all.
+ */
+export interface SelectedLore {
+  totalCount: number
+  items: { id: string; name: string; typeName: string }[]
 }
 
 export interface PublicationDetails {

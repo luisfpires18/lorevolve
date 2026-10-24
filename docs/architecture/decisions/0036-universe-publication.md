@@ -90,9 +90,13 @@ Public portal section in Settings; the public page does not yet know its viewer 
   offers "Restore as private" there.
 - **No stored selection is rewritten.** Entries selected earlier stay selected, and `PublicationRules.PublicLore` still
   hides them until the universe is public.
-- **Publishing says what comes with it.** `PublicationState.SelectedLore` counts live entries with `Visibility =
-  Public` (one `COUNT`); the publish confirmation names that number when it is above zero, since the pill that would have
-  shown them is gone. Making an entry private again stays on its page once the world is public.
+- **Publishing names what comes with it.** `PublicationRules.SelectedLore` is the entry half of `PublicLore` (selected,
+  out of the Trash, with address and date); `PublicLore` is now that predicate inside a public universe, the same rule as
+  before. `GET /api/universes/{id}/publication/selected-lore` (owner only, `Publish` capability: a member 403, anyone else
+  404) answers `{ totalCount, items: [{ id, name, typeName }] }`, by name, at most 100 named. The publish confirmation reads
+  it fresh with the publication state and lists each entry with its type, says "and N more" past 100, and says plainly when
+  none is selected. It reads only: neither answer to the confirmation changes a selection. Making an entry private again
+  stays on its page once the world is public.
 
 ## Amendment (2026-10-05, fix/universe-artwork-loading) - the artwork's card arrives with the universe
 
