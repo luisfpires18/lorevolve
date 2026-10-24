@@ -25,7 +25,7 @@ public sealed class SceneManuscriptBackupTests(LorexApiFactory factory) : IClass
         var world = await BuildManuscripts(client, universe.Id);
 
         var backup = await Backup(client, universe.Id);
-        Assert.Equal(26, backup.FormatVersion);
+        Assert.Equal(27, backup.FormatVersion);
         Assert.Equal(UniverseBackup.CurrentVersion, backup.FormatVersion);
 
         var scenes = Assert.Single(backup.Payload.Stories!).Scenes.ToDictionary(scene => scene.Id);

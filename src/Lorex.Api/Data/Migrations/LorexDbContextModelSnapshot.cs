@@ -1355,6 +1355,206 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("ProfileImages", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEra", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("EndDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("EndEraId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("EndMonth")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("EndMonthId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("EndYear")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("StartDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("StartEraId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("StartMonth")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("StartMonthId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("StartYear")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EndEraId");
+
+                    b.HasIndex("EndMonthId");
+
+                    b.HasIndex("StartEraId");
+
+                    b.HasIndex("StartMonthId");
+
+                    b.HasIndex("EntityId", "SortOrder");
+
+                    b.ToTable("EntityEras", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEraFieldValue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool?>("BooleanValue")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("DateValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityEraId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("EraId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FieldDefinitionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCleared")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("NumberValue")
+                        .HasColumnType("REAL");
+
+                    b.Property<Guid?>("OptionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ReferencedEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TextValue")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EraId");
+
+                    b.HasIndex("FieldDefinitionId");
+
+                    b.HasIndex("OptionId");
+
+                    b.HasIndex("ReferencedEntityId");
+
+                    b.HasIndex("EntityEraId", "FieldDefinitionId");
+
+                    b.ToTable("EntityEraFieldValues", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEraScene", b =>
+                {
+                    b.Property<Guid>("EntityEraId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SceneId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("EntityEraId", "SceneId");
+
+                    b.HasIndex("SceneId");
+
+                    b.ToTable("EntityEraScenes", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEraStory", b =>
+                {
+                    b.Property<Guid>("EntityEraId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("StoryId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("EntityEraId", "StoryId");
+
+                    b.HasIndex("StoryId");
+
+                    b.ToTable("EntityEraStories", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityProgression", b =>
+                {
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("EntityId");
+
+                    b.ToTable("EntityProgressions", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityProgressionRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActorUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("RestoredFromRevisionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Snapshot")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("EntityProgressionRevisions", (string)null);
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Publishing.UniverseArtwork", b =>
                 {
                     b.Property<Guid>("UniverseId")
@@ -3241,6 +3441,145 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEra", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Chronology.ChronologyEra", "EndEra")
+                        .WithMany()
+                        .HasForeignKey("EndEraId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Lorex.Api.Features.Chronology.ChronologyCalendarMonth", "EndCalendarMonth")
+                        .WithMany()
+                        .HasForeignKey("EndMonthId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
+                        .WithMany()
+                        .HasForeignKey("EntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Chronology.ChronologyEra", "StartEra")
+                        .WithMany()
+                        .HasForeignKey("StartEraId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Lorex.Api.Features.Chronology.ChronologyCalendarMonth", "StartCalendarMonth")
+                        .WithMany()
+                        .HasForeignKey("StartMonthId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("EndCalendarMonth");
+
+                    b.Navigation("EndEra");
+
+                    b.Navigation("Entity");
+
+                    b.Navigation("StartCalendarMonth");
+
+                    b.Navigation("StartEra");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEraFieldValue", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Progression.EntityEra", "EntityEra")
+                        .WithMany("FieldValues")
+                        .HasForeignKey("EntityEraId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Chronology.ChronologyEra", "Era")
+                        .WithMany()
+                        .HasForeignKey("EraId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Lorex.Api.Features.Lore.EntityFieldDefinition", "FieldDefinition")
+                        .WithMany()
+                        .HasForeignKey("FieldDefinitionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Lore.EntityFieldOption", "Option")
+                        .WithMany()
+                        .HasForeignKey("OptionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "ReferencedEntity")
+                        .WithMany()
+                        .HasForeignKey("ReferencedEntityId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("EntityEra");
+
+                    b.Navigation("Era");
+
+                    b.Navigation("FieldDefinition");
+
+                    b.Navigation("Option");
+
+                    b.Navigation("ReferencedEntity");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEraScene", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Progression.EntityEra", "Era")
+                        .WithMany("Scenes")
+                        .HasForeignKey("EntityEraId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Stories.Scene", "Scene")
+                        .WithMany()
+                        .HasForeignKey("SceneId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Era");
+
+                    b.Navigation("Scene");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEraStory", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Progression.EntityEra", "Era")
+                        .WithMany("Stories")
+                        .HasForeignKey("EntityEraId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Stories.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Era");
+
+                    b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityProgression", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
+                        .WithOne()
+                        .HasForeignKey("Lorex.Api.Features.Progression.EntityProgression", "EntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Entity");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityProgressionRevision", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
+                        .WithMany()
+                        .HasForeignKey("EntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Entity");
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Publishing.UniverseArtwork", b =>
                 {
                     b.HasOne("Lorex.Api.Features.Universes.Universe", null)
@@ -3847,6 +4186,15 @@ namespace Lorex.Api.Data.Migrations
             modelBuilder.Entity("Lorex.Api.Features.Lore.Tag", b =>
                 {
                     b.Navigation("EntityTags");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEra", b =>
+                {
+                    b.Navigation("FieldValues");
+
+                    b.Navigation("Scenes");
+
+                    b.Navigation("Stories");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Stories.Chapter", b =>

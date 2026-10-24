@@ -157,6 +157,33 @@ public static class ChronologyCalendarEndpoints
                         .SetProperty(scene => scene.MonthId, (Guid?)null),
                     cancellationToken);
 
+            // An entry's era is dated the same way (Issue #41), the Trash included.
+            await db.EntityEras
+                .Where(era => era.Entity!.UniverseId == universeId && era.StartMonthId != null)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(
+                            era => era.StartMonth,
+                            era => db.ChronologyCalendarMonths
+                                .Where(month => month.Id == era.StartMonthId)
+                                .Select(month => (int?)(month.SortOrder + 1))
+                                .FirstOrDefault())
+                        .SetProperty(era => era.StartMonthId, (Guid?)null),
+                    cancellationToken);
+
+            await db.EntityEras
+                .Where(era => era.Entity!.UniverseId == universeId && era.EndMonthId != null)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(
+                            era => era.EndMonth,
+                            era => db.ChronologyCalendarMonths
+                                .Where(month => month.Id == era.EndMonthId)
+                                .Select(month => (int?)(month.SortOrder + 1))
+                                .FirstOrDefault())
+                        .SetProperty(era => era.EndMonthId, (Guid?)null),
+                    cancellationToken);
+
             await db.ChronologyCalendarMonths.Where(month => month.CalendarId == calendarId).ExecuteDeleteAsync(cancellationToken);
             await db.ChronologyCalendars.Where(calendar => calendar.Id == calendarId).ExecuteDeleteAsync(cancellationToken);
         }
@@ -263,6 +290,32 @@ public static class ChronologyCalendarEndpoints
                     .SetProperty(scene => scene.Month, (int?)null),
                 cancellationToken);
 
+        await db.EntityEras
+            .Where(era => era.Entity!.UniverseId == universeId && era.StartMonth != null)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(
+                        era => era.StartMonthId,
+                        era => db.ChronologyCalendarMonths
+                            .Where(month => month.CalendarId == calendarId && month.SortOrder + 1 == era.StartMonth)
+                            .Select(month => (Guid?)month.Id)
+                            .FirstOrDefault())
+                    .SetProperty(era => era.StartMonth, (int?)null),
+                cancellationToken);
+
+        await db.EntityEras
+            .Where(era => era.Entity!.UniverseId == universeId && era.EndMonth != null)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(
+                        era => era.EndMonthId,
+                        era => db.ChronologyCalendarMonths
+                            .Where(month => month.CalendarId == calendarId && month.SortOrder + 1 == era.EndMonth)
+                            .Select(month => (Guid?)month.Id)
+                            .FirstOrDefault())
+                    .SetProperty(era => era.EndMonth, (int?)null),
+                cancellationToken);
+
         return null;
     }
 
@@ -354,20 +407,46 @@ public static class ChronologyCalendarEndpoints
             })
             .ToListAsync(cancellationToken);
 
+        // An entry's era with a custom month at both ends is a span on the same line (Issue #41), read at the precision written.
+        var spans = await db.EntityEras.AsNoTracking()
+            .Where(era => era.Entity!.UniverseId == universeId && era.StartMonthId != null && era.EndMonthId != null)
+            .Select(era => new
+            {
+                Title = era.Name,
+                era.StartEraId,
+                era.StartYear,
+                era.StartMonthId,
+                era.StartDay,
+                era.EndEraId,
+                era.EndYear,
+                era.EndMonthId,
+                era.EndDay,
+            })
+            .ToListAsync(cancellationToken);
+
         var reversed = ranges
             .Where(range => reckoning.Point(range.StartEraId, range.StartYear, null, range.StartDay, range.StartMonthId) is { } start
                 && reckoning.Point(range.EndEraId, range.EndYear, null, range.EndDay, range.EndMonthId) is { } end
                 && end < start)
             .Select(range => range.Title)
-            .Order(StringComparer.Ordinal)
             .ToList();
+
+        var reversedSpans = spans
+            .Where(span => ChronologySpans.Lower(new ChronologyValue(span.StartEraId, span.StartYear, null, span.StartDay, span.StartMonthId), reckoning) is { } start
+                && ChronologySpans.Upper(new ChronologyValue(span.EndEraId, span.EndYear, null, span.EndDay, span.EndMonthId), reckoning) is { } end
+                && end < start)
+            .Select(span => span.Title)
+            .ToList();
+
+        var spansReversed = reversedSpans.Count > 0;
+        reversed = [.. reversed.Concat(reversedSpans).Order(StringComparer.Ordinal)];
 
         if (reversed.Count > 0)
         {
             var named = string.Join(", ", reversed.Take(5).Select(Quote)) + (reversed.Count > 5 ? $" and {reversed.Count - 5} more" : "");
             return Results.Problem(
                 title: "Ranges would end before they start",
-                detail: $"In this order, {Count(reversed.Count, "timeline range", "timeline ranges")} would end before "
+                detail: $"In this order, {(spansReversed ? Count(reversed.Count, "dated range", "dated ranges") : Count(reversed.Count, "timeline range", "timeline ranges"))} would end before "
                     + $"{(reversed.Count == 1 ? "it starts" : "they start")}: {named}. Change those dates first, or keep the months "
                     + "in their current order.",
                 statusCode: StatusCodes.Status409Conflict,
@@ -420,7 +499,8 @@ public static class ChronologyCalendarEndpoints
         int SortOrder,
         int DayCount,
         int UseCount,
-        int? MaxDayUsed);
+        int? MaxDayUsed,
+        int EntryEraCount = 0);
 
     /// <summary>
     /// The calendar's months in order, each with its use: one query however many months, the counts and latest days as
@@ -447,6 +527,9 @@ public static class ChronologyCalendarEndpoints
                 StartDay = db.TimelineEntries.Where(entry => entry.StartMonthId == month.Id).Max(entry => entry.StartDay),
                 EndDay = db.TimelineEntries.Where(entry => entry.EndMonthId == month.Id).Max(entry => entry.EndDay),
                 SceneDay = db.Scenes.Where(scene => scene.MonthId == month.Id).Max(scene => scene.Day),
+                EntryEras = db.EntityEras.Count(era => era.StartMonthId == month.Id || era.EndMonthId == month.Id),
+                EraStartDay = db.EntityEras.Where(era => era.StartMonthId == month.Id).Max(era => era.StartDay),
+                EraEndDay = db.EntityEras.Where(era => era.EndMonthId == month.Id).Max(era => era.EndDay),
             })
             .ToListAsync(cancellationToken);
 
@@ -459,8 +542,9 @@ public static class ChronologyCalendarEndpoints
                 row.Abbreviation,
                 row.SortOrder,
                 row.DayCount,
-                row.Moments + row.Scenes,
-                new[] { row.StartDay, row.EndDay, row.SceneDay }.Max())),
+                row.Moments + row.Scenes + row.EntryEras,
+                new[] { row.StartDay, row.EndDay, row.SceneDay, row.EraStartDay, row.EraEndDay }.Max(),
+                row.EntryEras)),
         ];
     }
 
@@ -488,8 +572,20 @@ public static class ChronologyCalendarEndpoints
             .Select(group => new { Month = group.Key, Day = group.Max(scene => scene.Day) ?? 0 })
             .ToListAsync(cancellationToken);
 
+        var eraStarts = await db.EntityEras.AsNoTracking()
+            .Where(era => era.Entity!.UniverseId == universeId && era.StartMonth != null)
+            .GroupBy(era => era.StartMonth!.Value)
+            .Select(group => new { Month = group.Key, Day = group.Max(era => era.StartDay) ?? 0 })
+            .ToListAsync(cancellationToken);
+
+        var eraEnds = await db.EntityEras.AsNoTracking()
+            .Where(era => era.Entity!.UniverseId == universeId && era.EndMonth != null)
+            .GroupBy(era => era.EndMonth!.Value)
+            .Select(group => new { Month = group.Key, Day = group.Max(era => era.EndDay) ?? 0 })
+            .ToListAsync(cancellationToken);
+
         var used = new Dictionary<int, int>();
-        foreach (var row in starts.Concat(ends).Concat(scenes))
+        foreach (var row in starts.Concat(ends).Concat(scenes).Concat(eraStarts).Concat(eraEnds))
         {
             used[row.Month] = Math.Max(used.GetValueOrDefault(row.Month), row.Day);
         }
@@ -517,7 +613,7 @@ public static class ChronologyCalendarEndpoints
     private static IResult MonthInUse(List<MonthUse> inUse) =>
         Results.Problem(
             title: inUse.Count == 1 ? "Month is in use" : "Months are in use",
-            detail: string.Join("; ", inUse.Select(month => $"{Quote(month.Name)} is still used by {Count(month.UseCount, "dated scene or timeline moment", "dated scenes or timeline moments")}"))
+            detail: string.Join("; ", inUse.Select(month => $"{Quote(month.Name)} is still used by {Uses(month)}"))
                 + ", counting anything in the Trash. Change those dates before removing it.",
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?>
@@ -525,6 +621,17 @@ public static class ChronologyCalendarEndpoints
                 ["code"] = MonthInUseCode,
                 ["monthIds"] = inUse.Select(month => month.Id).ToList(),
             });
+
+    /// <summary>What dates a month: scenes and moments as it always said, and entries' eras when any are (Issue #41).</summary>
+    private static string Uses(MonthUse month)
+    {
+        var others = month.UseCount - month.EntryEraCount;
+        var eras = Count(month.EntryEraCount, "era of an entry", "eras of entries");
+
+        return others == 0 ? eras
+            : month.EntryEraCount == 0 ? Count(others, "dated scene or timeline moment", "dated scenes or timeline moments")
+            : $"{Count(others, "dated scene or timeline moment", "dated scenes or timeline moments")} and {eras}";
+    }
 
     private static IResult Incompatible(string detail) =>
         Results.Problem(

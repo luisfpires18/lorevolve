@@ -54,8 +54,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0047 | An AI proposes changes; a person approves them in LoreX; only approved changes are applied, together, through each resource's own write path | [0047-staged-ai-changes.md](0047-staged-ai-changes.md) |
 | 0048 | Relationships and timeline moments get a Trash; AI proposals reach every creator-authored resource | [0048-ai-changes-content-coverage.md](0048-ai-changes-content-coverage.md) |
 | 0049 | One LoreX confirmation replaces the browser's confirm(); only beforeunload stays the browser's | [0049-shared-confirmation-dialog.md](0049-shared-confirmation-dialog.md) |
+| 0050 | An entry's progression is its own aggregate, and an era holds only what differs then (#41) | [0050-entry-progression-eras.md](0050-entry-progression-eras.md) |
 
-All accepted. Next number: `0049`.
+All accepted. Next number: `0051`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

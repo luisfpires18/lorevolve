@@ -462,3 +462,12 @@ field active, even when it carries the member.
 Pending AI Changes are not in a backup and are never restored: proposals and their changes are review state about
 accounts and connections, like comments and suggestions. A restored universe starts with none, so nothing approvable
 travels into another universe. The format is unchanged.
+
+## Amendment: version 27, an entry's eras (2026-10-24, Issue #41, ADR 0050)
+
+`BackupEntity.Progression` carries an entry's eras in the author's order - name, description, a span on the file's
+chronology, the stories and scenes of the file it covers, and every override row, archived fields' included - with every
+saved version of them as the snapshot the save stored. Not ignorable: the eras are authored, so a version 26 reader would
+restore every entry without them. A restore gives every era a new id and translates every id inside the snapshots, an id
+only a version recorded getting a fresh one of its own. A version 26 or older file restores every entry with no eras, even
+when it carries the member.

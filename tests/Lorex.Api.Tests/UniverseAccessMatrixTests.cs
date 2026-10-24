@@ -4,6 +4,7 @@ using Lorex.Api.Features.Assistant;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Comments;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Publishing;
 using Lorex.Api.Features.Relationships;
 using Lorex.Api.Features.RuleValidation;
@@ -116,6 +117,12 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("article history", Get, $"{e}/article/revisions", May.Edit),
             new("article version", Get, $"{e}/article/revisions/{w.ArticleRevision}", May.Edit),
             new("restore article version", Post, $"{e}/article/revisions/{w.ArticleRevision}/restore", May.Edit, Json(new EntityArticleRestoreRequest(null))),
+
+            new("progression", Get, $"{e}/progression", May.Read),
+            new("save progression", Put, $"{e}/progression", May.Edit, Json(new ProgressionRequest([], 0))),
+            new("progression history", Get, $"{e}/progression/revisions", May.Edit),
+            new("progression version", Get, $"{e}/progression/revisions/{w.ProgressionRevision}", May.Edit),
+            new("restore progression version", Post, $"{e}/progression/revisions/{w.ProgressionRevision}/restore", May.Edit, Json(new ProgressionRestoreRequest(1))),
 
             new("entry history", Get, $"{e}/revisions", May.Edit),
             new("entry version", Get, $"{e}/revisions/{w.EntryRevision}", May.Edit),

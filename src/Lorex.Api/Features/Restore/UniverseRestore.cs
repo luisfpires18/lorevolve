@@ -8,6 +8,7 @@ using Lorex.Api.Features.WorldRules;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.RuleValidation;
 using Lorex.Api.Features.Media;
+using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Storage;
 using Lorex.Api.Features.Publishing;
 using Lorex.Api.Features.Relationships;
@@ -117,6 +118,16 @@ internal sealed class RestoreIdentity
             }
 
             foreach (var revision in entity.ArticleRevisions!)
+            {
+                yield return revision.Id;
+            }
+
+            foreach (var era in entity.Progression?.Eras ?? [])
+            {
+                yield return era.Id;
+            }
+
+            foreach (var revision in entity.Progression?.Revisions ?? [])
             {
                 yield return revision.Id;
             }
@@ -882,6 +893,118 @@ internal sealed partial class UniverseRestore(
                 });
             }
         }
+
+        if (entity.Progression is { } progression)
+        {
+            AddProgression(entityId, progression, ids);
+        }
+    }
+
+    /// <summary>
+    /// An entry's eras (Issue #41) with their links and overrides, by the new ids, and its saved versions with every id inside
+    /// them translated the same way - an era the history names but no longer has gets a fresh id of its own, as any id a version
+    /// merely recorded does - and re-sorted, since the order they were stored in was by id.
+    /// </summary>
+    private void AddProgression(Guid entityId, BackupProgression progression, RestoreIdentity ids)
+    {
+        db.EntityProgressions.Add(new EntityProgression { EntityId = entityId, UpdatedAt = progression.UpdatedAt, Version = 1 });
+
+        foreach (var era in progression.Eras)
+        {
+            var eraId = ids.Map(era.Id);
+
+            db.EntityEras.Add(new EntityEra
+            {
+                Id = eraId,
+                EntityId = entityId,
+                Name = era.Name.Trim(),
+                Description = era.Description,
+                SortOrder = era.SortOrder,
+                StartEraId = ids.Map(era.Start?.EraId),
+                StartYear = era.Start?.Year,
+                StartMonth = era.Start?.Month,
+                StartMonthId = ids.Map(era.Start?.MonthId),
+                StartDay = era.Start?.Day,
+                EndEraId = ids.Map(era.End?.EraId),
+                EndYear = era.End?.Year,
+                EndMonth = era.End?.Month,
+                EndMonthId = ids.Map(era.End?.MonthId),
+                EndDay = era.End?.Day,
+            });
+
+            foreach (var story in era.StoryIds.Distinct())
+            {
+                db.EntityEraStories.Add(new EntityEraStory { EntityEraId = eraId, StoryId = ids.Map(story) });
+            }
+
+            foreach (var scene in era.SceneIds.Distinct())
+            {
+                db.EntityEraScenes.Add(new EntityEraScene { EntityEraId = eraId, SceneId = ids.Map(scene) });
+            }
+
+            foreach (var value in era.FieldValues)
+            {
+                db.EntityEraFieldValues.Add(new EntityEraFieldValue
+                {
+                    Id = Guid.NewGuid(),
+                    EntityEraId = eraId,
+                    FieldDefinitionId = ids.Map(value.FieldDefinitionId),
+                    IsCleared = value.IsCleared,
+                    TextValue = value.TextValue,
+                    NumberValue = value.NumberValue,
+                    EraId = ids.Map(value.EraId),
+                    BooleanValue = value.BooleanValue,
+                    DateValue = value.DateValue,
+                    OptionId = ids.Map(value.OptionId),
+                    ReferencedEntityId = ids.Map(value.ReferencedEntityId),
+                });
+            }
+        }
+
+        foreach (var revision in progression.Revisions)
+        {
+            db.EntityProgressionRevisions.Add(new EntityProgressionRevision
+            {
+                Id = ids.Map(revision.Id),
+                EntityId = entityId,
+                Number = revision.Number,
+                Kind = revision.Kind,
+                RestoredFromRevisionId = ids.Translate(revision.RestoredFromRevisionId),
+                CreatedAt = revision.CreatedAt,
+                Snapshot = ProgressionState.Serialize(Translated(revision.Snapshot, ids)),
+            });
+        }
+    }
+
+    private static ProgressionSnapshot Translated(ProgressionSnapshot snapshot, RestoreIdentity ids)
+    {
+        ChronologyValue? Point(ChronologyValue? point) =>
+            point is null ? null : point with { EraId = ids.Translate(point.EraId), MonthId = ids.Translate(point.MonthId) };
+
+        List<Guid> Sorted(IEnumerable<Guid>? list) => [.. (list ?? []).Select(id => ids.Translate(id)).Order()];
+
+        return new ProgressionSnapshot([
+            .. (snapshot.Eras ?? []).Select(era => era with
+            {
+                Id = ids.Translate(era.Id),
+                Start = Point(era.Start),
+                End = Point(era.End),
+                StoryIds = Sorted(era.StoryIds),
+                SceneIds = Sorted(era.SceneIds),
+                Fields =
+                [
+                    .. (era.Fields ?? [])
+                        .Select(field => field with
+                        {
+                            FieldDefinitionId = ids.Translate(field.FieldDefinitionId),
+                            OptionIds = field.OptionIds is null ? null : Sorted(field.OptionIds),
+                            ReferencedEntityId = ids.Translate(field.ReferencedEntityId),
+                            EraId = ids.Translate(field.EraId),
+                        })
+                        .OrderBy(field => field.FieldDefinitionId),
+                ],
+            }),
+        ]);
     }
 
     private void AddStories(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId)

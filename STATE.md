@@ -108,6 +108,20 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `beforeunload` and the article link `alert` kept. E2E helpers `support/confirm.ts`; new `confirm-dialog.spec.ts` 3.
   Playwright on fresh DBs: 37 migrated specs 219 (215, + 4 green alone: 3 `EADDRINUSE`, 1 timeout); 27 neighbouring
   specs 177 (175, + 2 green alone). Full suite delegated to CI.
+- **Issue #30 - Evolving Lore Profiles** (pre-alpha parent; five subtasks on stacked branches, each cut from its
+  predecessor's tip; committed, not merged, not pushed). Owner decisions 2026-10-24: era value = its override else the
+  main profile, never another era's; optional fields may be "None in this era", required never; real-world relation
+  dates kept but no longer offered; one link holds many periods; periods anchor to dates or an entry era; availability is
+  explicit per era; forms carry no field overrides; one Appearance record for outfits and looks; a fourth "Eras" view.
+  - **#41 Era / Arc States** (`feat/lore-era-states` off `dev` at `a6ff4db`). Migration `AddEntityProgression`, backup 27.
+    ADR 0050 (new); 0014, 0022, 0043 amendments. Progression is its own aggregate on `.../entities/{id}/progression`
+    (own version, JSON-snapshot history, restore refused unless exact). Eras: ordered, stable ids, optional span on the
+    universe's chronology, stories and scenes, field overrides or cleared. Every field protection, retype, date period
+    removal and calendar conversion counts them. UI: Eras view with `?era=`, era drawer, Era history. Public unchanged.
+    Independent review (12 findings) fixed: overrides the form does not show are kept; blank "Set" refused; era history
+    blocks field delete/kind change/option removal; backup refuses required-cleared, valueless and reversed spans.
+    Tests: API 1807 passed / 6 skipped (`EntityProgressionTests` 24; matrix +5 routes); Playwright `entry-eras.spec.ts` 3;
+    neighbouring specs green (view count now 4 in entry-views and mobile; restore version 27).
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);

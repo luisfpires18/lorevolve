@@ -171,7 +171,7 @@ public static class ChronologyEndpoints
         return Results.Ok(await DescribeAsync(db, universeId, cancellationToken));
     }
 
-    private sealed record EraUse(Guid Id, string Name, int MomentCount, int YearCount, int SceneCount);
+    private sealed record EraUse(Guid Id, string Name, int MomentCount, int YearCount, int SceneCount, int EntryEraCount);
 
     /// <summary>Of the eras about to be removed, the ones something is still dated in.</summary>
     private static async Task<List<EraUse>> InUseAsync(
@@ -204,6 +204,18 @@ public static class ChronologyEndpoints
             .Select(scene => scene.EraId!.Value)
             .ToListAsync(cancellationToken);
 
+        // An entry's era is dated on the same line, and its overrides may hold a year in a date period (Issue #41).
+        var entryEras = await db.EntityEras.AsNoTracking()
+            .Where(era => (era.StartEraId != null && ids.Contains(era.StartEraId.Value))
+                || (era.EndEraId != null && ids.Contains(era.EndEraId.Value)))
+            .Select(era => new { era.StartEraId, era.EndEraId })
+            .ToListAsync(cancellationToken);
+
+        var overrideYears = await db.EntityEraFieldValues.AsNoTracking()
+            .Where(value => value.EraId != null && ids.Contains(value.EraId.Value))
+            .Select(value => value.EraId!.Value)
+            .ToListAsync(cancellationToken);
+
         return
         [
             .. removed
@@ -212,9 +224,10 @@ public static class ChronologyEndpoints
                     era.Id,
                     era.Name,
                     moments.Count(moment => moment.StartEraId == era.Id || moment.EndEraId == era.Id),
-                    years.Count(id => id == era.Id),
-                    scenes.Count(id => id == era.Id)))
-                .Where(use => use.MomentCount > 0 || use.YearCount > 0 || use.SceneCount > 0),
+                    years.Count(id => id == era.Id) + overrideYears.Count(id => id == era.Id),
+                    scenes.Count(id => id == era.Id),
+                    entryEras.Count(entryEra => entryEra.StartEraId == era.Id || entryEra.EndEraId == era.Id)))
+                .Where(use => use.MomentCount > 0 || use.YearCount > 0 || use.SceneCount > 0 || use.EntryEraCount > 0),
         ];
     }
 
@@ -242,6 +255,11 @@ public static class ChronologyEndpoints
             if (use.SceneCount > 0)
             {
                 parts.Add(use.SceneCount == 1 ? "1 scene" : $"{use.SceneCount} scenes");
+            }
+
+            if (use.EntryEraCount > 0)
+            {
+                parts.Add(use.EntryEraCount == 1 ? "1 era of an entry" : $"{use.EntryEraCount} eras of entries");
             }
 
             return $"\"{use.Name}\" still dates {string.Join(" and ", parts)}";
@@ -275,8 +293,9 @@ public static class ChronologyEndpoints
                 era.Direction,
                 era.LabelPosition,
                 db.TimelineEntries.Count(entry => entry.StartEraId == era.Id || entry.EndEraId == era.Id),
-                db.EntityFieldValues.Count(value => value.EraId == era.Id),
-                db.Scenes.Count(scene => scene.EraId == era.Id)))
+                db.EntityFieldValues.Count(value => value.EraId == era.Id) + db.EntityEraFieldValues.Count(value => value.EraId == era.Id),
+                db.Scenes.Count(scene => scene.EraId == era.Id),
+                db.EntityEras.Count(entryEra => entryEra.StartEraId == era.Id || entryEra.EndEraId == era.Id)))
             .ToListAsync(cancellationToken);
 
         var unplacedMoments = await db.TimelineEntries.AsNoTracking()

@@ -183,6 +183,15 @@ function Root() {
                 )}
               />
               <Route
+                path="lore/:entityId/progression"
+                element={asSection(
+                  'entry',
+                  <RoleGate>
+                    <EntityPage view="progression" />
+                  </RoleGate>,
+                )}
+              />
+              <Route
                 path="lore/:entityId/relations"
                 element={asSection(
                   'entry',

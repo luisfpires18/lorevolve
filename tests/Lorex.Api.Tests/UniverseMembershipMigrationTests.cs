@@ -128,8 +128,8 @@ public sealed class UniverseMembershipMigrationTests : IDisposable
             (await owner.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-membermigrate", Password))).EnsureSuccessStatusCode();
             var detail = (await owner.GetFromJsonAsync<UniverseDetail>($"/api/universes/{universeId}"))!;
             Assert.Equal(UniverseRole.Owner, detail.AccessRole);
-            Assert.Equal(26, (await PlotTestClient.Backup(owner, universeId)).FormatVersion);
-            Assert.Equal(26, UniverseBackup.CurrentVersion);
+            Assert.Equal(27, (await PlotTestClient.Backup(owner, universeId)).FormatVersion);
+            Assert.Equal(27, UniverseBackup.CurrentVersion);
 
             var member = host.CreateHttpsClient();
             (await member.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-membermigrate2", Password))).EnsureSuccessStatusCode();

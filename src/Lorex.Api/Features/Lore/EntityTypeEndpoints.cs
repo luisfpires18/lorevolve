@@ -77,6 +77,9 @@ public static class EntityTypeEndpoints
     /// <summary>The marker on the 409 for changing the kind of a field that holds values now or in an older version.</summary>
     public const string KindLockedCode = "entity_field_kind_locked";
 
+    /// <summary>The 409 for making a field required while an entry's era leaves it empty (Issue #41).</summary>
+    public const string RequiredClearedCode = "entity_field_required_cleared";
+
     /// <summary>The marker on the 409 for a field edit made over a version that is no longer current (ADR 0043).</summary>
     public const string FieldChangedCode = "entity_field_changed";
 
@@ -779,9 +782,9 @@ public static class EntityTypeEndpoints
             return Results.ValidationProblem(errors);
         }
 
-        var hasValues = await db.EntityFieldValues.AnyAsync(
-            value => value.FieldDefinitionId == fieldId,
-            cancellationToken);
+        // An era's override is a value of the field too (Issue #41).
+        var hasValues = await db.EntityFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken)
+            || await db.EntityEraFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken);
 
         // Changing the kind would reinterpret every stored value, so it is refused while
         // any exist. Renaming and reordering stay safe. An older version's values count too: restoring
@@ -799,7 +802,8 @@ public static class EntityTypeEndpoints
                     extensions: new Dictionary<string, object?> { ["code"] = KindLockedCode });
             }
 
-            if (await db.EntityRevisionFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken))
+            if (await db.EntityRevisionFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken)
+                || await InProgressionHistoryAsync(db, fieldId, cancellationToken))
             {
                 return Results.Problem(
                     title: "Field is in older versions",
@@ -851,6 +855,18 @@ public static class EntityTypeEndpoints
             return RequiredMissing(definition.Name, await TypeNameAsync(db, typeId, cancellationToken), missing, restoring: false);
         }
 
+        // An era may leave an optional field empty; a required one it may not (Issue #41), so the author changes those first.
+        if (request.IsRequired && !definition.IsRequired
+            && await db.EntityEraFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId && value.IsCleared, cancellationToken))
+        {
+            return Results.Problem(
+                title: "Field can't be required yet",
+                detail: $"Some entries' eras leave {definition.Name} empty, so it can't be required. "
+                    + "Give it a value in those eras, or let them inherit it, first.",
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = RequiredClearedCode });
+        }
+
         definition.Name = name;
         definition.TargetEntityTypeId = request.TargetEntityTypeId;
         definition.TargetGroupId = request.TargetGroupId;
@@ -878,9 +894,8 @@ public static class EntityTypeEndpoints
                     continue;
                 }
 
-                var optionInUse = await db.EntityFieldValues.AnyAsync(
-                    value => value.OptionId == option.Id,
-                    cancellationToken);
+                var optionInUse = await db.EntityFieldValues.AnyAsync(value => value.OptionId == option.Id, cancellationToken)
+                    || await db.EntityEraFieldValues.AnyAsync(value => value.OptionId == option.Id, cancellationToken);
 
                 if (optionInUse)
                 {
@@ -892,7 +907,8 @@ public static class EntityTypeEndpoints
                 }
 
                 // An older version that chose it could no longer be restored as it was written, so the choice stays.
-                if (await db.EntityRevisionFieldValues.AnyAsync(value => value.OptionId == option.Id, cancellationToken))
+                if (await db.EntityRevisionFieldValues.AnyAsync(value => value.OptionId == option.Id, cancellationToken)
+                    || await InProgressionHistoryAsync(db, option.Id, cancellationToken))
                 {
                     return Results.Problem(
                         title: "Option is in an older version",
@@ -995,11 +1011,16 @@ public static class EntityTypeEndpoints
             return Results.NotFound();
         }
 
-        var holders = await db.EntityFieldValues.AsNoTracking()
+        // An entry holds the field when it has a value for it or one of its eras overrides it (Issue #41).
+        var holders = (await db.EntityFieldValues.AsNoTracking()
             .Where(value => value.FieldDefinitionId == fieldId)
             .Select(value => new { value.EntityId, Trashed = value.Entity!.DeletedAt != null })
+            .Concat(db.EntityEraFieldValues.AsNoTracking()
+                .Where(value => value.FieldDefinitionId == fieldId)
+                .Select(value => new { value.EntityEra!.EntityId, Trashed = value.EntityEra.Entity!.DeletedAt != null }))
+            .ToListAsync(cancellationToken))
             .Distinct()
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         if (holders.Count > 0)
         {
@@ -1019,6 +1040,7 @@ public static class EntityTypeEndpoints
         var historic = await db.EntityRevisionFieldValues.AsNoTracking()
             .Where(value => value.FieldDefinitionId == fieldId)
             .Select(value => value.Revision!.EntityId)
+            .Union(ProgressionHistory(db, fieldId).Select(revision => revision.EntityId))
             .Distinct()
             .CountAsync(cancellationToken);
 
@@ -1041,6 +1063,20 @@ public static class EntityTypeEndpoints
 
         return Results.NoContent();
     }
+
+    /// <summary>
+    /// The saved versions of entries' eras (Issue #41) that name this field or choice. A version is the save's JSON, where an id
+    /// is written as Guid's own lowercase text, so a text search finds it; only field deletes, kind changes and option removals
+    /// ask, and they are rare. ponytail: a scan of every era version; an index of the ids a version names if that ever shows.
+    /// </summary>
+    private static IQueryable<Progression.EntityProgressionRevision> ProgressionHistory(LorexDbContext db, Guid id)
+    {
+        var text = id.ToString();
+        return db.EntityProgressionRevisions.AsNoTracking().Where(revision => revision.Snapshot.Contains(text));
+    }
+
+    private static Task<bool> InProgressionHistoryAsync(LorexDbContext db, Guid id, CancellationToken cancellationToken) =>
+        ProgressionHistory(db, id).AnyAsync(cancellationToken);
 
     /// <summary>Why a field older versions recorded cannot be deleted. Mirrored by the Types screen, which has no count.</summary>
     internal static string FieldInHistoryDetail(int entries) =>
@@ -1194,10 +1230,18 @@ public static class EntityTypeEndpoints
     /// archived does not carry it, and saving that form after the restore would otherwise remove the values the restore
     /// brought back. Entries with no value for the field have nothing such a save could lose.
     /// </summary>
-    private static Task<int> InvalidateOpenFormsAsync(LorexDbContext db, Guid fieldId, CancellationToken cancellationToken) =>
-        db.Entities
+    private static async Task InvalidateOpenFormsAsync(LorexDbContext db, Guid fieldId, CancellationToken cancellationToken)
+    {
+        await db.Entities
             .Where(entity => entity.FieldValues.Any(value => value.FieldDefinitionId == fieldId))
             .ExecuteUpdateAsync(setters => setters.SetProperty(entity => entity.Version, entity => entity.Version + 1), cancellationToken);
+
+        // The same for a progression whose eras override the field (Issue #41): its form shows those overrides, or did not.
+        await db.EntityProgressions
+            .Where(progression => db.EntityEraFieldValues.Any(value =>
+                value.FieldDefinitionId == fieldId && value.EntityEra!.EntityId == progression.EntityId))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(progression => progression.Version, progression => progression.Version + 1), cancellationToken);
+    }
 
     /// <summary>How many live entries of the type have no value for the field: what making it required would leave invalid.</summary>
     private static Task<int> MissingRequiredAsync(LorexDbContext db, Guid typeId, Guid fieldId, CancellationToken cancellationToken) =>
@@ -1242,11 +1286,16 @@ public static class EntityTypeEndpoints
         CancellationToken cancellationToken)
     {
         if (targetType is { } type
-            && await db.EntityFieldValues.AnyAsync(
-                value => value.FieldDefinitionId == fieldId
-                    && value.ReferencedEntityId != null
-                    && value.ReferencedEntity!.EntityTypeId != type,
-                cancellationToken))
+            && (await db.EntityFieldValues.AnyAsync(
+                    value => value.FieldDefinitionId == fieldId
+                        && value.ReferencedEntityId != null
+                        && value.ReferencedEntity!.EntityTypeId != type,
+                    cancellationToken)
+                || await db.EntityEraFieldValues.AnyAsync(
+                    value => value.FieldDefinitionId == fieldId
+                        && value.ReferencedEntityId != null
+                        && value.ReferencedEntity!.EntityTypeId != type,
+                    cancellationToken)))
         {
             return Results.Problem(
                 title: "Field is in use",
@@ -1257,12 +1306,18 @@ public static class EntityTypeEndpoints
         }
 
         if (targetGroup is { } group
-            && await db.EntityFieldValues.AnyAsync(
-                value => value.FieldDefinitionId == fieldId
-                    && value.ReferencedEntityId != null
-                    && !db.EntityTypeGroupMembers.Any(member =>
-                        member.EntityTypeGroupId == group && member.EntityTypeId == value.ReferencedEntity!.EntityTypeId),
-                cancellationToken))
+            && (await db.EntityFieldValues.AnyAsync(
+                    value => value.FieldDefinitionId == fieldId
+                        && value.ReferencedEntityId != null
+                        && !db.EntityTypeGroupMembers.Any(member =>
+                            member.EntityTypeGroupId == group && member.EntityTypeId == value.ReferencedEntity!.EntityTypeId),
+                    cancellationToken)
+                || await db.EntityEraFieldValues.AnyAsync(
+                    value => value.FieldDefinitionId == fieldId
+                        && value.ReferencedEntityId != null
+                        && !db.EntityTypeGroupMembers.Any(member =>
+                            member.EntityTypeGroupId == group && member.EntityTypeId == value.ReferencedEntity!.EntityTypeId),
+                    cancellationToken)))
         {
             return Results.Problem(
                 title: "Field is in use",
@@ -1339,10 +1394,26 @@ public static class EntityTypeEndpoints
             field.TargetEntityTypeId,
             field.TargetGroupId,
             field.ArchivedAt,
-            field.Values.Select(value => value.EntityId).Distinct().Count(),
-            field.Values.Where(value => value.Entity!.DeletedAt != null).Select(value => value.EntityId).Distinct().Count(),
+            // An entry holds the field through its own value or an era's override of it (Issue #41): its own values' holders,
+            // plus the entries holding only an override - both read through the field's index, as before.
+            field.Values.Select(value => value.EntityId).Distinct().Count()
+                + db.EntityEraFieldValues
+                    .Where(value => value.FieldDefinitionId == field.Id
+                        && !db.EntityFieldValues.Any(own => own.FieldDefinitionId == field.Id && own.EntityId == value.EntityEra!.EntityId))
+                    .Select(value => value.EntityEra!.EntityId)
+                    .Distinct()
+                    .Count(),
+            field.Values.Where(value => value.Entity!.DeletedAt != null).Select(value => value.EntityId).Distinct().Count()
+                + db.EntityEraFieldValues
+                    .Where(value => value.FieldDefinitionId == field.Id
+                        && value.EntityEra!.Entity!.DeletedAt != null
+                        && !db.EntityFieldValues.Any(own => own.FieldDefinitionId == field.Id && own.EntityId == value.EntityEra.EntityId))
+                    .Select(value => value.EntityEra!.EntityId)
+                    .Distinct()
+                    .Count(),
             db.EntityRevisionFieldValues.Any(value => value.FieldDefinitionId == field.Id),
             field.Version);
+
 
     internal static async Task<List<EntityTypeResponse>> LoadTypesAsync(
         LorexDbContext db,

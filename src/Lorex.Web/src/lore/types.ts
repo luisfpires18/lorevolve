@@ -274,6 +274,8 @@ export interface EntityDetail extends EntitySummary {
   hasFamilyConnections: boolean
   /** What the entry form's save names as the version it was written over (ADR 0043). */
   version: number
+  /** It has eras (Issue #30), read on their own route. */
+  hasProgression: boolean
 }
 
 export interface EntityPage {

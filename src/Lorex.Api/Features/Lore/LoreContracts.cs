@@ -357,7 +357,8 @@ public sealed record SearchExcerptPart(string Text, bool IsMatch);
 /// <summary>
 /// An entry's structured lore. Its article is read on its own route (<see cref="EntityArticleResponse"/>).
 /// <paramref name="HasFamilyConnections"/> says a live link of a family kind touches it, so an entry recorded in a family
-/// before its type's eligibility existed still offers its tree (ADR 0040).
+/// before its type's eligibility existed still offers its tree (ADR 0040). <paramref name="HasProgression"/> says it has eras
+/// (Issue #30), which are read on their own route.
 /// </summary>
 public sealed record EntityDetail(
     Guid Id,
@@ -376,7 +377,8 @@ public sealed record EntityDetail(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     bool HasFamilyConnections,
-    int Version);
+    int Version,
+    bool HasProgression = false);
 
 public sealed record EntityPage(
     IReadOnlyList<EntitySummary> Items,

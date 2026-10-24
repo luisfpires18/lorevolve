@@ -86,7 +86,7 @@ public sealed class McpConnectionMigrationTests : IDisposable
     /// <summary>Everything that was there before: every table but the new ones (and the later type groups), with its row count.</summary>
     private static async Task<string> Fingerprint(LorexDbContext db)
     {
-        var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'OpenIddict%' AND name <> 'McpConnections' AND name NOT LIKE 'EntityTypeGroup%' AND name NOT LIKE 'AiChange%' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%SearchIndex%' AND name <> '__EFMigrationsHistory' ORDER BY name");
+        var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'OpenIddict%' AND name <> 'McpConnections' AND name NOT LIKE 'EntityTypeGroup%' AND name NOT LIKE 'AiChange%' AND name NOT LIKE 'EntityEra%' AND name NOT LIKE 'EntityProgression%' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%SearchIndex%' AND name <> '__EFMigrationsHistory' ORDER BY name");
         var parts = new List<string>();
         foreach (var table in tables)
         {

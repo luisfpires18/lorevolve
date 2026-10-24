@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Lorex.Api.Data;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Relationships;
 using Lorex.Api.Features.RuleValidation;
 using Lorex.Api.Features.Stories;
@@ -51,7 +52,8 @@ internal sealed record SharedWorld(
     Guid ManuscriptRevision,
     Guid Arc,
     Guid Beat,
-    Trashed Trash)
+    Trashed Trash,
+    Guid ProgressionRevision = default)
 {
     public HttpClient Client(Who who) => who switch
     {
@@ -110,6 +112,13 @@ internal static class CollaborationTestClient
 
         var image = await UploadImage(owner, u, entry);
 
+        // Eras saved once (Issue #41), so the entry's progression has a version to read and restore.
+        (await owner.PutAsJsonAsync(
+            $"/api/universes/{u}/entities/{entry}/progression",
+            new ProgressionRequest([new EraInput(null, "Youth", null, null, null, null, null, null)], 0))).EnsureSuccessStatusCode();
+        var progressionRevision = (await owner.GetFromJsonAsync<List<ProgressionRevisionSummary>>(
+            $"/api/universes/{u}/entities/{entry}/progression/revisions"))!.Single().Id;
+
         var kind = await PostJson<RelationshipTypeResponse>(
             owner, $"/api/universes/{u}/relationship-types", new RelationshipTypeRequest("Sworn to", null, true, null, null));
         var relationship = await PostJson<RelationshipDetail>(
@@ -135,7 +144,7 @@ internal static class CollaborationTestClient
         return new SharedWorld(
             factory, u, owner, editor, reviewer, viewer, outsider, ownerId, editorId, reviewerId, viewerId, outsiderId,
             character, entry, other, image, entryRevision, articleRevision, kind.Id, relationship.Id, moment.Id, rule.Id,
-            term.Id, story, chapter, scene, manuscriptRevision, arc.Id, beat.Id, trash);
+            term.Id, story, chapter, scene, manuscriptRevision, arc.Id, beat.Id, trash, progressionRevision);
     }
 
     /// <summary>A membership written straight to the database: the only way one is made until invitations exist.</summary>

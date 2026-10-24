@@ -189,7 +189,8 @@ test.describe('entry views', () => {
     // They are links in a labelled navigation, not a tablist: each one is somewhere to go.
     const views = page.getByTestId('entry-views')
     await expect(views).toHaveAttribute('aria-label', 'Entry views')
-    await expect(views.getByRole('link')).toHaveCount(3)
+    // Article, Eras (Issue #41: offered to an editor before the entry has any), Relations, History.
+    await expect(views.getByRole('link')).toHaveCount(4)
     await expect(page.getByTestId('entry-view-article')).toHaveAttribute('aria-current', 'page')
 
     // The default address is the article, and the article is only there.

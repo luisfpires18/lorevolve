@@ -117,12 +117,13 @@ test.describe('on a phone', () => {
       expect(target.height, `${testId} wrapped onto a second line`).toBeLessThan(60)
     }
 
-    // The entry's own views are three ordinary links, on one line, and the one being read says so.
+    // The entry's own views are four ordinary links - Article, Eras, Relations, History - on one line, and the one being
+    // read says so.
     const views = page.getByTestId('entry-views')
-    await expect(views.getByRole('link')).toHaveCount(3)
+    await expect(views.getByRole('link')).toHaveCount(4)
     await expect(page.getByTestId('entry-view-article')).toHaveAttribute('aria-current', 'page')
     const strip = (await views.boundingBox())!
-    expect(strip.height, 'the three views wrapped onto a second line').toBeLessThan(60)
+    expect(strip.height, 'the four views wrapped onto a second line').toBeLessThan(60)
 
     // Each of them is a place, reached and left the way any other page is.
     await page.getByTestId('entry-view-relations').click()
