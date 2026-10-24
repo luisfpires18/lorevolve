@@ -1575,7 +1575,9 @@ public static class EntityEndpoints
                     && relationship.RelationshipType!.FamilySemantic != RelationshipFamilySemantic.None
                     && ((relationship.SourceEntityId == candidate.Id && relationship.TargetEntity!.DeletedAt == null)
                         || (relationship.TargetEntityId == candidate.Id && relationship.SourceEntity!.DeletedAt == null))),
-                HasProgression = db.EntityEras.Any(era => era.EntityId == candidate.Id),
+                HasProgression = db.EntityEras.Any(era => era.EntityId == candidate.Id)
+                    || db.EntityForms.Any(form => form.EntityId == candidate.Id)
+                    || db.EntityAbilities.Any(ability => ability.EntityId == candidate.Id),
             })
             .FirstOrDefaultAsync(cancellationToken);
 

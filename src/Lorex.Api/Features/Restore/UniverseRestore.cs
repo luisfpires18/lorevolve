@@ -131,6 +131,16 @@ internal sealed class RestoreIdentity
             {
                 yield return revision.Id;
             }
+
+            foreach (var form in entity.Progression?.Forms ?? [])
+            {
+                yield return form.Id;
+            }
+
+            foreach (var ability in entity.Progression?.Abilities ?? [])
+            {
+                yield return ability.Id;
+            }
         }
 
         foreach (var type in payload.RelationshipTypes)
@@ -984,6 +994,63 @@ internal sealed partial class UniverseRestore(
             }
         }
 
+        foreach (var form in progression.Forms ?? [])
+        {
+            var formId = ids.Map(form.Id);
+            db.EntityForms.Add(new EntityForm
+            {
+                Id = formId,
+                EntityId = entityId,
+                Name = form.Name.Trim(),
+                Description = form.Description,
+                SortOrder = form.SortOrder,
+                UnlockEntityEraId = ids.Map(form.UnlockEraId),
+                UnlockSceneId = ids.Map(form.UnlockSceneId),
+                UnlockTimelineEntryId = ids.Map(form.UnlockMomentId),
+            });
+
+            foreach (var era in form.EraIds.Distinct())
+            {
+                db.EntityFormEras.Add(new EntityFormEra { EntityFormId = formId, EntityEraId = ids.Map(era) });
+            }
+
+            foreach (var scene in form.SceneIds.Distinct())
+            {
+                db.EntityFormScenes.Add(new EntityFormScene { EntityFormId = formId, SceneId = ids.Map(scene) });
+            }
+        }
+
+        foreach (var ability in progression.Abilities ?? [])
+        {
+            var abilityId = ids.Map(ability.Id);
+            db.EntityAbilities.Add(new EntityAbility
+            {
+                Id = abilityId,
+                EntityId = entityId,
+                Name = ability.Name.Trim(),
+                Description = ability.Description,
+                SortOrder = ability.SortOrder,
+                UnlockEntityEraId = ids.Map(ability.UnlockEraId),
+                UnlockSceneId = ids.Map(ability.UnlockSceneId),
+                UnlockTimelineEntryId = ids.Map(ability.UnlockMomentId),
+            });
+
+            foreach (var era in ability.EraIds.Distinct())
+            {
+                db.EntityAbilityEras.Add(new EntityAbilityEra { EntityAbilityId = abilityId, EntityEraId = ids.Map(era) });
+            }
+
+            foreach (var scene in ability.SceneIds.Distinct())
+            {
+                db.EntityAbilityScenes.Add(new EntityAbilityScene { EntityAbilityId = abilityId, SceneId = ids.Map(scene) });
+            }
+
+            foreach (var form in ability.FormIds.Distinct())
+            {
+                db.EntityAbilityForms.Add(new EntityAbilityForm { EntityAbilityId = abilityId, EntityFormId = ids.Map(form) });
+            }
+        }
+
         foreach (var revision in progression.Revisions)
         {
             db.EntityProgressionRevisions.Add(new EntityProgressionRevision
@@ -1006,8 +1073,11 @@ internal sealed partial class UniverseRestore(
 
         List<Guid> Sorted(IEnumerable<Guid>? list) => [.. (list ?? []).Select(id => ids.Translate(id)).Order()];
 
-        return new ProgressionSnapshot([
-            .. (snapshot.Eras ?? []).Select(era => era with
+        List<Guid>? Ids(IEnumerable<Guid>? list) => list is null ? null : Sorted(list);
+
+        return new ProgressionSnapshot(
+            [
+                .. (snapshot.Eras ?? []).Select(era => era with
             {
                 Id = ids.Translate(era.Id),
                 Start = Point(era.Start),
@@ -1027,7 +1097,30 @@ internal sealed partial class UniverseRestore(
                         .OrderBy(field => field.FieldDefinitionId),
                 ],
             }),
-        ]);
+            ],
+            snapshot.Forms is null ? null : [
+                .. snapshot.Forms.Select(form => form with
+                {
+                    Id = ids.Translate(form.Id),
+                    UnlockEraId = ids.Translate(form.UnlockEraId),
+                    UnlockSceneId = ids.Translate(form.UnlockSceneId),
+                    UnlockMomentId = ids.Translate(form.UnlockMomentId),
+                    EraIds = Ids(form.EraIds),
+                    SceneIds = Ids(form.SceneIds),
+                }),
+            ],
+            snapshot.Abilities is null ? null : [
+                .. snapshot.Abilities.Select(ability => ability with
+                {
+                    Id = ids.Translate(ability.Id),
+                    UnlockEraId = ids.Translate(ability.UnlockEraId),
+                    UnlockSceneId = ids.Translate(ability.UnlockSceneId),
+                    UnlockMomentId = ids.Translate(ability.UnlockMomentId),
+                    EraIds = Ids(ability.EraIds),
+                    SceneIds = Ids(ability.SceneIds),
+                    FormIds = Ids(ability.FormIds),
+                }),
+            ]);
     }
 
     private void AddStories(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId)

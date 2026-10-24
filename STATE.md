@@ -133,6 +133,17 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     says when nothing holds, moves focus; era choices show reading/failed states and stored eras; From/To grouped.
     Tests: API 1817 passed / 6 skipped (`RelationshipPeriodTests` 10); Playwright `relation-periods.spec.ts` 2, relationships
     spec moved to periods; neighbouring specs green.
+  - **#42 Transformations / Stages / Ability Unlocks** (`feat/lore-forms-abilities`, cut from the #18 tip). Migration
+    `AddEntityFormsAndAbilities`, backup 29. ADR 0052 (new); 0014, 0050 amendments. Forms and abilities live in the
+    progression (same route, version, history, restore). Each: name, description, first unlock (era / scene / moment, each
+    optional), available eras exactly as ticked, used-in scenes (never checked); abilities belong to 0..n forms. A form
+    overrides no field. Left-out lists kept but must still fit the eras/forms left; client strips refs on era/form removal.
+    UI: Forms and Abilities under the eras, drawer with "Tick X and every later era", era page "Forms/Abilities in this era"
+    with "First unlocked here". Independent review (1 high, 3 medium, 2 low) fixed: a version from before forms existed
+    restores without touching them (absent is not none); unmatched and description errors shown; backup refuses shared
+    form/ability places; scene picker is a fieldset; "Use the latest" resets the leave guard.
+    Tests: API 1822 passed / 6 skipped before review fixes (`EntityFormTests` 8 after); Playwright `entry-forms.spec.ts` 3;
+    entry-eras, relation-periods, entry-views green.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);

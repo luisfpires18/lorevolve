@@ -17,6 +17,12 @@ public static class ProgressionLimits
     public const int MaxStoriesPerEra = 50;
 
     public const int MaxScenesPerEra = 100;
+
+    /// <summary>The forms one entry may have (Issue #42).</summary>
+    public const int MaxForms = 50;
+
+    /// <summary>The abilities one entry may have (Issue #42).</summary>
+    public const int MaxAbilities = 100;
 }
 
 public sealed class EntityProgressionConfiguration : IEntityTypeConfiguration<EntityProgression>

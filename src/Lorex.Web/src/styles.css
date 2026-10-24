@@ -16502,6 +16502,115 @@ details.reviewsection > .reviewsection__list {
   font-weight: 600;
 }
 
+/* ---------- Entry: forms and abilities (Issue #42) ----------
+
+   Under the eras on the main profile, each form or ability is a ruled row: its name in the display face with
+   its menu at the end, what it is, then three quiet facts - first unlocked, available in, used in. The form
+   drawer groups the unlock parts and the era ticks in plain fieldsets; scene pickers set story and scene side
+   by side and stack on a phone. */
+
+.progitems {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.progitems__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progitems__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.progitems__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.progitems__name {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+.progitems__description {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.progitems__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.progitems__facts > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+}
+
+.progitems__facts dt {
+  color: var(--muted);
+}
+
+.progitems__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.itemunlock,
+.itemeras {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.itemunlock {
+  align-items: stretch;
+}
+
+.scenepicks__group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.scenepicks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-2);
+}
+
+.momentpick__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
 /* ---------- Relations: when a relation holds (Issue #18) ----------
 
    Periods sit in the relation form under its status, each a quiet row of its own - Dates or An era, then

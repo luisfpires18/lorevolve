@@ -18,6 +18,10 @@ internal static class ProgressionState
 
     public static string Serialize(ProgressionSnapshot snapshot) => JsonSerializer.Serialize(snapshot, Json);
 
+    /// <summary>
+    /// A stored version. A part absent from its JSON - forms and abilities in a version saved before they existed - stays null:
+    /// that version said nothing about it, so a restore of it leaves that part as it is now. An empty list is "none".
+    /// </summary>
     public static ProgressionSnapshot Deserialize(string json) =>
         JsonSerializer.Deserialize<ProgressionSnapshot>(json, Json) is { } snapshot
             ? snapshot with { Eras = snapshot.Eras ?? [] }
@@ -56,17 +60,22 @@ internal static class ProgressionState
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
-        return new ProgressionSnapshot([
-            .. eras.Select(era => new EraInput(
-                era.Id,
-                era.Name,
-                era.Description,
-                Point(era.StartEraId, era.StartYear, era.StartMonth, era.StartDay, era.StartMonthId),
-                Point(era.EndEraId, era.EndYear, era.EndMonth, era.EndDay, era.EndMonthId),
-                Sorted(era.Stories),
-                Sorted(era.Scenes),
-                Overrides(era.Values))),
-        ]);
+        var (forms, abilities) = await ProgressionForms.ReadAsync(db, entityId, cancellationToken);
+
+        return new ProgressionSnapshot(
+            [
+                .. eras.Select(era => new EraInput(
+                    era.Id,
+                    era.Name,
+                    era.Description,
+                    Point(era.StartEraId, era.StartYear, era.StartMonth, era.StartDay, era.StartMonthId),
+                    Point(era.EndEraId, era.EndYear, era.EndMonth, era.EndDay, era.EndMonthId),
+                    Sorted(era.Stories),
+                    Sorted(era.Scenes),
+                    Overrides(era.Values))),
+            ],
+            forms,
+            abilities);
     }
 
     private static ChronologyValue? Point(Guid? eraId, int? year, int? month, int? day, Guid? monthId) =>
@@ -195,15 +204,37 @@ internal static class ProgressionState
     {
         var errors = new Dictionary<string, string[]>();
 
-        if (request.Eras is null)
+        var (eras, eraErrors) = request.Eras is null
+            ? ([.. current.Eras], [])
+            : await NormalizeErasAsync(db, universeId, entityId, entityTypeId, current, request.Eras, recreating, cancellationToken);
+
+        foreach (var (key, messages) in eraErrors)
         {
-            return (current, errors);
+            errors[key] = messages;
         }
 
-        if (request.Eras.Count > ProgressionLimits.MaxEras)
+        // Forms and abilities (Issue #42) are checked against the eras this same save leaves.
+        var (forms, abilities) = await ProgressionForms.NormalizeAsync(
+            db, universeId, entityId, current, request, eras.Select(era => era.Id!.Value).ToHashSet(), recreating, errors, cancellationToken);
+
+        return (new ProgressionSnapshot(eras, forms, abilities), errors);
+    }
+
+    private static async Task<(List<EraInput> Eras, Dictionary<string, string[]> Errors)> NormalizeErasAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid entityId,
+        Guid entityTypeId,
+        ProgressionSnapshot current,
+        IReadOnlyList<EraInput?> sentEras,
+        bool recreating,
+        CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (sentEras.Count > ProgressionLimits.MaxEras)
         {
             errors["eras"] = [$"An entry can have at most {ProgressionLimits.MaxEras} eras."];
-            return (current, errors);
+            return ([.. current.Eras], errors);
         }
 
         var known = current.Eras.ToDictionary(era => era.Id!.Value);
@@ -215,7 +246,7 @@ internal static class ProgressionState
             .ToListAsync(cancellationToken);
         var byId = definitions.ToDictionary(field => field.Id);
 
-        var sent = request.Eras.OfType<EraInput>().ToList();
+        var sent = sentEras.OfType<EraInput>().ToList();
 
         var (referenced, members) = await EntityEndpoints.LinkTargetsAsync(
             db,
@@ -252,11 +283,11 @@ internal static class ProgressionState
         var ids = new HashSet<Guid>();
         var eras = new List<EraInput>();
 
-        for (var index = 0; index < request.Eras.Count; index++)
+        for (var index = 0; index < sentEras.Count; index++)
         {
             var key = $"eras[{index}]";
 
-            if (request.Eras[index] is not { } era)
+            if (sentEras[index] is not { } era)
             {
                 errors[key] = ["Send each era as an object."];
                 continue;
@@ -382,7 +413,7 @@ internal static class ProgressionState
                 [.. overrides.OrderBy(field => field.FieldDefinitionId)]));
         }
 
-        return (new ProgressionSnapshot(eras), errors);
+        return (eras, errors);
     }
 
     // ---------- Writing ----------
@@ -488,6 +519,7 @@ internal static class ProgressionState
             }
         }
 
+        await ProgressionForms.ApplyAsync(db, entityId, current, wanted, cancellationToken);
         return null;
     }
 
