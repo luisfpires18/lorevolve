@@ -46,6 +46,8 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<EntityFieldDefinition> EntityFieldDefinitions => Set<EntityFieldDefinition>();
 
+    public DbSet<EntityFieldSection> EntityFieldSections => Set<EntityFieldSection>();
+
     public DbSet<EntityFieldOption> EntityFieldOptions => Set<EntityFieldOption>();
 
     public DbSet<LoreEntity> Entities => Set<LoreEntity>();

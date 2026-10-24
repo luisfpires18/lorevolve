@@ -498,3 +498,11 @@ as an upload would and refuses a path Lorex would not write, a label twice, an e
 than a look holds; a restore holds the owner's storage for them with the entries' own pictures and gives everything new ids.
 A version 29 or older file restores every entry with none, even when it carries the member. A saved version's snapshot that
 has no `appearances` member, like one with no `forms`, restores leaving them as they are.
+
+## Amendment: version 31, field sections (2026-10-24, Issue #26, ADR 0055)
+
+`BackupEntityType.FieldSections` carries a type's sections in order - id, name, place and whether each starts collapsed - and
+`BackupFieldDefinition.SectionId` the section of the same type a field is in, archived fields included. Not ignorable: a
+version 30 reader would restore every form flat. Validation refuses a section the field's type does not hold, a repeated name
+within a type and more than 50 sections; a restore gives every section a new id and points its fields at it, after every field
+exists. A version 30 or older file restores every field ungrouped, even when it carries the members.

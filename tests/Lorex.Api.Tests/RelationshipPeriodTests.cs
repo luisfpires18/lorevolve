@@ -221,7 +221,7 @@ public sealed class RelationshipPeriodTests(LorexApiFactory factory) : IClassFix
         await Create(w, w.Goku, w.RedRibbon, [Dated(749, 750), new RelationshipPeriodInput(null, null, saga)]);
 
         var backup = await Backup(w.Client, w.U);
-        Assert.Equal(30, backup.FormatVersion);
+        Assert.Equal(31, backup.FormatVersion);
         var periods = backup.Payload.Relationships.Single().Periods!;
         Assert.Equal(2, periods.Count);
         Assert.Equal(saga, periods[1].EntityEraId);

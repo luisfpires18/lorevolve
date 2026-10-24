@@ -127,6 +127,21 @@ export interface FieldDefinition {
   usedInHistory: boolean
   /** The definition's edit version, which an edit names as `expectedVersion` (ADR 0043). */
   version: number
+  /**
+   * The section of its type this field is shown in, or null for the ungrouped fields shown first (Issue #26). Presentation
+   * only. An archived field keeps it, so a restore puts it back where it was.
+   */
+  sectionId: string | null
+}
+
+/** One optional section of a type's fields (Issue #26): a heading and a fold, nothing more. */
+export interface FieldSection {
+  id: string
+  name: string
+  /** Its place among the type's sections, from 1. */
+  displayOrder: number
+  /** Whether forms and entries show it folded at first. A reader's own toggles are never stored. */
+  startsCollapsed: boolean
 }
 
 /**
@@ -159,6 +174,10 @@ export interface EntityType {
   fields: FieldDefinition[]
   /** Its archived fields (Issue #39), apart so nothing that reads `fields` can meet one by accident. */
   archivedFields: FieldDefinition[]
+  /** Its fields' sections in order (Issue #26); empty for a type that has none, which shows its fields as one list. */
+  fieldSections: FieldSection[]
+  /** The layout's own version, which a layout save names as `expectedVersion`. Apart from every field's `version`. */
+  fieldLayoutVersion: number
   /**
    * The type's own Family Tree switch, the one a save writes. Set by the author, never read from the name (ADR 0040).
    */

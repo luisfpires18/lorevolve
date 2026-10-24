@@ -145,7 +145,7 @@ public sealed class EntityFormTests(LorexApiFactory factory) : IClassFixture<Lor
         Assert.Equal("Super Saiyan", restored.Abilities!.Single().Forms.Single().Name);
 
         var backup = await Backup(w.Client, w.U);
-        Assert.Equal(30, backup.FormatVersion);
+        Assert.Equal(31, backup.FormatVersion);
         var progression = backup.Payload.Entities.Single(entity => entity.Id == w.Goku).Progression!;
         Assert.Equal("Super Saiyan", progression.Forms!.Single().Name);
         Assert.Equal([formId], progression.Abilities!.Single().FormIds);

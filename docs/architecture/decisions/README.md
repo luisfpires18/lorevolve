@@ -59,8 +59,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0052 | An entry's forms and abilities are available exactly in the eras the author ticks (#42) | [0052-entry-forms-and-abilities.md](0052-entry-forms-and-abilities.md) |
 | 0053 | An entry's appearances are one record each, with a gallery stored like the entry's own picture (#43) | [0053-entry-appearances.md](0053-entry-appearances.md) |
 | 0054 | Duplicate is a new entry's form filled from another, and copies only what it says (#27) | [0054-duplicate-entry.md](0054-duplicate-entry.md) |
+| 0055 | A type's fields may be arranged in optional sections, and a section is presentation only (#26) | [0055-field-sections.md](0055-field-sections.md) |
 
-All accepted. Next number: `0054`.
+All accepted. Next number: `0056`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

@@ -78,6 +78,9 @@ public sealed record EntityTypeReorderRequest(int? Index, Guid? ParentId);
 /// <paramref name="Fields"/> are the type's active fields, the ones entry forms, filters and rules read;
 /// <paramref name="ArchivedFields"/> are its archived ones (Issue #39), apart so that no reader of the active list can meet
 /// one by accident.
+/// <paramref name="FieldSections"/> are the type's optional sections in their order (Issue #26), empty for a type that has
+/// none; each field names its own in <see cref="FieldDefinitionResponse.SectionId"/>. <paramref name="FieldLayoutVersion"/> is
+/// what a layout save names as its <c>expectedVersion</c>.
 /// </summary>
 public sealed record EntityTypeResponse(
     Guid Id,
@@ -92,7 +95,24 @@ public sealed record EntityTypeResponse(
     bool FamilyTreeEligible,
     Guid? ParentId = null,
     bool FamilyTreeOffered = false,
-    IReadOnlyList<FieldDefinitionResponse>? ArchivedFields = null);
+    IReadOnlyList<FieldDefinitionResponse>? ArchivedFields = null,
+    IReadOnlyList<FieldSectionResponse>? FieldSections = null,
+    int FieldLayoutVersion = 1);
+
+/// <summary>One section of a type's fields (Issue #26): its name, its place from 1, and whether it starts folded.</summary>
+public sealed record FieldSectionResponse(Guid Id, string Name, int DisplayOrder, bool StartsCollapsed);
+
+/// <summary>
+/// A type's whole field layout (Issue #26), saved at once: <paramref name="Sections"/> in the order they are shown. A section
+/// with an <c>id</c> is one of the type's own, kept; one without is new; one of the type's sections left out is removed and its
+/// fields return to the ungrouped list. Every field of the type that no section lists - active or archived - is ungrouped.
+/// <paramref name="ExpectedVersion"/> is the <see cref="EntityTypeResponse.FieldLayoutVersion"/> the layout was opened on.
+/// Nothing here changes a field's id, values, version, order or settings.
+/// </summary>
+public sealed record FieldLayoutRequest(IReadOnlyList<FieldSectionRequest>? Sections, int? ExpectedVersion);
+
+/// <summary>One section of a layout save: the type's own section by <paramref name="Id"/>, or a new one; and its fields, as a set.</summary>
+public sealed record FieldSectionRequest(Guid? Id, string? Name, bool StartsCollapsed, IReadOnlyList<Guid>? FieldIds);
 
 // ---------- Field definitions ----------
 
@@ -130,7 +150,7 @@ public sealed record FieldOptionResponse(Guid Id, string Value, int DisplayOrder
 /// is how many entries hold a value for it, the Trash included, and <paramref name="TrashedEntryCount"/> how many of those are
 /// in the Trash: a field with any is never deleted, only archived. <paramref name="UsedInHistory"/> says whether an older version
 /// of any entry recorded a value for it, which keeps it from being deleted too. <paramref name="Version"/> is what an edit names
-/// as its <c>expectedVersion</c>.
+/// as its <c>expectedVersion</c>. <paramref name="SectionId"/> is the section of its type it is shown in, or null (Issue #26).
 /// </summary>
 public sealed record FieldDefinitionResponse(
     Guid Id,
@@ -147,7 +167,8 @@ public sealed record FieldDefinitionResponse(
     int EntryCount = 0,
     int TrashedEntryCount = 0,
     bool UsedInHistory = false,
-    int Version = 1);
+    int Version = 1,
+    Guid? SectionId = null);
 
 /// <summary>
 /// Restoring an archived field. <paramref name="AsOptional"/> is the author's explicit choice to bring a required field back

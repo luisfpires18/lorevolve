@@ -18,6 +18,7 @@ import { ChangeList, EditConflict } from '../components/EditConflict'
 import { EntityHistory } from '../components/EntityHistory'
 import { EntityImageField, type PendingImage } from '../components/EntityImageField'
 import { FieldInput } from '../components/FieldInputs'
+import { FieldSectionFold } from '../components/FieldSectionFold'
 import { ImageViewer } from '../components/ImageViewer'
 import { NameList } from '../components/NameList'
 import { ProgressionView } from '../components/ProgressionView'
@@ -50,10 +51,14 @@ import {
   type CanonStatusValue,
   type EntityDetail,
   type EntityType,
+  type FieldDefinition,
   FieldKind,
+  type FieldSection,
+  type FieldValue,
   type FieldValueInput,
 } from '../lore/types'
 import { renderFact } from '../lore/facts'
+import { groupBySection } from '../lore/fieldSections'
 import { typeChoices } from '../lore/typeTree'
 import { StatusBadge } from '../components/StatusBadge'
 import { suggestEntryChanges } from '../suggestions/api'
@@ -230,6 +235,22 @@ function EntityScreen({ view }: { view: EntryView }) {
   )
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
+
+  // Which field sections the reader has opened or folded here (Issue #26), by id; one not in it starts as its type says.
+  // Transient on purpose: nothing is stored, so the next visit starts from the author's choice again.
+  const [sectionOpen, setSectionOpen] = useState<Record<string, boolean>>({})
+  const isSectionOpen = (section: FieldSection) =>
+    sectionOpen[section.id] ?? !section.startsCollapsed
+  // The field a refused save sends the focus to, once the render that opens its section is on screen.
+  const focusField = useRef<string | null>(null)
+  useEffect(() => {
+    if (!focusField.current) return
+    document
+      .querySelector(`[data-field-id="${focusField.current}"]`)
+      ?.querySelector<HTMLElement>('input, select, textarea')
+      ?.focus()
+    focusField.current = null
+  })
   const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -353,6 +374,28 @@ function EntityScreen({ view }: { view: EntryView }) {
     () => types.find((type) => type.id === draft?.entityTypeId) ?? null,
     [types, draft?.entityTypeId],
   )
+
+  // The form's fields as their type lays them out: ungrouped first, then each section that holds any (Issue #26).
+  const formSections = useMemo(
+    () =>
+      groupBySection(
+        selectedType?.fields ?? [],
+        (field) => field.sectionId,
+        selectedType?.fieldSections ?? [],
+      ),
+    [selectedType],
+  )
+
+  // The entry's facts the same way, by the section of the field each one is for.
+  const factSections = useMemo(() => {
+    const type = types.find((each) => each.id === detail?.entityTypeId)
+    const sectionOf = new Map(type?.fields.map((field) => [field.id, field.sectionId]))
+    return groupBySection(
+      detail?.fields ?? [],
+      (value) => sectionOf.get(value.fieldDefinitionId),
+      type?.fieldSections ?? [],
+    )
+  }, [types, detail])
 
   const offersFamilyTree =
     !!detail &&
@@ -502,6 +545,23 @@ function EntityScreen({ view }: { view: EntryView }) {
         setConflict(true)
       } else if (error instanceof ApiError) {
         setFieldErrors(error.fieldErrors)
+        // The first field it names, in the order the form shows them, gets the focus - its section opened first, and any
+        // other section holding a refused field with it, so nothing that needs the author stays folded away.
+        const refused = [
+          ...formSections.ungrouped,
+          ...formSections.groups.flatMap((group) => group.items),
+        ].filter((definition) => error.fieldErrors[definition.id])
+        if (refused.length > 0) {
+          setSectionOpen((current) => ({
+            ...current,
+            ...Object.fromEntries(
+              refused.flatMap((definition) =>
+                definition.sectionId ? [[definition.sectionId, true]] : [],
+              ),
+            ),
+          }))
+          focusField.current = refused[0].id
+        }
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
@@ -518,6 +578,7 @@ function EntityScreen({ view }: { view: EntryView }) {
   }, [
     draft,
     selectedType,
+    formSections,
     isNew,
     universe.id,
     entityId,
@@ -733,6 +794,37 @@ function EntityScreen({ view }: { view: EntryView }) {
     setIsEditing(true)
     if (view !== 'article') void navigate(entryPath)
   }
+
+  /** One field's control in the form, with the refusal under it; `data-field-id` is where a refused save sends the focus. */
+  const fieldInput = (definition: FieldDefinition) => (
+    <div key={definition.id} data-field-id={definition.id}>
+      <FieldInput
+        definition={definition}
+        value={draft.fields[definition.id] ?? emptyValue(definition)}
+        universeId={universe.id}
+        excludeId={entityId}
+        heldReference={heldReference(detail ?? source?.detail ?? null, definition.id)}
+        chronology={chronology}
+        onChange={(next) =>
+          setDraft((current) =>
+            current
+              ? { ...current, fields: { ...current.fields, [definition.id]: next } }
+              : current,
+          )
+        }
+      />
+      {fieldErrors[definition.id] ? (
+        <p className="field__error">{fieldErrors[definition.id]}</p>
+      ) : null}
+    </div>
+  )
+
+  const fact = (value: FieldValue) => (
+    <div className="facts__row" key={value.fieldDefinitionId}>
+      <dt className="facts__key">{value.name}</dt>
+      <dd className="facts__value prose">{renderFact(value, chronology)}</dd>
+    </div>
+  )
 
   return (
     <article
@@ -1102,30 +1194,26 @@ function EntityScreen({ view }: { view: EntryView }) {
               <h2 className="entryform__heading sectionrule sectionrule--accent">
                 What a <bdi>{selectedType?.name}</bdi> records
               </h2>
-              <div className="entryform__fields">
-                {selectedType!.fields.map((definition) => (
-                  <div key={definition.id}>
-                    <FieldInput
-                      definition={definition}
-                      value={draft.fields[definition.id] ?? emptyValue(definition)}
-                      universeId={universe.id}
-                      excludeId={entityId}
-                      heldReference={heldReference(detail ?? source?.detail ?? null, definition.id)}
-                      chronology={chronology}
-                      onChange={(next) =>
-                        setDraft((current) =>
-                          current
-                            ? { ...current, fields: { ...current.fields, [definition.id]: next } }
-                            : current,
-                        )
-                      }
-                    />
-                    {fieldErrors[definition.id] ? (
-                      <p className="field__error">{fieldErrors[definition.id]}</p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
+              {formSections.ungrouped.length > 0 ? (
+                <div className="entryform__fields">{formSections.ungrouped.map(fieldInput)}</div>
+              ) : null}
+              {formSections.groups.map(({ section, items }) => {
+                const refused = items.filter((definition) => fieldErrors[definition.id]).length
+                return (
+                  <FieldSectionFold
+                    key={section.id}
+                    section={section}
+                    open={isSectionOpen(section)}
+                    onToggle={(open) =>
+                      setSectionOpen((current) => ({ ...current, [section.id]: open }))
+                    }
+                    attention={refused > 0}
+                    meta={sectionMeta(items, refused)}
+                  >
+                    <div className="entryform__fields">{items.map(fieldInput)}</div>
+                  </FieldSectionFold>
+                )
+              })}
             </section>
           ) : null}
 
@@ -1184,15 +1272,30 @@ function EntityScreen({ view }: { view: EntryView }) {
           </div>
 
           <aside className="entry__rail" aria-label="Details">
-            {(detail?.fields.length ?? 0) > 0 ? (
+            {(detail?.fields.length ?? 0) > 0 && factSections.groups.length === 0 ? (
               <dl className="facts" data-testid="entry-fields">
-                {detail!.fields.map((value) => (
-                  <div className="facts__row" key={value.fieldDefinitionId}>
-                    <dt className="facts__key">{value.name}</dt>
-                    <dd className="facts__value prose">{renderFact(value, chronology)}</dd>
-                  </div>
-                ))}
+                {detail!.fields.map(fact)}
               </dl>
+            ) : null}
+
+            {factSections.groups.length > 0 ? (
+              <div className="facts__sections" data-testid="entry-fields">
+                {factSections.ungrouped.length > 0 ? (
+                  <dl className="facts">{factSections.ungrouped.map(fact)}</dl>
+                ) : null}
+                {factSections.groups.map(({ section, items }) => (
+                  <FieldSectionFold
+                    key={section.id}
+                    section={section}
+                    open={isSectionOpen(section)}
+                    onToggle={(open) =>
+                      setSectionOpen((current) => ({ ...current, [section.id]: open }))
+                    }
+                  >
+                    <dl className="facts">{items.map(fact)}</dl>
+                  </FieldSectionFold>
+                ))}
+              </div>
             ) : null}
 
             {(detail?.tags.length ?? 0) > 0 ? (
@@ -1517,6 +1620,27 @@ function CopyPanel({
         comments, history and publication. The copy starts as an Idea and stays private.
       </p>
     </section>
+  )
+}
+
+/**
+ * What a folded section of the form holds (Issue #26): its fields, how many are required, and how many a refused save named -
+ * so a required or refused field is never out of sight behind a fold.
+ */
+function sectionMeta(items: FieldDefinition[], refused: number) {
+  const required = items.filter((definition) => definition.isRequired).length
+  const parts = [items.length === 1 ? '1 field' : `${items.length} fields`]
+  if (required > 0) parts.push(`${required} required`)
+  return (
+    <>
+      {parts.join(' · ')}
+      {refused > 0 ? (
+        <span className="fieldsection__alert">
+          {' · '}
+          {refused === 1 ? '1 needs attention' : `${refused} need attention`}
+        </span>
+      ) : null}
+    </>
   )
 }
 

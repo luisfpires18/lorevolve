@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Archive, ArchiveRestore, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Archive, ArchiveRestore, LayoutList, Pencil, Plus, Trash2 } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { Field } from './Field'
+import { FieldSectionsDialog } from './FieldSectionsDialog'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
@@ -29,6 +30,7 @@ import {
   type FieldSemanticValue,
 } from '../lore/types'
 import { typePathLabel, type TypeTree } from '../lore/typeTree'
+import { groupBySection } from '../lore/fieldSections'
 import { confirmAction } from '../lib/confirm'
 
 const KIND_ORDER: FieldKindValue[] = [
@@ -58,6 +60,9 @@ interface TypeFieldsProps {
  *
  * Archiving hides a field and keeps everything it holds; deleting is for a field no entry has a value for, and a populated
  * one is told so here, without a confirmation it could only fail. Feedback is said under the list, in a status line.
+ *
+ * A type with sections (Issue #26) lists its ungrouped fields first, then each section under its name; Sections opens the
+ * drawer that arranges them. A type without any reads exactly as before.
  */
 export function TypeFields({
   universeId,
@@ -68,6 +73,7 @@ export function TypeFields({
   onChanged,
 }: TypeFieldsProps) {
   const [editing, setEditing] = useState<FieldDefinition | 'new' | null>(null)
+  const [arranging, setArranging] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   // Why one field cannot be deleted, under it, with the way out.
@@ -266,6 +272,76 @@ export function TypeFields({
   }
 
   const archived = type.archivedFields ?? []
+  const sections = type.fieldSections ?? []
+
+  /** "In Combat", for an archived field that keeps a section to return to. */
+  function sectionName(sectionId: string | null) {
+    const section = sections.find((each) => each.id === sectionId)
+    return section ? `In ${section.name}` : null
+  }
+  const layout = groupBySection(type.fields, (field) => field.sectionId, sections, true)
+
+  function fieldRow(field: FieldDefinition) {
+    return (
+      <li
+        className="fieldlist__row"
+        key={field.id}
+        data-field-name={field.name}
+        data-testid={`field-row-${field.name}`}
+      >
+        <div className="fieldlist__text">
+          <span className="fieldlist__name">
+            <bdi>{field.name}</bdi>
+          </span>
+          <span className="fieldlist__meta" data-testid={`field-summary-${field.name}`}>
+            {summary(field)}
+          </span>
+        </div>
+        {canEdit ? (
+          <span className="fieldlist__actions">
+            <button
+              className="button button--secondary button--sm"
+              type="button"
+              onClick={() => {
+                clear()
+                setEditing(field)
+              }}
+              disabled={busyFieldId === field.id}
+              aria-label={`Edit ${field.name}`}
+              data-testid={`edit-field-${field.name}`}
+            >
+              <ActionIcon icon={Pencil} />
+              Edit
+            </button>
+            <ActionMenu
+              label={`More actions for ${field.name}`}
+              triggerTestId={`field-actions-${field.name}`}
+            >
+              <button
+                className="actionmenu__item"
+                type="button"
+                onClick={() => void archive(field)}
+                data-testid={`archive-field-${field.name}`}
+              >
+                <ActionIcon icon={Archive} />
+                Archive field
+              </button>
+              <button
+                className="actionmenu__item actionmenu__item--danger"
+                type="button"
+                onClick={() => void remove(field)}
+                data-testid={`delete-field-${field.name}`}
+              >
+                <ActionIcon icon={Trash2} />
+                Delete field
+              </button>
+            </ActionMenu>
+          </span>
+        ) : null}
+        {blockedNote(field)}
+      </li>
+    )
+  }
 
   return (
     <div className="types__fields" data-testid={`type-fields-${type.name}`}>
@@ -275,85 +351,65 @@ export function TypeFields({
         </p>
       ) : null}
 
-      {type.fields.length > 0 ? (
-        <ul className="fieldlist" aria-label={`Fields of ${type.name}`}>
-          {type.fields.map((field) => (
-            <li
-              className="fieldlist__row"
-              key={field.id}
-              data-field-name={field.name}
-              data-testid={`field-row-${field.name}`}
-            >
-              <div className="fieldlist__text">
-                <span className="fieldlist__name">
-                  <bdi>{field.name}</bdi>
-                </span>
-                <span className="fieldlist__meta" data-testid={`field-summary-${field.name}`}>
-                  {summary(field)}
-                </span>
-              </div>
-              {canEdit ? (
-                <span className="fieldlist__actions">
-                  <button
-                    className="button button--secondary button--sm"
-                    type="button"
-                    onClick={() => {
-                      clear()
-                      setEditing(field)
-                    }}
-                    disabled={busyFieldId === field.id}
-                    aria-label={`Edit ${field.name}`}
-                    data-testid={`edit-field-${field.name}`}
-                  >
-                    <ActionIcon icon={Pencil} />
-                    Edit
-                  </button>
-                  <ActionMenu
-                    label={`More actions for ${field.name}`}
-                    triggerTestId={`field-actions-${field.name}`}
-                  >
-                    <button
-                      className="actionmenu__item"
-                      type="button"
-                      onClick={() => void archive(field)}
-                      data-testid={`archive-field-${field.name}`}
-                    >
-                      <ActionIcon icon={Archive} />
-                      Archive field
-                    </button>
-                    <button
-                      className="actionmenu__item actionmenu__item--danger"
-                      type="button"
-                      onClick={() => void remove(field)}
-                      data-testid={`delete-field-${field.name}`}
-                    >
-                      <ActionIcon icon={Trash2} />
-                      Delete field
-                    </button>
-                  </ActionMenu>
-                </span>
-              ) : null}
-              {blockedNote(field)}
-            </li>
-          ))}
-        </ul>
-      ) : (
+      {type.fields.length === 0 ? (
         <p className="settings__note">No custom fields yet.</p>
-      )}
+      ) : sections.length === 0 ? (
+        <ul className="fieldlist" aria-label={`Fields of ${type.name}`}>
+          {type.fields.map(fieldRow)}
+        </ul>
+      ) : layout.ungrouped.length > 0 ? (
+        <ul className="fieldlist" aria-label={`Fields of ${type.name} in no section`}>
+          {layout.ungrouped.map(fieldRow)}
+        </ul>
+      ) : null}
+
+      {layout.groups.map(({ section, items }) => (
+        <div className="fieldgroup" key={section.id} data-testid={`type-section-${section.name}`}>
+          <p className="fieldgroup__head">
+            <bdi>{section.name}</bdi>
+            {section.startsCollapsed ? (
+              <span className="fieldgroup__meta">Starts collapsed</span>
+            ) : null}
+          </p>
+          {items.length > 0 ? (
+            <ul className="fieldlist" aria-label={`${section.name} fields of ${type.name}`}>
+              {items.map(fieldRow)}
+            </ul>
+          ) : (
+            <p className="settings__note">No fields in this section yet.</p>
+          )}
+        </div>
+      ))}
 
       {canEdit ? (
-        <button
-          className="button button--secondary button--sm fieldlist__add"
-          type="button"
-          onClick={() => {
-            clear()
-            setEditing('new')
-          }}
-          data-testid={`new-field-${type.name}`}
-        >
-          <ActionIcon icon={Plus} />
-          Add field
-        </button>
+        <p className="fieldlist__tools">
+          <button
+            className="button button--secondary button--sm"
+            type="button"
+            onClick={() => {
+              clear()
+              setEditing('new')
+            }}
+            data-testid={`new-field-${type.name}`}
+          >
+            <ActionIcon icon={Plus} />
+            Add field
+          </button>
+          {type.fields.length > 0 || sections.length > 0 ? (
+            <button
+              className="button button--text button--sm"
+              type="button"
+              onClick={() => {
+                clear()
+                setArranging(true)
+              }}
+              data-testid={`arrange-sections-${type.name}`}
+            >
+              <ActionIcon icon={LayoutList} />
+              Sections
+            </button>
+          ) : null}
+        </p>
       ) : null}
 
       <p className="types__notice" role="status" data-testid={`fields-notice-${type.name}`}>
@@ -387,6 +443,7 @@ export function TypeFields({
                     {[
                       FIELD_KIND_LABELS[field.kind],
                       field.isRequired ? 'Previously required' : null,
+                      sectionName(field.sectionId),
                       field.entryCount === 0
                         ? 'No values'
                         : `Values in ${entries(field.entryCount)}`,
@@ -450,6 +507,20 @@ export function TypeFields({
             ))}
           </ul>
         </details>
+      ) : null}
+
+      {arranging ? (
+        <FieldSectionsDialog
+          universeId={universeId}
+          type={type}
+          onClose={() => setArranging(false)}
+          onChanged={onChanged}
+          onSaved={async () => {
+            setArranging(false)
+            await onChanged()
+            setNotice(`Saved the sections of ${type.name}.`)
+          }}
+        />
       ) : null}
 
       {editing ? (

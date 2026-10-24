@@ -55,6 +55,7 @@ namespace Lorex.Api.Features.Restore;
 /// <item>Versions 1-23: no group is enabled for the Family Tree, even when the file says one is (Issue #37). A group's name
 /// enables nothing.</item>
 /// <item>Versions 1-24: every field is active, even when the file says one is archived (Issue #39).</item>
+/// <item>Versions 1-30: no field sections, even when the file carries some, so every field is ungrouped (Issue #26).</item>
 /// </list>
 ///
 /// One thing is normalized for every version: the live rows of each ordered collection are numbered
@@ -77,7 +78,7 @@ internal static class BackupNormalization
                     ? payload.Universe with { OriginalCreator = null, OriginalWork = null }
                     : payload.Universe with { PublicSummary = null, Category = null, Genres = null, Artwork = null, OriginalCreator = null, OriginalWork = null },
         ChronologyEras = version >= 4 ? payload.ChronologyEras : null,
-        EntityTypes = version >= 25 || payload.EntityTypes is null
+        EntityTypes = version >= 31 || payload.EntityTypes is null
             ? payload.EntityTypes!
             : [.. payload.EntityTypes.Select(type => type is null ? null! : ProjectType(type, version))],
         Entities = payload.Entities is null ? null! : [.. payload.Entities.Select(entity => entity is null ? null! : ProjectEntity(entity, version))],
@@ -119,8 +120,9 @@ internal static class BackupNormalization
     };
 
     /// <summary>
-    /// Before 25 every field is active (Issue #39). Before 19 there is no hierarchy: every type is a root, in its stored order,
-    /// whatever it is called. Before 18 the Family Tree is the untouched starter Character's alone.
+    /// Before 31 no field is in a section (Issue #26). Before 25 every field is active (Issue #39). Before 19 there is no
+    /// hierarchy: every type is a root, in its stored order, whatever it is called. Before 18 the Family Tree is the untouched
+    /// starter Character's alone.
     /// </summary>
     private static BackupEntityType ProjectType(BackupEntityType type, int version) => type with
     {
@@ -131,7 +133,10 @@ internal static class BackupNormalization
                 && EntityTypeDefaults.IsUntouchedStarterCharacter(type.Name, type.Description, type.Icon, type.AccentColor),
         Fields = type.Fields is null
             ? type.Fields!
-            : [.. type.Fields.Select(field => field is null ? null! : field with { ArchivedAt = null })],
+            : [.. type.Fields.Select(field => field is null
+                ? null!
+                : field with { ArchivedAt = version >= 25 ? field.ArchivedAt : null, SectionId = null })],
+        FieldSections = null,
     };
 
     /// <summary>Constraints from version 4, a family meaning from version 14 - never taken from what a kind is called.</summary>

@@ -313,3 +313,9 @@ Frontend only; the listing's query semantics are unchanged.
   that type's own entries only; nested types carry other fields (as the 034 amendment already stated).
 - Not done: one merged scope control (types and groups in one menu on a wide screen) and folding status behind Filters on
   a wide screen. Both cost more re-learning than the clutter they remove; revisit if the rows themselves grow.
+
+## Amendment - optional sections for a type's fields (2026-10-24, Issue #26)
+
+A type's fields may be arranged in author-named sections, each starting open or folded. Presentation only: no field id,
+value, order, setting, required check, target, filter or Canon reading changes, and sections are not semantic groups. One
+layout save replaces them all, under a version of its own. ADR 0055.
