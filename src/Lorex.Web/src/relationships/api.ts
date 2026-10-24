@@ -1,3 +1,4 @@
+import type { ChronologyValue } from '../chronology/types'
 import { apiFetch } from '../lib/api'
 import type {
   RelationshipDetail,
@@ -41,15 +42,30 @@ export function deleteRelationshipType(universeId: string, typeId: string) {
 
 // ---------- Relationships ----------
 
-/** Every link touching one entity, already worded from that entity's side. */
+/**
+ * Every link touching one entity, already worded from that entity's side. Asked about a time (Issue #18) - one of this entry's
+ * eras, or a point on the universe's chronology - only the links that hold then, each with its `validity`.
+ */
 export function listEntityRelationships(
   universeId: string,
   entityId: string,
   signal?: AbortSignal,
+  when?: { eraId: string } | { at: ChronologyValue },
 ) {
-  return apiFetch<RelationshipView[]>(`${base(universeId)}/entities/${entityId}/relationships`, {
-    signal,
-  })
+  const query = new URLSearchParams()
+  if (when && 'eraId' in when) query.set('era', when.eraId)
+  if (when && 'at' in when) {
+    if (when.at.eraId) query.set('atEraId', when.at.eraId)
+    if (when.at.year !== null) query.set('atYear', String(when.at.year))
+    if (when.at.month !== null) query.set('atMonth', String(when.at.month))
+    if (when.at.monthId) query.set('atMonthId', when.at.monthId)
+    if (when.at.day !== null) query.set('atDay', String(when.at.day))
+  }
+  const search = query.toString()
+  return apiFetch<RelationshipView[]>(
+    `${base(universeId)}/entities/${entityId}/relationships${search ? `?${search}` : ''}`,
+    { signal },
+  )
 }
 
 export function createRelationship(universeId: string, input: RelationshipInput) {

@@ -16485,6 +16485,10 @@ details.reviewsection > .reviewsection__list {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .erapoint + .erapoint {
@@ -16493,6 +16497,93 @@ details.reviewsection > .reviewsection__list {
 
 .erapoint__label {
   margin: 0;
+  padding: 0;
   font-size: var(--text-sm);
   font-weight: 600;
+}
+
+/* ---------- Relations: when a relation holds (Issue #18) ----------
+
+   Periods sit in the relation form under its status, each a quiet row of its own - Dates or An era, then
+   the From/To points or the era - with Remove at its end. The list says each relation's periods in one
+   line beside its kind, and a time the list is read at is stated above it with the way back. */
+
+.relperiods {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.relperiod {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+}
+
+.relperiod__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.relperiod__label {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.relperiod__head .iconbutton {
+  margin-left: auto;
+}
+
+.relperiods > .button {
+  align-self: flex-start;
+}
+
+.relform__legacy {
+  margin-top: var(--space-4);
+}
+
+.relform__legacy > .button {
+  align-self: flex-start;
+}
+
+.relation__validity {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.relwhen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.relwhen > .linkbutton {
+  align-self: flex-start;
+}
+
+.relwhen__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 34rem;
+}
+
+.relwhen__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.relwhen__status {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
 }

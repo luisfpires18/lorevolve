@@ -471,8 +471,8 @@ function EraPoint({
   const error = (part: string) => fieldErrors[`${errorKey}.${part}`.toLowerCase()]
 
   return (
-    <div className="erapoint" data-testid={prefix}>
-      <p className="erapoint__label">{label}</p>
+    <fieldset className="erapoint" data-testid={prefix}>
+      <legend className="erapoint__label">{label}</legend>
       <ChronologyPointFields
         chronology={chronology}
         ids={{
@@ -481,6 +481,8 @@ function EraPoint({
           month: `${prefix}-month`,
           day: `${prefix}-day`,
         }}
+        eraLabel={`${label}: date period`}
+        yearLabel={`${label}: year`}
         value={value}
         onChange={(part: ChronologyPointPart, next: string) => onChange({ ...value, [part]: next })}
         errors={{
@@ -490,7 +492,7 @@ function EraPoint({
           day: error('day'),
         }}
       />
-    </div>
+    </fieldset>
   )
 }
 

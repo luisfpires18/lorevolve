@@ -679,6 +679,7 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
         CancellationToken cancellationToken)
     {
         var relationships = await db.Relationships.AsNoTracking()
+            .Include(relationship => relationship.Periods)
             .Where(relationship => relationship.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
@@ -700,7 +701,19 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                     relationship.Notes,
                     Utc(relationship.CreatedAt),
                     Utc(relationship.UpdatedAt),
-                    Utc(relationship.DeletedAt))),
+                    Utc(relationship.DeletedAt),
+                    [
+                        .. relationship.Periods
+                            .OrderBy(period => period.SortOrder)
+                            .Select(period => new BackupRelationshipPeriod(
+                                period.EntityEraId,
+                                period.StartYear is { } startYear
+                                    ? new BackupChronologyValue(period.StartEraId, startYear, period.StartMonth, period.StartDay, period.StartMonthId)
+                                    : null,
+                                period.EndYear is { } endYear
+                                    ? new BackupChronologyValue(period.EndEraId, endYear, period.EndMonth, period.EndDay, period.EndMonthId)
+                                    : null)),
+                    ])),
         ];
     }
 

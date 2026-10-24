@@ -76,3 +76,29 @@ public sealed class LoreRelationshipConfiguration : IEntityTypeConfiguration<Lor
         builder.HasIndex(relationship => new { relationship.UniverseId, relationship.DeletedAt });
     }
 }
+
+public sealed class RelationshipPeriodConfiguration : IEntityTypeConfiguration<RelationshipPeriod>
+{
+    public void Configure(EntityTypeBuilder<RelationshipPeriod> builder)
+    {
+        builder.ToTable("RelationshipPeriods");
+        builder.HasKey(period => period.Id);
+
+        // Part of the link: replaced with its save, and gone with it.
+        builder.HasOne(period => period.Relationship)
+            .WithMany(relationship => relationship.Periods)
+            .HasForeignKey(period => period.RelationshipId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // An era a period names cannot be removed from its entry's progression (the save refuses it); no action, checked at the
+        // end of the statement, so deleting an entry - which takes its eras and every link it ends - still cascades.
+        builder.HasOne(period => period.EntityEra).WithMany().HasForeignKey(period => period.EntityEraId).OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(period => period.StartEra).WithMany().HasForeignKey(period => period.StartEraId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(period => period.EndEra).WithMany().HasForeignKey(period => period.EndEraId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(period => period.StartCalendarMonth).WithMany().HasForeignKey(period => period.StartMonthId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(period => period.EndCalendarMonth).WithMany().HasForeignKey(period => period.EndMonthId).OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasIndex(period => new { period.RelationshipId, period.SortOrder });
+    }
+}

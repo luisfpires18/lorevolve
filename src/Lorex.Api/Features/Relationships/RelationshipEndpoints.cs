@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Lorex.Api.Data;
 using Lorex.Api.Features.CanonIntegrity;
+using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -53,6 +54,9 @@ public static class RelationshipEndpoints
     /// <summary>The refusal an exact duplicate gets, so a client can tell it from any other conflict.</summary>
     public const string DuplicateCode = "relationship_already_exists";
 
+    /// <summary>The refusal for moving an end of a link while a period it keeps names an era of the end it leaves (Issue #18).</summary>
+    public const string PeriodEraMovedCode = "relationship_period_era_moved";
+
     /// <summary>The refusal a restore gets while one of the link's ends is still in the Trash.</summary>
     public const string EndInTrashCode = "relationship_end_in_trash";
 
@@ -77,12 +81,24 @@ public static class RelationshipEndpoints
         return endpoints;
     }
 
+    /// <summary>
+    /// Every link of one entry; or, asked about a time (Issue #18), only those that hold then, each saying how: during one of
+    /// this entry's eras (<paramref name="era"/>), or at a point on the universe's chronology (<paramref name="atYear"/> with
+    /// its date period, month and day as precise as wanted). Links that hold at another time are left out; a link that cannot
+    /// be placed is listed and marked so.
+    /// </summary>
     private static async Task<IResult> ListForEntityAsync(
         Guid universeId,
         Guid entityId,
         ClaimsPrincipal principal,
         LorexDbContext db,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] Guid? era = null,
+        [FromQuery] Guid? atEraId = null,
+        [FromQuery] int? atYear = null,
+        [FromQuery] int? atMonth = null,
+        [FromQuery] Guid? atMonthId = null,
+        [FromQuery] int? atDay = null)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.Read, cancellationToken) is { } denied)
         {
@@ -100,8 +116,73 @@ public static class RelationshipEndpoints
             return Results.NotFound();
         }
 
-        return Results.Ok(await LoadForEntityAsync(db, universeId, entityId, cancellationToken));
+        var askedAtPoint = atEraId is not null || atYear is not null || atMonth is not null || atMonthId is not null || atDay is not null;
+
+        if (era is null && !askedAtPoint)
+        {
+            return Results.Ok(await LoadForEntityAsync(db, universeId, entityId, cancellationToken));
+        }
+
+        if (era is not null && askedAtPoint)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]> { ["era"] = ["Ask about an era or a point in time, not both."] });
+        }
+
+        var chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken);
+
+        if (era is { } eraId)
+        {
+            var span = await db.EntityEras.AsNoTracking()
+                .Where(candidate => candidate.Id == eraId && candidate.EntityId == entityId)
+                .Select(candidate => new
+                {
+                    candidate.StartEraId,
+                    candidate.StartYear,
+                    candidate.StartMonth,
+                    candidate.StartMonthId,
+                    candidate.StartDay,
+                    candidate.EndEraId,
+                    candidate.EndYear,
+                    candidate.EndMonth,
+                    candidate.EndMonthId,
+                    candidate.EndDay,
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (span is null)
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]> { ["era"] = ["Choose one of this entry's eras."] });
+            }
+
+            var start = span.StartYear is null ? null : new ChronologyValue(span.StartEraId, span.StartYear, span.StartMonth, span.StartDay, span.StartMonthId);
+            var end = span.EndYear is null ? null : new ChronologyValue(span.EndEraId, span.EndYear, span.EndMonth, span.EndDay, span.EndMonthId);
+            var views = await LoadForEntityAsync(db, universeId, entityId, cancellationToken);
+
+            return Results.Ok(Holding(views, periods => RelationshipPeriods.During(periods, eraId, entityId, start, end, chronology)));
+        }
+
+        var point = new ChronologyValue(atEraId, atYear, atMonth, atDay, atMonthId);
+        var errors = new Dictionary<string, string[]>();
+        ChronologyPointValidation.ValidatePoint(point, ChronologyPointKeys.Prefixed("at"), chronology, errors);
+
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var all = await LoadForEntityAsync(db, universeId, entityId, cancellationToken);
+        return Results.Ok(Holding(all, periods => RelationshipPeriods.At(periods, point, chronology)));
     }
+
+    /// <summary>The links that hold, each marked with how.</summary>
+    private static List<RelationshipView> Holding(
+        List<RelationshipView> views,
+        Func<IReadOnlyList<RelationshipPeriodResponse>, RelationshipValidity?> holds) =>
+    [
+        .. views
+            .Select(view => view with { Validity = holds(view.Periods ?? []) })
+            .Where(view => view.Validity is not null),
+    ];
 
     private static async Task<IResult> GetAsync(
         Guid universeId,
@@ -160,6 +241,12 @@ public static class RelationshipEndpoints
             return AlreadyExists(existing);
         }
 
+        if (request.Periods is { } periods
+            && await RelationshipPeriods.CheckAsync(db, universeId, request.SourceEntityId, request.TargetEntityId, periods, cancellationToken) is { } periodErrors)
+        {
+            return Results.ValidationProblem(periodErrors);
+        }
+
         var now = DateTime.UtcNow;
         var relationship = new LoreRelationship
         {
@@ -177,6 +264,7 @@ public static class RelationshipEndpoints
         };
 
         db.Relationships.Add(relationship);
+        await RelationshipPeriods.ReplaceAsync(db, relationship.Id, request.Periods ?? [], cancellationToken, isNew: true);
         await db.SaveChangesAsync(cancellationToken);
 
         var detail = await LoadDetailAsync(db, universeId, relationship.Id, cancellationToken);
@@ -237,6 +325,33 @@ public static class RelationshipEndpoints
         if (await FindDuplicateAsync(db, universeId, request, relationshipId, cancellationToken) is { } existing)
         {
             return AlreadyExists(existing);
+        }
+
+        // Periods left out are kept as they are - and an era they name must still be one of the link's ends' if an end moved.
+        var endsMoved = relationship.SourceEntityId != request.SourceEntityId || relationship.TargetEntityId != request.TargetEntityId;
+
+        if (request.Periods is { } sent
+            && await RelationshipPeriods.CheckAsync(db, universeId, request.SourceEntityId, request.TargetEntityId, sent, cancellationToken) is { } periodErrors)
+        {
+            return Results.ValidationProblem(periodErrors);
+        }
+
+        if (request.Periods is null && endsMoved
+            && await RelationshipPeriods.CheckAsync(
+                db, universeId, request.SourceEntityId, request.TargetEntityId,
+                await RelationshipPeriods.StoredAsync(db, relationshipId, cancellationToken), cancellationToken) is not null)
+        {
+            return Results.Problem(
+                title: "Period names an era",
+                detail: "This relation holds during an era of an entry it would no longer connect. Change that period first, "
+                    + "then move the relation.",
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = PeriodEraMovedCode });
+        }
+
+        if (request.Periods is not null)
+        {
+            await RelationshipPeriods.ReplaceAsync(db, relationshipId, request.Periods, cancellationToken);
         }
 
         relationship.RelationshipTypeId = request.RelationshipTypeId;
@@ -495,6 +610,18 @@ public static class RelationshipEndpoints
         LorexDbContext db,
         Guid universeId,
         Guid relationshipId,
+        CancellationToken cancellationToken)
+    {
+        var detail = await DetailRowAsync(db, universeId, relationshipId, cancellationToken);
+        return detail is null
+            ? null
+            : detail with { Periods = (await RelationshipPeriods.ReadAsync(db, [relationshipId], cancellationToken)).GetValueOrDefault(relationshipId, []) };
+    }
+
+    private static async Task<RelationshipDetail?> DetailRowAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid relationshipId,
         CancellationToken cancellationToken) =>
         await db.Relationships.AsNoTracking()
             .Where(relationship => relationship.Id == relationshipId
@@ -584,6 +711,9 @@ public static class RelationshipEndpoints
             })
             .ToListAsync(cancellationToken);
 
+        // When each holds (Issue #18), read for every link at once.
+        var periods = await RelationshipPeriods.ReadAsync(db, [.. rows.Select(row => row.Id)], cancellationToken);
+
         return rows
             .Select(row =>
             {
@@ -617,7 +747,8 @@ public static class RelationshipEndpoints
                     row.EndDate,
                     row.Notes,
                     row.CreatedAt,
-                    row.UpdatedAt));
+                    row.UpdatedAt,
+                    periods.GetValueOrDefault(row.Id, [])));
             })
             .OrderBy(entry => entry.TypeDisplayOrder)
             .ThenBy(entry => entry.View.Label, StringComparer.OrdinalIgnoreCase)

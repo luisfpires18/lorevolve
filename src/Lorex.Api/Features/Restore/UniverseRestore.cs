@@ -720,6 +720,29 @@ internal sealed partial class UniverseRestore(
                 UpdatedAt = relationship.UpdatedAt,
                 DeletedAt = relationship.DeletedAt,
             });
+
+            // When it holds (Issue #18), each era by its restored id.
+            var order = 0;
+            foreach (var period in relationship.Periods ?? [])
+            {
+                db.RelationshipPeriods.Add(new RelationshipPeriod
+                {
+                    Id = Guid.NewGuid(),
+                    RelationshipId = ids.Map(relationship.Id),
+                    SortOrder = order++,
+                    EntityEraId = ids.Map(period.EntityEraId),
+                    StartEraId = ids.Map(period.Start?.EraId),
+                    StartYear = period.Start?.Year,
+                    StartMonth = period.Start?.Month,
+                    StartMonthId = ids.Map(period.Start?.MonthId),
+                    StartDay = period.Start?.Day,
+                    EndEraId = ids.Map(period.End?.EraId),
+                    EndYear = period.End?.Year,
+                    EndMonth = period.End?.Month,
+                    EndMonthId = ids.Map(period.End?.MonthId),
+                    EndDay = period.End?.Day,
+                });
+            }
         }
 
         foreach (var entry in payload.TimelineEntries)

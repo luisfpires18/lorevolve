@@ -821,6 +821,23 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
         work.Problems(RelationshipValidation.ValidateRelationship(new RelationshipRequest(
             relationship.TypeId, Guid.NewGuid(), Guid.NewGuid(), relationship.CanonStatus, relationship.StartDate, relationship.EndDate, relationship.Notes)));
 
+        // A link that moves an end keeps its periods (Issue #18): one naming an era of the end it leaves would refuse the
+        // commit, so it is said here, where the author can still change the link in LoreX first.
+        if (work.Action == AiChangeAction.Update && work.TargetId is { } moving
+            && Resolve(relationship.Source).Id is { } newSource && Resolve(relationship.Target).Id is { } newTarget
+            && await db.RelationshipPeriods.AsNoTracking().AnyAsync(
+                period => period.RelationshipId == moving
+                    && period.EntityEraId != null
+                    && period.EntityEra!.EntityId != newSource
+                    && period.EntityEra.EntityId != newTarget,
+                cancellationToken))
+        {
+            work.Problem(
+                AiChangeCodes.Invalid,
+                "This relationship holds during an era of an entry it would no longer connect. Change that period in LoreX first.",
+                "source");
+        }
+
         var symmetric = _relationshipTypes.GetValueOrDefault(relationship.TypeId);
         if (Resolve(relationship.Source).Id is { } source && Resolve(relationship.Target).Id is { } target
             && _relationshipTypes.ContainsKey(relationship.TypeId)

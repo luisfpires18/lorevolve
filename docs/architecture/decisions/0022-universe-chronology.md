@@ -183,3 +183,8 @@ An entry's era may be dated with a span on the universe's line (`ChronologySpans
 whole precision. It counts as a use of a date period and of a custom month like any other date: removing either is refused
 while an era is dated in it, the calendar's switch converts era months both ways, and a month reorder that would reverse an
 era's span is refused with the timeline's ranges.
+
+## Amendment (2026-10-24, Issue #18, ADR 0051)
+
+A relationship's dated period is a span on the same line, counted and converted like an entry era's: removing a date period
+or a month it is dated in is refused, the calendar's switch converts it, and a reorder that would reverse it is refused.

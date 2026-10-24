@@ -1671,6 +1671,68 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("Relationships", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Relationships.RelationshipPeriod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("EndDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("EndEraId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("EndMonth")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("EndMonthId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("EndYear")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("EntityEraId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RelationshipId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("StartDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("StartEraId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("StartMonth")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("StartMonthId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("StartYear")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EndEraId");
+
+                    b.HasIndex("EndMonthId");
+
+                    b.HasIndex("EntityEraId");
+
+                    b.HasIndex("StartEraId");
+
+                    b.HasIndex("StartMonthId");
+
+                    b.HasIndex("RelationshipId", "SortOrder");
+
+                    b.ToTable("RelationshipPeriods", (string)null);
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Relationships.RelationshipType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3624,6 +3686,52 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("Universe");
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Relationships.RelationshipPeriod", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Chronology.ChronologyEra", "EndEra")
+                        .WithMany()
+                        .HasForeignKey("EndEraId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Lorex.Api.Features.Chronology.ChronologyCalendarMonth", "EndCalendarMonth")
+                        .WithMany()
+                        .HasForeignKey("EndMonthId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Lorex.Api.Features.Progression.EntityEra", "EntityEra")
+                        .WithMany()
+                        .HasForeignKey("EntityEraId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Lorex.Api.Features.Relationships.LoreRelationship", "Relationship")
+                        .WithMany("Periods")
+                        .HasForeignKey("RelationshipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Chronology.ChronologyEra", "StartEra")
+                        .WithMany()
+                        .HasForeignKey("StartEraId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Lorex.Api.Features.Chronology.ChronologyCalendarMonth", "StartCalendarMonth")
+                        .WithMany()
+                        .HasForeignKey("StartMonthId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("EndCalendarMonth");
+
+                    b.Navigation("EndEra");
+
+                    b.Navigation("EntityEra");
+
+                    b.Navigation("Relationship");
+
+                    b.Navigation("StartCalendarMonth");
+
+                    b.Navigation("StartEra");
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Relationships.RelationshipType", b =>
                 {
                     b.HasOne("Lorex.Api.Features.Universes.Universe", "Universe")
@@ -4195,6 +4303,11 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("Scenes");
 
                     b.Navigation("Stories");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Relationships.LoreRelationship", b =>
+                {
+                    b.Navigation("Periods");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Stories.Chapter", b =>

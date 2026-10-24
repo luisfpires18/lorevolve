@@ -1,11 +1,18 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useUniverseAccess } from '../universes/access'
 import { EntityPicker } from './EntityPicker'
 import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useLeaveGuard } from '../lib/leaveGuard'
-import { formatSpan, fromDateInput, toDateInput } from '../lib/dates'
+import { formatSpan } from '../lib/dates'
+import { ChronologyPointFields, type ChronologyPointDraft } from './ChronologyPointFields'
+import { RelationshipPeriodsField, type EraChoice } from './RelationshipPeriodsField'
+import { formatChronologyPoint, hasCalendar, namesEras } from '../chronology/format'
+import type { Chronology } from '../chronology/types'
+import { getProgression } from '../progression/api'
+import { periodDrafts, periodInputs, periodText, type PeriodDraft } from '../relationships/periods'
+import { chronologyOf, EMPTY_POINT } from '../stories/sceneDraft'
 import {
   createRelationship,
   deleteRelationship,
@@ -15,6 +22,7 @@ import {
 } from '../relationships/api'
 import {
   Perspective,
+  Validity,
   labelChoices,
   type RelationshipType,
   type RelationshipView,
@@ -33,20 +41,29 @@ interface RelationDraft {
   useInverse: boolean
   related: { id: string; name: string } | null
   canonStatus: CanonStatusValue
-  start: string
-  end: string
+  /** The older real-world dates (Issue #18): sent back exactly as read, or cleared - never typed any more. */
+  legacyStart: string | null
+  legacyEnd: string | null
   notes: string
+  periods: PeriodDraft[]
 }
 
 interface RelationshipSectionProps {
   universeId: string
   entityId: string
   entityName: string
+  /** How the universe keeps time, for a relation's periods (Issue #18). */
+  chronology: Chronology
 }
 
 /** A draft as it would be saved, for telling whether anything changed since the form opened. */
 function draftKey(draft: RelationDraft) {
-  return payloadKey({ ...draft, related: draft.related?.id ?? null, notes: draft.notes.trim() })
+  return payloadKey({
+    ...draft,
+    related: draft.related?.id ?? null,
+    notes: draft.notes.trim(),
+    periods: draft.periods.map(({ key: _key, ...period }) => period),
+  })
 }
 
 function choiceKey(typeId: string, useInverse: boolean) {
@@ -81,9 +98,10 @@ function draftFromView(view: RelationshipView): RelationDraft {
     useInverse: view.perspective === Perspective.Inverse,
     related: { id: view.relatedEntityId, name: view.relatedEntityName },
     canonStatus: view.canonStatus,
-    start: toDateInput(view.startDate),
-    end: toDateInput(view.endDate),
+    legacyStart: view.startDate,
+    legacyEnd: view.endDate,
     notes: view.notes ?? '',
+    periods: periodDrafts(view.periods ?? []),
   }
 }
 
@@ -91,6 +109,7 @@ export function RelationshipSection({
   universeId,
   entityId,
   entityName,
+  chronology,
 }: RelationshipSectionProps) {
   const access = useUniverseAccess()
   const [views, setViews] = useState<RelationshipView[] | null>(null)
@@ -102,27 +121,82 @@ export function RelationshipSection({
   const [message, setMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [opened, setOpened] = useState<string | null>(null)
+  // The eras each end of a relation being edited has, read when the form needs them (Issue #18).
+  const [erasOf, setErasOf] = useState<
+    Record<
+      string,
+      { status: 'loading' | 'loaded' | 'failed'; eras: { id: string; name: string }[] }
+    >
+  >({})
+  const [readError, setReadError] = useState<string | null>(null)
+  const whenStatus = useRef<HTMLParagraphElement>(null)
+  const whenOpen = useRef<HTMLButtonElement>(null)
+  // A time the list is read at, when the author asked: only the relations that hold then.
+  const [when, setWhen] = useState<ChronologyPointDraft | null>(null)
+  const [shownAt, setShownAt] = useState<ChronologyPointDraft | null>(null)
+  const reckonsInEras = namesEras(chronology)
+  const custom = hasCalendar(chronology)
 
   const isDirty = draft !== null && draftKey(draft) !== opened
   useLeaveGuard(isDirty ? 'This relation has unsaved changes. Leave without saving it?' : null)
 
+  const at = shownAt ? chronologyOf(shownAt, reckonsInEras, custom) : null
+  const whenReady =
+    when !== null && when.year.trim() !== '' && (!reckonsInEras || when.eraId !== '')
+
   const load = useCallback(
     (signal?: AbortSignal) =>
       Promise.all([
-        listEntityRelationships(universeId, entityId, signal),
+        listEntityRelationships(universeId, entityId, signal, at ? { at } : undefined),
         listRelationshipTypes(universeId, signal),
       ])
         .then(([loadedViews, loadedTypes]) => {
           setViews(loadedViews)
           setTypes(loadedTypes)
+          setReadError(null)
         })
         .catch(() => {
           if (signal?.aborted) return
-          setViews([])
-          setMessage('The relations could not be read.')
+          // A failed read at a time keeps what was shown; a failed first read has nothing to keep.
+          setViews((current) => current ?? [])
+          setReadError(
+            at
+              ? 'The relations at that time could not be read. Check the date and try again.'
+              : 'The relations could not be read.',
+          )
         }),
-    [universeId, entityId],
+    // `at` is rebuilt every render from what was shown; its text is what decides.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [universeId, entityId, JSON.stringify(at)],
   )
+
+  // The eras of this entry and of the entry the relation connects to, read once each.
+  const relatedId = draft?.related?.id ?? null
+  useEffect(() => {
+    if (!draft) return
+    const controller = new AbortController()
+    for (const id of [entityId, relatedId]) {
+      if (!id || erasOf[id]?.status === 'loaded' || erasOf[id]?.status === 'loading') continue
+      setErasOf((current) => ({ ...current, [id]: { status: 'loading', eras: [] } }))
+      getProgression(universeId, id, controller.signal)
+        .then((progression) =>
+          setErasOf((current) => ({
+            ...current,
+            [id]: {
+              status: 'loaded',
+              eras: progression.eras.map((era) => ({ id: era.id, name: era.name })),
+            },
+          })),
+        )
+        .catch(() => {
+          if (!controller.signal.aborted)
+            setErasOf((current) => ({ ...current, [id]: { status: 'failed', eras: [] } }))
+        })
+    }
+    return () => controller.abort()
+    // Read again only for an entry not read yet.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [universeId, entityId, relatedId, draft !== null])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -160,9 +234,10 @@ export function RelationshipSection({
       useInverse: false,
       related: null,
       canonStatus: CanonStatus.Idea,
-      start: '',
-      end: '',
+      legacyStart: null,
+      legacyEnd: null,
       notes: '',
+      periods: [],
     })
   }
 
@@ -194,9 +269,10 @@ export function RelationshipSection({
       sourceEntityId: draft.useInverse ? draft.related.id : entityId,
       targetEntityId: draft.useInverse ? entityId : draft.related.id,
       canonStatus: draft.canonStatus,
-      startDate: fromDateInput(draft.start),
-      endDate: fromDateInput(draft.end),
+      startDate: draft.legacyStart,
+      endDate: draft.legacyEnd,
       notes: draft.notes.trim() ? draft.notes.trim() : null,
+      periods: periodInputs(draft.periods, reckonsInEras, custom),
     }
 
     try {
@@ -260,6 +336,15 @@ export function RelationshipSection({
       )
     : ''
 
+  // Each end's eras, named now - this entry's and the one the relation connects to.
+  const ends = [entityId, ...(relatedId ? [relatedId] : [])]
+  const eraChoices: EraChoice[] = ends.flatMap((id) =>
+    (erasOf[id]?.eras ?? []).map((era) => ({
+      id: era.id,
+      label: `${era.name} (${id === entityId ? entityName || 'this entry' : (draft?.related?.name ?? '')})`,
+    })),
+  )
+
   const form = draft ? (
     <div className="relform" data-testid="relationship-form">
       <p className="relform__reads" data-testid="relationship-preview">
@@ -322,37 +407,38 @@ export function RelationshipSection({
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="field">
-          <label className="field__label" htmlFor="relation-start">
-            Began
-          </label>
-          <input
-            id="relation-start"
-            className="field__input"
-            type="date"
-            value={draft.start}
-            onChange={(event) => edit({ start: event.target.value })}
-            data-testid="relation-start"
-          />
-        </div>
+      <RelationshipPeriodsField
+        chronology={chronology}
+        eras={eraChoices}
+        erasReading={ends.some((id) => erasOf[id]?.status === 'loading')}
+        erasFailed={ends.some((id) => erasOf[id]?.status === 'failed')}
+        value={draft.periods}
+        onChange={(periods) => edit({ periods })}
+        errors={fieldErrors}
+      />
 
-        <div className="field">
-          <label className="field__label" htmlFor="relation-end">
-            Ended
-          </label>
-          <input
-            id="relation-end"
-            className="field__input"
-            type="date"
-            value={draft.end}
-            onChange={(event) => edit({ end: event.target.value })}
-            aria-invalid={fieldErrors.enddate ? true : undefined}
-            data-testid="relation-end"
-          />
+      {/* The real-world dates a relation could carry before it could be placed in the universe's own time: kept, shown and
+          clearable, never typed any more (Issue #18). */}
+      {draft.legacyStart || draft.legacyEnd ? (
+        <div className="field relform__legacy" data-testid="relation-legacy-dates">
+          <span className="field__label">Real-world dates</span>
+          <p className="field__hint">
+            {formatSpan(draft.legacyStart, draft.legacyEnd)}. Recorded before relations could be
+            placed in this universe&rsquo;s own time.
+          </p>
+          <button
+            type="button"
+            className="button button--secondary button--sm"
+            onClick={() => edit({ legacyStart: null, legacyEnd: null })}
+            data-testid="relation-legacy-clear"
+          >
+            Clear real-world dates
+          </button>
           {fieldErrors.enddate ? <p className="field__error">{fieldErrors.enddate}</p> : null}
         </div>
-      </div>
+      ) : null}
 
       <div className="field">
         <label className="field__label" htmlFor="relation-notes">
@@ -412,11 +498,107 @@ export function RelationshipSection({
         ) : null}
       </div>
 
-      {message ? (
+      {(message ?? readError) ? (
         <p className="form__message" role="alert" data-testid="relationship-error">
-          {message}
+          {message ?? readError}
         </p>
       ) : null}
+
+      {/* Which relations hold at one time (Issue #18): the universe's own date, as precise as wanted. */}
+      <div className="relwhen" data-testid="relations-when">
+        {when === null ? (
+          <button
+            ref={whenOpen}
+            type="button"
+            className="linkbutton"
+            onClick={() => setWhen(shownAt ?? EMPTY_POINT)}
+            data-testid="relations-when-open"
+          >
+            {shownAt ? 'Change the time' : 'Show the relations at a time'}
+          </button>
+        ) : (
+          <form
+            className="relwhen__form"
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (!whenReady) return
+              setShownAt(when)
+              setWhen(null)
+              requestAnimationFrame(() => whenStatus.current?.focus())
+            }}
+          >
+            <ChronologyPointFields
+              chronology={chronology}
+              ids={{
+                eraId: 'relations-at-eraId',
+                year: 'relations-at-year',
+                month: 'relations-at-month',
+                day: 'relations-at-day',
+              }}
+              value={when}
+              onChange={(part, next) => setWhen({ ...when, [part]: next })}
+              errors={{}}
+            />
+            {!whenReady ? (
+              <p className="field__hint" data-testid="relations-when-hint">
+                {reckonsInEras
+                  ? 'Give a date period and a year, then Show.'
+                  : 'Give a year, then Show.'}
+              </p>
+            ) : null}
+            <div className="relwhen__actions">
+              <button
+                className="button button--sm"
+                type="submit"
+                disabled={!whenReady}
+                data-testid="relations-when-show"
+              >
+                Show
+              </button>
+              <button
+                className="button button--secondary button--sm"
+                type="button"
+                onClick={() => {
+                  setWhen(null)
+                  requestAnimationFrame(() => whenOpen.current?.focus())
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+        {shownAt && at ? (
+          <p
+            className="relwhen__status"
+            role="status"
+            tabIndex={-1}
+            ref={whenStatus}
+            data-testid="relations-when-status"
+          >
+            Showing what holds at{' '}
+            {formatChronologyPoint(chronology, {
+              year: at.year ?? 0,
+              month: at.month,
+              day: at.day,
+              eraId: at.eraId,
+              monthId: at.monthId,
+            })}
+            .{' '}
+            <button
+              type="button"
+              className="linkbutton"
+              onClick={() => {
+                setShownAt(null)
+                requestAnimationFrame(() => whenOpen.current?.focus())
+              }}
+              data-testid="relations-when-clear"
+            >
+              Show all
+            </button>
+          </p>
+        ) : null}
+      </div>
 
       {isAdding ? form : null}
 
@@ -426,7 +608,11 @@ export function RelationshipSection({
         </p>
       ) : views.length === 0 && !isAdding ? (
         <p className="relations__quiet" data-testid="relations-empty">
-          {types.length === 0 ? (
+          {shownAt ? (
+            'No relation holds then.'
+          ) : readError ? (
+            'Nothing could be shown.'
+          ) : types.length === 0 ? (
             <>
               Relations need a kind first, like who rules what or who is married to whom. Name one
               under <Link to={`/app/universes/${universeId}/types`}>Types</Link>.
@@ -474,9 +660,23 @@ export function RelationshipSection({
                             step={view.canonStatus}
                             label={CANON_LABELS[view.canonStatus]}
                           />
+                          {(view.periods ?? []).length > 0 ? (
+                            <span className="relation__span" data-testid="relation-periods-text">
+                              {(view.periods ?? [])
+                                .map((period) => periodText(period, chronology))
+                                .join('; ')}
+                            </span>
+                          ) : null}
                           {formatSpan(view.startDate, view.endDate) ? (
                             <span className="relation__span">
-                              {formatSpan(view.startDate, view.endDate)}
+                              Real-world: {formatSpan(view.startDate, view.endDate)}
+                            </span>
+                          ) : null}
+                          {view.validity === Validity.Timeless ? (
+                            <span className="relation__validity">Always</span>
+                          ) : view.validity === Validity.Unplaced ? (
+                            <span className="relation__validity" data-testid="relation-unplaced">
+                              Can&rsquo;t be placed then
                             </span>
                           ) : null}
                         </p>

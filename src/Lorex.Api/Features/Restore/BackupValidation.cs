@@ -265,7 +265,7 @@ internal static partial class BackupValidation
             }
         }
 
-        count += payload.Relationships.Count;
+        count += payload.Relationships.Sum(relationship => 1L + (relationship?.Periods?.Count ?? 0));
         count += payload.TimelineEntries.Sum(entry => 1L + entry.ParticipantEntityIds.Count + (entry.StoryIds?.Count ?? 0));
 
         foreach (var story in payload.Stories!)
@@ -302,6 +302,7 @@ internal static partial class BackupValidation
         private readonly Dictionary<Guid, BackupEntityType> _types = [];
         private readonly Dictionary<Guid, Guid> _fieldOwner = [];
         private readonly HashSet<Guid> _requiredFields = [];
+        private readonly Dictionary<Guid, Guid> _eraOwner = [];
         private UniverseChronology? _reckoning;
         private readonly Dictionary<Guid, (BackupFieldDefinition Field, string What)> _fieldTargets = [];
         private readonly Dictionary<Guid, HashSet<Guid>> _groupMembers = [];
@@ -870,6 +871,7 @@ internal static partial class BackupValidation
                     if (era is not null)
                     {
                         Register(era.Id, $"The era {Quote(era.Name)} of {Entry(entity)}");
+                        _eraOwner[era.Id] = entity.Id;
                     }
                 }
 
@@ -1342,6 +1344,59 @@ internal static partial class BackupValidation
             if (relationship.SourceEntityId == relationship.TargetEntityId)
             {
                 Add(BackupIssueCodes.InvalidValue, $"A relationship connects {(source is null ? "an entry" : Entry(source))} to itself.");
+            }
+
+            var periods = relationship.Periods ?? [];
+            if (periods.Count > Relationships.RelationshipPeriods.MaxPeriods)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"A relationship has more periods than Lorex keeps ({Relationships.RelationshipPeriods.MaxPeriods}).");
+            }
+
+            // Each period as a save allows it (Issue #18): an era of either end, or a dated span that does not end before it starts.
+            foreach (var period in periods)
+            {
+                if (period is null)
+                {
+                    Missing("a period of a relationship");
+                    continue;
+                }
+
+                if (period.EntityEraId is { } eraId)
+                {
+                    if (period.Start is not null || period.End is not null)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, "A relationship's period is both dates and an era.");
+                    }
+
+                    Reference(
+                        _eraOwner.TryGetValue(eraId, out var owner) && (owner == relationship.SourceEntityId || owner == relationship.TargetEntityId),
+                        "A relationship's period names an era that is not one of its two entries'.");
+                    continue;
+                }
+
+                if (period.Start is null && period.End is null)
+                {
+                    Add(BackupIssueCodes.InvalidValue, "A relationship's period has neither a start nor an end.");
+                    continue;
+                }
+
+                if (period.Start is { } start)
+                {
+                    Point(start.EraId, start.Year, start.Month, start.MonthId, start.Day, "A relationship period's start");
+                }
+
+                if (period.End is { } end)
+                {
+                    Point(end.EraId, end.Year, end.Month, end.MonthId, end.Day, "A relationship period's end");
+                }
+
+                if (period.Start is { } from && period.End is { } to
+                    && ChronologySpans.Lower(Value(from), Reckoning()) is { } lower
+                    && ChronologySpans.Upper(Value(to), Reckoning()) is { } upper
+                    && upper < lower)
+                {
+                    Add(BackupIssueCodes.InvalidValue, "A relationship's period ends before it starts.");
+                }
             }
         }
 

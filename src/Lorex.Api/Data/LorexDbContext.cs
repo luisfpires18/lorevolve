@@ -89,6 +89,8 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<LoreRelationship> Relationships => Set<LoreRelationship>();
 
+    public DbSet<RelationshipPeriod> RelationshipPeriods => Set<RelationshipPeriod>();
+
     public DbSet<TimelineEntry> TimelineEntries => Set<TimelineEntry>();
 
     public DbSet<TimelineEntryLink> TimelineEntryLinks => Set<TimelineEntryLink>();

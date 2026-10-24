@@ -26,6 +26,9 @@ public static class ProgressionEndpoints
     /// <summary>The 409 for removing an era that still holds an archived field's value.</summary>
     public const string EraArchivedValuesCode = "entity_era_archived_values";
 
+    /// <summary>The 409 for removing an era a relationship's period names (Issue #18).</summary>
+    public const string EraInRelationshipCode = "entity_era_in_relationship";
+
     /// <summary>
     /// The 409 for restoring a version that can no longer be put back exactly as it was saved: it overrides a field that is
     /// archived now or that the entry's type no longer has, chooses an option since removed, or names a story, scene or entry

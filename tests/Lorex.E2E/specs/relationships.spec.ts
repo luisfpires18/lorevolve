@@ -119,13 +119,16 @@ test.describe('relationships', () => {
     await expect(relation(page, 'rules')).toHaveCount(0)
     await expect(page.getByTestId('relationship-list').locator('> li')).toHaveCount(1)
 
-    // Edit from the inverse side: status, dates and notes all set from here.
+    // Edit from the inverse side: status, when it holds and notes all set from here. A period is on the universe's own
+    // chronology - plain years here, since this universe names no date periods (Issue #18).
     await page.getByTestId('relationship-actions-Aragorn').click()
     await page.getByTestId('edit-relationship-Aragorn').click()
     await expect(page.getByTestId('relationship-preview')).toContainText('Gondor ruled by Aragorn')
     await page.getByTestId('relation-canon-canon').click()
-    await page.getByTestId('relation-start').fill('2019-05-01')
-    await page.getByTestId('relation-end').fill('2021-03-04')
+    await page.getByTestId('relation-period-add').click()
+    const period = page.getByTestId('relation-period-0')
+    await period.locator('input[id$="-start-year"]').fill('3019')
+    await period.locator('input[id$="-end-year"]').fill('3021')
     await page.getByTestId('relation-notes').fill('Crowned after the war.')
     await page.getByTestId('save-relationship').click()
 
@@ -138,15 +141,15 @@ test.describe('relationships', () => {
     await expect(forward).toContainText('Gondor')
     await expect(forward).toContainText('Crowned after the war.')
     await expect(forward).toContainText('Canon')
-    await expect(forward.locator('.relation__span')).toContainText('2019')
-    await expect(forward.locator('.relation__span')).toContainText('2021')
+    await expect(forward.getByTestId('relation-periods-text')).toHaveText('3019 – 3021')
 
-    // The dates come back into the form exactly as they were typed, whichever end the
+    // The period comes back into the form exactly as it was typed, whichever end the
     // author is standing on.
     await page.getByTestId('relationship-actions-Gondor').click()
     await page.getByTestId('edit-relationship-Gondor').click()
-    await expect(page.getByTestId('relation-start')).toHaveValue('2019-05-01')
-    await expect(page.getByTestId('relation-end')).toHaveValue('2021-03-04')
+    const reread = page.getByTestId('relation-period-0')
+    await expect(reread.locator('input[id$="-start-year"]')).toHaveValue('3019')
+    await expect(reread.locator('input[id$="-end-year"]')).toHaveValue('3021')
     await expect(page.getByTestId('relation-notes')).toHaveValue('Crowned after the war.')
     await page.getByRole('button', { name: 'Cancel' }).click()
 
@@ -162,8 +165,10 @@ test.describe('relationships', () => {
     expect(views[0].perspective).toBe(0)
     expect(views[0].label).toBe('rules')
     expect(views[0].notes).toBe('Crowned after the war.')
-    expect(views[0].startDate).toContain('2019-05-01')
-    expect(views[0].endDate).toContain('2021-03-04')
+    expect(views[0].startDate).toBeNull()
+    expect(views[0].periods).toHaveLength(1)
+    expect(views[0].periods[0].start.year).toBe(3019)
+    expect(views[0].periods[0].end.year).toBe(3021)
 
     // Removing it from the target clears it from both entries: one row, one delete.
     await answerConfirms(page, () => true, [])
@@ -295,22 +300,24 @@ test.describe('relationships', () => {
     await page.getByTestId('add-relationship').click()
     await page.getByLabel('Reading').selectOption({ label: 'rules' })
     await pickRelated(page, 'Gondor')
-    await page.getByTestId('relation-start').fill('2021-03-04')
-    await page.getByTestId('relation-end').fill('2019-05-01')
+    await page.getByTestId('relation-period-add').click()
+    const period = page.getByTestId('relation-period-0')
+    await period.locator('input[id$="-start-year"]').fill('3021')
+    await period.locator('input[id$="-end-year"]').fill('3019')
     await page.getByTestId('relation-notes').fill('Kept through the refusal.')
     await page.getByTestId('save-relationship').click()
 
     await expect(page.getByTestId('relationship-error')).toBeVisible()
-    await expect(page.getByTestId('relation-end')).toHaveAttribute('aria-invalid', 'true')
+    await expect(period.locator('input[id$="-end-year"]')).toHaveAttribute('aria-invalid', 'true')
     await expect(page.locator('[data-relation-label]')).toHaveCount(0)
 
     // Nothing the author typed is thrown away by the refusal.
     await expect(page.getByTestId('relation-notes')).toHaveValue('Kept through the refusal.')
-    await expect(page.getByTestId('relation-start')).toHaveValue('2021-03-04')
+    await expect(period.locator('input[id$="-start-year"]')).toHaveValue('3021')
     await expect(page.getByTestId('relationship-preview')).toContainText('Aragorn rules Gondor')
 
     // Correcting only the offending field is enough to save.
-    await page.getByTestId('relation-end').fill('2022-06-08')
+    await period.locator('input[id$="-end-year"]').fill('3022')
     await page.getByTestId('save-relationship').click()
     await expect(relation(page, 'rules')).toContainText('Gondor')
     await expect(relation(page, 'rules')).toContainText('Kept through the refusal.')

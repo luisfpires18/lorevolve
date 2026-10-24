@@ -84,9 +84,11 @@ internal static class BackupNormalization
         RelationshipTypes = version >= 14 || payload.RelationshipTypes is null
             ? payload.RelationshipTypes!
             : [.. payload.RelationshipTypes.Select(type => type is null ? null! : ProjectRelationshipType(type, version))],
-        Relationships = version >= 26 || payload.Relationships is null
+        Relationships = version >= 28 || payload.Relationships is null
             ? payload.Relationships!
-            : [.. payload.Relationships.Select(relationship => relationship is null ? null! : relationship with { DeletedAt = null })],
+            : [.. payload.Relationships.Select(relationship => relationship is null
+                ? null!
+                : relationship with { DeletedAt = version >= 26 ? relationship.DeletedAt : null, Periods = null })],
         TimelineEntries = version >= 26 || payload.TimelineEntries is null
             ? payload.TimelineEntries!
             : [.. payload.TimelineEntries.Select(entry => entry is null

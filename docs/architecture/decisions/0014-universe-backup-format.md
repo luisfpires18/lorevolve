@@ -471,3 +471,10 @@ saved version of them as the snapshot the save stored. Not ignorable: the eras a
 restore every entry without them. A restore gives every era a new id and translates every id inside the snapshots, an id
 only a version recorded getting a fresh one of its own. A version 26 or older file restores every entry with no eras, even
 when it carries the member.
+
+## Amendment: version 28, relationship periods (2026-10-24, Issue #18, ADR 0051)
+
+`BackupRelationship.Periods` carries when each link holds, in order: a dated span on the file's chronology, or an era of
+either end by its id in the file. Not ignorable: a version 27 reader would restore every link timeless. A restore points
+each era at its restored id; validation refuses an era of neither end, a period with no bound or with both kinds, and a
+span ending before it starts. A version 27 or older file restores every link timeless, even when it carries the member.
