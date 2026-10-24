@@ -174,6 +174,17 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   image or Story options in V1; links listed). Tests: Playwright `entity-duplicate.spec.ts` 3; `entity-page` (menu order),
   `collaboration` (Editor sees Duplicate) updated; with lore, lore-article, field-lifecycle, entity-reference-target,
   history 46/46 on a fresh DB. No API change, so no API run.
+- **Issue #26 - Lore Type Field Groups / Progressive Forms** (`feat/lore-field-groups` off `dev` at `26c38a8`; committed,
+  not merged, not pushed). Migration `AddEntityFieldSections`, backup format 31. ADR 0055 (new); ADR 0007, 0014, 0043
+  amended. Optional author-named sections for a type's fields, presentation only: no field id, value, order, setting,
+  required check, target, filter, Canon, MCP or assistant change; Explore unchanged; not semantic groups. One
+  `PUT .../field-layout` saves the whole layout under its own `FieldLayoutVersion` (409 `entity_field_layout_changed`);
+  field versions never move. The same save orders the fields (renumbers `DisplayOrder` as shown; `ungroupedFieldIds`
+  first), and a field edit keeps its place. Ungrouped fields first, no "General"; folds start as the author set, reader toggles not
+  stored; a refused save opens the refused fields' sections and focuses the first. Archived fields keep their section.
+  Types screen: fields listed by section, Sections drawer. Tests: API `EntityFieldSectionTests` 14,
+  `EntityFieldSectionMigrationTests` 1, full API suite green; Playwright `field-sections.spec.ts` 7 with neighbouring
+  specs on a fresh DB. Full Playwright suite not run locally; delegated to GitHub Actions by project workflow.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);

@@ -249,6 +249,21 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
             .Where(option => option.FieldDefinition!.EntityType!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
+        var sectionsByType = (await db.EntityFieldSections.AsNoTracking()
+                .Where(section => section.EntityType!.UniverseId == universeId)
+                .ToListAsync(cancellationToken))
+            .GroupBy(section => section.EntityTypeId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<BackupFieldSection>)
+                [
+                    .. group
+                        .OrderBy(section => section.DisplayOrder)
+                        .ThenBy(section => section.Name, StringComparer.Ordinal)
+                        .ThenBy(section => Key(section.Id), StringComparer.Ordinal)
+                        .Select(section => new BackupFieldSection(section.Id, section.Name, section.DisplayOrder, section.StartsCollapsed)),
+                ]);
+
         var optionsByField = options
             .GroupBy(option => option.FieldDefinitionId)
             .ToDictionary(
@@ -284,7 +299,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                             optionsByField.GetValueOrDefault(field.Id, []),
                             field.TargetEntityTypeId,
                             field.TargetGroupId,
-                            field.ArchivedAt)),
+                            field.ArchivedAt,
+                            field.SectionId)),
                 ]);
 
         // The hierarchy's own order, as the app lists it: a parent before its descendants, siblings by place, then name,
@@ -303,7 +319,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                     Utc(type.CreatedAt),
                     Utc(type.UpdatedAt),
                     fieldsByType.GetValueOrDefault(type.Id, []),
-                    type.ParentId)),
+                    type.ParentId,
+                    sectionsByType.GetValueOrDefault(type.Id, []))),
         ];
     }
 

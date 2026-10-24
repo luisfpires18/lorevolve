@@ -321,7 +321,7 @@ internal static partial class BackupValidation
 
         foreach (var type in payload.EntityTypes)
         {
-            count += 1 + type.Fields.Count + type.Fields.Sum(field => (long)field.Options.Count);
+            count += 1 + (type.FieldSections?.Count ?? 0) + type.Fields.Count + type.Fields.Sum(field => (long)field.Options.Count);
         }
 
         foreach (var entity in payload.Entities)
@@ -821,6 +821,34 @@ internal static partial class BackupValidation
                     Add(BackupIssueCodes.InvalidValue, $"{what} has an icon Lorex does not have.");
                 }
 
+                // Its fields' sections (version 31): ids of this file, names unique within the type as the API keeps them.
+                var sections = Required(type.FieldSections, $"{what}'s field sections", since: 31);
+                var sectionIds = new HashSet<Guid>();
+                var sectionNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                if (sections.Count > LoreLimits.MaxFieldSections)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} has {sections.Count} field sections. A type can have at most {LoreLimits.MaxFieldSections}.");
+                }
+
+                foreach (var section in sections)
+                {
+                    if (section is null)
+                    {
+                        Missing($"a field section of {what.ToLowerInvariant()}");
+                        continue;
+                    }
+
+                    var sectionWhat = $"The field section {Quote(section.Name)} of {Quote(type.Name)}";
+                    Register(section.Id, sectionWhat);
+                    sectionIds.Add(section.Id);
+
+                    if (Text(section.Name, LoreLimits.NameMaxLength, $"{sectionWhat}'s name", required: true) && !sectionNames.Add(section.Name))
+                    {
+                        Add(BackupIssueCodes.Duplicate, $"The entry type {Quote(type.Name)} has two field sections called {Quote(section.Name)}.");
+                    }
+                }
+
                 var fields = Required(type.Fields, $"{what}'s fields");
                 var fieldNames = new HashSet<string>(StringComparer.Ordinal);
                 var semantics = new HashSet<EntityFieldSemantic>();
@@ -849,6 +877,12 @@ internal static partial class BackupValidation
 
                     Defined(field.Kind, $"{fieldWhat}'s kind");
                     Text(field.DefaultValue, LoreLimits.TextValueMaxLength, $"{fieldWhat}'s default value");
+
+                    // A section of its own type only: the restore maps it to that section's new id.
+                    if (field.SectionId is { } sectionId)
+                    {
+                        Reference(sectionIds.Contains(sectionId), $"{fieldWhat} is in a field section its type does not hold.");
+                    }
 
                     if (field.TargetEntityTypeId is not null || field.TargetGroupId is not null)
                     {

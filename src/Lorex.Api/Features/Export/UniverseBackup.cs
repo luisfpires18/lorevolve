@@ -251,8 +251,14 @@ public sealed record UniverseBackup(
     /// notes, the eras, forms and scenes each belongs to - with each one's pictures in gallery order, every original in the
     /// archive under <c>media/entities/{entryId}/appearances/</c>. Not ignorable: a version 29 reader would restore every entry
     /// without its looks. A file at version 29 or earlier has none; every entry restores with no appearances.
+    ///
+    /// 31 - A type's fields may be organised into sections (Issue #26). <see cref="BackupEntityType.FieldSections"/> carries a
+    /// type's sections in order - name and whether each starts collapsed - and <see cref="BackupFieldDefinition.SectionId"/>
+    /// names the section of the same type a field is in, archived fields included. The restore gives every section a new id
+    /// and points its fields at it. Not ignorable: a version 30 reader would restore every form flat. A file at version 30 or
+    /// earlier has no sections; every field restores ungrouped, even if it names one, and nothing is inferred from names.
     /// </summary>
-    public const int CurrentVersion = 30;
+    public const int CurrentVersion = 31;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -375,6 +381,7 @@ public sealed record BackupChronologyCalendarMonth(
 /// <summary>
 /// <paramref name="FamilyTreeEligible"/> was added in version 18, <paramref name="ParentId"/> in version 19 (see
 /// <see cref="UniverseBackup.CurrentVersion"/>): the type of this file it sits beneath, or null for a root.
+/// <paramref name="FieldSections"/> (version 31) are its fields' sections in order; empty or absent means none.
 /// </summary>
 public sealed record BackupEntityType(
     Guid Id,
@@ -387,7 +394,11 @@ public sealed record BackupEntityType(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     IReadOnlyList<BackupFieldDefinition> Fields,
-    Guid? ParentId = null);
+    Guid? ParentId = null,
+    IReadOnlyList<BackupFieldSection>? FieldSections = null);
+
+/// <summary>One section of a type's fields (since version 31): its id, which its fields name, its name, place and fold.</summary>
+public sealed record BackupFieldSection(Guid Id, string Name, int DisplayOrder, bool StartsCollapsed);
 
 /// <summary>
 /// One custom field, with its declared meaning. <c>Semantic</c> is authored (ADR 0011) and
@@ -395,6 +406,7 @@ public sealed record BackupEntityType(
 /// <paramref name="TargetEntityTypeId"/> (version 20) is the type of this file a link field is limited to, or null for any.
 /// <paramref name="TargetGroupId"/> (version 23) is the group of this file it is limited to instead, or null.
 /// <paramref name="ArchivedAt"/> (version 25) is when the field was archived, or null for an active field.
+/// <paramref name="SectionId"/> (version 31) is the section of its own type it is shown in, or null.
 /// </summary>
 public sealed record BackupFieldDefinition(
     Guid Id,
@@ -407,7 +419,8 @@ public sealed record BackupFieldDefinition(
     IReadOnlyList<BackupFieldOption> Options,
     Guid? TargetEntityTypeId = null,
     Guid? TargetGroupId = null,
-    DateTime? ArchivedAt = null);
+    DateTime? ArchivedAt = null,
+    Guid? SectionId = null);
 
 /// <summary>
 /// A semantic group (since version 23): its id, which fields and memberships name, its name, and the types of this file in

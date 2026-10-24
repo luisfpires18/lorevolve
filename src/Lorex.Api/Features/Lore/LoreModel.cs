@@ -106,7 +106,39 @@ public sealed class EntityType
 
     public DateTime UpdatedAt { get; set; }
 
+    /// <summary>
+    /// The version of the type's field layout - its sections and which field sits in which (Issue #26): 1 at first, advanced
+    /// by every layout save that changes something. Apart from each field's own <see cref="EntityFieldDefinition.Version"/>, so
+    /// reorganising sections never makes an open field drawer stale, and editing a field never makes the layout stale.
+    /// </summary>
+    public int FieldLayoutVersion { get; set; } = 1;
+
     public ICollection<EntityFieldDefinition> Fields { get; set; } = [];
+
+    public ICollection<EntityFieldSection> FieldSections { get; set; } = [];
+}
+
+/// <summary>
+/// An optional, author-named section of one type's fields (Issue #26), such as "Combat" or "Politics". Presentation only: it
+/// changes where a field is shown in a form and on an entry, never the field's id, values, required check, target, filters,
+/// Canon reading or anything the API, MCP or the assistant answers about an entry. A type with none shows its fields as one
+/// list. Fields in no section are shown first, with no heading.
+/// </summary>
+public sealed class EntityFieldSection
+{
+    public Guid Id { get; set; }
+
+    public Guid EntityTypeId { get; set; }
+
+    public EntityType? EntityType { get; set; }
+
+    public required string Name { get; set; }
+
+    /// <summary>The section's place among its type's sections, from 1.</summary>
+    public int DisplayOrder { get; set; }
+
+    /// <summary>Whether forms and entries show the section folded at first. A reader's own toggles are not stored.</summary>
+    public bool StartsCollapsed { get; set; }
 }
 
 /// <summary>
@@ -209,6 +241,15 @@ public sealed class EntityFieldDefinition
     /// counts its values, so nothing an archived field holds can be invalidated behind it.
     /// </summary>
     public DateTime? ArchivedAt { get; set; }
+
+    /// <summary>
+    /// The section of its own type this field is shown in, or null for the ungrouped fields shown first (Issue #26). Kept while
+    /// the field is archived, so a restore puts it back where it was; cleared when the section is removed. Not part of
+    /// <see cref="Version"/>: it is set by the type's layout, which has its own (<see cref="EntityType.FieldLayoutVersion"/>).
+    /// A plain column, as <see cref="EntityType.ParentId"/> is: triggers hold that the section is of the field's own type
+    /// and clear it when the section goes, so <c>EntityFieldDefinitions</c> is never rebuilt for a key.
+    /// </summary>
+    public Guid? SectionId { get; set; }
 
     /// <summary>
     /// The definition's edit version (ADR 0043 amendment, Issue #39): 1 when created, advanced once by every edit that changes

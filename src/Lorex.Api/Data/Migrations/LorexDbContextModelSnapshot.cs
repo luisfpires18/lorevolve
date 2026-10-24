@@ -684,6 +684,9 @@ namespace Lorex.Api.Data.Migrations
                         .HasMaxLength(160)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("SectionId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("Semantic")
                         .HasColumnType("INTEGER");
 
@@ -697,6 +700,8 @@ namespace Lorex.Api.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SectionId");
 
                     b.HasIndex("TargetEntityTypeId");
 
@@ -735,6 +740,33 @@ namespace Lorex.Api.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("EntityFieldOptions", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Lore.EntityFieldSection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("EntityTypeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("StartsCollapsed")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityTypeId");
+
+                    b.ToTable("EntityFieldSections", (string)null);
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Lore.EntityFieldValue", b =>
@@ -1079,6 +1111,9 @@ namespace Lorex.Api.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("FamilyTreeEligible")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FieldLayoutVersion")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Icon")
@@ -3572,6 +3607,17 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("FieldDefinition");
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Lore.EntityFieldSection", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Lore.EntityType", "EntityType")
+                        .WithMany("FieldSections")
+                        .HasForeignKey("EntityTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EntityType");
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Lore.EntityFieldValue", b =>
                 {
                     b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
@@ -4794,6 +4840,8 @@ namespace Lorex.Api.Data.Migrations
 
             modelBuilder.Entity("Lorex.Api.Features.Lore.EntityType", b =>
                 {
+                    b.Navigation("FieldSections");
+
                     b.Navigation("Fields");
                 });
 

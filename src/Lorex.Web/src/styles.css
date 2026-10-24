@@ -5512,6 +5512,78 @@ a.button--danger:visited {
   overflow-wrap: anywhere;
 }
 
+/* An entry's facts in its type's sections (Issue #26): the ungrouped ones first, each section folded or open beneath. */
+.facts__sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* One section of a type's fields, in the entry form and on the entry: a native fold, named, saying what it holds. */
+.fieldsection {
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-3);
+}
+
+.fieldsection__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  cursor: pointer;
+  list-style: none;
+}
+
+.fieldsection__summary::-webkit-details-marker {
+  display: none;
+}
+
+.fieldsection__chevron {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  align-self: center;
+  color: var(--muted);
+  transition: transform 120ms ease-out;
+}
+
+.fieldsection[open] > .fieldsection__summary .fieldsection__chevron {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fieldsection__chevron {
+    transition: none;
+  }
+}
+
+.fieldsection__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fieldsection__meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.fieldsection__alert {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.fieldsection[data-attention='true'] > .fieldsection__summary .fieldsection__name {
+  color: var(--danger);
+}
+
+.fieldsection[open] > .fieldsection__body {
+  margin-top: var(--space-4);
+}
+
+.entry__rail .fieldsection[open] > .fieldsection__body {
+  margin-top: var(--space-2);
+}
+
 /* ---------- The entry's form ----------
 
    One column at a form's measure, in the order an author thinks of an entry: the name and summary
@@ -7069,8 +7141,116 @@ html:has(.viewer[open]) {
   flex-basis: 100%;
 }
 
-.fieldlist__add {
-  margin-top: var(--space-4);
+.fieldlist__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-4) 0 0;
+}
+
+/* A type's section on the Types screen (Issue #26): its name over its fields, the ungrouped ones above it. */
+.fieldgroup {
+  margin-top: var(--space-5);
+}
+
+.fieldgroup__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-ui);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fieldgroup__meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+/* The sections drawer: each section a row of its name, its fold and its moves, then every field with its section. */
+.sectionlist,
+.sectionfields {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sectionlist {
+  gap: var(--space-4);
+}
+
+.sectionlist__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--rule);
+}
+
+.sectionlist__row > .field {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.sectionlist__row > .check {
+  min-height: var(--control-sm);
+}
+
+.sectionlist__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.sectionlist__add {
+  align-self: flex-start;
+}
+
+.sectionfields {
+  gap: var(--space-3);
+}
+
+.sectionfields__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+}
+
+.sectionfields__name {
+  flex: 1 1 10rem;
+  min-width: 0;
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.sectionfields__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sectionfields__label {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.sectionfields__row > .field__input {
+  flex: 1 1 12rem;
+  min-width: 0;
 }
 
 /* In the field drawer, after a stale save: the field as someone else saved it. */

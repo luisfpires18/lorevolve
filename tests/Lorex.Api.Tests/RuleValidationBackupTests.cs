@@ -37,7 +37,7 @@ public sealed class RuleValidationBackupTests(LorexApiFactory factory) : IClassF
         var backup = JsonSerializer.Deserialize<UniverseBackup>(raw, UniverseBackupJson.Options)!;
         var payload = backup.Payload;
 
-        Assert.Equal(30, backup.FormatVersion);
+        Assert.Equal(31, backup.FormatVersion);
         Assert.Equal(
             [(world.Resurrection, ValidationTermKind.EventKind, "Resurrection"), (world.RiteOfAsh, ValidationTermKind.Method, "Rite of Ash"), (world.SevenStones, ValidationTermKind.Method, "Seven Stones")],
             payload.ValidationTerms!.Select(term => (term.Id, term.Kind, term.Name)));

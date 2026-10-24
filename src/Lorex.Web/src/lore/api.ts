@@ -224,6 +224,35 @@ export const FIELD_IN_USE_CODE = 'entity_field_in_use'
 /** The code on the 409 for a field edit made over a version that is no longer current. */
 export const FIELD_CHANGED_CODE = 'entity_field_changed'
 
+/** The code on the 409 for a field layout saved over sections someone changed since (Issue #26). */
+export const FIELD_LAYOUT_CHANGED_CODE = 'entity_field_layout_changed'
+
+/** One section of a layout save: one of the type's own by `id`, or a new one (no `id`); its fields as a set. */
+export interface FieldSectionInput {
+  id: string | null
+  name: string
+  startsCollapsed: boolean
+  fieldIds: string[]
+}
+
+/**
+ * Saves a type's whole field layout (Issue #26): its sections in order, which field sits in which, and the fields' order -
+ * `ungroupedFieldIds` first, then each section's `fieldIds`, as listed. A section left out is removed and its fields become
+ * ungrouped, as does any field no section lists. Changes no field's settings, values or version. Answers the type.
+ */
+export function saveFieldLayout(
+  universeId: string,
+  typeId: string,
+  sections: FieldSectionInput[],
+  ungroupedFieldIds: string[],
+  expectedVersion: number,
+) {
+  return apiFetch<EntityType>(`${base(universeId)}/entity-types/${typeId}/field-layout`, {
+    method: 'PUT',
+    body: JSON.stringify({ sections, ungroupedFieldIds, expectedVersion }),
+  })
+}
+
 /** The code on the 409 for making a field required, or restoring it required, while live entries have no value for it. */
 export const FIELD_REQUIRED_MISSING_CODE = 'entity_field_required_missing'
 

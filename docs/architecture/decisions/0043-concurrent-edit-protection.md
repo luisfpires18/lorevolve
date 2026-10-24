@@ -99,3 +99,9 @@ An entry's progression is protected the same way: `EntityProgression.Version` (0
 by every save and history restore, refused with 409 `entity_progression_changed`. It is apart from the entry's own version,
 so saving eras never makes an open entry form stale, and the reverse. Archiving or restoring a field moves it on for every
 progression that overrides that field.
+
+## Amendment (2026-10-24, Issue #26, ADR 0055)
+
+A type's field layout is protected on its own: `EntityTypes.FieldLayoutVersion`, named as `expectedVersion` by every layout
+save, refused with 409 `entity_field_layout_changed`. It is apart from each field's version: saving sections never makes an
+open field drawer stale, and editing, archiving or restoring a field never makes an open Sections drawer stale.

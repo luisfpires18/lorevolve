@@ -16,6 +16,9 @@ public static class LoreLimits
     /// <summary>One article's document, in characters of Tiptap JSON. Mirrored by the web client.</summary>
     public const int ContentMaxLength = 200_000;
     public const int OptionMaxLength = 120;
+
+    /// <summary>The most sections one type's fields may be organised into (Issue #26).</summary>
+    public const int MaxFieldSections = 50;
 }
 
 public sealed class EntityTypeConfiguration : IEntityTypeConfiguration<EntityType>
@@ -126,11 +129,30 @@ public sealed class EntityFieldDefinitionConfiguration : IEntityTypeConfiguratio
 
         builder.HasIndex(field => new { field.EntityTypeId, field.Name }).IsUnique();
 
+        // A section without a key (Issue #26): triggers keep it of the field's own type and clear it when the section goes.
+        builder.HasIndex(field => field.SectionId);
+
         // One meaning per type at most. Filtered, because the ordinary case is a type with
         // several semantic-free fields and a unique index over nulls would forbid that.
         builder.HasIndex(field => new { field.EntityTypeId, field.Semantic })
             .IsUnique()
             .HasFilter("\"Semantic\" IS NOT NULL");
+    }
+}
+
+public sealed class EntityFieldSectionConfiguration : IEntityTypeConfiguration<EntityFieldSection>
+{
+    public void Configure(EntityTypeBuilder<EntityFieldSection> builder)
+    {
+        builder.ToTable("EntityFieldSections");
+        builder.HasKey(section => section.Id);
+
+        builder.Property(section => section.Name).IsRequired().HasMaxLength(LoreLimits.NameMaxLength);
+
+        builder.HasOne(section => section.EntityType)
+            .WithMany(type => type.FieldSections)
+            .HasForeignKey(section => section.EntityTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

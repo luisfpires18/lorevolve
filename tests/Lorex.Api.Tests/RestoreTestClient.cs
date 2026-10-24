@@ -479,6 +479,20 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 31)
+        {
+            // A type's field sections, and a field's section, arrived in version 31.
+            foreach (var type in payload["entityTypes"]!.AsArray())
+            {
+                Drop(type, "fieldSections");
+
+                foreach (var field in type!["fields"]!.AsArray())
+                {
+                    Drop(field, "sectionId");
+                }
+            }
+        }
+
         if (version < 26)
         {
             // A relationship's and a moment's Trash marker arrived in version 26 (ADR 0048).

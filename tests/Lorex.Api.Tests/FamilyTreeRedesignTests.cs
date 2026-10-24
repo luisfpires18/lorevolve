@@ -282,7 +282,7 @@ public sealed class FamilyTreeRedesignTests(LorexApiFactory factory) : IClassFix
 
         var archive = await RawArchive(family.Client, family.Universe);
         var backup = BackupOf(archive);
-        Assert.Equal(30, backup.FormatVersion);
+        Assert.Equal(31, backup.FormatVersion);
         Assert.Equal(
             ["People"],
             backup.Payload.EntityTypeGroups!.Where(group => group.FamilyTreeEnabled).Select(group => group.Name));

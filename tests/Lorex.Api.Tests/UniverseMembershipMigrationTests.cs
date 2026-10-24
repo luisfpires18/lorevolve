@@ -128,8 +128,8 @@ public sealed class UniverseMembershipMigrationTests : IDisposable
             (await owner.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-membermigrate", Password))).EnsureSuccessStatusCode();
             var detail = (await owner.GetFromJsonAsync<UniverseDetail>($"/api/universes/{universeId}"))!;
             Assert.Equal(UniverseRole.Owner, detail.AccessRole);
-            Assert.Equal(30, (await PlotTestClient.Backup(owner, universeId)).FormatVersion);
-            Assert.Equal(30, UniverseBackup.CurrentVersion);
+            Assert.Equal(31, (await PlotTestClient.Backup(owner, universeId)).FormatVersion);
+            Assert.Equal(31, UniverseBackup.CurrentVersion);
 
             var member = host.CreateHttpsClient();
             (await member.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-membermigrate2", Password))).EnsureSuccessStatusCode();
@@ -163,10 +163,11 @@ public sealed class UniverseMembershipMigrationTests : IDisposable
         foreach (var table in tables)
         {
             // A scene's custom month (AddChronologyCalendars, 039), an account's storage allowance (AddAccountStorageQuota,
-            // ADR 0042), a version's author (AddRevisionActors, 042) and an edit version (AddContentEditVersions, ADR 0043)
-            // arrive after memberships, so a rollback past them takes them.
+            // ADR 0042), a version's author (AddRevisionActors, 042), an edit version (AddContentEditVersions, ADR 0043) and a
+            // type's field layout version (AddEntityFieldSections, Issue #26) arrive after memberships, so a rollback past them
+            // takes them.
             var columns = (await Strings(db, $"SELECT name AS Value FROM pragma_table_info('{table}') ORDER BY cid"))
-                .Where(column => column is not "MonthId" and not "StorageQuotaBytes" and not "ActorUserId" and not "Version");
+                .Where(column => column is not "MonthId" and not "StorageQuotaBytes" and not "ActorUserId" and not "Version" and not "FieldLayoutVersion");
             var select = string.Join(" || '|' || ", columns.Select(column => $"COALESCE(CAST(\"{column}\" AS TEXT), '~')"));
             rows.AddRange(await Strings(db, $"SELECT '{table}:' || {select} AS Value FROM \"{table}\" ORDER BY 1"));
         }

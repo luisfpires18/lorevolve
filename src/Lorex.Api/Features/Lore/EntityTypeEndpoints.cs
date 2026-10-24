@@ -83,6 +83,9 @@ public static class EntityTypeEndpoints
     /// <summary>The marker on the 409 for a field edit made over a version that is no longer current (ADR 0043).</summary>
     public const string FieldChangedCode = "entity_field_changed";
 
+    /// <summary>The marker on the 409 for a field layout saved over a layout version that is no longer current (Issue #26).</summary>
+    public const string FieldLayoutChangedCode = "entity_field_layout_changed";
+
     /// <summary>The machine-readable marker on the refusal of a parent or a move that would put a type inside itself.</summary>
     public const string ParentCycleCode = "entity_type_parent_cycle";
 
@@ -107,6 +110,7 @@ public static class EntityTypeEndpoints
         group.MapDelete("/{typeId:guid}/fields/{fieldId:guid}", DeleteFieldAsync).WithName("DeleteEntityField");
         group.MapPost("/{typeId:guid}/fields/{fieldId:guid}/archive", ArchiveFieldAsync).WithName("ArchiveEntityField");
         group.MapPost("/{typeId:guid}/fields/{fieldId:guid}/restore", RestoreFieldAsync).WithName("RestoreEntityField");
+        group.MapPut("/{typeId:guid}/field-layout", SaveFieldLayoutAsync).WithName("SaveEntityFieldLayout");
 
         return endpoints;
     }
@@ -876,7 +880,8 @@ public static class EntityTypeEndpoints
         // declared or withdrawn at any time - unlike the kind, which is frozen once values exist.
         definition.Semantic = request.Semantic;
         definition.IsRequired = request.IsRequired;
-        definition.DisplayOrder = request.DisplayOrder ?? definition.DisplayOrder;
+        // An edit keeps the field's place, whatever it sends: the order is the type's layout's (Issue #26), saved under its own
+        // version, so a drawer opened before a reorder can never put the field back where it was.
         definition.DefaultValue = LoreValidation.Normalize(request.DefaultValue);
 
         if (request.Options is not null)
@@ -1330,6 +1335,190 @@ public static class EntityTypeEndpoints
         return null;
     }
 
+    /// <summary>
+    /// Saves a type's whole field layout (Issue #26): its sections, in order, each named and folded or not, which field sits in
+    /// which, and the fields' order - the ungrouped ones first, then each section's, as listed. Presentation only - no field's
+    /// id, values, version, required flag, target or meaning changes - so it is not gated, and no open entry form or field
+    /// drawer becomes stale. Versioned on its own (<see cref="EntityType.FieldLayoutVersion"/>): a stale or missing version is a
+    /// 409 <see cref="FieldLayoutChangedCode"/>. Refused, never trimmed to fit: a section of another type, a field that is not
+    /// this type's, a field listed twice, a blank or repeated name, more than <see cref="LoreLimits.MaxFieldSections"/>. One
+    /// transaction; an unchanged save leaves the version where it was.
+    /// </summary>
+    private static async Task<IResult> SaveFieldLayoutAsync(
+        Guid universeId,
+        Guid typeId,
+        [FromBody] FieldLayoutRequest request,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var entityType = await db.EntityTypes
+            .Include(type => type.FieldSections)
+            .FirstOrDefaultAsync(type => type.Id == typeId && type.UniverseId == universeId, cancellationToken);
+
+        if (entityType is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (!EditVersion.Matches(entityType.FieldLayoutVersion, request.ExpectedVersion))
+        {
+            return EditVersion.Changed(
+                FieldLayoutChangedCode,
+                "Sections changed",
+                "This type's sections were changed after they were opened here. Nothing was saved.",
+                entityType.FieldLayoutVersion);
+        }
+
+        // Every field of the type, archived ones included: an archived field keeps its section for when it is restored.
+        var fields = await db.EntityFieldDefinitions
+            .Where(field => field.EntityTypeId == typeId)
+            .ToDictionaryAsync(field => field.Id, cancellationToken);
+
+        var sections = request.Sections ?? [];
+        var errors = new Dictionary<string, string[]>();
+        if (request.Sections is null)
+        {
+            errors["sections"] = ["Send the type's sections, or an empty list for none."];
+        }
+        else if (sections.Count > LoreLimits.MaxFieldSections)
+        {
+            errors["sections"] = [$"A type can have at most {LoreLimits.MaxFieldSections} sections."];
+        }
+
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var named = new HashSet<Guid>();
+        var placed = new Dictionary<Guid, int>();
+
+        for (var index = 0; index < sections.Count; index++)
+        {
+            var at = $"sections[{index}]";
+            if (sections[index] is not { } section)
+            {
+                errors[at] = ["Describe each section."];
+                continue;
+            }
+
+            var name = section.Name?.Trim();
+            if (string.IsNullOrEmpty(name))
+            {
+                errors[$"{at}.name"] = ["Give the section a name."];
+            }
+            else if (name.Length > LoreLimits.NameMaxLength)
+            {
+                errors[$"{at}.name"] = [$"Keep a section's name to {LoreLimits.NameMaxLength} characters."];
+            }
+            else if (!names.Add(name))
+            {
+                errors[$"{at}.name"] = ["This type already has a section with that name."];
+            }
+
+            // Another type's section and a made-up id get the same answer.
+            if (section.Id is { } id && (!named.Add(id) || entityType.FieldSections.All(own => own.Id != id)))
+            {
+                errors[$"{at}.id"] = ["This section is not one of this type's. Reload the sections and try again."];
+            }
+
+            foreach (var fieldId in section.FieldIds ?? [])
+            {
+                if (!fields.ContainsKey(fieldId))
+                {
+                    errors[$"{at}.fieldIds"] = ["A field here is not one of this type's fields. Reload the sections and try again."];
+                }
+                else if (!placed.TryAdd(fieldId, index))
+                {
+                    errors[$"{at}.fieldIds"] = ["A field can be in one section only."];
+                }
+            }
+        }
+
+        // The ungrouped fields' order, when the save gives one: this type's fields, each once, and in no section.
+        var ungrouped = new Dictionary<Guid, int>();
+        foreach (var fieldId in request.UngroupedFieldIds ?? [])
+        {
+            if (!fields.ContainsKey(fieldId))
+            {
+                errors["ungroupedFieldIds"] = ["A field here is not one of this type's fields. Reload the sections and try again."];
+            }
+            else if (placed.ContainsKey(fieldId) || !ungrouped.TryAdd(fieldId, ungrouped.Count))
+            {
+                errors["ungroupedFieldIds"] = ["A field can be in one place only."];
+            }
+        }
+
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        // Sections first, in their own save: a field below may name a new one, and one save does not promise to write it
+        // before the field that names it. Removing a section ungroups its fields (a trigger, then the loop below says so too).
+        var removed = entityType.FieldSections.Where(own => !named.Contains(own.Id)).ToList();
+        db.EntityFieldSections.RemoveRange(removed);
+
+        var rows = new List<EntityFieldSection>(sections.Count);
+        for (var index = 0; index < sections.Count; index++)
+        {
+            var section = sections[index];
+            var row = section.Id is { } id ? entityType.FieldSections.Single(own => own.Id == id) : null;
+            if (row is null)
+            {
+                row = new EntityFieldSection { Id = Guid.NewGuid(), EntityTypeId = typeId, Name = string.Empty };
+                db.EntityFieldSections.Add(row);
+            }
+
+            row.Name = section.Name!.Trim();
+            row.DisplayOrder = index + 1;
+            row.StartsCollapsed = section.StartsCollapsed;
+            rows.Add(row);
+        }
+
+        var changed = db.ChangeTracker.HasChanges();
+        await db.SaveChangesAsync(cancellationToken);
+
+        foreach (var field in fields.Values)
+        {
+            field.SectionId = placed.TryGetValue(field.Id, out var index) ? rows[index].Id : null;
+        }
+
+        // Every field numbered 1..n in the order the type shows them: ungrouped first, then each section in its place, each
+        // group as listed. A field the save does not list - one added since it was opened - keeps its old place at the end of
+        // its group. The field's version does not move: its place is the layout's, not the field's.
+        var position = sections
+            .SelectMany(section => (section.FieldIds ?? []).Select((fieldId, at) => (fieldId, at)))
+            .ToDictionary(pair => pair.fieldId, pair => pair.at);
+        var order = fields.Values
+            .OrderBy(field => placed.TryGetValue(field.Id, out var group) ? group : -1)
+            .ThenBy(field => position.TryGetValue(field.Id, out var at) || ungrouped.TryGetValue(field.Id, out at) ? at : int.MaxValue)
+            .ThenBy(field => field.DisplayOrder)
+            .ThenBy(field => field.Name, StringComparer.Ordinal)
+            .ThenBy(field => field.Id)
+            .ToList();
+        for (var at = 0; at < order.Count; at++)
+        {
+            order[at].DisplayOrder = at + 1;
+        }
+
+        changed |= db.ChangeTracker.HasChanges();
+        if (changed)
+        {
+            entityType.FieldLayoutVersion++;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+
+        var types = await LoadTypesAsync(db, universeId, cancellationToken);
+        return Results.Ok(types.First(type => type.Id == typeId));
+    }
+
     /// <summary>" (archived)" after a field's quoted name in a refusal, so the author knows to look among the archived fields.</summary>
     internal static string ArchivedMark(bool archived) => archived ? " (archived)" : string.Empty;
 
@@ -1412,7 +1601,8 @@ public static class EntityTypeEndpoints
                     .Distinct()
                     .Count(),
             db.EntityRevisionFieldValues.Any(value => value.FieldDefinitionId == field.Id),
-            field.Version);
+            field.Version,
+            field.SectionId);
 
 
     internal static async Task<List<EntityTypeResponse>> LoadTypesAsync(
@@ -1449,7 +1639,14 @@ public static class EntityTypeEndpoints
                     .OrderBy(field => field.DisplayOrder)
                     .ThenBy(field => field.Name)
                     .Select(toField)
-                    .ToList()))
+                    .ToList(),
+                type.FieldSections
+                    .OrderBy(section => section.DisplayOrder)
+                    .ThenBy(section => section.Name)
+                    .ThenBy(section => section.Id)
+                    .Select(section => new FieldSectionResponse(section.Id, section.Name, section.DisplayOrder, section.StartsCollapsed))
+                    .ToList(),
+                type.FieldLayoutVersion))
             .ToListAsync(cancellationToken),
             type => type.Id,
             type => type.ParentId,

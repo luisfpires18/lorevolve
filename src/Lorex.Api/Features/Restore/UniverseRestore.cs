@@ -87,6 +87,11 @@ internal sealed class RestoreIdentity
         {
             yield return type.Id;
 
+            foreach (var section in type.FieldSections ?? [])
+            {
+                yield return section.Id;
+            }
+
             foreach (var field in type.Fields)
             {
                 yield return field.Id;
@@ -536,6 +541,29 @@ internal sealed partial class UniverseRestore(
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Puts each restored field in its restored section (Issue #26), through the same map as every other internal reference. A
+    /// second write in the restore's transaction, as for nested types: a trigger checks the section exists as the field is
+    /// written, and one save does not promise to write sections first. Validation proved each is of the field's own type.
+    /// </summary>
+    private async Task SectionFieldsAsync(UniverseBackupPayload payload, RestoreIdentity ids, CancellationToken cancellationToken)
+    {
+        var placed = payload.EntityTypes.SelectMany(type => type.Fields).Where(field => field.SectionId is not null).ToList();
+        if (placed.Count == 0)
+        {
+            return;
+        }
+
+        var restored = db.EntityFieldDefinitions.Local.ToDictionary(field => field.Id);
+        foreach (var field in placed)
+        {
+            restored[ids.Map(field.Id)].SectionId = ids.Map(field.SectionId);
+        }
+
+        db.ChangeTracker.DetectChanges();
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
     private async Task<Universe> WriteAsync(
         UniverseBackupPayload payload,
         RestoreIdentity ids,
@@ -603,6 +631,7 @@ internal sealed partial class UniverseRestore(
 
             await db.SaveChangesAsync(cancellationToken);
             await NestTypesAsync(payload, ids, cancellationToken);
+            await SectionFieldsAsync(payload, ids, cancellationToken);
         }
         catch (DbUpdateException)
         {
@@ -708,6 +737,19 @@ internal sealed partial class UniverseRestore(
                 CreatedAt = type.CreatedAt,
                 UpdatedAt = type.UpdatedAt,
             });
+
+            // Its fields' sections (version 31), in their order; SectionFieldsAsync puts the fields in them once they exist.
+            foreach (var section in type.FieldSections ?? [])
+            {
+                db.EntityFieldSections.Add(new EntityFieldSection
+                {
+                    Id = ids.Map(section.Id),
+                    EntityTypeId = ids.Map(type.Id),
+                    Name = section.Name,
+                    DisplayOrder = section.DisplayOrder,
+                    StartsCollapsed = section.StartsCollapsed,
+                });
+            }
 
             foreach (var field in type.Fields)
             {

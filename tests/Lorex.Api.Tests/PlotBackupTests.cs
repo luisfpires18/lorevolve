@@ -25,7 +25,7 @@ public sealed class PlotBackupTests(LorexApiFactory factory) : IClassFixture<Lor
 
         // Plot arrived in version 7; prose, articles and the Trash moved the file on without changing how a live plot travels.
         var backup = await Backup(client, universe.Id);
-        Assert.Equal(30, backup.FormatVersion);
+        Assert.Equal(31, backup.FormatVersion);
 
         var stories = backup.Payload.Stories!;
         Assert.Equal(["Plotted", "Unplotted"], stories.Select(story => story.Title));

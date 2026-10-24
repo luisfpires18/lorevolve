@@ -435,7 +435,7 @@ public sealed class CollaboratorInvitationTests(LorexApiFactory factory) : IClas
 
         var archive = await RawArchive(w.Owner, w.U);
         var document = DocumentText(archive);
-        Assert.Equal(30, (await Backup(w.Owner, w.U)).FormatVersion);
+        Assert.Equal(31, (await Backup(w.Owner, w.U)).FormatVersion);
         foreach (var word in new[] { "invitation", "inv-backup-pending", "membership", "collaborator" })
         {
             Assert.DoesNotContain(word, document, StringComparison.OrdinalIgnoreCase);
