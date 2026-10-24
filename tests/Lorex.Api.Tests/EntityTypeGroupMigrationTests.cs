@@ -110,7 +110,7 @@ public sealed class EntityTypeGroupMigrationTests : IDisposable
     /// <summary>Everything that was there before: every table but the new ones, with its row count, and every type's id.</summary>
     private static async Task<string> Fingerprint(LorexDbContext db)
     {
-        var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'EntityTypeGroup%' AND name NOT LIKE 'AiChange%' AND name NOT LIKE 'EntityEra%' AND name NOT LIKE 'EntityProgression%' AND name <> 'RelationshipPeriods' AND name NOT LIKE 'EntityForm%' AND name NOT LIKE 'EntityAbilit%' AND name NOT LIKE 'EntityAppearance%' AND name <> 'EntityFieldSections' AND name <> 'EntityPrivateNotes' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%SearchIndex%' AND name <> '__EFMigrationsHistory' ORDER BY name");
+        var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'EntityTypeGroup%' AND name NOT LIKE 'AiChange%' AND name NOT LIKE 'EntityEra%' AND name NOT LIKE 'EntityProgression%' AND name <> 'RelationshipPeriods' AND name NOT LIKE 'EntityForm%' AND name NOT LIKE 'EntityAbilit%' AND name NOT LIKE 'EntityAppearance%' AND name <> 'EntityFieldSections' AND name <> 'EntityPrivateNotes' AND name <> 'KnowledgeRecords' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%SearchIndex%' AND name <> '__EFMigrationsHistory' ORDER BY name");
         var parts = new List<string>();
         foreach (var table in tables)
         {

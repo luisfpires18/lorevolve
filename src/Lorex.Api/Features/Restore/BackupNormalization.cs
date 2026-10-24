@@ -117,6 +117,7 @@ internal static class BackupNormalization
             : version >= 23
                 ? [.. payload.EntityTypeGroups.Select(group => group is null ? null! : group with { FamilyTreeEnabled = false })]
                 : null,
+        KnowledgeRecords = version >= 33 ? payload.KnowledgeRecords : null,
     };
 
     /// <summary>
@@ -222,6 +223,7 @@ internal static class BackupNormalization
         WorldRules = [.. (payload.WorldRules ?? []).Select(rule => rule.Validation is { Kind: WorldRuleValidationKind.None } ? rule with { Validation = null } : rule)],
         ValidationTerms = payload.ValidationTerms ?? [],
         EntityTypeGroups = payload.EntityTypeGroups ?? [],
+        KnowledgeRecords = payload.KnowledgeRecords ?? [],
         TimelineEntries =
         [
             .. payload.TimelineEntries.Select(entry =>

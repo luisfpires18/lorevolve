@@ -514,3 +514,12 @@ entry with none. Not ignorable: authored text a version 31 reader would restore 
 a restore makes the restoring account the owner of the new universe, so the note's one reader is unchanged by the trip; the
 restored note is version 1 again. Validation refuses a note with no text and one over 20,000 characters. A version 31 or
 older file restores every entry without a note, even when it carries the member.
+
+## Amendment: version 33, knowledge records (2026-10-25, issue 15, ADR 0057)
+
+`UniverseBackupPayload.KnowledgeRecords` carries every knowledge record of the universe by id - knower, optional subject,
+statement, the scene it is learnt in or known from the start, created and updated - by knower name, then creation, then id.
+Not ignorable: a version 32 reader would restore a world with every continuity note silently gone. Validation refuses a
+knower or scene the file does not hold, a subject that is the knower, both anchors or neither, and a blank or over-long
+statement; a restore gives every record a new id pointing at the restored entries and scenes. A version 32 or older file
+restores with none, even when it carries the member.

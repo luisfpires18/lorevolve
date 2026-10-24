@@ -15336,6 +15336,64 @@ a.idearef__name {
   margin-top: var(--space-2);
 }
 
+/* ---------- Entry: knowledge (issue 15) ----------
+
+   What an entry knows, in the stories' order, as rows under "Known from the start" and each story's title; the readings
+   the list can give are small marks after the place, never a colour that claims a verdict. */
+.knowledge__abouthead {
+  margin-top: var(--space-6);
+}
+
+.knowledge__abouttitle {
+  margin: 0;
+}
+
+.knowledge__row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.knowledge__statement {
+  grid-column: 1;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.knowledge__meta {
+  grid-column: 1;
+  margin: 0;
+  font-size: var(--text-ui);
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+
+.knowledge__issue {
+  padding: 0.0625rem var(--space-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.knowledge__tools {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+
+.knowledge__fixed {
+  margin: 0 0 var(--space-3);
+  font-weight: 500;
+}
+
 .reviewsection {
   display: flex;
   flex-direction: column;

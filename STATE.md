@@ -174,6 +174,23 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   image or Story options in V1; links listed). Tests: Playwright `entity-duplicate.spec.ts` 3; `entity-page` (menu order),
   `collaboration` (Editor sees Duplicate) updated; with lore, lore-article, field-lifecycle, entity-reference-target,
   history 46/46 on a fresh DB. No API change, so no API run.
+- **Issue #15 - Knowledge / Reveal Tracking** (`feat/knowledge-tracking`, cut from the #23 tip because both move the backup
+  format; committed, not merged, not pushed). Migration `AddKnowledgeRecords` (one additive table), backup format 33. ADR
+  0057 (new); ADR 0014 amended. Owner's initial model 2026-10-24: any member reads, whoever edits content changes; never
+  public or read by the assistant or MCP; a record names a scene unless known from the start; no timeline-moment anchor;
+  apart from perspective/belief (#16); nothing inferred, no Canon or lore changed. A record is one actor (any entry), one
+  statement in the author's words (<= 1,000), optionally about one other entry, since one scene or from the start (the
+  database holds the one-anchor rule). `GET`/`POST`/`PUT`/`DELETE .../knowledge`; the list is in reading order (from the
+  start, then story by story, Unchaptered first, chapters and scenes in order) and reads only stored facts as `issues`:
+  `knower_not_in_scene` (not in the scene's lore or its point of view), `scene_trashed`, `knower_trashed`,
+  `subject_trashed`. Erasing the knower or the scene takes the record, the subject is set null; the Trash marks and keeps;
+  no Trash or history for records (removed after a confirmation). UI: a Knowledge section under the entry's Relations view (a fifth view
+  does not fit the bar on a phone) - what the entry knows grouped under "Known from the start" and each story, then who
+  knows about it; a drawer form (other entry, statement,
+  story then scene in reading order, or from the start). Not done on purpose: a per-scene "known by here" reading, group
+  knowledge, partial or mistaken knowledge, the Lore Context drawer (#6 is complete). Tests: API `KnowledgeTests` 6,
+  `KnowledgeMigrationTests` 1, matrix +4 routes, every `FormatVersion` assert at 33; Playwright `knowledge.spec.ts` 1 with
+  neighbouring specs on a fresh DB. Full Playwright delegated to GitHub Actions.
 - **Issue #23 - Private Author Notes** (`feat/private-author-notes` off `dev` at `fbbe4b2`; committed, not merged, not
   pushed). Migration `AddEntityPrivateNotes` (one additive table), backup format 32. ADR 0056 (new); ADR 0014, 0041, 0043
   amended. Owner decisions 2026-10-24: a dedicated `PrivateNotes` capability held by the owner alone; no saved versions and

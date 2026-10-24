@@ -479,6 +479,12 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 33)
+        {
+            // Knowledge records arrived in version 33 (ADR 0057).
+            payload.AsObject().Remove("knowledgeRecords");
+        }
+
         if (version < 32)
         {
             // The owner's private note on an entry arrived in version 32 (ADR 0056).

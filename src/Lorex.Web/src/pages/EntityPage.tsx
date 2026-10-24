@@ -13,6 +13,7 @@ import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ReviewComments } from '../components/ReviewComments'
 import { PrivateNotes } from '../components/PrivateNotes'
+import { KnowledgeView } from '../components/KnowledgeView'
 import { ContentPublication } from '../components/ContentPublication'
 import { EntityArticleSection } from '../components/EntityArticle'
 import { ChangeList, EditConflict } from '../components/EditConflict'
@@ -1350,6 +1351,14 @@ function EntityScreen({ view }: { view: EntryView }) {
             entityId={entityId!}
             entityName={detail?.name ?? ''}
             chronology={chronology}
+          />
+          {/* What the entry knows, and who knows about it (issue 15): under its relations, read by every member. A
+              fifth view would not fit the entry's bar on a phone, and knowledge is what this entry has with others. */}
+          <KnowledgeView
+            key={entityId}
+            universeId={universe.id}
+            entityId={entityId!}
+            entityName={detail?.name ?? ''}
           />
         </div>
       ) : (

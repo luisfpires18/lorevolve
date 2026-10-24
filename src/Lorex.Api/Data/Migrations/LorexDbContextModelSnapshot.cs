@@ -574,6 +574,54 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("IdeaStoryReferences", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Knowledge.KnowledgeRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("KnowerEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("KnownFromStart")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("SceneId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Statement")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SubjectEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KnowerEntityId");
+
+                    b.HasIndex("SceneId");
+
+                    b.HasIndex("SubjectEntityId");
+
+                    b.HasIndex("UniverseId");
+
+                    b.ToTable("KnowledgeRecords", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_KnowledgeRecords_Anchor", "(\"SceneId\" IS NOT NULL) + \"KnownFromStart\" = 1");
+                        });
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Lore.EntityAlias", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3557,6 +3605,39 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("Idea");
 
                     b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Knowledge.KnowledgeRecord", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Knower")
+                        .WithMany()
+                        .HasForeignKey("KnowerEntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Stories.Scene", "Scene")
+                        .WithMany()
+                        .HasForeignKey("SceneId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Subject")
+                        .WithMany()
+                        .HasForeignKey("SubjectEntityId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Lorex.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Knower");
+
+                    b.Navigation("Scene");
+
+                    b.Navigation("Subject");
+
+                    b.Navigation("Universe");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Lore.EntityAlias", b =>

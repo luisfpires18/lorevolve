@@ -3,6 +3,7 @@ using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Export;
 using Lorex.Api.Features.Ideas;
+using Lorex.Api.Features.Knowledge;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Media;
@@ -317,7 +318,7 @@ internal static partial class BackupValidation
     private static int CountRecords(UniverseBackupPayload payload)
     {
         long count = 1 + payload.ChronologyEras!.Count + (payload.ChronologyCalendar is { } calendar ? 1 + calendar.Months.Count : 0) + payload.Tags.Count + payload.RelationshipTypes.Count
-            + payload.DismissedConflicts.Count;
+            + payload.DismissedConflicts.Count + (payload.KnowledgeRecords?.Count ?? 0);
 
         foreach (var type in payload.EntityTypes)
         {
@@ -426,6 +427,7 @@ internal static partial class BackupValidation
             var worldRules = Required(payload.WorldRules, "the list of world rules", since: 12);
             var terms = Required(payload.ValidationTerms, "the list of event kinds and methods", since: 13);
             var groups = Required(payload.EntityTypeGroups, "the list of type groups", since: 23);
+            var knowledge = Required(payload.KnowledgeRecords, "the list of knowledge records", since: 33);
 
             // Everything that can be referenced is listed first, so a reference checked below can
             // point anywhere in the file regardless of order.
@@ -440,6 +442,7 @@ internal static partial class BackupValidation
             RegisterRelationshipTypes(relationshipTypes);
             RegisterStories(stories);
             RegisterValidationTerms(terms);
+            CheckKnowledge(knowledge, stories);
 
             foreach (var entity in entities)
             {
@@ -711,6 +714,56 @@ internal static partial class BackupValidation
         /// The semantic groups (version 23), once every type is known: each with its own id, a unique name, and members that
         /// are types of this file, each once. Membership is carried as written and never inferred from a name.
         /// </summary>
+        /// <summary>
+        /// Knowledge records (ADR 0057): each names a knower the file holds, a subject it holds or none, a statement, and a
+        /// scene the file holds or known from the start - never both, never neither.
+        /// </summary>
+        private void CheckKnowledge(IReadOnlyList<BackupKnowledgeRecord> records, IReadOnlyList<BackupStory> stories)
+        {
+            if (version < 33)
+            {
+                return;
+            }
+
+            var scenes = new HashSet<Guid>(stories
+                .Where(story => story is not null)
+                .SelectMany(story => story.Scenes ?? [])
+                .Where(scene => scene is not null)
+                .Select(scene => scene.Id));
+
+            foreach (var record in records)
+            {
+                if (record is null)
+                {
+                    Missing("a knowledge record");
+                    continue;
+                }
+
+                var what = $"The knowledge record {Quote(record.Statement ?? string.Empty)}";
+                Register(record.Id, what);
+                Text(record.Statement, KnowledgeLimits.StatementMaxLength, $"{what}'s statement", required: true);
+                Reference(_entities.ContainsKey(record.KnowerEntityId), $"{what} names a knower the backup does not hold.");
+
+                if (record.SubjectEntityId is { } subject)
+                {
+                    Reference(_entities.ContainsKey(subject), $"{what} is about an entry the backup does not hold.");
+                    if (subject == record.KnowerEntityId)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{what} has its knower as its own subject.");
+                    }
+                }
+
+                if (record.KnownFromStart == (record.SceneId is not null))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} must name the scene it is learnt in or be known from the start, not both or neither.");
+                }
+                else if (record.SceneId is { } scene)
+                {
+                    Reference(scenes.Contains(scene), $"{what} names a scene the backup does not hold.");
+                }
+            }
+        }
+
         private void RegisterGroups(IReadOnlyList<BackupEntityTypeGroup> groups)
         {
             var names = new HashSet<string>(StringComparer.Ordinal);
