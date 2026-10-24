@@ -106,12 +106,17 @@ public sealed record FieldSectionResponse(Guid Id, string Name, int DisplayOrder
 /// A type's whole field layout (Issue #26), saved at once: <paramref name="Sections"/> in the order they are shown. A section
 /// with an <c>id</c> is one of the type's own, kept; one without is new; one of the type's sections left out is removed and its
 /// fields return to the ungrouped list. Every field of the type that no section lists - active or archived - is ungrouped.
-/// <paramref name="ExpectedVersion"/> is the <see cref="EntityTypeResponse.FieldLayoutVersion"/> the layout was opened on.
-/// Nothing here changes a field's id, values, version, order or settings.
+/// The fields' order is the order listed: <paramref name="UngroupedFieldIds"/> first, then each section's; a field not listed
+/// keeps its old place at the end of its group. <paramref name="ExpectedVersion"/> is the
+/// <see cref="EntityTypeResponse.FieldLayoutVersion"/> the layout was opened on. Nothing here changes a field's id, values,
+/// version or settings.
 /// </summary>
-public sealed record FieldLayoutRequest(IReadOnlyList<FieldSectionRequest>? Sections, int? ExpectedVersion);
+public sealed record FieldLayoutRequest(
+    IReadOnlyList<FieldSectionRequest>? Sections,
+    int? ExpectedVersion,
+    IReadOnlyList<Guid>? UngroupedFieldIds = null);
 
-/// <summary>One section of a layout save: the type's own section by <paramref name="Id"/>, or a new one; and its fields, as a set.</summary>
+/// <summary>One section of a layout save: the type's own section by <paramref name="Id"/>, or a new one; and its fields, in order.</summary>
 public sealed record FieldSectionRequest(Guid? Id, string? Name, bool StartsCollapsed, IReadOnlyList<Guid>? FieldIds);
 
 // ---------- Field definitions ----------
@@ -129,6 +134,9 @@ public sealed record FieldSectionRequest(Guid? Id, string? Name, bool StartsColl
 ///
 /// <paramref name="ExpectedVersion"/> is the definition's version the edit was made over (ADR 0043). An edit of an existing
 /// field must send it: one that does not, or names an older one, is refused with nothing changed. Adding a field ignores it.
+///
+/// <c>DisplayOrder</c> places a new field (absent: last); an edit ignores it and keeps the field's place, which only the type's
+/// field layout changes (Issue #26).
 /// </summary>
 public sealed record FieldDefinitionRequest(
     string? Name,

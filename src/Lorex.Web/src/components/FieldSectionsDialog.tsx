@@ -19,9 +19,14 @@ interface DraftSection {
 /**
  * The type's layout as the drawer edits it. `placed` is every field, archived ones included, by the key of its section ('' for
  * none): an archived field is not shown here, but is sent where it is, so a restore after this save still finds its section.
+ * `order` is every field's id in the type's order; a group's fields are the ones placed in it, in this order.
  */
 function layoutOf(type: EntityType) {
+  const all = [...type.fields, ...(type.archivedFields ?? [])].sort(
+    (a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name),
+  )
   return {
+    order: all.map((field) => field.id),
     sections: type.fieldSections.map((section): DraftSection => ({
       key: section.id,
       id: section.id,
@@ -38,8 +43,8 @@ function layoutOf(type: EntityType) {
 }
 
 /**
- * A type's field sections (Issue #26) in the drawer every Lorex form uses: name, order, fold and remove sections, and put each
- * field in one or in none. Saved at once, over the layout version it opened on; a layout someone saved since is refused, and
+ * A type's field sections (Issue #26) in the drawer every Lorex form uses: name, order, fold and remove sections, put each
+ * field in one or in none, and order the fields within each. Saved at once, over the layout version it opened on; a layout someone saved since is refused, and
  * the author chooses between theirs and the saved one. Nothing here touches a field: its settings, values and version stay.
  */
 export function FieldSectionsDialog({
@@ -64,6 +69,7 @@ export function FieldSectionsDialog({
   }))
   const [sections, setSections] = useState(base.layout.sections)
   const [placed, setPlaced] = useState(base.layout.placed)
+  const [order, setOrder] = useState(base.layout.order)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
   const [stale, setStale] = useState(false)
@@ -71,7 +77,7 @@ export function FieldSectionsDialog({
   // The section name to focus once the render that shows it is on screen: a new one, or the first one refused.
   const focusKey = useRef<string | null>(null)
 
-  const isDirty = payloadKey({ sections, placed }) !== payloadKey(base.layout)
+  const isDirty = payloadKey({ sections, placed, order }) !== payloadKey(base.layout)
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     `Your changes to the sections of “${type.name}” have not been saved. Leave without saving them?`,
@@ -105,6 +111,22 @@ export function FieldSectionsDialog({
     })
   }
 
+  /** Puts a field in another section, or none, last there. */
+  function place(fieldId: string, key: string) {
+    setPlaced((current) => ({ ...current, [fieldId]: key }))
+    setOrder((current) => [...current.filter((id) => id !== fieldId), fieldId])
+  }
+
+  /** Swaps a field with the one shown before or after it in its own group. */
+  function shift(fieldId: string, step: number) {
+    setOrder((current) => {
+      const shown = current.filter((id) => active.has(id) && placed[id] === placed[fieldId])
+      const neighbour = shown[shown.indexOf(fieldId) + step]
+      if (!neighbour) return current
+      return current.map((id) => (id === fieldId ? neighbour : id === neighbour ? fieldId : id))
+    })
+  }
+
   function add() {
     added.current += 1
     const key = `new-${added.current}`
@@ -127,6 +149,7 @@ export function FieldSectionsDialog({
     setBase({ layout, version: type.fieldLayoutVersion })
     setSections(layout.sections)
     setPlaced(layout.placed)
+    setOrder(layout.order)
     setErrors({})
     setMessage(null)
     setStale(false)
@@ -164,8 +187,9 @@ export function FieldSectionsDialog({
           id: section.id,
           name: section.name.trim(),
           startsCollapsed: section.startsCollapsed,
-          fieldIds: Object.keys(placed).filter((fieldId) => placed[fieldId] === section.key),
+          fieldIds: order.filter((fieldId) => placed[fieldId] === section.key),
         })),
+        order.filter((fieldId) => placed[fieldId] === ''),
         base.version,
       )
       await onSaved()
@@ -195,6 +219,23 @@ export function FieldSectionsDialog({
 
   const sectionLabel = (section: DraftSection, index: number) =>
     section.name.trim() || `Section ${index + 1}`
+
+  // The active fields, as the drawer shows them: grouped like the form - no section first, then each section - in order.
+  const active = new Map(type.fields.map((field) => [field.id, field]))
+  const groups = [
+    { key: '', label: 'No section' },
+    ...sections.map((section, index) => ({
+      key: section.key,
+      label: sectionLabel(section, index),
+    })),
+  ]
+    .map((group) => ({
+      ...group,
+      fields: order
+        .filter((id) => active.has(id) && (placed[id] ?? '') === group.key)
+        .map((id) => active.get(id)!),
+    }))
+    .filter((group) => group.fields.length > 0)
 
   return (
     <dialog
@@ -258,8 +299,8 @@ export function FieldSectionsDialog({
           ) : null}
 
           <p className="field__hint">
-            Sections arrange this type&rsquo;s fields in forms and on entries. Fields in no section
-            come first. Nothing about a field or its values changes.
+            Sections and order arrange this type&rsquo;s fields in forms and on entries. Fields in
+            no section come first. Nothing about a field or its values changes.
           </p>
 
           <section className="drawer__group" aria-labelledby="sections-list">
@@ -350,31 +391,67 @@ export function FieldSectionsDialog({
               <h3 className="sectionrule sectionrule--accent" id="sections-fields">
                 Fields
               </h3>
-              <ul className="sectionfields">
-                {type.fields.map((field) => (
-                  <li className="sectionfields__row" key={field.id}>
-                    <label className="sectionfields__name" htmlFor={`field-section-${field.id}`}>
-                      <bdi>{field.name}</bdi>
-                    </label>
-                    <select
-                      id={`field-section-${field.id}`}
-                      className="field__input field__input--select"
-                      value={placed[field.id] ?? ''}
-                      onChange={(event) =>
-                        setPlaced((current) => ({ ...current, [field.id]: event.target.value }))
-                      }
-                      data-testid={`place-${field.name}`}
-                    >
-                      <option value="">No section</option>
-                      {sections.map((section, index) => (
-                        <option key={section.key} value={section.key}>
-                          {sectionLabel(section, index)}
-                        </option>
-                      ))}
-                    </select>
-                  </li>
-                ))}
-              </ul>
+              {groups.map((group) => (
+                <div className="sectionfields__group" key={group.key || 'none'}>
+                  <p className="sectionfields__label">
+                    <bdi>{group.label}</bdi>
+                  </p>
+                  <ol
+                    className="sectionfields"
+                    aria-label={`Fields in ${group.label}`}
+                    data-testid={`fields-in-${group.label}`}
+                  >
+                    {group.fields.map((field, index) => (
+                      <li className="sectionfields__row" key={field.id}>
+                        <label
+                          className="sectionfields__name"
+                          htmlFor={`field-section-${field.id}`}
+                        >
+                          <bdi>{field.name}</bdi>
+                        </label>
+                        <select
+                          id={`field-section-${field.id}`}
+                          className="field__input field__input--select"
+                          value={placed[field.id] ?? ''}
+                          onChange={(event) => place(field.id, event.target.value)}
+                          data-testid={`place-${field.name}`}
+                        >
+                          <option value="">No section</option>
+                          {sections.map((section, at) => (
+                            <option key={section.key} value={section.key}>
+                              {sectionLabel(section, at)}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="sectionlist__actions">
+                          <button
+                            className="iconbutton"
+                            type="button"
+                            onClick={() => shift(field.id, -1)}
+                            disabled={index === 0}
+                            aria-label={`Move ${field.name} up`}
+                            title="Move up"
+                            data-testid={`field-up-${field.name}`}
+                          >
+                            <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
+                          </button>
+                          <button
+                            className="iconbutton"
+                            type="button"
+                            onClick={() => shift(field.id, 1)}
+                            disabled={index === group.fields.length - 1}
+                            aria-label={`Move ${field.name} down`}
+                            title="Move down"
+                            data-testid={`field-down-${field.name}`}
+                          >
+                            <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
+                          </button>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ))}
             </section>
           ) : null}
         </div>

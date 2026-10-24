@@ -236,18 +236,20 @@ export interface FieldSectionInput {
 }
 
 /**
- * Saves a type's whole field layout (Issue #26): its sections in order and which field sits in which. A section left out
- * is removed and its fields become ungrouped, as does any field no section lists. Changes no field. Answers the type.
+ * Saves a type's whole field layout (Issue #26): its sections in order, which field sits in which, and the fields' order -
+ * `ungroupedFieldIds` first, then each section's `fieldIds`, as listed. A section left out is removed and its fields become
+ * ungrouped, as does any field no section lists. Changes no field's settings, values or version. Answers the type.
  */
 export function saveFieldLayout(
   universeId: string,
   typeId: string,
   sections: FieldSectionInput[],
+  ungroupedFieldIds: string[],
   expectedVersion: number,
 ) {
   return apiFetch<EntityType>(`${base(universeId)}/entity-types/${typeId}/field-layout`, {
     method: 'PUT',
-    body: JSON.stringify({ sections, expectedVersion }),
+    body: JSON.stringify({ sections, ungroupedFieldIds, expectedVersion }),
   })
 }
 

@@ -269,6 +269,53 @@ test.describe('field sections', () => {
     await expect(page.getByTestId('edit-entity')).toBeVisible()
   })
 
+  test('fields are reordered within and across sections, and an edit keeps the place', async ({
+    page,
+  }) => {
+    await account(page)
+    const w = await world(page)
+    await w.layout([{ name: 'Combat', fieldIds: [w.strength, w.weapon] }])
+
+    const panel = await openFields(page, w.u, 'Character')
+    await page.getByTestId('arrange-sections-Character').click()
+    const dialog = page.getByTestId('sections-dialog')
+    const combat = dialog.getByTestId('fields-in-Combat')
+    await expect(combat.locator('label')).toHaveText(['Strength', 'Weapon'])
+    await expect(dialog.getByTestId('field-up-Strength')).toBeDisabled()
+
+    // Within Combat: Weapon above Strength. Across: Title into Combat, where it goes last.
+    await dialog.getByRole('button', { name: 'Move Weapon up' }).click()
+    await expect(combat.locator('label')).toHaveText(['Weapon', 'Strength'])
+    await dialog.getByTestId('place-Title').selectOption({ label: 'Combat' })
+    await expect(dialog.getByTestId('fields-in-No section')).toHaveCount(0)
+    await expect(combat.locator('label')).toHaveText(['Weapon', 'Strength', 'Title'])
+    await dialog.getByTestId('field-up-Title').click()
+    await expect(combat.locator('label')).toHaveText(['Weapon', 'Title', 'Strength'])
+    await dialog.getByTestId('save-sections').click()
+    await expect(dialog).toHaveCount(0)
+
+    const rows = panel.getByTestId('type-section-Combat').locator('[data-field-name]')
+    const order = () =>
+      rows.evaluateAll((all) => all.map((row) => row.getAttribute('data-field-name')))
+    await expect.poll(order).toEqual(['Weapon', 'Title', 'Strength'])
+
+    // The field drawer saves Title as Rank and leaves it where the layout put it.
+    await page.getByTestId('edit-field-Title').click()
+    await page.getByTestId('field-dialog').getByTestId('field-name').fill('Rank')
+    await page.getByTestId('save-field').click()
+    await expect(page.getByTestId('field-dialog')).toHaveCount(0)
+    await expect.poll(order).toEqual(['Weapon', 'Rank', 'Strength'])
+
+    // The entry form shows the same order inside the section.
+    await page.goto(`/app/universes/${w.u}/lore/${w.mara}`)
+    await page.getByTestId('edit-entity').click()
+    await expect(page.getByTestId('field-section-Combat').locator('.field__label')).toHaveText([
+      'Weapon',
+      'Rank',
+      'Strength',
+    ])
+  })
+
   test('an archived field keeps its section and returns to it when restored', async ({ page }) => {
     await account(page)
     const w = await world(page)

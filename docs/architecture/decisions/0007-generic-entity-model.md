@@ -316,6 +316,7 @@ Frontend only; the listing's query semantics are unchanged.
 
 ## Amendment - optional sections for a type's fields (2026-10-24, Issue #26)
 
-A type's fields may be arranged in author-named sections, each starting open or folded. Presentation only: no field id,
-value, order, setting, required check, target, filter or Canon reading changes, and sections are not semantic groups. One
-layout save replaces them all, under a version of its own. ADR 0055.
+A type's fields may be arranged in author-named sections, each starting open or folded, and ordered within them - the
+"Reordering fields" #39 left out. Presentation only: no field id, value, setting, required check, target, filter or Canon
+reading changes, and sections are not semantic groups. One layout save replaces sections and order, under a version of its
+own; a field edit keeps the field's place. ADR 0055.

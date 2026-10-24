@@ -179,11 +179,12 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   amended. Optional author-named sections for a type's fields, presentation only: no field id, value, order, setting,
   required check, target, filter, Canon, MCP or assistant change; Explore unchanged; not semantic groups. One
   `PUT .../field-layout` saves the whole layout under its own `FieldLayoutVersion` (409 `entity_field_layout_changed`);
-  field versions never move. Ungrouped fields first, no "General"; folds start as the author set, reader toggles not
+  field versions never move. The same save orders the fields (renumbers `DisplayOrder` as shown; `ungroupedFieldIds`
+  first), and a field edit keeps its place. Ungrouped fields first, no "General"; folds start as the author set, reader toggles not
   stored; a refused save opens the refused fields' sections and focuses the first. Archived fields keep their section.
-  Types screen: fields listed by section, Sections drawer. Tests: API `EntityFieldSectionTests` 13,
-  `EntityFieldSectionMigrationTests` 1, full API suite green; Playwright `field-sections.spec.ts` 6 with 14 neighbouring
-  specs 81/81 on a fresh DB. Full Playwright suite not run locally; delegated to GitHub Actions by project workflow.
+  Types screen: fields listed by section, Sections drawer. Tests: API `EntityFieldSectionTests` 14,
+  `EntityFieldSectionMigrationTests` 1, full API suite green; Playwright `field-sections.spec.ts` 7 with neighbouring
+  specs on a fresh DB. Full Playwright suite not run locally; delegated to GitHub Actions by project workflow.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);

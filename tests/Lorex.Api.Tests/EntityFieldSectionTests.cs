@@ -69,7 +69,8 @@ public sealed class EntityFieldSectionTests(LorexApiFactory factory) : IClassFix
 
         Assert.Equal([(story, "Story and lore", 1), (combat, "Combat", 2)],
             moved.FieldSections!.Select(section => (section.Id, section.Name, section.DisplayOrder)));
-        Assert.Equal([null, combat, story], moved.Fields.Select(field => field.SectionId));
+        // The fields follow the layout: ungrouped Title, then Story's Weapon, then Combat's Strength.
+        Assert.Equal([(title, (Guid?)null), (weapon, story), (strength, combat)], moved.Fields.Select(field => (field.Id, field.SectionId)));
         Assert.Equal(["Queen", "Spear"], (await Detail(w, mara)).Fields.Select(value => value.Text));
     }
 
@@ -146,6 +147,9 @@ public sealed class EntityFieldSectionTests(LorexApiFactory factory) : IClassFix
             (Layout(1, Section(null, "Combat", [Guid.NewGuid()])), "sections[0].fieldIds"),
             (Layout(1, Section(theirs, "Court", [])), "sections[0].id"),
             (Layout(1, Section(null, "Combat", [title]), Section(null, "Story", [title])), "sections[1].fieldIds"),
+            (Layout(1, Section(null, "Combat", [title])) with { UngroupedFieldIds = [title] }, "ungroupedFieldIds"),
+            (Layout(1) with { UngroupedFieldIds = [ruler] }, "ungroupedFieldIds"),
+            (Layout(1) with { UngroupedFieldIds = [title, title] }, "ungroupedFieldIds"),
             (Layout(1, Section(null, "Combat", []), Section(null, " combat ", [])), "sections[1].name"),
             (Layout(1, Section(null, "  ", [])), "sections[0].name"),
             (Layout(1, Section(null, new string('x', LoreLimits.NameMaxLength + 1), [])), "sections[0].name"),
@@ -238,6 +242,45 @@ public sealed class EntityFieldSectionTests(LorexApiFactory factory) : IClassFix
         await SaveLayout(w, w.Character, 1, Section(null, "Identity", [title]));
         (await w.Client.PostAsync($"/api/universes/{w.U}/archive", content: null)).EnsureSuccessStatusCode();
         Assert.Equal(HttpStatusCode.NoContent, (await w.Client.DeleteAsync($"/api/universes/{w.U}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Fields_are_reordered_within_and_across_sections_and_an_edit_keeps_its_place()
+    {
+        var w = await NewWorld("efs-order");
+        var title = await AddField(w, w.Character, "Title");
+        var strength = await AddField(w, w.Character, "Strength", EntityFieldKind.Number);
+        var weapon = await AddField(w, w.Character, "Weapon");
+        var mara = await Entry(w, "Mara", Text(title, "Queen"), Text(weapon, "Spear"));
+        var before = await TypeOf(w, w.Character);
+        var opened = before.Fields.Single(field => field.Id == title);
+
+        // Within the ungrouped list: Weapon before Title; Strength alone in Combat.
+        var saved = await SaveLayout(w, w.Character, 1, [weapon, title], Section(null, "Combat", [strength]));
+        Assert.Equal([weapon, title, strength], saved.Fields.Select(field => field.Id));
+        Assert.Equal([1, 2, 3], saved.Fields.Select(field => field.DisplayOrder));
+        Assert.Equal(2, saved.FieldLayoutVersion);
+
+        // Across sections: Title into Combat, after Strength.
+        var combat = saved.FieldSections![0].Id;
+        var moved = await SaveLayout(w, w.Character, saved.FieldLayoutVersion, [weapon], Section(combat, "Combat", [strength, title]));
+        Assert.Equal([(weapon, (Guid?)null), (strength, combat), (title, combat)], moved.Fields.Select(field => (field.Id, field.SectionId)));
+
+        // Nothing about a field moved but its place: ids, versions, values.
+        Assert.Equal(before.Fields.Select(field => (field.Id, field.Version)).OrderBy(pair => pair.Id),
+            moved.Fields.Select(field => (field.Id, field.Version)).OrderBy(pair => pair.Id));
+        Assert.Equal(["Queen", "Spear"], (await Detail(w, mara)).Fields.Select(value => value.Text).Order());
+
+        // A drawer opened before the reorder sends the old place; the edit keeps the new one.
+        var edit = await w.Client.PutFieldAsync(w.U, w.Character, title,
+            new FieldDefinitionRequest("Rank", EntityFieldKind.ShortText, false, opened.DisplayOrder, null, null, ExpectedVersion: opened.Version));
+        Assert.True(edit.IsSuccessStatusCode, await edit.Content.ReadAsStringAsync());
+        Assert.Equal([weapon, strength, title], (await TypeOf(w, w.Character)).Fields.Select(field => field.Id));
+
+        // A field added since the layout was read is not listed by it, and keeps its place at the end of the ungrouped ones.
+        var oath = await AddField(w, w.Character, "Oath");
+        var kept = await SaveLayout(w, w.Character, moved.FieldLayoutVersion, [weapon], Section(combat, "Combat", [title, strength]));
+        Assert.Equal([weapon, oath, title, strength], kept.Fields.Select(field => field.Id));
     }
 
     // ---------- Backup ----------
@@ -334,9 +377,13 @@ public sealed class EntityFieldSectionTests(LorexApiFactory factory) : IClassFix
     private static Task<HttpResponseMessage> PutLayout(World w, Guid typeId, FieldLayoutRequest request) =>
         w.Client.PutAsJsonAsync($"/api/universes/{w.U}/entity-types/{typeId}/field-layout", request);
 
-    private static async Task<EntityTypeResponse> SaveLayout(World w, Guid typeId, int version, params FieldSectionRequest[] sections)
+    private static Task<EntityTypeResponse> SaveLayout(World w, Guid typeId, int version, params FieldSectionRequest[] sections) =>
+        SaveLayout(w, typeId, version, null, sections);
+
+    private static async Task<EntityTypeResponse> SaveLayout(
+        World w, Guid typeId, int version, Guid[]? ungrouped, params FieldSectionRequest[] sections)
     {
-        var response = await PutLayout(w, typeId, Layout(version, sections));
+        var response = await PutLayout(w, typeId, Layout(version, sections) with { UngroupedFieldIds = ungrouped });
         Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
         return (await response.Content.ReadFromJsonAsync<EntityTypeResponse>())!;
     }

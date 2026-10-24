@@ -11,7 +11,7 @@ collapsible sections - Identity, Combat, Politics - without a second value model
 ## Decision
 
 **Presentation only.** A section is a heading and a fold. It changes where a field is shown in the entry form and on the
-entry, and nothing else: field ids, values, order, settings, required checks, link targets, permissions, Lore filters, Canon
+entry, and nothing else: field ids, values, settings, required checks, link targets, permissions, Lore filters, Canon
 readings, history, MCP and the assistant are untouched. Public Explore shows no custom fields and is unchanged. Sections are
 not semantic type groups (ADR 0007, #36) and not field filters.
 
@@ -22,10 +22,17 @@ Migration `AddEntityFieldSections` is additive: every existing field is ungroupe
 nothing has to be set up.
 
 **One layout save.** `PUT .../entity-types/{id}/field-layout` `{ sections: [{ id?, name, startsCollapsed, fieldIds }],
-expectedVersion }` replaces the type's whole layout in one transaction: listed sections in that order, an id keeps a
-section, no id makes one, an omitted section is removed. Every field of the type that no section lists - active or
-archived - is ungrouped. Refused (400), never trimmed: another type's section or field, a field in two sections, a blank,
+ungroupedFieldIds?, expectedVersion }` replaces the type's whole layout in one transaction: listed sections in that order, an
+id keeps a section, no id makes one, an omitted section is removed. Every field of the type that no section lists - active
+or archived - is ungrouped. Refused (400), never trimmed: another type's section or field, a field listed twice, a blank,
 over-long or repeated name (case-insensitive), more than 50 sections.
+
+**Field order is the layout's.** The issue's approved V1 boundaries ask for coverage of "field reorder/group moves", and no
+decision deferred it, so a layout save also orders the fields: `DisplayOrder` is renumbered 1..n as the type shows them -
+`ungroupedFieldIds` first, then each section's `fieldIds`, as listed. A field the save does not list (one added since the
+drawer opened) keeps its old place at the end of its group. A field edit no longer moves a field: `DisplayOrder` in an
+edit is ignored (it still places a new field), so a field drawer opened before a reorder cannot undo it. Every reader of
+field order - forms, entries, filters, MCP, backups - keeps reading `DisplayOrder`, now in the order the author set.
 
 **Its own version.** `EntityTypes.FieldLayoutVersion`, moved on by a save that changes something, refused stale or missing
 with 409 `entity_field_layout_changed`. A layout save never moves a field's `Version`, and a field edit never moves the
@@ -41,10 +48,11 @@ every section holding a refused field, marks it ("1 needs attention"), and moves
 the order shown. A type with no sections renders exactly as before.
 
 **Managing it.** The Types screen lists a type's ungrouped fields, then each section under its name. Sections opens a
-drawer to add, name, reorder (up and down), fold and remove sections and to put each active field in one or none. A stale
-save keeps the draft and offers the saved layout or the author's.
+drawer to add, name, reorder (up and down), fold and remove sections, to put each active field in one or none (it goes last
+there), and to move a field up or down within its group. A stale save keeps the draft and offers the saved layout or the
+author's.
 
 ## Consequences
 
 - Backup format 31 carries sections and each field's section (ADR 0014 amendment). Older files restore ungrouped.
-- Not done: a section in the progression era form, drag to reorder, reordering fields themselves, per-user fold memory.
+- Not done: a section in the progression era form, drag to reorder, per-user fold memory.

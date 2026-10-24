@@ -734,8 +734,8 @@ function FieldDialog({
       name: name.trim(),
       kind,
       isRequired,
-      // An edit keeps the field's place; a new one goes last.
-      displayOrder: field?.displayOrder ?? null,
+      // A new field goes last, and an edit keeps its place: the order is the Sections drawer's (Issue #26).
+      displayOrder: null,
       defaultValue: isText ? defaultValue.trim() || null : null,
       options: hasOptions ? splitOptions(options) : null,
       semantic,

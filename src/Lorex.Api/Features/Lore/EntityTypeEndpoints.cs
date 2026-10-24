@@ -880,7 +880,8 @@ public static class EntityTypeEndpoints
         // declared or withdrawn at any time - unlike the kind, which is frozen once values exist.
         definition.Semantic = request.Semantic;
         definition.IsRequired = request.IsRequired;
-        definition.DisplayOrder = request.DisplayOrder ?? definition.DisplayOrder;
+        // An edit keeps the field's place, whatever it sends: the order is the type's layout's (Issue #26), saved under its own
+        // version, so a drawer opened before a reorder can never put the field back where it was.
         definition.DefaultValue = LoreValidation.Normalize(request.DefaultValue);
 
         if (request.Options is not null)
@@ -1335,13 +1336,13 @@ public static class EntityTypeEndpoints
     }
 
     /// <summary>
-    /// Saves a type's whole field layout (Issue #26): its sections, in order, each named and folded or not, and which field sits
-    /// in which. Presentation only - no field's id, values, version, order, required flag, target or meaning changes - so it is
-    /// not gated, and no open entry form or field drawer becomes stale. Versioned on its own
-    /// (<see cref="EntityType.FieldLayoutVersion"/>): a stale or missing version is a 409 <see cref="FieldLayoutChangedCode"/>.
-    /// Refused, never trimmed to fit: a section of another type, a field that is not this type's, a field in two sections, a
-    /// blank or repeated name, more than <see cref="LoreLimits.MaxFieldSections"/>. One transaction; an unchanged save leaves
-    /// the version where it was.
+    /// Saves a type's whole field layout (Issue #26): its sections, in order, each named and folded or not, which field sits in
+    /// which, and the fields' order - the ungrouped ones first, then each section's, as listed. Presentation only - no field's
+    /// id, values, version, required flag, target or meaning changes - so it is not gated, and no open entry form or field
+    /// drawer becomes stale. Versioned on its own (<see cref="EntityType.FieldLayoutVersion"/>): a stale or missing version is a
+    /// 409 <see cref="FieldLayoutChangedCode"/>. Refused, never trimmed to fit: a section of another type, a field that is not
+    /// this type's, a field listed twice, a blank or repeated name, more than <see cref="LoreLimits.MaxFieldSections"/>. One
+    /// transaction; an unchanged save leaves the version where it was.
     /// </summary>
     private static async Task<IResult> SaveFieldLayoutAsync(
         Guid universeId,
@@ -1438,6 +1439,20 @@ public static class EntityTypeEndpoints
             }
         }
 
+        // The ungrouped fields' order, when the save gives one: this type's fields, each once, and in no section.
+        var ungrouped = new Dictionary<Guid, int>();
+        foreach (var fieldId in request.UngroupedFieldIds ?? [])
+        {
+            if (!fields.ContainsKey(fieldId))
+            {
+                errors["ungroupedFieldIds"] = ["A field here is not one of this type's fields. Reload the sections and try again."];
+            }
+            else if (placed.ContainsKey(fieldId) || !ungrouped.TryAdd(fieldId, ungrouped.Count))
+            {
+                errors["ungroupedFieldIds"] = ["A field can be in one place only."];
+            }
+        }
+
         if (errors.Count > 0)
         {
             return Results.ValidationProblem(errors);
@@ -1471,6 +1486,24 @@ public static class EntityTypeEndpoints
         foreach (var field in fields.Values)
         {
             field.SectionId = placed.TryGetValue(field.Id, out var index) ? rows[index].Id : null;
+        }
+
+        // Every field numbered 1..n in the order the type shows them: ungrouped first, then each section in its place, each
+        // group as listed. A field the save does not list - one added since it was opened - keeps its old place at the end of
+        // its group. The field's version does not move: its place is the layout's, not the field's.
+        var position = sections
+            .SelectMany(section => (section.FieldIds ?? []).Select((fieldId, at) => (fieldId, at)))
+            .ToDictionary(pair => pair.fieldId, pair => pair.at);
+        var order = fields.Values
+            .OrderBy(field => placed.TryGetValue(field.Id, out var group) ? group : -1)
+            .ThenBy(field => position.TryGetValue(field.Id, out var at) || ungrouped.TryGetValue(field.Id, out at) ? at : int.MaxValue)
+            .ThenBy(field => field.DisplayOrder)
+            .ThenBy(field => field.Name, StringComparer.Ordinal)
+            .ThenBy(field => field.Id)
+            .ToList();
+        for (var at = 0; at < order.Count; at++)
+        {
+            order[at].DisplayOrder = at + 1;
         }
 
         changed |= db.ChangeTracker.HasChanges();
