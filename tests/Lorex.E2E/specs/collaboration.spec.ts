@@ -424,6 +424,9 @@ test.describe('each role is shown what it can do', () => {
     }
     await editor.page.goto(`${base}/lore/${kept}`)
     await expect(editor.page.getByTestId('edit-entity')).toBeVisible()
+    await editor.page.getByTestId('entity-actions').click()
+    await expect(editor.page.getByTestId('duplicate-entity')).toBeVisible()
+    await editor.page.keyboard.press('Escape')
     await expect(editor.page.getByTestId('entry-view-history')).toBeVisible()
     await expect(editor.page.getByTestId('entry-publication-state')).toHaveCount(0)
     await editor.page.goto(`${base}/trash`)

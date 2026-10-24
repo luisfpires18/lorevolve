@@ -8,7 +8,7 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router-dom'
-import { Check, FilePenLine, Maximize2, Network, Pencil, Trash, X } from 'lucide-react'
+import { Check, Copy, FilePenLine, Maximize2, Network, Pencil, Trash, X } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ReviewComments } from '../components/ReviewComments'
@@ -22,7 +22,8 @@ import { ImageViewer } from '../components/ImageViewer'
 import { NameList } from '../components/NameList'
 import { ProgressionView } from '../components/ProgressionView'
 import { RelationshipSection } from '../components/RelationshipSection'
-import { emptyValue } from '../lore/document'
+import { getEntityArticle, saveEntityArticle, type EntityArticle } from '../lore/article'
+import { articleLinks, emptyValue, isEmptyDocument } from '../lore/document'
 import { entityImageUrl, setEntityImage } from '../lore/images'
 import { TokenInput } from '../components/TokenInput'
 import { TypeIcon } from '../components/TypeIcon'
@@ -49,6 +50,7 @@ import {
   type CanonStatusValue,
   type EntityDetail,
   type EntityType,
+  FieldKind,
   type FieldValueInput,
 } from '../lore/types'
 import { renderFact } from '../lore/facts'
@@ -109,6 +111,44 @@ function draftFromDetail(detail: EntryFields): Draft {
   }
 }
 
+/** The entry a new one is copied from, as read when the form opened, and its article if it has one (Issue #27). */
+interface CopySource {
+  detail: EntityDetail
+  article: EntityArticle | null
+}
+
+/**
+ * A new entry's starting form when it is copied from another: the source's type, summary, tags and field values, named
+ * as a copy and at the first Canon step. Its aliases and its links to other entries start out of it - the copy panel adds
+ * them back on request - and nothing else of the source is read at all.
+ */
+function copiedDraft(detail: EntityDetail, types: EntityType[]): Draft {
+  const draft = draftFromDetail(detail)
+  for (const value of detail.fields) {
+    if (value.kind === FieldKind.EntityReference) delete draft.fields[value.fieldDefinitionId]
+  }
+
+  return {
+    ...draft,
+    entityTypeId: types.some((type) => type.id === detail.entityTypeId)
+      ? detail.entityTypeId
+      : types[0].id,
+    name: `${detail.name} (copy)`,
+    canonStatus: CanonStatus.Idea,
+    aliases: [],
+  }
+}
+
+/** The source's links to other entries the copy may take: each link field that points at an entry still out of the Trash. */
+function copyableReferences(detail: EntityDetail) {
+  return detail.fields.filter(
+    (value) =>
+      value.kind === FieldKind.EntityReference &&
+      value.referencedEntityId !== null &&
+      !value.referencedEntityIsTrashed,
+  )
+}
+
 /** How long the article stays marked after a link lands on it - the story page's scene and beat mark, for the same reason. */
 const ARRIVAL_MS = 2400
 
@@ -135,6 +175,22 @@ type EntryView = 'article' | 'progression' | 'relations' | 'history'
  * this morning are the same screen.
  */
 export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
+  // An entry and a new one are the same screen at two addresses, so moving between them keeps this page. That is what lets
+  // a create land on the entry it made with everything it said still on screen. Opening a new form - from an entry's
+  // Duplicate, or from a copy of another - starts afresh instead: the form is new, so nothing of the last page may be in it.
+  const { entityId } = useParams<{ entityId: string }>()
+  const [searchParams] = useSearchParams()
+  const isNew = entityId === undefined
+  const from = searchParams.get('from')
+  const [form, setForm] = useState({ isNew, from, key: 0 })
+  if (form.isNew !== isNew || form.from !== from) {
+    setForm({ isNew, from, key: isNew ? form.key + 1 : form.key })
+  }
+
+  return <EntityScreen key={form.key} view={view} />
+}
+
+function EntityScreen({ view }: { view: EntryView }) {
   const { universe, chronology } = useOutletContext<WorkspaceContext>()
   const access = useUniverseAccess()
   const { entityId } = useParams<{ entityId: string }>()
@@ -146,6 +202,14 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
   const startingTypeId = searchParams.get('type')
 
   const isNew = entityId === undefined
+
+  // A new entry made from an existing one (`lore/new?from=<id>`, Issue #27): the form opens filled from it, and the copy
+  // panel says what came across and offers the rest. Nothing is stored until Create entry, and then only through the
+  // ordinary create - so the copy has its own id, history and search entry, and nothing of the source's.
+  const sourceId = isNew ? searchParams.get('from') : null
+  const [source, setSource] = useState<CopySource | null>(null)
+  const [sourceStatus, setSourceStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading')
+  const [copyArticle, setCopyArticle] = useState(false)
   const [types, setTypes] = useState<EntityType[]>([])
   const [typesRead, setTypesRead] = useState(false)
   const [detail, setDetail] = useState<EntityDetail | null>(null)
@@ -244,10 +308,35 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
     }
   }, [universe.id, entityId, isNew])
 
+  // The entry being copied, and its article, read once. One that cannot be read - gone to the Trash since, say - leaves an
+  // ordinary blank form and a line saying so.
+  useEffect(() => {
+    if (sourceId === null) return
+
+    const controller = new AbortController()
+    Promise.all([
+      getEntity(universe.id, sourceId, controller.signal),
+      getEntityArticle(universe.id, sourceId, controller.signal),
+    ])
+      .then(([loaded, article]) => {
+        setSource({ detail: loaded, article: isEmptyDocument(article.content) ? null : article })
+        setSourceStatus('ready')
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setSourceStatus('unavailable')
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [universe.id, sourceId])
+
   // A new entry's blank draft is derived from the first available type rather than
-  // written back into state, so nothing has to re-render to produce it.
+  // written back into state, so nothing has to re-render to produce it. A copy's is the source's, as copied.
   const blankDraft = useMemo((): Draft | null => {
     if (!isNew || types.length === 0) return null
+    if (sourceId !== null && sourceStatus === 'loading') return null
+    if (source) return copiedDraft(source.detail, types)
     return {
       entityTypeId: types.find((type) => type.id === startingTypeId)?.id ?? types[0].id,
       name: '',
@@ -257,7 +346,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
       tags: [],
       fields: {},
     } satisfies Draft
-  }, [isNew, types, startingTypeId])
+  }, [isNew, types, startingTypeId, sourceId, sourceStatus, source])
   const draft = editedDraft ?? blankDraft
 
   const selectedType = useMemo(
@@ -380,6 +469,19 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
         }
       }
 
+      // A copied article is the same kind of second write: the copy exists either way, and a refused article says so.
+      // Its text is the one the copy panel showed, links and all, saved as the new entry's first version.
+      if (isNew && copyArticle && source?.article) {
+        try {
+          await saveEntityArticle(universe.id, saved.id, {
+            content: source.article.content,
+            expectedVersion: 0,
+          })
+        } catch {
+          setMessage('The entry was created, but its article could not be copied.')
+        }
+      }
+
       const stored = { ...saved, image }
 
       setDetail(stored)
@@ -423,6 +525,8 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
     pendingImage,
     detail,
     isSuggesting,
+    copyArticle,
+    source,
   ])
 
   /**
@@ -866,21 +970,34 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
                   <span className="entry__toollabel">Family tree</span>
                 </Link>
               ) : null}
-              {access.manageTrash ? (
+              {access.editContent || access.manageTrash ? (
                 <ActionMenu
                   label={`More actions for ${detail?.name ?? 'this entry'}`}
                   triggerTestId="entity-actions"
                 >
-                  <button
-                    className="actionmenu__item actionmenu__item--danger"
-                    type="button"
-                    onClick={() => void moveToTrash()}
-                    disabled={isSaving}
-                    data-testid="trash-entity"
-                  >
-                    <ActionIcon icon={Trash} />
-                    Move to Trash
-                  </button>
+                  {/* A new entry filled from this one, to change before it is created (Issue #27). */}
+                  {access.editContent ? (
+                    <Link
+                      className="actionmenu__item"
+                      to={`/app/universes/${universe.id}/lore/new?from=${entityId}`}
+                      data-testid="duplicate-entity"
+                    >
+                      <ActionIcon icon={Copy} />
+                      Duplicate
+                    </Link>
+                  ) : null}
+                  {access.manageTrash ? (
+                    <button
+                      className="actionmenu__item actionmenu__item--danger"
+                      type="button"
+                      onClick={() => void moveToTrash()}
+                      disabled={isSaving}
+                      data-testid="trash-entity"
+                    >
+                      <ActionIcon icon={Trash} />
+                      Move to Trash
+                    </button>
+                  ) : null}
                 </ActionMenu>
               ) : null}
             </div>
@@ -926,6 +1043,16 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
 
       {isEditing ? (
         <div className="entryform" data-testid="entry-form">
+          {isNew && sourceId !== null ? (
+            <CopyPanel
+              source={source}
+              draft={draft}
+              onDraft={(change) => setDraft((current) => change(current ?? draft))}
+              copyArticle={copyArticle}
+              onCopyArticle={setCopyArticle}
+            />
+          ) : null}
+
           {suggesting ? (
             <p className="callout" data-testid="entry-suggesting">
               You&rsquo;re suggesting changes. The entry stays as it is until the owner or an Editor
@@ -983,7 +1110,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
                       value={draft.fields[definition.id] ?? emptyValue(definition)}
                       universeId={universe.id}
                       excludeId={entityId}
-                      heldReference={heldReference(detail, definition.id)}
+                      heldReference={heldReference(detail ?? source?.detail ?? null, definition.id)}
                       chronology={chronology}
                       onChange={(next) =>
                         setDraft((current) =>
@@ -1003,7 +1130,11 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
           ) : null}
 
           {isNew ? (
-            <p className="entryform__note">The article is written on the entry once it exists.</p>
+            <p className="entryform__note">
+              {copyArticle && source?.article
+                ? 'The copied article is added to the entry once it exists.'
+                : 'The article is written on the entry once it exists.'}
+            </p>
           ) : null}
         </div>
       ) : view === 'article' ? (
@@ -1211,6 +1342,182 @@ function comparable(draft: Draft, types: EntityType[]) {
     ...draft,
     fields: definitions.map((definition) => draft.fields[definition.id] ?? emptyValue(definition)),
   })
+}
+
+/**
+ * What a copy takes from the entry it is made from (Issue #27), said above the new entry's form before anything is created.
+ *
+ * Aliases and links to other entries are offered and start off: an alias names the source, and a link field points at
+ * other entries. Their boxes read the form rather than state of their own, so taking one out of the form by hand clears its
+ * box too. The article is offered, off, with every link it holds listed when it is chosen - it is copied with them, as
+ * written. Everything else an entry has is named as not copied, never offered.
+ */
+function CopyPanel({
+  source,
+  draft,
+  onDraft,
+  copyArticle,
+  onCopyArticle,
+}: {
+  source: CopySource | null
+  draft: Draft
+  onDraft: (change: (current: Draft) => Draft) => void
+  copyArticle: boolean
+  onCopyArticle: (copy: boolean) => void
+}) {
+  if (!source) {
+    return (
+      <p className="callout callout--warning" role="status" data-testid="entry-copy-unavailable">
+        The entry to copy from couldn&rsquo;t be opened. This is a blank new entry.
+      </p>
+    )
+  }
+
+  const { detail, article } = source
+  const aliases = detail.aliases
+  const references = copyableReferences(detail)
+  const sameType = draft.entityTypeId === detail.entityTypeId
+  const hasAliases = aliases.length > 0 && aliases.every((alias) => draft.aliases.includes(alias))
+  const hasReferences =
+    sameType &&
+    references.length > 0 &&
+    references.every(
+      (value) =>
+        draft.fields[value.fieldDefinitionId]?.referencedEntityId === value.referencedEntityId,
+    )
+  const links = copyArticle && article ? articleLinks(article.content) : []
+
+  function setAliases(copy: boolean) {
+    onDraft((current) => ({
+      ...current,
+      aliases: copy
+        ? [...current.aliases, ...aliases.filter((alias) => !current.aliases.includes(alias))]
+        : current.aliases.filter((alias) => !aliases.includes(alias)),
+    }))
+  }
+
+  function setReferences(copy: boolean) {
+    onDraft((current) => {
+      const fields = { ...current.fields }
+      for (const value of references) {
+        if (copy) {
+          fields[value.fieldDefinitionId] = {
+            fieldDefinitionId: value.fieldDefinitionId,
+            text: null,
+            number: null,
+            boolean: null,
+            date: null,
+            optionIds: null,
+            referencedEntityId: value.referencedEntityId,
+            eraId: null,
+          }
+        } else {
+          delete fields[value.fieldDefinitionId]
+        }
+      }
+      return { ...current, fields }
+    })
+  }
+
+  return (
+    <section
+      className="callout entrycopy"
+      aria-labelledby="entry-copy-title"
+      data-testid="entry-copy"
+    >
+      <p className="callout__title" id="entry-copy-title">
+        {/* Named, not linked: the new form and an entry are one page, and a link from one to the other would carry the open
+            form onto the source. */}
+        Copying from <bdi>{detail.name}</bdi>
+      </p>
+      <p>
+        Its type, summary, tags and fields are in the form below. Change anything before you create
+        the entry.
+      </p>
+
+      {aliases.length > 0 || references.length > 0 || article ? (
+        <fieldset className="entrycopy__options">
+          <legend>Also copy</legend>
+          <div className="choices">
+            {aliases.length > 0 ? (
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={hasAliases}
+                  onChange={(event) => setAliases(event.target.checked)}
+                  data-testid="entry-copy-aliases"
+                />
+                <span>
+                  Other names: <NameList names={aliases} />
+                </span>
+              </label>
+            ) : null}
+            {references.length > 0 ? (
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={hasReferences}
+                  disabled={!sameType}
+                  onChange={(event) => setReferences(event.target.checked)}
+                  data-testid="entry-copy-references"
+                />
+                <span>
+                  Links to other entries:{' '}
+                  <NameList
+                    names={references.map(
+                      (value) => `${value.name}: ${value.referencedEntityName ?? 'Another entry'}`,
+                    )}
+                  />
+                  {sameType ? null : ' (only within the same type)'}
+                </span>
+              </label>
+            ) : null}
+            {article ? (
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={copyArticle}
+                  onChange={(event) => onCopyArticle(event.target.checked)}
+                  data-testid="entry-copy-article"
+                />
+                <span>Article</span>
+              </label>
+            ) : null}
+          </div>
+        </fieldset>
+      ) : null}
+
+      {copyArticle && article ? (
+        links.length === 0 ? (
+          <p data-testid="entry-copy-links">The article has no links.</p>
+        ) : (
+          <div data-testid="entry-copy-links">
+            <p>
+              The article is copied with its {links.length === 1 ? 'link' : `${links.length} links`}
+              , as written:
+            </p>
+            <ul className="entrycopy__links">
+              {links.map((link, index) => (
+                <li key={index}>
+                  <bdi>{link.text}</bdi> &rarr;{' '}
+                  <span className="entrycopy__href">
+                    {link.href.startsWith('/') || link.href.startsWith('#')
+                      ? `${link.href} (inside Lorex)`
+                      : link.href}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      ) : null}
+
+      <p className="entryform__note" data-testid="entry-copy-skipped">
+        Not copied: its picture, relationships, story and scene links, eras, forms and appearances,
+        comments, history and publication. The copy starts as an Idea and stays private.
+      </p>
+    </section>
+  )
 }
 
 /**

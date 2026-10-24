@@ -5562,6 +5562,40 @@ a.button--danger:visited {
   color: var(--muted);
 }
 
+/* What a copy takes from the entry it is made from (Issue #27), above the new entry's form. */
+.entrycopy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.entrycopy > p,
+.entrycopy__links {
+  margin: 0;
+}
+
+.entrycopy__options {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.entrycopy__options legend {
+  padding: 0;
+  margin-block-end: var(--space-1);
+  font-weight: 600;
+}
+
+.entrycopy__links {
+  padding-inline-start: 1.25rem;
+}
+
+.entrycopy__href {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 /* The form's bar: its state in words on the left, Cancel and Save on the right. It holds to the bottom
    of the screen while the form is longer than it is, and settles at the form's end. */
 .entry__actions.actionbar {
