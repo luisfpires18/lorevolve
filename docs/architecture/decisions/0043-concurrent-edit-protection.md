@@ -92,3 +92,10 @@ Archiving and restoring move it on too, so a drawer opened before either cannot 
 field needs no version. The field drawer keeps its draft on the refusal, shows the field as saved now, and offers "Use the
 saved settings" or "Keep my changes" (which takes the new version, so the next Save deliberately replaces what is saved).
 Field definitions joined this ADR's protected set; types, groups and relation kinds still have no version.
+
+## Amendment (2026-10-24, Issue #41, ADR 0050)
+
+An entry's progression is protected the same way: `EntityProgression.Version` (0 with no row), named as `expectedVersion`
+by every save and history restore, refused with 409 `entity_progression_changed`. It is apart from the entry's own version,
+so saving eras never makes an open entry form stale, and the reverse. Archiving or restoring a field moves it on for every
+progression that overrides that field.

@@ -20,6 +20,7 @@ import { EntityImageField, type PendingImage } from '../components/EntityImageFi
 import { FieldInput } from '../components/FieldInputs'
 import { ImageViewer } from '../components/ImageViewer'
 import { NameList } from '../components/NameList'
+import { ProgressionView } from '../components/ProgressionView'
 import { RelationshipSection } from '../components/RelationshipSection'
 import { emptyValue } from '../lore/document'
 import { entityImageUrl, setEntityImage } from '../lore/images'
@@ -115,7 +116,7 @@ const ARRIVAL_MS = 2400
  * Which of the entry's three views is open. Read from the address and written back to it, never held
  * as page state: each one is a place, so it reloads, it is linkable, and Back leaves it (ADR 0028).
  */
-type EntryView = 'article' | 'relations' | 'history'
+type EntryView = 'article' | 'progression' | 'relations' | 'history'
 
 /**
  * One entry, under one header, at three addresses.
@@ -509,6 +510,15 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
   }
 
   /** After a restore the stored lore is a version the page has not seen. Read it back. */
+  /**
+   * Reads the entry again without touching the entry form: saving its eras changes when it was worked on and whether it has
+   * eras, never what the form edits, and the form may hold unsaved work while another view is open.
+   */
+  async function refreshDetail() {
+    if (entityId === undefined) return
+    setDetail(await getEntity(universe.id, entityId))
+  }
+
   async function reloadAfterRestore() {
     if (entityId === undefined) return
 
@@ -763,6 +773,16 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
               <NavLink to={entryPath} end className="views__link" data-testid="entry-view-article">
                 Article
               </NavLink>
+              {/* An entry's eras (Issue #30): offered to whoever can add one, and to everyone once it has any. */}
+              {access.editContent || detail?.hasProgression ? (
+                <NavLink
+                  to={`${entryPath}/progression`}
+                  className="views__link"
+                  data-testid="entry-view-progression"
+                >
+                  Eras
+                </NavLink>
+              ) : null}
               <NavLink
                 to={`${entryPath}/relations`}
                 className="views__link"
@@ -1065,6 +1085,19 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
               </p>
             ) : null}
           </aside>
+        </div>
+      ) : view === 'progression' ? (
+        <div className="entry__view">
+          {detail ? (
+            <ProgressionView
+              key={detail.id}
+              universeId={universe.id}
+              entry={detail}
+              definitions={types.find((type) => type.id === detail.entityTypeId)?.fields ?? []}
+              chronology={chronology}
+              onChanged={() => void refreshDetail()}
+            />
+          ) : null}
         </div>
       ) : view === 'relations' ? (
         <div className="entry__view">

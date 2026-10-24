@@ -16247,3 +16247,252 @@ details.reviewsection > .reviewsection__list {
     min-height: var(--control-touch);
   }
 }
+
+/* ---------- Entry: eras (Issue #41) ----------
+
+   One entry read in its own periods. The eras sit under the entry's views as a second, quieter row of
+   places - Main profile first, then each era in the author's order - so choosing one is a link like any
+   view and Back leaves it. An era is a page in the same book: its name in the display face, when it is
+   on the universe's line, what it covers, and the facts infobox with each value saying where it comes
+   from. No box inside a box. */
+
+.progression {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 52rem;
+  margin-top: 1.5rem;
+}
+
+.progression__head,
+.erapanel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  flex-wrap: wrap;
+}
+
+.progression__head .sectiontitle {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: var(--text-section);
+}
+
+.eranav__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eranav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.25rem var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.eranav__link:hover,
+.eranav__link:focus-visible {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.eranav__link[aria-current='page'] {
+  color: var(--ink);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+@media (pointer: coarse) {
+  .eranav__link {
+    min-height: var(--control-touch);
+  }
+}
+
+.eralist {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eralist__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.eralist__name {
+  font-family: var(--display);
+  font-size: 1.25rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.eralist__span,
+.eralist__meta,
+.erapanel__span,
+.erapanel__eyebrow {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.eralist__description {
+  flex-basis: 100%;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.eralist__meta {
+  flex-basis: 100%;
+}
+
+.erapanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.erapanel__title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: var(--text-section);
+  overflow-wrap: anywhere;
+}
+
+.erapanel__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.erapanel__description {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.eracovers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.erafacts {
+  max-width: 34rem;
+}
+
+.erafacts .facts__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.erasource {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.erasource--era {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.erafacts .facts__row[data-source='entry'] .facts__value > :first-child {
+  color: var(--muted);
+}
+
+.erahistory {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+}
+
+.erahistory__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.erafields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.erafield {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+}
+
+.erafield__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+
+.erafield__name {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.erafield__mode {
+  width: auto;
+  min-width: 12rem;
+}
+
+.erafield__inherited {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.erapoint {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.erapoint + .erapoint {
+  margin-top: var(--space-3);
+}
+
+.erapoint__label {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}

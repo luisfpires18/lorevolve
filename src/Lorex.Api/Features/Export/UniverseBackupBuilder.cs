@@ -2,6 +2,7 @@ using Lorex.Api.Data;
 using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Publishing;
 using Microsoft.EntityFrameworkCore;
 
@@ -349,6 +350,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
 
         var articleRevisionsByEntity = await ArticleRevisionsAsync(universeId, cancellationToken);
 
+        var progressionByEntity = await ProgressionsAsync(universeId, cancellationToken);
+
         var aliasesByEntity = aliases
             .GroupBy(alias => alias.EntityId)
             .ToDictionary(
@@ -411,8 +414,85 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                     valuesByEntity.GetValueOrDefault(entity.Id, []),
                     Image(images, entity.Id),
                     revisionsByEntity.GetValueOrDefault(entity.Id, []),
-                    articleRevisionsByEntity.GetValueOrDefault(entity.Id, []))),
+                    articleRevisionsByEntity.GetValueOrDefault(entity.Id, []),
+                    progressionByEntity.GetValueOrDefault(entity.Id))),
         ];
+    }
+
+    /// <summary>
+    /// Every entry's progression (Issue #41), keyed by entry: its eras in order with their links and every override - archived
+    /// fields' too, a backup being the whole of what is stored - and its saved versions oldest first. Four reads.
+    /// </summary>
+    private async Task<Dictionary<Guid, BackupProgression>> ProgressionsAsync(Guid universeId, CancellationToken cancellationToken)
+    {
+        var progressions = await db.EntityProgressions.AsNoTracking()
+            .Where(progression => progression.Entity!.UniverseId == universeId)
+            .ToListAsync(cancellationToken);
+
+        if (progressions.Count == 0)
+        {
+            return [];
+        }
+
+        var eras = await db.EntityEras.AsNoTracking()
+            .Where(era => era.Entity!.UniverseId == universeId)
+            .Include(era => era.Stories)
+            .Include(era => era.Scenes)
+            .Include(era => era.FieldValues)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+
+        var revisions = await db.EntityProgressionRevisions.AsNoTracking()
+            .Where(revision => revision.Entity!.UniverseId == universeId)
+            .ToListAsync(cancellationToken);
+
+        var erasByEntity = eras.ToLookup(era => era.EntityId);
+        var revisionsByEntity = revisions.ToLookup(revision => revision.EntityId);
+
+        return progressions.ToDictionary(
+            progression => progression.EntityId,
+            progression => new BackupProgression(
+                Utc(progression.UpdatedAt),
+                [
+                    .. erasByEntity[progression.EntityId]
+                        .OrderBy(era => era.SortOrder)
+                        .Select(era => new BackupEntityEra(
+                            era.Id,
+                            era.Name,
+                            era.Description,
+                            era.SortOrder,
+                            era.StartYear is { } startYear ? new BackupChronologyValue(era.StartEraId, startYear, era.StartMonth, era.StartDay, era.StartMonthId) : null,
+                            era.EndYear is { } endYear ? new BackupChronologyValue(era.EndEraId, endYear, era.EndMonth, era.EndDay, era.EndMonthId) : null,
+                            [.. era.Stories.Select(link => link.StoryId).OrderBy(Key, StringComparer.Ordinal)],
+                            [.. era.Scenes.Select(link => link.SceneId).OrderBy(Key, StringComparer.Ordinal)],
+                            [
+                                .. era.FieldValues
+                                    .OrderBy(value => Key(value.FieldDefinitionId), StringComparer.Ordinal)
+                                    .ThenBy(value => Key(value.OptionId), StringComparer.Ordinal)
+                                    .ThenBy(value => Key(value.Id), StringComparer.Ordinal)
+                                    .Select(value => new BackupEraFieldValue(
+                                        value.FieldDefinitionId,
+                                        value.IsCleared,
+                                        value.TextValue,
+                                        value.NumberValue,
+                                        value.EraId,
+                                        value.BooleanValue,
+                                        Utc(value.DateValue),
+                                        value.OptionId,
+                                        value.ReferencedEntityId)),
+                            ])),
+                ],
+                [
+                    .. revisionsByEntity[progression.EntityId]
+                        .OrderBy(revision => revision.Number)
+                        .Select(revision => new BackupProgressionRevision(
+                            revision.Id,
+                            revision.Number,
+                            revision.Kind,
+                            revision.RestoredFromRevisionId,
+                            Utc(revision.CreatedAt),
+                            ProgressionState.Deserialize(revision.Snapshot))),
+                ]));
     }
 
     /// <summary>

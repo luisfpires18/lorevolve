@@ -396,6 +396,11 @@ internal static class TrashPermanentDelete
                 .Where(value => value.ReferencedEntityId != null && entries.Contains(value.ReferencedEntityId.Value))
                 .ExecuteDeleteAsync(cancellationToken);
 
+            // An era's override that links to one goes the same way, and that era then inherits the field (Issue #41).
+            await db.EntityEraFieldValues
+                .Where(value => value.ReferencedEntityId != null && entries.Contains(value.ReferencedEntityId.Value))
+                .ExecuteDeleteAsync(cancellationToken);
+
             await db.TimelineEntryValidations
                 .Where(details => details.ParticipantEntityId != null
                     && entries.Contains(details.ParticipantEntityId.Value)

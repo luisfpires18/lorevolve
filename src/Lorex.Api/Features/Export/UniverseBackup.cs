@@ -2,6 +2,7 @@ using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Publishing;
 using Lorex.Api.Features.Relationships;
 using Lorex.Api.Features.RuleValidation;
@@ -228,8 +229,14 @@ public sealed record UniverseBackup(
     /// null while live; each travels whole and restores into the Trash, still restorable. Not ignorable: a version 25 reader
     /// would restore every trashed link and moment live, back in Canon and on the timeline. A file at version 25 or earlier
     /// has no <c>deletedAt</c> on either; every link and moment restores live, even if it carries a value.
+    ///
+    /// 27 - An entry may have eras (Issue #41). <see cref="BackupEntity.Progression"/> carries them in the author's order - each
+    /// era's name, description, dated span on the file's chronology, the stories and scenes of this file it covers, and the
+    /// fields it overrides or leaves empty - with every saved version of them. Not ignorable: the eras and their overrides are
+    /// authored, so a version 26 reader would restore every entry without them. A file at version 26 or earlier has no
+    /// <c>progression</c>; every entry restores with no eras, even if it carries one.
     /// </summary>
-    public const int CurrentVersion = 26;
+    public const int CurrentVersion = 27;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -450,7 +457,8 @@ public sealed record BackupEntity(
     IReadOnlyList<BackupFieldValue> FieldValues,
     BackupEntityImage? Image,
     IReadOnlyList<BackupRevision> Revisions,
-    IReadOnlyList<BackupArticleRevision>? ArticleRevisions);
+    IReadOnlyList<BackupArticleRevision>? ArticleRevisions,
+    BackupProgression? Progression = null);
 
 /// <summary>
 /// One saved version of an entry's article (since version 9). <paramref name="Content"/> is the whole document exactly as
@@ -465,6 +473,52 @@ public sealed record BackupArticleRevision(
     Guid? RestoredFromRevisionId,
     DateTime CreatedAt,
     string Content);
+
+/// <summary>
+/// An entry's progression (since version 27): its eras in the author's order, and every saved version of it, oldest first.
+/// Null for an entry that never had one. Ids are preserved, because relationships and an older version name an era by id.
+/// </summary>
+public sealed record BackupProgression(
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupEntityEra> Eras,
+    IReadOnlyList<BackupProgressionRevision> Revisions);
+
+/// <summary>
+/// One era of one entry: <paramref name="SortOrder"/> its place, from 0; <paramref name="Start"/> and <paramref name="End"/>
+/// its optional bounds, each as precise as written; <paramref name="StoryIds"/> and <paramref name="SceneIds"/> stories and
+/// scenes of this file, sorted; <paramref name="FieldValues"/> what it overrides, archived fields' included.
+/// </summary>
+public sealed record BackupEntityEra(
+    Guid Id,
+    string Name,
+    string? Description,
+    int SortOrder,
+    BackupChronologyValue? Start,
+    BackupChronologyValue? End,
+    IReadOnlyList<Guid> StoryIds,
+    IReadOnlyList<Guid> SceneIds,
+    IReadOnlyList<BackupEraFieldValue> FieldValues);
+
+/// <summary>One override row, in <see cref="BackupFieldValue"/>'s members, or <paramref name="IsCleared"/> with none set.</summary>
+public sealed record BackupEraFieldValue(
+    Guid FieldDefinitionId,
+    bool IsCleared,
+    string? TextValue,
+    double? NumberValue,
+    Guid? EraId,
+    bool? BooleanValue,
+    DateTime? DateValue,
+    Guid? OptionId,
+    Guid? ReferencedEntityId);
+
+/// <summary>One saved version of a progression: the whole of it as that save stored it, ids as they were then.</summary>
+public sealed record BackupProgressionRevision(
+    Guid Id,
+    int Number,
+    EntityRevisionKind Kind,
+    Guid? RestoredFromRevisionId,
+    DateTime CreatedAt,
+    ProgressionSnapshot Snapshot);
 
 /// <summary>
 /// The entry's primary image, as a reader of the archive needs to see it.

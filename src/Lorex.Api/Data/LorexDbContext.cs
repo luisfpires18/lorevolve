@@ -7,6 +7,7 @@ using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Mcp;
 using Lorex.Api.Features.Profile;
+using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Publishing;
 using Lorex.Api.Features.Relationships;
 using Lorex.Api.Features.RuleValidation;
@@ -71,6 +72,18 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<EntityRevisionFieldValue> EntityRevisionFieldValues =>
         Set<EntityRevisionFieldValue>();
+
+    public DbSet<EntityProgression> EntityProgressions => Set<EntityProgression>();
+
+    public DbSet<EntityEra> EntityEras => Set<EntityEra>();
+
+    public DbSet<EntityEraStory> EntityEraStories => Set<EntityEraStory>();
+
+    public DbSet<EntityEraScene> EntityEraScenes => Set<EntityEraScene>();
+
+    public DbSet<EntityEraFieldValue> EntityEraFieldValues => Set<EntityEraFieldValue>();
+
+    public DbSet<EntityProgressionRevision> EntityProgressionRevisions => Set<EntityProgressionRevision>();
 
     public DbSet<RelationshipType> RelationshipTypes => Set<RelationshipType>();
 

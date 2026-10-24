@@ -50,6 +50,9 @@ public static class EntityEndpoints
     /// <summary>The marker on the 409 for moving an entry to another type while it holds values in archived fields of its own (Issue #39).</summary>
     public const string TypeChangeArchivedCode = "entity_type_change_archived";
 
+    /// <summary>The 409 for moving an entry to another type while its eras override its type's fields (Issue #41).</summary>
+    public const string TypeChangeProgressionCode = "entity_type_change_progression";
+
     /// <summary>
     /// The one grid-card projection, shared because the listing now has two orderings and only
     /// one shape: browsing reads it straight off the entity, searching reads it off the entity
@@ -674,6 +677,12 @@ public static class EntityEndpoints
             return archivedValues;
         }
 
+        if (entity.EntityTypeId != request.EntityTypeId
+            && await EraOverridesRefusalAsync(db, entity, cancellationToken) is { } overridden)
+        {
+            return overridden;
+        }
+
         entity.EntityTypeId = request.EntityTypeId;
         entity.Name = request.Name!.Trim();
         entity.Summary = LoreValidation.Normalize(request.Summary);
@@ -745,22 +754,37 @@ public static class EntityEndpoints
         CancellationToken cancellationToken)
     {
         var entityId = entity.Id;
-        var blocking = await db.EntityFieldValues.AsNoTracking()
-            .Where(value => value.ReferencedEntityId == entityId
-                && ((value.FieldDefinition!.TargetEntityTypeId != null && value.FieldDefinition.TargetEntityTypeId != newTypeId)
-                    || (value.FieldDefinition.TargetGroupId != null
-                        && !db.EntityTypeGroupMembers.Any(member =>
-                            member.EntityTypeGroupId == value.FieldDefinition.TargetGroupId && member.EntityTypeId == newTypeId))))
-            .GroupBy(value => new
-            {
-                value.FieldDefinitionId,
-                FieldName = value.FieldDefinition!.Name,
-                TypeId = value.FieldDefinition.EntityTypeId,
-                TypeName = value.FieldDefinition.EntityType!.Name,
-                Archived = value.FieldDefinition.ArchivedAt != null,
-            })
-            .Select(group => new { group.Key.FieldDefinitionId, group.Key.FieldName, group.Key.TypeId, group.Key.TypeName, group.Key.Archived, Links = group.Count() })
-            .ToListAsync(cancellationToken);
+
+        // A link an era's override holds relies on the field's limit as much as an entry's own value does (Issue #41). Both
+        // read through the reference index; only the fields they come through are then read, and only the limited ones kept.
+        var linkCounts = (await db.EntityFieldValues.AsNoTracking()
+                .Where(value => value.ReferencedEntityId == entityId)
+                .Select(value => value.FieldDefinitionId)
+                .Concat(db.EntityEraFieldValues.AsNoTracking()
+                    .Where(value => value.ReferencedEntityId == entityId)
+                    .Select(value => value.FieldDefinitionId))
+                .ToListAsync(cancellationToken))
+            .CountBy(fieldId => fieldId)
+            .ToDictionary();
+        var fieldIds = linkCounts.Keys.ToList();
+
+        var blocking = (await db.EntityFieldDefinitions.AsNoTracking()
+                .Where(field => fieldIds.Contains(field.Id)
+                    && ((field.TargetEntityTypeId != null && field.TargetEntityTypeId != newTypeId)
+                        || (field.TargetGroupId != null
+                            && !db.EntityTypeGroupMembers.Any(member =>
+                                member.EntityTypeGroupId == field.TargetGroupId && member.EntityTypeId == newTypeId))))
+                .Select(field => new
+                {
+                    FieldDefinitionId = field.Id,
+                    FieldName = field.Name,
+                    TypeId = field.EntityTypeId,
+                    TypeName = field.EntityType!.Name,
+                    Archived = field.ArchivedAt != null,
+                })
+                .ToListAsync(cancellationToken))
+            .Select(field => new { field.FieldDefinitionId, field.FieldName, field.TypeId, field.TypeName, field.Archived, Links = linkCounts[field.FieldDefinitionId] })
+            .ToList();
 
         if (blocking.Count == 0)
         {
@@ -824,6 +848,32 @@ public static class EntityEndpoints
                 + "discard it. Restore the field on its type to see the value, then try again.",
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?> { ["code"] = TypeChangeArchivedCode, ["fields"] = fields });
+    }
+
+    /// <summary>
+    /// The refusal for moving <paramref name="entity"/> to another type while any of its eras overrides one of its type's fields,
+    /// or null (Issue #41). An override belongs to a field of this type, and the new type has none of them: the move would
+    /// discard what the eras say. The author clears those overrides first, and the move is then the ordinary one.
+    /// </summary>
+    private static async Task<IResult?> EraOverridesRefusalAsync(
+        LorexDbContext db,
+        LoreEntity entity,
+        CancellationToken cancellationToken)
+    {
+        var entityId = entity.Id;
+        var overridden = await db.EntityEraFieldValues.AsNoTracking()
+            .Where(value => value.EntityEra!.EntityId == entityId)
+            .Select(value => new { Era = value.EntityEra!.Name, Field = value.FieldDefinition!.Name })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return overridden is null
+            ? null
+            : Results.Problem(
+                title: "Entry's eras set its fields",
+                detail: $"{entity.Name} can't change type because its era \"{overridden.Era}\" sets \"{overridden.Field}\", a field of its "
+                    + "current type. Let its eras inherit their fields first, then try again.",
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = TypeChangeProgressionCode });
     }
 
     /// <summary>
@@ -1165,36 +1215,12 @@ public static class EntityEndpoints
 
         var errors = new Dictionary<string, string[]>();
 
-        // Every entry a link field names, read once with its type, and only from this universe: what each field then accepts
-        // is decided from that, however many link fields the type has.
         var wanted = definitions
             .Where(definition => definition.Kind == EntityFieldKind.EntityReference)
             .Select(definition => supplied.GetValueOrDefault(definition.Id)?.ReferencedEntityId)
-            .OfType<Guid>()
-            .Distinct()
-            .ToList();
+            .OfType<Guid>();
 
-        var referenced = wanted.Count == 0
-            ? []
-            : await db.Entities.AsNoTracking()
-                .Where(candidate => candidate.UniverseId == universeId && wanted.Contains(candidate.Id))
-                .ToDictionaryAsync(candidate => candidate.Id, candidate => candidate.EntityTypeId, cancellationToken);
-
-        // The groups this type's link fields are limited to, as (group, member type) pairs: one read, only when needed.
-        var targetGroups = definitions
-            .Where(definition => definition.TargetGroupId is not null)
-            .Select(definition => definition.TargetGroupId!.Value)
-            .Distinct()
-            .ToList();
-
-        var members = targetGroups.Count == 0 || wanted.Count == 0
-            ? []
-            : (await db.EntityTypeGroupMembers.AsNoTracking()
-                .Where(member => targetGroups.Contains(member.EntityTypeGroupId))
-                .Select(member => new { member.EntityTypeGroupId, member.EntityTypeId })
-                .ToListAsync(cancellationToken))
-                .Select(member => (member.EntityTypeGroupId, member.EntityTypeId))
-                .ToHashSet();
+        var (referenced, members) = await LinkTargetsAsync(db, universeId, definitions, wanted, cancellationToken);
 
         var rows = new List<EntityFieldValue>();
 
@@ -1215,8 +1241,46 @@ public static class EntityEndpoints
         return (definitions, rows, errors);
     }
 
+    /// <summary>
+    /// Every entry a save's link fields name, read once with its type and only from this universe, and the groups those fields
+    /// are limited to as (group, member type) pairs - what <see cref="BuildRows"/> decides each link from, however many link
+    /// fields there are. Shared with an era's overrides (Issue #41).
+    /// </summary>
+    internal static async Task<(Dictionary<Guid, Guid> Referenced, HashSet<(Guid GroupId, Guid TypeId)> Members)> LinkTargetsAsync(
+        LorexDbContext db,
+        Guid universeId,
+        IEnumerable<EntityFieldDefinition> definitions,
+        IEnumerable<Guid> linked,
+        CancellationToken cancellationToken)
+    {
+        var wanted = linked.Distinct().ToList();
+
+        var referenced = wanted.Count == 0
+            ? []
+            : await db.Entities.AsNoTracking()
+                .Where(candidate => candidate.UniverseId == universeId && wanted.Contains(candidate.Id))
+                .ToDictionaryAsync(candidate => candidate.Id, candidate => candidate.EntityTypeId, cancellationToken);
+
+        var targetGroups = definitions
+            .Where(definition => definition.TargetGroupId is not null)
+            .Select(definition => definition.TargetGroupId!.Value)
+            .Distinct()
+            .ToList();
+
+        var members = targetGroups.Count == 0 || wanted.Count == 0
+            ? []
+            : (await db.EntityTypeGroupMembers.AsNoTracking()
+                .Where(member => targetGroups.Contains(member.EntityTypeGroupId))
+                .Select(member => new { member.EntityTypeGroupId, member.EntityTypeId })
+                .ToListAsync(cancellationToken))
+                .Select(member => (member.EntityTypeGroupId, member.EntityTypeId))
+                .ToHashSet();
+
+        return (referenced, members);
+    }
+
     /// <param name="referenced">This universe's entries the request links to, each with its type.</param>
-    private static List<EntityFieldValue> BuildRows(
+    internal static List<EntityFieldValue> BuildRows(
         Guid entityId,
         EntityFieldDefinition definition,
         FieldValueInput? input,
@@ -1511,6 +1575,7 @@ public static class EntityEndpoints
                     && relationship.RelationshipType!.FamilySemantic != RelationshipFamilySemantic.None
                     && ((relationship.SourceEntityId == candidate.Id && relationship.TargetEntity!.DeletedAt == null)
                         || (relationship.TargetEntityId == candidate.Id && relationship.SourceEntity!.DeletedAt == null))),
+                HasProgression = db.EntityEras.Any(era => era.EntityId == candidate.Id),
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -1558,6 +1623,7 @@ public static class EntityEndpoints
             entity.CreatedAt,
             entity.UpdatedAt,
             entity.HasFamilyConnections,
-            entity.Version);
+            entity.Version,
+            entity.HasProgression);
     }
 }

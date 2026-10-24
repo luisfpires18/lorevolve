@@ -4,6 +4,7 @@ using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Export;
 using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Media;
 using Lorex.Api.Features.Publishing;
 using Lorex.Api.Features.Relationships;
@@ -251,6 +252,13 @@ internal static partial class BackupValidation
             count += 2 + entity.Aliases.Count + entity.TagIds.Count + entity.FieldValues.Count + (entity.Image is null ? 0 : 1)
                 + entity.ArticleRevisions!.Count;
 
+            if (entity.Progression is { } progression)
+            {
+                count += 1 + (progression.Revisions?.Count ?? 0)
+                    + (progression.Eras ?? []).Sum(era => era is null ? 0L
+                        : 1L + (era.StoryIds?.Count ?? 0) + (era.SceneIds?.Count ?? 0) + (era.FieldValues?.Count ?? 0));
+            }
+
             foreach (var revision in entity.Revisions)
             {
                 count += 1 + revision.Aliases.Count + revision.Tags.Count + revision.FieldValues.Count;
@@ -293,6 +301,8 @@ internal static partial class BackupValidation
         private readonly HashSet<Guid> _ids = [];
         private readonly Dictionary<Guid, BackupEntityType> _types = [];
         private readonly Dictionary<Guid, Guid> _fieldOwner = [];
+        private readonly HashSet<Guid> _requiredFields = [];
+        private UniverseChronology? _reckoning;
         private readonly Dictionary<Guid, (BackupFieldDefinition Field, string What)> _fieldTargets = [];
         private readonly Dictionary<Guid, HashSet<Guid>> _groupMembers = [];
         private readonly HashSet<Guid> _options = [];
@@ -743,6 +753,11 @@ internal static partial class BackupValidation
                     Register(field.Id, fieldWhat);
                     _fieldOwner[field.Id] = type.Id;
 
+                    if (field.IsRequired)
+                    {
+                        _requiredFields.Add(field.Id);
+                    }
+
                     if (Text(field.Name, LoreLimits.NameMaxLength, $"{fieldWhat}'s name", required: true) && !fieldNames.Add(field.Name))
                     {
                         Add(BackupIssueCodes.Duplicate, $"The entry type {Quote(type.Name)} has two fields called {Quote(field.Name)}.");
@@ -849,6 +864,22 @@ internal static partial class BackupValidation
                         Register(revision.Id, $"A saved version of the article of {Entry(entity)}");
                     }
                 }
+
+                foreach (var era in entity.Progression?.Eras ?? [])
+                {
+                    if (era is not null)
+                    {
+                        Register(era.Id, $"The era {Quote(era.Name)} of {Entry(entity)}");
+                    }
+                }
+
+                foreach (var revision in entity.Progression?.Revisions ?? [])
+                {
+                    if (revision is not null)
+                    {
+                        Register(revision.Id, $"A saved version of the eras of {Entry(entity)}");
+                    }
+                }
             }
         }
 
@@ -931,6 +962,172 @@ internal static partial class BackupValidation
 
             CheckRevisions(entity, what);
             CheckArticleRevisions(entity, what);
+            CheckProgression(entity, what);
+        }
+
+        /// <summary>
+        /// An entry's eras (since version 27) held to what a save allows: named, each name once, their places distinct, dates on
+        /// the file's chronology, stories and scenes of this file, and overrides of this entry's own type's fields only - with
+        /// options, links and years the file holds, a link within its field's limit, and nothing set beside "left empty".
+        /// </summary>
+        private void CheckProgression(BackupEntity entity, string what)
+        {
+            if (entity.Progression is not { } progression)
+            {
+                return;
+            }
+
+            var eras = Required(progression.Eras, $"{what}'s eras");
+
+            if (eras.Count > ProgressionLimits.MaxEras)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} has more eras than Lorex keeps ({ProgressionLimits.MaxEras}).");
+            }
+
+            var names = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
+            var places = new HashSet<int>();
+
+            foreach (var era in eras)
+            {
+                if (era is null)
+                {
+                    Missing($"an era of {Entry(entity)}");
+                    continue;
+                }
+
+                var label = $"The era {Quote(era.Name)} of {Entry(entity)}";
+
+                if (Text(era.Name, ProgressionLimits.NameMaxLength, $"{label}'s name", required: true) && !names.Add(era.Name.Trim()))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{what} has two eras named {Quote(era.Name)}.");
+                }
+
+                Text(era.Description, ProgressionLimits.DescriptionMaxLength, $"{label}'s description");
+
+                if (era.SortOrder < 0 || !places.Add(era.SortOrder))
+                {
+                    Add(BackupIssueCodes.InvalidOrder, $"{label} has a place another era of the entry also has.");
+                }
+
+                if (era.Start is { } start)
+                {
+                    Point(start.EraId, start.Year, start.Month, start.MonthId, start.Day, $"{label}'s start");
+                }
+
+                if (era.End is { } end)
+                {
+                    Point(end.EraId, end.Year, end.Month, end.MonthId, end.Day, $"{label}'s end");
+                }
+
+                // The span is read on the file's own chronology, as a save reads it on the universe's: one that ends before
+                // it starts would refuse every later save of the entry's eras.
+                if (era.Start is { } from && era.End is { } to
+                    && ChronologySpans.Lower(Value(from), Reckoning()) is { } lower
+                    && ChronologySpans.Upper(Value(to), Reckoning()) is { } upper
+                    && upper < lower)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{label} ends before it starts.");
+                }
+
+                var stories = Required(era.StoryIds, $"{label}'s stories");
+                var scenes = Required(era.SceneIds, $"{label}'s scenes");
+
+                if (stories.Count > ProgressionLimits.MaxStoriesPerEra || scenes.Count > ProgressionLimits.MaxScenesPerEra)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{label} covers more stories or scenes than Lorex keeps.");
+                }
+
+                foreach (var story in stories)
+                {
+                    Reference(_stories.Contains(story), $"{label} covers a story the backup does not hold.");
+                }
+
+                foreach (var scene in scenes)
+                {
+                    Reference(_sceneStory.ContainsKey(scene), $"{label} covers a scene the backup does not hold.");
+                }
+
+                if (stories.Distinct().Count() != stories.Count || scenes.Distinct().Count() != scenes.Count)
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{label} lists the same story or scene twice.");
+                }
+
+                foreach (var value in Required(era.FieldValues, $"{label}'s fields"))
+                {
+                    if (value is null)
+                    {
+                        Missing($"a field of {label.ToLowerInvariant()}");
+                        continue;
+                    }
+
+                    Reference(
+                        _fieldOwner.TryGetValue(value.FieldDefinitionId, out var owner) && owner == entity.EntityTypeId,
+                        $"{label} sets a field its entry's type does not have.");
+                    Text(value.TextValue, LoreLimits.TextValueMaxLength, $"A value of {label.ToLowerInvariant()}");
+
+                    var holdsValue = value.TextValue is not null || value.NumberValue is not null || value.BooleanValue is not null
+                        || value.DateValue is not null || value.OptionId is not null || value.ReferencedEntityId is not null;
+
+                    if (value.IsCleared && (holdsValue || value.EraId is not null))
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{label} both leaves a field empty and sets it.");
+                    }
+                    else if (value.IsCleared && _requiredFields.Contains(value.FieldDefinitionId))
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{label} leaves a required field empty.");
+                    }
+                    else if (!value.IsCleared && !holdsValue)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{label} sets a field to nothing.");
+                    }
+
+                    if (value.OptionId is { } option)
+                    {
+                        Reference(_options.Contains(option), $"{label} names an option the backup does not hold.");
+                    }
+
+                    if (value.ReferencedEntityId is { } referenced)
+                    {
+                        Reference(_entities.ContainsKey(referenced), $"{label} links to an entry the backup does not hold.");
+
+                        if (_fieldTargets.TryGetValue(value.FieldDefinitionId, out var limited)
+                            && _entities.TryGetValue(referenced, out var linked)
+                            && (limited.Field.TargetGroupId is { } group
+                                ? _groupMembers.TryGetValue(group, out var members) && !members.Contains(linked.EntityTypeId)
+                                : linked.EntityTypeId != limited.Field.TargetEntityTypeId))
+                        {
+                            Add(BackupIssueCodes.InvalidValue, $"{label} links its field {Quote(limited.Field.Name)} to an entry of a type that field does not allow.");
+                        }
+                    }
+
+                    if (value.EraId is { } year)
+                    {
+                        Reference(_eras.Contains(year), $"{label} has a year counted in a date period the backup does not have.");
+                    }
+                }
+            }
+
+            var numbers = new HashSet<int>();
+            foreach (var revision in Required(progression.Revisions, $"{what}'s saved versions of its eras"))
+            {
+                if (revision is null)
+                {
+                    Missing($"a saved version of the eras of {Entry(entity)}");
+                    continue;
+                }
+
+                if (!numbers.Add(revision.Number))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"The eras of {Entry(entity)} have two saved versions numbered {revision.Number}.");
+                }
+
+                Defined(revision.Kind, $"Version {revision.Number} of the eras of {Entry(entity)}");
+
+                if (revision.Snapshot?.Eras is null)
+                {
+                    Missing($"what version {revision.Number} of the eras of {Entry(entity)} held");
+                }
+            }
         }
 
         private void CheckImage(BackupEntity entity, BackupEntityImage image, string what)
@@ -1769,6 +1966,28 @@ internal static partial class BackupValidation
                 }
             }
         }
+
+        private static ChronologyValue Value(BackupChronologyValue point) =>
+            new(point.EraId, point.Year, point.Month, point.Day, point.MonthId);
+
+        /// <summary>The file's own reckoning - its date periods and calendar - built once, the first time a span needs it.</summary>
+        private UniverseChronology Reckoning() =>
+            _reckoning ??= UniverseChronology.Of(
+                (payload.ChronologyEras ?? []).OfType<BackupChronologyEra>().Select(era => new ChronologyEra
+                {
+                    Id = era.Id,
+                    Name = era.Name ?? string.Empty,
+                    SortOrder = era.SortOrder,
+                    Direction = era.Direction,
+                    LabelPosition = era.LabelPosition,
+                }),
+                payload.ChronologyCalendar?.Months?.OfType<BackupChronologyCalendarMonth>().Select(month => new ChronologyCalendarMonth
+                {
+                    Id = month.Id,
+                    Name = month.Name ?? string.Empty,
+                    SortOrder = month.SortOrder,
+                    DayCount = month.DayCount,
+                }));
 
         private void Reference(bool resolves, string message)
         {

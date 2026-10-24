@@ -176,3 +176,10 @@ calendar says how any year is split into months and days. The two are orthogonal
 - **Not in V1:** several calendars, conversion between calendars or to Gregorian, leap rules, intercalary days, weekdays,
   seasons. Birth and death years stay year precision. The Gregorian `Date` custom field is unrelated and untouched; a
   chronology-aware Lore field is the natural follow-up, not a reinterpretation of it.
+
+## Amendment (2026-10-24, Issue #41, ADR 0050)
+
+An entry's era may be dated with a span on the universe's line (`ChronologySpans`): two optional bounds, each covering its
+whole precision. It counts as a use of a date period and of a custom month like any other date: removing either is refused
+while an era is dated in it, the calendar's switch converts era months both ways, and a month reorder that would reverse an
+era's span is refused with the timeline's ranges.

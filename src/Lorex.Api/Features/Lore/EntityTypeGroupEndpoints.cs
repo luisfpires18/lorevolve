@@ -327,7 +327,10 @@ public static class EntityTypeGroupEndpoints
                 GroupId = field.TargetGroupId!.Value,
                 GroupName = field.TargetGroup!.Name,
                 Archived = field.ArchivedAt != null,
-                Links = field.Values.Count(value => value.ReferencedEntityId != null && value.ReferencedEntity!.EntityTypeId == typeId),
+                Links = field.Values.Count(value => value.ReferencedEntityId != null && value.ReferencedEntity!.EntityTypeId == typeId)
+                    + db.EntityEraFieldValues.Count(value => value.FieldDefinitionId == field.Id
+                        && value.ReferencedEntityId != null
+                        && value.ReferencedEntity!.EntityTypeId == typeId),
             })
             .Where(field => field.Links > 0)
             .ToListAsync(cancellationToken);
