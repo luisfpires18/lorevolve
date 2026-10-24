@@ -82,6 +82,22 @@ Public portal section in Settings; the public page does not yet know its viewer 
   authenticated owner-scoped route, never anonymously.
 - An archived universe stays public; archive is the owner's list, not visibility.
 
+## Amendment (2026-10-23, Issue #47) - an entry's pill only in a public universe
+
+- **A private universe's entry pages show no publication pill.** `ContentPublication` renders nothing for an entry
+  whose `universeIsPublic` is false; Edit leads the tools. Stories keep their pill (out of scope). The API is unchanged:
+  `POST .../entities/{id}/publish` still selects an entry in a private universe, and the Trash restore question still
+  offers "Restore as private" there.
+- **No stored selection is rewritten.** Entries selected earlier stay selected, and `PublicationRules.PublicLore` still
+  hides them until the universe is public.
+- **Publishing names what comes with it.** `PublicationRules.SelectedLore` is the entry half of `PublicLore` (selected,
+  out of the Trash, with address and date); `PublicLore` is now that predicate inside a public universe, the same rule as
+  before. `GET /api/universes/{id}/publication/selected-lore` (owner only, `Publish` capability: a member 403, anyone else
+  404) answers `{ totalCount, items: [{ id, name, typeName }] }`, by name, at most 100 named. The publish confirmation reads
+  it fresh with the publication state and lists each entry with its type, says "and N more" past 100, and says plainly when
+  none is selected. It reads only: neither answer to the confirmation changes a selection. Making an entry private again
+  stays on its page once the world is public.
+
 ## Amendment (2026-10-05, fix/universe-artwork-loading) - the artwork's card arrives with the universe
 
 Measured first: a card and the workspace used to paint the fallback, then ask `GET /api/universes/{id}/artwork` for

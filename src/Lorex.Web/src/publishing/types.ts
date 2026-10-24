@@ -135,6 +135,16 @@ export interface PublicationState {
   originalWork: string | null
 }
 
+/**
+ * The lore entries publishing a universe would make public, read fresh for its owner's confirmation (Issue #47): a private
+ * universe's entry pages do not show that choice, so this is where the owner reviews it. `items` are by name, at most 100;
+ * `totalCount` counts them all.
+ */
+export interface SelectedLore {
+  totalCount: number
+  items: { id: string; name: string; typeName: string }[]
+}
+
 export interface PublicationDetails {
   publicSummary: string | null
   category: CategoryValue | null

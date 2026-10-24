@@ -33,6 +33,9 @@ public static class PublicationEndpoints
     /// <summary>A save would leave a public universe without something publishing needs.</summary>
     public const string RequiredWhilePublicCode = "publication_required_while_public";
 
+    /// <summary>How many selected entries the publish review names; the rest are counted.</summary>
+    public const int SelectedLoreLimit = 100;
+
     public static IEndpointRouteBuilder MapPublicationEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/universes/{universeId:guid}")
@@ -40,6 +43,7 @@ public static class PublicationEndpoints
             .RequireAuthorization();
 
         group.MapGet("/publication", GetAsync).WithName("GetUniversePublication");
+        group.MapGet("/publication/selected-lore", SelectedLoreAsync).WithName("GetSelectedLore");
         group.MapPut("/publication", SaveAsync).WithName("SaveUniversePublication");
 
         // POST with no body, like archive: a transition, not a field. The cookie is SameSite=Strict,
@@ -125,6 +129,35 @@ public static class PublicationEndpoints
 
         var state = await ReadStateAsync(db, universeId, principal.RequireUserId(), cancellationToken);
         return state is null ? Results.NotFound() : Results.Ok(state);
+    }
+
+    /// <summary>
+    /// The entries publishing would make public, read fresh for the owner's confirmation (Issue #47). The owner's alone, like
+    /// every route here: a member is refused, anyone else finds nothing. It reads; it never changes a selection.
+    /// </summary>
+    private static async Task<IResult> SelectedLoreAsync(
+        Guid universeId,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.Publish, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        var ownerId = principal.RequireUserId();
+        var selected = PublicationRules.SelectedLore(db).AsNoTracking()
+            .Where(entity => entity.UniverseId == universeId && entity.Universe!.OwnerId == ownerId);
+        var total = await selected.CountAsync(cancellationToken);
+        var items = await selected
+            .OrderBy(entity => EF.Functions.Collate(entity.Name, "NOCASE"))
+            .ThenBy(entity => entity.Id)
+            .Take(SelectedLoreLimit)
+            .Select(entity => new SelectedLoreEntry(entity.Id, entity.Name, entity.EntityType!.Name))
+            .ToListAsync(cancellationToken);
+
+        return Results.Ok(new SelectedLore(total, items));
     }
 
     private static async Task<IResult> SaveAsync(

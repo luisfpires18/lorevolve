@@ -86,19 +86,25 @@ internal static class PublicationRules
                 && db.UniverseArtworks.Any(artwork => artwork.UniverseId == universe.Id));
 
     /// <summary>
-    /// Every lore entry the public portal may read, and nothing else: selected by its author, not in the Trash, with
-    /// the address and date publishing gives it - and inside a universe <see cref="Public"/> answers. The parent is
-    /// part of the predicate rather than a step a caller remembers, so a private universe overrides every entry in
-    /// it and no route can ask for one without the other.
+    /// Every lore entry its author selected for publication: selected, not in the Trash, with the address and date
+    /// publishing gives it - whether or not its universe is public yet. <see cref="PublicLore"/> is exactly these inside a
+    /// public universe, so what an owner is shown before publishing (Issue #47) is what the portal will then read.
+    /// </summary>
+    public static IQueryable<LoreEntity> SelectedLore(LorexDbContext db) =>
+        db.Entities.Where(entity => entity.Visibility == ContentVisibility.Public
+            && entity.DeletedAt == null
+            && entity.PublicSlug != null
+            && entity.PublishedAt != null);
+
+    /// <summary>
+    /// Every lore entry the public portal may read, and nothing else: <see cref="SelectedLore"/> inside a universe
+    /// <see cref="Public"/> answers. The parent is part of the predicate rather than a step a caller remembers, so a
+    /// private universe overrides every entry in it and no route can ask for one without the other.
     /// </summary>
     public static IQueryable<LoreEntity> PublicLore(LorexDbContext db)
     {
         var universes = Public(db);
-        return db.Entities.Where(entity => entity.Visibility == ContentVisibility.Public
-            && entity.DeletedAt == null
-            && entity.PublicSlug != null
-            && entity.PublishedAt != null
-            && universes.Any(universe => universe.Id == entity.UniverseId));
+        return SelectedLore(db).Where(entity => universes.Any(universe => universe.Id == entity.UniverseId));
     }
 
     /// <summary>

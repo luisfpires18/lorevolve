@@ -42,6 +42,17 @@ public sealed record PublicationState(
     string? OriginalWork = null);
 
 /// <summary>
+/// The lore entries publishing this universe would make public, for its owner to review first (Issue #47): every entry
+/// <see cref="PublicationRules.SelectedLore"/> answers for the universe, by name, at most
+/// <see cref="PublicationEndpoints.SelectedLoreLimit"/> of them, and how many there are in all. A private universe's entry
+/// pages do not show that choice, so this is where the owner sees it.
+/// </summary>
+public sealed record SelectedLore(int TotalCount, IReadOnlyList<SelectedLoreEntry> Items);
+
+/// <summary>One selected entry as the confirmation names it: its name and its type's name.</summary>
+public sealed record SelectedLoreEntry(Guid Id, string Name, string TypeName);
+
+/// <summary>
 /// The artwork as its owner's client needs it: ids to compose the owner-only addresses of the
 /// original and the card from, the picture's shape, and the frame to reopen the cropper on. No key
 /// and no URL, as with every other picture (ADR 0019).

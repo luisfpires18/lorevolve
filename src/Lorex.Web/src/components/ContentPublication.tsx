@@ -13,10 +13,6 @@ const WORDS = {
     kept: 'Its fields, aliases, tags, relationships and history are not published.',
     isPublic: 'This lore entry is available in your public universe.',
     willPublish: 'Publishing this lore entry makes it available in your public universe.',
-    selectedHidden:
-      'This entry is selected for publication, but it will remain hidden until the universe is public.',
-    willSelect:
-      'Your universe is private. Publishing selects this entry: it will remain hidden until the universe is public.',
   },
   story: {
     noun: 'story',
@@ -124,6 +120,10 @@ export function ContentPublication({
     ) : null
   }
 
+  // An entry's choice only matters in a public universe (Issue #47): a private universe hides every entry anyway, so its
+  // pages offer no pill. The stored selection is untouched, and publishing the universe says how many entries it holds.
+  if (kind === 'entry' && !state.universeIsPublic) return null
+
   const shown = shownOf(kind, state)
   const isSelected = state.visibility === Visibility.Public
   const missingSummary = lacksSummary(kind, state)
@@ -159,14 +159,14 @@ export function ContentPublication({
     shown === 'public'
       ? [words.isPublic, words.listed, words.kept]
       : shown === 'selected'
-        ? [missingSummary ? WORDS.story.needsSummary : words.selectedHidden, words.kept]
+        ? [missingSummary ? WORDS.story.needsSummary : WORDS.story.selectedHidden, words.kept]
         : [
             `Only you can see this ${words.noun}.`,
             missingSummary
               ? WORDS.story.noSummary
               : state.universeIsPublic
                 ? words.willPublish
-                : words.willSelect,
+                : WORDS.story.willSelect,
             words.listed,
             words.kept,
           ]

@@ -366,6 +366,76 @@ public sealed class ContentPublicationTests(LorexApiFactory factory) : IClassFix
         Assert.Equal(ContentVisibility.Public, (await EntryState(owner, u, entry)).Visibility);
     }
 
+    [Fact]
+    public async Task Publishing_names_the_entries_it_would_make_public_and_neither_answer_rewrites_a_selection()
+    {
+        var (owner, _) = await Account(_factory, "cp-selected-review");
+        var universe = await Ready(owner, "Cp selected review");
+        var u = universe.Id;
+        var chosen = await Entry(owner, u, "Chosen warden", null);
+        var keep = await EntryOfType(owner, u, "Location", "Ash keep");
+        var unchosen = await Entry(owner, u, "Unchosen warden", null);
+        var trashed = await Entry(owner, u, "Trashed warden", null);
+        foreach (var id in new[] { chosen, keep, trashed })
+        {
+            await PublishEntry(owner, u, id);
+        }
+
+        (await owner.DeleteAsync($"/api/universes/{u}/entities/{trashed}")).EnsureSuccessStatusCode();
+
+        // The review (Issue #47): exactly the live selected entries, by name, with their types - nothing private, nothing
+        // in the Trash. Reading it twice changes nothing; cancelling the confirmation sends nothing else.
+        var review = await SelectedLoreOf(owner, u);
+        Assert.Equal(2, review.TotalCount);
+        Assert.Equal([("Ash keep", "Location"), ("Chosen warden", "Character")], review.Items.Select(item => (item.Name, item.TypeName)));
+        Assert.Equal(review.Items, (await SelectedLoreOf(owner, u)).Items);
+        await AssertSelections(owner, u, (chosen, ContentVisibility.Public), (keep, ContentVisibility.Public), (unchosen, ContentVisibility.Private));
+
+        // Confirmed: the portal reads exactly the reviewed entries, and no selection was rewritten to get there.
+        var slug = (await Published(owner, u)).PublicSlug!;
+        var anonymous = Anonymous(_factory);
+        Assert.Equal(review.Items.Select(item => item.Name), (await Lore(anonymous, slug)).Items.Select(item => item.Name));
+        await AssertSelections(owner, u, (chosen, ContentVisibility.Public), (keep, ContentVisibility.Public), (unchosen, ContentVisibility.Private));
+
+        // Private again: every public way to the entries answers as if nothing were there, and the review is unchanged.
+        (await Unpublish(owner, u)).EnsureSuccessStatusCode();
+        Assert.Null(await PublicBySlug(anonymous, slug));
+        Assert.DoesNotContain(await PublicListing(anonymous), world => world.Slug == slug);
+        Assert.Equal(HttpStatusCode.NotFound, (await anonymous.GetAsync(LoreRoute(slug))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await anonymous.GetAsync($"{LoreRoute(slug)}/chosen-warden")).StatusCode);
+        Assert.Equal(review.Items, (await SelectedLoreOf(owner, u)).Items);
+        await AssertSelections(owner, u, (chosen, ContentVisibility.Public), (keep, ContentVisibility.Public), (unchosen, ContentVisibility.Private));
+    }
+
+    [Fact]
+    public async Task The_review_is_empty_when_nothing_is_selected_names_the_first_hundred_and_is_the_owners_alone()
+    {
+        var (owner, _) = await Account(_factory, "cp-review-limit");
+        var (stranger, strangerId) = await Account(_factory, "cp-review-stranger");
+        var universe = await Ready(owner, "Cp review limit");
+        var u = universe.Id;
+        var route = $"/api/universes/{u}/publication/selected-lore";
+
+        var empty = await SelectedLoreOf(owner, u);
+        Assert.Equal((0, 0), (empty.TotalCount, empty.Items.Count));
+
+        for (var i = 0; i < PublicationEndpoints.SelectedLoreLimit + 1; i++)
+        {
+            await PublishEntry(owner, u, await Entry(owner, u, $"Entry {i:D3}", null));
+        }
+
+        var many = await SelectedLoreOf(owner, u);
+        Assert.Equal(PublicationEndpoints.SelectedLoreLimit + 1, many.TotalCount);
+        Assert.Equal(PublicationEndpoints.SelectedLoreLimit, many.Items.Count);
+        Assert.Equal("Entry 000", many.Items[0].Name);
+
+        // Nobody else learns what an owner chose: an Editor is refused, a stranger finds nothing, and no session is refused.
+        Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync(route)).StatusCode);
+        await CollaborationTestClient.Join(_factory, u, strangerId, Lorex.Api.Features.Universes.UniverseRole.Editor);
+        Assert.Equal(HttpStatusCode.Forbidden, (await stranger.GetAsync(route)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Anonymous(_factory).GetAsync(route)).StatusCode);
+    }
+
     // ---------- Who may ----------
 
     [Fact]
@@ -576,6 +646,25 @@ public sealed class ContentPublicationTests(LorexApiFactory factory) : IClassFix
     {
         var types = (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{universeId}/entity-types"))!;
         return await CreateEntry(client, universeId, new EntityRequest(types[0].Id, name, summary, CanonStatus.Draft, null, null, null));
+    }
+
+    private static async Task<Guid> EntryOfType(HttpClient client, Guid universeId, string typeName, string name)
+    {
+        var types = (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{universeId}/entity-types"))!;
+        var type = types.Single(candidate => candidate.Name == typeName);
+        return await CreateEntry(client, universeId, new EntityRequest(type.Id, name, null, CanonStatus.Draft, null, null, null));
+    }
+
+    private static async Task<SelectedLore> SelectedLoreOf(HttpClient client, Guid universeId) =>
+        (await client.GetFromJsonAsync<SelectedLore>($"/api/universes/{universeId}/publication/selected-lore"))!;
+
+    /// <summary>Each entry's stored selection, read back from its own publication route.</summary>
+    private static async Task AssertSelections(HttpClient client, Guid universeId, params (Guid Entry, ContentVisibility Visibility)[] expected)
+    {
+        foreach (var (entry, visibility) in expected)
+        {
+            Assert.Equal(visibility, (await EntryState(client, universeId, entry)).Visibility);
+        }
     }
 
     private static async Task<Guid> CreateEntry(HttpClient client, Guid universeId, EntityRequest request) =>
