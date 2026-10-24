@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowDown, ArrowUp, History, Pencil, Plus, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { AppearanceList } from './AppearanceList'
 import { EmptyState } from './EmptyState'
 import { EraForm } from './EraForm'
 import { ProgressionItemForm } from './ProgressionItemForm'
@@ -17,6 +18,9 @@ import { RevisionKind } from '../lore/revisions'
 import type { EntityDetail, FieldDefinition } from '../lore/types'
 import {
   abilityInputOf,
+  appearanceImageUrl,
+  appearanceInputOf,
+  removeAppearanceImage,
   eraInputOf,
   formInputOf,
   getProgression,
@@ -29,6 +33,7 @@ import {
 import { formatSpan, resolveFields, type FieldSource } from '../progression/eras'
 import type {
   Ability,
+  Appearance,
   Era,
   Form,
   Progression,
@@ -74,24 +79,29 @@ export function ProgressionView({
   const [failed, setFailed] = useState(false)
   const [editing, setEditing] = useState<Era | 'new' | null>(null)
   const [editingItem, setEditingItem] = useState<{
-    kind: 'form' | 'ability'
-    item: Form | Ability | null
+    kind: 'form' | 'ability' | 'appearance'
+    item: Form | Ability | Appearance | null
   } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [historyKey, setHistoryKey] = useState(0)
   // One change at a time: a second press while one is saving would name the same version and be refused as stale.
   const [busy, setBusy] = useState(false)
+  // Each read and each save takes a ticket; a read answers only if nothing was read or saved after it started.
+  const ticket = useRef(0)
 
   const load = useCallback(
-    (signal?: AbortSignal) =>
-      getProgression(universeId, entry.id, signal)
+    (signal?: AbortSignal) => {
+      const mine = ++ticket.current
+      return getProgression(universeId, entry.id, signal)
         .then((read) => {
+          if (mine !== ticket.current) return
           setProgression(read)
           setFailed(false)
         })
         .catch(() => {
-          if (!signal?.aborted) setFailed(true)
-        }),
+          if (!signal?.aborted && mine === ticket.current) setFailed(true)
+        })
+    },
     [universeId, entry.id],
   )
 
@@ -102,6 +112,7 @@ export function ProgressionView({
   }, [load])
 
   function changed(next: Progression) {
+    ticket.current++
     setProgression(next)
     setHistoryKey((key) => key + 1)
     onChanged()
@@ -136,7 +147,7 @@ export function ProgressionView({
   async function write(
     eras: Era[],
     done?: () => void,
-    items?: Pick<ProgressionInput, 'forms' | 'abilities'>,
+    items?: Pick<ProgressionInput, 'forms' | 'abilities' | 'appearances'>,
   ) {
     if (!progression || busy) return
     setMessage(null)
@@ -175,7 +186,7 @@ export function ProgressionView({
     if (
       !(await confirmAction({
         title: `Remove the era “${era.name}”?`,
-        message: `What it sets for ${entry.name} goes with it, and forms and abilities stop being available in it. The main profile is not changed. Era history can bring it back.`,
+        message: `What it sets for ${entry.name} goes with it; forms, abilities and appearances stop belonging to it. The main profile is not changed. Era history can bring it back.`,
         confirmLabel: 'Remove era',
         variant: 'destructive',
       }))
@@ -189,6 +200,7 @@ export function ProgressionView({
       {
         forms: progression!.forms.map((form) => formInputOf(form, dropping)),
         abilities: progression!.abilities.map((ability) => abilityInputOf(ability, dropping)),
+        appearances: progression!.appearances.map((one) => appearanceInputOf(one, dropping)),
       },
     )
   }
@@ -200,7 +212,7 @@ export function ProgressionView({
         title: `Remove the ${what} “${item.name}”?`,
         message:
           kind === 'form'
-            ? `Abilities stop belonging to it. Era history can bring it back.`
+            ? `Abilities and appearances stop belonging to it. Era history can bring it back.`
             : `Era history can bring it back.`,
         confirmLabel: `Remove ${what}`,
         variant: 'destructive',
@@ -216,7 +228,87 @@ export function ProgressionView({
       abilities: progression!.abilities
         .filter((one) => one.id !== item.id)
         .map((ability) => abilityInputOf(ability, new Set(), droppingForms)),
+      appearances: progression!.appearances.map((one) =>
+        appearanceInputOf(one, new Set(), droppingForms),
+      ),
     })
+  }
+
+  /** A look goes with its pictures, which are deleted first, one by one - after the author agrees, since nothing keeps them. */
+  async function removeAppearance(appearance: Appearance) {
+    const pictures = appearance.images.length
+    if (
+      !(await confirmAction({
+        title: `Remove the appearance “${appearance.label}”?`,
+        message:
+          pictures === 0
+            ? 'Era history can bring it back.'
+            : `Its ${pictures === 1 ? 'picture is' : `${pictures} pictures are`} deleted for good; era history keeps the appearance but not its pictures.`,
+        confirmLabel: 'Remove appearance',
+        variant: 'destructive',
+      }))
+    ) {
+      return
+    }
+    if (busy) return
+    setMessage(null)
+    setBusy(true)
+    try {
+      // Nothing is deleted unless the save that follows names the version these pictures were shown at.
+      const latest = await getProgression(universeId, entry.id)
+      if (latest.version !== progression!.version) {
+        ticket.current++
+        setProgression(latest)
+        setMessage('These eras were changed somewhere else. The latest are shown now; try again.')
+        return
+      }
+      for (const image of appearance.images) {
+        await removeAppearanceImage(universeId, entry.id, appearance.id, image.id)
+      }
+      changed(
+        await saveProgression(universeId, entry.id, {
+          eras: latest.eras.map(eraInputOf),
+          expectedVersion: latest.version,
+          appearances: latest.appearances
+            .filter((one) => one.id !== appearance.id)
+            .map((one) => appearanceInputOf(one)),
+        }),
+      )
+    } catch (error: unknown) {
+      setMessage(
+        error instanceof ApiError ? error.message : 'That appearance could not be removed.',
+      )
+      void load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /** Moves a form, ability or appearance one place in the author's order, saved with the rest as they are. */
+  function moveItem(kind: 'form' | 'ability' | 'appearance', id: string, by: number) {
+    function swapped<T extends { id: string }>(list: T[]) {
+      const next = [...list]
+      const from = next.findIndex((one) => one.id === id)
+      const to = from + by
+      if (from === -1 || to < 0 || to >= next.length) return null
+      ;[next[from], next[to]] = [next[to], next[from]]
+      return next
+    }
+    const p = progression!
+    if (kind === 'form') {
+      const forms = swapped(p.forms)
+      if (forms) void write(p.eras, undefined, { forms: forms.map((form) => formInputOf(form)) })
+    } else if (kind === 'ability') {
+      const abilities = swapped(p.abilities)
+      if (abilities)
+        void write(p.eras, undefined, { abilities: abilities.map((one) => abilityInputOf(one)) })
+    } else {
+      const appearances = swapped(p.appearances)
+      if (appearances)
+        void write(p.eras, undefined, {
+          appearances: appearances.map((one) => appearanceInputOf(one)),
+        })
+    }
   }
 
   return (
@@ -331,22 +423,37 @@ export function ProgressionView({
           <ItemList
             kind="form"
             items={progression.forms}
+            appearances={progression.appearances}
             universeId={universeId}
             entryName={entry.name}
             busy={busy}
             onAdd={() => setEditingItem({ kind: 'form', item: null })}
             onEdit={(item) => setEditingItem({ kind: 'form', item })}
+            onMove={(item, by) => moveItem('form', item.id, by)}
             onRemove={(item) => void removeItem('form', item)}
           />
           <ItemList
             kind="ability"
             items={progression.abilities}
+            appearances={progression.appearances}
             universeId={universeId}
             entryName={entry.name}
             busy={busy}
             onAdd={() => setEditingItem({ kind: 'ability', item: null })}
             onEdit={(item) => setEditingItem({ kind: 'ability', item })}
+            onMove={(item, by) => moveItem('ability', item.id, by)}
             onRemove={(item) => void removeItem('ability', item)}
+          />
+          <AppearanceList
+            universeId={universeId}
+            entityId={entry.id}
+            appearances={progression.appearances}
+            busy={busy}
+            onAdd={() => setEditingItem({ kind: 'appearance', item: null })}
+            onEdit={(appearance) => setEditingItem({ kind: 'appearance', item: appearance })}
+            onMove={(appearance, by) => moveItem('appearance', appearance.id, by)}
+            onRemove={(appearance) => void removeAppearance(appearance)}
+            onPicturesChanged={() => void load()}
           />
         </>
       )}
@@ -447,6 +554,9 @@ function EraPanel({
   const forms = progression.forms.filter((form) => form.eras.some((one) => one.id === era.id))
   const abilities = progression.abilities.filter((ability) =>
     ability.eras.some((one) => one.id === era.id),
+  )
+  const looks = progression.appearances.filter((appearance) =>
+    appearance.eras.some((one) => one.id === era.id),
   )
 
   return (
@@ -579,6 +689,39 @@ function EraPanel({
         items={abilities}
         testId="era-abilities"
       />
+
+      {looks.length > 0 ? (
+        <div className="rail__block">
+          <h4 className="rail__heading">Appearances in this era</h4>
+          <ul className="eralooks" data-testid="era-appearances">
+            {looks.map((look) => (
+              <li
+                className="eralooks__item"
+                key={look.id}
+                data-testid={`era-appearances-${look.label}`}
+              >
+                {look.images[0] ? (
+                  <img
+                    className="gallery__thumb"
+                    src={appearanceImageUrl(
+                      universeId,
+                      entry.id,
+                      look.id,
+                      look.images[0].id,
+                      'thumbnail',
+                    )}
+                    alt=""
+                    width={64}
+                    height={64}
+                    loading="lazy"
+                  />
+                ) : null}
+                <bdi>{look.label}</bdi>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </article>
   )
 }
@@ -629,20 +772,25 @@ function unlockParts(unlock: UnlockMilestone) {
 function ItemList({
   kind,
   items,
+  appearances,
   universeId,
   entryName,
   busy,
   onAdd,
   onEdit,
+  onMove,
   onRemove,
 }: {
   kind: 'form' | 'ability'
   items: (Form | Ability)[]
+  /** The entry's appearances: a form's look is the ones that name it (Issue #43). */
+  appearances: Appearance[]
   universeId: string
   entryName: string
   busy: boolean
   onAdd: () => void
   onEdit: (item: Form | Ability) => void
+  onMove: (item: Form | Ability, by: number) => void
   onRemove: (item: Form | Ability) => void
 }) {
   const access = useUniverseAccess()
@@ -679,7 +827,7 @@ function ItemList({
         </p>
       ) : (
         <ul className="progitems__list">
-          {items.map((item) => {
+          {items.map((item, index) => {
             const unlock = unlockParts(item.unlock)
             return (
               <li className="progitems__item" key={item.id} data-testid={`${kind}-${item.name}`}>
@@ -702,6 +850,28 @@ function ItemList({
                         <ActionIcon icon={Pencil} />
                         Edit {one}
                       </button>
+                      {index > 0 ? (
+                        <button
+                          className="actionmenu__item"
+                          type="button"
+                          disabled={busy}
+                          onClick={() => onMove(item, -1)}
+                        >
+                          <ActionIcon icon={ArrowUp} />
+                          Move earlier
+                        </button>
+                      ) : null}
+                      {index < items.length - 1 ? (
+                        <button
+                          className="actionmenu__item"
+                          type="button"
+                          disabled={busy}
+                          onClick={() => onMove(item, 1)}
+                        >
+                          <ActionIcon icon={ArrowDown} />
+                          Move later
+                        </button>
+                      ) : null}
                       <button
                         className="actionmenu__item actionmenu__item--danger"
                         type="button"
@@ -733,6 +903,18 @@ function ItemList({
                         : item.eras.map((era) => era.name).join(', ')}
                     </dd>
                   </div>
+                  {kind === 'form' &&
+                  appearances.some((look) => look.forms.some((form) => form.id === item.id)) ? (
+                    <div>
+                      <dt>Looks</dt>
+                      <dd data-testid="form-looks">
+                        {appearances
+                          .filter((look) => look.forms.some((form) => form.id === item.id))
+                          .map((look) => look.label)
+                          .join(', ')}
+                      </dd>
+                    </div>
+                  ) : null}
                   {'forms' in item && item.forms.length > 0 ? (
                     <div>
                       <dt>Forms</dt>

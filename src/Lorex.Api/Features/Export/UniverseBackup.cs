@@ -246,8 +246,13 @@ public sealed record UniverseBackup(
     /// of the entry, a scene, a moment of this file), the eras each is available in, the scenes it is used in, and an ability's
     /// forms. Not ignorable: they are authored, so a version 28 reader would restore every entry without them. A file at version
     /// 28 or earlier has neither; every entry restores with no forms or abilities, even if it carries some.
+    ///
+    /// 30 - An entry may have appearances (Issue #43). <see cref="BackupProgression.Appearances"/> carries them in order - label,
+    /// notes, the eras, forms and scenes each belongs to - with each one's pictures in gallery order, every original in the
+    /// archive under <c>media/entities/{entryId}/appearances/</c>. Not ignorable: a version 29 reader would restore every entry
+    /// without its looks. A file at version 29 or earlier has none; every entry restores with no appearances.
     /// </summary>
-    public const int CurrentVersion = 29;
+    public const int CurrentVersion = 30;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -494,7 +499,35 @@ public sealed record BackupProgression(
     IReadOnlyList<BackupEntityEra> Eras,
     IReadOnlyList<BackupProgressionRevision> Revisions,
     IReadOnlyList<BackupForm>? Forms = null,
-    IReadOnlyList<BackupAbility>? Abilities = null);
+    IReadOnlyList<BackupAbility>? Abilities = null,
+    IReadOnlyList<BackupAppearance>? Appearances = null);
+
+/// <summary>
+/// One appearance of one entry (since version 30): <paramref name="SortOrder"/> its place; the eras and forms of this entry and
+/// the scenes of this file it belongs to, sorted; its pictures in gallery order, each original in the archive.
+/// </summary>
+public sealed record BackupAppearance(
+    Guid Id,
+    string Label,
+    string? Notes,
+    int SortOrder,
+    IReadOnlyList<Guid> EraIds,
+    IReadOnlyList<Guid> FormIds,
+    IReadOnlyList<Guid> SceneIds,
+    IReadOnlyList<BackupAppearanceImage> Images);
+
+/// <summary>
+/// One picture of an appearance, as <see cref="BackupEntityImage"/> describes an entry's own: the original's facts and where it
+/// sits in the archive. No framing - a gallery thumbnail is always the centred square, cut again on restore.
+/// </summary>
+public sealed record BackupAppearanceImage(
+    Guid Id,
+    string? FileName,
+    string ContentType,
+    int Width,
+    int Height,
+    long ByteSize,
+    string MediaPath);
 
 /// <summary>
 /// One form of one entry (since version 29): <paramref name="SortOrder"/> its place; the first unlock, each part optional - an

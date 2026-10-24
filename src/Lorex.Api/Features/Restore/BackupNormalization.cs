@@ -151,7 +151,9 @@ internal static class BackupNormalization
         ArticleRevisions = version >= 9 ? entity.ArticleRevisions : null,
         Progression = version < 27 || entity.Progression is null
             ? null
-            : version >= 29 ? entity.Progression : entity.Progression with { Forms = null, Abilities = null },
+            : version >= 30 ? entity.Progression
+            : version >= 29 ? entity.Progression with { Appearances = null }
+            : entity.Progression with { Forms = null, Abilities = null, Appearances = null },
         FieldValues = version >= 4 || entity.FieldValues is null
             ? entity.FieldValues!
             : [.. entity.FieldValues.Select(value => value is null ? null! : value with { EraId = null })],

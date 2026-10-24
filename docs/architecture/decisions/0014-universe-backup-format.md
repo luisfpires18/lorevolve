@@ -487,3 +487,14 @@ it is used in and, for an ability, the forms it belongs to. Not ignorable: a ver
 without them. A restore gives each a new id and translates them inside the snapshots; validation refuses an era of another
 entry, a scene or moment the file does not hold, a form of another entry and a repeated name. A version 28 or older file
 restores every entry with none, even when it carries the members.
+
+## Amendment: version 30, an entry's appearances (2026-10-24, Issue #43, ADR 0053)
+
+`BackupProgression.Appearances` carries an entry's appearances in order - label, notes, the eras and forms of the entry and the
+scenes of the file each belongs to - and each one's pictures in gallery order: the original's facts and its path in the archive,
+`media/entities/{entryId}/appearances/{imageId}/original.{ext}`. No framing: a gallery thumbnail is the centred square, cut
+again on restore. Not ignorable: a version 29 reader would restore every entry without them. Validation decodes every picture
+as an upload would and refuses a path Lorex would not write, a label twice, an era or form of another entry and more pictures
+than a look holds; a restore holds the owner's storage for them with the entries' own pictures and gives everything new ids.
+A version 29 or older file restores every entry with none, even when it carries the member. A saved version's snapshot that
+has no `appearances` member, like one with no `forms`, restores leaving them as they are.

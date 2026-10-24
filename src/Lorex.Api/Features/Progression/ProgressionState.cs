@@ -61,6 +61,7 @@ internal static class ProgressionState
             .ToListAsync(cancellationToken);
 
         var (forms, abilities) = await ProgressionForms.ReadAsync(db, entityId, cancellationToken);
+        var appearances = await ProgressionAppearances.ReadAsync(db, entityId, cancellationToken);
 
         return new ProgressionSnapshot(
             [
@@ -75,7 +76,8 @@ internal static class ProgressionState
                     Overrides(era.Values))),
             ],
             forms,
-            abilities);
+            abilities,
+            appearances);
     }
 
     private static ChronologyValue? Point(Guid? eraId, int? year, int? month, int? day, Guid? monthId) =>
@@ -217,7 +219,12 @@ internal static class ProgressionState
         var (forms, abilities) = await ProgressionForms.NormalizeAsync(
             db, universeId, entityId, current, request, eras.Select(era => era.Id!.Value).ToHashSet(), recreating, errors, cancellationToken);
 
-        return (new ProgressionSnapshot(eras, forms, abilities), errors);
+        // Appearances (Issue #43) against the eras and forms this same save leaves.
+        var appearances = await ProgressionAppearances.NormalizeAsync(
+            db, universeId, entityId, current, request, eras.Select(era => era.Id!.Value).ToHashSet(),
+            forms.Select(form => form.Id!.Value).ToHashSet(), recreating, errors, cancellationToken);
+
+        return (new ProgressionSnapshot(eras, forms, abilities, appearances), errors);
     }
 
     private static async Task<(List<EraInput> Eras, Dictionary<string, string[]> Errors)> NormalizeErasAsync(
@@ -431,6 +438,12 @@ internal static class ProgressionState
         ProgressionSnapshot wanted,
         CancellationToken cancellationToken)
     {
+        // Before anything is written: pictures are not versioned, so a look that holds any is never removed here.
+        if (await ProgressionAppearances.RefuseRemovingPicturesAsync(db, current, wanted, cancellationToken) is { } holding)
+        {
+            return holding;
+        }
+
         var keep = wanted.Eras.Select(era => era.Id!.Value).ToHashSet();
         var removed = current.Eras.Select(era => era.Id!.Value).Where(id => !keep.Contains(id)).ToList();
 
@@ -520,6 +533,7 @@ internal static class ProgressionState
         }
 
         await ProgressionForms.ApplyAsync(db, entityId, current, wanted, cancellationToken);
+        await ProgressionAppearances.ApplyAsync(db, entityId, current, wanted, cancellationToken);
         return null;
     }
 

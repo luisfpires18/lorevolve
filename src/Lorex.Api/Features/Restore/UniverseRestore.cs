@@ -141,6 +141,11 @@ internal sealed class RestoreIdentity
             {
                 yield return ability.Id;
             }
+
+            foreach (var appearance in entity.Progression?.Appearances ?? [])
+            {
+                yield return appearance.Id;
+            }
         }
 
         foreach (var type in payload.RelationshipTypes)
@@ -253,6 +258,7 @@ internal sealed partial class UniverseRestore(
         try
         {
             var images = await StoreImagesAsync(backup, opened, ids, universeId, now, attempted, cancellationToken);
+            await StoreAppearanceImagesAsync(backup, opened, ids, universeId, now, attempted, cancellationToken);
             var artwork = await StoreArtworkAsync(backup, opened, universeId, now, attempted, cancellationToken);
             return await WriteAsync(backup.Payload, ids, universeId, ownerId, name, now, images, artwork, hold, cancellationToken);
         }
@@ -269,6 +275,68 @@ internal sealed partial class UniverseRestore(
     }
 
     // ---------- Pictures ----------
+
+    /// <summary>Appearance pictures written before the transaction, added by <see cref="AddProgression"/> with their looks.</summary>
+    private readonly List<EntityAppearanceImage> _appearanceImages = [];
+
+    /// <summary>
+    /// Every appearance picture (Issue #43) under the new universe's keys: the original from the archive and the centred square
+    /// validation already cut. One at a time - galleries are small and this keeps the failure path the artwork's.
+    /// </summary>
+    private async Task StoreAppearanceImagesAsync(
+        RestorableBackup backup,
+        OpenedBackup opened,
+        RestoreIdentity ids,
+        Guid universeId,
+        DateTime now,
+        ConcurrentQueue<string> attempted,
+        CancellationToken cancellationToken)
+    {
+        foreach (var entity in backup.Payload.Entities)
+        {
+            foreach (var appearance in entity.Progression?.Appearances ?? [])
+            {
+                for (var index = 0; index < appearance.Images.Count; index++)
+                {
+                    var image = appearance.Images[index];
+                    var validated = backup.AppearanceImages![image.Id];
+                    var original = await opened.ReadMediaAsync(validated.MediaPath, cancellationToken);
+
+                    var entityId = ids.Map(entity.Id);
+                    var appearanceId = ids.Map(appearance.Id);
+                    var imageId = Guid.NewGuid();
+                    var originalKey = AppearanceImageKeys.Original(universeId, entityId, appearanceId, imageId, validated.Extension);
+                    var thumbnailKey = AppearanceImageKeys.Thumbnail(universeId, entityId, appearanceId, imageId);
+
+                    attempted.Enqueue(originalKey);
+                    attempted.Enqueue(thumbnailKey);
+
+                    using var originalBytes = new MemoryStream(original, writable: false);
+                    using var thumbnailBytes = new MemoryStream(validated.Thumbnail, writable: false);
+                    await MediaObjectWrites.PutAllAsync(
+                        store,
+                        cancellationToken,
+                        new PendingMediaObject(originalKey, originalBytes, validated.ContentType),
+                        new PendingMediaObject(thumbnailKey, thumbnailBytes, "image/webp"));
+
+                    _appearanceImages.Add(new EntityAppearanceImage
+                    {
+                        Id = imageId,
+                        EntityAppearanceId = appearanceId,
+                        SortOrder = index,
+                        OriginalKey = originalKey,
+                        ThumbnailKey = thumbnailKey,
+                        ContentType = validated.ContentType,
+                        FileName = FileNameLabel(image.FileName),
+                        Width = validated.Width,
+                        Height = validated.Height,
+                        ByteSize = validated.ByteSize,
+                        UploadedAt = now,
+                    });
+                }
+            }
+        }
+    }
 
     private async Task<Dictionary<Guid, EntityImage>> StoreImagesAsync(
         RestorableBackup backup,
@@ -1051,6 +1119,36 @@ internal sealed partial class UniverseRestore(
             }
         }
 
+        foreach (var appearance in progression.Appearances ?? [])
+        {
+            var appearanceId = ids.Map(appearance.Id);
+            db.EntityAppearances.Add(new EntityAppearance
+            {
+                Id = appearanceId,
+                EntityId = entityId,
+                Label = appearance.Label.Trim(),
+                Notes = appearance.Notes,
+                SortOrder = appearance.SortOrder,
+            });
+
+            foreach (var era in appearance.EraIds.Distinct())
+            {
+                db.EntityAppearanceEras.Add(new EntityAppearanceEra { EntityAppearanceId = appearanceId, EntityEraId = ids.Map(era) });
+            }
+
+            foreach (var form in appearance.FormIds.Distinct())
+            {
+                db.EntityAppearanceForms.Add(new EntityAppearanceForm { EntityAppearanceId = appearanceId, EntityFormId = ids.Map(form) });
+            }
+
+            foreach (var scene in appearance.SceneIds.Distinct())
+            {
+                db.EntityAppearanceScenes.Add(new EntityAppearanceScene { EntityAppearanceId = appearanceId, SceneId = ids.Map(scene) });
+            }
+
+            db.EntityAppearanceImages.AddRange(_appearanceImages.Where(image => image.EntityAppearanceId == appearanceId));
+        }
+
         foreach (var revision in progression.Revisions)
         {
             db.EntityProgressionRevisions.Add(new EntityProgressionRevision
@@ -1119,6 +1217,15 @@ internal sealed partial class UniverseRestore(
                     EraIds = Ids(ability.EraIds),
                     SceneIds = Ids(ability.SceneIds),
                     FormIds = Ids(ability.FormIds),
+                }),
+            ],
+            snapshot.Appearances is null ? null : [
+                .. snapshot.Appearances.Select(appearance => appearance with
+                {
+                    Id = ids.Translate(appearance.Id),
+                    EraIds = Ids(appearance.EraIds),
+                    FormIds = Ids(appearance.FormIds),
+                    SceneIds = Ids(appearance.SceneIds),
                 }),
             ]);
     }

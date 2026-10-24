@@ -144,6 +144,19 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     form/ability places; scene picker is a fieldset; "Use the latest" resets the leave guard.
     Tests: API 1822 passed / 6 skipped before review fixes (`EntityFormTests` 8 after); Playwright `entry-forms.spec.ts` 3;
     entry-eras, relation-periods, entry-views green.
+  - **#43 Outfits / Appearance / Visual History** (`feat/lore-appearances`, cut from the #42 tip). Migration
+    `AddEntityAppearances`, backup 30. ADR 0053 (new); 0014, 0042, 0050 amendments. One Appearance record: label, notes,
+    eras/forms/scenes exactly as ticked, in the progression (version, history, restore). Gallery pictures are not
+    versioned: `.../appearances/{id}/images` add (multipart) / order / delete / read, the entry picture's pipeline (decode,
+    centred thumbnail, id keys, owner storage held first, sweep after the row goes), at most 20 a look, members only. A
+    save or restore removing a look that holds pictures is 409 `entity_appearance_has_pictures`; the client deletes its
+    pictures first after a confirmation. Entry erase and universe delete sweep them. UI: Appearances with gallery, form
+    "Looks", era "Appearances in this era"; Move earlier/later for forms, abilities and looks. Independent review
+    (0 high, 3 medium, 3 low, 1 question) fixed: removing a look checks the latest version before deleting pictures and
+    holds one busy state; a stale read never lands after a save; the file input keeps focus; ordering an unknown look is
+    404 and deleting a trashed entry's picture 409; confirmations say looks lose the era or form.
+    Tests: API 1831 passed / 6 skipped before review fixes (`EntityAppearanceTests` 7 after; matrix +5 routes);
+    Playwright `entry-appearances.spec.ts` 2 with entry-forms, entry-eras, entity-image, restore green.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);

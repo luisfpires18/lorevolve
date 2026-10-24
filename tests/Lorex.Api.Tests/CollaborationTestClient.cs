@@ -53,7 +53,9 @@ internal sealed record SharedWorld(
     Guid Arc,
     Guid Beat,
     Trashed Trash,
-    Guid ProgressionRevision = default)
+    Guid ProgressionRevision = default,
+    Guid Appearance = default,
+    Guid AppearanceImage = default)
 {
     public HttpClient Client(Who who) => who switch
     {
@@ -112,12 +114,20 @@ internal static class CollaborationTestClient
 
         var image = await UploadImage(owner, u, entry);
 
-        // Eras saved once (Issue #41), so the entry's progression has a version to read and restore.
-        (await owner.PutAsJsonAsync(
+        // Eras and a look saved once (Issues #41, #43), so the entry's progression has a version to read and restore, and the
+        // look one picture.
+        var saved = await (await owner.PutAsJsonAsync(
             $"/api/universes/{u}/entities/{entry}/progression",
-            new ProgressionRequest([new EraInput(null, "Youth", null, null, null, null, null, null)], 0))).EnsureSuccessStatusCode();
+            new ProgressionRequest(
+                [new EraInput(null, "Youth", null, null, null, null, null, null)], 0,
+                Appearances: [new AppearanceInput(null, "Mourning grey", null, [], [], [])]))).EnsureSuccessStatusCode()
+            .Content.ReadFromJsonAsync<ProgressionResponse>();
         var progressionRevision = (await owner.GetFromJsonAsync<List<ProgressionRevisionSummary>>(
             $"/api/universes/{u}/entities/{entry}/progression/revisions"))!.Single().Id;
+        var appearance = saved!.Appearances!.Single().Id;
+        var appearanceImage = (await (await owner.PutAsync(
+                $"/api/universes/{u}/entities/{entry}/appearances/{appearance}/images", PngForm())).EnsureSuccessStatusCode()
+            .Content.ReadFromJsonAsync<AppearanceImageRef>())!.Id;
 
         var kind = await PostJson<RelationshipTypeResponse>(
             owner, $"/api/universes/{u}/relationship-types", new RelationshipTypeRequest("Sworn to", null, true, null, null));
@@ -144,7 +154,7 @@ internal static class CollaborationTestClient
         return new SharedWorld(
             factory, u, owner, editor, reviewer, viewer, outsider, ownerId, editorId, reviewerId, viewerId, outsiderId,
             character, entry, other, image, entryRevision, articleRevision, kind.Id, relationship.Id, moment.Id, rule.Id,
-            term.Id, story, chapter, scene, manuscriptRevision, arc.Id, beat.Id, trash, progressionRevision);
+            term.Id, story, chapter, scene, manuscriptRevision, arc.Id, beat.Id, trash, progressionRevision, appearance, appearanceImage);
     }
 
     /// <summary>A membership written straight to the database: the only way one is made until invitations exist.</summary>

@@ -55,6 +55,12 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
         }
 
         var images = await ImagesAsync(universeId, cancellationToken);
+
+        // Every appearance's pictures (Issue #43), originals only, by the entry they belong to.
+        var appearanceImages = await db.EntityAppearanceImages.AsNoTracking()
+            .Where(image => image.Appearance!.Entity!.UniverseId == universeId)
+            .Select(image => new { image.Id, image.Appearance!.EntityId, image.ContentType, image.OriginalKey })
+            .ToListAsync(cancellationToken);
         var artwork = await db.UniverseArtworks.AsNoTracking()
             .FirstOrDefaultAsync(candidate => candidate.UniverseId == universeId, cancellationToken);
 
@@ -113,6 +119,11 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                         BackupArchive.MediaPathFor(image.EntityId, image.ContentType),
                         image.OriginalKey,
                         image.ContentType))
+                    .Concat(appearanceImages.Select(image => new BackupMediaObject(
+                        image.EntityId,
+                        BackupArchive.AppearanceMediaPathFor(image.EntityId, image.Id, image.ContentType),
+                        image.OriginalKey,
+                        image.ContentType)))
                     .Concat(artwork is null
                         ? []
                         : [new BackupMediaObject(null, BackupArchive.ArtworkPathFor(artwork.ContentType), artwork.OriginalKey, artwork.ContentType)])
@@ -461,10 +472,20 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
+        var appearances = await db.EntityAppearances.AsNoTracking()
+            .Where(appearance => appearance.Entity!.UniverseId == universeId)
+            .Include(appearance => appearance.Eras)
+            .Include(appearance => appearance.Forms)
+            .Include(appearance => appearance.Scenes)
+            .Include(appearance => appearance.Images)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+
         var erasByEntity = eras.ToLookup(era => era.EntityId);
         var revisionsByEntity = revisions.ToLookup(revision => revision.EntityId);
         var formsByEntity = forms.ToLookup(form => form.EntityId);
         var abilitiesByEntity = abilities.ToLookup(ability => ability.EntityId);
+        var appearancesByEntity = appearances.ToLookup(appearance => appearance.EntityId);
 
         return progressions.ToDictionary(
             progression => progression.EntityId,
@@ -538,6 +559,30 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                             [.. ability.Eras.Select(link => link.EntityEraId).OrderBy(Key, StringComparer.Ordinal)],
                             [.. ability.Scenes.Select(link => link.SceneId).OrderBy(Key, StringComparer.Ordinal)],
                             [.. ability.Forms.Select(link => link.EntityFormId).OrderBy(Key, StringComparer.Ordinal)])),
+                ],
+                [
+                    .. appearancesByEntity[progression.EntityId]
+                        .OrderBy(appearance => appearance.SortOrder)
+                        .Select(appearance => new BackupAppearance(
+                            appearance.Id,
+                            appearance.Label,
+                            appearance.Notes,
+                            appearance.SortOrder,
+                            [.. appearance.Eras.Select(link => link.EntityEraId).OrderBy(Key, StringComparer.Ordinal)],
+                            [.. appearance.Forms.Select(link => link.EntityFormId).OrderBy(Key, StringComparer.Ordinal)],
+                            [.. appearance.Scenes.Select(link => link.SceneId).OrderBy(Key, StringComparer.Ordinal)],
+                            [
+                                .. appearance.Images
+                                    .OrderBy(image => image.SortOrder)
+                                    .Select(image => new BackupAppearanceImage(
+                                        image.Id,
+                                        image.FileName,
+                                        image.ContentType,
+                                        image.Width,
+                                        image.Height,
+                                        image.ByteSize,
+                                        BackupArchive.AppearanceMediaPathFor(appearance.EntityId, image.Id, image.ContentType))),
+                            ])),
                 ]));
     }
 

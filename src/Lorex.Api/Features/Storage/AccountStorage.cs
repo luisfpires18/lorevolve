@@ -42,14 +42,15 @@ public static partial class AccountStorage
     /// </summary>
     public static Task<StorageUsage?> UsageAsync(LorexDbContext db, string userId, CancellationToken cancellationToken)
     {
-        // Captured as a query, so EF Core folds it into the one statement as a subquery.
+        // Captured as queries, so EF Core folds them into the one statement as subqueries.
         var loreImages = LoreImageBytes(db, userId);
+        var appearanceImages = AppearanceImageBytes(db, userId);
 
         return db.Users
             .Where(user => user.Id == userId)
             .Select(user => new StorageUsage(
                 user.StorageQuotaBytes,
-                loreImages.Sum(bytes => (long?)bytes) ?? 0))
+                (loreImages.Sum(bytes => (long?)bytes) ?? 0) + (appearanceImages.Sum(bytes => (long?)bytes) ?? 0)))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -180,6 +181,12 @@ public static partial class AccountStorage
             .Where(image => image.Entity!.Universe!.OwnerId == ownerId)
             .Select(image => image.ByteSize);
 
+    /// <summary>The originals of every appearance's pictures in those universes (Issue #43) - Lore pictures too, counted beside.</summary>
+    private static IQueryable<long> AppearanceImageBytes(LorexDbContext db, string ownerId) =>
+        db.EntityAppearanceImages
+            .Where(image => image.Appearance!.Entity!.Universe!.OwnerId == ownerId)
+            .Select(image => image.ByteSize);
+
     /// <summary>
     /// Whether <paramref name="bytes"/> more fit: stored plus held plus these, at most the allowance. One command.
     /// An account already over its allowance has no room for any increase, however small.
@@ -192,13 +199,14 @@ public static partial class AccountStorage
         CancellationToken cancellationToken)
     {
         var loreImages = LoreImageBytes(db, ownerId);
+        var appearanceImages = AppearanceImageBytes(db, ownerId);
 
         var room = await db.Users
             .Where(user => user.Id == ownerId)
             .Select(user => new
             {
                 user.StorageQuotaBytes,
-                Stored = loreImages.Sum(stored => (long?)stored) ?? 0,
+                Stored = (loreImages.Sum(stored => (long?)stored) ?? 0) + (appearanceImages.Sum(stored => (long?)stored) ?? 0),
                 Held = db.StorageReservations
                     .Where(reservation => reservation.UserId == ownerId && reservation.ExpiresAt > now)
                     .Sum(reservation => (long?)reservation.Bytes) ?? 0,

@@ -8,6 +8,7 @@ import { isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import {
   abilityInputOf,
+  appearanceInputOf,
   eraInputOf,
   formInputOf,
   getProgression,
@@ -17,6 +18,8 @@ import {
 import type {
   Ability,
   AbilityInput,
+  Appearance,
+  AppearanceInput,
   EraScene,
   Form,
   FormInput,
@@ -24,7 +27,21 @@ import type {
   Progression,
 } from '../progression/types'
 
-type Kind = 'form' | 'ability'
+type Kind = 'form' | 'ability' | 'appearance'
+
+type Item = Form | Ability | Appearance
+
+function nameOf(item: Item) {
+  return 'label' in item ? item.label : item.name
+}
+
+function listOf(progression: Progression, kind: Kind): Item[] {
+  return kind === 'form'
+    ? progression.forms
+    : kind === 'ability'
+      ? progression.abilities
+      : progression.appearances
+}
 
 interface ItemDraft {
   name: string
@@ -37,13 +54,14 @@ interface ItemDraft {
   formIds: string[]
 }
 
-function draftOf(item: Form | Ability | null): ItemDraft {
+function draftOf(item: Item | null): ItemDraft {
+  const unlock = item && 'unlock' in item ? item.unlock : null
   return {
-    name: item?.name ?? '',
-    description: item?.description ?? '',
-    unlockEraId: item?.unlock.era?.id ?? '',
-    unlockScene: item?.unlock.scene ? [item.unlock.scene] : [],
-    unlockMoment: item?.unlock.moment ?? null,
+    name: item ? nameOf(item) : '',
+    description: (item && ('notes' in item ? item.notes : item.description)) ?? '',
+    unlockEraId: unlock?.era?.id ?? '',
+    unlockScene: unlock?.scene ? [unlock.scene] : [],
+    unlockMoment: unlock?.moment ?? null,
     eraIds: item?.eras.map((era) => era.id) ?? [],
     scenes: item?.scenes ?? [],
     formIds: item && 'forms' in item ? item.forms.map((form) => form.id) : [],
@@ -79,9 +97,16 @@ const SHOWN = [
 /** The server's limit on what a form or ability is (`ProgressionLimits.DescriptionMaxLength`). */
 const DESCRIPTION_MAX = 10000
 
-const WORDS: Record<Kind, { one: string; placeholder: string }> = {
-  form: { one: 'form', placeholder: 'Super Saiyan 3' },
-  ability: { one: 'ability', placeholder: 'Instant Transmission' },
+const WORDS: Record<Kind, { one: string; placeholder: string; list: string }> = {
+  form: { one: 'form', placeholder: 'Super Saiyan 3', list: 'forms' },
+  ability: { one: 'ability', placeholder: 'Instant Transmission', list: 'abilities' },
+  appearance: { one: 'appearance', placeholder: 'Battle armour', list: 'appearances' },
+}
+
+/** An appearance's name and description are its label and notes (Issue #43), in its errors too. */
+function partOf(kind: Kind, part: string) {
+  if (kind !== 'appearance') return part
+  return part === 'name' ? 'label' : part === 'description' ? 'notes' : part
 }
 
 /**
@@ -89,6 +114,9 @@ const WORDS: Record<Kind, { one: string; placeholder: string }> = {
  * - an era of the entry, a scene, a timeline moment, each optional; the eras it is available in, ticked one by one (a shortcut
  * ticks an era and every later one, and what is saved is still the ticks); the scenes it is used in; and, for an ability, the
  * forms it belongs to. Nothing is filled in from anything else. The save is the whole progression over the version read.
+ *
+ * An appearance (Issue #43) is the same drawer without a first unlock: its label, notes, eras, forms and scenes. Its pictures
+ * are added on the appearance itself, once it is saved.
  */
 export function ProgressionItemForm({
   universeId,
@@ -105,7 +133,7 @@ export function ProgressionItemForm({
   entityName: string
   progression: Progression
   kind: Kind
-  item: Form | Ability | null
+  item: Item | null
   onClose: () => void
   onSaved: (progression: Progression) => void
 }) {
@@ -125,7 +153,7 @@ export function ProgressionItemForm({
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     item
-      ? `“${item.name}” has unsaved changes. Leave without saving them?`
+      ? `“${nameOf(item)}” has unsaved changes. Leave without saving them?`
       : `This new ${words.one} has not been saved. Leave without saving it?`,
     onClose,
   )
@@ -137,10 +165,11 @@ export function ProgressionItemForm({
     nameInput.current?.focus()
   }, [])
 
-  const list: (Form | Ability)[] = kind === 'form' ? base.forms : base.abilities
+  const list = listOf(base, kind)
   const index = item ? list.findIndex((one) => one.id === item.id) : -1
-  const key = `${kind === 'form' ? 'forms' : 'abilities'}[${index === -1 ? list.length : index}]`
-  const errorOf = (part: string) => fieldErrors[`${key}.${part}`.toLowerCase()]
+  const key = `${words.list}[${index === -1 ? list.length : index}]`
+  const errorOf = (part: string) => fieldErrors[`${key}.${partOf(kind, part)}`.toLowerCase()]
+  const isLook = kind === 'appearance'
 
   function edit(change: Partial<ItemDraft>) {
     setDraft((current) => ({ ...current, ...change }))
@@ -166,8 +195,21 @@ export function ProgressionItemForm({
     const mine = inputOf(draft, item?.id ?? null)
     const forms: FormInput[] = base.forms.map((form) => formInputOf(form))
     const abilities: AbilityInput[] = base.abilities.map((ability) => abilityInputOf(ability))
+    const appearances: AppearanceInput[] = base.appearances.map((one) => appearanceInputOf(one))
 
-    if (kind === 'form') {
+    if (kind === 'appearance') {
+      const look: AppearanceInput = {
+        id: mine.id,
+        label: mine.name,
+        notes: mine.description,
+        eraIds: mine.eraIds,
+        formIds: mine.formIds,
+        sceneIds: mine.sceneIds,
+      }
+      const at = appearances.findIndex((one) => one.id === item?.id)
+      if (at === -1) appearances.push(look)
+      else appearances[at] = look
+    } else if (kind === 'form') {
       // A form carries no forms of its own.
       const { formIds: _forms, ...form } = mine
       const at = forms.findIndex((one) => one.id === item?.id)
@@ -186,6 +228,7 @@ export function ProgressionItemForm({
           expectedVersion: base.version,
           forms,
           abilities,
+          appearances,
         }),
       )
     } catch (error: unknown) {
@@ -195,7 +238,7 @@ export function ProgressionItemForm({
         setFieldErrors(error.fieldErrors)
         // A refusal no field below shows - this one removed meanwhile, say - is said here in its own words.
         const unshown = Object.entries(error.fieldErrors).find(
-          ([name]) => !SHOWN.some((part) => name === `${key}.${part}`.toLowerCase()),
+          ([name]) => !SHOWN.some((part) => name === `${key}.${partOf(kind, part)}`.toLowerCase()),
         )
         setMessage(
           Object.keys(error.fieldErrors).length === 0
@@ -210,7 +253,7 @@ export function ProgressionItemForm({
     }
   }
 
-  const heading = item ? item.name : `New ${words.one}`
+  const heading = item ? nameOf(item) : `New ${words.one}`
   const unlockAt = base.eras.findIndex((era) => era.id === draft.unlockEraId)
 
   return (
@@ -250,8 +293,8 @@ export function ProgressionItemForm({
               read={() => getProgression(universeId, entityId)}
               renderLatest={(latest) => (
                 <ul className="namelist">
-                  {(kind === 'form' ? latest.forms : latest.abilities).map((one) => (
-                    <li key={one.id}>{one.name}</li>
+                  {listOf(latest, kind).map((one) => (
+                    <li key={one.id}>{nameOf(one)}</li>
                   ))}
                 </ul>
               )}
@@ -262,10 +305,7 @@ export function ProgressionItemForm({
               }}
               onUseLatest={(latest) => {
                 setBase(latest)
-                const reread =
-                  (kind === 'form' ? latest.forms : latest.abilities).find(
-                    (one) => one.id === item?.id,
-                  ) ?? null
+                const reread = listOf(latest, kind).find((one) => one.id === item?.id) ?? null
                 setDraft(draftOf(reread))
                 setInitial(draftOf(reread))
                 setConflict(false)
@@ -277,7 +317,7 @@ export function ProgressionItemForm({
 
           <div className="field">
             <label className="field__label" htmlFor="item-name">
-              Name
+              {isLook ? 'Label' : 'Name'}
             </label>
             <input
               id="item-name"
@@ -300,12 +340,14 @@ export function ProgressionItemForm({
 
           <div className="field">
             <label className="field__label" htmlFor="item-description">
-              What it is
+              {isLook ? 'Notes' : 'What it is'}
             </label>
             <p className="field__hint">
               {kind === 'form'
                 ? 'How it changes them: abilities, looks, strength. A form changes no detail of the entry.'
-                : 'What it does, and what it costs.'}
+                : kind === 'ability'
+                  ? 'What it does, and what it costs.'
+                  : 'What it looks like, what it is made of, who made it.'}
             </p>
             <textarea
               id="item-description"
@@ -326,60 +368,63 @@ export function ProgressionItemForm({
             ) : null}
           </div>
 
-          <fieldset className="itemunlock" data-testid={`${kind}-unlock`}>
-            <legend className="field__label">First unlocked</legend>
-            <p className="field__hint">Each is optional. Say only what you know.</p>
+          {isLook ? null : (
+            <fieldset className="itemunlock" data-testid={`${kind}-unlock`}>
+              <legend className="field__label">First unlocked</legend>
+              <p className="field__hint">Each is optional. Say only what you know.</p>
 
-            <div className="field">
-              <label className="field__label" htmlFor="item-unlock-era">
-                In the era
-              </label>
-              <select
-                id="item-unlock-era"
-                className="field__input field__input--select"
-                value={draft.unlockEraId}
-                onChange={(event) => edit({ unlockEraId: event.target.value })}
-                aria-invalid={errorOf('unlockEraId') ? true : undefined}
-                data-testid={`${kind}-unlock-era`}
-              >
-                <option value="">{base.eras.length === 0 ? 'No eras yet' : 'Not said'}</option>
-                {base.eras.map((era) => (
-                  <option key={era.id} value={era.id}>
-                    {era.name}
-                  </option>
-                ))}
-              </select>
-              {errorOf('unlockEraId') ? (
-                <p className="field__error">{errorOf('unlockEraId')}</p>
-              ) : null}
-            </div>
+              <div className="field">
+                <label className="field__label" htmlFor="item-unlock-era">
+                  In the era
+                </label>
+                <select
+                  id="item-unlock-era"
+                  className="field__input field__input--select"
+                  value={draft.unlockEraId}
+                  onChange={(event) => edit({ unlockEraId: event.target.value })}
+                  aria-invalid={errorOf('unlockEraId') ? true : undefined}
+                  data-testid={`${kind}-unlock-era`}
+                >
+                  <option value="">{base.eras.length === 0 ? 'No eras yet' : 'Not said'}</option>
+                  {base.eras.map((era) => (
+                    <option key={era.id} value={era.id}>
+                      {era.name}
+                    </option>
+                  ))}
+                </select>
+                {errorOf('unlockEraId') ? (
+                  <p className="field__error">{errorOf('unlockEraId')}</p>
+                ) : null}
+              </div>
 
-            <ScenePicks
-              universeId={universeId}
-              label="In the scene"
-              value={draft.unlockScene}
-              onChange={(unlockScene) => edit({ unlockScene })}
-              single
-              error={errorOf('unlockSceneId')}
-              testId={`${kind}-unlock-scene`}
-            />
+              <ScenePicks
+                universeId={universeId}
+                label="In the scene"
+                value={draft.unlockScene}
+                onChange={(unlockScene) => edit({ unlockScene })}
+                single
+                error={errorOf('unlockSceneId')}
+                testId={`${kind}-unlock-scene`}
+              />
 
-            <MomentPick
-              universeId={universeId}
-              label="At the timeline moment"
-              value={draft.unlockMoment}
-              onChange={(unlockMoment) => edit({ unlockMoment })}
-              error={errorOf('unlockMomentId')}
-              testId={`${kind}-unlock-moment`}
-            />
-          </fieldset>
+              <MomentPick
+                universeId={universeId}
+                label="At the timeline moment"
+                value={draft.unlockMoment}
+                onChange={(unlockMoment) => edit({ unlockMoment })}
+                error={errorOf('unlockMomentId')}
+                testId={`${kind}-unlock-moment`}
+              />
+            </fieldset>
+          )}
 
           {base.eras.length > 0 ? (
             <fieldset className="itemeras" data-testid={`${kind}-eras`}>
-              <legend className="field__label">Available in</legend>
+              <legend className="field__label">{isLook ? 'Eras' : 'Available in'}</legend>
               <p className="field__hint">
-                Tick every era it can be used in. Nothing is assumed from the order of eras or from
-                when it was first unlocked.
+                {isLook
+                  ? 'Tick every era it belongs to. Nothing is assumed from the order of eras.'
+                  : 'Tick every era it can be used in. Nothing is assumed from the order of eras or from when it was first unlocked.'}
               </p>
               {base.eras.map((era) => (
                 <label className="check" key={era.id}>
@@ -394,7 +439,7 @@ export function ProgressionItemForm({
                   {era.name}
                 </label>
               ))}
-              {unlockAt !== -1 ? (
+              {!isLook && unlockAt !== -1 ? (
                 <button
                   type="button"
                   className="button button--secondary button--sm"
@@ -410,17 +455,23 @@ export function ProgressionItemForm({
 
           <ScenePicks
             universeId={universeId}
-            label="Used in scenes"
-            hint="Scenes where it is used or active. Being available and being used are kept apart."
+            label={isLook ? 'Seen in scenes' : 'Used in scenes'}
+            hint={
+              isLook
+                ? 'Scenes where it is worn or seen.'
+                : 'Scenes where it is used or active. Being available and being used are kept apart.'
+            }
             value={draft.scenes}
             onChange={(scenes) => edit({ scenes })}
             error={errorOf('sceneIds')}
             testId={`${kind}-scenes`}
           />
 
-          {kind === 'ability' && base.forms.length > 0 ? (
-            <fieldset className="itemeras" data-testid="ability-forms">
-              <legend className="field__label">Belongs to forms</legend>
+          {kind !== 'form' && base.forms.length > 0 ? (
+            <fieldset className="itemeras" data-testid={`${kind}-forms`}>
+              <legend className="field__label">
+                {isLook ? 'A look of forms' : 'Belongs to forms'}
+              </legend>
               <p className="field__hint">None, one or several.</p>
               {base.forms.map((form) => (
                 <label className="check" key={form.id}>
@@ -430,7 +481,7 @@ export function ProgressionItemForm({
                     onChange={(event) =>
                       edit({ formIds: toggle(draft.formIds, form.id, event.target.checked) })
                     }
-                    data-testid={`ability-form-${form.name}`}
+                    data-testid={`${kind}-form-${form.name}`}
                   />
                   {form.name}
                 </label>

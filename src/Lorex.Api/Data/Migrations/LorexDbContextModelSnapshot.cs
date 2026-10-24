@@ -1443,6 +1443,129 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("EntityAbilityScenes", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityId", "SortOrder");
+
+                    b.ToTable("EntityAppearances", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearanceEra", b =>
+                {
+                    b.Property<Guid>("EntityAppearanceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityEraId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("EntityAppearanceId", "EntityEraId");
+
+                    b.HasIndex("EntityEraId");
+
+                    b.ToTable("EntityAppearanceEras", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearanceForm", b =>
+                {
+                    b.Property<Guid>("EntityAppearanceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityFormId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("EntityAppearanceId", "EntityFormId");
+
+                    b.HasIndex("EntityFormId");
+
+                    b.ToTable("EntityAppearanceForms", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearanceImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("ByteSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityAppearanceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OriginalKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ThumbnailKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityAppearanceId", "SortOrder");
+
+                    b.ToTable("EntityAppearanceImages", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearanceScene", b =>
+                {
+                    b.Property<Guid>("EntityAppearanceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SceneId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("EntityAppearanceId", "SceneId");
+
+                    b.HasIndex("SceneId");
+
+                    b.ToTable("EntityAppearanceScenes", (string)null);
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEra", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3753,6 +3876,85 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("Scene");
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearance", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
+                        .WithMany()
+                        .HasForeignKey("EntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Entity");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearanceEra", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Progression.EntityAppearance", "Appearance")
+                        .WithMany("Eras")
+                        .HasForeignKey("EntityAppearanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Progression.EntityEra", "Era")
+                        .WithMany()
+                        .HasForeignKey("EntityEraId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Appearance");
+
+                    b.Navigation("Era");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearanceForm", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Progression.EntityAppearance", "Appearance")
+                        .WithMany("Forms")
+                        .HasForeignKey("EntityAppearanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Progression.EntityForm", "Form")
+                        .WithMany()
+                        .HasForeignKey("EntityFormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Appearance");
+
+                    b.Navigation("Form");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearanceImage", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Progression.EntityAppearance", "Appearance")
+                        .WithMany("Images")
+                        .HasForeignKey("EntityAppearanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Appearance");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearanceScene", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Progression.EntityAppearance", "Appearance")
+                        .WithMany("Scenes")
+                        .HasForeignKey("EntityAppearanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Stories.Scene", "Scene")
+                        .WithMany()
+                        .HasForeignKey("SceneId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Appearance");
+
+                    b.Navigation("Scene");
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Progression.EntityEra", b =>
                 {
                     b.HasOne("Lorex.Api.Features.Chronology.ChronologyEra", "EndEra")
@@ -4621,6 +4823,17 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("Eras");
 
                     b.Navigation("Forms");
+
+                    b.Navigation("Scenes");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAppearance", b =>
+                {
+                    b.Navigation("Eras");
+
+                    b.Navigation("Forms");
+
+                    b.Navigation("Images");
 
                     b.Navigation("Scenes");
                 });

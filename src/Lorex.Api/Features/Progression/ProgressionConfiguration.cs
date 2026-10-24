@@ -23,6 +23,12 @@ public static class ProgressionLimits
 
     /// <summary>The abilities one entry may have (Issue #42).</summary>
     public const int MaxAbilities = 100;
+
+    /// <summary>The appearances one entry may have (Issue #43).</summary>
+    public const int MaxAppearances = 50;
+
+    /// <summary>The pictures one appearance's gallery may hold (Issue #43).</summary>
+    public const int MaxImagesPerAppearance = 20;
 }
 
 public sealed class EntityProgressionConfiguration : IEntityTypeConfiguration<EntityProgression>

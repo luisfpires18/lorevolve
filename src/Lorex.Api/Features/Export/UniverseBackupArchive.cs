@@ -34,6 +34,10 @@ public static class BackupArchive
     public static string MediaPathFor(Guid entityId, string contentType) =>
         $"media/entities/{entityId:D}/original.{ExtensionFor(contentType)}";
 
+    /// <summary>The original of one picture of one entry's appearance, inside the archive (since version 30).</summary>
+    public static string AppearanceMediaPathFor(Guid entityId, Guid imageId, string contentType) =>
+        $"media/entities/{entityId:D}/appearances/{imageId:D}/original.{ExtensionFor(contentType)}";
+
     /// <summary>The original of the universe's artwork, inside the archive (since version 15). One per archive.</summary>
     public static string ArtworkPathFor(string contentType) =>
         $"media/universe/artwork/original.{ExtensionFor(contentType)}";
