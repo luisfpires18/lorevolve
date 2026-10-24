@@ -3,6 +3,7 @@ import { Plus, X } from 'lucide-react'
 import { getEntity } from '../lore/api'
 import {
   MAX_FIELD_FILTERS,
+  encodeFieldFilter,
   filterRule,
   filterableFields,
   isCompleteValue,
@@ -38,7 +39,8 @@ export function LoreFieldFilters({
   universeId: string
   type: EntityType
   filters: FieldFilter[]
-  onChange: (next: FieldFilter[]) => void
+  /** Given a change to the filters, not the result: it is applied to the address as it is when it lands. */
+  onChange: (change: (current: FieldFilter[]) => FieldFilter[]) => void
 }) {
   const fields = filterableFields(type)
   const [editing, setEditing] = useState<FieldDefinition | null>(null)
@@ -147,7 +149,12 @@ export function LoreFieldFilters({
                       type="button"
                       aria-label={`Remove filter: ${sentence}`}
                       title="Remove filter"
-                      onClick={() => onChange(filters.filter((_, at) => at !== index))}
+                      onClick={() => {
+                        const token = encodeFieldFilter(filter)
+                        onChange((current) =>
+                          current.filter((each) => encodeFieldFilter(each) !== token),
+                        )
+                      }}
                       data-testid="lore-remove-field-filter"
                     >
                       <X aria-hidden="true" focusable="false" />
@@ -165,7 +172,7 @@ export function LoreFieldFilters({
               field={editing}
               onApply={(filter, entry) => {
                 if (entry) setNames((known) => ({ ...known, [filter.value]: entry }))
-                onChange([...filters, filter])
+                onChange((current) => [...current, filter])
                 close()
               }}
               onCancel={close}
