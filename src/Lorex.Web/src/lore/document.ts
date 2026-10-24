@@ -41,6 +41,60 @@ function isBlankNode(node: DocumentNode, depth: number): boolean {
   return (node.content as DocumentNode[]).every((child) => isBlankNode(child, depth + 1))
 }
 
+interface MarkedNode extends DocumentNode {
+  marks?: unknown
+}
+
+/** One link in an article: the words it is on and where it points. */
+export interface ArticleLink {
+  text: string
+  href: string
+}
+
+/**
+ * Every link an article holds, in reading order: neighbouring text with the same address is one link. Empty for no
+ * article or one that cannot be read. Shown before an article is copied (Issue #27), so the author sees what travels.
+ */
+export function articleLinks(json: string | null): ArticleLink[] {
+  const links: ArticleLink[] = []
+  if (!json) return links
+
+  // The link the previous text node was in, so a link split across bold and plain words stays one.
+  let open: ArticleLink | null = null
+
+  function walk(node: MarkedNode, depth: number) {
+    if (depth > 40 || typeof node !== 'object' || node === null) return
+    if (typeof node.text === 'string') {
+      const link = Array.isArray(node.marks)
+        ? (node.marks as { type?: unknown; attrs?: { href?: unknown } }[]).find(
+            (mark) => mark?.type === 'link' && typeof mark.attrs?.href === 'string',
+          )
+        : undefined
+      const href = link?.attrs?.href as string | undefined
+      if (href === undefined) {
+        open = null
+      } else if (open?.href === href) {
+        open.text += node.text
+      } else {
+        open = { text: node.text, href }
+        links.push(open)
+      }
+      return
+    }
+    open = null
+    if (Array.isArray(node.content)) {
+      for (const child of node.content as MarkedNode[]) walk(child, depth + 1)
+    }
+  }
+
+  try {
+    walk(JSON.parse(json) as MarkedNode, 0)
+  } catch {
+    return []
+  }
+  return links
+}
+
 /** The starting value for a field the entity has never had one for. */
 export function emptyValue(definition: FieldDefinition): FieldValueInput {
   const isText = definition.kind === FieldKind.ShortText || definition.kind === FieldKind.LongText

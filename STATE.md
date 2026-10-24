@@ -164,6 +164,16 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     No comparison view, no public surface. Independent review (1 high, 4 medium) handled: unplaced relations stay listed
     apart (owner decision for #18) but folded under a count; relations re-read after a save or restore; stepping to an era
     focuses its title; E2E covers an unplaced dated link and an entry with no progression.
+- **Issue #27 - Duplicate / Create from Existing** (`feat/lore-duplicate` off `dev` at `933d10d`; committed, not merged,
+  not pushed). Frontend only, no migration, no backup change. ADR 0054 (new). An entry's ⋯ menu Duplicate (editContent)
+  opens `lore/new?from=<id>`: the form filled with type, summary, tags and field values, name "X (copy)", status Idea,
+  private. Copy panel: aliases, links to other entries (same type only; trashed targets never) and the article are offered,
+  all off; the article lists every link it carries. Never copied: picture, relationships, story/scene links, eras, forms,
+  appearances, comments, history, publication. Create is the ordinary `POST /entities`; a chosen article is saved after it
+  as the copy's first version (non-atomic, said if it fails). Owner decisions 2026-10-24 (article off; no relationship,
+  image or Story options in V1; links listed). Tests: Playwright `entity-duplicate.spec.ts` 3; `entity-page` (menu order),
+  `collaboration` (Editor sees Duplicate) updated; with lore, lore-article, field-lifecycle, entity-reference-target,
+  history 46/46 on a fresh DB. No API change, so no API run.
 - **Issue #36 - semantic groups for Lore types** (P0; `feat/lore-semantic-groups` off `dev` at `70cfc90`; merged into `dev`
   at `74773fe`). One migration (`AddEntityTypeGroups`), backup format 23. ADR 0007 and 0014 amendments.
   - Universe-scoped `EntityTypeGroups` + `EntityTypeGroupMembers` (stable ids, explicit membership, a type in 0..n groups);
