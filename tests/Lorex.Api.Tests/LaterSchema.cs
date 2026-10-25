@@ -293,6 +293,10 @@ internal static class LaterSchema
         "sqlite_autoindex_MapCalibrations_1",
     ];
 
+    /// <summary>Whether an index or trigger name predates AI change pictures - and so everything after them.</summary>
+    public static bool BeforeAiMedia(string name) =>
+        !AiMedia.Concat(McpAlias).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+
     /// <summary>Whether an index or trigger name predates semantic type groups.</summary>
     public static bool BeforeTypeGroups(string name) =>
         !TypeGroups.Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
