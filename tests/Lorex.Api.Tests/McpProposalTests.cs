@@ -33,6 +33,8 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
 
     private const string ReadAndPropose = "lorex.read lorex.propose offline_access";
 
+    private static readonly string[] Races = ["Orc", "Human", "Elf"];
+
     private readonly LorexApiFactory _factory;
 
     private readonly ScriptedAssistantProvider _model;
@@ -44,7 +46,7 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
     }
 
     /// <summary>The whole flow with the app asking to propose too, and the person ticking it - or not.</summary>
-    private async Task<(Connection Connection, TokenAnswer Tokens)> ConnectAsync(HttpClient browser, Guid universeId, bool allowProposals)
+    private async Task<(Connection Connection, TokenAnswer Tokens)> ConnectAsync(HttpClient browser, Guid universeId, bool allowProposals, bool allowSchema = false)
     {
         var clientId = await RegisterPublicClient(_factory.CreateClient());
         var (verifier, challenge) = Pkce();
@@ -52,6 +54,11 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
         if (allowProposals)
         {
             request[OAuthEndpoints.ProposeField] = OAuthEndpoints.AllowProposals;
+        }
+
+        if (allowSchema)
+        {
+            request[OAuthEndpoints.SchemaField] = OAuthEndpoints.AllowProposals;
         }
 
         var approved = RedirectParameters(await Decide(browser, request, "approve"));
@@ -340,6 +347,99 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
         {
             Assert.Contains(member, schema, StringComparison.Ordinal);
         }
+    }
+
+    [Fact]
+    public async Task Schema_is_a_second_tick_that_an_app_never_gets_by_default_and_loses_on_its_own()
+    {
+        var (browser, _, u, character) = await OwnerAsync("mcpschema");
+        object SchemaChange(string name) => new
+        {
+            summary = "A new type",
+            operations = new object[] { new { id = "t", action = "create", resource = "lore_type", loreType = new { name } } },
+        };
+
+        // Proposing without the schema tick: content yes, schema no - and the catalog says why.
+        var (content, _) = await ConnectAsync(browser, u, allowProposals: true);
+        var options = Body(await CallAsync(content, LorexMcpProposalTools.OptionsTool, new { }));
+        Assert.False(options.GetProperty("schema").GetProperty("canPropose").GetBoolean());
+        Assert.DoesNotContain(options.GetProperty("allowed").EnumerateArray(), allowed => allowed.GetString() == "create lore_type");
+        var refused = await CallAsync(content, LorexMcpProposalTools.ProposeTool, SchemaChange("Kingdom"));
+        Assert.True(refused.GetProperty("isError").GetBoolean());
+        Assert.Equal(AiChangeCodes.NotAllowed, Body(refused).GetProperty("problems")[0].GetProperty("code").GetString());
+
+        // The schema tick alone, without proposals, grants nothing.
+        var (schemaOnly, _) = await ConnectAsync(browser, u, allowProposals: false, allowSchema: true);
+        Assert.DoesNotContain(LorexMcpProposalTools.ProposeTool, await ToolsAsync(schemaOnly));
+
+        // Both ticks: the catalog is the universe's real schema, and a type is staged.
+        var (schema, _) = await ConnectAsync(browser, u, allowProposals: true, allowSchema: true);
+        options = Body(await CallAsync(schema, LorexMcpProposalTools.OptionsTool, new { }));
+        Assert.True(options.GetProperty("schema").GetProperty("canPropose").GetBoolean());
+        Assert.Contains(options.GetProperty("allowed").EnumerateArray(), allowed => allowed.GetString() == "remove lore_field");
+        Assert.Contains(options.GetProperty("schema").GetProperty("fieldKinds").EnumerateArray(), kind => kind.GetString() == "link");
+        Assert.Contains(options.GetProperty("schema").GetProperty("groups").EnumerateArray(), group => group.GetProperty("name").GetString() == "Places");
+        Assert.Contains(options.GetProperty("loreTypes").EnumerateArray(), type => type.GetProperty("id").GetGuid() == character);
+        var staged = Body(await CallAsync(schema, LorexMcpProposalTools.ProposeTool, SchemaChange("Kingdom")));
+        var proposalId = staged.GetProperty("proposalId").GetGuid();
+        var apps = (await browser.GetFromJsonAsync<List<ConnectedApp>>("/api/profile/connected-apps"))!;
+        var app = Assert.Single(apps, row => row.CanProposeSchema);
+
+        // Taking schema back blocks what it staged at once, and keeps content proposals and reading.
+        Assert.Equal(HttpStatusCode.NoContent, (await browser.DeleteAsync($"/api/profile/connected-apps/{app.Id}/schema")).StatusCode);
+        var proposal = await AiChangeTestClient.Read(browser, u, proposalId);
+        Assert.NotNull(proposal.Blocked);
+        Assert.Equal(AiChangeCodes.Blocked, await AiChangeTestClient.Code(await AiChangeTestClient.Approve(browser, u, proposal, ["t"])));
+        Assert.True(Body(await CallAsync(schema, LorexMcpProposalTools.ProposeTool, SchemaChange("City"))).TryGetProperty("problems", out _));
+        var still = Body(await CallAsync(schema, LorexMcpProposalTools.ProposeTool, new
+        {
+            summary = "Content",
+            operations = new object[] { new { id = "a", action = "create", resource = "lore_entry", lore = new { typeId = character, name = "Ulf" } } },
+        }));
+        Assert.True(still.TryGetProperty("proposalId", out _), still.ToString());
+        await PlotTestClient.WithDb(_factory, async db => Assert.False(await db.EntityTypes.AnyAsync(type => type.UniverseId == u && type.Name == "Kingdom")));
+    }
+
+    [Fact]
+    public async Task A_reviewer_is_not_offered_the_schema_tick_and_ticking_it_anyway_grants_nothing()
+    {
+        var (_, _, u, _) = await OwnerAsync("mcpschemarole");
+        var (reviewer, reviewerId) = await NewBrowser(_factory, "mcpschemarole-reviewer");
+        await CollaborationTestClient.Join(_factory, u, reviewerId, UniverseRole.Reviewer);
+
+        var (connection, _) = await ConnectAsync(reviewer, u, allowProposals: true, allowSchema: true);
+        await PlotTestClient.WithDb(_factory, async db => Assert.False(await db.McpConnections.Where(row => row.UserId == reviewerId).Select(row => row.CanProposeSchema).SingleAsync()));
+        Assert.False(Body(await CallAsync(connection, LorexMcpProposalTools.OptionsTool, new { })).GetProperty("schema").GetProperty("canPropose").GetBoolean());
+    }
+
+    [Fact]
+    public async Task The_assistant_stages_schema_through_the_same_contract_and_review()
+    {
+        var (browser, _, u, character) = await OwnerAsync("assistschema");
+        _model.Use(step => step.Number == 1
+            ? ScriptedAssistantProvider.Calls((AssistantProposing.ProposeTool, new
+            {
+                summary = "Races as a field",
+                operations = new object[]
+                {
+                    new { id = "race", action = "create", resource = "lore_field", field = new { type = new { id = character }, name = "Race", kind = "one_choice", options = Races } },
+                },
+            }))
+            : ScriptedAssistantProvider.Answer(("note", "A Race field is waiting for review.", [])));
+
+        var asked = await browser.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Add a Race choice to Character: Orc, Human, Elf.", null, AssistantEndpoints.ProposeMode));
+        var answer = (await asked.Content.ReadFromJsonAsync<AssistantAnswer>())!;
+        Assert.NotNull(answer.Proposal);
+        var schema = _model.Steps[0].Brief.Tools.Single(tool => tool.Name == AssistantProposing.ProposeTool).ParametersSchema;
+        foreach (var member in new[] { "\"loreType\"", "\"field\"", "\"group\"", "\"linksToGroup\"", "\"relationshipKind\"", "\"chronology\"", "\"months\"", "\"term\"" })
+        {
+            Assert.Contains(member, schema, StringComparison.Ordinal);
+        }
+
+        await AiChangeTestClient.ApproveAll(browser, u, answer.Proposal!.Id);
+        var race = (await browser.GetFromJsonAsync<List<Lorex.Api.Features.Lore.EntityTypeResponse>>($"/api/universes/{u}/entity-types"))!
+            .Single(type => type.Id == character).Fields.Single(field => field.Name == "Race");
+        Assert.Equal(["Orc", "Human", "Elf"], race.Options.Select(option => option.Value));
     }
 
     [Fact]

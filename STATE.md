@@ -108,6 +108,35 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - Review fix: provisioning only granted, so a moved setting left two Admins. Now demotes others + unique index.
   - Tests: API 1899/1899 (1 skipped; `AdminWorkspaceTests` 15, `AdminProvisioningFileTests` 3; migration tests' later-schema
     lists extended). Playwright `admin-workspace` 6/6 (serial), neighbours 49/49, fresh DB. Full suite delegated to CI.
+- **Issue #59 - MCP full creator authoring** (`feat/mcp-full-creator-authoring` off `origin/dev` at `dd0deef`, in the main
+  checkout; committed locally, not pushed, not merged). ADR 0062 (new); 0046, 0047 amended. Five migrations:
+  `AddSchemaProposals`, `AddDefinitionProposals`, `AddProgressionProposals`, `AddAiChangeMedia`, `AddMcpUniverseAliases`.
+  - **Phase 1 schema:** `lore_type`, `lore_field` (remove = archive), `lore_group` through the Types screen's own cores
+    (extracted; field refusals split into `FieldAddRefusalAsync`/`FieldEditRefusalAsync`); Group -> Type -> Field `{ref}`s;
+    never in one proposal with content (entries come after approval, with the ids the catalog then lists); no AI-set field
+    meaning (ADR 0011); types/groups never removed. Owner/Editor only. Apps need `McpConnection.CanProposeSchema`: a second
+    unticked consent box, not an OAuth scope (no grant or registration changes), off in Connected Apps on its own.
+  - **Phase 2 definitions:** `relationship_kind` (direction kept while in use; Canon age rules and family meaning carried),
+    `chronology` (written whole; existing periods/months kept in order; a dated period keeps its count; no calendar over
+    simple months in use), `event_kind`/`method`. Each refusal says what to do by hand.
+  - **Phase 3 progression (content):** one `progression` change per entry - eras, forms, abilities, appearances added (ids
+    given at staging, named by keys) or changed by id, never removed; `ProgressionEndpoints.WriteAsync(givenIds)`; pictures
+    untouched. `get_change_options` with `loreId` lists an entry's progression.
+  - **Phase 4 pictures:** `image` change carries no file; the person uploads it on the review page; `AiChangeMedia`
+    quarantine (upload gate's decoders, no FKs, reviewer-only preview, 64 MB per account, not counted); approval holds quota
+    first then attaches through `AppearanceImageEndpoints.AttachAsync`/`EntityImageEndpoints.AttachFirstAsync`; never replaces
+    a profile picture; `AiChangeMediaSweep` (hourly) deletes abandoned objects.
+  - **Friendly URLs:** `/mcp/u/{name-xxxx}` beside `/mcp/universes/{id}` (unchanged); own table, made on first Connect to AI,
+    kept through renames; resolved server-side; either spelling's token passes, another universe's never. App Service not renamed.
+  - Assistant and MCP share the one contract, catalog, staging, checks and commit; the Fake assistant stages a "type" and a
+    "picture" for Playwright.
+  - Tests: new `AiChangeSchemaTests` 8, `AiChangeDefinitionTests` 7, `AiChangeProgressionTests` 6, `AiChangeMediaTests` 5,
+    `McpAliasTests` 4, `McpProposalTests` +3, migration rollback +1; full API suite 1943 passed, 0 failed, 1 skipped. Playwright `ai-schema` 2/2 (new),
+    `mcp-connect` 10/10, `ai-changes` + `universe-assistant` + `types-and-trash` + `nested-types` 28/28, fresh DB. Release
+    build, web lint/format/build green.
+  - **Unverified:** a real external MCP client (Claude/ChatGPT) staging schema, progression and pictures, and connecting by
+    the friendly URL - needs DEV with `Mcp__Origin` and a fresh connection ticking schema. The assistant's 10,000-character
+    tool-result cap (ADR 0045) can cut a large catalog.
 - **Issues #56, #57, #58 - pre-alpha batch** (`feat/mcp-lore-images-shell-pwa` off `dev` at `f4a548d`, in the worktree
   `D:\Workspace\LOREX-pre-alpha`; committed, not merged, not pushed). No migration. Three scopes, one commit each.
   - **#56 MCP pictures.** ADR 0046 amendment; 0019 and 0053 amended. `list_lore_images` and `get_lore_image`

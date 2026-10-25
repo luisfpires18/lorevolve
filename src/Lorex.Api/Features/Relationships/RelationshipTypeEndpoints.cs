@@ -55,6 +55,16 @@ public static class RelationshipTypeEndpoints
             return denied;
         }
 
+        return await CreateCoreAsync(db, universeId, request, cancellationToken);
+    }
+
+    /// <summary>A kind's create after the caller's access check: the route's, and an approved AI change's (ADR 0062). Answers 201.</summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        RelationshipTypeRequest request,
+        CancellationToken cancellationToken)
+    {
         var constraints = request.CanonConstraints ?? RelationshipTypeCanonConstraints.None;
         var familySemantic = request.FamilySemantic ?? RelationshipFamilySemantic.None;
 
@@ -157,6 +167,17 @@ public static class RelationshipTypeEndpoints
             token => UpdateCoreAsync(universeId, typeId, request, relationshipType, db, token),
             cancellationToken);
     }
+
+    /// <summary>A kind's edit inside the caller's reconciling transaction: an approved AI change's (ADR 0062), under the gate.</summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid typeId,
+        RelationshipTypeRequest request,
+        CancellationToken cancellationToken) =>
+        await FindTypeAsync(db, universeId, typeId, cancellationToken) is { } relationshipType
+            ? await UpdateCoreAsync(universeId, typeId, request, relationshipType, db, cancellationToken)
+            : Results.NotFound();
 
     private static async Task<IResult> UpdateCoreAsync(
         Guid universeId,

@@ -57,24 +57,35 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
     [McpServerTool(Name = OptionsTool, Title = "What changes can be proposed", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Before proposing changes, read what can be proposed in this universe for this person: the changes their role allows, "
         + "the lore types with the ids of their fields and choices, the relationship kinds, the stories with their chapters and plot arcs, the "
-        + "date periods and months, the world rules, the event kinds and methods, and - for the universe owner only - their ideas here. "
-        + "Use only these ids. Types, fields, kinds, calendars and terms themselves can't be created or changed.")]
-    public async Task<CallToolResult> GetChangeOptionsAsync(CancellationToken cancellationToken)
+        + "date periods and months, the world rules, the event kinds and methods, and - for the universe owner only - their ideas here - "
+        + "and the universe's real schema: every type with its fields (archived ones apart), parent and groups, every group, the field "
+        + "kinds and icons, and whether this connection may propose schema. Use only these ids; never assume the starter types are all "
+        + "there is. Give loreId to also get that entry's progression - its eras, forms, abilities and appearances by id - for a "
+        + "progression change.")]
+    public async Task<CallToolResult> GetChangeOptionsAsync(
+        [Description("Optional: a lore entry's id, to include its progression's ids and version.")] string? loreId = null,
+        CancellationToken cancellationToken = default)
     {
         if (await RoleAsync(cancellationToken) is not { } role)
         {
             return NotAllowed();
         }
 
-        return Result(await AiChangeCatalog.ReadAsync(db, caller.UniverseId, role, cancellationToken));
+        return Result(await AiChangeCatalog.ReadAsync(
+            db, caller.UniverseId, role, cancellationToken, caller.CanProposeSchema, Guid.TryParse(loreId, out var entityId) ? entityId : null));
     }
 
     [McpServerTool(Name = ProposeTool, Title = "Propose changes for review", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
     [Description("Stage changes to this universe for the person to review in LoreX. Only do this when the person asked for these changes. "
         + "Nothing changes until they approve it in LoreX's Pending AI Changes; this tool cannot approve or apply anything. "
         + "Send up to 100 changes: create, update or remove (to the Trash) lore entries, relationships, stories, chapters, scenes, plot arcs, "
+        + "add to or change an entry's progression - its eras, forms, abilities and appearances, for the same entry - "
+        + "ask for a picture for an entry or one of its appearances (image: no file is sent; the person uploads it on the review page), "
         + "plot beats, timeline moments, world rules and - for the universe owner - their ideas; write scene manuscripts and entry articles; "
-        + "reorder a story's chapters or arcs, a chapter's scenes or an arc's beats. A change can refer to what an earlier change creates "
+        + "reorder a story's chapters or arcs, a chapter's scenes or an arc's beats. Where get_change_options says schema may be proposed, "
+        + "a proposal of its own can instead create and update lore types, field definitions with their choices, semantic groups, "
+        + "relationship kinds, event kinds and methods, add date periods and calendar months, and archive a field; propose what uses "
+        + "them after it is approved. A change can refer to what an earlier change creates "
         + "with {\"ref\": \"<its id>\"}. Nothing is ever deleted for good. "
         + "Every change is checked first: if any has a problem, nothing is staged and every problem is listed so you can fix them and send again. "
         + "Returns the proposal's id and the address where the person reviews it.")]
@@ -93,7 +104,7 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
             clock,
             caller.UniverseId,
             caller.UserId,
-            new AiChangeOrigin(AiChangeSource.Mcp, caller.ConnectionId, caller.ClientName),
+            new AiChangeOrigin(AiChangeSource.Mcp, caller.ConnectionId, caller.ClientName, caller.CanProposeSchema),
             new AiChangeSubmission(summary, operations),
             cancellationToken);
 
@@ -116,7 +127,9 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
             proposalId = proposal.Id,
             status = "waiting_for_review",
             reviewUrl = ReviewUrl(proposal.Id),
-            message = "Staged for review. Nothing in the universe has changed: tell the person their changes are waiting in LoreX's Pending AI Changes, where they can approve or reject each one.",
+            message = proposal.Operations.Any(operation => operation.Resource == AiChangeResource.Media)
+                ? "Staged for review. Nothing in the universe has changed. This proposal asks for pictures: no file came through this connection, so tell the person to open the review page, upload each picture there, and approve or reject it. Don't say the picture was added."
+                : "Staged for review. Nothing in the universe has changed: tell the person their changes are waiting in LoreX's Pending AI Changes, where they can approve or reject each one.",
             changes = proposal.Operations.OrderBy(operation => operation.Sequence).Select(operation => new { id = operation.Key, action = operation.Action, resource = operation.Resource }),
         });
     }

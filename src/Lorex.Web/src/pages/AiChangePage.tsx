@@ -8,8 +8,10 @@ import {
   editChange,
   getProposal,
   itemPath,
+  mediaPreviewPath,
   ProposalStatus,
   rejectChanges,
+  uploadChangeMedia,
   type Change,
   type ChangeEditable,
   type Proposal,
@@ -37,6 +39,12 @@ const ACTION_WORDS = {
   [ChangeAction.Remove]: 'To the Trash',
   [ChangeAction.Reorder]: 'Order',
 } as const
+
+/** A field is archived, not trashed: it keeps its values and comes back from Types. */
+const actionWords = (change: Change) =>
+  change.resource === ChangeResource.LoreField && change.action === ChangeAction.Remove
+    ? 'Archive'
+    : ACTION_WORDS[change.action]
 
 /** Prose changes - a scene's manuscript, an entry's article - are shown as prose, never as before-and-after lines. */
 const isProse = (change: Change) =>
@@ -467,7 +475,7 @@ function ChangeItem({
         ) : null}
         <div className="aichangeitem__heading">
           <span className="aichangeitem__action" data-action={change.action}>
-            {isProse(change) ? 'Prose' : ACTION_WORDS[change.action]}
+            {isProse(change) ? 'Prose' : actionWords(change)}
           </span>
           <h2 className="aichangeitem__title" id={titleId} dir="auto">
             {change.title}
@@ -523,6 +531,15 @@ function ChangeItem({
         ) : null}
 
         {change.prose ? <ProseChange change={change} /> : null}
+
+        {change.media ? (
+          <MediaChange
+            universeId={universeId}
+            proposal={proposal}
+            change={change}
+            onUploaded={onEdited}
+          />
+        ) : null}
 
         {change.impact ? (
           <ul className="aichangeitem__impact" data-testid="ai-change-impact">
@@ -592,6 +609,90 @@ function ChangeItem({
         />
       ) : null}
     </li>
+  )
+}
+
+/**
+ * A picture change's hand-over (ADR 0062): the AI sends no file, so the person uploads it here. It waits in quarantine - seen
+ * only on this page - until the change is approved, and goes if it is rejected. Uploading again replaces it.
+ */
+function MediaChange({
+  universeId,
+  proposal,
+  change,
+  onUploaded,
+}: {
+  universeId: string
+  proposal: Proposal
+  change: Change
+  onUploaded: (next: Proposal) => void
+}) {
+  const media = change.media!
+  const inputId = useId()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const waiting =
+    change.status === ChangeStatus.Pending &&
+    proposal.proposal.status === ProposalStatus.Open &&
+    (proposal.canReview || proposal.proposal.proposedByMe)
+
+  async function upload(file: File | undefined) {
+    if (!file) return
+    setBusy(true)
+    setError(null)
+    try {
+      onUploaded(await uploadChangeMedia(universeId, proposal.proposal.id, change.id, file))
+    } catch (problem: unknown) {
+      setError(
+        problem instanceof ApiError
+          ? (Object.values(problem.fieldErrors)[0] ?? problem.message)
+          : 'The picture couldn’t be uploaded. Try again.',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="aichangeitem__media" data-testid="ai-change-media">
+      {media.uploaded && media.uploadedAt ? (
+        <figure className="aichangeitem__picture">
+          <img
+            src={mediaPreviewPath(universeId, proposal.proposal.id, change.id, media.uploadedAt)}
+            alt={`The picture uploaded for: ${change.title}`}
+            width={160}
+            height={160}
+            data-testid="ai-change-media-preview"
+          />
+          <figcaption>
+            {media.fileName ?? 'Picture'} · {media.width}×{media.height}
+          </figcaption>
+        </figure>
+      ) : (
+        <p className="aichangeitem__deps">No picture yet. The AI sends no file: upload it here.</p>
+      )}
+      {waiting ? (
+        <div className="field">
+          <label className="field__label" htmlFor={inputId}>
+            {media.uploaded ? 'Replace the picture' : 'Upload the picture'}
+          </label>
+          <input
+            id={inputId}
+            className="field__input"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            disabled={busy}
+            onChange={(event) => void upload(event.target.files?.[0])}
+            data-testid="ai-change-media-file"
+          />
+        </div>
+      ) : null}
+      {error ? (
+        <p className="form__message" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
   )
 }
 

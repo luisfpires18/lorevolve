@@ -358,7 +358,7 @@ internal static class ImagePreparation
         }
 
         upload.Position = 0;
-        var display = await PreviewAsync(upload, displaySide, cancellationToken);
+        var display = await PreviewAsync(upload, displaySide, png: false, cancellationToken);
         if (display is null)
         {
             return (null, new ImageRejection(FileField, "That image could not be read. It may be incomplete or damaged."));

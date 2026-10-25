@@ -27,6 +27,10 @@ namespace Lorex.Api.Features.Assistant;
 /// Words in the question add issue 45's resources (ADR 0048), each only when the options allow it: "article" writes each new
 /// entry a one-paragraph article; "rule" proposes a world rule named after the first name; "arc" a plot arc of that name in
 /// the first story, with one beat about the first entry; "idea" an idea of that name about the first entry.
+///
+/// Issue 59 (ADR 0062): "type" instead stages a schema proposal - a lore type named by the first name, with a short text
+/// field for each further name, the last one a link to the first existing type when the question says "link"; "picture"
+/// searches for the first name and asks for a picture for that entry, which the person then uploads on the review page.
 /// </summary>
 public sealed partial class FakeAssistantProvider : IAssistantProvider
 {
@@ -65,6 +69,38 @@ public sealed partial class FakeAssistantProvider : IAssistantProvider
 
             using var document = JsonDocument.Parse(results.Count > 0 ? results[0].Output : "{}");
             var root = document.RootElement;
+            bool Asked(string word) => question.Contains(word, StringComparison.OrdinalIgnoreCase);
+
+            // A search made for a picture: ask for one for the entry it found.
+            if (root.TryGetProperty("results", out var found))
+            {
+                var entry = found.EnumerateArray().FirstOrDefault(result => result.GetProperty("kind").GetString() == "lore");
+                return Task.FromResult(entry.ValueKind != JsonValueKind.Object
+                    ? Answer(Segment("note", $"I couldn't find {names[0]} to ask for a picture of."))
+                    : Call(AssistantProposing.ProposeTool, new
+                    {
+                        summary = $"A picture of {names[0]}",
+                        operations = new object[]
+                        {
+                            new { id = "picture-1", action = "create", resource = "image", image = new { entry = entry.GetProperty("id").GetString(), note = names[0] } },
+                        },
+                    }));
+            }
+
+            if (_step == 2 && Asked("type") && root.GetProperty("allowed").EnumerateArray().Any(item => item.GetString() == "create lore_type"))
+            {
+                var linkTo = root.GetProperty("loreTypes").EnumerateArray().First().GetProperty("id").GetString();
+                var schema = new List<object> { new { id = "type-1", action = "create", resource = "lore_type", loreType = new { name = names[0] } } };
+                schema.AddRange(names.Skip(1).Select((name, index) => (object)(Asked("link") && index == names.Count - 2
+                    ? new { id = $"field-{index + 1}", action = "create", resource = "lore_field", field = new { type = new { @ref = "type-1" }, name, kind = "link", linksToType = new { id = linkTo } } }
+                    : new { id = $"field-{index + 1}", action = "create", resource = "lore_field", field = new { type = new { @ref = "type-1" }, name, kind = "short_text", linksToType = (object?)null } })));
+                return Task.FromResult(Call(AssistantProposing.ProposeTool, new { summary = $"New type: {names[0]}", operations = schema }));
+            }
+
+            if (_step == 2 && Asked("picture"))
+            {
+                return Task.FromResult(Call(AssistantTools.SearchUniverse, new { query = names[0] }));
+            }
 
             if (_step == 2)
             {
@@ -102,7 +138,6 @@ public sealed partial class FakeAssistantProvider : IAssistantProvider
                 }
 
                 var allowed = root.GetProperty("allowed").EnumerateArray().Select(item => item.GetString()).ToHashSet();
-                bool Asked(string word) => question.Contains(word, StringComparison.OrdinalIgnoreCase);
 
                 if (Asked("article") && allowed.Contains("update article"))
                 {

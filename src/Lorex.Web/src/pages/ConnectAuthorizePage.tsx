@@ -11,6 +11,7 @@ import {
   getConsentToken,
   PROPOSE_FIELD,
   READABLE,
+  SCHEMA_FIELD,
   type ConnectionRequestDetails,
   type ConsentToken,
 } from '../mcp/api'
@@ -305,6 +306,8 @@ function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id
  * and never ticked for the person. Proposing is not writing: what the app sends waits in Pending AI Changes.
  */
 function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
+  const [proposing, setProposing] = useState(false)
+
   if (!details.canPropose) {
     return (
       <section className="consent__part" aria-label="Proposing changes">
@@ -327,6 +330,7 @@ function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
           value="allow"
           aria-describedby="consent-propose-what"
           data-testid="consent-propose"
+          onChange={(event) => setProposing(event.target.checked)}
         />
         <label htmlFor="consent-propose">
           Also let <bdi>{details.clientName}</bdi> propose changes for you to review
@@ -339,6 +343,29 @@ function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
         universe&rsquo;s owner or an Editor, approves it there. You can turn this off in Connected
         apps.
       </p>
+      {details.canProposeSchema ? (
+        <>
+          <div className="consent__check">
+            <input
+              id="consent-schema"
+              type="checkbox"
+              name={SCHEMA_FIELD}
+              value="allow"
+              disabled={!proposing}
+              aria-describedby="consent-schema-what"
+              data-testid="consent-schema"
+            />
+            <label htmlFor="consent-schema">
+              Also let it propose new lore types, fields and groups
+            </label>
+          </div>
+          <p className="consent__identity" id="consent-schema-what">
+            Schema changes how every entry of a type is shaped, so it is a separate choice. They
+            arrive in their own proposal, are reviewed and approved like any other change, and are
+            never deleted by the app: a field is only ever archived.
+          </p>
+        </>
+      ) : null}
     </section>
   )
 }

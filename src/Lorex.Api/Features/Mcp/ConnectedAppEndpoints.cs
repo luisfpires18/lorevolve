@@ -26,7 +26,8 @@ public enum ConnectedAppStatus
 
 /// <summary>
 /// One of the signed-in account's connections, as Profile -> Connected Apps lists it. No token, secret or code.
-/// <paramref name="CanPropose"/>: the person also let it propose changes for review (ADR 0047).
+/// <paramref name="CanPropose"/>: the person also let it propose changes for review (ADR 0047); <paramref name="CanProposeSchema"/>:
+/// those proposals may hold types, fields and groups too (ADR 0062).
 /// </summary>
 public sealed record ConnectedApp(
     Guid Id,
@@ -37,10 +38,15 @@ public sealed record ConnectedApp(
     DateTime CreatedAt,
     DateTime? LastUsedAt,
     ConnectedAppStatus Status,
-    bool CanPropose = false);
+    bool CanPropose = false,
+    bool CanProposeSchema = false);
 
-/// <summary>Where a universe's MCP server is, for Connect to AI: the URL to copy, or null when MCP is not set up here.</summary>
-public sealed record McpConnectInfo(string? McpUrl);
+/// <summary>
+/// Where a universe's MCP server is, for Connect to AI: the friendly URL to copy (ADR 0062), or null when MCP is not set up here.
+/// <paramref name="CanonicalUrl"/> is the address by id, which connections made with it keep using; <paramref name="SuggestedName"/>
+/// a name to give the connection in the AI app.
+/// </summary>
+public sealed record McpConnectInfo(string? McpUrl, string? CanonicalUrl = null, string? SuggestedName = null);
 
 /// <summary>
 /// The account's own connections (ADR 0046): listed and revoked from the session alone, like the rest of
@@ -55,6 +61,7 @@ public static class ConnectedAppEndpoints
         group.MapGet("/", ListAsync).WithName("ListConnectedApps");
         group.MapDelete("/{connectionId:guid}", RevokeConnectionAsync).WithName("RevokeConnectedApp");
         group.MapDelete("/{connectionId:guid}/proposals", StopProposalsAsync).WithName("StopConnectedAppProposals");
+        group.MapDelete("/{connectionId:guid}/schema", StopSchemaAsync).WithName("StopConnectedAppSchemaProposals");
 
         // Connect to AI: any member may connect their own client, so this is a Read.
         endpoints.MapGet("/api/universes/{universeId:guid}/mcp", ConnectInfoAsync)
@@ -92,6 +99,7 @@ public static class ConnectedAppEndpoints
                 connection.CreatedAt,
                 connection.LastUsedAt,
                 connection.CanPropose,
+                connection.CanProposeSchema,
                 HasAccess = connection.Universe.OwnerId == userId
                     || db.UniverseMemberships.Any(membership => membership.UniverseId == connection.UniverseId && membership.UserId == userId),
                 CanRefresh = connection.CreatedAt > exchanging
@@ -111,7 +119,8 @@ public static class ConnectedAppEndpoints
             row.CreatedAt,
             row.LastUsedAt,
             !row.HasAccess ? ConnectedAppStatus.NoAccess : row.CanRefresh ? ConnectedAppStatus.Active : ConnectedAppStatus.Expired,
-            row.CanPropose)));
+            row.CanPropose,
+            row.CanPropose && row.CanProposeSchema)));
     }
 
     private static async Task<IResult> RevokeConnectionAsync(
@@ -152,7 +161,25 @@ public static class ConnectedAppEndpoints
         var userId = principal.RequireUserId();
         var changed = await db.McpConnections
             .Where(row => row.Id == connectionId && row.UserId == userId)
-            .ExecuteUpdateAsync(set => set.SetProperty(row => row.CanPropose, false), cancellationToken);
+            .ExecuteUpdateAsync(set => set.SetProperty(row => row.CanPropose, false).SetProperty(row => row.CanProposeSchema, false), cancellationToken);
+        return changed == 0 ? Results.NotFound() : Results.NoContent();
+    }
+
+    /// <summary>
+    /// Takes back one connection's permission to propose schema (ADR 0062) and keeps it proposing content and reading. Checked
+    /// on every proposal and approval, so a schema proposal it already staged can then only be rejected. Getting it back means
+    /// connecting again and ticking it on the consent screen.
+    /// </summary>
+    private static async Task<IResult> StopSchemaAsync(
+        Guid connectionId,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var userId = principal.RequireUserId();
+        var changed = await db.McpConnections
+            .Where(row => row.Id == connectionId && row.UserId == userId)
+            .ExecuteUpdateAsync(set => set.SetProperty(row => row.CanProposeSchema, false), cancellationToken);
         return changed == 0 ? Results.NotFound() : Results.NoContent();
     }
 
@@ -168,7 +195,16 @@ public static class ConnectedAppEndpoints
             return denied;
         }
 
-        return Results.Ok(new McpConnectInfo(site.IsEnabled ? site.ResourceFor(universeId) : null));
+        if (!site.IsEnabled)
+        {
+            return Results.Ok(new McpConnectInfo(null));
+        }
+
+        var name = await db.Universes.AsNoTracking().Where(universe => universe.Id == universeId).Select(universe => universe.Name).SingleAsync(cancellationToken);
+        return Results.Ok(new McpConnectInfo(
+            McpAliases.Resource(site, await McpAliases.EnsureAsync(db, universeId, cancellationToken)),
+            site.ResourceFor(universeId),
+            $"LoreX - {name}"));
     }
 
     /// <summary>

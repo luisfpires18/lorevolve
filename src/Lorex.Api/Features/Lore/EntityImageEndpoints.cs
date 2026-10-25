@@ -400,6 +400,48 @@ public static partial class EntityImageEndpoints
         }
     }
 
+    /// <summary>
+    /// A first picture, whose objects are already stored, becomes the entry's image inside the caller's transaction - an
+    /// approved AI change's staged picture (ADR 0062). The same commit as an upload's: under the writer lock the entry must be
+    /// live and still have no picture, the hold is consumed first, and the change is recorded in the entry's history as an
+    /// upload records it. False when the entry is gone or has a picture now: nothing was written.
+    /// </summary>
+    internal static async Task<bool> AttachFirstAsync(
+        LorexDbContext db,
+        TimeProvider clock,
+        Guid universeId,
+        Guid entityId,
+        EntityImage stored,
+        StorageHold? hold,
+        string actorUserId,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+
+        var live = await db.Entities.AnyAsync(
+            candidate => candidate.Id == entityId && candidate.UniverseId == universeId && candidate.DeletedAt == null,
+            cancellationToken);
+        if (!live || await db.EntityImages.AnyAsync(image => image.EntityId == entityId, cancellationToken))
+        {
+            return false;
+        }
+
+        await AccountStorage.ConsumeAsync(db, clock, hold, cancellationToken);
+        stored.EntityId = entityId;
+        db.EntityImages.Add(stored);
+        await db.SaveChangesAsync(cancellationToken);
+        await EntityRevisions.CaptureAsync(
+            db,
+            entityId,
+            EntityRevisionKind.Edited,
+            restoredFromRevisionId: null,
+            actorUserId,
+            cancellationToken,
+            also: EntityRevisionChange.Image);
+        await transaction.CommitAsync(cancellationToken);
+        return true;
+    }
+
     /// <summary>How an upload's commit ended: it landed, or it lost a race and keeps nothing.</summary>
     private enum UploadOutcome
     {
@@ -864,7 +906,7 @@ public static partial class EntityImageEndpoints
             extensions: new Dictionary<string, object?> { ["code"] = OriginalUnavailableCode });
 
     /// <summary>The author's own filename, kept only as a label and never used to build a key.</summary>
-    private static string? TrimFileName(string? fileName)
+    internal static string? TrimFileName(string? fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName))
         {

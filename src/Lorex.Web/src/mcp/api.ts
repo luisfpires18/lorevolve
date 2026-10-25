@@ -3,7 +3,12 @@ import type { UniverseRoleValue } from '../universes/types'
 
 /** Where a universe's MCP server is (ADR 0046). Null when connecting AI apps is not set up on this LoreX. */
 export interface McpConnectInfo {
+  /** The universe's friendly address, such as /mcp/u/lotr-7k2f (ADR 0062). */
   mcpUrl: string | null
+  /** The address by id, which connections made with it keep using. */
+  canonicalUrl?: string | null
+  /** A name to give the connection in the AI app, such as "LoreX - LOTR". */
+  suggestedName?: string | null
 }
 
 /** What the consent screen shows about a request: the app as it claims to be, and the universe it asks for. */
@@ -21,6 +26,8 @@ export interface ConnectionRequestDetails {
   proposalsRequested: boolean
   /** The person's role could allow that. The screen offers it, unticked, only when both are true. */
   canPropose: boolean
+  /** The role could also let those proposals hold types, fields and groups (ADR 0062): a second unticked choice. */
+  canProposeSchema: boolean
 }
 
 /** Mirrors the backend enum, sent as its number like every enum this API sends. */
@@ -44,6 +51,8 @@ export interface ConnectedApp {
   status: ConnectedAppStatusValue
   /** The person also let it propose changes for review (ADR 0047). */
   canPropose: boolean
+  /** Those proposals may also hold types, fields and groups (ADR 0062). */
+  canProposeSchema: boolean
 }
 
 export function getMcpConnectInfo(universeId: string, signal?: AbortSignal) {
@@ -90,8 +99,18 @@ export function stopProposals(connectionId: string) {
   })
 }
 
+/** Takes back one connection's permission to propose types, fields and groups, and keeps it proposing content. */
+export function stopSchemaProposals(connectionId: string) {
+  return apiFetch<void>(`/api/profile/connected-apps/${connectionId}/schema`, {
+    method: 'DELETE',
+  })
+}
+
 /** The consent form's separate, unticked choice to let the app propose changes. Read by `OAuthEndpoints` on the server. */
 export const PROPOSE_FIELD = 'lorex_propose'
+
+/** The consent form's second unticked choice: proposals may hold schema too (ADR 0062). Only sent with PROPOSE_FIELD. */
+export const SCHEMA_FIELD = 'lorex_schema'
 
 /** What the connection lets an app read, in the words the screens use. */
 export const READABLE = [

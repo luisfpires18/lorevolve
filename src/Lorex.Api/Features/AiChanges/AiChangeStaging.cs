@@ -9,8 +9,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lorex.Api.Features.AiChanges;
 
-/// <summary>Where a submission came from, as the server knows it: never anything the AI said about itself.</summary>
-internal sealed record AiChangeOrigin(AiChangeSource Source, Guid? McpConnectionId = null, string? ClientName = null);
+/// <summary>
+/// Where a submission came from, as the server knows it: never anything the AI said about itself. <paramref name="SchemaAllowed"/>:
+/// this entry point may stage schema definitions (ADR 0062) - the assistant, asked by a signed-in person in propose mode, or an MCP
+/// connection the person explicitly allowed to propose schema.
+/// </summary>
+internal sealed record AiChangeOrigin(AiChangeSource Source, Guid? McpConnectionId = null, string? ClientName = null, bool SchemaAllowed = false);
 
 /// <summary>One problem with a submission: which change (by its place and its id, when it has them), and what is wrong.</summary>
 public sealed record AiChangeStageIssue(int? Index, string? Id, string Code, string Message, string? Field = null);
@@ -108,17 +112,18 @@ internal static partial class AiChangeStaging
 
             if (Action(input.Action) is not { } action || Resource(input.Resource) is not { } resource)
             {
-                Problem(AiChangeCodes.Invalid, "Say what the change does (create, update, remove or reorder) and to what (lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea).");
+                Problem(AiChangeCodes.Invalid, "Say what the change does (create, update, remove or reorder) and to what (lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule, idea, lore_type, lore_field or lore_group).");
                 continue;
             }
 
-            // Prose has one change: written over the manuscript or article there is, which the first save creates.
-            if (resource is AiChangeResource.Manuscript or AiChangeResource.Article && action == AiChangeAction.Create)
+            // Prose has one change: written over the manuscript or article there is, which the first save creates. So has the
+            // reckoning: there is always one, plain until periods are named.
+            if (resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Chronology or AiChangeResource.Progression && action == AiChangeAction.Create)
             {
                 action = AiChangeAction.Update;
             }
 
-            if (action == AiChangeAction.Remove && resource is AiChangeResource.Manuscript or AiChangeResource.Article)
+            if (action == AiChangeAction.Remove && resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Progression)
             {
                 Problem(AiChangeCodes.Unsupported, AiChangeText.NoTrash(resource));
                 continue;
@@ -131,13 +136,27 @@ internal static partial class AiChangeStaging
                 continue;
             }
 
+            if (AiChangePermissions.IsSchema(resource) && !origin.SchemaAllowed)
+            {
+                Problem(AiChangeCodes.NotAllowed, "This connection can't propose types, fields or groups. To allow it, connect the app again in LoreX and tick schema changes.");
+                continue;
+            }
+
+            if (action == AiChangeAction.Remove && AiChangePermissions.IsSchema(resource) && resource != AiChangeResource.LoreField)
+            {
+                Problem(AiChangeCodes.Unsupported, AiChangeText.NoSchemaRemoval(resource));
+                continue;
+            }
+
             if (!AiChangePermissions.MayStage(effective, resource, action))
             {
                 Problem(AiChangeCodes.NotAllowed, resource == AiChangeResource.Idea
                     ? "Ideas are the universe owner's own, so only the owner can have an AI propose them."
                     : effective == UniverseRole.Reviewer
                         ? "As a Reviewer, you can only have an AI suggest edits to existing lore entries, stories and scenes."
-                        : "Your role in this universe doesn't allow this change.");
+                        : AiChangePermissions.IsSchema(resource)
+                            ? "Only an owner or Editor can have an AI propose types, fields and groups."
+                            : "Your role in this universe doesn't allow this change.");
                 continue;
             }
 
@@ -148,10 +167,18 @@ internal static partial class AiChangeStaging
             }
         }
 
+        // Definitions and content never share a proposal: content can only use a definition once it exists, so the schema is
+        // reviewed and approved first, and the entries are proposed after with the ids it got (ADR 0062).
+        if (works.Any(work => AiChangePermissions.IsSchema(work.Resource)) && works.Any(work => !AiChangePermissions.IsSchema(work.Resource)))
+        {
+            Whole(AiChangeCodes.Unsupported, "Propose types, fields and groups on their own. Once they are approved, read get_change_options for their ids and propose the entries in a second proposal.");
+        }
+
         await new AiChangeChecker(db, universeId, userId).CheckAsync(works, cancellationToken);
         foreach (var work in works)
         {
-            foreach (var issue in work.Issues)
+            // A picture change is staged before its file exists: the person uploads it in LoreX afterwards.
+            foreach (var issue in work.Issues.Where(issue => issue.Code != AiChangeCodes.AwaitingUpload))
             {
                 issues.Add(new AiChangeStageIssue(work.Sequence, work.Key, issue.Code, issue.Message, issue.Field));
             }
@@ -216,6 +243,8 @@ internal static partial class AiChangeStaging
     private static AiChangeResource? Resource(string? text) => text?.Trim().ToLowerInvariant().Replace('-', '_') switch
     {
         "lore_entry" or "lore" or "entry" => AiChangeResource.LoreEntry,
+        "progression" or "lore_progression" => AiChangeResource.Progression,
+        "image" or "picture" or "media" => AiChangeResource.Media,
         "relationship" => AiChangeResource.Relationship,
         "story" => AiChangeResource.Story,
         "chapter" => AiChangeResource.Chapter,
@@ -227,6 +256,12 @@ internal static partial class AiChangeStaging
         "plot_beat" or "beat" => AiChangeResource.PlotBeat,
         "world_rule" or "rule" => AiChangeResource.WorldRule,
         "idea" => AiChangeResource.Idea,
+        "lore_type" or "type" => AiChangeResource.LoreType,
+        "lore_field" or "field" or "field_definition" => AiChangeResource.LoreField,
+        "lore_group" or "group" or "type_group" or "semantic_group" => AiChangeResource.LoreGroup,
+        "relationship_kind" or "relationship_type" or "relation_kind" => AiChangeResource.RelationshipType,
+        "chronology" or "calendar" or "date_periods" or "reckoning" => AiChangeResource.Chronology,
+        "event_kind" or "method" or "validation_term" or "term" => AiChangeResource.ValidationTerm,
         _ => null,
     };
 
@@ -257,7 +292,7 @@ internal static partial class AiChangeStaging
         public async Task<AiChangeWork?> BuildAsync(CancellationToken cancellationToken)
         {
             if (action is AiChangeAction.Update or AiChangeAction.Remove
-                && resource is not (AiChangeResource.Manuscript or AiChangeResource.Article)
+                && resource is not (AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Chronology)
                 && input.TargetId is null)
             {
                 Fail(AiChangeCodes.Invalid, "Say which item this changes: its id goes in targetId.", "targetId");
@@ -272,6 +307,15 @@ internal static partial class AiChangeStaging
                 (AiChangeResource.PlotBeat, _) => await PlotBeatAsync(cancellationToken),
                 (AiChangeResource.WorldRule, _) => await WorldRuleAsync(cancellationToken),
                 (AiChangeResource.Idea, _) => await IdeaAsync(cancellationToken),
+                (AiChangeResource.LoreType, _) => await LoreTypeAsync(cancellationToken),
+                (AiChangeResource.LoreField, _) => await LoreFieldAsync(cancellationToken),
+                (AiChangeResource.LoreGroup, _) => await LoreGroupAsync(cancellationToken),
+                (AiChangeResource.RelationshipType, _) => await RelationshipKindAsync(cancellationToken),
+                (AiChangeResource.Chronology, _) => await ChronologyAsync(cancellationToken),
+                (AiChangeResource.ValidationTerm, _) => await TermAsync(cancellationToken),
+                (AiChangeResource.Progression, _) => await ProgressionAsync(cancellationToken),
+                (AiChangeResource.Media, AiChangeAction.Create) => await MediaAsync(cancellationToken),
+                (AiChangeResource.Media, _) => Unsupported(),
 
                 (AiChangeResource.LoreEntry, AiChangeAction.Create) => Work(null, null, Lore(input.Lore, null)),
                 (AiChangeResource.LoreEntry, AiChangeAction.Update) => await StoredAsync(
@@ -344,6 +388,42 @@ internal static partial class AiChangeStaging
             }
 
             return built;
+        }
+
+        private AiChangeWork? Unsupported()
+        {
+            Fail(AiChangeCodes.Unsupported, "A picture change only adds a picture. Change, reorder or remove pictures by hand in LoreX.");
+            return null;
+        }
+
+        /// <summary>
+        /// A picture change carries no file: where it goes, and what the person should upload. The entry must be live and, for a
+        /// profile picture, have none yet - an AI change never replaces one, since the replaced picture is deleted for good -
+        /// and an appearance must be the entry's, with room in its gallery.
+        /// </summary>
+        private async Task<AiChangeWork?> MediaAsync(CancellationToken cancellationToken)
+        {
+            if (input.Image is not { Entry: { } entityId } image)
+            {
+                Fail(AiChangeCodes.Invalid, "Say which entry the picture is for, in image.entry.", "image.entry");
+                return null;
+            }
+
+            var note = image.Note?.Trim();
+            if (note is { Length: > AiChangeLimits.SummaryMaxLength })
+            {
+                Fail(AiChangeCodes.TooLarge, $"Keep the note under {AiChangeLimits.SummaryMaxLength} characters.", "image.note");
+                return null;
+            }
+
+            var work = Work(null, null, new MediaValues(entityId, image.Appearance, string.IsNullOrEmpty(note) ? null : note));
+            if (work is not null)
+            {
+                // Named on the change, so the review links to the entry the picture is for.
+                work.TargetId = entityId;
+            }
+
+            return work;
         }
 
         private AiChangeWork? Work(object? before, int? version, object? proposed) =>

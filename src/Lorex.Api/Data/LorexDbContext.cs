@@ -201,6 +201,12 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<AiChangeOperation> AiChangeOperations => Set<AiChangeOperation>();
 
+    /// <summary>Pictures handed over for pending AI media changes, quarantined until approved (ADR 0062).</summary>
+    public DbSet<AiChangeMedia> AiChangeMedia => Set<AiChangeMedia>();
+
+    /// <summary>Each universe's friendly MCP address, once made (ADR 0062).</summary>
+    public DbSet<Lorex.Api.Features.Mcp.McpUniverseAlias> McpUniverseAliases => Set<Lorex.Api.Features.Mcp.McpUniverseAlias>();
+
     public DbSet<Features.Admin.AdminAuditRecord> AdminAuditRecords => Set<Features.Admin.AdminAuditRecord>();
 
     protected override void OnModelCreating(ModelBuilder builder)

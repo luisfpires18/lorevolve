@@ -61,6 +61,16 @@ public static class ValidationTermEndpoints
             return denied;
         }
 
+        return await CreateCoreAsync(db, universeId, request, cancellationToken);
+    }
+
+    /// <summary>A term's create after the caller's access check: the route's, and an approved AI change's (ADR 0062). Answers 201.</summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        ValidationTermRequest request,
+        CancellationToken cancellationToken)
+    {
         if (!Enum.IsDefined(request.Kind))
         {
             return Results.ValidationProblem(new Dictionary<string, string[]> { ["kind"] = ["Say whether this is an event kind or a method."] });
@@ -142,6 +152,17 @@ public static class ValidationTermEndpoints
             token => RenameCoreAsync(universeId, term, request, db, token),
             cancellationToken);
     }
+
+    /// <summary>A rename inside the caller's reconciling transaction: an approved AI change's (ADR 0062), under the gate.</summary>
+    internal static async Task<IResult> RenameCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid termId,
+        ValidationTermRenameRequest request,
+        CancellationToken cancellationToken) =>
+        await db.ValidationTerms.FirstOrDefaultAsync(candidate => candidate.Id == termId && candidate.UniverseId == universeId, cancellationToken) is { } term
+            ? await RenameCoreAsync(universeId, term, request, db, cancellationToken)
+            : Results.NotFound();
 
     private static async Task<IResult> RenameCoreAsync(
         Guid universeId,
@@ -276,7 +297,7 @@ public static class ValidationTermEndpoints
         ];
     }
 
-    private static Dictionary<string, string[]>? ValidateName(string? name, ValidationTermKind kind)
+    internal static Dictionary<string, string[]>? ValidateName(string? name, ValidationTermKind kind)
     {
         var trimmed = name?.Trim();
 

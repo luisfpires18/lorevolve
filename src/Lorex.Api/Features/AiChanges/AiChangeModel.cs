@@ -48,8 +48,9 @@ public enum AiChangeOperationStatus
 }
 
 /// <summary>
-/// What an operation changes: the resources issue 32 approved, and the rest of a universe's authored content issue 45 added
-/// (ADR 0048). Never schema: no type, field, choice, relationship kind, calendar or vocabulary.
+/// What an operation changes: the resources issue 32 approved, the rest of a universe's authored content issue 45 added
+/// (ADR 0048), and the schema definitions issue 59 added (ADR 0062) - staged only by a person and a connection allowed to
+/// propose schema, and never in the same proposal as content.
 /// </summary>
 public enum AiChangeResource
 {
@@ -70,6 +71,30 @@ public enum AiChangeResource
 
     /// <summary>One of the universe owner's own ideas linked to this universe - never another account's (ADR 0030).</summary>
     Idea = 11,
+
+    /// <summary>A lore type's definition (ADR 0062). Schema.</summary>
+    LoreType = 12,
+
+    /// <summary>A field definition of a lore type, with its choices; removal archives it (ADR 0062). Schema.</summary>
+    LoreField = 13,
+
+    /// <summary>A semantic group of lore types (ADR 0062). Schema.</summary>
+    LoreGroup = 14,
+
+    /// <summary>A relationship kind's definition (ADR 0062). Schema.</summary>
+    RelationshipType = 15,
+
+    /// <summary>The universe's reckoning - date periods and a custom calendar - written whole, nothing removed or reordered (ADR 0062). Schema.</summary>
+    Chronology = 16,
+
+    /// <summary>An event kind or a method of the rule vocabulary (ADR 0034, ADR 0062). Schema.</summary>
+    ValidationTerm = 17,
+
+    /// <summary>One entry's progression - eras, forms, abilities, appearances - added to or changed, never removed (ADR 0062). Content.</summary>
+    Progression = 18,
+
+    /// <summary>A picture for an entry or one of its appearances, uploaded by a person in LoreX and quarantined until approved (ADR 0062). Content.</summary>
+    Media = 19,
 }
 
 public enum AiChangeAction
@@ -259,7 +284,7 @@ public sealed class AiChangeOperationConfiguration : IEntityTypeConfiguration<Ai
         builder.ToTable("AiChangeOperations", table =>
         {
             table.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
-            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)");
+            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)");
             table.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
         });
         builder.HasKey(operation => operation.Id);

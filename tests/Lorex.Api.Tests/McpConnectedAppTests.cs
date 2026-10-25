@@ -177,11 +177,17 @@ public sealed class McpConnectedAppTests : IDisposable
     public async Task Connect_to_AI_gives_members_the_universe_s_URL_and_outsiders_nothing()
     {
         var w = await NewSharedWorld(_api, "cainfo");
+        // One friendly address for every member (ADR 0062), and the address by id beside it.
+        var urls = new HashSet<string?>();
         foreach (var who in Members)
         {
             var info = await w.Client(who).GetFromJsonAsync<McpConnectInfo>($"/api/universes/{w.U}/mcp");
-            Assert.Equal(Resource(w.U), info!.McpUrl);
+            Assert.Equal(Resource(w.U), info!.CanonicalUrl);
+            Assert.StartsWith($"{LorexApiFactory.Origin}/mcp/u/", info.McpUrl, StringComparison.Ordinal);
+            urls.Add(info.McpUrl);
         }
+
+        Assert.Single(urls);
 
         Assert.Equal(HttpStatusCode.NotFound, (await w.Outsider.GetAsync($"/api/universes/{w.U}/mcp")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await w.Owner.GetAsync($"/api/universes/{Guid.NewGuid()}/mcp")).StatusCode);

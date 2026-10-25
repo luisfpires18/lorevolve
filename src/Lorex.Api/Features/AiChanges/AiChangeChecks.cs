@@ -100,6 +100,9 @@ public static class AiChangeCodes
     public const string Unsupported = "unsupported";
     public const string TooLarge = "too_large";
 
+    /// <summary>A picture change whose file the person has not uploaded in LoreX yet: it waits, and can't be approved until then.</summary>
+    public const string AwaitingUpload = "awaiting_upload";
+
     // ---------- The refusals of the review routes ----------
     public const string ProposalChanged = "ai_change_proposal_changed";
     public const string AlreadyDecided = "ai_change_already_decided";
@@ -136,6 +139,14 @@ internal static class AiChangeJson
                 AiChangeResource.PlotBeat => Read<PlotBeatValues>(json),
                 AiChangeResource.WorldRule => Read<WorldRuleValues>(json),
                 AiChangeResource.Idea => Read<IdeaValues>(json),
+                AiChangeResource.LoreType => Read<TypeValues>(json),
+                AiChangeResource.LoreField => Read<FieldValues>(json),
+                AiChangeResource.LoreGroup => Read<GroupValues>(json),
+                AiChangeResource.RelationshipType => Read<RelationshipKindValues>(json),
+                AiChangeResource.Chronology => Read<ChronologyValues>(json),
+                AiChangeResource.ValidationTerm => Read<TermValues>(json),
+                AiChangeResource.Progression => Read<ProgressionValues>(json),
+                AiChangeResource.Media => Read<MediaValues>(json),
                 _ => Read<TimelineValues>(json),
             },
         };
@@ -153,6 +164,13 @@ internal static class AiChangeJson
         (AiChangeResource.PlotBeat, _) => Read<PlotBeatValues>(json),
         (AiChangeResource.WorldRule, _) => Read<WorldRuleValues>(json),
         (AiChangeResource.Idea, _) => Read<IdeaValues>(json),
+        (AiChangeResource.LoreType, _) => Read<TypeValues>(json),
+        (AiChangeResource.LoreField, _) => Read<FieldValues>(json),
+        (AiChangeResource.LoreGroup, _) => Read<GroupValues>(json),
+        (AiChangeResource.RelationshipType, _) => Read<RelationshipKindValues>(json),
+        (AiChangeResource.Chronology, _) => Read<ChronologyValues>(json),
+        (AiChangeResource.ValidationTerm, _) => Read<TermValues>(json),
+        (AiChangeResource.Progression, _) => Read<Progression.ProgressionSnapshot>(json),
         _ => throw new InvalidOperationException($"A {resource} change keeps no stored form."),
     };
 
@@ -363,9 +381,19 @@ internal static class AiChangePermissions
     public static UniverseCapability ToApply(AiChangeAction action) =>
         action == AiChangeAction.Remove ? UniverseCapability.ManageTrash : UniverseCapability.EditContent;
 
+    /// <summary>
+    /// A definition rather than content (ADR 0062): staged only where schema proposing was allowed, never beside content, and
+    /// only by a role that edits types by hand - a Reviewer's suggestions never reach the schema.
+    /// </summary>
+    public static bool IsSchema(AiChangeResource resource) =>
+        resource is AiChangeResource.LoreType or AiChangeResource.LoreField or AiChangeResource.LoreGroup
+            or AiChangeResource.RelationshipType or AiChangeResource.Chronology or AiChangeResource.ValidationTerm;
+
     public static bool MayStage(UniverseRole role, AiChangeResource resource, AiChangeAction action) =>
         resource == AiChangeResource.Idea
             ? role == UniverseRole.Owner
+            : IsSchema(resource)
+                ? UniverseAccess.Allows(role, UniverseCapability.EditContent)
             : UniverseAccess.Allows(role, ToApply(action))
                 || (action == AiChangeAction.Update
                     && resource is AiChangeResource.LoreEntry or AiChangeResource.Story or AiChangeResource.Scene
@@ -376,7 +404,9 @@ internal static class AiChangePermissions
         UniverseAccess.Allows(role, UniverseCapability.EditContent) || UniverseAccess.Allows(role, UniverseCapability.SuggestChanges);
 
     public static bool MayApprove(UniverseRole role, AiChangeResource resource, AiChangeAction action) =>
-        resource == AiChangeResource.Idea ? role == UniverseRole.Owner : UniverseAccess.Allows(role, ToApply(action));
+        resource == AiChangeResource.Idea ? role == UniverseRole.Owner
+            : IsSchema(resource) ? UniverseAccess.Allows(role, UniverseCapability.EditContent)
+            : UniverseAccess.Allows(role, ToApply(action));
 
     /// <summary>Reads every proposal in the universe, and edits and rejects their changes: the people who could approve them.</summary>
     public static bool MayReview(UniverseRole role) => UniverseAccess.Allows(role, UniverseCapability.EditContent);
@@ -425,6 +455,10 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
         }
 
         await LoadAsync(works, cancellationToken);
+        if (works.Any(work => AiChangePermissions.IsSchema(work.Resource)))
+        {
+            await LoadSchemaAsync(cancellationToken);
+        }
 
         foreach (var work in works.Where(work => work.IsPending))
         {
@@ -453,6 +487,30 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
                     break;
                 case (AiChangeResource.Idea, _):
                     await CheckIdeaAsync(work, cancellationToken);
+                    break;
+                case (AiChangeResource.LoreType, _):
+                    await CheckLoreTypeAsync(work, works, cancellationToken);
+                    break;
+                case (AiChangeResource.LoreField, _):
+                    await CheckLoreFieldAsync(work, works, cancellationToken);
+                    break;
+                case (AiChangeResource.LoreGroup, _):
+                    await CheckLoreGroupAsync(work, works, cancellationToken);
+                    break;
+                case (AiChangeResource.RelationshipType, _):
+                    await CheckRelationshipKindAsync(work, works, cancellationToken);
+                    break;
+                case (AiChangeResource.Chronology, _):
+                    await CheckChronologyAsync(work, cancellationToken);
+                    break;
+                case (AiChangeResource.ValidationTerm, _):
+                    await CheckTermAsync(work, works, cancellationToken);
+                    break;
+                case (AiChangeResource.Progression, _):
+                    await CheckProgressionAsync(work, cancellationToken);
+                    break;
+                case (AiChangeResource.Media, _):
+                    await CheckMediaAsync(work, works, cancellationToken);
                     break;
                 case (AiChangeResource.LoreEntry, _):
                     await CheckLoreAsync(work, cancellationToken);
@@ -534,6 +592,18 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
             .. beat.Lore.Select(lore => (lore, AiChangeResource.LoreEntry, "lore")),
         ],
         IdeaValues idea => idea.References.Select(reference => (reference.Target, IdeaKind(reference.Kind), "references")),
+        MediaValues media => [(AiRef.To(media.EntityId), AiChangeResource.LoreEntry, "entry")],
+        TypeValues type =>
+        [
+            .. type.Parent is { } parent ? [(parent, AiChangeResource.LoreType, "parent")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
+            .. type.Groups.Select(group => (group, AiChangeResource.LoreGroup, "groups")),
+        ],
+        FieldValues field =>
+        [
+            (field.Type, AiChangeResource.LoreType, "type"),
+            .. field.TargetType is { } linksToType ? [(linksToType, AiChangeResource.LoreType, "linksToType")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
+            .. field.TargetGroup is { } linksToGroup ? [(linksToGroup, AiChangeResource.LoreGroup, "linksToGroup")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
+        ],
         OrderValues order =>
         [
             (order.Story, AiChangeResource.Story, "story"),
@@ -1111,6 +1181,11 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
             AiChangeResource.Chapter => await AiChangeSnapshots.ChapterAsync(db, universeId, target, cancellationToken) is { } chapter
                 ? (true, null, AiChangeSnapshots.Same(chapter, work.Before))
                 : (false, null, true),
+
+            // An archived field is gone from forms already: archiving it again would be nothing, so it is not found here.
+            AiChangeResource.LoreField => await AiChangeSnapshots.FieldAsync(db, universeId, target, cancellationToken) is { Archived: false } field
+                ? (true, (int?)field.Version, true)
+                : (false, null, true),
             _ => (false, null, true),
         };
 
@@ -1262,6 +1337,8 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
         AiChangeResource.Scene => "a scene",
         AiChangeResource.PlotArc => "a plot arc",
         AiChangeResource.PlotBeat => "a plot beat",
+        AiChangeResource.LoreType => "a lore type",
+        AiChangeResource.LoreGroup => "a group",
         _ => "that",
     };
 }
@@ -1308,6 +1385,17 @@ internal static class AiChangeText
     public static string NoTrash(AiChangeResource resource) => resource switch
     {
         AiChangeResource.Article => "An article isn't removed. To empty one, replace it with no blocks, and its saved versions keep the old article.",
+        AiChangeResource.Progression => "An AI change never removes an era, form, ability or appearance. Remove one by hand on the entry's Progression page, where it shows what goes with it.",
         _ => "A manuscript isn't removed. To empty one, replace its text, and its saved versions keep the old prose.",
+    };
+
+    /// <summary>Why an AI can't remove a definition: none has a Trash, and LoreX deletes one only by hand, only once nothing uses it.</summary>
+    public static string NoSchemaRemoval(AiChangeResource resource) => resource switch
+    {
+        AiChangeResource.LoreType => "An AI change can't delete a lore type. Delete it by hand in LoreX's Types, once no entry, nested type or field uses it.",
+        AiChangeResource.LoreGroup => "An AI change can't delete a group. Delete it by hand in LoreX's Types, once no field is limited to it.",
+        AiChangeResource.RelationshipType => "An AI change can't delete a relationship kind. Delete it by hand in LoreX, once no relationship uses it.",
+        AiChangeResource.Chronology => "An AI change can't remove the reckoning. Date periods and months are removed by hand in Chronology, once nothing is dated in them.",
+        _ => "An AI change can't delete an event kind or a method. Delete it by hand in World rules, once no rule or moment names it.",
     };
 }

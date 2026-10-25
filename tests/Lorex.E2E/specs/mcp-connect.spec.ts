@@ -110,7 +110,8 @@ test.describe('Connect to AI', () => {
     await expect(drawer.getByRole('heading', { name: universe.name })).toBeVisible()
 
     const url = page.getByTestId('connect-ai-url')
-    await expect(url).toHaveValue(new RegExp(`/mcp/universes/${universe.id}$`))
+    // The friendly address (ADR 0062): the universe's name made readable, and a random suffix.
+    await expect(url).toHaveValue(/\/mcp\/u\/[a-z0-9]+(-[a-z0-9]+)*$/)
     await expect(url).toHaveValue(await mcpUrlOf(page, universe.id))
     await expect(drawer).toContainText('can’t create, edit or delete anything')
     await expect(drawer).toContainText('sign in to LoreX')

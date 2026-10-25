@@ -71,6 +71,14 @@ internal static class AiChangeViews
             return "The app that sent these changes was disconnected or can no longer propose changes, so they can only be rejected.";
         }
 
+        // Schema changes need the app's schema permission still in place, as they did when staged (ADR 0062).
+        if (proposal.Source == AiChangeSource.Mcp
+            && proposal.Operations.Any(operation => AiChangePermissions.IsSchema(operation.Resource))
+            && !await db.McpConnections.AnyAsync(connection => connection.Id == proposal.McpConnectionId && connection.CanProposeSchema, cancellationToken))
+        {
+            return "The app that sent these changes can no longer propose types, fields and groups, so they can only be rejected.";
+        }
+
         return null;
     }
 
@@ -110,6 +118,11 @@ internal static class AiChangeViews
             .ToDictionary(row => row.Id, row => row.Name);
 
         var rows = proposal.Operations.ToDictionary(operation => operation.Id);
+        var staged = works.Any(work => work.Proposed is MediaValues)
+            ? await db.AiChangeMedia.AsNoTracking()
+                .Where(media => media.UniverseId == universeId && rows.Keys.Contains(media.OperationId))
+                .ToDictionaryAsync(media => media.OperationId, cancellationToken)
+            : [];
         var open = proposal.Status == AiChangeProposalStatus.Open;
         var operations = new List<AiChangeOperationResponse>();
         foreach (var work in works)
@@ -138,7 +151,11 @@ internal static class AiChangeViews
                 row.ResultId,
                 resolvers.GetValueOrDefault(row.Id),
                 row.ResolvedAt is { } at ? DateTime.SpecifyKind(at, DateTimeKind.Utc) : null,
-                row.ResolutionNote));
+                row.ResolutionNote,
+                work.Proposed is not MediaValues ? null
+                    : staged.TryGetValue(work.OperationId, out var file)
+                        ? new AiChangeMediaInfo(true, file.FileName, file.ContentType, file.Width, file.Height, file.ByteSize, DateTime.SpecifyKind(file.UploadedAt, DateTimeKind.Utc))
+                        : new AiChangeMediaInfo(false, null, null, null, null, null, null)));
         }
 
         return new AiChangeProposalResponse(
@@ -188,11 +205,15 @@ internal static class AiChangeViews
                     PlotBeatValues beat => beat.Title,
                     WorldRuleValues rule => rule.Title,
                     IdeaValues idea => idea.Title,
+                    FieldValues field => $"{field.Name} on {names.TypeRef(field.Type)}",
                     _ => "this",
                 };
-                return (work.Resource == AiChangeResource.Idea
-                    ? $"Delete the idea {named} (it stays in your deleted ideas)"
-                    : $"Move {Noun(work.Resource)} {named} to the Trash", lines);
+                return (work.Resource switch
+                {
+                    AiChangeResource.Idea => $"Delete the idea {named} (it stays in your deleted ideas)",
+                    AiChangeResource.LoreField => $"Archive the field {named}",
+                    _ => $"Move {Noun(work.Resource)} {named} to the Trash",
+                }, lines);
 
             case (OrderValues order, var before):
             {
@@ -266,6 +287,121 @@ internal static class AiChangeViews
                 Line("Idea", old is null ? null : Blank(old.Body), Blank(idea.Body));
                 Line("Refers to", Join(old?.References.Select(names.Reference)), Join(idea.References.Select(names.Reference)));
                 return (work.Action == AiChangeAction.Create ? $"New idea: {idea.Title}" : $"Edit idea: {old?.Title ?? idea.Title}", lines);
+            }
+
+            case (TypeValues type, var before):
+            {
+                var old = before as TypeValues;
+                Line("Name", old?.Name, type.Name);
+                Line("Description", old?.Description, type.Description);
+                Line("Icon", old?.Icon, type.Icon);
+                Line("Colour", old?.AccentColor, type.AccentColor);
+                Line("Sits beneath", old is null ? null : names.Parent(old.Parent), names.Parent(type.Parent));
+                Line("Groups", Join(old?.Groups.Select(names.Group)), Join(type.Groups.Select(names.Group)));
+                Line("Family Tree", old is null ? null : YesNo(old.FamilyTreeEligible), YesNo(type.FamilyTreeEligible));
+                return (work.Action == AiChangeAction.Create ? $"New lore type: {type.Name}" : $"Edit lore type: {old?.Name ?? type.Name}", lines);
+            }
+
+            case (FieldValues field, var before):
+            {
+                var old = before as FieldValues;
+                Line("Type", old is null ? null : names.TypeRef(old.Type), names.TypeRef(field.Type));
+                Line("Name", old?.Name, field.Name);
+                Line("Kind", old is null ? null : FieldKind(old.Kind), FieldKind(field.Kind));
+                Line("Required", old is null ? null : YesNo(old.Required), YesNo(field.Required));
+                Line("Default", old?.DefaultValue, field.DefaultValue);
+                Line("Choices", Join(old?.Options), Join(field.Options));
+                Line("Links to", old is null ? null : names.Links(old), names.Links(field));
+                return (work.Action == AiChangeAction.Create
+                    ? $"New field on {names.TypeRef(field.Type)}: {field.Name}"
+                    : $"Edit field {old?.Name ?? field.Name} on {names.TypeRef(field.Type)}", lines);
+            }
+
+            case (GroupValues group, var before):
+            {
+                var old = before as GroupValues;
+                Line("Name", old?.Name, group.Name);
+                Line("Family Tree", old is null ? null : YesNo(old.FamilyTreeEnabled), YesNo(group.FamilyTreeEnabled));
+                return (work.Action == AiChangeAction.Create ? $"New group: {group.Name}" : $"Edit group: {old?.Name ?? group.Name}", lines);
+            }
+
+            case (RelationshipKindValues kind, var before):
+            {
+                var old = before as RelationshipKindValues;
+                Line("Name", old?.Name, kind.Name);
+                Line("Reads back as", old is null ? null : old.Symmetric ? "The same both ways" : old.InverseName, kind.Symmetric ? "The same both ways" : kind.InverseName);
+                Line("Description", old?.Description, kind.Description);
+                return (work.Action == AiChangeAction.Create ? $"New relationship kind: {kind.Name}" : $"Edit relationship kind: {old?.Name ?? kind.Name}", lines);
+            }
+
+            case (ChronologyValues reckoning, var before):
+            {
+                var old = before as ChronologyValues;
+                string? Periods(List<DatePeriodValue>? eras) => eras is null ? null
+                    : Numbered(eras.Select(era => $"{era.Name}{(era.Abbreviation is { } label ? $" ({label})" : string.Empty)}{(era.Direction == ChronologyEraDirection.Descending ? ", counting down" : string.Empty)}"));
+                string? Year(List<MonthValue>? months) => months is null ? "Simple dates" : Numbered(months.Select(month => $"{month.Name} ({month.Days} days)"));
+                Line("Date periods", Periods(old?.Eras), Periods(reckoning.Eras));
+                Line("Calendar", old is null ? null : Year(old.Months), Year(reckoning.Months));
+                return ("Change the date periods and calendar", lines);
+            }
+
+            case (TermValues term, var before):
+            {
+                var old = before as TermValues;
+                var noun = term.Kind == RuleValidation.ValidationTermKind.EventKind ? "event kind" : "method";
+                Line("Name", old?.Name, term.Name);
+                return (work.Action == AiChangeAction.Create ? $"New {noun}: {term.Name}" : $"Rename {noun} {old?.Name ?? term.Name}", lines);
+            }
+
+            case (MediaValues media, _):
+            {
+                if (media.Note is { } note)
+                {
+                    lines.Add(new AiChangeLine("Picture of", null, note));
+                }
+
+                var entry = names.Entry(AiRef.To(media.EntityId));
+                return (media.AppearanceId is { } look
+                    ? $"Add a picture to {entry}'s appearance {names.Appearance(look)}"
+                    : $"Add a profile picture to {entry}", lines);
+            }
+
+            case (ProgressionValues progression, var before):
+            {
+                var old = before as Progression.ProgressionSnapshot;
+                var now = progression.Form;
+                var eraNames = (old?.Eras ?? []).Concat(now.Eras).Where(era => era.Id is not null).GroupBy(era => era.Id!.Value).ToDictionary(group => group.Key, group => group.Last().Name ?? string.Empty);
+                var formNames = (old?.Forms ?? []).Concat(now.Forms ?? []).Where(form => form.Id is not null).GroupBy(form => form.Id!.Value).ToDictionary(group => group.Key, group => group.Last().Name ?? string.Empty);
+                string? In(string label, IEnumerable<Guid>? ids, Dictionary<Guid, string> named) =>
+                    ids?.ToList() is { Count: > 0 } list ? $"; {label} {string.Join(", ", list.Select(id => named.GetValueOrDefault(id, "?")))}" : null;
+                string EraText(Progression.EraInput era) => $"{era.Name}{(era.Start is null && era.End is null ? string.Empty : $" ({names.Point(era.Start) ?? "?"} to {names.Point(era.End) ?? "?"})")}"
+                    + (era.Fields is { Count: > 0 } fields ? $"; {Count(fields.Count, "field")} differ" : string.Empty);
+                string FormText(Progression.FormInput form) => $"{form.Name}{In("in eras", form.EraIds, eraNames)}{(form.UnlockEraId is { } unlock ? $"; first in {eraNames.GetValueOrDefault(unlock, "?")}" : string.Empty)}";
+                string AbilityText(Progression.AbilityInput ability) => $"{ability.Name}{In("of forms", ability.FormIds, formNames)}{In("in eras", ability.EraIds, eraNames)}";
+                string LookText(Progression.AppearanceInput look) => $"{look.Label}{In("in eras", look.EraIds, eraNames)}{In("as forms", look.FormIds, formNames)}";
+
+                void Items<T>(string noun, IReadOnlyList<T>? was, IReadOnlyList<T>? wanted, Func<T, Guid?> id, Func<T, string> text)
+                {
+                    var stored = (was ?? []).ToDictionary(item => id(item)!.Value);
+                    foreach (var item in wanted ?? [])
+                    {
+                        var after = text(item);
+                        if (!stored.TryGetValue(id(item)!.Value, out var prior))
+                        {
+                            lines.Add(new AiChangeLine($"New {noun}", null, after));
+                        }
+                        else if (text(prior) is var earlier && earlier != after)
+                        {
+                            lines.Add(new AiChangeLine(Capital(noun), earlier, after));
+                        }
+                    }
+                }
+
+                Items("era", old?.Eras, now.Eras, era => era.Id, EraText);
+                Items("form", old?.Forms, now.Forms, form => form.Id, FormText);
+                Items("ability", old?.Abilities, now.Abilities, ability => ability.Id, AbilityText);
+                Items("appearance", old?.Appearances, now.Appearances, look => look.Id, LookText);
+                return ($"Edit the progression of {names.Entry(AiRef.To(progression.EntityId))}", lines);
             }
 
             case (LoreValues lore, var before):
@@ -500,12 +636,35 @@ internal static class AiChangeViews
             case AiChangeResource.Idea:
                 notes[0] = "It goes to your deleted ideas, not away for good: it can be restored from there with its references.";
                 break;
+
+            case AiChangeResource.LoreField:
+                var holding = await db.EntityFieldValues.Where(value => value.FieldDefinitionId == id).Select(value => value.EntityId).Distinct().CountAsync(cancellationToken);
+                notes[0] = "It is archived, not deleted: it leaves entry forms, filters and the rules, and can be restored from Types with everything it held.";
+                notes.Add(holding == 0 ? "No entry has a value for it." : holding == 1 ? "1 entry keeps its value for it while it is archived." : $"{holding} entries keep their values for it while it is archived.");
+                break;
         }
 
         return new AiChangeImpact(notes);
     }
 
     private static string Count(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
+
+    private static string YesNo(bool value) => value ? "Yes" : "No";
+
+    private static string Capital(string word) => word.Length == 0 ? word : char.ToUpperInvariant(word[0]) + word[1..];
+
+    /// <summary>A field's kind as the Types screen names it.</summary>
+    private static string FieldKind(EntityFieldKind kind) => kind switch
+    {
+        EntityFieldKind.ShortText => "Short text",
+        EntityFieldKind.LongText => "Long text",
+        EntityFieldKind.Number => "Number",
+        EntityFieldKind.Boolean => "Yes / no",
+        EntityFieldKind.Date => "Date",
+        EntityFieldKind.Select => "One choice",
+        EntityFieldKind.MultiSelect => "Choices",
+        _ => "Link to an entry",
+    };
 
     private static string Noun(AiChangeResource resource) => resource switch
     {
@@ -552,6 +711,8 @@ internal static class AiChangeViews
         private Dictionary<Guid, string> _arcs = [];
         private Dictionary<Guid, string> _beats = [];
         private Dictionary<Guid, string> _terms = [];
+        private Dictionary<Guid, string> _groups = [];
+        private Dictionary<Guid, string> _appearances = [];
         private Dictionary<string, AiChangeWork> _pending = [];
         private UniverseChronology _chronology = UniverseChronology.Plain;
 
@@ -582,12 +743,32 @@ internal static class AiChangeViews
                 _arcs = await db.PlotArcs.AsNoTracking().Where(arc => arc.Story!.UniverseId == universeId && ids.Contains(arc.Id)).ToDictionaryAsync(arc => arc.Id, arc => arc.Title, cancellationToken),
                 _beats = await db.PlotBeats.AsNoTracking().Where(beat => beat.PlotArc!.Story!.UniverseId == universeId && ids.Contains(beat.Id)).ToDictionaryAsync(beat => beat.Id, beat => beat.Title, cancellationToken),
                 _terms = await db.ValidationTerms.AsNoTracking().Where(term => term.UniverseId == universeId).ToDictionaryAsync(term => term.Id, term => term.Name, cancellationToken),
+                _groups = await db.EntityTypeGroups.AsNoTracking().Where(group => group.UniverseId == universeId).ToDictionaryAsync(group => group.Id, group => group.Name, cancellationToken),
+                _appearances = await db.EntityAppearances.AsNoTracking()
+                    .Where(look => look.Entity!.UniverseId == universeId && ids.Contains(look.EntityId))
+                    .ToDictionaryAsync(look => look.Id, look => look.Label, cancellationToken),
                 _pending = works.ToDictionary(work => work.Key, StringComparer.Ordinal),
                 _chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken),
             };
         }
 
         public string Type(Guid id) => _types.GetValueOrDefault(id) ?? "Unknown type";
+
+        /// <summary>A type an existing id names, or one this proposal creates: "Kingdom (new)".</summary>
+        public string TypeRef(AiRef reference) => Named(reference, _types, work => (work.Proposed as TypeValues)?.Name);
+
+        public string Group(AiRef reference) => Named(reference, _groups, work => (work.Proposed as GroupValues)?.Name);
+
+        public string Appearance(Guid id) => _appearances.GetValueOrDefault(id) ?? "that isn't there any more";
+
+        public string Parent(AiRef? reference) => reference is null ? "Nothing (top level)" : TypeRef(reference);
+
+        /// <summary>What a link field accepts, in words; null for a field that is not a link.</summary>
+        public string? Links(FieldValues field) => field.Kind != EntityFieldKind.EntityReference
+            ? null
+            : field.TargetType is { } type ? $"Entries of type {TypeRef(type)}"
+            : field.TargetGroup is { } group ? $"Entries of any type in the group {Group(group)}"
+            : "Any entry";
 
         public string Field(Guid id) => _fields.TryGetValue(id, out var field) ? field.Name : "Unknown field";
 

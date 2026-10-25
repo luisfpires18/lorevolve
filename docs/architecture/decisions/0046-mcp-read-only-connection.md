@@ -224,3 +224,9 @@ and `measure_map_distance`. Every location carries an absolute link that opens t
 a distance is given only on one calibrated map with confirmed pins and says its method, its unit as the creator named it,
 and the picture it rests on; otherwise the result says what is missing. The connection's gate, the live-entries rule and
 the one-universe rule apply unchanged. Sixteen tools in all.
+
+## Amendment (2026-10-25, issue 59, ADR 0062)
+
+A universe also answers at a friendly address, `{origin}/mcp/u/{alias}`, resolved server-side to the same one universe; the
+address by id and every connection made with it are unchanged. A token's audience is the address the app asked for, in either
+spelling. ADR 0062 says how an alias is made, kept and answered.

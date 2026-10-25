@@ -35,7 +35,13 @@ public sealed class McpCaller
     /// </summary>
     public bool CanPropose { get; private set; }
 
-    internal void Allow(Guid universeId, string userId, string universeName, Guid connectionId, string? clientName, bool canPropose)
+    /// <summary>
+    /// Proposals may also hold schema - types, fields, groups (ADR 0062): <see cref="CanPropose"/>, and the person's separate
+    /// tick for schema, which Connected Apps can take back on its own.
+    /// </summary>
+    public bool CanProposeSchema { get; private set; }
+
+    internal void Allow(Guid universeId, string userId, string universeName, Guid connectionId, string? clientName, bool canPropose, bool canProposeSchema = false)
     {
         UniverseId = universeId;
         UserId = userId;
@@ -43,6 +49,7 @@ public sealed class McpCaller
         ConnectionId = connectionId;
         ClientName = clientName;
         CanPropose = canPropose;
+        CanProposeSchema = canPropose && canProposeSchema;
         IsAllowed = true;
     }
 }
@@ -99,15 +106,33 @@ public static class McpEndpoints
             .WithName("GetMcpResourceMetadata")
             .AllowAnonymous();
 
-        var pattern = $"{McpSite.ResourcePathPrefix}{{universeId:guid}}";
-        endpoints.MapMcp(pattern).WithMetadata(new McpUniverseEndpointMetadata()).WithTags("MCP");
-        endpoints.MapMethods(pattern, SessionMethods, (HttpContext http) =>
-            {
-                http.Response.Headers.Allow = HttpMethods.Post;
-                return Results.StatusCode(StatusCodes.Status405MethodNotAllowed);
-            })
-            .WithMetadata(new McpUniverseEndpointMetadata())
-            .WithTags("MCP");
+        // The friendly address (ADR 0062): answered alike for every alias of the right shape, so it says nothing about which exist.
+        endpoints.MapGet($"{McpSite.ResourceMetadataPrefix}{McpAliases.PathPrefix}{{alias}}", (string alias) =>
+                McpAliases.IsAlias(alias)
+                    ? Results.Json(new Dictionary<string, object>
+                    {
+                        ["resource"] = McpAliases.Resource(site, alias),
+                        ["authorization_servers"] = (string[])[site.Issuer.AbsoluteUri],
+                        ["scopes_supported"] = Scopes,
+                        ["bearer_methods_supported"] = BearerMethods,
+                        ["resource_name"] = "LoreX universe",
+                    })
+                    : Results.NotFound())
+            .WithTags("MCP")
+            .WithName("GetMcpAliasResourceMetadata")
+            .AllowAnonymous();
+
+        foreach (var pattern in (string[])[$"{McpSite.ResourcePathPrefix}{{universeId:guid}}", $"{McpAliases.PathPrefix}{{alias}}"])
+        {
+            endpoints.MapMcp(pattern).WithMetadata(new McpUniverseEndpointMetadata()).WithTags("MCP");
+            endpoints.MapMethods(pattern, SessionMethods, (HttpContext http) =>
+                {
+                    http.Response.Headers.Allow = HttpMethods.Post;
+                    return Results.StatusCode(StatusCodes.Status405MethodNotAllowed);
+                })
+                .WithMetadata(new McpUniverseEndpointMetadata())
+                .WithTags("MCP");
+        }
 
         return endpoints;
     }
@@ -134,8 +159,29 @@ public static class McpEndpoints
     private static async Task<IResult?> RefuseAsync(HttpContext http)
     {
         var site = http.RequestServices.GetRequiredService<McpSite>();
-        var universeId = Guid.Parse((string)http.GetRouteValue("universeId")!);
         var cancellationToken = http.RequestAborted;
+        var db = http.RequestServices.GetRequiredService<LorexDbContext>();
+
+        // Either address of one universe: by id, or by its friendly alias (ADR 0062), resolved here and nowhere else. An alias
+        // that names nothing gets the same challenge as any address, so the gate says nothing about which aliases exist.
+        Guid? addressed;
+        string metadata;
+        if (http.GetRouteValue("universeId") is string id)
+        {
+            addressed = Guid.Parse(id);
+            metadata = site.ResourceMetadataFor(addressed.Value);
+        }
+        else
+        {
+            var alias = ((string)http.GetRouteValue("alias")!).ToLowerInvariant();
+            if (!McpAliases.IsAlias(alias))
+            {
+                return Results.NotFound();
+            }
+
+            addressed = await McpAliases.UniverseOfAliasAsync(db, alias, cancellationToken);
+            metadata = McpAliases.ResourceMetadata(site, alias);
+        }
 
         // DNS rebinding (Streamable HTTP: MUST): a page on another origin may not drive this endpoint from a browser.
         // Server-side clients send no Origin at all.
@@ -149,23 +195,29 @@ public static class McpEndpoints
         if (result.Principal is not { } principal)
         {
             // No token at all is the start of discovery; a token that was refused is invalid_token.
-            return Challenge(site, universeId, http.Request.Headers.Authorization.Count == 0 ? null : "The access token is not valid.");
+            return Challenge(metadata, http.Request.Headers.Authorization.Count == 0 ? null : "The access token is not valid.");
         }
 
-        // RFC 8707 / MCP: only a token issued for this very resource. A token for another universe is not one for this.
-        if (!principal.GetAudiences().Contains(site.ResourceFor(universeId)))
+        // RFC 8707 / MCP: only a token issued for this universe's resource - in either of its spellings. A token for another
+        // universe is not one for this.
+        var audiences = new List<Guid?>();
+        foreach (var audience in principal.GetAudiences())
         {
-            return Challenge(site, universeId, "The access token was issued for a different resource.");
+            audiences.Add(await McpAliases.UniverseOfAsync(db, site, audience, cancellationToken));
+        }
+
+        if (addressed is not { } universeId || !audiences.Contains(universeId))
+        {
+            return Challenge(metadata, "The access token was issued for a different resource.");
         }
 
         if (!principal.HasScope(McpLimits.ReadScope))
         {
-            return InsufficientScope(site, universeId);
+            return InsufficientScope(metadata);
         }
 
         var userId = principal.GetClaim(Claims.Subject);
         var authorizationId = principal.GetAuthorizationId();
-        var db = http.RequestServices.GetRequiredService<LorexDbContext>();
         var connection = await db.McpConnections.AsNoTracking()
             .Where(row => row.AuthorizationId == authorizationId)
             .Select(row => new
@@ -176,6 +228,7 @@ public static class McpEndpoints
                 row.ClientId,
                 row.LastUsedAt,
                 row.CanPropose,
+                row.CanProposeSchema,
                 Blocked = row.User!.BlockedAt != null,
                 UniverseName = row.Universe!.Name,
                 ClientName = db.Set<OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication>()
@@ -188,19 +241,19 @@ public static class McpEndpoints
         if (connection is null || connection.UniverseId != universeId || connection.UserId != userId
             || connection.ClientId != principal.GetClaim(Claims.ClientId))
         {
-            return Challenge(site, universeId, "This connection was disconnected.");
+            return Challenge(metadata, "This connection was disconnected.");
         }
 
         // Blocking revokes the account's connections in the same transaction (#40); this holds even if one were missed.
         if (connection.Blocked)
         {
-            return Challenge(site, universeId, "This account is blocked.");
+            return Challenge(metadata, "This account is blocked.");
         }
 
         if (await UniverseAccess.RoleAsync(db, universeId, connection.UserId, cancellationToken) is not { } role
             || !UniverseAccess.Allows(role, UniverseCapability.Read))
         {
-            return Challenge(site, universeId, "This connection no longer has access to the universe.");
+            return Challenge(metadata, "This connection no longer has access to the universe.");
         }
 
         var now = http.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
@@ -216,7 +269,8 @@ public static class McpEndpoints
             connection.UniverseName,
             connection.Id,
             connection.ClientName,
-            principal.HasScope(McpLimits.ProposeScope) && connection.CanPropose);
+            principal.HasScope(McpLimits.ProposeScope) && connection.CanPropose,
+            connection.CanProposeSchema);
 
         // The MCP endpoint is not a cookie-session endpoint: whatever else the request carried, the caller is the token.
         http.User = new ClaimsPrincipal(principal.Identity!);
@@ -224,15 +278,15 @@ public static class McpEndpoints
     }
 
     /// <summary>401 with where to find the authorization server, and the one scope to ask it for (RFC 6750, RFC 9728).</summary>
-    private static ChallengeResult Challenge(McpSite site, Guid universeId, string? invalidToken) => new ChallengeResult(
+    private static ChallengeResult Challenge(string metadata, string? invalidToken) => new ChallengeResult(
         StatusCodes.Status401Unauthorized,
         invalidToken is null
-            ? $"Bearer resource_metadata=\"{site.ResourceMetadataFor(universeId)}\", scope=\"{ChallengeScope}\""
-            : $"Bearer error=\"invalid_token\", error_description=\"{invalidToken}\", resource_metadata=\"{site.ResourceMetadataFor(universeId)}\", scope=\"{ChallengeScope}\"");
+            ? $"Bearer resource_metadata=\"{metadata}\", scope=\"{ChallengeScope}\""
+            : $"Bearer error=\"invalid_token\", error_description=\"{invalidToken}\", resource_metadata=\"{metadata}\", scope=\"{ChallengeScope}\"");
 
-    private static ChallengeResult InsufficientScope(McpSite site, Guid universeId) => new ChallengeResult(
+    private static ChallengeResult InsufficientScope(string metadata) => new ChallengeResult(
         StatusCodes.Status403Forbidden,
-        $"Bearer error=\"insufficient_scope\", scope=\"{ChallengeScope}\", resource_metadata=\"{site.ResourceMetadataFor(universeId)}\"");
+        $"Bearer error=\"insufficient_scope\", scope=\"{ChallengeScope}\", resource_metadata=\"{metadata}\"");
 
     private sealed class ChallengeResult(int status, string header) : IResult
     {

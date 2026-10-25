@@ -4,11 +4,14 @@ using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Relationships;
 using Lorex.Api.Features.RuleValidation;
+using Lorex.Api.Features.Progression;
+using Lorex.Api.Features.Storage;
 using Lorex.Api.Features.Stories;
 using Lorex.Api.Features.Timeline;
 using Lorex.Api.Features.Universes;
 using Lorex.Api.Features.WorldRules;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lorex.Api.Features.AiChanges;
@@ -64,10 +67,42 @@ internal static class AiChangeCommit
             return replayed;
         }
 
-        return await gate.RunAsync(
-            universeId,
-            token => ApplyAsync(db, clock, universeId, proposalId, approverId, approvalId, revision, selected, token),
-            cancellationToken);
+        // A picture counts against the universe owner's storage once it is attached (ADR 0042), so its room is held now,
+        // before the approval's transaction, as every upload holds it before its commit; the commit consumes it, and every
+        // hold is given back afterwards - one already consumed is gone, so giving it back does nothing.
+        var holds = new Dictionary<Guid, StorageHold?>();
+        try
+        {
+            var staged = await db.AiChangeMedia.AsNoTracking()
+                .Where(media => media.UniverseId == universeId && selected.Contains(media.OperationId))
+                .Select(media => new { media.OperationId, media.ByteSize })
+                .ToListAsync(cancellationToken);
+            if (staged.Count > 0)
+            {
+                var ownerId = await db.Universes.Where(universe => universe.Id == universeId).Select(universe => universe.OwnerId).SingleAsync(cancellationToken);
+                foreach (var media in staged)
+                {
+                    if (await AccountStorage.ReserveAsync(db, clock, ownerId, media.ByteSize, cancellationToken) is not { } hold)
+                    {
+                        return StorageQuota.Exceeded(isOwner: ownerId == approverId);
+                    }
+
+                    holds[media.OperationId] = hold;
+                }
+            }
+
+            return await gate.RunAsync(
+                universeId,
+                token => ApplyAsync(db, clock, universeId, proposalId, approverId, approvalId, revision, selected, holds, token),
+                cancellationToken);
+        }
+        finally
+        {
+            foreach (var hold in holds.Values)
+            {
+                await AccountStorage.ReleaseAsync(db, hold, NullLogger.Instance);
+            }
+        }
     }
 
     private static async Task<IResult?> ReplayAsync(
@@ -127,6 +162,7 @@ internal static class AiChangeCommit
         Guid approvalId,
         int revision,
         IReadOnlyList<Guid> selected,
+        IReadOnlyDictionary<Guid, StorageHold?> holds,
         CancellationToken cancellationToken)
     {
         var proposal = await db.AiChangeProposals
@@ -236,7 +272,7 @@ internal static class AiChangeCommit
 
         foreach (var work in Ordered(picked, pickedKeys))
         {
-            var (resultId, problem) = await RunAsync(db, universeId, approverId, work, made, cancellationToken);
+            var (resultId, problem) = await RunAsync(db, clock, universeId, approverId, work, made, holds, cancellationToken);
             if (problem is not null)
             {
                 return CommitRefused(work, problem);
@@ -287,10 +323,12 @@ internal static class AiChangeCommit
     /// </summary>
     private static async Task<(Guid? Id, IResult? Problem)> RunAsync(
         LorexDbContext db,
+        TimeProvider clock,
         Guid universeId,
         string approverId,
         AiChangeWork work,
         Dictionary<string, Guid> made,
+        IReadOnlyDictionary<Guid, StorageHold?> holds,
         CancellationToken cancellationToken)
     {
         Guid Id(AiRef reference) => reference.Id ?? made[reference.Key!];
@@ -313,6 +351,10 @@ internal static class AiChangeCommit
                     AiChangeResource.PlotBeat => await PlotBeatEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
                     AiChangeResource.WorldRule => await WorldRuleEndpoints.TrashCoreAsync(db, null, universeId, target!.Value, cancellationToken),
                     AiChangeResource.Idea => await IdeaEndpoints.DeleteCoreAsync(db, approverId, target!.Value, cancellationToken),
+
+                    // A field is archived, never deleted: it keeps every value and comes back with a restore (Issue #39).
+                    AiChangeResource.LoreField => await EntityTypeEndpoints.ArchiveFieldCoreAsync(
+                        db, universeId, ((FieldValues)work.Before!).Type.Id!.Value, target!.Value, cancellationToken),
                     _ => throw new InvalidOperationException($"A {work.Resource} change is never a removal."),
                 };
                 return Done(trashed, target);
@@ -375,6 +417,104 @@ internal static class AiChangeCommit
                 return work.Action == AiChangeAction.Create
                     ? Made<IdeaDetail>(await IdeaEndpoints.CreateCoreAsync(db, approverId, kept, cancellationToken), detail => detail.Id)
                     : Done(await IdeaEndpoints.UpdateCoreAsync(db, approverId, target!.Value, kept, cancellationToken), target);
+
+            // Schema (ADR 0062): each definition through the Types screen's own write path, as the approver.
+            case TypeValues type:
+                var typed = new EntityTypeRequest(
+                    type.Name,
+                    type.Description,
+                    type.Icon,
+                    type.AccentColor,
+                    null,
+                    type.FamilyTreeEligible,
+                    new EntityTypeParentChoice(type.Parent is { } parent ? Id(parent) : null),
+                    [.. type.Groups.Select(group => new EntityTypeGroupChoice(Id(group)))]);
+                return work.Action == AiChangeAction.Create
+                    ? Made<EntityTypeResponse>(await EntityTypeEndpoints.CreateCoreAsync(db, universeId, typed, cancellationToken), detail => detail.Id)
+                    : Done(await EntityTypeEndpoints.UpdateCoreAsync(db, universeId, target!.Value, typed, cancellationToken), target);
+
+            case FieldValues field:
+                var ofType = Id(field.Type);
+                var defined = new FieldDefinitionRequest(
+                    field.Name,
+                    field.Kind,
+                    field.Required,
+                    null,
+                    field.DefaultValue,
+                    field.Options,
+                    field.Semantic,
+                    field.TargetType is { } linksToType ? Id(linksToType) : null,
+                    field.TargetGroup is { } linksToGroup ? Id(linksToGroup) : null,
+                    work.BaseVersion);
+                return work.Action == AiChangeAction.Create
+                    ? Made<EntityTypeResponse>(
+                        await EntityTypeEndpoints.AddFieldCoreAsync(db, universeId, ofType, defined, cancellationToken),
+                        detail => detail.Fields.Single(added => added.Name == field.Name).Id)
+                    : Done(await EntityTypeEndpoints.UpdateFieldCoreAsync(universeId, ofType, target!.Value, defined, db, cancellationToken), target);
+
+            case GroupValues group:
+                return work.Action == AiChangeAction.Create
+                    ? Made<EntityTypeGroupResponse>(
+                        await EntityTypeGroupEndpoints.CreateCoreAsync(db, universeId, group.Name, group.FamilyTreeEnabled, cancellationToken),
+                        detail => detail.Id)
+                    : Done(await EntityTypeGroupEndpoints.UpdateCoreAsync(db, universeId, target!.Value, group.Name, group.FamilyTreeEnabled, cancellationToken), target);
+
+            case RelationshipKindValues kind:
+                var described = new RelationshipTypeRequest(kind.Name, kind.InverseName, kind.Symmetric, kind.Description, null, kind.Constraints, kind.FamilySemantic);
+                return work.Action == AiChangeAction.Create
+                    ? Made<RelationshipTypeResponse>(await RelationshipTypeEndpoints.CreateCoreAsync(db, universeId, described, cancellationToken), detail => detail.Id)
+                    : Done(await RelationshipTypeEndpoints.UpdateCoreAsync(db, universeId, target!.Value, described, cancellationToken), target);
+
+            case ChronologyValues reckoning:
+                // Each half through its own screen's write: the periods under the gate they are always under, the calendar as
+                // it is saved by hand. Only what changed is written.
+                var was = (ChronologyValues)work.Before!;
+                if (!AiChangeSnapshots.Same(was.Eras, reckoning.Eras)
+                    && await Chronology.ChronologyEndpoints.UpdateCoreAsync(
+                        universeId,
+                        new Chronology.ChronologyRequest([.. reckoning.Eras.Select(era => new Chronology.ChronologyEraRequest(era.Id, era.Name, era.Abbreviation, era.Direction, era.Label))]),
+                        db,
+                        cancellationToken) is var periods
+                    && !Succeeded(periods))
+                {
+                    return (null, periods);
+                }
+
+                if (reckoning.Months is { } months && !AiChangeSnapshots.Same(was.Months, months))
+                {
+                    return Done(
+                        await Chronology.ChronologyCalendarEndpoints.SaveCoreAsync(
+                            db,
+                            universeId,
+                            new Chronology.ChronologyCalendarRequest([.. months.Select(month => new Chronology.ChronologyCalendarMonthRequest(month.Id, month.Name, month.Abbreviation, month.Days))]),
+                            cancellationToken),
+                        universeId);
+                }
+
+                return (universeId, null);
+
+            case TermValues term:
+                return work.Action == AiChangeAction.Create
+                    ? Made<ValidationTermResponse>(await ValidationTermEndpoints.CreateCoreAsync(db, universeId, new ValidationTermRequest(term.Kind, term.Name), cancellationToken), detail => detail.Id)
+                    : Done(await ValidationTermEndpoints.RenameCoreAsync(db, universeId, target!.Value, new ValidationTermRenameRequest(term.Name), cancellationToken), target);
+
+            case MediaValues media:
+                return await AttachAsync(db, clock, universeId, approverId, work, media, holds.GetValueOrDefault(work.OperationId), cancellationToken);
+
+            case ProgressionValues progression:
+                // The Progression page's own save, over the version staged against; its new items keep the ids staging gave them.
+                return Done(
+                    await Progression.ProgressionEndpoints.WriteAsync(
+                        db,
+                        universeId,
+                        progression.EntityId,
+                        progression.Form.ToRequest(work.BaseVersion),
+                        EntityRevisionKind.Edited,
+                        null,
+                        approverId,
+                        cancellationToken,
+                        givenIds: true),
+                    progression.EntityId);
 
             case LoreValues lore:
                 var entry = new EntityRequest(
@@ -453,6 +593,95 @@ internal static class AiChangeCommit
             default:
                 throw new InvalidOperationException("An AI change of an unknown shape.");
         }
+    }
+
+    /// <summary>
+    /// A quarantined picture attached through its upload's own commit (ADR 0062): the objects already stored under the
+    /// picture's keys become its image row's, and the quarantine row goes in the same transaction. The entry gone or given a
+    /// picture meanwhile, the appearance gone or full, or storage out of room refuses the approval whole; the picture stays
+    /// in quarantine for the change to be rejected or approved again.
+    /// </summary>
+    private static async Task<(Guid? Id, IResult? Problem)> AttachAsync(
+        LorexDbContext db,
+        TimeProvider clock,
+        Guid universeId,
+        string approverId,
+        AiChangeWork work,
+        MediaValues media,
+        StorageHold? hold,
+        CancellationToken cancellationToken)
+    {
+        var staged = await db.AiChangeMedia.FirstOrDefaultAsync(row => row.OperationId == work.OperationId && row.UniverseId == universeId, cancellationToken);
+        if (staged is null)
+        {
+            return (null, Results.Problem(detail: "The picture hasn't been uploaded.", statusCode: StatusCodes.Status409Conflict));
+        }
+
+        bool attached;
+        try
+        {
+            attached = media.AppearanceId is { } appearanceId
+                ? await AppearanceImageEndpoints.AttachAsync(
+                    db,
+                    clock,
+                    appearanceId,
+                    new EntityAppearanceImage
+                    {
+                        Id = staged.AssetId,
+                        OriginalKey = staged.OriginalKey,
+                        ThumbnailKey = staged.ThumbnailKey,
+                        ContentType = staged.ContentType,
+                        FileName = staged.FileName,
+                        Width = staged.Width,
+                        Height = staged.Height,
+                        ByteSize = staged.ByteSize,
+                        UploadedAt = staged.UploadedAt,
+                    },
+                    hold,
+                    cancellationToken)
+                : await EntityImageEndpoints.AttachFirstAsync(
+                    db,
+                    clock,
+                    universeId,
+                    media.EntityId,
+                    new EntityImage
+                    {
+                        AssetId = staged.AssetId,
+                        ThumbnailId = staged.ThumbnailId,
+                        OriginalKey = staged.OriginalKey,
+                        ThumbnailKey = staged.ThumbnailKey,
+                        ContentType = staged.ContentType,
+                        FileName = staged.FileName,
+                        Width = staged.Width,
+                        Height = staged.Height,
+                        ByteSize = staged.ByteSize,
+                        UploadedAt = staged.UploadedAt,
+                        CropX = staged.CropX,
+                        CropY = staged.CropY,
+                        CropWidth = staged.CropWidth,
+                        CropHeight = staged.CropHeight,
+                    },
+                    hold,
+                    approverId,
+                    cancellationToken);
+        }
+        catch (StorageQuotaExceededException)
+        {
+            return (null, Results.Problem(detail: "The universe owner's storage has no room for this picture.", statusCode: StatusCodes.Status409Conflict));
+        }
+
+        if (!attached)
+        {
+            return (null, Results.Problem(
+                detail: media.AppearanceId is null
+                    ? "The entry was trashed or given a picture since, so this one wasn't attached."
+                    : "The appearance was removed or its gallery filled up since, so this picture wasn't attached.",
+                statusCode: StatusCodes.Status409Conflict));
+        }
+
+        db.AiChangeMedia.Remove(staged);
+        await db.SaveChangesAsync(cancellationToken);
+        return (staged.AssetId, null);
     }
 
     /// <summary>A whole order through its container's own order route, every item resolved to a real id.</summary>

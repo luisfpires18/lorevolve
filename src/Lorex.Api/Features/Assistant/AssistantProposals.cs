@@ -28,8 +28,9 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
             OptionsTool,
             "Read what changes can be proposed in this universe: the changes the writer's role allows, the lore types with the ids of "
             + "their fields and choices, the relationship kinds, the stories with their chapters and plot arcs, the date periods, the world "
-            + "rules, the event kinds and methods, and - for the universe owner only - their ideas here. Use only these ids.",
-            """{"type":"object","properties":{},"required":[],"additionalProperties":false}"""),
+            + "rules, the event kinds and methods, and - for the universe owner only - their ideas here. Use only these ids. Give loreId "
+            + "for that entry's progression too: its eras, forms, abilities and appearances by id.",
+            """{"type":"object","properties":{"loreId":{"type":["string","null"]}},"required":["loreId"],"additionalProperties":false}"""),
         new(
             ProposeTool,
             "Stage changes for the writer to review in LoreX. Call it once, with every change they asked for. Nothing changes until "
@@ -46,6 +47,7 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
         - create needs the values; update needs targetId and only the values that change; remove moves an item to the Trash (an idea to the owner's deleted ideas); reorder takes a container's whole order in order.items.
         - For a manuscript, use mode "append" to add prose after what is there. An article is written as blocks of plain text, in article.blocks.
         - Ideas are the universe owner's own; propose one only when the writer asked for an idea.
+        - New lore types, fields, groups, relationship kinds, date periods, months, event kinds and methods go in a proposal of their own (lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind, method), only when the writer asked for them: check get_change_options' types and schema first, reuse what exists, and ask when more than one model fits. Entries that use them come in a later question, once they are approved.
         - If propose_changes lists problems, fix them and call it again.
         When it is staged, answer in a note that the changes are waiting for the writer to review in Pending AI Changes, and say briefly what they are.
         """;
@@ -60,7 +62,18 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
     {
         if (call.Name == OptionsTool)
         {
-            return JsonSerializer.Serialize(await AiChangeCatalog.ReadAsync(db, universeId, role, cancellationToken), AssistantTools.Json);
+            Guid? progressionOf = null;
+            try
+            {
+                using var arguments = JsonDocument.Parse(string.IsNullOrWhiteSpace(call.Arguments) ? "{}" : call.Arguments);
+                progressionOf = arguments.RootElement.TryGetProperty("loreId", out var lore) && lore.ValueKind == JsonValueKind.String && Guid.TryParse(lore.GetString(), out var id) ? id : null;
+            }
+            catch (JsonException)
+            {
+                // Nothing asked for: the catalog alone.
+            }
+
+            return JsonSerializer.Serialize(await AiChangeCatalog.ReadAsync(db, universeId, role, cancellationToken, schemaAllowed: true, progressionOf), AssistantTools.Json);
         }
 
         if (Staged is not null)
@@ -78,7 +91,8 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
             return Error("bad_arguments", "The changes were not in the expected shape. Every id must be one a tool returned.");
         }
 
-        var staged = await AiChangeStaging.StageAsync(db, clock, universeId, userId, new AiChangeOrigin(AiChangeSource.Assistant), submission, cancellationToken);
+        // The writer asked in propose mode, signed in: schema is theirs to propose when their role edits types (ADR 0062).
+        var staged = await AiChangeStaging.StageAsync(db, clock, universeId, userId, new AiChangeOrigin(AiChangeSource.Assistant, SchemaAllowed: true), submission, cancellationToken);
         if (staged.Proposal is not { } proposal)
         {
             return JsonSerializer.Serialize(new
@@ -138,10 +152,23 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
             ("endMonthId", Nullable("string")),
             ("eraLabel", Nullable("string")));
 
+        var progressionRef = Object(("id", Nullable("string")), ("key", Nullable("string")));
+        var progressionItem = Object(
+            ("id", Nullable("string")),
+            ("key", Nullable("string")),
+            ("name", Nullable("string")),
+            ("description", Nullable("string")),
+            ("unlockEra", Or(progressionRef)),
+            ("unlockSceneId", Nullable("string")),
+            ("unlockMomentId", Nullable("string")),
+            ("eras", NullableArray(progressionRef)),
+            ("sceneIds", NullableArray(Text())),
+            ("forms", NullableArray(progressionRef)));
+
         var operation = Object(
             ("id", Text()),
             ("action", Text("create, update, remove or reorder")),
-            ("resource", Text("lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea")),
+            ("resource", Text("lore_entry, article, progression, image, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea; or, in a proposal of their own, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method")),
             ("targetId", Nullable("string")),
             ("expectedVersion", Nullable("integer")),
             ("lore", Or(Object(
@@ -199,7 +226,66 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
                 ("chapter", Or(reference)),
                 ("unchaptered", Nullable("boolean")),
                 ("arc", Or(reference)),
-                ("items", NullableArray(reference))))));
+                ("items", NullableArray(reference))))),
+            ("loreType", Or(Object(
+                ("name", Nullable("string")),
+                ("description", Nullable("string")),
+                ("icon", Nullable("string")),
+                ("accentColor", Nullable("string")),
+                ("parent", Or(reference)),
+                ("root", Nullable("boolean")),
+                ("groups", NullableArray(reference)),
+                ("familyTree", Nullable("boolean"))))),
+            ("field", Or(Object(
+                ("type", Or(reference)),
+                ("name", Nullable("string")),
+                ("kind", Nullable("string")),
+                ("required", Nullable("boolean")),
+                ("defaultValue", Nullable("string")),
+                ("options", NullableArray(Text())),
+                ("linksToType", Or(reference)),
+                ("linksToGroup", Or(reference)),
+                ("linksToAny", Nullable("boolean"))))),
+            ("group", Or(Object(("name", Nullable("string")), ("familyTree", Nullable("boolean"))))),
+            ("relationshipKind", Or(Object(
+                ("name", Nullable("string")),
+                ("inverseName", Nullable("string")),
+                ("symmetric", Nullable("boolean")),
+                ("description", Nullable("string"))))),
+            ("chronology", Or(Object(
+                ("eras", NullableArray(Object(
+                    ("id", Nullable("string")),
+                    ("name", Nullable("string")),
+                    ("abbreviation", Nullable("string")),
+                    ("direction", Nullable("string")),
+                    ("label", Nullable("string"))))),
+                ("months", NullableArray(Object(
+                    ("id", Nullable("string")),
+                    ("name", Nullable("string")),
+                    ("abbreviation", Nullable("string")),
+                    ("days", Nullable("integer")))))))),
+            ("term", Or(Object(("name", Nullable("string"))))),
+            ("image", Or(Object(("entry", Nullable("string")), ("appearance", Nullable("string")), ("note", Nullable("string"))))),
+            ("progression", Or(Object(
+                ("eras", NullableArray(Object(
+                    ("id", Nullable("string")),
+                    ("key", Nullable("string")),
+                    ("name", Nullable("string")),
+                    ("description", Nullable("string")),
+                    ("start", Or(point)),
+                    ("end", Or(point)),
+                    ("storyIds", NullableArray(Text())),
+                    ("sceneIds", NullableArray(Text())),
+                    ("fields", NullableArray(field))))),
+                ("forms", NullableArray(progressionItem)),
+                ("abilities", NullableArray(progressionItem)),
+                ("appearances", NullableArray(Object(
+                    ("id", Nullable("string")),
+                    ("label", Nullable("string")),
+                    ("notes", Nullable("string")),
+                    ("eras", NullableArray(progressionRef)),
+                    ("forms", NullableArray(progressionRef)),
+                    ("sceneIds", NullableArray(Text())))))))));
 
         return Object(("summary", Nullable("string")), ("operations", new JsonObject { ["type"] = "array", ["items"] = operation })).ToJsonString();
     }
