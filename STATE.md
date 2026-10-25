@@ -125,7 +125,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     `format: "png"` re-encodes the preview (WebP stays default) so the owner can compare in ChatGPT without a deploy;
     checklist `docs/testing/mcp-images-checklist.md`. `McpImageToolTests` 12 (PNG preview, no-picture entry). Branch
     `fix/mcp-image-client-fallback` off `origin/dev` `dd0deef`, local only. Not tried in a real client here: this
-    session's LoreX connector was invalidated and no ChatGPT access.
+    session's LoreX connector was invalidated and no ChatGPT access. Full API suite on this branch: 1911 passed, 0 failed, 1 skipped.
   - **#57 shell bound.** Root cause measured, not assumed: `.canvas` had no bound or centring, so at 2560 the title, tabs,
     article and picture stayed left (content 2168px wide) while the Canon control and actions sat on the far right;
     1366-1920 were already one layout (article 558px, picture column 320px at every width). `--canvas-max: 100rem`
