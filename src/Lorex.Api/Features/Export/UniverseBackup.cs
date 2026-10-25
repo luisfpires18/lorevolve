@@ -257,8 +257,14 @@ public sealed record UniverseBackup(
     /// names the section of the same type a field is in, archived fields included. The restore gives every section a new id
     /// and points its fields at it. Not ignorable: a version 30 reader would restore every form flat. A file at version 30 or
     /// earlier has no sections; every field restores ungrouped, even if it names one, and nothing is inferred from names.
+    ///
+    /// 32 - An entry may carry the owner's private note (issue 23, ADR 0056). <see cref="BackupEntity.PrivateNote"/> carries
+    /// it - the text exactly as written and when it was last saved - or null for an entry with none. Not ignorable: it is
+    /// authored text a version 31 reader would restore silently gone. Only the owner exports, and a restore makes the
+    /// restoring account the owner, so the note's one reader is unchanged by the trip. A file at version 31 or earlier
+    /// restores every entry without a note, even when it carries the member.
     /// </summary>
-    public const int CurrentVersion = 31;
+    public const int CurrentVersion = 32;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -487,7 +493,14 @@ public sealed record BackupEntity(
     BackupEntityImage? Image,
     IReadOnlyList<BackupRevision> Revisions,
     IReadOnlyList<BackupArticleRevision>? ArticleRevisions,
-    BackupProgression? Progression = null);
+    BackupProgression? Progression = null,
+    BackupPrivateNote? PrivateNote = null);
+
+/// <summary>
+/// The owner's private note on an entry (since version 32, ADR 0056): the text exactly as saved - <c>""</c> for a note that
+/// was emptied - and when. No history and no author: the owner's alone, and the restore makes it version 1 again.
+/// </summary>
+public sealed record BackupPrivateNote(string Content, DateTime UpdatedAt);
 
 /// <summary>
 /// One saved version of an entry's article (since version 9). <paramref name="Content"/> is the whole document exactly as

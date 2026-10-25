@@ -34,6 +34,8 @@ export interface UniverseCapabilities {
   suggestChanges: boolean
   /** Accept a suggestion, which saves it as an ordinary edit, or reject it. */
   resolveSuggestions: boolean
+  /** Read and write the owner's private note on an entry (issue 23). The owner's alone. */
+  privateNotes: boolean
   /**
    * Keep account ideas about this universe. Not an API capability but a consequence of one: an idea may point only into
    * a universe its author owns (ADR 0030 amendment), so a collaborator has nothing to keep here.
@@ -54,6 +56,7 @@ const NONE: UniverseCapabilities = {
   resolveComments: false,
   suggestChanges: false,
   resolveSuggestions: false,
+  privateNotes: false,
   keepIdeas: false,
 }
 
@@ -74,6 +77,7 @@ export function capabilitiesOf(role: UniverseRoleValue): UniverseCapabilities {
         resolveComments: true,
         suggestChanges: true,
         resolveSuggestions: true,
+        privateNotes: true,
         keepIdeas: true,
       }
     case UniverseRole.Editor:

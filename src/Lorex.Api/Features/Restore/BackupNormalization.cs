@@ -154,6 +154,7 @@ internal static class BackupNormalization
         Image = version >= 3 ? entity.Image : null,
         ArticleUpdatedAt = version >= 9 ? entity.ArticleUpdatedAt : null,
         ArticleRevisions = version >= 9 ? entity.ArticleRevisions : null,
+        PrivateNote = version >= 32 ? entity.PrivateNote : null,
         Progression = version < 27 || entity.Progression is null
             ? null
             : version >= 30 ? entity.Progression

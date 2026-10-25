@@ -479,6 +479,15 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 32)
+        {
+            // The owner's private note on an entry arrived in version 32 (ADR 0056).
+            foreach (var entity in payload["entities"]!.AsArray())
+            {
+                Drop(entity, "privateNote");
+            }
+        }
+
         if (version < 31)
         {
             // A type's field sections, and a field's section, arrived in version 31.

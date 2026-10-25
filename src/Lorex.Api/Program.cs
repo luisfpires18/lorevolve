@@ -110,6 +110,7 @@ app.MapEntityEndpoints();
 app.MapEntityImageEndpoints();
 app.MapEntityRevisionEndpoints();
 app.MapEntityArticleEndpoints();
+app.MapEntityPrivateNoteEndpoints();
 app.MapProgressionEndpoints();
 app.MapAppearanceImageEndpoints();
 app.MapRelationshipTypeEndpoints();

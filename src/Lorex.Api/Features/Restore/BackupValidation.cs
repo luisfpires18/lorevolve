@@ -1049,6 +1049,18 @@ internal static partial class BackupValidation
                 Add(BackupIssueCodes.MissingMember, $"{what} has an article but no record of when it was saved.");
             }
 
+            if (version >= 32 && entity.PrivateNote is { } note)
+            {
+                if (note.Content is null)
+                {
+                    Missing($"the text of {Entry(entity)}'s private note");
+                }
+                else
+                {
+                    Text(note.Content, PrivateNoteLimits.ContentMaxLength, $"{what}'s private note");
+                }
+            }
+
             var aliases = new HashSet<string>(StringComparer.Ordinal);
             foreach (var alias in Required(entity.Aliases, $"{what}'s aliases"))
             {

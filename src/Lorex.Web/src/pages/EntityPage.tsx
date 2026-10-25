@@ -12,6 +12,7 @@ import { Check, Copy, FilePenLine, Maximize2, Network, Pencil, Trash, X } from '
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ReviewComments } from '../components/ReviewComments'
+import { PrivateNotes } from '../components/PrivateNotes'
 import { ContentPublication } from '../components/ContentPublication'
 import { EntityArticleSection } from '../components/EntityArticle'
 import { ChangeList, EditConflict } from '../components/EditConflict'
@@ -1061,6 +1062,15 @@ function EntityScreen({ view }: { view: EntryView }) {
                   <ActionIcon icon={Network} />
                   <span className="entry__toollabel">Family tree</span>
                 </Link>
+              ) : null}
+              {/* The owner's private note on the entry (issue 23): a tool on the entry itself, offered to the owner alone,
+                  its icon alone on a phone like Family tree - the views line has no room for a second trigger at 390px. */}
+              {access.privateNotes ? (
+                <PrivateNotes
+                  universeId={universe.id}
+                  entityId={entityId!}
+                  entryName={detail?.name ?? ''}
+                />
               ) : null}
               {access.editContent || access.manageTrash ? (
                 <ActionMenu

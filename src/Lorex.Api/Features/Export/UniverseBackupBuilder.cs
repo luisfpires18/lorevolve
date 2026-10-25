@@ -378,6 +378,12 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
 
         var articleRevisionsByEntity = await ArticleRevisionsAsync(universeId, cancellationToken);
 
+        // The owner's private note is its own row too (ADR 0056); only the owner exports, so it travels.
+        var notes = await db.EntityPrivateNotes.AsNoTracking()
+            .Where(note => note.Entity!.UniverseId == universeId)
+            .Select(note => new { note.EntityId, note.Content, note.UpdatedAt })
+            .ToDictionaryAsync(note => note.EntityId, note => new BackupPrivateNote(note.Content, Utc(note.UpdatedAt)), cancellationToken);
+
         var progressionByEntity = await ProgressionsAsync(universeId, cancellationToken);
 
         var aliasesByEntity = aliases
@@ -443,7 +449,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                     Image(images, entity.Id),
                     revisionsByEntity.GetValueOrDefault(entity.Id, []),
                     articleRevisionsByEntity.GetValueOrDefault(entity.Id, []),
-                    progressionByEntity.GetValueOrDefault(entity.Id))),
+                    progressionByEntity.GetValueOrDefault(entity.Id),
+                    notes.GetValueOrDefault(entity.Id))),
         ];
     }
 

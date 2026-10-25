@@ -506,3 +506,11 @@ has no `appearances` member, like one with no `forms`, restores leaving them as 
 version 30 reader would restore every form flat. Validation refuses a section the field's type does not hold, a repeated name
 within a type and more than 50 sections; a restore gives every section a new id and points its fields at it, after every field
 exists. A version 30 or older file restores every field ungrouped, even when it carries the members.
+
+## Amendment: version 32, the owner's private notes (2026-10-24, issue 23, ADR 0056)
+
+`BackupEntity.PrivateNote` carries the owner's private note on an entry - the text exactly as saved and when - or null for an
+entry with none. Not ignorable: authored text a version 31 reader would restore silently gone. Only the owner may export, and
+a restore makes the restoring account the owner of the new universe, so the note's one reader is unchanged by the trip; the
+restored note is version 1 again. Validation refuses a note with no text and one over 20,000 characters. A version 31 or
+older file restores every entry without a note, even when it carries the member.

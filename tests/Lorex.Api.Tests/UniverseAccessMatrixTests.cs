@@ -276,6 +276,10 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             // ---------- Backup ----------
             new("export", Get, $"{u}/export", May.Own),
 
+            // ---------- Private notes (issue 23) ----------
+            new("entry private note", Get, $"{e}/private-note", May.Own),
+            new("save private note", Put, $"{e}/private-note", May.Own, Json(new EntityPrivateNoteRequest("For my eyes.", 0))),
+
             // ---------- Review comments (043) ----------
             new("entry comments", Get, $"{e}/comments", May.Read),
             new("comment on entry", Post, $"{e}/comments", May.Comment, Json(new CommentRequest("A note."))),

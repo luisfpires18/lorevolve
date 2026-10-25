@@ -977,6 +977,18 @@ internal sealed partial class UniverseRestore(
             });
         }
 
+        // The owner's private note (ADR 0056): the restoring account is the new owner, so it is theirs to read again.
+        if (entity.PrivateNote is { } note)
+        {
+            db.EntityPrivateNotes.Add(new EntityPrivateNote
+            {
+                EntityId = entityId,
+                Content = note.Content,
+                UpdatedAt = note.UpdatedAt,
+                Version = 1,
+            });
+        }
+
         if (images.TryGetValue(entity.Id, out var image))
         {
             db.EntityImages.Add(image);

@@ -451,7 +451,7 @@ public sealed class EntityProgressionTests(LorexApiFactory factory) : IClassFixt
         await Save(w, first.Version, Keep(first.Eras[0]), Era("Frieza Saga"));
 
         var backup = await Backup(w.Client, w.U);
-        Assert.Equal(31, backup.FormatVersion);
+        Assert.Equal(32, backup.FormatVersion);
         var progression = backup.Payload.Entities.Single(entity => entity.Id == w.Entry).Progression!;
         Assert.Equal(["Saiyan Saga", "Frieza Saga"], progression.Eras.Select(era => era.Name));
         Assert.Equal(3, progression.Eras[0].FieldValues.Count);
