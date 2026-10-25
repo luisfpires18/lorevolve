@@ -115,7 +115,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     appearance pictures with their ticked forms/eras, a form/era/appearance narrows to explicit links only and says when
     none; one picture as an MCP image block + metadata + the entry's page link - `preview` fitted within 1024px (new
     `ImagePreparation.PreviewAsync`), `thumbnail` as stored, `original` on request up to 4 MB. Live entries of the
-    caller's universe only, bytes inline, never a URL. Tests: `McpImageToolTests` 9 (+ tool list now 12). Verified in
+    caller's universe only, bytes inline, never a URL. Review fix: the `original` stream is cut off at 4 MB as it is
+    read, not only judged by the row's `ByteSize` - an object grown past its row is refused whole, never sent in part.
+    Tests: `McpImageToolTests` 10 (+ tool list now 12). Verified in
     the official MCP SDK client (the tests); **not yet tried in Claude or ChatGPT** - needs DEV (`Mcp__Origin` set)
     and a connect; the tools appear there on the next deploy.
   - **#57 shell bound.** Root cause measured, not assumed: `.canvas` had no bound or centring, so at 2560 the title, tabs,

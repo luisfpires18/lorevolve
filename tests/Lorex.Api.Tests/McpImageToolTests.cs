@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Mcp;
+using Lorex.Api.Features.Media;
 using Lorex.Api.Features.Progression;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -288,6 +289,40 @@ public sealed class McpImageToolTests(McpImageToolFixture fixture) : IClassFixtu
         Assert.True(preview.DecodedData.Length < 1024 * 1024, "The preview is not small.");
         Assert.Equal(image.ByteSize, about.GetProperty("originalBytes").GetInt64());
         Assert.Equal(1500, about.GetProperty("originalWidth").GetInt32());
+    }
+
+    [Fact]
+    public async Task An_original_whose_stored_bytes_outgrow_its_recorded_size_is_refused_whole_and_never_sent_in_part()
+    {
+        // The row says a small picture; the store holds a larger one under the same key, as a store that stopped being
+        // Lorex's might. Within the upload ceiling, so the preview and thumbnail paths still read it.
+        var mirror = await CreateEntity(W.Owner, W.U, "Mirror of the Vale");
+        var image = await UploadImage(W.Owner, W.U, mirror);
+        Assert.True(image.ByteSize < McpLimits.ImageOriginalBytes);
+        var originalKey = Assert.Single(Api.Media.Keys, key => key.Contains(image.AssetId.ToString("D"), StringComparison.Ordinal) && key.Contains("original", StringComparison.Ordinal));
+        var swollen = NoisePng(1400);
+        Assert.InRange(swollen.Length, McpLimits.ImageOriginalBytes + 1, ImagePreparation.MaxUploadBytes);
+        using (var content = new MemoryStream(swollen, writable: false))
+        {
+            await Api.Media.PutAsync(originalKey, content, "image/png", CancellationToken.None);
+        }
+
+        await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
+
+        var result = await client.CallToolAsync(
+            "get_lore_image",
+            new Dictionary<string, object?> { ["loreId"] = mirror.ToString(), ["imageId"] = image.AssetId.ToString(), ["variant"] = "original" });
+        Assert.True(result.IsError, Text(result));
+        Assert.DoesNotContain(result.Content, block => block is ImageContentBlock);
+        using var json = JsonDocument.Parse(Text(result));
+        Assert.Equal("image_too_large", json.RootElement.GetProperty("error").GetString());
+        Assert.Equal(McpLimits.ImageOriginalBytes, json.RootElement.GetProperty("details").GetProperty("limit").GetInt64());
+
+        // The same object, read for a preview or the thumbnail, is within what Lorex stores and still comes back.
+        var (preview, _) = await Fetch(client, mirror, image.AssetId);
+        Assert.Equal("image/webp", preview.MimeType);
+        var (thumbnail, _) = await Fetch(client, mirror, image.AssetId, "thumbnail");
+        Assert.Equal("image/webp", thumbnail.MimeType);
     }
 
     [Fact]

@@ -285,12 +285,20 @@ public sealed partial class LorexMcpImageTools(
                 return NotFound();
             }
 
-            // Lorex wrote every object it reads here, each under the upload ceiling; the bound only stops a store that
-            // stopped being Lorex's from flooding a client.
-            var read = await ReadBoundedAsync(stored.Content, ImagePreparation.MaxUploadBytes, cancellationToken);
+            // The bytes are bounded as they stream, not only as the row describes them: an original is cut off at the
+            // limit this tool promises, and a preview's or thumbnail's source at the upload ceiling. Lorex wrote every
+            // object it reads here, so a stream past its bound is a store that stopped being Lorex's, and the answer is a
+            // refusal with nothing of the picture in it - never a partial picture.
+            var bound = which == OriginalVariant ? McpLimits.ImageOriginalBytes : ImagePreparation.MaxUploadBytes;
+            var read = await ReadBoundedAsync(stored.Content, bound, cancellationToken);
             if (read is null)
             {
-                return Error("image_too_large", "This picture is larger than Lorex stores.");
+                return which == OriginalVariant
+                    ? Error(
+                        "image_too_large",
+                        $"The original is over the {Megabytes(McpLimits.ImageOriginalBytes)} MB handed over inline. Ask for the {PreviewVariant} instead.",
+                        new { limit = McpLimits.ImageOriginalBytes })
+                    : Error("image_too_large", "This picture is larger than Lorex stores.");
             }
 
             bytes = read;
