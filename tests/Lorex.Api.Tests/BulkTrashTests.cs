@@ -152,17 +152,18 @@ public sealed class BulkTrashTests(LorexApiFactory factory) : IClassFixture<Lore
             && command.Parameters.Cast<DbParameter>().Any(parameter =>
                 string.Equals(parameter.Value?.ToString(), fails, StringComparison.OrdinalIgnoreCase));
 
-        Exception? failure;
+        HttpResponseMessage failed;
         try
         {
-            failure = await Record.ExceptionAsync(() => BulkTrash(client, universe.Id, [.. entries.Select(entry => entry.Id)]));
+            failed = await BulkTrash(client, universe.Id, [.. entries.Select(entry => entry.Id)]);
         }
         finally
         {
             _factory.Commands.FailWhen = null;
         }
 
-        Assert.NotNull(failure);
+        // Answered as a deployment answers it: the exception handler's 500 (issue 55, W2).
+        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
         Assert.Equal(20, await LiveCount(client, universe.Id));
         Assert.Empty((await Trash(client, universe.Id)).Items);
     }

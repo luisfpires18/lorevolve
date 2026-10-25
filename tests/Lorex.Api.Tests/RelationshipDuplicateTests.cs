@@ -283,10 +283,10 @@ public sealed class RelationshipDuplicateTests(LorexApiFactory factory) : IClass
         _factory.Commands.FailWhen = static command =>
             command.CommandText.Contains("INSERT INTO \"Relationships\"", StringComparison.Ordinal);
 
-        Exception? failure;
+        HttpResponseMessage failed;
         try
         {
-            failure = await Record.ExceptionAsync(() => PostLink(family, bore.Id, akron, aaron));
+            failed = await PostLink(family, bore.Id, akron, aaron);
         }
         finally
         {
@@ -296,8 +296,7 @@ public sealed class RelationshipDuplicateTests(LorexApiFactory factory) : IClass
 
         // The write failed, so it has to read as a failure. Telling the author their link already exists
         // when it does not is a lie they would act on by going to look for it.
-        Assert.NotNull(failure);
-        Assert.Contains("database is locked", Describe(failure), StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
 
         // And nothing was stored, so the very next attempt writes it.
         Assert.Equal(HttpStatusCode.Created, (await PostLink(family, bore.Id, akron, aaron)).StatusCode);
@@ -377,16 +376,5 @@ public sealed class RelationshipDuplicateTests(LorexApiFactory factory) : IClass
             body.TryGetValue("relationshipId", out var id) && Guid.TryParse(id.ToString(), out var parsed)
                 ? parsed
                 : null);
-    }
-
-    private static string Describe(Exception? failure)
-    {
-        var lines = new List<string>();
-        for (var current = failure; current is not null; current = current.InnerException)
-        {
-            lines.Add(current.Message);
-        }
-
-        return string.Join(" | ", lines);
     }
 }
