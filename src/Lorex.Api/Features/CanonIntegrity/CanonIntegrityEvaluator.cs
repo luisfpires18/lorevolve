@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Lorex.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,8 +28,17 @@ public sealed record CanonEvaluationSummary(
 /// Ownership is not checked here. The caller proves it, and this class is never reached
 /// from anywhere that has not.
 /// </summary>
-public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICanonIntegrityRule> rules)
+public sealed partial class CanonIntegrityEvaluator(
+    LorexDbContext db,
+    IEnumerable<ICanonIntegrityRule> rules,
+    ILogger<CanonIntegrityEvaluator> logger)
 {
+    /// <summary>
+    /// A sweep this long is logged as a warning (issue 55, W3). Every gated write runs two of them inside its transaction,
+    /// holding SQLite's one writer, so this is the number to watch as universes grow.
+    /// </summary>
+    public static readonly TimeSpan SlowSweep = TimeSpan.FromSeconds(1);
+
     public async Task<CanonEvaluationSummary> EvaluateAsync(
         Guid universeId,
         CancellationToken cancellationToken) =>
@@ -50,6 +60,7 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
         Dictionary<string, CanonFinding> findings,
         CancellationToken cancellationToken)
     {
+        var reconcileStarted = Stopwatch.GetTimestamp();
         var existing = await db.CanonConflicts
             .Include(conflict => conflict.Subjects)
             .Where(conflict => conflict.UniverseId == universeId)
@@ -110,6 +121,7 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
 
         await db.SaveChangesAsync(cancellationToken);
 
+        LogReconciled(logger, universeId, Stopwatch.GetElapsedTime(reconcileStarted).TotalMilliseconds, created, reopened, resolved);
         return new CanonEvaluationSummary(findings.Count, created, reopened, persisted, resolved, now);
     }
 
@@ -126,6 +138,7 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
         Guid universeId,
         CancellationToken cancellationToken)
     {
+        var started = Stopwatch.GetTimestamp();
         var context = new CanonRuleContext(db, universeId);
         var findings = new Dictionary<string, CanonFinding>(StringComparer.Ordinal);
 
@@ -135,6 +148,16 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
             {
                 findings.TryAdd(finding.Fingerprint, finding);
             }
+        }
+
+        var elapsed = Stopwatch.GetElapsedTime(started);
+        if (elapsed >= SlowSweep)
+        {
+            LogSlowSweep(logger, universeId, elapsed.TotalMilliseconds, findings.Count);
+        }
+        else
+        {
+            LogSweep(logger, universeId, elapsed.TotalMilliseconds, findings.Count);
         }
 
         return findings;
@@ -236,4 +259,13 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
 
         return changed;
     }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Canon rules swept universe {UniverseId} in {ElapsedMs:0} ms ({Findings} findings).")]
+    private static partial void LogSweep(ILogger logger, Guid universeId, double elapsedMs, int findings);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Canon rules took {ElapsedMs:0} ms to sweep universe {UniverseId} ({Findings} findings); a gated write holds the database for two of these.")]
+    private static partial void LogSlowSweep(ILogger logger, Guid universeId, double elapsedMs, int findings);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Canon conflicts of universe {UniverseId} reconciled in {ElapsedMs:0} ms ({Created} opened, {Reopened} reopened, {Resolved} resolved).")]
+    private static partial void LogReconciled(ILogger logger, Guid universeId, double elapsedMs, int created, int reopened, int resolved);
 }
