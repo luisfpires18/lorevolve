@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
+import { ArrowDown, ArrowUp, BookOpen, Pencil, PenLine, Trash } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
@@ -30,7 +30,8 @@ interface PlotBeatItemProps {
  * and Delete beat, last, are in its ⋯ menu.
  *
  * Each scene is named from the story as it is now - its title, and its chapter when the story has chapters - and
- * links to that scene on the story's Scenes view; each entry links to its own page. The beat stores only ids, so a
+ * links to that scene on the story's Scenes view, with its manuscript one step away beside it; each entry links to its own
+ * page. The beat stores only ids, so a
  * scene moved to another chapter simply shows its new chapter here.
  *
  * The row takes the focus without being in the tab order, so a scene's plot chip can land a keyboard on it.
@@ -101,6 +102,15 @@ export function PlotBeatItem({
                         {containerNumber(chapters, scene.chapterId)}
                       </span>
                     ) : null}
+                  </Link>
+                  <Link
+                    className="beat__write"
+                    to={`/app/universes/${universeId}/stories/${storyId}/manuscript/${scene.id}`}
+                    aria-label={`Manuscript of “${scene.title}”`}
+                    title="Manuscript"
+                    data-testid="plot-beat-scene-manuscript"
+                  >
+                    <ActionIcon icon={access.editContent ? PenLine : BookOpen} />
                   </Link>
                 </li>
               ))}

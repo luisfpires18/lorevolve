@@ -328,22 +328,36 @@ async function expectApart(first: Locator, second: Locator) {
 }
 
 test.describe('workspace navigation', () => {
-  test('Chronology follows Timeline in the sidebar, the phone sheet and the Overview', async ({
+  test('Timeline sits between Stories and Ideas in the sidebar, the phone sheet and the Overview', async ({
     page,
   }) => {
     await signUp(page)
     const universeId = await seedUniverse(page)
     await page.goto(`/app/universes/${universeId}`)
 
-    const world = ['Lore', 'Family Tree', 'Timeline', 'Chronology', 'World Rules']
+    // Issue #48: the world's four, then the writing - Stories, the Timeline it is told against, Ideas.
+    const world = ['Lore', 'Family Tree', 'Chronology', 'World Rules']
+    const writing = ['Stories', 'Timeline', 'Ideas']
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
-    // All universes, Overview, then the world's five - whatever the groups below them hold.
-    await expect(sections.getByRole('link')).toContainText(['All universes', 'Overview', ...world])
+    await expect(sections.getByRole('link')).toContainText([
+      'All universes',
+      'Overview',
+      ...world,
+      ...writing,
+    ])
     await expect(page.locator('[data-testid="overview-lore"]')).toBeVisible()
     const links = (await sections.getByRole('link').allTextContents()).map((text) => text.trim())
-    expect(links.slice(2, 7)).toEqual(world)
+    expect(links.slice(2, 9)).toEqual([...world, ...writing])
 
-    const doorways = ['lore', 'family-tree', 'timeline', 'chronology', 'world-rules']
+    const doorways = [
+      'lore',
+      'family-tree',
+      'chronology',
+      'world-rules',
+      'stories',
+      'timeline',
+      'ideas',
+    ]
     const overview = await page
       .locator('[data-testid^="overview-"]')
       .evaluateAll((all) => all.map((one) => one.getAttribute('data-testid')))
@@ -351,19 +365,30 @@ test.describe('workspace navigation', () => {
       doorways.map((segment) => `overview-${segment}`),
     )
 
+    // The Timeline is still where it was, and its link is the current page there.
+    await sections.getByRole('link', { name: 'Timeline' }).click()
+    await page.waitForURL(`/app/universes/${universeId}/timeline`)
+    await expect(sections.getByRole('link', { name: 'Timeline' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.reload()
+    await page.goto(`/app/universes/${universeId}`)
     await page.getByTestId('workspace-nav-toggle').click()
-    await expect(page.getByTestId('workspace-chronology')).toBeVisible()
+    await expect(page.getByTestId('workspace-timeline')).toBeVisible()
     const sheet = (
       await page
         .getByRole('navigation', { name: 'Universe', exact: true })
         .getByRole('link')
         .allTextContents()
     ).map((text) => text.trim())
-    expect(sheet.slice(sheet.indexOf('Lore'), sheet.indexOf('Lore') + 5)).toEqual(world)
-    await page.getByTestId('workspace-chronology').click()
-    await page.waitForURL(`/app/universes/${universeId}/chronology`)
+    expect(sheet.slice(sheet.indexOf('Lore'), sheet.indexOf('Lore') + 7)).toEqual([
+      ...world,
+      ...writing,
+    ])
+    await page.getByTestId('workspace-timeline').click()
+    await page.waitForURL(`/app/universes/${universeId}/timeline`)
   })
 })
 

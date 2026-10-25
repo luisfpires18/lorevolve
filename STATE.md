@@ -90,6 +90,15 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     shards and Package). Back to 3.1.12 by owner decision, to settle the key later; its five advisories are open again.
     The JPEG/PNG/WebP-only decoding stays (it builds on 3.x), so a TIFF or BMP still never reaches a decoder. Release
     build green; API image, artwork, profile, backup and restore tests 338 passed.
+- **Issue #48 - story workflow cross-links** (`feat/story-workflow-links` off `dev` at `61148a9`; committed, not merged,
+  not pushed). Spike then owner-authorized UX. Frontend only: no API, schema or backup change. ADR 0026 amendment. Verified:
+  beat->scenes is the one link (many to many), a scene has an optional world date, a moment links stories only; the
+  manuscript already showed a scene's beats (desktop; behind Scene details on a phone). Added on existing links: a beat's
+  scene gets a Manuscript link; a scene's date opens `/timeline?story=`; a manuscript whose scene no beat links says so with
+  Open Plot (only when the story has beats); sidebar/sheet/Overview order Stories, Timeline, Ideas. Not done (decision
+  needed): linking beats from a scene; moment<->scene/beat links. Tests: Playwright `story-workflow.spec.ts` 4, nav tests
+  in `editing-flow` and `workspace-settings` updated; with 14 neighbouring specs 106/106 (2 green on rerun after a dev
+  server drop).
 - **Issue #47 - entry pill only in public universes** (`feat/lore-visibility-public-universes` off `dev` at `a7f5e99`;
   merged into `dev` at `45a76db`). No migration. ADR 0036 amendment. A private universe's entry header shows no
   publication pill (any width); stored selections untouched. The publish confirmation lists the entries it makes public

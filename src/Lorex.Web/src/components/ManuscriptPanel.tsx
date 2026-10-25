@@ -214,6 +214,7 @@ export function ManuscriptPanel({
               chronology={chronology}
               where={whereOf(chapters, scenes, selected)}
               beats={beatsByScene(arcs).get(selected.id) ?? []}
+              storyHasBeats={arcs.some((arc) => arc.beats.length > 0)}
               onEditScene={onEditScene}
               onSuggestScene={onSuggestScene}
               chapters={chapters}
