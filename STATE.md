@@ -149,7 +149,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     is a straight line in displayed pixels by that scale, rounded honestly, only on one calibrated map with confirmed pins;
     otherwise the reading says why (no scale, different maps, unconfirmed position). Read-only throughout.
   - Tests: API `MapTests` 13, `MapBackupTests` 2, `MapMigrationTests` 1, `MapGeographyTests` 8, `MapCalibrationMigrationTests`
-    1; final full API suite after all five commits: 1934 passed, 0 failed, 1 skipped. `McpToolTests` 10/10, including
+    1; final full API suite on the code as committed: 1934 passed, 0 failed, 1 skipped. `McpToolTests` 10/10, including
     the SDK tool-list assertion; migration tests' later-schema lists extended; format assertions read
     `UniverseBackup.CurrentVersion`.
     Playwright `maps.spec.ts` 2/2 on the final commit (desktop journey with scale and Fake assistant; 390px). The neighbouring
