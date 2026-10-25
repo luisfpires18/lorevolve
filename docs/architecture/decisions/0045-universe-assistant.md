@@ -218,3 +218,14 @@ Two fixes. The retry is skipped when the server asks for more than 10 s (`Respon
 limit's long `Retry-After` used to hold the question until its 90 s timeout and report it as too slow; it is now busy at
 once. And a provider failure after `propose_changes` staged a proposal answers with that proposal and LoreX's note
 instead of an error, so trying again does not stage it twice. No model, context or allowance change.
+
+## Amendment (2026-10-25, issue 53, ADR 0061): geography
+
+Four more read-only tools, each a call into the shared geography reader `MapGeography` and nothing of their own:
+`list_maps`, `search_map_locations`, `get_map_location` (by entry id) and `measure_map_distance` (by two pin ids). Ground
+rule 12 says that geography comes only from the maps' pins, that a role such as a capital is resolved first through the
+recorded relationships and fields the assistant already reads, that an entry on no map is said to be on none and one on
+several maps named on each, and that a distance exists only when `measure_map_distance` returns one - a straight line on
+the picture by the creator's scale, approximate - never estimated from pixels, descriptions or the picture. Two source
+kinds join the answer schema's: `MapPin` (its map's id in the container slot) and `Map`; the client opens each on the map,
+on the pin. The Fake provider answers a question that starts "Where is" from the pins alone, and says when there are none.

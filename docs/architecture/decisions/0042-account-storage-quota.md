@@ -123,3 +123,10 @@ test pauses each such sweep and proves another connection can write meanwhile.
 An appearance's pictures are Lore pictures too: their originals count against the universe owner beside the entries' own
 pictures, live and trashed alike, held before the bucket is touched and consumed by the commit that adds the row, exactly as an
 entry picture's upload is. A gallery picture is always new bytes, so every upload holds its whole size.
+
+## Amendment (2026-10-25, issue 52, ADR 0060)
+
+A map's original counts against the universe owner too, as its own category: `GET /api/profile/storage` answers
+`mapImagesBytes` beside `loreImagesBytes`, and `usedBytes` is their sum. The fitted display copy, like a thumbnail, never
+counts. A new map holds its whole size before the bucket is touched; a replacement holds only its growth; deleting a map or
+its universe frees the bytes with the row and sweeps the objects after the commit.

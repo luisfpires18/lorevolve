@@ -134,6 +134,30 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     `env()` to 0 - recorded as a test annotation, so that part stays a device check). **No cause reproduced, no code
     changed**; real iOS / Android / desktop installs **unverified** - `docs/testing/pwa-checklist.md` has the repro
     matrix and the per-platform checklist, routed to #33 (security) and #34 (readiness).
+- **Issues #52 and #53 - Lore-linked maps, geography and calibration** (`feat/lore-linked-maps` off `dev` at `dd0deef`, in
+  the worktree `D:\Workspace\LOREX-maps`; committed, not merged, not pushed). Two migrations (`AddUniverseMaps`,
+  `AddMapCalibrations`), backup format 34 then 35. ADR 0060, ADR 0061; 0014, 0042, 0045, 0046 amended.
+  - **#52 maps.** Several per universe; a picture kept whole with a fitted 4096px display copy, keys of ids, originals on the
+    owner's storage; pins as fractions of the displayed picture linked to a live same-universe entry by id, once per map, on
+    any number of maps; the entry's page lists each map and opens it on the pin (`?pin=`); replacing the picture asks keep
+    (pins await review until saved) or remove; delete is outright, not the Trash; members read, Editors change; nothing public.
+    Viewer is one CSS transform with counter-scaled pin buttons, keyboard pan/zoom/fit, typed positions, drag, pinch; Leaflet
+    weighed and declined (ADR 0060).
+  - **#53 geography.** `MapGeography`, one reader under both the assistant (`list_maps`, `search_map_locations`,
+    `get_map_location`, `measure_map_distance`; ground rule 12; source kinds `MapPin`/`Map`) and MCP (same names, 16 tools).
+    Calibration per map and per picture: two points, a distance, a unit kept as written; a replacement drops it. A distance
+    is a straight line in displayed pixels by that scale, rounded honestly, only on one calibrated map with confirmed pins;
+    otherwise the reading says why (no scale, different maps, unconfirmed position). Read-only throughout.
+  - Tests: API `MapTests` 13, `MapBackupTests` 2, `MapMigrationTests` 1, `MapGeographyTests` 8, `MapCalibrationMigrationTests`
+    1; full suite 1924/1925 passed before the #53 half (the one failure the catalog since extended), affected classes green
+    after; migration tests' later-schema lists extended; format assertions now read `UniverseBackup.CurrentVersion`.
+    Playwright `maps.spec.ts` 2/2 (desktop journey with the scale and the Fake assistant; 390px), neighbours
+    (editing-flow, entity-page, entry-profile, shell-layout, usage, storage, restore, navigation, mobile, entity-image,
+    universe-assistant) green on a fresh DB; one save-controls flake under load passed alone. Release build green.
+  - **Owner checks on DEV:** `docs/testing/maps-checklist.md` - a real map, real-device touch, Groq's phrasing over the
+    geography tools, Claude/ChatGPT over MCP. Unverified here.
+  - Pre-existing, not fixed: `UniverseWorkspace.tsx` renders two siblings keyed by the universe id (a React duplicate-key
+    warning in the console on every universe screen).
 - **Fix: Deploy DEV E2E shard 6** (`fix/trash-e2e-row` off `dev` at `52a913c`; merged into `dev`, pushed). Runs
   40137578174, 40180740487 and 40184813329 failed on one test, `trash-permanent-delete` "names isolated", on all three
   attempts: its 14-context size loop ran out of Playwright's default 30 s (~24 s locally). `test.setTimeout(120_000)`, as
@@ -1949,6 +1973,10 @@ tool has changed the picture.
   trashed/restored-by and an activity feed (version authors done in 042), version checks for moments, relationships, chapters and plot (044 covers entries, articles, stories, scenes, manuscripts), ownership transfer, public
   collaborator credit; a collaborator's idea pointing into a shared universe; the public page's workspace link for
   members. An Editor restoring a previously public item from the Trash brings back the owner's selection as it was.
+- **Maps (#52, #53; ADR 0060, 0061)** - later, not gaps: the Trash for maps (delete is outright), public maps, tiles for
+  very large originals (drawn from the 4096px copy), edit versions on pins, a shared coordinate system across maps or
+  across replacements, measuring on screen (the assistant and MCP measure), routes, borders, timeline overlays (#10),
+  drawing of any kind, a non-uniform scale.
 - **MCP (049, ADR 0046).** Owner step: set `Mcp__Origin` on DEV and connect Claude or ChatGPT once (runbook). Later, not
   gaps: any write through MCP (issue 32), AI-assisted import (issue 17), pre-registered clients, custom-scheme redirects,
   a LoreX-styled page for the requests OpenIddict refuses before trusting a redirect.

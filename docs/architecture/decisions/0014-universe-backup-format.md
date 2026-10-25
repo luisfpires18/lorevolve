@@ -523,3 +523,21 @@ Not ignorable: a version 32 reader would restore a world with every continuity n
 knower or scene the file does not hold, a subject that is the knower, both anchors or neither, and a blank or over-long
 statement; a restore gives every record a new id pointing at the restored entries and scenes. A version 32 or older file
 restores with none, even when it carries the member.
+
+## Amendment: version 34, maps (2026-10-25, issue 52, ADR 0060)
+
+`UniverseBackupPayload.Maps` carries every map of the universe by name: its details, its picture's facts (the displayed size
+every pin's fractions are of) and the original at `media/maps/{mapId}/original.{ext}`, and every pin - title, note, fractions,
+the entry of the file it stands for, and whether it was placed on the picture the map shows. The fitted display copy is
+derived and fitted again on restore. Not ignorable: a version 33 reader would restore a world with every map silently gone.
+Validation decodes the picture as an upload would and refuses a size that is not the stated one, a pin off the map, a pin for
+an entry the file does not hold and an entry pinned twice on one map; a restore holds the owner's storage for the originals,
+gives everything new ids and keeps a waiting pin waiting. A version 33 or older file restores with no maps.
+
+## Amendment: version 35, a map's scale (2026-10-25, issue 53, ADR 0061)
+
+`BackupMap.Calibration` carries the creator's scale, or null: two points as fractions, the distance between them and the
+unit's name exactly as written. Not ignorable: a version 34 reader would restore every map unable to measure. Validation
+refuses a point off the map, two points one pixel or less apart, a distance that is not above zero and a blank or over-long
+unit; a restore writes it against the restored picture's asset id. A version 34 or older file restores every map without a
+scale.

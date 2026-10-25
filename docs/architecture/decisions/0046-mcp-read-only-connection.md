@@ -209,3 +209,12 @@ The bytes travel inline, so no URL outlives the authorization that produced it: 
 a trashed entry or an id from another universe answers as every other read does. A listing names at most 100
 appearance pictures. Nothing uploads, changes or deletes a picture through MCP. Whether a given client draws an image
 block is the client's: the official SDK client (the tests) carries it; Claude and ChatGPT remain to be tried against DEV.
+
+## Amendment (2026-10-25, issue 53, ADR 0061): geography, the same reader
+
+Four more read-only tools (`LorexMcpMapTools`), over the same `MapGeography` the built-in assistant reads: `list_maps`,
+`search_map_locations`, `get_map_location` (by id or exact name or alias, an ambiguous name refused with the candidates)
+and `measure_map_distance`. Every location carries an absolute link that opens the map on the pin, behind LoreX's sign-in;
+a distance is given only on one calibrated map with confirmed pins and says its method, its unit as the creator named it,
+and the picture it rests on; otherwise the result says what is missing. The connection's gate, the live-entries rule and
+the one-universe rule apply unchanged. Sixteen tools in all.

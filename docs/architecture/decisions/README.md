@@ -64,8 +64,10 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0057 | A knowledge record is an author's statement that one actor knows one thing from one scene, and nothing is inferred (#15) | [0057-knowledge-records.md](0057-knowledge-records.md) |
 | 0058 | A manuscript mention is one plain-text token, resolved by id, shown as stored while writing and as a name everywhere else (#31) | [0058-manuscript-mentions.md](0058-manuscript-mentions.md) |
 | 0059 | An account has a platform role; an Admin may block a Member, and reads only what LoreX records (#40) | [0059-platform-admin-workspace.md](0059-platform-admin-workspace.md) |
+| 0060 | A universe's maps are uploaded pictures kept whole, with pins at fractions of them linked to Lore by id (#52) | [0060-lore-linked-maps.md](0060-lore-linked-maps.md) |
+| 0061 | Geography is read from the maps' pins through one shared reader, and a distance exists only on a calibrated map (#53) | [0061-map-geography-and-calibration.md](0061-map-geography-and-calibration.md) |
 
-All accepted. Next number: `0060`.
+All accepted. Next number: `0062`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's
