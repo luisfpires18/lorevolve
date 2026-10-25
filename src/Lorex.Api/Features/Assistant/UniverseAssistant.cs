@@ -120,7 +120,19 @@ internal static partial class UniverseAssistant
         for (var round = 0; ; round++)
         {
             var toolsAllowed = round < ToolRounds && calls < ToolCalls;
-            var turn = await conversation.NextAsync(results, toolsAllowed, cancellationToken);
+            AssistantModelTurn turn;
+            try
+            {
+                turn = await conversation.NextAsync(results, toolsAllowed, cancellationToken);
+            }
+            // A staged proposal is never reported as a failed question, here too: the provider failing after it (busy, say,
+            // on the answering step) would otherwise show an error, and asking again would stage it twice (Issue #46).
+            catch (AssistantProviderException exception) when (proposing?.Staged is { } staged)
+            {
+                LogFailedAfterStaging(logger, exception.Failure, exception.Message, exception.InnerException);
+                return StagedNote(staged, isIncomplete: true) with { Proposal = new AssistantProposal(staged.Id, staged.Operations.Count) };
+            }
+
             inputTokens += turn.InputTokens;
             outputTokens += turn.OutputTokens;
 
@@ -213,15 +225,21 @@ internal static partial class UniverseAssistant
         }
         catch (AssistantProviderException)
         {
-            var count = staged.Operations.Count;
-            return new AssistantAnswer(
-                [new AssistantSegment(
-                    AssistantSegmentKind.Note,
-                    $"I've prepared {(count == 1 ? "1 change" : $"{count} changes")} for you to review. Nothing changes until you approve them in Pending AI Changes.",
-                    [])],
-                [],
-                isIncomplete);
+            return StagedNote(staged, isIncomplete);
         }
+    }
+
+    /// <summary>LoreX's own words for a staged proposal, when the model's cannot be used.</summary>
+    private static AssistantAnswer StagedNote(AiChanges.AiChangeProposal staged, bool isIncomplete)
+    {
+        var count = staged.Operations.Count;
+        return new AssistantAnswer(
+            [new AssistantSegment(
+                AssistantSegmentKind.Note,
+                $"I've prepared {(count == 1 ? "1 change" : $"{count} changes")} for you to review. Nothing changes until you approve them in Pending AI Changes.",
+                [])],
+            [],
+            isIncomplete);
     }
 
     /// <summary>
@@ -300,6 +318,9 @@ internal static partial class UniverseAssistant
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Assistant ran tool {Tool}.")]
     private static partial void LogToolRun(ILogger logger, string tool);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Assistant provider failed ({Failure}) after a proposal was staged; answered with LoreX's note: {Reason}")]
+    private static partial void LogFailedAfterStaging(ILogger logger, AssistantFailure failure, string reason, Exception? exception);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Assistant tool {Tool} failed; the model was told it could not be read.")]
     private static partial void LogToolFailed(ILogger logger, string tool, Exception exception);

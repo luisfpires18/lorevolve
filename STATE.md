@@ -90,6 +90,12 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     shards and Package). Back to 3.1.12 by owner decision, to settle the key later; its five advisories are open again.
     The JPEG/PNG/WebP-only decoding stays (it builds on 3.x), so a TIFF or BMP still never reaches a decoder. Release
     build green; API image, artwork, profile, backup and restore tests 338 passed.
+- **Issue #46 - assistant rate limits** (`fix/assistant-rate-limit` off `dev` at `61148a9`; committed, not merged, not
+  pushed). No migration. ADR 0045 amendment. Verified first: a 429 is retried once by the client pipeline (0.8 s or the
+  server's `Retry-After`, whichever is longer), then 503 `assistant_busy`; the drawer keeps the question, Try again adds no
+  turn. Fixed: a wait over 10 s is busy at once (was slept until the 90 s timeout, then "took too long"); a provider failure
+  after a proposal was staged answers with it (was an error, and Try again staged it twice). Tests: `AssistantRateLimitTests`
+  5, `McpProposalTests` +1; assistant/provider/MCP proposal classes 94/94.
 - **Issue #47 - entry pill only in public universes** (`feat/lore-visibility-public-universes` off `dev` at `a7f5e99`;
   merged into `dev` at `45a76db`). No migration. ADR 0036 amendment. A private universe's entry header shows no
   publication pill (any width); stored selections untouched. The publish confirmation lists the entries it makes public

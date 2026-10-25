@@ -69,7 +69,8 @@ internal sealed class ResponsesConversation : IAssistantConversation
     }
 
     /// <summary>
-    /// A client for one server: its key, its endpoint (null for OpenAI's own), a short network timeout and one retry. A test
+    /// A client for one server: its key, its endpoint (null for OpenAI's own), a short network timeout and one short retry
+    /// (<see cref="OneShortRetry"/>). A test
     /// hands it a <paramref name="transport"/> that answers in place of the server; a deployment never does.
     /// </summary>
     public static ResponsesClient CreateClient(string apiKey, Uri? endpoint, PipelineTransport? transport)
@@ -77,7 +78,7 @@ internal sealed class ResponsesConversation : IAssistantConversation
         var options = new ResponsesClientOptions
         {
             NetworkTimeout = TimeSpan.FromSeconds(45),
-            RetryPolicy = new ClientRetryPolicy(maxRetries: 1),
+            RetryPolicy = new OneShortRetry(),
         };
 
         if (endpoint is not null)
@@ -91,6 +92,24 @@ internal sealed class ResponsesConversation : IAssistantConversation
         }
 
         return new ResponsesClient(new ApiKeyCredential(apiKey), options);
+    }
+
+    /// <summary>
+    /// The client pipeline's single retry of a 408, 429, 5xx or dropped connection, after its own backoff or the server's
+    /// Retry-After, whichever is longer - but only while that wait is at most <see cref="MaxWait"/>. A server asking for
+    /// longer (a daily limit, say) is answered as busy at once, instead of the question sleeping until its own timeout and
+    /// then being reported as too slow (Issue #46). Cancellation still stops the wait.
+    /// </summary>
+    internal sealed class OneShortRetry() : ClientRetryPolicy(maxRetries: 1)
+    {
+        public static readonly TimeSpan MaxWait = TimeSpan.FromSeconds(10);
+
+        // The first retry is the only one, so its delay is always the first try's.
+        protected override bool ShouldRetry(PipelineMessage message, Exception? exception) =>
+            base.ShouldRetry(message, exception) && GetNextDelay(message, 1) <= MaxWait;
+
+        protected override async ValueTask<bool> ShouldRetryAsync(PipelineMessage message, Exception? exception) =>
+            await base.ShouldRetryAsync(message, exception) && GetNextDelay(message, 1) <= MaxWait;
     }
 
     public async Task<AssistantModelTurn> NextAsync(
