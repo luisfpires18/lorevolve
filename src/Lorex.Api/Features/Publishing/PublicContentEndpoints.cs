@@ -221,7 +221,8 @@ public static class PublicContentEndpoints
             listing.PublicSummary,
             listing.PublishedAt,
             // Published prose with nothing in it is not a part a reader can read, so it is left out rather than shown empty.
-            [.. manuscript.Where(part => !string.IsNullOrWhiteSpace(part.Text)).Select(part => new PublicManuscriptPart(part.Title, part.Text!))],
+            // A mention is its name in plain text, as the author wrote it (ADR 0058): never a link, never anything else of the entry.
+            [.. manuscript.Where(part => !string.IsNullOrWhiteSpace(part.Text)).Select(part => new PublicManuscriptPart(part.Title, Stories.ManuscriptMentions.Plain(part.Text!)))],
             scenes,
             [.. arcs.Select(arc => new PublicPlotArc(
                 arc.Title,

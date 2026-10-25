@@ -276,6 +276,9 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             // ---------- Backup ----------
             new("export", Get, $"{u}/export", May.Own),
 
+            // ---------- Manuscript mentions (issue 31) ----------
+            new("lore references", Get, $"{u}/lore-references?ids={w.Entry}", May.Read),
+
             // ---------- Review comments (043) ----------
             new("entry comments", Get, $"{e}/comments", May.Read),
             new("comment on entry", Post, $"{e}/comments", May.Comment, Json(new CommentRequest("A note."))),

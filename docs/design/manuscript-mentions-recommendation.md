@@ -1,8 +1,7 @@
 # Interactive @Lore mentions (issue 31) - persistence recommendation
 
-Status: recommendation, awaiting the owner's decision (2026-10-24). Nothing here is implemented. The owner asked for the
-smallest safe persistent representation before any manuscript code is written; one product choice below is not settled by
-the approved decisions, so coding stops at it.
+Status: decided 2026-10-25 - the owner chose E1, implemented under ADR 0058. Kept as the record of the options weighed
+before any manuscript code was written.
 
 ## What the manuscript is today (as built)
 

@@ -15,6 +15,7 @@ import type {
   StoryDetail,
   StoryInput,
   StorySummary,
+  SceneLoreReference,
 } from './types'
 
 function base(universeId: string) {
@@ -100,6 +101,17 @@ export function createScene(universeId: string, storyId: string, input: SceneInp
     method: 'POST',
     body: JSON.stringify(input),
   })
+}
+
+/**
+ * The entries a manuscript's mentions name, by id (issue 31): this universe's only, trashed ones marked, in the order asked.
+ * An id that names nothing here is simply absent from the answer.
+ */
+export function listLoreReferences(universeId: string, ids: string[], signal?: AbortSignal) {
+  return apiFetch<SceneLoreReference[]>(
+    `/api/universes/${universeId}/lore-references?ids=${ids.map(encodeURIComponent).join(',')}`,
+    { signal },
+  )
 }
 
 /** One live scene, as the scene form shows it. */

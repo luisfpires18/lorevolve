@@ -1,4 +1,12 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+  type SyntheticEvent,
+} from 'react'
 import { useUniverseAccess } from '../universes/access'
 import { SaveAction } from './SaveAction'
 import { FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
@@ -7,6 +15,11 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EditConflict, LatestText } from './EditConflict'
 import { LoreContext } from './LoreContext'
+import { MentionSuggestions } from './MentionSuggestions'
+import { useMentionSearch } from '../lore/mentionSearch'
+import { caretPoint } from '../lib/caret'
+import { findMentions, mentionQueryAt, mentionToken, plainMentions } from '../lore/mentions'
+import type { EntitySummary } from '../lore/types'
 import { ManuscriptHistory } from './ManuscriptHistory'
 import { ReviewComments } from './ReviewComments'
 import { describeSceneSuggestion } from '../stories/sceneDraft'
@@ -139,6 +152,18 @@ export function ManuscriptEditor({
   const inFlight = useRef(false)
   const editor = useRef<HTMLTextAreaElement>(null)
   const shortcut = useRef<() => void>(() => {})
+  const suggestionsId = useId()
+  // The @ mention being typed (issue 31): where its `@` is, the words after it, and where to draw the suggestions.
+  const [mention, setMention] = useState<{
+    start: number
+    query: string
+    top: number
+    left: number
+  } | null>(null)
+  const [activeSuggestion, setActiveSuggestion] = useState(0)
+  // An `@` the author closed the suggestions on with Escape: it stays prose until the caret is at another one.
+  const dismissed = useRef<number | null>(null)
+  const suggestions = useMentionSearch(universeId, mention?.query ?? null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -256,6 +281,80 @@ export function ManuscriptEditor({
     }
   }, [])
 
+  /**
+   * Opens, moves or closes the mention suggestions to match the caret (issue 31): open while the caret ends an `@query`
+   * that could start a mention, closed for a selection, an email address, a finished mention, or an `@` closed with Escape.
+   * Reads the box, writes nothing to it.
+   */
+  function trackMention(box: HTMLTextAreaElement) {
+    const at =
+      box.readOnly || box.selectionStart !== box.selectionEnd
+        ? null
+        : mentionQueryAt(box.value, box.selectionStart)
+    if (at === null || at.start === dismissed.current) {
+      if (at === null) dismissed.current = null
+      setMention(null)
+      return
+    }
+    const point = caretPoint(box, at.start)
+    const width = box.clientWidth
+    setMention((current) => {
+      if (current === null || current.start !== at.start) setActiveSuggestion(0)
+      return {
+        start: at.start,
+        query: at.query,
+        top: box.offsetTop + point.top + point.lineHeight + 4,
+        left: box.offsetLeft + Math.max(0, Math.min(point.left, width - 288)),
+      }
+    })
+  }
+
+  /**
+   * Puts the chosen entry in place of the `@query` as one stored mention, through the browser's own insertion so it is one
+   * step of the text box's undo, exactly like typing it. The prose changes as any edit does: unsaved until Save.
+   */
+  function chooseMention(row: EntitySummary) {
+    const box = editor.current
+    if (!box || mention === null) return
+    const caret = box.selectionStart
+    const next = box.value[caret]
+    const text = mentionToken(row.name, row.id) + (next === undefined || /\S/.test(next) ? ' ' : '')
+    box.focus()
+    box.setSelectionRange(mention.start, caret)
+    if (!document.execCommand('insertText', false, text)) {
+      box.setRangeText(text, mention.start, caret, 'end')
+      setDraft(box.value)
+    }
+    dismissed.current = null
+    setMention(null)
+    setAnnouncement(`Mentioned ${row.name}.`)
+  }
+
+  function onEditorKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
+    if (mention === null) return
+    const rows = suggestions.rows
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      dismissed.current = mention.start
+      setMention(null)
+      return
+    }
+    if (rows.length === 0) return
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      setActiveSuggestion((current) => (current + step + rows.length) % rows.length)
+    } else if ((event.key === 'Enter' || event.key === 'Tab') && !event.shiftKey) {
+      event.preventDefault()
+      chooseMention(rows[Math.min(activeSuggestion, rows.length - 1)])
+    }
+  }
+
+  function onEditorSelect(event: SyntheticEvent<HTMLTextAreaElement>) {
+    trackMention(event.currentTarget)
+  }
+
   function reread() {
     setConflict(false)
     setFailure(null)
@@ -361,6 +460,7 @@ export function ManuscriptEditor({
               storyId={storyId}
               scene={scene}
               chronology={chronology}
+              mentions={isReady ? findMentions(draft) : []}
               onSceneSaved={onSceneSaved}
               onSceneChanged={onSceneChanged}
             />
@@ -505,7 +605,7 @@ export function ManuscriptEditor({
                       aria-label="Text of the recovered draft"
                       tabIndex={0}
                     >
-                      {offer.content}
+                      {plainMentions(offer.content)}
                     </div>
                   )
                 }
@@ -527,7 +627,7 @@ export function ManuscriptEditor({
                       <p className="entry__blank">No text in the latest version.</p>
                     ) : (
                       <div className="recovery__prose prose" dir="auto">
-                        {latest.content}
+                        {plainMentions(latest.content)}
                       </div>
                     )}
                   </LatestText>
@@ -549,25 +649,67 @@ export function ManuscriptEditor({
             </p>
           ) : null}
 
-          <label className="visually-hidden" htmlFor={editorId}>
-            Manuscript of “{scene.title}”
-          </label>
-          <textarea
-            ref={editor}
-            id={editorId}
-            className="manuscript__text"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            // Read only for a collaborator who reads (ADR 0041 amendment): the prose, with no Save under it.
-            readOnly={isHeld || !access.editContent}
-            placeholder={access.editContent ? 'Write the scene.' : 'Nothing written yet.'}
-            spellCheck
-            aria-describedby={describedBy}
-            aria-invalid={isTooLong ? true : undefined}
-            aria-keyshortcuts="Control+S Meta+S"
-            data-testid="manuscript-editor"
-            data-held={isHeld ? 'true' : 'false'}
-          />
+          {access.editContent ? (
+            <div className="manuscript__write">
+              <label className="visually-hidden" htmlFor={editorId}>
+                Manuscript of “{scene.title}”
+              </label>
+              <textarea
+                ref={editor}
+                id={editorId}
+                className="manuscript__text"
+                value={draft}
+                onChange={(event) => {
+                  setDraft(event.target.value)
+                  trackMention(event.target)
+                }}
+                onSelect={onEditorSelect}
+                onKeyDown={onEditorKeyDown}
+                onBlur={() => setMention(null)}
+                readOnly={isHeld}
+                placeholder="Write the scene. Type @ to mention Lore."
+                spellCheck
+                aria-describedby={describedBy}
+                aria-invalid={isTooLong ? true : undefined}
+                aria-keyshortcuts="Control+S Meta+S"
+                aria-autocomplete="list"
+                aria-controls={mention && suggestions.rows.length > 0 ? suggestionsId : undefined}
+                aria-activedescendant={
+                  mention && suggestions.rows.length > 0
+                    ? `${suggestionsId}-${Math.min(activeSuggestion, suggestions.rows.length - 1)}`
+                    : undefined
+                }
+                data-testid="manuscript-editor"
+                data-held={isHeld ? 'true' : 'false'}
+              />
+              {mention && !isHeld ? (
+                <MentionSuggestions
+                  id={suggestionsId}
+                  search={suggestions}
+                  query={mention.query}
+                  active={Math.min(activeSuggestion, Math.max(0, suggestions.rows.length - 1))}
+                  position={{ top: mention.top, left: mention.left }}
+                  onChoose={chooseMention}
+                  onHover={setActiveSuggestion}
+                />
+              ) : null}
+            </div>
+          ) : (
+            // A collaborator who reads (ADR 0041 amendment) reads the prose as prose: each mention as its name (issue 31).
+            <div
+              className="manuscript__text manuscript__read prose"
+              role="region"
+              aria-label={`Manuscript of “${scene.title}”`}
+              tabIndex={0}
+              data-testid="manuscript-read"
+            >
+              {draft === '' ? (
+                <p className="entry__blank">Nothing written yet.</p>
+              ) : (
+                plainMentions(draft)
+              )}
+            </div>
+          )}
 
           {access.editContent ? (
             <div className="manuscript__bar">

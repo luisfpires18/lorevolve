@@ -51,6 +51,9 @@ internal sealed class RestoreIdentity
 
     public Guid? Map(Guid? source) => source is { } id ? Map(id) : null;
 
+    /// <summary>The new id of something the backup holds, or null for an id it does not (a manuscript mention's, ADR 0058).</summary>
+    public Guid? Known(Guid source) => _restored.TryGetValue(source, out var restored) ? restored : null;
+
     public Guid Translate(Guid source) => _restored.TryGetValue(source, out var restored) ? restored : Allocate(source);
 
     public Guid? Translate(Guid? source) => source is { } id ? Translate(id) : null;
@@ -1341,7 +1344,8 @@ internal sealed partial class UniverseRestore(
                     db.SceneManuscripts.Add(new SceneManuscript
                     {
                         SceneId = sceneId,
-                        Content = manuscript.Content,
+                        // Mentions point at the restored entries: the one rewrite inside authored text a restore makes.
+                        Content = ManuscriptMentions.Remap(manuscript.Content, ids.Known),
                         UpdatedAt = manuscript.UpdatedAt,
                     });
 
@@ -1355,7 +1359,7 @@ internal sealed partial class UniverseRestore(
                             Kind = revision.Kind,
                             RestoredFromRevisionId = ids.Translate(revision.RestoredFromRevisionId),
                             CreatedAt = revision.CreatedAt,
-                            Content = revision.Content,
+                            Content = ManuscriptMentions.Remap(revision.Content, ids.Known),
                         });
                     }
                 }

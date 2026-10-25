@@ -277,3 +277,9 @@ restore never creates a membership and the archive holds none to restore; its an
 The entry pictures a restore writes are the restorer's storage. Their total is held before any is stored and consumed by
 the transaction that writes the universe; without room the restore answers 409 `storage_quota_exceeded`, keeps nothing and
 leaves the upload waiting. Artwork does not count. No allowance or hold is in a backup.
+
+## Amendment (2026-10-25, issue 31, ADR 0058)
+
+A restore makes one rewrite inside authored text: each well-formed manuscript mention's entry id, in the manuscript and in
+every saved version, is pointed at the restored entry. An id the backup does not hold stays as it is. The backup format is
+unchanged; the file still carries the prose byte for byte.

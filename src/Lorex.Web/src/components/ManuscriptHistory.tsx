@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { plainMentions } from '../lore/mentions'
 import { VersionActor } from './VersionActor'
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
@@ -276,7 +277,7 @@ export function ManuscriptHistory({
                         aria-label={`Text of version ${revision.number}`}
                         tabIndex={0}
                       >
-                        {viewing.detail.content}
+                        {plainMentions(viewing.detail.content)}
                       </div>
                     )}
                   </div>

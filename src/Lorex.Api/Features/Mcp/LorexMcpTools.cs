@@ -319,7 +319,9 @@ public sealed class LorexMcpTools(LorexDbContext db, McpCaller caller)
             .Where(row => row.SceneId == sceneId)
             .Select(row => new { row.Content, row.Version })
             .FirstOrDefaultAsync(cancellationToken);
-        return (manuscript?.Content ?? string.Empty, manuscript?.Version ?? 0);
+        // Mentions read as the names the author wrote (ADR 0058); ranges and searches are over this text, so they still join
+        // back into exactly what was read.
+        return (Stories.ManuscriptMentions.Plain(manuscript?.Content ?? string.Empty), manuscript?.Version ?? 0);
     }
 
     // ---------- Shaping ----------

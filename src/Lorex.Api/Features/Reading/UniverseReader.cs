@@ -256,8 +256,11 @@ public static class UniverseReader
                     .Take(MentionLimit)
                     .Select(link => new LoreMention(link.EntityId, link.Name, link.EntityTypeName)),
             ],
-            ReadingText.Cut(prose, ProseLength),
-            await UniverseSearchIndex.ManuscriptPassageAsync(db, sceneId, find, cancellationToken));
+            // Mentions read as the names the author wrote (ADR 0058): an assistant reads prose, not markup.
+            ReadingText.Cut(prose is null ? null : ManuscriptMentions.Plain(prose), ProseLength),
+            await UniverseSearchIndex.ManuscriptPassageAsync(db, sceneId, find, cancellationToken) is { } passage
+                ? ManuscriptMentions.PlainExcerpt(passage)
+                : null);
     }
 
     /// <summary>One timeline moment of this universe, or null.</summary>

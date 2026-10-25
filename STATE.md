@@ -174,6 +174,19 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   image or Story options in V1; links listed). Tests: Playwright `entity-duplicate.spec.ts` 3; `entity-page` (menu order),
   `collaboration` (Editor sees Duplicate) updated; with lore, lore-article, field-lifecycle, entity-reference-target,
   history 46/46 on a fresh DB. No API change, so no API run.
+- **Issue #31 - Interactive @Lore Mentions** (`feat/manuscript-mentions` off `dev` at `fbbe4b2`; committed, not merged,
+  not pushed). No migration, backup format unchanged. ADR 0058 (new; 0056/0057 are on the #23/#15 branches); ADR 0027,
+  0032, 0046 amended. Owner decision 2026-10-25: option E1 of `docs/design/manuscript-mentions-recommendation.md`. A mention
+  is the plain-text token `@[Name](lore:<id>)` in the manuscript, resolved by id in its universe. Textarea kept: `@` after a
+  space/bracket/quote then a character opens six suggestions from Lore search under the caret (Up/Down, Enter/Tab, Escape
+  leaves prose; not in emails); a choice is one native undo step. Shown as stored while writing; as the written name in the
+  public page, the assistant and MCP, a Viewer's read view (now prose, not a read-only box), history, conflict review,
+  recovery preview and search excerpts. Lore drawer: "Mentioned in the text", each entry once with current name, preview,
+  "Written as" after a rename, and "Add to this scene's Lore" until linked (`GET .../lore-references?ids=`, Read). Restore
+  repoints token ids in the manuscript and its versions. Known ceiling: an AI manuscript replace is written over rendered
+  text, so its mentions return as names (ADR 0058). Tests: API `ManuscriptMentionTests` 6, matrix +1 route; web unit
+  `mentions.test.ts` 5 (in `npm test`); Playwright `manuscript-mentions.spec.ts` 2 with neighbouring specs on a fresh DB.
+  Full Playwright delegated to GitHub Actions.
 - **Issue #26 - Lore Type Field Groups / Progressive Forms** (`feat/lore-field-groups` off `dev` at `26c38a8`; committed,
   not merged, not pushed). Migration `AddEntityFieldSections`, backup format 31. ADR 0055 (new); ADR 0007, 0014, 0043
   amended. Optional author-named sections for a type's fields, presentation only: no field id, value, order, setting,
