@@ -90,6 +90,10 @@
   --control-md: 2.5rem;
   --control-touch: 2.75rem;
   --gutter: 2.5rem;
+  /* The widest a workspace screen's content box gets (#57). Past it the column's spare width is split evenly, so the
+     title, tabs, article and picture keep one relationship from a laptop to a wide monitor instead of hugging the left
+     edge of whatever is left. Below it the gutters are just the gutters. */
+  --canvas-max: 100rem;
 
   /* Motion and layers */
   --duration-1: 120ms;
@@ -878,7 +882,9 @@ a.button--danger:visited {
   width: 100%;
   max-width: 72rem;
   margin: 0 auto;
-  padding: clamp(2rem, 5vw, 3.5rem) clamp(1.25rem, 4vw, 3rem) 4rem;
+  /* The same side gutter as a universe's screens (#57), so the account screens and the Admin workspace start where
+     a universe's do at every width. */
+  padding: clamp(2rem, 5vw, 3.5rem) var(--gutter) 4rem;
 }
 
 .home__heading {
@@ -2869,6 +2875,14 @@ a.button--danger:visited {
 
 .workspace__top {
   padding: var(--space-4) var(--gutter) 0;
+}
+
+/* One bound and one centring rule for every screen in the workspace, and for the search band above it so the box
+   stays on the screen's left edge (#57). `100%` is the column, so the padding grows only once the column is wider than
+   the bound plus two gutters; until then this is exactly the gutter. */
+.workspace__top,
+.canvas {
+  padding-inline: max(var(--gutter), calc((100% - var(--canvas-max)) / 2));
 }
 
 .unisearch {

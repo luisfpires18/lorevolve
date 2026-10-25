@@ -1416,6 +1416,15 @@ Settings (`.settings__body`) and Publish (`.publish__body`) keep a 46rem column,
 a reading measure (a lede 62ch, a note ~70ch, an article 62ch). The account's Profile, outside any universe, keeps its own
 centred frame.
 
+**The canvas has a bound (issue #57, 2026-10-25).** `--canvas-max` (100rem) is the widest the content box of any
+workspace screen gets; the search band above shares it. Below the bound nothing changes - the gutters are the gutters
+and the content is left-aligned under the title, as above. Past it (a 2560px monitor: the column is 2264px) the column's
+spare width is split evenly either side (`padding-inline: max(var(--gutter), calc((100% - var(--canvas-max)) / 2))`
+on `.canvas` and `.workspace__top`), so a wide monitor shows the same screen a 1920 desktop does, with margins, instead
+of the title, tabs, article and picture hugging the left of an empty expanse while the actions sit on its far right.
+One shell still: nothing inside is centred, and no page sets its own origin. `.home__body` (the account screens and
+Admin) takes the same `--gutter`. `shell-layout.spec.ts` holds the geometry at 1366, 1440, 1920, 2560, 1024 and 390.
+
 ### 21.3 Lore grid and pagination
 
 - **Grid:** `repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr))` for `.lore__grid` and its skeleton - columns come from
