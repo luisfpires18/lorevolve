@@ -330,6 +330,10 @@ test.describe('deleting from the Trash permanently', () => {
   test('the row reads as a recovery list at every width, in both themes and at 200%, names isolated', async ({
     browser,
   }) => {
+    // Fourteen fresh contexts (two themes x seven sizes), each loading the Trash: ~24 s here, most of Playwright's default
+    // 30 s. CI ran out of it on all three attempts (Deploy DEV, 2026-10-24 and -25) and the row was never late, only the
+    // clock. The loop is the test; its budget says so, as final-polish.spec.ts does for the same loop.
+    test.setTimeout(120_000)
     const setup = await browser.newContext()
     const page = await setup.newPage()
     await signUp(page)

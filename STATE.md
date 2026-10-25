@@ -90,6 +90,10 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     shards and Package). Back to 3.1.12 by owner decision, to settle the key later; its five advisories are open again.
     The JPEG/PNG/WebP-only decoding stays (it builds on 3.x), so a TIFF or BMP still never reaches a decoder. Release
     build green; API image, artwork, profile, backup and restore tests 338 passed.
+- **Fix: Deploy DEV E2E shard 6** (`fix/trash-e2e-row` off `dev` at `52a913c`; merged into `dev`, pushed). Runs
+  40137578174, 40180740487 and 40184813329 failed on one test, `trash-permanent-delete` "names isolated", on all three
+  attempts: its 14-context size loop ran out of Playwright's default 30 s (~24 s locally). `test.setTimeout(120_000)`, as
+  `final-polish` does for the same loop. No production code changed. Spec 7/7 twice locally.
 - **Issue #46 - assistant rate limits** (`fix/assistant-rate-limit` off `dev` at `61148a9`; merged into `dev`,
   pushed). No migration. ADR 0045 amendment. Verified first: a 429 is retried once by the client pipeline (0.8 s or the
   server's `Retry-After`, whichever is longer), then 503 `assistant_busy`; the drawer keeps the question, Try again adds no
