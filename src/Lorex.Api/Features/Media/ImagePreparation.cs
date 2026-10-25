@@ -26,6 +26,12 @@ internal sealed record ImageRejection(string Field, string Message);
 /// <summary>A whole picture fitted within a square, as lossy WebP with no metadata: what an MCP client is shown (ADR 0046).</summary>
 internal sealed record ImagePreview(byte[] Bytes, int Width, int Height);
 
+/// <summary>
+/// An upload that passed the gate whole, with the whole picture fitted within a side as its derivative (a map, issue #52):
+/// the original's decoded type, its displayed size, and the fitted WebP with its own size. No crop: nothing is cut.
+/// </summary>
+internal sealed record PreparedFit(string ContentType, string Extension, int Width, int Height, ImagePreview Display);
+
 /// <summary>A crop, placed on pixels: a rectangle of the frame's shape, inside the image, in whole pixels.</summary>
 internal readonly record struct CropRect(int Left, int Top, int Width, int Height);
 
@@ -294,6 +300,78 @@ internal static class ImagePreparation
                 null);
         }
     }
+
+    /// <summary>
+    /// The gate for a picture shown whole rather than cut - a map (issue #52): the same refusals as
+    /// <see cref="PrepareAsync(Stream, long, ImageCrop?, CancellationToken)"/>, in the same order and the same words, and
+    /// then the whole picture fitted within <paramref name="displaySide"/> as the derivative that is displayed. The
+    /// original is kept as uploaded; <see cref="PreparedFit.Width"/> and <see cref="PreparedFit.Height"/> are its size as a
+    /// browser draws it, which is the space a pin's fractions are measured against.
+    /// </summary>
+    public static async Task<(PreparedFit? Image, ImageRejection? Rejection)> FitAsync(
+        Stream upload,
+        long byteLength,
+        int displaySide,
+        CancellationToken cancellationToken)
+    {
+        if (byteLength <= 0)
+        {
+            return (null, new ImageRejection(FileField, "That file is empty."));
+        }
+
+        if (byteLength > MaxUploadBytes)
+        {
+            return (null, new ImageRejection(FileField, $"Images must be {MaxUploadBytes / (1024 * 1024)} MB or smaller."));
+        }
+
+        ImageInfo info;
+        try
+        {
+            info = await Image.IdentifyAsync(Decoding, upload, cancellationToken);
+        }
+        catch (Exception exception) when (exception is UnknownImageFormatException or InvalidImageContentException)
+        {
+            return (null, new ImageRejection(FileField, "That file is not an image Lorex can read. Use a JPEG, PNG or WebP."));
+        }
+
+        var format = info.Metadata.DecodedImageFormat;
+        if (format is null || !AcceptedFormats.TryGetValue(format.Name, out var extension))
+        {
+            return (null, new ImageRejection(FileField, "Images must be a JPEG, PNG or WebP."));
+        }
+
+        if (info.Width <= 0 || info.Height <= 0)
+        {
+            return (null, new ImageRejection(FileField, "That image has no size Lorex can use."));
+        }
+
+        if (info.Width > MaxSide || info.Height > MaxSide)
+        {
+            return (null, new ImageRejection(FileField, $"Images must be {MaxSide} pixels or smaller on each side."));
+        }
+
+        if ((long)info.Width * info.Height > MaxPixels)
+        {
+            return (null, new ImageRejection(FileField, $"That image is too large to process - {MaxPixels / 1_000_000} megapixels is the limit."));
+        }
+
+        upload.Position = 0;
+        var display = await PreviewAsync(upload, displaySide, cancellationToken);
+        if (display is null)
+        {
+            return (null, new ImageRejection(FileField, "That image could not be read. It may be incomplete or damaged."));
+        }
+
+        // The displayed size, from the header alone: the stored size, turned when a browser would turn it (EXIF orientation
+        // 5-8 swap the sides), so a pin's fractions are measured against the picture the author sees - no second decode.
+        var turned = HonoursOrientation(format) && IsTurned(info);
+        return (new PreparedFit(format.DefaultMimeType, extension, turned ? info.Height : info.Width, turned ? info.Width : info.Height, display), null);
+    }
+
+    /// <summary>Whether a picture's EXIF orientation swaps its sides when applied (values 5 to 8: the rotations by 90 degrees).</summary>
+    private static bool IsTurned(ImageInfo info) =>
+        info.Metadata.ExifProfile?.TryGetValue(SixLabors.ImageSharp.Metadata.Profiles.Exif.ExifTag.Orientation, out var orientation) == true
+        && orientation?.Value is >= 5 and <= 8;
 
     /// <summary>
     /// The whole of a stored picture fitted within <paramref name="maxSide"/> pixels on its longer side - never enlarged -

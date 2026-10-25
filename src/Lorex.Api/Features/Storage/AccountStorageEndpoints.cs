@@ -30,12 +30,13 @@ public static class AccountStorageEndpoints
 
         return usage is null
             ? Results.NotFound()
-            : Results.Ok(new AccountStorageResponse(usage.UsedBytes, usage.QuotaBytes, usage.RemainingBytes, usage.LoreImageBytes));
+            : Results.Ok(new AccountStorageResponse(usage.UsedBytes, usage.QuotaBytes, usage.RemainingBytes, usage.LoreImageBytes, usage.MapImageBytes));
     }
 }
 
 /// <summary>
-/// The account's storage in bytes. <c>UsedBytes</c> is the total; <c>LoreImagesBytes</c> is the one category that
-/// makes it up today, kept apart so another can be added beside it without changing what the total means.
+/// The account's storage in bytes. <c>UsedBytes</c> is the total; <c>LoreImagesBytes</c> and <c>MapImagesBytes</c>
+/// (issue #52) are the categories that make it up, kept apart so another can be added beside them without changing what
+/// the total means.
 /// </summary>
-public sealed record AccountStorageResponse(long UsedBytes, long QuotaBytes, long RemainingBytes, long LoreImagesBytes);
+public sealed record AccountStorageResponse(long UsedBytes, long QuotaBytes, long RemainingBytes, long LoreImagesBytes, long MapImagesBytes);

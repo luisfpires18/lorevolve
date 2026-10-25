@@ -14,6 +14,7 @@ import { ActionMenu } from '../components/ActionMenu'
 import { ReviewComments } from '../components/ReviewComments'
 import { PrivateNotes } from '../components/PrivateNotes'
 import { KnowledgeView } from '../components/KnowledgeView'
+import { LoreOnMaps } from '../components/LoreOnMaps'
 import { ContentPublication } from '../components/ContentPublication'
 import { EntityArticleSection } from '../components/EntityArticle'
 import { ChangeList, EditConflict } from '../components/EditConflict'
@@ -1331,6 +1332,15 @@ function EntityScreen({ view }: { view: EntryView }) {
                   ))}
                 </p>
               </div>
+            ) : null}
+
+            {detail ? (
+              <LoreOnMaps
+                key={detail.id}
+                universeId={universe.id}
+                entityId={detail.id}
+                canEdit={access.editContent}
+              />
             ) : null}
 
             {detail ? (

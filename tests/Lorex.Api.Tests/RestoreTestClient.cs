@@ -479,6 +479,12 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 34)
+        {
+            // Maps arrived in version 34 (issue #52, ADR 0060).
+            payload.AsObject().Remove("maps");
+        }
+
         if (version < 33)
         {
             // Knowledge records arrived in version 33 (ADR 0057).

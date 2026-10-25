@@ -5,6 +5,7 @@ using Lorex.Api.Features.Export;
 using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Knowledge;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Maps;
 using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Media;
 using Lorex.Api.Features.Publishing;
@@ -33,6 +34,20 @@ internal sealed record ValidatedImage(
     byte[] Thumbnail);
 
 /// <summary>
+/// One map's picture that passed validation (issue #52): what the writer needs to store it again under new ids, with the
+/// display copy already fitted by the same gate an upload goes through. Keyed by the map's id in the file.
+/// </summary>
+internal sealed record ValidatedMapImage(
+    Guid MapId,
+    string MediaPath,
+    string ContentType,
+    string Extension,
+    int Width,
+    int Height,
+    long ByteSize,
+    byte[] Display);
+
+/// <summary>
 /// A backup that can be restored: the payload in the current shape (<see cref="BackupNormalization"/>),
 /// every picture proven readable, and what the author is shown before they commit to it.
 /// </summary>
@@ -44,7 +59,8 @@ internal sealed record RestorableBackup(
     int RecordCount,
     BackupPreviewCounts Counts,
     ValidatedImage? Artwork = null,
-    IReadOnlyDictionary<Guid, ValidatedImage>? AppearanceImages = null);
+    IReadOnlyDictionary<Guid, ValidatedImage>? AppearanceImages = null,
+    IReadOnlyDictionary<Guid, ValidatedMapImage>? MapImages = null);
 
 /// <summary>
 /// Decides whether a parsed backup can be reconstructed, without writing anything anywhere.
@@ -95,6 +111,7 @@ internal static partial class BackupValidation
         var images = await CheckImagesAsync(payload, opened, issues, cancellationToken);
         var appearanceImages = await CheckAppearanceImagesAsync(payload, opened, issues, cancellationToken);
         var artwork = await CheckArtworkAsync(payload.Universe, opened, issues, cancellationToken);
+        var mapImages = await CheckMapImagesAsync(payload, opened, issues, cancellationToken);
         issues.ThrowIfAny();
 
         return new RestorableBackup(
@@ -105,7 +122,8 @@ internal static partial class BackupValidation
             records,
             BackupPreviewCounts.Of(payload, images.Count + appearanceImages.Count),
             artwork,
-            appearanceImages);
+            appearanceImages,
+            mapImages);
     }
 
     /// <summary>
@@ -315,10 +333,87 @@ internal static partial class BackupValidation
         return results;
     }
 
+    /// <summary>
+    /// Every map's picture (since version 34), decoded in full and fitted into its display copy by the same gate an upload
+    /// goes through - so a picture that would fail the restore fails here. Keyed by the map's id in the file.
+    /// </summary>
+    private static async Task<Dictionary<Guid, ValidatedMapImage>> CheckMapImagesAsync(
+        UniverseBackupPayload payload,
+        OpenedBackup opened,
+        BackupIssueList issues,
+        CancellationToken cancellationToken)
+    {
+        var results = new Dictionary<Guid, ValidatedMapImage>();
+        using var gate = new SemaphoreSlim(BackupRestoreLimits.ImageConcurrency);
+
+        await Task.WhenAll((payload.Maps ?? []).Select(async map =>
+        {
+            await gate.WaitAsync(cancellationToken);
+            try
+            {
+                var bytes = await opened.ReadMediaAsync(map.Image.MediaPath, cancellationToken);
+                using var stream = new MemoryStream(bytes, writable: false);
+                PreparedFit? prepared;
+                ImageRejection? rejection;
+
+                try
+                {
+                    (prepared, rejection) = await ImagePreparation.FitAsync(stream, bytes.Length, MapLimits.DisplaySide, cancellationToken);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    (prepared, rejection) = (null, new ImageRejection(ImagePreparation.FileField, "That image could not be read."));
+                }
+
+                var what = $"The picture of the map {Quote(map.Name)}";
+                lock (results)
+                {
+                    if (prepared is null)
+                    {
+                        issues.Add(BackupIssueCodes.InvalidImage, $"{what} could not be used: {rejection!.Message}");
+                    }
+                    else if (!string.Equals(prepared.ContentType, map.Image.ContentType, StringComparison.Ordinal))
+                    {
+                        issues.Add(BackupIssueCodes.InvalidImage, $"{what} is not the kind of image the backup says it is.");
+                    }
+                    else if (bytes.Length != map.Image.ByteSize)
+                    {
+                        issues.Add(BackupIssueCodes.InvalidImage, $"{what} is not the size the backup says it is.");
+                    }
+                    else if (prepared.Width != map.Image.Width || prepared.Height != map.Image.Height)
+                    {
+                        // The pins' fractions were measured against the size the file states; a picture of another size would
+                        // put every pin somewhere else.
+                        issues.Add(BackupIssueCodes.InvalidImage, $"{what} is not the size in pixels the backup says it is.");
+                    }
+                    else
+                    {
+                        results[map.Id] = new ValidatedMapImage(
+                            map.Id,
+                            map.Image.MediaPath,
+                            prepared.ContentType,
+                            prepared.Extension,
+                            prepared.Width,
+                            prepared.Height,
+                            bytes.Length,
+                            prepared.Display.Bytes);
+                    }
+                }
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }));
+
+        return results;
+    }
+
     private static int CountRecords(UniverseBackupPayload payload)
     {
         long count = 1 + payload.ChronologyEras!.Count + (payload.ChronologyCalendar is { } calendar ? 1 + calendar.Months.Count : 0) + payload.Tags.Count + payload.RelationshipTypes.Count
-            + payload.DismissedConflicts.Count + (payload.KnowledgeRecords?.Count ?? 0);
+            + payload.DismissedConflicts.Count + (payload.KnowledgeRecords?.Count ?? 0)
+            + (payload.Maps ?? []).Sum(map => map is null ? 0L : 1L + (map.Pins?.Count ?? 0));
 
         foreach (var type in payload.EntityTypes)
         {
@@ -428,6 +523,7 @@ internal static partial class BackupValidation
             var terms = Required(payload.ValidationTerms, "the list of event kinds and methods", since: 13);
             var groups = Required(payload.EntityTypeGroups, "the list of type groups", since: 23);
             var knowledge = Required(payload.KnowledgeRecords, "the list of knowledge records", since: 33);
+            var maps = Required(payload.Maps, "the list of maps", since: 34);
 
             // Everything that can be referenced is listed first, so a reference checked below can
             // point anywhere in the file regardless of order.
@@ -443,6 +539,7 @@ internal static partial class BackupValidation
             RegisterStories(stories);
             RegisterValidationTerms(terms);
             CheckKnowledge(knowledge, stories);
+            CheckMaps(maps);
 
             foreach (var entity in entities)
             {
@@ -2082,6 +2179,124 @@ internal static partial class BackupValidation
             {
                 Add(BackupIssueCodes.InvalidValue, "A dismissed Canon conflict does not carry a fingerprint Lorex wrote.");
             }
+        }
+
+        // ---------- Maps ----------
+
+        /// <summary>
+        /// Maps (issue #52, since version 34): each named once per universe within bounds, its picture at the place Lorex would
+        /// have written it and of a kind it stores, and every pin titled, within bounds, on the map (finite fractions from 0 to
+        /// 1), standing for an entry the file holds or for none, and no entry pinned twice on one map.
+        /// </summary>
+        private void CheckMaps(IReadOnlyList<BackupMap> maps)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+
+            if (maps.Count > MapLimits.MaxMapsPerUniverse)
+            {
+                Add(BackupIssueCodes.InvalidValue, "The backup holds more maps than a universe keeps.");
+            }
+
+            foreach (var map in maps)
+            {
+                if (map is null)
+                {
+                    Missing("a map");
+                    continue;
+                }
+
+                var what = $"The map {Quote(map.Name)}";
+                Register(map.Id, what);
+
+                if (Text(map.Name, MapLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(map.Name.Trim()))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"Two maps are both called {Quote(map.Name)}.");
+                }
+
+                Text(map.Description, MapLimits.DescriptionMaxLength, $"{what}'s description");
+
+                if (map.Image is null)
+                {
+                    Missing($"the picture of {what}");
+                }
+                else
+                {
+                    CheckMapImage(map, what);
+                }
+
+                var pins = Required(map.Pins, $"{what}'s pins");
+                if (pins.Count > MapLimits.MaxPinsPerMap)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} has more pins than a map holds.");
+                }
+
+                var pinned = new HashSet<Guid>();
+                foreach (var pin in pins)
+                {
+                    if (pin is null)
+                    {
+                        Missing($"a pin of {what}");
+                        continue;
+                    }
+
+                    var label = $"The pin {Quote(pin.Title)} on {what}";
+                    Register(pin.Id, label);
+                    Text(pin.Title, MapLimits.NameMaxLength, $"{label}'s title", required: true);
+                    Text(pin.Note, MapLimits.NoteMaxLength, $"{label}'s note");
+
+                    if (!double.IsFinite(pin.X) || !double.IsFinite(pin.Y) || pin.X < 0 || pin.X > 1 || pin.Y < 0 || pin.Y > 1)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{label} is not on the map.");
+                    }
+
+                    if (pin.EntityId is { } entityId)
+                    {
+                        Reference(_entities.ContainsKey(entityId), $"{label} stands for an entry the backup does not hold.");
+
+                        if (!pinned.Add(entityId))
+                        {
+                            Add(BackupIssueCodes.Duplicate, $"{what} pins the same entry twice.");
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CheckMapImage(BackupMap map, string what)
+        {
+            var image = map.Image;
+            if (image.ContentType is not ("image/jpeg" or "image/png" or "image/webp"))
+            {
+                Add(BackupIssueCodes.InvalidImage, $"{what} has a picture of a kind Lorex does not store.");
+                return;
+            }
+
+            var expected = BackupArchive.MapMediaPathFor(map.Id, image.ContentType);
+            if (!string.Equals(image.MediaPath, expected, StringComparison.Ordinal))
+            {
+                Add(BackupIssueCodes.InvalidImage, $"{what} names a picture at a place Lorex would not have put it.");
+                return;
+            }
+
+            _referencedMedia.Add(expected);
+
+            if (opened.MediaLength(expected) is not { } length)
+            {
+                Add(BackupIssueCodes.MissingMedia, $"The picture of {what} is missing from the archive.");
+                return;
+            }
+
+            if (length != image.ByteSize || image.ByteSize <= 0 || image.ByteSize > BackupRestoreLimits.MaxMediaBytes)
+            {
+                Add(BackupIssueCodes.InvalidImage, $"The picture of {what} is not the size the backup says it is.");
+            }
+
+            if (image.Width <= 0 || image.Height <= 0 || image.Width > ImagePreparation.MaxSide || image.Height > ImagePreparation.MaxSide)
+            {
+                Add(BackupIssueCodes.InvalidImage, $"The picture of {what} has dimensions Lorex does not accept.");
+            }
+
+            Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of the picture of {what}");
         }
 
         // ---------- The archive ----------

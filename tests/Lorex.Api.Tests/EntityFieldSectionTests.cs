@@ -297,7 +297,7 @@ public sealed class EntityFieldSectionTests(LorexApiFactory factory) : IClassFix
 
         var archive = await RawArchive(w.Client, w.U);
         var file = BackupOf(archive);
-        Assert.Equal(33, file.FormatVersion);
+        Assert.Equal(Lorex.Api.Features.Export.UniverseBackup.CurrentVersion, file.FormatVersion);
         var character = file.Payload.EntityTypes.Single(type => type.Name == "Character");
         Assert.Equal(["Story", "Combat"], character.FieldSections!.Select(section => section.Name));
 

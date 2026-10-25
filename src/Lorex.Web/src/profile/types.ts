@@ -27,4 +27,6 @@ export interface AccountStorage {
   quotaBytes: number
   remainingBytes: number
   loreImagesBytes: number
+  /** The maps' originals (issue #52). Absent from an older server's answer. */
+  mapImagesBytes?: number
 }

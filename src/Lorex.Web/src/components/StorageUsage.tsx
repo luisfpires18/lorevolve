@@ -35,8 +35,8 @@ export function StorageUsage() {
             ) : null}
 
             <p className="settings__note">
-              Images on Lore entries in universes you own count here, including entries in the Trash
-              and images your collaborators add.
+              Images on Lore entries and maps in universes you own count here, including entries in
+              the Trash and images your collaborators add.
             </p>
           </>
         )

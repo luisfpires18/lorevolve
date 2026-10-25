@@ -92,7 +92,9 @@ public static partial class UniverseExportEndpoints
                 title: "That backup could not be completed.",
                 detail: (missing.EntityId is { } entityId
                         ? $"An image belonging to entry {entityId:D} could not be read"
-                        : "The universe's artwork could not be read")
+                        : missing.MapId is { } mapId
+                            ? $"The picture of map {mapId:D} could not be read"
+                            : "The universe's artwork could not be read")
                     + ", so the backup would have been missing it. Nothing was downloaded.",
                 statusCode: StatusCodes.Status500InternalServerError,
                 extensions: new Dictionary<string, object?> { ["code"] = MediaMissingCode });

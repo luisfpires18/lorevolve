@@ -5,6 +5,7 @@ using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Comments;
 using Lorex.Api.Features.Knowledge;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Maps;
 using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Publishing;
 using Lorex.Api.Features.Relationships;
@@ -286,6 +287,20 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("edit knowledge", Put, $"{u}/knowledge/{any}", May.Edit, Json(new KnowledgeRecordRequest(w.Entry, null, "Knows the tide.", w.Scene, false))),
             new("remove knowledge", Delete, $"{u}/knowledge/{any}", May.Edit),
 
+            // ---------- Maps (issue 52, ADR 0060) ----------
+            new("maps", Get, $"{u}/maps", May.Read),
+            new("create map", Post, $"{u}/maps", May.Edit, () => MapTestClient.MapForm("Matrix map", RestoreTestClient.Png(64, 64))),
+            new("map", Get, $"{u}/maps/{any}", May.Read),
+            new("edit map details", Put, $"{u}/maps/{any}", May.Edit, Json(new MapDetailsRequest("Renamed", null, 1))),
+            new("delete map", Delete, $"{u}/maps/{any}", May.Edit),
+            new("replace map picture", Put, $"{u}/maps/{any}/image", May.Edit, () => MapTestClient.ReplaceForm(RestoreTestClient.Png(64, 64), "keep")),
+            new("map picture original", Get, $"{u}/maps/{any}/image/{any}/original", May.Read),
+            new("map picture display", Get, $"{u}/maps/{any}/image/{any}/display", May.Read),
+            new("add pin", Post, $"{u}/maps/{any}/pins", May.Edit, Json(new MapPinRequest("Pin", null, 0.5, 0.5, null))),
+            new("edit pin", Put, $"{u}/maps/{any}/pins/{any}", May.Edit, Json(new MapPinRequest("Pin", null, 0.5, 0.5, null))),
+            new("remove pin", Delete, $"{u}/maps/{any}/pins/{any}", May.Edit),
+            new("entry map pins", Get, $"{e}/map-pins", May.Read),
+
             // ---------- Private notes (issue 23) ----------
             new("entry private note", Get, $"{e}/private-note", May.Own),
             new("save private note", Put, $"{e}/private-note", May.Own, Json(new EntityPrivateNoteRequest("For my eyes.", 0))),
@@ -387,7 +402,9 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
                 var response = await w.Client(who).SendAsync(call.Request(call.Path));
 
                 // A finding id is random: past the gate, a member is told it is not there - the same as the owner is.
-                var expected = call.Name is "canon finding" or "ai change" ? HttpStatusCode.NotFound : HttpStatusCode.OK;
+                var expected = call.Name is "canon finding" or "ai change" or "map" or "map picture original" or "map picture display"
+                    ? HttpStatusCode.NotFound
+                    : HttpStatusCode.OK;
                 Assert.True(response.StatusCode == expected, $"{who}: {call.Name} answered {(int)response.StatusCode}");
             }
         }

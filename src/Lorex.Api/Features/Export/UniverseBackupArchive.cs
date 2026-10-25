@@ -38,6 +38,10 @@ public static class BackupArchive
     public static string AppearanceMediaPathFor(Guid entityId, Guid imageId, string contentType) =>
         $"media/entities/{entityId:D}/appearances/{imageId:D}/original.{ExtensionFor(contentType)}";
 
+    /// <summary>The original of one map's picture, inside the archive (since version 34).</summary>
+    public static string MapMediaPathFor(Guid mapId, string contentType) =>
+        $"media/maps/{mapId:D}/original.{ExtensionFor(contentType)}";
+
     /// <summary>The original of the universe's artwork, inside the archive (since version 15). One per archive.</summary>
     public static string ArtworkPathFor(string contentType) =>
         $"media/universe/artwork/original.{ExtensionFor(contentType)}";
@@ -62,13 +66,15 @@ public static class BackupArchive
 /// <summary>
 /// One image to be written into the archive. The object key is here and only here - it is how
 /// this installation reaches the bytes, and it never reaches the file. <paramref name="EntityId"/> is
-/// the entry the picture belongs to, or null for the universe's own artwork.
+/// the entry the picture belongs to, <paramref name="MapId"/> the map it is (issue #52), or neither for the universe's own
+/// artwork.
 /// </summary>
 public sealed record BackupMediaObject(
     Guid? EntityId,
     string ArchivePath,
     string ObjectKey,
-    string ContentType);
+    string ContentType,
+    Guid? MapId = null);
 
 /// <summary>
 /// Everything one export needs: the document, and the media it refers to.
@@ -84,13 +90,18 @@ public sealed record UniverseBackupSnapshot(
 /// that quietly left out a picture would break that promise at exactly the moment the promise
 /// mattered - when the file is all that is left.
 /// </summary>
-public sealed class BackupMediaMissingException(Guid? entityId)
+public sealed class BackupMediaMissingException(Guid? entityId, Guid? mapId = null)
     : InvalidOperationException(entityId is { } id
         ? $"The image stored for entry {id:D} could not be read."
-        : "The universe's artwork could not be read.")
+        : mapId is { } map
+            ? $"The picture stored for map {map:D} could not be read."
+            : "The universe's artwork could not be read.")
 {
-    /// <summary>The entry whose picture is missing, or null when it is the universe's artwork.</summary>
+    /// <summary>The entry whose picture is missing, or null when it is a map's or the universe's artwork.</summary>
     public Guid? EntityId { get; } = entityId;
+
+    /// <summary>The map whose picture is missing, or null.</summary>
+    public Guid? MapId { get; } = mapId;
 }
 
 /// <summary>
@@ -133,7 +144,7 @@ public static class UniverseBackupArchiveWriter
             foreach (var item in media.OrderBy(one => one.ArchivePath, StringComparer.Ordinal))
             {
                 var bytes = await readObject(item.ObjectKey, cancellationToken)
-                    ?? throw new BackupMediaMissingException(item.EntityId);
+                    ?? throw new BackupMediaMissingException(item.EntityId, item.MapId);
 
                 await using (bytes)
                 {

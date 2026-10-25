@@ -246,7 +246,7 @@ public sealed class KnowledgeTests(LorexApiFactory factory) : IClassFixture<Lore
         var fromStart = await Added(w.Owner, w.U, Request(subject, null, "Always known.", null, fromStart: true));
 
         var backup = await Backup(w.Owner, w.U);
-        Assert.Equal(33, backup.FormatVersion);
+        Assert.Equal(Lorex.Api.Features.Export.UniverseBackup.CurrentVersion, backup.FormatVersion);
         var carried = backup.Payload.KnowledgeRecords!;
         Assert.Equal(2, carried.Count);
         var row = carried.Single(record => record.Id == atFirst.Id);

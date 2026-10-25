@@ -8,6 +8,7 @@ import {
   Globe,
   Hourglass,
   Library,
+  Map,
   Network,
   Scale,
   Settings,
@@ -50,6 +51,13 @@ export const WORLD: readonly Section[] = [
     testId: 'workspace-lore',
     icon: Library,
     purpose: 'Every entry: people, places, things and ideas.',
+  },
+  {
+    segment: 'maps',
+    label: 'Maps',
+    testId: 'workspace-maps',
+    icon: Map,
+    purpose: 'Pictures of the world, with pins that open the Lore they stand for.',
   },
   {
     segment: 'family-tree',

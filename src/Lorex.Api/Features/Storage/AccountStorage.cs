@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lorex.Api.Features.Storage;
 
-/// <summary>An account's allowance beside what it is using, by category. Lore pictures are the only category so far.</summary>
-public sealed record StorageUsage(long QuotaBytes, long LoreImageBytes)
+/// <summary>An account's allowance beside what it is using, by category: Lore pictures, and since issue #52 the maps' originals.</summary>
+public sealed record StorageUsage(long QuotaBytes, long LoreImageBytes, long MapImageBytes = 0)
 {
-    public long UsedBytes => LoreImageBytes;
+    public long UsedBytes => LoreImageBytes + MapImageBytes;
 
     /// <summary>Never below zero: an account over its allowance - stored before there was one - has none left, not less.</summary>
     public long RemainingBytes => Math.Max(0, QuotaBytes - UsedBytes);
@@ -45,12 +45,14 @@ public static partial class AccountStorage
         // Captured as queries, so EF Core folds them into the one statement as subqueries.
         var loreImages = LoreImageBytes(db, userId);
         var appearanceImages = AppearanceImageBytes(db, userId);
+        var mapImages = MapImageBytes(db, userId);
 
         return db.Users
             .Where(user => user.Id == userId)
             .Select(user => new StorageUsage(
                 user.StorageQuotaBytes,
-                (loreImages.Sum(bytes => (long?)bytes) ?? 0) + (appearanceImages.Sum(bytes => (long?)bytes) ?? 0)))
+                (loreImages.Sum(bytes => (long?)bytes) ?? 0) + (appearanceImages.Sum(bytes => (long?)bytes) ?? 0),
+                mapImages.Sum(bytes => (long?)bytes) ?? 0))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -187,6 +189,12 @@ public static partial class AccountStorage
             .Where(image => image.Appearance!.Entity!.Universe!.OwnerId == ownerId)
             .Select(image => image.ByteSize);
 
+    /// <summary>The originals of every map in those universes (issue #52): the author's own files, as a picture's are. The derivative never counts.</summary>
+    private static IQueryable<long> MapImageBytes(LorexDbContext db, string ownerId) =>
+        db.UniverseMaps
+            .Where(map => map.Universe!.OwnerId == ownerId)
+            .Select(map => map.ByteSize);
+
     /// <summary>
     /// Whether <paramref name="bytes"/> more fit: stored plus held plus these, at most the allowance. One command.
     /// An account already over its allowance has no room for any increase, however small.
@@ -200,13 +208,14 @@ public static partial class AccountStorage
     {
         var loreImages = LoreImageBytes(db, ownerId);
         var appearanceImages = AppearanceImageBytes(db, ownerId);
+        var mapImages = MapImageBytes(db, ownerId);
 
         var room = await db.Users
             .Where(user => user.Id == ownerId)
             .Select(user => new
             {
                 user.StorageQuotaBytes,
-                Stored = (loreImages.Sum(stored => (long?)stored) ?? 0) + (appearanceImages.Sum(stored => (long?)stored) ?? 0),
+                Stored = (loreImages.Sum(stored => (long?)stored) ?? 0) + (appearanceImages.Sum(stored => (long?)stored) ?? 0) + (mapImages.Sum(stored => (long?)stored) ?? 0),
                 Held = db.StorageReservations
                     .Where(reservation => reservation.UserId == ownerId && reservation.ExpiresAt > now)
                     .Sum(reservation => (long?)reservation.Bytes) ?? 0,

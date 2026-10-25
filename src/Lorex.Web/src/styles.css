@@ -17570,3 +17570,521 @@ details.reviewsection > .reviewsection__list {
   font-size: var(--text-ui);
   overflow-wrap: anywhere;
 }
+
+/* ---------- Maps (issue #52, ADR 0060) ----------
+
+   A picture of the world, panned and zoomed, with pins on it. The viewer is one transformed layer: the
+   picture at its displayed size, the pins at fractions of it, counter-scaled so they keep one size. */
+
+.maps__notice {
+  margin: 1.5rem 0 0;
+}
+
+.maps__notice p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.maplist {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--space-5);
+  margin: 2rem 0 0;
+  padding: 0;
+}
+
+.mapcard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.mapcard__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.mapcard__picture {
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.mapcard__picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.mapcard__name {
+  font-family: var(--display);
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.mapcard__link:hover .mapcard__name,
+.mapcard__link:focus-visible .mapcard__name {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.mapcard__description {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 0.9rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mapcard__meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* One map. */
+.mapscreen__review,
+.mapscreen__placing {
+  margin: var(--space-4) 0 0;
+}
+
+.mapscreen__placing .button--text {
+  padding: 0;
+  min-height: 0;
+  font-size: inherit;
+}
+
+.mapscreen__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: var(--space-5);
+  align-items: start;
+  margin-top: var(--space-5);
+}
+
+.mapscreen__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.mapscreen__pinsheading {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mapscreen__count {
+  font-weight: 400;
+}
+
+.mapscreen__empty {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+/* The viewer. */
+.mapviewer {
+  position: relative;
+  min-width: 0;
+}
+
+.mapviewer__stage {
+  position: relative;
+  height: min(70vh, 48rem);
+  min-height: 18rem;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mapviewer__stage:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.mapviewer__stage:active {
+  cursor: grabbing;
+}
+
+.mapviewer[data-placing] .mapviewer__stage {
+  cursor: crosshair;
+}
+
+.mapviewer__layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.mapviewer__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.mapviewer__controls {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  box-shadow: var(--shadow-2);
+}
+
+/* A pin: a button at a fraction of the picture, its foot on the point. Counter-scaled against the layer. */
+.mappin,
+.mapmarker {
+  position: absolute;
+  transform: translate(-50%, -100%) scale(calc(1 / var(--map-scale, 1)));
+  transform-origin: 50% 100%;
+}
+
+.mappin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.mappin__head {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50% 50% 50% 0;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 2px var(--raised),
+    var(--shadow-2);
+  transform: rotate(-45deg);
+  transition: transform var(--duration-1) var(--ease);
+}
+
+.mappin__label {
+  max-width: 12rem;
+  padding: 0.0625rem var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--raised);
+  box-shadow: var(--shadow-1);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity var(--duration-1) var(--ease);
+}
+
+/* A pointer's hover, the keyboard's focus and the chosen pin all say the name; a coarse pointer always does. */
+.mappin:hover .mappin__label,
+.mappin:focus-visible .mappin__label,
+.mappin[aria-pressed='true'] .mappin__label,
+.mappin[data-dragging] .mappin__label {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .mappin__label {
+    opacity: 1;
+  }
+}
+
+.mappin:focus-visible .mappin__head {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.mappin[aria-pressed='true'] .mappin__head {
+  transform: rotate(-45deg) scale(1.25);
+  background: var(--ink);
+}
+
+.mappin[data-review] .mappin__head {
+  background: var(--raised);
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    var(--shadow-2);
+}
+
+.mappin[data-dragging] {
+  z-index: 2;
+}
+
+.mapmarker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.mapmarker__dot {
+  display: block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid var(--raised);
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+
+.mapmarker__label {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--raised);
+  font-size: var(--text-xs);
+  box-shadow: var(--shadow-1);
+}
+
+/* The chosen pin, beside the picture. */
+.pincard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.pincard__title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.pincard__review {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.pincard__note {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pincard__lore {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.pincard__lore--trashed,
+.pincard__lore--none,
+.pincard__position {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.pincard__icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+.pincard__type {
+  color: var(--muted);
+}
+
+.pincard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* Every pin, as a list the keyboard and a screen reader walk. */
+.pinlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.pinlist__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pinlist__item:hover {
+  background: var(--paper);
+}
+
+.pinlist__item[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.pinlist__icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.15rem;
+  color: var(--muted);
+}
+
+.pinlist__text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pinlist__lore,
+.pinlist__review {
+  color: var(--muted);
+}
+
+/* The pin form's position, two numbers. */
+.mappinform__position {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.mappinform__coords {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.mappinform__coord {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.mappinform__coord .field__input {
+  width: 6.5rem;
+}
+
+/* The map form's file and the replacement's choice. */
+.mapform__file {
+  padding: var(--space-2) 0;
+}
+
+.mapform__choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.mapform__choice input {
+  margin-top: 0.25rem;
+}
+
+/* On the entry: where it is. */
+.rail__quiet {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.entrymaps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.entrymaps__link {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.entrymaps__icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.15rem;
+  color: var(--muted);
+}
+
+.entrymaps__pin {
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .mapscreen__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mapviewer__stage {
+    height: min(60vh, 32rem);
+  }
+
+  .pinlist {
+    max-height: none;
+  }
+}

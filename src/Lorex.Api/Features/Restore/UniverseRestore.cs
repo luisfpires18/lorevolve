@@ -7,6 +7,7 @@ using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Knowledge;
 using Lorex.Api.Features.WorldRules;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Maps;
 using Lorex.Api.Features.RuleValidation;
 using Lorex.Api.Features.Media;
 using Lorex.Api.Features.Progression;
@@ -115,6 +116,16 @@ internal sealed class RestoreIdentity
         foreach (var record in payload.KnowledgeRecords ?? [])
         {
             yield return record.Id;
+        }
+
+        foreach (var map in payload.Maps ?? [])
+        {
+            yield return map.Id;
+
+            foreach (var pin in map.Pins)
+            {
+                yield return pin.Id;
+            }
         }
 
         foreach (var tag in payload.Tags)
@@ -273,6 +284,7 @@ internal sealed partial class UniverseRestore(
         {
             var images = await StoreImagesAsync(backup, opened, ids, universeId, now, attempted, cancellationToken);
             await StoreAppearanceImagesAsync(backup, opened, ids, universeId, now, attempted, cancellationToken);
+            await StoreMapImagesAsync(backup, opened, ids, universeId, now, attempted, cancellationToken);
             var artwork = await StoreArtworkAsync(backup, opened, universeId, now, attempted, cancellationToken);
             return await WriteAsync(backup.Payload, ids, universeId, ownerId, name, now, images, artwork, hold, cancellationToken);
         }
@@ -292,6 +304,85 @@ internal sealed partial class UniverseRestore(
 
     /// <summary>Appearance pictures written before the transaction, added by <see cref="AddProgression"/> with their looks.</summary>
     private readonly List<EntityAppearanceImage> _appearanceImages = [];
+
+    /// <summary>Maps whose pictures were written before the transaction, with their pins, added by <see cref="AddMaps"/>.</summary>
+    private readonly List<UniverseMap> _maps = [];
+
+    /// <summary>
+    /// Every map's picture (issue #52) under the new universe's keys: the original from the archive and the display copy
+    /// validation already fitted. One at a time, as the appearance pictures are. A pin placed on the picture the backup shows
+    /// is placed on the restored one; a pin that was waiting for review goes on waiting, under an asset id the map never had.
+    /// </summary>
+    private async Task StoreMapImagesAsync(
+        RestorableBackup backup,
+        OpenedBackup opened,
+        RestoreIdentity ids,
+        Guid universeId,
+        DateTime now,
+        ConcurrentQueue<string> attempted,
+        CancellationToken cancellationToken)
+    {
+        foreach (var map in backup.Payload.Maps ?? [])
+        {
+            var validated = backup.MapImages![map.Id];
+            var original = await opened.ReadMediaAsync(validated.MediaPath, cancellationToken);
+
+            var mapId = ids.Map(map.Id);
+            var assetId = Guid.NewGuid();
+            var originalKey = MapImageKeys.Original(universeId, mapId, assetId, validated.Extension);
+            var displayKey = MapImageKeys.Display(universeId, mapId, assetId);
+
+            attempted.Enqueue(originalKey);
+            attempted.Enqueue(displayKey);
+
+            using var originalBytes = new MemoryStream(original, writable: false);
+            using var displayBytes = new MemoryStream(validated.Display, writable: false);
+            await MediaObjectWrites.PutAllAsync(
+                store,
+                cancellationToken,
+                new PendingMediaObject(originalKey, originalBytes, validated.ContentType),
+                new PendingMediaObject(displayKey, displayBytes, "image/webp"));
+
+            var stale = Guid.NewGuid();
+            _maps.Add(new UniverseMap
+            {
+                Id = mapId,
+                UniverseId = universeId,
+                Name = map.Name.Trim(),
+                Description = string.IsNullOrWhiteSpace(map.Description) ? null : map.Description,
+                AssetId = assetId,
+                OriginalKey = originalKey,
+                DisplayKey = displayKey,
+                ContentType = validated.ContentType,
+                FileName = FileNameLabel(map.Image.FileName),
+                Width = validated.Width,
+                Height = validated.Height,
+                ByteSize = validated.ByteSize,
+                UploadedAt = now,
+                CreatedAt = map.CreatedAt,
+                UpdatedAt = map.UpdatedAt,
+                Pins =
+                [
+                    .. map.Pins.Select(pin => new MapPin
+                    {
+                        Id = ids.Map(pin.Id),
+                        MapId = mapId,
+                        EntityId = ids.Map(pin.EntityId),
+                        Title = pin.Title.Trim(),
+                        Note = string.IsNullOrWhiteSpace(pin.Note) ? null : pin.Note,
+                        X = pin.X,
+                        Y = pin.Y,
+                        PlacedOnAssetId = pin.PlacedOnCurrentImage ? assetId : stale,
+                        CreatedAt = pin.CreatedAt,
+                        UpdatedAt = pin.UpdatedAt,
+                    }),
+                ],
+            });
+        }
+    }
+
+    /// <summary>The maps stored above, as rows: after the entries, which their pins stand for.</summary>
+    private void AddMaps() => db.UniverseMaps.AddRange(_maps);
 
     /// <summary>
     /// Every appearance picture (Issue #43) under the new universe's keys: the original from the archive and the centred square
@@ -633,6 +724,7 @@ internal sealed partial class UniverseRestore(
             }
 
             AddLore(payload, ids, universeId, images);
+            AddMaps();
             AddStories(payload, ids, universeId);
             AddIdeas(payload, ids, universeId, ownerId);
             AddWorldRules(payload, ids, universeId);

@@ -356,6 +356,14 @@ public static partial class UniverseEndpoints
             .SelectMany(artwork => new[] { artwork.OriginalKey, artwork.CardKey })
             .ToArray();
 
+        // The maps' pictures (issue #52), the same way: keys as written, swept only past the commit.
+        var mapKeys = (await db.UniverseMaps
+                .Where(map => map.UniverseId == universe.Id)
+                .Select(map => new { map.OriginalKey, map.DisplayKey })
+                .ToListAsync(cancellationToken))
+            .SelectMany(map => new[] { map.OriginalKey, map.DisplayKey })
+            .ToArray();
+
         db.Universes.Remove(universe);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -363,7 +371,8 @@ public static partial class UniverseEndpoints
         // Only past the commit, and never a reason to undo it: each helper logs a key that will not delete and moves on.
         await Task.WhenAll(
             EntityImageEndpoints.SweepAsync(store, loggerFactory.CreateLogger("Lorex.EntityImages"), pictureKeys),
-            UniverseArtworkEndpoints.SweepAsync(store, loggerFactory.CreateLogger(UniverseArtworkEndpoints.LoggerName), artworkKeys));
+            UniverseArtworkEndpoints.SweepAsync(store, loggerFactory.CreateLogger(UniverseArtworkEndpoints.LoggerName), artworkKeys),
+            Maps.MapEndpoints.SweepAsync(store, loggerFactory.CreateLogger(Maps.MapEndpoints.LoggerName), mapKeys));
 
         return Results.NoContent();
     }

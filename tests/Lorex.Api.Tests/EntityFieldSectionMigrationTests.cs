@@ -115,7 +115,7 @@ public sealed class EntityFieldSectionMigrationTests : IDisposable
     /// <summary>Everything that was there before: every table with its row count, and every field's and type's id and name.</summary>
     private static async Task<string> Fingerprint(LorexDbContext db)
     {
-        var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name <> 'EntityFieldSections' AND name <> 'EntityPrivateNotes' AND name <> 'KnowledgeRecords' AND name <> 'AdminAuditRecords' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%SearchIndex%' AND name <> '__EFMigrationsHistory' ORDER BY name");
+        var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name <> 'EntityFieldSections' AND name <> 'EntityPrivateNotes' AND name <> 'KnowledgeRecords' AND name <> 'AdminAuditRecords' AND name <> 'UniverseMaps' AND name <> 'MapPins' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%SearchIndex%' AND name <> '__EFMigrationsHistory' ORDER BY name");
         var parts = new List<string>();
         foreach (var table in tables)
         {

@@ -32,7 +32,7 @@ public sealed class PublicationBackupTests(LorexApiFactory factory) : IClassFixt
         var backup = BackupOf(archive);
         var carried = backup.Payload.Universe;
 
-        Assert.Equal(33, backup.FormatVersion);
+        Assert.Equal(Lorex.Api.Features.Export.UniverseBackup.CurrentVersion, backup.FormatVersion);
         Assert.Equal("A drowned coast where the tide keeps count.", carried.PublicSummary);
         Assert.Equal(UniverseCategory.Books, carried.Category);
         Assert.Equal([UniverseGenres.Fantasy, UniverseGenres.Adventure], carried.Genres);

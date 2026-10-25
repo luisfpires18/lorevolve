@@ -241,7 +241,8 @@ public static partial class BackupRestoreEndpoints
                 // a byte of them is stored and consumed by the commit that writes the universe (ADR 0042). The
                 // artwork is not a Lore picture and does not count.
                 var imageBytes = restorable.Images.Values.Sum(image => image.ByteSize)
-                    + (restorable.AppearanceImages?.Values.Sum(image => image.ByteSize) ?? 0);
+                    + (restorable.AppearanceImages?.Values.Sum(image => image.ByteSize) ?? 0)
+                    + (restorable.MapImages?.Values.Sum(image => image.ByteSize) ?? 0);
                 StorageHold? hold = null;
 
                 if (imageBytes > 0)

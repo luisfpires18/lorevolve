@@ -236,7 +236,7 @@ public sealed class EntityPrivateNoteTests(LorexApiFactory factory) : IClassFixt
 
         var backup = await Backup(w.Owner, w.U);
         Assert.Equal(UniverseBackup.CurrentVersion, backup.FormatVersion);
-        Assert.Equal(33, backup.FormatVersion);
+        Assert.Equal(Lorex.Api.Features.Export.UniverseBackup.CurrentVersion, backup.FormatVersion);
         var noted = backup.Payload.Entities.Single(entity => entity.Id == w.Entry);
         Assert.NotNull(noted.PrivateNote);
         Assert.Equal(text, noted.PrivateNote!.Content);

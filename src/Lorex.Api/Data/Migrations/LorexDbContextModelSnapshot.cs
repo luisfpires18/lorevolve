@@ -1398,6 +1398,124 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("Tags", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Maps.MapPin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MapId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PlacedOnAssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("X")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Y")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityId");
+
+                    b.HasIndex("MapId");
+
+                    b.HasIndex("MapId", "EntityId")
+                        .IsUnique()
+                        .HasFilter("\"EntityId\" IS NOT NULL");
+
+                    b.ToTable("MapPins", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Maps.UniverseMap", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("ByteSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OriginalKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UniverseId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("UniverseMaps", (string)null);
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Mcp.McpConnection", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3961,6 +4079,35 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("Universe");
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Maps.MapPin", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
+                        .WithMany()
+                        .HasForeignKey("EntityId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Lorex.Api.Features.Maps.UniverseMap", "Map")
+                        .WithMany("Pins")
+                        .HasForeignKey("MapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Entity");
+
+                    b.Navigation("Map");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Maps.UniverseMap", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Universe");
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Mcp.McpConnection", b =>
                 {
                     b.HasOne("Lorex.Api.Features.Universes.Universe", "Universe")
@@ -5022,6 +5169,11 @@ namespace Lorex.Api.Data.Migrations
             modelBuilder.Entity("Lorex.Api.Features.Lore.Tag", b =>
                 {
                     b.Navigation("EntityTags");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Maps.UniverseMap", b =>
+                {
+                    b.Navigation("Pins");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Progression.EntityAbility", b =>

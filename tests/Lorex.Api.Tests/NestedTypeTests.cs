@@ -421,7 +421,7 @@ public sealed partial class NestedTypeTests(LorexApiFactory factory) : IClassFix
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(33, backup.FormatVersion);
+        Assert.Equal(Lorex.Api.Features.Export.UniverseBackup.CurrentVersion, backup.FormatVersion);
         var types = backup.Payload.EntityTypes;
         Assert.Equal(runes.Id, types.Single(t => t.Name == "Material").ParentId);
         Assert.Equal(material.Id, types.Single(t => t.Name == "Metal").ParentId);

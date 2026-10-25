@@ -353,7 +353,7 @@ public sealed class TypeManagementTests(LorexApiFactory factory) : IClassFixture
         // A rename, an icon and the new icon keys are all values of columns a version 18 backup already carried; version 19
         // added only a type's parent (nested types, Product refinement 022). Later versions added a link field's target (20),
         // a moment's stories (21), a custom calendar (22) and type groups (23), which sit beside the types rather than in one.
-        Assert.Equal(33, UniverseBackup.CurrentVersion);
+        Assert.Equal(34, UniverseBackup.CurrentVersion);
     }
 
     // ---------- Helpers ----------

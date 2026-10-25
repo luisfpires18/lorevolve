@@ -268,8 +268,16 @@ public sealed record UniverseBackup(
     /// record of the universe: who knows, what, about whom, since which scene or from the start, by id. Not ignorable: a
     /// version 32 reader would restore a world with every continuity note silently gone. A file at version 32 or earlier has
     /// none, and restores with none, even when it carries the member.
+    ///
+    /// 34 - A universe may hold maps (issue #52, ADR 0060). <see cref="UniverseBackupPayload.Maps"/> carries every map by
+    /// name - its details, its picture's facts and where the original sits in the archive
+    /// (<c>media/maps/{mapId}/original.{ext}</c>), and every pin: title, note, position as fractions of the displayed picture,
+    /// the entry it stands for by id, and whether it was placed on the picture the map shows. Not ignorable: the pins and the
+    /// map's own words are authored, and a version 33 reader would restore a world with every map silently gone. The fitted
+    /// display picture is derived and is not carried. A file at version 33 or earlier has none, and restores with none, even
+    /// when it carries the member.
     /// </summary>
-    public const int CurrentVersion = 33;
+    public const int CurrentVersion = 34;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -317,7 +325,52 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupValidationTerm>? ValidationTerms = null,
     BackupChronologyCalendar? ChronologyCalendar = null,
     IReadOnlyList<BackupEntityTypeGroup>? EntityTypeGroups = null,
-    IReadOnlyList<BackupKnowledgeRecord>? KnowledgeRecords = null);
+    IReadOnlyList<BackupKnowledgeRecord>? KnowledgeRecords = null,
+    IReadOnlyList<BackupMap>? Maps = null);
+
+/// <summary>
+/// One map of the universe (since version 34, ADR 0060): its details, its picture and its pins in title order. Ids are
+/// preserved because pins name their map and the entry they stand for, and a restore gives each a new one.
+/// </summary>
+public sealed record BackupMap(
+    Guid Id,
+    string Name,
+    string? Description,
+    BackupMapImage Image,
+    IReadOnlyList<BackupMapPin> Pins,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
+/// <summary>
+/// A map's picture, as <see cref="BackupEntityImage"/> describes an entry's: the original's identity and facts and where
+/// it sits in the archive. The fitted display copy is derived and is not carried; an importer fits it again. No object key,
+/// no URL. <paramref name="Width"/> and <paramref name="Height"/> are the picture as displayed - what every pin's fractions
+/// are measured against.
+/// </summary>
+public sealed record BackupMapImage(
+    Guid AssetId,
+    string? FileName,
+    string ContentType,
+    int Width,
+    int Height,
+    long ByteSize,
+    string MediaPath);
+
+/// <summary>
+/// One pin: its title and note as written, its position as fractions of the displayed picture, the entry of this file it
+/// stands for or null, and whether its position was placed or confirmed on the picture the map carries here. A pin that was
+/// still waiting for review stays so after a restore.
+/// </summary>
+public sealed record BackupMapPin(
+    Guid Id,
+    string Title,
+    string? Note,
+    double X,
+    double Y,
+    Guid? EntityId,
+    bool PlacedOnCurrentImage,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
 /// <summary>
 /// One knowledge record (since version 33, ADR 0057): the knower and, optionally, the subject by entry id, the statement

@@ -38,6 +38,8 @@ const InvitationPage = lazy(() => import('./pages/InvitationPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const LorePage = lazy(() => import('./pages/LorePage'))
+const MapPage = lazy(() => import('./pages/MapPage'))
+const MapsPage = lazy(() => import('./pages/MapsPage'))
 const MassCreatePage = lazy(() => import('./pages/MassCreatePage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const PublicAuthorPage = lazy(() => import('./pages/PublicAuthorPage'))
@@ -210,6 +212,8 @@ function Root() {
                   </RoleGate>,
                 )}
               />
+              <Route path="maps" element={asSection('maps', <MapsPage />)} />
+              <Route path="maps/:mapId" element={asSection('map', <MapPage />)} />
               <Route path="family-tree" element={asSection('family-tree', <FamilyTreePage />)} />
               <Route
                 path="family-tree/:entityId"

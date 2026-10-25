@@ -336,7 +336,7 @@ test.describe('workspace navigation', () => {
     await page.goto(`/app/universes/${universeId}`)
 
     // Issue #48: the world's four, then the writing - Stories, the Timeline it is told against, Ideas.
-    const world = ['Lore', 'Family Tree', 'Chronology', 'World Rules']
+    const world = ['Lore', 'Maps', 'Family Tree', 'Chronology', 'World Rules']
     const writing = ['Stories', 'Timeline', 'Ideas']
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
     await expect(sections.getByRole('link')).toContainText([
@@ -347,7 +347,7 @@ test.describe('workspace navigation', () => {
     ])
     await expect(page.locator('[data-testid="overview-lore"]')).toBeVisible()
     const links = (await sections.getByRole('link').allTextContents()).map((text) => text.trim())
-    expect(links.slice(2, 9)).toEqual([...world, ...writing])
+    expect(links.slice(2, 2 + world.length + writing.length)).toEqual([...world, ...writing])
 
     const doorways = [
       'lore',
@@ -383,10 +383,9 @@ test.describe('workspace navigation', () => {
         .getByRole('link')
         .allTextContents()
     ).map((text) => text.trim())
-    expect(sheet.slice(sheet.indexOf('Lore'), sheet.indexOf('Lore') + 7)).toEqual([
-      ...world,
-      ...writing,
-    ])
+    expect(
+      sheet.slice(sheet.indexOf('Lore'), sheet.indexOf('Lore') + world.length + writing.length),
+    ).toEqual([...world, ...writing])
     await page.getByTestId('workspace-timeline').click()
     await page.waitForURL(`/app/universes/${universeId}/timeline`)
   })

@@ -2,6 +2,7 @@ using Lorex.Api.Data;
 using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Maps;
 using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Publishing;
 using Microsoft.EntityFrameworkCore;
@@ -64,6 +65,13 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
         var artwork = await db.UniverseArtworks.AsNoTracking()
             .FirstOrDefaultAsync(candidate => candidate.UniverseId == universeId, cancellationToken);
 
+        // Every map with its pins (issue #52), originals only: the display copy is fitted again on restore.
+        var maps = await db.UniverseMaps.AsNoTracking()
+            .Where(map => map.UniverseId == universeId)
+            .Include(map => map.Pins)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+
         var payload = new UniverseBackupPayload(
             new BackupUniverse(
                 universe.Id,
@@ -106,7 +114,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
             await ValidationTermsAsync(universeId, cancellationToken),
             await CalendarAsync(universeId, cancellationToken),
             await EntityTypeGroupsAsync(universeId, cancellationToken),
-            await KnowledgeAsync(universeId, cancellationToken));
+            await KnowledgeAsync(universeId, cancellationToken),
+            MapsOf(maps));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -128,6 +137,12 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                     .Concat(artwork is null
                         ? []
                         : [new BackupMediaObject(null, BackupArchive.ArtworkPathFor(artwork.ContentType), artwork.OriginalKey, artwork.ContentType)])
+                    .Concat(maps.Select(map => new BackupMediaObject(
+                        null,
+                        BackupArchive.MapMediaPathFor(map.Id, map.ContentType),
+                        map.OriginalKey,
+                        map.ContentType,
+                        map.Id)))
                     .OrderBy(one => one.ArchivePath, StringComparer.Ordinal),
             ]);
     }
@@ -148,6 +163,43 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
         await db.EntityImages.AsNoTracking()
             .Where(image => image.Entity!.UniverseId == universeId)
             .ToDictionaryAsync(image => image.EntityId, cancellationToken);
+
+    /// <summary>Every map by name then id, each with its pins by title then id (issue #52), so two exports of an unchanged world agree.</summary>
+    private static IReadOnlyList<BackupMap> MapsOf(List<UniverseMap> maps) =>
+    [
+        .. maps
+            .OrderBy(map => map.Name, StringComparer.Ordinal)
+            .ThenBy(map => Key(map.Id), StringComparer.Ordinal)
+            .Select(map => new BackupMap(
+                map.Id,
+                map.Name,
+                map.Description,
+                new BackupMapImage(
+                    map.AssetId,
+                    map.FileName,
+                    map.ContentType,
+                    map.Width,
+                    map.Height,
+                    map.ByteSize,
+                    BackupArchive.MapMediaPathFor(map.Id, map.ContentType)),
+                [
+                    .. map.Pins
+                        .OrderBy(pin => pin.Title, StringComparer.Ordinal)
+                        .ThenBy(pin => Key(pin.Id), StringComparer.Ordinal)
+                        .Select(pin => new BackupMapPin(
+                            pin.Id,
+                            pin.Title,
+                            pin.Note,
+                            pin.X,
+                            pin.Y,
+                            pin.EntityId,
+                            pin.PlacedOnAssetId == map.AssetId,
+                            Utc(pin.CreatedAt),
+                            Utc(pin.UpdatedAt))),
+                ],
+                Utc(map.CreatedAt),
+                Utc(map.UpdatedAt))),
+    ];
 
     // ---------- Chronology ----------
 

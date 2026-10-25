@@ -14,6 +14,9 @@ import { entryText } from './support/zip'
  * world through the API and exports it for real, so the file uploaded is exactly the file Lorex writes.
  */
 
+/** The backup format the API writes today (`UniverseBackup.CurrentVersion`); a file one past it is from a newer Lorex. */
+const CURRENT_FORMAT_VERSION = 34
+
 function unique(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`
 }
@@ -201,7 +204,7 @@ test.describe('restore a backup', () => {
     await expect(preview).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Ready to restore' })).toBeFocused()
     await expect(page.getByTestId('restore-universe-name')).toHaveText(source.name)
-    await expect(preview).toContainText('Version 33')
+    await expect(preview).toContainText(`Version ${CURRENT_FORMAT_VERSION}`)
     await expect(preview).toContainText('1 world rule')
     await expect(preview).toContainText('1 entry')
     await expect(preview).toContainText('1 picture')
@@ -329,7 +332,9 @@ test.describe('restore a backup', () => {
         {
           name: 'future.json',
           mimeType: 'application/json',
-          buffer: Buffer.from(JSON.stringify({ ...document, formatVersion: 34 })),
+          buffer: Buffer.from(
+            JSON.stringify({ ...document, formatVersion: CURRENT_FORMAT_VERSION + 1 }),
+          ),
         },
         /newer Lorex/,
       ],

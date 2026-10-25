@@ -39,6 +39,9 @@ export interface BackupPreviewCounts {
   dismissedConflicts: number
   worldRules: number
   worldRulesInTrash: number
+  /** Maps and their pins (issue #52). Absent from a preview written before them. */
+  maps?: number
+  mapPins?: number
 }
 
 export interface BackupPreview {

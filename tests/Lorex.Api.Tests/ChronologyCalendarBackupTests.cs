@@ -79,7 +79,7 @@ public sealed class ChronologyCalendarBackupTests(LorexApiFactory factory) : ICl
 
         var archive = await RawArchive(client, w.U);
         var backup = BackupOf(archive);
-        Assert.Equal(33, backup.FormatVersion);
+        Assert.Equal(Lorex.Api.Features.Export.UniverseBackup.CurrentVersion, backup.FormatVersion);
 
         var calendar = backup.Payload.ChronologyCalendar!;
         Assert.Equal(w.Chronology.Calendar!.Id, calendar.Id);

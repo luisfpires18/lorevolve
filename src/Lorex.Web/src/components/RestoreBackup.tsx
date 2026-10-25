@@ -467,6 +467,15 @@ function summaryRows(counts: BackupPreviewCounts): [string, string][] {
     rows.push(['World Rules', plural(counts.worldRules, 'world rule', 'world rules')])
   }
 
+  if ((counts.maps ?? 0) > 0) {
+    rows.push([
+      'Maps',
+      [plural(counts.maps ?? 0, 'map', 'maps'), plural(counts.mapPins ?? 0, 'pin', 'pins')].join(
+        ', ',
+      ),
+    ])
+  }
+
   const history = counts.entryVersions + counts.articleVersions + counts.manuscriptVersions
   if (history > 0) {
     rows.push(['Saved versions', plural(history, 'saved version', 'saved versions')])

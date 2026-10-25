@@ -6,6 +6,7 @@ using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Ideas;
 using Lorex.Api.Features.Knowledge;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Maps;
 using Lorex.Api.Features.Mcp;
 using Lorex.Api.Features.Profile;
 using Lorex.Api.Features.Progression;
@@ -111,6 +112,10 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
     public DbSet<EntityAppearanceScene> EntityAppearanceScenes => Set<EntityAppearanceScene>();
 
     public DbSet<EntityAppearanceImage> EntityAppearanceImages => Set<EntityAppearanceImage>();
+
+    public DbSet<UniverseMap> UniverseMaps => Set<UniverseMap>();
+
+    public DbSet<MapPin> MapPins => Set<MapPin>();
 
     public DbSet<RelationshipType> RelationshipTypes => Set<RelationshipType>();
 
