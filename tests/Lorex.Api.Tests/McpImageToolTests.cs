@@ -270,6 +270,45 @@ public sealed class McpImageToolTests(McpImageToolFixture fixture) : IClassFixtu
     }
 
     [Fact]
+    public async Task A_preview_asked_for_as_png_is_a_real_png_of_the_same_picture_and_nothing_else_is_re_encoded()
+    {
+        await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
+
+        var (png, about) = await Fetch(client, W.Entry, W.Image.AssetId, format: "PNG");
+        Assert.Equal("image/png", png.MimeType);
+        var bytes = png.DecodedData.ToArray();
+        Assert.NotEmpty(bytes);
+        Assert.Equal("image/png", Image.DetectFormat(bytes).DefaultMimeType);
+        Assert.Equal((640, 480), (Shape(png).Width, Shape(png).Height));
+        Assert.Equal("image/png", about.GetProperty("contentType").GetString());
+        Assert.Equal(bytes.Length, about.GetProperty("bytes").GetInt32());
+
+        // Same picture as the WebP preview: every pixel close, since only the lossy WebP differs from the source.
+        var (webp, _) = await Fetch(client, W.Entry, W.Image.AssetId);
+        using var fromPng = Image.Load<Rgb24>(bytes);
+        using var fromWebp = Image.Load<Rgb24>(webp.DecodedData.Span);
+        Assert.InRange(MeanDifference(fromPng, fromWebp), 0, 12);
+
+        await Refused(client, "get_lore_image", new() { ["loreId"] = W.Entry.ToString(), ["imageId"] = W.Image.AssetId.ToString(), ["variant"] = "thumbnail", ["format"] = "png" }, "bad_arguments");
+        await Refused(client, "get_lore_image", new() { ["loreId"] = W.Entry.ToString(), ["imageId"] = W.Image.AssetId.ToString(), ["format"] = "gif" }, "bad_arguments");
+    }
+
+    [Fact]
+    public async Task An_entry_with_no_pictures_says_so_and_has_nothing_to_fetch()
+    {
+        var bare = await CreateEntity(W.Owner, W.U, "Bare Hollow");
+        await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
+
+        var listing = await Call(client, "list_lore_images", new() { ["lore"] = bare.ToString() });
+        Assert.False(listing.TryGetProperty("profileImage", out _));
+        Assert.Equal(0, listing.GetProperty("appearancePictures").GetInt32());
+        Assert.Equal("This entry has no pictures.", listing.GetProperty("note").GetString());
+
+        // The base picture's id is not this entry's: nothing borrowed from another entry.
+        await Refused(client, "get_lore_image", new() { ["loreId"] = bare.ToString(), ["imageId"] = W.Image.AssetId.ToString() }, "not_found");
+    }
+
+    [Fact]
     public async Task A_large_original_is_refused_inline_and_its_preview_is_bounded()
     {
         var mural = await CreateEntity(W.Owner, W.U, "Mural of the Vale");
@@ -431,12 +470,17 @@ public sealed class McpImageToolTests(McpImageToolFixture fixture) : IClassFixtu
     }
 
     /// <summary>A picture: the image block, and the text block of metadata after it.</summary>
-    private static async Task<(ImageContentBlock Image, JsonElement About)> Fetch(McpClient client, Guid lore, Guid image, string? variant = null)
+    private static async Task<(ImageContentBlock Image, JsonElement About)> Fetch(McpClient client, Guid lore, Guid image, string? variant = null, string? format = null)
     {
         Dictionary<string, object?> arguments = new() { ["loreId"] = lore.ToString(), ["imageId"] = image.ToString() };
         if (variant is not null)
         {
             arguments["variant"] = variant;
+        }
+
+        if (format is not null)
+        {
+            arguments["format"] = format;
         }
 
         var result = await client.CallToolAsync("get_lore_image", arguments);
@@ -453,6 +497,21 @@ public sealed class McpImageToolTests(McpImageToolFixture fixture) : IClassFixtu
     private static string Text(CallToolResult result) => result.Content.OfType<TextContentBlock>().Last().Text;
 
     private static ImageInfo Shape(ImageContentBlock block) => Image.Identify(block.DecodedData.Span);
+
+    private static double MeanDifference(Image<Rgb24> a, Image<Rgb24> b)
+    {
+        long total = 0;
+        for (var y = 0; y < a.Height; y++)
+        {
+            for (var x = 0; x < a.Width; x++)
+            {
+                var (p, q) = (a[x, y], b[x, y]);
+                total += Math.Abs(p.R - q.R) + Math.Abs(p.G - q.G) + Math.Abs(p.B - q.B);
+            }
+        }
+
+        return total / (3.0 * a.Width * a.Height);
+    }
 
     private static MultipartFormDataContent Form(byte[] png)
     {

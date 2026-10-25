@@ -212,4 +212,6 @@ appearance pictures. Nothing uploads, changes or deletes a picture through MCP. 
 block is the client's: the official SDK client (the tests) carries valid WebP bytes. An owner's ChatGPT test showed a
 blank image tile despite the response metadata, so the tool now states that display cannot be confirmed server-side and
 offers its authenticated LoreX page link as a fallback. The real ChatGPT display/fallback still requires a client smoke
-test; do not treat SDK acceptance as proof of visible rendering.
+test; do not treat SDK acceptance as proof of visible rendering. `format: "png"` re-encodes the preview as PNG (same
+decoders, same bound), so the WebP-versus-PNG comparison can be made in a real client without a deploy; WebP stays the
+default until that comparison says otherwise. Smoke steps: `docs/testing/mcp-images-checklist.md`.
