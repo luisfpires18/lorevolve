@@ -98,6 +98,21 @@ public static class McpLimits
     public static readonly TimeSpan UnusedRegistrationLifetime = TimeSpan.FromDays(1);
 
     public static readonly TimeSpan MaintenanceInterval = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// The longer side of a picture's preview (issue #56): the whole picture, fitted, as WebP - enough for a client's model to
+    /// look at, a few hundred kilobytes at most, and well under what any client's context should spend on one picture.
+    /// </summary>
+    public const int ImagePreviewSide = 1024;
+
+    /// <summary>
+    /// The largest original handed over inline, when one is asked for. Base64 adds a third again, and a tool result is
+    /// held whole by the client; an original past this is refused and the preview stands in.
+    /// </summary>
+    public const long ImageOriginalBytes = 4L * 1024 * 1024;
+
+    /// <summary>Appearance pictures named in one listing at most; more says the list was cut. List first, fetch on demand.</summary>
+    public const int ImageListLimit = 100;
 }
 
 /// <summary>
@@ -257,6 +272,7 @@ public static class McpSetup
             })
             .WithHttpTransport(transport => transport.SessionMode = ModelContextProtocol.AspNetCore.HttpServerSessionMode.Stateless)
             .WithTools<LorexMcpTools>()
+            .WithTools<LorexMcpImageTools>()
             .WithTools<LorexMcpProposalTools>()
             .WithRequestFilters(LorexMcpProposalTools.Filters);
 

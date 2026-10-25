@@ -23,6 +23,9 @@ internal sealed record PreparedImage(
 /// <summary>Why an image was not accepted, and which part of the request to blame.</summary>
 internal sealed record ImageRejection(string Field, string Message);
 
+/// <summary>A whole picture fitted within a square, as lossy WebP with no metadata: what an MCP client is shown (ADR 0046).</summary>
+internal sealed record ImagePreview(byte[] Bytes, int Width, int Height);
+
 /// <summary>A crop, placed on pixels: a rectangle of the frame's shape, inside the image, in whole pixels.</summary>
 internal readonly record struct CropRect(int Left, int Top, int Width, int Height);
 
@@ -289,6 +292,90 @@ internal static class ImagePreparation
                     Describe(rect, width, height),
                     thumbnail),
                 null);
+        }
+    }
+
+    /// <summary>
+    /// The whole of a stored picture fitted within <paramref name="maxSide"/> pixels on its longer side - never enlarged -
+    /// oriented as a browser draws it, stripped of metadata and encoded as lossy WebP: the preview an MCP client is handed
+    /// (issue #56). Null when the bytes are not a picture Lorex reads, which for an object Lorex itself wrote means it has
+    /// been damaged. The same decoders, ceilings and encoder as an upload, so nothing here reads what the gate refuses.
+    /// </summary>
+    public static async Task<ImagePreview?> PreviewAsync(Stream original, int maxSide, CancellationToken cancellationToken)
+    {
+        ImageInfo info;
+        try
+        {
+            info = await Image.IdentifyAsync(Decoding, original, cancellationToken);
+        }
+        catch (ImageFormatException)
+        {
+            return null;
+        }
+
+        var format = info.Metadata.DecodedImageFormat;
+        if (format is null
+            || !AcceptedFormats.ContainsKey(format.Name)
+            || info.Width <= 0
+            || info.Height <= 0
+            || info.Width > MaxSide
+            || info.Height > MaxSide
+            || (long)info.Width * info.Height > MaxPixels)
+        {
+            return null;
+        }
+
+        original.Position = 0;
+
+        Image decoded;
+        try
+        {
+            decoded = await Image.LoadAsync(Decoding, original, cancellationToken);
+        }
+        catch (ImageFormatException)
+        {
+            return null;
+        }
+
+        using (decoded)
+        {
+            if (HonoursOrientation(format))
+            {
+                decoded.Mutate(context => context.AutoOrient());
+            }
+
+            if (decoded.Width > maxSide || decoded.Height > maxSide)
+            {
+                decoded.Mutate(context => context.Resize(new ResizeOptions
+                {
+                    Size = new Size(maxSide, maxSide),
+                    Mode = ResizeMode.Max,
+                    Sampler = KnownResamplers.Lanczos3,
+                }));
+            }
+
+            // A derived picture carries nothing the original said about itself - no camera, no GPS.
+            decoded.Metadata.ExifProfile = null;
+            decoded.Metadata.IptcProfile = null;
+            decoded.Metadata.XmpProfile = null;
+
+            using var buffer = new MemoryStream();
+            await decoded.SaveAsync(buffer, ThumbnailEncoder, cancellationToken);
+            return new ImagePreview(buffer.ToArray(), decoded.Width, decoded.Height);
+        }
+    }
+
+    /// <summary>A stored picture's pixel size from its header alone, or null when the bytes are not a picture Lorex reads.</summary>
+    public static async Task<(int Width, int Height)?> MeasureAsync(Stream picture, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var info = await Image.IdentifyAsync(Decoding, picture, cancellationToken);
+            return (info.Width, info.Height);
+        }
+        catch (ImageFormatException)
+        {
+            return null;
         }
     }
 

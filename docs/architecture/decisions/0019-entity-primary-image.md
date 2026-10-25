@@ -320,3 +320,11 @@ and consumes the hold in the commit; a full owner's upload is refused with 409 `
 is touched. The commit now re-reads the entry's picture and moves only if it is still the one the upload replaced (409
 `image_changed` otherwise), and the superseded pair it sweeps is the one the row named at the commit. Reframe, read and
 remove are untouched by the allowance.
+
+## Amendment (2026-10-25, issue 56, ADR 0046)
+
+An MCP client reads an entry's picture through its connection's gate, never through a URL: `get_lore_image` streams the
+object out of the same store and hands the bytes over inline as an image block, so "reads are an authenticated Lorex
+route, not a presigned URL" holds for the one consumer that cannot send the session cookie. The preview it is given by
+default is derived on demand from the original by the upload gate's decoders, fitted within 1024 pixels, metadata
+stripped; the original goes out only when asked for and only up to 4 MB. Nothing here changes what is stored.

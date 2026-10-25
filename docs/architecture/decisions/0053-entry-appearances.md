@@ -36,4 +36,5 @@ pictures is refused (409 `entity_appearance_has_pictures`); the client deletes t
 - Erasing an entry for good and deleting a universe sweep appearance pictures with the entry's own.
 - Backup version 30 carries appearances and each picture's original in the archive; a restore re-cuts thumbnails, holds the
   owner's storage for them, and gives everything new ids. A version 29 or older file restores every entry with none.
-- Not public, not searched, not read by the assistant, MCP or AI changes.
+- Not public, not searched, not read by the assistant or AI changes. MCP reads a look's pictures and links, as
+  members read them, through the picture tools of ADR 0046 (amendment 2026-10-25, issue 56).

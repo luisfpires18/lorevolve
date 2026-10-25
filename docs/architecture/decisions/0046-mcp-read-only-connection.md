@@ -190,3 +190,22 @@ and a new approval" - this is that scope, and it is still not a write.
 
 `read_scene_manuscript` and `search_scene_manuscript` read the prose with each Lore mention as the name the author wrote,
 never the token; ranges, matches and the version are over that text, so chunks still join back into exactly what was read.
+
+## Amendment (2026-10-25, issue 56): pictures, read the same way
+
+Two more read-only tools, over the same rows and the same object store the app reads (ADR 0019, ADR 0053), with no
+second index and no new identifier. `list_lore_images` resolves a live entry of the connected universe by id or by its
+exact name or alias - a name two entries answer to is refused with the candidates, never guessed - and lists its
+profile picture apart from the pictures of its appearances, each appearance with exactly the forms and eras the author
+ticked. An optional form, era or appearance (id or exact name; unique within an entry) narrows the list to pictures
+explicitly linked to it; a form nothing was ticked for lists none, the answer says so, and the entry's portrait is
+reported as the base picture and never stands in. `get_lore_image` returns one picture, by the entry's id and the
+picture's id together, as an MCP image content block followed by a text block of metadata and a link to the entry's
+page in LoreX; `preview` (the default) is the whole picture fitted within 1024 pixels as WebP with no metadata, cut
+from the original on demand by the upload gate's own decoders; `thumbnail` is the stored square; `original` is the
+file as uploaded, only when asked for and only up to 4 MB, else refused with the preview offered.
+
+The bytes travel inline, so no URL outlives the authorization that produced it: a revoked connection, a removed member,
+a trashed entry or an id from another universe answers as every other read does. A listing names at most 100
+appearance pictures. Nothing uploads, changes or deletes a picture through MCP. Whether a given client draws an image
+block is the client's: the official SDK client (the tests) carries it; Claude and ChatGPT remain to be tried against DEV.

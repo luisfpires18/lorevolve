@@ -31,7 +31,10 @@ public sealed class LorexMcpTools(LorexDbContext db, McpCaller caller)
         + "or search_universe, then read what you found by its id - ids are stable, pass them back exactly. Manuscript prose is "
         + "never included by default, because a long manuscript uses a lot of your context: get_scene gives a scene's details and "
         + "the manuscript's size, search_scene_manuscript finds passages, and read_scene_manuscript reads the text in ordered "
-        + "chunks. Read only as much prose as the task needs.";
+        + "chunks. Read only as much prose as the task needs. Pictures: list_lore_images lists an entry's profile picture and "
+        + "the pictures of its appearances, each with the forms and eras it is explicitly linked to - a form with no linked "
+        + "picture has none, and the entry's portrait never stands in for it; get_lore_image returns one picture as viewable "
+        + "image content, a bounded preview unless the original is asked for.";
 
     /// <summary>A chunk of prose by default: about 2,000 tokens of English.</summary>
     public const int ManuscriptChunkDefault = 8_000;

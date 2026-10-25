@@ -49,8 +49,9 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
 {
     private static readonly string[] ToolNames =
     [
-        "browse_timeline", "get_lore_entry", "get_lore_relationships", "get_scene", "get_story", "get_timeline_moment",
-        "get_universe_overview", "read_scene_manuscript", "search_scene_manuscript", "search_universe",
+        "browse_timeline", "get_lore_entry", "get_lore_image", "get_lore_relationships", "get_scene", "get_story",
+        "get_timeline_moment", "get_universe_overview", "list_lore_images", "read_scene_manuscript", "search_scene_manuscript",
+        "search_universe",
     ];
 
     private LorexApiFactory Api => fixture.Api;
