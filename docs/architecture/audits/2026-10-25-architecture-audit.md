@@ -506,9 +506,9 @@ ImageSharp, or anyone else's in-progress work.
 ### 7.1 M3: backup inventory test
 
 - `BackupInventoryTests` enumerates `LorexDbContext.Model.GetEntityTypes()`, keyed by table name, or by
-  CLR name for the 3 keyless FTS query shapes. It requires every one of the 98 entity types to be in
+  CLR name for the 3 keyless FTS query shapes. It requires every one of the 101 entity types to be in
   exactly one list:
-  - **Carried:** 70.
+  - **Carried:** 73.
   - **Derived:** 5, each with a reason.
   - **Left out:** 23, each with the ADR that decides it.
 - It also fails on a stale name (a table that no longer exists) and on a duplicate.
