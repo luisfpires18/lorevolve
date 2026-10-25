@@ -139,6 +139,8 @@ internal static class ImagePreparation
     /// from the square being cut, so the same original and the same crop always produce the same
     /// thumbnail bytes - which is what lets an importer regenerate one rather than carry it.
     /// </summary>
+    private static readonly PngEncoder PreviewPngEncoder = new() { CompressionLevel = PngCompressionLevel.BestCompression };
+
     private static readonly WebpEncoder ThumbnailEncoder = new()
     {
         Quality = 80,
@@ -375,11 +377,11 @@ internal static class ImagePreparation
 
     /// <summary>
     /// The whole of a stored picture fitted within <paramref name="maxSide"/> pixels on its longer side - never enlarged -
-    /// oriented as a browser draws it, stripped of metadata and encoded as lossy WebP: the preview an MCP client is handed
-    /// (issue #56). Null when the bytes are not a picture Lorex reads, which for an object Lorex itself wrote means it has
+    /// oriented as a browser draws it, stripped of metadata and encoded as lossy WebP - or as PNG when
+    /// <paramref name="png"/> asks, for a client that cannot draw WebP: the preview an MCP client is handed (issue #56). Null when the bytes are not a picture Lorex reads, which for an object Lorex itself wrote means it has
     /// been damaged. The same decoders, ceilings and encoder as an upload, so nothing here reads what the gate refuses.
     /// </summary>
-    public static async Task<ImagePreview?> PreviewAsync(Stream original, int maxSide, CancellationToken cancellationToken)
+    public static async Task<ImagePreview?> PreviewAsync(Stream original, int maxSide, bool png, CancellationToken cancellationToken)
     {
         ImageInfo info;
         try
@@ -438,7 +440,7 @@ internal static class ImagePreparation
             decoded.Metadata.XmpProfile = null;
 
             using var buffer = new MemoryStream();
-            await decoded.SaveAsync(buffer, ThumbnailEncoder, cancellationToken);
+            await decoded.SaveAsync(buffer, png ? PreviewPngEncoder : ThumbnailEncoder, cancellationToken);
             return new ImagePreview(buffer.ToArray(), decoded.Width, decoded.Height);
         }
     }

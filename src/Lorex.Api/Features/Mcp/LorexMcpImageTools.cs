@@ -43,6 +43,9 @@ public sealed partial class LorexMcpImageTools(
     public const string ThumbnailVariant = "thumbnail";
     public const string OriginalVariant = "original";
 
+    public const string WebpFormat = "webp";
+    public const string PngFormat = "png";
+
     /// <summary>The entry's own picture (ADR 0019): its portrait on cards and at the head of its page.</summary>
     public const string ProfileKind = "profile";
 
@@ -240,12 +243,15 @@ public sealed partial class LorexMcpImageTools(
         + "list_lore_images gave. variant: \"preview\" (default) is the whole picture fitted within 1024 pixels, as WebP - "
         + "enough to look at; \"thumbnail\" is the small square the author framed for cards (WebP, 320 pixels); \"original\" is "
         + "the file exactly as uploaded, only when asked for and only up to 4 MB - a larger original is refused and the preview "
-        + "stands in. The result is an image block, then a text block with the picture's metadata, what it is a picture of, "
-        + "and a link to the entry's page in LoreX.")]
+        + "stands in. format: \"webp\" (default) or \"png\" re-encodes the preview as PNG, for a client that shows a blank "
+        + "tile for WebP; the thumbnail and original keep their stored type. The result includes an image block, an explicit LoreX page link that requires sign-in and current "
+        + "universe access, and a text block with metadata. Client rendering varies: if the person cannot see the inline image, "
+        + "show them the LoreX link; do not claim that the image was displayed unless it is visibly present in the client.")]
     public async Task<CallToolResult> GetLoreImageAsync(
         [Description("The lore entry's id, exactly as a result gave it.")] string loreId,
         [Description("The picture's imageId, exactly as list_lore_images gave it.")] string imageId,
         [Description("preview (default), thumbnail or original.")] string? variant = null,
+        [Description("The preview's encoding: webp (default) or png.")] string? format = null,
         CancellationToken cancellationToken = default)
     {
         if (Guard() is { } refused)
@@ -257,6 +263,12 @@ public sealed partial class LorexMcpImageTools(
         if (which is not (PreviewVariant or ThumbnailVariant or OriginalVariant))
         {
             return Error("bad_arguments", $"variant must be {PreviewVariant}, {ThumbnailVariant} or {OriginalVariant}.");
+        }
+
+        var encoding = (format ?? WebpFormat).Trim().ToLowerInvariant();
+        if (encoding is not (WebpFormat or PngFormat) || (encoding == PngFormat && which != PreviewVariant))
+        {
+            return Error("bad_arguments", $"format must be {WebpFormat} or {PngFormat}, and only the {PreviewVariant} is re-encoded.");
         }
 
         if (!Guid.TryParse(loreId, out var entryId) || !Guid.TryParse(imageId, out var pictureId)
@@ -321,12 +333,12 @@ public sealed partial class LorexMcpImageTools(
             case PreviewVariant:
             {
                 using var source = new MemoryStream(bytes, writable: false);
-                if (await ImagePreparation.PreviewAsync(source, McpLimits.ImagePreviewSide, cancellationToken) is not { } preview)
+                if (await ImagePreparation.PreviewAsync(source, McpLimits.ImagePreviewSide, encoding == PngFormat, cancellationToken) is not { } preview)
                 {
                     return Error("image_unreadable", "This picture could not be decoded for a preview.");
                 }
 
-                (bytes, contentType, width, height) = (preview.Bytes, "image/webp", preview.Width, preview.Height);
+                (bytes, contentType, width, height) = (preview.Bytes, encoding == PngFormat ? "image/png" : "image/webp", preview.Width, preview.Height);
                 break;
             }
 
@@ -343,6 +355,8 @@ public sealed partial class LorexMcpImageTools(
                 break;
         }
 
+        var viewUrl = found.Kind == ProfileKind ? EntryUrl(entryId) : ProgressionUrl(entryId);
+        var pageLabel = found.Kind == ProfileKind ? "Lore page" : "progression page";
         var about = new
         {
             loreId = entryId,
@@ -366,14 +380,16 @@ public sealed partial class LorexMcpImageTools(
             appearance = found.Appearance is null
                 ? null
                 : new { id = found.Appearance.Id, label = found.Appearance.Name, forms = found.Forms, eras = found.Eras },
-            url = found.Kind == ProfileKind ? EntryUrl(entryId) : ProgressionUrl(entryId),
+            url = viewUrl,
         };
+        var viewText = $"If the inline picture is not visible in this client, [open the LoreX {pageLabel}]({viewUrl}). Sign-in and current access to this universe are required. LoreX cannot tell whether this client rendered the inline picture.";
 
         return new CallToolResult
         {
             Content =
             [
                 ImageContentBlock.FromBytes(bytes, contentType),
+                new TextContentBlock { Text = viewText },
                 new TextContentBlock { Text = JsonSerializer.Serialize(about, Json) },
             ],
         };
