@@ -344,6 +344,44 @@ internal static class AiChangeViews
                 return (work.Action == AiChangeAction.Create ? $"New {noun}: {term.Name}" : $"Rename {noun} {old?.Name ?? term.Name}", lines);
             }
 
+            case (ProgressionValues progression, var before):
+            {
+                var old = before as Progression.ProgressionSnapshot;
+                var now = progression.Form;
+                var eraNames = (old?.Eras ?? []).Concat(now.Eras).Where(era => era.Id is not null).GroupBy(era => era.Id!.Value).ToDictionary(group => group.Key, group => group.Last().Name ?? string.Empty);
+                var formNames = (old?.Forms ?? []).Concat(now.Forms ?? []).Where(form => form.Id is not null).GroupBy(form => form.Id!.Value).ToDictionary(group => group.Key, group => group.Last().Name ?? string.Empty);
+                string? In(string label, IEnumerable<Guid>? ids, Dictionary<Guid, string> named) =>
+                    ids?.ToList() is { Count: > 0 } list ? $"; {label} {string.Join(", ", list.Select(id => named.GetValueOrDefault(id, "?")))}" : null;
+                string EraText(Progression.EraInput era) => $"{era.Name}{(era.Start is null && era.End is null ? string.Empty : $" ({names.Point(era.Start) ?? "?"} to {names.Point(era.End) ?? "?"})")}"
+                    + (era.Fields is { Count: > 0 } fields ? $"; {Count(fields.Count, "field")} differ" : string.Empty);
+                string FormText(Progression.FormInput form) => $"{form.Name}{In("in eras", form.EraIds, eraNames)}{(form.UnlockEraId is { } unlock ? $"; first in {eraNames.GetValueOrDefault(unlock, "?")}" : string.Empty)}";
+                string AbilityText(Progression.AbilityInput ability) => $"{ability.Name}{In("of forms", ability.FormIds, formNames)}{In("in eras", ability.EraIds, eraNames)}";
+                string LookText(Progression.AppearanceInput look) => $"{look.Label}{In("in eras", look.EraIds, eraNames)}{In("as forms", look.FormIds, formNames)}";
+
+                void Items<T>(string noun, IReadOnlyList<T>? was, IReadOnlyList<T>? wanted, Func<T, Guid?> id, Func<T, string> text)
+                {
+                    var stored = (was ?? []).ToDictionary(item => id(item)!.Value);
+                    foreach (var item in wanted ?? [])
+                    {
+                        var after = text(item);
+                        if (!stored.TryGetValue(id(item)!.Value, out var prior))
+                        {
+                            lines.Add(new AiChangeLine($"New {noun}", null, after));
+                        }
+                        else if (text(prior) is var earlier && earlier != after)
+                        {
+                            lines.Add(new AiChangeLine(Capital(noun), earlier, after));
+                        }
+                    }
+                }
+
+                Items("era", old?.Eras, now.Eras, era => era.Id, EraText);
+                Items("form", old?.Forms, now.Forms, form => form.Id, FormText);
+                Items("ability", old?.Abilities, now.Abilities, ability => ability.Id, AbilityText);
+                Items("appearance", old?.Appearances, now.Appearances, look => look.Id, LookText);
+                return ($"Edit the progression of {names.Entry(AiRef.To(progression.EntityId))}", lines);
+            }
+
             case (LoreValues lore, var before):
             {
                 var old = before as LoreValues;
@@ -590,6 +628,8 @@ internal static class AiChangeViews
     private static string Count(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
 
     private static string YesNo(bool value) => value ? "Yes" : "No";
+
+    private static string Capital(string word) => word.Length == 0 ? word : char.ToUpperInvariant(word[0]) + word[1..];
 
     /// <summary>A field's kind as the Types screen names it.</summary>
     private static string FieldKind(EntityFieldKind kind) => kind switch

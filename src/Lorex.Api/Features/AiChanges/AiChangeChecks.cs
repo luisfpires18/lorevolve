@@ -142,6 +142,7 @@ internal static class AiChangeJson
                 AiChangeResource.RelationshipType => Read<RelationshipKindValues>(json),
                 AiChangeResource.Chronology => Read<ChronologyValues>(json),
                 AiChangeResource.ValidationTerm => Read<TermValues>(json),
+                AiChangeResource.Progression => Read<ProgressionValues>(json),
                 _ => Read<TimelineValues>(json),
             },
         };
@@ -165,6 +166,7 @@ internal static class AiChangeJson
         (AiChangeResource.RelationshipType, _) => Read<RelationshipKindValues>(json),
         (AiChangeResource.Chronology, _) => Read<ChronologyValues>(json),
         (AiChangeResource.ValidationTerm, _) => Read<TermValues>(json),
+        (AiChangeResource.Progression, _) => Read<Progression.ProgressionSnapshot>(json),
         _ => throw new InvalidOperationException($"A {resource} change keeps no stored form."),
     };
 
@@ -499,6 +501,9 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
                     break;
                 case (AiChangeResource.ValidationTerm, _):
                     await CheckTermAsync(work, works, cancellationToken);
+                    break;
+                case (AiChangeResource.Progression, _):
+                    await CheckProgressionAsync(work, cancellationToken);
                     break;
                 case (AiChangeResource.LoreEntry, _):
                     await CheckLoreAsync(work, cancellationToken);
@@ -1372,6 +1377,7 @@ internal static class AiChangeText
     public static string NoTrash(AiChangeResource resource) => resource switch
     {
         AiChangeResource.Article => "An article isn't removed. To empty one, replace it with no blocks, and its saved versions keep the old article.",
+        AiChangeResource.Progression => "An AI change never removes an era, form, ability or appearance. Remove one by hand on the entry's Progression page, where it shows what goes with it.",
         _ => "A manuscript isn't removed. To empty one, replace its text, and its saved versions keep the old prose.",
     };
 

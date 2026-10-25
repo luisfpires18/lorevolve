@@ -28,8 +28,9 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
             OptionsTool,
             "Read what changes can be proposed in this universe: the changes the writer's role allows, the lore types with the ids of "
             + "their fields and choices, the relationship kinds, the stories with their chapters and plot arcs, the date periods, the world "
-            + "rules, the event kinds and methods, and - for the universe owner only - their ideas here. Use only these ids.",
-            """{"type":"object","properties":{},"required":[],"additionalProperties":false}"""),
+            + "rules, the event kinds and methods, and - for the universe owner only - their ideas here. Use only these ids. Give loreId "
+            + "for that entry's progression too: its eras, forms, abilities and appearances by id.",
+            """{"type":"object","properties":{"loreId":{"type":["string","null"]}},"required":["loreId"],"additionalProperties":false}"""),
         new(
             ProposeTool,
             "Stage changes for the writer to review in LoreX. Call it once, with every change they asked for. Nothing changes until "
@@ -61,7 +62,18 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
     {
         if (call.Name == OptionsTool)
         {
-            return JsonSerializer.Serialize(await AiChangeCatalog.ReadAsync(db, universeId, role, cancellationToken, schemaAllowed: true), AssistantTools.Json);
+            Guid? progressionOf = null;
+            try
+            {
+                using var arguments = JsonDocument.Parse(string.IsNullOrWhiteSpace(call.Arguments) ? "{}" : call.Arguments);
+                progressionOf = arguments.RootElement.TryGetProperty("loreId", out var lore) && lore.ValueKind == JsonValueKind.String && Guid.TryParse(lore.GetString(), out var id) ? id : null;
+            }
+            catch (JsonException)
+            {
+                // Nothing asked for: the catalog alone.
+            }
+
+            return JsonSerializer.Serialize(await AiChangeCatalog.ReadAsync(db, universeId, role, cancellationToken, schemaAllowed: true, progressionOf), AssistantTools.Json);
         }
 
         if (Staged is not null)
@@ -140,10 +152,23 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
             ("endMonthId", Nullable("string")),
             ("eraLabel", Nullable("string")));
 
+        var progressionRef = Object(("id", Nullable("string")), ("key", Nullable("string")));
+        var progressionItem = Object(
+            ("id", Nullable("string")),
+            ("key", Nullable("string")),
+            ("name", Nullable("string")),
+            ("description", Nullable("string")),
+            ("unlockEra", Or(progressionRef)),
+            ("unlockSceneId", Nullable("string")),
+            ("unlockMomentId", Nullable("string")),
+            ("eras", NullableArray(progressionRef)),
+            ("sceneIds", NullableArray(Text())),
+            ("forms", NullableArray(progressionRef)));
+
         var operation = Object(
             ("id", Text()),
             ("action", Text("create, update, remove or reorder")),
-            ("resource", Text("lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea; or, in a proposal of their own, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method")),
+            ("resource", Text("lore_entry, article, progression, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea; or, in a proposal of their own, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method")),
             ("targetId", Nullable("string")),
             ("expectedVersion", Nullable("integer")),
             ("lore", Or(Object(
@@ -239,7 +264,27 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
                     ("name", Nullable("string")),
                     ("abbreviation", Nullable("string")),
                     ("days", Nullable("integer")))))))),
-            ("term", Or(Object(("name", Nullable("string"))))));
+            ("term", Or(Object(("name", Nullable("string"))))),
+            ("progression", Or(Object(
+                ("eras", NullableArray(Object(
+                    ("id", Nullable("string")),
+                    ("key", Nullable("string")),
+                    ("name", Nullable("string")),
+                    ("description", Nullable("string")),
+                    ("start", Or(point)),
+                    ("end", Or(point)),
+                    ("storyIds", NullableArray(Text())),
+                    ("sceneIds", NullableArray(Text())),
+                    ("fields", NullableArray(field))))),
+                ("forms", NullableArray(progressionItem)),
+                ("abilities", NullableArray(progressionItem)),
+                ("appearances", NullableArray(Object(
+                    ("id", Nullable("string")),
+                    ("label", Nullable("string")),
+                    ("notes", Nullable("string")),
+                    ("eras", NullableArray(progressionRef)),
+                    ("forms", NullableArray(progressionRef)),
+                    ("sceneIds", NullableArray(Text())))))))));
 
         return Object(("summary", Nullable("string")), ("operations", new JsonObject { ["type"] = "array", ["items"] = operation })).ToJsonString();
     }

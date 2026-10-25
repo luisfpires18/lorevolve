@@ -1,7 +1,8 @@
 # ADR 0062 - An AI proposes schema as its own reviewed proposal, through the Types screen's own write paths
 
 Status: accepted (2026-10-25). GitHub issue 59 (P0, pre-alpha): phase 1 - lore types, field definitions, semantic groups;
-phase 2 - relationship kinds, the reckoning (date periods and calendar), event kinds and methods.
+phase 2 - relationship kinds, the reckoning (date periods and calendar), event kinds and methods; phase 3 - one entry's
+progression (eras, forms, abilities, appearances), as content.
 
 ## Context
 
@@ -96,11 +97,30 @@ The catalog lists kinds with descriptions and how many links use them, and `sche
 direction, label and whether it dates anything, the calendar's months with their days and use, and whether simple dates use
 months. Migration `AddDefinitionProposals` widens the constraint to 17; its rollback drops only proposals holding these.
 
+## Phase 3: one entry's progression, as content
+
+`AiChangeResource.Progression` (18, `progression`, update only, `targetId` the entry) is **content**, not schema: it shares a
+proposal with the entry's other changes, never with schema, and is staged by those who edit content (owner, Editor - a
+Reviewer's suggestions stay entries, stories and scenes). One change per entry per proposal holds its eras, forms, abilities
+and appearances as a patch over the stored snapshot (`ProgressionSnapshot`, the history's own record): an item with an id
+changes, one without is added, one left out stays exactly as stored, and **nothing is removed** - taking an era, a form or a
+look away is the author's, on the Progression page.
+
+New items get their ids from LoreX at staging, and an AI names them by keys (`{"key": "young"}`), so a new form can be
+available in a new era and a new outfit worn in a new form in one save, on the same entry - never a new entry per era. The
+check is the save's own normalisation (`ProgressionState.NormalizeAsync`, as a restore runs it so the given ids are taken,
+never one another entry's item holds); the change is bound to the progression's version; approval is
+`ProgressionEndpoints.WriteAsync` as the approver (`givenIds`), one version of the history. An appearance's pictures are not
+part of a save, so every existing picture link stays. `get_change_options` with `loreId` adds that entry's progression - ids,
+links, picture counts and version - so an AI can change existing items by id.
+
 ## Consequences
 
 - Migration `AddSchemaProposals`: the resource check constraint widened to 14 and `McpConnections.CanProposeSchema` (false
   for every existing row). Its rollback first deletes proposals holding a schema change - review state, never content - so
   the narrower constraint can be rebuilt; what was approved stays in the schema.
+- Migrations `AddDefinitionProposals` and `AddProgressionProposals` widen the constraint to 17 and 18; each rollback drops
+  only proposals holding what it added.
 - Backups carry no proposals (ADR 0047). Approved types, fields and groups are ordinary schema and travel as they always did.
 - A type's sections, field order and field layout (#26), type reordering and reparenting beyond `parent`, field restore and
   every delete stay hand-only. Field meaning stays hand-only by ADR 0011.

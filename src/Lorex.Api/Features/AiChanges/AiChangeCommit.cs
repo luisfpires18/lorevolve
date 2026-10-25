@@ -460,6 +460,21 @@ internal static class AiChangeCommit
                     ? Made<ValidationTermResponse>(await ValidationTermEndpoints.CreateCoreAsync(db, universeId, new ValidationTermRequest(term.Kind, term.Name), cancellationToken), detail => detail.Id)
                     : Done(await ValidationTermEndpoints.RenameCoreAsync(db, universeId, target!.Value, new ValidationTermRenameRequest(term.Name), cancellationToken), target);
 
+            case ProgressionValues progression:
+                // The Progression page's own save, over the version staged against; its new items keep the ids staging gave them.
+                return Done(
+                    await Progression.ProgressionEndpoints.WriteAsync(
+                        db,
+                        universeId,
+                        progression.EntityId,
+                        progression.Form.ToRequest(work.BaseVersion),
+                        EntityRevisionKind.Edited,
+                        null,
+                        approverId,
+                        cancellationToken,
+                        givenIds: true),
+                    progression.EntityId);
+
             case LoreValues lore:
                 var entry = new EntityRequest(
                     lore.TypeId,

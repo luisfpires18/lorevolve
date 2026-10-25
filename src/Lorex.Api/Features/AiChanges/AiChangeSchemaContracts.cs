@@ -149,3 +149,72 @@ public sealed record AiChangeOptionChronology(
 public sealed record AiChangeOptionPeriod(Guid Id, string Name, string? Abbreviation, string Direction, string Label, bool InUse);
 
 public sealed record AiChangeOptionMonth(Guid Id, string Name, string? Abbreviation, int Days, bool InUse);
+
+// ---------- Phase 3: one entry's progression (content, not schema) ----------
+
+/// <summary>An era or form of this entry: an existing one by id, or one this same change adds, by its key.</summary>
+public sealed record AiProgressionRef(
+    [property: Description("An existing era's or form's id, from get_lore_entry's progression.")] Guid? Id = null,
+    [property: Description("The key of an era or form this same change adds.")] string? Key = null);
+
+[Description("One entry's progression - eras, forms or transformations, abilities, appearances or outfits - for the same entry, never a new entry per era. Items listed without an id are added; items listed with an id change; items left out stay exactly as they are. Nothing is removed here. targetId is the entry.")]
+public sealed record AiProgressionInput(
+    IReadOnlyList<AiEraItemInput>? Eras = null,
+    IReadOnlyList<AiFormItemInput>? Forms = null,
+    IReadOnlyList<AiFormItemInput>? Abilities = null,
+    IReadOnlyList<AiAppearanceItemInput>? Appearances = null);
+
+[Description("An era of the entry: a stretch of its life, such as Young Bilbo. Its fields override the entry's while it lasts.")]
+public sealed record AiEraItemInput(
+    [property: Description("An existing era's id to change it; leave it out to add one.")] Guid? Id = null,
+    [property: Description("A key for a new era, so forms and appearances of this change can name it.")] string? Key = null,
+    string? Name = null,
+    string? Description = null,
+    [property: Description("When it starts, on the universe's own date periods.")] AiPointInput? Start = null,
+    AiPointInput? End = null,
+    [property: Description("The whole set of stories it spans. On an existing era, leave it out to keep them.")] IReadOnlyList<Guid>? StoryIds = null,
+    [property: Description("The whole set of scenes it spans. On an existing era, leave it out to keep them.")] IReadOnlyList<Guid>? SceneIds = null,
+    [property: Description("Field values that differ in this era, by field id; clear true leaves a field empty in it. On an existing era, leave it out to keep them.")] IReadOnlyList<AiFieldInput>? Fields = null);
+
+[Description("A form or transformation, or an ability: what the entry can become or do, available exactly in the eras listed.")]
+public sealed record AiFormItemInput(
+    [property: Description("An existing one's id to change it; leave it out to add one.")] Guid? Id = null,
+    [property: Description("A key for a new form, so abilities and appearances of this change can name it.")] string? Key = null,
+    string? Name = null,
+    string? Description = null,
+    [property: Description("The era it was first unlocked in.")] AiProgressionRef? UnlockEra = null,
+    [property: Description("The scene it was first unlocked in.")] Guid? UnlockSceneId = null,
+    [property: Description("The timeline moment it was first unlocked at.")] Guid? UnlockMomentId = null,
+    [property: Description("The whole set of eras it is available in. On an existing one, leave it out to keep them.")] IReadOnlyList<AiProgressionRef>? Eras = null,
+    [property: Description("The whole set of scenes it is used in. On an existing one, leave it out to keep them.")] IReadOnlyList<Guid>? SceneIds = null,
+    [property: Description("For an ability: the whole set of forms it belongs to. On an existing one, leave it out to keep them.")] IReadOnlyList<AiProgressionRef>? Forms = null);
+
+[Description("An appearance or outfit: a look of the entry, apart from its forms; its pictures are kept as they are.")]
+public sealed record AiAppearanceItemInput(
+    [property: Description("An existing appearance's id to change it; leave it out to add one.")] Guid? Id = null,
+    string? Label = null,
+    string? Notes = null,
+    [property: Description("The whole set of eras it belongs to. On an existing one, leave it out to keep them.")] IReadOnlyList<AiProgressionRef>? Eras = null,
+    [property: Description("The whole set of forms it belongs to. On an existing one, leave it out to keep them.")] IReadOnlyList<AiProgressionRef>? Forms = null,
+    [property: Description("The whole set of scenes it appears in. On an existing one, leave it out to keep them.")] IReadOnlyList<Guid>? SceneIds = null);
+
+/// <summary>
+/// An entry's whole progression as the change would save it: the stored snapshot with what the AI listed added or changed.
+/// New items carry ids LoreX gave them at staging, never ones an AI sent, so new items can name each other in one save.
+/// </summary>
+public sealed record ProgressionValues(Guid EntityId, Progression.ProgressionSnapshot Form);
+
+/// <summary>
+/// One entry's progression as get_change_options gives it when asked with loreId: every era, form, ability and appearance by
+/// id, how they link, how many pictures an appearance holds (kept by any change), and the version a change is bound to.
+/// </summary>
+public sealed record AiChangeOptionProgression(
+    Guid EntityId,
+    string Name,
+    int Version,
+    IReadOnlyList<AiChangeOptionNamed> Eras,
+    IReadOnlyList<AiChangeOptionProgressionItem> Forms,
+    IReadOnlyList<AiChangeOptionProgressionItem> Abilities,
+    IReadOnlyList<AiChangeOptionProgressionItem> Appearances);
+
+public sealed record AiChangeOptionProgressionItem(Guid Id, string Name, IReadOnlyList<Guid> EraIds, IReadOnlyList<Guid>? FormIds = null, int? Pictures = null);

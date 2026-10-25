@@ -44,6 +44,8 @@ export const ChangeResource = {
   Chronology: 16,
   /** An event kind or a method of the world rule vocabulary. */
   ValidationTerm: 17,
+  /** One entry's eras, forms, abilities and appearances, added to or changed. Content. */
+  Progression: 18,
 } as const
 export type ChangeResourceValue = (typeof ChangeResource)[keyof typeof ChangeResource]
 
@@ -261,6 +263,8 @@ export function itemPath(universeId: string, change: Change) {
     case ChangeResource.LoreEntry:
     case ChangeResource.Article:
       return `${universe}/lore/${id}`
+    case ChangeResource.Progression:
+      return `${universe}/lore/${id}/progression`
     case ChangeResource.Relationship:
       return null
     case ChangeResource.Story:

@@ -81,7 +81,8 @@ public sealed record AiChangeOptions(
     IReadOnlyList<AiChangeOptionNamed>? Methods = null,
     IReadOnlyList<AiChangeOptionNamed>? Ideas = null,
     bool MoreIdeas = false,
-    AiChangeSchemaOptions? Schema = null);
+    AiChangeSchemaOptions? Schema = null,
+    AiChangeOptionProgression? Progression = null);
 
 internal static class AiChangeCatalog
 {
@@ -135,7 +136,13 @@ internal static class AiChangeCatalog
         + "simple dates use month numbers (schema.chronology says which). Once a schema proposal is approved, read this catalog again "
         + "for the new ids and propose what uses them in a second proposal.";
 
-    public static async Task<AiChangeOptions> ReadAsync(LorexDbContext db, Guid universeId, UniverseRole role, CancellationToken cancellationToken, bool schemaAllowed = false)
+    public static async Task<AiChangeOptions> ReadAsync(
+        LorexDbContext db,
+        Guid universeId,
+        UniverseRole role,
+        CancellationToken cancellationToken,
+        bool schemaAllowed = false,
+        Guid? progressionOf = null)
     {
         var groups = await db.EntityTypeGroups.AsNoTracking()
             .Where(group => group.UniverseId == universeId)
@@ -338,7 +345,37 @@ internal static class AiChangeCatalog
             [.. terms.Where(term => term.Kind == RuleValidation.ValidationTermKind.Method).Select(term => new AiChangeOptionNamed(term.Id, term.Name))],
             ideas is null ? null : [.. ideas.Take(IdeaLimit)],
             ideas is { Count: > IdeaLimit },
-            schema);
+            schema,
+            progressionOf is { } entityId ? await ProgressionAsync(db, universeId, entityId, cancellationToken) : null);
+    }
+
+    /// <summary>A live entry's progression, by id, for a progression change; null for anything else.</summary>
+    private static async Task<AiChangeOptionProgression?> ProgressionAsync(LorexDbContext db, Guid universeId, Guid entityId, CancellationToken cancellationToken)
+    {
+        var name = await db.Entities.AsNoTracking()
+            .Where(entity => entity.Id == entityId && entity.UniverseId == universeId && entity.DeletedAt == null)
+            .Select(entity => entity.Name)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (name is null)
+        {
+            return null;
+        }
+
+        var snapshot = await Progression.ProgressionState.ReadAsync(db, entityId, cancellationToken);
+        var version = await db.EntityProgressions.AsNoTracking().Where(row => row.EntityId == entityId).Select(row => (int?)row.Version).FirstOrDefaultAsync(cancellationToken) ?? 0;
+        var pictures = await db.EntityAppearances.AsNoTracking()
+            .Where(look => look.EntityId == entityId)
+            .Select(look => new { look.Id, Count = look.Images.Count })
+            .ToDictionaryAsync(look => look.Id, look => look.Count, cancellationToken);
+
+        return new AiChangeOptionProgression(
+            entityId,
+            name,
+            version,
+            [.. snapshot.Eras.Select(era => new AiChangeOptionNamed(era.Id!.Value, era.Name ?? string.Empty))],
+            [.. (snapshot.Forms ?? []).Select(form => new AiChangeOptionProgressionItem(form.Id!.Value, form.Name ?? string.Empty, form.EraIds ?? []))],
+            [.. (snapshot.Abilities ?? []).Select(ability => new AiChangeOptionProgressionItem(ability.Id!.Value, ability.Name ?? string.Empty, ability.EraIds ?? [], ability.FormIds ?? []))],
+            [.. (snapshot.Appearances ?? []).Select(look => new AiChangeOptionProgressionItem(look.Id!.Value, look.Label ?? string.Empty, look.EraIds ?? [], look.FormIds ?? [], pictures.GetValueOrDefault(look.Id!.Value)))]);
     }
 
     private static string Kind(EntityFieldKind kind) => kind switch

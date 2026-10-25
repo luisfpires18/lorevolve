@@ -212,7 +212,9 @@ public static class ProgressionEndpoints
     /// <summary>
     /// The one write, inside the caller's transaction: a live entry, the version named, the save checked and normalised, then
     /// the difference written, the version moved on once, a version of the history recorded, and the entry's <c>UpdatedAt</c>
-    /// touched so it sorts as recently worked on. A save equal to what is stored writes nothing.
+    /// touched so it sorts as recently worked on. A save equal to what is stored writes nothing. <paramref name="givenIds"/>: new
+    /// items arrive with ids LoreX already gave them - an approved AI change's (ADR 0062), whose new items name each other - and
+    /// are taken as a restore takes an era back, never an id another entry's item has.
     /// </summary>
     internal static async Task<IResult> WriteAsync(
         LorexDbContext db,
@@ -223,7 +225,8 @@ public static class ProgressionEndpoints
         Guid? restoredFromRevisionId,
         string actorUserId,
         CancellationToken cancellationToken,
-        ProgressionSnapshot? exactly = null)
+        ProgressionSnapshot? exactly = null,
+        bool givenIds = false)
     {
         if (await LiveTypeAsync(db, universeId, entityId, cancellationToken) is not { } typeId)
         {
@@ -244,7 +247,7 @@ public static class ProgressionEndpoints
 
         var current = await ProgressionState.ReadAsync(db, entityId, cancellationToken);
         var (wanted, errors) = await ProgressionState.NormalizeAsync(
-            db, universeId, entityId, typeId, current, request, kind == EntityRevisionKind.Restored, cancellationToken);
+            db, universeId, entityId, typeId, current, request, kind == EntityRevisionKind.Restored || givenIds, cancellationToken);
 
         var json = ProgressionState.Serialize(wanted);
 

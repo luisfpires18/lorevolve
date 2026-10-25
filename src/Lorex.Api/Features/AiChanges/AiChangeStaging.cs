@@ -118,12 +118,12 @@ internal static partial class AiChangeStaging
 
             // Prose has one change: written over the manuscript or article there is, which the first save creates. So has the
             // reckoning: there is always one, plain until periods are named.
-            if (resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Chronology && action == AiChangeAction.Create)
+            if (resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Chronology or AiChangeResource.Progression && action == AiChangeAction.Create)
             {
                 action = AiChangeAction.Update;
             }
 
-            if (action == AiChangeAction.Remove && resource is AiChangeResource.Manuscript or AiChangeResource.Article)
+            if (action == AiChangeAction.Remove && resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Progression)
             {
                 Problem(AiChangeCodes.Unsupported, AiChangeText.NoTrash(resource));
                 continue;
@@ -242,6 +242,7 @@ internal static partial class AiChangeStaging
     private static AiChangeResource? Resource(string? text) => text?.Trim().ToLowerInvariant().Replace('-', '_') switch
     {
         "lore_entry" or "lore" or "entry" => AiChangeResource.LoreEntry,
+        "progression" or "lore_progression" => AiChangeResource.Progression,
         "relationship" => AiChangeResource.Relationship,
         "story" => AiChangeResource.Story,
         "chapter" => AiChangeResource.Chapter,
@@ -310,6 +311,7 @@ internal static partial class AiChangeStaging
                 (AiChangeResource.RelationshipType, _) => await RelationshipKindAsync(cancellationToken),
                 (AiChangeResource.Chronology, _) => await ChronologyAsync(cancellationToken),
                 (AiChangeResource.ValidationTerm, _) => await TermAsync(cancellationToken),
+                (AiChangeResource.Progression, _) => await ProgressionAsync(cancellationToken),
 
                 (AiChangeResource.LoreEntry, AiChangeAction.Create) => Work(null, null, Lore(input.Lore, null)),
                 (AiChangeResource.LoreEntry, AiChangeAction.Update) => await StoredAsync(
