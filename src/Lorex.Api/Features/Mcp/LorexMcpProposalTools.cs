@@ -57,8 +57,10 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
     [McpServerTool(Name = OptionsTool, Title = "What changes can be proposed", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Before proposing changes, read what can be proposed in this universe for this person: the changes their role allows, "
         + "the lore types with the ids of their fields and choices, the relationship kinds, the stories with their chapters and plot arcs, the "
-        + "date periods and months, the world rules, the event kinds and methods, and - for the universe owner only - their ideas here. "
-        + "Use only these ids. Types, fields, kinds, calendars and terms themselves can't be created or changed.")]
+        + "date periods and months, the world rules, the event kinds and methods, and - for the universe owner only - their ideas here - "
+        + "and the universe's real schema: every type with its fields (archived ones apart), parent and groups, every group, the field "
+        + "kinds and icons, and whether this connection may propose schema. Use only these ids; never assume the starter types are all "
+        + "there is.")]
     public async Task<CallToolResult> GetChangeOptionsAsync(CancellationToken cancellationToken)
     {
         if (await RoleAsync(cancellationToken) is not { } role)
@@ -66,7 +68,7 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
             return NotAllowed();
         }
 
-        return Result(await AiChangeCatalog.ReadAsync(db, caller.UniverseId, role, cancellationToken));
+        return Result(await AiChangeCatalog.ReadAsync(db, caller.UniverseId, role, cancellationToken, caller.CanProposeSchema));
     }
 
     [McpServerTool(Name = ProposeTool, Title = "Propose changes for review", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
@@ -74,7 +76,9 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
         + "Nothing changes until they approve it in LoreX's Pending AI Changes; this tool cannot approve or apply anything. "
         + "Send up to 100 changes: create, update or remove (to the Trash) lore entries, relationships, stories, chapters, scenes, plot arcs, "
         + "plot beats, timeline moments, world rules and - for the universe owner - their ideas; write scene manuscripts and entry articles; "
-        + "reorder a story's chapters or arcs, a chapter's scenes or an arc's beats. A change can refer to what an earlier change creates "
+        + "reorder a story's chapters or arcs, a chapter's scenes or an arc's beats. Where get_change_options says schema may be proposed, "
+        + "a proposal of its own can instead create and update lore types, field definitions with their choices, and semantic groups, "
+        + "and archive a field; propose the entries that use them after it is approved. A change can refer to what an earlier change creates "
         + "with {\"ref\": \"<its id>\"}. Nothing is ever deleted for good. "
         + "Every change is checked first: if any has a problem, nothing is staged and every problem is listed so you can fix them and send again. "
         + "Returns the proposal's id and the address where the person reviews it.")]
@@ -93,7 +97,7 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
             clock,
             caller.UniverseId,
             caller.UserId,
-            new AiChangeOrigin(AiChangeSource.Mcp, caller.ConnectionId, caller.ClientName),
+            new AiChangeOrigin(AiChangeSource.Mcp, caller.ConnectionId, caller.ClientName, caller.CanProposeSchema),
             new AiChangeSubmission(summary, operations),
             cancellationToken);
 

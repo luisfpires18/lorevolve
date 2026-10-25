@@ -123,7 +123,7 @@ namespace Lorex.Api.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
 
-                            t.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)");
+                            t.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)");
 
                             t.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
                         });
@@ -1410,6 +1410,9 @@ namespace Lorex.Api.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("CanPropose")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("CanProposeSchema")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ClientId")

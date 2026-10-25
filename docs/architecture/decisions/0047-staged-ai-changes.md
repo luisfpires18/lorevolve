@@ -183,3 +183,9 @@ articles, images, ideas, world rules, accounts, roles, publishing, imports, perm
   gives the assistant a cut catalog. MCP clients get it whole.
 - The issue 33 security review must look at the proposal scope, the consent choice, the filters that hide the tools, and
   the approval routes' session-only boundary.
+
+## Amendment (2026-10-25, issue 59, ADR 0062)
+
+"Never type or field schema" is narrowed: lore types, field definitions and semantic groups can now be proposed, in a
+proposal of their own, by an owner or Editor through the assistant or an app the person separately allowed to propose schema
+(`McpConnection.CanProposeSchema`). Content proposals, their contract and every grant made before are unchanged.

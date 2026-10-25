@@ -38,6 +38,28 @@ internal static class AiChangeTestClient
             db, factory.Clock, universeId, userId, new AiChangeOrigin(AiChangeSource.Assistant), new AiChangeSubmission("Test changes", operations), default);
     }
 
+    /// <summary>Stages a schema proposal (ADR 0062) as <paramref name="userId"/>, from an entry point allowed to propose schema.</summary>
+    public static async Task<AiChangeStaged> StageSchema(LorexApiFactory factory, Guid universeId, string userId, params AiChangeOperationInput[] operations)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LorexDbContext>();
+        return await AiChangeStaging.StageAsync(
+            db, factory.Clock, universeId, userId, new AiChangeOrigin(AiChangeSource.Assistant, SchemaAllowed: true), new AiChangeSubmission("Schema", operations), default);
+    }
+
+    public static async Task<Guid> StagedSchema(LorexApiFactory factory, Guid universeId, string userId, params AiChangeOperationInput[] operations)
+    {
+        var staged = await StageSchema(factory, universeId, userId, operations);
+        Assert.True(staged.Proposal is not null, string.Join("; ", staged.Issues.Select(issue => $"{issue.Id}: {issue.Code} {issue.Message} ({issue.Field})")));
+        return staged.Proposal!.Id;
+    }
+
+    public static AiChangeOperationInput NewType(string key, AiLoreTypeInput type) => new(key, "create", "lore_type", LoreType: type);
+
+    public static AiChangeOperationInput NewField(string key, AiLoreFieldInput field) => new(key, "create", "lore_field", Field: field);
+
+    public static AiChangeOperationInput NewGroup(string key, string name) => new(key, "create", "lore_group", Group: new AiLoreGroupInput(name));
+
     /// <summary>Stages a proposal that must be accepted, and answers its id.</summary>
     public static async Task<Guid> Staged(LorexApiFactory factory, Guid universeId, string userId, params AiChangeOperationInput[] operations)
     {

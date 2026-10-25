@@ -35,6 +35,10 @@ export const ChangeResource = {
   WorldRule: 10,
   /** One of the universe owner's own ideas (ADR 0048). Only its proposer ever sees such a change. */
   Idea: 11,
+  /** Schema (ADR 0062): a lore type, a field definition, a semantic group. Never in a proposal with content. */
+  LoreType: 12,
+  LoreField: 13,
+  LoreGroup: 14,
 } as const
 export type ChangeResourceValue = (typeof ChangeResource)[keyof typeof ChangeResource]
 
@@ -226,6 +230,14 @@ export function itemPath(universeId: string, change: Change) {
   const id = change.resultId ?? change.targetId
   const universe = `/app/universes/${universeId}`
   const story = change.storyId ? `${universe}/stories/${change.storyId}` : null
+  // Schema lives on the Types screen, an archived field included.
+  if (
+    change.resource === ChangeResource.LoreType ||
+    change.resource === ChangeResource.LoreField ||
+    change.resource === ChangeResource.LoreGroup
+  ) {
+    return `${universe}/types`
+  }
   if (change.action === ChangeAction.Remove) {
     // Everything removed waits in the Trash - an idea in its owner's deleted ideas - from where it comes back.
     return change.resource === ChangeResource.Idea ? '/app/ideas' : `${universe}/trash`

@@ -9,8 +9,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lorex.Api.Features.AiChanges;
 
-/// <summary>Where a submission came from, as the server knows it: never anything the AI said about itself.</summary>
-internal sealed record AiChangeOrigin(AiChangeSource Source, Guid? McpConnectionId = null, string? ClientName = null);
+/// <summary>
+/// Where a submission came from, as the server knows it: never anything the AI said about itself. <paramref name="SchemaAllowed"/>:
+/// this entry point may stage schema definitions (ADR 0062) - the assistant, asked by a signed-in person in propose mode, or an MCP
+/// connection the person explicitly allowed to propose schema.
+/// </summary>
+internal sealed record AiChangeOrigin(AiChangeSource Source, Guid? McpConnectionId = null, string? ClientName = null, bool SchemaAllowed = false);
 
 /// <summary>One problem with a submission: which change (by its place and its id, when it has them), and what is wrong.</summary>
 public sealed record AiChangeStageIssue(int? Index, string? Id, string Code, string Message, string? Field = null);
@@ -108,7 +112,7 @@ internal static partial class AiChangeStaging
 
             if (Action(input.Action) is not { } action || Resource(input.Resource) is not { } resource)
             {
-                Problem(AiChangeCodes.Invalid, "Say what the change does (create, update, remove or reorder) and to what (lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea).");
+                Problem(AiChangeCodes.Invalid, "Say what the change does (create, update, remove or reorder) and to what (lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule, idea, lore_type, lore_field or lore_group).");
                 continue;
             }
 
@@ -131,13 +135,27 @@ internal static partial class AiChangeStaging
                 continue;
             }
 
+            if (AiChangePermissions.IsSchema(resource) && !origin.SchemaAllowed)
+            {
+                Problem(AiChangeCodes.NotAllowed, "This connection can't propose types, fields or groups. To allow it, connect the app again in LoreX and tick schema changes.");
+                continue;
+            }
+
+            if (action == AiChangeAction.Remove && resource is AiChangeResource.LoreType or AiChangeResource.LoreGroup)
+            {
+                Problem(AiChangeCodes.Unsupported, AiChangeText.NoSchemaRemoval(resource));
+                continue;
+            }
+
             if (!AiChangePermissions.MayStage(effective, resource, action))
             {
                 Problem(AiChangeCodes.NotAllowed, resource == AiChangeResource.Idea
                     ? "Ideas are the universe owner's own, so only the owner can have an AI propose them."
                     : effective == UniverseRole.Reviewer
                         ? "As a Reviewer, you can only have an AI suggest edits to existing lore entries, stories and scenes."
-                        : "Your role in this universe doesn't allow this change.");
+                        : AiChangePermissions.IsSchema(resource)
+                            ? "Only an owner or Editor can have an AI propose types, fields and groups."
+                            : "Your role in this universe doesn't allow this change.");
                 continue;
             }
 
@@ -146,6 +164,13 @@ internal static partial class AiChangeStaging
             {
                 works.Add(work);
             }
+        }
+
+        // Definitions and content never share a proposal: content can only use a definition once it exists, so the schema is
+        // reviewed and approved first, and the entries are proposed after with the ids it got (ADR 0062).
+        if (works.Any(work => AiChangePermissions.IsSchema(work.Resource)) && works.Any(work => !AiChangePermissions.IsSchema(work.Resource)))
+        {
+            Whole(AiChangeCodes.Unsupported, "Propose types, fields and groups on their own. Once they are approved, read get_change_options for their ids and propose the entries in a second proposal.");
         }
 
         await new AiChangeChecker(db, universeId, userId).CheckAsync(works, cancellationToken);
@@ -227,6 +252,9 @@ internal static partial class AiChangeStaging
         "plot_beat" or "beat" => AiChangeResource.PlotBeat,
         "world_rule" or "rule" => AiChangeResource.WorldRule,
         "idea" => AiChangeResource.Idea,
+        "lore_type" or "type" => AiChangeResource.LoreType,
+        "lore_field" or "field" or "field_definition" => AiChangeResource.LoreField,
+        "lore_group" or "group" or "type_group" or "semantic_group" => AiChangeResource.LoreGroup,
         _ => null,
     };
 
@@ -272,6 +300,9 @@ internal static partial class AiChangeStaging
                 (AiChangeResource.PlotBeat, _) => await PlotBeatAsync(cancellationToken),
                 (AiChangeResource.WorldRule, _) => await WorldRuleAsync(cancellationToken),
                 (AiChangeResource.Idea, _) => await IdeaAsync(cancellationToken),
+                (AiChangeResource.LoreType, _) => await LoreTypeAsync(cancellationToken),
+                (AiChangeResource.LoreField, _) => await LoreFieldAsync(cancellationToken),
+                (AiChangeResource.LoreGroup, _) => await LoreGroupAsync(cancellationToken),
 
                 (AiChangeResource.LoreEntry, AiChangeAction.Create) => Work(null, null, Lore(input.Lore, null)),
                 (AiChangeResource.LoreEntry, AiChangeAction.Update) => await StoredAsync(

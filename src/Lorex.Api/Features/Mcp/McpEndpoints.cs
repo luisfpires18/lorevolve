@@ -35,7 +35,13 @@ public sealed class McpCaller
     /// </summary>
     public bool CanPropose { get; private set; }
 
-    internal void Allow(Guid universeId, string userId, string universeName, Guid connectionId, string? clientName, bool canPropose)
+    /// <summary>
+    /// Proposals may also hold schema - types, fields, groups (ADR 0062): <see cref="CanPropose"/>, and the person's separate
+    /// tick for schema, which Connected Apps can take back on its own.
+    /// </summary>
+    public bool CanProposeSchema { get; private set; }
+
+    internal void Allow(Guid universeId, string userId, string universeName, Guid connectionId, string? clientName, bool canPropose, bool canProposeSchema = false)
     {
         UniverseId = universeId;
         UserId = userId;
@@ -43,6 +49,7 @@ public sealed class McpCaller
         ConnectionId = connectionId;
         ClientName = clientName;
         CanPropose = canPropose;
+        CanProposeSchema = canPropose && canProposeSchema;
         IsAllowed = true;
     }
 }
@@ -176,6 +183,7 @@ public static class McpEndpoints
                 row.ClientId,
                 row.LastUsedAt,
                 row.CanPropose,
+                row.CanProposeSchema,
                 Blocked = row.User!.BlockedAt != null,
                 UniverseName = row.Universe!.Name,
                 ClientName = db.Set<OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication>()
@@ -216,7 +224,8 @@ public static class McpEndpoints
             connection.UniverseName,
             connection.Id,
             connection.ClientName,
-            principal.HasScope(McpLimits.ProposeScope) && connection.CanPropose);
+            principal.HasScope(McpLimits.ProposeScope) && connection.CanPropose,
+            connection.CanProposeSchema);
 
         // The MCP endpoint is not a cookie-session endpoint: whatever else the request carried, the caller is the token.
         http.User = new ClaimsPrincipal(principal.Identity!);

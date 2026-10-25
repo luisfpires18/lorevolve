@@ -38,6 +38,12 @@ const ACTION_WORDS = {
   [ChangeAction.Reorder]: 'Order',
 } as const
 
+/** A field is archived, not trashed: it keeps its values and comes back from Types. */
+const actionWords = (change: Change) =>
+  change.resource === ChangeResource.LoreField && change.action === ChangeAction.Remove
+    ? 'Archive'
+    : ACTION_WORDS[change.action]
+
 /** Prose changes - a scene's manuscript, an entry's article - are shown as prose, never as before-and-after lines. */
 const isProse = (change: Change) =>
   change.resource === ChangeResource.Manuscript || change.resource === ChangeResource.Article
@@ -467,7 +473,7 @@ function ChangeItem({
         ) : null}
         <div className="aichangeitem__heading">
           <span className="aichangeitem__action" data-action={change.action}>
-            {isProse(change) ? 'Prose' : ACTION_WORDS[change.action]}
+            {isProse(change) ? 'Prose' : actionWords(change)}
           </span>
           <h2 className="aichangeitem__title" id={titleId} dir="auto">
             {change.title}

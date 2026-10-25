@@ -20,6 +20,8 @@ public sealed record ConsentToken(string FieldName, string Token);
 /// What the consent screen shows about a request: the client as it claims to be, and the universe it asks for.
 /// <paramref name="ProposalsRequested"/>: the app also asked to propose changes (ADR 0047); <paramref name="CanPropose"/>:
 /// the person's role could grant that. The screen offers the choice only when both are true, unticked.
+/// <paramref name="CanProposeSchema"/>: the role could also let those proposals hold types, fields and groups (ADR 0062) - a
+/// second unticked choice, beneath the first.
 /// </summary>
 public sealed record ConnectionRequestDetails(
     string ClientName,
@@ -30,7 +32,8 @@ public sealed record ConnectionRequestDetails(
     string UniverseName,
     UniverseRole Role,
     bool ProposalsRequested = false,
-    bool CanPropose = false);
+    bool CanPropose = false,
+    bool CanProposeSchema = false);
 
 /// <summary>
 /// The two OAuth endpoints LoreX answers itself, after OpenIddict has validated the request (ADR 0046), and the consent
@@ -60,6 +63,9 @@ public static class OAuthEndpoints
     public const string ProposeField = "lorex_propose";
 
     public const string AllowProposals = "allow";
+
+    /// <summary>The consent form's separate choice to let those proposals hold schema too (ADR 0062). Its value is <see cref="AllowProposals"/>.</summary>
+    public const string SchemaField = "lorex_schema";
 
     /// <summary>The consent form's antiforgery field, and the cookie its token is paired with.</summary>
     public const string ConsentTokenField = "lorex_consent_token";
@@ -154,7 +160,7 @@ public static class OAuthEndpoints
         if (!session.Succeeded || session.Principal is null || !await antiforgery.IsRequestValidAsync(http))
         {
             return Results.Redirect(ConsentPath + QueryString.Create(form
-                .Where(field => field.Key is not (DecisionField or ConsentTokenField or ProposeField))
+                .Where(field => field.Key is not (DecisionField or ConsentTokenField or ProposeField or SchemaField))
                 .SelectMany(field => field.Value.Select(value => new KeyValuePair<string, string?>(field.Key, value)))).ToUriComponent());
         }
 
@@ -187,6 +193,11 @@ public static class OAuthEndpoints
         var canPropose = request.HasScope(McpLimits.ProposeScope)
             && form[ProposeField] == AllowProposals
             && AiChanges.AiChangePermissions.MayStageAnything(role);
+        // Schema rides on proposing: a second tick on this same screen, from a role that edits types (ADR 0062). It is no
+        // OAuth scope - the token is the same either way - so no client registration changes; the connection carries it.
+        var canProposeSchema = canPropose
+            && form[SchemaField] == AllowProposals
+            && AiChanges.AiChangePermissions.MayStage(role, AiChanges.AiChangeResource.LoreType, AiChanges.AiChangeAction.Create);
         principal.SetScopes(canPropose
             ? [McpLimits.ReadScope, McpLimits.ProposeScope, Scopes.OfflineAccess]
             : [McpLimits.ReadScope, Scopes.OfflineAccess]);
@@ -222,6 +233,7 @@ public static class OAuthEndpoints
             UniverseId = universeId,
             CreatedAt = clock.GetUtcNow().UtcDateTime,
             CanPropose = canPropose,
+            CanProposeSchema = canProposeSchema,
         });
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -321,7 +333,8 @@ public static class OAuthEndpoints
             universe.Name,
             effective,
             (scope ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains(McpLimits.ProposeScope, StringComparer.Ordinal),
-            AiChanges.AiChangePermissions.MayStageAnything(effective)));
+            AiChanges.AiChangePermissions.MayStageAnything(effective),
+            AiChanges.AiChangePermissions.MayStage(effective, AiChanges.AiChangeResource.LoreType, AiChanges.AiChangeAction.Create)));
     }
 
     /// <summary>An OAuth error, which OpenIddict writes back to the client's validated redirect URI or token response.</summary>

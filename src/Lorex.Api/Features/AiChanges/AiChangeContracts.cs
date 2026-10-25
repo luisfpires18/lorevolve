@@ -26,7 +26,7 @@ public sealed record AiChangeOperationInput(
     string? Id,
     [property: Description("create, update, remove or reorder. remove moves the item to LoreX's Trash (an idea to the owner's deleted ideas), from where it can be restored; nothing is deleted for good. reorder sets the whole order of a story's chapters or plot arcs, a chapter's scenes or an arc's beats.")]
     string? Action,
-    [property: Description("lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea.")]
+    [property: Description("lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea - or, for a connection allowed to propose schema, lore_type, lore_field or lore_group. Schema changes go in a proposal of their own.")]
     string? Resource,
     [property: Description("For update and remove: the existing item's id, exactly as a read tool gave it. For a manuscript or an article, the scene or entry goes in manuscript.scene or article.entry instead; for reorder, the container goes in order.")]
     Guid? TargetId = null,
@@ -44,7 +44,10 @@ public sealed record AiChangeOperationInput(
     AiPlotBeatInput? PlotBeat = null,
     AiWorldRuleInput? WorldRule = null,
     AiIdeaInput? Idea = null,
-    AiOrderInput? Order = null);
+    AiOrderInput? Order = null,
+    AiLoreTypeInput? LoreType = null,
+    AiLoreFieldInput? Field = null,
+    AiLoreGroupInput? Group = null);
 
 /// <summary>Something that exists, by its id, or something this proposal creates, by the change's id.</summary>
 public sealed record AiRefInput(

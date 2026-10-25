@@ -46,6 +46,7 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
         - create needs the values; update needs targetId and only the values that change; remove moves an item to the Trash (an idea to the owner's deleted ideas); reorder takes a container's whole order in order.items.
         - For a manuscript, use mode "append" to add prose after what is there. An article is written as blocks of plain text, in article.blocks.
         - Ideas are the universe owner's own; propose one only when the writer asked for an idea.
+        - New lore types, fields and groups go in a proposal of their own (lore_type, lore_field, lore_group), only when the writer asked for them: check get_change_options' types and schema first, reuse what exists, and ask when more than one model fits. Entries that use them come in a later question, once they are approved.
         - If propose_changes lists problems, fix them and call it again.
         When it is staged, answer in a note that the changes are waiting for the writer to review in Pending AI Changes, and say briefly what they are.
         """;
@@ -60,7 +61,7 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
     {
         if (call.Name == OptionsTool)
         {
-            return JsonSerializer.Serialize(await AiChangeCatalog.ReadAsync(db, universeId, role, cancellationToken), AssistantTools.Json);
+            return JsonSerializer.Serialize(await AiChangeCatalog.ReadAsync(db, universeId, role, cancellationToken, schemaAllowed: true), AssistantTools.Json);
         }
 
         if (Staged is not null)
@@ -78,7 +79,8 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
             return Error("bad_arguments", "The changes were not in the expected shape. Every id must be one a tool returned.");
         }
 
-        var staged = await AiChangeStaging.StageAsync(db, clock, universeId, userId, new AiChangeOrigin(AiChangeSource.Assistant), submission, cancellationToken);
+        // The writer asked in propose mode, signed in: schema is theirs to propose when their role edits types (ADR 0062).
+        var staged = await AiChangeStaging.StageAsync(db, clock, universeId, userId, new AiChangeOrigin(AiChangeSource.Assistant, SchemaAllowed: true), submission, cancellationToken);
         if (staged.Proposal is not { } proposal)
         {
             return JsonSerializer.Serialize(new
@@ -141,7 +143,7 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
         var operation = Object(
             ("id", Text()),
             ("action", Text("create, update, remove or reorder")),
-            ("resource", Text("lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea")),
+            ("resource", Text("lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea; or, in a proposal of their own, lore_type, lore_field or lore_group")),
             ("targetId", Nullable("string")),
             ("expectedVersion", Nullable("integer")),
             ("lore", Or(Object(
@@ -199,7 +201,27 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
                 ("chapter", Or(reference)),
                 ("unchaptered", Nullable("boolean")),
                 ("arc", Or(reference)),
-                ("items", NullableArray(reference))))));
+                ("items", NullableArray(reference))))),
+            ("loreType", Or(Object(
+                ("name", Nullable("string")),
+                ("description", Nullable("string")),
+                ("icon", Nullable("string")),
+                ("accentColor", Nullable("string")),
+                ("parent", Or(reference)),
+                ("root", Nullable("boolean")),
+                ("groups", NullableArray(reference)),
+                ("familyTree", Nullable("boolean"))))),
+            ("field", Or(Object(
+                ("type", Or(reference)),
+                ("name", Nullable("string")),
+                ("kind", Nullable("string")),
+                ("required", Nullable("boolean")),
+                ("defaultValue", Nullable("string")),
+                ("options", NullableArray(Text())),
+                ("linksToType", Or(reference)),
+                ("linksToGroup", Or(reference)),
+                ("linksToAny", Nullable("boolean"))))),
+            ("group", Or(Object(("name", Nullable("string")), ("familyTree", Nullable("boolean"))))));
 
         return Object(("summary", Nullable("string")), ("operations", new JsonObject { ["type"] = "array", ["items"] = operation })).ToJsonString();
     }

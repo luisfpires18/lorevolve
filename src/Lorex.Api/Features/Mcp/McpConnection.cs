@@ -48,6 +48,13 @@ public sealed class McpConnection
     /// Checked on every proposal tool call beside the token's own scope.
     /// </summary>
     public bool CanPropose { get; set; }
+
+    /// <summary>
+    /// Whether the person also let this app propose schema - lore types, fields and groups (ADR 0062) - beside content: a
+    /// second explicit choice on the consent screen, never implied by <see cref="CanPropose"/>, never given to a connection
+    /// approved before it existed, and turned off from Connected Apps on its own. Checked on every proposal and approval.
+    /// </summary>
+    public bool CanProposeSchema { get; set; }
 }
 
 public sealed class McpConnectionConfiguration : IEntityTypeConfiguration<McpConnection>

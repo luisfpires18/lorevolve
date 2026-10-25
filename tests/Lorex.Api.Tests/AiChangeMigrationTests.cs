@@ -192,6 +192,46 @@ public sealed class AiChangeMigrationTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task Rolling_back_schema_proposals_drops_only_the_proposals_that_hold_schema()
+    {
+        Directory.CreateDirectory(_directory);
+        Guid universeId;
+        await using (var host = new FileHost(DataSource))
+        {
+            var client = host.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+            (await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest("user-aischemamig", "aischemamig@example.test", Password))).EnsureSuccessStatusCode();
+            universeId = (await PlotTestClient.CreateUniverse(client, "Schema world")).Id;
+        }
+
+        SqliteConnection.ClearAllPools();
+
+        await using var db = Context();
+        var userId = (await Strings(db, "SELECT Id AS Value FROM AspNetUsers"))[0];
+        async Task<string> ProposalAsync(int resource)
+        {
+            var id = Guid.NewGuid().ToString().ToUpperInvariant();
+            await db.Database.ExecuteSqlRawAsync(
+                "INSERT INTO AiChangeProposals (Id, UniverseId, ProposedByUserId, Source, Status, Revision, CreatedAt, ExpiresAt) VALUES ({0}, {1}, {2}, 1, 0, 1, '2026-10-25 00:00:00', '2026-11-08 00:00:00')",
+                id, universeId.ToString().ToUpperInvariant(), userId);
+            await db.Database.ExecuteSqlRawAsync(
+                "INSERT INTO AiChangeOperations (Id, ProposalId, Sequence, Key, Resource, Action, Proposed, DependsOn, Status) VALUES ({0}, {1}, 0, 'a', {2}, 0, '{{}}', '[]', 0)",
+                Guid.NewGuid().ToString().ToUpperInvariant(), id, resource);
+            return id;
+        }
+
+        var content = await ProposalAsync(0);
+        var schema = await ProposalAsync(13);
+
+        await db.GetService<IMigrator>().MigrateAsync("20261025141528_AddPlatformAdmin");
+        Assert.Equal([content], await Strings(db, "SELECT Id AS Value FROM AiChangeProposals"));
+        Assert.DoesNotContain("CanProposeSchema", await Strings(db, "SELECT name AS Value FROM pragma_table_info('McpConnections')"));
+
+        await db.GetService<IMigrator>().MigrateAsync();
+        Assert.Contains("CanProposeSchema", await Strings(db, "SELECT name AS Value FROM pragma_table_info('McpConnections')"));
+        Assert.NotEqual(schema, await ProposalAsync(14));
+    }
+
     private LorexDbContext Context() => new(new DbContextOptionsBuilder<LorexDbContext>().UseSqlite($"Data Source={DataSource}").Options);
 
     private static async Task<List<string>> Tables(LorexDbContext db) =>

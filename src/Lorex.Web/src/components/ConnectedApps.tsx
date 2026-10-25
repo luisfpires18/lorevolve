@@ -6,6 +6,7 @@ import {
   disconnectApp,
   listConnectedApps,
   stopProposals,
+  stopSchemaProposals,
   type ConnectedApp,
   type ConnectedAppStatusValue,
 } from '../mcp/api'
@@ -117,6 +118,7 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
   const [app, setApp] = useState(listed)
   const [stopping, setStopping] = useState(false)
   const [stopped, setStopped] = useState(false)
+  const [stoppingSchema, setStoppingSchema] = useState(false)
   const id = useId()
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -157,12 +159,25 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
     setError(null)
     try {
       await stopProposals(app.id)
-      setApp({ ...app, canPropose: false })
+      setApp({ ...app, canPropose: false, canProposeSchema: false })
       setStopped(true)
     } catch {
       setError('Proposals couldn’t be turned off. Try again.')
     } finally {
       setStopping(false)
+    }
+  }
+
+  async function stopSchema() {
+    setStoppingSchema(true)
+    setError(null)
+    try {
+      await stopSchemaProposals(app.id)
+      setApp({ ...app, canProposeSchema: false })
+    } catch {
+      setError('Schema proposals couldn’t be turned off. Try again.')
+    } finally {
+      setStoppingSchema(false)
     }
   }
 
@@ -181,7 +196,11 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
             'Unverified app'
           )}
           {' · '}
-          {app.canPropose ? 'Reads, and can propose changes for review' : 'Read-only'}
+          {app.canProposeSchema
+            ? 'Reads, and can propose changes, types, fields and groups for review'
+            : app.canPropose
+              ? 'Reads, and can propose changes for review'
+              : 'Read-only'}
         </p>
         <p className="connectedapps__meta">
           Reads <bdi>{app.universeName}</bdi>
@@ -203,6 +222,18 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
         </p>
       </div>
       <div className="connectedapps__controls">
+        {app.canProposeSchema ? (
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => void stopSchema()}
+            disabled={busy || stopping || stoppingSchema}
+            aria-label={`Stop ${app.clientName} proposing types, fields and groups to ${app.universeName}`}
+            data-testid="stop-app-schema"
+          >
+            {stoppingSchema ? 'Stopping' : 'Stop schema proposals'}
+          </button>
+        ) : null}
         {app.canPropose ? (
           <button
             className="button button--secondary"

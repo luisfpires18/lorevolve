@@ -145,6 +145,19 @@ public static class EntityTypeEndpoints
             return denied;
         }
 
+        return await CreateCoreAsync(db, universeId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// A type's create after the caller's access check: the route's, and an approved AI change's (ADR 0062), which runs it
+    /// inside the approval's transaction. Answers 201 with the type.
+    /// </summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        EntityTypeRequest request,
+        CancellationToken cancellationToken)
+    {
         if (LoreValidation.ValidateEntityType(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -154,7 +167,7 @@ public static class EntityTypeEndpoints
         var parentId = request.Parent?.Id;
 
         // One writer at a time from here, so two types created under the same parent cannot both take the last place.
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         if (await db.EntityTypes.AnyAsync(
                 type => type.UniverseId == universeId && type.Name == name,
@@ -226,6 +239,17 @@ public static class EntityTypeEndpoints
             return denied;
         }
 
+        return await UpdateCoreAsync(db, universeId, typeId, request, cancellationToken);
+    }
+
+    /// <summary>A type's edit after the caller's access check: the route's, and an approved AI change's (ADR 0062).</summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid typeId,
+        EntityTypeRequest request,
+        CancellationToken cancellationToken)
+    {
         var entityType = await FindTypeAsync(db, universeId, typeId, cancellationToken);
         if (entityType is null)
         {
@@ -239,7 +263,7 @@ public static class EntityTypeEndpoints
 
         var name = request.Name!.Trim();
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         if (!string.Equals(entityType.Name, name, StringComparison.Ordinal)
             && await db.EntityTypes.AnyAsync(
@@ -519,7 +543,7 @@ public static class EntityTypeEndpoints
             .MaxAsync(type => (int?)type.DisplayOrder, cancellationToken) ?? 0) + 1;
 
     /// <summary>Every type of the universe and its parent: the whole graph, which is small.</summary>
-    private static async Task<Dictionary<Guid, Guid?>> ParentsAsync(
+    internal static async Task<Dictionary<Guid, Guid?>> ParentsAsync(
         LorexDbContext db,
         Guid universeId,
         CancellationToken cancellationToken) =>
@@ -635,6 +659,20 @@ public static class EntityTypeEndpoints
             return denied;
         }
 
+        return await AddFieldCoreAsync(db, universeId, typeId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adding a field after the caller's access check: the route's, and an approved AI change's (ADR 0062), inside the
+    /// approval's transaction. Answers the type.
+    /// </summary>
+    internal static async Task<IResult> AddFieldCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid typeId,
+        FieldDefinitionRequest request,
+        CancellationToken cancellationToken)
+    {
         var entityType = await FindTypeAsync(db, universeId, typeId, cancellationToken);
         if (entityType is null)
         {
@@ -648,29 +686,14 @@ public static class EntityTypeEndpoints
 
         // One writer at a time from here (IMMEDIATE), so the target checked below cannot be deleted before the field that
         // names it is written: a type or group delete racing this one either sees the field or is seen as gone.
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
-        if (await UnknownTargetAsync(db, universeId, request.TargetEntityTypeId, cancellationToken))
+        if (await FieldAddRefusalAsync(db, universeId, typeId, request, cancellationToken) is { } refused)
         {
-            return UnknownTarget();
-        }
-
-        if (await UnknownGroupAsync(db, universeId, request.TargetGroupId, cancellationToken))
-        {
-            return UnknownGroup();
+            return refused;
         }
 
         var name = request.Name!.Trim();
-
-        if (await NameClashAsync(db, typeId, null, name, cancellationToken) is { } nameClash)
-        {
-            return FieldNameTaken(nameClash);
-        }
-
-        if (await SemanticClashAsync(db, typeId, null, request.Semantic, cancellationToken) is { } semanticClash)
-        {
-            return SemanticTaken(request.Semantic!.Value, semanticClash);
-        }
 
         var order = request.DisplayOrder
             ?? await db.EntityFieldDefinitions.Where(field => field.EntityTypeId == typeId)
@@ -711,6 +734,41 @@ public static class EntityTypeEndpoints
     }
 
     /// <summary>
+    /// What refuses a new field once its shape is valid: a target that is not this universe's, a name the type's fields already
+    /// use (archived ones included), a meaning another field holds. Read-only, so an AI change's check (ADR 0062) asks the same
+    /// before anything is approved; the add itself asks again inside its transaction.
+    /// </summary>
+    internal static async Task<IResult?> FieldAddRefusalAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid typeId,
+        FieldDefinitionRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (await UnknownTargetAsync(db, universeId, request.TargetEntityTypeId, cancellationToken))
+        {
+            return UnknownTarget();
+        }
+
+        if (await UnknownGroupAsync(db, universeId, request.TargetGroupId, cancellationToken))
+        {
+            return UnknownGroup();
+        }
+
+        if (await NameClashAsync(db, typeId, null, request.Name!.Trim(), cancellationToken) is { } nameClash)
+        {
+            return FieldNameTaken(nameClash);
+        }
+
+        if (await SemanticClashAsync(db, typeId, null, request.Semantic, cancellationToken) is { } semanticClash)
+        {
+            return SemanticTaken(request.Semantic!.Value, semanticClash);
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Gated, because this is where meaning is declared on a field that may already hold
     /// values. Pointing <c>DeathYear</c> at a number field a hundred Canon characters have
     /// filled in tells the chronology rules something new about every one of them at once,
@@ -746,7 +804,7 @@ public static class EntityTypeEndpoints
             cancellationToken);
     }
 
-    private static async Task<IResult> UpdateFieldCoreAsync(
+    internal static async Task<IResult> UpdateFieldCoreAsync(
         Guid universeId,
         Guid typeId,
         Guid fieldId,
@@ -780,6 +838,99 @@ public static class EntityTypeEndpoints
         {
             return FieldChanged(definition.Version);
         }
+
+        if (await FieldEditRefusalAsync(db, universeId, typeId, definition, request, cancellationToken) is { } refused)
+        {
+            return refused;
+        }
+
+        definition.Name = request.Name!.Trim();
+        definition.TargetEntityTypeId = request.TargetEntityTypeId;
+        definition.TargetGroupId = request.TargetGroupId;
+        definition.Kind = request.Kind;
+
+        // Meaning is metadata about the field, not about what is stored in it, so it may be
+        // declared or withdrawn at any time - unlike the kind, which is frozen once values exist.
+        definition.Semantic = request.Semantic;
+        definition.IsRequired = request.IsRequired;
+        // An edit keeps the field's place, whatever it sends: the order is the type's layout's (Issue #26), saved under its own
+        // version, so a drawer opened before a reorder can never put the field back where it was.
+        definition.DefaultValue = LoreValidation.Normalize(request.DefaultValue);
+
+        if (request.Options is not null)
+        {
+            var keep = KeptOptions(request.Options);
+
+            // Every choice left out was found unused, now and in older versions, by the refusal above.
+            foreach (var option in definition.Options.Where(option => !keep.Contains(option.Value)).ToList())
+            {
+                definition.Options.Remove(option);
+            }
+
+            var existing = new HashSet<string>(
+                definition.Options.Select(option => option.Value),
+                StringComparer.OrdinalIgnoreCase);
+
+            var order = 0;
+            foreach (var value in keep)
+            {
+                order++;
+                if (existing.Contains(value))
+                {
+                    continue;
+                }
+
+                // Added through the set, not the tracked collection: a new option arrives with its id already set, and EF
+                // Core would take one found in the collection that way for an existing row and update nothing.
+                db.EntityFieldOptions.Add(new EntityFieldOption
+                {
+                    Id = Guid.NewGuid(),
+                    FieldDefinitionId = fieldId,
+                    Value = value,
+                    DisplayOrder = order,
+                });
+            }
+        }
+
+        // An edit that changed something moves the version on, exactly once; an unchanged save leaves every other open
+        // drawer current.
+        if (db.ChangeTracker.HasChanges())
+        {
+            definition.Version++;
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException failure) when (DatabaseFailures.IsUniqueViolation(failure))
+        {
+            return FieldNameTaken(archived: false);
+        }
+
+        var types = await LoadTypesAsync(db, universeId, cancellationToken);
+        return Results.Ok(types.First(type => type.Id == typeId));
+    }
+
+    private static HashSet<string> KeptOptions(IReadOnlyList<string> options) => new(
+        options.Where(option => !string.IsNullOrWhiteSpace(option)).Select(option => option.Trim()),
+        StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// What refuses an edit of an active field, its version aside: its shape, a kind change over values it holds now or in an
+    /// older version, a name or meaning another field holds, a target not of this universe or narrower than its links, required
+    /// while entries or eras leave it empty, a choice left out that an entry or an older version still uses. Read-only, so an AI
+    /// change's check (ADR 0062) asks exactly what the edit will; the edit asks again inside its transaction.
+    /// </summary>
+    internal static async Task<IResult?> FieldEditRefusalAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid typeId,
+        EntityFieldDefinition definition,
+        FieldDefinitionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var fieldId = definition.Id;
 
         if (LoreValidation.ValidateField(request) is { } errors)
         {
@@ -871,34 +1022,14 @@ public static class EntityTypeEndpoints
                 extensions: new Dictionary<string, object?> { ["code"] = RequiredClearedCode });
         }
 
-        definition.Name = name;
-        definition.TargetEntityTypeId = request.TargetEntityTypeId;
-        definition.TargetGroupId = request.TargetGroupId;
-        definition.Kind = request.Kind;
-
-        // Meaning is metadata about the field, not about what is stored in it, so it may be
-        // declared or withdrawn at any time - unlike the kind, which is frozen once values exist.
-        definition.Semantic = request.Semantic;
-        definition.IsRequired = request.IsRequired;
-        // An edit keeps the field's place, whatever it sends: the order is the type's layout's (Issue #26), saved under its own
-        // version, so a drawer opened before a reorder can never put the field back where it was.
-        definition.DefaultValue = LoreValidation.Normalize(request.DefaultValue);
-
         if (request.Options is not null)
         {
-            var keep = new HashSet<string>(
-                request.Options.Where(option => !string.IsNullOrWhiteSpace(option)).Select(option => option.Trim()),
-                StringComparer.OrdinalIgnoreCase);
+            var keep = KeptOptions(request.Options);
 
             // An option still chosen somewhere is kept, so removing it cannot quietly drop
             // an author's answer.
-            foreach (var option in definition.Options.ToList())
+            foreach (var option in definition.Options.Where(option => !keep.Contains(option.Value)))
             {
-                if (keep.Contains(option.Value))
-                {
-                    continue;
-                }
-
                 var optionInUse = await db.EntityFieldValues.AnyAsync(value => value.OptionId == option.Id, cancellationToken)
                     || await db.EntityEraFieldValues.AnyAsync(value => value.OptionId == option.Id, cancellationToken);
 
@@ -922,53 +1053,10 @@ public static class EntityTypeEndpoints
                         statusCode: StatusCodes.Status409Conflict,
                         extensions: new Dictionary<string, object?> { ["code"] = OptionInHistoryCode });
                 }
-
-                definition.Options.Remove(option);
-            }
-
-            var existing = new HashSet<string>(
-                definition.Options.Select(option => option.Value),
-                StringComparer.OrdinalIgnoreCase);
-
-            var order = 0;
-            foreach (var value in keep)
-            {
-                order++;
-                if (existing.Contains(value))
-                {
-                    continue;
-                }
-
-                // Added through the set, not the tracked collection: a new option arrives with its id already set, and EF
-                // Core would take one found in the collection that way for an existing row and update nothing.
-                db.EntityFieldOptions.Add(new EntityFieldOption
-                {
-                    Id = Guid.NewGuid(),
-                    FieldDefinitionId = fieldId,
-                    Value = value,
-                    DisplayOrder = order,
-                });
             }
         }
 
-        // An edit that changed something moves the version on, exactly once; an unchanged save leaves every other open
-        // drawer current.
-        if (db.ChangeTracker.HasChanges())
-        {
-            definition.Version++;
-        }
-
-        try
-        {
-            await db.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException failure) when (DatabaseFailures.IsUniqueViolation(failure))
-        {
-            return FieldNameTaken(archived: false);
-        }
-
-        var types = await LoadTypesAsync(db, universeId, cancellationToken);
-        return Results.Ok(types.First(type => type.Id == typeId));
+        return null;
     }
 
     /// <summary>The 409 for a field edit made over a version that is no longer current.</summary>
@@ -1127,30 +1215,38 @@ public static class EntityTypeEndpoints
             return Results.NotFound();
         }
 
-        return await canon.RecordAsync(
-            universeId,
-            async token =>
-            {
-                var definition = await db.EntityFieldDefinitions
-                    .FirstOrDefaultAsync(field => field.Id == fieldId && field.EntityTypeId == typeId, token);
+        return await canon.RecordAsync(universeId, token => ArchiveFieldCoreAsync(db, universeId, typeId, fieldId, token), cancellationToken);
+    }
 
-                if (definition is null)
-                {
-                    return Results.NotFound();
-                }
+    /// <summary>
+    /// The archive itself, inside the caller's transaction: the route's reconciliation, or an approved AI change's gate
+    /// (ADR 0062). Archiving only takes facts away from the rules, so the gate can never refuse it.
+    /// </summary>
+    internal static async Task<IResult> ArchiveFieldCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid typeId,
+        Guid fieldId,
+        CancellationToken cancellationToken)
+    {
+        var definition = await db.EntityFieldDefinitions
+            .FirstOrDefaultAsync(field => field.Id == fieldId && field.EntityTypeId == typeId && field.EntityType!.UniverseId == universeId, cancellationToken);
 
-                if (definition.ArchivedAt is null)
-                {
-                    definition.ArchivedAt = DateTime.UtcNow;
-                    definition.Version++;
-                    await db.SaveChangesAsync(token);
-                    await InvalidateOpenFormsAsync(db, fieldId, token);
-                }
+        if (definition is null)
+        {
+            return Results.NotFound();
+        }
 
-                var types = await LoadTypesAsync(db, universeId, token);
-                return Results.Ok(types.First(type => type.Id == typeId));
-            },
-            cancellationToken);
+        if (definition.ArchivedAt is null)
+        {
+            definition.ArchivedAt = DateTime.UtcNow;
+            definition.Version++;
+            await db.SaveChangesAsync(cancellationToken);
+            await InvalidateOpenFormsAsync(db, fieldId, cancellationToken);
+        }
+
+        var types = await LoadTypesAsync(db, universeId, cancellationToken);
+        return Results.Ok(types.First(type => type.Id == typeId));
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Lorex.Api.Data;
+using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -68,16 +69,80 @@ public static class EntityTypeGroupEndpoints
             return denied;
         }
 
-        var name = request.Name?.Trim();
-        if (string.IsNullOrEmpty(name) || name.Length > LoreLimits.NameMaxLength)
-        {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
+        return await UpdateCoreAsync(db, universeId, groupId, request.Name, null, cancellationToken);
+    }
+
+    /// <summary>Why a group name can't be used, by its shape alone, or null. The name's uniqueness is the write's, in its transaction.</summary>
+    internal static Dictionary<string, string[]>? NameProblem(string? name) =>
+        string.IsNullOrEmpty(name) || name.Length > LoreLimits.NameMaxLength
+            ? new Dictionary<string, string[]>
             {
                 ["name"] = [string.IsNullOrEmpty(name) ? "Give the group a name." : $"Keep the name under {LoreLimits.NameMaxLength} characters."],
-            });
+            }
+            : null;
+
+    /// <summary>
+    /// A new group with no types yet - what an approved AI change creates before the types that join it (ADR 0062). The app
+    /// itself creates a group with the type that first joins it (<see cref="ApplyMembershipAsync"/>); both are one row with a
+    /// name unique in the universe, and a group left empty is the state deleting its last type leaves too.
+    /// </summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        string? name,
+        bool familyTreeEnabled,
+        CancellationToken cancellationToken)
+    {
+        name = name?.Trim();
+        if (NameProblem(name) is { } errors)
+        {
+            return Results.ValidationProblem(errors);
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+
+        if (await db.EntityTypeGroups.AnyAsync(other => other.UniverseId == universeId && other.Name == name, cancellationToken))
+        {
+            return NameTaken("name", name!);
+        }
+
+        var now = DateTime.UtcNow;
+        var group = new EntityTypeGroup { Id = Guid.NewGuid(), UniverseId = universeId, Name = name!, FamilyTreeEnabled = familyTreeEnabled, CreatedAt = now, UpdatedAt = now };
+        db.EntityTypeGroups.Add(group);
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException failure) when (DatabaseFailures.IsUniqueViolation(failure))
+        {
+            return NameTaken("name", name!);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+
+        return Results.Ok((await LoadGroupsAsync(db, universeId, cancellationToken)).First(each => each.Id == group.Id));
+    }
+
+    /// <summary>
+    /// A group's rename and, when <paramref name="familyTreeEnabled"/> is given, its Family Tree switch, after the caller's
+    /// access check: the rename route's, and an approved AI change's (ADR 0062). The group keeps its id, members and targets.
+    /// </summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        Guid groupId,
+        string? name,
+        bool? familyTreeEnabled,
+        CancellationToken cancellationToken)
+    {
+        name = name?.Trim();
+        if (NameProblem(name) is { } errors)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var group = await db.EntityTypeGroups
             .FirstOrDefaultAsync(candidate => candidate.Id == groupId && candidate.UniverseId == universeId, cancellationToken);
@@ -89,10 +154,11 @@ public static class EntityTypeGroupEndpoints
         if (group.Name != name
             && await db.EntityTypeGroups.AnyAsync(other => other.UniverseId == universeId && other.Name == name, cancellationToken))
         {
-            return NameTaken("name", name);
+            return NameTaken("name", name!);
         }
 
-        group.Name = name;
+        group.Name = name!;
+        group.FamilyTreeEnabled = familyTreeEnabled ?? group.FamilyTreeEnabled;
         group.UpdatedAt = DateTime.UtcNow;
 
         try
@@ -101,7 +167,7 @@ public static class EntityTypeGroupEndpoints
         }
         catch (DbUpdateException failure) when (DatabaseFailures.IsUniqueViolation(failure))
         {
-            return NameTaken("name", name);
+            return NameTaken("name", name!);
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -309,7 +375,7 @@ public static class EntityTypeGroupEndpoints
     /// it. Bounded: it reads only the fields limited to those groups and counts, through the reference index, their values
     /// that point at entries of this type.
     /// </summary>
-    private static async Task<IResult?> LeavingRefusalAsync(
+    internal static async Task<IResult?> LeavingRefusalAsync(
         LorexDbContext db,
         EntityType entityType,
         List<Guid> groupIds,

@@ -47,7 +47,7 @@ public sealed class McpConnectionMigrationTests : IDisposable
         {
             Assert.Equal(Added, await Tables(db));
             Assert.Equal(
-                ["Id", "AuthorizationId", "ClientId", "UserId", "UniverseId", "CreatedAt", "LastUsedAt", "CanPropose"],
+                ["Id", "AuthorizationId", "ClientId", "UserId", "UniverseId", "CreatedAt", "LastUsedAt", "CanPropose", "CanProposeSchema"],
                 await Strings(db, "SELECT name AS Value FROM pragma_table_info('McpConnections') ORDER BY cid"));
             Assert.Equal(
                 ["AspNetUsers CASCADE", "Universes CASCADE"],

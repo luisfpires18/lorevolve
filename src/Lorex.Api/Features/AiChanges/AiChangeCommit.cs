@@ -313,6 +313,10 @@ internal static class AiChangeCommit
                     AiChangeResource.PlotBeat => await PlotBeatEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
                     AiChangeResource.WorldRule => await WorldRuleEndpoints.TrashCoreAsync(db, null, universeId, target!.Value, cancellationToken),
                     AiChangeResource.Idea => await IdeaEndpoints.DeleteCoreAsync(db, approverId, target!.Value, cancellationToken),
+
+                    // A field is archived, never deleted: it keeps every value and comes back with a restore (Issue #39).
+                    AiChangeResource.LoreField => await EntityTypeEndpoints.ArchiveFieldCoreAsync(
+                        db, universeId, ((FieldValues)work.Before!).Type.Id!.Value, target!.Value, cancellationToken),
                     _ => throw new InvalidOperationException($"A {work.Resource} change is never a removal."),
                 };
                 return Done(trashed, target);
@@ -375,6 +379,47 @@ internal static class AiChangeCommit
                 return work.Action == AiChangeAction.Create
                     ? Made<IdeaDetail>(await IdeaEndpoints.CreateCoreAsync(db, approverId, kept, cancellationToken), detail => detail.Id)
                     : Done(await IdeaEndpoints.UpdateCoreAsync(db, approverId, target!.Value, kept, cancellationToken), target);
+
+            // Schema (ADR 0062): each definition through the Types screen's own write path, as the approver.
+            case TypeValues type:
+                var typed = new EntityTypeRequest(
+                    type.Name,
+                    type.Description,
+                    type.Icon,
+                    type.AccentColor,
+                    null,
+                    type.FamilyTreeEligible,
+                    new EntityTypeParentChoice(type.Parent is { } parent ? Id(parent) : null),
+                    [.. type.Groups.Select(group => new EntityTypeGroupChoice(Id(group)))]);
+                return work.Action == AiChangeAction.Create
+                    ? Made<EntityTypeResponse>(await EntityTypeEndpoints.CreateCoreAsync(db, universeId, typed, cancellationToken), detail => detail.Id)
+                    : Done(await EntityTypeEndpoints.UpdateCoreAsync(db, universeId, target!.Value, typed, cancellationToken), target);
+
+            case FieldValues field:
+                var ofType = Id(field.Type);
+                var defined = new FieldDefinitionRequest(
+                    field.Name,
+                    field.Kind,
+                    field.Required,
+                    null,
+                    field.DefaultValue,
+                    field.Options,
+                    field.Semantic,
+                    field.TargetType is { } linksToType ? Id(linksToType) : null,
+                    field.TargetGroup is { } linksToGroup ? Id(linksToGroup) : null,
+                    work.BaseVersion);
+                return work.Action == AiChangeAction.Create
+                    ? Made<EntityTypeResponse>(
+                        await EntityTypeEndpoints.AddFieldCoreAsync(db, universeId, ofType, defined, cancellationToken),
+                        detail => detail.Fields.Single(added => added.Name == field.Name).Id)
+                    : Done(await EntityTypeEndpoints.UpdateFieldCoreAsync(universeId, ofType, target!.Value, defined, db, cancellationToken), target);
+
+            case GroupValues group:
+                return work.Action == AiChangeAction.Create
+                    ? Made<EntityTypeGroupResponse>(
+                        await EntityTypeGroupEndpoints.CreateCoreAsync(db, universeId, group.Name, group.FamilyTreeEnabled, cancellationToken),
+                        detail => detail.Id)
+                    : Done(await EntityTypeGroupEndpoints.UpdateCoreAsync(db, universeId, target!.Value, group.Name, group.FamilyTreeEnabled, cancellationToken), target);
 
             case LoreValues lore:
                 var entry = new EntityRequest(

@@ -48,8 +48,9 @@ public enum AiChangeOperationStatus
 }
 
 /// <summary>
-/// What an operation changes: the resources issue 32 approved, and the rest of a universe's authored content issue 45 added
-/// (ADR 0048). Never schema: no type, field, choice, relationship kind, calendar or vocabulary.
+/// What an operation changes: the resources issue 32 approved, the rest of a universe's authored content issue 45 added
+/// (ADR 0048), and the schema definitions issue 59 added (ADR 0062) - staged only by a person and a connection allowed to
+/// propose schema, and never in the same proposal as content.
 /// </summary>
 public enum AiChangeResource
 {
@@ -70,6 +71,15 @@ public enum AiChangeResource
 
     /// <summary>One of the universe owner's own ideas linked to this universe - never another account's (ADR 0030).</summary>
     Idea = 11,
+
+    /// <summary>A lore type's definition (ADR 0062). Schema.</summary>
+    LoreType = 12,
+
+    /// <summary>A field definition of a lore type, with its choices; removal archives it (ADR 0062). Schema.</summary>
+    LoreField = 13,
+
+    /// <summary>A semantic group of lore types (ADR 0062). Schema.</summary>
+    LoreGroup = 14,
 }
 
 public enum AiChangeAction
@@ -259,7 +269,7 @@ public sealed class AiChangeOperationConfiguration : IEntityTypeConfiguration<Ai
         builder.ToTable("AiChangeOperations", table =>
         {
             table.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
-            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)");
+            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)");
             table.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
         });
         builder.HasKey(operation => operation.Id);
