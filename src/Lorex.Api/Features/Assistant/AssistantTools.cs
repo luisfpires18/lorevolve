@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lorex.Api.Data;
 using Lorex.Api.Features.Lore;
+using Lorex.Api.Features.Maps;
 using Lorex.Api.Features.Reading;
 using Lorex.Api.Features.Search;
 using Lorex.Api.Features.Timeline;
@@ -31,6 +32,10 @@ internal sealed class AssistantTools(LorexDbContext db, Guid universeId, Assista
     public const string GetTimelineItem = "get_timeline_item";
     public const string BrowseTimeline = "browse_timeline";
     public const string GetUniverseOverview = "get_universe_overview";
+    public const string ListMaps = "list_maps";
+    public const string SearchMapLocations = "search_map_locations";
+    public const string GetMapLocation = "get_map_location";
+    public const string MeasureMapDistance = "measure_map_distance";
 
     private const string IdSchema = """{"type":"object","properties":{"id":{"type":"string","description":"The id exactly as a tool result gave it."}},"required":["id"],"additionalProperties":false}""";
 
@@ -76,6 +81,27 @@ internal sealed class AssistantTools(LorexDbContext db, Guid universeId, Assista
             "Read an overview of the whole universe: its description, its stories, how many lore entries of each type it holds "
             + "with a few examples, and the size of its timeline. Use it for briefings and broad questions.",
             """{"type":"object","properties":{},"required":[],"additionalProperties":false}"""),
+        new(
+            ListMaps,
+            "The universe's maps: each with its id, name, description, picture size, how many pins it holds, and its scale when "
+            + "the creator recorded one. A map without a scale can locate places but not measure distances.",
+            """{"type":"object","properties":{},"required":[],"additionalProperties":false}"""),
+        new(
+            SearchMapLocations,
+            "Find pins on the maps whose title, or whose lore entry's name or alias, contains the words given. Every match is "
+            + "returned, up to 20: several matches are several recorded places, so ask which is meant rather than choosing.",
+            """{"type":"object","properties":{"query":{"type":"string","description":"A name, or part of one."}},"required":["query"],"additionalProperties":false}"""),
+        new(
+            GetMapLocation,
+            "Every map one lore entry is pinned on, by the entry's id. Resolve a role - a capital, a seat - to its entry through "
+            + "recorded relationships and fields first. An entry on no map is reported as such; one on several maps lists each.",
+            """{"type":"object","properties":{"lore_id":{"type":"string","description":"The lore entry's id exactly as a tool result gave it."}},"required":["lore_id"],"additionalProperties":false}"""),
+        new(
+            MeasureMapDistance,
+            "The straight-line separation of two pins by their pin ids. A distance in the creator's unit only when both pins are "
+            + "on one map with a recorded scale and confirmed positions; otherwise the result says what is missing. Approximate, "
+            + "on the picture, never a route or a travel time.",
+            """{"type":"object","properties":{"from_pin_id":{"type":"string"},"to_pin_id":{"type":"string"}},"required":["from_pin_id","to_pin_id"],"additionalProperties":false}"""),
     ];
 
     /// <summary>How tool results are written for the model: plain JSON, enums by name, nothing empty.</summary>
@@ -131,6 +157,12 @@ internal sealed class AssistantTools(LorexDbContext db, Guid universeId, Assista
             GetTimelineItem => await ReadAsync(arguments, "id", id => UniverseReader.GetTimelineItemAsync(db, universeId, id, cancellationToken), Remember),
             BrowseTimeline => await BrowseAsync(arguments, cancellationToken),
             GetUniverseOverview => Write(Remember(await UniverseReader.GetOverviewAsync(db, universeId, cancellationToken))),
+
+            // Geography (issue #53, ADR 0061): the same reader the MCP tools call, and nothing of its own.
+            ListMaps => Write(Remember(await MapGeography.ListMapsAsync(db, universeId, cancellationToken))),
+            SearchMapLocations => await SearchLocationsAsync(Text(arguments, "query"), cancellationToken),
+            GetMapLocation => await ReadAsync(arguments, "lore_id", id => MapGeography.LocateAsync(db, universeId, id, cancellationToken), Remember),
+            MeasureMapDistance => await MeasureAsync(arguments, cancellationToken),
 
             // Only in propose mode, which the person turned on for this question (ADR 0047); otherwise no such tool exists.
             AssistantProposing.OptionsTool or AssistantProposing.ProposeTool when proposing is not null => await proposing.RunAsync(call, cancellationToken),
@@ -208,6 +240,50 @@ internal sealed class AssistantTools(LorexDbContext db, Guid universeId, Assista
         }
 
         return Write(remember(reading));
+    }
+
+    private async Task<string> SearchLocationsAsync(string? query, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return Error("bad_arguments", "Give a name, or part of one, to look for.");
+        }
+
+        var found = await MapGeography.SearchLocationsAsync(db, universeId, query, cancellationToken);
+        foreach (var location in found)
+        {
+            Remember(location);
+        }
+
+        return Write(new
+        {
+            locations = found,
+            note = found.Count == 0 ? "No pin on any map of this universe matches. Nothing is recorded about where this is."
+                : found.Count >= MapGeography.SearchLimit ? "Only the first 20 matches are listed; narrow the words." : null,
+        });
+    }
+
+    private async Task<string> MeasureAsync(JsonElement arguments, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(Text(arguments, "from_pin_id"), out var from) || !Guid.TryParse(Text(arguments, "to_pin_id"), out var to))
+        {
+            return Error("not_found", "Nothing with that id is in this universe.");
+        }
+
+        if (from == to)
+        {
+            return Error("bad_arguments", "Give two different pins.");
+        }
+
+        var reading = await MapGeography.MeasureAsync(db, universeId, from, to, cancellationToken);
+        if (reading is null)
+        {
+            return Error("not_found", "Nothing with that id is in this universe.");
+        }
+
+        Remember(reading.From);
+        Remember(reading.To);
+        return Write(reading);
     }
 
     // ---------- Remembering what was read ----------
@@ -320,6 +396,37 @@ internal sealed class AssistantTools(LorexDbContext db, Guid universeId, Assista
     }
 
     private void Remember(LoreMention lore) => Remember(new AssistantSource(AssistantSourceKind.Lore, lore.Id, lore.Name, null));
+
+    private void Remember(LocationReading location)
+    {
+        Remember(new AssistantSource(AssistantSourceKind.MapPin, location.PinId, location.Title, location.MapId));
+        Remember(new AssistantSource(AssistantSourceKind.Map, location.MapId, location.MapName, location.MapId));
+        if (location.Lore is { } lore)
+        {
+            Remember(lore);
+        }
+    }
+
+    private IReadOnlyList<MapReading> Remember(IReadOnlyList<MapReading> maps)
+    {
+        foreach (var map in maps)
+        {
+            Remember(new AssistantSource(AssistantSourceKind.Map, map.Id, map.Name, map.Id));
+        }
+
+        return maps;
+    }
+
+    private LoreLocationsReading Remember(LoreLocationsReading located)
+    {
+        Remember(located.Lore);
+        foreach (var pin in located.Pins)
+        {
+            Remember(pin);
+        }
+
+        return located;
+    }
 
     // ---------- Shaping ----------
 

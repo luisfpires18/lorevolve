@@ -71,6 +71,9 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
             .Include(map => map.Pins)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
+        var calibrations = await db.MapCalibrations.AsNoTracking()
+            .Where(calibration => calibration.Map!.UniverseId == universeId)
+            .ToDictionaryAsync(calibration => calibration.MapId, cancellationToken);
 
         var payload = new UniverseBackupPayload(
             new BackupUniverse(
@@ -115,7 +118,7 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
             await CalendarAsync(universeId, cancellationToken),
             await EntityTypeGroupsAsync(universeId, cancellationToken),
             await KnowledgeAsync(universeId, cancellationToken),
-            MapsOf(maps));
+            MapsOf(maps, calibrations));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -165,7 +168,7 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
             .ToDictionaryAsync(image => image.EntityId, cancellationToken);
 
     /// <summary>Every map by name then id, each with its pins by title then id (issue #52), so two exports of an unchanged world agree.</summary>
-    private static IReadOnlyList<BackupMap> MapsOf(List<UniverseMap> maps) =>
+    private static IReadOnlyList<BackupMap> MapsOf(List<UniverseMap> maps, Dictionary<Guid, MapCalibration> calibrations) =>
     [
         .. maps
             .OrderBy(map => map.Name, StringComparer.Ordinal)
@@ -198,7 +201,12 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                             Utc(pin.UpdatedAt))),
                 ],
                 Utc(map.CreatedAt),
-                Utc(map.UpdatedAt))),
+                Utc(map.UpdatedAt),
+
+                // Only a scale measured on the picture carried here; a replacement deletes the row, so this is the rule said twice.
+                calibrations.TryGetValue(map.Id, out var calibration) && calibration.AssetId == map.AssetId
+                    ? new BackupMapCalibration(calibration.X1, calibration.Y1, calibration.X2, calibration.Y2, calibration.Distance, calibration.Unit, Utc(calibration.UpdatedAt))
+                    : null)),
     ];
 
     // ---------- Chronology ----------

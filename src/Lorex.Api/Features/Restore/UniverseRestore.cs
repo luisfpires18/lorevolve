@@ -343,6 +343,23 @@ internal sealed partial class UniverseRestore(
                 new PendingMediaObject(originalKey, originalBytes, validated.ContentType),
                 new PendingMediaObject(displayKey, displayBytes, "image/webp"));
 
+            if (map.Calibration is { } calibration)
+            {
+                _calibrations.Add(new MapCalibration
+                {
+                    MapId = mapId,
+                    AssetId = assetId,
+                    X1 = calibration.X1,
+                    Y1 = calibration.Y1,
+                    X2 = calibration.X2,
+                    Y2 = calibration.Y2,
+                    Distance = calibration.Distance,
+                    Unit = calibration.Unit.Trim(),
+                    CreatedAt = calibration.UpdatedAt,
+                    UpdatedAt = calibration.UpdatedAt,
+                });
+            }
+
             var stale = Guid.NewGuid();
             _maps.Add(new UniverseMap
             {
@@ -381,8 +398,15 @@ internal sealed partial class UniverseRestore(
         }
     }
 
-    /// <summary>The maps stored above, as rows: after the entries, which their pins stand for.</summary>
-    private void AddMaps() => db.UniverseMaps.AddRange(_maps);
+    /// <summary>Scales measured on the pictures stored above, against their restored asset ids.</summary>
+    private readonly List<MapCalibration> _calibrations = [];
+
+    /// <summary>The maps stored above, as rows, with their scales: after the entries, which their pins stand for.</summary>
+    private void AddMaps()
+    {
+        db.UniverseMaps.AddRange(_maps);
+        db.MapCalibrations.AddRange(_calibrations);
+    }
 
     /// <summary>
     /// Every appearance picture (Issue #43) under the new universe's keys: the original from the archive and the centred square

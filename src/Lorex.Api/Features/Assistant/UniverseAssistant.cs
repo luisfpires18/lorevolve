@@ -74,6 +74,7 @@ internal static partial class UniverseAssistant
         9. Write dates exactly as the tool results write them. This universe may keep its own calendar; never convert its dates to real-world ones.
         10. Search with one or two distinctive words, usually a name. Read an object before relying on it.
         11. An entry's article and a scene's prose are read from their start. When a search found your words in an article or in prose, or the start does not answer the question, read the object again with find set to those words to get the passage around them before saying anything is not recorded.
+        12. Geography comes only from the maps' pins. To locate something, find its lore entry first - by search, or through recorded relationships and fields when the question names a role, such as a kingdom's capital - and call get_map_location with its id; if no entry is recorded for the role, or several could be meant, say so or ask which. Say plainly when an entry is on no map, and name each map when it is on several. A distance comes only from measure_map_distance: it is a straight line on the map picture by the creator's recorded scale, approximate, and exists only when that tool returns one. Never estimate a distance, a direction or a travel time from pixels, descriptions or the picture.
         """;
 
     /// <summary>Rule 6 of an ordinary question. Propose mode says something else in its place (<see cref="AssistantProposing.ProposeRule"/>).</summary>

@@ -16,6 +16,8 @@ namespace Lorex.Api.Features.Assistant;
 /// <item>A question asking for ideas or possibilities is answered as a suggestion; one starting "Does", "Did", "Could",
 /// "Is" or "Was" as an inference; anything else as recorded, from the object's own summary.</item>
 /// </list>
+/// A question that starts "Where is" (issue #53) searches the maps' pins for the capitalised words instead, and answers
+/// with the first pin found - its map and title, citing the pin - or says that LoreX records no map location for them.
 /// Every answer cites the one object it read. Nothing it reads is ever followed as an instruction.
 ///
 /// In propose mode (ADR 0047) it reads the change options, then stages one new lore entry for every name the question puts
@@ -169,6 +171,7 @@ public sealed partial class FakeAssistantProvider : IAssistantProvider
         private int _step;
         private int _calls;
         private string _keywords = string.Empty;
+        private bool _locating;
 
         public Task<AssistantModelTurn> NextAsync(
             IReadOnlyList<AssistantToolResult> results,
@@ -184,13 +187,25 @@ public sealed partial class FakeAssistantProvider : IAssistantProvider
                 _keywords = string.Join(
                     ' ',
                     CapitalisedWord().Matches(asked).Where(match => match.Index > 0 && match.Length > 1).Select(match => match.Value));
+                _locating = asked.StartsWith("Where is", StringComparison.OrdinalIgnoreCase) || asked.StartsWith("Where are", StringComparison.OrdinalIgnoreCase);
                 return Task.FromResult(_keywords.Length == 0
                     ? Answer(Segment("note", "Ask about someone or something by name, and I'll look it up in this universe."))
-                    : Call(AssistantTools.SearchUniverse, new { query = _keywords }));
+                    : Call(_locating ? AssistantTools.SearchMapLocations : AssistantTools.SearchUniverse, new { query = _keywords }));
             }
 
             using var document = JsonDocument.Parse(results.Count > 0 ? results[0].Output : "{}");
             var root = document.RootElement;
+
+            if (_locating)
+            {
+                var pin = root.TryGetProperty("locations", out var locations) ? locations.EnumerateArray().FirstOrDefault() : default;
+                return Task.FromResult(pin.ValueKind != JsonValueKind.Object
+                    ? Answer(Segment("note", $"LoreX records no map location for {_keywords}."))
+                    : Answer(Segment(
+                        "recorded",
+                        $"{pin.GetProperty("title").GetString()} is pinned on the map {pin.GetProperty("mapName").GetString()}.",
+                        pin.GetProperty("pinId").GetString()!)));
+            }
 
             if (_step == 2)
             {

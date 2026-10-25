@@ -59,7 +59,8 @@ public sealed record MapDetail(
     int PinsAwaitingReview,
     int Version,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    MapCalibrationResponse? Calibration = null);
 
 /// <summary>A map's details, saved over the version they were read at (ADR 0043).</summary>
 public sealed record MapDetailsRequest(string? Name, string? Description, int? ExpectedVersion);

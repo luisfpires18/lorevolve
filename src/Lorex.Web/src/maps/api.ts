@@ -2,6 +2,8 @@ import { apiFetch } from '../lib/api'
 import { apiUpload, type UploadProgress } from '../lib/upload'
 import type {
   EntityMapPin,
+  MapCalibration,
+  MapCalibrationInput,
   MapDetail,
   MapPin,
   MapPinInput,
@@ -119,6 +121,18 @@ export function updatePin(universeId: string, mapId: string, pinId: string, inpu
 
 export function deletePin(universeId: string, mapId: string, pinId: string) {
   return apiFetch<void>(`${base(universeId)}/${mapId}/pins/${pinId}`, { method: 'DELETE' })
+}
+
+/** The creator's scale, written against the picture the map shows now (issue #53). */
+export function setMapCalibration(universeId: string, mapId: string, input: MapCalibrationInput) {
+  return apiFetch<MapCalibration>(`${base(universeId)}/${mapId}/calibration`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}
+
+export function removeMapCalibration(universeId: string, mapId: string) {
+  return apiFetch<void>(`${base(universeId)}/${mapId}/calibration`, { method: 'DELETE' })
 }
 
 /** Every map one entry is pinned on, by map name. */

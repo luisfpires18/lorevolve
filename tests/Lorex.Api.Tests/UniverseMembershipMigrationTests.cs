@@ -129,7 +129,7 @@ public sealed class UniverseMembershipMigrationTests : IDisposable
             var detail = (await owner.GetFromJsonAsync<UniverseDetail>($"/api/universes/{universeId}"))!;
             Assert.Equal(UniverseRole.Owner, detail.AccessRole);
             Assert.Equal(Lorex.Api.Features.Export.UniverseBackup.CurrentVersion, (await PlotTestClient.Backup(owner, universeId)).FormatVersion);
-            Assert.Equal(34, UniverseBackup.CurrentVersion);
+            Assert.Equal(35, UniverseBackup.CurrentVersion);
 
             var member = host.CreateHttpsClient();
             (await member.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-membermigrate2", Password))).EnsureSuccessStatusCode();

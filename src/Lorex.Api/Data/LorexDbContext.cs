@@ -117,6 +117,8 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<MapPin> MapPins => Set<MapPin>();
 
+    public DbSet<MapCalibration> MapCalibrations => Set<MapCalibration>();
+
     public DbSet<RelationshipType> RelationshipTypes => Set<RelationshipType>();
 
     public DbSet<LoreRelationship> Relationships => Set<LoreRelationship>();

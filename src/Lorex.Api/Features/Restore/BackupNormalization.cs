@@ -56,7 +56,7 @@ namespace Lorex.Api.Features.Restore;
 /// enables nothing.</item>
 /// <item>Versions 1-24: every field is active, even when the file says one is archived (Issue #39).</item>
 /// <item>Versions 1-30: no field sections, even when the file carries some, so every field is ungrouped (Issue #26).</item>
-/// <item>Versions 1-33: no maps, even when the file carries some (issue #52).</item>
+/// <item>Versions 1-33: no maps, even when the file carries some (issue #52). Version 34: no map has a scale (issue #53).</item>
 /// </list>
 ///
 /// One thing is normalized for every version: the live rows of each ordered collection are numbered
@@ -119,7 +119,11 @@ internal static class BackupNormalization
                 ? [.. payload.EntityTypeGroups.Select(group => group is null ? null! : group with { FamilyTreeEnabled = false })]
                 : null,
         KnowledgeRecords = version >= 33 ? payload.KnowledgeRecords : null,
-        Maps = version >= 34 ? payload.Maps : null,
+        Maps = version >= 35 || payload.Maps is null
+            ? payload.Maps
+            : version >= 34
+                ? [.. payload.Maps.Select(map => map is null ? null! : map with { Calibration = null })]
+                : null,
     };
 
     /// <summary>

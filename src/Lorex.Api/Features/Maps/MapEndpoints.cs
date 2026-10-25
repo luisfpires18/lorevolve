@@ -97,6 +97,9 @@ public static partial class MapEndpoints
                 ReadImageAsync(universeId, mapId, assetId, display: true, principal, db, store, loggerFactory, context, cancellationToken))
             .WithName("ReadMapImageDisplay");
 
+        // The creator's scale (issue #53, ADR 0061).
+        MapCalibrationRoutes(group);
+
         group.MapPost("/{mapId:guid}/pins", CreatePinAsync).WithName("CreateMapPin");
         group.MapPut("/{mapId:guid}/pins/{pinId:guid}", UpdatePinAsync).WithName("UpdateMapPin");
         group.MapDelete("/{mapId:guid}/pins/{pinId:guid}", DeletePinAsync).WithName("DeleteMapPin");
@@ -178,7 +181,8 @@ public static partial class MapEndpoints
             pins.Count(pin => pin.PlacedOnAssetId != map.AssetId),
             map.Version,
             map.CreatedAt,
-            map.UpdatedAt);
+            map.UpdatedAt,
+            MapCalibrationResponse.Of(await ScaleAsync(db, map, cancellationToken)));
     }
 
     /// <summary>A pin as read, with its entry's facts only while that entry is live: the Trash is not every member's to see.</summary>
@@ -608,6 +612,9 @@ public static partial class MapEndpoints
                     {
                         await db.Set<MapPin>().Where(pin => pin.MapId == mapId).ExecuteDeleteAsync(cancellationToken);
                     }
+
+                    // A scale was measured on the picture that is going; it says nothing about the new one (ADR 0061).
+                    await db.Set<MapCalibration>().Where(calibration => calibration.MapId == mapId).ExecuteDeleteAsync(cancellationToken);
 
                     await db.SaveChangesAsync(cancellationToken);
                     await transaction.CommitAsync(cancellationToken);

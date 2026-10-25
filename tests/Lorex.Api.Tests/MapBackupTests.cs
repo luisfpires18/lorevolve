@@ -34,13 +34,15 @@ public sealed class MapBackupTests(LorexApiFactory factory) : IClassFixture<Lore
         await AddPin(client, u, map.Id, "Here be dragons", 0.9, 0.1);
 
         // A second map whose picture was replaced with the pins kept: one pin still waits for review.
+        (await client.PutAsJsonAsync($"{Map(u, map.Id)}/calibration", new MapCalibrationRequest(0.1, 0.5, 0.9, 0.5, 400, "leagues"))).EnsureSuccessStatusCode();
+
         var old = await CreateMap(client, u, "Old chart", Png(300, 300, 12));
         var waiting = await AddPin(client, u, old.Id, "Waiting", 0.5, 0.5);
         (await client.PutAsync($"{Map(u, old.Id)}/image", ReplaceForm(Png(600, 300, 13), "keep"))).EnsureSuccessStatusCode();
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(34, backup.FormatVersion);
+        Assert.Equal(UniverseBackup.CurrentVersion, backup.FormatVersion);
         var maps = backup.Payload.Maps!;
         Assert.Equal(["Old chart", "The Known World"], maps.Select(each => each.Name));
 
@@ -50,6 +52,8 @@ public sealed class MapBackupTests(LorexApiFactory factory) : IClassFixture<Lore
         Assert.Equal(["Arkazia", "Here be dragons"], known.Pins.Select(pin => pin.Title));
         Assert.Equal((capital, 0.25, 0.5, "The capital.", true), (known.Pins[0].EntityId, known.Pins[0].X, known.Pins[0].Y, known.Pins[0].Note, known.Pins[0].PlacedOnCurrentImage));
         Assert.False(maps.Single(each => each.Name == "Old chart").Pins.Single().PlacedOnCurrentImage);
+        Assert.Equal((0.1, 0.5, 0.9, 0.5, 400d, "leagues"), (known.Calibration!.X1, known.Calibration.Y1, known.Calibration.X2, known.Calibration.Y2, known.Calibration.Distance, known.Calibration.Unit));
+        Assert.Null(maps.Single(each => each.Name == "Old chart").Calibration);
 
         // The originals are in the archive, byte for byte; no display copy, no key, no URL.
         var entries = Entries(archive);
@@ -72,6 +76,9 @@ public sealed class MapBackupTests(LorexApiFactory factory) : IClassFixture<Lore
         Assert.Equal("Arkazia", restoredPin.Lore.Name);
         Assert.Equal((0.25, 0.5, true), (restoredPin.X, restoredPin.Y, restoredPin.PlacedOnCurrentImage));
         Assert.Equal(0, restoredKnown.PinsAwaitingReview);
+        Assert.Equal(("leagues", 400d, restoredKnown.Image.AssetId), (restoredKnown.Calibration!.Unit, restoredKnown.Calibration.Distance, restoredKnown.Calibration.AssetId));
+        // 400 leagues over the 512 pixels between the points of a 640-wide picture.
+        Assert.Equal(400d / 512, restoredKnown.Calibration.UnitsPerPixel, 10);
 
         var restoredOld = await ReadMap(client, restored.Id, restoredMaps.Single(each => each.Name == "Old chart").Id);
         Assert.False(Assert.Single(restoredOld.Pins).PlacedOnCurrentImage);
@@ -105,6 +112,19 @@ public sealed class MapBackupTests(LorexApiFactory factory) : IClassFixture<Lore
         var downgraded = Rewrite(Downgrade(archive, 33), files: files => files.Remove($"media/maps/{map.Id:D}/original.png"));
         var restored = await Restored(client, (await Validated(client, downgraded)).Token, "Charted from 33");
         Assert.Empty((await client.GetFromJsonAsync<List<MapSummary>>(Maps(restored.Id)))!);
+
+        // Version 34 knows maps but no scale: the map restores, uncalibrated.
+        (await client.PutAsJsonAsync($"{Map(u, map.Id)}/calibration", new MapCalibrationRequest(0, 0, 1, 1, 10, "km"))).EnsureSuccessStatusCode();
+        var scaled = await RawArchive(client, u);
+        var from34 = await Restored(client, (await Validated(client, Downgrade(scaled, 34))).Token, "Charted from 34");
+        var restoredMap = Assert.Single((await client.GetFromJsonAsync<List<MapSummary>>(Maps(from34.Id)))!);
+        Assert.Null((await ReadMap(client, from34.Id, restoredMap.Id)).Calibration);
+
+        // A scale whose two points are one point, or whose distance is nothing.
+        var onePoint = Rewrite(scaled, document: root => { Payload(root)["maps"]![0]!["calibration"]!["x2"] = 0; Payload(root)["maps"]![0]!["calibration"]!["y2"] = 0; });
+        Assert.Contains((await Refused(await Validate(client, onePoint))).Issues, issue => issue.Code == BackupIssueCodes.InvalidValue && issue.Message.Contains("scale", StringComparison.Ordinal));
+        var noDistance = Rewrite(scaled, document: root => { Payload(root)["maps"]![0]!["calibration"]!["distance"] = 0; });
+        Assert.Contains((await Refused(await Validate(client, noDistance))).Issues, issue => issue.Code == BackupIssueCodes.InvalidValue);
 
         // A pin standing for an entry the file does not hold.
         var foreignPin = Rewrite(archive, document: root =>

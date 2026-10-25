@@ -205,6 +205,49 @@ test.describe('a map of the world', () => {
     await expect(page.getByTestId('map-pin-card')).toContainText('Here be dragons')
     await expect(page.getByTestId('map-pin-card')).toContainText('An annotation')
 
+    // ---------- The scale (#53): two typed points, a distance, a unit the author names ----------
+
+    await expect(page.getByTestId('map-scale-none')).toBeVisible()
+    await page.getByTestId('map-calibrate').click()
+    const calibration = page.getByTestId('map-calibration-form')
+    await expect(page.getByTestId('map-calibrating-hint')).toBeVisible()
+    await calibration.getByTestId('map-calibration-a-x').fill('10')
+    await calibration.getByTestId('map-calibration-a-y').fill('50')
+    await calibration.getByTestId('map-calibration-b-x').fill('90')
+    await calibration.getByTestId('map-calibration-b-y').fill('50')
+    await expect(page.getByTestId('map-marker')).toHaveCount(2)
+    await calibration.getByTestId('map-calibration-distance').fill('400')
+    await calibration.getByTestId('map-calibration-unit').fill('leagues')
+    await calibration.getByTestId('map-calibration-save').click()
+    await expect(calibration).toHaveCount(0)
+    await expect(page.getByTestId('map-scale-text')).toContainText('400 leagues')
+    await expect(page.getByTestId('map-scale-line')).toBeVisible()
+
+    // ---------- The assistant answers from the pins, and only from them (#53) ----------
+
+    await page.getByRole('button', { name: 'Assistant' }).click()
+    await expect(page.getByTestId('assistant-drawer')).toBeVisible()
+    await page.getByTestId('assistant-input').fill(`Where is ${capital}?`)
+    await page.getByTestId('assistant-ask').click()
+    const located = page.getByTestId('assistant-turn').last()
+    await expect(located.getByTestId('assistant-answer')).toContainText(
+      `is pinned on the map ${mapName}`,
+    )
+    await expect(located.getByTestId('assistant-source').first()).toHaveAttribute(
+      'href',
+      `/app/universes/${universeId}/maps/${mapId}?pin=${pinId}`,
+    )
+    await page.getByTestId('assistant-input').fill('Where is Atlantis?')
+    await page.getByTestId('assistant-ask').click()
+    await expect(
+      page.getByTestId('assistant-turn').last().getByTestId('assistant-answer'),
+    ).toContainText('records no map location')
+    await expect(
+      page.getByTestId('assistant-turn').last().getByTestId('assistant-source'),
+    ).toHaveCount(0)
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('assistant-drawer')).toHaveCount(0)
+
     // ---------- The picture replaced, pins kept for review ----------
 
     await page.getByTestId('map-actions').click()
@@ -217,6 +260,8 @@ test.describe('a map of the world', () => {
     await expect(page.getByTestId('map-review-notice')).toContainText(
       '2 pins were placed on an earlier picture',
     )
+    // The scale was measured on the picture that went: it is gone with it.
+    await expect(page.getByTestId('map-scale-none')).toBeVisible()
     await expect(stage.locator('img')).toHaveAttribute('width', '1000')
     await expect(dragons).toHaveAttribute('data-review', 'true')
 

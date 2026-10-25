@@ -18075,6 +18075,49 @@ details.reviewsection > .reviewsection__list {
   color: var(--muted);
 }
 
+/* The scale (issue #53): a dashed line between the two calibration points, and the panel's words about it. */
+.mapviewer__overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  stroke: var(--ink);
+  fill: none;
+}
+
+.mapscale,
+.mapcalibration {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mapcalibration {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.mapscale__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.mapscale__text--none {
+  color: var(--muted);
+}
+
+.mapcalibration__distance .field__input {
+  width: 7rem;
+}
+
+.mapcalibration__unit .field__input {
+  width: 9rem;
+}
+
 @media (max-width: 760px) {
   .mapscreen__body {
     grid-template-columns: minmax(0, 1fr);

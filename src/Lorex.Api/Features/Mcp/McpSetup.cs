@@ -273,6 +273,7 @@ public static class McpSetup
             .WithHttpTransport(transport => transport.SessionMode = ModelContextProtocol.AspNetCore.HttpServerSessionMode.Stateless)
             .WithTools<LorexMcpTools>()
             .WithTools<LorexMcpImageTools>()
+            .WithTools<LorexMcpMapTools>()
             .WithTools<LorexMcpProposalTools>()
             .WithRequestFilters(LorexMcpProposalTools.Filters);
 

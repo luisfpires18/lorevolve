@@ -276,8 +276,13 @@ public sealed record UniverseBackup(
     /// map's own words are authored, and a version 33 reader would restore a world with every map silently gone. The fitted
     /// display picture is derived and is not carried. A file at version 33 or earlier has none, and restores with none, even
     /// when it carries the member.
+    ///
+    /// 35 - A map may carry its creator's scale (issue #53, ADR 0061). <see cref="BackupMap.Calibration"/> carries the two points
+    /// as fractions, the distance between them and the unit's name exactly as written, or null. Not ignorable: the numbers and the
+    /// unit are the creator's, and a version 34 reader would restore every map unable to measure. A file at version 34 or earlier
+    /// restores every map without a scale, even when it carries the member.
     /// </summary>
-    public const int CurrentVersion = 34;
+    public const int CurrentVersion = 35;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -339,7 +344,15 @@ public sealed record BackupMap(
     BackupMapImage Image,
     IReadOnlyList<BackupMapPin> Pins,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    BackupMapCalibration? Calibration = null);
+
+/// <summary>
+/// A map's scale (since version 35): two points as fractions of the picture the map carries here, the fictional distance
+/// between them and the unit's name as the creator wrote it. A restore writes it against the restored picture; the picture
+/// is the same bytes at the same size, so the points still mean what they meant.
+/// </summary>
+public sealed record BackupMapCalibration(double X1, double Y1, double X2, double Y2, double Distance, string Unit, DateTime UpdatedAt);
 
 /// <summary>
 /// A map's picture, as <see cref="BackupEntityImage"/> describes an entry's: the original's identity and facts and where

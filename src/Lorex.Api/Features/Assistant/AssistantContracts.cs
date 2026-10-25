@@ -41,6 +41,12 @@ public enum AssistantSourceKind
     PlotArc = 4,
     PlotBeat = 5,
     TimelineMoment = 6,
+
+    /// <summary>A pin on a map (issue #53); its map's id travels as the container id.</summary>
+    MapPin = 7,
+
+    /// <summary>A map (issue #53).</summary>
+    Map = 8,
 }
 
 /// <summary>

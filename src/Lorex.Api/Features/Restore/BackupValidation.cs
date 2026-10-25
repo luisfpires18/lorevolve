@@ -2224,6 +2224,11 @@ internal static partial class BackupValidation
                     CheckMapImage(map, what);
                 }
 
+                if (map.Calibration is { } calibration)
+                {
+                    CheckCalibration(map, calibration, what);
+                }
+
                 var pins = Required(map.Pins, $"{what}'s pins");
                 if (pins.Count > MapLimits.MaxPinsPerMap)
                 {
@@ -2259,6 +2264,32 @@ internal static partial class BackupValidation
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>A map's scale (since version 35): two points on the picture at least a pixel apart, a distance above zero, a named unit.</summary>
+        private void CheckCalibration(BackupMap map, BackupMapCalibration calibration, string what)
+        {
+            var points = new[] { calibration.X1, calibration.Y1, calibration.X2, calibration.Y2 };
+            if (points.Any(point => !double.IsFinite(point) || point < 0 || point > 1))
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what}'s scale names a point off the map.");
+            }
+            else if (map.Image is not null
+                && MapGeography.PixelDistance(calibration.X1, calibration.Y1, calibration.X2, calibration.Y2, map.Image.Width, map.Image.Height) < MapCalibrationLimits.MinPointSeparationPixels)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what}'s scale names two points that are one point.");
+            }
+
+            if (!double.IsFinite(calibration.Distance) || calibration.Distance <= 0)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what}'s scale has no distance above zero.");
+            }
+
+            if (Text(calibration.Unit, MapCalibrationLimits.UnitMaxLength, $"{what}'s unit of distance", required: true)
+                && calibration.Unit.Any(char.IsControl))
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what}'s unit of distance holds control characters.");
             }
         }
 

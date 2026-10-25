@@ -34,7 +34,11 @@ public sealed class LorexMcpTools(LorexDbContext db, McpCaller caller)
         + "chunks. Read only as much prose as the task needs. Pictures: list_lore_images lists an entry's profile picture and "
         + "the pictures of its appearances, each with the forms and eras it is explicitly linked to - a form with no linked "
         + "picture has none, and the entry's portrait never stands in for it; get_lore_image returns one picture as viewable "
-        + "image content, a bounded preview unless the original is asked for.";
+        + "image content, a bounded preview unless the original is asked for. Maps: list_maps names the universe's maps and whether "
+        + "each has a recorded scale; get_map_location gives every map a lore entry is pinned on, by id or exact name; "
+        + "search_map_locations finds pins by name; measure_map_distance gives the straight-line separation of two pins, as a "
+        + "distance only when both are on one calibrated map. A location is a pin someone placed and a distance only what that tool "
+        + "returns - never estimate either from a name, a description or the picture.";
 
     /// <summary>A chunk of prose by default: about 2,000 tokens of English.</summary>
     public const int ManuscriptChunkDefault = 8_000;

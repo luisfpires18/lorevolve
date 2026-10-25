@@ -479,6 +479,15 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 35)
+        {
+            // A map's scale arrived in version 35 (issue #53, ADR 0061).
+            foreach (var map in payload["maps"]?.AsArray() ?? [])
+            {
+                Drop(map, "calibration");
+            }
+        }
+
         if (version < 34)
         {
             // Maps arrived in version 34 (issue #52, ADR 0060).

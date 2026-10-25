@@ -53,6 +53,32 @@ export interface MapPin {
   updatedAt: string
 }
 
+/**
+ * The creator's scale for a map (issue #53, ADR 0061): two points as fractions of the picture, the fictional distance between
+ * them in a unit the creator named (kept as written, never converted), and the picture it was measured on. `unitsPerPixel`
+ * is that distance over the points' separation in pixels of the displayed picture.
+ */
+export interface MapCalibration {
+  assetId: string
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  distance: number
+  unit: string
+  unitsPerPixel: number
+  updatedAt: string
+}
+
+export interface MapCalibrationInput {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  distance: number
+  unit: string
+}
+
 export interface MapDetail {
   id: string
   name: string
@@ -64,6 +90,8 @@ export interface MapDetail {
   version: number
   createdAt: string
   updatedAt: string
+  /** The creator's scale, or null: without one the map locates places but measures nothing. */
+  calibration: MapCalibration | null
 }
 
 export interface MapPinInput {
@@ -88,4 +116,5 @@ export interface EntityMapPin {
 export type ReplacePinsPolicy = 'keep' | 'remove'
 
 export const MAP_NAME_MAX_LENGTH = 120
+export const MAP_UNIT_MAX_LENGTH = 40
 export const MAP_NOTE_MAX_LENGTH = 2000

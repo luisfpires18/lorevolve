@@ -1398,6 +1398,45 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("Tags", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Maps.MapCalibration", b =>
+                {
+                    b.Property<Guid>("MapId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Distance")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("X1")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("X2")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Y1")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Y2")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("MapId");
+
+                    b.ToTable("MapCalibrations", (string)null);
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Maps.MapPin", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4077,6 +4116,17 @@ namespace Lorex.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Maps.MapCalibration", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Maps.UniverseMap", "Map")
+                        .WithOne()
+                        .HasForeignKey("Lorex.Api.Features.Maps.MapCalibration", "MapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Map");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Maps.MapPin", b =>

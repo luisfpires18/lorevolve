@@ -29,6 +29,9 @@ export const SourceKind = {
   PlotArc: 4,
   PlotBeat: 5,
   TimelineMoment: 6,
+  /** A pin on a map (issue #53); `storyId` carries its map's id. */
+  MapPin: 7,
+  Map: 8,
 } as const
 
 export type SourceKindValue = (typeof SourceKind)[keyof typeof SourceKind]

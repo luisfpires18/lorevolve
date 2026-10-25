@@ -570,6 +570,7 @@ public sealed class AssistantTests(AssistantFixture fixture) : IClassFixture<Ass
             [
                 AssistantTools.SearchUniverse, AssistantTools.GetLore, AssistantTools.GetRelationships, AssistantTools.GetStory,
                 AssistantTools.GetScene, AssistantTools.GetTimelineItem, AssistantTools.BrowseTimeline, AssistantTools.GetUniverseOverview,
+                AssistantTools.ListMaps, AssistantTools.SearchMapLocations, AssistantTools.GetMapLocation, AssistantTools.MeasureMapDistance,
             ],
             step.Brief.Tools.Select(tool => tool.Name)));
         Assert.All(_model.Steps[2].Results, result => Assert.Contains("unknown_tool", result.Output, StringComparison.Ordinal));

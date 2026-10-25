@@ -300,6 +300,8 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("edit pin", Put, $"{u}/maps/{any}/pins/{any}", May.Edit, Json(new MapPinRequest("Pin", null, 0.5, 0.5, null))),
             new("remove pin", Delete, $"{u}/maps/{any}/pins/{any}", May.Edit),
             new("entry map pins", Get, $"{e}/map-pins", May.Read),
+            new("set map calibration", Put, $"{u}/maps/{any}/calibration", May.Edit, Json(new MapCalibrationRequest(0.1, 0.5, 0.9, 0.5, 10, "km"))),
+            new("remove map calibration", Delete, $"{u}/maps/{any}/calibration", May.Edit),
 
             // ---------- Private notes (issue 23) ----------
             new("entry private note", Get, $"{e}/private-note", May.Own),

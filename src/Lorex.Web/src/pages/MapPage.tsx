@@ -4,6 +4,7 @@ import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { EmptyState } from '../components/EmptyState'
+import { MapCalibrationForm, MapScaleSummary, type Fraction } from '../components/MapCalibration'
 import { MapForm } from '../components/MapForm'
 import { MapPinForm } from '../components/MapPinForm'
 import { MapViewer } from '../components/MapViewer'
@@ -51,6 +52,8 @@ export default function MapPage() {
   const [dialog, setDialog] = useState<MapDialog>(null)
   const [focusPinId, setFocusPinId] = useState<string | null>(params.get('pin'))
   const [failure, setFailure] = useState<string | null>(null)
+  // Calibrating (issue #53): the two points marked so far, or null when not calibrating.
+  const [calibrating, setCalibrating] = useState<Fraction[] | null>(null)
 
   const selectedPinId = params.get('pin')
 
@@ -260,6 +263,7 @@ export default function MapPage() {
                 className="button"
                 type="button"
                 aria-pressed={placing}
+                disabled={calibrating !== null}
                 onClick={() => setPlacing((current) => !current)}
                 data-testid="map-add-pin"
               >
@@ -315,6 +319,13 @@ export default function MapPage() {
         </p>
       ) : null}
 
+      {calibrating ? (
+        <p className="callout mapscreen__placing" role="status" data-testid="map-calibrating-hint">
+          Setting the scale: press the map to mark point A, then point B - or type where they are
+          beside the map.
+        </p>
+      ) : null}
+
       {placing ? (
         <p className="callout mapscreen__placing" role="status" data-testid="map-placing-hint">
           Press the map where the pin goes, or{' '}
@@ -350,13 +361,88 @@ export default function MapPage() {
           onSelectPin={(pinId) => select(pinId)}
           focusPinId={focusPinId}
           canEdit={canEdit}
-          placing={placing}
-          onPlace={(x, y) => setPinForm({ kind: 'new', at: { x, y } })}
+          placing={placing || calibrating !== null}
+          onPlace={(x, y) => {
+            if (calibrating) {
+              // Two points, then the next press starts again from the first.
+              setCalibrating(calibrating.length >= 2 ? [{ x, y }] : [...calibrating, { x, y }])
+            } else {
+              setPinForm({ kind: 'new', at: { x, y } })
+            }
+          }}
           onMovePin={(pin, x, y) => void movePin(pin, x, y)}
+          markers={
+            calibrating
+              ? calibrating.map((point, index) => ({
+                  id: index === 0 ? 'a' : 'b',
+                  x: point.x,
+                  y: point.y,
+                  label: index === 0 ? 'A' : 'B',
+                }))
+              : map.calibration
+                ? [
+                    { id: 'a', x: map.calibration.x1, y: map.calibration.y1, label: 'A' },
+                    { id: 'b', x: map.calibration.x2, y: map.calibration.y2, label: 'B' },
+                  ]
+                : []
+          }
+          overlay={(view) => {
+            const line = calibrating
+              ? calibrating.length === 2
+                ? {
+                    x1: calibrating[0].x,
+                    y1: calibrating[0].y,
+                    x2: calibrating[1].x,
+                    y2: calibrating[1].y,
+                  }
+                : null
+              : map.calibration
+                ? {
+                    x1: map.calibration.x1,
+                    y1: map.calibration.y1,
+                    x2: map.calibration.x2,
+                    y2: map.calibration.y2,
+                  }
+                : null
+            if (!line) return null
+            return (
+              <svg
+                className="mapviewer__overlay"
+                viewBox={`0 0 ${map.image.width} ${map.image.height}`}
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                focusable="false"
+                data-testid="map-scale-line"
+              >
+                <line
+                  x1={line.x1 * map.image.width}
+                  y1={line.y1 * map.image.height}
+                  x2={line.x2 * map.image.width}
+                  y2={line.y2 * map.image.height}
+                  strokeWidth={2 / view.scale}
+                  strokeDasharray={`${8 / view.scale} ${6 / view.scale}`}
+                />
+              </svg>
+            )
+          }}
         />
 
-        <aside className="mapscreen__panel" aria-label="Pins">
-          {selected ? (
+        <aside className="mapscreen__panel" aria-label="Pins and scale">
+          {calibrating ? (
+            <MapCalibrationForm
+              universeId={universe.id}
+              map={map}
+              points={calibrating}
+              onPointsChange={setCalibrating}
+              onSaved={(calibration) => {
+                setCalibrating(null)
+                setState({ kind: 'ready', map: { ...map, calibration } })
+              }}
+              onCancel={() => setCalibrating(null)}
+            />
+          ) : null}
+
+          {selected && !calibrating ? (
             <div className="pincard" data-testid="map-pin-card">
               <h2 className="pincard__title">
                 <bdi>{selected.title}</bdi>
@@ -423,6 +509,26 @@ export default function MapPage() {
                 </div>
               ) : null}
             </div>
+          ) : null}
+
+          {!calibrating ? (
+            <MapScaleSummary
+              universeId={universe.id}
+              map={map}
+              canEdit={canEdit}
+              onStartCalibrating={() => {
+                setPlacing(false)
+                setCalibrating(
+                  map.calibration
+                    ? [
+                        { x: map.calibration.x1, y: map.calibration.y1 },
+                        { x: map.calibration.x2, y: map.calibration.y2 },
+                      ]
+                    : [],
+                )
+              }}
+              onRemoved={() => setState({ kind: 'ready', map: { ...map, calibration: null } })}
+            />
           ) : null}
 
           <h2 className="mapscreen__pinsheading">

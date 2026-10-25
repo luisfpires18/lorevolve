@@ -273,6 +273,9 @@ internal static class LaterSchema
         "IX_MapPins_MapId",
         "IX_MapPins_MapId_EntityId",
         "IX_UniverseMaps_UniverseId_Name",
+
+        // A map's scale (AddMapCalibrations, 2026-10-25, issue 53, ADR 0061): one table and its key's index.
+        "sqlite_autoindex_MapCalibrations_1",
     ];
 
     /// <summary>Whether an index or trigger name predates semantic type groups.</summary>
