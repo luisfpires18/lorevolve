@@ -320,6 +320,7 @@ A type's fields may be arranged in author-named sections, each starting open or 
 "Reordering fields" #39 left out. Presentation only: no field id, value, setting, required check, target, filter or Canon
 reading changes, and sections are not semantic groups. One layout save replaces sections and order, under a version of its
 own; a field edit keeps the field's place. ADR 0055.
+
 ## Amendment - Quick Create from a link field or a relation (2026-10-20, Issue #25)
 
 A creator can make a missing entry from the picker that needs it, without leaving the form the picker is in.

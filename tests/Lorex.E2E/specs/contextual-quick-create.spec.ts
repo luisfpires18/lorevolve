@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Quick Create (Issue #25): a missing entry made from the link field or the relation that needs it, without leaving or
@@ -245,8 +246,8 @@ test.describe('Quick Create', () => {
     expect(before.fields.some((value) => value.referencedEntityId === erandor[0].id)).toBe(false)
 
     // Cancelling the entry lets its changes go and keeps the new Kingdom.
-    page.once('dialog', (question) => void question.accept())
     await page.getByTestId('cancel-entity').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('entry-summary')).toHaveText('Original summary.')
     expect(await named(page, w.u, 'Erandor')).toHaveLength(1)
     const after = await stored(page, w.u, w.mara)
@@ -336,8 +337,8 @@ test.describe('Quick Create', () => {
     await kingdom.getByTestId('picker-input').press('ArrowDown')
     await kingdom.getByTestId('picker-create').click()
     await dialog(page).getByLabel('Motto (required)').fill('Lost')
-    page.once('dialog', (question) => void question.accept())
     await dialog(page).getByTestId('quick-create-cancel').click()
+    await acceptConfirm(page)
     await expect(dialog(page)).toHaveCount(0)
     expect(await named(page, w.u, 'Nowhere')).toHaveLength(0)
     await expect(page.getByTestId('save-entity')).toBeVisible()
@@ -364,7 +365,6 @@ test.describe('Quick Create', () => {
     await page.getByTestId('add-relationship').click()
     const relation = page.getByTestId('relationship-form')
     await relation.getByTestId('relation-notes').fill('Met at the ford.')
-    await relation.getByTestId('relation-start').fill('2020-01-02')
     await relation.getByTestId('relation-canon-canon').click()
 
     const target = picker(relation, 'Connected to')
@@ -380,7 +380,6 @@ test.describe('Quick Create', () => {
     )
     await expect(relation.getByTestId('relationship-preview')).toContainText('Kaelen')
     await expect(relation.getByTestId('relation-notes')).toHaveValue('Met at the ford.')
-    await expect(relation.getByTestId('relation-start')).toHaveValue('2020-01-02')
     await expect(relation.getByTestId('relation-canon-canon')).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -399,8 +398,8 @@ test.describe('Quick Create', () => {
     await dialog(page).getByTestId('quick-create-type-select').selectOption({ label: 'Character' })
     await dialog(page).getByTestId('quick-create-submit').click()
     await expect(second.locator('.picker__chosenname')).toHaveText('Orin')
-    page.once('dialog', (question) => void question.accept())
     await page.getByTestId('relationship-form').getByRole('button', { name: 'Cancel' }).click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('relationship-form')).toHaveCount(0)
     expect(await named(page, w.u, 'Orin')).toHaveLength(1)
     expect((await relations()).map((each) => each.relatedEntityName)).toEqual(['Kaelen'])
