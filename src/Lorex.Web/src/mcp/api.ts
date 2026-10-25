@@ -3,7 +3,12 @@ import type { UniverseRoleValue } from '../universes/types'
 
 /** Where a universe's MCP server is (ADR 0046). Null when connecting AI apps is not set up on this LoreX. */
 export interface McpConnectInfo {
+  /** The universe's friendly address, such as /mcp/u/lotr-7k2f (ADR 0062). */
   mcpUrl: string | null
+  /** The address by id, which connections made with it keep using. */
+  canonicalUrl?: string | null
+  /** A name to give the connection in the AI app, such as "LoreX - LOTR". */
+  suggestedName?: string | null
 }
 
 /** What the consent screen shows about a request: the app as it claims to be, and the universe it asks for. */

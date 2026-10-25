@@ -3,7 +3,7 @@
 Status: accepted (2026-10-25). GitHub issue 59 (P0, pre-alpha): phase 1 - lore types, field definitions, semantic groups;
 phase 2 - relationship kinds, the reckoning (date periods and calendar), event kinds and methods; phase 3 - one entry's
 progression (eras, forms, abilities, appearances), as content; phase 4 - pictures handed over by a person and quarantined until
-approved.
+approved; and a friendly, stable MCP address per universe.
 
 ## Context
 
@@ -143,13 +143,33 @@ refuses the approval whole and the picture stays in quarantine. Every hold is gi
 quarantined picture whose change is no longer waiting - rejected, expired, its proposal or universe gone. Backups carry none
 of it (ADR 0047). A migration rollback drops the table and leaves its objects in the bucket - a migration has no store.
 
+## A friendly MCP address per universe
+
+Each universe gets `{origin}/mcp/u/{alias}`, such as `/mcp/u/the-lord-of-the-rings-7k2f`, beside the canonical
+`/mcp/universes/{id}`, which keeps working - every connection made with it is untouched. The alias is the universe's name in
+lowercase ASCII words (common accented Latin letters folded, since the host runs with invariant globalization), cut at 24
+characters, and four random characters, so nobody guesses one from a name and two universes never share one. It lives in
+`McpUniverseAliases` - MCP's own table, cascading with the universe, never a column on `Universes` (SQLite would rebuild that
+table on a rollback, under triggers that name it) - is made the first time Connect to AI is opened, and is kept through a
+rename.
+
+An address, never a credential: the gate resolves it server-side to one universe and then asks exactly what it asks of the
+address by id - the token, the connection, the role. A token's audience is the resource the app asked for, in the spelling
+it used, and either spelling of the same universe passes the gate; another universe's never does, and a refresh cannot move
+a grant to another universe by naming its alias. An alias that names nothing is answered like any address - the same 401
+with its own metadata address, the same metadata document - and a connection asked for with it is refused at the redirect
+(`invalid_target`); someone who cannot read the universe is refused as before. Connect to AI shows the friendly URL to copy,
+suggests a connection name ("LoreX - LOTR"), and says it survives a rename. The Azure App Service is not renamed.
+
 ## Consequences
 
 - Migration `AddSchemaProposals`: the resource check constraint widened to 14 and `McpConnections.CanProposeSchema` (false
   for every existing row). Its rollback first deletes proposals holding a schema change - review state, never content - so
   the narrower constraint can be rebuilt; what was approved stays in the schema.
 - Migrations `AddDefinitionProposals`, `AddProgressionProposals` and `AddAiChangeMedia` widen the constraint to 17, 18 and
-  19 (the last adds the quarantine table); each rollback drops only proposals holding what it added.
+  19 (the last adds the quarantine table); each rollback drops only proposals holding what it added. `AddMcpUniverseAliases`
+  adds the alias table; its rollback drops it, and the canonical addresses go on working.
+- An alias cannot be chosen or changed by the owner yet; a universe keeps the one it was given.
 - Real AI clients: an MCP client is told in the tool result to send the person to the review page for each picture, and not
   to say a picture was added. Whether a given client relays that honestly is the client's; nothing a client says changes
   what is attached.

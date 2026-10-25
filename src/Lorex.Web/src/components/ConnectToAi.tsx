@@ -6,7 +6,10 @@ import { getMcpConnectInfo, READABLE } from '../mcp/api'
 import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 
-type Load = { kind: 'loading' } | { kind: 'ready'; url: string | null } | { kind: 'error' }
+type Load =
+  | { kind: 'loading' }
+  | { kind: 'ready'; url: string | null; name: string | null }
+  | { kind: 'error' }
 
 /**
  * Connect to AI (ADR 0046): an action on the universe's front page, opening a drawer with this universe's MCP URL to copy into an
@@ -72,7 +75,9 @@ function ConnectDrawer({
   useEffect(() => {
     const controller = new AbortController()
     getMcpConnectInfo(universeId, controller.signal)
-      .then((info) => setLoad({ kind: 'ready', url: info.mcpUrl }))
+      .then((info) =>
+        setLoad({ kind: 'ready', url: info.mcpUrl, name: info.suggestedName ?? null }),
+      )
       .catch(() => {
         if (!controller.signal.aborted) setLoad({ kind: 'error' })
       })
@@ -113,7 +118,7 @@ function ConnectDrawer({
               Connecting AI apps isn&rsquo;t set up on this LoreX yet.
             </p>
           ) : (
-            <ConnectSteps url={load.url} onFollow={onClose} />
+            <ConnectSteps url={load.url} name={load.name} onFollow={onClose} />
           )}
         </div>
 
@@ -132,7 +137,15 @@ function ConnectDrawer({
   )
 }
 
-function ConnectSteps({ url, onFollow }: { url: string; onFollow: () => void }) {
+function ConnectSteps({
+  url,
+  name,
+  onFollow,
+}: {
+  url: string
+  name: string | null
+  onFollow: () => void
+}) {
   const inputId = useId()
   const hintId = useId()
   const input = useRef<HTMLInputElement>(null)
@@ -180,7 +193,7 @@ function ConnectSteps({ url, onFollow }: { url: string; onFollow: () => void }) 
         </div>
         <p className="connect__hint" id={hintId}>
           This URL is only an address. Anyone who uses it still has to sign in to LoreX and be a
-          member of this universe.
+          member of this universe. It stays the same if the universe is renamed.
         </p>
         <p className="connect__status" role="status" data-testid="connect-ai-copy-status">
           {copied === 'copied'
@@ -200,6 +213,13 @@ function ConnectSteps({ url, onFollow }: { url: string; onFollow: () => void }) 
           <li>
             In your AI app, add a custom connector or MCP server and paste the URL. Claude, ChatGPT
             and other apps that support remote MCP servers with sign-in can use it.
+            {name ? (
+              <>
+                {' '}
+                Name it <q data-testid="connect-ai-name">{name}</q>, so you can tell your universes
+                apart: each connection reads one universe only.
+              </>
+            ) : null}
           </li>
           <li>
             The app opens LoreX in your browser. Sign in if you&rsquo;re asked to, check which app

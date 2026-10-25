@@ -41,8 +41,12 @@ public sealed record ConnectedApp(
     bool CanPropose = false,
     bool CanProposeSchema = false);
 
-/// <summary>Where a universe's MCP server is, for Connect to AI: the URL to copy, or null when MCP is not set up here.</summary>
-public sealed record McpConnectInfo(string? McpUrl);
+/// <summary>
+/// Where a universe's MCP server is, for Connect to AI: the friendly URL to copy (ADR 0062), or null when MCP is not set up here.
+/// <paramref name="CanonicalUrl"/> is the address by id, which connections made with it keep using; <paramref name="SuggestedName"/>
+/// a name to give the connection in the AI app.
+/// </summary>
+public sealed record McpConnectInfo(string? McpUrl, string? CanonicalUrl = null, string? SuggestedName = null);
 
 /// <summary>
 /// The account's own connections (ADR 0046): listed and revoked from the session alone, like the rest of
@@ -191,7 +195,16 @@ public static class ConnectedAppEndpoints
             return denied;
         }
 
-        return Results.Ok(new McpConnectInfo(site.IsEnabled ? site.ResourceFor(universeId) : null));
+        if (!site.IsEnabled)
+        {
+            return Results.Ok(new McpConnectInfo(null));
+        }
+
+        var name = await db.Universes.AsNoTracking().Where(universe => universe.Id == universeId).Select(universe => universe.Name).SingleAsync(cancellationToken);
+        return Results.Ok(new McpConnectInfo(
+            McpAliases.Resource(site, await McpAliases.EnsureAsync(db, universeId, cancellationToken)),
+            site.ResourceFor(universeId),
+            $"LoreX - {name}"));
     }
 
     /// <summary>

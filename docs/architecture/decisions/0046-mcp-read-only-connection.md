@@ -209,3 +209,9 @@ The bytes travel inline, so no URL outlives the authorization that produced it: 
 a trashed entry or an id from another universe answers as every other read does. A listing names at most 100
 appearance pictures. Nothing uploads, changes or deletes a picture through MCP. Whether a given client draws an image
 block is the client's: the official SDK client (the tests) carries it; Claude and ChatGPT remain to be tried against DEV.
+
+## Amendment (2026-10-25, issue 59, ADR 0062)
+
+A universe also answers at a friendly address, `{origin}/mcp/u/{alias}`, resolved server-side to the same one universe; the
+address by id and every connection made with it are unchanged. A token's audience is the address the app asked for, in either
+spelling. ADR 0062 says how an alias is made, kept and answered.

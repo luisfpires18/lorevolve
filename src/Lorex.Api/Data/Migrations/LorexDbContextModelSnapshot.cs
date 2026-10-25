@@ -1527,6 +1527,24 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("McpConnections", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Mcp.McpUniverseAlias", b =>
+                {
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Alias")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UniverseId");
+
+                    b.HasIndex("Alias")
+                        .IsUnique();
+
+                    b.ToTable("McpUniverseAliases", (string)null);
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Profile.ProfileImage", b =>
                 {
                     b.Property<string>("UserId")
@@ -4063,6 +4081,17 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("Universe");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Mcp.McpUniverseAlias", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Universe");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Profile.ProfileImage", b =>

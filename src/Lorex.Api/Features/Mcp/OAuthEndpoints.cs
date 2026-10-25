@@ -129,7 +129,7 @@ public static class OAuthEndpoints
         // RFC 8707: one resource, and on this server a resource is one universe's MCP URL on the configured origin. Checked
         // here rather than while OpenIddict validates, so the refusal goes back to the client's (validated) redirect URI.
         var resources = request.GetResources();
-        if (resources.Length != 1 || site.UniverseOf(resources[0]) is not { } universeId)
+        if (resources.Length != 1 || await McpAliases.UniverseOfAsync(db, site, resources[0], cancellationToken) is not { } universeId)
         {
             return Refuse(Errors.InvalidTarget, "Connect with one universe's LoreX MCP URL, exactly as Connect to AI shows it.");
         }
@@ -201,7 +201,9 @@ public static class OAuthEndpoints
         principal.SetScopes(canPropose
             ? [McpLimits.ReadScope, McpLimits.ProposeScope, Scopes.OfflineAccess]
             : [McpLimits.ReadScope, Scopes.OfflineAccess]);
-        principal.SetResources(site.ResourceFor(universeId));
+        // The resource the app asked for, in the spelling it used - by id, or by its friendly alias (ADR 0062) - so the token's
+        // audience is the address the app calls. Either names this one universe and no other.
+        principal.SetResources(McpAliases.AliasOf(site, resources[0]) is { } alias ? McpAliases.Resource(site, alias.ToLowerInvariant()) : site.ResourceFor(universeId));
         principal.SetDestinations(static _ => [Destinations.AccessToken]);
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -253,8 +255,14 @@ public static class OAuthEndpoints
         }
 
         // RFC 8707: a token request may name the resource again - only the one universe it was approved for.
-        var granted = site.UniverseOf(principal.GetResources().SingleOrDefault());
-        if (granted is null || request.GetResources().Any(resource => site.UniverseOf(resource) != granted))
+        var granted = await McpAliases.UniverseOfAsync(db, site, principal.GetResources().SingleOrDefault(), cancellationToken);
+        var asked = new List<Guid?>();
+        foreach (var resource in request.GetResources())
+        {
+            asked.Add(await McpAliases.UniverseOfAsync(db, site, resource, cancellationToken));
+        }
+
+        if (granted is null || asked.Any(universe => universe != granted))
         {
             return Refuse(Errors.InvalidTarget, "This connection is for one universe only.");
         }
@@ -306,7 +314,7 @@ public static class OAuthEndpoints
             return Problem(StatusCodes.Status400BadRequest, "connection_request_invalid", "This connection request isn't valid.");
         }
 
-        var universeId = site.UniverseOf(resource);
+        var universeId = await McpAliases.UniverseOfAsync(db, site, resource, cancellationToken);
         var universe = universeId is null
             ? null
             : await db.Universes.AsNoTracking()
