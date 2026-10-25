@@ -52,7 +52,7 @@ interface RelationshipSectionProps {
   universeId: string
   entityId: string
   entityName: string
-  /** How the universe keeps time, for a relation's periods (Issue #18). */
+  /** How the universe keeps time, for a relation's periods (Issue #18), and Quick Create's required fields (Issue #25). */
   chronology: Chronology
 }
 
@@ -388,6 +388,11 @@ export function RelationshipSection({
           onChange={(related) => edit({ related })}
           excludeId={entityId}
           error={fieldErrors.targetentityid ?? fieldErrors.sourceentityid}
+          // The form only opens for someone who may edit content, which is who may create Lore. Any type: a relation's
+          // other end has no limit of its own.
+          quickCreate={
+            access.editContent ? { chronology, keepHint: 'Save the relation to connect it.' } : null
+          }
         />
 
         <div className="field">

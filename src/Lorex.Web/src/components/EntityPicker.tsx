@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
+import type { Chronology } from '../chronology/types'
 import { listEntities } from '../lore/api'
 import type { EntitySummary } from '../lore/types'
+import { QuickCreateDialog } from './QuickCreateDialog'
 
 const MAX_RESULTS = 8
 
@@ -10,6 +12,17 @@ export interface EntityChoice {
   name: string
   /** The entry's type, where a chooser keeps it to tell two of the same name apart. */
   typeName?: string
+}
+
+/**
+ * Quick Create (Issue #25), which a picker offers only when it is given this: an entry's link fields and its relation's
+ * other end, for someone who may create Lore. Every other picker leaves it out and is unchanged.
+ */
+export interface QuickCreateOptions {
+  /** For a required number that is a year in one of the universe's date periods. */
+  chronology: Chronology
+  /** Said once the new entry exists: what still has to be saved for the choice to be kept. */
+  keepHint: string
 }
 
 /**
@@ -122,11 +135,14 @@ interface ListKeyOptions {
   active: number
   setActive: (update: (current: number) => number) => void
   choose: (item: EntitySummary) => void
+  /** A last row after the results that is not an entry - Create "..." - taken by Enter like any other. */
+  extra?: () => void
 }
 
 /** Arrow keys walk the list, Enter takes the highlighted row, Escape gives up on it. */
 function listKeyDown(event: KeyboardEvent<HTMLInputElement>, options: ListKeyOptions) {
-  const { isOpen, open, close, results, active, setActive, choose } = options
+  const { isOpen, open, close, results, active, setActive, choose, extra } = options
+  const count = results.length + (extra ? 1 : 0)
 
   if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
     event.preventDefault()
@@ -135,13 +151,14 @@ function listKeyDown(event: KeyboardEvent<HTMLInputElement>, options: ListKeyOpt
       return
     }
     const step = event.key === 'ArrowDown' ? 1 : -1
-    setActive((current) =>
-      results.length === 0 ? 0 : (current + step + results.length) % results.length,
-    )
+    setActive((current) => (count === 0 ? 0 : (current + step + count) % count))
   } else if (event.key === 'Enter') {
     if (isOpen && results[active]) {
       event.preventDefault()
       choose(results[active])
+    } else if (isOpen && extra && active === results.length) {
+      event.preventDefault()
+      extra()
     }
   } else if (event.key === 'Escape') {
     if (isOpen) {
@@ -170,6 +187,8 @@ interface EntityPickerProps {
   entityTypeGroupId?: string | null
   placeholder?: string
   error?: string
+  /** Offers Create "..." beside the matches (Issue #25). Left out, the picker only finds entries that exist. */
+  quickCreate?: QuickCreateOptions | null
 }
 
 /** One entity, or none. Used for a relation's other end and for the timeline filter. */
@@ -184,17 +203,26 @@ export function EntityPicker({
   entityTypeGroupId = null,
   placeholder = 'Search this universe',
   error,
+  quickCreate = null,
 }: EntityPickerProps) {
   const inputId = useId()
   const listId = useId()
+  const noteId = useId()
 
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  // The name Quick Create opened with, while its form is open.
+  const [creating, setCreating] = useState<string | null>(null)
+  // The entry Quick Create just made, said under the choice until the choice changes.
+  const [created, setCreated] = useState<EntityChoice | null>(null)
 
   const wrapper = useRef<HTMLDivElement>(null)
   const list = useRef<HTMLUListElement>(null)
   const input = useRef<HTMLInputElement>(null)
+  const change = useRef<HTMLButtonElement>(null)
   const focusInput = useRef(false)
+  // Where the focus goes once Quick Create's form has gone: the choice it made, or back to the search.
+  const focusAfterCreate = useRef<'chosen' | 'input' | null>(null)
   const { results, isSearching, active, setActive } = useEntitySearch(
     universeId,
     query,
@@ -215,6 +243,11 @@ export function EntityPicker({
       focusInput.current = false
       input.current?.focus()
     }
+    if (focusAfterCreate.current && creating === null) {
+      const target = focusAfterCreate.current === 'chosen' ? change.current : input.current
+      focusAfterCreate.current = null
+      target?.focus()
+    }
   })
 
   function choose(item: EntitySummary) {
@@ -222,6 +255,26 @@ export function EntityPicker({
     setIsOpen(false)
     setQuery('')
   }
+
+  // Offered whenever something is typed, beside the matches rather than only when there are none: a name can be shared.
+  const createName = quickCreate ? query.trim() : ''
+  const startCreate = createName
+    ? () => {
+        setIsOpen(false)
+        setCreating(createName)
+      }
+    : undefined
+
+  function finishCreate(choice: EntityChoice | null, wasCreated: boolean) {
+    focusAfterCreate.current = choice ? 'chosen' : 'input'
+    setCreating(null)
+    if (!choice) return
+    setCreated(wasCreated ? choice : null)
+    setQuery('')
+    onChange(choice)
+  }
+
+  const note = created && value?.id === created.id ? created : null
 
   return (
     <div className="field picker" ref={wrapper}>
@@ -235,8 +288,10 @@ export function EntityPicker({
             <bdi>{value.name}</bdi>
           </span>
           <button
+            ref={change}
             className="button button--secondary button--sm"
             type="button"
+            aria-describedby={note ? noteId : undefined}
             onClick={() => {
               focusInput.current = true
               onChange(null)
@@ -261,7 +316,11 @@ export function EntityPicker({
             aria-autocomplete="list"
             aria-invalid={error ? true : undefined}
             aria-activedescendant={
-              isOpen && results[active] ? `${listId}-${results[active].id}` : undefined
+              isOpen && results[active]
+                ? `${listId}-${results[active].id}`
+                : isOpen && startCreate && active === results.length
+                  ? `${listId}-create`
+                  : undefined
             }
             placeholder={placeholder}
             value={query}
@@ -279,6 +338,7 @@ export function EntityPicker({
                 active,
                 setActive,
                 choose,
+                extra: startCreate,
               })
             }
             data-testid="picker-input"
@@ -313,12 +373,64 @@ export function EntityPicker({
                   {isSearching ? 'Looking…' : 'Nothing here by that name.'}
                 </li>
               ) : null}
+
+              {startCreate ? (
+                <li>
+                  <button
+                    id={`${listId}-create`}
+                    className="picker__option picker__create"
+                    type="button"
+                    role="option"
+                    aria-selected={active === results.length}
+                    onMouseEnter={() => setActive(() => results.length)}
+                    onClick={startCreate}
+                    data-testid="picker-create"
+                  >
+                    <span className="picker__name">
+                      Create “<bdi>{createName}</bdi>”
+                    </span>
+                    <span className="picker__kind">New entry</span>
+                  </button>
+                </li>
+              ) : null}
             </ul>
           ) : null}
         </>
       )}
 
+      {quickCreate ? (
+        // Announced as it appears: the entry exists now, the choice does not until the form it sits in is saved.
+        <p className="picker__created" id={noteId} role="status" data-testid="picker-created">
+          {note ? (
+            <>
+              <bdi>{note.name}</bdi> was created. {quickCreate.keepHint}{' '}
+              <a
+                href={`/app/universes/${universeId}/lore/${note.id}`}
+                target="_blank"
+                rel="noopener"
+                data-testid="picker-created-open"
+              >
+                Open full entry
+              </a>
+            </>
+          ) : null}
+        </p>
+      ) : null}
+
       {error ? <p className="field__error">{error}</p> : null}
+
+      {creating !== null && quickCreate ? (
+        <QuickCreateDialog
+          universeId={universeId}
+          initialName={creating}
+          entityTypeId={entityTypeId}
+          entityTypeGroupId={entityTypeGroupId}
+          chronology={quickCreate.chronology}
+          onCreated={(choice) => finishCreate(choice, true)}
+          onChooseExisting={(choice) => finishCreate(choice, false)}
+          onCancel={() => finishCreate(null, false)}
+        />
+      ) : null}
     </div>
   )
 }

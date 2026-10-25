@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { FieldKind, isYearMeaning, type FieldDefinition, type FieldValueInput } from '../lore/types'
-import { EntityPicker, type EntityChoice } from './EntityPicker'
+import { EntityPicker, type EntityChoice, type QuickCreateOptions } from './EntityPicker'
 
 interface FieldInputProps {
   definition: FieldDefinition
@@ -23,6 +23,9 @@ interface FieldInputProps {
   /** How the universe keeps time, for a number that is a year in one of its date periods (eras). */
   chronology: Chronology
   onChange: (next: FieldValueInput) => void
+
+  /** A link field offers Quick Create with this (Issue #25): the entry form, for someone who may create Lore. */
+  quickCreate?: QuickCreateOptions | null
 }
 
 /** Renders the one control the field's kind calls for. */
@@ -34,6 +37,7 @@ export function FieldInput({
   heldReference,
   chronology,
   onChange,
+  quickCreate = null,
 }: FieldInputProps) {
   const id = `field-${definition.id}`
   const label = definition.isRequired ? `${definition.name} (required)` : definition.name
@@ -88,6 +92,7 @@ export function FieldInput({
         entityTypeId={definition.targetEntityTypeId}
         entityTypeGroupId={definition.targetGroupId}
         placeholder="Search for an entry"
+        quickCreate={quickCreate}
       />
     )
   }

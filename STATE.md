@@ -338,6 +338,22 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - **Owner decision outstanding:** give relationships and timeline moments a Trash (own roadmap item); AI removal of them
     stays blocked until then.
   - Tests: see the review archive. Full Playwright not run locally; delegated to CI.
+- **Roadmap task 050 - Contextual Quick Create** (GitHub issue 25; `feat/contextual-quick-create-v1` off `dev` at
+  `61148a9`; committed, not merged, not pushed). The unmerged `feat/contextual-quick-create` (off `bd88d6c`) cherry-picked
+  onto today's `dev` (field sections, shared confirmation dialog), owner authorized 2026-10-25. Frontend only: no API,
+  schema or backup change. ADR 0007 amendment.
+  - An entry form's link fields and a relation's Connected to offer Create "<name>" after the matches, to `editContent`
+    only and never while suggesting. Opt-in `quickCreate` on `EntityPicker`; every other picker unchanged.
+  - `QuickCreateDialog`: name, the type (taken when the limit is one type; chosen among a group's members or every type),
+    the type's active required fields, a similar-name warning with Use this one. Posts the ordinary `createEntity`: an Idea.
+  - The entry exists once created; the parent stays open and unsaved with only that field or target changed, and its
+    Cancel keeps the entry. Note under the choice: "<name> was created. Save ... " + Open full entry (new tab).
+  - A create on its way cannot be dismissed or changed (Escape, backdrop, Cancel, Use this one, inputs); its answer
+    alone chooses; a failure gives the form back. Review fix after `4f85419`.
+  - Tests: API `QuickCreateTests` 5; Playwright `contextual-quick-create.spec.ts` 9 (its leave questions now answer
+    LoreX's confirmation dialog, #50; the relation draft check drops the retired real-world start date, #18). On
+    today's `dev`: API Quick Create + entity tests 27/27; Playwright Quick Create + entity-reference-target 13/13, with 15
+    neighbouring specs 79/79.
 - **Issue 38 - compact MCP consent card** (`improve/mcp-oauth-consent` off `dev` at `80db857`; committed, not merged,
   not pushed). Frontend only: `/connect/authorize` drops the sign-in plate for a centred card (max 32rem); Approve/Deny
   stick to the screen's foot when the viewport is at least 34rem tall. Consent copy, form fields, antiforgery and OAuth
