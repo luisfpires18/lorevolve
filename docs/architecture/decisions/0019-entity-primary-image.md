@@ -323,8 +323,9 @@ remove are untouched by the allowance.
 
 ## Amendment (2026-10-25, issue 56, ADR 0046)
 
-An MCP client reads an entry's picture through its connection's gate, never through a URL: `get_lore_image` streams the
-object out of the same store and hands the bytes over inline as an image block, so "reads are an authenticated Lorex
-route, not a presigned URL" holds for the one consumer that cannot send the session cookie. The preview it is given by
-default is derived on demand from the original by the upload gate's decoders, fitted within 1024 pixels, metadata
-stripped; the original goes out only when asked for and only up to 4 MB. Nothing here changes what is stored.
+An MCP client reads an entry's picture through its connection's gate: `get_lore_image` streams the object out of the same
+store and hands the bytes over inline as an image block. If that client does not visibly render the block, the tool also
+offers the canonical LoreX page as a fallback. That URL is an app route, not a media URL; it still requires sign-in and
+current universe access, and no presigned or public media URL is returned. The preview it is given by default is derived
+on demand from the original by the upload gate's decoders, fitted within 1024 pixels, metadata stripped; the original
+goes out only when asked for and only up to 4 MB. Nothing here changes what is stored.

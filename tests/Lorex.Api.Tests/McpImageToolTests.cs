@@ -391,6 +391,16 @@ public sealed class McpImageToolTests(McpImageToolFixture fixture) : IClassFixtu
         var content = (await Message(before)).GetProperty("result").GetProperty("content");
         Assert.Equal("image", content[0].GetProperty("type").GetString());
         Assert.Equal("image/webp", content[0].GetProperty("mimeType").GetString());
+        var previewBytes = Convert.FromBase64String(content[0].GetProperty("data").GetString()!);
+        Assert.NotEmpty(previewBytes);
+        Assert.Equal("Webp", Image.DetectFormat(previewBytes).Name);
+        var rawShape = Image.Identify(previewBytes)!;
+        Assert.Equal((320, 320), (rawShape.Width, rawShape.Height));
+        var viewText = content[1].GetProperty("text").GetString()!;
+        Assert.Contains("[open the LoreX Lore page](", viewText, StringComparison.Ordinal);
+        Assert.Contains($"/app/universes/{W.U}/lore/{W.Entry}", viewText, StringComparison.Ordinal);
+        Assert.Contains("Sign-in and current access to this universe are required", viewText, StringComparison.Ordinal);
+        Assert.Equal("text", content[2].GetProperty("type").GetString());
 
         var connections = (await browser.GetFromJsonAsync<List<ConnectedApp>>("/api/profile/connected-apps"))!;
         var target = connections.Single(app => app.CreatedAt == connections.Max(other => other.CreatedAt)).Id;
@@ -431,9 +441,11 @@ public sealed class McpImageToolTests(McpImageToolFixture fixture) : IClassFixtu
 
         var result = await client.CallToolAsync("get_lore_image", arguments);
         Assert.False(result.IsError ?? false, Text(result));
-        Assert.Equal(2, result.Content.Count);
+        Assert.Equal(3, result.Content.Count);
         var picture = Assert.IsType<ImageContentBlock>(result.Content[0]);
-        using var json = JsonDocument.Parse(Assert.IsType<TextContentBlock>(result.Content[1]).Text);
+        var fallback = Assert.IsType<TextContentBlock>(result.Content[1]).Text;
+        Assert.Contains("Sign-in and current access to this universe are required", fallback, StringComparison.Ordinal);
+        using var json = JsonDocument.Parse(Assert.IsType<TextContentBlock>(result.Content[2]).Text);
         return (picture, json.RootElement.Clone());
     }
 

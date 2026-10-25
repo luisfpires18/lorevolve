@@ -200,12 +200,16 @@ profile picture apart from the pictures of its appearances, each appearance with
 ticked. An optional form, era or appearance (id or exact name; unique within an entry) narrows the list to pictures
 explicitly linked to it; a form nothing was ticked for lists none, the answer says so, and the entry's portrait is
 reported as the base picture and never stands in. `get_lore_image` returns one picture, by the entry's id and the
-picture's id together, as an MCP image content block followed by a text block of metadata and a link to the entry's
-page in LoreX; `preview` (the default) is the whole picture fitted within 1024 pixels as WebP with no metadata, cut
+picture's id together, as an MCP image content block, an explicit Markdown fallback link to the canonical LoreX Lore or
+progression page, and a text block of metadata; the page link requires sign-in and current universe access and is not a
+media URL. `preview` (the default) is the whole picture fitted within 1024 pixels as WebP with no metadata, cut
 from the original on demand by the upload gate's own decoders; `thumbnail` is the stored square; `original` is the
 file as uploaded, only when asked for and only up to 4 MB, else refused with the preview offered.
 
 The bytes travel inline, so no URL outlives the authorization that produced it: a revoked connection, a removed member,
 a trashed entry or an id from another universe answers as every other read does. A listing names at most 100
 appearance pictures. Nothing uploads, changes or deletes a picture through MCP. Whether a given client draws an image
-block is the client's: the official SDK client (the tests) carries it; Claude and ChatGPT remain to be tried against DEV.
+block is the client's: the official SDK client (the tests) carries valid WebP bytes. An owner's ChatGPT test showed a
+blank image tile despite the response metadata, so the tool now states that display cannot be confirmed server-side and
+offers its authenticated LoreX page link as a fallback. The real ChatGPT display/fallback still requires a client smoke
+test; do not treat SDK acceptance as proof of visible rendering.

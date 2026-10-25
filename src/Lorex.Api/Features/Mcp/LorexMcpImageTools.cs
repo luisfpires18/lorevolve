@@ -240,8 +240,9 @@ public sealed partial class LorexMcpImageTools(
         + "list_lore_images gave. variant: \"preview\" (default) is the whole picture fitted within 1024 pixels, as WebP - "
         + "enough to look at; \"thumbnail\" is the small square the author framed for cards (WebP, 320 pixels); \"original\" is "
         + "the file exactly as uploaded, only when asked for and only up to 4 MB - a larger original is refused and the preview "
-        + "stands in. The result is an image block, then a text block with the picture's metadata, what it is a picture of, "
-        + "and a link to the entry's page in LoreX.")]
+        + "stands in. The result includes an image block, an explicit LoreX page link that requires sign-in and current "
+        + "universe access, and a text block with metadata. Client rendering varies: if the person cannot see the inline image, "
+        + "show them the LoreX link; do not claim that the image was displayed unless it is visibly present in the client.")]
     public async Task<CallToolResult> GetLoreImageAsync(
         [Description("The lore entry's id, exactly as a result gave it.")] string loreId,
         [Description("The picture's imageId, exactly as list_lore_images gave it.")] string imageId,
@@ -343,6 +344,8 @@ public sealed partial class LorexMcpImageTools(
                 break;
         }
 
+        var viewUrl = found.Kind == ProfileKind ? EntryUrl(entryId) : ProgressionUrl(entryId);
+        var pageLabel = found.Kind == ProfileKind ? "Lore page" : "progression page";
         var about = new
         {
             loreId = entryId,
@@ -366,14 +369,16 @@ public sealed partial class LorexMcpImageTools(
             appearance = found.Appearance is null
                 ? null
                 : new { id = found.Appearance.Id, label = found.Appearance.Name, forms = found.Forms, eras = found.Eras },
-            url = found.Kind == ProfileKind ? EntryUrl(entryId) : ProgressionUrl(entryId),
+            url = viewUrl,
         };
+        var viewText = $"If the inline picture is not visible in this client, [open the LoreX {pageLabel}]({viewUrl}). Sign-in and current access to this universe are required. LoreX cannot tell whether this client rendered the inline picture.";
 
         return new CallToolResult
         {
             Content =
             [
                 ImageContentBlock.FromBytes(bytes, contentType),
+                new TextContentBlock { Text = viewText },
                 new TextContentBlock { Text = JsonSerializer.Serialize(about, Json) },
             ],
         };

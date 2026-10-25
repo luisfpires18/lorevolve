@@ -113,13 +113,15 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - **#56 MCP pictures.** ADR 0046 amendment; 0019 and 0053 amended. `list_lore_images` and `get_lore_image`
     (`LorexMcpImageTools`): entry by id or exact name/alias (ambiguity refused with candidates), profile picture apart from
     appearance pictures with their ticked forms/eras, a form/era/appearance narrows to explicit links only and says when
-    none; one picture as an MCP image block + metadata + the entry's page link - `preview` fitted within 1024px (new
-    `ImagePreparation.PreviewAsync`), `thumbnail` as stored, `original` on request up to 4 MB. Live entries of the
-    caller's universe only, bytes inline, never a URL. Review fix: the `original` stream is cut off at 4 MB as it is
+    none; one picture as an MCP image block + metadata + explicit Markdown fallback link to the canonical Lore/progression
+    page - `preview` fitted within 1024px (new `ImagePreparation.PreviewAsync`), `thumbnail` as stored, `original` on request
+    up to 4 MB. The fallback is an app page requiring sign-in and current universe access, never a public media URL.
+    Live entries of the caller's universe only, image bytes inline. Review fix: the `original` stream is cut off at 4 MB as it is
     read, not only judged by the row's `ByteSize` - an object grown past its row is refused whole, never sent in part.
-    Tests: `McpImageToolTests` 10 (+ tool list now 12). Verified in
-    the official MCP SDK client (the tests); **not yet tried in Claude or ChatGPT** - needs DEV (`Mcp__Origin` set)
-    and a connect; the tools appear there on the next deploy.
+    Tests: `McpImageToolTests` 10 (+ tool list now 12). Raw Streamable HTTP image data is base64-decoded and checked as
+    valid WebP with the expected dimensions. Owner's ChatGPT test showed a blank image tile despite dimensions in the
+    answer; a truthful, permission-checked LoreX page fallback was added. **ChatGPT rendering/fallback still needs a real
+    client smoke test**, and the issue stays open until it passes; SDK/protocol success alone is not acceptance.
   - **#57 shell bound.** Root cause measured, not assumed: `.canvas` had no bound or centring, so at 2560 the title, tabs,
     article and picture stayed left (content 2168px wide) while the Canon control and actions sat on the far right;
     1366-1920 were already one layout (article 558px, picture column 320px at every width). `--canvas-max: 100rem`
