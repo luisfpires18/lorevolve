@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
+import { plainExcerpt } from '../lore/mentions'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { confirmLeaving } from '../lib/leaveGuard'
@@ -323,11 +324,12 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
                         <span className="unisearch__excerpt">
                           {where ? <span className="unisearch__where">{where}</span> : null}
                           <span className="unisearch__excerpttext" dir="auto">
+                            {/* A manuscript excerpt may hold a mention, cut or whole: read as its name (issue 31). */}
                             {result.excerpt.map((part, at) =>
                               part.isMatch ? (
-                                <mark key={at}>{part.text}</mark>
+                                <mark key={at}>{plainExcerpt(part.text)}</mark>
                               ) : (
-                                <span key={at}>{part.text}</span>
+                                <span key={at}>{plainExcerpt(part.text)}</span>
                               ),
                             )}
                           </span>

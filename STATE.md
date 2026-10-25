@@ -174,8 +174,21 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   image or Story options in V1; links listed). Tests: Playwright `entity-duplicate.spec.ts` 3; `entity-page` (menu order),
   `collaboration` (Editor sees Duplicate) updated; with lore, lore-article, field-lifecycle, entity-reference-target,
   history 46/46 on a fresh DB. No API change, so no API run.
+- **Issue #31 - Interactive @Lore Mentions** (`feat/manuscript-mentions` off `dev` at `fbbe4b2`; merged into `dev`
+  locally after #23 and #15, not pushed). No migration, backup format unchanged. ADR 0058 (new); ADR 0027,
+  0032, 0046 amended. Owner decision 2026-10-25: option E1 of `docs/design/manuscript-mentions-recommendation.md`. A mention
+  is the plain-text token `@[Name](lore:<id>)` in the manuscript, resolved by id in its universe. Textarea kept: `@` after a
+  space/bracket/quote then a character opens six suggestions from Lore search under the caret (Up/Down, Enter/Tab, Escape
+  leaves prose; not in emails); a choice is one native undo step. Shown as stored while writing; as the written name in the
+  public page, the assistant and MCP, a Viewer's read view (now prose, not a read-only box), history, conflict review,
+  recovery preview and search excerpts. Lore drawer: "Mentioned in the text", each entry once with current name, preview,
+  "Written as" after a rename, and "Add to this scene's Lore" until linked (`GET .../lore-references?ids=`, Read). Restore
+  repoints token ids in the manuscript and its versions. Known ceiling: an AI manuscript replace is written over rendered
+  text, so its mentions return as names (ADR 0058). Tests: API `ManuscriptMentionTests` 6, matrix +1 route; web unit
+  `mentions.test.ts` 5 (in `npm test`); Playwright `manuscript-mentions.spec.ts` 2 with neighbouring specs on a fresh DB.
+  Full Playwright delegated to GitHub Actions.
 - **Issue #15 - Knowledge / Reveal Tracking** (`feat/knowledge-tracking`, cut from the #23 tip because both move the backup
-  format; committed, not merged, not pushed). Migration `AddKnowledgeRecords` (one additive table), backup format 33. ADR
+  format; merged into `dev` locally after #23, not pushed). Migration `AddKnowledgeRecords` (one additive table), backup format 33. ADR
   0057 (new); ADR 0014 amended. Owner's initial model 2026-10-24: any member reads, whoever edits content changes; never
   public or read by the assistant or MCP; a record names a scene unless known from the start; no timeline-moment anchor;
   apart from perspective/belief (#16); nothing inferred, no Canon or lore changed. A record is one actor (any entry), one
@@ -191,8 +204,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   knowledge, partial or mistaken knowledge, the Lore Context drawer (#6 is complete). Tests: API `KnowledgeTests` 6,
   `KnowledgeMigrationTests` 1, matrix +4 routes, every `FormatVersion` assert at 33; Playwright `knowledge.spec.ts` 1 with
   neighbouring specs on a fresh DB. Full Playwright delegated to GitHub Actions.
-- **Issue #23 - Private Author Notes** (`feat/private-author-notes` off `dev` at `fbbe4b2`; committed, not merged, not
-  pushed). Migration `AddEntityPrivateNotes` (one additive table), backup format 32. ADR 0056 (new); ADR 0014, 0041, 0043
+- **Issue #23 - Private Author Notes** (`feat/private-author-notes` off `dev` at `fbbe4b2`; merged into `dev` locally,
+  not pushed). Migration `AddEntityPrivateNotes` (one additive table), backup format 32. ADR 0056 (new); ADR 0014, 0041, 0043
   amended. Owner decisions 2026-10-24: a dedicated `PrivateNotes` capability held by the owner alone; no saved versions and
   no device recovery copy; the version check kept; notes in the owner's backup; nothing readable by the assistant, MCP or an
   AI proposal; nothing in any public page, API, search, preview or error. `EntityPrivateNotes` is its own row with no

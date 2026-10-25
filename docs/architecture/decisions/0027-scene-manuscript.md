@@ -175,3 +175,10 @@ A save and a restore now name the stored `version` (0 before the first save) as 
 `expectedUpdatedAt`; `updatedAt` is still read and still carried on the 409. A refused save no longer offers to write
 straight over the newer text: the author reviews the latest first, then keeps their own text - which the next save names
 the reviewed version over - or takes the latest. Everything else here is unchanged.
+
+## Amendment (2026-10-25, issue 31, ADR 0058)
+
+The text may hold Lore mentions, `@[Name](lore:<entry id>)`: still plain text, stored exactly, versioned and recovered as
+any other characters. The editor shows them as stored; every reader of prose - the public page, the assistant and MCP, a
+member who only reads, history, the conflict review, a recovered draft, search excerpts - shows each as its name. Nothing
+reads the text for meaning beyond that shape, and a mention links nothing to the scene by itself.

@@ -185,3 +185,8 @@ registered before the scope existed were given it by the data-only `UpgradeMcpCl
 proposal tools are hidden and refused without it. Connected Apps lists it and turns it off without disconnecting
 (`DELETE /api/profile/connected-apps/{id}/proposals`). "V1 grants read only; a later write permission would be a new scope
 and a new approval" - this is that scope, and it is still not a write.
+
+## Amendment (2026-10-25, issue 31, ADR 0058)
+
+`read_scene_manuscript` and `search_scene_manuscript` read the prose with each Lore mention as the name the author wrote,
+never the token; ranges, matches and the version are over that text, so chunks still join back into exactly what was read.

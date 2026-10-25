@@ -14,8 +14,9 @@ import { renderFact } from '../lore/facts'
 import { CANON_LABELS, type EntityDetail, type EntityImageRef } from '../lore/types'
 import { listEntityRelationships } from '../relationships/api'
 import type { RelationshipView } from '../relationships/types'
-import { SCENE_CHANGED, updateScene } from '../stories/api'
-import type { Scene } from '../stories/types'
+import { listLoreReferences, SCENE_CHANGED, updateScene } from '../stories/api'
+import type { Scene, SceneLoreReference } from '../stories/types'
+import type { Mention } from '../lore/mentions'
 import { useUniverseAccess } from '../universes/access'
 
 const MAX_RESULTS = 8
@@ -27,6 +28,8 @@ interface LoreContextProps {
   /** The open scene, as the story page holds it. Its `entities` are the scene's linked lore (`SceneEntityLinks`). */
   scene: Scene
   chronology: Chronology
+  /** The @ mentions in the prose as it stands in the editor, saved or not (issue 31), in order. */
+  mentions: Mention[]
   /** A link or unlink was saved: the story page shows the scene the API answered with. */
   onSceneSaved: (scene: Scene) => void
   /** The scene changed somewhere else: the story is read again. */
@@ -49,6 +52,9 @@ interface LoreRow {
  * every Lorex form uses, opened beside the manuscript without leaving it. The prose is untouched: the drawer reads and
  * writes only the scene's links, through the scene's own save, so the manuscript's draft, recovery copy and leave
  * question carry on underneath exactly as they were.
+ *
+ * Since issue 31 it also lists the prose's @ mentions, each once, with its entry's current name and a preview, and its own
+ * optional "Add to this scene's Lore": a mention never links anything by itself, and one already linked offers nothing.
  */
 export function LoreContext(props: LoreContextProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -83,6 +89,7 @@ function LoreContextDrawer({
   storyId,
   scene,
   chronology,
+  mentions,
   onSceneSaved,
   onSceneChanged,
   onClose,
@@ -109,6 +116,12 @@ function LoreContextDrawer({
   const [busy, setBusy] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [announcement, setAnnouncement] = useState('')
+  // The entries the mentions name, read once when the drawer opens, by id: their names now, or gone.
+  const mentioned = [...new Map(mentions.map((mention) => [mention.entityId, mention])).values()]
+  const [mentionIds] = useState(() => mentioned.map((mention) => mention.entityId))
+  const [references, setReferences] = useState<Map<string, SceneLoreReference> | 'failed' | null>(
+    null,
+  )
 
   // Nothing in the drawer is ever unsaved, so it closes without asking; Escape and the backdrop still go through the guard.
   const { close, dialogProps } = useDrawerGuard(false, '', onClose)
@@ -118,6 +131,19 @@ function LoreContextDrawer({
     dialog.current?.showModal()
     search.current?.focus()
   }, [])
+
+  useEffect(() => {
+    if (mentionIds.length === 0) return
+    const controller = new AbortController()
+    listLoreReferences(universeId, mentionIds.slice(0, 100), controller.signal)
+      .then((found) =>
+        setReferences(new Map(found.map((reference) => [reference.entityId, reference]))),
+      )
+      .catch(() => {
+        if (!controller.signal.aborted) setReferences('failed')
+      })
+    return () => controller.abort()
+  }, [universeId, mentionIds])
 
   const term = query.trim()
   useEffect(() => {
@@ -399,6 +425,104 @@ function LoreContextDrawer({
                   </ul>
                 )}
               </section>
+
+              {mentioned.length > 0 ? (
+                <section
+                  className="lorecontext__group"
+                  aria-labelledby={`${headingId}-mentioned`}
+                  data-testid="lore-context-mentions"
+                >
+                  <h3 className="sectionrule sectionrule--accent" id={`${headingId}-mentioned`}>
+                    Mentioned in the text
+                  </h3>
+                  {references === 'failed' ? (
+                    <p className="form__message" data-testid="lore-context-mentions-error">
+                      The mentioned lore could not be read.
+                    </p>
+                  ) : (
+                    <ul className="relations__rows">
+                      {mentioned.map((mention) => {
+                        const reference =
+                          references instanceof Map ? references.get(mention.entityId) : undefined
+                        const known = references instanceof Map
+                        const live = reference !== undefined && !reference.isTrashed
+                        const isLinked = linkedIds.has(mention.entityId)
+                        const name = reference?.name ?? mention.name
+                        const key = `mention-${mention.entityId}`
+                        return (
+                          <li
+                            className="relation lorecontext__row"
+                            key={mention.entityId}
+                            data-testid="lore-context-mention"
+                            data-name={name}
+                          >
+                            <EntityTile
+                              className="relation__tile"
+                              universeId={universeId}
+                              entityId={mention.entityId}
+                              image={live ? reference.image : null}
+                              typeIcon={reference?.entityTypeIcon ?? null}
+                              typeAccent={reference?.entityTypeAccentColor ?? null}
+                            />
+                            <div className="relation__body">
+                              {live ? (
+                                <button
+                                  className="relation__name lorecontext__name"
+                                  type="button"
+                                  onClick={() => openPreview(mention.entityId, key)}
+                                  data-preview-from={key}
+                                  aria-label={`Preview ${name}`}
+                                  data-testid="lore-context-mention-preview"
+                                >
+                                  <bdi>{name}</bdi>
+                                </button>
+                              ) : (
+                                <span className="relation__name lorecontext__name--trashed">
+                                  <bdi>{name}</bdi>
+                                </span>
+                              )}
+                              <p
+                                className="relation__meta"
+                                data-testid="lore-context-mention-state"
+                              >
+                                {!known ? (
+                                  'Reading…'
+                                ) : reference === undefined ? (
+                                  'Not in this universe’s Lore'
+                                ) : reference.isTrashed ? (
+                                  'In the Trash'
+                                ) : (
+                                  <>
+                                    <bdi>{reference.entityTypeName}</bdi>
+                                    {reference.name !== mention.name ? (
+                                      <span>
+                                        Written as <bdi>{mention.name}</bdi>
+                                      </span>
+                                    ) : null}
+                                    {isLinked ? <span>In this scene’s Lore</span> : null}
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                            {access.editContent && live && !isLinked ? (
+                              <button
+                                className="button button--text lorecontext__action"
+                                type="button"
+                                aria-disabled={busy !== null}
+                                aria-label={`Add ${name} to this scene’s Lore`}
+                                onClick={() => void setLink({ id: mention.entityId, name }, true)}
+                                data-testid="lore-context-mention-link"
+                              >
+                                Add to this scene’s Lore
+                              </button>
+                            ) : null}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </section>
+              ) : null}
 
               <section className="lorecontext__group" aria-labelledby={`${headingId}-find`}>
                 <h3 className="sectionrule sectionrule--accent" id={`${headingId}-find`}>

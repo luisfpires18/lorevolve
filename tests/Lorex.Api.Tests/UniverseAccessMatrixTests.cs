@@ -277,6 +277,9 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             // ---------- Backup ----------
             new("export", Get, $"{u}/export", May.Own),
 
+            // ---------- Manuscript mentions (issue 31) ----------
+            new("lore references", Get, $"{u}/lore-references?ids={w.Entry}", May.Read),
+
             // ---------- Knowledge records (issue 15) ----------
             new("knowledge", Get, $"{u}/knowledge", May.Read),
             new("add knowledge", Post, $"{u}/knowledge", May.Edit, Json(new KnowledgeRecordRequest(w.Entry, null, "Knows the tide.", w.Scene, false))),

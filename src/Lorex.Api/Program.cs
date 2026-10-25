@@ -125,6 +125,7 @@ app.MapStoryEndpoints();
 app.MapChapterEndpoints();
 app.MapSceneEndpoints();
 app.MapSceneManuscriptEndpoints();
+app.MapLoreReferenceEndpoints();
 app.MapPlotArcEndpoints();
 app.MapPlotBeatEndpoints();
 app.MapCanonIntegrityEndpoints();

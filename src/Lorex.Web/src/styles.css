@@ -9692,6 +9692,75 @@ a.lorechip--pov:focus-visible .lorechip__name {
   border-color: var(--accent);
 }
 
+/* @ mentions (issue 31): the text box sits in a frame the suggestions are drawn in, at the caret, over the prose. */
+.manuscript__write {
+  position: relative;
+}
+
+.mentionsuggest {
+  position: absolute;
+  z-index: var(--z-dropdown);
+  width: min(18rem, 100%);
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  box-shadow: var(--shadow-2);
+}
+
+.mentionsuggest__list {
+  margin: 0;
+  padding: var(--space-1) 0;
+  list-style: none;
+}
+
+.mentionsuggest__option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+}
+
+.mentionsuggest__option[aria-selected='true'] {
+  background: var(--accent-wash);
+}
+
+.mentionsuggest__icon {
+  grid-row: 1 / span 2;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--muted);
+}
+
+.mentionsuggest__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.mentionsuggest__type {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.mentionsuggest__note {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-ui);
+  color: var(--muted);
+}
+
+/* A collaborator who reads gets the prose as prose, mentions as names, in the text box's own measure and face. */
+.manuscript__read {
+  overflow-y: auto;
+  resize: none;
+}
+
 /* Save stays in reach however far down the sheet the author is: the bar holds to the bottom of the screen. */
 .manuscript__bar {
   position: sticky;
