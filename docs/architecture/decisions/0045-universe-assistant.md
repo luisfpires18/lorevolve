@@ -206,3 +206,15 @@ A question sent with `mode: "propose"` - the drawer's explicit Propose changes s
 `propose_changes` among its tools, and rule 6 says what it may do instead of "you can only read". An ordinary question is
 handed neither tool and is unchanged. Nothing is applied from a tool call; the answer carries the staged proposal's id and
 the drawer links to its review. Same allowance and limits, 8,000 output tokens a step in propose mode.
+
+## Amendment (2026-10-25, Issue #46): rate limits
+
+Verified with a stub transport: a provider's 429 (or 408, 5xx, dropped connection) is sent once more by the client
+pipeline, after its own 0.8 s backoff or the server's `Retry-After`, whichever is longer; a second 429 is `Busy` (503
+`assistant_busy`, "The assistant is busy right now. Try again in a minute."), and the drawer keeps the question on its
+turn with Try again, adding no turn. Closing the drawer cancels the wait.
+
+Two fixes. The retry is skipped when the server asks for more than 10 s (`ResponsesConversation.OneShortRetry`): a daily
+limit's long `Retry-After` used to hold the question until its 90 s timeout and report it as too slow; it is now busy at
+once. And a provider failure after `propose_changes` staged a proposal answers with that proposal and LoreX's note
+instead of an error, so trying again does not stage it twice. No model, context or allowance change.

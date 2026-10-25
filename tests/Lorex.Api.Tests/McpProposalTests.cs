@@ -257,6 +257,43 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
     }
 
     [Fact]
+    public async Task A_provider_busy_after_staging_still_answers_with_the_one_proposal_so_asking_again_is_not_needed()
+    {
+        var (browser, _, u, character) = await OwnerAsync("assistbusy");
+
+        // Issue #46: the proposal is staged, then the answering step is rate limited.
+        _model.Use(step => step.Number == 1
+            ? ScriptedAssistantProvider.Calls((AssistantProposing.ProposeTool, new
+            {
+                summary = "A new character",
+                operations = new object[] { new { id = "w", action = "create", resource = "lore_entry", lore = new { typeId = character, name = "Wren" } } },
+            }))
+            : throw new AssistantProviderException(AssistantFailure.Busy, "Groq is rate limiting this host."));
+
+        var asked = await browser.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Create a character called Wren.", null, AssistantEndpoints.ProposeMode));
+
+        Assert.Equal(HttpStatusCode.OK, asked.StatusCode);
+        var answer = (await asked.Content.ReadFromJsonAsync<AssistantAnswer>())!;
+        Assert.Equal(1, answer.Proposal!.ChangeCount);
+        Assert.Equal(
+            "I've prepared 1 change for you to review. Nothing changes until you approve them in Pending AI Changes.",
+            Assert.Single(answer.Segments).Text);
+        Assert.Equal(2, _model.Steps.Count);
+
+        await PlotTestClient.WithDb(_factory, async db =>
+        {
+            Assert.Equal([answer.Proposal.Id], await db.AiChangeProposals.Where(row => row.UniverseId == u).Select(row => row.Id).ToListAsync());
+            Assert.False(await db.Entities.AnyAsync(entity => entity.UniverseId == u && entity.Name == "Wren"));
+        });
+
+        // Busy before anything was staged is still the busy answer.
+        _model.Use(_ => throw new AssistantProviderException(AssistantFailure.Busy, "Groq is rate limiting this host."));
+        var busy = await browser.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Create another.", null, AssistantEndpoints.ProposeMode));
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, busy.StatusCode);
+        await PlotTestClient.WithDb(_factory, async db => Assert.Equal(1, await db.AiChangeProposals.CountAsync(row => row.UniverseId == u)));
+    }
+
+    [Fact]
     public async Task Both_entry_points_stage_the_issue_45_resources_through_the_one_contract()
     {
         var (browser, _, u, character) = await OwnerAsync("mcpcontent");
