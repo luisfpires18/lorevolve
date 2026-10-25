@@ -184,6 +184,9 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
             new("edit ai change", Put, $"{u}/ai-changes/{any}/operations/{any}", May.Edit, Json(new Lorex.Api.Features.AiChanges.AiChangeEditRequest(1, new(Name: "x")))),
             new("approve ai change", Post, $"{u}/ai-changes/{any}/approve", May.Edit, Json(new Lorex.Api.Features.AiChanges.AiChangeApproveRequest(1, [any], any))),
             new("reject ai change", Post, $"{u}/ai-changes/{any}/reject", May.Read, Json(new Lorex.Api.Features.AiChanges.AiChangeRejectRequest(null, true))),
+            new("hand over ai change picture", Put, $"{u}/ai-changes/{any}/operations/{any}/media", May.Edit, PngForm),
+            new("preview ai change picture", Get, $"{u}/ai-changes/{any}/operations/{any}/media/thumbnail", May.Read),
+            new("preview ai change original", Get, $"{u}/ai-changes/{any}/operations/{any}/media/original", May.Read),
 
             // ---------- Stories ----------
             new("stories", Get, $"{u}/stories", May.Read),
@@ -387,7 +390,7 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
                 var response = await w.Client(who).SendAsync(call.Request(call.Path));
 
                 // A finding id is random: past the gate, a member is told it is not there - the same as the owner is.
-                var expected = call.Name is "canon finding" or "ai change" ? HttpStatusCode.NotFound : HttpStatusCode.OK;
+                var expected = call.Name is "canon finding" or "ai change" or "preview ai change picture" or "preview ai change original" ? HttpStatusCode.NotFound : HttpStatusCode.OK;
                 Assert.True(response.StatusCode == expected, $"{who}: {call.Name} answered {(int)response.StatusCode}");
             }
         }
