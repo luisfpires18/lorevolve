@@ -170,11 +170,12 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
     await page.goto(`/app/universes/${w.id}`)
 
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
-    // The way up, All universes, then an owner's fourteen sections, in order.
+    // The way up, All universes, then an owner's fifteen sections, in order.
     await expect(sections.getByRole('link')).toHaveText([
       'All universes',
       'Overview',
       'Lore',
+      'Maps',
       'Family Tree',
       'Chronology',
       'World Rules',
