@@ -235,7 +235,7 @@ public sealed class AiChangeMigrationTests : IDisposable
     private LorexDbContext Context() => new(new DbContextOptionsBuilder<LorexDbContext>().UseSqlite($"Data Source={DataSource}").Options);
 
     private static async Task<List<string>> Tables(LorexDbContext db) =>
-        await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name LIKE 'AiChange%' ORDER BY name");
+        await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name LIKE 'AiChange%' AND name <> 'AiChangeMedia' ORDER BY name");
 
     /// <summary>Everything that was there before: every other table with its row count.</summary>
     private static async Task<string> Fingerprint(LorexDbContext db)

@@ -100,6 +100,9 @@ public static class AiChangeCodes
     public const string Unsupported = "unsupported";
     public const string TooLarge = "too_large";
 
+    /// <summary>A picture change whose file the person has not uploaded in LoreX yet: it waits, and can't be approved until then.</summary>
+    public const string AwaitingUpload = "awaiting_upload";
+
     // ---------- The refusals of the review routes ----------
     public const string ProposalChanged = "ai_change_proposal_changed";
     public const string AlreadyDecided = "ai_change_already_decided";
@@ -143,6 +146,7 @@ internal static class AiChangeJson
                 AiChangeResource.Chronology => Read<ChronologyValues>(json),
                 AiChangeResource.ValidationTerm => Read<TermValues>(json),
                 AiChangeResource.Progression => Read<ProgressionValues>(json),
+                AiChangeResource.Media => Read<MediaValues>(json),
                 _ => Read<TimelineValues>(json),
             },
         };
@@ -505,6 +509,9 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
                 case (AiChangeResource.Progression, _):
                     await CheckProgressionAsync(work, cancellationToken);
                     break;
+                case (AiChangeResource.Media, _):
+                    await CheckMediaAsync(work, works, cancellationToken);
+                    break;
                 case (AiChangeResource.LoreEntry, _):
                     await CheckLoreAsync(work, cancellationToken);
                     break;
@@ -585,6 +592,7 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
             .. beat.Lore.Select(lore => (lore, AiChangeResource.LoreEntry, "lore")),
         ],
         IdeaValues idea => idea.References.Select(reference => (reference.Target, IdeaKind(reference.Kind), "references")),
+        MediaValues media => [(AiRef.To(media.EntityId), AiChangeResource.LoreEntry, "entry")],
         TypeValues type =>
         [
             .. type.Parent is { } parent ? [(parent, AiChangeResource.LoreType, "parent")] : Array.Empty<(AiRef, AiChangeResource, string)>(),

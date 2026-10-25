@@ -80,6 +80,7 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
         + "Nothing changes until they approve it in LoreX's Pending AI Changes; this tool cannot approve or apply anything. "
         + "Send up to 100 changes: create, update or remove (to the Trash) lore entries, relationships, stories, chapters, scenes, plot arcs, "
         + "add to or change an entry's progression - its eras, forms, abilities and appearances, for the same entry - "
+        + "ask for a picture for an entry or one of its appearances (image: no file is sent; the person uploads it on the review page), "
         + "plot beats, timeline moments, world rules and - for the universe owner - their ideas; write scene manuscripts and entry articles; "
         + "reorder a story's chapters or arcs, a chapter's scenes or an arc's beats. Where get_change_options says schema may be proposed, "
         + "a proposal of its own can instead create and update lore types, field definitions with their choices, semantic groups, "
@@ -126,7 +127,9 @@ public sealed class LorexMcpProposalTools(LorexDbContext db, McpCaller caller, M
             proposalId = proposal.Id,
             status = "waiting_for_review",
             reviewUrl = ReviewUrl(proposal.Id),
-            message = "Staged for review. Nothing in the universe has changed: tell the person their changes are waiting in LoreX's Pending AI Changes, where they can approve or reject each one.",
+            message = proposal.Operations.Any(operation => operation.Resource == AiChangeResource.Media)
+                ? "Staged for review. Nothing in the universe has changed. This proposal asks for pictures: no file came through this connection, so tell the person to open the review page, upload each picture there, and approve or reject it. Don't say the picture was added."
+                : "Staged for review. Nothing in the universe has changed: tell the person their changes are waiting in LoreX's Pending AI Changes, where they can approve or reject each one.",
             changes = proposal.Operations.OrderBy(operation => operation.Sequence).Select(operation => new { id = operation.Key, action = operation.Action, resource = operation.Resource }),
         });
     }

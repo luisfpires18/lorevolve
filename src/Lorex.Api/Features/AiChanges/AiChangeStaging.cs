@@ -177,7 +177,8 @@ internal static partial class AiChangeStaging
         await new AiChangeChecker(db, universeId, userId).CheckAsync(works, cancellationToken);
         foreach (var work in works)
         {
-            foreach (var issue in work.Issues)
+            // A picture change is staged before its file exists: the person uploads it in LoreX afterwards.
+            foreach (var issue in work.Issues.Where(issue => issue.Code != AiChangeCodes.AwaitingUpload))
             {
                 issues.Add(new AiChangeStageIssue(work.Sequence, work.Key, issue.Code, issue.Message, issue.Field));
             }
@@ -243,6 +244,7 @@ internal static partial class AiChangeStaging
     {
         "lore_entry" or "lore" or "entry" => AiChangeResource.LoreEntry,
         "progression" or "lore_progression" => AiChangeResource.Progression,
+        "image" or "picture" or "media" => AiChangeResource.Media,
         "relationship" => AiChangeResource.Relationship,
         "story" => AiChangeResource.Story,
         "chapter" => AiChangeResource.Chapter,
@@ -312,6 +314,8 @@ internal static partial class AiChangeStaging
                 (AiChangeResource.Chronology, _) => await ChronologyAsync(cancellationToken),
                 (AiChangeResource.ValidationTerm, _) => await TermAsync(cancellationToken),
                 (AiChangeResource.Progression, _) => await ProgressionAsync(cancellationToken),
+                (AiChangeResource.Media, AiChangeAction.Create) => await MediaAsync(cancellationToken),
+                (AiChangeResource.Media, _) => Unsupported(),
 
                 (AiChangeResource.LoreEntry, AiChangeAction.Create) => Work(null, null, Lore(input.Lore, null)),
                 (AiChangeResource.LoreEntry, AiChangeAction.Update) => await StoredAsync(
@@ -384,6 +388,42 @@ internal static partial class AiChangeStaging
             }
 
             return built;
+        }
+
+        private AiChangeWork? Unsupported()
+        {
+            Fail(AiChangeCodes.Unsupported, "A picture change only adds a picture. Change, reorder or remove pictures by hand in LoreX.");
+            return null;
+        }
+
+        /// <summary>
+        /// A picture change carries no file: where it goes, and what the person should upload. The entry must be live and, for a
+        /// profile picture, have none yet - an AI change never replaces one, since the replaced picture is deleted for good -
+        /// and an appearance must be the entry's, with room in its gallery.
+        /// </summary>
+        private async Task<AiChangeWork?> MediaAsync(CancellationToken cancellationToken)
+        {
+            if (input.Image is not { Entry: { } entityId } image)
+            {
+                Fail(AiChangeCodes.Invalid, "Say which entry the picture is for, in image.entry.", "image.entry");
+                return null;
+            }
+
+            var note = image.Note?.Trim();
+            if (note is { Length: > AiChangeLimits.SummaryMaxLength })
+            {
+                Fail(AiChangeCodes.TooLarge, $"Keep the note under {AiChangeLimits.SummaryMaxLength} characters.", "image.note");
+                return null;
+            }
+
+            var work = Work(null, null, new MediaValues(entityId, image.Appearance, string.IsNullOrEmpty(note) ? null : note));
+            if (work is not null)
+            {
+                // Named on the change, so the review links to the entry the picture is for.
+                work.TargetId = entityId;
+            }
+
+            return work;
         }
 
         private AiChangeWork? Work(object? before, int? version, object? proposed) =>

@@ -2,7 +2,8 @@
 
 Status: accepted (2026-10-25). GitHub issue 59 (P0, pre-alpha): phase 1 - lore types, field definitions, semantic groups;
 phase 2 - relationship kinds, the reckoning (date periods and calendar), event kinds and methods; phase 3 - one entry's
-progression (eras, forms, abilities, appearances), as content.
+progression (eras, forms, abilities, appearances), as content; phase 4 - pictures handed over by a person and quarantined until
+approved.
 
 ## Context
 
@@ -114,13 +115,44 @@ never one another entry's item holds); the change is bound to the progression's 
 part of a save, so every existing picture link stays. `get_change_options` with `loreId` adds that entry's progression - ids,
 links, picture counts and version - so an AI can change existing items by id.
 
+## Phase 4: pictures, handed over by a person, quarantined until approved
+
+`AiChangeResource.Media` (19, `image`, create only) is content: a picture for an entry's profile - only when it has none, since
+an AI change never replaces one (the replaced picture's objects are deleted for good) - or one more picture in one of its
+appearances. **The AI sends no file.** AI clients cannot reliably hand over a person's local file, and a proposal never
+carries base64, a URL to fetch (no SSRF surface), or storage credentials. The change says where the picture goes and what it
+should be; the person uploads it on the proposal's review page, signed in (`PUT .../ai-changes/{p}/operations/{o}/media`,
+the person it was staged for or someone who may approve it, while the change waits). Until then the change has
+`awaiting_upload` and cannot be approved; staging itself does not count that as a problem.
+
+**Quarantine.** The upload passes `ImagePreparation.PrepareAsync` - the upload gate's three decoders, one frame, its byte and
+pixel bounds - and its original and thumbnail are written, with no transaction open, under the keys the picture will have
+(the entry's or appearance's prefix, a fresh asset id). `AiChangeMedia` records them, with no foreign key so no cascade can
+forget a key. Nothing serves them but the review's preview (`.../media/thumbnail|original`, behind the proposal's own access,
+`private, no-store`); nothing counts them against storage; at most 64 MB waits per account. Uploading again replaces the
+file and sweeps the old objects.
+
+**Approval attaches through the upload's own commit.** Room is held before the approval's transaction
+(`AccountStorage.ReserveAsync`, as every upload holds it before its commit, ADR 0042) and consumed inside it by
+`AppearanceImageEndpoints.AttachAsync` or `EntityImageEndpoints.AttachFirstAsync` - the routes' own in-transaction steps,
+extracted: the target still live, the gallery not full, the entry still without a picture, the history recorded - and the
+quarantine row goes in the same commit, so the picture's row owns the objects from then on. Out of room, or the target gone,
+refuses the approval whole and the picture stays in quarantine. Every hold is given back afterwards.
+
+**Nothing is left behind.** `AiChangeMediaSweep` (hourly, after start-up) deletes the objects, then the row, of every
+quarantined picture whose change is no longer waiting - rejected, expired, its proposal or universe gone. Backups carry none
+of it (ADR 0047). A migration rollback drops the table and leaves its objects in the bucket - a migration has no store.
+
 ## Consequences
 
 - Migration `AddSchemaProposals`: the resource check constraint widened to 14 and `McpConnections.CanProposeSchema` (false
   for every existing row). Its rollback first deletes proposals holding a schema change - review state, never content - so
   the narrower constraint can be rebuilt; what was approved stays in the schema.
-- Migrations `AddDefinitionProposals` and `AddProgressionProposals` widen the constraint to 17 and 18; each rollback drops
-  only proposals holding what it added.
+- Migrations `AddDefinitionProposals`, `AddProgressionProposals` and `AddAiChangeMedia` widen the constraint to 17, 18 and
+  19 (the last adds the quarantine table); each rollback drops only proposals holding what it added.
+- Real AI clients: an MCP client is told in the tool result to send the person to the review page for each picture, and not
+  to say a picture was added. Whether a given client relays that honestly is the client's; nothing a client says changes
+  what is attached.
 - Backups carry no proposals (ADR 0047). Approved types, fields and groups are ordinary schema and travel as they always did.
 - A type's sections, field order and field layout (#26), type reordering and reparenting beyond `parent`, field restore and
   every delete stay hand-only. Field meaning stays hand-only by ADR 0011.

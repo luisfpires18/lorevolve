@@ -168,7 +168,7 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
         var operation = Object(
             ("id", Text()),
             ("action", Text("create, update, remove or reorder")),
-            ("resource", Text("lore_entry, article, progression, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea; or, in a proposal of their own, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method")),
+            ("resource", Text("lore_entry, article, progression, image, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea; or, in a proposal of their own, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method")),
             ("targetId", Nullable("string")),
             ("expectedVersion", Nullable("integer")),
             ("lore", Or(Object(
@@ -265,6 +265,7 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
                     ("abbreviation", Nullable("string")),
                     ("days", Nullable("integer")))))))),
             ("term", Or(Object(("name", Nullable("string"))))),
+            ("image", Or(Object(("entry", Nullable("string")), ("appearance", Nullable("string")), ("note", Nullable("string"))))),
             ("progression", Or(Object(
                 ("eras", NullableArray(Object(
                     ("id", Nullable("string")),

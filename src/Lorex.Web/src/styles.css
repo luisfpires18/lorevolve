@@ -16625,6 +16625,29 @@ details.reviewsection > .reviewsection__list {
   overflow-wrap: anywhere;
 }
 
+/* A picture change's hand-over (ADR 0062): the quarantined preview, and the file input that supplies it. */
+.aichangeitem__media {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.aichangeitem__picture {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.aichangeitem__picture img {
+  width: 10rem;
+  height: 10rem;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--rule);
+}
+
 .aichangeprose {
   display: grid;
   gap: 0.375rem;

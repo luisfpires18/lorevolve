@@ -115,7 +115,9 @@ internal static class AiChangeCatalog
         + "Use ids exactly as given. To refer to something another change in the same proposal creates, use {\"ref\": \"<that change's id>\"} "
         + "instead of an id. Only the fields listed for a type exist. Types, fields, choices, groups, relationship kinds, date periods, "
         + "the calendar, event kinds and methods change only through a schema proposal (see schema), never in the same proposal as "
-        + "content. remove moves an item to LoreX's Trash (an idea to its owner's deleted ideas), "
+        + "content. An image change sends no file: it says which entry, or which of its appearances, a picture is for, and the person "
+        + "uploads the picture on the proposal's review page in LoreX, then approves it; an AI never replaces a profile picture. "
+        + "remove moves an item to LoreX's Trash (an idea to its owner's deleted ideas), "
         + "from where it can be restored; nothing is ever deleted for good. An article is written as blocks (paragraph, heading, bullet_list, "
         + "numbered_list, quote) of plain text, apart from the entry's fields. reorder takes the whole order of a container. Ideas are the "
         + "universe owner's own and are offered only to the owner. Only propose changes the person asked for.";
@@ -210,10 +212,15 @@ internal static class AiChangeCatalog
                 var ordered = resource is AiChangeResource.Chapter or AiChangeResource.Scene or AiChangeResource.PlotArc or AiChangeResource.PlotBeat;
                 var offered = action switch
                 {
-                    AiChangeAction.Create or AiChangeAction.Remove => !prose,
+                    AiChangeAction.Create or AiChangeAction.Remove => !prose && resource != AiChangeResource.Progression,
                     AiChangeAction.Reorder => ordered,
-                    _ => true,
+                    _ => resource != AiChangeResource.Media,
                 };
+                if (resource == AiChangeResource.Media)
+                {
+                    // A picture is only ever added, and its file comes from the person, in LoreX.
+                    offered = action == AiChangeAction.Create;
+                }
                 if (AiChangePermissions.IsSchema(resource))
                 {
                     // Schema: create and update (the reckoning: update); remove only archives a field. Offered only where schema
@@ -405,6 +412,8 @@ internal static class AiChangeCatalog
         AiChangeResource.RelationshipType => "relationship_kind",
         AiChangeResource.Chronology => "chronology",
         AiChangeResource.ValidationTerm => "event_kind",
+        AiChangeResource.Progression => "progression",
+        AiChangeResource.Media => "image",
         _ => resource.ToString().ToLowerInvariant(),
     };
 }

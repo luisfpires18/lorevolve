@@ -46,6 +46,8 @@ export const ChangeResource = {
   ValidationTerm: 17,
   /** One entry's eras, forms, abilities and appearances, added to or changed. Content. */
   Progression: 18,
+  /** A picture for an entry or an appearance: the person uploads the file here, and it waits in quarantine until approved. */
+  Media: 19,
 } as const
 export type ChangeResourceValue = (typeof ChangeResource)[keyof typeof ChangeResource]
 
@@ -126,6 +128,43 @@ export interface Change {
   resolvedByName: string | null
   resolvedAt: string | null
   resolutionNote: string | null
+  /** A picture change's file: not uploaded yet, or uploaded and previewable here. Null for every other change. */
+  media?: ChangeMedia | null
+}
+
+export interface ChangeMedia {
+  uploaded: boolean
+  fileName: string | null
+  contentType: string | null
+  width: number | null
+  height: number | null
+  byteSize: number | null
+  uploadedAt: string | null
+}
+
+/** The quarantined picture's preview, behind the session like every other LoreX picture. */
+export function mediaPreviewPath(
+  universeId: string,
+  proposalId: string,
+  operationId: string,
+  uploadedAt: string,
+) {
+  return `/api/universes/${universeId}/ai-changes/${proposalId}/operations/${operationId}/media/thumbnail?at=${encodeURIComponent(uploadedAt)}`
+}
+
+/** Hands the picture over for a pending picture change; answers the proposal as it reads now. */
+export function uploadChangeMedia(
+  universeId: string,
+  proposalId: string,
+  operationId: string,
+  file: File,
+) {
+  const body = new FormData()
+  body.append('file', file)
+  return apiFetch<Proposal>(
+    `/api/universes/${universeId}/ai-changes/${proposalId}/operations/${operationId}/media`,
+    { method: 'PUT', body },
+  )
 }
 
 export interface Proposal {
@@ -247,6 +286,9 @@ export function itemPath(universeId: string, change: Change) {
     return `${universe}/types`
   }
   if (change.resource === ChangeResource.Chronology) return `${universe}/chronology`
+  if (change.resource === ChangeResource.Media) {
+    return change.targetId ? `${universe}/lore/${change.targetId}` : null
+  }
   if (change.resource === ChangeResource.ValidationTerm) return `${universe}/types`
   if (change.action === ChangeAction.Remove) {
     // Everything removed waits in the Trash - an idea in its owner's deleted ideas - from where it comes back.

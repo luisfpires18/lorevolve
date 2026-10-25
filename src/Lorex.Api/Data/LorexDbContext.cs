@@ -194,6 +194,9 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<AiChangeOperation> AiChangeOperations => Set<AiChangeOperation>();
 
+    /// <summary>Pictures handed over for pending AI media changes, quarantined until approved (ADR 0062).</summary>
+    public DbSet<AiChangeMedia> AiChangeMedia => Set<AiChangeMedia>();
+
     public DbSet<Features.Admin.AdminAuditRecord> AdminAuditRecords => Set<Features.Admin.AdminAuditRecord>();
 
     protected override void OnModelCreating(ModelBuilder builder)

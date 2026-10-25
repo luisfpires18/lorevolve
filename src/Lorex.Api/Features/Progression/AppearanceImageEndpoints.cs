@@ -184,29 +184,8 @@ public static partial class AppearanceImageEndpoints
             var gone = false;
             try
             {
-                await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
-
-                // Under the writer lock: the appearance must still be there, on a live entry, with room in its gallery.
-                var count = await db.EntityAppearances.AsNoTracking()
-                    .Where(appearance => appearance.Id == appearanceId && appearance.Entity!.DeletedAt == null)
-                    .Select(appearance => (int?)appearance.Images.Count)
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (count is null || count >= ProgressionLimits.MaxImagesPerAppearance)
-                {
-                    gone = true;
-                }
-                else
-                {
-                    await AccountStorage.ConsumeAsync(db, clock, hold, cancellationToken);
-                    row.SortOrder = (await db.EntityAppearanceImages
-                        .Where(image => image.EntityAppearanceId == appearanceId)
-                        .MaxAsync(image => (int?)image.SortOrder, cancellationToken) ?? -1) + 1;
-                    db.EntityAppearanceImages.Add(row);
-                    await db.SaveChangesAsync(cancellationToken);
-                    await transaction.CommitAsync(cancellationToken);
-                    committed = true;
-                }
+                committed = await AttachAsync(db, clock, appearanceId, row, hold, cancellationToken);
+                gone = !committed;
             }
             catch (StorageQuotaExceededException)
             {
@@ -238,6 +217,43 @@ public static partial class AppearanceImageEndpoints
                 await AccountStorage.ReleaseAsync(db, hold, logger);
             }
         }
+    }
+
+    /// <summary>
+    /// A picture whose objects are already stored joins its appearance's gallery, last, inside the caller's transaction or its
+    /// own: the route's upload, and an approved AI change's staged picture (ADR 0062). Under the writer lock the appearance must
+    /// still be there, on a live entry, with room in its gallery; the hold is consumed in the same commit. False when it is not
+    /// there or full - nothing was written, and the objects are the caller's to sweep.
+    /// </summary>
+    internal static async Task<bool> AttachAsync(
+        LorexDbContext db,
+        TimeProvider clock,
+        Guid appearanceId,
+        EntityAppearanceImage row,
+        StorageHold? hold,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+
+        var count = await db.EntityAppearances.AsNoTracking()
+            .Where(appearance => appearance.Id == appearanceId && appearance.Entity!.DeletedAt == null)
+            .Select(appearance => (int?)appearance.Images.Count)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (count is null || count >= ProgressionLimits.MaxImagesPerAppearance)
+        {
+            return false;
+        }
+
+        await AccountStorage.ConsumeAsync(db, clock, hold, cancellationToken);
+        row.EntityAppearanceId = appearanceId;
+        row.SortOrder = (await db.EntityAppearanceImages
+            .Where(image => image.EntityAppearanceId == appearanceId)
+            .MaxAsync(image => (int?)image.SortOrder, cancellationToken) ?? -1) + 1;
+        db.EntityAppearanceImages.Add(row);
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return true;
     }
 
     // ---------- Order ----------

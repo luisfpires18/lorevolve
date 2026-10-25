@@ -118,6 +118,11 @@ internal static class AiChangeViews
             .ToDictionary(row => row.Id, row => row.Name);
 
         var rows = proposal.Operations.ToDictionary(operation => operation.Id);
+        var staged = works.Any(work => work.Proposed is MediaValues)
+            ? await db.AiChangeMedia.AsNoTracking()
+                .Where(media => media.UniverseId == universeId && rows.Keys.Contains(media.OperationId))
+                .ToDictionaryAsync(media => media.OperationId, cancellationToken)
+            : [];
         var open = proposal.Status == AiChangeProposalStatus.Open;
         var operations = new List<AiChangeOperationResponse>();
         foreach (var work in works)
@@ -146,7 +151,11 @@ internal static class AiChangeViews
                 row.ResultId,
                 resolvers.GetValueOrDefault(row.Id),
                 row.ResolvedAt is { } at ? DateTime.SpecifyKind(at, DateTimeKind.Utc) : null,
-                row.ResolutionNote));
+                row.ResolutionNote,
+                work.Proposed is not MediaValues ? null
+                    : staged.TryGetValue(work.OperationId, out var file)
+                        ? new AiChangeMediaInfo(true, file.FileName, file.ContentType, file.Width, file.Height, file.ByteSize, DateTime.SpecifyKind(file.UploadedAt, DateTimeKind.Utc))
+                        : new AiChangeMediaInfo(false, null, null, null, null, null, null)));
         }
 
         return new AiChangeProposalResponse(
@@ -342,6 +351,19 @@ internal static class AiChangeViews
                 var noun = term.Kind == RuleValidation.ValidationTermKind.EventKind ? "event kind" : "method";
                 Line("Name", old?.Name, term.Name);
                 return (work.Action == AiChangeAction.Create ? $"New {noun}: {term.Name}" : $"Rename {noun} {old?.Name ?? term.Name}", lines);
+            }
+
+            case (MediaValues media, _):
+            {
+                if (media.Note is { } note)
+                {
+                    lines.Add(new AiChangeLine("Picture of", null, note));
+                }
+
+                var entry = names.Entry(AiRef.To(media.EntityId));
+                return (media.AppearanceId is { } look
+                    ? $"Add a picture to {entry}'s appearance {names.Appearance(look)}"
+                    : $"Add a profile picture to {entry}", lines);
             }
 
             case (ProgressionValues progression, var before):
@@ -690,6 +712,7 @@ internal static class AiChangeViews
         private Dictionary<Guid, string> _beats = [];
         private Dictionary<Guid, string> _terms = [];
         private Dictionary<Guid, string> _groups = [];
+        private Dictionary<Guid, string> _appearances = [];
         private Dictionary<string, AiChangeWork> _pending = [];
         private UniverseChronology _chronology = UniverseChronology.Plain;
 
@@ -721,6 +744,9 @@ internal static class AiChangeViews
                 _beats = await db.PlotBeats.AsNoTracking().Where(beat => beat.PlotArc!.Story!.UniverseId == universeId && ids.Contains(beat.Id)).ToDictionaryAsync(beat => beat.Id, beat => beat.Title, cancellationToken),
                 _terms = await db.ValidationTerms.AsNoTracking().Where(term => term.UniverseId == universeId).ToDictionaryAsync(term => term.Id, term => term.Name, cancellationToken),
                 _groups = await db.EntityTypeGroups.AsNoTracking().Where(group => group.UniverseId == universeId).ToDictionaryAsync(group => group.Id, group => group.Name, cancellationToken),
+                _appearances = await db.EntityAppearances.AsNoTracking()
+                    .Where(look => look.Entity!.UniverseId == universeId && ids.Contains(look.EntityId))
+                    .ToDictionaryAsync(look => look.Id, look => look.Label, cancellationToken),
                 _pending = works.ToDictionary(work => work.Key, StringComparer.Ordinal),
                 _chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken),
             };
@@ -732,6 +758,8 @@ internal static class AiChangeViews
         public string TypeRef(AiRef reference) => Named(reference, _types, work => (work.Proposed as TypeValues)?.Name);
 
         public string Group(AiRef reference) => Named(reference, _groups, work => (work.Proposed as GroupValues)?.Name);
+
+        public string Appearance(Guid id) => _appearances.GetValueOrDefault(id) ?? "that isn't there any more";
 
         public string Parent(AiRef? reference) => reference is null ? "Nothing (top level)" : TypeRef(reference);
 
