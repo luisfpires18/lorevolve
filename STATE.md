@@ -108,6 +108,30 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - Review fix: provisioning only granted, so a moved setting left two Admins. Now demotes others + unique index.
   - Tests: API 1899/1899 (1 skipped; `AdminWorkspaceTests` 15, `AdminProvisioningFileTests` 3; migration tests' later-schema
     lists extended). Playwright `admin-workspace` 6/6 (serial), neighbours 49/49, fresh DB. Full suite delegated to CI.
+- **Issues #56, #57, #58 - pre-alpha batch** (`feat/mcp-lore-images-shell-pwa` off `dev` at `f4a548d`, in the worktree
+  `D:\Workspace\LOREX-pre-alpha`; committed, not merged, not pushed). No migration. Three scopes, one commit each.
+  - **#56 MCP pictures.** ADR 0046 amendment; 0019 and 0053 amended. `list_lore_images` and `get_lore_image`
+    (`LorexMcpImageTools`): entry by id or exact name/alias (ambiguity refused with candidates), profile picture apart from
+    appearance pictures with their ticked forms/eras, a form/era/appearance narrows to explicit links only and says when
+    none; one picture as an MCP image block + metadata + the entry's page link - `preview` fitted within 1024px (new
+    `ImagePreparation.PreviewAsync`), `thumbnail` as stored, `original` on request up to 4 MB. Live entries of the
+    caller's universe only, bytes inline, never a URL. Tests: `McpImageToolTests` 9 (+ tool list now 12). Verified in
+    the official MCP SDK client (the tests); **not yet tried in Claude or ChatGPT** - needs DEV (`Mcp__Origin` set)
+    and a connect; the tools appear there on the next deploy.
+  - **#57 shell bound.** Root cause measured, not assumed: `.canvas` had no bound or centring, so at 2560 the title, tabs,
+    article and picture stayed left (content 2168px wide) while the Canon control and actions sat on the far right;
+    1366-1920 were already one layout (article 558px, picture column 320px at every width). `--canvas-max: 100rem`
+    and `padding-inline: max(gutter, (100% - bound) / 2)` on `.canvas` and `.workspace__top`; `.home__body` on the
+    shared `--gutter`. Nothing changes at or below 1920. Design contract §21.2 amended. Tests: `shell-layout.spec.ts`
+    7/7 (geometry at six viewports, fourteen routes; 1920 vs 2560 one layout). Before/after screenshots in
+    `review-artifacts/pack/visual/{before,after}` (gitignored).
+  - **#58 Lore category in an installed app.** Control identified (Category menu on the Lore browser ≤ 640px; the entry
+    form's Type `<select>`; Quick Create's `<select>` in a dialog). Works in the browser and under a simulated installed
+    window (`pwa-standalone.spec.ts` 3/3: standalone media/`navigator.standalone`, phone + touch, launch layer lifted,
+    controls uncovered and on screen, choice persisted; safe-area insets asked for via CDP but this Chromium resolved
+    `env()` to 0 - recorded as a test annotation, so that part stays a device check). **No cause reproduced, no code
+    changed**; real iOS / Android / desktop installs **unverified** - `docs/testing/pwa-checklist.md` has the repro
+    matrix and the per-platform checklist, routed to #33 (security) and #34 (readiness).
 - **Fix: Deploy DEV E2E shard 6** (`fix/trash-e2e-row` off `dev` at `52a913c`; merged into `dev`, pushed). Runs
   40137578174, 40180740487 and 40184813329 failed on one test, `trash-permanent-delete` "names isolated", on all three
   attempts: its 14-context size loop ran out of Playwright's default 30 s (~24 s locally). `test.setTimeout(120_000)`, as
