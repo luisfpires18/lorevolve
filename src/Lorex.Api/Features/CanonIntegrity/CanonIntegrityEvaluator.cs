@@ -34,10 +34,10 @@ public sealed partial class CanonIntegrityEvaluator(
     ILogger<CanonIntegrityEvaluator> logger)
 {
     /// <summary>
-    /// A sweep this long is logged as a warning (issue 55, W3). Every gated write runs two of them inside its transaction,
-    /// holding SQLite's one writer, so this is the number to watch as universes grow.
+    /// A sweep or a reconciliation this long is logged as a warning (issue 55, W3). A gated write runs two sweeps and one
+    /// reconciliation inside its transaction, holding SQLite's one writer, so these are the numbers to watch as universes grow.
     /// </summary>
-    public static readonly TimeSpan SlowSweep = TimeSpan.FromSeconds(1);
+    public static readonly TimeSpan Slow = TimeSpan.FromSeconds(1);
 
     public async Task<CanonEvaluationSummary> EvaluateAsync(
         Guid universeId,
@@ -121,7 +121,16 @@ public sealed partial class CanonIntegrityEvaluator(
 
         await db.SaveChangesAsync(cancellationToken);
 
-        LogReconciled(logger, universeId, Stopwatch.GetElapsedTime(reconcileStarted).TotalMilliseconds, created, reopened, resolved);
+        var reconciled = Stopwatch.GetElapsedTime(reconcileStarted);
+        if (reconciled >= Slow)
+        {
+            LogSlowReconcile(logger, universeId, reconciled.TotalMilliseconds, existing.Count);
+        }
+        else
+        {
+            LogReconciled(logger, universeId, reconciled.TotalMilliseconds, created, reopened, resolved);
+        }
+
         return new CanonEvaluationSummary(findings.Count, created, reopened, persisted, resolved, now);
     }
 
@@ -151,7 +160,7 @@ public sealed partial class CanonIntegrityEvaluator(
         }
 
         var elapsed = Stopwatch.GetElapsedTime(started);
-        if (elapsed >= SlowSweep)
+        if (elapsed >= Slow)
         {
             LogSlowSweep(logger, universeId, elapsed.TotalMilliseconds, findings.Count);
         }
@@ -268,4 +277,7 @@ public sealed partial class CanonIntegrityEvaluator(
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Canon conflicts of universe {UniverseId} reconciled in {ElapsedMs:0} ms ({Created} opened, {Reopened} reopened, {Resolved} resolved).")]
     private static partial void LogReconciled(ILogger logger, Guid universeId, double elapsedMs, int created, int reopened, int resolved);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Canon conflicts of universe {UniverseId} took {ElapsedMs:0} ms to reconcile ({Recorded} recorded); a gated write holds the database for it.")]
+    private static partial void LogSlowReconcile(ILogger logger, Guid universeId, double elapsedMs, int recorded);
 }
