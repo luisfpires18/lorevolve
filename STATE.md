@@ -135,7 +135,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     changed**; real iOS / Android / desktop installs **unverified** - `docs/testing/pwa-checklist.md` has the repro
     matrix and the per-platform checklist, routed to #33 (security) and #34 (readiness).
 - **Issues #52 and #53 - Lore-linked maps, geography and calibration** (`feat/lore-linked-maps` off `dev` at `dd0deef`, in
-  the worktree `D:\Workspace\LOREX\worktrees\LOREX-maps`; five local commits, not merged, not pushed). Two migrations (`AddUniverseMaps`,
+  the worktree `D:\Workspace\LOREX\worktrees\LOREX-maps`; implementation and verification committed locally, not merged, not pushed). Two migrations (`AddUniverseMaps`,
   `AddMapCalibrations`), backup format 34 then 35. ADR 0060, ADR 0061; 0014, 0042, 0045, 0046 amended.
   - **#52 maps.** Several per universe; a picture kept whole with a fitted 4096px display copy, keys of ids, originals on the
     owner's storage; pins as fractions of the displayed picture linked to a live same-universe entry by id, once per map, on
