@@ -4,6 +4,7 @@ using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Comments;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Ideas;
+using Lorex.Api.Features.Knowledge;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Mcp;
 using Lorex.Api.Features.Profile;
@@ -172,6 +173,8 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
     public DbSet<WorldRule> WorldRules => Set<WorldRule>();
 
     public DbSet<EntityPrivateNote> EntityPrivateNotes => Set<EntityPrivateNote>();
+
+    public DbSet<KnowledgeRecord> KnowledgeRecords => Set<KnowledgeRecord>();
 
     public DbSet<CommentThread> CommentThreads => Set<CommentThread>();
 

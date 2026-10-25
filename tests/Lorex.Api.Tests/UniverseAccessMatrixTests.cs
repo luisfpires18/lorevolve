@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Lorex.Api.Features.Assistant;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Comments;
+using Lorex.Api.Features.Knowledge;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.Progression;
 using Lorex.Api.Features.Publishing;
@@ -275,6 +276,12 @@ public sealed class UniverseAccessMatrixTests(LorexApiFactory factory) : IClassF
 
             // ---------- Backup ----------
             new("export", Get, $"{u}/export", May.Own),
+
+            // ---------- Knowledge records (issue 15) ----------
+            new("knowledge", Get, $"{u}/knowledge", May.Read),
+            new("add knowledge", Post, $"{u}/knowledge", May.Edit, Json(new KnowledgeRecordRequest(w.Entry, null, "Knows the tide.", w.Scene, false))),
+            new("edit knowledge", Put, $"{u}/knowledge/{any}", May.Edit, Json(new KnowledgeRecordRequest(w.Entry, null, "Knows the tide.", w.Scene, false))),
+            new("remove knowledge", Delete, $"{u}/knowledge/{any}", May.Edit),
 
             // ---------- Private notes (issue 23) ----------
             new("entry private note", Get, $"{e}/private-note", May.Own),

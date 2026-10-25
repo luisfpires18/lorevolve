@@ -105,7 +105,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
             await WorldRulesAsync(universeId, cancellationToken),
             await ValidationTermsAsync(universeId, cancellationToken),
             await CalendarAsync(universeId, cancellationToken),
-            await EntityTypeGroupsAsync(universeId, cancellationToken));
+            await EntityTypeGroupsAsync(universeId, cancellationToken),
+            await KnowledgeAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -209,6 +210,43 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
     /// The universe's semantic groups, by name then id, each with its member type ids sorted - so two exports of unchanged lore
     /// are identical.
     /// </summary>
+    /// <summary>Every knowledge record of the universe (ADR 0057), by knower name, then creation, then id. One read.</summary>
+    private async Task<IReadOnlyList<BackupKnowledgeRecord>> KnowledgeAsync(Guid universeId, CancellationToken cancellationToken)
+    {
+        var records = await db.KnowledgeRecords.AsNoTracking()
+            .Where(record => record.UniverseId == universeId)
+            .Select(record => new
+            {
+                record.Id,
+                record.KnowerEntityId,
+                KnowerName = record.Knower!.Name,
+                record.SubjectEntityId,
+                record.Statement,
+                record.SceneId,
+                record.KnownFromStart,
+                record.CreatedAt,
+                record.UpdatedAt,
+            })
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. records
+                .OrderBy(record => record.KnowerName, StringComparer.Ordinal)
+                .ThenBy(record => record.CreatedAt)
+                .ThenBy(record => Key(record.Id), StringComparer.Ordinal)
+                .Select(record => new BackupKnowledgeRecord(
+                    record.Id,
+                    record.KnowerEntityId,
+                    record.SubjectEntityId,
+                    record.Statement,
+                    record.SceneId,
+                    record.KnownFromStart,
+                    Utc(record.CreatedAt),
+                    Utc(record.UpdatedAt))),
+        ];
+    }
+
     private async Task<IReadOnlyList<BackupEntityTypeGroup>> EntityTypeGroupsAsync(
         Guid universeId,
         CancellationToken cancellationToken)

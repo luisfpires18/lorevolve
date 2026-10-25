@@ -769,7 +769,7 @@ public sealed class EntityFieldLifecycleTests(LorexApiFactory factory) : IClassF
 
         var archive = await RawArchive(w.Client, w.U);
         var backup = BackupOf(archive);
-        Assert.Equal(32, backup.FormatVersion);
+        Assert.Equal(33, backup.FormatVersion);
         var carried = backup.Payload.EntityTypes.Single(type => type.Id == w.Character).Fields;
         Assert.NotNull(carried.Single(field => field.Id == kingdom).ArchivedAt);
         Assert.Null(carried.Single(field => field.Id == title).ArchivedAt);

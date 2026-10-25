@@ -263,8 +263,13 @@ public sealed record UniverseBackup(
     /// authored text a version 31 reader would restore silently gone. Only the owner exports, and a restore makes the
     /// restoring account the owner, so the note's one reader is unchanged by the trip. A file at version 31 or earlier
     /// restores every entry without a note, even when it carries the member.
+    ///
+    /// 33 - Knowledge records (issue 15, ADR 0057). <see cref="UniverseBackupPayload.KnowledgeRecords"/> carries every
+    /// record of the universe: who knows, what, about whom, since which scene or from the start, by id. Not ignorable: a
+    /// version 32 reader would restore a world with every continuity note silently gone. A file at version 32 or earlier has
+    /// none, and restores with none, even when it carries the member.
     /// </summary>
-    public const int CurrentVersion = 32;
+    public const int CurrentVersion = 33;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -311,7 +316,23 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupWorldRule>? WorldRules,
     IReadOnlyList<BackupValidationTerm>? ValidationTerms = null,
     BackupChronologyCalendar? ChronologyCalendar = null,
-    IReadOnlyList<BackupEntityTypeGroup>? EntityTypeGroups = null);
+    IReadOnlyList<BackupEntityTypeGroup>? EntityTypeGroups = null,
+    IReadOnlyList<BackupKnowledgeRecord>? KnowledgeRecords = null);
+
+/// <summary>
+/// One knowledge record (since version 33, ADR 0057): the knower and, optionally, the subject by entry id, the statement
+/// exactly as written, and either the scene it is learnt in (by id) or <paramref name="KnownFromStart"/>. Listed by knower
+/// name, then creation, then id, so two exports of an unchanged world agree.
+/// </summary>
+public sealed record BackupKnowledgeRecord(
+    Guid Id,
+    Guid KnowerEntityId,
+    Guid? SubjectEntityId,
+    string Statement,
+    Guid? SceneId,
+    bool KnownFromStart,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
 /// <summary>
 /// The universe itself. <c>OwnerId</c> is deliberately absent: it names an Identity row that

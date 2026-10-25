@@ -4,6 +4,7 @@ using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Chronology;
 using Lorex.Api.Features.Export;
 using Lorex.Api.Features.Ideas;
+using Lorex.Api.Features.Knowledge;
 using Lorex.Api.Features.WorldRules;
 using Lorex.Api.Features.Lore;
 using Lorex.Api.Features.RuleValidation;
@@ -106,6 +107,11 @@ internal sealed class RestoreIdentity
         foreach (var group in payload.EntityTypeGroups ?? [])
         {
             yield return group.Id;
+        }
+
+        foreach (var record in payload.KnowledgeRecords ?? [])
+        {
+            yield return record.Id;
         }
 
         foreach (var tag in payload.Tags)
@@ -718,6 +724,23 @@ internal sealed partial class UniverseRestore(
             {
                 db.EntityTypeGroupMembers.Add(new EntityTypeGroupMember { EntityTypeGroupId = ids.Map(group.Id), EntityTypeId = ids.Map(typeId) });
             }
+        }
+
+        // Knowledge records (ADR 0057) under new ids, pointing at the restored entries and scenes.
+        foreach (var record in payload.KnowledgeRecords ?? [])
+        {
+            db.KnowledgeRecords.Add(new KnowledgeRecord
+            {
+                Id = ids.Map(record.Id),
+                UniverseId = universeId,
+                KnowerEntityId = ids.Map(record.KnowerEntityId),
+                SubjectEntityId = ids.Map(record.SubjectEntityId),
+                Statement = record.Statement,
+                SceneId = ids.Map(record.SceneId),
+                KnownFromStart = record.KnownFromStart,
+                CreatedAt = record.CreatedAt,
+                UpdatedAt = record.UpdatedAt,
+            });
         }
 
         foreach (var type in payload.EntityTypes)

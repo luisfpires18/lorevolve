@@ -17,7 +17,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0011 | A field declares what it means, in a closed enum, on Number only | [0011-semantic-field-codes.md](0011-semantic-field-codes.md) |
 | 0012 | High conflicts block only the write that introduces them (amended for mass create: a batch is one all-or-nothing candidate) | [0012-canon-promotion-gate.md](0012-canon-promotion-gate.md) |
 | 0013 | An entry's history is a full snapshot per accepted write (amended #39: a field or choice a version records is kept) | [0013-entity-revision-snapshots.md](0013-entity-revision-snapshots.md) |
-| 0014 | A backup is one versioned archive holding a universe's authored data (amended #23: version 32, the owner's private notes) | [0014-universe-backup-format.md](0014-universe-backup-format.md) |
+| 0014 | A backup is one versioned archive holding a universe's authored data (amended #23: version 32, the owner's private notes; #15: version 33, knowledge records) | [0014-universe-backup-format.md](0014-universe-backup-format.md) |
 | 0015 | An entry is trashed by a marker, and nothing that points at it is destroyed (amended 020: bulk move, all or nothing) | [0015-entity-trash-and-restore.md](0015-entity-trash-and-restore.md) |
 | 0016 | Lore is searched by a SQLite FTS5 index the write path keeps in step | [0016-sqlite-full-text-search.md](0016-sqlite-full-text-search.md) |
 | 0017 | Lorex installs as an app shell and caches build output only | [0017-pwa-shell-and-caching.md](0017-pwa-shell-and-caching.md) |
@@ -61,8 +61,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0054 | Duplicate is a new entry's form filled from another, and copies only what it says (#27) | [0054-duplicate-entry.md](0054-duplicate-entry.md) |
 | 0055 | A type's fields may be arranged in optional sections, and a section is presentation only (#26) | [0055-field-sections.md](0055-field-sections.md) |
 | 0056 | An entry may carry one private author note, and the owner alone may read it (#23) | [0056-private-author-notes.md](0056-private-author-notes.md) |
+| 0057 | A knowledge record is an author's statement that one actor knows one thing from one scene, and nothing is inferred (#15) | [0057-knowledge-records.md](0057-knowledge-records.md) |
 
-All accepted. Next number: `0057`.
+All accepted. Next number: `0058`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

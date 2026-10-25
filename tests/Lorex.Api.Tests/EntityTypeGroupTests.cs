@@ -526,7 +526,7 @@ public sealed class EntityTypeGroupTests(LorexApiFactory factory) : IClassFixtur
 
         var archive = await RawArchive(w.Client, w.U);
         var backup = BackupOf(archive);
-        Assert.Equal(32, backup.FormatVersion);
+        Assert.Equal(33, backup.FormatVersion);
         var carried = backup.Payload.EntityTypeGroups!.Single(group => group.Id == runes.Id);
         Assert.Equal(new[] { w.Corrupted, w.Elemental }.Order(), carried.TypeIds.Order());
         Assert.Equal(runes.Id, backup.Payload.EntityTypes.Single(type => type.Id == w.Character).Fields.Single(one => one.Id == field).TargetGroupId);
