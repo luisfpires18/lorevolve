@@ -71,7 +71,8 @@ public static class ChronologyEndpoints
             cancellationToken);
     }
 
-    private static async Task<IResult> UpdateCoreAsync(
+    /// <summary>The eras replaced whole, inside the caller's gate: the route's, and an approved AI change's (ADR 0062).</summary>
+    internal static async Task<IResult> UpdateCoreAsync(
         Guid universeId,
         ChronologyRequest request,
         LorexDbContext db,

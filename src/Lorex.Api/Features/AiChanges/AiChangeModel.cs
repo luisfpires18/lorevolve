@@ -80,6 +80,15 @@ public enum AiChangeResource
 
     /// <summary>A semantic group of lore types (ADR 0062). Schema.</summary>
     LoreGroup = 14,
+
+    /// <summary>A relationship kind's definition (ADR 0062). Schema.</summary>
+    RelationshipType = 15,
+
+    /// <summary>The universe's reckoning - date periods and a custom calendar - written whole, nothing removed or reordered (ADR 0062). Schema.</summary>
+    Chronology = 16,
+
+    /// <summary>An event kind or a method of the rule vocabulary (ADR 0034, ADR 0062). Schema.</summary>
+    ValidationTerm = 17,
 }
 
 public enum AiChangeAction
@@ -269,7 +278,7 @@ public sealed class AiChangeOperationConfiguration : IEntityTypeConfiguration<Ai
         builder.ToTable("AiChangeOperations", table =>
         {
             table.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
-            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)");
+            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17)");
             table.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
         });
         builder.HasKey(operation => operation.Id);

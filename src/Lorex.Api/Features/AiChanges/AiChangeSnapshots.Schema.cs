@@ -77,4 +77,38 @@ internal static partial class AiChangeSnapshots
             .Where(group => group.Id == groupId && group.UniverseId == universeId)
             .Select(group => new GroupValues(group.Name, group.FamilyTreeEnabled))
             .FirstOrDefaultAsync(cancellationToken);
+
+    public static Task<RelationshipKindValues?> RelationshipKindAsync(LorexDbContext db, Guid universeId, Guid typeId, CancellationToken cancellationToken) =>
+        db.RelationshipTypes.AsNoTracking()
+            .Where(type => type.Id == typeId && type.UniverseId == universeId)
+            .Select(type => new RelationshipKindValues(
+                type.Name,
+                type.InverseName,
+                type.IsSymmetric,
+                type.Description,
+                new Relationships.RelationshipTypeCanonConstraints(type.AgeOrder, type.MinAgeDifferenceYears, type.MaxAgeDifferenceYears),
+                type.FamilySemantic))
+            .FirstOrDefaultAsync(cancellationToken);
+
+    /// <summary>The universe's reckoning as stored: its periods earliest first, and its calendar's months in order, or null for simple dates.</summary>
+    public static async Task<ChronologyValues> ChronologyAsync(LorexDbContext db, Guid universeId, CancellationToken cancellationToken)
+    {
+        var eras = await db.ChronologyEras.AsNoTracking()
+            .Where(era => era.UniverseId == universeId)
+            .OrderBy(era => era.SortOrder)
+            .Select(era => new DatePeriodValue(era.Id, era.Name, era.Abbreviation, era.Direction, era.LabelPosition))
+            .ToListAsync(cancellationToken);
+        var months = await db.ChronologyCalendarMonths.AsNoTracking()
+            .Where(month => month.Calendar!.UniverseId == universeId)
+            .OrderBy(month => month.SortOrder)
+            .Select(month => new MonthValue(month.Id, month.Name, month.Abbreviation, month.DayCount))
+            .ToListAsync(cancellationToken);
+        return new ChronologyValues(eras, months.Count == 0 ? null : months);
+    }
+
+    public static Task<TermValues?> TermAsync(LorexDbContext db, Guid universeId, Guid termId, CancellationToken cancellationToken) =>
+        db.ValidationTerms.AsNoTracking()
+            .Where(term => term.Id == termId && term.UniverseId == universeId)
+            .Select(term => new TermValues(term.Kind, term.Name))
+            .FirstOrDefaultAsync(cancellationToken);
 }

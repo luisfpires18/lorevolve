@@ -139,6 +139,9 @@ internal static class AiChangeJson
                 AiChangeResource.LoreType => Read<TypeValues>(json),
                 AiChangeResource.LoreField => Read<FieldValues>(json),
                 AiChangeResource.LoreGroup => Read<GroupValues>(json),
+                AiChangeResource.RelationshipType => Read<RelationshipKindValues>(json),
+                AiChangeResource.Chronology => Read<ChronologyValues>(json),
+                AiChangeResource.ValidationTerm => Read<TermValues>(json),
                 _ => Read<TimelineValues>(json),
             },
         };
@@ -159,6 +162,9 @@ internal static class AiChangeJson
         (AiChangeResource.LoreType, _) => Read<TypeValues>(json),
         (AiChangeResource.LoreField, _) => Read<FieldValues>(json),
         (AiChangeResource.LoreGroup, _) => Read<GroupValues>(json),
+        (AiChangeResource.RelationshipType, _) => Read<RelationshipKindValues>(json),
+        (AiChangeResource.Chronology, _) => Read<ChronologyValues>(json),
+        (AiChangeResource.ValidationTerm, _) => Read<TermValues>(json),
         _ => throw new InvalidOperationException($"A {resource} change keeps no stored form."),
     };
 
@@ -374,7 +380,8 @@ internal static class AiChangePermissions
     /// only by a role that edits types by hand - a Reviewer's suggestions never reach the schema.
     /// </summary>
     public static bool IsSchema(AiChangeResource resource) =>
-        resource is AiChangeResource.LoreType or AiChangeResource.LoreField or AiChangeResource.LoreGroup;
+        resource is AiChangeResource.LoreType or AiChangeResource.LoreField or AiChangeResource.LoreGroup
+            or AiChangeResource.RelationshipType or AiChangeResource.Chronology or AiChangeResource.ValidationTerm;
 
     public static bool MayStage(UniverseRole role, AiChangeResource resource, AiChangeAction action) =>
         resource == AiChangeResource.Idea
@@ -483,6 +490,15 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
                     break;
                 case (AiChangeResource.LoreGroup, _):
                     await CheckLoreGroupAsync(work, works, cancellationToken);
+                    break;
+                case (AiChangeResource.RelationshipType, _):
+                    await CheckRelationshipKindAsync(work, works, cancellationToken);
+                    break;
+                case (AiChangeResource.Chronology, _):
+                    await CheckChronologyAsync(work, cancellationToken);
+                    break;
+                case (AiChangeResource.ValidationTerm, _):
+                    await CheckTermAsync(work, works, cancellationToken);
                     break;
                 case (AiChangeResource.LoreEntry, _):
                     await CheckLoreAsync(work, cancellationToken);
@@ -1359,8 +1375,13 @@ internal static class AiChangeText
         _ => "A manuscript isn't removed. To empty one, replace its text, and its saved versions keep the old prose.",
     };
 
-    /// <summary>Why an AI can't remove a type or a group: neither has a Trash, and LoreX deletes them only by hand, only once nothing uses them.</summary>
-    public static string NoSchemaRemoval(AiChangeResource resource) => resource == AiChangeResource.LoreType
-        ? "An AI change can't delete a lore type. Delete it by hand in LoreX's Types, once no entry, nested type or field uses it."
-        : "An AI change can't delete a group. Delete it by hand in LoreX's Types, once no field is limited to it.";
+    /// <summary>Why an AI can't remove a definition: none has a Trash, and LoreX deletes one only by hand, only once nothing uses it.</summary>
+    public static string NoSchemaRemoval(AiChangeResource resource) => resource switch
+    {
+        AiChangeResource.LoreType => "An AI change can't delete a lore type. Delete it by hand in LoreX's Types, once no entry, nested type or field uses it.",
+        AiChangeResource.LoreGroup => "An AI change can't delete a group. Delete it by hand in LoreX's Types, once no field is limited to it.",
+        AiChangeResource.RelationshipType => "An AI change can't delete a relationship kind. Delete it by hand in LoreX, once no relationship uses it.",
+        AiChangeResource.Chronology => "An AI change can't remove the reckoning. Date periods and months are removed by hand in Chronology, once nothing is dated in them.",
+        _ => "An AI change can't delete an event kind or a method. Delete it by hand in World rules, once no rule or moment names it.",
+    };
 }

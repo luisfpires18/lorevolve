@@ -41,7 +41,8 @@ public sealed record AiChangeOptionType(
     IReadOnlyList<AiChangeOptionField>? ArchivedFields = null,
     int Entries = 0);
 
-public sealed record AiChangeOptionRelationshipType(Guid Id, string Name, string? InverseName, bool Symmetric);
+/// <summary>A relationship kind; <paramref name="Relationships"/> counts the links using it, which keep it from changing direction.</summary>
+public sealed record AiChangeOptionRelationshipType(Guid Id, string Name, string? InverseName, bool Symmetric, string? Description = null, int Relationships = 0);
 
 public sealed record AiChangeOptionChapter(Guid Id, string Title);
 
@@ -111,23 +112,28 @@ internal static class AiChangeCatalog
     public const string Notes =
         "Every change is staged for a person to review in LoreX; nothing changes until they approve it there. "
         + "Use ids exactly as given. To refer to something another change in the same proposal creates, use {\"ref\": \"<that change's id>\"} "
-        + "instead of an id. Only the fields listed for a type exist. Types, fields, choices and groups change only through a schema proposal "
-        + "(see schema), never in the same proposal as entries; relationship kinds, calendars, date periods, event kinds and methods "
-        + "can't be created or changed here. remove moves an item to LoreX's Trash (an idea to its owner's deleted ideas), "
+        + "instead of an id. Only the fields listed for a type exist. Types, fields, choices, groups, relationship kinds, date periods, "
+        + "the calendar, event kinds and methods change only through a schema proposal (see schema), never in the same proposal as "
+        + "content. remove moves an item to LoreX's Trash (an idea to its owner's deleted ideas), "
         + "from where it can be restored; nothing is ever deleted for good. An article is written as blocks (paragraph, heading, bullet_list, "
         + "numbered_list, quote) of plain text, apart from the entry's fields. reorder takes the whole order of a container. Ideas are the "
         + "universe owner's own and are offered only to the owner. Only propose changes the person asked for.";
 
     /// <summary>What a schema proposal is, for the AI reading the catalog.</summary>
     public const string SchemaNotes =
-        "A schema proposal holds only lore_type, lore_field and lore_group changes - definitions, not entries' values. Inspect the "
+        "A schema proposal holds only definitions - lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind and "
+        + "method - never entries, relationships or moments that use them. Inspect the "
         + "types, fields and groups here first and reuse what exists instead of making a near-duplicate. A group collects types "
         + "(Locations: Kingdom, City); it is not a type, a parent or a field choice. When more than one model fits - Orc as its own "
         + "type, or as a choice of a Race field on Character - ask the person which they want before proposing. Use only the field "
         + "kinds listed; a field's meaning for Lorex's rules is set by the author in LoreX, never here. A change can refer to a type or "
         + "group another change of the same proposal creates with {\"ref\": id}. remove on a lore_field archives it: it keeps every "
-        + "value and can be restored in LoreX; types and groups are never removed here. Once a schema proposal is approved, read this "
-        + "catalog again for the new ids and propose entries that use them in a second proposal.";
+        + "value and can be restored in LoreX; no other definition is ever removed here. A relationship kind's Canon age rules and family "
+        + "meaning stay the author's; a kind relationships already use keeps its direction. chronology is written whole: list every "
+        + "existing date period and month by id, in its current order, and add new ones; nothing dated is moved, so existing periods are "
+        + "never reordered or removed, a period that dates anything keeps the way its years count, and a calendar can't start while "
+        + "simple dates use month numbers (schema.chronology says which). Once a schema proposal is approved, read this catalog again "
+        + "for the new ids and propose what uses them in a second proposal.";
 
     public static async Task<AiChangeOptions> ReadAsync(LorexDbContext db, Guid universeId, UniverseRole role, CancellationToken cancellationToken, bool schemaAllowed = false)
     {
@@ -203,15 +209,21 @@ internal static class AiChangeCatalog
                 };
                 if (AiChangePermissions.IsSchema(resource))
                 {
-                    // Schema: create and update; remove only archives a field. Offered only where schema may be proposed.
+                    // Schema: create and update (the reckoning: update); remove only archives a field. Offered only where schema
+                    // may be proposed.
                     offered = schemaAllowed
-                        && (action is AiChangeAction.Create or AiChangeAction.Update
+                        && (action == AiChangeAction.Update
+                            || (action == AiChangeAction.Create && resource != AiChangeResource.Chronology)
                             || (action == AiChangeAction.Remove && resource == AiChangeResource.LoreField));
                 }
 
                 if (offered && AiChangePermissions.MayStage(role, resource, action))
                 {
                     allowed.Add($"{Wire(action)} {Wire(resource)}");
+                    if (resource == AiChangeResource.ValidationTerm)
+                    {
+                        allowed.Add($"{Wire(action)} method");
+                    }
                 }
             }
         }
@@ -257,6 +269,19 @@ internal static class AiChangeCatalog
             field.Archived);
 
         var mayStageSchema = AiChangePermissions.MayStage(role, AiChangeResource.LoreType, AiChangeAction.Create);
+        var reckoning = await Chronology.ChronologyEndpoints.DescribeAsync(db, universeId, cancellationToken);
+        var chronology = new AiChangeOptionChronology(
+            [.. reckoning.Eras.Select(era => new AiChangeOptionPeriod(
+                era.Id,
+                era.Name,
+                era.Abbreviation,
+                era.Direction == Chronology.ChronologyEraDirection.Descending ? "descending" : "ascending",
+                era.LabelPosition == Chronology.ChronologyLabelPosition.AfterYear ? "after" : "before",
+                era.MomentCount + era.YearCount + era.SceneCount + era.EntryEraCount + era.PeriodCount > 0))],
+            reckoning.Calendar is { } calendar
+                ? [.. calendar.Months.Select(month => new AiChangeOptionMonth(month.Id, month.Name, month.Abbreviation, month.DayCount, month.UseCount > 0))]
+                : null,
+            (await Chronology.ChronologyCalendarEndpoints.SimpleMonthsInUseAsync(db, universeId, cancellationToken)).Count > 0);
         var schema = new AiChangeSchemaOptions(
             schemaAllowed && mayStageSchema,
             !mayStageSchema ? "Only an owner or Editor can have an AI propose types, fields and groups."
@@ -265,7 +290,8 @@ internal static class AiChangeCatalog
             [.. AiChangeStaging.FieldKinds.Select(kind => kind.Wire)],
             [.. EntityTypeIcons.Keys],
             [.. (await EntityTypeGroupEndpoints.LoadGroupsAsync(db, universeId, cancellationToken)).Select(group => new AiChangeOptionGroup(group.Id, group.Name, group.TypeIds, group.FamilyTreeEnabled))],
-            SchemaNotes);
+            SchemaNotes,
+            chronology);
 
         return new AiChangeOptions(
             role.ToString(),
@@ -283,7 +309,13 @@ internal static class AiChangeCatalog
             await db.RelationshipTypes.AsNoTracking()
                 .Where(type => type.UniverseId == universeId)
                 .OrderBy(type => type.DisplayOrder)
-                .Select(type => new AiChangeOptionRelationshipType(type.Id, type.Name, type.InverseName, type.IsSymmetric))
+                .Select(type => new AiChangeOptionRelationshipType(
+                    type.Id,
+                    type.Name,
+                    type.InverseName,
+                    type.IsSymmetric,
+                    type.Description,
+                    db.Relationships.Count(relationship => relationship.RelationshipTypeId == type.Id)))
                 .ToListAsync(cancellationToken),
             [.. stories.Take(StoryLimit).Select(story => new AiChangeOptionStory(story.Id, story.Title, story.Chapters, story.PlotArcs))],
             stories.Count > StoryLimit,
@@ -333,6 +365,9 @@ internal static class AiChangeCatalog
         AiChangeResource.LoreType => "lore_type",
         AiChangeResource.LoreField => "lore_field",
         AiChangeResource.LoreGroup => "lore_group",
+        AiChangeResource.RelationshipType => "relationship_kind",
+        AiChangeResource.Chronology => "chronology",
+        AiChangeResource.ValidationTerm => "event_kind",
         _ => resource.ToString().ToLowerInvariant(),
     };
 }

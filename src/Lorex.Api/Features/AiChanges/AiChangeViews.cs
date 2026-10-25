@@ -316,6 +316,34 @@ internal static class AiChangeViews
                 return (work.Action == AiChangeAction.Create ? $"New group: {group.Name}" : $"Edit group: {old?.Name ?? group.Name}", lines);
             }
 
+            case (RelationshipKindValues kind, var before):
+            {
+                var old = before as RelationshipKindValues;
+                Line("Name", old?.Name, kind.Name);
+                Line("Reads back as", old is null ? null : old.Symmetric ? "The same both ways" : old.InverseName, kind.Symmetric ? "The same both ways" : kind.InverseName);
+                Line("Description", old?.Description, kind.Description);
+                return (work.Action == AiChangeAction.Create ? $"New relationship kind: {kind.Name}" : $"Edit relationship kind: {old?.Name ?? kind.Name}", lines);
+            }
+
+            case (ChronologyValues reckoning, var before):
+            {
+                var old = before as ChronologyValues;
+                string? Periods(List<DatePeriodValue>? eras) => eras is null ? null
+                    : Numbered(eras.Select(era => $"{era.Name}{(era.Abbreviation is { } label ? $" ({label})" : string.Empty)}{(era.Direction == ChronologyEraDirection.Descending ? ", counting down" : string.Empty)}"));
+                string? Year(List<MonthValue>? months) => months is null ? "Simple dates" : Numbered(months.Select(month => $"{month.Name} ({month.Days} days)"));
+                Line("Date periods", Periods(old?.Eras), Periods(reckoning.Eras));
+                Line("Calendar", old is null ? null : Year(old.Months), Year(reckoning.Months));
+                return ("Change the date periods and calendar", lines);
+            }
+
+            case (TermValues term, var before):
+            {
+                var old = before as TermValues;
+                var noun = term.Kind == RuleValidation.ValidationTermKind.EventKind ? "event kind" : "method";
+                Line("Name", old?.Name, term.Name);
+                return (work.Action == AiChangeAction.Create ? $"New {noun}: {term.Name}" : $"Rename {noun} {old?.Name ?? term.Name}", lines);
+            }
+
             case (LoreValues lore, var before):
             {
                 var old = before as LoreValues;

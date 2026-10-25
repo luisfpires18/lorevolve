@@ -46,7 +46,7 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
         - create needs the values; update needs targetId and only the values that change; remove moves an item to the Trash (an idea to the owner's deleted ideas); reorder takes a container's whole order in order.items.
         - For a manuscript, use mode "append" to add prose after what is there. An article is written as blocks of plain text, in article.blocks.
         - Ideas are the universe owner's own; propose one only when the writer asked for an idea.
-        - New lore types, fields and groups go in a proposal of their own (lore_type, lore_field, lore_group), only when the writer asked for them: check get_change_options' types and schema first, reuse what exists, and ask when more than one model fits. Entries that use them come in a later question, once they are approved.
+        - New lore types, fields, groups, relationship kinds, date periods, months, event kinds and methods go in a proposal of their own (lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind, method), only when the writer asked for them: check get_change_options' types and schema first, reuse what exists, and ask when more than one model fits. Entries that use them come in a later question, once they are approved.
         - If propose_changes lists problems, fix them and call it again.
         When it is staged, answer in a note that the changes are waiting for the writer to review in Pending AI Changes, and say briefly what they are.
         """;
@@ -143,7 +143,7 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
         var operation = Object(
             ("id", Text()),
             ("action", Text("create, update, remove or reorder")),
-            ("resource", Text("lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea; or, in a proposal of their own, lore_type, lore_field or lore_group")),
+            ("resource", Text("lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea; or, in a proposal of their own, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method")),
             ("targetId", Nullable("string")),
             ("expectedVersion", Nullable("integer")),
             ("lore", Or(Object(
@@ -221,7 +221,25 @@ internal sealed class AssistantProposing(LorexDbContext db, TimeProvider clock, 
                 ("linksToType", Or(reference)),
                 ("linksToGroup", Or(reference)),
                 ("linksToAny", Nullable("boolean"))))),
-            ("group", Or(Object(("name", Nullable("string")), ("familyTree", Nullable("boolean"))))));
+            ("group", Or(Object(("name", Nullable("string")), ("familyTree", Nullable("boolean"))))),
+            ("relationshipKind", Or(Object(
+                ("name", Nullable("string")),
+                ("inverseName", Nullable("string")),
+                ("symmetric", Nullable("boolean")),
+                ("description", Nullable("string"))))),
+            ("chronology", Or(Object(
+                ("eras", NullableArray(Object(
+                    ("id", Nullable("string")),
+                    ("name", Nullable("string")),
+                    ("abbreviation", Nullable("string")),
+                    ("direction", Nullable("string")),
+                    ("label", Nullable("string"))))),
+                ("months", NullableArray(Object(
+                    ("id", Nullable("string")),
+                    ("name", Nullable("string")),
+                    ("abbreviation", Nullable("string")),
+                    ("days", Nullable("integer")))))))),
+            ("term", Or(Object(("name", Nullable("string"))))));
 
         return Object(("summary", Nullable("string")), ("operations", new JsonObject { ["type"] = "array", ["items"] = operation })).ToJsonString();
     }

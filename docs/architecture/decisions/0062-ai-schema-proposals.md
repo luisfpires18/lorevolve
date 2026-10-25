@@ -1,6 +1,7 @@
 # ADR 0062 - An AI proposes schema as its own reviewed proposal, through the Types screen's own write paths
 
-Status: accepted (2026-10-25). GitHub issue 59 (P0, pre-alpha), phase 1 - lore types, field definitions, semantic groups.
+Status: accepted (2026-10-25). GitHub issue 59 (P0, pre-alpha): phase 1 - lore types, field definitions, semantic groups;
+phase 2 - relationship kinds, the reckoning (date periods and calendar), event kinds and methods.
 
 ## Context
 
@@ -70,6 +71,30 @@ schema now, why not, and notes: reuse what exists, a group is not a type or a ch
 **Review.** Schema changes are described by LoreX like content ("New lore type", "New field on WEAPON OF ORDER (new):
 WIELDER", kind, required, choices, what a link accepts, parent, groups); an archive says what it keeps. "Open it" goes to
 Types.
+
+## Phase 2: relationship kinds, the reckoning, event kinds and methods
+
+Three more schema resources, under every rule above: `RelationshipType` (15, `relationship_kind`), `Chronology` (16,
+`chronology`) and `ValidationTerm` (17, `event_kind` or `method` - the word is the kind, and a term never changes kind).
+Written through their own screens' cores: `RelationshipTypeEndpoints.CreateCoreAsync`/`UpdateCoreAsync`,
+`ChronologyEndpoints.UpdateCoreAsync` (under the gate it always runs under), `ChronologyCalendarEndpoints.SaveCoreAsync`,
+`ValidationTermEndpoints.CreateCoreAsync`/`RenameCoreAsync`. None is ever removed by an AI.
+
+**Nothing already linked or dated is reinterpreted.** A person may do each of these by hand, where the screen shows what
+moves; an AI change may not, and is refused with the reason, nothing written:
+
+- A relationship kind relationships already use keeps its direction (symmetric or not). Renaming it or its inverse is a
+  plain before/after line in the review. Its Canon age rules and family meaning (ADR 0035) are carried through unchanged: what
+  a kind means to the rules is the author's, like a field's meaning.
+- The reckoning is one change, written whole. Every existing date period and month is listed by id, **in its stored order**;
+  new ones go anywhere among periods and after the months. Leaving one out, reordering, an id that is not this universe's, a
+  period that dates anything turning its count around, a month shortened below a day in use, and starting a custom calendar
+  while simple dates use month numbers (which turning one on rewrites) are all refused. Bound to the whole stored reckoning:
+  any hand edit since makes it a conflict.
+
+The catalog lists kinds with descriptions and how many links use them, and `schema.chronology`: each period with its
+direction, label and whether it dates anything, the calendar's months with their days and use, and whether simple dates use
+months. Migration `AddDefinitionProposals` widens the constraint to 17; its rollback drops only proposals holding these.
 
 ## Consequences
 

@@ -431,7 +431,7 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
         var answer = (await asked.Content.ReadFromJsonAsync<AssistantAnswer>())!;
         Assert.NotNull(answer.Proposal);
         var schema = _model.Steps[0].Brief.Tools.Single(tool => tool.Name == AssistantProposing.ProposeTool).ParametersSchema;
-        foreach (var member in new[] { "\"loreType\"", "\"field\"", "\"group\"", "\"linksToGroup\"" })
+        foreach (var member in new[] { "\"loreType\"", "\"field\"", "\"group\"", "\"linksToGroup\"", "\"relationshipKind\"", "\"chronology\"", "\"months\"", "\"term\"" })
         {
             Assert.Contains(member, schema, StringComparison.Ordinal);
         }

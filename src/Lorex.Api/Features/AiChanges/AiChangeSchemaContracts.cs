@@ -82,4 +82,70 @@ public sealed record AiChangeSchemaOptions(
     IReadOnlyList<string> FieldKinds,
     IReadOnlyList<string> Icons,
     IReadOnlyList<AiChangeOptionGroup> Groups,
-    string Notes);
+    string Notes,
+    AiChangeOptionChronology? Chronology = null);
+
+// ---------- Phase 2: relationship kinds, chronology, event kinds and methods ----------
+
+[Description("A relationship kind: how two entries relate, read as \"source <name> target\" and, unless symmetric, \"target <inverseName> source\". Create: name is required. Update: only what you set changes; a kind in use can't change between symmetric and directed.")]
+public sealed record AiRelationshipKindInput(
+    string? Name = null,
+    [property: Description("How the relationship reads from the target's side, such as \"child of\" for \"parent of\". Not for a symmetric kind.")] string? InverseName = null,
+    [property: Description("true when it reads the same both ways, such as \"sibling of\".")] bool? Symmetric = null,
+    [property: Description("On update, \"\" clears it.")] string? Description = null);
+
+[Description("The universe's reckoning, written whole: its date periods (eras) earliest first and, optionally, a custom calendar's months in the order of the year. Existing periods and months are listed by id, in their current order; new ones go without an id. Nothing is removed or reordered here.")]
+public sealed record AiChronologyInput(
+    [property: Description("Every date period, earliest first: the existing ones by id, in their order, and any new ones. Leave it out to keep them.")] IReadOnlyList<AiDatePeriodInput>? Eras = null,
+    [property: Description("Every month of the custom calendar, in the order of the year: the existing ones by id, and any new ones after them. Leave it out to keep the calendar as it is.")] IReadOnlyList<AiMonthInput>? Months = null);
+
+public sealed record AiDatePeriodInput(
+    [property: Description("An existing date period's id, from get_change_options; leave it out for a new one.")] Guid? Id = null,
+    string? Name = null,
+    [property: Description("A short label such as \"TA\". On an existing period, \"\" clears it.")] string? Abbreviation = null,
+    [property: Description("ascending (years count up from 1) or descending (years count down to 1). Only a new or unused period can change it.")] string? Direction = null,
+    [property: Description("before (\"TA 3019\") or after (\"3019 TA\").")] string? Label = null);
+
+public sealed record AiMonthInput(
+    [property: Description("An existing month's id, from get_change_options; leave it out for a new one.")] Guid? Id = null,
+    string? Name = null,
+    [property: Description("On an existing month, \"\" clears it.")] string? Abbreviation = null,
+    int? Days = null);
+
+[Description("An event kind or a method: the small vocabulary world rule checks and moments name. Create: name is required. Update: renames it; its kind never changes.")]
+public sealed record AiTermInput(string? Name = null);
+
+/// <summary>
+/// A relationship kind as a change stores it. <paramref name="Constraints"/> and <paramref name="FamilySemantic"/> are the
+/// stored Canon age rules and family meaning, carried through unchanged: what a kind means to the rules is the author's to say
+/// (ADR 0035, ADR 0062), like a field's meaning.
+/// </summary>
+public sealed record RelationshipKindValues(
+    string Name,
+    string? InverseName,
+    bool Symmetric,
+    string? Description,
+    Relationships.RelationshipTypeCanonConstraints? Constraints,
+    Relationships.RelationshipFamilySemantic FamilySemantic);
+
+public sealed record DatePeriodValue(Guid? Id, string Name, string? Abbreviation, Chronology.ChronologyEraDirection Direction, Chronology.ChronologyLabelPosition Label);
+
+public sealed record MonthValue(Guid? Id, string Name, string? Abbreviation, int Days);
+
+/// <summary>The universe's whole reckoning as a change stores it: its periods in order, and its calendar's months, or null for simple dates.</summary>
+public sealed record ChronologyValues(List<DatePeriodValue> Eras, List<MonthValue>? Months);
+
+public sealed record TermValues(RuleValidation.ValidationTermKind Kind, string Name);
+
+/// <summary>
+/// The chronology half of get_change_options: each period with what it dates, the calendar's months with what uses them, and
+/// whether simple dates already use months - which a new calendar would reinterpret, so an AI cannot start one then.
+/// </summary>
+public sealed record AiChangeOptionChronology(
+    IReadOnlyList<AiChangeOptionPeriod> Eras,
+    IReadOnlyList<AiChangeOptionMonth>? Months,
+    bool SimpleMonthsInUse);
+
+public sealed record AiChangeOptionPeriod(Guid Id, string Name, string? Abbreviation, string Direction, string Label, bool InUse);
+
+public sealed record AiChangeOptionMonth(Guid Id, string Name, string? Abbreviation, int Days, bool InUse);

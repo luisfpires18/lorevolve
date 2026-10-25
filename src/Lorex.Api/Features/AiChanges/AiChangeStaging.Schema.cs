@@ -151,6 +151,142 @@ internal static partial class AiChangeStaging
                 before?.Semantic);
         }
 
+        private async Task<AiChangeWork?> RelationshipKindAsync(CancellationToken cancellationToken)
+        {
+            if (input.RelationshipKind is not { } kind)
+            {
+                Fail(AiChangeCodes.Invalid, "Put the kind's values in relationshipKind.", "relationshipKind");
+                return null;
+            }
+
+            return action == AiChangeAction.Create
+                ? Work(null, null, KindForm(kind, null))
+                : await StoredAsync(
+                    () => AiChangeSnapshots.RelationshipKindAsync(db, universeId, input.TargetId!.Value, cancellationToken),
+                    stored => Work(stored, null, KindForm(kind, stored)));
+        }
+
+        /// <summary>A kind's Canon age rules and family meaning are kept as stored: an AI never sets what a kind means (ADR 0062).</summary>
+        private static RelationshipKindValues KindForm(AiRelationshipKindInput kind, RelationshipKindValues? before)
+        {
+            var symmetric = kind.Symmetric ?? before?.Symmetric ?? false;
+            return new RelationshipKindValues(
+                (kind.Name ?? before?.Name ?? string.Empty).Trim(),
+                symmetric ? null : Cleared(kind.InverseName, before?.InverseName),
+                symmetric,
+                Cleared(kind.Description, before?.Description),
+                before?.Constraints,
+                before?.FamilySemantic ?? Relationships.RelationshipFamilySemantic.None);
+        }
+
+        /// <summary>
+        /// The reckoning, whole: what the AI lists, each existing period or month starting from what is stored, so leaving a
+        /// value out keeps it. What is left out of the list is not removed here - the checks refuse that - and the change is
+        /// bound to the whole stored reckoning.
+        /// </summary>
+        private async Task<AiChangeWork?> ChronologyAsync(CancellationToken cancellationToken)
+        {
+            if (input.Chronology is not { } chronology || (chronology.Eras is null && chronology.Months is null))
+            {
+                Fail(AiChangeCodes.Invalid, "Put the date periods, the calendar's months, or both in chronology.", "chronology");
+                return null;
+            }
+
+            var stored = await AiChangeSnapshots.ChronologyAsync(db, universeId, cancellationToken);
+            var eras = stored.Eras.ToDictionary(era => era.Id!.Value);
+            var months = (stored.Months ?? []).ToDictionary(month => month.Id!.Value);
+
+            List<DatePeriodValue> periods = [];
+            foreach (var era in chronology.Eras ?? [])
+            {
+                var was = era?.Id is { } id ? eras.GetValueOrDefault(id) : null;
+                Chronology.ChronologyEraDirection? direction = era?.Direction?.Trim().ToLowerInvariant() switch
+                {
+                    null => was?.Direction ?? Chronology.ChronologyEraDirection.Ascending,
+                    "ascending" or "up" => Chronology.ChronologyEraDirection.Ascending,
+                    "descending" or "down" => Chronology.ChronologyEraDirection.Descending,
+                    _ => null,
+                };
+                Chronology.ChronologyLabelPosition? label = era?.Label?.Trim().ToLowerInvariant() switch
+                {
+                    null => was?.Label ?? Chronology.ChronologyLabelPosition.BeforeYear,
+                    "before" or "before_year" => Chronology.ChronologyLabelPosition.BeforeYear,
+                    "after" or "after_year" => Chronology.ChronologyLabelPosition.AfterYear,
+                    _ => null,
+                };
+                if (era is null || direction is null || label is null)
+                {
+                    Fail(AiChangeCodes.Invalid, "A date period's direction is ascending or descending, and its label goes before or after the year.", "chronology.eras");
+                    return null;
+                }
+
+                periods.Add(new DatePeriodValue(era.Id, (era.Name ?? was?.Name ?? string.Empty).Trim(), Cleared(era.Abbreviation, was?.Abbreviation), direction.Value, label.Value));
+            }
+
+            List<MonthValue> year = [];
+            foreach (var month in chronology.Months ?? [])
+            {
+                var was = month?.Id is { } id ? months.GetValueOrDefault(id) : null;
+                if (month is null || (month.Days ?? was?.Days) is not { } days)
+                {
+                    Fail(AiChangeCodes.Invalid, "Give every new month its number of days.", "chronology.months");
+                    return null;
+                }
+
+                year.Add(new MonthValue(month.Id, (month.Name ?? was?.Name ?? string.Empty).Trim(), Cleared(month.Abbreviation, was?.Abbreviation), days));
+            }
+
+            var work = Work(stored, null, new ChronologyValues(
+                chronology.Eras is null ? stored.Eras : periods,
+                chronology.Months is null ? stored.Months : year));
+            if (work is not null)
+            {
+                // One reckoning per universe, so one change to it per proposal.
+                work.TargetId = universeId;
+            }
+
+            return work;
+        }
+
+        private async Task<AiChangeWork?> TermAsync(CancellationToken cancellationToken)
+        {
+            RuleValidation.ValidationTermKind? named = input.Resource?.Trim().ToLowerInvariant().Replace('-', '_') switch
+            {
+                "event_kind" => RuleValidation.ValidationTermKind.EventKind,
+                "method" => RuleValidation.ValidationTermKind.Method,
+                _ => null,
+            };
+
+            if (input.Term is not { } term)
+            {
+                Fail(AiChangeCodes.Invalid, "Put the event kind's or method's name in term.", "term");
+                return null;
+            }
+
+            if (action == AiChangeAction.Create)
+            {
+                if (named is not { } kind)
+                {
+                    Fail(AiChangeCodes.Invalid, "Say which it is: resource event_kind or method.", "resource");
+                    return null;
+                }
+
+                return Work(null, null, new TermValues(kind, (term.Name ?? string.Empty).Trim()));
+            }
+
+            return await StoredAsync(
+                () => AiChangeSnapshots.TermAsync(db, universeId, input.TargetId!.Value, cancellationToken),
+                stored => named is { } asked && asked != stored.Kind
+                    ? Mismatched()
+                    : Work(stored, null, stored with { Name = (term.Name ?? stored.Name).Trim() }));
+
+            AiChangeWork? Mismatched()
+            {
+                Fail(AiChangeCodes.Unsupported, "An event kind can't become a method, or a method an event kind: every rule and moment naming it would change meaning.", "resource");
+                return null;
+            }
+        }
+
         private async Task<AiChangeWork?> LoreGroupAsync(CancellationToken cancellationToken)
         {
             if (input.Group is not { } group)

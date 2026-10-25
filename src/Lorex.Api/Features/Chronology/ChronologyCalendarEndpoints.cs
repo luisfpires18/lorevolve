@@ -48,12 +48,25 @@ public static class ChronologyCalendarEndpoints
             return denied;
         }
 
+        return await SaveCoreAsync(db, universeId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// Turning the calendar on, or replacing its months, after the caller's access check: the route's, and an approved AI
+    /// change's (ADR 0062), which joins the approval's transaction.
+    /// </summary>
+    internal static async Task<IResult> SaveCoreAsync(
+        LorexDbContext db,
+        Guid universeId,
+        ChronologyCalendarRequest request,
+        CancellationToken cancellationToken)
+    {
         if (ChronologyValidation.ValidateCalendar(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await CanonIntegrity.JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var calendarId = await db.ChronologyCalendars
             .Where(calendar => calendar.UniverseId == universeId)
@@ -621,7 +634,7 @@ public static class ChronologyCalendarEndpoints
     }
 
     /// <summary>Every simple month in use, with the latest day used in it (0 when only the month is given): three grouped reads.</summary>
-    private static async Task<Dictionary<int, int>> SimpleMonthsInUseAsync(
+    internal static async Task<Dictionary<int, int>> SimpleMonthsInUseAsync(
         LorexDbContext db,
         Guid universeId,
         CancellationToken cancellationToken)

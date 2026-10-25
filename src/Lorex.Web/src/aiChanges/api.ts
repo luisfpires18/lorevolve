@@ -39,6 +39,11 @@ export const ChangeResource = {
   LoreType: 12,
   LoreField: 13,
   LoreGroup: 14,
+  RelationshipType: 15,
+  /** The universe's date periods and calendar, written whole. */
+  Chronology: 16,
+  /** An event kind or a method of the world rule vocabulary. */
+  ValidationTerm: 17,
 } as const
 export type ChangeResourceValue = (typeof ChangeResource)[keyof typeof ChangeResource]
 
@@ -230,14 +235,17 @@ export function itemPath(universeId: string, change: Change) {
   const id = change.resultId ?? change.targetId
   const universe = `/app/universes/${universeId}`
   const story = change.storyId ? `${universe}/stories/${change.storyId}` : null
-  // Schema lives on the Types screen, an archived field included.
+  // Schema lives on its own screens: Types (an archived field, relation kinds and event kinds and methods included) and Chronology.
   if (
     change.resource === ChangeResource.LoreType ||
     change.resource === ChangeResource.LoreField ||
-    change.resource === ChangeResource.LoreGroup
+    change.resource === ChangeResource.LoreGroup ||
+    change.resource === ChangeResource.RelationshipType
   ) {
     return `${universe}/types`
   }
+  if (change.resource === ChangeResource.Chronology) return `${universe}/chronology`
+  if (change.resource === ChangeResource.ValidationTerm) return `${universe}/types`
   if (change.action === ChangeAction.Remove) {
     // Everything removed waits in the Trash - an idea in its owner's deleted ideas - from where it comes back.
     return change.resource === ChangeResource.Idea ? '/app/ideas' : `${universe}/trash`

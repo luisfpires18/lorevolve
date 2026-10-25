@@ -116,8 +116,9 @@ internal static partial class AiChangeStaging
                 continue;
             }
 
-            // Prose has one change: written over the manuscript or article there is, which the first save creates.
-            if (resource is AiChangeResource.Manuscript or AiChangeResource.Article && action == AiChangeAction.Create)
+            // Prose has one change: written over the manuscript or article there is, which the first save creates. So has the
+            // reckoning: there is always one, plain until periods are named.
+            if (resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Chronology && action == AiChangeAction.Create)
             {
                 action = AiChangeAction.Update;
             }
@@ -141,7 +142,7 @@ internal static partial class AiChangeStaging
                 continue;
             }
 
-            if (action == AiChangeAction.Remove && resource is AiChangeResource.LoreType or AiChangeResource.LoreGroup)
+            if (action == AiChangeAction.Remove && AiChangePermissions.IsSchema(resource) && resource != AiChangeResource.LoreField)
             {
                 Problem(AiChangeCodes.Unsupported, AiChangeText.NoSchemaRemoval(resource));
                 continue;
@@ -255,6 +256,9 @@ internal static partial class AiChangeStaging
         "lore_type" or "type" => AiChangeResource.LoreType,
         "lore_field" or "field" or "field_definition" => AiChangeResource.LoreField,
         "lore_group" or "group" or "type_group" or "semantic_group" => AiChangeResource.LoreGroup,
+        "relationship_kind" or "relationship_type" or "relation_kind" => AiChangeResource.RelationshipType,
+        "chronology" or "calendar" or "date_periods" or "reckoning" => AiChangeResource.Chronology,
+        "event_kind" or "method" or "validation_term" or "term" => AiChangeResource.ValidationTerm,
         _ => null,
     };
 
@@ -285,7 +289,7 @@ internal static partial class AiChangeStaging
         public async Task<AiChangeWork?> BuildAsync(CancellationToken cancellationToken)
         {
             if (action is AiChangeAction.Update or AiChangeAction.Remove
-                && resource is not (AiChangeResource.Manuscript or AiChangeResource.Article)
+                && resource is not (AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Chronology)
                 && input.TargetId is null)
             {
                 Fail(AiChangeCodes.Invalid, "Say which item this changes: its id goes in targetId.", "targetId");
@@ -303,6 +307,9 @@ internal static partial class AiChangeStaging
                 (AiChangeResource.LoreType, _) => await LoreTypeAsync(cancellationToken),
                 (AiChangeResource.LoreField, _) => await LoreFieldAsync(cancellationToken),
                 (AiChangeResource.LoreGroup, _) => await LoreGroupAsync(cancellationToken),
+                (AiChangeResource.RelationshipType, _) => await RelationshipKindAsync(cancellationToken),
+                (AiChangeResource.Chronology, _) => await ChronologyAsync(cancellationToken),
+                (AiChangeResource.ValidationTerm, _) => await TermAsync(cancellationToken),
 
                 (AiChangeResource.LoreEntry, AiChangeAction.Create) => Work(null, null, Lore(input.Lore, null)),
                 (AiChangeResource.LoreEntry, AiChangeAction.Update) => await StoredAsync(

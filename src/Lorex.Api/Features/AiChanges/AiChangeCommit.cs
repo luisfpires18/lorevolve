@@ -421,6 +421,45 @@ internal static class AiChangeCommit
                         detail => detail.Id)
                     : Done(await EntityTypeGroupEndpoints.UpdateCoreAsync(db, universeId, target!.Value, group.Name, group.FamilyTreeEnabled, cancellationToken), target);
 
+            case RelationshipKindValues kind:
+                var described = new RelationshipTypeRequest(kind.Name, kind.InverseName, kind.Symmetric, kind.Description, null, kind.Constraints, kind.FamilySemantic);
+                return work.Action == AiChangeAction.Create
+                    ? Made<RelationshipTypeResponse>(await RelationshipTypeEndpoints.CreateCoreAsync(db, universeId, described, cancellationToken), detail => detail.Id)
+                    : Done(await RelationshipTypeEndpoints.UpdateCoreAsync(db, universeId, target!.Value, described, cancellationToken), target);
+
+            case ChronologyValues reckoning:
+                // Each half through its own screen's write: the periods under the gate they are always under, the calendar as
+                // it is saved by hand. Only what changed is written.
+                var was = (ChronologyValues)work.Before!;
+                if (!AiChangeSnapshots.Same(was.Eras, reckoning.Eras)
+                    && await Chronology.ChronologyEndpoints.UpdateCoreAsync(
+                        universeId,
+                        new Chronology.ChronologyRequest([.. reckoning.Eras.Select(era => new Chronology.ChronologyEraRequest(era.Id, era.Name, era.Abbreviation, era.Direction, era.Label))]),
+                        db,
+                        cancellationToken) is var periods
+                    && !Succeeded(periods))
+                {
+                    return (null, periods);
+                }
+
+                if (reckoning.Months is { } months && !AiChangeSnapshots.Same(was.Months, months))
+                {
+                    return Done(
+                        await Chronology.ChronologyCalendarEndpoints.SaveCoreAsync(
+                            db,
+                            universeId,
+                            new Chronology.ChronologyCalendarRequest([.. months.Select(month => new Chronology.ChronologyCalendarMonthRequest(month.Id, month.Name, month.Abbreviation, month.Days))]),
+                            cancellationToken),
+                        universeId);
+                }
+
+                return (universeId, null);
+
+            case TermValues term:
+                return work.Action == AiChangeAction.Create
+                    ? Made<ValidationTermResponse>(await ValidationTermEndpoints.CreateCoreAsync(db, universeId, new ValidationTermRequest(term.Kind, term.Name), cancellationToken), detail => detail.Id)
+                    : Done(await ValidationTermEndpoints.RenameCoreAsync(db, universeId, target!.Value, new ValidationTermRenameRequest(term.Name), cancellationToken), target);
+
             case LoreValues lore:
                 var entry = new EntityRequest(
                     lore.TypeId,
