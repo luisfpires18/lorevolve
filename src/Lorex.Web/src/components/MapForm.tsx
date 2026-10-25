@@ -273,6 +273,12 @@ export function MapForm(props: MapFormProps) {
                   ? 'This map has no pins, so nothing is at risk - choose either way.'
                   : `${pinCount} ${pinCount === 1 ? 'pin was' : 'pins were'} placed on the current picture. A new picture may put them somewhere else.`}
               </p>
+              {map?.calibration ? (
+                <p className="field__hint" data-testid="map-replace-scale-note">
+                  The scale was measured on the current picture and goes with it. Set it again on
+                  the new one before asking for distances.
+                </p>
+              ) : null}
               <label className="mapform__choice">
                 <input
                   type="radio"
