@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lorex.Api.Data.Migrations
 {
     [DbContext(typeof(LorexDbContext))]
-    [Migration("20261025114557_AddPlatformAdmin")]
+    [Migration("20261025141528_AddPlatformAdmin")]
     partial class AddPlatformAdmin
     {
         /// <inheritdoc />
@@ -269,6 +269,11 @@ namespace Lorex.Api.Data.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("PlatformRole")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AspNetUsers_SoleAdmin")
+                        .HasFilter("\"PlatformRole\" = 1");
 
                     b.HasIndex("PublicAuthorSlug")
                         .IsUnique();

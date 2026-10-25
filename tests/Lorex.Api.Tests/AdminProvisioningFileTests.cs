@@ -13,8 +13,9 @@ namespace Lorex.Api.Tests;
 
 /// <summary>
 /// The Admin role over a real SQLite file (#40), where each request has its own connection: the owner's existing account
-/// becomes Admin from <c>PlatformAdmin:OwnerUserId</c> when the server starts, again and again without harm, and two
-/// blocks of one account at the same moment apply once. Credentials are obviously synthetic.
+/// becomes Admin from <c>PlatformAdmin:OwnerUserId</c> when the server starts, again and again without harm; a restart
+/// with another account's id moves the role rather than adding a second Admin; and two blocks of one account at the same
+/// moment apply once. Credentials are obviously synthetic.
 /// </summary>
 public sealed class AdminProvisioningFileTests : IDisposable
 {
@@ -43,17 +44,60 @@ public sealed class AdminProvisioningFileTests : IDisposable
             Assert.Equal(HttpStatusCode.OK, (await owner.GetAsync("/api/admin/overview")).StatusCode);
 
             var bystander = await SignIn(host, "user-bystander");
+            Assert.False((await bystander.GetFromJsonAsync<AuthUserResponse>("/api/auth/me"))!.IsAdmin);
             Assert.Equal(HttpStatusCode.Forbidden, (await bystander.GetAsync("/api/admin/overview")).StatusCode);
 
-            using var scope = host.Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<LorexDbContext>();
-            Assert.Equal([ownerId], await db.Users.Where(user => user.PlatformRole == PlatformRole.Admin).Select(user => user.Id).ToListAsync());
+            Assert.Equal([ownerId], await AdminIds(host));
+        }
+    }
+
+    [Fact]
+    public async Task Restarting_with_another_account_s_id_moves_the_role_and_an_unknown_id_leaves_none()
+    {
+        Directory.CreateDirectory(_directory);
+        string firstId;
+        string secondId;
+        await using (var before = new FileHost(DataSource, ownerUserId: null))
+        {
+            firstId = (await Register(before, "user-first")).Id;
+            secondId = (await Register(before, "user-second")).Id;
         }
 
-        // A setting that names no account grants nothing, and the host still starts.
-        await using var unknown = new FileHost(DataSource, "user-bystander");
-        var stillMember = await SignIn(unknown, "user-bystander");
-        Assert.Equal(HttpStatusCode.Forbidden, (await stillMember.GetAsync("/api/admin/overview")).StatusCode);
+        await using (var host = new FileHost(DataSource, firstId))
+        {
+            Assert.Equal([firstId], await AdminIds(host));
+        }
+
+        await using (var host = new FileHost(DataSource, secondId))
+        {
+            Assert.Equal([secondId], await AdminIds(host));
+
+            var first = await SignIn(host, "user-first");
+            Assert.False((await first.GetFromJsonAsync<AuthUserResponse>("/api/auth/me"))!.IsAdmin);
+            Assert.Equal(HttpStatusCode.Forbidden, (await first.GetAsync("/api/admin/users")).StatusCode);
+            Assert.Equal(
+                HttpStatusCode.Forbidden,
+                (await first.PostAsJsonAsync($"/api/admin/users/{secondId}/block", new AdminActionRequest("Former owner."))).StatusCode);
+
+            var second = await SignIn(host, "user-second");
+            Assert.True((await second.GetFromJsonAsync<AuthUserResponse>("/api/auth/me"))!.IsAdmin);
+            Assert.Equal(HttpStatusCode.OK, (await second.GetAsync("/api/admin/users")).StatusCode);
+        }
+
+        // A setting that names no account - a typo, say - leaves no Admin, and the host still starts.
+        await using (var host = new FileHost(DataSource, "user-second"))
+        {
+            Assert.Empty(await AdminIds(host));
+            var second = await SignIn(host, "user-second");
+            Assert.Equal(HttpStatusCode.Forbidden, (await second.GetAsync("/api/admin/overview")).StatusCode);
+        }
+    }
+
+    private static async Task<List<string>> AdminIds(FileHost host)
+    {
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LorexDbContext>();
+        return await db.Users.Where(user => user.PlatformRole == PlatformRole.Admin).Select(user => user.Id).ToListAsync();
     }
 
     [Fact]

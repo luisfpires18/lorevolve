@@ -23,7 +23,9 @@ public sealed class PlatformAdminRequirement : IAuthorizationRequirement;
 
 /// <summary>
 /// Read from the database on every request rather than from a claim in the cookie, so a role taken away in the database
-/// is gone at the next request, never at the next sign-in. One indexed lookup by key.
+/// is gone at the next request, never at the next sign-in - including the previous owner's, the moment provisioning moves
+/// the role to another account. Exactly one row can be Admin (<see cref="PlatformAdminProvisioning"/>, ADR 0059). One
+/// indexed lookup by key.
 /// </summary>
 public sealed class PlatformAdminHandler(LorexDbContext db) : AuthorizationHandler<PlatformAdminRequirement>
 {

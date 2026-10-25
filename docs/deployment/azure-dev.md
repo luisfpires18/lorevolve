@@ -237,19 +237,22 @@ the MCP endpoint (Anthropic from `160.79.104.0/21`). Access restrictions on the 
 
 ## Provision the owner's Admin account (ADR 0059)
 
-LoreX Admin (`/admin`) is closed to everyone until the server names its Admin. Nothing in the app grants the role, and a
-username, email or display name is never matched: only the account's immutable id.
+LoreX Admin (`/admin`) is closed to everyone until the server names its Admin. There is only ever one Admin: the
+account this setting names. Nothing in the app grants the role, and a username, email or display name is never matched:
+only the account's immutable id.
 
 1. Sign in on DEV as the owner's existing account. In the same browser, open `https://<host>/api/auth/me` and copy `id`
    - that is the verified id of the account the session belongs to. Do not take an id from anywhere else.
 2. Set one app setting, never in a file: `PlatformAdmin__OwnerUserId=<that id>`. Saving it restarts the site.
-3. The log says `Platform Admin granted to account <id> from configuration.` (or nothing, if it already was).
-   `PlatformAdmin:OwnerUserId names no account` means the id is wrong: nothing was granted.
+3. The log says `Platform Admin granted to account <id> from configuration.` (or nothing, if it already was). If another
+   account was Admin, it also says it is a Member again. `PlatformAdmin:OwnerUserId names no account. No account is
+   Admin.` means the id is wrong: fix it and restart.
 4. Reload LoreX: the account menu offers LoreX Admin, and `/api/auth/me` says `"isAdmin": true`.
 
-Safe to repeat: every start re-applies it and changes nothing more. Removing the setting afterwards leaves the role where
-it is; taking the role away is a database change (`PlatformRole = 0` on that `AspNetUsers` row), effective at the next
-request. Locally, the same setting goes in user secrets (`dotnet user-secrets set PlatformAdmin:OwnerUserId <id>`).
+Keep the setting: every start re-applies it and changes nothing more. Changing it to another account's id moves the role
+there at the restart and makes the previous account a Member - never two Admins (the database refuses a second one).
+Removing it leaves the last configured account as the one Admin; taking the role away entirely is a database change
+(`PlatformRole = 0` on that `AspNetUsers` row), effective at the next request. Locally, the same setting goes in user secrets (`dotnet user-secrets set PlatformAdmin:OwnerUserId <id>`).
 
 ## Search indexing (ADR 0038)
 

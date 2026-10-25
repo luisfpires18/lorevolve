@@ -267,6 +267,11 @@ namespace Lorex.Api.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
+                    b.HasIndex("PlatformRole")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AspNetUsers_SoleAdmin")
+                        .HasFilter("\"PlatformRole\" = 1");
+
                     b.HasIndex("PublicAuthorSlug")
                         .IsUnique();
 

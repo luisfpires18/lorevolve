@@ -38,10 +38,26 @@ public sealed class AdminWorkspaceTests : IDisposable
         return account;
     }
 
+    /// <summary>What a start with <c>PlatformAdmin:OwnerUserId</c> set to <paramref name="id"/> does.</summary>
     private async Task<PlatformAdminProvisioning.ProvisionResult> Provision(string id)
     {
         using var scope = _api.Services.CreateScope();
-        return await PlatformAdminProvisioning.ProvisionAsync(scope.ServiceProvider.GetRequiredService<LorexDbContext>(), id, CancellationToken.None);
+        return (await PlatformAdminProvisioning.ProvisionAsync(scope.ServiceProvider.GetRequiredService<LorexDbContext>(), id, CancellationToken.None)).Result;
+    }
+
+    private Task<List<string>> AdminIds() =>
+        InDb(db => db.Users.Where(user => user.PlatformRole == PlatformRole.Admin).Select(user => user.Id).ToListAsync());
+
+    /// <summary>Every admin route and both actions, from <paramref name="client"/>, answer <paramref name="status"/>.</summary>
+    private static async Task AssertEveryAdminRoute(HttpClient client, string targetId, HttpStatusCode status)
+    {
+        foreach (var route in Routes(targetId))
+        {
+            Assert.Equal(status, (await client.GetAsync(route)).StatusCode);
+        }
+
+        Assert.Equal(status, (await Block(client, targetId)).StatusCode);
+        Assert.Equal(status, (await Unblock(client, targetId)).StatusCode);
     }
 
     private async Task<T> InDb<T>(Func<LorexDbContext, Task<T>> work)
@@ -68,6 +84,8 @@ public sealed class AdminWorkspaceTests : IDisposable
     [Fact]
     public async Task A_member_and_a_visitor_are_refused_every_admin_route()
     {
+        // While the configured owner is Admin, beside them.
+        var (owner, _) = await Admin();
         var (member, _) = await Account("member");
         var (_, otherId) = await Account("other");
         using var visitor = _api.CreateClient();
@@ -87,6 +105,8 @@ public sealed class AdminWorkspaceTests : IDisposable
         Assert.Equal(HttpStatusCode.Forbidden, (await member.PostAsync($"/api/admin/users/{otherId}/block", junk)).StatusCode);
 
         Assert.False((await member.GetFromJsonAsync<AuthUserResponse>("/api/auth/me"))!.IsAdmin);
+        Assert.True((await owner.GetFromJsonAsync<AuthUserResponse>("/api/auth/me"))!.IsAdmin);
+        Assert.Equal(HttpStatusCode.OK, (await owner.GetAsync("/api/admin/overview")).StatusCode);
         Assert.Null(await InDb(db => db.Users.Where(user => user.Id == otherId).Select(user => user.BlockedAt).FirstAsync()));
         Assert.Equal(0, await InDb(db => db.AdminAuditRecords.CountAsync()));
     }
@@ -107,7 +127,7 @@ public sealed class AdminWorkspaceTests : IDisposable
         // The existing session sees it at once: the role is read from the database, not from the cookie.
         Assert.Equal(HttpStatusCode.OK, (await owner.GetAsync("/api/admin/overview")).StatusCode);
         Assert.True((await owner.GetFromJsonAsync<AuthUserResponse>("/api/auth/me"))!.IsAdmin);
-        Assert.Equal(1, await InDb(db => db.Users.CountAsync(user => user.PlatformRole == PlatformRole.Admin)));
+        Assert.Equal([ownerId], await AdminIds());
     }
 
     [Fact]
@@ -221,15 +241,72 @@ public sealed class AdminWorkspaceTests : IDisposable
     }
 
     [Fact]
+    public async Task Changing_the_configured_id_moves_the_role_and_never_leaves_two_admins()
+    {
+        var (first, firstId) = await Admin("first-owner");
+        var (second, secondId) = await Account("second-owner");
+        var (_, memberId) = await Account("bystander");
+        Assert.Equal(HttpStatusCode.OK, (await first.GetAsync("/api/admin/overview")).StatusCode);
+
+        // The setting now names another existing account, as a restart with the changed setting does.
+        Assert.Equal(PlatformAdminProvisioning.ProvisionResult.Granted, await Provision(secondId));
+
+        Assert.Equal([secondId], await AdminIds());
+        Assert.False((await first.GetFromJsonAsync<AuthUserResponse>("/api/auth/me"))!.IsAdmin);
+        await AssertEveryAdminRoute(first, memberId, HttpStatusCode.Forbidden);
+
+        Assert.True((await second.GetFromJsonAsync<AuthUserResponse>("/api/auth/me"))!.IsAdmin);
+        Assert.Equal(HttpStatusCode.OK, (await second.GetAsync("/api/admin/overview")).StatusCode);
+
+        // And back again: still exactly one.
+        Assert.Equal(PlatformAdminProvisioning.ProvisionResult.Granted, await Provision(firstId));
+        Assert.Equal([firstId], await AdminIds());
+        Assert.Equal(HttpStatusCode.Forbidden, (await second.GetAsync("/api/admin/overview")).StatusCode);
+
+        // An id that names no account leaves no Admin at all, rather than keeping the last one.
+        Assert.Equal(PlatformAdminProvisioning.ProvisionResult.NoSuchAccount, await Provision("not-an-account"));
+        Assert.Empty(await AdminIds());
+        Assert.Equal(HttpStatusCode.Forbidden, (await first.GetAsync("/api/admin/overview")).StatusCode);
+    }
+
+    [Fact]
+    public async Task The_database_refuses_a_second_admin_whatever_writes_it()
+    {
+        var (_, ownerId) = await Admin();
+        var (other, otherId) = await Account("intruder");
+
+        await Assert.ThrowsAnyAsync<Exception>(() => InDb(db => db.Users.Where(user => user.Id == otherId)
+            .ExecuteUpdateAsync(set => set.SetProperty(user => user.PlatformRole, PlatformRole.Admin))));
+
+        Assert.Equal([ownerId], await AdminIds());
+        Assert.False((await other.GetFromJsonAsync<AuthUserResponse>("/api/auth/me"))!.IsAdmin);
+        await AssertEveryAdminRoute(other, ownerId, HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Only_the_configured_owner_can_block_or_unblock()
+    {
+        var (owner, _) = await Admin();
+        var (member, _) = await Account("would-be");
+        var (_, targetId) = await Account("target");
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await Block(member, targetId)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Block(owner, targetId)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await Unblock(member, targetId)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Unblock(owner, targetId)).StatusCode);
+
+        Assert.Equal(2, await InDb(db => db.AdminAuditRecords.CountAsync()));
+        Assert.Equal(0, await InDb(db => db.Users.CountAsync(user => user.BlockedAt != null)));
+    }
+
+    [Fact]
     public async Task No_admin_can_be_blocked_so_nobody_locks_out_themselves_or_the_last_admin()
     {
         var (admin, adminId) = await Admin();
-        var (_, secondAdminId) = await Admin("second-admin");
 
         var self = await Block(admin, adminId);
         Assert.Equal(HttpStatusCode.Conflict, self.StatusCode);
         Assert.Equal(AdminEndpoints.AdminTargetCode, await Code(self));
-        Assert.Equal(AdminEndpoints.AdminTargetCode, await Code(await Block(admin, secondAdminId)));
 
         Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/api/admin/overview")).StatusCode);
         Assert.Equal(0, await InDb(db => db.Users.CountAsync(user => user.BlockedAt != null)));

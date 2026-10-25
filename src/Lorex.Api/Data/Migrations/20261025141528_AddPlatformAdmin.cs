@@ -41,6 +41,13 @@ namespace Lorex.Api.Data.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_SoleAdmin",
+                table: "AspNetUsers",
+                column: "PlatformRole",
+                unique: true,
+                filter: "\"PlatformRole\" = 1");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AdminAuditRecords_TargetUserId_CreatedAt",
                 table: "AdminAuditRecords",
                 columns: new[] { "TargetUserId", "CreatedAt" });
@@ -51,6 +58,10 @@ namespace Lorex.Api.Data.Migrations
         {
             migrationBuilder.DropTable(
                 name: "AdminAuditRecords");
+
+            migrationBuilder.DropIndex(
+                name: "IX_AspNetUsers_SoleAdmin",
+                table: "AspNetUsers");
 
             migrationBuilder.DropColumn(
                 name: "BlockedAt",

@@ -29,7 +29,12 @@ public sealed class LorexUserConfiguration : IEntityTypeConfiguration<LorexUser>
         // account gets the same from the property's own initializer.
         builder.Property(user => user.StorageQuotaBytes).HasDefaultValue(Storage.StorageQuota.DefaultBytes);
 
-        // Every existing account is a Member (#40): the column's default, 0.
+        // Every existing account is a Member (#40): the column's default, 0. At most one account is Admin, held by the
+        // database whatever writes the row (ADR 0059): a unique index over the Admin rows alone.
         builder.Property(user => user.PlatformRole).HasConversion<int>();
+        builder.HasIndex(user => user.PlatformRole)
+            .HasDatabaseName("IX_AspNetUsers_SoleAdmin")
+            .IsUnique()
+            .HasFilter($"\"PlatformRole\" = {(int)Admin.PlatformRole.Admin}");
     }
 }

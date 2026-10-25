@@ -19,11 +19,19 @@ the assistant's question count is held in process memory only (ADR 0045); there 
 existing and new account a Member. It grants nothing in any universe: an Admin reads another account's universe exactly
 as any non-member does - not at all.
 
-**Admin is granted from the server's configuration, by immutable id.** `PlatformAdmin:OwnerUserId`
-(`PlatformAdmin__OwnerUserId`) names one account id; a hosted service, after the schema, makes that account Admin with
-one conditional update. Safe to repeat; an id that names no account grants nothing and logs a warning; it never demotes.
-No username, email or display name is ever matched, and no route grants, changes or removes the role. Revoking it is a
-database change by the owner, and it bites at the next request.
+**One Admin: the account the server's configuration names, by immutable id.** `PlatformAdmin:OwnerUserId`
+(`PlatformAdmin__OwnerUserId`) names one account id. A hosted service, after the schema, in one transaction demotes
+every other Admin to Member and then makes that account Admin. So changing the setting from one account to another
+(which restarts the App Service) moves the role instead of adding a second holder, and an id that names no account
+leaves no Admin at all and logs a warning. Safe to repeat. An empty setting changes nothing, so the last configured
+owner stays the one Admin. No username, email or display name is ever matched, and no route grants, changes or removes
+the role.
+
+**The database holds the line too.** A filtered unique index, `IX_AspNetUsers_SoleAdmin` on `PlatformRole` where it
+is Admin, refuses a second Admin row whatever writes it - a hand edit, a bug, a race. Revoking the role is a database
+change (`PlatformRole = 0`), effective at the next request; moving it is changing the setting and restarting. A setting
+changed without a restart (a local `appsettings` reload) takes effect at the next start; until then the previous owner
+remains the only Admin.
 
 **The role is read live.** `/api/admin/*` requires the `PlatformAdmin` policy, whose handler reads the role and the
 block from the database on every request, before the body is bound. `/api/auth/me` says `isAdmin` only so the client
@@ -74,5 +82,8 @@ email, and no profile photo - ADR 0021 keeps a photo out of anyone else's view, 
 - One extra indexed read per signed-in request. The tests that count a read's queries ignore it by its tag.
 - A block is immediate for sessions and MCP; a blocked author's public universes stay public. Whether a block should also
   withdraw published work is an owner decision, not taken here.
+- Review correction (2026-10-25): provisioning first only granted, so moving the setting from one account to another
+  left both Admin. It now demotes every other Admin in the same transaction, and the unique index makes two Admins
+  impossible.
 - Role assignment, other account actions, impersonation, deletion, billing and a tracing product are out of scope.
 - Metrics that are not recorded need instrumentation first (#40 follow-up); nothing here estimates them.

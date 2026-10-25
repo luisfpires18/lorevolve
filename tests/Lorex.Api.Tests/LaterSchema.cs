@@ -253,11 +253,15 @@ internal static class LaterSchema
         "IX_KnowledgeRecords_SceneId",
     ];
 
-    /// <summary>The Admin workspace (AddPlatformAdmin, 2026-10-25, issue 40, ADR 0059): a table, its key's index and one index.</summary>
+    /// <summary>
+    /// The Admin workspace (AddPlatformAdmin, 2026-10-25, issue 40, ADR 0059): a table, its key's index, one index, and the
+    /// one-Admin index on <c>AspNetUsers</c>.
+    /// </summary>
     private static readonly string[] Admin =
     [
         "sqlite_autoindex_AdminAuditRecords_1",
         "IX_AdminAuditRecords_TargetUserId_CreatedAt",
+        "IX_AspNetUsers_SoleAdmin",
     ];
 
     /// <summary>Whether an index or trigger name predates semantic type groups.</summary>

@@ -91,9 +91,10 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     The JPEG/PNG/WebP-only decoding stays (it builds on 3.x), so a TIFF or BMP still never reaches a decoder. Release
     build green; API image, artwork, profile, backup and restore tests 338 passed.
 - **Issue #40 - Platform Admin workspace** (`feat/admin-workspace` off `origin/dev` at `fb3304b`; committed locally, not
-  pushed, not merged). Migration `AddPlatformAdmin` (two `AspNetUsers` columns, one table). ADR 0059 (new).
-  - `PlatformRole` Member/Admin, independent of universe roles; Admin only from `PlatformAdmin:OwnerUserId` (immutable id,
-    repeatable, never demotes). `/api/admin/*` re-reads role and block every request. No role UI, no self-elevation.
+  pushed, not merged). Migration `AddPlatformAdmin` (two `AspNetUsers` columns, a one-Admin unique index, one table). ADR 0059 (new).
+  - `PlatformRole` Member/Admin, independent of universe roles. One Admin only: `PlatformAdmin:OwnerUserId` (immutable id)
+    at startup demotes every other Admin and grants that account, one transaction; an unknown id leaves none; a unique
+    index refuses a second Admin row. `/api/admin/*` and `me` re-read the role every request. No role UI or route.
   - Every signed-in request checks the account (exists, not blocked, same security stamp). Block (Members only, reason
     required): stamp rotated, MCP connections revoked, audit row, one transaction; sign-in refused (403
     `account_blocked`); unblock revives neither sessions nor connections. Admins cannot be blocked (no self/last-admin
@@ -104,8 +105,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     (`docs/deployment/azure-dev.md`). Until then nobody is Admin.
   - Open: a blocked author's public universes stay public (owner decision); account creation date, sign-in time, request
     telemetry and persisted AI usage are not recorded, so their metrics wait for instrumentation.
-  - Tests: API 1895/1895 (1 skipped; `AdminWorkspaceTests` 12, `AdminProvisioningFileTests` 2; migration tests' later-schema
-    lists extended). Playwright `admin-workspace` 5/5, neighbours 49/49, fresh DB. Full suite delegated to GitHub Actions.
+  - Review fix: provisioning only granted, so a moved setting left two Admins. Now demotes others + unique index.
+  - Tests: API 1899/1899 (1 skipped; `AdminWorkspaceTests` 15, `AdminProvisioningFileTests` 3; migration tests' later-schema
+    lists extended). Playwright `admin-workspace` 6/6 (serial), neighbours 49/49, fresh DB. Full suite delegated to CI.
 - **Fix: Deploy DEV E2E shard 6** (`fix/trash-e2e-row` off `dev` at `52a913c`; merged into `dev`, pushed). Runs
   40137578174, 40180740487 and 40184813329 failed on one test, `trash-permanent-delete` "names isolated", on all three
   attempts: its 14-context size loop ran out of Playwright's default 30 s (~24 s locally). `test.setTimeout(120_000)`, as

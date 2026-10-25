@@ -58,6 +58,9 @@ async function openUser(admin: Page, username: string) {
 }
 
 test.describe('LoreX Admin', () => {
+  // Each test makes its own account the one Admin, which takes the role from any other: one at a time.
+  test.describe.configure({ mode: 'serial' })
+
   test('a member is offered no Admin entry and is refused at the door and by the API', async ({
     page,
   }) => {
@@ -154,6 +157,28 @@ test.describe('LoreX Admin', () => {
     await signIn(member, memberName)
     // Back to where the ended session was headed.
     await member.waitForURL('/app/profile')
+  })
+
+  test('making another account the owner takes the entry and the API from the first', async ({
+    browser,
+  }) => {
+    const { page: first } = await newAdmin(browser)
+    await openAccountMenu(first)
+    await expect(first.getByTestId('account-menu-admin')).toBeVisible()
+
+    const { page: second } = await newAdmin(browser)
+
+    await first.reload()
+    await openAccountMenu(first)
+    await expect(first.getByTestId('account-menu-workspace')).toBeVisible()
+    await expect(first.getByTestId('account-menu-admin')).toHaveCount(0)
+    expect((await first.request.get('/api/admin/overview')).status()).toBe(403)
+    await first.goto('/admin')
+    await first.waitForURL('/app')
+
+    await openAccountMenu(second)
+    await expect(second.getByTestId('account-menu-admin')).toBeVisible()
+    expect((await second.request.get('/api/admin/overview')).status()).toBe(200)
   })
 
   test('an admin account offers no block, its own included', async ({ browser }) => {

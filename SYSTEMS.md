@@ -55,10 +55,10 @@ Repository index. Paths and one-line responsibilities only.
 | `Features/Auth/AuthEndpoints.cs` | Register, login, logout and current-user endpoints. Login checks the password, then the block (403 `account_blocked`); `me` carries `isAdmin` (ADR 0059). |
 | `Features/Auth/AuthContracts.cs` | Request and response records for the auth surface. |
 | `Features/Auth/LorexUser.cs` | Application user on top of `IdentityUser`; its public name and public author address (ADR 0036, 0037); its storage allowance, `StorageQuotaBytes` (1 GiB default, ADR 0042); `PlatformRole` and `BlockedAt` (ADR 0059). |
-| `Features/Auth/LorexUserConfiguration.cs` | Unique index on the normalized email. |
+| `Features/Auth/LorexUserConfiguration.cs` | Unique index on the normalized email; `PlatformRole` as int and `IX_AspNetUsers_SoleAdmin`, at most one Admin row (ADR 0059). |
 | `Features/Admin/AdminSetup.cs` | ADR 0059: `AdminLimits`, the `PlatformAdmin` policy and its handler (role and block read from the database every request), registration. |
 | `Features/Admin/AdminAuditRecord.cs` | `PlatformRole`, `AdminAction`, `AdminAuditRecord` (actor, target, action, reason, UTC time; plain ids, append-only) and its schema. |
-| `Features/Admin/PlatformAdminProvisioning.cs` | At startup, after the schema: `PlatformAdmin:OwnerUserId` made Admin by one conditional update; repeatable, never demotes, an unknown id grants nothing. |
+| `Features/Admin/PlatformAdminProvisioning.cs` | At startup, after the schema: every other Admin demoted, then `PlatformAdmin:OwnerUserId` made Admin, one transaction; repeatable; an unknown id leaves no Admin. The one-Admin unique index (`IX_AspNetUsers_SoleAdmin`) is in `LorexUserConfiguration`. |
 | `Features/Admin/AdminEndpoints.cs` + `AdminContracts.cs` | `/api/admin`: overview (counts and the six-month universes trend, aggregates only), users (search, 24 a page), one account's details and audit history, block (Members only; stamp rotated, MCP connections revoked, audited, one transaction) and unblock. |
 | `Features/Universes/Universe.cs` | Universe entity, owned by one user (`OwnerId`, the one source of ownership). |
 | `Features/Universes/UniverseMembership.cs` | `UniverseRole` (Owner derived, never stored; Viewer, Reviewer, Editor stored), `UniverseMembership` (non-owner collaborator, key universe + user) and its schema: role check constraint, both FKs cascade, `UserId` index. No route writes one yet. ADR 0041. |
@@ -401,8 +401,8 @@ Repository index. Paths and one-line responsibilities only.
 | `Lorex.Api.Tests/HealthEndpointTests.cs` | Backend test-infrastructure proof. |
 | `Lorex.Api.Tests/HostStartupTests.cs` | Startup on a real file: migrations before queries, backfill, forwarded scheme. |
 | `Lorex.Api.Tests/AuthEndpointTests.cs` | Registration, sign-in, session and logout. |
-| `Lorex.Api.Tests/AdminWorkspaceTests.cs` | ADR 0059: every admin route refused to a Member and a visitor, provisioning by id only, a role removed in the database refused at once, block ending sessions and MCP connections and refusing sign-in, unblock reviving neither, audit records, no Admin blockable, reason/404/state guards, no universe access, search and paging, exact overview counts. |
-| `Lorex.Api.Tests/AdminProvisioningFileTests.cs` | Over a real file: `PlatformAdmin:OwnerUserId` granting at startup across restarts, an unknown id granting nothing, two racing blocks applying once. |
+| `Lorex.Api.Tests/AdminWorkspaceTests.cs` | ADR 0059: every admin route refused to a Member and a visitor, provisioning by id only, a moved setting never leaving two Admins, the database refusing a second Admin, only the owner blocking, a role removed in the database refused at once, block ending sessions and MCP connections and refusing sign-in, unblock reviving neither, audit records, no Admin blockable, reason/404/state guards, no universe access, search and paging, exact overview counts. |
+| `Lorex.Api.Tests/AdminProvisioningFileTests.cs` | Over a real file: `PlatformAdmin:OwnerUserId` granting at startup across restarts, a restart with another id moving the role, an unknown id leaving none, two racing blocks applying once. |
 | `Lorex.Api.Tests/UniverseEndpointTests.cs` | Universe CRUD and the ownership invariant. |
 | `Lorex.Api.Tests/CollaborationTestClient.cs` | `SharedWorld`: an owner, Editor, Reviewer, Viewer (memberships written to the database) and outsider around one universe holding every family, live and trashed. |
 | `Lorex.Api.Tests/VersionTestClient.cs` | `CurrentVersion`, `RestoreEntryVersion` and `PutVersionedAsync`: an entry, story or scene save naming the version its editor would have read (ADR 0043). |
@@ -597,7 +597,7 @@ Repository index. Paths and one-line responsibilities only.
 | `Lorex.E2E/specs/export.spec.ts` | One journey: the click produces a real archive on disk, named and readable. |
 | `Lorex.E2E/specs/restore.spec.ts` | A real exported backup checked, previewed, named and restored as a new universe that opens with its article, picture, prose, plot, idea, Trash and search; the same file again beside an untouched original; refusals that create nothing; the flow on a phone, dark, by keyboard, with a right-to-left name. |
 | `Lorex.E2E/specs/support/account.ts` | Opening the account menu and signing out through it, wherever it is on screen. Not a spec. |
-| `Lorex.E2E/specs/support/admin.ts` | `grantAdmin`: an account made Admin in the run's database by id, as the owner does outside the app (`node:sqlite`). Not a spec. |
+| `Lorex.E2E/specs/support/admin.ts` | `grantAdmin`: an account made the one Admin in the run's database by id, every other Admin demoted, as a start with the setting does (`node:sqlite`). Not a spec. |
 | `Lorex.E2E/specs/support/rowMenu.ts` | Opening the ⋯ menu that holds a Story workspace action - a scene's, a chapter's, an arc's, a beat's, the story's or the open manuscript's - and pressing it. Not a spec. |
 | `Lorex.E2E/specs/support/png.ts` | Builds a real PNG, pixel by pixel, with an optional EXIF orientation. Not a spec. |
 | `Lorex.E2E/specs/support/pixels.ts` | Reads colours back out of a displayed picture, and checks a crop square sits wholly on it. Not a spec. |
@@ -611,7 +611,7 @@ Repository index. Paths and one-line responsibilities only.
 | `Lorex.E2E/specs/profile.spec.ts` | The account screen: reached from a universe, what it prints, the guard, the photo added, framed, reframed, replaced and removed, the two stages of a save, and the circle on a phone. |
 | `Lorex.E2E/specs/account-usage.spec.ts` | The Profile's Usage section: one section, Storage then AI Assistant; one item failing leaves the other; both used up; light and dark on desktop and a phone; for the Assistant a fresh allowance, a question through the drawer counted without reloading the app, a refused question counted, the used-up state with its time, loading, a failed read and Try again, a phone. |
 | `Lorex.E2E/specs/account-storage.spec.ts` | Storage in the Profile's Usage section: amount, percentage and meter, an upload and its removal, an Editor's upload on the owner's Profile only, a phone. |
-| `Lorex.E2E/specs/admin-workspace.spec.ts` | LoreX Admin: no entry and refused for a Member (route and API), Main/Users/Tracing for an Admin, block signing a member out and refusing sign-in, unblock, no block on an Admin, a phone. |
+| `Lorex.E2E/specs/admin-workspace.spec.ts` | LoreX Admin: no entry and refused for a Member (route and API), Main/Users/Tracing for an Admin, block signing a member out and refusing sign-in, unblock, a new owner taking the entry and API from the first, no block on an Admin, a phone. Serial: each test moves the one role. |
 | `Lorex.E2E/specs/account-menu.spec.ts` | The one account menu: on the global rail and not in a universe's sidebar, the same in the universes header, the avatar agreeing everywhere, the keyboard, and a phone. |
 | `Lorex.E2E/specs/pwa.spec.ts` | Manifest, icons (and the maskable safe zone) and metadata, and what the service worker is never allowed to cache. |
 | `Lorex.E2E/specs/launch.spec.ts` | 043.5: an installed launch on black with the logo, revealing the portal and the signed-in workspace past its pending plate; no replay on navigation or reload; nothing in a browser tab; a fade under reduced motion. |
