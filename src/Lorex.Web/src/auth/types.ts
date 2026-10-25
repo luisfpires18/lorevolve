@@ -2,6 +2,8 @@ export interface AuthUser {
   id: string
   username: string
   email: string
+  /** Only whether to offer the Admin workspace (#40). Every admin route checks the role again on the server. */
+  isAdmin: boolean
 }
 
 export interface AuthContextValue {

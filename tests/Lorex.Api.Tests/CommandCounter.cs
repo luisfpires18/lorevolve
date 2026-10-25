@@ -66,7 +66,10 @@ internal sealed class CommandCounter : IObserver<DiagnosticListener>, IObserver<
 
     public void OnNext(KeyValuePair<string, object?> value)
     {
-        if (value.Key != RelationalEventId.CommandExecuted.Name || value.Value is not CommandExecutedEventData executed)
+        // The per-request session check (#40) runs before every signed-in request, whatever it reads; it is not the read
+        // being measured.
+        if (value.Key != RelationalEventId.CommandExecuted.Name || value.Value is not CommandExecutedEventData executed
+            || executed.Command.CommandText.Contains(Lorex.Api.Features.Auth.AccountSessions.QueryTag, StringComparison.Ordinal))
         {
             return;
         }

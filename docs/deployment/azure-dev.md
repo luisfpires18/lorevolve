@@ -235,6 +235,22 @@ Check it after a deploy:
 The site must be reachable from the internet for Claude and ChatGPT: their servers fetch the discovery documents and call
 the MCP endpoint (Anthropic from `160.79.104.0/21`). Access restrictions on the App Service would break that.
 
+## Provision the owner's Admin account (ADR 0059)
+
+LoreX Admin (`/admin`) is closed to everyone until the server names its Admin. Nothing in the app grants the role, and a
+username, email or display name is never matched: only the account's immutable id.
+
+1. Sign in on DEV as the owner's existing account. In the same browser, open `https://<host>/api/auth/me` and copy `id`
+   - that is the verified id of the account the session belongs to. Do not take an id from anywhere else.
+2. Set one app setting, never in a file: `PlatformAdmin__OwnerUserId=<that id>`. Saving it restarts the site.
+3. The log says `Platform Admin granted to account <id> from configuration.` (or nothing, if it already was).
+   `PlatformAdmin:OwnerUserId names no account` means the id is wrong: nothing was granted.
+4. Reload LoreX: the account menu offers LoreX Admin, and `/api/auth/me` says `"isAdmin": true`.
+
+Safe to repeat: every start re-applies it and changes nothing more. Removing the setting afterwards leaves the role where
+it is; taking the role away is a database change (`PlatformRole = 0` on that `AspNetUsers` row), effective at the next
+request. Locally, the same setting goes in user secrets (`dotnet user-secrets set PlatformAdmin:OwnerUserId <id>`).
+
 ## Search indexing (ADR 0038)
 
 DEV sets no `PublicSite__Origin` and no `PublicSite__AllowIndexing`, on purpose: `robots.txt` answers `Disallow: /`,

@@ -16,6 +16,9 @@ public static class AuthEndpoints
     /// </summary>
     private const string InvalidCredentials = "That username or email and password combination is not correct.";
 
+    /// <summary>A correct password for a blocked account (#40).</summary>
+    public const string BlockedCode = "account_blocked";
+
     private static readonly EmailAddressAttribute EmailValidator = new();
 
     /// <summary>
@@ -154,8 +157,9 @@ public static class AuthEndpoints
             return InvalidCredentialsProblem();
         }
 
-        var signIn = await signInManager.PasswordSignInAsync(
-            user, password, isPersistent: true, lockoutOnFailure: true);
+        // The password first, then the block (#40): only someone who knows the password learns the account is blocked,
+        // and a blocked account never gets a session.
+        var signIn = await signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
 
         if (signIn.IsLockedOut)
         {
@@ -170,6 +174,16 @@ public static class AuthEndpoints
             return InvalidCredentialsProblem();
         }
 
+        if (user.BlockedAt is not null)
+        {
+            return Results.Problem(
+                title: "Account blocked",
+                detail: "This account has been blocked by a LoreX administrator.",
+                statusCode: StatusCodes.Status403Forbidden,
+                extensions: new Dictionary<string, object?> { ["code"] = BlockedCode });
+        }
+
+        await signInManager.SignInAsync(user, isPersistent: true);
         return Results.Ok(ToResponse(user));
     }
 
@@ -194,7 +208,7 @@ public static class AuthEndpoints
             statusCode: StatusCodes.Status401Unauthorized);
 
     private static AuthUserResponse ToResponse(LorexUser user) =>
-        new(user.Id, user.UserName ?? string.Empty, user.Email ?? string.Empty);
+        new(user.Id, user.UserName ?? string.Empty, user.Email ?? string.Empty, user.PlatformRole == Admin.PlatformRole.Admin);
 
     private static Dictionary<string, string[]> ToValidationErrors(IdentityResult result)
     {

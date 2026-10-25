@@ -29,4 +29,16 @@ public sealed class LorexUser : IdentityUser
     /// its own with - only something trusted on the server, such as billing one day, may raise it.
     /// </summary>
     public long StorageQuotaBytes { get; set; } = Storage.StorageQuota.DefaultBytes;
+
+    /// <summary>
+    /// The account's role on LoreX itself (#40), never a universe's: Member for every account, Admin only for the one
+    /// the server's configuration names (<see cref="Admin.PlatformAdminProvisioning"/>). No route changes it.
+    /// </summary>
+    public Admin.PlatformRole PlatformRole { get; set; }
+
+    /// <summary>
+    /// UTC. When an Admin blocked this account; null while it may sign in. Checked on sign-in, on every request a session
+    /// makes and on every MCP request (#40). The reason lives in the audit record, not here.
+    /// </summary>
+    public DateTime? BlockedAt { get; set; }
 }

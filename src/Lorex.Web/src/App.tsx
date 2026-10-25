@@ -2,7 +2,7 @@ import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Route, RouterProvider, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthProvider'
 import { ConfirmHost } from './components/ConfirmDialog'
-import { RequireAuth, RequireGuest } from './auth/routes'
+import { RequireAdmin, RequireAuth, RequireGuest } from './auth/routes'
 import { PublicLayout } from './components/PublicLayout'
 import { RoleGate } from './components/RoleGate'
 import { RouteFocus, SkipLink } from './components/SkipLink'
@@ -24,6 +24,7 @@ import UniverseWorkspace from './pages/UniverseWorkspace'
  * `EntityPage` is why this is worth doing: it carries the rich-text editor, which is the largest
  * dependency Lorex has and is needed on exactly one screen.
  */
+const AdminWorkspace = lazy(() => import('./pages/AdminWorkspace'))
 const AiChangePage = lazy(() => import('./pages/AiChangePage'))
 const AiChangesPage = lazy(() => import('./pages/AiChangesPage'))
 const CanonPage = lazy(() => import('./pages/CanonPage'))
@@ -317,6 +318,12 @@ function Root() {
                 )}
               />
             </Route>
+          </Route>
+
+          {/* LoreX Admin (#40): the service's own workspace, for an Admin only. The guard is the door, never the lock -
+              every admin request is refused by the server for anyone else. */}
+          <Route element={<RequireAdmin />}>
+            <Route path="/admin/*" element={asScreen('admin', <AdminWorkspace />)} />
           </Route>
 
           {/* An address nobody holds: inside the workspace, the universes; anywhere else, Lorex's home (031). */}

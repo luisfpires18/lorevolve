@@ -17300,3 +17300,259 @@ details.reviewsection > .reviewsection__list {
   font-size: var(--text-sm);
   color: var(--muted);
 }
+
+/* ---------- LoreX Admin (#40) ----------
+
+   The service's own workspace, in My workspace's frame. Plain ruled cards on raised paper: figures, accounts and an
+   account's facts. A figure LoreX does not record is set in the muted ink and says so in words. */
+
+.adminsection {
+  margin-top: var(--space-7);
+}
+
+.adminstats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+}
+
+.adminstat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  box-shadow: var(--shadow-1);
+}
+
+.adminstat__label {
+  font-size: var(--text-ui);
+  color: var(--muted);
+}
+
+.adminstat__value {
+  font-family: var(--display);
+  font-size: 1.75rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.adminstat__value--none,
+.adminfact--none {
+  font-family: inherit;
+  font-size: var(--text-ui);
+  font-style: italic;
+  color: var(--muted);
+}
+
+.adminstat__source {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.admintrend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 34rem;
+}
+
+.admintrend__row {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-ui);
+}
+
+.admintrend__month {
+  color: var(--muted);
+}
+
+.admintrend__bar {
+  display: block;
+  height: 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  overflow: hidden;
+}
+
+.admintrend__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.admintrend__count {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.adminusers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+}
+
+.adminuser {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+  height: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  box-shadow: var(--shadow-1);
+}
+
+.adminuser__avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+}
+
+.adminuser__avatar--blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-size: 1.25rem;
+  color: var(--muted);
+}
+
+.adminprofile .adminuser__avatar {
+  flex: none;
+  width: 4.5rem;
+  height: 4.5rem;
+  font-size: 1.75rem;
+}
+
+.adminuser__text {
+  min-width: 0;
+  width: 100%;
+}
+
+.adminuser__name {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.adminuser__public {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-ui);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.adminuser__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+}
+
+.adminuser__open {
+  grid-column: 1 / -1;
+  justify-self: start;
+  align-self: end;
+}
+
+.admintag {
+  padding: 0.05rem var(--space-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.admintag--blocked {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.adminback {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-ui);
+}
+
+.adminback a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.adminprofile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+  min-width: 0;
+}
+
+.adminprofile .home__title {
+  overflow-wrap: anywhere;
+}
+
+.admindetail {
+  max-width: 34rem;
+}
+
+.admindetail code {
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.adminblock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 34rem;
+}
+
+.adminblock .field {
+  width: 100%;
+}
+
+.adminhistory {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 34rem;
+}
+
+.adminhistory__item {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.adminhistory__line {
+  margin: 0;
+  font-size: var(--text-ui);
+}
+
+.adminhistory__reason {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}

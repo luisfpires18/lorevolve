@@ -33,3 +33,20 @@ export function RequireGuest() {
   if (user) return <Navigate to={returnPath(location.state)} replace />
   return <Outlet />
 }
+
+/**
+ * The Admin workspace's door (#40): a signed-in account the server called an Admin, else back to My workspace. Only the
+ * entry is hidden here; every admin request is refused by the server for anyone else, whatever this guard decides.
+ */
+export function RequireAdmin() {
+  const { user, isLoading } = useAuth()
+  const location = useLocation()
+
+  if (isLoading) return <SessionPending />
+  if (!user)
+    return (
+      <Navigate to="/login" state={{ from: `${location.pathname}${location.search}` }} replace />
+    )
+  if (!user.isAdmin) return <Navigate to="/app" replace />
+  return <Outlet />
+}

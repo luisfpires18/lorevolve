@@ -43,6 +43,9 @@ public static class AuthSetup
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return Task.CompletedTask;
             };
+            // Every request: a blocked account, or a session ended by one, is signed out at once (#40).
+            options.Events.OnValidatePrincipal = AccountSessions.ValidateAsync;
+
             options.Events.OnRedirectToAccessDenied = context =>
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;

@@ -1,4 +1,5 @@
 using Lorex.Api.Data;
+using Lorex.Api.Features.Admin;
 using Lorex.Api.Features.AiChanges;
 using Lorex.Api.Features.Assistant;
 using Lorex.Api.Features.Auth;
@@ -39,6 +40,7 @@ builder.Services.AddLorexForwardedHeaders(builder.Configuration);
 builder.Services.AddLorexDataProtection(builder.Configuration, builder.Environment);
 builder.Services.AddLorexDatabase(builder.Configuration, builder.Environment);
 builder.Services.AddLorexAuth(builder.Environment);
+builder.Services.AddLorexAdmin();
 builder.Services.AddCanonIntegrity();
 builder.Services.AddLoreSearch();
 builder.Services.AddHostedService<Lorex.Api.Features.Publishing.PublicAuthorBackfill>();
@@ -92,6 +94,7 @@ app.UseLorexMcp();
 
 app.MapHealthEndpoints();
 app.MapAuthEndpoints();
+app.MapAdminEndpoints();
 app.MapProfileImageEndpoints();
 app.MapAccountStorageEndpoints();
 app.MapUniverseEndpoints();

@@ -194,6 +194,8 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<AiChangeOperation> AiChangeOperations => Set<AiChangeOperation>();
 
+    public DbSet<Features.Admin.AdminAuditRecord> AdminAuditRecords => Set<Features.Admin.AdminAuditRecord>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

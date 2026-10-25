@@ -28,5 +28,8 @@ public sealed class LorexUserConfiguration : IEntityTypeConfiguration<LorexUser>
         // The column's default is what every account that existed before storage quotas receives (ADR 0042). A new
         // account gets the same from the property's own initializer.
         builder.Property(user => user.StorageQuotaBytes).HasDefaultValue(Storage.StorageQuota.DefaultBytes);
+
+        // Every existing account is a Member (#40): the column's default, 0.
+        builder.Property(user => user.PlatformRole).HasConversion<int>();
     }
 }

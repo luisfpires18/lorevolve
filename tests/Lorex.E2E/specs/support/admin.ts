@@ -1,0 +1,31 @@
+import { isAbsolute, resolve } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
+import { fileURLToPath } from 'node:url'
+import type { Page } from '@playwright/test'
+
+/**
+ * Makes an account a LoreX Admin (#40) the way the server's owner does: outside the app, by its immutable id. The API
+ * has no route that grants the role, by design, so a spec writes it straight into the database the run's API uses -
+ * `LOREX_E2E_DB` (relative to `src/Lorex.Api`, as the API reads it), else the development database. The role is read
+ * from the database on every admin request, so the page's existing session sees it at its next request.
+ *
+ * Not a spec.
+ */
+export function grantAdmin(userId: string) {
+  const apiRoot = fileURLToPath(new URL('../../../../src/Lorex.Api/', import.meta.url))
+  const configured = process.env.LOREX_E2E_DB ?? 'App_Data/lorex.dev.db'
+  const db = new DatabaseSync(isAbsolute(configured) ? configured : resolve(apiRoot, configured))
+  try {
+    db.exec('PRAGMA busy_timeout = 10000')
+    const changed = db.prepare('UPDATE AspNetUsers SET PlatformRole = 1 WHERE Id = ?').run(userId)
+    if (Number(changed.changes) !== 1) throw new Error(`No account ${userId} to make Admin.`)
+  } finally {
+    db.close()
+  }
+}
+
+/** The signed-in account's id, as the API says it. */
+export async function currentUserId(page: Page) {
+  const response = await page.request.get('/api/auth/me')
+  return ((await response.json()) as { id: string }).id
+}

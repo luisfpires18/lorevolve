@@ -176,6 +176,7 @@ public static class McpEndpoints
                 row.ClientId,
                 row.LastUsedAt,
                 row.CanPropose,
+                Blocked = row.User!.BlockedAt != null,
                 UniverseName = row.Universe!.Name,
                 ClientName = db.Set<OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication>()
                     .Where(application => application.ClientId == row.ClientId)
@@ -188,6 +189,12 @@ public static class McpEndpoints
             || connection.ClientId != principal.GetClaim(Claims.ClientId))
         {
             return Challenge(site, universeId, "This connection was disconnected.");
+        }
+
+        // Blocking revokes the account's connections in the same transaction (#40); this holds even if one were missed.
+        if (connection.Blocked)
+        {
+            return Challenge(site, universeId, "This account is blocked.");
         }
 
         if (await UniverseAccess.RoleAsync(db, universeId, connection.UserId, cancellationToken) is not { } role

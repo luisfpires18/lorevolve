@@ -63,8 +63,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0056 | An entry may carry one private author note, and the owner alone may read it (#23) | [0056-private-author-notes.md](0056-private-author-notes.md) |
 | 0057 | A knowledge record is an author's statement that one actor knows one thing from one scene, and nothing is inferred (#15) | [0057-knowledge-records.md](0057-knowledge-records.md) |
 | 0058 | A manuscript mention is one plain-text token, resolved by id, shown as stored while writing and as a name everywhere else (#31) | [0058-manuscript-mentions.md](0058-manuscript-mentions.md) |
+| 0059 | An account has a platform role; an Admin may block a Member, and reads only what LoreX records (#40) | [0059-platform-admin-workspace.md](0059-platform-admin-workspace.md) |
 
-All accepted. Next number: `0059`.
+All accepted. Next number: `0060`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

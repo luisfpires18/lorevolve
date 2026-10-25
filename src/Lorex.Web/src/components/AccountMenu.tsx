@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BookOpen, LogOut, StickyNote, Telescope, UserRound } from 'lucide-react'
+import { BookOpen, LogOut, ShieldCheck, StickyNote, Telescope, UserRound } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
 import { confirmLeaving } from '../lib/leaveGuard'
 import { useProfileImage } from '../profile/useProfileImage'
@@ -110,6 +110,13 @@ export function AccountMenu({
             <ActionIcon icon={Telescope} />
             Explore
           </Link>
+          {/* Only for an Admin (#40). Hiding it is courtesy; the server refuses the Admin API to anyone else. */}
+          {user.isAdmin ? (
+            <Link className="actionmenu__item" to="/admin" data-testid="account-menu-admin">
+              <ActionIcon icon={ShieldCheck} />
+              LoreX Admin
+            </Link>
+          ) : null}
         </div>
 
         <Link className="actionmenu__item" to="/app/profile" data-testid="account-menu-profile">

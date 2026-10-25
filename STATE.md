@@ -90,6 +90,22 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     shards and Package). Back to 3.1.12 by owner decision, to settle the key later; its five advisories are open again.
     The JPEG/PNG/WebP-only decoding stays (it builds on 3.x), so a TIFF or BMP still never reaches a decoder. Release
     build green; API image, artwork, profile, backup and restore tests 338 passed.
+- **Issue #40 - Platform Admin workspace** (`feat/admin-workspace` off `origin/dev` at `fb3304b`; committed locally, not
+  pushed, not merged). Migration `AddPlatformAdmin` (two `AspNetUsers` columns, one table). ADR 0059 (new).
+  - `PlatformRole` Member/Admin, independent of universe roles; Admin only from `PlatformAdmin:OwnerUserId` (immutable id,
+    repeatable, never demotes). `/api/admin/*` re-reads role and block every request. No role UI, no self-elevation.
+  - Every signed-in request checks the account (exists, not blocked, same security stamp). Block (Members only, reason
+    required): stamp rotated, MCP connections revoked, audit row, one transaction; sign-in refused (403
+    `account_blocked`); unblock revives neither sessions nor connections. Admins cannot be blocked (no self/last-admin
+    lockout); racing actions apply once.
+  - `/admin`: Main (counts recorded today, six-month universes trend, "Not tracked yet" for the rest), Users (cards,
+    search, 24/page, details, block/unblock, audit history), Tracing placeholder. No universe content, email or photo.
+  - **Owner step:** set `PlatformAdmin__OwnerUserId` on DEV to the id `/api/auth/me` shows for the owner's account
+    (`docs/deployment/azure-dev.md`). Until then nobody is Admin.
+  - Open: a blocked author's public universes stay public (owner decision); account creation date, sign-in time, request
+    telemetry and persisted AI usage are not recorded, so their metrics wait for instrumentation.
+  - Tests: API 1895/1895 (1 skipped; `AdminWorkspaceTests` 12, `AdminProvisioningFileTests` 2; migration tests' later-schema
+    lists extended). Playwright `admin-workspace` 5/5, neighbours 49/49, fresh DB. Full suite delegated to GitHub Actions.
 - **Fix: Deploy DEV E2E shard 6** (`fix/trash-e2e-row` off `dev` at `52a913c`; merged into `dev`, pushed). Runs
   40137578174, 40180740487 and 40184813329 failed on one test, `trash-permanent-delete` "names isolated", on all three
   attempts: its 14-context size loop ran out of Playwright's default 30 s (~24 s locally). `test.setTimeout(120_000)`, as
