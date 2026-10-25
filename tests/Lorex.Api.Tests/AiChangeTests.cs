@@ -202,7 +202,7 @@ public sealed class AiChangeTests(LorexApiFactory factory) : IClassFixture<Lorex
         _factory.Commands.FailWhen = command => command.CommandText.Contains("INSERT INTO \"Relationships\"", StringComparison.Ordinal);
         try
         {
-            await Assert.ThrowsAnyAsync<Exception>(() => Approve(owner, u, proposal, ["a", "b", "ab"], approval));
+            Assert.Equal(HttpStatusCode.InternalServerError, (await Approve(owner, u, proposal, ["a", "b", "ab"], approval)).StatusCode);
         }
         finally
         {

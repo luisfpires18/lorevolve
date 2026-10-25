@@ -69,6 +69,9 @@ var app = builder.Build();
 app.UseLorexForwardedHeaders();
 app.UseLorexRobotsHeaders();
 
+// Early, so whatever follows that throws answers RFC 7807 with a trace id rather than an empty 500.
+app.UseLorexUnhandledFailures();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
