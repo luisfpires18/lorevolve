@@ -9404,6 +9404,45 @@ a.lorechip--pov:focus-visible .lorechip__name {
   font-size: 0.72rem;
 }
 
+/* A linked scene's manuscript, beside its chip on a beat (Issue #48): an icon link, the chip's height. */
+.beat__chips li:has(.beat__write) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.beat__write {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+}
+
+.beat__write:hover,
+.beat__write:focus-visible {
+  color: var(--ink);
+  background: var(--press-wash);
+}
+
+/* A scene's world date, leading to its story's timeline: the date as written, underlined only when pointed at. */
+.scene__whenlink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.scene__whenlink:hover,
+.scene__whenlink:focus-visible {
+  text-decoration: underline;
+}
+
+.scene__noplot {
+  margin-bottom: 0;
+  font-size: var(--text-sm);
+}
+
 .plotchip__arrow {
   color: var(--rule-strong);
 }

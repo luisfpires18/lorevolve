@@ -15,7 +15,10 @@ import type { Scene } from '../stories/types'
 
 type Surface = 'scene' | 'manuscript'
 
-/** Where the scene happens in the world and whose eyes it is seen through, or nothing when it has neither. */
+/**
+ * Where the scene happens in the world and whose eyes it is seen through, or nothing when it has neither. The date opens
+ * the story's timeline, where the scene sits in world order (Issue #48).
+ */
 export function SceneStamp({
   universeId,
   chronology,
@@ -34,7 +37,15 @@ export function SceneStamp({
     <div className="scene__stamp">
       {when ? (
         <span className="scene__when" data-testid={`${testId}-when`}>
-          {when.text}
+          {/* The story's timeline: this scene among its other dated scenes and the moments linked to the story. */}
+          <Link
+            className="scene__whenlink"
+            to={`/app/universes/${universeId}/timeline?story=${scene.storyId}`}
+            aria-label={`${when.text}, on the story's timeline`}
+            data-testid={`${testId}-timeline`}
+          >
+            {when.text}
+          </Link>
           {when.placed ? null : <span className="scene__unplaced"> · no date period yet</span>}
         </span>
       ) : null}
@@ -82,15 +93,32 @@ export function SceneBeats({
   universeId,
   storyId,
   beats,
+  storyHasBeats = false,
   testId,
 }: {
   universeId: string
   storyId: string
   beats: SceneBeatReference[]
+  /**
+   * The story plans beats, none of them this scene's: say so, and where they are linked, rather than show nothing. Only
+   * where one scene is shown at a time (the manuscript), and never a demand - a scene needs no beat.
+   */
+  storyHasBeats?: boolean
   testId: Surface
 }) {
   const labelId = useId()
-  if (beats.length === 0) return null
+  const plotPath = `/app/universes/${universeId}/stories/${storyId}/plot`
+
+  if (beats.length === 0) {
+    return storyHasBeats ? (
+      <p className="scene__refs scene__noplot" data-testid={`${testId}-plot-none`}>
+        <span className="scene__label">Plot</span>
+        <span>
+          No beat links this scene. <Link to={plotPath}>Open Plot</Link>
+        </span>
+      </p>
+    ) : null
+  }
 
   return (
     <div className="scene__refs">
@@ -102,7 +130,7 @@ export function SceneBeats({
           <li key={beat.beatId}>
             <Link
               className="lorechip plotchip"
-              to={`/app/universes/${universeId}/stories/${storyId}/plot#beat-${beat.beatId}`}
+              to={`${plotPath}#beat-${beat.beatId}`}
               aria-label={`${beat.arcTitle}: ${beat.beatTitle}`}
               data-testid={`${testId}-plot-beat`}
             >

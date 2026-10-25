@@ -131,3 +131,23 @@ newly linked. Still no plot delete reaches a scene, a chapter or an entry.
 The deferred "Plot search" is done (ADR 0031): an arc's and a beat's title, description and notes are searched by the
 universe's search bar, and a result opens the Plot view at the arc or beat. A beat inside an arc in the Trash is not found.
 Nothing about plot's meaning, links or order changes.
+
+## Amendment (2026-10-25, Issue #48): moving between plan, writing and chronology
+
+Verified first, on code and on the owner's DEV story: a beat holds its scenes (`PlotBeatScenes`, many to many, cascading
+from both sides), a scene holds no beat, a scene owns its manuscript and may carry one world date, and a moment links to
+stories (`TimelineEntryStories`), never to a scene or a beat. Beat order, scene order and world order stay three orders.
+
+On those links only - no new link, route or field:
+
+- A beat's linked scene keeps its chip to the Scenes view (title, chapter) and gains a Manuscript link beside it.
+- A dated scene's date, on its card and above its manuscript, opens the story's timeline (`/timeline?story=`), where the
+  scene sits among the story's dated scenes and moments in world order; the timeline already led back to the manuscript
+  and the beat.
+- Above a manuscript, a scene no beat links says so with Open Plot when the story plans beats, and nothing when it plans
+  none: a scene needs no beat.
+- The universe sidebar, phone sheet and Overview list Timeline after Stories, before Ideas (owner request). Its route,
+  active state and access are unchanged; Chronology stays with the world, after Family Tree.
+
+Not done, needs a decision: linking a scene to a beat from the scene (the beat form is the one editor of that link), and
+any moment to scene or moment to beat link.

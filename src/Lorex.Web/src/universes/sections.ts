@@ -59,13 +59,6 @@ export const WORLD: readonly Section[] = [
     purpose: 'Families worked out from recorded connections.',
   },
   {
-    segment: 'timeline',
-    label: 'Timeline',
-    testId: 'workspace-timeline',
-    icon: Hourglass,
-    purpose: 'What happened, in the order it happened.',
-  },
-  {
     segment: 'chronology',
     label: 'Chronology',
     testId: 'workspace-chronology',
@@ -81,7 +74,7 @@ export const WORLD: readonly Section[] = [
   },
 ]
 
-/** The writing done with it. */
+/** The writing done with it, and the world's chronology it is told against - Stories, then Timeline (Issue #48). */
 export const WRITING: readonly Section[] = [
   {
     segment: 'stories',
@@ -89,6 +82,13 @@ export const WRITING: readonly Section[] = [
     testId: 'workspace-stories',
     icon: Feather,
     purpose: 'Narratives told with this world, scene by scene.',
+  },
+  {
+    segment: 'timeline',
+    label: 'Timeline',
+    testId: 'workspace-timeline',
+    icon: Hourglass,
+    purpose: 'What happened, in the order it happened.',
   },
   {
     segment: 'ideas',

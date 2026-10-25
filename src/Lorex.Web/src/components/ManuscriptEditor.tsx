@@ -71,6 +71,8 @@ interface ManuscriptEditorProps {
   where: { container: ReactNode; position: string }
   /** The plot beats that point at this scene. Shown only: the plot owns those links. */
   beats: SceneBeatReference[]
+  /** Whether the story plans any beat, linked here or not: a scene no beat links then says so. */
+  storyHasBeats: boolean
   /** Opens the scene's own form. Its planning is edited there, never here. */
   onEditScene: (scene: Scene) => void
   /** Opens the scene's form to send a suggestion instead (task 045). */
@@ -114,6 +116,7 @@ export function ManuscriptEditor({
   chronology,
   where,
   beats,
+  storyHasBeats,
   onEditScene,
   onSuggestScene,
   chapters,
@@ -399,7 +402,8 @@ export function ManuscriptEditor({
     sceneWhen(chronology, scene.chronology) !== null ||
     scene.pov !== null ||
     scene.entities.length > 0 ||
-    beats.length > 0
+    beats.length > 0 ||
+    storyHasBeats
 
   const describedBy = [statusId, isTooLong ? tooLongId : null, offer ? recoveryId : null]
     .filter(Boolean)
@@ -527,6 +531,7 @@ export function ManuscriptEditor({
               universeId={universeId}
               storyId={storyId}
               beats={beats}
+              storyHasBeats={storyHasBeats}
               testId="manuscript"
             />
           </div>
