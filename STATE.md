@@ -90,14 +90,14 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     shards and Package). Back to 3.1.12 by owner decision, to settle the key later; its five advisories are open again.
     The JPEG/PNG/WebP-only decoding stays (it builds on 3.x), so a TIFF or BMP still never reaches a decoder. Release
     build green; API image, artwork, profile, backup and restore tests 338 passed.
-- **Issue #46 - assistant rate limits** (`fix/assistant-rate-limit` off `dev` at `61148a9`; committed, not merged, not
+- **Issue #46 - assistant rate limits** (`fix/assistant-rate-limit` off `dev` at `61148a9`; merged into `dev`,
   pushed). No migration. ADR 0045 amendment. Verified first: a 429 is retried once by the client pipeline (0.8 s or the
   server's `Retry-After`, whichever is longer), then 503 `assistant_busy`; the drawer keeps the question, Try again adds no
   turn. Fixed: a wait over 10 s is busy at once (was slept until the 90 s timeout, then "took too long"); a provider failure
   after a proposal was staged answers with it (was an error, and Try again staged it twice). Tests: `AssistantRateLimitTests`
   5, `McpProposalTests` +1; assistant/provider/MCP proposal classes 94/94.
-- **Issue #48 - story workflow cross-links** (`feat/story-workflow-links` off `dev` at `61148a9`; committed, not merged,
-  not pushed). Spike then owner-authorized UX. Frontend only: no API, schema or backup change. ADR 0026 amendment. Verified:
+- **Issue #48 - story workflow cross-links** (`feat/story-workflow-links` off `dev` at `61148a9`; merged into `dev`,
+  pushed). Spike then owner-authorized UX. Frontend only: no API, schema or backup change. ADR 0026 amendment. Verified:
   beat->scenes is the one link (many to many), a scene has an optional world date, a moment links stories only; the
   manuscript already showed a scene's beats (desktop; behind Scene details on a phone). Added on existing links: a beat's
   scene gets a Manuscript link; a scene's date opens `/timeline?story=`; a manuscript whose scene no beat links says so with
@@ -339,7 +339,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     stays blocked until then.
   - Tests: see the review archive. Full Playwright not run locally; delegated to CI.
 - **Roadmap task 050 - Contextual Quick Create** (GitHub issue 25; `feat/contextual-quick-create-v1` off `dev` at
-  `61148a9`; committed, not merged, not pushed). The unmerged `feat/contextual-quick-create` (off `bd88d6c`) cherry-picked
+  `61148a9`; merged into `dev`, pushed). The unmerged `feat/contextual-quick-create` (off `bd88d6c`) cherry-picked
   onto today's `dev` (field sections, shared confirmation dialog), owner authorized 2026-10-25. Frontend only: no API,
   schema or backup change. ADR 0007 amendment.
   - An entry form's link fields and a relation's Connected to offer Create "<name>" after the matches, to `editContent`
