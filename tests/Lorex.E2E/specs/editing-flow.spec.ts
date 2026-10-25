@@ -395,6 +395,8 @@ test.describe('save controls fit', () => {
   test('every width, both themes and 200%: the save buttons sit clear and nothing scrolls sideways', async ({
     page,
   }) => {
+    // Six sizes by four pages is twenty-four full loads: past the default 30 s on a slow runner.
+    test.setTimeout(120_000)
     await signUp(page)
     const universeId = await seedUniverse(page)
     const idea = await seedIdea(page, 'Lembas', universeId)
