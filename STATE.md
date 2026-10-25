@@ -135,7 +135,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     changed**; real iOS / Android / desktop installs **unverified** - `docs/testing/pwa-checklist.md` has the repro
     matrix and the per-platform checklist, routed to #33 (security) and #34 (readiness).
 - **Issues #52 and #53 - Lore-linked maps, geography and calibration** (`feat/lore-linked-maps` off `dev` at `dd0deef`, in
-  the worktree `D:\Workspace\LOREX-maps`; committed, not merged, not pushed). Two migrations (`AddUniverseMaps`,
+  the worktree `D:\Workspace\LOREX\worktrees\LOREX-maps`; five local commits, not merged, not pushed). Two migrations (`AddUniverseMaps`,
   `AddMapCalibrations`), backup format 34 then 35. ADR 0060, ADR 0061; 0014, 0042, 0045, 0046 amended.
   - **#52 maps.** Several per universe; a picture kept whole with a fitted 4096px display copy, keys of ids, originals on the
     owner's storage; pins as fractions of the displayed picture linked to a live same-universe entry by id, once per map, on
@@ -149,11 +149,12 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     is a straight line in displayed pixels by that scale, rounded honestly, only on one calibrated map with confirmed pins;
     otherwise the reading says why (no scale, different maps, unconfirmed position). Read-only throughout.
   - Tests: API `MapTests` 13, `MapBackupTests` 2, `MapMigrationTests` 1, `MapGeographyTests` 8, `MapCalibrationMigrationTests`
-    1; full suite 1924/1925 passed before the #53 half (the one failure the catalog since extended), affected classes green
-    after; migration tests' later-schema lists extended; format assertions now read `UniverseBackup.CurrentVersion`.
-    Playwright `maps.spec.ts` 2/2 (desktop journey with the scale and the Fake assistant; 390px), neighbours
-    (editing-flow, entity-page, entry-profile, shell-layout, usage, storage, restore, navigation, mobile, entity-image,
-    universe-assistant) green on a fresh DB; one save-controls flake under load passed alone. Release build green.
+    1; final full API suite after all five commits: 1934 passed, 0 failed, 1 skipped. `McpToolTests` 10/10, including
+    the SDK tool-list assertion; migration tests' later-schema lists extended; format assertions read
+    `UniverseBackup.CurrentVersion`.
+    Playwright `maps.spec.ts` 2/2 on the final commit (desktop journey with scale and Fake assistant; 390px). The neighbouring
+    run was 83/85 on a fresh DB with two `shell-layout` load flakes; `shell-layout` passed 7/7 alone. An earlier
+    `editing-flow` save-controls flake also passed alone. Release build green.
   - **Owner checks on DEV:** `docs/testing/maps-checklist.md` - a real map, real-device touch, Groq's phrasing over the
     geography tools, Claude/ChatGPT over MCP. Unverified here.
   - Pre-existing, not fixed: `UniverseWorkspace.tsx` renders two siblings keyed by the universe id (a React duplicate-key
