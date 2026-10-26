@@ -17,6 +17,7 @@ Repository index. Paths and one-line responsibilities only.
 | `docs/tooling/` | Agent tooling trial notes (RTK and Graphify evaluation). |
 | `docs/security/alpha-security-assessment.md` | Issue #33: the first-alpha security and privacy assessment - findings with evidence, severity, exploitability, boundary, mitigation and residual risk; verified controls; owner runtime checks; the final regression after #11 and #54. |
 | `docs/recovery/universe-recovery.md` | Issue #11: backup vs readable export, exactly what each holds and leaves out, picture paths, restore steps, compatibility and size limits, what is tested and what is not promised. |
+| `docs/recovery/database-backups.md` | Issue #54: what a database backup holds and what it does not (picture bytes, key ring), the facts it rests on, owner setup (bucket, lock, scoped token, settings), status and log lines, retention proposal and cost, failure modes, the restore drill with measured numbers, the production restore procedure, media recovery exactly. |
 | `docs/testing/maps-checklist.md` | Issues #52/#53: what the map tests prove, the manual DEV checklist (upload, pan/zoom, pins both ways, visibility, replace, calibrate, assistant and MCP questions, backup, delete) and what stays unverified. |
 | `docs/testing/pwa-checklist.md` | Issue #58: what automation proves, what `pwa-standalone.spec.ts` simulates and cannot, the category-selector report's reproduction status (unverified on a real install), the manual real-device checklist per platform and journey, and where findings route (#33, #34). |
 | `assets/brand/lorex-icon.png` | The Lorex mark, as the owner supplied it (replaced in 043.5). The one source every icon is derived from; not shipped. |
@@ -40,7 +41,7 @@ Repository index. Paths and one-line responsibilities only.
 
 | Path | Responsibility |
 | --- | --- |
-| `Program.cs` | Composition root and pipeline. |
+| `Program.cs` | Composition root and pipeline; `database-backup <command>` as the first argument runs the operator CLI (ADR 0064) and exits. |
 | `Data/LorexDbContext.cs` | Single EF Core context; applies feature entity configurations. |
 | `Data/DatabaseSetup.cs` | SQLite registration, data-source path resolution, startup-step wiring. |
 | `Data/LorexDatabaseInitializer.cs` | Migrates once per process, and what other startup work awaits. |
@@ -289,6 +290,12 @@ Repository index. Paths and one-line responsibilities only.
 | `Features/Storage/StorageReservation.cs` | `StorageReservation`, bytes held against the universe owner's account for one upload in flight, and its schema: bytes above zero, account cascade, `(UserId, ExpiresAt)` index. |
 | `Features/Storage/AccountStorage.cs` | Usage summed from `EntityImages.ByteSize` and `EntityAppearanceImages.ByteSize` (Issue #43) over the owner's universes (Trash included, one query); `ReserveAsync` (room check + hold, one short IMMEDIATE transaction, before the bucket), `ConsumeAsync` (inside the commit; a lapsed hold checked again), `ReleaseAsync` (never cancelled, never throws). |
 | `Features/Storage/AccountStorageEndpoints.cs` | `GET /api/profile/storage`: the signed-in account's used, allowance, remaining and Lore-picture bytes. Read only. |
+| `Features/DatabaseBackups/DatabaseBackupOptions.cs` | Issue #54, ADR 0064: `DatabaseBackup:*` - Enabled, Automatic, Environment, Store (R2 or FileSystem), Prefix, Interval (24 h), StaleAfter (26 h), WorkingDirectory, R2 settings (own bucket and token), Retention (off; 30 days, 12 monthly, newest 3). |
+| `Features/DatabaseBackups/DatabaseBackupStore.cs` | `IDatabaseBackupStore` and its two stores: R2 (private bucket, R2 upload flags, errors as status + code only) and a folder (write-then-rename, keys kept inside the root). |
+| `Features/DatabaseBackups/DatabaseSnapshot.cs` | The online snapshot through `SqliteConnection.BackupDatabase`, journal switched to DELETE on the copy, `integrity_check`, schema version from the copy's migration history, gzip, SHA-256s; the manifest records. |
+| `Features/DatabaseBackups/DatabaseBackupRunner.cs` | One run at a time: snapshot, upload, read back and compare, manifest last and read back; failures as one-line reasons; status from the store's manifests (age, stale, count, bytes); retention after a verified backup only, manifest before object, strays swept after a day. |
+| `Features/DatabaseBackups/DatabaseBackupSetup.cs` | Registration and the store from settings (a half-configured store is a problem, never a fallback); Admin routes `GET /api/admin/database-backups`, `POST .../run` (202, 409 busy or not configured); `DatabaseBackupService`, the 15-minute schedule inside the web process. |
+| `Features/DatabaseBackups/DatabaseBackupCli.cs` | `Lorex.Api database-backup run \| list \| restore-drill`: the drill checks both SHA-256s, integrity and foreign keys, refuses unknown migrations, migrates the copy, reads every universe whole, optionally confirms media originals, times each step, never writes over the live file. |
 | `Features/Export/UniverseBackup.cs` | The backup format, as records. The contract the restore reads. |
 | `Features/Export/UniverseBackupArchive.cs` | Archive layout, the media list, and the deterministic ZIP writer; `WriteMediaAsync` (originals by archive path, refusing a missing one) is shared with the readable export. |
 | `Features/Export/UniverseBackupBuilder.cs` | Reads one universe and its media in a single transaction, and orders every collection. |
@@ -469,6 +476,7 @@ Repository index. Paths and one-line responsibilities only.
 | `Lorex.Api.Tests/CanonPromotionGateTests.cs` | What the gate refuses, what a refusal leaves behind, and what it must never block. |
 | `Lorex.Api.Tests/UniverseExportTests.cs` | What a backup holds, what it must never hold, its coherence and its determinism. |
 | `Lorex.Api.Tests/UniverseRecoveryTests.cs` | Issue #11: a restore drill with every kind of picture (entry, appearance, map, artwork, a trashed entry's) brought back byte for byte and the same world exported again; the readable export's pages, links and pictures; unsafe links and markup neutralised; a missing live picture refuses it, a missing trashed one does not. |
+| `Lorex.Api.Tests/DatabaseBackupTests.cs` | Issue #54: a verified snapshot with its manifest last; a read-back mismatch or refused manifest leaves nothing and says why; runs never overlap; retention keeps newest, recent and monthly, sweeps strays, never after a failure, never another environment; Admin-only status and Run now; R2 settings and secret hygiene; the drill with media check, tampering, an older schema brought forward and a newer one refused. |
 | `Lorex.Api.Tests/SecurityHeadersTests.cs` | Issue #33 M-4: 200, 401, 404 and an unhandled 500 carry the security headers. |
 | `Lorex.Api.Tests/StoryEndpointTests.cs` | Story CRUD, what deleting a story or a universe takes, ownership, that a story changes no lore, timeline or Canon, and the story read's fixed query count. |
 | `Lorex.Api.Tests/SceneEndpointTests.cs` | Narrative order against chronology, reorder refusals, scene chronology, lore references, the Trash, delete actions and ownership. |

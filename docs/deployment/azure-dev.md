@@ -164,9 +164,11 @@ so on. Nobody bumps it and no commit records it.
 - **A rollback does not roll the database back.** Migrations are forward-only and there is no
   down-migration path, so a deployment that adds a migration cannot be undone by redeploying
   the previous build. Restore from a backup instead - see below.
-- **Backup:** each universe exports as a JSON file from Settings. There is no automated
-  database backup in DEV; taking the file off `/home` is a manual act
-  (`az webapp ssh` and copy it out).
+- **Backup:** the whole database is backed up daily to a private R2 bucket once the `DatabaseBackup__*` settings exist
+  (issue #54, ADR 0064): setup, status, retention, the restore drill and the restore procedure are in
+  [../recovery/database-backups.md](../recovery/database-backups.md). Creators back up and export single universes from
+  Settings > Data ([../recovery/universe-recovery.md](../recovery/universe-recovery.md)). Never copy the live `.db` file
+  out by hand while the site runs: it can miss what is still in the WAL.
 
 ## Known DEV limitations
 
@@ -179,8 +181,9 @@ Accepted deliberately. Each one is a reason this topology is not a production to
   short outage.
 - **Data Protection keys are unencrypted at rest**, with no rotation policy and no Key Vault.
   Anyone who can read `/home/data/keys` can forge a session cookie.
-- **No automated backup.** The per-universe export archive is the only backup, taken by hand; it restores as a new
-  universe from the universes page (ADR 0032). A validated upload waits up to 30 minutes in the site's local temp folder -
+- **Database backups are off until configured.** With the `DatabaseBackup__*` settings they run daily from the web
+  process to R2 (ADR 0064); without them the per-universe archive, taken by hand, is the only backup. Pictures are never in
+  a database backup - they stay in the media bucket ([../recovery/database-backups.md](../recovery/database-backups.md)). A validated upload waits up to 30 minutes in the site's local temp folder -
   not on `/home` - so a restart or redeploy in between asks the author to choose the file again.
 - **`AllowedHosts` is `*` by default.** Narrow it to the site hostname
   (`az webapp config appsettings set --settings AllowedHosts=<app-name>.azurewebsites.net`)

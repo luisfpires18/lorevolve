@@ -246,7 +246,7 @@ public sealed class UniverseRecoveryTests(LorexApiFactory factory) : IClassFixtu
     }
 
     /// <summary>The rich world, plus every kind of picture, a private note, a mention in prose and a formatted article.</summary>
-    private async Task<FullWorld> BuildFullWorld(HttpClient client, string name)
+    private static async Task<FullWorld> BuildFullWorld(HttpClient client, string name)
     {
         var rich = await BuildRichWorld(client, name);
         var u = rich.Universe.Id;

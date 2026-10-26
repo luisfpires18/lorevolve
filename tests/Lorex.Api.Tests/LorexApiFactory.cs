@@ -65,10 +65,18 @@ public sealed class LorexApiFactory : WebApplicationFactory<Program>
     /// <summary>The MCP origin this host is given; null for a host where MCP is not set up.</summary>
     public string? McpOrigin { get; init; } = Origin;
 
+    /// <summary>Extra configuration for one host, applied as settings (a database-backup store, say).</summary>
+    public IReadOnlyDictionary<string, string?> Settings { get; init; } = new Dictionary<string, string?>();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("Mcp:Origin", McpOrigin ?? string.Empty);
+        foreach (var (key, value) in Settings)
+        {
+            builder.UseSetting(key, value);
+        }
+
         builder.UseSetting("Mcp:RegistrationsPerMinute", RegistrationsPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture));
         if (MetadataRechecksPerHostPerMinute is { } rechecks)
         {

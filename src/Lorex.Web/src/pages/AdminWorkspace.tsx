@@ -2,11 +2,14 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft, Search } from 'lucide-react'
 import {
+  getDatabaseBackups,
   getOverview,
   getUser,
   listUsers,
+  runDatabaseBackup,
   setBlocked,
   type AdminOverview,
+  type DatabaseBackupStatus,
   type AdminUserDetail,
   type AdminUserPage,
 } from '../admin/api'
@@ -201,7 +204,121 @@ function MainScreen() {
       ) : null}
       {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
       {state.kind === 'ready' ? <Overview overview={state.value} /> : null}
+      <DatabaseBackups />
     </>
+  )
+}
+
+/**
+ * Database backups (#54): the age of the last backup that was uploaded and read back, the last attempt and its error, and
+ * Run now. While one runs, the status is read again every few seconds until it ends.
+ */
+function DatabaseBackups() {
+  const { state, setState, retry } = useLoad(getDatabaseBackups)
+  const [starting, setStarting] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const running = state.kind === 'ready' && state.value.running
+
+  useEffect(() => {
+    if (!running) return
+    const timer = window.setTimeout(retry, 3000)
+    return () => window.clearTimeout(timer)
+  }, [running, state, retry])
+
+  async function runNow() {
+    setStarting(true)
+    setMessage(null)
+    try {
+      setState({ kind: 'ready', value: await runDatabaseBackup() })
+    } catch (error: unknown) {
+      setMessage(error instanceof Error ? error.message : 'The backup could not be started.')
+    } finally {
+      setStarting(false)
+    }
+  }
+
+  return (
+    <section className="adminsection" aria-labelledby="admin-backups" data-testid="admin-backups">
+      <h2 className="settings__heading" id="admin-backups">
+        Database backups
+      </h2>
+      {state.kind === 'loading' ? (
+        <p className="notice" role="status">
+          Reading&hellip;
+        </p>
+      ) : null}
+      {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
+      {state.kind === 'ready' ? <BackupFacts status={state.value} /> : null}
+      {state.kind === 'ready' && state.value.enabled && !state.value.problem ? (
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={() => void runNow()}
+          disabled={starting || running}
+          data-testid="admin-backup-run"
+        >
+          {running ? 'Backing up' : 'Run backup now'}
+        </button>
+      ) : null}
+      {message ? (
+        <p className="form__message" role="alert">
+          {message}
+        </p>
+      ) : null}
+    </section>
+  )
+}
+
+function BackupFacts({ status }: { status: DatabaseBackupStatus }) {
+  if (!status.enabled) {
+    return (
+      <p className="settings__note" data-testid="admin-backups-off">
+        Off on this server. Turned on by the deployment&rsquo;s settings:
+        docs/recovery/database-backups.md.
+      </p>
+    )
+  }
+
+  if (status.problem) {
+    return (
+      <p className="notice notice--error" role="alert" data-testid="admin-backups-problem">
+        {status.problem}
+      </p>
+    )
+  }
+
+  const last = status.lastAttempt
+  return (
+    <ul className="adminstats" data-testid="admin-backup-facts">
+      <Stat
+        label="Last verified backup"
+        value={status.lastVerified ? formatDateTime(status.lastVerified.createdAt) : 'None yet'}
+        source={
+          status.stale
+            ? `Stale: older than expected (every ${status.intervalHours} hours).`
+            : `Uploaded and read back. Every ${status.intervalHours} hours${status.automatic ? '' : ', manual only'}.`
+        }
+        testId="stat-backup-last"
+      />
+      <Stat
+        label="Kept"
+        value={`${status.verifiedCount} · ${formatBytes(status.storedBytes)}`}
+        source={`${status.environment}, ${status.store}. Pruning ${status.pruneEnabled ? 'on' : 'off'}.`}
+        testId="stat-backup-kept"
+      />
+      <Stat
+        label="Last attempt"
+        value={last ? `${last.outcome}` : 'None since this server started'}
+        source={
+          last?.error
+            ? `${last.error} (${status.consecutiveFailures} in a row)`
+            : last
+              ? formatDateTime(last.startedAt)
+              : 'The schedule checks every 15 minutes.'
+        }
+        testId="stat-backup-attempt"
+      />
+    </ul>
   )
 }
 

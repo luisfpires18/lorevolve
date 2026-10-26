@@ -8,6 +8,10 @@ Until the steps below are done, Lorex still runs. Every image route answers
 `503 Image storage is unavailable.` and no entry can be given a picture. Nothing else is
 affected.
 
+**Database backups use a different bucket and a different token** (issue #54, ADR 0064): never point
+`DatabaseBackup__R2__*` at this bucket or reuse this token, so a backup key can read no live picture and the media key no
+backup. Setup: [../recovery/database-backups.md](../recovery/database-backups.md).
+
 **No secret belongs in this repository.** Not in `appsettings*.json`, not in a workflow file,
 not in this document. Every value below is entered in the Cloudflare dashboard, in
 `dotnet user-secrets`, or in App Service configuration.
