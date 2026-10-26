@@ -52,3 +52,9 @@ public sealed record AdminOverview(
     long StoredImageBytes,
     int ConnectedApps,
     IReadOnlyList<MonthCount> UniversesCreatedByMonth);
+
+/// <summary>The address an Admin's sign-up link lets register while registration is invitation-only.</summary>
+public sealed record SignUpLinkRequest(string? Email);
+
+/// <summary>The link's token (the client puts it in <c>/register?invite=</c>) and when it stops working.</summary>
+public sealed record SignUpLinkResponse(string Token, DateTime ExpiresAt);

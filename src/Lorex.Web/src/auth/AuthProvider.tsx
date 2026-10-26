@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const register = useCallback(
-    async (input: { username: string; email: string; password: string }) => {
+    async (input: { username: string; email: string; password: string; inviteToken?: string }) => {
       setUser(
         await apiFetch<AuthUser>('/api/auth/register', {
           method: 'POST',

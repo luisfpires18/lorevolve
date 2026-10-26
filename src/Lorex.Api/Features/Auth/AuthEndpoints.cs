@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Lorex.Api.Data;
+using Lorex.Api.Features.Universes;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +37,8 @@ public static class AuthEndpoints
     {
         var group = endpoints.MapGroup("/api/auth").WithTags("Auth");
 
+        group.MapGet("/registration", (IConfiguration configuration) => Results.Ok(new RegistrationResponse(InviteOnly(configuration))))
+            .WithName("GetRegistration");
         group.MapPost("/register", RegisterAsync).WithName("Register");
         group.MapPost("/login", LoginAsync).WithName("Login");
         group.MapPost("/logout", LogoutAsync).WithName("Logout").RequireAuthorization();
@@ -43,12 +47,64 @@ public static class AuthEndpoints
         return endpoints;
     }
 
+    /// <summary>Open sign-up refused while registration is invitation-only and the request carries no live invitation.</summary>
+    public const string InviteOnlyCode = "registration_invite_only";
+
+    /// <summary>
+    /// <c>Registration:InviteOnly</c>: only someone holding a live universe invitation or an Admin's sign-up link may create an
+    /// account, and only for the address it was made for. Off by default; accounts that exist are never affected.
+    /// </summary>
+    private static bool InviteOnly(IConfiguration configuration) => configuration.GetValue<bool>("Registration:InviteOnly");
+
+    /// <summary>The address an invitation-only registration may use, or null when the token opens nothing now.</summary>
+    private static async Task<string?> InvitedEmailAsync(
+        string? token, IDataProtectionProvider protection, LorexDbContext db, TimeProvider clock, CancellationToken cancellationToken)
+    {
+        var now = clock.GetUtcNow().UtcDateTime;
+
+        if (SignUpLinks.Read(protection, token) is { } link)
+        {
+            return link.ExpiresAt > now ? link.NormalizedEmail : null;
+        }
+
+        if (InvitationClaims.Read(protection, token) is { } claim)
+        {
+            // Live and pending, as accepting would require: a revoked, answered or expired invitation opens nothing.
+            var live = await db.UniverseInvitations.AnyAsync(
+                invitation => invitation.Id == claim.InvitationId
+                    && invitation.NormalizedEmail == claim.NormalizedEmail
+                    && invitation.ExpiresAt > now,
+                cancellationToken);
+            return live ? claim.NormalizedEmail : null;
+        }
+
+        return null;
+    }
+
     private static async Task<IResult> RegisterAsync(
         [FromBody] RegisterRequest request,
         UserManager<LorexUser> userManager,
         SignInManager<LorexUser> signInManager,
+        IConfiguration configuration,
+        IDataProtectionProvider protection,
+        LorexDbContext db,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
+        string? invitedEmail = null;
+        if (InviteOnly(configuration))
+        {
+            invitedEmail = await InvitedEmailAsync(request.InviteToken, protection, db, clock, cancellationToken);
+            if (invitedEmail is null)
+            {
+                return Results.Problem(
+                    title: "Registration is by invitation",
+                    detail: "Lorex is invitation-only for now. Open the invitation link you were sent to create your account.",
+                    statusCode: StatusCodes.Status403Forbidden,
+                    extensions: new Dictionary<string, object?> { ["code"] = InviteOnlyCode });
+            }
+        }
+
         var username = request.Username?.Trim() ?? string.Empty;
         var email = request.Email?.Trim() ?? string.Empty;
         var password = request.Password ?? string.Empty;
@@ -77,6 +133,14 @@ public static class AuthEndpoints
         if (errors.Count > 0)
         {
             return Results.ValidationProblem(errors);
+        }
+
+        if (invitedEmail is not null && userManager.NormalizeEmail(email) != invitedEmail)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["email"] = ["Use the email address your invitation was sent to."],
+            });
         }
 
         cancellationToken.ThrowIfCancellationRequested();

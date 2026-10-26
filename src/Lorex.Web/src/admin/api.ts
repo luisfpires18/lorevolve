@@ -77,6 +77,14 @@ export function setBlocked(userId: string, block: boolean, reason: string) {
   )
 }
 
+/** A sign-up link for one address while registration is invitation-only: put in `/register?invite=`, 7 days. */
+export function createSignUpLink(email: string) {
+  return apiFetch<{ token: string; expiresAt: string }>('/api/admin/signup-links', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
 /** Database backups to R2 (#54, ADR 0064): what is off the host, and the last attempt. */
 export interface VerifiedBackup {
   key: string

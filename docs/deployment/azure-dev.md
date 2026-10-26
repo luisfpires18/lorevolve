@@ -238,6 +238,17 @@ Check it after a deploy:
 The site must be reachable from the internet for Claude and ChatGPT: their servers fetch the discovery documents and call
 the MCP endpoint (Anthropic from `160.79.104.0/21`). Access restrictions on the App Service would break that.
 
+## Invitation-only registration (alpha)
+
+`Registration__InviteOnly=true` closes open sign-up; unset or `false` it stays open. While on, an account is created only
+from a live universe invitation link, or from a sign-up link an Admin makes in Admin > Users (one address, 7 days), and
+only with the address it names. Existing accounts and sign-in are untouched. The alpha's acceptance of ImageSharp M-1
+(#34, #51) assumes it is on.
+
+```bash
+az webapp config appsettings set -g rg-lorex-dev -n lorex-dev-lfp18 --settings Registration__InviteOnly=true
+```
+
 ## Provision the owner's Admin account (ADR 0059)
 
 LoreX Admin (`/admin`) is closed to everyone until the server names its Admin. There is only ever one Admin: the
