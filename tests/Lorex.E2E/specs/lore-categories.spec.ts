@@ -102,6 +102,8 @@ const names = (scope: ReturnType<Page['locator']>) =>
     .getByTestId('lore-type')
     .evaluateAll((all) => all.map((link) => link.getAttribute('data-type-name')))
 const cards = (page: Page) => page.getByTestId('entity-card')
+const typeCard = (page: Page, name: string) =>
+  page.locator(`[data-testid="lore-type-card"][data-type-name="${name}"]`)
 const cardNames = (page: Page) =>
   cards(page).evaluateAll((all) => all.map((card) => card.getAttribute('data-entity-name')).sort())
 const heading = (page: Page) => page.getByRole('heading', { level: 1 })
@@ -130,25 +132,17 @@ test.describe('Lore categories on a desktop', () => {
     const changes = writes(page)
     await page.goto(w.lore())
 
-    // Bare Lore: the categories, nothing nested beside them, nothing current, and the way in said plainly.
-    await expect.poll(() => names(categories(page))).toContain('Runes')
-    const top = await names(categories(page))
-    expect(top).toEqual(
-      expect.arrayContaining(['Character', 'Location', 'Weapons', 'Kingdoms', 'Runes']),
-    )
-    for (const nested of [...RUNES, 'Weapons of Chaos', 'Weapons of Order'])
-      expect(top).not.toContain(nested)
-    await expect(nav(page).getByTestId('lore-subtypes')).toHaveCount(0)
-    await expect(nav(page).locator('[aria-current]')).toHaveCount(0)
+    // Bare Lore is the catalog (Issue #60): every category a card, a nested one saying where it sits, the row waiting.
+    await expect(typeCard(page, 'Runes')).toBeVisible()
+    for (const nested of RUNES) await expect(typeCard(page, nested)).toContainText('In Runes')
+    await expect(typeCard(page, 'Weapons of Order')).toContainText('In Weapons')
+    await expect(typeCard(page, 'Runes')).toContainText(`3 entries · ${RUNES.length} nested types`)
+    await expect(nav(page)).toHaveCount(0)
     await expect(heading(page)).toHaveText('Lore')
-    await expect(page.getByTestId('lore-no-category')).toContainText(
-      'Choose a category to browse your lore.',
-    )
-    await expect(page.getByTestId('empty-new-entity')).toHaveText('New entry')
     await expect(page.getByTestId('new-entity')).toHaveAccessibleName('New entry')
 
     // Runes: current, its subtypes beneath in their order, "All Runes" first and current, its whole branch listed.
-    await categories(page).getByRole('link', { name: 'Runes' }).click()
+    await typeCard(page, 'Runes').click()
     await expect(heading(page)).toHaveText('Runes')
     await expect(categories(page).locator('[data-type-name="Runes"]')).toHaveAttribute(
       'aria-current',
@@ -313,12 +307,14 @@ test.describe('Lore categories on a phone', () => {
       const w = await arda(page)
       await page.goto(w.lore())
 
-      await expect(nav(page)).toBeHidden()
-      const category = page.getByTestId('lore-type-menu')
-      await expect(category).toHaveAccessibleName('Choose category')
-      await expect(page.getByTestId('lore-no-category')).toBeVisible()
+      // The catalog first (Issue #60); the menus are the navigation once a category is open.
+      await expect(page.getByTestId('lore-catalog')).toBeVisible()
+      await expect(page.getByTestId('lore-type-menu')).toHaveCount(0)
       expect(await sideways(page)).toBeLessThanOrEqual(0)
+      await typeCard(page, 'Kingdoms').click()
 
+      const category = page.getByTestId('lore-type-menu')
+      await expect(category).toHaveAccessibleName('Category: Kingdoms')
       await category.click()
       const menu = page.getByTestId('lore-type-menu-panel')
       await expect(menu.locator('[data-type-name="Runes"]')).toBeVisible()

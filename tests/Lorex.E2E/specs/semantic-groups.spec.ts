@@ -210,13 +210,20 @@ test.describe('semantic groups', () => {
     await expect(page.getByTestId('entry-fields')).toContainText('Lava Rune')
 
     // ---------- Lore: the group is a way in, across its types ----------
+    // On the catalog (Issue #60) the group narrows the type cards to its members and links its own list.
     await page.goto(`/app/universes/${w.u}/lore`)
-    const groupLink = page.getByTestId('lore-groups').locator('[data-group-name="Runes"]')
-    await expect(groupLink).toHaveAccessibleName('Runes (group)')
-    await groupLink.click()
+    const browse = page.locator('[data-testid="lore-browse-group"][data-group-name="Runes"]')
+    await expect(browse).toHaveAccessibleName('Runes (group)')
+    await browse.click()
+    await expect(page.getByTestId('lore-type-card')).toHaveCount(2)
+    await page.getByTestId('lore-browse-group-entries').click()
     await expect(page).toHaveURL(/group=/)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Runes')
     await expect(page.getByTestId('entity-card')).toHaveCount(2)
+    // The group row is still there once a list is open.
+    const groupLink = page.getByTestId('lore-groups').locator('[data-group-name="Runes"]')
+    await expect(groupLink).toHaveAccessibleName('Runes (group)')
+    await expect(groupLink).toHaveAttribute('aria-current', 'page')
 
     // A concrete type is still exactly itself.
     await page.goto(`/app/universes/${w.u}/lore?type=${w.elemental}`)
@@ -307,13 +314,17 @@ test.describe('semantic groups', () => {
     expect(await noSideways(page)).toBeLessThanOrEqual(0)
     await save(editor)
 
+    // The catalog's group choice (Issue #60), then the group's list; the Category menu still offers the group there.
     await page.goto(`/app/universes/${w.u}/lore`)
-    await page.getByTestId('lore-type-menu').click()
-    await page
-      .getByTestId('lore-type-menu-panel')
-      .getByRole('link', { name: 'Realms (group)' })
-      .click()
+    await page.locator('[data-testid="lore-browse-group"][data-group-name="Realms"]').click()
+    await expect(page.getByTestId('lore-type-card')).toHaveCount(1)
+    expect(await noSideways(page)).toBeLessThanOrEqual(0)
+    await page.getByTestId('lore-browse-group-entries').click()
     await expect(page.getByTestId('entity-card')).toHaveCount(1)
+    await page.getByTestId('lore-type-menu').click()
+    await expect(
+      page.getByTestId('lore-type-menu-panel').getByRole('link', { name: 'Realms (group)' }),
+    ).toHaveAttribute('aria-current', 'page')
     expect(await noSideways(page)).toBeLessThanOrEqual(0)
   })
 })

@@ -1822,7 +1822,9 @@ public static class EntityTypeEndpoints
                     .ThenBy(section => section.Id)
                     .Select(section => new FieldSectionResponse(section.Id, section.Name, section.DisplayOrder, section.StartsCollapsed))
                     .ToList(),
-                type.FieldLayoutVersion))
+                type.FieldLayoutVersion,
+                // What Lore's listing shows of the type's own entries (EntityEndpoints.ListAsync): live and not archived.
+                db.Entities.Count(entity => entity.EntityTypeId == type.Id && entity.DeletedAt == null && !entity.IsArchived)))
             .ToListAsync(cancellationToken),
             type => type.Id,
             type => type.ParentId,

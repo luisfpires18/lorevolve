@@ -89,6 +89,8 @@ const names = (page: Page) =>
 const heading = (page: Page) => page.getByRole('heading', { level: 1 })
 const panel = (page: Page) => page.getByTestId('lore-type-menu-panel')
 const row = (page: Page) => page.getByRole('navigation', { name: 'Lore types' })
+const typeCard = (page: Page, name: string) =>
+  page.locator(`[data-testid="lore-type-card"][data-type-name="${name}"]`)
 const linkIn = (scope: ReturnType<Page['getByTestId']>, name: string) =>
   scope.locator(`[data-type-name="${name}"]`)
 /** The type names one row of the navigation lists - the categories, or what is inside `parent` - in order. */
@@ -107,7 +109,7 @@ function sideways(page: Page) {
 }
 
 test.describe('Lore with nested types', () => {
-  test('starts with no type chosen: no All, nothing read, and only the type row to choose from', async ({
+  test('starts with no type chosen: no All, nothing read, and the catalog of types to choose from', async ({
     page,
   }) => {
     await signUp(page)
@@ -120,9 +122,10 @@ test.describe('Lore with nested types', () => {
 
     await page.goto(lore(w.u, '?q=rune&status=0'))
     await expect(heading(page)).toHaveText('Lore')
-    await expect(row(page)).toBeVisible()
-    await expect(row(page).locator('[aria-current="page"]')).toHaveCount(0)
-    // No panel asks, no card, no skeleton, no Filters, no Select, no All - only the way to choose.
+    // The catalog (Issue #60): every type a card, nested ones by where they sit; the row waits for a choice.
+    await expect(typeCard(page, 'Metal Runes')).toContainText('In Runes › Material Runes')
+    await expect(row(page)).toHaveCount(0)
+    // No panel asks, no entry card, no skeleton, no Filters, no Select, no All - only the way to choose.
     await expect(page.getByTestId('lore-choose')).toHaveCount(0)
     await expect(page.locator('.lore__skeleton')).toHaveCount(0)
     await expect(cards(page)).toHaveCount(0)
@@ -137,7 +140,7 @@ test.describe('Lore with nested types', () => {
     // An id this universe does not have is taken out of the address, and still nothing is read.
     await page.goto(lore(w.u, '?type=00000000-0000-0000-0000-000000000000'))
     await expect(page).toHaveURL(/\/lore$/)
-    await expect(row(page).locator('[aria-current="page"]')).toHaveCount(0)
+    await expect(typeCard(page, 'Runes')).toBeVisible()
     await expect(cards(page)).toHaveCount(0)
     expect(reads).toEqual([])
 
@@ -153,19 +156,19 @@ test.describe('Lore with nested types', () => {
   }) => {
     await signUp(page)
     const w = await runeWorld(page)
+    // The catalog's card opens a category (Issue #60); from there the row is the navigation.
     await page.goto(lore(w.u))
+    await typeCard(page, 'Runes').click()
 
-    // Only the top-level categories at first: nothing nested is listed beside them (refinement 028).
+    // Only the top-level categories in the row: nothing nested is listed beside them (refinement 028).
     await expect.poll(() => rowOrder(page)).toContain('Runes')
     const top = await rowOrder(page)
     for (const nested of ['Material Runes', 'Metal Runes', 'Stone Runes', 'Animal Runes']) {
       expect(top).not.toContain(nested)
     }
-    await expect(row(page).getByTestId('lore-subtypes')).toHaveCount(0)
 
     // A parent shows its whole branch - its own entries and every type beneath - and never a sibling branch; what is
     // inside it opens beneath, "All Runes" first and current.
-    await row(page).getByTestId('lore-categories').locator('[data-type-name="Runes"]').click()
     await expect(heading(page)).toHaveText('Runes')
     await expect(
       row(page).getByTestId('lore-categories').locator('[data-type-name="Runes"]'),
@@ -233,7 +236,7 @@ test.describe('Lore with nested types', () => {
     await page.getByTestId('lore-path-root').click()
     await expect(page).toHaveURL(/\/lore$/)
     await expect(heading(page)).toHaveText('Lore')
-    await expect(row(page).locator('[aria-current="page"]')).toHaveCount(0)
+    await expect(typeCard(page, 'Runes')).toBeVisible()
     await expect(cards(page)).toHaveCount(0)
     expect(reads).toEqual([])
   })

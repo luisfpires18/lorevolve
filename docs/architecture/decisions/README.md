@@ -69,6 +69,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0062 | An AI proposes schema - lore types, fields, groups - as its own reviewed proposal, through the Types screen's own write paths | [0062-ai-schema-proposals.md](0062-ai-schema-proposals.md) |
 | 0063 | A readable export is Markdown pages rendered from the backup snapshot, for reading, never read back (#11) | [0063-readable-universe-export.md](0063-readable-universe-export.md) |
 | 0064 | The web process takes a daily online SQLite snapshot and keeps it, verified, in a private R2 bucket (#54) | [0064-sqlite-backups-to-r2.md](0064-sqlite-backups-to-r2.md) |
+| 0065 | Lore's front page is a catalog of the universe's types, with a Browse by group choice above the cards (#60) | [0065-lore-front-page-catalog.md](0065-lore-front-page-catalog.md) |
 
 All accepted. Next number: `0065`.
 

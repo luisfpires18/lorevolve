@@ -349,6 +349,7 @@ test.describe('Lore types', () => {
     ]
     for (const name of names) await newType(page, universeId, name)
     const all = 7 + names.length
+    const kingdom = (await typeNamed(page, universeId, 'Kingdom')).id
 
     for (const [width, height, colorScheme] of [
       [1920, 1080, 'light'],
@@ -365,8 +366,17 @@ test.describe('Lore types', () => {
       await page.goto(`/app/universes/${universeId}/lore`)
       await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme)
 
-      // No type chosen: no card and nothing scrolls - only the types to choose from.
+      // No type chosen: no entry card and nothing scrolls - the catalog of types to choose from (Issue #60).
       await expect(page.getByTestId('entity-card')).toHaveCount(0)
+      await expect(page.getByTestId('lore-type-card')).toHaveCount(all)
+      await expect(
+        page.locator('[data-testid="lore-type-card"][data-type-name="עידן האור"] bdi').first(),
+      ).toBeVisible()
+      expect(await sideways(page), at).toBeLessThanOrEqual(1)
+
+      // The type navigation, once a type is open.
+      await page.goto(`/app/universes/${universeId}/lore?type=${kingdom}`)
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Kingdom')
       expect(await sideways(page), at).toBeLessThanOrEqual(1)
 
       if (width > 640) {
@@ -396,7 +406,7 @@ test.describe('Lore types', () => {
       } else {
         await expect(page.getByTestId('lore-types')).toBeHidden()
         const trigger = page.getByTestId('lore-type-menu')
-        await expect(trigger).toHaveAccessibleName('Choose category')
+        await expect(trigger).toHaveAccessibleName('Category: Kingdom')
         await trigger.click()
         const menu = page.getByTestId('lore-type-menu-panel')
         await expect(menu.locator('a[data-type-name]')).toHaveCount(all)

@@ -21,6 +21,7 @@ import {
 import { ActionIcon } from '../components/ActionIcon'
 import { EmptyState } from '../components/EmptyState'
 import { EntityCard } from '../components/EntityCard'
+import { LoreCatalog, LoreCatalogSkeleton } from '../components/LoreCatalog'
 import { LoreFieldFilters } from '../components/LoreFieldFilters'
 import { PageHeader } from '../components/PageHeader'
 import { GroupSwitcher, TypeSwitcher } from '../components/TypeSwitcher'
@@ -84,10 +85,14 @@ function readPage(value: string | null) {
  * is a move too. Field filters belong to the type whose fields they read: another type starts with none.
  *
  * A type is where browsing starts (ADR 0007 amendment, 2026-10-01). There is no "All": with no type chosen the page lists
- * nothing and reads nothing - a search or status in the address waits for a type. The type navigation above the list is
- * how one is chosen: the same wrapped row (a menu on a phone) Lore always had, minus All, with nothing current. A chosen type shows its whole branch: its own entries and those of every type nested beneath it, each card
- * still naming its own type. A type id the universe does not have - deleted, mistyped, or another world's - is taken out of
- * the address, which leaves nothing chosen; it never widens to every entry.
+ * no entries and reads none - a search or status in the address waits for a type. Lore's front page is the catalog
+ * instead (Issue #60, ADR 0065): every type as a card, with a "Browse by group" choice above that narrows the cards
+ * (`?browse=<group id>`, replacing its history entry, so Back from a type finds the cards as they were). A card opens the
+ * same `?type=<id>` the type row links to; the row (a menu on a phone) is the navigation once a type or group is chosen,
+ * and the Lore crumb leads back to the cards. A chosen type shows its whole branch: its own entries and those of every
+ * type nested beneath it, each card still naming its own type. A type id the universe does not have - deleted,
+ * mistyped, or another world's - is taken out of the address, which leaves nothing chosen; it never widens to every
+ * entry.
  *
  * A semantic group (Issue #36) is the other way in: `?group=<id>` lists the entries of every type in the group, as it is
  * now. A type and a group are never both chosen - choosing one drops the other - and field filters stay a type's, since a
@@ -121,6 +126,7 @@ export default function LorePage() {
 
   const typeParam = params.get('type')
   const groupParam = params.get('group')
+  const browseParam = params.get('browse')
   const canonStatus = readStatus(params.get('status'))
   const search = params.get('q') ?? ''
   const page = readPage(params.get('page'))
@@ -183,6 +189,11 @@ export default function LorePage() {
   const isUnknownGroup =
     !typeParam && groupParam !== null && groups !== null && selectedGroup === null
   const chosenName = selectedType?.name ?? selectedGroup?.name ?? null
+  // Nothing named in the address: Lore's front page, the catalog of types (Issue #60).
+  const atCatalog = !typeParam && !groupParam
+  const browsing =
+    (atCatalog && browseParam && groups?.find((group) => group.id === browseParam)) || null
+  const isUnknownBrowse = atCatalog && browseParam !== null && groups !== null && browsing === null
 
   // A type this universe does not have is taken out of the address in place, which leaves nothing chosen.
   useEffect(() => {
@@ -211,6 +222,19 @@ export default function LorePage() {
       { replace: true },
     )
   }, [isUnknownGroup, setParams])
+
+  // A catalog narrowed to a group the universe does not have shows every type again, with the address cleaned in place.
+  useEffect(() => {
+    if (!isUnknownBrowse) return
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        next.delete('browse')
+        return next
+      },
+      { replace: true },
+    )
+  }, [isUnknownBrowse, setParams])
 
   // Field filters the chosen type can still answer. One the address carries that it cannot - a field since deleted or
   // changed, an option gone, a hand-edited value - is taken out in place, never read as another filter, and never sent.
@@ -326,7 +350,12 @@ export default function LorePage() {
 
   // Another type is another set of fields: its filters do not travel with the author.
   const hrefFor = (typeId: string | null): To => {
-    const next = withParams({ type: typeId, group: null, [FIELD_FILTER_PARAM]: null }).toString()
+    const next = withParams({
+      type: typeId,
+      group: null,
+      browse: null,
+      [FIELD_FILTER_PARAM]: null,
+    }).toString()
     return { search: next ? `?${next}` : '' }
   }
 
@@ -334,7 +363,12 @@ export default function LorePage() {
 
   // A group drops the type, and with it the type's field filters.
   const groupHref = (groupId: string): To => {
-    const next = withParams({ group: groupId, type: null, [FIELD_FILTER_PARAM]: null }).toString()
+    const next = withParams({
+      group: groupId,
+      type: null,
+      browse: null,
+      [FIELD_FILTER_PARAM]: null,
+    }).toString()
     return { search: `?${next}` }
   }
 
@@ -467,13 +501,13 @@ export default function LorePage() {
     <article className="lore" data-selecting={isSelecting ? 'true' : undefined}>
       <PageHeader
         crumb={
-          selectedNode ? (
+          selectedNode || selectedGroup ? (
             <span className="lore__path" data-testid="lore-path">
-              {/* Lore itself: no type chosen, which reads nothing - not every entry. */}
+              {/* Lore itself: the catalog, which reads no entry - not every entry. A group's list has it too. */}
               <Link to={hrefFor(null)} data-testid="lore-path-root">
                 Lore
               </Link>
-              {selectedNode.path.slice(0, -1).map((ancestor) => (
+              {(selectedNode?.path ?? []).slice(0, -1).map((ancestor) => (
                 <Fragment key={ancestor.id}>
                   <span className="lore__pathsep" aria-hidden="true">
                     ›
@@ -487,6 +521,13 @@ export default function LorePage() {
           ) : null
         }
         title={chosenName ? <bdi>{chosenName}</bdi> : 'Lore'}
+        lede={
+          atCatalog && types !== null && types.length > 0 ? (
+            <>
+              Every category in <bdi>{universe.name}</bdi>. Open one to browse its entries.
+            </>
+          ) : undefined
+        }
         actions={
           access.editContent ? (
             <>
@@ -517,38 +558,43 @@ export default function LorePage() {
       >
         {/* Navigation only: the types, and on a phone the Filters button beside them. Nothing that comes and goes with the
             list - Select, a page size - shares this row, so the types have the same width whichever type is open and their
-            links never move from one row to another as the author goes between a type with entries and one without. */}
-        <div className="lore__nav">
-          <TypeSwitcher
-            tree={tree}
-            selected={selectedNode}
-            hrefFor={typeHref}
-            groups={groups ?? []}
-            selectedGroupId={selectedGroup?.id ?? null}
-            groupHref={groupHref}
-          />
-          {chosenName ? (
-            <button
-              className="button button--secondary lore__filtertoggle"
-              type="button"
-              aria-expanded={filtersOpen}
-              aria-controls={filtersId}
-              onClick={() => setFiltersOpen((open) => !open)}
-              data-testid="lore-filters-toggle"
-            >
-              <ActionIcon icon={ListFilter} />
-              Filters
-              {activeFilters > 0 ? (
-                <span className="lore__filtercount">{activeFilters}</span>
+            links never move from one row to another as the author goes between a type with entries and one without. On the
+            catalog the cards are the navigation, so the row and the groups wait for a choice (Issue #60). */}
+        {atCatalog ? null : (
+          <>
+            <div className="lore__nav">
+              <TypeSwitcher
+                tree={tree}
+                selected={selectedNode}
+                hrefFor={typeHref}
+                groups={groups ?? []}
+                selectedGroupId={selectedGroup?.id ?? null}
+                groupHref={groupHref}
+              />
+              {chosenName ? (
+                <button
+                  className="button button--secondary lore__filtertoggle"
+                  type="button"
+                  aria-expanded={filtersOpen}
+                  aria-controls={filtersId}
+                  onClick={() => setFiltersOpen((open) => !open)}
+                  data-testid="lore-filters-toggle"
+                >
+                  <ActionIcon icon={ListFilter} />
+                  Filters
+                  {activeFilters > 0 ? (
+                    <span className="lore__filtercount">{activeFilters}</span>
+                  ) : null}
+                </button>
               ) : null}
-            </button>
-          ) : null}
-        </div>
-        <GroupSwitcher
-          groups={groups ?? []}
-          selectedGroupId={selectedGroup?.id ?? null}
-          groupHref={groupHref}
-        />
+            </div>
+            <GroupSwitcher
+              groups={groups ?? []}
+              selectedGroupId={selectedGroup?.id ?? null}
+              groupHref={groupHref}
+            />
+          </>
+        )}
       </PageHeader>
 
       {/* The list's own controls, under the navigation: what narrows the list (search and status, folded behind Filters on a
@@ -699,27 +745,21 @@ export default function LorePage() {
         </p>
       ) : null}
 
-      {/* Nothing chosen yet: the categories above are the way in, and this says so - with the one create action. Nothing is
-          read for it (ADR 0007 amendment). */}
-      {types !== null &&
-      types.length > 0 &&
-      !selectedType &&
-      !selectedGroup &&
-      !isUnknownType &&
-      !isUnknownGroup ? (
-        <EmptyState
-          testId="lore-no-category"
-          title="Choose a category to browse your lore."
-          hint="A category shows its own entries and everything filed inside it."
-          action={
-            access.editContent ? (
-              <Link className="button" to={createTo} data-testid="empty-new-entity">
-                <ActionIcon icon={Plus} />
-                New entry
-              </Link>
-            ) : undefined
-          }
+      {/* Nothing chosen yet: the catalog of types is the way in (ADR 0065). It reads the types and groups the page already
+          has, and no entry. Groups that cannot be read leave the cards without the group choice. */}
+      {atCatalog && types !== null && types.length > 0 && groups !== null ? (
+        <LoreCatalog
+          tree={tree}
+          groups={groups}
+          browsing={browsing}
+          onBrowse={(groupId) => update({ browse: groupId }, true)}
+          typeHref={typeHref}
+          groupHref={groupHref}
+          typesUrl={`/app/universes/${universe.id}/types`}
         />
+      ) : null}
+      {atCatalog && !typesFailed && (types === null || (types.length > 0 && groups === null)) ? (
+        <LoreCatalogSkeleton />
       ) : null}
 
       {typesFailed ? (
