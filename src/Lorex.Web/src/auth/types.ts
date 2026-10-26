@@ -10,6 +10,10 @@ export interface AuthContextValue {
   user: AuthUser | null
   /** True until the first /api/auth/me probe settles, so routes can hold the paint. */
   isLoading: boolean
+  /** The probe failed for a reason other than 401 (offline, a 500): the session is unknown, not ended. */
+  isUnreachable: boolean
+  /** Runs the session probe again. */
+  retry: () => void
   register: (input: {
     username: string
     email: string

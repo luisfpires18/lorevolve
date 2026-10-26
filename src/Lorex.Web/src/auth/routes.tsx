@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { NETWORK_FAILURE } from '../lib/api'
 import { returnPath } from './returnPath'
 import { useAuth } from './useAuth'
 
@@ -7,12 +8,27 @@ function SessionPending() {
   return <div className="session-pending" role="status" aria-label="Checking your session" />
 }
 
+/** The session probe could not reach Lorex, so whether the author is signed in is unknown: offer a retry. */
+function SessionUnreachable({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="session-pending session-pending--unreachable">
+      <div className="notice notice--error" role="alert">
+        <p>{NETWORK_FAILURE}</p>
+        <button className="button button--secondary" type="button" onClick={onRetry}>
+          Try again
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /** Sends signed-out visitors to the sign-in page, remembering where they were headed. */
 export function RequireAuth() {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, isUnreachable, retry } = useAuth()
   const location = useLocation()
 
   if (isLoading) return <SessionPending />
+  if (!user && isUnreachable) return <SessionUnreachable onRetry={retry} />
   if (!user)
     return (
       <Navigate to="/login" state={{ from: `${location.pathname}${location.search}` }} replace />
@@ -39,10 +55,11 @@ export function RequireGuest() {
  * entry is hidden here; every admin request is refused by the server for anyone else, whatever this guard decides.
  */
 export function RequireAdmin() {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, isUnreachable, retry } = useAuth()
   const location = useLocation()
 
   if (isLoading) return <SessionPending />
+  if (!user && isUnreachable) return <SessionUnreachable onRetry={retry} />
   if (!user)
     return (
       <Navigate to="/login" state={{ from: `${location.pathname}${location.search}` }} replace />

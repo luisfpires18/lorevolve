@@ -278,7 +278,7 @@ public sealed partial class DatabaseBackupRunner(
                 await PruneSafelyAsync(store, cancellationToken);
             }
 
-            await RefreshAsync(cancellationToken);
+            await RefreshSafelyAsync(cancellationToken);
             return attempt;
         }
         catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
@@ -313,6 +313,19 @@ public sealed partial class DatabaseBackupRunner(
             {
                 LogCleanupFailed(logger, exception, workDirectory);
             }
+        }
+    }
+
+    private async Task RefreshSafelyAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await RefreshAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // The backup is already verified; a failed listing must not record it as failed and trigger a duplicate run.
+            LogRefreshFailed(logger, exception, Explain(exception));
         }
     }
 
@@ -455,6 +468,9 @@ public sealed partial class DatabaseBackupRunner(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Database backup retention did not run: {Reason}")]
     private static partial void LogPruneFailed(ILogger logger, Exception exception, string reason);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Database backup list did not refresh after a verified backup: {Reason}")]
+    private static partial void LogRefreshFailed(ILogger logger, Exception exception, string reason);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "An unverified backup object could not be removed and will be swept later: {Key}")]
     private static partial void LogStrayLeft(ILogger logger, Exception exception, string key);

@@ -37,6 +37,12 @@ export interface ChronologyEra extends EraWriting {
 
   /** Story scenes placed in this era. */
   sceneCount: number
+
+  /** Progression eras of entries that start or end in this era. */
+  entryEraCount: number
+
+  /** Relationship periods that start or end in this era. */
+  periodCount: number
 }
 
 /**

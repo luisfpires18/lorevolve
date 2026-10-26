@@ -19,6 +19,7 @@ namespace Lorex.Api.Data;
 internal static class DatabaseFailures
 {
     private const int Constraint = 19;
+    private const int ConstraintForeignKey = 787;
     private const int ConstraintPrimaryKey = 1555;
     private const int ConstraintUnique = 2067;
 
@@ -31,10 +32,12 @@ internal static class DatabaseFailures
         && sqlite.SqliteExtendedErrorCode is ConstraintUnique or ConstraintPrimaryKey;
 
     /// <summary>
-    /// Whether any constraint refused the write: a unique index, a foreign key, a check or a
-    /// not-null column. For the writes whose expected loss is a row moving or vanishing
-    /// underneath them, not only a duplicate.
+    /// Whether a unique index or a foreign key refused the write. For the writes whose expected
+    /// loss is a row moving or vanishing underneath them, not only a duplicate. A check or a
+    /// not-null column refusing is a bug in the write, not a race, so it fails as one.
     /// </summary>
     internal static bool IsConstraintViolation(DbUpdateException exception) =>
-        exception.InnerException is SqliteException { SqliteErrorCode: Constraint };
+        exception.InnerException is SqliteException sqlite
+        && sqlite.SqliteErrorCode == Constraint
+        && sqlite.SqliteExtendedErrorCode is ConstraintUnique or ConstraintPrimaryKey or ConstraintForeignKey;
 }
