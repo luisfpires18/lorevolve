@@ -76,7 +76,7 @@ public static class DatabaseSnapshot
         string? appSchemaVersion,
         CancellationToken cancellationToken)
     {
-        Directory.CreateDirectory(directory);
+        CreatePrivateDirectory(directory);
         var databasePath = Path.Combine(directory, "lorex.db");
         var compressedPath = databasePath + ".gz";
 
@@ -175,6 +175,22 @@ public static class DatabaseSnapshot
         }
 
         return (total, Convert.ToHexStringLower(hash.GetHashAndReset()));
+    }
+
+    /// <summary>
+    /// A folder only this account can enter: a snapshot is the whole database, password hashes included. Owner-only (0700)
+    /// on Unix - App Service Linux - and the inherited ACL of the user's own temp folder on Windows.
+    /// </summary>
+    public static void CreatePrivateDirectory(string directory)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Directory.CreateDirectory(directory);
+        }
+        else
+        {
+            Directory.CreateDirectory(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
     }
 
     /// <summary>A connection string for one file, unpooled so the file is released the moment it is closed.</summary>

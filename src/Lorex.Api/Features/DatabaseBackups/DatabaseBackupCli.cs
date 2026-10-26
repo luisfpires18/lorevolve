@@ -166,7 +166,7 @@ public static class DatabaseBackupCli
             throw new DatabaseBackupException("The drill never writes over the configured database. Choose another --target.");
         }
 
-        Directory.CreateDirectory(targetFolder);
+        DatabaseSnapshot.CreatePrivateDirectory(targetFolder);
         var report = new DrillReport { RestoredPath = restoredPath };
         var clock = Stopwatch.StartNew();
 

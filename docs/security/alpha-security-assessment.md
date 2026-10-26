@@ -176,3 +176,78 @@ maps, uploads, auth, publication, assistant limits, storage quota, headers).
 
 No known Critical. The one High (H-1) is fixed on this branch. Mediums M-1..M-6 are open with the mitigations and
 follow-ups above and need the owner's acceptance for alpha. Part 2 re-checks the boundaries #11 and #54 change.
+
+## Part 2 - Final targeted regression after #11 and #54 (2026-10-26)
+
+Scope: the boundaries `526e994`/`6b9b624` (#11 readable export, recovery drill) and `5dfa4f4` (#54 database backups)
+changed or connect to, re-attacked rather than re-read: export and restore authorization and isolation, private media,
+R2 credentials and permissions, backup object access, retention, restore privilege, failure logs, and the Admin, MCP,
+upload and map controls they touch.
+
+### Findings in the new work
+
+| ID | Sev. | Status | Boundary | Finding |
+| --- | --- | --- | --- | --- |
+| R-1 | Medium | **Fixed** `6b9b624` | Readable export | Date-period and month labels and manuscript prose reached the Markdown unescaped, so a collaborator could plant a `[x](javascript:...)` link or image that a viewer renders when the owner opens their export |
+| R-2 | Low | **Fixed** (final regression commit) | Backup host | The snapshot's working folder took the temp folder's default permissions; it holds the whole database (password hashes) for the seconds of a run |
+| R-3 | Low | Open, owner step | R2 backups | The backup token must be able to write, and R2 cannot grant write without delete: a leaked token or a compromised process could delete backups |
+| R-4 | Low | Open | Backup host | A process killed mid-run leaves its snapshot in the container's temp folder until the container restarts (container-local, owner-only) |
+| R-5 | Info | Accepted | Admin | Admin's status shows object keys, sizes and SHA-256s - metadata only, Admin only |
+
+**R-1.** Evidence: `Year`/`Date` appended era and month names raw; `Manuscript` escaped only `<`. Exploit: an Editor names a
+date period `Age [z](javascript:alert(5))` or writes link syntax in a scene; the owner downloads the readable export and
+opens it in a Markdown viewer that follows links. Needs an Editor and a viewer that allows the scheme. Fix: every date
+helper escapes its labels; prose escapes `\ [ ] < >`. Test: `UniverseRecoveryTests.The_readable_export_neutralises_unsafe_links_and_markup_written_into_content`
+now plants all three and asserts no page holds an unescaped `javascript:` target or a raw tag. Residual: none known.
+
+**R-2.** Fix: `DatabaseSnapshot.CreatePrivateDirectory` creates the run folder and the drill target 0700 on Unix; on Windows
+the user's own temp folder's ACL applies. Test: `DatabaseBackupTests.The_working_folder_is_the_owner_s_alone` (asserts the
+mode where the platform has one; CI runs Linux). Residual: Low - App Service's `/tmp` is already container-local.
+
+**R-3.** Mitigation (runbook step 2): an R2 bucket lock on `lorex-db/` for 7 days, shorter than the 30-day window pruning
+uses; the token is scoped to the one backup bucket and never shared with media. Residual: Low once the lock exists.
+
+**R-4.** Residual: Low. The next run uses a new folder; a restart clears `/tmp`. A start-up sweep of stale run folders is a
+small follow-up if this is ever seen.
+
+### Re-checked, no finding
+
+| Boundary | What was tried | Evidence |
+| --- | --- | --- |
+| Readable export authorization | Editor, Reviewer, Viewer, stranger, anonymous | `UniverseAccessMatrixTests` (route classified Own: 403 members, 404 stranger); `UniverseRecoveryTests` (401 anonymous) |
+| Cross-universe isolation | Export renders one payload built for the route's universe; links resolve inside it | `UniverseBackupBuilder` scoping (existing `A_backup_never_reaches_into_another_universes_media`); readable pages come from the same payload |
+| Private notes | Only the owner can download either file; notes appear only there | Same gate as the backup (ADR 0056, 0063) |
+| Private media | The readable export writes only originals its live pages show, by key from the snapshot; trashed pictures and thumbnails stay out | `UniverseRecoveryTests` (exactly 4 originals, trashed relic absent) |
+| Unsafe article links | `javascript:` stored before validation | Not emitted as a link (`SafeHref`), tested |
+| Backup object access | Any route returning backup bytes, a signed URL or a manifest's contents beyond metadata | None exists; `/api/admin/database-backups` is Admin only and returns metadata (`DatabaseBackupTests`: 401 anonymous, 403 member for GET and POST) |
+| R2 credentials | Secret in status, logs or errors | Status describes the bucket name only; errors are `status + error code`; tested with a secret value |
+| Misconfiguration | Half-set R2 settings, a path-like environment name | A stated problem, no store, no fallback (`An_r2_target_needs_every_setting_and_never_describes_its_secret`) |
+| Partial uploads | Corrupted read-back, refused manifest, interrupted run | No manifest, object removed, reason reported (`A_run_that_cannot_verify_its_upload_...`) |
+| Overlap | Second run while one runs | Refused (`Runs_never_overlap_...`) |
+| Retention | Deleting another environment's or too-recent backups; pruning after a failure | Own prefix only, policy only, never after a failure (`Retention_keeps_...`) |
+| Restore privilege | Writing over the live database from the drill; restoring a newer schema | Refused (`The_restore_drill_proves_a_backup_...`, `The_drill_brings_an_older_schema_forward_...`); production restore needs Azure and R2 access, nothing inside LoreX grants it |
+| Failure logs | Keys, connection strings or secrets in log messages | Messages carry keys and reasons only; the exception is logged as the provider raised it (no credential in AWS SDK exceptions) |
+| CSRF on Run now | Cross-site POST | `SameSite=Strict` session; `azurewebsites.net` is a public suffix, so other sites there are cross-site |
+| Security headers | New routes | Global middleware (`SecurityHeadersTests`) |
+| Admin, MCP, uploads, maps | Touched only by reading (export) and by the database snapshot | Access matrix, MCP, upload and map suites re-run green (below) |
+
+### Evidence on the branch tip
+
+- Full API suite at `5dfa4f4`: 1995 passed, 1 skipped (the live OpenAI smoke test), 0 failed; then `DatabaseBackupTests`
+  10/10 with the R-2 change.
+- Release build of the solution; `dotnet ef migrations has-pending-model-changes`: none.
+- Web: typecheck, lint (0 errors), Prettier, unit tests 8/8, production build.
+- E2E on a fresh database with the branch's own API and Vite: admin-workspace, export, restore, workspace-settings,
+  collaboration, mcp-connect, entity-image, public-reading, explore, pwa, auth, maps, smoke - 91 passed; earlier on the
+  branch, export/restore/collaboration/settings and every spec whose invitation helper H-1 changed - 107 passed.
+  Full Playwright suite not run locally; delegated to GitHub Actions by project workflow.
+- Response headers checked on a running host: `nosniff`, `X-Frame-Options: DENY`, the CSP and `Referrer-Policy` present.
+- Local restore drill of a 63.6 MB WAL database (runbook): passed; R2 and DEV not exercised.
+
+### Final gate verdict
+
+No known Critical or High is open. H-1 (High) and R-1 (Medium, found in this regression) are fixed with regression tests;
+M-4 is fixed in part. Open for the owner's acceptance before #34: M-1 (ImageSharp licence decision), M-2 (blocked on the
+App Service client-address check), M-3, M-5, M-6, the Low items, R-3 (bucket lock) and the runtime checks of Part 1.
+#33 is ready for the #34 go/no-go **on the condition** that the owner accepts those residual risks and completes the
+runtime checks; LoreX should not be called ready while H-level work is unmerged, and none of this branch is merged.

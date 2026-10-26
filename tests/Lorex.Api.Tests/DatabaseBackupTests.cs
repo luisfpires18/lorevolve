@@ -341,6 +341,21 @@ public sealed class DatabaseBackupTests : IDisposable
     }
 
     [Fact]
+    public void The_working_folder_is_the_owner_s_alone()
+    {
+        // A snapshot is the whole database, password hashes included (issue #33, R-2).
+        var folder = Path.Combine(_folder, "work", "lorex-db-backup", "run");
+        DatabaseSnapshot.CreatePrivateDirectory(folder);
+        Assert.True(Directory.Exists(folder));
+        if (!OperatingSystem.IsWindows())
+        {
+            var ownerOnly = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
+            Assert.Equal(ownerOnly, File.GetUnixFileMode(folder));
+            Assert.Equal(ownerOnly, File.GetUnixFileMode(Path.GetDirectoryName(folder)!));
+        }
+    }
+
+    [Fact]
     public void An_r2_target_needs_every_setting_and_never_describes_its_secret()
     {
         var options = new DatabaseBackupOptions
