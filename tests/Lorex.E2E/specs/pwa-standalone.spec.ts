@@ -129,6 +129,61 @@ async function expectOnScreen(page: Page, testId: string) {
 }
 
 test.describe('an installed Lorex on a phone (simulated)', () => {
+  test('choosing a Lore category loads and shows that category’s entities', async ({ page }) => {
+    await asInstalled(page)
+    await withSafeAreas(page)
+    await signUp(page)
+    const universeId = await newUniverse(page)
+    const types = (await (
+      await page.request.get(`/api/universes/${universeId}/entity-types`)
+    ).json()) as { id: string; name: string }[]
+    const character = types.find((type) => type.name === 'Character')!
+    const location = types.find((type) => type.name === 'Location')!
+
+    for (const [typeId, name] of [
+      [character.id, 'PWA Character visible'],
+      [location.id, 'PWA Location visible'],
+    ]) {
+      const response = await page.request.post(`/api/universes/${universeId}/entities`, {
+        data: {
+          entityTypeId: typeId,
+          name,
+          summary: null,
+          canonStatus: 2,
+          aliases: [],
+          tags: [],
+          fields: [],
+        },
+      })
+      expect(response.ok(), await response.text()).toBe(true)
+    }
+
+    await page.goto(`/app/universes/${universeId}/lore`)
+    await expectLaunched(page)
+    await expect(page.getByTestId('lore-no-category')).toBeVisible()
+
+    const category = page.getByTestId('lore-type-menu')
+    await category.tap()
+    await page
+      .getByTestId('lore-type-menu-panel')
+      .getByRole('link', { name: 'Character', exact: true })
+      .tap()
+    await expect(page).toHaveURL(new RegExp(`/lore\\?type=${character.id}$`))
+    await expect(page.getByTestId('entity-card')).toHaveCount(1)
+    await expect(page.getByTestId('entity-card')).toContainText('PWA Character visible')
+
+    await page.getByTestId('lore-type-menu').tap()
+    await page
+      .getByTestId('lore-type-menu-panel')
+      .getByRole('link', { name: 'Location', exact: true })
+      .tap()
+    await expect(page).toHaveURL(new RegExp(`/lore\\?type=${location.id}$`))
+    await expect(page.getByTestId('entity-card')).toHaveCount(1)
+    await expect(page.getByTestId('entity-card')).toContainText('PWA Location visible')
+    await expect(page.getByTestId('entity-card')).not.toContainText('PWA Character visible')
+    await expect(page.getByTestId('lore-load-error')).toHaveCount(0)
+  })
+
   test('the Lore category menu opens on screen, chooses a category, and the choice survives a reload and a new window', async ({
     page,
     browser,

@@ -250,6 +250,7 @@ async function open(page: Page, url: string) {
   // The entry's picture reserves its shape before it loads, but the layout is only settled once it has.
   if (url.includes('/lore/') && !url.includes('?')) {
     await expect(page.getByTestId('entry-image').locator('img')).toBeVisible()
+    await expect(page.locator('.article__body')).toBeVisible()
   }
 }
 
@@ -321,6 +322,12 @@ for (const vp of VIEWPORTS) {
       // The entry: a reading measure, the picture beside the text on a desktop and under it on narrower screens, and
       // nothing that belongs to the entry outside its content box.
       const contentRight = canvas.x + canvas.w - canvas.pr
+      if (vp.width >= 1280) {
+        expect(
+          got.entryRail!.x + got.entryRail!.w,
+          `${where}: the visible article/details layout leaves unexplained space to its right`,
+        ).toBeCloseTo(contentRight, 0)
+      }
       expect(got.article!.w, `${where}: the article lost its measure`).toBeGreaterThanOrEqual(
         Math.min(480, contentWidth - 1),
       )
@@ -366,7 +373,7 @@ for (const vp of VIEWPORTS) {
   })
 }
 
-test('the entry page is one layout on a 1920 desktop and a 2560 monitor: only the margins differ', async ({
+test('the entry keeps its reading measure and aligns the details at 1920 and 2560', async ({
   browser,
 }) => {
   test.setTimeout(120_000)
@@ -398,15 +405,13 @@ test('the entry page is one layout on a 1920 desktop and a 2560 monitor: only th
   same('the text column', desktop.entryMain!.w, monitor.entryMain!.w)
   same('the picture column', desktop.entryRail!.w, monitor.entryRail!.w)
   same('the picture', desktop.entryMedia!.w, monitor.entryMedia!.w)
-  // ...the same horizontal relationships, measured from the title...
-  same(
-    'title to picture',
-    desktop.entryMedia!.x - desktop.title!.x,
-    monitor.entryMedia!.x - monitor.title!.x,
-  )
-  // ...the tools and the status at the content box's right edge on both...
+  // ...the details stay at the far edge of each visible content box, instead of leaving the wide monitor's content
+  // concentrated on the left with a large empty region to its right...
   const fromRight = (got: Shape, part: Box) =>
     got.canvas!.x + got.canvas!.w - got.canvas!.pr - (part.x + part.w)
+  same('desktop details to the right edge', fromRight(desktop, desktop.entryRail!), 0, 1)
+  same('monitor details to the right edge', fromRight(monitor, monitor.entryRail!), 0, 1)
+  // ...and the tools and status use that same right edge on both...
   same(
     'tools to the right edge',
     fromRight(desktop, desktop.tools!),
