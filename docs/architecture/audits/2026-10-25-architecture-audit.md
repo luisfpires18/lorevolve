@@ -309,6 +309,8 @@ follows from the code but was not exercised), Plausible (risk without a measurem
 
 #### W9. Reconciling an unchanged conflict table is most of a gated save (measured)
 
+> **Status:** diagnosed and fixed (section 7.7). Reconcile on an unchanged table now takes 89-132 ms, down from 450-601 ms.
+
 - **Evidence (Measured, `CanonSweepBenchmark`, Release, two runs).** Synthetic universes: half the
   entries Canon and half Draft, every relationship Canon, nothing dated, so the status rules find
   something on most relationships.
@@ -592,10 +594,12 @@ An earlier full run on `373a27a` found the five tests in 7.2's list
 - **W5.** Already structured; an account id in logs is a #33 privacy call.
 - **W7.** STATE.md is edited live by other sessions.
 - **W8.** Opportunistic.
-- **W9.** Measured just now; optimising it needs review.
+- **W9.** Done afterwards; see section 7.7.
 - **P1-P6.** Post-alpha.
 
 ### Draft F: "[Pre-alpha · Performance] Reconcile Canon conflicts without loading every subject"
+
+> Done in section 7.7, with a narrower change than drafted: subjects are still compared, through a lean projection.
 
 > Measured by `CanonSweepBenchmark` (W9): `ReconcileAsync` takes about 550 ms on an unchanged table
 > of 5,000-12,500 conflicts, inside every gated write's transaction. Compare stored fingerprints with
@@ -603,3 +607,92 @@ An earlier full run on `373a27a` found the five tests in 7.2's list
 > reopen, resolve or change wording. **Done when:** the benchmark's reconcile line drops to tens of ms
 > at 2,000 entries; Canon lifecycle tests (`CanonIntegrityEndpointTests`, `CanonPromotionGateTests`)
 > and the full suite stay green.
+
+### 7.7 W9: why reconciliation was slow, and the fix
+
+**Diagnosis (measured).** I added temporary per-phase timers (not committed) to `ReconcileAsync` and
+ran `CanonSweepBenchmark` on the gated save's reconciliation, with no conflict changing (Release):
+
+| Phase | 4,996 conflicts / 9,992 subjects | 12,537 / 25,074 |
+| --- | --- | --- |
+| Tracked `CanonConflicts.Include(Subjects)` load (the old first step) | **354-361 ms** | **459-475 ms** |
+| Same query, `AsNoTracking` | 198-202 ms | 292-303 ms |
+| Projection of the compared scalars (no tracking) | 18 ms | 31 ms |
+| Projection of the subject tuples (no tracking) | 28 ms | 110 ms |
+| Fingerprints only | 6-8 ms | 8-10 ms |
+| Compare loop | 29-38 ms | 34-40 ms |
+| `DetectChanges` | 19-20 ms | 38-121 ms |
+| `SaveChanges` (nothing to write) | 20-21 ms | 33-36 ms |
+
+The cost is EF, not SQLite. Most of it was materialising and tracking 15k-37k entities: the single
+`Include` query repeats each conflict's Title and Explanation on every subject row, and the change
+tracker then fixes up every entity. Reading the same columns as plain projections costs 46 ms and
+141 ms.
+
+**Change** (`CanonIntegrityEvaluator.ReconcileAsync`):
+
+1. Read every conflict's compared fields (id, fingerprint, status, severity, title, explanation) and
+   all subject tuples as two no-tracking projections.
+2. Decide, conflict by conflict, whether reconciliation would write anything. `WillChange` asks the
+   same questions as `Refresh`/`SyncSubjects`: severity, title or explanation differs, the subject set
+   differs, or the conflict is Resolved and detected again. A conflict that is no longer detected
+   needs a write unless it is already Resolved.
+3. Load and track only those conflicts, with their subjects, and run the **unchanged** create /
+   reopen / refresh / resolve / subject-sync code over them.
+
+A conflict that is still detected and unchanged is counted as persisted, exactly as before, and
+never loaded.
+
+**Behaviour kept:**
+
+- Writes are identical, because an unloaded conflict was never written before either.
+- Dismissals are untouched, and resolved-and-absent conflicts are left alone.
+- `UpdatedAt` moves only on change.
+- The summary counts are the same.
+- The caller still owns the transaction. Under the gate, both reads happen inside the write
+  transaction, so they see the same state.
+- Under `POST /evaluate`, a write committed between the projection and the tracked load can make
+  this round skip a conflict that changed. The next reconciliation catches it. The old code had the
+  same window between its load and its save.
+- No caller leaves a conflict edit unsaved before reconciling (checked: dismiss/reopen save first,
+  `TrashPermanentDelete` uses `ExecuteDelete`), so reading through no-tracking projections misses
+  nothing.
+
+**Regression test.** `CanonReconcileTrackingTests` covers, on one universe:
+
+- first evaluation creates 3 conflicts;
+- an unchanged reconcile tracks **0** conflicts, writes nothing (status, title, `UpdatedAt` and
+  subjects identical) and keeps a dismissal;
+- a rename rewrites only the conflict that names the entry, and tracks 1;
+- a promotion resolves 1 and a demotion reopens the same id, each tracking 1.
+
+It failed against the old full load (`Tracked` was not 0) and with `WillChange` forced false
+(rewording and resolving were skipped).
+
+**Before and after, same benchmark** (deterministic seeds; Release; two runs each):
+
+| Entries / relationships | Reconcile, nothing changed | One gated save (create entry) | First evaluate (creates all) |
+| --- | --- | --- | --- |
+| 200 / 500 | 28 → 7 ms | 73-74 → 53-55 ms | 154-174 → 165-167 ms |
+| 2,000 / 5,000 | 450-467 → 89-91 ms | 1,000-1,016 → 676-684 ms | 2.8-3.0 → 2.7-2.8 s |
+| 5,000 / 12,500 | 579-601 → 125-132 ms | 845-883 → 390-437 ms | 2.4-2.6 → 2.5-2.6 s |
+
+**Limits:**
+
+- Synthetic data with far more findings than any real universe (the largest real one has 45
+  entries); on real data the gain is a few milliseconds.
+- One machine, in-memory SQLite.
+- The 2,000-entry case runs first in the process, so its save carries warm-up time. That is why it
+  is slower than the 5,000 case.
+- A gated save of a new entry still spends about 400-500 ms outside the sweeps and reconciliation
+  (the entry write itself, search indexing). That is not attributed or changed here.
+- The first evaluation, which inserts every conflict, is not faster: it is insert-bound.
+- When many conflicts change at once (for example, resolving thousands), the tracked load is close to
+  the old cost. Only the unchanged and few-changed cases get faster.
+
+**Checks:**
+
+- Canon, backup/restore, trash, family-tree and duplicate suites: 298/298.
+- `CanonReconcileTrackingTests`: 1/1.
+- Full Release suite: **1,979 total: 1,978 passed, 0 failed, 1 skipped** (the OpenAI smoke test), 12 m 32 s. The run started just before a comment-only edit to the evaluator.
+
