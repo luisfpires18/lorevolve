@@ -5366,9 +5366,10 @@ a.button--danger:visited {
 
 /* ---------- The entry's page: article, picture, facts ----------
 
-   Desktop: the article at its reading measure on the left; the picture and facts sit at the far
-   edge of the available content area, as an infobox. This keeps the visible page balanced on wide
-   screens without stretching prose. A picture wider than it is tall would be a strip in that column, so it spans the page
+   Desktop: the article at its reading measure on the left; on the right, the picture and then the facts, as
+   an infobox. On a wide content box the infobox column takes the spare width (#57), so the page reaches its
+   right edge without a void between the text and its picture, and the prose keeps its measure. A picture
+   wider than it is tall would be a strip in that column, so it spans the page
    above both instead, bounded in height so it introduces the article rather than replacing it. The
    picture is always the original, shown whole: only maxima are set, so nothing is cropped,
    stretched or blown up past its own size, and its `width`/`height` reserve its shape before it
@@ -5378,10 +5379,18 @@ a.button--danger:visited {
   display: grid;
   grid-template-columns: minmax(0, 46rem) minmax(15rem, 20rem);
   grid-template-areas: 'main rail';
-  justify-content: space-between;
+  justify-content: start;
   align-items: start;
   gap: var(--space-6) var(--space-7);
   margin-top: var(--space-6);
+}
+
+/* From 1600 the content box is wider than the article and a 20rem column need; the column grows instead of
+   leaving the remainder empty. Below it the two already fill the box, so laptops are unchanged. */
+@media (min-width: 1600px) {
+  .entry__layout {
+    grid-template-columns: minmax(0, 46rem) minmax(20rem, 1fr);
+  }
 }
 
 .entry__layout[data-picture='true'][data-shape='portrait'],

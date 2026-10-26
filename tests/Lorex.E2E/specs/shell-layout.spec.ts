@@ -15,8 +15,10 @@ import { png } from './support/png'
  *     screen hugging the left of an empty expanse;
  *   - on an entry the article keeps a reading measure and the picture sits beside it on a desktop, under it on a
  *     tablet or a phone; its tools and status never leave the content box;
- *   - and the one thing the owner saw: the entry page at 1920 and at 2560 is the same layout, measured, with only the
- *     side margins differing.
+ *   - on a desktop the details reach the content edge one column gap from the article, so spare width widens the
+ *     details column instead of opening a void beside or after the text;
+ *   - and the one thing the owner saw: the entry page at 1920 and at 2560 is the same layout, measured - the same
+ *     measure, picture and rhythm, the details column wider on the monitor.
  *
  * Physical screen size and OS scaling are not in play here and cannot be: they change the CSS viewport, which is what
  * these widths are.
@@ -72,6 +74,8 @@ interface Shape {
   tools: Box | null
   canon: Box | null
   bar: Box | null
+  /** The entry grid's own column gap, as computed: the only space allowed between the article and its details. */
+  entryGap: number | null
 }
 
 function unique(prefix: string) {
@@ -240,6 +244,10 @@ async function shape(page: Page): Promise<Shape> {
       tools: box('.entry__tools'),
       canon: box('.entry__kind .canon'),
       bar: box('.entry__bar'),
+      entryGap: (() => {
+        const layout = document.querySelector('.entry__layout')
+        return layout ? parseFloat(getComputedStyle(layout).columnGap) : null
+      })(),
     }
   })
 }
@@ -323,10 +331,22 @@ for (const vp of VIEWPORTS) {
       // nothing that belongs to the entry outside its content box.
       const contentRight = canvas.x + canvas.w - canvas.pr
       if (vp.width >= 1280) {
+        // The details reach the content edge, and nothing but the grid's own gap separates them from the article:
+        // spare width goes to the details column, never to empty space on either side of it.
         expect(
           got.entryRail!.x + got.entryRail!.w,
           `${where}: the visible article/details layout leaves unexplained space to its right`,
         ).toBeCloseTo(contentRight, 0)
+        expect(
+          Math.abs(got.entryRail!.x - (got.entryMain!.x + got.entryMain!.w) - got.entryGap!),
+          `${where}: the space between the article and its details is more than the column gap`,
+        ).toBeLessThanOrEqual(1)
+        // Seen from the reader's side: where the prose ends to where the details begin stays within the article
+        // column's own slack (46rem less the measure) plus that gap.
+        expect(
+          got.entryRail!.x - (got.article!.x + got.article!.w),
+          `${where}: the details are cut off from the text they belong to`,
+        ).toBeLessThanOrEqual(736 - got.article!.w + got.entryGap! + 1)
       }
       expect(got.article!.w, `${where}: the article lost its measure`).toBeGreaterThanOrEqual(
         Math.min(480, contentWidth - 1),
@@ -373,7 +393,7 @@ for (const vp of VIEWPORTS) {
   })
 }
 
-test('the entry keeps its reading measure and aligns the details at 1920 and 2560', async ({
+test('the entry keeps its reading measure and its details beside it, reaching the edge, at 1920 and 2560', async ({
   browser,
 }) => {
   test.setTimeout(120_000)
@@ -403,14 +423,27 @@ test('the entry keeps its reading measure and aligns the details at 1920 and 256
   // The same widths...
   same('the article measure', desktop.article!.w, monitor.article!.w)
   same('the text column', desktop.entryMain!.w, monitor.entryMain!.w)
-  same('the picture column', desktop.entryRail!.w, monitor.entryRail!.w)
   same('the picture', desktop.entryMedia!.w, monitor.entryMedia!.w)
-  // ...the details stay at the far edge of each visible content box, instead of leaving the wide monitor's content
-  // concentrated on the left with a large empty region to its right...
+  // ...the details column takes what the article leaves, so it sits one column gap from the article and reaches the
+  // content edge on both - wider on the monitor, never a void between the text and its picture...
   const fromRight = (got: Shape, part: Box) =>
     got.canvas!.x + got.canvas!.w - got.canvas!.pr - (part.x + part.w)
-  same('desktop details to the right edge', fromRight(desktop, desktop.entryRail!), 0, 1)
-  same('monitor details to the right edge', fromRight(monitor, monitor.entryRail!), 0, 1)
+  for (const [which, got] of [
+    ['desktop', desktop],
+    ['monitor', monitor],
+  ] as const) {
+    same(`${which} details to the right edge`, fromRight(got, got.entryRail!), 0, 1)
+    same(
+      `${which} article to details`,
+      got.entryRail!.x - (got.entryMain!.x + got.entryMain!.w),
+      got.entryGap!,
+      1,
+    )
+  }
+  expect(desktop.entryRail!.w, 'the details column did not grow at 1920').toBeGreaterThan(320)
+  expect(monitor.entryRail!.w, 'the details column did not grow at 2560').toBeGreaterThanOrEqual(
+    desktop.entryRail!.w,
+  )
   // ...and the tools and status use that same right edge on both...
   same(
     'tools to the right edge',
