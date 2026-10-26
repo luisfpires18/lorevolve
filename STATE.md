@@ -19,6 +19,16 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - **#54** in-process daily SQLite backup API snapshot -> private R2 bucket, manifest last after read-back, Admin status/Run
     now, retention proposed and off, `database-backup run|list|restore-drill` CLI (ADR 0064, `docs/recovery/database-backups.md`).
     **Off until the owner adds `DatabaseBackup__*` settings**; R2 path and DEV untested. Local drill measured (63.6 MB, 57.6 s).
+- **Issue #29 - Claude Code MCP toolchain** (`chore/claude-code-mcp-servers` off `dev` at `d96b205`, main checkout;
+  committed locally, not merged, not pushed; issue left open). `.mcp.json` (no secret): `microsoft-learn`, `context7`,
+  `openai-docs` (HTTP, no auth), `chrome-devtools` (`chrome-devtools-mcp@1.12.0 --isolated`, telemetry and CrUX off),
+  `github` (`/mcp/readonly`, `X-MCP-Readonly`, toolsets repos/issues/pull_requests - no Actions; token from
+  `GITHUB_PERSONAL_ACCESS_TOKEN`). **Not fully accepted:** verified without owner approval - the four no-auth servers by
+  protocol probes and a `claude -p --mcp-config` run; `github` only once with the `gh` CLI token as a stand-in.
+  **Owner steps:** approve the five project servers (`claude` or `/mcp`); create a fine-grained read-only PAT for
+  `luisfpires18/lorex`, set `GITHUB_PERSONAL_ACCESS_TOKEN`, confirm `github` connects. Doc:
+  `docs/tooling/claude-code-mcp.md`. Later items (Azure, NuGet, Sentry) not set up; the enabled `playwright` plugin left
+  as the owner set it.
 - **Issue #61 - parent-type link fields take subtypes** (`fix/parent-type-link-subtypes` off `dev` at `75a476a`, in the main
   checkout; committed locally, not merged, not pushed; issue left open). No migration, backup format unchanged. ADR 0007
   amendment. A link field limited to a type now accepts that type and every type nested beneath it (was exact type only).

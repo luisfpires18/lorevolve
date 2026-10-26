@@ -58,3 +58,15 @@ project-scoped hook is real; the warning is cosmetic.
 
 RTK and Graphify are unrelated and both stay: Graphify explores the codebase, RTK
 compresses command output. Neither replaces the other.
+
+## MCP servers
+
+`.mcp.json` (project scope, issue #29): `microsoft-learn`, `context7`, `openai-docs` for current docs,
+`chrome-devtools` for a live isolated Chrome, `github` read-only. Setup, owner steps and why:
+`docs/tooling/claude-code-mcp.md`.
+
+- Reach for a docs server before guessing an API that may have moved (EF Core, ASP.NET Core, Vite, React, Playwright,
+  the Responses API). Never put universe content, keys or personal data in a docs query.
+- `github` is read context only: repositories, issues, pull requests. Never inspect, trigger or wait on GitHub Actions;
+  never ask for a writable token or toolset.
+- No secret in `.mcp.json`; the GitHub token comes from `GITHUB_PERSONAL_ACCESS_TOKEN` in the owner's environment.
