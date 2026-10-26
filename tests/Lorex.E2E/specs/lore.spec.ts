@@ -36,12 +36,16 @@ async function openLore(page: Page) {
   await page.waitForURL(/\/lore$/)
 }
 
-/** Lore starts with no type chosen; a type is chosen from the type row under its heading. */
+/** Lore starts at its type catalog; after a type is chosen, navigation stays in the type row. */
 async function chooseType(page: Page, name: string) {
-  await page
-    .getByRole('navigation', { name: 'Lore types' })
-    .getByRole('link', { name, exact: true })
-    .click()
+  const catalog = page.getByTestId('lore-catalog')
+  const nav = page.getByRole('navigation', { name: 'Lore types' })
+  await expect(catalog.or(nav).or(page.getByTestId('lore-type-menu')).first()).toBeVisible()
+  if (await catalog.isVisible()) {
+    await catalog.locator(`[data-testid="lore-type-card"][data-type-name="${name}"]`).click()
+  } else {
+    await nav.getByRole('link', { name, exact: true }).click()
+  }
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(name)
 }
 

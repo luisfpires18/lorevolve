@@ -189,7 +189,17 @@ public static class DatabaseSnapshot
         }
         else
         {
-            Directory.CreateDirectory(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            // .NET gives the mode to the last folder only and creates missing parents 0755, so each is made here.
+            var missing = new Stack<string>();
+            for (var folder = Path.GetFullPath(directory); !Directory.Exists(folder); folder = Path.GetDirectoryName(folder)!)
+            {
+                missing.Push(folder);
+            }
+
+            foreach (var folder in missing)
+            {
+                Directory.CreateDirectory(folder, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            }
         }
     }
 
