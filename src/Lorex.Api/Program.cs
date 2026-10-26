@@ -67,6 +67,7 @@ var app = builder.Build();
 // First: everything after this point may read the request scheme, and behind a TLS-terminating
 // proxy the scheme is only correct once the forwarded header has been applied.
 app.UseLorexForwardedHeaders();
+app.UseLorexSecurityHeaders();
 app.UseLorexRobotsHeaders();
 
 // Early, so whatever follows that throws answers RFC 7807 with a trace id rather than an empty 500.
