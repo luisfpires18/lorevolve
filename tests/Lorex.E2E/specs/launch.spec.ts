@@ -2,13 +2,21 @@ import { expect, test, type Page } from '@playwright/test'
 import { PASSWORD, unique } from './support/trash'
 
 /**
- * 043.5: the launch layer. An installed Lorex opens on black with its logo, then reveals the app that started
- * underneath; a browser tab never sees it, a reload or a navigation in the same window never replays it, and reduced
- * motion gets a fade rather than movement.
+ * 043.5: the launch layer. An installed Lorex opens on black with its logo and the opening - a book, a world, a game
+ * and a screen drawn around it - then reveals the app that started underneath; a browser tab sees it only on its first
+ * visit to the home page, a reload or a navigation in the same window never replays it, a tap or key skips it, and
+ * reduced motion gets a fade rather than movement.
  *
  * Playwright cannot install the app, so "installed" is the one thing the page reads to decide:
  * `matchMedia('(display-mode: standalone)')`, answered as an installed window would before anything else runs.
  */
+
+/** A browser driven by a person, not by automation: the home page's opening is skipped under `navigator.webdriver`. */
+async function asPerson(page: Page) {
+  await page.addInitScript(() =>
+    Object.defineProperty(Navigator.prototype, 'webdriver', { get: () => false }),
+  )
+}
 
 async function asInstalled(page: Page) {
   await page.addInitScript(() => {
@@ -117,6 +125,44 @@ test.describe('the launch layer', () => {
       /#f6f2ea|#151617/,
     )
     expect(logo).toEqual([])
+  })
+
+  test("a browser's first visit to the home page plays the opening, and once only", async ({
+    page,
+  }) => {
+    await asPerson(page)
+    await page.goto('/')
+
+    await expect(page.locator('html')).toHaveAttribute('data-launch', /on|leaving/)
+    await expect(page.getByTestId('launch-form')).toHaveCount(4)
+    expect(
+      await page.evaluate(
+        () => getComputedStyle(document.querySelector('.launch__form--book')!).animationName,
+      ),
+    ).toContain('launch-form')
+
+    // It plays out, wipes away and leaves the home page usable.
+    await expect(page.getByTestId('launch')).toHaveCount(0, { timeout: 10_000 })
+    await expect(page.locator('html')).not.toHaveAttribute('data-launch')
+    await expect(page.getByRole('main')).toBeVisible()
+
+    // The same window never sees it again.
+    await page.reload()
+    await expect(page.getByRole('main')).toBeVisible()
+    await expect(page.getByTestId('launch')).toHaveCount(0)
+  })
+
+  test('a key skips the opening at once', async ({ page }) => {
+    await asPerson(page)
+    await page.goto('/')
+    await expect(page.locator('html')).toHaveAttribute('data-launch', 'on')
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('launch')).toHaveCount(0)
+    await expect(page.locator('html')).not.toHaveAttribute('data-launch')
+    await expect(page.locator('meta[name=theme-color]')).toHaveAttribute(
+      'content',
+      /#f6f2ea|#151617/,
+    )
   })
 
   test('with reduced motion the logo fades in place and the layer fades out, with nothing moving', async ({
