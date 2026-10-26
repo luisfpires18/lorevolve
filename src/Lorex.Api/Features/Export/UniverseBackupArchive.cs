@@ -141,25 +141,38 @@ public static class UniverseBackupArchiveWriter
                 await JsonSerializer.SerializeAsync(writing, backup, UniverseBackupJson.Options, cancellationToken);
             }
 
-            foreach (var item in media.OrderBy(one => one.ArchivePath, StringComparer.Ordinal))
-            {
-                var bytes = await readObject(item.ObjectKey, cancellationToken)
-                    ?? throw new BackupMediaMissingException(item.EntityId, item.MapId);
-
-                await using (bytes)
-                {
-                    // Stored rather than deflated. A JPEG, PNG or WebP is already compressed, so
-                    // deflating it costs time and saves nothing - and storing it is what makes
-                    // "the original bytes, exactly" the plainest possible thing to verify.
-                    var entry = archive.CreateEntry(item.ArchivePath, CompressionLevel.NoCompression);
-                    entry.LastWriteTime = BackupArchive.Timestamp;
-
-                    await using var writing = entry.Open();
-                    await bytes.CopyToAsync(writing, cancellationToken);
-                }
-            }
+            await WriteMediaAsync(archive, media, readObject, cancellationToken);
         }
 
         return buffer.ToArray();
+    }
+
+    /// <summary>
+    /// Every picture's original, sorted by archive path. Shared with the readable export (ADR 0063), so both put the same
+    /// picture at the same path and both refuse rather than leave one out.
+    /// </summary>
+    internal static async Task WriteMediaAsync(
+        ZipArchive archive,
+        IEnumerable<BackupMediaObject> media,
+        Func<string, CancellationToken, Task<Stream?>> readObject,
+        CancellationToken cancellationToken)
+    {
+        foreach (var item in media.OrderBy(one => one.ArchivePath, StringComparer.Ordinal))
+        {
+            var bytes = await readObject(item.ObjectKey, cancellationToken)
+                ?? throw new BackupMediaMissingException(item.EntityId, item.MapId);
+
+            await using (bytes)
+            {
+                // Stored rather than deflated. A JPEG, PNG or WebP is already compressed, so
+                // deflating it costs time and saves nothing - and storing it is what makes
+                // "the original bytes, exactly" the plainest possible thing to verify.
+                var entry = archive.CreateEntry(item.ArchivePath, CompressionLevel.NoCompression);
+                entry.LastWriteTime = BackupArchive.Timestamp;
+
+                await using var writing = entry.Open();
+                await bytes.CopyToAsync(writing, cancellationToken);
+            }
+        }
     }
 }

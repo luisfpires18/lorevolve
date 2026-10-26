@@ -43,8 +43,26 @@ function save(blob: Blob, fileName: string) {
  * Downloads one universe's backup and returns the filename it was saved under, so the page
  * can say which file to look for.
  */
-export async function downloadUniverseBackup(universeId: string): Promise<string> {
-  const response = await fetch(`/api/universes/${universeId}/export`, {
+export function downloadUniverseBackup(universeId: string): Promise<string> {
+  return download(
+    `/api/universes/${universeId}/export`,
+    'That backup could not be prepared. Try again.',
+  )
+}
+
+/**
+ * Downloads the readable export (issue #11): the same universe as Markdown pages with its
+ * pictures, for reading and keeping. LoreX never reads it back - a backup is what restores.
+ */
+export function downloadReadableExport(universeId: string): Promise<string> {
+  return download(
+    `/api/universes/${universeId}/export/readable`,
+    'That export could not be prepared. Try again.',
+  )
+}
+
+async function download(path: string, fallbackMessage: string): Promise<string> {
+  const response = await fetch(path, {
     credentials: 'same-origin',
     // The archive when it works, ProblemDetails when it does not - and a refusal is read as
     // JSON below, so both have to be asked for.
@@ -55,10 +73,7 @@ export async function downloadUniverseBackup(universeId: string): Promise<string
     const isJson = response.headers.get('content-type')?.includes('json') ?? false
     const problem = isJson ? ((await response.json()) as { detail?: string; title?: string }) : null
 
-    throw new ApiError(
-      response.status,
-      problem?.detail ?? problem?.title ?? 'That backup could not be prepared. Try again.',
-    )
+    throw new ApiError(response.status, problem?.detail ?? problem?.title ?? fallbackMessage)
   }
 
   const fileName = fileNameFrom(response.headers.get('content-disposition'))

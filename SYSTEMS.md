@@ -15,6 +15,8 @@ Repository index. Paths and one-line responsibilities only.
 | `STATE.md` | Operational state only: roadmap position, blockers, deferred decisions. |
 | `graphify-out/` | Generated knowledge graph. Gitignored, manual-only; rebuild with `python -m graphify update .`. |
 | `docs/tooling/` | Agent tooling trial notes (RTK and Graphify evaluation). |
+| `docs/security/alpha-security-assessment.md` | Issue #33: the first-alpha security and privacy assessment - findings with evidence, severity, exploitability, boundary, mitigation and residual risk; verified controls; owner runtime checks; the final regression after #11 and #54. |
+| `docs/recovery/universe-recovery.md` | Issue #11: backup vs readable export, exactly what each holds and leaves out, picture paths, restore steps, compatibility and size limits, what is tested and what is not promised. |
 | `docs/testing/maps-checklist.md` | Issues #52/#53: what the map tests prove, the manual DEV checklist (upload, pan/zoom, pins both ways, visibility, replace, calibrate, assistant and MCP questions, backup, delete) and what stays unverified. |
 | `docs/testing/pwa-checklist.md` | Issue #58: what automation proves, what `pwa-standalone.spec.ts` simulates and cannot, the category-selector report's reproduction status (unverified on a real install), the manual real-device checklist per platform and journey, and where findings route (#33, #34). |
 | `assets/brand/lorex-icon.png` | The Lorex mark, as the owner supplied it (replaced in 043.5). The one source every icon is derived from; not shipped. |
@@ -50,6 +52,7 @@ Repository index. Paths and one-line responsibilities only.
 | `Features/Seo/PageMetadata.cs` | `PageMetadataResolver`: a path to its head - `/`, Lorex's home (031), a fixed indexable head; public pages through `PublicationRules` with public text only, hidden/missing public addresses a 404 noindex head, everything else the private noindex head; Explore's query states `noindex,follow`. |
 | `Features/Seo/SeoEndpoints.cs` | `/robots.txt`, `/sitemap.xml` (effective-public addresses only, per request, `no-cache`), the shell renderer and `ShellTemplate` (the `lorex:head` markers), `X-Robots-Tag: noindex` on `/api`. |
 | `Hosting/ProxyHeaders.cs` | Honouring `X-Forwarded-Proto` behind a TLS-terminating proxy. |
+| `Hosting/SecurityHeaders.cs` | Issue #33 M-4: every response (including the exception handler's 500) carries `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin` and CSP `frame-ancestors 'none'; object-src 'none'; base-uri 'self'` (no `script-src` yet); HSTS outside Development. A route's own header wins. |
 | `Features/Health/HealthEndpoints.cs` | `/health` and `/api/health`. |
 | `Features/Auth/AuthSetup.cs` | Identity registration and cookie session configuration; the cookie's `OnValidatePrincipal` is `AccountSessions`. |
 | `Features/Auth/AccountSessions.cs` | ADR 0059: every signed-in request - account gone, blocked, or a stamp other than the cookie's ends the session; one keyed read tagged `lorex:session-check`, then Identity's own validator. |
@@ -287,9 +290,10 @@ Repository index. Paths and one-line responsibilities only.
 | `Features/Storage/AccountStorage.cs` | Usage summed from `EntityImages.ByteSize` and `EntityAppearanceImages.ByteSize` (Issue #43) over the owner's universes (Trash included, one query); `ReserveAsync` (room check + hold, one short IMMEDIATE transaction, before the bucket), `ConsumeAsync` (inside the commit; a lapsed hold checked again), `ReleaseAsync` (never cancelled, never throws). |
 | `Features/Storage/AccountStorageEndpoints.cs` | `GET /api/profile/storage`: the signed-in account's used, allowance, remaining and Lore-picture bytes. Read only. |
 | `Features/Export/UniverseBackup.cs` | The backup format, as records. The contract the restore reads. |
-| `Features/Export/UniverseBackupArchive.cs` | Archive layout, the media list, and the deterministic ZIP writer. |
+| `Features/Export/UniverseBackupArchive.cs` | Archive layout, the media list, and the deterministic ZIP writer; `WriteMediaAsync` (originals by archive path, refusing a missing one) is shared with the readable export. |
 | `Features/Export/UniverseBackupBuilder.cs` | Reads one universe and its media in a single transaction, and orders every collection. |
-| `Features/Export/UniverseExportEndpoints.cs` | The export route, the download filename, and the one failure a backup can have. |
+| `Features/Export/UniverseExportEndpoints.cs` | The export routes - `/export` (backup) and `/export/readable` (issue #11, ADR 0063), owner only - the download filenames, and the one failure both can have. |
+| `Features/Export/ReadableExport.cs` | Issue #11, ADR 0063: the readable export - Markdown pages (`README.md`, `lore/{type}/{entry}.md`, `relationships.md`, `timeline.md`, `stories/{story}/README.md` and `{NNN}-{scene}.md`, `maps/{map}.md`, `world-rules.md`, `ideas.md`) rendered from the backup snapshot's live content, linked by relative path, author text escaped, article links http/https/mailto only; the live pictures at the backup's paths. Layout version 1. |
 | `Features/Restore/BackupRestoreEndpoints.cs` | `PUT /api/backups/validate` (the raw archive streamed to staging, validated, a preview and a token), `POST /api/backups/restore` (token and name, validated again, restored), `DELETE` of a waiting upload; refusals as problem codes and issues; DI registration. |
 | `Features/Restore/BackupRestoreContracts.cs` | The preview, its server-counted totals, the validation answer and the restore request. |
 | `Features/Restore/BackupRestoreLimits.cs` | Every bound on an upload: file, decompressed, document, picture, entries, rows, JSON depth, staging lifetime and budget. |
@@ -464,6 +468,8 @@ Repository index. Paths and one-line responsibilities only.
 | `Lorex.Api.Tests/CanonChronologyRuleTests.cs` | Semantic field assignment, the three chronology rules and every case they must stay quiet on. |
 | `Lorex.Api.Tests/CanonPromotionGateTests.cs` | What the gate refuses, what a refusal leaves behind, and what it must never block. |
 | `Lorex.Api.Tests/UniverseExportTests.cs` | What a backup holds, what it must never hold, its coherence and its determinism. |
+| `Lorex.Api.Tests/UniverseRecoveryTests.cs` | Issue #11: a restore drill with every kind of picture (entry, appearance, map, artwork, a trashed entry's) brought back byte for byte and the same world exported again; the readable export's pages, links and pictures; unsafe links and markup neutralised; a missing live picture refuses it, a missing trashed one does not. |
+| `Lorex.Api.Tests/SecurityHeadersTests.cs` | Issue #33 M-4: 200, 401, 404 and an unhandled 500 carry the security headers. |
 | `Lorex.Api.Tests/StoryEndpointTests.cs` | Story CRUD, what deleting a story or a universe takes, ownership, that a story changes no lore, timeline or Canon, and the story read's fixed query count. |
 | `Lorex.Api.Tests/SceneEndpointTests.cs` | Narrative order against chronology, reorder refusals, scene chronology, lore references, the Trash, delete actions and ownership. |
 | `Lorex.Api.Tests/ChapterEndpointTests.cs` | Chapter CRUD, order and reorder refusals, the number that is only a position, the delete that keeps every scene, what deleting a story, universe or entry takes, and ownership. |

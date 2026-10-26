@@ -541,3 +541,9 @@ unit's name exactly as written. Not ignorable: a version 34 reader would restore
 refuses a point off the map, two points one pixel or less apart, a distance that is not above zero and a blank or over-long
 unit; a restore writes it against the restored picture's asset id. A version 34 or older file restores every map without a
 scale.
+
+## Amendment: a readable export beside the backup (2026-10-26, issue #11, ADR 0063)
+
+The backup stays the one restorable file and its format is unchanged (version 35). A second download, the readable export,
+renders the same snapshot's live content as Markdown pages with the live pictures at this ADR's media paths. It is never
+read back, so nothing here owes it a version; ADR 0063 owns its layout.

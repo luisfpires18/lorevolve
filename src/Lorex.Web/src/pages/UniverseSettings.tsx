@@ -3,7 +3,7 @@ import { Link, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { CollaboratorsPanel } from '../components/CollaboratorsPanel'
 import { UniverseForm } from '../components/UniverseForm'
-import { downloadUniverseBackup } from '../export/api'
+import { downloadReadableExport, downloadUniverseBackup } from '../export/api'
 import { discardUniverseDrafts } from '../lib/localDrafts'
 import { getPublication } from '../publishing/api'
 import { Visibility } from '../publishing/types'
@@ -88,22 +88,24 @@ export default function UniverseSettings() {
     }
   }, [confirmingDelete])
 
-  const [exporting, setExporting] = useState(false)
+  const [exporting, setExporting] = useState<'backup' | 'readable' | null>(null)
   const [exportedAs, setExportedAs] = useState<string | null>(null)
   const [exportError, setExportError] = useState<string | null>(null)
 
-  async function exportBackup() {
-    setExporting(true)
+  async function exportFile(kind: 'backup' | 'readable') {
+    setExporting(kind)
     setExportedAs(null)
     setExportError(null)
     try {
-      setExportedAs(await downloadUniverseBackup(universe.id))
+      setExportedAs(
+        await (kind === 'backup' ? downloadUniverseBackup : downloadReadableExport)(universe.id),
+      )
     } catch (problem: unknown) {
       setExportError(
-        problem instanceof Error ? problem.message : 'That backup could not be prepared.',
+        problem instanceof Error ? problem.message : 'That file could not be prepared.',
       )
     } finally {
-      setExporting(false)
+      setExporting(null)
     }
   }
 
@@ -253,18 +255,34 @@ export default function UniverseSettings() {
           <section className="settings__section">
             <h2 className="settings__heading">Backup</h2>
             <p className="settings__note">
-              One archive of this universe: its lore and articles, types, relationships, timeline,
-              world rules, history, pictures, its ideas and its public details. No account data, and
-              not whether it is public - a restored universe is always private.
+              One archive of this universe that LoreX can restore: its lore, types and fields,
+              articles, relationships, timeline, stories and scenes, maps, world rules, ideas, your
+              private notes, the Trash, saved versions and every picture as you uploaded it. No
+              account data, collaborators or comments, and not whether it is public - a restored
+              universe is always private.
             </p>
             <button
               className="button button--secondary"
               type="button"
-              onClick={exportBackup}
-              disabled={exporting}
+              onClick={() => void exportFile('backup')}
+              disabled={exporting !== null}
               data-testid="export-universe"
             >
-              {exporting ? 'Preparing backup' : 'Download backup'}
+              {exporting === 'backup' ? 'Preparing backup' : 'Download backup'}
+            </button>
+            <p className="settings__note">
+              A readable export is the same universe as Markdown pages - one per entry, story, scene
+              and map, with the pictures beside them - to read in any editor or keep. It leaves out
+              the Trash and saved versions, and LoreX cannot restore from it.
+            </p>
+            <button
+              className="button button--secondary"
+              type="button"
+              onClick={() => void exportFile('readable')}
+              disabled={exporting !== null}
+              data-testid="export-readable"
+            >
+              {exporting === 'readable' ? 'Preparing export' : 'Download readable export'}
             </button>
             {exportedAs ? (
               <p className="settings__saved" role="status" data-testid="export-done">

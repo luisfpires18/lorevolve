@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { expect, test, type Page } from '@playwright/test'
-import { entryNames, ZIP_SIGNATURE } from './support/zip'
+import { entryNames, entryText, ZIP_SIGNATURE } from './support/zip'
 
 /**
  * One journey, for the one thing only a browser can prove.
@@ -73,5 +73,20 @@ test.describe('export', () => {
 
     // And the page says which file to go and look for.
     await expect(page.getByTestId('export-done')).toContainText(download.suggestedFilename())
+
+    // The readable export (issue #11): Markdown pages for reading, one per entry, linked from the index.
+    const readableDownloading = page.waitForEvent('download')
+    await page.getByTestId('export-readable').click()
+    const readable = await readableDownloading
+    expect(readable.suggestedFilename()).toMatch(/^lorex-tidewatch-[a-z0-9]+-\d{8}-readable\.zip$/)
+
+    const book = await readFile((await readable.path())!)
+    expect(book.subarray(0, 4)).toEqual(ZIP_SIGNATURE)
+    const pages = entryNames(book)
+    expect(pages).toEqual(expect.arrayContaining(['README.md', 'lore/README.md', 'timeline.md']))
+    const entryPage = pages.find((path) => path.startsWith('lore/character/'))!
+    expect(entryText(book, entryPage)).toContain(`# ${name}`)
+    expect(entryText(book, 'lore/README.md')).toContain(`](${entryPage.slice('lore/'.length)})`)
+    await expect(page.getByTestId('export-done')).toContainText(readable.suggestedFilename())
   })
 })
