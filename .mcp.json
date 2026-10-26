@@ -22,15 +22,6 @@
         "--no-usage-statistics",
         "--no-performance-crux"
       ]
-    },
-    "github": {
-      "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/readonly",
-      "headers": {
-        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN:-}",
-        "X-MCP-Toolsets": "repos,issues,pull_requests",
-        "X-MCP-Readonly": "true"
-      }
     }
   }
 }
