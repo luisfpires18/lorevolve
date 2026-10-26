@@ -51,8 +51,8 @@ mention a link to its entry. Field values read as the app shows them (a year wit
 to the entry).
 
 **Safe to open.** Every piece of an author's text is escaped (`\`, `` ` ``, `*`, `_`, `[`, `]`, `<`, `>`, `#`, `|` in
-headings, lists, tables and links; `<` in prose), so a collaborator's text cannot become a link, a table or HTML in a viewer
-that renders it. An article link survives only for `http`, `https` and `mailto` - the editor's own rule (`LoreContent`),
+headings, lists, tables and links, date-period and month labels included; `\`, `[`, `]`, `<` and `>` in manuscript prose),
+so a collaborator's text cannot become a link, an image, a table or HTML in a viewer that renders it. An article link survives only for `http`, `https` and `mailto` - the editor's own rule (`LoreContent`),
 applied again because a row may predate it.
 
 **The same gate as a backup.** `UniverseCapability.Backup`: the owner alone, 404 to anyone without access. It holds the

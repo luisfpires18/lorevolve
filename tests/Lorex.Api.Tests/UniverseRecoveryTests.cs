@@ -167,17 +167,43 @@ public sealed class UniverseRecoveryTests(LorexApiFactory factory) : IClassFixtu
 
         var story = await CreateStory(client, u, "Tale");
         var scene = await CreateScene(client, u, story, "Scene");
-        await ManuscriptTestClient.WriteManuscript(client, u, story, scene, "<script>alert(1)</script>");
+        await ManuscriptTestClient.WriteManuscript(client, u, story, scene, "<script>alert(1)</script> [x](javascript:alert(2)) ![i](javascript:alert(3))");
+
+        // A date period whose label is a link, and a year counted in it.
+        var chronology = await client.PutAsJsonAsync($"/api/universes/{u}/chronology", new Lorex.Api.Features.Chronology.ChronologyRequest(
+            [new Lorex.Api.Features.Chronology.ChronologyEraRequest(null, "Age [z](javascript:alert(5))", null,
+                Lorex.Api.Features.Chronology.ChronologyEraDirection.Ascending, Lorex.Api.Features.Chronology.ChronologyLabelPosition.AfterYear)]));
+        Assert.True(chronology.IsSuccessStatusCode, await chronology.Content.ReadAsStringAsync());
+        var era = (await chronology.Content.ReadFromJsonAsync<Lorex.Api.Features.Chronology.ChronologyResponse>())!.Eras.Single().Id;
+        var type = (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{u}/entity-types"))!.First(row => row.Name == "Character").Id;
+        var field = await client.PostAsJsonAsync($"/api/universes/{u}/entity-types/{type}/fields",
+            new FieldDefinitionRequest("Born", EntityFieldKind.Number, false, null, null, null, null));
+        field.EnsureSuccessStatusCode();
+        var born = (await field.Content.ReadFromJsonAsync<EntityTypeResponse>())!.Fields.First(row => row.Name == "Born").Id;
+        (await client.PostAsJsonAsync($"/api/universes/{u}/entities", new EntityRequest(
+            type, "Dated", null, CanonStatus.Draft, null, null, [new FieldValueInput(born, null, 7, null, null, null, null, era)]))).EnsureSuccessStatusCode();
 
         var files = Entries(await (await client.GetAsync($"/api/universes/{u}/export/readable")).Content.ReadAsByteArrayAsync());
-        var page = Encoding.UTF8.GetString(files.Single(file => file.Key.StartsWith("lore/", StringComparison.Ordinal) && file.Key != "lore/README.md").Value);
+        var page = Encoding.UTF8.GetString(files.Single(file => file.Key.StartsWith("lore/character/mallory", StringComparison.Ordinal)).Value);
         Assert.DoesNotMatch(@"(?<!\\)\]\(\s*javascript:", page);
         Assert.Contains("# Mallory \\[x\\](javascript:alert(1))", page, StringComparison.Ordinal);
         Assert.Contains("click \\<img src=x onerror=alert(1)\\>", page, StringComparison.Ordinal);
         Assert.DoesNotContain("<img", page.Replace("\\<img", string.Empty, StringComparison.Ordinal), StringComparison.Ordinal);
 
         var prose = Encoding.UTF8.GetString(files.Single(file => file.Key.StartsWith("stories/tale/0", StringComparison.Ordinal)).Value);
-        Assert.Contains("\\<script>alert(1)\\</script>", prose, StringComparison.Ordinal);
+        Assert.Contains("\\<script\\>alert(1)\\</script\\>", prose, StringComparison.Ordinal);
+        Assert.Contains("\\[x\\](javascript:alert(2))", prose, StringComparison.Ordinal);
+
+        // No page anywhere holds a link or image whose target is a script, and no raw tag.
+        foreach (var (path, bytes) in files.Where(file => file.Key.EndsWith(".md", StringComparison.Ordinal)))
+        {
+            var text = Encoding.UTF8.GetString(bytes);
+            Assert.DoesNotMatch(@"(?<!\\)\]\(\s*javascript:", text);
+            Assert.DoesNotMatch(@"(?<!\\)<(script|img)", text);
+        }
+
+        var dated = Encoding.UTF8.GetString(files.Single(file => file.Key.EndsWith("/dated.md", StringComparison.Ordinal)).Value);
+        Assert.Contains("**Born:** 7 Age \\[z\\](javascript:alert(5))", dated, StringComparison.Ordinal);
     }
 
     [Fact]

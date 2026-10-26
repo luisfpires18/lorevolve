@@ -545,7 +545,7 @@ internal sealed class ReadableBook
     private string FieldValue(string page, BackupFieldDefinition field, IReadOnlyList<BackupFieldValue> values) =>
         string.Join(", ", values.Select(value => field.Kind switch
         {
-            EntityFieldKind.Number when value.NumberValue is { } number => Inline(Year(value.EraId, number)),
+            EntityFieldKind.Number when value.NumberValue is { } number => Year(value.EraId, number),
             EntityFieldKind.Boolean when value.BooleanValue is { } flag => flag ? "Yes" : "No",
             EntityFieldKind.Date when value.DateValue is { } date => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             EntityFieldKind.Select or EntityFieldKind.MultiSelect when value.OptionId is { } option =>
@@ -566,7 +566,7 @@ internal sealed class ReadableBook
             foreach (var era in progression.Eras.OrderBy(era => era.SortOrder))
             {
                 text.Append("### ").AppendLine(Inline(era.Name)).AppendLine();
-                Field(text, "When", Join(" to ", era.Start is { } start ? Point(start) : null, era.End is { } end ? Point(end) : null));
+                Field(text, "When", Join(" to ", era.Start is { } start ? Point(start) : null, era.End is { } end ? Point(end) : null), escape: false);
                 Paragraph(text, era.Description);
                 Field(text, "Stories", era.StoryIds.Count > 0 ? Links(era.StoryIds.Select(id => StoryLink(page, id))) : null, escape: false);
                 Field(text, "Scenes", era.SceneIds.Count > 0 ? Scenes(era.SceneIds) : null, escape: false);
@@ -836,7 +836,7 @@ internal sealed class ReadableBook
             .AppendLine(chapter is null ? "." : $", chapter {chapter.SortOrder + 1}: {Inline(chapter.Title)}.").AppendLine();
 
         Field(text, "Point of view", scene.PovEntityId is { } pov ? EntityLink(page, pov) : null, escape: false);
-        Field(text, "When", scene.Chronology is { } when ? Point(when) : null);
+        Field(text, "When", scene.Chronology is { } when ? Point(when) : null, escape: false);
         Field(text, "Lore", scene.LinkedEntityIds.Count > 0 ? Links(scene.LinkedEntityIds.Select(id => EntityLink(page, id))) : null, escape: false);
         Paragraph(text, scene.Summary);
         Field(text, "Notes", scene.Notes);
@@ -942,7 +942,10 @@ internal sealed class ReadableBook
 
     // ---------- Dates ----------
 
-    /// <summary>A year as the author reads it: the same rule as <see cref="UniverseChronology.FormatYear"/>.</summary>
+    /// <summary>
+    /// A year as the author reads it: the same rule as <see cref="UniverseChronology.FormatYear"/>. Every date helper below
+    /// answers Markdown with the author's labels already escaped, so a caller appends it as it is.
+    /// </summary>
     private string Year(Guid? eraId, double year)
     {
         var number = year.ToString("0.####", CultureInfo.InvariantCulture);
@@ -951,7 +954,7 @@ internal sealed class ReadableBook
             return number;
         }
 
-        var label = era.Abbreviation ?? era.Name;
+        var label = Inline(era.Abbreviation ?? era.Name);
         return era.LabelPosition == ChronologyLabelPosition.AfterYear ? $"{number} {label}" : $"{label} {number}";
     }
 
@@ -965,10 +968,10 @@ internal sealed class ReadableBook
         var written = Year(eraId, y);
         if (eraId is null && plainLabel is { Length: > 0 })
         {
-            written = $"{written} {plainLabel}";
+            written = $"{written} {Inline(plainLabel)}";
         }
 
-        var monthName = monthId is { } id && _months.TryGetValue(id, out var named) ? named.Name : month is { } number ? $"month {number}" : null;
+        var monthName = monthId is { } id && _months.TryGetValue(id, out var named) ? Inline(named.Name) : month is { } number ? $"month {number}" : null;
         return Join(", ", written, monthName, day is { } d ? $"day {d}" : null)!;
     }
 
@@ -1091,8 +1094,8 @@ internal sealed class ReadableBook
 
     /// <summary>
     /// A scene's prose as written - every line as it is, so the words stay the author's - with each mention a link to the
-    /// entry it names (its name alone when that entry is not exported) and every <c>&lt;</c> escaped so no viewer reads the
-    /// prose as HTML.
+    /// entry it names (its name alone when that entry is not exported). <c>\</c>, <c>[</c>, <c>]</c>, <c>&lt;</c> and
+    /// <c>&gt;</c> are escaped, so prose a collaborator wrote can never become a link, an image or HTML in a viewer.
     /// </summary>
     private string Manuscript(string page, string content)
     {
@@ -1100,15 +1103,29 @@ internal sealed class ReadableBook
         var at = 0;
         foreach (var mention in ManuscriptMentions.Find(content))
         {
-            text.Append(EscapeAngles(content[at..mention.Start]));
+            text.Append(EscapeProse(content[at..mention.Start]));
             text.Append(_entities.ContainsKey(mention.EntityId) ? Link(mention.Name, Relative(page, _entityPaths[mention.EntityId])) : Inline(mention.Name));
             at = mention.Start + mention.Length;
         }
 
-        return text.Append(EscapeAngles(content[at..])).ToString();
+        return text.Append(EscapeProse(content[at..])).ToString();
     }
 
-    private static string EscapeAngles(string value) => value.Replace("<", "\\<", StringComparison.Ordinal);
+    private static string EscapeProse(string value)
+    {
+        var text = new StringBuilder(value.Length + 8);
+        foreach (var character in value)
+        {
+            if (character is '\\' or '[' or ']' or '<' or '>')
+            {
+                text.Append('\\');
+            }
+
+            text.Append(character);
+        }
+
+        return text.ToString();
+    }
 
     // ---------- Articles ----------
 
