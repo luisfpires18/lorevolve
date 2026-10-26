@@ -370,17 +370,18 @@ public sealed class MassCreateTests(LorexApiFactory factory) : IClassFixture<Lor
             command.CommandText.Contains("INSERT INTO \"Entities\"", StringComparison.Ordinal)
             && command.Parameters.Cast<DbParameter>().Any(parameter => parameter.Value as string == fails);
 
-        Exception? failure;
+        HttpResponseMessage failed;
         try
         {
-            failure = await Record.ExceptionAsync(() => Bulk(client, universe.Id, rows));
+            failed = await Bulk(client, universe.Id, rows);
         }
         finally
         {
             _factory.Commands.FailWhen = null;
         }
 
-        Assert.NotNull(failure);
+        // Answered as a deployment answers it: the exception handler's 500 (issue 55, W2).
+        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
         Assert.Equal(0, await Count(client, universe.Id));
 
         using (var scope = _factory.Services.CreateScope())

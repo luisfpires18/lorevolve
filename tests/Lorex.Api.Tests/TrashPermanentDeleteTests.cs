@@ -372,17 +372,18 @@ public sealed partial class TrashPermanentDeleteTests(LorexApiFactory factory) :
             && command.Parameters.Cast<DbParameter>().Any(parameter =>
                 string.Equals(parameter.Value?.ToString(), id, StringComparison.OrdinalIgnoreCase));
 
-        Exception? failure;
+        HttpResponseMessage failed;
         try
         {
-            failure = await Record.ExceptionAsync(() => client.DeleteAsync(EntryRoute(u, entity)));
+            failed = await client.DeleteAsync(EntryRoute(u, entity));
         }
         finally
         {
             _factory.Commands.FailWhen = null;
         }
 
-        Assert.NotNull(failure);
+        // Answered as a deployment answers it: the exception handler's 500 (issue 55, W2).
+        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
         Assert.Equal(entity, Assert.Single((await Trash(client, u)).Items).Id);
         await WithDb(_factory, async db => Assert.True(await db.EntityImages.AnyAsync(row => row.EntityId == entity)));
         Assert.True(_factory.Media.Contains(original));

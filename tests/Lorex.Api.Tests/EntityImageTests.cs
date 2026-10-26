@@ -470,8 +470,10 @@ public sealed class EntityImageTests(LorexApiFactory factory) : IClassFixture<Lo
 
         try
         {
-            await Assert.ThrowsAnyAsync<Exception>(() =>
-                Upload(client, universe.Id, entry.Id, Jpeg(500, 500), "second.jpg"));
+            // Answered as a deployment answers it: the exception handler's 500 (issue 55, W2).
+            Assert.Equal(
+                HttpStatusCode.InternalServerError,
+                (await Upload(client, universe.Id, entry.Id, Jpeg(500, 500), "second.jpg")).StatusCode);
         }
         finally
         {

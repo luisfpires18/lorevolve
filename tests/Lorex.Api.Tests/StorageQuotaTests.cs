@@ -338,8 +338,8 @@ public sealed class StorageQuotaTests(LorexApiFactory factory) : IClassFixture<L
                 string.Equals(parameter.Value?.ToString(), marker, StringComparison.OrdinalIgnoreCase));
         try
         {
-            // The test host hands the server's own exception back rather than a 500.
-            await Assert.ThrowsAsync<DbUpdateException>(() => Upload(client, u, entry, Medium));
+            // Answered as a deployment answers it: the exception handler's 500 (issue 55, W2).
+            Assert.Equal(HttpStatusCode.InternalServerError, (await Upload(client, u, entry, Medium)).StatusCode);
         }
         finally
         {

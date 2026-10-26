@@ -107,16 +107,15 @@ public sealed class DatabaseFailureTests(LorexApiFactory factory) : IClassFixtur
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "dbfail-locked");
 
-        var failure = await Record.ExceptionAsync(() => WithFailedInsert(
+        var failed = await WithFailedInsert(
             "EntityTypes",
             () => new SqliteException("SQLite Error 5: 'database is locked'.", 5, 5),
             () => client.PostAsJsonAsync(
                 $"/api/universes/{universe.Id}/entity-types",
-                new EntityTypeRequest("Artefact", null, null, null, null))));
+                new EntityTypeRequest("Artefact", null, null, null, null)));
 
         // The write failed, so it must read as a failure - not as a name that was never taken.
-        Assert.NotNull(failure);
-        Assert.Contains("database is locked", Describe(failure), StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
 
         // And the name really is free: the very next attempt takes it.
         var created = await client.PostAsJsonAsync(
@@ -130,13 +129,13 @@ public sealed class DatabaseFailureTests(LorexApiFactory factory) : IClassFixtur
     {
         var client = await SignedIn(_factory, "dbfail-universe");
 
-        var failure = await Record.ExceptionAsync(() => WithFailedInsert(
+        var failed = await WithFailedInsert(
             "Universes",
             () => new SqliteException("SQLite Error 5: 'database is locked'.", 5, 5),
-            () => client.PostAsJsonAsync("/api/universes", new CreateUniverseRequest("Saltmarch", null, null))));
+            () => client.PostAsJsonAsync("/api/universes", new CreateUniverseRequest("Saltmarch", null, null)));
 
-        Assert.NotNull(failure);
-        Assert.Contains("database is locked", Describe(failure), StringComparison.Ordinal);
+        // A failure, answered as one: not a refusal saying the name was taken or the order moved.
+        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
 
         var created = await client.PostAsJsonAsync("/api/universes", new CreateUniverseRequest("Saltmarch", null, null));
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
@@ -148,15 +147,15 @@ public sealed class DatabaseFailureTests(LorexApiFactory factory) : IClassFixtur
         var (client, universe) = await SignedInWithUniverse(_factory, "dbfail-order");
         var story = await CreateStory(client, universe.Id, "Saltmarch");
 
-        var failure = await Record.ExceptionAsync(() => WithFailedInsert(
+        var failed = await WithFailedInsert(
             "Chapters",
             () => new SqliteException("SQLite Error 5: 'database is locked'.", 5, 5),
             () => client.PostAsJsonAsync(
                 $"{Story(universe.Id, story)}/chapters",
-                new ChapterRequest("First light", null, null))));
+                new ChapterRequest("First light", null, null)));
 
-        Assert.NotNull(failure);
-        Assert.Contains("database is locked", Describe(failure), StringComparison.Ordinal);
+        // A failure, answered as one: not a refusal saying the name was taken or the order moved.
+        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
 
         var created = await client.PostAsJsonAsync(
             $"{Story(universe.Id, story)}/chapters",
@@ -183,17 +182,5 @@ public sealed class DatabaseFailureTests(LorexApiFactory factory) : IClassFixtur
             _factory.Commands.FailWhen = null;
             _factory.Commands.FailWith = static () => new InvalidOperationException("A test failed this command on purpose.");
         }
-    }
-
-    /// <summary>Every message in the chain, so an assertion can look at the cause and not only the wrapper.</summary>
-    private static string Describe(Exception exception)
-    {
-        var text = new List<string>();
-        for (Exception? current = exception; current is not null; current = current.InnerException)
-        {
-            text.Add(current.Message);
-        }
-
-        return string.Join(" | ", text);
     }
 }

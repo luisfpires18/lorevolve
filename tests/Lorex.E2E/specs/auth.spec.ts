@@ -78,8 +78,9 @@ test.describe('authentication', () => {
 
     await register(page, account)
     await clickSignOut(page)
+    // Signed out for certain before the form is used: going to /login while the sign-out is still in flight races it.
+    await expect(page).toHaveURL('/login')
 
-    await page.goto('/login')
     await page.getByLabel('Username or email').fill(account.username)
     await page.getByLabel('Password', { exact: true }).fill('Not-the-password-9!')
     await page.getByRole('button', { name: 'Sign in' }).click()

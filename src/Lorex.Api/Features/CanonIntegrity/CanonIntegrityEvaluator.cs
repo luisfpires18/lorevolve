@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Lorex.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,8 +28,17 @@ public sealed record CanonEvaluationSummary(
 /// Ownership is not checked here. The caller proves it, and this class is never reached
 /// from anywhere that has not.
 /// </summary>
-public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICanonIntegrityRule> rules)
+public sealed partial class CanonIntegrityEvaluator(
+    LorexDbContext db,
+    IEnumerable<ICanonIntegrityRule> rules,
+    ILogger<CanonIntegrityEvaluator> logger)
 {
+    /// <summary>
+    /// A sweep or a reconciliation this long is logged as a warning (issue 55, W3). A gated write runs two sweeps and one
+    /// reconciliation inside its transaction, holding SQLite's one writer, so these are the numbers to watch as universes grow.
+    /// </summary>
+    public static readonly TimeSpan Slow = TimeSpan.FromSeconds(1);
+
     public async Task<CanonEvaluationSummary> EvaluateAsync(
         Guid universeId,
         CancellationToken cancellationToken) =>
@@ -50,10 +60,22 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
         Dictionary<string, CanonFinding> findings,
         CancellationToken cancellationToken)
     {
-        var existing = await db.CanonConflicts
-            .Include(conflict => conflict.Subjects)
-            .Where(conflict => conflict.UniverseId == universeId)
-            .ToListAsync(cancellationToken);
+        var reconcileStarted = Stopwatch.GetTimestamp();
+
+        // Only the conflicts this reconciliation will change are loaded and tracked (issue 55, W9). Every other one would have
+        // been loaded, compared and left unwritten, so the outcome is the same; what is saved is materialising and tracking
+        // thousands of conflicts and their subjects to find nothing to do - most of a gated save on a large universe.
+        var recorded = await RecordedAsync(universeId, cancellationToken);
+        var touched = recorded.Values
+            .Where(row => findings.TryGetValue(row.Fingerprint, out var finding) ? WillChange(row, finding) : row.Status != CanonConflictStatus.Resolved)
+            .Select(row => row.Id)
+            .ToList();
+        var existing = touched.Count == 0
+            ? []
+            : await db.CanonConflicts
+                .Include(conflict => conflict.Subjects)
+                .Where(conflict => conflict.UniverseId == universeId && touched.Contains(conflict.Id))
+                .ToListAsync(cancellationToken);
 
         var stored = existing.ToDictionary(conflict => conflict.Fingerprint, StringComparer.Ordinal);
         var now = DateTime.UtcNow;
@@ -64,6 +86,13 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
         {
             if (!stored.TryGetValue(finding.Fingerprint, out var conflict))
             {
+                if (recorded.ContainsKey(finding.Fingerprint))
+                {
+                    // Recorded, still detected, and nothing about it differs: it persists as it is.
+                    persisted++;
+                    continue;
+                }
+
                 db.CanonConflicts.Add(Open(universeId, finding, now));
                 created++;
                 continue;
@@ -110,6 +139,16 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
 
         await db.SaveChangesAsync(cancellationToken);
 
+        var reconciled = Stopwatch.GetElapsedTime(reconcileStarted);
+        if (reconciled >= Slow)
+        {
+            LogSlowReconcile(logger, universeId, reconciled.TotalMilliseconds, recorded.Count);
+        }
+        else
+        {
+            LogReconciled(logger, universeId, reconciled.TotalMilliseconds, created, reopened, resolved);
+        }
+
         return new CanonEvaluationSummary(findings.Count, created, reopened, persisted, resolved, now);
     }
 
@@ -126,6 +165,7 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
         Guid universeId,
         CancellationToken cancellationToken)
     {
+        var started = Stopwatch.GetTimestamp();
         var context = new CanonRuleContext(db, universeId);
         var findings = new Dictionary<string, CanonFinding>(StringComparer.Ordinal);
 
@@ -137,8 +177,66 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
             }
         }
 
+        var elapsed = Stopwatch.GetElapsedTime(started);
+        if (elapsed >= Slow)
+        {
+            LogSlowSweep(logger, universeId, elapsed.TotalMilliseconds, findings.Count);
+        }
+        else
+        {
+            LogSweep(logger, universeId, elapsed.TotalMilliseconds, findings.Count);
+        }
+
         return findings;
     }
+
+    /// <summary>What a stored conflict says, read without tracking: the fields reconciliation compares, and its subjects.</summary>
+    private sealed record RecordedConflict(
+        Guid Id,
+        string Fingerprint,
+        CanonConflictStatus Status,
+        CanonConflictSeverity Severity,
+        string Title,
+        string Explanation,
+        HashSet<(CanonSubjectKind Kind, Guid SubjectId, string Role)> Subjects);
+
+    /// <summary>Every conflict of the universe by fingerprint, as two lean projections rather than tracked entities.</summary>
+    private async Task<Dictionary<string, RecordedConflict>> RecordedAsync(Guid universeId, CancellationToken cancellationToken)
+    {
+        var subjects = (await db.CanonConflictSubjects.AsNoTracking()
+                .Where(subject => subject.Conflict!.UniverseId == universeId)
+                .Select(subject => new { subject.ConflictId, subject.SubjectKind, subject.SubjectId, subject.Role })
+                .ToListAsync(cancellationToken))
+            .ToLookup(subject => subject.ConflictId, subject => (subject.SubjectKind, subject.SubjectId, subject.Role));
+
+        return await db.CanonConflicts.AsNoTracking()
+            .Where(conflict => conflict.UniverseId == universeId)
+            .Select(conflict => new { conflict.Id, conflict.Fingerprint, conflict.Status, conflict.Severity, conflict.Title, conflict.Explanation })
+            .ToDictionaryAsync(
+                conflict => conflict.Fingerprint,
+                conflict => new RecordedConflict(
+                    conflict.Id,
+                    conflict.Fingerprint,
+                    conflict.Status,
+                    conflict.Severity,
+                    conflict.Title,
+                    conflict.Explanation,
+                    [.. subjects[conflict.Id]]),
+                StringComparer.Ordinal,
+                cancellationToken);
+    }
+
+    /// <summary>
+    /// Whether reconciling this still-detected conflict writes anything: exactly when <see cref="Refresh"/> would report a
+    /// change or the conflict is resolved and comes back. Kept beside <see cref="Refresh"/> and <see cref="SyncSubjects"/>,
+    /// which decide the same things on the tracked entity.
+    /// </summary>
+    private static bool WillChange(RecordedConflict conflict, CanonFinding finding) =>
+        conflict.Status == CanonConflictStatus.Resolved
+        || conflict.Severity != finding.Severity
+        || !string.Equals(conflict.Title, finding.Title, StringComparison.Ordinal)
+        || !string.Equals(conflict.Explanation, finding.Explanation, StringComparison.Ordinal)
+        || !conflict.Subjects.SetEquals(finding.Subjects.Select(subject => (subject.Kind, subject.SubjectId, subject.Role)));
 
     private static CanonConflict Open(Guid universeId, CanonFinding finding, DateTime now)
     {
@@ -236,4 +334,16 @@ public sealed class CanonIntegrityEvaluator(LorexDbContext db, IEnumerable<ICano
 
         return changed;
     }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Canon rules swept universe {UniverseId} in {ElapsedMs:0} ms ({Findings} findings).")]
+    private static partial void LogSweep(ILogger logger, Guid universeId, double elapsedMs, int findings);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Canon rules took {ElapsedMs:0} ms to sweep universe {UniverseId} ({Findings} findings); a gated write holds the database for two of these.")]
+    private static partial void LogSlowSweep(ILogger logger, Guid universeId, double elapsedMs, int findings);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Canon conflicts of universe {UniverseId} reconciled in {ElapsedMs:0} ms ({Created} opened, {Reopened} reopened, {Resolved} resolved).")]
+    private static partial void LogReconciled(ILogger logger, Guid universeId, double elapsedMs, int created, int reopened, int resolved);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Canon conflicts of universe {UniverseId} took {ElapsedMs:0} ms to reconcile ({Recorded} recorded); a gated write holds the database for it.")]
+    private static partial void LogSlowReconcile(ILogger logger, Guid universeId, double elapsedMs, int recorded);
 }
