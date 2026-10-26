@@ -10,7 +10,7 @@ Router only. No architecture detail and no operational state here.
 | A file or a responsibility | `SYSTEMS.md` |
 | An architecture decision | `docs/architecture/decisions/README.md` |
 | Git workflow and branch naming | `docs/architecture/branching.md` |
-| Graphify and RTK usage | `.claude/CLAUDE.md` |
+| Graphify, RTK and MCP server usage | `.claude/CLAUDE.md` |
 | How to run a phase | `.claude/skills/phase-workflow/SKILL.md` |
 | Backend conventions | `.claude/skills/aspnet-core-guidance/SKILL.md` |
 
