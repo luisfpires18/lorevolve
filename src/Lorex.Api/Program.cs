@@ -5,6 +5,7 @@ using Lorex.Api.Features.Assistant;
 using Lorex.Api.Features.Auth;
 using Lorex.Api.Features.CanonIntegrity;
 using Lorex.Api.Features.Chronology;
+using Lorex.Api.Features.DatabaseBackups;
 using Lorex.Api.Features.Comments;
 using Lorex.Api.Features.Export;
 using Lorex.Api.Features.FamilyTrees;
@@ -32,6 +33,13 @@ using Lorex.Api.Features.Universes;
 using Lorex.Api.Features.WorldRules;
 using Lorex.Api.Hosting;
 
+// Operator commands (ADR 0064): `database-backup run | list | restore-drill`, with the app's own configuration, then exit.
+if (args is [DatabaseBackupCli.Verb, ..])
+{
+    Environment.ExitCode = await DatabaseBackupCli.RunAsync(args);
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
@@ -48,6 +56,7 @@ builder.Services.AddHostedService<Lorex.Api.Features.Publishing.PublicAuthorBack
 builder.Services.AddLorexMedia(builder.Configuration);
 builder.Services.AddHostedService<Lorex.Api.Features.AiChanges.AiChangeMediaSweep>();
 builder.Services.AddBackupRestore();
+builder.Services.AddLorexDatabaseBackups(builder.Configuration);
 builder.Services.AddLorexSeo(builder.Configuration);
 builder.Services.AddLorexAssistant(builder.Configuration);
 builder.Services.AddLorexMcp(builder.Configuration, builder.Environment);
@@ -67,6 +76,7 @@ var app = builder.Build();
 // First: everything after this point may read the request scheme, and behind a TLS-terminating
 // proxy the scheme is only correct once the forwarded header has been applied.
 app.UseLorexForwardedHeaders();
+app.UseLorexSecurityHeaders();
 app.UseLorexRobotsHeaders();
 
 // Early, so whatever follows that throws answers RFC 7807 with a trace id rather than an empty 500.
@@ -100,6 +110,7 @@ app.UseLorexMcp();
 app.MapHealthEndpoints();
 app.MapAuthEndpoints();
 app.MapAdminEndpoints();
+app.MapDatabaseBackupEndpoints();
 app.MapProfileImageEndpoints();
 app.MapAccountStorageEndpoints();
 app.MapUniverseEndpoints();
@@ -157,7 +168,7 @@ app.MapSeoEndpoints();
 // Last: the client-side routing fallback only answers what no route above claimed.
 app.MapLorexFrontendFallback();
 
-app.Run();
+await app.RunAsync();
 
 /// <summary>Exposed so integration tests can boot the real host through WebApplicationFactory.</summary>
 public partial class Program;

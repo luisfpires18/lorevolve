@@ -73,13 +73,14 @@ test.describe('LoreX Admin', () => {
     await page.goto('/admin/users')
     await page.waitForURL('/app')
 
-    for (const path of ['/api/admin/overview', '/api/admin/users']) {
+    for (const path of ['/api/admin/overview', '/api/admin/users', '/api/admin/database-backups']) {
       expect((await page.request.get(path)).status()).toBe(403)
     }
     const block = await page.request.post('/api/admin/users/anyone/block', {
       data: { reason: 'Trying.' },
     })
     expect(block.status()).toBe(403)
+    expect((await page.request.post('/api/admin/database-backups/run')).status()).toBe(403)
   })
 
   test('an admin opens Main, Users and Tracing from the account menu', async ({ browser }) => {
@@ -101,6 +102,10 @@ test.describe('LoreX Admin', () => {
       await expect(page.getByTestId(`${id}-value`)).toHaveText('Not tracked yet')
     }
     await expect(page.getByTestId('admin-trend').getByRole('listitem')).toHaveCount(6)
+
+    // Database backups (#54) are off on a development server, and the page says so rather than showing a time.
+    await expect(page.getByTestId('admin-backups-off')).toContainText('Off on this server')
+    await expect(page.getByTestId('admin-backup-run')).toHaveCount(0)
 
     await nav.getByRole('link', { name: 'Tracing' }).click()
     await expect(page.getByTestId('admin-tracing-empty')).toContainText('not available yet')

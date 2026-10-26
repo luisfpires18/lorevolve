@@ -40,13 +40,18 @@ async function person(browser: Browser, prefix: string): Promise<Person> {
 }
 
 async function share(owner: Page, universeId: string, member: Person, role: number) {
-  const invitationId = await post(owner, `/api/universes/${universeId}/invitations`, {
-    email: member.email,
-    role,
+  const invitation = await owner.request.post(`/api/universes/${universeId}/invitations`, {
+    data: { email: member.email, role },
   })
-  expect((await member.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(
-    true,
-  )
+  expect(invitation.ok()).toBe(true)
+  const { claimToken } = (await invitation.json()) as { claimToken: string }
+  expect(
+    (
+      await member.page.request.post(
+        `/api/invitations/claim/${encodeURIComponent(claimToken)}/accept`,
+      )
+    ).ok(),
+  ).toBe(true)
 }
 
 async function world(owner: Page) {

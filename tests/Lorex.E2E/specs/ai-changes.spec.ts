@@ -256,17 +256,19 @@ test.describe('Pending AI Changes', () => {
       [viewer, 1],
       [reviewer, 2],
     ] as const) {
-      const invitationId = (
-        await api<{ id: string }>(
-          owner.page.request,
-          'POST',
-          `/api/universes/${universeId}/invitations`,
-          { email: person.email, role },
-        )
-      ).id
-      expect((await person.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(
-        true,
+      const invitation = await api<{ claimToken: string }>(
+        owner.page.request,
+        'POST',
+        `/api/universes/${universeId}/invitations`,
+        { email: person.email, role },
       )
+      expect(
+        (
+          await person.page.request.post(
+            `/api/invitations/claim/${encodeURIComponent(invitation.claimToken)}/accept`,
+          )
+        ).ok(),
+      ).toBe(true)
     }
 
     // A reviewer may suggest changes, so AI changes follows Types; Trash needs more than a reviewer has.

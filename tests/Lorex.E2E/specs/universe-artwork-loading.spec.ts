@@ -147,12 +147,12 @@ async function share(browser: Browser, owner: Page, universeId: string, role: nu
     data: { email, role },
   })
   expect(invited.ok()).toBe(true)
-  const invitations = (await (await member.request.get('/api/invitations')).json()) as {
-    id: string
-    universeId: string
-  }[]
-  const invitation = invitations.find((candidate) => candidate.universeId === universeId)!
-  expect((await member.request.post(`/api/invitations/${invitation.id}/accept`)).ok()).toBe(true)
+  const { claimToken } = (await invited.json()) as { claimToken: string }
+  expect(
+    (
+      await member.request.post(`/api/invitations/claim/${encodeURIComponent(claimToken)}/accept`)
+    ).ok(),
+  ).toBe(true)
   return { context, member }
 }
 

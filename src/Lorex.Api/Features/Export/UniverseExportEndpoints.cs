@@ -45,16 +45,50 @@ public static partial class UniverseExportEndpoints
             .RequireAuthorization();
 
         group.MapGet("/", ExportAsync).WithName("ExportUniverse");
+        group.MapGet("/readable", ExportReadableAsync).WithName("ExportUniverseReadable");
 
         return endpoints;
     }
 
-    private static async Task<IResult> ExportAsync(
+    private static Task<IResult> ExportAsync(
         Guid universeId,
         ClaimsPrincipal principal,
         LorexDbContext db,
         IMediaObjectStore store,
         ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken) =>
+        ArchiveAsync(
+            universeId, principal, db, store, loggerFactory,
+            (snapshot, generatedAt, read, token) =>
+                UniverseBackupArchiveWriter.WriteAsync(UniverseBackup.Of(snapshot.Payload, generatedAt), snapshot.Media, read, token),
+            FileNameFor,
+            cancellationToken);
+
+    /// <summary>
+    /// The readable export (issue #11, ADR 0063): the same snapshot as a backup, as Markdown pages and the live pictures. The
+    /// same gate - the owner's alone, as a backup is, because it holds the owner's private notes - and the same refusals.
+    /// </summary>
+    private static Task<IResult> ExportReadableAsync(
+        Guid universeId,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken) =>
+        ArchiveAsync(
+            universeId, principal, db, store, loggerFactory,
+            (snapshot, generatedAt, read, token) => ReadableExport.WriteAsync(snapshot, generatedAt, read, token),
+            ReadableExport.FileNameFor,
+            cancellationToken);
+
+    private static async Task<IResult> ArchiveAsync(
+        Guid universeId,
+        ClaimsPrincipal principal,
+        LorexDbContext db,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
+        Func<UniverseBackupSnapshot, DateTime, Func<string, CancellationToken, Task<Stream?>>, CancellationToken, Task<byte[]>> write,
+        Func<string, DateTime, string> fileName,
         CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.Backup, cancellationToken) is { } denied)
@@ -72,14 +106,13 @@ public static partial class UniverseExportEndpoints
         }
 
         var generatedAt = DateTime.UtcNow;
-        var backup = UniverseBackup.Of(snapshot.Payload, generatedAt);
 
         byte[] bytes;
         try
         {
-            bytes = await UniverseBackupArchiveWriter.WriteAsync(
-                backup,
-                snapshot.Media,
+            bytes = await write(
+                snapshot,
+                generatedAt,
                 async (key, token) => (await store.GetAsync(key, token))?.Content,
                 cancellationToken);
         }
@@ -116,7 +149,7 @@ public static partial class UniverseExportEndpoints
                 extensions: new Dictionary<string, object?> { ["code"] = MediaMissingCode });
         }
 
-        return Results.File(bytes, MediaType, FileNameFor(snapshot.Payload.Universe.Name, generatedAt));
+        return Results.File(bytes, MediaType, fileName(snapshot.Payload.Universe.Name, generatedAt));
     }
 
     /// <summary>

@@ -79,7 +79,7 @@ public sealed class ContentEditVersionMigrationTests : IDisposable
             }
 
             Assert.Empty(await Strings(db, "SELECT \"table\" AS Value FROM pragma_foreign_key_check"));
-            Assert.Equal(indexes.Where(LaterSchema.BeforeSuggestions), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
+            Assert.Equal(LaterSchema.WithDropped(indexes).Where(LaterSchema.BeforeSuggestions), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
             Assert.Equal(triggers.Where(LaterSchema.BeforeTypeGroups), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
             Assert.Equal(content, await Content(db));
         }

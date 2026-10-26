@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
-import { PASSWORD, post, unique } from './support/trash'
+import { invite, PASSWORD, post, unique } from './support/trash'
 
 /**
  * Issue 31: @ mentions in a scene's manuscript (ADR 0058). The text box shows the stored token while writing; every place
@@ -149,13 +149,7 @@ test.describe('manuscript mentions', () => {
     const viewer = await person(browser, 'mentionviewer')
     const { universeId, akron, storyId, sceneId, manuscriptPage } = await world(owner.page)
     const u = `/api/universes/${universeId}`
-    const invitationId = await post(owner.page, `${u}/invitations`, {
-      email: viewer.email,
-      role: 1,
-    })
-    expect((await viewer.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(
-      true,
-    )
+    await invite(owner.page, viewer.page, `${u}/invitations`, viewer.email, 1)
     const saved = await owner.page.request.put(
       `${u}/stories/${storyId}/scenes/${sceneId}/manuscript`,
       {

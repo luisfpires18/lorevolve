@@ -67,8 +67,10 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0060 | A universe's maps are uploaded pictures kept whole, with pins at fractions of them linked to Lore by id (#52) | [0060-lore-linked-maps.md](0060-lore-linked-maps.md) |
 | 0061 | Geography is read from the maps' pins through one shared reader, and a distance exists only on a calibrated map (#53) | [0061-map-geography-and-calibration.md](0061-map-geography-and-calibration.md) |
 | 0062 | An AI proposes schema - lore types, fields, groups - as its own reviewed proposal, through the Types screen's own write paths | [0062-ai-schema-proposals.md](0062-ai-schema-proposals.md) |
+| 0063 | A readable export is Markdown pages rendered from the backup snapshot, for reading, never read back (#11) | [0063-readable-universe-export.md](0063-readable-universe-export.md) |
+| 0064 | The web process takes a daily online SQLite snapshot and keeps it, verified, in a private R2 bucket (#54) | [0064-sqlite-backups-to-r2.md](0064-sqlite-backups-to-r2.md) |
 
-All accepted. Next number: `0062`.
+All accepted. Next number: `0065`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

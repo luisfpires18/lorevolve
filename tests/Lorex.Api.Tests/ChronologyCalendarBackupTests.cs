@@ -229,7 +229,7 @@ public sealed class ChronologyCalendarMigrationTests : IDisposable
             Assert.Empty(await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE name IN ('ChronologyCalendars', 'ChronologyCalendarMonths')"));
             Assert.DoesNotContain("MonthId", await Strings(db, "SELECT name AS Value FROM pragma_table_info('Scenes')"));
             Assert.DoesNotContain("StartMonthId", await Strings(db, "SELECT name AS Value FROM pragma_table_info('TimelineEntries')"));
-            Assert.Equal(indexes.Where(LaterSchema.BeforeCalendars), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
+            Assert.Equal(LaterSchema.WithDropped(indexes).Where(LaterSchema.BeforeCalendars), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
             Assert.Equal(triggers.Where(LaterSchema.BeforeTypeGroups), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
             Assert.Empty(await Strings(db, "SELECT \"table\" AS Value FROM pragma_foreign_key_check"));
 

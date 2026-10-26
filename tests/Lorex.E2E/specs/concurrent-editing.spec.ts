@@ -43,13 +43,18 @@ async function sharedWorld(owner: Person, editor: Person) {
     description: null,
     accentColor: null,
   })
-  const invitationId = await post(owner.page, `/api/universes/${id}/invitations`, {
-    email: editor.email,
-    role: Role.Editor,
+  const invitation = await owner.page.request.post(`/api/universes/${id}/invitations`, {
+    data: { email: editor.email, role: Role.Editor },
   })
-  expect((await editor.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(
-    true,
-  )
+  expect(invitation.ok()).toBe(true)
+  const { claimToken } = (await invitation.json()) as { claimToken: string }
+  expect(
+    (
+      await editor.page.request.post(
+        `/api/invitations/claim/${encodeURIComponent(claimToken)}/accept`,
+      )
+    ).ok(),
+  ).toBe(true)
   return id
 }
 

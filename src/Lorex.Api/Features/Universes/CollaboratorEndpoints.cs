@@ -14,10 +14,10 @@ namespace Lorex.Api.Features.Universes;
 /// a collaborator is refused with 403 and anyone else gets the 404 of a missing universe.
 ///
 /// <para><b>An invitation names an address; the owner never learns about accounts.</b> Creating one answers the same,
-/// field for field, whether an account holds that address or not, and nothing here searches accounts. When one does, the
-/// invitation is privately bound to that account's id (<see cref="UniverseInvitation.TargetUserId"/>) - never by email
-/// again afterwards - and no response says so. The only account ever named back is one already collaborating here, which
-/// the owner can see anyway.</para>
+/// field for field, whether an account holds that address or not, and nothing here searches accounts. It is never bound to
+/// an account that happens to hold the address: Lorex verifies no email, so whoever registered it first would receive it
+/// (issue #33, H-1). The invitee claims it through its link. The only account ever named back is one already
+/// collaborating here, which the owner can see anyway.</para>
 ///
 /// <para>The owner is <see cref="Universe.OwnerId"/> and has no membership row, so none of these routes can reach, change
 /// or remove them: their id answers 404 like any id that collaborates on nothing here.</para>
@@ -147,20 +147,12 @@ public static class CollaboratorEndpoints
             .Where(invitation => invitation.UniverseId == universeId && invitation.ExpiresAt <= now)
             .ExecuteDeleteAsync(cancellationToken);
 
-        // Private: an account that already holds the address is who the invitation is for, by id from now on. Read here
-        // and never answered - the response below is the same either way.
-        var targetUserId = await db.Users
-            .Where(user => user.NormalizedEmail == normalized)
-            .Select(user => user.Id)
-            .FirstOrDefaultAsync(cancellationToken);
-
         var created = new UniverseInvitation
         {
             Id = Guid.NewGuid(),
             UniverseId = universeId,
             Email = email,
             NormalizedEmail = normalized,
-            TargetUserId = targetUserId,
             Role = request.Role!.Value,
             CreatedAt = now,
             ExpiresAt = now + InvitationLimits.Lifetime,

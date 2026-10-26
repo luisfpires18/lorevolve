@@ -383,13 +383,21 @@ test.describe('ideas workspace', () => {
       { kind: Kind.Story, id: storyId },
     ])
 
-    const invitationId = await post(owner.page, `/api/universes/${universeId}/invitations`, {
-      email: editor.email,
-      role: 3,
-    })
-    expect((await editor.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(
-      true,
+    const inviteResponse = await owner.page.request.post(
+      `/api/universes/${universeId}/invitations`,
+      {
+        data: { email: editor.email, role: 3 },
+      },
     )
+    expect(inviteResponse.ok()).toBe(true)
+    const { claimToken } = (await inviteResponse.json()) as { claimToken: string }
+    expect(
+      (
+        await editor.page.request.post(
+          `/api/invitations/claim/${encodeURIComponent(claimToken)}/accept`,
+        )
+      ).ok(),
+    ).toBe(true)
 
     const storyPath = `/app/universes/${universeId}/stories/${storyId}`
     await editor.page.goto(storyPath)

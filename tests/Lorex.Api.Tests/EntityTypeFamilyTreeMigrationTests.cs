@@ -96,7 +96,7 @@ public sealed class EntityTypeFamilyTreeMigrationTests : IDisposable
             Assert.DoesNotContain("FamilyTreeEligible", await Columns(db, "EntityTypes"));
             Assert.Empty(await ForeignKeyViolations(db));
             Assert.Equal(triggers.Where(LaterSchema.BeforeNestedTypes), await Triggers(db));
-            Assert.Equal(indexes.Where(LaterSchema.BeforeNestedTypes), await Indexes(db));
+            Assert.Equal(LaterSchema.WithDropped(indexes).Where(LaterSchema.BeforeNestedTypes), await Indexes(db));
             Assert.Equal(typeCount, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM \"EntityTypes\"").SingleAsync());
         }
 

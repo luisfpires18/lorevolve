@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { png } from './support/png'
-import { PASSWORD, post, seeder, unique } from './support/trash'
+import { PASSWORD, invite, post, seeder, unique } from './support/trash'
 
 /**
  * Refinement 040 (ADR 0042): Storage in the Profile's Usage section, as a person sees it. What counts, whose it is and when an
@@ -102,11 +102,7 @@ test('an editor’s upload shows on the owner’s Profile and not the editor’s
 
   const universeId = await world(owner)
   const entry = await seeder(owner, universeId).entry('Shared')
-  const invitationId = await post(owner, `/api/universes/${universeId}/invitations`, {
-    email: editorEmail,
-    role: Role.Editor,
-  })
-  expect((await editor.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(true)
+  await invite(owner, editor, `/api/universes/${universeId}/invitations`, editorEmail, Role.Editor)
 
   await upload(editor, universeId, entry.id)
 

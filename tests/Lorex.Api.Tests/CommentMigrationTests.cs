@@ -61,7 +61,7 @@ public sealed class CommentMigrationTests : IDisposable
             await db.GetService<IMigrator>().MigrateAsync(Before);
 
             Assert.Empty(await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE name IN ('CommentThreads', 'Comments')"));
-            Assert.Equal(indexes.Where(LaterSchema.BeforeComments), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
+            Assert.Equal(LaterSchema.WithDropped(indexes).Where(LaterSchema.BeforeComments), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
             Assert.Equal(triggers.Where(LaterSchema.BeforeTypeGroups), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
             Assert.Equal(1, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM \"Entities\"").SingleAsync());
         }

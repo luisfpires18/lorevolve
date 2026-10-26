@@ -6,6 +6,19 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 ## Roadmap position
 
 - Phases 001-022 done and merged. Sequence log: `docs/architecture/branching.md`.
+- **Pre-alpha gate: #33 security, #11 recovery, #54 database backups** (`feat/pre-alpha-recovery-security` off `dev` at
+  `c1721c5`, in the main checkout; committed locally, not merged, not pushed; issues left open).
+  - **#33** `docs/security/alpha-security-assessment.md`: initial assessment (re-checked the 2026-10-23 audit plus #40, #32/#45,
+    #59, maps, notes) and final regression. Fixed: H-1 invitation link-only (ported from the unmerged `fix/invitation-link-only`,
+    migration regenerated as `20261026120312_DropInvitationTargetUser`), M-4 security headers (no `script-src` yet), R-1 export
+    escaping, R-2 private snapshot folder. Open for owner acceptance: M-1 ImageSharp licence, M-2 (needs App Service client-IP
+    check), M-3, M-5, M-6, Lows, R-3 bucket lock, runtime checks.
+  - **#11** readable export `GET .../export/readable` (Markdown ZIP, owner only, ADR 0063), Settings > Data button, full
+    all-media restore drill test, `docs/recovery/universe-recovery.md`. Backup format unchanged (35). Known limit: a backup over
+    512 MB (pictures near the 1 GiB allowance) downloads but will not restore.
+  - **#54** in-process daily SQLite backup API snapshot -> private R2 bucket, manifest last after read-back, Admin status/Run
+    now, retention proposed and off, `database-backup run|list|restore-drill` CLI (ADR 0064, `docs/recovery/database-backups.md`).
+    **Off until the owner adds `DatabaseBackup__*` settings**; R2 path and DEV untested. Local drill measured (63.6 MB, 57.6 s).
 - **Phase 020** (Full-Text Search) merged into `dev`. Entity search reads the article an author
   wrote, not only the name, aliases and summary, and orders hits by relevance. Index shape,
   synchronization and query semantics: ADR 0016.
@@ -1960,8 +1973,8 @@ tool has changed the picture.
 - **Azure DEV and R2 are owner-created and live** - live DEV testing is what found the R2 upload
   bug. Nothing in this repository creates or changes either. Steps:
   `docs/deployment/azure-dev.md`, `docs/deployment/cloudflare-r2.md`.
-- **Full security audit.** Relationships, timeline and Canon Integrity each had a focused check
-  backed by tests. Outstanding: rate limiting, header/cookie hardening, dependency review, auth.
+- **Full security audit.** Done as issue #33's alpha assessment (`docs/security/alpha-security-assessment.md`): headers
+  fixed in part; still outstanding there - auth rate limiting (M-2), session lifecycle (M-5), a `script-src` CSP.
 - **Date period tooling** (eras in code). Cross-period order is solved only for a universe with date periods;
   free-text year labels on plain years still order nothing and still stand the rules down. Years written
   before periods are given one entry by entry - no bulk assignment - and removing a period needs its
@@ -1983,7 +1996,7 @@ tool has changed the picture.
   AI, semantic or fuzzy search, substring matching; a command palette, results page, filters, saved searches, history; timeline,
   Canon, types and Trash search; highlighting the match inside an opened article or manuscript; a pinned bar. ADR 0031.
 - **Backup restore deferred** - not gaps: restoring over or merging into a universe, partial/selective restore, account-wide
-  backup, scheduled/cloud backups, encryption, import from other tools, repair by hand or AI, a background job or resumable
+  backup, scheduled/cloud backups of a universe (the whole database: #54, ADR 0064), encryption, import from other tools, repair by hand or AI, a background job or resumable
   upload. ADR 0032.
 - **World Rules deferred** - later: the node/tree rule builder (owner idea, undecided), an enabled state if checks prove they need
   one. Not planned: reading rule prose for meaning, a DSL, AI over rules, priorities/categories/tags, saved versions, permanent
