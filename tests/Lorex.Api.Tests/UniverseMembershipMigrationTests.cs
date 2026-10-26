@@ -73,7 +73,7 @@ public sealed class UniverseMembershipMigrationTests : IDisposable
 
             Assert.Empty(await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE name = 'UniverseMemberships'"));
             Assert.Equal(
-                indexes.Where(index => !index.EndsWith(" on UniverseMemberships", StringComparison.Ordinal)
+                LaterSchema.WithDropped(indexes).Where(index => !index.EndsWith(" on UniverseMemberships", StringComparison.Ordinal)
                     && !index.EndsWith(" on UniverseInvitations", StringComparison.Ordinal)
                     && LaterSchema.BeforeReferenceTargets(index)),
                 await Indexes(db));

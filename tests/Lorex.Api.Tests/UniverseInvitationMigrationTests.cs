@@ -9,6 +9,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Lorex.Api.Tests;
 
@@ -25,6 +27,9 @@ public sealed class UniverseInvitationMigrationTests : IDisposable
 
     /// <summary>The migration immediately before invitations.</summary>
     private const string Before = "20261002160204_AddUniverseMemberships";
+
+    /// <summary>The migration immediately before the invitation's account binding was dropped (issue #33, H-1).</summary>
+    private const string BeforeDroppingTheBinding = "20261025214044_AddMcpUniverseAliases";
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(), "lorex-invitation-migration", Guid.NewGuid().ToString("n"));
@@ -73,9 +78,9 @@ public sealed class UniverseInvitationMigrationTests : IDisposable
             Assert.Equal(before, after);
             Assert.Equal(0, await db.UniverseInvitations.CountAsync());
             Assert.Equal(
-                ["Id", "UniverseId", "Email", "NormalizedEmail", "TargetUserId", "Role", "CreatedAt", "ExpiresAt"],
-                await Strings(db, "SELECT name AS Value FROM pragma_table_info('UniverseInvitations') ORDER BY cid"));
-            Assert.Equal(["AspNetUsers CASCADE", "Universes CASCADE"], await Strings(db, "SELECT \"table\" || ' ' || on_delete AS Value FROM pragma_foreign_key_list('UniverseInvitations') ORDER BY \"table\""));
+                ["CreatedAt", "Email", "ExpiresAt", "Id", "NormalizedEmail", "Role", "UniverseId"],
+                await Strings(db, "SELECT name AS Value FROM pragma_table_info('UniverseInvitations') ORDER BY name"));
+            Assert.Equal(["Universes CASCADE"], await Strings(db, "SELECT \"table\" || ' ' || on_delete AS Value FROM pragma_foreign_key_list('UniverseInvitations') ORDER BY \"table\""));
 
             await Insert(db, Guid.NewGuid(), universeId, "ANA@EXAMPLE.TEST", (int)UniverseRole.Editor);
             await Assert.ThrowsAsync<SqliteException>(() => Insert(db, Guid.NewGuid(), universeId, "ANA@EXAMPLE.TEST", (int)UniverseRole.Viewer));
@@ -105,8 +110,7 @@ public sealed class UniverseInvitationMigrationTests : IDisposable
         var invitation = (await invites.Single(response => response.StatusCode == HttpStatusCode.Created)
             .Content.ReadFromJsonAsync<PendingInvitationResponse>())!;
 
-        // The invitee - no account when invited, so the invitation is unbound - accepts its link from two tabs at once: one
-        // membership, one success, the other told it is spent.
+        // The invitee accepts its link from two tabs at once: one membership, one success, the other told it is spent.
         var (ana, anaId) = await Register(host, "user-invrace-ana", "invrace-ana@example.test");
         var second = host.CreateHttpsClient();
         (await second.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-invrace-ana", Password))).EnsureSuccessStatusCode();
@@ -114,7 +118,7 @@ public sealed class UniverseInvitationMigrationTests : IDisposable
         var accepts = await Task.WhenAll(
             ana.PostAsync($"{CollaboratorInvitationTests.Claim(invitation.ClaimToken)}/accept", null),
             second.PostAsync($"{CollaboratorInvitationTests.Claim(invitation.ClaimToken)}/accept", null),
-            ana.PostAsync($"/api/invitations/{invitation.Id}/accept", null));
+            ana.PostAsync($"{CollaboratorInvitationTests.Claim(invitation.ClaimToken)}/accept", null));
         Assert.Equal(1, accepts.Count(response => response.StatusCode == HttpStatusCode.OK));
         Assert.All(accepts, response => Assert.Contains(response.StatusCode, new[] { HttpStatusCode.OK, HttpStatusCode.NotFound }));
 
@@ -132,6 +136,67 @@ public sealed class UniverseInvitationMigrationTests : IDisposable
         Assert.Equal(1, await db.UniverseMemberships.CountAsync(row => row.UniverseId == universeId && row.UserId == anaId));
         Assert.Equal(0, await db.UniverseInvitations.CountAsync());
         Assert.True(await db.UniverseMemberships.CountAsync(row => row.UserId == benId) <= 1);
+    }
+
+    [Fact]
+    public async Task Dropping_the_binding_keeps_pending_invitations_and_only_the_link_claims_them()
+    {
+        Directory.CreateDirectory(_directory);
+        Guid universeId;
+        string anaId;
+        string boundId;
+
+        await using (var host = new FileHost(DataSource))
+        {
+            var (owner, _) = await Register(host, "user-invdrop-owner", "invdrop-owner@example.test");
+            (_, anaId) = await Register(host, "user-invdrop-ana", "invdrop-ana@example.test");
+            (_, boundId) = await Register(host, "user-invdrop-bound", "invdrop-bound@example.test");
+            universeId = (await PlotTestClient.CreateUniverse(owner, "Invitation drop")).Id;
+        }
+
+        SqliteConnection.ClearAllPools();
+
+        // Down to the binding, with an invitation to Ana's address bound - by email alone, as it was - to another account.
+        var invitationId = Guid.NewGuid();
+        await using (var db = Context())
+        {
+            await db.GetService<IMigrator>().MigrateAsync(BeforeDroppingTheBinding);
+            await db.Database.ExecuteSqlRawAsync(
+                "INSERT INTO UniverseInvitations (Id, UniverseId, Email, NormalizedEmail, TargetUserId, Role, CreatedAt, ExpiresAt) VALUES ({0}, {1}, 'invdrop-ana@example.test', 'INVDROP-ANA@EXAMPLE.TEST', {2}, 1, '2026-10-20 00:00:00', '2099-01-01 00:00:00')",
+                Key(invitationId), Key(universeId), boundId);
+        }
+
+        SqliteConnection.ClearAllPools();
+
+        // Up again on start, as a deployment does: the invitation survives, the binding does not.
+        await using var upgraded = new FileHost(DataSource);
+        var bound = await LogIn(upgraded, "user-invdrop-bound");
+        var ana = await LogIn(upgraded, "user-invdrop-ana");
+
+        await using (var db = Context())
+        {
+            Assert.DoesNotContain("TargetUserId", await Strings(db, "SELECT name AS Value FROM pragma_table_info('UniverseInvitations')"));
+            Assert.Equal(UniverseRole.Viewer, (await db.UniverseInvitations.SingleAsync(row => row.Id == invitationId)).Role);
+        }
+
+        var link = CollaboratorInvitationTests.Claim(
+            InvitationClaims.Issue(upgraded.Services.GetRequiredService<IDataProtectionProvider>(), invitationId, "INVDROP-ANA@EXAMPLE.TEST"));
+        Assert.Equal(HttpStatusCode.Forbidden, (await bound.PostAsync($"{link}/accept", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await ana.PostAsync($"{link}/accept", null)).StatusCode);
+
+        SqliteConnection.ClearAllPools();
+        await using (var db = Context())
+        {
+            Assert.Equal(UniverseRole.Viewer, (await db.UniverseMemberships.SingleAsync(row => row.UniverseId == universeId && row.UserId == anaId)).Role);
+            Assert.False(await db.UniverseMemberships.AnyAsync(row => row.UniverseId == universeId && row.UserId == boundId));
+        }
+    }
+
+    private static async Task<HttpClient> LogIn(FileHost host, string username)
+    {
+        var client = host.CreateHttpsClient();
+        (await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(username, Password))).EnsureSuccessStatusCode();
+        return client;
     }
 
     private static async Task<(HttpClient Client, string UserId)> Register(FileHost host, string username, string email)

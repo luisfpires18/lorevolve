@@ -100,6 +100,23 @@ internal static class LaterSchema
     ];
 
     /// <summary>
+    /// Indexes a migration later than every rollback target drops, as <c>name on table</c>: the invitation's account binding
+    /// (DropInvitationTargetUser, issue #33 H-1). The latest schema no longer has them, but a rollback past the drop
+    /// brings them back.
+    /// </summary>
+    private static readonly string[] Dropped =
+    [
+        "IX_UniverseInvitations_TargetUserId on UniverseInvitations",
+    ];
+
+    /// <summary>
+    /// The latest schema's indexes plus those a later migration dropped, in SQLite's <c>ORDER BY name</c> order: what a
+    /// rollback past the drop shows, before a <c>Before...</c> filter takes out what was added after its target.
+    /// </summary>
+    public static IEnumerable<string> WithDropped(IEnumerable<string> latest) =>
+        latest.Concat(Dropped).Order(StringComparer.Ordinal);
+
+    /// <summary>
     /// Semantic type groups (AddEntityTypeGroups, 2026-10-19, Issue #36): two tables, their keys' indexes, three indexes and four
     /// triggers.
     /// </summary>

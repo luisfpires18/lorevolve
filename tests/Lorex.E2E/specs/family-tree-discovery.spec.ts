@@ -153,19 +153,16 @@ async function share(browser: Browser, owner: Page, universeId: string, role: nu
   const context = await browser.newContext()
   const member = await context.newPage()
   const email = await account(member)
+  const response = await owner.request.post(`/api/universes/${universeId}/invitations`, {
+    data: { email, role },
+  })
+  expect(response.ok()).toBe(true)
+  const { claimToken } = (await response.json()) as { claimToken: string }
   expect(
     (
-      await owner.request.post(`/api/universes/${universeId}/invitations`, {
-        data: { email, role },
-      })
+      await member.request.post(`/api/invitations/claim/${encodeURIComponent(claimToken)}/accept`)
     ).ok(),
   ).toBe(true)
-  const invitations = (await (await member.request.get('/api/invitations')).json()) as {
-    id: string
-    universeId: string
-  }[]
-  const invitation = invitations.find((candidate) => candidate.universeId === universeId)!
-  expect((await member.request.post(`/api/invitations/${invitation.id}/accept`)).ok()).toBe(true)
   return { context, member }
 }
 

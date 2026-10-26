@@ -98,7 +98,7 @@ public sealed class FamilySemanticMigrationTests : IDisposable
 
             // The walk down also passes back through the publishing migration after this one, which takes its own
             // indexes with it; every other index is exactly where it was.
-            Assert.Equal(indexes.Where(index => !IsPublishing(index)).Where(LaterSchema.BeforeNestedTypes), await Indexes(db));
+            Assert.Equal(LaterSchema.WithDropped(indexes).Where(index => !IsPublishing(index)).Where(LaterSchema.BeforeNestedTypes), await Indexes(db));
 
             Assert.Equal(8, await db.RelationshipTypes.CountAsync());
             Assert.Equal(8, await db.Relationships.CountAsync());

@@ -575,13 +575,14 @@ async function member(browser: Browser, owner: Page, universeId: string, role: n
   const context = await browser.newContext()
   const page = await context.newPage()
   const username = await signUp(page, 'filterviewer')
-  const invitationId = (
-    await post(owner, `/api/universes/${universeId}/invitations`, {
-      email: `${username}@example.test`,
-      role,
-    })
-  ).id
-  const accepted = await page.request.post(`/api/invitations/${invitationId}/accept`)
+  const invitation = await owner.request.post(`/api/universes/${universeId}/invitations`, {
+    data: { email: `${username}@example.test`, role },
+  })
+  expect(invitation.ok()).toBe(true)
+  const { claimToken } = (await invitation.json()) as { claimToken: string }
+  const accepted = await page.request.post(
+    `/api/invitations/claim/${encodeURIComponent(claimToken)}/accept`,
+  )
   expect(accepted.ok(), await accepted.text()).toBe(true)
   return page
 }

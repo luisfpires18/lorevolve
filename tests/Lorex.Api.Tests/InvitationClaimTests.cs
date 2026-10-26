@@ -11,10 +11,11 @@ using static Lorex.Api.Tests.PlotTestClient;
 namespace Lorex.Api.Tests;
 
 /// <summary>
-/// Who may claim an invitation, now that an email address is known not to be an identity (ADR 0041 amendment, the 030
-/// correction). Lorex does not verify the address an account registers with, so typing the invited address proves
-/// nothing. An invitation is claimed by the account it was privately bound to when that account already existed, or with
-/// the protected link the owner sent - the email then only a consistency check. The owner is never told which.
+/// Who may claim an invitation, now that an email address is known not to be an identity (ADR 0041 amendment). Lorex does
+/// not verify the address an account registers with, so holding the invited address proves nothing - not even when the
+/// account held it before the owner invited it, since anyone can register any address first (issue #33, H-1). An
+/// invitation is claimed only with the protected link the owner sent, the email then a consistency check. The owner is
+/// never told whether an account held the address.
 /// </summary>
 public sealed class InvitationClaimTests(LorexApiFactory factory) : IClassFixture<LorexApiFactory>
 {
@@ -23,45 +24,35 @@ public sealed class InvitationClaimTests(LorexApiFactory factory) : IClassFixtur
     private readonly LorexApiFactory _factory = factory;
 
     [Fact]
-    public async Task An_existing_account_is_bound_privately_and_alone_sees_and_accepts_it()
+    public async Task An_account_that_registered_the_address_first_gets_nothing_without_the_link()
     {
-        var w = await NewSharedWorld(_factory, "claim-bound");
-        var (ana, anaId) = await Register("claim-bound-ana");
-        var (other, _) = await Register("claim-bound-other");
+        var w = await NewSharedWorld(_factory, "claim-first");
 
-        var created = await Invite(w.Owner, w.U, "claim-bound-ana@example.test");
-        var nobody = await Invite(w.Owner, w.U, "claim-bound-nobody@example.test");
+        // Someone registers the address before the owner ever invites it - the real person, or anyone who guessed it.
+        var (squatter, squatterId) = await Register("claim-first-ana");
 
-        // 1, 5: bound to Ana's id, inside; the address no account held stays unbound.
-        await WithDb(_factory, async db =>
-        {
-            Assert.Equal(anaId, await db.UniverseInvitations.Where(row => row.Id == created.Invitation.Id).Select(row => row.TargetUserId).SingleAsync());
-            Assert.Null(await db.UniverseInvitations.Where(row => row.Id == nobody.Invitation.Id).Select(row => row.TargetUserId).SingleAsync());
-        });
+        var created = await Invite(w.Owner, w.U, "claim-first-ana@example.test");
+        var nobody = await Invite(w.Owner, w.U, "claim-first-nobody@example.test");
 
-        // 2, 15: the owner's answers cannot tell the two apart - same status, same fields, no account id anywhere.
+        // The owner's answers cannot tell the two apart - same status, same fields, no account id anywhere.
         Assert.Equal(created.Status, nobody.Status);
         Assert.Equal(Fields(created.Body), Fields(nobody.Body));
-        Assert.DoesNotContain(anaId, created.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain(squatterId, created.Body, StringComparison.Ordinal);
         Assert.DoesNotContain("target", created.Body, StringComparison.OrdinalIgnoreCase);
         var listed = await w.Owner.GetStringAsync($"/api/universes/{w.U}/collaborators");
-        Assert.DoesNotContain(anaId, listed, StringComparison.Ordinal);
+        Assert.DoesNotContain(squatterId, listed, StringComparison.Ordinal);
         Assert.DoesNotContain("target", listed, StringComparison.OrdinalIgnoreCase);
 
-        // 3: only Ana is shown it.
-        Assert.Equal(created.Invitation.Id, Assert.Single(await Mine(ana)).Id);
-        Assert.Empty(await Mine(other));
-        foreach (var who in new[] { w.Editor, w.Reviewer, w.Viewer, w.Outsider })
-        {
-            Assert.Empty(await Mine(who));
-        }
+        // No list shows it to the account, and no id opens it: those routes are gone.
+        Assert.Equal(HttpStatusCode.NotFound, (await squatter.GetAsync("/api/invitations")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await squatter.PostAsync($"/api/invitations/{created.Invitation.Id}/accept", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await squatter.PostAsync($"/api/invitations/{created.Invitation.Id}/decline", null)).StatusCode);
+        await AssertNotMember(w.U, squatterId);
+        await WithDb(_factory, async db => Assert.True(await db.UniverseInvitations.AnyAsync(row => row.Id == created.Invitation.Id)));
 
-        // 4: nobody else claims it by id, and its link answers only Ana.
-        await AssertCode(await other.PostAsync($"/api/invitations/{created.Invitation.Id}/accept", null), HttpStatusCode.NotFound, InvitationEndpoints.NotFoundCode);
-        await AssertCode(await other.PostAsync($"{Claim(created.Invitation.ClaimToken)}/accept", null), HttpStatusCode.Forbidden, InvitationEndpoints.OtherAccountCode);
-
-        await Ok(ana.PostAsync($"/api/invitations/{created.Invitation.Id}/accept", null));
-        await AssertMember(w.U, anaId, UniverseRole.Editor);
+        // Only the link the owner sends opens it.
+        await Ok(squatter.PostAsync($"{Claim(created.Invitation.ClaimToken)}/accept", null));
+        await AssertMember(w.U, squatterId, UniverseRole.Editor);
     }
 
     [Fact]
@@ -70,18 +61,33 @@ public sealed class InvitationClaimTests(LorexApiFactory factory) : IClassFixtur
         var w = await NewSharedWorld(_factory, "claim-later");
         var created = await Invite(w.Owner, w.U, "claim-later-ana@example.test");
 
-        // 6, 4: someone registers the address afterwards. Nothing surfaces, and nothing opens by id.
+        // Someone registers the address afterwards. Nothing surfaces, and nothing opens by id.
         var (impostor, impostorId) = await Register("claim-later-ana");
-        Assert.Empty(await Mine(impostor));
-        await AssertCode(await impostor.PostAsync($"/api/invitations/{created.Invitation.Id}/accept", null), HttpStatusCode.NotFound, InvitationEndpoints.NotFoundCode);
-        await AssertCode(await impostor.PostAsync($"/api/invitations/{created.Invitation.Id}/decline", null), HttpStatusCode.NotFound, InvitationEndpoints.NotFoundCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await impostor.GetAsync("/api/invitations")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await impostor.PostAsync($"/api/invitations/{created.Invitation.Id}/accept", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await impostor.PostAsync($"/api/invitations/{created.Invitation.Id}/decline", null)).StatusCode);
         await AssertNotMember(w.U, impostorId);
 
-        await WithDb(_factory, async db =>
-        {
-            var row = await db.UniverseInvitations.SingleAsync(candidate => candidate.Id == created.Invitation.Id);
-            Assert.Null(row.TargetUserId);
-        });
+        await WithDb(_factory, async db => Assert.True(await db.UniverseInvitations.AnyAsync(candidate => candidate.Id == created.Invitation.Id)));
+    }
+
+    [Fact]
+    public async Task An_account_an_older_invitation_was_bound_to_gains_nothing_by_it()
+    {
+        var w = await NewSharedWorld(_factory, "claim-legacy");
+        var created = await Invite(w.Owner, w.U, "claim-legacy-ana@example.test", UniverseRole.Viewer);
+        var (ana, anaId) = await Register("claim-legacy-ana");
+        var (bound, boundId) = await Register("claim-legacy-bound");
+
+        var link = Claim(created.Invitation.ClaimToken);
+        await AssertCode(await bound.GetAsync(link), HttpStatusCode.Forbidden, InvitationEndpoints.OtherAccountCode);
+        await AssertCode(await bound.PostAsync($"{link}/accept", null), HttpStatusCode.Forbidden, InvitationEndpoints.OtherAccountCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await bound.PostAsync($"/api/invitations/{created.Invitation.Id}/accept", null)).StatusCode);
+        await AssertNotMember(w.U, boundId);
+
+        // The link's own address still claims it.
+        await Ok(ana.PostAsync($"{link}/accept", null));
+        await AssertMember(w.U, anaId, UniverseRole.Viewer);
     }
 
     [Fact]
@@ -141,7 +147,6 @@ public sealed class InvitationClaimTests(LorexApiFactory factory) : IClassFixtur
             await AssertCode(await ana.PostAsync($"{Claim(bad)}/accept", null), HttpStatusCode.NotFound, InvitationEndpoints.NotFoundCode);
         }
 
-        await AssertCode(await ana.PostAsync($"/api/invitations/{created.Invitation.Id}/accept", null), HttpStatusCode.NotFound, InvitationEndpoints.NotFoundCode);
         await AssertNotMember(w.U, anaId);
 
         // A token issued for one invitation never opens another one, not even one to the same address after a revoke.
@@ -173,7 +178,6 @@ public sealed class InvitationClaimTests(LorexApiFactory factory) : IClassFixtur
         var declined = await Invite(w.Owner, w.U, "claim-after-ana@example.test");
         Assert.Equal(HttpStatusCode.NoContent, (await ana.PostAsync($"{Claim(declined.Invitation.ClaimToken)}/decline", null)).StatusCode);
         await AssertCode(await ana.PostAsync($"{Claim(declined.Invitation.ClaimToken)}/accept", null), HttpStatusCode.NotFound, InvitationEndpoints.NotFoundCode);
-        await AssertCode(await ana.PostAsync($"/api/invitations/{declined.Invitation.Id}/accept", null), HttpStatusCode.NotFound, InvitationEndpoints.NotFoundCode);
 
         await AssertNotMember(w.U, anaId);
     }
@@ -197,9 +201,6 @@ public sealed class InvitationClaimTests(LorexApiFactory factory) : IClassFixtur
         Assert.True(response.StatusCode == HttpStatusCode.Created, body);
         return new Created(response.StatusCode, body, JsonSerializer.Deserialize<PendingInvitationResponse>(body, JsonSerializerOptions.Web)!);
     }
-
-    private static async Task<List<ReceivedInvitationResponse>> Mine(HttpClient client) =>
-        (await client.GetFromJsonAsync<List<ReceivedInvitationResponse>>("/api/invitations"))!;
 
     private static List<string> Fields(string json) =>
         [.. JsonDocument.Parse(json).RootElement.EnumerateObject().Select(property => property.Name).Order(StringComparer.Ordinal)];

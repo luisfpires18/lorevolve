@@ -125,7 +125,7 @@ test.describe('AI changes to every authored resource', () => {
     await signUp(page)
     const universeId = await seed(page)
     const editor = await newPerson(browser)
-    const invitation = await api<{ id: string }>(
+    const invitation = await api<{ claimToken: string }>(
       page.request,
       'POST',
       `/api/universes/${universeId}/invitations`,
@@ -134,9 +134,13 @@ test.describe('AI changes to every authored resource', () => {
         role: 3,
       },
     )
-    expect((await editor.page.request.post(`/api/invitations/${invitation.id}/accept`)).ok()).toBe(
-      true,
-    )
+    expect(
+      (
+        await editor.page.request.post(
+          `/api/invitations/claim/${encodeURIComponent(invitation.claimToken)}/accept`,
+        )
+      ).ok(),
+    ).toBe(true)
 
     const review = await propose(page, universeId, `Create "${unique('Lia ')}" with an idea.`)
     await expect(page.getByTestId('ai-change-item')).toHaveCount(2)

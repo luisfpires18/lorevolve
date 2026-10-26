@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArchiveRestore, Plus, Search } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
-import { ReceivedInvitations } from '../components/ReceivedInvitations'
 import { RestoreBackup } from '../components/RestoreBackup'
 import { UniverseCard } from '../components/UniverseCard'
 import { UniverseForm } from '../components/UniverseForm'
@@ -127,8 +126,6 @@ export default function UniversesPage() {
           />
         </section>
       ) : null}
-
-      <ReceivedInvitations />
 
       <div className="controls">
         <div className="controls__search">

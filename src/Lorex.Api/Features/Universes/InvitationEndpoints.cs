@@ -6,18 +6,12 @@ using Microsoft.EntityFrameworkCore;
 namespace Lorex.Api.Features.Universes;
 
 /// <summary>
-/// The signed-in account's own invitations (ADR 0041 amendment). Lorex does not verify email addresses, so an address is
-/// never permission by itself. An invitation reaches an account in exactly two ways:
-///
-/// <para><b>Bound</b> - an account already held the address when the owner invited it, so the invitation carries that
-/// account's id. Only that account lists it in My workspace and accepts or declines it there, by id
-/// (<c>/api/invitations/{id}</c>).</para>
-///
-/// <para><b>By its link</b> - the protected token the owner copies (<see cref="InvitationClaims"/>), at
-/// <c>/api/invitations/claim/{token}</c>. A bound invitation still answers only its own account; an unbound one answers
-/// the account whose normalized email matches, the link being the proof and the email a consistency check. Anyone else
-/// learns only that it is for a different account - never the universe, role, owner or address. A token that is missing,
-/// forged or edited opens nothing.</para>
+/// The signed-in account's side of an invitation (ADR 0041 amendment): reached only through its link. Lorex does not
+/// verify email addresses, so an address is never permission by itself - not even when an account already held it at the
+/// moment the owner invited it, because anyone can register any address first (issue #33, H-1). The protected token the
+/// owner copies (<see cref="InvitationClaims"/>), at <c>/api/invitations/claim/{token}</c>, is the proof; the signed-in
+/// account's normalized email must also match, as a consistency check. Anyone else learns only that it is for a different
+/// account - never the universe, role, owner or address. A token that is missing, forged or edited opens nothing.
 ///
 /// <para>The database decides the rest: the invitation must still exist, be live, and the role is read from it at the
 /// moment of acceptance - so a revoke, expiry, accept or decline ends every link ever issued for it. Accepting is one
@@ -37,71 +31,12 @@ public static class InvitationEndpoints
             .WithTags("Invitations")
             .RequireAuthorization();
 
-        group.MapGet("/", ListAsync).WithName("ListMyInvitations");
-        group.MapPost("/{invitationId:guid}/accept", AcceptBoundAsync).WithName("AcceptInvitation");
-        group.MapPost("/{invitationId:guid}/decline", DeclineBoundAsync).WithName("DeclineInvitation");
         group.MapGet("/claim/{token}", GetClaimAsync).WithName("GetClaimedInvitation");
         group.MapPost("/claim/{token}/accept", AcceptClaimAsync).WithName("AcceptClaimedInvitation");
         group.MapPost("/claim/{token}/decline", DeclineClaimAsync).WithName("DeclineClaimedInvitation");
 
         return endpoints;
     }
-
-    /// <summary>
-    /// Live invitations bound to this account, to universes it neither owns nor already works on. Never one matched by
-    /// email alone: an unbound invitation is reached through its link.
-    /// </summary>
-    private static async Task<IResult> ListAsync(
-        ClaimsPrincipal principal,
-        LorexDbContext db,
-        TimeProvider clock,
-        CancellationToken cancellationToken)
-    {
-        var userId = principal.RequireUserId();
-        var now = clock.GetUtcNow().UtcDateTime;
-
-        var invitations = await db.UniverseInvitations.AsNoTracking()
-            .Where(invitation => invitation.TargetUserId == userId
-                && invitation.ExpiresAt > now
-                && invitation.Universe!.OwnerId != userId
-                && !db.UniverseMemberships.Any(membership => membership.UniverseId == invitation.UniverseId && membership.UserId == userId))
-            .OrderByDescending(invitation => invitation.CreatedAt)
-            .Select(invitation => new ReceivedInvitationResponse(
-                invitation.Id, invitation.UniverseId, invitation.Universe!.Name, invitation.Role, invitation.ExpiresAt))
-            .ToListAsync(cancellationToken);
-
-        return Results.Ok(invitations);
-    }
-
-    // ---------- Bound, from My workspace ----------
-
-    private static Task<IResult> AcceptBoundAsync(
-        Guid invitationId,
-        ClaimsPrincipal principal,
-        LorexDbContext db,
-        TimeProvider clock,
-        CancellationToken cancellationToken) =>
-        AcceptAsync(db, principal.RequireUserId(), clock, Bound(invitationId), cancellationToken);
-
-    private static Task<IResult> DeclineBoundAsync(
-        Guid invitationId,
-        ClaimsPrincipal principal,
-        LorexDbContext db,
-        TimeProvider clock,
-        CancellationToken cancellationToken) =>
-        DeclineAsync(db, principal.RequireUserId(), clock, Bound(invitationId), cancellationToken);
-
-    /// <summary>Only the account an invitation is bound to finds it by id; for anyone else it is not there.</summary>
-    private static Locate Bound(Guid invitationId) => async (db, userId, cancellationToken) =>
-    {
-        var invitation = await db.UniverseInvitations
-            .Include(candidate => candidate.Universe)
-            .FirstOrDefaultAsync(candidate => candidate.Id == invitationId, cancellationToken);
-
-        return invitation is not null && invitation.TargetUserId == userId
-            ? (invitation, null)
-            : (null, NotFoundProblem());
-    };
 
     // ---------- By its protected link ----------
 
@@ -148,8 +83,8 @@ public static class InvitationEndpoints
 
     /// <summary>
     /// The invitation a link's token names, if this account may have it. In this order, so nothing past the first refusal
-    /// is disclosed: a token this host did not issue, or one for an invitation no longer there, is not found; one for
-    /// another account - bound to someone else, or unbound and addressed to another email - is someone else's.
+    /// is disclosed: a token this host did not issue, or one for an invitation no longer there, is not found; one addressed
+    /// to another email is someone else's.
     /// </summary>
     private static Locate Claimed(IDataProtectionProvider protection, string token) => async (db, userId, cancellationToken) =>
     {
@@ -168,12 +103,11 @@ public static class InvitationEndpoints
             return (null, NotFoundProblem());
         }
 
-        var entitled = invitation.TargetUserId is { } target
-            ? target == userId
-            : invitation.NormalizedEmail == await db.Users
-                .Where(user => user.Id == userId)
-                .Select(user => user.NormalizedEmail)
-                .FirstOrDefaultAsync(cancellationToken);
+        // Never an account recorded on the invitation: older invitations may carry one, bound by email alone.
+        var entitled = invitation.NormalizedEmail == await db.Users
+            .Where(user => user.Id == userId)
+            .Select(user => user.NormalizedEmail)
+            .FirstOrDefaultAsync(cancellationToken);
 
         return entitled
             ? (invitation, null)
@@ -184,7 +118,7 @@ public static class InvitationEndpoints
                 "This invitation is for a different account."));
     };
 
-    // ---------- Accepting and declining, however the invitation was reached ----------
+    // ---------- Accepting and declining ----------
 
     private delegate Task<(UniverseInvitation? Invitation, IResult? Refused)> Locate(
         LorexDbContext db, string userId, CancellationToken cancellationToken);

@@ -48,11 +48,10 @@ async function universe(page: Page, name = unique('Shared World ')) {
 
 /** An invitation made and accepted through the API: the same routes the screens use. */
 async function share(owner: Page, universeId: string, member: Person, role: number) {
-  const invitationId = await post(owner, `/api/universes/${universeId}/invitations`, {
-    email: member.email,
-    role,
-  })
-  const accepted = await member.page.request.post(`/api/invitations/${invitationId}/accept`)
+  const invitation = await invite(owner, universeId, member.email, role)
+  const accepted = await member.page.request.post(
+    `/api/invitations/claim/${encodeURIComponent(invitation.claimToken)}/accept`,
+  )
   expect(accepted.ok()).toBe(true)
 }
 
@@ -123,7 +122,7 @@ test.describe('collaborators', () => {
 
     const created = owner.page.getByTestId('invitation-created')
     await expect(created).toContainText('Invitation created')
-    await expect(created).toContainText('can accept it from LoreX if they sign in with this email')
+    await expect(created).toContainText('they accept it signed in with that email')
     await expect(created).toContainText('LoreX does not send email')
     await expect(owner.page.getByText(/email (was )?sent/i)).toHaveCount(0)
 
@@ -155,54 +154,54 @@ test.describe('collaborators', () => {
       new RegExp(`^${new URL(owner.page.url()).origin}/invite/[A-Za-z0-9_-]{40,}$`),
     )
 
-    // The invitee, in their own browser, is offered it as Editor - the role it holds now.
+    // The invitee, in their own browser, opens the link and is offered it as Editor - the role it holds now. Nothing
+    // reaches them without it (issue #33, H-1).
     await invitee.page.reload()
-    const offered = invitee.page.getByTestId('received-invitation')
-    await expect(offered).toContainText(world.name)
-    await expect(offered).toContainText('Invited as Editor')
+    await expect(invitee.page.getByTestId('received-invitations')).toHaveCount(0)
+    await invitee.page.goto(link)
+    await expect(invitee.page.getByRole('heading', { level: 1 })).toHaveText(world.name)
+    await expect(invitee.page.getByText("You've been invited as Editor.")).toBeVisible()
 
     // Revoked, it is gone from both sides.
     await pending.getByTestId('revoke-invitation').click()
     await expect(pending).toHaveCount(0)
     await expect(owner.page.getByTestId('invitations-empty')).toBeVisible()
     await invitee.page.reload()
-    await expect(invitee.page.getByTestId('received-invitations')).toHaveCount(0)
+    await expect(invitee.page.getByRole('heading', { level: 1 })).toHaveText(
+      'This invitation is no longer available.',
+    )
 
     await owner.context.close()
     await invitee.context.close()
   })
 
-  test('an existing account accepts from My workspace, opens the universe as Editor and writes in it; another declines', async ({
+  test('an existing account is offered nothing in My workspace; its links open one universe as Editor and decline another', async ({
     browser,
   }) => {
     const owner = await person(browser, 'acceptowner')
     const ana = await person(browser, 'acceptana')
     const world = await universe(owner.page)
     const other = await universe(owner.page)
-    await post(owner.page, `/api/universes/${world.id}/invitations`, {
-      email: ana.email,
-      role: Role.Editor,
-    })
-    await post(owner.page, `/api/universes/${other.id}/invitations`, {
-      email: ana.email,
-      role: Role.Viewer,
-    })
+    const offered = await invite(owner.page, world.id, ana.email, Role.Editor)
+    const declined = await invite(owner.page, other.id, ana.email, Role.Viewer)
 
+    // An account that already held the address is shown nothing: the address is unverified (issue #33, H-1).
     await ana.page.reload()
-    const section = ana.page.getByTestId('received-invitations')
-    await expect(section.getByRole('heading', { name: 'Invitations' })).toBeVisible()
-    const declined = section.getByTestId('received-invitation').filter({ hasText: other.name })
-    await expect(declined).toContainText('Invited as Viewer')
-    await declined.getByTestId('decline-invitation').click()
-    await expect(ana.page.getByTestId('invitations-announcer')).toContainText('declined')
-    await expect(section.getByTestId('received-invitation')).toHaveCount(1)
+    await expect(ana.page.getByTestId('received-invitations')).toHaveCount(0)
+    expect((await ana.page.request.get('/api/invitations')).status()).toBe(404)
+
+    await ana.page.goto(`/invite/${declined.claimToken}`)
+    await expect(ana.page.getByText("You've been invited as Viewer.")).toBeVisible()
+    await ana.page.getByTestId('invitation-decline').click()
+    await expect(ana.page.getByRole('heading', { level: 1 })).toHaveText('Invitation declined.')
+    await ana.page.goto('/app')
     await expect(ana.page.getByTestId('universe-card').filter({ hasText: other.name })).toHaveCount(
       0,
     )
 
-    const offered = section.getByTestId('received-invitation').filter({ hasText: world.name })
-    await expect(offered).toContainText('Invited as Editor')
-    await offered.getByTestId('accept-invitation').click()
+    await ana.page.goto(`/invite/${offered.claimToken}`)
+    await expect(ana.page.getByText("You've been invited as Editor.")).toBeVisible()
+    await ana.page.getByTestId('invitation-accept').click()
 
     // Accepting opens the universe, and says whose role this is.
     await ana.page.waitForURL(`/app/universes/${world.id}`)
@@ -264,7 +263,7 @@ test.describe('collaborators', () => {
     await page.waitForURL(`/invite/${claimToken}`)
 
     // The address is unverified, so nothing was offered to the new account on its own: only the link opens it.
-    expect(await (await page.request.get('/api/invitations')).json()).toEqual([])
+    expect((await page.request.get('/api/invitations')).status()).toBe(404)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(world.name)
     await expect(page.getByRole('heading', { level: 1 })).toBeFocused()
     await expect(page.getByText("You've been invited as Reviewer.")).toBeVisible()
@@ -634,15 +633,18 @@ test.describe('collaboration on a phone', () => {
         expect(box.x + box.width).toBeLessThanOrEqual(width)
       }
 
-      // Another invitation, on the invitee's phone.
-      await post(owner.page, `/api/universes/${(await universe(owner.page)).id}/invitations`, {
-        email: ana.email,
-        role: Role.Viewer,
-      })
+      // Another invitation, its link opened on the invitee's phone.
+      const another = await invite(
+        owner.page,
+        (await universe(owner.page)).id,
+        ana.email,
+        Role.Viewer,
+      )
       await ana.page.setViewportSize({ width, height: 800 })
+      await ana.page.goto(`/invite/${another.claimToken}`)
+      await expect(ana.page.getByTestId('invitation-accept')).toBeInViewport()
+      expect(await sideways(ana.page)).toBeLessThanOrEqual(1)
       await ana.page.goto('/app')
-      await expect(ana.page.getByTestId('received-invitation')).toBeVisible()
-      await expect(ana.page.getByTestId('accept-invitation')).toBeInViewport()
       const card = ana.page.locator(
         `[data-testid="universe-card"][data-universe-name="${world.name}"]`,
       )

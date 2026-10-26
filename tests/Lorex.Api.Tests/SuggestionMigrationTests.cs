@@ -62,7 +62,7 @@ public sealed class SuggestionMigrationTests : IDisposable
             await db.GetService<IMigrator>().MigrateAsync(Before);
 
             Assert.Empty(await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE name = 'SuggestedChanges'"));
-            Assert.Equal(indexes.Where(LaterSchema.BeforeSuggestions), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
+            Assert.Equal(LaterSchema.WithDropped(indexes).Where(LaterSchema.BeforeSuggestions), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
             Assert.Equal(triggers.Where(LaterSchema.BeforeTypeGroups), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
             Assert.Equal(1, await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM \"Stories\"").SingleAsync());
         }

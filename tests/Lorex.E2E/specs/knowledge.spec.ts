@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
-import { PASSWORD, post, unique } from './support/trash'
+import { invite, PASSWORD, post, unique } from './support/trash'
 
 /**
  * Issue 15: an entry's Knowledge view, as two people in their own browsers. The API's rules are proved by its own tests;
@@ -87,12 +87,12 @@ test.describe('knowledge records', () => {
     const owner = await person(browser, 'knowowner')
     const viewer = await person(browser, 'knowviewer')
     const { universeId, miraId, heirId, storyId, causewayId } = await world(owner.page)
-    const invitationId = await post(owner.page, `/api/universes/${universeId}/invitations`, {
-      email: viewer.email,
-      role: 1,
-    })
-    expect((await viewer.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(
-      true,
+    await invite(
+      owner.page,
+      viewer.page,
+      `/api/universes/${universeId}/invitations`,
+      viewer.email,
+      1,
     )
 
     // Knowledge lives under the entry's relations, read by every member.

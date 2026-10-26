@@ -461,8 +461,21 @@ async function member(browser: Browser, owner: Page, universeId: string, role: n
   const context = await browser.newContext()
   const page = await context.newPage()
   const { email } = await account(page, 'quickmember')
-  const invitation = await post(owner, `/api/universes/${universeId}/invitations`, { email, role })
-  expect((await page.request.post(`/api/invitations/${invitation.id}/accept`)).ok()).toBe(true)
+  const invitation = await post<{ claimToken: string }>(
+    owner,
+    `/api/universes/${universeId}/invitations`,
+    {
+      email,
+      role,
+    },
+  )
+  expect(
+    (
+      await page.request.post(
+        `/api/invitations/claim/${encodeURIComponent(invitation.claimToken)}/accept`,
+      )
+    ).ok(),
+  ).toBe(true)
   return page
 }
 

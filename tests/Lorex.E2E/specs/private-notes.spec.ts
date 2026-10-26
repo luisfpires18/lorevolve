@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
-import { PASSWORD, post, unique } from './support/trash'
+import { invite, PASSWORD, post, unique } from './support/trash'
 
 /**
  * Issue 23: the owner's private note on an entry, as two people in their own browsers. The API's rules are proved by its own
@@ -159,12 +159,12 @@ test.describe('private author notes', () => {
     const owner = await person(browser, 'noteowner')
     const editor = await person(browser, 'noteeditor')
     const { universeId, entryId } = await world(owner.page)
-    const invitationId = await post(owner.page, `/api/universes/${universeId}/invitations`, {
-      email: editor.email,
-      role: 3,
-    })
-    expect((await editor.page.request.post(`/api/invitations/${invitationId}/accept`)).ok()).toBe(
-      true,
+    await invite(
+      owner.page,
+      editor.page,
+      `/api/universes/${universeId}/invitations`,
+      editor.email,
+      3,
     )
     const entryPage = `/app/universes/${universeId}/lore/${entryId}`
 

@@ -26,6 +26,17 @@ export async function post(page: Page, path: string, data: unknown) {
   return ((await response.json()) as { id: string }).id
 }
 
+/** Creates an invitation and accepts it only through the owner's protected claim link. */
+export async function invite(owner: Page, member: Page, path: string, email: string, role: number) {
+  const response = await owner.request.post(path, { data: { email, role } })
+  expect(response.ok(), path).toBe(true)
+  const invitation = (await response.json()) as { claimToken: string }
+  const accepted = await member.request.post(
+    `/api/invitations/claim/${encodeURIComponent(invitation.claimToken)}/accept`,
+  )
+  expect(accepted.ok(), await accepted.text()).toBe(true)
+}
+
 export async function trash(page: Page, path: string) {
   expect((await page.request.delete(path)).status(), path).toBe(204)
 }

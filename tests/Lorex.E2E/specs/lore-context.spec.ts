@@ -334,13 +334,18 @@ test.describe('Lore Context', () => {
     await signUp(page)
     const w = await world(page)
     const viewer = await member(browser)
-    const invitation = await post(page, `/api/universes/${w.universeId}/invitations`, {
-      email: viewer.email,
-      role: Role.Viewer,
+    const invitation = await page.request.post(`/api/universes/${w.universeId}/invitations`, {
+      data: { email: viewer.email, role: Role.Viewer },
     })
-    expect((await viewer.page.request.post(`/api/invitations/${invitation}/accept`)).ok()).toBe(
-      true,
-    )
+    expect(invitation.ok()).toBe(true)
+    const { claimToken } = (await invitation.json()) as { claimToken: string }
+    expect(
+      (
+        await viewer.page.request.post(
+          `/api/invitations/claim/${encodeURIComponent(claimToken)}/accept`,
+        )
+      ).ok(),
+    ).toBe(true)
 
     await viewer.page.goto(
       `/app/universes/${w.universeId}/stories/${w.storyId}/manuscript/${w.sceneId}`,

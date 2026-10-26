@@ -24,9 +24,9 @@ type LoadState =
  * Settings → Collaborators (ADR 0041 amendment): invite someone by email, and manage who works here. The owner's alone -
  * the tab is never offered to anyone else, and the API refuses them anyway.
  *
- * Lorex sends no email. An invitation waits for whoever signs in with that address, and its link can be copied and sent
- * by hand; this screen says exactly that and never claims a message went out. Creating one answers the same whether an
- * account holds the address or not.
+ * Lorex sends no email. An invitation is claimed only through its link, which the owner copies and sends by hand, by the
+ * account with that address; this screen says exactly that and never claims a message went out. Creating one answers the
+ * same whether an account holds the address or not.
  */
 export function CollaboratorsPanel({ universeId }: { universeId: string }) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
@@ -89,9 +89,8 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
               Invitation created
             </p>
             <p className="settings__note">
-              <bdi className="collab__email">{created.email}</bdi> can accept it from LoreX if they
-              sign in with this email. LoreX does not send email, so you can also send them this
-              link:
+              LoreX does not send email. Send <bdi className="collab__email">{created.email}</bdi>{' '}
+              this link; they accept it signed in with that email:
             </p>
             <CopyLink
               claimToken={created.claimToken}

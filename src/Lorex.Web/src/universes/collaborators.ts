@@ -89,10 +89,6 @@ export function removeCollaborator(universeId: string, userId: string) {
   })
 }
 
-export function listMyInvitations(signal?: AbortSignal) {
-  return apiFetch<ReceivedInvitation[]>('/api/invitations', { signal })
-}
-
 /** An invitation reached through its link. Only the account it is for gets an answer (ADR 0041 amendment). */
 export function getClaimedInvitation(token: string, signal?: AbortSignal) {
   return apiFetch<ReceivedInvitation>(claimPath(token), { signal })
@@ -108,17 +104,9 @@ export function declineClaimedInvitation(token: string) {
 
 const claimPath = (token: string) => `/api/invitations/claim/${encodeURIComponent(token)}`
 
-export function acceptInvitation(invitationId: string) {
-  return apiFetch<AcceptedInvitation>(`/api/invitations/${invitationId}/accept`, { method: 'POST' })
-}
-
-export function declineInvitation(invitationId: string) {
-  return apiFetch<void>(`/api/invitations/${invitationId}/decline`, { method: 'POST' })
-}
-
 /**
  * The link an owner sends by hand, carrying the invitation's protected claim token: Lorex verifies no email address, so
- * the link - not the address - is what lets an invitation nobody was bound to be claimed. Built from this page's own
+ * the link - not the address - is the only way an invitation is claimed (issue #33). Built from this page's own
  * origin: no hostname is written into Lorex.
  */
 export function invitationLink(claimToken: string) {
