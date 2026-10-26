@@ -255,7 +255,7 @@ internal static class ProgressionState
 
         var sent = sentEras.OfType<EraInput>().ToList();
 
-        var (referenced, members) = await EntityEndpoints.LinkTargetsAsync(
+        var (referenced, members, parentOf) = await EntityEndpoints.LinkTargetsAsync(
             db,
             universeId,
             definitions,
@@ -380,7 +380,7 @@ internal static class ProgressionState
                 }
 
                 var fieldErrors = new Dictionary<string, string[]>();
-                var rows = EntityEndpoints.BuildRows(entityId, definition, field.ToValue(), chronology, referenced, members, fieldErrors);
+                var rows = EntityEndpoints.BuildRows(entityId, definition, field.ToValue(), chronology, referenced, members, parentOf, fieldErrors);
 
                 foreach (var (_, messages) in fieldErrors)
                 {

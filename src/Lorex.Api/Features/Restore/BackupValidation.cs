@@ -485,6 +485,7 @@ internal static partial class BackupValidation
         private UniverseChronology? _reckoning;
         private readonly Dictionary<Guid, (BackupFieldDefinition Field, string What)> _fieldTargets = [];
         private readonly Dictionary<Guid, HashSet<Guid>> _groupMembers = [];
+        private Dictionary<Guid, Guid?>? _typeParents;
         private readonly HashSet<Guid> _options = [];
         private readonly HashSet<Guid> _tags = [];
         private readonly Dictionary<Guid, BackupEntity> _entities = [];
@@ -1254,9 +1255,7 @@ internal static partial class BackupValidation
                     // The limit holds in the file as it does in the app: a restore would otherwise write a link the field refuses.
                     if (_fieldTargets.TryGetValue(value.FieldDefinitionId, out var limited)
                         && _entities.TryGetValue(referenced, out var linked)
-                        && (limited.Field.TargetGroupId is { } group
-                            ? _groupMembers.TryGetValue(group, out var members) && !members.Contains(linked.EntityTypeId)
-                            : linked.EntityTypeId != limited.Field.TargetEntityTypeId))
+                        && Refuses(limited.Field, linked.EntityTypeId))
                     {
                         Add(BackupIssueCodes.InvalidValue, $"{what} links its field {Quote(limited.Field.Name)} to an entry of a type that field does not allow.");
                     }
@@ -1405,9 +1404,7 @@ internal static partial class BackupValidation
 
                         if (_fieldTargets.TryGetValue(value.FieldDefinitionId, out var limited)
                             && _entities.TryGetValue(referenced, out var linked)
-                            && (limited.Field.TargetGroupId is { } group
-                                ? _groupMembers.TryGetValue(group, out var members) && !members.Contains(linked.EntityTypeId)
-                                : linked.EntityTypeId != limited.Field.TargetEntityTypeId))
+                            && Refuses(limited.Field, linked.EntityTypeId))
                         {
                             Add(BackupIssueCodes.InvalidValue, $"{label} links its field {Quote(limited.Field.Name)} to an entry of a type that field does not allow.");
                         }
@@ -2710,6 +2707,22 @@ internal static partial class BackupValidation
             {
                 Add(BackupIssueCodes.MissingReference, message);
             }
+        }
+
+        /// <summary>
+        /// Whether a limited field in the file refuses an entry of <paramref name="typeId"/>, by the app's own rule: its type or
+        /// one nested beneath it in the file's tree (Issue #61), or a type in its group. A group the file does not hold is
+        /// reported once, where the field is.
+        /// </summary>
+        private bool Refuses(BackupFieldDefinition field, Guid typeId)
+        {
+            if (field.TargetGroupId is { } group)
+            {
+                return _groupMembers.TryGetValue(group, out var members) && !members.Contains(typeId);
+            }
+
+            _typeParents ??= _types.ToDictionary(type => type.Key, type => type.Value.ParentId);
+            return !EntityTypeHierarchy.IsWithin(_typeParents, typeId, field.TargetEntityTypeId!.Value);
         }
 
         private void Add(string code, string message) => issues.Add(code, message);

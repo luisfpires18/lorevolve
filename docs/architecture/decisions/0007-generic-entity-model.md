@@ -176,7 +176,8 @@ of every entry and the Lore filter's picker searched the whole universe. A targe
   is refused. The same universe is checked by the endpoints, since the key cannot say it; another universe's type and no type
   get the same answer.
 - **Exact type only.** Types nested inside the target are not included, and moving or renaming types changes nothing about
-  what a field accepts. Several allowed types or a whole branch would be a later, deliberate change.
+  what a field accepts. Several allowed types or a whole branch would be a later, deliberate change. *Superseded by the
+  Issue #61 amendment below: a type target now takes its whole branch.*
 - **Never from a name.** A field called "Kingdom" is not limited to a type called "Kingdoms" unless its author says so; the
   migration (`AddEntityReferenceTargetType`) leaves every existing link field open to any type and infers nothing.
 - **Narrowing waits for the data.** Limiting a field, from any type or from another type, is refused (409
@@ -342,3 +343,27 @@ A creator can make a missing entry from the picker that needs it, without leavin
   input are refused, and a status says why; the answer alone chooses, with the entry it returns. A failure gives the form
   back. A lost answer still cannot say whether the entry was made, as with every create.
 - **Not done (V1).** Quick Create inside its own form's link fields, in other pickers, or for more than one entry at once.
+
+## Amendment - a type target takes its nested types (2026-10-26, Issue #61)
+
+A Base rune field limited to **Runes** refused Life Rune, an entry of **Nature Runes** beneath Runes, so an MCP migration
+could not stage it. 036's "exact type only" is replaced: a link field limited to a type accepts that type and every type
+nested beneath it, at any depth. Groups are unchanged (explicit membership, never read from the tree).
+
+- **One rule.** `EntityTypeHierarchy.Lineage`/`IsWithin` walk up from the entry's type with a visited set; a missing parent
+  or a loop ends the walk, so a broken graph only ever narrows. `EntityEndpoints.LinkAllows` is the field-level rule; the
+  entry save and era overrides (`BuildRows`), the AI change checks at staging, on every read and inside the approval, the
+  Lore field filter and the backup check all ask it. The universe's type graph is read whole, as before; other universes'
+  entries and types still get the same answer as missing ones.
+- **The tree is now part of what a field accepts**, so writes that change it check the data, as group membership does:
+  - narrowing a field to a type (and restoring an archived one) is refused while a link points outside its branch (409
+    `entity_field_target_conflict`);
+  - retyping an entry is refused while a type-limited field links to it and the new type is outside that field's branch (409
+    `entity_type_change_linked`);
+  - **moving a type** - by hand or an approved AI change, also said at staging - is refused while a field limited to a type
+    the move takes it out from under links to an entry of the moved branch (409 `entity_type_branch_in_use`). Nothing is
+    cleared or rewritten. Moving into a branch only widens and is never refused.
+- **Pickers** search the branch (`includeDescendants=true`); Quick Create offers the type and its nested types in the
+  hierarchy's order (one type is still taken without asking). The AI catalog says "or a type nested beneath it" where the
+  target has nested types. The Types screen says so beside the choice.
+- No schema, backup format or migration change: every link that fit the exact rule still fits.

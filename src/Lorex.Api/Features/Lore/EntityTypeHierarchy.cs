@@ -104,6 +104,30 @@ public static class EntityTypeHierarchy
     }
 
     /// <summary>
+    /// <paramref name="typeId"/> and every type above it. Walks up; a parent that is not in the graph, or a loop already in the
+    /// data, ends the walk, so a broken graph only ever leaves a type with fewer ancestors, never more.
+    /// </summary>
+    public static HashSet<Guid> Lineage(IReadOnlyDictionary<Guid, Guid?> parentOf, Guid typeId)
+    {
+        var lineage = new HashSet<Guid> { typeId };
+        var current = typeId;
+
+        while (parentOf.TryGetValue(current, out var up) && up is { } parent && parentOf.ContainsKey(parent) && lineage.Add(parent))
+        {
+            current = parent;
+        }
+
+        return lineage;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="typeId"/> is <paramref name="ancestorId"/> or nested beneath it at any depth: what a link field
+    /// limited to <paramref name="ancestorId"/> accepts (ADR 0007 amendment, Issue #61).
+    /// </summary>
+    public static bool IsWithin(IReadOnlyDictionary<Guid, Guid?> parentOf, Guid typeId, Guid ancestorId) =>
+        Lineage(parentOf, typeId).Contains(ancestorId);
+
+    /// <summary>
     /// Whether making <paramref name="parentId"/> the parent of <paramref name="typeId"/> would close a loop: the parent is the
     /// type itself, or one of its descendants. Walks up from the would-be parent; a loop already in the data ends the walk.
     /// </summary>

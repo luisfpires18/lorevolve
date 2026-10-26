@@ -19,6 +19,15 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - **#54** in-process daily SQLite backup API snapshot -> private R2 bucket, manifest last after read-back, Admin status/Run
     now, retention proposed and off, `database-backup run|list|restore-drill` CLI (ADR 0064, `docs/recovery/database-backups.md`).
     **Off until the owner adds `DatabaseBackup__*` settings**; R2 path and DEV untested. Local drill measured (63.6 MB, 57.6 s).
+- **Issue #61 - parent-type link fields take subtypes** (`fix/parent-type-link-subtypes` off `dev` at `75a476a`, in the main
+  checkout; committed locally, not merged, not pushed; issue left open). No migration, backup format unchanged. ADR 0007
+  amendment. A link field limited to a type now accepts that type and every type nested beneath it (was exact type only).
+  One rule (`EntityTypeHierarchy.IsWithin`, `EntityEndpoints.LinkAllows`) in entry/era saves, AI staging + every read +
+  approval, Lore field filters, restore validation; retarget and retype checks use the branch; moving a type out from under
+  a targeted type while links rely on it is 409 `entity_type_branch_in_use` (by hand, approved AI change, said at staging).
+  Pickers search the branch, Quick Create offers the branch's types, AI catalog says "or a type nested beneath it".
+  Tests: `NestedTypeLinkTargetTests` 6, `McpProposalTests` +1; full API 2003 passed, 1 skipped. Playwright
+  `entity-reference-target` +1 (5/5) with quick-create, nested-types, field filters, groups, types, AI specs 56/56.
 - **Phase 020** (Full-Text Search) merged into `dev`. Entity search reads the article an author
   wrote, not only the name, aliases and summary, and orders hits by relevance. Index shape,
   synchronization and query semantics: ADR 0016.

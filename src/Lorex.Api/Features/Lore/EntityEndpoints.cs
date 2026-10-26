@@ -742,7 +742,7 @@ public static class EntityEndpoints
 
     /// <summary>
     /// The refusal for moving <paramref name="entity"/> to <paramref name="newTypeId"/> while other entries link to it through
-    /// fields limited to one type or one group that the new type does not satisfy - or null. Links from entries in the Trash
+    /// fields limited to a type or a group that the new type does not satisfy (<see cref="LinkAllows"/>) - or null. Links from entries in the Trash
     /// count, since their values come back with them. Read inside the write's own transaction (the promotion gate's, which
     /// Microsoft.Data.Sqlite begins IMMEDIATE), so a membership change or a field's new target cannot slip between this check
     /// and the save. Bounded by the reference index: only values pointing at this one entry are read.
@@ -768,9 +768,12 @@ public static class EntityEndpoints
             .ToDictionary();
         var fieldIds = linkCounts.Keys.ToList();
 
+        // A field limited to a type still holds the link when the new type is that type or nested beneath it (Issue #61).
+        var lineage = EntityTypeHierarchy.Lineage(await EntityTypeEndpoints.ParentsAsync(db, entity.UniverseId, cancellationToken), newTypeId).ToList();
+
         var blocking = (await db.EntityFieldDefinitions.AsNoTracking()
                 .Where(field => fieldIds.Contains(field.Id)
-                    && ((field.TargetEntityTypeId != null && field.TargetEntityTypeId != newTypeId)
+                    && ((field.TargetEntityTypeId != null && !lineage.Contains(field.TargetEntityTypeId.Value))
                         || (field.TargetGroupId != null
                             && !db.EntityTypeGroupMembers.Any(member =>
                                 member.EntityTypeGroupId == field.TargetGroupId && member.EntityTypeId == newTypeId))))
@@ -1220,7 +1223,7 @@ public static class EntityEndpoints
             .Select(definition => supplied.GetValueOrDefault(definition.Id)?.ReferencedEntityId)
             .OfType<Guid>();
 
-        var (referenced, members) = await LinkTargetsAsync(db, universeId, definitions, wanted, cancellationToken);
+        var (referenced, members, parentOf) = await LinkTargetsAsync(db, universeId, definitions, wanted, cancellationToken);
 
         var rows = new List<EntityFieldValue>();
 
@@ -1228,7 +1231,7 @@ public static class EntityEndpoints
         {
             supplied.TryGetValue(definition.Id, out var input);
 
-            var built = BuildRows(entityId, definition, input, chronology, referenced, members, errors);
+            var built = BuildRows(entityId, definition, input, chronology, referenced, members, parentOf, errors);
 
             if (definition.IsRequired && built.Count == 0)
             {
@@ -1242,11 +1245,12 @@ public static class EntityEndpoints
     }
 
     /// <summary>
-    /// Every entry a save's link fields name, read once with its type and only from this universe, and the groups those fields
-    /// are limited to as (group, member type) pairs - what <see cref="BuildRows"/> decides each link from, however many link
-    /// fields there are. Shared with an era's overrides (Issue #41).
+    /// Every entry a save's link fields name, read once with its type and only from this universe, the groups those fields
+    /// are limited to as (group, member type) pairs, and the universe's type graph when a field is limited to a type (Issue
+    /// #61) - what <see cref="BuildRows"/> decides each link from, however many link fields there are. Shared with an era's
+    /// overrides (Issue #41).
     /// </summary>
-    internal static async Task<(Dictionary<Guid, Guid> Referenced, HashSet<(Guid GroupId, Guid TypeId)> Members)> LinkTargetsAsync(
+    internal static async Task<(Dictionary<Guid, Guid> Referenced, HashSet<(Guid GroupId, Guid TypeId)> Members, Dictionary<Guid, Guid?> ParentOf)> LinkTargetsAsync(
         LorexDbContext db,
         Guid universeId,
         IEnumerable<EntityFieldDefinition> definitions,
@@ -1276,8 +1280,26 @@ public static class EntityEndpoints
                 .Select(member => (member.EntityTypeGroupId, member.EntityTypeId))
                 .ToHashSet();
 
-        return (referenced, members);
+        var parentOf = wanted.Count == 0 || !definitions.Any(definition => definition.TargetEntityTypeId is not null)
+            ? []
+            : await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken);
+
+        return (referenced, members, parentOf);
     }
+
+    /// <summary>
+    /// The one rule for what a link field limited to a type or a group accepts (ADR 0007 amendments 036, Issue #36, Issue #61):
+    /// an entry whose type is the field's type or nested beneath it at any depth, or whose type is in the field's group now.
+    /// No limit accepts any type. An entry's save, an era's overrides, an AI change's checks and a Lore filter all ask this.
+    /// </summary>
+    internal static bool LinkAllows(
+        Guid? targetType,
+        Guid? targetGroup,
+        Guid typeId,
+        IReadOnlyDictionary<Guid, Guid?> parentOf,
+        IReadOnlySet<(Guid GroupId, Guid TypeId)> members) =>
+        (targetType is not { } type || EntityTypeHierarchy.IsWithin(parentOf, typeId, type))
+        && (targetGroup is not { } group || members.Contains((group, typeId)));
 
     /// <param name="referenced">This universe's entries the request links to, each with its type.</param>
     internal static List<EntityFieldValue> BuildRows(
@@ -1287,6 +1309,7 @@ public static class EntityEndpoints
         UniverseChronology chronology,
         Dictionary<Guid, Guid> referenced,
         HashSet<(Guid GroupId, Guid TypeId)> members,
+        IReadOnlyDictionary<Guid, Guid?> parentOf,
         Dictionary<string, string[]> errors)
     {
         var rows = new List<EntityFieldValue>();
@@ -1415,11 +1438,11 @@ public static class EntityEndpoints
                 // reference. Discoverability is the picker's job: the entity listing never
                 // offers a trashed entry, so a *new* reference to one cannot be authored.
                 //
-                // A field limited to one type accepts entries of exactly that type, checked here whatever the picker
-                // offered. A trashed entry still has its type, so a kept link is checked like any other. An entry of
-                // another universe gets the same answer as one of the wrong type, and says nothing about itself.
-                // A field limited to a group accepts an entry whose type is in that group now: its membership when this is
-                // written, read inside the same kind of transaction a membership change takes.
+                // A field limited to one type accepts entries of that type or a type nested beneath it (Issue #61), checked
+                // here whatever the picker offered. A trashed entry still has its type, so a kept link is checked like any
+                // other. An entry of another universe gets the same answer as one of the wrong type, and says nothing about
+                // itself. A field limited to a group accepts an entry whose type is in that group now: its membership when
+                // this is written, read inside the same kind of transaction a membership change takes.
                 if (!referenced.TryGetValue(referenceId, out var referencedType))
                 {
                     errors[definition.Id.ToString()] = definition.TargetEntityTypeId is null && definition.TargetGroupId is null
@@ -1428,13 +1451,7 @@ public static class EntityEndpoints
                     break;
                 }
 
-                if (definition.TargetEntityTypeId is { } target && referencedType != target)
-                {
-                    errors[definition.Id.ToString()] = [WrongTarget(definition)];
-                    break;
-                }
-
-                if (definition.TargetGroupId is { } group && !members.Contains((group, referencedType)))
+                if (!LinkAllows(definition.TargetEntityTypeId, definition.TargetGroupId, referencedType, parentOf, members))
                 {
                     errors[definition.Id.ToString()] = [WrongTarget(definition)];
                     break;
@@ -1456,7 +1473,7 @@ public static class EntityEndpoints
     /// <summary>The one refusal for a link a limited field does not allow: wrong type, missing or not this universe's.</summary>
     private static string WrongTarget(EntityFieldDefinition definition) =>
         definition.TargetGroupId is null
-            ? $"{definition.Name} can only link to an entry of the type it allows. Choose another entry."
+            ? $"{definition.Name} can only link to an entry of the type it allows, or of a type nested beneath it. Choose another entry."
             : $"{definition.Name} can only link to an entry whose type is in its group. Choose another entry.";
 
     /// <summary>

@@ -443,6 +443,56 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
     }
 
     [Fact]
+    public async Task An_app_links_a_parent_type_field_to_a_nested_type_entry_and_is_refused_an_unrelated_one()
+    {
+        // Issue #61's reproduction over MCP: Base rune is limited to Runes; Life Rune is an entry of Nature Runes beneath it.
+        var (browser, _, u, _) = await OwnerAsync("mcpnested");
+        async Task<Guid> Type(string name, Guid? parent) => (await PlotTestClient.PostJson<Lorex.Api.Features.Lore.EntityTypeResponse>(
+            browser,
+            $"/api/universes/{u}/entity-types",
+            new Lorex.Api.Features.Lore.EntityTypeRequest(name, null, null, null, null, Parent: parent is null ? null : new Lorex.Api.Features.Lore.EntityTypeParentChoice(parent)))).Id;
+        var runes = await Type("Runes", null);
+        var corrupted = await Type("Corrupted Runes", runes);
+        var nature = await Type("Nature Runes", runes);
+        var kingdoms = await Type("Kingdoms", null);
+        var baseRune = (await AiChangeTestClient.Field(browser, u, corrupted, new Lorex.Api.Features.Lore.FieldDefinitionRequest(
+            "Base rune", Lorex.Api.Features.Lore.EntityFieldKind.EntityReference, false, null, null, null, TargetEntityTypeId: runes))).Id;
+        async Task<Guid> Entry(string name, Guid type) => (await PlotTestClient.PostJson<Lorex.Api.Features.Lore.EntityDetail>(
+            browser,
+            $"/api/universes/{u}/entities",
+            new Lorex.Api.Features.Lore.EntityRequest(type, name, null, Lorex.Api.Features.Lore.CanonStatus.Canon, null, null, null))).Id;
+        var lifeRune = await Entry("Life Rune", nature);
+        var arkazia = await Entry("Arkazia", kingdoms);
+        var (connection, _) = await ConnectAsync(browser, u, allowProposals: true);
+
+        // What the app reads to choose a target says the branch is allowed.
+        var options = Body(await CallAsync(connection, LorexMcpProposalTools.OptionsTool, new { }));
+        var field = options.GetProperty("loreTypes").EnumerateArray()
+            .Single(type => type.GetProperty("id").GetGuid() == corrupted)
+            .GetProperty("fields").EnumerateArray().Single(one => one.GetProperty("id").GetGuid() == baseRune);
+        Assert.Equal("entries of type Runes or a type nested beneath it", field.GetProperty("linksTo").GetString());
+
+        object Proposal(string name, Guid target) => new
+        {
+            summary = name,
+            operations = new object[]
+            {
+                new { id = "a", action = "create", resource = "lore_entry", lore = new { typeId = corrupted, name, fields = new[] { new { fieldId = baseRune, entry = new { id = target } } } } },
+            },
+        };
+
+        var unrelated = await CallAsync(connection, LorexMcpProposalTools.ProposeTool, Proposal("Crown Rune", arkazia));
+        Assert.True(unrelated.GetProperty("isError").GetBoolean());
+        Assert.Equal("invalid_proposal", Body(unrelated).GetProperty("error").GetString());
+
+        var staged = await CallAsync(connection, LorexMcpProposalTools.ProposeTool, Proposal("Blood Rune", lifeRune));
+        Assert.False(staged.TryGetProperty("isError", out var error) && error.GetBoolean(), staged.ToString());
+        var receipt = await AiChangeTestClient.ApproveAll(browser, u, Body(staged).GetProperty("proposalId").GetGuid());
+        var blood = await browser.GetFromJsonAsync<Lorex.Api.Features.Lore.EntityDetail>($"/api/universes/{u}/entities/{receipt.Applied.Single().ResultId}");
+        Assert.Equal(lifeRune, blood!.Fields.Single(value => value.FieldDefinitionId == baseRune).ReferencedEntityId);
+    }
+
+    [Fact]
     public async Task A_viewer_cannot_ask_the_assistant_to_propose()
     {
         var (_, _, u, _) = await OwnerAsync("assistviewer");

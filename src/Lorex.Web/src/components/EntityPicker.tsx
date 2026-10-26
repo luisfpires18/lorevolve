@@ -60,6 +60,8 @@ function useEntitySearch(
         {
           search: query,
           entityTypeId,
+          // A link field limited to a type takes that type's nested types too (Issue #61).
+          includeDescendants: true,
           entityTypeGroupId,
           canonStatus: null,
           tag: null,
@@ -179,8 +181,8 @@ interface EntityPickerProps {
   /** Only entries whose type is enabled for the Family Tree. */
   familyTreeOnly?: boolean
   /**
-   * Only entries of exactly this type, searched for by the API rather than filtered here: a link field limited to one
-   * type. Null or left out offers every type.
+   * Only entries of this type or a type nested beneath it, searched for by the API rather than filtered here: a link field
+   * limited to one type (Issue #61). Null or left out offers every type.
    */
   entityTypeId?: string | null
   /** Only entries whose type is in this semantic group: a link field limited to a group. */

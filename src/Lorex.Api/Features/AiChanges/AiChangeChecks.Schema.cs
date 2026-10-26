@@ -14,13 +14,13 @@ namespace Lorex.Api.Features.AiChanges;
 /// </summary>
 internal sealed partial class AiChangeChecker
 {
+    // Read with the types in LoadAsync: a link field limited to a type accepts the types nested beneath it too (Issue #61).
     private Dictionary<Guid, Guid?> _typeParents = [];
 
     private Dictionary<Guid, string> _groups = [];
 
     private async Task LoadSchemaAsync(CancellationToken cancellationToken)
     {
-        _typeParents = await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken);
         _groups = await db.EntityTypeGroups.AsNoTracking()
             .Where(group => group.UniverseId == universeId)
             .ToDictionaryAsync(group => group.Id, group => group.Name, cancellationToken);
@@ -66,17 +66,25 @@ internal sealed partial class AiChangeChecker
             work.Problem(AiChangeCodes.Duplicate, $"Another change in this proposal also names a type {type.Name}.", "name");
         }
 
-        if (type.Parent is { } parent)
+        var (newParentId, pendingNewParent) = type.Parent is { } parent ? Resolve(parent) : (null, null);
+        var parentFits = true;
+        if (newParentId is { } existing && !_types.ContainsKey(existing))
         {
-            var (parentId, pendingParent) = Resolve(parent);
-            if (parentId is { } existing && !_types.ContainsKey(existing))
-            {
-                work.Problem(AiChangeCodes.NotFound, "Choose a parent type from this universe, or none.", "parent");
-            }
-            else if (work.TargetId is { } typeId && Inside(typeId, parentId, pendingParent))
-            {
-                work.Problem(AiChangeCodes.Invalid, $"{type.Name} can't sit beneath itself or one of its own nested types.", "parent");
-            }
+            work.Problem(AiChangeCodes.NotFound, "Choose a parent type from this universe, or none.", "parent");
+            parentFits = false;
+        }
+        else if (work.TargetId is { } typeId && Inside(typeId, newParentId, pendingNewParent))
+        {
+            work.Problem(AiChangeCodes.Invalid, $"{type.Name} can't sit beneath itself or one of its own nested types.", "parent");
+            parentFits = false;
+        }
+
+        // Moving out from under a type that link fields are limited to, while links rely on it, is refused by the save (Issue
+        // #61); said here too. A new parent this proposal creates sits under the stored type its chain ends at.
+        if (parentFits && stored is not null && work.TargetId is { } moved
+            && await EntityTypeEndpoints.LeavingBranchRefusalAsync(db, _typeParents, moved, stored.Name, StoredParent(newParentId, pendingNewParent), cancellationToken) is { } stranded)
+        {
+            Refusal(work, stranded, "parent");
         }
 
         foreach (var group in type.Groups)
@@ -104,14 +112,21 @@ internal sealed partial class AiChangeChecker
     /// Whether putting the type <paramref name="typeId"/> beneath this parent would put it inside itself: the parent is the type,
     /// or sits beneath it - through stored types, or through types this proposal creates beneath one another.
     /// </summary>
-    private bool Inside(Guid typeId, Guid? parentId, AiChangeWork? pendingParent)
+    private bool Inside(Guid typeId, Guid? parentId, AiChangeWork? pendingParent) =>
+        StoredParent(parentId, pendingParent) is { } existing && (existing == typeId || EntityTypeHierarchy.WouldCycle(_typeParents, typeId, existing));
+
+    /// <summary>
+    /// The stored type a parent leads to: the parent itself, or - through types this proposal creates beneath one another -
+    /// the stored type their chain ends under; null for the root.
+    /// </summary>
+    private Guid? StoredParent(Guid? parentId, AiChangeWork? pendingParent)
     {
         for (var guard = 0; pendingParent is not null && guard < _byKey.Count; guard++)
         {
             (parentId, pendingParent) = (pendingParent.Proposed as TypeValues)?.Parent is { } next ? Resolve(next) : (null, null);
         }
 
-        return parentId is { } existing && (existing == typeId || EntityTypeHierarchy.WouldCycle(_typeParents, typeId, existing));
+        return parentId;
     }
 
     private async Task CheckLoreFieldAsync(AiChangeWork work, IReadOnlyList<AiChangeWork> works, CancellationToken cancellationToken)
