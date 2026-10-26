@@ -935,7 +935,7 @@ function FieldDialog({
                     ? 'It can link to any entry in this universe.'
                     : target.startsWith('group:')
                       ? 'It can link to entries whose type is in this group when you make the link.'
-                      : 'It can link only to entries of this exact type, not to types nested inside it.'}
+                      : 'It can link to entries of this type and of any type nested beneath it.'}
               </p>
               {field && field.entryCount > 0 ? (
                 <p className="field__hint">

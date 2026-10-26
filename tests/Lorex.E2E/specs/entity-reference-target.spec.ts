@@ -260,6 +260,85 @@ test.describe('a link field limited to one type', () => {
     await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to Realms')
   })
 
+  test('a field limited to a parent type offers, saves and filters by entries of its nested types (#61)', async ({
+    page,
+  }) => {
+    await account(page)
+    const w = await world(page)
+    const nature = (
+      await post(page, `/api/universes/${w.u}/entity-types`, {
+        name: 'Nature Runes',
+        description: null,
+        icon: null,
+        accentColor: null,
+        displayOrder: null,
+        parent: { id: w.runes },
+      })
+    ).id
+    await post(page, `/api/universes/${w.u}/entities`, {
+      entityTypeId: nature,
+      name: 'Life Rune',
+      summary: null,
+      canonStatus: 2,
+      aliases: [],
+      tags: [],
+      fields: [],
+    })
+    await post(page, `/api/universes/${w.u}/entity-types/${w.character}/fields`, {
+      name: 'Bound rune',
+      kind: 7,
+      isRequired: false,
+      displayOrder: null,
+      defaultValue: null,
+      options: null,
+      targetEntityTypeId: w.runes,
+    })
+
+    await page.goto(typesUrl(w))
+    await showFields(page, 'Character')
+    await page.getByTestId('edit-field-Bound rune').click()
+    await expect(fieldDialog(page)).toContainText('any type nested beneath it')
+    await fieldDialog(page).getByTestId('cancel-field').click()
+    await expect(fieldDialog(page)).toHaveCount(0)
+
+    // The entry's picker offers Runes and Nature Runes entries, never a Kingdom.
+    await page.goto(`/app/universes/${w.u}/lore/${w.mara}`)
+    await page.getByTestId('edit-entity').click()
+    const picker = page
+      .locator('.picker')
+      .filter({ has: page.getByText('Bound rune', { exact: true }) })
+    await picker.getByTestId('picker-input').click()
+    await expect.poll(() => offered(picker)).toEqual(['Life Rune', 'Magnetism Rune', 'Nanite Rune'])
+
+    // Quick Create offers the type and its nested type, and takes neither without asking.
+    await picker.getByTestId('picker-input').fill('Ember Rune')
+    await picker.getByTestId('picker-create').click()
+    const create = page.getByTestId('quick-create-dialog')
+    const choices = create.getByTestId('quick-create-type-select').locator('option')
+    await expect(choices).toHaveText(['Choose a type', 'Runes', 'Nature Runes'])
+    await create.getByTestId('quick-create-cancel').click()
+    await expect(create).toHaveCount(0)
+
+    await picker.getByTestId('picker-input').fill('life')
+    await picker.getByTestId('picker-option-Life Rune').click()
+    await page.getByTestId('save-entity').click()
+    await expect(page.getByTestId('entry-fields')).toContainText('Life Rune')
+
+    // The Lore filter's picker searches the same branch and finds Mara by it.
+    await page.goto(`/app/universes/${w.u}/lore?type=${w.character}`)
+    await page.getByTestId('lore-add-field-filter').click()
+    await page
+      .getByTestId('lore-field-filter-menu')
+      .getByRole('button', { name: 'Bound rune', exact: true })
+      .click()
+    const editor = page.getByTestId('lore-field-filter-editor')
+    await editor.getByTestId('picker-input').fill('life')
+    await editor.getByTestId('picker-option-Life Rune').click()
+    await editor.getByTestId('lore-field-filter-apply').click()
+    await expect(page.getByTestId('entity-card')).toHaveCount(1)
+    await expect(page.getByTestId('entity-card')).toHaveAttribute('data-entity-name', 'Mara')
+  })
+
   test('a field limited to a type cannot be narrowed past the links it holds, and says why', async ({
     page,
   }) => {
@@ -311,7 +390,7 @@ test.describe('a link field limited to one type', () => {
     await showFields(page, 'Character')
     const refused = await editField(page, 'Kingdom', { target: 'Kingdoms' }, { saved: false })
     await expect(refused.getByTestId('field-dialog-error')).toContainText(
-      'Some entries link this field to entries of another type.',
+      'Some entries link this field to entries of a type that is neither this type nor nested beneath it.',
     )
     // The draft is kept until the author lets it go; the field is as it was.
     expect(await selectedText(refused.getByTestId('field-target'))).toBe('Kingdoms')

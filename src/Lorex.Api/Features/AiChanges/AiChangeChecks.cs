@@ -850,10 +850,12 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
             : null;
     }
 
-    /// <summary>Whether a link field accepts an entry of this type: any type, its one type, or a type in its group.</summary>
+    /// <summary>
+    /// Whether a link field accepts an entry of this type, by the save's own rule: any type, its type or one nested beneath it,
+    /// or a type in its group.
+    /// </summary>
     private bool Accepts(EntityFieldDefinition definition, Guid typeId) =>
-        (definition.TargetEntityTypeId is null || definition.TargetEntityTypeId == typeId)
-        && (definition.TargetGroupId is null || _groupMembers.Contains((definition.TargetGroupId.Value, typeId)));
+        EntityEndpoints.LinkAllows(definition.TargetEntityTypeId, definition.TargetGroupId, typeId, _typeParents, _groupMembers);
 
     private async Task CheckRelationshipAsync(AiChangeWork work, IReadOnlyList<AiChangeWork> works, CancellationToken cancellationToken)
     {
@@ -1275,9 +1277,12 @@ internal sealed partial class AiChangeChecker(LorexDbContext db, Guid universeId
                 .Where(field => field.EntityType!.UniverseId == universeId && field.ArchivedAt == null)
                 .ToListAsync(cancellationToken))
             .ToLookup(field => field.EntityTypeId);
-        _types = await db.EntityTypes.AsNoTracking()
+        var types = await db.EntityTypes.AsNoTracking()
             .Where(type => type.UniverseId == universeId)
-            .ToDictionaryAsync(type => type.Id, type => (type.Name, new List<EntityFieldDefinition>()), cancellationToken);
+            .Select(type => new { type.Id, type.Name, type.ParentId })
+            .ToListAsync(cancellationToken);
+        _types = types.ToDictionary(type => type.Id, type => (type.Name, new List<EntityFieldDefinition>()));
+        _typeParents = types.ToDictionary(type => type.Id, type => type.ParentId);
         foreach (var (typeId, type) in _types)
         {
             type.Fields.AddRange(fields[typeId]);

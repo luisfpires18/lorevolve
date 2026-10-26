@@ -92,6 +92,9 @@ public static class EntityTypeEndpoints
     /// <summary>The machine-readable marker on a reorder whose type no longer sits under the parent the client saw.</summary>
     public const string ParentChangedCode = "entity_type_parent_changed";
 
+    /// <summary>The 409 for moving a type out from under a type that link fields are limited to, while links rely on it (Issue #61).</summary>
+    public const string BranchInUseCode = "entity_type_branch_in_use";
+
     public static IEndpointRouteBuilder MapEntityTypeEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/universes/{universeId:guid}/entity-types")
@@ -323,9 +326,10 @@ public static class EntityTypeEndpoints
         Guid? parentId,
         CancellationToken cancellationToken)
     {
+        var parentOf = await ParentsAsync(db, universeId, cancellationToken);
+
         if (parentId is { } parent)
         {
-            var parentOf = await ParentsAsync(db, universeId, cancellationToken);
             if (!parentOf.ContainsKey(parent))
             {
                 return ParentMissing();
@@ -343,6 +347,11 @@ public static class EntityTypeEndpoints
             }
         }
 
+        if (await LeavingBranchRefusalAsync(db, parentOf, entityType.Id, entityType.Name, parentId, cancellationToken) is { } stranded)
+        {
+            return stranded;
+        }
+
         var now = DateTime.UtcNow;
         var oldParentId = entityType.ParentId;
         var order = await NextPlaceAsync(db, universeId, parentId, cancellationToken);
@@ -355,6 +364,71 @@ public static class EntityTypeEndpoints
         Renumber(formerSiblings.Where(sibling => sibling.Id != entityType.Id).ToList(), now);
 
         return null;
+    }
+
+    /// <summary>
+    /// The refusal for moving the type <paramref name="typeId"/> beneath <paramref name="newParentId"/> (null for the root)
+    /// while a link field limited to a type the move takes it out from under links to an entry of it or of a type nested
+    /// beneath it (Issue #61) - or null. Such a link would no longer fit, and nothing is cleared to make it: the author changes
+    /// the links first, as for leaving a group. The branch moves whole, so only the types above it that it leaves matter. Links
+    /// from the Trash and from eras count. Read-only; <paramref name="parentOf"/> is the graph before the move. Shared with an
+    /// AI change's checks.
+    /// </summary>
+    internal static async Task<IResult?> LeavingBranchRefusalAsync(
+        LorexDbContext db,
+        IReadOnlyDictionary<Guid, Guid?> parentOf,
+        Guid typeId,
+        string typeName,
+        Guid? newParentId,
+        CancellationToken cancellationToken)
+    {
+        var left = parentOf.GetValueOrDefault(typeId) is { } oldParent ? EntityTypeHierarchy.Lineage(parentOf, oldParent) : [];
+        if (newParentId is { } newParent)
+        {
+            left.ExceptWith(EntityTypeHierarchy.Lineage(parentOf, newParent));
+        }
+
+        if (left.Count == 0)
+        {
+            return null;
+        }
+
+        var leaving = left.ToList();
+        var moving = EntityTypeHierarchy.Branch(parentOf, typeId).ToList();
+        var relying = await db.EntityFieldDefinitions.AsNoTracking()
+            .Where(field => field.TargetEntityTypeId != null && leaving.Contains(field.TargetEntityTypeId.Value))
+            .Select(field => new
+            {
+                field.Name,
+                TypeName = field.EntityType!.Name,
+                TargetName = field.TargetEntityType!.Name,
+                Archived = field.ArchivedAt != null,
+                Links = field.Values.Count(value => value.ReferencedEntityId != null && moving.Contains(value.ReferencedEntity!.EntityTypeId))
+                    + db.EntityEraFieldValues.Count(value => value.FieldDefinitionId == field.Id
+                        && value.ReferencedEntityId != null
+                        && moving.Contains(value.ReferencedEntity!.EntityTypeId)),
+            })
+            .Where(field => field.Links > 0)
+            .ToListAsync(cancellationToken);
+
+        if (relying.Count == 0)
+        {
+            return null;
+        }
+
+        var ordered = relying.OrderBy(field => field.TypeName, StringComparer.Ordinal).ThenBy(field => field.Name, StringComparer.Ordinal).ToList();
+        var first = ordered[0];
+        var others = ordered.Count - 1;
+        var links = first.Links == 1 ? "1 link" : $"{first.Links} links";
+
+        return Results.Problem(
+            title: "Type is in use",
+            detail: $"{typeName} can't move out from under {first.TargetName} because the field \"{first.Name}\"{ArchivedMark(first.Archived)} on {first.TypeName} "
+                + $"is limited to {first.TargetName} and has {links} to {typeName} entries or entries of a type nested beneath it"
+                + (others == 0 ? string.Empty : others == 1 ? ", and 1 other field does too" : $", and {others} other fields do too")
+                + ". Change those links first, then try again.",
+            statusCode: StatusCodes.Status409Conflict,
+            extensions: new Dictionary<string, object?> { ["code"] = BranchInUseCode });
     }
 
     /// <summary>
@@ -997,7 +1071,7 @@ public static class EntityTypeEndpoints
         // Widening to any type is always safe.
         if (((request.TargetEntityTypeId is { } target && target != definition.TargetEntityTypeId)
                 || (request.TargetGroupId is { } group && group != definition.TargetGroupId))
-            && await TargetConflictAsync(db, fieldId, request.TargetEntityTypeId, request.TargetGroupId, cancellationToken) is { } conflict)
+            && await TargetConflictAsync(db, universeId, fieldId, request.TargetEntityTypeId, request.TargetGroupId, cancellationToken) is { } conflict)
         {
             return conflict;
         }
@@ -1296,7 +1370,7 @@ public static class EntityTypeEndpoints
 
                 if (definition.ArchivedAt is not null)
                 {
-                    if (await TargetConflictAsync(db, fieldId, definition.TargetEntityTypeId, definition.TargetGroupId, token) is { } conflict)
+                    if (await TargetConflictAsync(db, universeId, fieldId, definition.TargetEntityTypeId, definition.TargetGroupId, token) is { } conflict)
                     {
                         return conflict;
                     }
@@ -1376,31 +1450,37 @@ public static class EntityTypeEndpoints
     /// <summary>
     /// The 409 for a link field limited to <paramref name="targetType"/> or <paramref name="targetGroup"/> while any of its
     /// stored links - the Trash included, since those values come back with their entries - points at an entry the limit
-    /// would not allow; null when every link fits, or for no limit. Group membership is read as it is now, inside the caller's
-    /// transaction, so a retype or a membership change cannot slip between. Shared by an edit that narrows a field and a restore.
+    /// would not allow; null when every link fits, or for no limit. A type allows the types nested beneath it (Issue #61).
+    /// Group membership and the type graph are read as they are now, inside the caller's transaction, so a retype, a move or a
+    /// membership change cannot slip between. Shared by an edit that narrows a field and a restore.
     /// </summary>
     private static async Task<IResult?> TargetConflictAsync(
         LorexDbContext db,
+        Guid universeId,
         Guid fieldId,
         Guid? targetType,
         Guid? targetGroup,
         CancellationToken cancellationToken)
     {
-        if (targetType is { } type
+        var branch = targetType is { } type
+            ? EntityTypeHierarchy.Branch(await ParentsAsync(db, universeId, cancellationToken), type).ToList()
+            : [];
+
+        if (branch.Count > 0
             && (await db.EntityFieldValues.AnyAsync(
                     value => value.FieldDefinitionId == fieldId
                         && value.ReferencedEntityId != null
-                        && value.ReferencedEntity!.EntityTypeId != type,
+                        && !branch.Contains(value.ReferencedEntity!.EntityTypeId),
                     cancellationToken)
                 || await db.EntityEraFieldValues.AnyAsync(
                     value => value.FieldDefinitionId == fieldId
                         && value.ReferencedEntityId != null
-                        && value.ReferencedEntity!.EntityTypeId != type,
+                        && !branch.Contains(value.ReferencedEntity!.EntityTypeId),
                     cancellationToken)))
         {
             return Results.Problem(
                 title: "Field is in use",
-                detail: "Some entries link this field to entries of another type. "
+                detail: "Some entries link this field to entries of a type that is neither this type nor nested beneath it. "
                     + "Change those links first, then limit the field to this type.",
                 statusCode: StatusCodes.Status409Conflict,
                 extensions: new Dictionary<string, object?> { ["code"] = TargetConflictCode });

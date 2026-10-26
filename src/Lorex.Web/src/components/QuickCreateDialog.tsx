@@ -12,6 +12,7 @@ import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { emptyValue } from '../lore/document'
 import { createEntity, listEntities, listEntityTypeGroups, listEntityTypes } from '../lore/api'
+import { branchIds, buildTypeTree } from '../lore/typeTree'
 import {
   CanonStatus,
   type EntitySummary,
@@ -26,7 +27,7 @@ interface Props {
   universeId: string
   /** What was typed in the picker: the new entry's name to start from. */
   initialName: string
-  /** The picker's own limit, exactly as it searches: one type, one semantic group, or neither (any type). */
+  /** The picker's own limit, exactly as it searches: one type and its nested types, one semantic group, or neither. */
   entityTypeId: string | null
   entityTypeGroupId: string | null
   chronology: Chronology
@@ -54,8 +55,9 @@ function looksLike(a: string, b: string) {
  *
  * It is an ordinary create: the same `createEntity` the full form posts, so the server checks the type, the fields, the
  * links and the access exactly as it does there, and the entry is a normal Idea from the moment it exists. Nothing here
- * saves the form underneath. The types offered are the picker's own limit as it is now: the one type, the members of the
- * group, or every type. Its own link fields search existing entries only, so a create never opens another create.
+ * saves the form underneath. The types offered are the picker's own limit as it is now: the type and the types nested
+ * beneath it, the members of the group, or every type. Its own link fields search existing entries only, so a create
+ * never opens another create.
  */
 export function QuickCreateDialog({
   universeId,
@@ -140,11 +142,18 @@ export function QuickCreateDialog({
       entityTypeGroupId ? listEntityTypeGroups(universeId, controller.signal) : null,
     ])
       .then(([all, groups]) => {
-        const members = entityTypeGroupId
-          ? new Set(groups?.find((group) => group.id === entityTypeGroupId)?.typeIds ?? [])
-          : null
-        const eligible = all.filter((type) =>
-          entityTypeId ? type.id === entityTypeId : members ? members.has(type.id) : true,
+        const tree = buildTypeTree(all)
+        const target = entityTypeId ? tree.byId.get(entityTypeId) : undefined
+        // A type limit takes its nested types too (Issue #61): the type and its branch, in the hierarchy's order.
+        const members = entityTypeId
+          ? target
+            ? branchIds(target)
+            : new Set<string>()
+          : entityTypeGroupId
+            ? new Set(groups?.find((group) => group.id === entityTypeGroupId)?.typeIds ?? [])
+            : null
+        const eligible = (entityTypeId ? tree.ordered.map((node) => node.type) : all).filter(
+          (type) => !members || members.has(type.id),
         )
         setTypes({ kind: 'ready', eligible })
         // One type to choose from is no choice: it is taken, never asked again.
@@ -168,6 +177,7 @@ export function QuickCreateDialog({
         {
           search,
           entityTypeId,
+          includeDescendants: true,
           entityTypeGroupId,
           canonStatus: null,
           tag: null,

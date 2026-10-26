@@ -265,6 +265,9 @@ internal static class AiChangeCatalog
                 .ToListAsync(cancellationToken)
             : null;
 
+        // A field limited to a type accepts the types nested beneath it too (Issue #61), so a target that has any says so.
+        var parents = types.Select(type => type.ParentId).OfType<Guid>().ToHashSet();
+
         AiChangeOptionField Field(FieldRow field) => new(
             field.Id,
             field.Name,
@@ -272,7 +275,8 @@ internal static class AiChangeCatalog
             field.IsRequired,
             field.Choices,
             field.Kind != EntityFieldKind.EntityReference ? null
-                : field.TargetTypeName is { } typeName ? $"entries of type {typeName}"
+                : field.TargetTypeName is { } typeName
+                    ? parents.Contains(field.TargetEntityTypeId!.Value) ? $"entries of type {typeName} or a type nested beneath it" : $"entries of type {typeName}"
                 : field.TargetGroupId is { } group && groups.TryGetValue(group, out var groupName) ? $"entries of a type in the group {groupName}"
                 : "any entry",
             field.Semantic?.ToString(),

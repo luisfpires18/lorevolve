@@ -189,8 +189,8 @@ public static class EntityFieldFilters
         }
 
         // One read for every referenced entry, with its type, and only this universe's count. A field limited to one type
-        // is compared only with an entry of that type: any other is a filter that cannot mean anything, so it is refused
-        // rather than answered with nothing - and an entry of another universe gets the same answer.
+        // is compared only with an entry that type or a type nested beneath it allows: any other is a filter that cannot mean
+        // anything, so it is refused rather than answered with nothing - and an entry of another universe gets the same answer.
         if (references.Count > 0)
         {
             var wanted = references.Values.Select(reference => reference.EntityId).Distinct().ToList();
@@ -212,6 +212,9 @@ public static class EntityFieldFilters
                     .ToListAsync(cancellationToken))
                     .Select(member => (member.EntityTypeGroupId, member.EntityTypeId))
                     .ToHashSet();
+            var parentOf = references.Values.Any(reference => reference.Target is not null)
+                ? await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken)
+                : [];
 
             foreach (var (index, (entityId, target, group)) in references)
             {
@@ -221,8 +224,7 @@ public static class EntityFieldFilters
                         ? "Choose an entry of this universe."
                         : "Choose an entry of the type this field allows."];
                 }
-                else if ((target is { } allowed && typeOf != allowed)
-                    || (group is { } inGroup && !members.Contains((inGroup, typeOf))))
+                else if (!EntityEndpoints.LinkAllows(target, group, typeOf, parentOf, members))
                 {
                     errors[$"field[{index}]"] = ["Choose an entry of the type this field allows."];
                 }
