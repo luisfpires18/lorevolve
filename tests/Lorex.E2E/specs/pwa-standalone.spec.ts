@@ -182,6 +182,55 @@ test.describe('an installed Lorex on a phone (simulated)', () => {
     await expect(page.getByTestId('entity-card')).toContainText('PWA Location visible')
     await expect(page.getByTestId('entity-card')).not.toContainText('PWA Character visible')
     await expect(page.getByTestId('lore-load-error')).toHaveCount(0)
+
+    // Shown, not merely present: the card is visible, and nothing fixed or sticky covers it once it is scrolled to.
+    await expect(page.getByTestId('entity-card')).toBeVisible()
+    await page.getByTestId('entity-card').scrollIntoViewIfNeeded()
+    await expectUncovered(page, 'entity-card')
+  })
+
+  test('a failed read of the categories says so and recovers, instead of reporting a universe with none', async ({
+    page,
+  }) => {
+    await asInstalled(page)
+    await signUp(page)
+    const universeId = await newUniverse(page)
+    const types = (await (
+      await page.request.get(`/api/universes/${universeId}/entity-types`)
+    ).json()) as { id: string; name: string }[]
+    const character = types.find((type) => type.name === 'Character')!
+    const made = await page.request.post(`/api/universes/${universeId}/entities`, {
+      data: {
+        entityTypeId: character.id,
+        name: 'Survives a dropped request',
+        summary: null,
+        canonStatus: 2,
+        aliases: [],
+        tags: [],
+        fields: [],
+      },
+    })
+    expect(made.ok(), await made.text()).toBe(true)
+
+    // Reads of the categories are lost, as a phone on a poor connection or waking from the background loses them.
+    let offline = true
+    await page.route(
+      (url) => url.pathname.endsWith(`/api/universes/${universeId}/entity-types`),
+      (route) => (offline ? route.abort('failed') : route.continue()),
+    )
+
+    await page.goto(`/app/universes/${universeId}/lore?type=${character.id}`)
+    await expectLaunched(page)
+    await expect(page.getByTestId('lore-types-error')).toBeVisible()
+    await expect(page.getByTestId('lore-no-types')).toHaveCount(0)
+    // The chosen category stays in the address: a failed read is not a category that does not exist.
+    await expect(page).toHaveURL(new RegExp(`/lore\\?type=${character.id}$`))
+
+    offline = false
+    await page.getByTestId('lore-types-error').getByRole('button', { name: 'Try again' }).tap()
+    await expect(page.getByTestId('lore-types-error')).toHaveCount(0)
+    await expect(page.getByTestId('entity-card')).toBeVisible()
+    await expect(page.getByTestId('entity-card')).toContainText('Survives a dropped request')
   })
 
   test('the Lore category menu opens on screen, chooses a category, and the choice survives a reload and a new window', async ({
