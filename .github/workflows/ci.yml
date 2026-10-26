@@ -1,10 +1,19 @@
 # Validation for Lorex. Runs on every pull request into dev, and is called by the DEV
 # deployment before it publishes anything, so nothing reaches Azure that has not passed here.
+#
+# A change made only of documentation or agent tooling is skipped: no Markdown file, nothing under
+# docs/ and nothing under .claude/ is an input to either build or to any test. A change that touches
+# anything else as well runs in full.
 name: CI
 
 on:
   pull_request:
     branches: [dev]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.claude/**'
+      - '.mcp.json'
   workflow_call:
   workflow_dispatch:
 
@@ -119,7 +128,9 @@ jobs:
   e2e:
     name: End to end (shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # The slowest shard of the last twenty runs took 11 minutes, retries included. A hung shard stops
+    # at about twice that, rather than holding six runners for 45 minutes each.
+    timeout-minutes: 25
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
       options: --ipc=host
