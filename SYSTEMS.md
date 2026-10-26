@@ -14,7 +14,7 @@ Repository index. Paths and one-line responsibilities only.
 | `CLAUDE.md` | Traffic controller for Claude sessions. |
 | `STATE.md` | Operational state only: roadmap position, blockers, deferred decisions. |
 | `graphify-out/` | Generated knowledge graph. Gitignored, manual-only; rebuild with `python -m graphify update .`. |
-| `.mcp.json` | Issue #29: the project's Claude Code MCP servers (Microsoft Learn, Context7, OpenAI docs, Chrome DevTools isolated, GitHub read-only via `GITHUB_PERSONAL_ACCESS_TOKEN`). No secrets. |
+| `.mcp.json` | Issue #29: the project's Claude Code MCP servers (Microsoft Learn, Context7, OpenAI docs, Chrome DevTools isolated). No secrets. GitHub is the `gh` CLI, not a server. |
 | `docs/tooling/` | Agent tooling trial notes (RTK and Graphify evaluation); `claude-code-mcp.md`, the MCP setup, owner steps and verification (#29). |
 | `docs/security/alpha-security-assessment.md` | Issue #33: the first-alpha security and privacy assessment - findings with evidence, severity, exploitability, boundary, mitigation and residual risk; verified controls; owner runtime checks; the final regression after #11 and #54. |
 | `docs/recovery/universe-recovery.md` | Issue #11: backup vs readable export, exactly what each holds and leaves out, picture paths, restore steps, compatibility and size limits, what is tested and what is not promised. |
