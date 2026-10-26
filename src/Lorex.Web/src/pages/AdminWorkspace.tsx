@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft, Search } from 'lucide-react'
 import {
@@ -6,6 +6,7 @@ import {
   getOverview,
   getUser,
   listUsers,
+  createSignUpLink,
   runDatabaseBackup,
   setBlocked,
   type AdminOverview,
@@ -474,6 +475,8 @@ function UsersScreen() {
     <>
       <Heading title="Users" lede="Every LoreX account. Universe content is never shown here." />
 
+      <SignUpLink />
+
       <div className="controls">
         <div className="controls__search">
           <label className="field__label" htmlFor="admin-user-search">
@@ -726,6 +729,75 @@ function UserDetail({
         )}
       </section>
     </>
+  )
+}
+
+/**
+ * A sign-up link for someone with no universe to be invited into. While registration is invitation-only it lets that one
+ * address create an account for seven days; with registration open, anyone can already register.
+ */
+function SignUpLink() {
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null)
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError(null)
+    setLink(null)
+    try {
+      const made = await createSignUpLink(email.trim())
+      setLink({
+        url: `${window.location.origin}/register?invite=${encodeURIComponent(made.token)}`,
+        expiresAt: made.expiresAt,
+      })
+    } catch (failure: unknown) {
+      setError(
+        failure instanceof ApiError
+          ? (failure.fieldErrors.email ?? failure.message)
+          : 'The link could not be made.',
+      )
+    }
+  }
+
+  return (
+    <section className="adminsection" aria-labelledby="admin-signup-link">
+      <h2 className="settings__heading" id="admin-signup-link">
+        Sign-up link
+      </h2>
+      <p className="settings__note">
+        For someone to join LoreX while registration is invitation-only. The link lets that email
+        address, and only that one, create an account.
+      </p>
+      <form className="form" onSubmit={submit} noValidate>
+        <label className="field__label" htmlFor="admin-signup-email">
+          Their email address
+        </label>
+        <input
+          id="admin-signup-email"
+          className="field__input"
+          type="email"
+          autoComplete="off"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          data-testid="admin-signup-email"
+        />
+        {error ? (
+          <p className="form__message" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <button className="button" type="submit" data-testid="admin-signup-create">
+          Make link
+        </button>
+      </form>
+      {link ? (
+        <p className="settings__note" role="status">
+          Send them this link, valid until {formatDateTime(link.expiresAt)}:{' '}
+          <code data-testid="admin-signup-url">{link.url}</code>
+        </p>
+      ) : null}
+    </section>
   )
 }
 

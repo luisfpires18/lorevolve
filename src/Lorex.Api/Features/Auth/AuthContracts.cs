@@ -1,7 +1,13 @@
 namespace Lorex.Api.Features.Auth;
 
-/// <summary>Registration input. Password is never echoed back or logged.</summary>
-public sealed record RegisterRequest(string? Username, string? Email, string? Password);
+/// <summary>
+/// Registration input. Password is never echoed back or logged. <c>InviteToken</c> is a universe invitation's claim token or
+/// an Admin's sign-up link; only invitation-only registration reads it.
+/// </summary>
+public sealed record RegisterRequest(string? Username, string? Email, string? Password, string? InviteToken = null);
+
+/// <summary>Whether anyone may create an account, or only someone holding an invitation (<c>Registration:InviteOnly</c>).</summary>
+public sealed record RegistrationResponse(bool InviteOnly);
 
 /// <summary>Login input. The identifier may be either the username or the email address.</summary>
 public sealed record LoginRequest(string? UsernameOrEmail, string? Password);

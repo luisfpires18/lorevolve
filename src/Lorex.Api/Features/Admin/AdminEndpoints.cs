@@ -1,9 +1,13 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Lorex.Api.Data;
+using Lorex.Api.Features.Auth;
 using Lorex.Api.Features.Mcp;
 using Lorex.Api.Features.Publishing;
 using Lorex.Api.Features.Storage;
 using Lorex.Api.Features.Universes;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
@@ -36,6 +40,7 @@ public static class AdminEndpoints
         group.MapGet("/users/{userId}", GetUserAsync).WithName("GetAdminUser");
         group.MapPost("/users/{userId}/block", BlockAsync).WithName("BlockAdminUser");
         group.MapPost("/users/{userId}/unblock", UnblockAsync).WithName("UnblockAdminUser");
+        group.MapPost("/signup-links", SignUpLink).WithName("CreateAdminSignUpLink");
         return endpoints;
     }
 
@@ -122,6 +127,29 @@ public static class AdminEndpoints
 
     private static async Task<IResult> GetUserAsync(string userId, LorexDbContext db, CancellationToken cancellationToken) =>
         await DetailAsync(db, userId, cancellationToken) is { } detail ? Results.Ok(detail) : Results.NotFound();
+
+    /// <summary>
+    /// A sign-up link for one address, for someone who has no universe to be invited into: while registration is
+    /// invitation-only it lets that address, and only that one, create an account for <see cref="SignUpLinks.Lifetime"/>.
+    /// Stateless; an address registers once, so the link opens one account.
+    /// </summary>
+    private static IResult SignUpLink(
+        [FromBody] SignUpLinkRequest request,
+        IDataProtectionProvider protection,
+        UserManager<LorexUser> userManager,
+        TimeProvider clock)
+    {
+        var email = request.Email?.Trim() ?? string.Empty;
+        if (EmailValidator.GetValidationResult(email, new ValidationContext(email)) != ValidationResult.Success || email.Length == 0)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]> { ["email"] = ["Enter a valid email address."] });
+        }
+
+        var expiresAt = clock.GetUtcNow().UtcDateTime + SignUpLinks.Lifetime;
+        return Results.Ok(new SignUpLinkResponse(SignUpLinks.Issue(protection, userManager.NormalizeEmail(email), expiresAt), expiresAt));
+    }
+
+    private static readonly EmailAddressAttribute EmailValidator = new();
 
     private static async Task<IResult> BlockAsync(
         string userId,
