@@ -81,6 +81,9 @@ public sealed record EntityTypeReorderRequest(int? Index, Guid? ParentId);
 /// <paramref name="FieldSections"/> are the type's optional sections in their order (Issue #26), empty for a type that has
 /// none; each field names its own in <see cref="FieldDefinitionResponse.SectionId"/>. <paramref name="FieldLayoutVersion"/> is
 /// what a layout save names as its <c>expectedVersion</c>.
+/// <paramref name="ListedEntityCount"/> is how many of the type's own entries Lore lists: not in the Trash and not archived
+/// (an archived entry only arrives from an older backup). Lore's front page sums it over a type's branch, which is what the
+/// type's list shows (ADR 0065). <paramref name="EntityCount"/> keeps its meaning for deletion.
 /// </summary>
 public sealed record EntityTypeResponse(
     Guid Id,
@@ -97,7 +100,8 @@ public sealed record EntityTypeResponse(
     bool FamilyTreeOffered = false,
     IReadOnlyList<FieldDefinitionResponse>? ArchivedFields = null,
     IReadOnlyList<FieldSectionResponse>? FieldSections = null,
-    int FieldLayoutVersion = 1);
+    int FieldLayoutVersion = 1,
+    int ListedEntityCount = 0);
 
 /// <summary>One section of a type's fields (Issue #26): its name, its place from 1, and whether it starts folded.</summary>
 public sealed record FieldSectionResponse(Guid Id, string Name, int DisplayOrder, bool StartsCollapsed);

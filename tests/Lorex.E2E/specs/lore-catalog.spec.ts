@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
+import { markArchived } from './support/admin'
 
 /**
  * Lore's front page (Issue #60): with no type chosen, Lore is a catalog of the universe's own types - a card each, in the
@@ -426,6 +427,78 @@ test.describe('Lore front page: the types as cards', () => {
     await page.goto(`/app/universes/${bare}/lore`)
     await expect(page.getByTestId('lore-no-types')).toBeVisible()
     await expect(catalog(page)).toHaveCount(0)
+  })
+
+  test('a card counts exactly what its list shows: entries in the Trash and archived ones are left out', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const u = (await post(page, '/api/universes', { name: unique('Counted '), description: null }))
+      .id
+    const type = async (name: string, parent: string | null) =>
+      (
+        await post(page, `/api/universes/${u}/entity-types`, {
+          name,
+          description: null,
+          icon: null,
+          accentColor: null,
+          displayOrder: null,
+          parent: parent ? { id: parent } : null,
+        })
+      ).id
+    const entry = async (entityTypeId: string, name: string) =>
+      (
+        await post(page, `/api/universes/${u}/entities`, {
+          entityTypeId,
+          name,
+          summary: null,
+          canonStatus: 2,
+          aliases: [],
+          tags: [],
+          fields: [],
+        })
+      ).id
+    const runes = await type('Runes', null)
+    const nature = await type('Nature Runes', runes)
+    const verdant = await type('Verdant Runes', nature)
+
+    // Live, in the Trash, and archived - as an older backup restores them - at every level of the branch.
+    await entry(runes, 'Old Rune')
+    const trashed = [await entry(runes, 'Lost Rune'), await entry(verdant, 'Rot Rune')]
+    const archived = [
+      await entry(runes, 'Ash Rune'),
+      await entry(nature, 'Ember Rune'),
+      await entry(verdant, 'Fern Rune'),
+    ]
+    await entry(nature, 'Life Rune')
+    await entry(verdant, 'Moss Rune')
+    for (const id of trashed)
+      expect((await page.request.delete(`/api/universes/${u}/entities/${id}`)).ok()).toBe(true)
+    markArchived(archived)
+
+    await page.goto(`/app/universes/${u}/lore`)
+    for (const [name, count] of [
+      ['Runes', '3 entries'],
+      ['Nature Runes', '2 entries'],
+      ['Verdant Runes', '1 entry'],
+    ] as const) {
+      await expect(typeCard(page, name).getByTestId('lore-type-card-count')).toHaveText(
+        new RegExp(`^${count}`),
+      )
+    }
+
+    // Each card's number is the list it opens.
+    for (const [name, listed] of [
+      ['Runes', ['Life Rune', 'Moss Rune', 'Old Rune']],
+      ['Nature Runes', ['Life Rune', 'Moss Rune']],
+      ['Verdant Runes', ['Moss Rune']],
+    ] as const) {
+      await typeCard(page, name).click()
+      await expect(heading(page)).toHaveText(name)
+      await expect.poll(() => entryNames(page)).toEqual(listed)
+      await page.goBack()
+      await expect(catalog(page)).toBeVisible()
+    }
   })
 })
 

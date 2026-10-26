@@ -170,6 +170,11 @@ export interface EntityType {
   entityCount: number
   /** How many of those are in the Trash. */
   trashedEntityCount: number
+  /**
+   * How many of its own entries Lore lists: not in the Trash and not archived (an archived entry only comes from an older
+   * backup). What a type's card on Lore's front page sums over its branch; never what deletion reads.
+   */
+  listedEntityCount: number
   /** The type's active fields: the ones entry forms, filters and Lore read. */
   fields: FieldDefinition[]
   /** Its archived fields (Issue #39), apart so nothing that reads `fields` can meet one by accident. */

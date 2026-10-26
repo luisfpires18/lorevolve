@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import { Link, type To } from 'react-router-dom'
 import { Layers } from 'lucide-react'
-import type { EntityType, EntityTypeGroup } from '../lore/types'
+import type { EntityTypeGroup } from '../lore/types'
 import { branchIds, type TypeNode, type TypeTree } from '../lore/typeTree'
 import { TypeIcon } from './TypeIcon'
 
@@ -9,16 +9,13 @@ import { TypeIcon } from './TypeIcon'
 const SKELETON_CARDS = 6
 
 /**
- * The live entries a type's card counts: its own and those of every type nested beneath it, the Trash left out - what
- * the type's list shows when the card is opened. Read from the types the page already has, so no count is read that the
- * reader could not already see in the universe's own types list.
+ * The entries a type's card counts: what the type's list shows when the card is opened - its own and those of every type
+ * nested beneath it, neither in the Trash nor archived. Summed from each type's `listedEntityCount`, which the universe's
+ * types list already carries, so no card makes a request of its own.
  */
-function liveEntries(node: TypeNode, byId: Map<string, TypeNode>) {
+function listedEntries(node: TypeNode, byId: Map<string, TypeNode>) {
   let count = 0
-  for (const id of branchIds(node)) {
-    const type: EntityType | undefined = byId.get(id)?.type
-    if (type) count += Math.max(0, type.entityCount - type.trashedEntityCount)
-  }
+  for (const id of branchIds(node)) count += byId.get(id)?.type.listedEntityCount ?? 0
   return count
 }
 
@@ -183,7 +180,7 @@ export function LoreCatalog({
             <li key={node.type.id}>
               <TypeCard
                 node={node}
-                count={liveEntries(node, tree.byId)}
+                count={listedEntries(node, tree.byId)}
                 href={typeHref(node.type.id)}
               />
             </li>
