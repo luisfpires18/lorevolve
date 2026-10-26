@@ -5366,8 +5366,11 @@ a.button--danger:visited {
 
 /* ---------- The entry's page: article, picture, facts ----------
 
-   Desktop: the article at its measure on the left; on the right, the picture and then the facts, as
-   an infobox. A picture wider than it is tall would be a strip in that column, so it spans the page
+   Desktop: the article at its reading measure on the left; on the right, the picture and then the facts, as
+   an infobox. The article column fills to its 46rem first; only then does the infobox column take what is left (#57),
+   so it widens with the content box - continuously, no breakpoint - and the page reaches its right edge with neither a
+   void between the text and its picture nor one after them, while the prose keeps its measure. A picture
+   wider than it is tall would be a strip in that column, so it spans the page
    above both instead, bounded in height so it introduces the article rather than replacing it. The
    picture is always the original, shown whole: only maxima are set, so nothing is cropped,
    stretched or blown up past its own size, and its `width`/`height` reserve its shape before it
@@ -5375,9 +5378,8 @@ a.button--danger:visited {
 
 .entry__layout {
   display: grid;
-  grid-template-columns: minmax(0, 46rem) minmax(15rem, 20rem);
+  grid-template-columns: minmax(0, 46rem) minmax(20rem, 1fr);
   grid-template-areas: 'main rail';
-  justify-content: start;
   align-items: start;
   gap: var(--space-6) var(--space-7);
   margin-top: var(--space-6);

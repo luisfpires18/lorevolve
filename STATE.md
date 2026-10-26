@@ -155,20 +155,18 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     checklist `docs/testing/mcp-images-checklist.md`. `McpImageToolTests` 12 (PNG preview, no-picture entry). Branch
     `fix/mcp-image-client-fallback` off `origin/dev` `dd0deef`, local only. Not tried in a real client here: this
     session's LoreX connector was invalidated and no ChatGPT access. Full API suite on this branch: 1911 passed, 0 failed, 1 skipped.
-  - **#57 shell bound.** Root cause measured, not assumed: `.canvas` had no bound or centring, so at 2560 the title, tabs,
-    article and picture stayed left (content 2168px wide) while the Canon control and actions sat on the far right;
-    1366-1920 were already one layout (article 558px, picture column 320px at every width). `--canvas-max: 100rem`
-    and `padding-inline: max(gutter, (100% - bound) / 2)` on `.canvas` and `.workspace__top`; `.home__body` on the
-    shared `--gutter`. Nothing changes at or below 1920. Design contract §21.2 amended. Tests: `shell-layout.spec.ts`
-    7/7 (geometry at six viewports, fourteen routes; 1920 vs 2560 one layout). Before/after screenshots in
-    `review-artifacts/pack/visual/{before,after}` (gitignored).
-  - **#58 Lore category in an installed app.** Control identified (Category menu on the Lore browser ≤ 640px; the entry
-    form's Type `<select>`; Quick Create's `<select>` in a dialog). Works in the browser and under a simulated installed
-    window (`pwa-standalone.spec.ts` 3/3: standalone media/`navigator.standalone`, phone + touch, launch layer lifted,
-    controls uncovered and on screen, choice persisted; safe-area insets asked for via CDP but this Chromium resolved
-    `env()` to 0 - recorded as a test annotation, so that part stays a device check). **No cause reproduced, no code
-    changed**; real iOS / Android / desktop installs **unverified** - `docs/testing/pwa-checklist.md` has the repro
-    matrix and the per-platform checklist, routed to #33 (security) and #34 (readiness).
+  - **#57 visible Lore article alignment.** Reopened after the owner screenshot showed that checking `.canvas` did not
+    prove the article/details layout was balanced. `.entry__layout` kept its fixed-width article and details columns
+    `justify-content: start`, leaving the details column short of the visible content edge on wide screens. It now uses
+    `space-between`: prose keeps its reading measure and details align to the far edge. `shell-layout.spec.ts` measures
+    that visible edge on six viewports and all representative routes; the 1920/2560 comparison keeps article and column
+    widths stable and asserts both details columns reach their content edge. Full focused run: 11/11 passed.
+  - **#58 Lore entities in a mobile installed app.** Reopened after the owner reported no entities in the real
+    installed/mobile experience. Added a standalone-mode Playwright journey with seeded Character and Location entries:
+    selecting each category shows only its own data. The test passes in Chromium simulation, but the failure has not been
+    reproduced there and this does not verify the owner's deployed build or native WebKit behavior. Real iOS / Android /
+    desktop installs remain **unverified**; keep the issue open until the reporting device and build are checked using
+    `docs/testing/pwa-checklist.md`. Full focused run: 11/11 passed.
 - **Issues #52 and #53 - Lore-linked maps, geography and calibration** (`feat/lore-linked-maps` off `dev` at `dd0deef`, in
   the worktree `D:\Workspace\LOREX\worktrees\LOREX-maps`; implementation and verification committed locally, not merged, not pushed). Two migrations (`AddUniverseMaps`,
   `AddMapCalibrations`), backup format 34 then 35. ADR 0060, ADR 0061; 0014, 0042, 0045, 0046 amended.

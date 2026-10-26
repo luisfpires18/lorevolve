@@ -15,8 +15,10 @@ import { png } from './support/png'
  *     screen hugging the left of an empty expanse;
  *   - on an entry the article keeps a reading measure and the picture sits beside it on a desktop, under it on a
  *     tablet or a phone; its tools and status never leave the content box;
- *   - and the one thing the owner saw: the entry page at 1920 and at 2560 is the same layout, measured, with only the
- *     side margins differing.
+ *   - on a desktop the details reach the content edge one column gap from the article, so spare width widens the
+ *     details column instead of opening a void beside or after the text;
+ *   - and the one thing the owner saw: the entry page at 1920 and at 2560 is the same layout, measured - the same
+ *     measure, picture and rhythm, the details column wider on the monitor.
  *
  * Physical screen size and OS scaling are not in play here and cannot be: they change the CSS viewport, which is what
  * these widths are.
@@ -72,6 +74,8 @@ interface Shape {
   tools: Box | null
   canon: Box | null
   bar: Box | null
+  /** The entry grid's own column gap, as computed: the only space allowed between the article and its details. */
+  entryGap: number | null
 }
 
 function unique(prefix: string) {
@@ -240,6 +244,10 @@ async function shape(page: Page): Promise<Shape> {
       tools: box('.entry__tools'),
       canon: box('.entry__kind .canon'),
       bar: box('.entry__bar'),
+      entryGap: (() => {
+        const layout = document.querySelector('.entry__layout')
+        return layout ? parseFloat(getComputedStyle(layout).columnGap) : null
+      })(),
     }
   })
 }
@@ -250,6 +258,7 @@ async function open(page: Page, url: string) {
   // The entry's picture reserves its shape before it loads, but the layout is only settled once it has.
   if (url.includes('/lore/') && !url.includes('?')) {
     await expect(page.getByTestId('entry-image').locator('img')).toBeVisible()
+    await expect(page.locator('.article__body')).toBeVisible()
   }
 }
 
@@ -321,6 +330,24 @@ for (const vp of VIEWPORTS) {
       // The entry: a reading measure, the picture beside the text on a desktop and under it on narrower screens, and
       // nothing that belongs to the entry outside its content box.
       const contentRight = canvas.x + canvas.w - canvas.pr
+      if (vp.width >= 1280) {
+        // The details reach the content edge, and nothing but the grid's own gap separates them from the article:
+        // spare width goes to the details column, never to empty space on either side of it.
+        expect(
+          got.entryRail!.x + got.entryRail!.w,
+          `${where}: the visible article/details layout leaves unexplained space to its right`,
+        ).toBeCloseTo(contentRight, 0)
+        expect(
+          Math.abs(got.entryRail!.x - (got.entryMain!.x + got.entryMain!.w) - got.entryGap!),
+          `${where}: the space between the article and its details is more than the column gap`,
+        ).toBeLessThanOrEqual(1)
+        // Seen from the reader's side: where the prose ends to where the details begin stays within the article
+        // column's own slack (46rem less the measure) plus that gap.
+        expect(
+          got.entryRail!.x - (got.article!.x + got.article!.w),
+          `${where}: the details are cut off from the text they belong to`,
+        ).toBeLessThanOrEqual(736 - got.article!.w + got.entryGap! + 1)
+      }
       expect(got.article!.w, `${where}: the article lost its measure`).toBeGreaterThanOrEqual(
         Math.min(480, contentWidth - 1),
       )
@@ -366,7 +393,7 @@ for (const vp of VIEWPORTS) {
   })
 }
 
-test('the entry page is one layout on a 1920 desktop and a 2560 monitor: only the margins differ', async ({
+test('the entry keeps its reading measure and its details beside it, reaching the edge, at 1920 and 2560', async ({
   browser,
 }) => {
   test.setTimeout(120_000)
@@ -396,17 +423,28 @@ test('the entry page is one layout on a 1920 desktop and a 2560 monitor: only th
   // The same widths...
   same('the article measure', desktop.article!.w, monitor.article!.w)
   same('the text column', desktop.entryMain!.w, monitor.entryMain!.w)
-  same('the picture column', desktop.entryRail!.w, monitor.entryRail!.w)
   same('the picture', desktop.entryMedia!.w, monitor.entryMedia!.w)
-  // ...the same horizontal relationships, measured from the title...
-  same(
-    'title to picture',
-    desktop.entryMedia!.x - desktop.title!.x,
-    monitor.entryMedia!.x - monitor.title!.x,
-  )
-  // ...the tools and the status at the content box's right edge on both...
+  // ...the details column takes what the article leaves, so it sits one column gap from the article and reaches the
+  // content edge on both - wider on the monitor, never a void between the text and its picture...
   const fromRight = (got: Shape, part: Box) =>
     got.canvas!.x + got.canvas!.w - got.canvas!.pr - (part.x + part.w)
+  for (const [which, got] of [
+    ['desktop', desktop],
+    ['monitor', monitor],
+  ] as const) {
+    same(`${which} details to the right edge`, fromRight(got, got.entryRail!), 0, 1)
+    same(
+      `${which} article to details`,
+      got.entryRail!.x - (got.entryMain!.x + got.entryMain!.w),
+      got.entryGap!,
+      1,
+    )
+  }
+  expect(desktop.entryRail!.w, 'the details column did not grow at 1920').toBeGreaterThan(320)
+  expect(monitor.entryRail!.w, 'the details column did not grow at 2560').toBeGreaterThanOrEqual(
+    desktop.entryRail!.w,
+  )
+  // ...and the tools and status use that same right edge on both...
   same(
     'tools to the right edge',
     fromRight(desktop, desktop.tools!),
@@ -424,4 +462,70 @@ test('the entry page is one layout on a 1920 desktop and a 2560 monitor: only th
   // ...and the monitor's spare width split evenly around it.
   expect(monitor.canvas!.pl).toBeGreaterThan(desktop.canvas!.pl)
   same('the monitor margins', monitor.canvas!.pl, monitor.canvas!.pr, 1)
+})
+
+test('the details column widens with the content box, without a jump, from a laptop to a monitor', async ({
+  browser,
+}) => {
+  test.setTimeout(120_000)
+  const world = await makeWorld(browser)
+  const context = await browser.newContext({
+    viewport: { width: 1366, height: 900 },
+    storageState: world.storage,
+  })
+  const page = await context.newPage()
+  await open(page, `/app/universes/${world.u}/lore/${world.entry}`)
+
+  // Either side of where the article column fills (about 1460) and of the old 1600 breakpoint, which snapped the
+  // picture from 320 to 440 px wide after leaving up to 119 px empty beside it.
+  const widths = [1366, 1440, 1500, 1560, 1599, 1600, 1601, 1680, 1920]
+  const rows: { width: number; got: Shape }[] = []
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 })
+    await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(width)
+    rows.push({ width, got: await shape(page) })
+  }
+
+  for (const { width, got } of rows) {
+    const where = `entry at ${width}`
+    const contentRight = got.canvas!.x + got.canvas!.w - got.canvas!.pr
+    expect(got.overflow, `${where}: scrolls sideways`).toBeLessThanOrEqual(0)
+    expect(
+      Math.abs(got.entryRail!.x + got.entryRail!.w - contentRight),
+      `${where}: space is left to the right of the details`,
+    ).toBeLessThanOrEqual(1)
+    expect(
+      Math.abs(got.entryRail!.x - (got.entryMain!.x + got.entryMain!.w) - got.entryGap!),
+      `${where}: the article and its details are more than a column gap apart`,
+    ).toBeLessThanOrEqual(1)
+    expect(got.article!.w, `${where}: the prose lost its measure`).toBeGreaterThanOrEqual(480)
+    expect(got.article!.w, `${where}: the prose outgrew its measure`).toBeLessThanOrEqual(600)
+    // Until the article column is full the details keep their 20rem, as on every laptop before.
+    if (got.entryMain!.w < 736 - 1) {
+      expect(
+        Math.abs(got.entryRail!.w - 320),
+        `${where}: the details left 20rem early`,
+      ).toBeLessThanOrEqual(1)
+    }
+  }
+
+  // Continuous: between neighbouring widths the details column and the picture grow by no more than the viewport did.
+  for (let index = 1; index < rows.length; index++) {
+    const before = rows[index - 1]
+    const after = rows[index]
+    const step = after.width - before.width
+    const where = `${before.width} -> ${after.width}`
+    for (const [what, a, b] of [
+      ['the details column', before.got.entryRail!.w, after.got.entryRail!.w],
+      ['the picture', before.got.entryMedia!.w, after.got.entryMedia!.w],
+    ] as const) {
+      expect(b, `${where}: ${what} shrank as the screen widened`).toBeGreaterThanOrEqual(a - 1)
+      expect(
+        b - a,
+        `${where}: ${what} jumped by ${b - a} px for ${step} px of screen`,
+      ).toBeLessThanOrEqual(step + 1)
+    }
+  }
+
+  await context.close()
 })

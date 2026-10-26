@@ -14,6 +14,7 @@ Run in CI on every pull request into `dev`.
 | Service worker never keeps `/api`, `/health`, navigations or the manifest; per-build cache; stale cache dropped | `pwa.spec.ts` | update and privacy policy |
 | Launch layer on an installed launch; lifts; no replay on reload; nothing in a tab; reduced motion | `launch.spec.ts` | installed first paint |
 | Lore category menu on a phone: one labelled control, every type in it, focus, Escape, Filters fold | `type-filter.spec.ts`, `lore-categories.spec.ts`, `mobile.spec.ts` | browser at 390 px |
+| Standalone Lore: choose a category, load its actual entries, switch category and show only the new results | `pwa-standalone.spec.ts` | seeded API data, 390 px touch viewport, Chromium standalone simulation |
 | Entry authoring, drawers, pickers, no sideways scroll at 390 px | `mobile.spec.ts`, `entity-page.spec.ts` | browser at 390 px |
 
 ## 2. What is simulated (`pwa-standalone.spec.ts`) - a browser standing in for an installed window
@@ -45,21 +46,22 @@ pass.
 
 ## 3. Reported problem and its reproduction status
 
-Owner report (2026-10-25): in installed PWA mode, while using Lore, a category cannot be chosen.
+Owner report (2026-10-25, reopened 2026-10-26): in the installed/mobile Lore experience, no Lore entities appear. The original report described being unable to choose a category.
 
 - **Control identified.** "Category" is Lore's type selector. On a phone (≤ 640 px) it is the **Category** button
   (`TypeSwitcher`, an `ActionMenu` with a panel of links) on the Lore browser; on an entry's form it is the **Type**
   `<select>`; Quick Create's dialog has the same `<select>` inside a modal `<dialog>` when more than one type is
   eligible. Above 640 px the categories are a row of links.
-- **Browser, same viewport:** works (the specs in §1 and §2, Chromium 390 x 844 with touch).
-- **Simulated installed window:** works (§2).
+- **Browser, same viewport:** category selection and entity rendering pass in Chromium (the specs in §1 and §2, 390 x 844 with touch).
+- **Simulated installed window:** choosing Character renders its seeded Character entry; switching to Location renders its Location entry and removes the Character result (`pwa-standalone.spec.ts`). This local reproduction passes, so the reported missing-entities failure has not been reproduced in Chromium.
 - **Real installed app:** **unverified** - no iOS, Android or desktop install was available to this run. The device,
   OS, browser, install path and display mode of the report are not recorded in the issue.
 
-Nothing in the code paths differs on `display-mode: standalone` except the launch layer, which the simulation covers and
-which removes itself (and goes inert after 10 s even if it could not). No standalone-specific defect was found in the
-controls, their overlays or their stacking, so **no code change was made for #58**: a fix without a reproduced cause
-would be a guess. The repro matrix below is what turns the report into one.
+Nothing in the category or entity-loading code paths differs on `display-mode: standalone` except the launch layer, which
+the simulation covers and which removes itself (and goes inert after 10 s even if it could not). The new seeded-data
+journey confirms that category selection requests and renders the intended entries in this simulation. It does not
+establish that the owner’s installed app is running the same deployed build or reproduce platform-specific WebKit
+behavior. Keep the real-device row open until the reporting device and build are checked against §4.
 
 ## 4. Manual checklist - real installed app (mark each row verified, failed or not available)
 
@@ -73,8 +75,9 @@ signed-in account, and the exact screen.
    desktop Chrome/Edge: the install icon in the address bar).
 2. Launch from the icon. Expect: black launch screen with the logo, then Explore.
 3. Sign in. Open a universe > Lore. Expect: "Choose a category to browse your lore." and the **Category** button.
-4. Tap Category. Expect: a menu with every type, the first type focused, inside the screen. Tap a type. Expect: the
-   title is that type, the address ends `?type=<id>`, cards or "No entries yet".
+4. Tap Category. Expect: a menu with every type, the first type focused, inside the screen. Tap a type that has known
+   entries. Expect: the title is that type, the address ends `?type=<id>`, and its entries appear. Switch to a second
+   type with a known entry; expect only that type's entries. Return to the first type and verify it loads again.
 5. If step 4 fails: note whether the menu opened at all, whether it opened off screen, whether a tap on a type did
    nothing, and whether the same device in the ordinary browser at the same screen does the same. Screenshot both.
    Then try: rotate to landscape and back; scroll the page a little and retry; close and relaunch the app; sign out

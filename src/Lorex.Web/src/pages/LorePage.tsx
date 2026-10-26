@@ -139,6 +139,10 @@ export default function LorePage() {
   const [trashed, setTrashed] = useState<{ text: string; list: string } | null>(null)
 
   const [types, setTypes] = useState<EntityType[] | null>(null)
+  // A failed read of the types is not a universe without any: `types` stays unknown, so nothing below reads the failure as
+  // "no types" or takes a chosen type out of the address as one that does not exist (#58).
+  const [typesFailed, setTypesFailed] = useState(false)
+  const [typeReads, setTypeReads] = useState(0)
   const [groups, setGroups] = useState<EntityTypeGroup[] | null>(null)
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
@@ -150,10 +154,13 @@ export default function LorePage() {
   useEffect(() => {
     const controller = new AbortController()
     listEntityTypes(universe.id, controller.signal)
-      .then(setTypes)
+      .then((read) => {
+        setTypesFailed(false)
+        setTypes(read)
+      })
       .catch(() => {
-        // Without its types Lore has nothing to choose from; the page says so rather than reading every entry.
-        if (!controller.signal.aborted) setTypes([])
+        // Without its types Lore has nothing to choose from; the page says the read failed and offers it again.
+        if (!controller.signal.aborted) setTypesFailed(true)
       })
     // Groups are a second way in, not a requirement: if they cannot be read, Lore is browsed by type alone.
     listEntityTypeGroups(universe.id, controller.signal)
@@ -164,7 +171,7 @@ export default function LorePage() {
     return () => {
       controller.abort()
     }
-  }, [universe.id])
+  }, [universe.id, typeReads])
 
   const tree = useMemo(() => buildTypeTree(types ?? []), [types])
   const selectedNode = (typeParam && tree.byId.get(typeParam)) || null
@@ -713,6 +720,22 @@ export default function LorePage() {
             ) : undefined
           }
         />
+      ) : null}
+
+      {typesFailed ? (
+        <div className="notice notice--error" role="alert" data-testid="lore-types-error">
+          <p>The categories could not be read.</p>
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => {
+              setTypesFailed(false)
+              setTypeReads((count) => count + 1)
+            }}
+          >
+            Try again
+          </button>
+        </div>
       ) : null}
 
       {/* No types at all leaves nothing to choose: one line to where types are made, not a panel. */}
