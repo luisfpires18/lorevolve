@@ -463,3 +463,69 @@ test('the entry keeps its reading measure and its details beside it, reaching th
   expect(monitor.canvas!.pl).toBeGreaterThan(desktop.canvas!.pl)
   same('the monitor margins', monitor.canvas!.pl, monitor.canvas!.pr, 1)
 })
+
+test('the details column widens with the content box, without a jump, from a laptop to a monitor', async ({
+  browser,
+}) => {
+  test.setTimeout(120_000)
+  const world = await makeWorld(browser)
+  const context = await browser.newContext({
+    viewport: { width: 1366, height: 900 },
+    storageState: world.storage,
+  })
+  const page = await context.newPage()
+  await open(page, `/app/universes/${world.u}/lore/${world.entry}`)
+
+  // Either side of where the article column fills (about 1460) and of the old 1600 breakpoint, which snapped the
+  // picture from 320 to 440 px wide after leaving up to 119 px empty beside it.
+  const widths = [1366, 1440, 1500, 1560, 1599, 1600, 1601, 1680, 1920]
+  const rows: { width: number; got: Shape }[] = []
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 })
+    await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(width)
+    rows.push({ width, got: await shape(page) })
+  }
+
+  for (const { width, got } of rows) {
+    const where = `entry at ${width}`
+    const contentRight = got.canvas!.x + got.canvas!.w - got.canvas!.pr
+    expect(got.overflow, `${where}: scrolls sideways`).toBeLessThanOrEqual(0)
+    expect(
+      Math.abs(got.entryRail!.x + got.entryRail!.w - contentRight),
+      `${where}: space is left to the right of the details`,
+    ).toBeLessThanOrEqual(1)
+    expect(
+      Math.abs(got.entryRail!.x - (got.entryMain!.x + got.entryMain!.w) - got.entryGap!),
+      `${where}: the article and its details are more than a column gap apart`,
+    ).toBeLessThanOrEqual(1)
+    expect(got.article!.w, `${where}: the prose lost its measure`).toBeGreaterThanOrEqual(480)
+    expect(got.article!.w, `${where}: the prose outgrew its measure`).toBeLessThanOrEqual(600)
+    // Until the article column is full the details keep their 20rem, as on every laptop before.
+    if (got.entryMain!.w < 736 - 1) {
+      expect(
+        Math.abs(got.entryRail!.w - 320),
+        `${where}: the details left 20rem early`,
+      ).toBeLessThanOrEqual(1)
+    }
+  }
+
+  // Continuous: between neighbouring widths the details column and the picture grow by no more than the viewport did.
+  for (let index = 1; index < rows.length; index++) {
+    const before = rows[index - 1]
+    const after = rows[index]
+    const step = after.width - before.width
+    const where = `${before.width} -> ${after.width}`
+    for (const [what, a, b] of [
+      ['the details column', before.got.entryRail!.w, after.got.entryRail!.w],
+      ['the picture', before.got.entryMedia!.w, after.got.entryMedia!.w],
+    ] as const) {
+      expect(b, `${where}: ${what} shrank as the screen widened`).toBeGreaterThanOrEqual(a - 1)
+      expect(
+        b - a,
+        `${where}: ${what} jumped by ${b - a} px for ${step} px of screen`,
+      ).toBeLessThanOrEqual(step + 1)
+    }
+  }
+
+  await context.close()
+})
