@@ -54,6 +54,24 @@ async function openSection(page: Page, testId: string) {
 }
 
 test.describe('on a phone', () => {
+  // iOS 26 Safari tints its status area from a fixed or sticky bar at the top of the page, and blurs whatever scrolls
+  // under it when there is none (#28). Chromium shows neither; this pins the CSS that gives Safari a bar to take.
+  test('the portal and My workspace keep a solid bar pinned to the top, as a universe does', async ({
+    page,
+  }) => {
+    await page.goto('/explore')
+    const portalBar = page.locator('.portal__bar')
+    await expect(portalBar).toHaveCSS('position', 'sticky')
+    const barColour = await portalBar.evaluate((bar) => getComputedStyle(bar).backgroundColor)
+    const pageColour = await page.evaluate(() => getComputedStyle(document.body).backgroundColor)
+    expect(pageColour, 'the page behind the portal is its bar').toBe(barColour)
+
+    await signUp(page)
+    const workspaceBar = page.locator('.workspacebar')
+    await expect(workspaceBar).toHaveCSS('position', 'sticky')
+    await expect(workspaceBar).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  })
+
   test('a world can be opened, navigated, authored and placed in time in a 390px column', async ({
     page,
   }) => {

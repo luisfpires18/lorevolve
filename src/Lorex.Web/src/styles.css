@@ -849,7 +849,7 @@ a.button--danger:visited {
       'nav nav';
     gap: 0 var(--space-3);
     min-height: 0;
-    padding-top: var(--space-3);
+    padding-top: max(var(--space-3), env(safe-area-inset-top));
   }
 
   .workspacebar__brand {
@@ -13098,9 +13098,23 @@ a.idearef__name {
    reads another is resolved where it is declared (`:root`), not where it is used. `--portal-*` are the
    portal's own few values; everything else is the Lorex scale. */
 
+/* The bar's colour is declared on the root, not on `.portal`, so the page behind a portal page can take it (below). */
+:root {
+  --portal-bar-bg: #0e1115;
+}
+
+:root[data-theme='light'] {
+  --portal-bar-bg: #ece6da;
+}
+
+/* Behind a portal page, the page is the bar's colour rather than the workspace's paper: iOS 26 Safari tints its status
+   area and the overscroll from the page, so the top reads as one band with the bar (#28). */
+body:has(.portal) {
+  background: var(--portal-bar-bg);
+}
+
 .portal {
   --portal-bg: #0b0d10;
-  --portal-bar-bg: #0e1115;
   --portal-surface: #15181d;
   --portal-card: #13161b;
   --portal-raised: #1d2025;
@@ -13162,7 +13176,6 @@ a.idearef__name {
    look: no workspace cards or plate, the portal's own panels and radii stay. */
 :root[data-theme='light'] .portal {
   --portal-bg: #f3eee5;
-  --portal-bar-bg: #ece6da;
   --portal-surface: #e9e2d5;
   --portal-card: #faf7f1;
   --portal-raised: #fffdf9;
@@ -13407,6 +13420,7 @@ a.idearef__name {
   .portal__bar {
     flex-wrap: wrap;
     padding-block: var(--space-3);
+    padding-top: max(var(--space-3), env(safe-area-inset-top));
   }
 
   .portal__session {
@@ -13504,6 +13518,22 @@ a.idearef__name {
   .portal__pill {
     padding: 0 0.625rem;
     font-size: var(--text-sm);
+  }
+}
+
+/* Phones, at the universe workspace rail's width: the portal's bar, and My workspace's and Admin's, stay at the top as
+   solid bands, as the rail does. iOS 26 Safari tints its status area from a fixed or sticky bar at the top of the page;
+   with none, it blurs whatever scrolls under it, which read as a soft header on these screens only (#28). */
+@media (max-width: 860px) {
+  .portal__bar,
+  .workspacebar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+  }
+
+  .workspacebar {
+    background: var(--surface);
   }
 }
 
