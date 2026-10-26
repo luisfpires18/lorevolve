@@ -82,6 +82,8 @@ async function world(page: Page) {
 
 const lore = (u: string, query = '') => `/app/universes/${u}/lore${query}`
 const row = (page: Page) => page.getByRole('navigation', { name: 'Lore types' })
+const typeCard = (page: Page, name: string) =>
+  page.locator(`[data-testid="lore-type-card"][data-type-name="${name}"]`)
 const typeLink = (page: Page, name: string) => row(page).getByRole('link', { name, exact: true })
 const cards = (page: Page) => page.getByTestId('entity-card')
 const heading = (page: Page) => page.getByRole('heading', { level: 1 })
@@ -98,7 +100,7 @@ function entryReads(page: Page) {
 }
 
 test.describe('Lore: the type row again, without All', () => {
-  test('bare Lore reads its types and no entries, and shows only the way to choose', async ({
+  test('bare Lore reads its types and no entries, and shows the catalog as the way to choose', async ({
     page,
   }) => {
     await signUp(page)
@@ -110,13 +112,14 @@ test.describe('Lore: the type row again, without All', () => {
     })
 
     await page.goto(lore(w.u))
-    await expect(typeLink(page, 'Runes')).toBeVisible()
+    await expect(typeCard(page, 'Runes')).toBeVisible()
     expect(typeReads.length).toBeGreaterThan(0)
     await expect(heading(page)).toHaveText('Lore')
 
-    // The row, directly: every type, none current, no All - and nothing else in the page's body.
-    await expect(row(page).getByRole('link', { name: 'All', exact: true })).toHaveCount(0)
-    await expect(row(page).locator('[aria-current="page"]')).toHaveCount(0)
+    // The catalog (Issue #60): a card per type, no All, no row yet - and no entry card, list control or read.
+    await expect(typeCard(page, 'Material Runes')).toContainText('In Runes')
+    await expect(page.getByRole('link', { name: 'All', exact: true })).toHaveCount(0)
+    await expect(row(page)).toHaveCount(0)
     await expect(cards(page)).toHaveCount(0)
     await expect(page.locator('.lore__skeleton')).toHaveCount(0)
     await expect(page.getByTestId('lore-filters-toggle')).toHaveCount(0)
@@ -129,7 +132,7 @@ test.describe('Lore: the type row again, without All', () => {
     expect(reads).toEqual([])
 
     // Choosing a parent reads its branch: its own entries and every type nested in it, never a sibling's.
-    await typeLink(page, 'Runes').click()
+    await typeCard(page, 'Runes').click()
     await expect(typeLink(page, 'Runes')).toHaveAttribute('aria-current', 'page')
     await expect(cards(page)).toHaveCount(2)
     await expect(cards(page).filter({ hasText: 'Rune hill' })).toHaveCount(0)
@@ -181,7 +184,11 @@ test.describe('Lore: the type row again, without All', () => {
       [720, 450],
     ] as const) {
       await page.setViewportSize({ width, height })
+      // The catalog fits too; the row is a type's navigation, so it is measured on a type's list.
       await page.goto(lore(w.u))
+      await expect(typeCard(page, 'Prophecy')).toBeVisible()
+      expect(await sideways(page), `${width} catalog`).toBeLessThanOrEqual(0)
+      await page.goto(lore(w.u, `?type=${w.runes}`))
       const links = row(page).getByRole('link')
       await expect(links.first()).toBeVisible()
       const shape = await page.getByTestId('lore-types').evaluate((element) => {
@@ -211,14 +218,17 @@ test.describe('Lore: the type row again, without All', () => {
       const w = await world(page)
       await page.goto(lore(w.u))
 
-      await expect(row(page)).toBeHidden()
-      const trigger = page.getByTestId('lore-type-menu')
-      await expect(trigger).toHaveAccessibleName('Choose category')
-      await expect(trigger).toHaveText('Choose category')
-      await expect(page.getByTestId('lore-subtype-menu')).toHaveCount(0)
+      // The catalog first (Issue #60): no menu until a category is open.
+      await expect(typeCard(page, 'Runes')).toBeVisible()
+      await expect(page.getByTestId('lore-type-menu')).toHaveCount(0)
       await expect(cards(page)).toHaveCount(0)
       expect(await sideways(page)).toBeLessThanOrEqual(0)
+      await typeCard(page, 'Location').click()
 
+      const trigger = page.getByTestId('lore-type-menu')
+      await expect(row(page)).toBeHidden()
+      await expect(trigger).toHaveAccessibleName('Category: Location')
+      await expect(page.getByTestId('lore-subtype-menu')).toHaveCount(0)
       await trigger.click()
       const menu = page.getByTestId('lore-type-menu-panel')
       const items = await menu

@@ -84,6 +84,10 @@ function typeLink(page: Page, name: string) {
   return typeNav(page).getByRole('link', { name, exact: true })
 }
 
+function typeCard(page: Page, name: string) {
+  return page.locator(`[data-testid="lore-type-card"][data-type-name="${name}"]`)
+}
+
 function card(page: Page, name: string) {
   return page.locator(`[data-testid="entity-card"][data-entity-name="${name}"]`)
 }
@@ -198,8 +202,9 @@ test.describe('lore types', () => {
 
     // ---------- Nothing is listed until a type is chosen ----------
 
-    // The wrapped row of types is the way to choose: no panel asks, nothing is current, and no entry is read.
-    await expect(typeNav(page)).toBeVisible()
+    // The catalog of types is the way to choose (Issue #60): no panel asks, no row yet, and no entry is read.
+    await expect(page.getByTestId('lore-catalog')).toBeVisible()
+    await expect(typeNav(page)).toHaveCount(0)
     await expect(page.getByTestId('lore-choose')).toHaveCount(0)
     await expect(page.getByTestId('entity-card')).toHaveCount(0)
     await expect(page.getByTestId('lore-filters-toggle')).toHaveCount(0)
@@ -207,11 +212,9 @@ test.describe('lore types', () => {
 
     // ---------- Every type the world has, starters and custom, and nothing else ----------
 
-    const labels = await (
-      await typeNav(page)
-    )
-      .getByRole('link')
-      .evaluateAll((links) => links.map((link) => link.textContent?.trim()))
+    const labels = await page
+      .getByTestId('lore-type-card')
+      .evaluateAll((cards) => cards.map((each) => each.getAttribute('data-type-name')))
     expect(labels).toEqual([
       'Character',
       'Location',
@@ -223,16 +226,16 @@ test.describe('lore types', () => {
       'Starship',
       'Kingdom',
     ])
-    await expect(typeNav(page).locator('[aria-current="page"]')).toHaveCount(0)
 
     // The chosen icon, the seeded one, and the fallback - drawn where the lore is browsed.
-    await expect(typeLink(page, 'Starship').locator('svg')).toHaveAttribute('data-icon', 'ship')
-    await expect(typeLink(page, 'Location').locator('svg')).toHaveAttribute('data-icon', 'location')
-    await expect(typeLink(page, 'Kingdom').locator('svg')).toHaveAttribute('data-icon', 'fallback')
+    await expect(typeCard(page, 'Starship').locator('svg')).toHaveAttribute('data-icon', 'ship')
+    await expect(typeCard(page, 'Location').locator('svg')).toHaveAttribute('data-icon', 'location')
+    await expect(typeCard(page, 'Kingdom').locator('svg')).toHaveAttribute('data-icon', 'fallback')
 
     // ---------- A type is a place: the address says it ----------
 
-    await typeLink(page, 'Character').click()
+    await typeCard(page, 'Character').click()
+    await expect(typeLink(page, 'Starship').locator('svg')).toHaveAttribute('data-icon', 'ship')
     await expect(page).toHaveURL(new RegExp(`/lore\\?type=${ids.get('Character')}$`))
     await expect(typeLink(page, 'Character')).toHaveAttribute('aria-current', 'page')
     await expect(title(page)).toHaveText('Character')
@@ -331,7 +334,7 @@ test.describe('lore types', () => {
     })
     await page.goto(`/app/universes/${universeId}/lore?type=00000000-0000-0000-0000-000000000000`)
     await expect(page).toHaveURL(/\/lore$/)
-    await expect(typeNav(page).locator('[aria-current="page"]')).toHaveCount(0)
+    await expect(page.getByTestId('lore-catalog')).toBeVisible()
     await expect(page.getByTestId('entity-card')).toHaveCount(0)
     expect(requests).toEqual([])
 
@@ -340,7 +343,7 @@ test.describe('lore types', () => {
     expect(
       (await page.request.delete(`/api/universes/${universeId}/entities/${brannoch}`)).ok(),
     ).toBeTruthy()
-    await typeLink(page, 'Character').click()
+    await typeCard(page, 'Character').click()
     await expect(page.getByTestId('entity-card')).toHaveCount(1)
     await expect(card(page, 'Brannoch Hale')).toHaveCount(0)
 
@@ -397,6 +400,11 @@ test.describe('lore types', () => {
     await page.waitForURL(/\/lore$/)
 
     await expect(page.getByTestId('entity-card')).toHaveCount(0)
+    // The catalog holds every type, a card each, and nothing scrolls sideways (Issue #60).
+    await expect(page.getByTestId('lore-type-card')).toHaveCount(7 + MANY_TYPES.length)
+    expect(await pageOverflow(page)).toBeLessThanOrEqual(1)
+    await typeCard(page, 'Character').click()
+    await expect(title(page)).toHaveText('Character')
 
     // The seven starters and every added type - no All - over more than one row, every one inside the row's box.
     const links = typeNav(page).getByRole('link')
@@ -557,9 +565,17 @@ test.describe('lore types on a phone', () => {
     await page.waitForURL(/\/lore$/)
     await expect(page.getByTestId('entity-card')).toHaveCount(0)
 
-    // One button that says what it chooses - nothing chosen yet.
+    // The catalog first (Issue #60): every type a card a thumb can take, nothing sideways; a card opens its list.
+    await expect(page.getByTestId('lore-type-card')).toHaveCount(7 + MANY_TYPES.length)
+    expect(
+      (await page.getByTestId('lore-type-card').first().boundingBox())!.height,
+    ).toBeGreaterThanOrEqual(44)
+    expect(await pageOverflow(page)).toBeLessThanOrEqual(1)
+    await typeCard(page, 'Character').tap()
+
+    // One button that says what it chooses.
     const trigger = page.getByTestId('lore-type-menu')
-    await expect(trigger).toHaveAccessibleName('Choose category')
+    await expect(trigger).toHaveAccessibleName('Category: Character')
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')
     expect((await trigger.boundingBox())!.height).toBeGreaterThanOrEqual(44)
     expect(await pageOverflow(page)).toBeLessThanOrEqual(1)

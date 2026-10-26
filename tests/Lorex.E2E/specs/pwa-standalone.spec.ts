@@ -160,14 +160,11 @@ test.describe('an installed Lorex on a phone (simulated)', () => {
 
     await page.goto(`/app/universes/${universeId}/lore`)
     await expectLaunched(page)
-    await expect(page.getByTestId('lore-no-category')).toBeVisible()
-
-    const category = page.getByTestId('lore-type-menu')
-    await category.tap()
-    await page
-      .getByTestId('lore-type-menu-panel')
-      .getByRole('link', { name: 'Character', exact: true })
-      .tap()
+    // Lore opens on the catalog (Issue #60): each category a card, tapped to open its list.
+    await expect(page.getByTestId('lore-catalog')).toBeVisible()
+    const card = page.locator('[data-testid="lore-type-card"][data-type-name="Character"]')
+    await expect(card).toContainText('1 entry')
+    await card.tap()
     await expect(page).toHaveURL(new RegExp(`/lore\\?type=${character.id}$`))
     await expect(page.getByTestId('entity-card')).toHaveCount(1)
     await expect(page.getByTestId('entity-card')).toContainText('PWA Character visible')
@@ -263,27 +260,39 @@ test.describe('an installed Lorex on a phone (simulated)', () => {
         inset + 36,
       )
     }
-    await expect(page.getByTestId('lore-no-category')).toBeVisible()
+    // The catalog first (Issue #60): a category's card is on screen, uncovered, a finger's size, and opens its list.
+    await expect(page.getByTestId('lore-catalog')).toBeVisible()
+    const first = (await page.getByTestId('lore-type-card').first().boundingBox())!
+    const bar = (await page.locator('.rail').boundingBox())!
+    expect(first.y, 'the first card is under the sticky bar').toBeGreaterThanOrEqual(
+      bar.y + bar.height - 1,
+    )
+    expect(first.y + first.height).toBeLessThanOrEqual(page.viewportSize()!.height + 1)
+    expect(first.x + first.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1)
+    expect(first.height).toBeGreaterThanOrEqual(44)
+    await expectUncovered(page, 'lore-type-card')
+    await page.locator('[data-testid="lore-type-card"][data-type-name="Location"]').tap()
     const trigger = page.getByTestId('lore-type-menu')
-    await expect(trigger).toHaveAccessibleName('Choose category')
+    await expect(trigger).toHaveAccessibleName('Category: Location')
     await expectOnScreen(page, 'lore-type-menu')
     await expectUncovered(page, 'lore-type-menu')
     expect((await trigger.boundingBox())!.height).toBeGreaterThanOrEqual(44)
 
-    // Tap: the menu opens inside the viewport, its first item focused, every starter type in it.
+    // Tap: the menu opens inside the viewport, its current item focused, every starter type in it.
     await trigger.tap()
     const menu = page.getByTestId('lore-type-menu-panel')
     await expect(menu).toBeVisible()
     await expectOnScreen(page, 'lore-type-menu-panel')
     await expectUncovered(page, 'lore-type-menu-panel')
-    await expect(menu.getByRole('link', { name: 'Character', exact: true })).toBeFocused()
+    // The open category is where the focus lands, so the reader starts from where they are.
+    await expect(menu.getByRole('link', { name: 'Location', exact: true })).toBeFocused()
 
     // Choose: the address says so, the control says so, the list is that category's.
     await menu.getByRole('link', { name: 'Character', exact: true }).tap()
     await expect(page).toHaveURL(/\/lore\?type=[0-9a-f-]+$/)
     await expect(trigger).toHaveAccessibleName('Category: Character')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Character')
-    await expect(page.getByTestId('lore-no-category')).toHaveCount(0)
+    await expect(page.getByTestId('lore-catalog')).toHaveCount(0)
     const chosen = page.url()
 
     // The choice is the address, so a reload - in the same window, which never replays the launch - keeps it.

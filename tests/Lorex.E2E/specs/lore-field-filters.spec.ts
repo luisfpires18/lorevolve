@@ -564,7 +564,7 @@ test.describe('Lore field filters', () => {
       if (/\/entities\?/.test(request.url())) reads.push(request.url())
     })
     await page.goto(`/app/universes/${w.u}/lore?field=${encodeURIComponent(`${w.age.id}:gt:1`)}`)
-    await expect(page.getByTestId('lore-no-category')).toBeVisible()
+    await expect(page.getByTestId('lore-catalog')).toBeVisible()
     await page.waitForTimeout(400)
     expect(reads).toEqual([])
   })

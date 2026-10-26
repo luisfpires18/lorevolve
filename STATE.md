@@ -121,6 +121,13 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - Review fix: provisioning only granted, so a moved setting left two Admins. Now demotes others + unique index.
   - Tests: API 1899/1899 (1 skipped; `AdminWorkspaceTests` 15, `AdminProvisioningFileTests` 3; migration tests' later-schema
     lists extended). Playwright `admin-workspace` 6/6 (serial), neighbours 49/49, fresh DB. Full suite delegated to CI.
+- **Issue #60 - Lore front page catalog** (`feat/lore-landing-catalog` off `dev` at `75a476a`, in the main checkout;
+  committed locally, not merged, not pushed; issue left open). Frontend only, no API change. ADR 0065 (new). Bare Lore is a
+  card per type (hierarchy order, icon, path, description, branch live-entry count from the types list) with "Browse by
+  group" chips above (`?browse=`, replace; members only, overlaps and ungrouped kept; link into `?group=`). Type/group rows
+  wait for a choice; a group's list gains the Lore crumb. Phone: chips one scrolling line. Tests: Playwright
+  `lore-catalog.spec.ts` 7 (new); `chooseLoreType` and 8 landing specs moved from the row to the cards; 26 Lore
+  neighbour specs 188/189 on a fresh DB (one Vite dynamic-import flake in `timeline`, 15/15 alone).
 - **Issue #59 - MCP full creator authoring** (`feat/mcp-full-creator-authoring` off `origin/dev` at `dd0deef`, in the main
   checkout; committed locally, not pushed, not merged). ADR 0062 (new); 0046, 0047 amended. Five migrations:
   `AddSchemaProposals`, `AddDefinitionProposals`, `AddProgressionProposals`, `AddAiChangeMedia`, `AddMcpUniverseAliases`.
