@@ -1,6 +1,8 @@
 # Idea boards - plan
 
-Status: approved 2026-10-27 with the recommended answers (ADR 0066). Steps 2 (backend) and 3 (backup 36) done on `feat/idea-boards`.
+Status: approved 2026-10-27 with the recommended answers (ADR 0066). Steps 2 to 5 done on `feat/idea-boards`: backend, backup 36, web app, E2E. Lines are drawn by choosing a card, Draw a line
+from here, then the other card (touch, mouse and keyboard alike) rather than by dragging from a handle; card resize is not
+built yet.
 
 ## What it is
 
