@@ -463,6 +463,10 @@ function summaryRows(counts: BackupPreviewCounts): [string, string][] {
     ])
   }
 
+  if ((counts.ideaBoards ?? 0) > 0) {
+    rows.push(['Idea boards', plural(counts.ideaBoards ?? 0, 'board', 'boards')])
+  }
+
   if (counts.worldRules > 0) {
     rows.push(['World Rules', plural(counts.worldRules, 'world rule', 'world rules')])
   }

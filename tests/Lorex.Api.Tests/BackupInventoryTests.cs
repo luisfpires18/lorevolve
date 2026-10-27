@@ -95,6 +95,11 @@ public sealed class BackupInventoryTests
         "IdeaSceneReferences",
         "IdeaStoryReferences",
 
+        // The idea boards that belong to this universe (ADR 0066).
+        "IdeaBoards",
+        "IdeaBoardCards",
+        "IdeaBoardConnections",
+
         // Maps.
         "UniverseMaps",
         "MapPins",
@@ -118,6 +123,7 @@ public sealed class BackupInventoryTests
     private static readonly (string Table, string Why)[] LeftOut =
     [
         ("AspNetUsers", "identity tables are not the world (ADR 0014)"),
+
         ("AspNetRoles", "identity tables are not the world (ADR 0014)"),
         ("AspNetRoleClaims", "identity tables are not the world (ADR 0014)"),
         ("AspNetUserClaims", "identity tables are not the world (ADR 0014)"),

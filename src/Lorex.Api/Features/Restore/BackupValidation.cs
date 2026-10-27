@@ -413,7 +413,8 @@ internal static partial class BackupValidation
     {
         long count = 1 + payload.ChronologyEras!.Count + (payload.ChronologyCalendar is { } calendar ? 1 + calendar.Months.Count : 0) + payload.Tags.Count + payload.RelationshipTypes.Count
             + payload.DismissedConflicts.Count + (payload.KnowledgeRecords?.Count ?? 0)
-            + (payload.Maps ?? []).Sum(map => map is null ? 0L : 1L + (map.Pins?.Count ?? 0));
+            + (payload.Maps ?? []).Sum(map => map is null ? 0L : 1L + (map.Pins?.Count ?? 0))
+            + (payload.IdeaBoards ?? []).Sum(board => board is null ? 0L : 1L + (board.Cards?.Count ?? 0) + (board.Connections?.Count ?? 0));
 
         foreach (var type in payload.EntityTypes)
         {
@@ -497,6 +498,7 @@ internal static partial class BackupValidation
         private readonly Dictionary<Guid, Guid> _sceneStory = [];
         private readonly HashSet<Guid> _arcs = [];
         private readonly HashSet<Guid> _beats = [];
+        private readonly HashSet<Guid> _ideas = [];
         private readonly Dictionary<Guid, ValidationTermKind> _terms = [];
         private readonly HashSet<string> _referencedMedia = new(StringComparer.Ordinal);
 
@@ -525,6 +527,7 @@ internal static partial class BackupValidation
             var groups = Required(payload.EntityTypeGroups, "the list of type groups", since: 23);
             var knowledge = Required(payload.KnowledgeRecords, "the list of knowledge records", since: 33);
             var maps = Required(payload.Maps, "the list of maps", since: 34);
+            var boards = Required(payload.IdeaBoards, "the list of idea boards", since: 36);
 
             // Everything that can be referenced is listed first, so a reference checked below can
             // point anywhere in the file regardless of order.
@@ -572,6 +575,9 @@ internal static partial class BackupValidation
             {
                 CheckIdea(idea);
             }
+
+            // After the ideas, so an idea card can tell an idea of this file from one outside it.
+            CheckIdeaBoards(boards);
 
             foreach (var rule in worldRules)
             {
@@ -2030,6 +2036,7 @@ internal static partial class BackupValidation
 
             var what = $"The idea {Quote(idea.Title)}";
             Register(idea.Id, what);
+            _ideas.Add(idea.Id);
             Text(idea.Title, IdeaLimits.TitleMaxLength, $"{what}'s title", required: true);
 
             if (idea.Body is null)
@@ -2261,6 +2268,126 @@ internal static partial class BackupValidation
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Idea boards (ADR 0066, since version 36): each titled within bounds, its cards one thing each, in bounds and with
+        /// ids unique on the board; an entry card naming an entry of this file, an idea card naming an idea of this file or
+        /// carrying the title of one outside it; every line between two different cards of the same board, once per pair.
+        /// </summary>
+        private void CheckIdeaBoards(IReadOnlyList<BackupIdeaBoard> boards)
+        {
+            foreach (var board in boards)
+            {
+                if (board is null)
+                {
+                    Missing("an idea board");
+                    continue;
+                }
+
+                var what = $"The idea board {Quote(board.Title)}";
+                Register(board.Id, what);
+                Text(board.Title, IdeaBoardLimits.TitleMaxLength, $"{what}'s title", required: true);
+
+                var cards = Required(board.Cards, $"{what}'s cards");
+                if (cards.Count > IdeaBoardLimits.MaxCards)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} has more cards than a board holds.");
+                }
+
+                var cardIds = new HashSet<Guid>();
+                foreach (var card in cards)
+                {
+                    if (card is null)
+                    {
+                        Missing($"a card of {what}");
+                        continue;
+                    }
+
+                    if (!cardIds.Add(card.Id))
+                    {
+                        Add(BackupIssueCodes.Duplicate, $"{what} has two cards with one id.");
+                    }
+
+                    CheckBoardCard(card, what);
+                }
+
+                var connections = Required(board.Connections, $"{what}'s lines");
+                if (connections.Count > IdeaBoardLimits.MaxConnections)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} has more lines than a board holds.");
+                }
+
+                var lineIds = new HashSet<Guid>();
+                var pairs = new HashSet<(Guid, Guid)>();
+                foreach (var connection in connections)
+                {
+                    if (connection is null)
+                    {
+                        Missing($"a line of {what}");
+                        continue;
+                    }
+
+                    if (!lineIds.Add(connection.Id))
+                    {
+                        Add(BackupIssueCodes.Duplicate, $"{what} has two lines with one id.");
+                    }
+
+                    Reference(
+                        cardIds.Contains(connection.FromCardId)
+                            && cardIds.Contains(connection.ToCardId)
+                            && connection.FromCardId != connection.ToCardId,
+                        $"{what} has a line that does not join two of its cards.");
+                    Text(connection.Label, IdeaBoardLimits.LabelMaxLength, $"A line's label on {what}");
+
+                    var pair = connection.FromCardId.CompareTo(connection.ToCardId) < 0
+                        ? (connection.FromCardId, connection.ToCardId)
+                        : (connection.ToCardId, connection.FromCardId);
+                    if (!pairs.Add(pair))
+                    {
+                        Add(BackupIssueCodes.Duplicate, $"{what} joins two cards with more than one line.");
+                    }
+                }
+            }
+        }
+
+        private void CheckBoardCard(BackupIdeaBoardCard card, string what)
+        {
+            var onePayload = card.Kind switch
+            {
+                IdeaBoardCardKind.Note => card.Text is not null && card.IdeaId is null && card.EntityId is null,
+                IdeaBoardCardKind.Idea => card.IdeaId is not null && card.Text is null && card.EntityId is null,
+                IdeaBoardCardKind.Entity => card.EntityId is not null && card.Text is null && card.IdeaId is null,
+                _ => false,
+            };
+
+            if (!onePayload)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} has a card that is not one note, idea or entry.");
+                return;
+            }
+
+            static bool Coordinate(double value) => double.IsFinite(value) && Math.Abs(value) <= IdeaBoardLimits.MaxCoordinate;
+            static bool Size(double value) =>
+                double.IsFinite(value) && value >= IdeaBoardLimits.MinCardSize && value <= IdeaBoardLimits.MaxCardSize;
+
+            if (!Coordinate(card.X) || !Coordinate(card.Y) || !Size(card.Width) || !Size(card.Height))
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} has a card placed or sized outside what a board allows.");
+            }
+
+            switch (card.Kind)
+            {
+                case IdeaBoardCardKind.Note:
+                    Text(card.Text, IdeaBoardLimits.NoteMaxLength, $"A note on {what}");
+                    break;
+                case IdeaBoardCardKind.Entity:
+                    Reference(_entities.ContainsKey(card.EntityId!.Value), $"{what} shows an entry the backup does not hold.");
+                    break;
+                case IdeaBoardCardKind.Idea when !_ideas.Contains(card.IdeaId!.Value):
+                    Text(card.OutsideIdeaTitle, IdeaLimits.TitleMaxLength, $"The title of an idea outside the backup on {what}", required: true);
+                    break;
             }
         }
 

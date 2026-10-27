@@ -11,6 +11,7 @@ import {
 import { Plus } from 'lucide-react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { EmptyState } from './EmptyState'
+import { IdeasTabs } from './IdeasTabs'
 import { ActionIcon } from './ActionIcon'
 import { PageHeader } from './PageHeader'
 import { Quoted } from './NameList'
@@ -292,6 +293,8 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
           }
         />
       )}
+
+      {scope.kind === 'story' ? null : <IdeasTabs basePath={basePath} current="ideas" />}
 
       {deleted ? null : <QuickCapture scope={scope} onCaptured={captured} />}
 

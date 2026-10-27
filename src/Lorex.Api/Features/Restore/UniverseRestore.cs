@@ -223,6 +223,11 @@ internal sealed class RestoreIdentity
             yield return idea.Id;
         }
 
+        foreach (var board in payload.IdeaBoards!)
+        {
+            yield return board.Id;
+        }
+
         foreach (var rule in payload.WorldRules!)
         {
             yield return rule.Id;
@@ -711,6 +716,21 @@ internal sealed partial class UniverseRestore(
             throw new RestoreNameTakenException();
         }
 
+        // Ideas a board shows that the file does not hold: the restoring account's own, still there, are linked back.
+        var outsideIdeas = payload.IdeaBoards!
+            .SelectMany(board => board.Cards)
+            .Where(card => card.Kind == IdeaBoardCardKind.Idea && ids.Known(card.IdeaId!.Value) is null)
+            .Select(card => card.IdeaId!.Value)
+            .Distinct()
+            .ToList();
+        var ownedOutsideIdeas = outsideIdeas.Count == 0
+            ? []
+            : (await db.Ideas
+                .Where(idea => idea.OwnerId == ownerId && outsideIdeas.Contains(idea.Id))
+                .Select(idea => idea.Id)
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+
         var source = payload.Universe;
         var universe = new Universe
         {
@@ -751,6 +771,7 @@ internal sealed partial class UniverseRestore(
             AddMaps();
             AddStories(payload, ids, universeId);
             AddIdeas(payload, ids, universeId, ownerId);
+            AddIdeaBoards(payload, ids, universeId, ownerId, ownedOutsideIdeas);
             AddWorldRules(payload, ids, universeId);
             AddRuleValidation(payload, ids, universeId);
 
@@ -1608,6 +1629,85 @@ internal sealed partial class UniverseRestore(
                         db.IdeaPlotBeatReferences.Add(new IdeaPlotBeatReference { IdeaId = ideaId, PlotBeatId = targetId });
                         break;
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The universe's idea boards become the restoring account's boards about the restored universe (ADR 0066): a new id each,
+    /// cards and lines with their own ids, in draw order. An idea card names the restored idea, or - for an idea outside the
+    /// file - the account's own idea when it still has it, and otherwise becomes a note holding that idea's title.
+    /// </summary>
+    private void AddIdeaBoards(
+        UniverseBackupPayload payload,
+        RestoreIdentity ids,
+        Guid universeId,
+        string ownerId,
+        HashSet<Guid> ownedOutsideIdeas)
+    {
+        foreach (var board in payload.IdeaBoards!)
+        {
+            var boardId = ids.Map(board.Id);
+
+            db.IdeaBoards.Add(new IdeaBoard
+            {
+                Id = boardId,
+                OwnerId = ownerId,
+                UniverseId = universeId,
+                Title = board.Title,
+                CreatedAt = board.CreatedAt,
+                UpdatedAt = board.UpdatedAt,
+                DeletedAt = board.DeletedAt,
+            });
+
+            for (var z = 0; z < board.Cards.Count; z++)
+            {
+                var card = board.Cards[z];
+                var restored = new IdeaBoardCard
+                {
+                    BoardId = boardId,
+                    Id = card.Id,
+                    Kind = card.Kind,
+                    X = card.X,
+                    Y = card.Y,
+                    Width = card.Width,
+                    Height = card.Height,
+                    Z = z,
+                };
+
+                switch (card.Kind)
+                {
+                    case IdeaBoardCardKind.Note:
+                        restored.Text = card.Text;
+                        break;
+                    case IdeaBoardCardKind.Entity:
+                        restored.EntityId = ids.Map(card.EntityId!.Value);
+                        break;
+                    case IdeaBoardCardKind.Idea when ids.Known(card.IdeaId!.Value) is { } restoredIdea:
+                        restored.IdeaId = restoredIdea;
+                        break;
+                    case IdeaBoardCardKind.Idea when ownedOutsideIdeas.Contains(card.IdeaId!.Value):
+                        restored.IdeaId = card.IdeaId;
+                        break;
+                    default:
+                        restored.Kind = IdeaBoardCardKind.Note;
+                        restored.Text = card.OutsideIdeaTitle;
+                        break;
+                }
+
+                db.IdeaBoardCards.Add(restored);
+            }
+
+            foreach (var connection in board.Connections)
+            {
+                db.IdeaBoardConnections.Add(new IdeaBoardConnection
+                {
+                    BoardId = boardId,
+                    Id = connection.Id,
+                    FromCardId = connection.FromCardId,
+                    ToCardId = connection.ToCardId,
+                    Label = connection.Label,
+                });
             }
         }
     }

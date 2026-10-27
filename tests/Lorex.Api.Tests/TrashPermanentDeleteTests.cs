@@ -292,14 +292,14 @@ public sealed partial class TrashPermanentDeleteTests(LorexApiFactory factory) :
         var entity = await CreateEntity(client, u, "Portrait");
         var (original, thumbnail) = await Picture(client, u, entity);
 
-        var entityPresentWhenSwept = new List<bool>();
+        var entityPresentWhenSwept = new System.Collections.Concurrent.ConcurrentQueue<bool>();
         _factory.Media.FailDelete = key =>
         {
             if (key == original || key == thumbnail)
             {
                 using var scope = _factory.Services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<LorexDbContext>();
-                entityPresentWhenSwept.Add(db.Entities.Any(row => row.Id == entity));
+                entityPresentWhenSwept.Enqueue(db.Entities.Any(row => row.Id == entity));
             }
 
             return null;

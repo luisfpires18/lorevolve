@@ -118,7 +118,8 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
             await CalendarAsync(universeId, cancellationToken),
             await EntityTypeGroupsAsync(universeId, cancellationToken),
             await KnowledgeAsync(universeId, cancellationToken),
-            MapsOf(maps, calibrations));
+            MapsOf(maps, calibrations),
+            await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1320,6 +1321,83 @@ public sealed class UniverseBackupBuilder(LorexDbContext db)
                     Utc(idea.UpdatedAt),
                     Utc(idea.DeletedAt),
                     referencesByIdea.GetValueOrDefault(idea.Id, []))),
+        ];
+    }
+
+    // ---------- Idea boards ----------
+
+    /// <summary>
+    /// Every idea board that belongs to this universe, live ones first, each group by title and then id, with its cards in
+    /// draw order and its lines by id (ADR 0066). An idea card whose idea is not one of this universe's - so not in this file -
+    /// carries that idea's title, read under the same owner, so the words survive a restore that cannot link it back.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupIdeaBoard>> IdeaBoardsAsync(
+        Guid universeId,
+        string ownerId,
+        CancellationToken cancellationToken)
+    {
+        var boards = await db.IdeaBoards.AsNoTracking()
+            .Where(board => board.UniverseId == universeId && board.OwnerId == ownerId)
+            .ToListAsync(cancellationToken);
+
+        if (boards.Count == 0)
+        {
+            return [];
+        }
+
+        var cards = (await db.IdeaBoardCards.AsNoTracking()
+                .Where(card => card.Board!.UniverseId == universeId && card.Board.OwnerId == ownerId)
+                .Select(card => new
+                {
+                    card.BoardId,
+                    card.Z,
+                    Card = new BackupIdeaBoardCard(
+                        card.Id,
+                        card.Kind,
+                        card.X,
+                        card.Y,
+                        card.Width,
+                        card.Height,
+                        card.Text,
+                        card.IdeaId,
+                        card.EntityId,
+                        card.Kind == IdeaBoardCardKind.Idea && card.Idea!.UniverseId != universeId ? card.Idea.Title : null),
+                })
+                .ToListAsync(cancellationToken))
+            .GroupBy(row => row.BoardId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<BackupIdeaBoardCard>)[.. group.OrderBy(row => row.Z).Select(row => row.Card)]);
+
+        var connections = (await db.IdeaBoardConnections.AsNoTracking()
+                .Where(connection => connection.FromCard!.Board!.UniverseId == universeId
+                    && connection.FromCard.Board.OwnerId == ownerId)
+                .ToListAsync(cancellationToken))
+            .GroupBy(connection => connection.BoardId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<BackupIdeaBoardConnection>)
+                [
+                    .. group
+                        .OrderBy(connection => Key(connection.Id), StringComparer.Ordinal)
+                        .Select(connection => new BackupIdeaBoardConnection(
+                            connection.Id, connection.FromCardId, connection.ToCardId, connection.Label)),
+                ]);
+
+        return
+        [
+            .. boards
+                .OrderBy(board => board.DeletedAt is not null)
+                .ThenBy(board => board.Title, StringComparer.Ordinal)
+                .ThenBy(board => Key(board.Id), StringComparer.Ordinal)
+                .Select(board => new BackupIdeaBoard(
+                    board.Id,
+                    board.Title,
+                    Utc(board.CreatedAt),
+                    Utc(board.UpdatedAt),
+                    Utc(board.DeletedAt),
+                    cards.GetValueOrDefault(board.Id, []),
+                    connections.GetValueOrDefault(board.Id, []))),
         ];
     }
 

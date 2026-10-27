@@ -177,6 +177,12 @@ public class LorexDbContext(DbContextOptions<LorexDbContext> options)
 
     public DbSet<IdeaPlotBeatReference> IdeaPlotBeatReferences => Set<IdeaPlotBeatReference>();
 
+    public DbSet<IdeaBoard> IdeaBoards => Set<IdeaBoard>();
+
+    public DbSet<IdeaBoardCard> IdeaBoardCards => Set<IdeaBoardCard>();
+
+    public DbSet<IdeaBoardConnection> IdeaBoardConnections => Set<IdeaBoardConnection>();
+
     public DbSet<WorldRule> WorldRules => Set<WorldRule>();
 
     public DbSet<EntityPrivateNote> EntityPrivateNotes => Set<EntityPrivateNote>();

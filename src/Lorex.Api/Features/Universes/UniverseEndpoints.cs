@@ -332,9 +332,11 @@ public static partial class UniverseEndpoints
         }
 
         // Ideas belong to the account, not to the universe (ADR 0030): every idea about this
-        // universe stays, unassigned, and only its references - to content deleted below - go.
+        // universe stays, unassigned, and only its references - to content deleted below - go; so does
+        // every board, without its entry cards (ADR 0066).
         // Same transaction, so no idea can be left pointing into a universe that is gone.
         await IdeaReferences.ReleaseUniverseAsync(db, universe.Id, cancellationToken);
+        await IdeaBoardEndpoints.ReleaseUniverseAsync(db, universe.Id, cancellationToken);
 
         // The stored keys, as written - never rebuilt from the naming convention - while the rows still exist.
         var pictureKeys = (await db.EntityImages

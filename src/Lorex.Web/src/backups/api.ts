@@ -42,6 +42,8 @@ export interface BackupPreviewCounts {
   /** Maps and their pins (issue #52). Absent from a preview written before them. */
   maps?: number
   mapPins?: number
+  /** Idea boards (ADR 0066). Absent from a preview written before them. */
+  ideaBoards?: number
 }
 
 export interface BackupPreview {

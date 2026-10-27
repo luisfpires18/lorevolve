@@ -2,22 +2,14 @@ import {
   useCallback,
   useEffect,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
-  type PointerEvent,
   type ReactNode,
 } from 'react'
 import { Maximize, ZoomIn, ZoomOut } from 'lucide-react'
 import type { MapPin } from '../maps/types'
-
-/** Where the picture sits in the stage: scaled by `scale`, its top-left corner at (`x`, `y`) stage pixels. */
-interface View {
-  scale: number
-  x: number
-  y: number
-}
+import { clamp, usePanZoom, ZOOM_STEP, type StageSize, type View } from '../lib/usePanZoom'
 
 /** A marker that is not a pin - a calibration point (#53) - drawn the same way, at a fraction of the picture. */
 export interface MapMarker {
@@ -51,14 +43,7 @@ interface MapViewerProps {
   overlay?: (view: View, size: { width: number; height: number }) => ReactNode
 }
 
-const ZOOM_STEP = 1.25
 const PAN_STEP = 48
-/** A press that moved less than this is a press, not a drag. */
-const DRAG_THRESHOLD = 4
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value))
-}
 
 /**
  * The map: one picture panned and zoomed with the pointer, the wheel, two fingers or the keyboard, with pins drawn at
@@ -93,27 +78,12 @@ export function MapViewer({
 }: MapViewerProps) {
   const stage = useRef<HTMLDivElement>(null)
   const hintId = useId()
-  const [size, setSize] = useState({ width: 0, height: 0 })
-  const [view, setView] = useState<View>({ scale: 1, x: 0, y: 0 })
-  const fitted = useRef(false)
   const [dragging, setDragging] = useState<{ id: string; x: number; y: number } | null>(null)
 
-  // Pointer gestures, kept in refs: they change on every move and nothing needs to render for them.
-  const pointers = useRef(new Map<number, { x: number; y: number }>())
-  const gesture = useRef<{
-    kind: 'pan' | 'pin' | 'pinch'
-    startX: number
-    startY: number
-    moved: boolean
-    view: View
-    pin?: MapPin
-    distance?: number
-  } | null>(null)
-
-  const fitScale =
-    size.width > 0 && size.height > 0 ? Math.min(size.width / width, size.height / height) : 1
-  const minScale = fitScale / 2
-  const maxScale = Math.max(fitScale * 8, 2)
+  const fitScaleFor = (stageSize: StageSize) =>
+    stageSize.width > 0 && stageSize.height > 0
+      ? Math.min(stageSize.width / width, stageSize.height / height)
+      : 1
 
   const fit = useCallback(
     (stageWidth: number, stageHeight: number): View => {
@@ -127,49 +97,36 @@ export function MapViewer({
     [width, height],
   )
 
-  // The stage's size, measured as it changes; the first measure fits the whole map in it.
-  useLayoutEffect(() => {
-    const element = stage.current
-    if (!element) return
-    const observer = new ResizeObserver((entries) => {
-      const box = entries[0]?.contentRect
-      if (!box) return
-      setSize({ width: box.width, height: box.height })
-      if (!fitted.current && box.width > 0 && box.height > 0) {
-        fitted.current = true
-        setView(fit(box.width, box.height))
-      }
-    })
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [fit])
+  const { view, setView, size, zoomAbout, toLayer, beginItemDrag, stageHandlers } = usePanZoom(
+    stage,
+    {
+      limits: (stageSize) => {
+        const fitted = fitScaleFor(stageSize)
+        return { min: fitted / 2, max: Math.max(fitted * 8, 2) }
+      },
+      initial: (stageSize) => fit(stageSize.width, stageSize.height),
+      // A press that did not move: place a pin, or clear the selection.
+      onTap: (clientX, clientY) => {
+        if (placing && onPlace) {
+          const at = fractionAt(clientX, clientY)
+          onPlace(at.x, at.y)
+        } else {
+          onSelectPin(null)
+        }
+      },
+    },
+  )
 
-  // A new picture: fit again.
+  const fitScale = fitScaleFor(size)
+  const minScale = fitScale / 2
+  const maxScale = Math.max(fitScale * 8, 2)
+
+  // A new picture: fit again. The first fit is the hook's, once the stage has a size.
   useEffect(() => {
-    fitted.current = false
-    if (size.width > 0 && size.height > 0) {
-      fitted.current = true
-      setView(fit(size.width, size.height))
-    }
+    if (size.width > 0 && size.height > 0) setView(fit(size.width, size.height))
     // The size is read, not depended on: resizing must not refit a view the author has moved.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src, fit])
-
-  /** Zooms by `factor` about a stage point, within bounds. */
-  const zoomAbout = useCallback(
-    (factor: number, aboutX: number, aboutY: number) => {
-      setView((current) => {
-        const scale = clamp(current.scale * factor, minScale, maxScale)
-        const ratio = scale / current.scale
-        return {
-          scale,
-          x: aboutX - (aboutX - current.x) * ratio,
-          y: aboutY - (aboutY - current.y) * ratio,
-        }
-      })
-    },
-    [minScale, maxScale],
-  )
 
   // The pin to focus - from the address, or chosen in the list - brought to the centre, zoomed in enough to see.
   useEffect(() => {
@@ -188,152 +145,33 @@ export function MapViewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusPinId, size.width === 0])
 
-  /** A stage point as fractions of the picture, clamped onto it. */
-  function fractionAt(clientX: number, clientY: number, from: View = view) {
-    const rect = stage.current!.getBoundingClientRect()
-    const x = (clientX - rect.left - from.x) / (width * from.scale)
-    const y = (clientY - rect.top - from.y) / (height * from.scale)
-    return { x: clamp(x, 0, 1), y: clamp(y, 0, 1) }
+  /** A client point as fractions of the picture, clamped onto it. */
+  function fractionAt(clientX: number, clientY: number) {
+    const at = toLayer(clientX, clientY)
+    return { x: clamp(at.x / width, 0, 1), y: clamp(at.y / height, 0, 1) }
   }
 
-  // The wheel zooms the map, not the page: a listener that may prevent the default, which React's own is not.
-  useEffect(() => {
-    const element = stage.current
-    if (!element) return
-    function onWheel(event: globalThis.WheelEvent) {
-      event.preventDefault()
-      const rect = element!.getBoundingClientRect()
-      zoomAbout(
-        Math.pow(ZOOM_STEP, -event.deltaY / 100),
-        event.clientX - rect.left,
-        event.clientY - rect.top,
-      )
+  /**
+   * The press is the pin's: released without moving it selects the pin; dragged, and only for someone who may edit, it
+   * moves the pin.
+   */
+  function pinDrag(pin: MapPin) {
+    return {
+      onMove: (clientX: number, clientY: number) => {
+        if (canEdit && !placing) setDragging({ id: pin.id, ...fractionAt(clientX, clientY) })
+      },
+      onEnd: (moved: boolean, clientX: number, clientY: number) => {
+        if (moved && canEdit && !placing) {
+          const at = fractionAt(clientX, clientY)
+          setDragging(null)
+          onMovePin?.(pin, at.x, at.y)
+        } else {
+          // A press always selects; the empty map or Escape clears. Never a toggle, so a press is never a surprise.
+          onSelectPin(pin.id)
+        }
+      },
+      onCancel: () => setDragging(null),
     }
-    element.addEventListener('wheel', onWheel, { passive: false })
-    return () => element.removeEventListener('wheel', onWheel)
-  }, [zoomAbout])
-
-  function onStagePointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (event.button !== 0 && event.pointerType === 'mouse') return
-    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    stage.current!.setPointerCapture(event.pointerId)
-
-    if (pointers.current.size === 2) {
-      const [a, b] = [...pointers.current.values()]
-      gesture.current = {
-        kind: 'pinch',
-        startX: (a.x + b.x) / 2,
-        startY: (a.y + b.y) / 2,
-        moved: true,
-        view,
-        distance: Math.hypot(a.x - b.x, a.y - b.y),
-      }
-      return
-    }
-
-    if (gesture.current?.kind === 'pin') return
-    gesture.current = {
-      kind: 'pan',
-      startX: event.clientX,
-      startY: event.clientY,
-      moved: false,
-      view,
-    }
-  }
-
-  function onPinPointerDown(event: PointerEvent<HTMLButtonElement>, pin: MapPin) {
-    if (event.button !== 0 && event.pointerType === 'mouse') return
-    // The press is the pin's: the stage must not start panning under it. Released without moving it selects the pin;
-    // dragged, and only for someone who may edit, it moves the pin.
-    event.stopPropagation()
-    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    stage.current!.setPointerCapture(event.pointerId)
-    gesture.current = {
-      kind: 'pin',
-      startX: event.clientX,
-      startY: event.clientY,
-      moved: false,
-      view,
-      pin,
-    }
-  }
-
-  function onPointerMove(event: PointerEvent<HTMLDivElement>) {
-    const current = gesture.current
-    if (!current || !pointers.current.has(event.pointerId)) return
-    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-
-    if (current.kind === 'pinch' && pointers.current.size >= 2) {
-      const [a, b] = [...pointers.current.values()]
-      const distance = Math.hypot(a.x - b.x, a.y - b.y)
-      const midX = (a.x + b.x) / 2
-      const midY = (a.y + b.y) / 2
-      const rect = stage.current!.getBoundingClientRect()
-      const factor = distance / (current.distance || distance)
-      const scale = clamp(current.view.scale * factor, minScale, maxScale)
-      const ratio = scale / current.view.scale
-      const aboutX = current.startX - rect.left
-      const aboutY = current.startY - rect.top
-      setView({
-        scale,
-        x: aboutX - (aboutX - current.view.x) * ratio + (midX - current.startX),
-        y: aboutY - (aboutY - current.view.y) * ratio + (midY - current.startY),
-      })
-      return
-    }
-
-    const dx = event.clientX - current.startX
-    const dy = event.clientY - current.startY
-    if (!current.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return
-    current.moved = true
-
-    if (current.kind === 'pan') {
-      setView({ ...current.view, x: current.view.x + dx, y: current.view.y + dy })
-    } else if (current.kind === 'pin' && current.pin && canEdit && !placing) {
-      const at = fractionAt(event.clientX, event.clientY)
-      setDragging({ id: current.pin.id, x: at.x, y: at.y })
-    }
-  }
-
-  function onPointerUp(event: PointerEvent<HTMLDivElement>) {
-    const current = gesture.current
-    pointers.current.delete(event.pointerId)
-    if (stage.current?.hasPointerCapture(event.pointerId))
-      stage.current.releasePointerCapture(event.pointerId)
-    if (!current) return
-    if (current.kind === 'pinch') {
-      if (pointers.current.size === 0) gesture.current = null
-      return
-    }
-    gesture.current = null
-
-    if (current.kind === 'pin' && current.pin) {
-      if (current.moved && canEdit && !placing) {
-        const at = fractionAt(event.clientX, event.clientY)
-        setDragging(null)
-        onMovePin?.(current.pin, at.x, at.y)
-      } else {
-        // A press always selects; the empty map or Escape clears. Never a toggle, so a press is never a surprise.
-        onSelectPin(current.pin.id)
-      }
-      return
-    }
-
-    // A press that did not move: place a pin, or clear the selection.
-    if (!current.moved) {
-      if (placing && onPlace) {
-        const at = fractionAt(event.clientX, event.clientY)
-        onPlace(at.x, at.y)
-      } else {
-        onSelectPin(null)
-      }
-    }
-  }
-
-  function onPointerCancel(event: PointerEvent<HTMLDivElement>) {
-    pointers.current.delete(event.pointerId)
-    gesture.current = null
-    setDragging(null)
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -399,10 +237,7 @@ export function MapViewer({
         tabIndex={0}
         data-testid="map-stage"
         data-scale={view.scale.toFixed(4)}
-        onPointerDown={onStagePointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
+        {...stageHandlers}
         onKeyDown={onKeyDown}
       >
         <div className="mapviewer__layer" style={layerStyle} data-testid="map-layer">
@@ -444,7 +279,7 @@ export function MapViewer({
                 data-pin-title={pin.title}
                 data-review={pin.placedOnCurrentImage ? undefined : true}
                 data-dragging={dragging?.id === pin.id || undefined}
-                onPointerDown={(event) => onPinPointerDown(event, pin)}
+                onPointerDown={(event) => beginItemDrag(event, pinDrag(pin))}
                 onClick={(event) => {
                   // A pointer press is handled on release above; the keyboard's Enter and Space land here.
                   if (event.detail === 0) onSelectPin(pin.id)

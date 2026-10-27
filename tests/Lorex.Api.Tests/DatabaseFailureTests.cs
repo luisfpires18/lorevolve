@@ -45,10 +45,13 @@ public sealed class DatabaseFailureTests(LorexApiFactory factory) : IClassFixtur
     [Fact]
     public void Any_constraint_covers_an_order_that_moved_but_still_not_a_locked_database()
     {
-        // A row appended twice, a parent deleted underneath, a column left null: all SQLITE_CONSTRAINT.
+        // A row appended twice or a parent deleted underneath: the races this predicate is for.
         Assert.True(DatabaseFailures.IsConstraintViolation(Sqlite(19, 2067)));
         Assert.True(DatabaseFailures.IsConstraintViolation(Sqlite(19, 787)));
-        Assert.True(DatabaseFailures.IsConstraintViolation(Sqlite(19, 1299)));
+
+        // A column left null or a check refusing is a bug in the write, not a race.
+        Assert.False(DatabaseFailures.IsConstraintViolation(Sqlite(19, 1299)));
+        Assert.False(DatabaseFailures.IsConstraintViolation(Sqlite(19, 275)));
 
         Assert.False(DatabaseFailures.IsConstraintViolation(Sqlite(5, 5)));
         Assert.False(DatabaseFailures.IsConstraintViolation(Sqlite(6, 6)));

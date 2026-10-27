@@ -480,14 +480,14 @@ public sealed partial class TrashPermanentDeleteTests
         await Deleted(client, EntityPath(u, first));
         await Deleted(client, EntityPath(u, second));
 
-        var presentWhenSwept = new List<bool>();
+        var presentWhenSwept = new System.Collections.Concurrent.ConcurrentQueue<bool>();
         _factory.Media.FailDelete = key =>
         {
             if (keys.Contains(key))
             {
                 using var scope = _factory.Services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<LorexDbContext>();
-                presentWhenSwept.Add(db.Entities.Any(row => row.Id == first || row.Id == second));
+                presentWhenSwept.Enqueue(db.Entities.Any(row => row.Id == first || row.Id == second));
             }
 
             return null;

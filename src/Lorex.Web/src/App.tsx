@@ -39,6 +39,8 @@ const ConnectAuthorizePage = lazy(() => import('./pages/ConnectAuthorizePage'))
 const EntityPage = lazy(() => import('./pages/EntityPage'))
 const ExplorePage = lazy(() => import('./pages/ExplorePage'))
 const FamilyTreePage = lazy(() => import('./pages/FamilyTreePage'))
+const IdeaBoardPage = lazy(() => import('./pages/IdeaBoardPage'))
+const IdeaBoardsPage = lazy(() => import('./pages/IdeaBoardsPage'))
 const IdeaPage = lazy(() => import('./pages/IdeaPage'))
 const IdeasPage = lazy(() => import('./pages/IdeasPage'))
 const InvitationPage = lazy(() => import('./pages/InvitationPage'))
@@ -161,6 +163,15 @@ function Root() {
               <Route path="/app/ai-changes" element={asSection('ai-changes', <AiChangesPage />)} />
               <Route path="/app/ideas/new" element={asSection('idea', <IdeaPage isNew />)} />
               <Route path="/app/ideas/:ideaId" element={asSection('idea', <IdeaPage />)} />
+              <Route path="/app/ideas/boards" element={asSection('ideas', <IdeaBoardsPage />)} />
+              <Route
+                path="/app/ideas/boards/new"
+                element={asSection('board', <IdeaBoardPage isNew />)}
+              />
+              <Route
+                path="/app/ideas/boards/:boardId"
+                element={asSection('board', <IdeaBoardPage />)}
+              />
             </Route>
             <Route path="/app/universes/:id" element={<UniverseWorkspace />}>
               <Route index element={<UniverseOverview />} />
@@ -288,6 +299,33 @@ function Root() {
                   'idea',
                   <RoleGate need="keepIdeas">
                     <IdeaPage inUniverse />
+                  </RoleGate>,
+                )}
+              />
+              <Route
+                path="ideas/boards"
+                element={asSection(
+                  'ideas',
+                  <RoleGate need="keepIdeas">
+                    <IdeaBoardsPage inUniverse />
+                  </RoleGate>,
+                )}
+              />
+              <Route
+                path="ideas/boards/new"
+                element={asSection(
+                  'board',
+                  <RoleGate need="keepIdeas">
+                    <IdeaBoardPage inUniverse isNew />
+                  </RoleGate>,
+                )}
+              />
+              <Route
+                path="ideas/boards/:boardId"
+                element={asSection(
+                  'board',
+                  <RoleGate need="keepIdeas">
+                    <IdeaBoardPage inUniverse />
                   </RoleGate>,
                 )}
               />

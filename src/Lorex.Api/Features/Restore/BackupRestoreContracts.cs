@@ -32,7 +32,8 @@ public sealed record BackupPreviewCounts(
     int WorldRules,
     int WorldRulesInTrash,
     int Maps = 0,
-    int MapPins = 0)
+    int MapPins = 0,
+    int IdeaBoards = 0)
 {
     internal static BackupPreviewCounts Of(UniverseBackupPayload payload, int images)
     {
@@ -72,7 +73,8 @@ public sealed record BackupPreviewCounts(
             payload.WorldRules!.Count(rule => rule.DeletedAt is null),
             payload.WorldRules!.Count(rule => rule.DeletedAt is not null),
             payload.Maps?.Count ?? 0,
-            payload.Maps?.Sum(map => map.Pins.Count) ?? 0);
+            payload.Maps?.Sum(map => map.Pins.Count) ?? 0,
+            payload.IdeaBoards?.Count ?? 0);
     }
 }
 

@@ -479,6 +479,12 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 36)
+        {
+            // Idea boards arrived in version 36 (ADR 0066).
+            payload.AsObject().Remove("ideaBoards");
+        }
+
         if (version < 35)
         {
             // A map's scale arrived in version 35 (issue #53, ADR 0061).

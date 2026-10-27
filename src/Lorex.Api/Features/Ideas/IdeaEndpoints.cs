@@ -573,10 +573,10 @@ public static class IdeaEndpoints
         references is null ? [] : [.. references.Distinct()];
 
     /// <summary>Compared as UTC ticks: SQLite hands a stored moment back with no kind, and JSON may carry it either way.</summary>
-    private static bool SameMoment(DateTime stored, DateTime? expected) =>
+    internal static bool SameMoment(DateTime stored, DateTime? expected) =>
         expected is { } moment && Utc(stored).Ticks == Utc(moment).Ticks;
 
-    private static DateTime Utc(DateTime value) => value.Kind switch
+    internal static DateTime Utc(DateTime value) => value.Kind switch
     {
         DateTimeKind.Utc => value,
         DateTimeKind.Local => value.ToUniversalTime(),
@@ -602,7 +602,7 @@ public static class IdeaEndpoints
     /// Whether the caller owns the universe. Deliberately owner-only, not <c>UniverseAccess</c>: an idea is account data,
     /// and membership of someone else's universe does not let one's ideas point into it (ADR 0041).
     /// </summary>
-    private static Task<bool> OwnsUniverseAsync(
+    internal static Task<bool> OwnsUniverseAsync(
         LorexDbContext db,
         Guid universeId,
         string ownerId,
