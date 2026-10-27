@@ -50,7 +50,7 @@ Why the bucket is private and stays private: [ADR 0019](../architecture/decision
 
 Cloudflare dashboard -> **R2** -> **Create bucket**.
 
-- **Name**: `lorex-media` (any name works; it goes in `Media__R2__Bucket`).
+- **Name**: `lorevolve-media-dev` (any name works; it goes in `Media__R2__Bucket`).
 - **Location**: automatic, or the hint nearest the App Service region.
 - **Public access**: leave **disabled**. Do not connect a custom domain and do not enable the
   `r2.dev` development URL. LorEvolve serves every image through its own authenticated route, so a
@@ -98,7 +98,7 @@ that is how App Service maps a name onto a configuration path:
 ```
 Media__Provider          = R2
 Media__R2__AccountId     = <account id>
-Media__R2__Bucket        = lorex-media
+Media__R2__Bucket        = lorevolve-media-dev
 Media__R2__AccessKeyId   = <access key id>
 Media__R2__SecretAccessKey = <secret access key>
 ```
@@ -129,7 +129,7 @@ dotnet user-secrets --project src/LorEvolve.Api set "Media:R2:AccountId" "<accou
 ```
 
 ```bash
-dotnet user-secrets --project src/LorEvolve.Api set "Media:R2:Bucket" "lorex-media"
+dotnet user-secrets --project src/LorEvolve.Api set "Media:R2:Bucket" "lorevolve-media-dev"
 ```
 
 ```bash

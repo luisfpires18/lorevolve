@@ -1981,7 +1981,7 @@ A public, read-only discovery experience beside the workspace, in the same appli
 
 ## Remote
 
-`origin` = https://github.com/luisfpires18/lorex.git (private). `dev` tracks `origin/dev` and is
+`origin` = https://github.com/luisfpires18/lorevolve.git (private). `dev` tracks `origin/dev` and is
 the GitHub default branch. `master` is reconciled and published; `dev` -> `master` merges happen
 only when the owner asks.
 
