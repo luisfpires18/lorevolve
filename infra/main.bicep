@@ -1,4 +1,4 @@
-// Lorex DEV infrastructure. One Linux App Service, and the plan it runs on. Nothing else:
+// LorEvolve DEV infrastructure. One Linux App Service, and the plan it runs on. Nothing else:
 // the app is one process that serves both the API and the built client, and it keeps its
 // SQLite database and its Data Protection key ring on the site's own persistent /home share.
 //
@@ -35,7 +35,7 @@ param environmentName string = 'AzureDev'
 
 @description('Tags applied to both resources.')
 param tags object = {
-  application: 'lorex'
+  application: 'lorevolve'
   environment: 'dev'
 }
 
@@ -70,7 +70,7 @@ resource site 'Microsoft.Web/sites@2023-12-01' = {
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
       healthCheckPath: '/health'
-      appCommandLine: 'dotnet Lorex.Api.dll'
+      appCommandLine: 'dotnet LorEvolve.Api.dll'
       // One writer. SQLite over the /home share cannot survive a second instance.
       numberOfWorkers: 1
       appSettings: [

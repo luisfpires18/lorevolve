@@ -4,13 +4,13 @@ Status: accepted (2026-09-06)
 
 ## Context
 
-Lorex is one API and one first-party SPA served from the same origin. A token scheme
+LorEvolve is one API and one first-party SPA served from the same origin. A token scheme
 would mean storing a credential somewhere JavaScript can read it, plus refresh handling,
 for no gain at this shape.
 
 ## Decision
 
-ASP.NET Core Identity with the application cookie. `LorexUser` derives from
+ASP.NET Core Identity with the application cookie. `LorEvolveUser` derives from
 `IdentityUser` and adds nothing: Id, UserName and Email already come from Identity.
 
 The cookie is HttpOnly, `SameSite=Strict`, Secure in Production and `SameAsRequest`

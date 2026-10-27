@@ -5,7 +5,7 @@ Unchaptered), amended 2026-09-14 (deleting moves to the Trash - ADR 0029), amend
 
 ## Context
 
-Everything Lorex holds so far is lore: what is true about a world. Entries, relationships, the
+Everything LorEvolve holds so far is lore: what is true about a world. Entries, relationships, the
 timeline and the chronology all make claims, and Canon Integrity checks them against each other.
 
 Authors also tell stories with a world, and a story is a different kind of thing. It may be a draft,
@@ -62,7 +62,7 @@ entries in the same universe, re-resolved on every write; a foreign or unknown i
 saying whether it exists elsewhere. The name, type, icon and portrait shown for a reference are read
 from the entry on every request - two queries for a whole story, not one per scene - so an edit to
 the lore shows in every scene at once. A link means only "relevant to this scene": not present, not
-alive, not taking part. Any entry may be the point of view; Lorex does not decide from a type's name
+alive, not taking part. Any entry may be the point of view; LorEvolve does not decide from a type's name
 that only characters have one. The point of view need not also be linked.
 
 **The Trash follows ADR 0015's rule.** A scene's point of view and links are sent back whole on every

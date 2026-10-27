@@ -57,7 +57,7 @@ says neither end is special. The family tree reads these rows and writes none of
 
 ## Amendment - one link, stored once (2026-09-22)
 
-Found by using Lorex to migrate a real world into it: the same biological parent link could be recorded twice -
+Found by using LorEvolve to migrate a real world into it: the same biological parent link could be recorded twice -
 once in an entry's Relations, once from the family tree's Add family connection - and the tree then showed the
 same child twice. Two rows, one connection, and nothing refused either.
 

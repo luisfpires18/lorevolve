@@ -4,7 +4,7 @@ Entry images live in one private R2 bucket. Nothing in this repository creates i
 the API token and the App Service settings are owner steps, exactly like the Azure resources in
 [azure-dev.md](azure-dev.md).
 
-Until the steps below are done, Lorex still runs. Every image route answers
+Until the steps below are done, LorEvolve still runs. Every image route answers
 `503 Image storage is unavailable.` and no entry can be given a picture. Nothing else is
 affected.
 
@@ -32,7 +32,7 @@ users/{userId}/profile/{assetId}/thumbnail-{thumbnailId}.webp
 A profile photo is account data and is deliberately not under `universes/`, so no per-world rule
 or bulk operation can sweep it up with authored lore. It is otherwise the same in every respect:
 the same accepted formats and limits, the same server-cut square, the same write ordering, and the
-same private-bucket, served-only-by-Lorex rule. [ADR 0021](../architecture/decisions/0021-profile-photo.md).
+same private-bucket, served-only-by-LorEvolve rule. [ADR 0021](../architecture/decisions/0021-profile-photo.md).
 
 Ids only - no username, no email, no world name, no entry name. R2 has no folders; the slashes
 are a key prefix the console happens to draw as a tree. `{assetId}` is new for every upload and
@@ -53,7 +53,7 @@ Cloudflare dashboard -> **R2** -> **Create bucket**.
 - **Name**: `lorex-media` (any name works; it goes in `Media__R2__Bucket`).
 - **Location**: automatic, or the hint nearest the App Service region.
 - **Public access**: leave **disabled**. Do not connect a custom domain and do not enable the
-  `r2.dev` development URL. Lorex serves every image through its own authenticated route, so a
+  `r2.dev` development URL. LorEvolve serves every image through its own authenticated route, so a
   public URL would only be a way around the ownership check.
 - **CORS**: none. The browser never talks to R2 - the API does.
 
@@ -121,26 +121,26 @@ suite, and it is not a bug.
 To exercise the real thing locally, use user secrets - never the committed settings file:
 
 ```bash
-dotnet user-secrets --project src/Lorex.Api set "Media:Provider" "R2"
+dotnet user-secrets --project src/LorEvolve.Api set "Media:Provider" "R2"
 ```
 
 ```bash
-dotnet user-secrets --project src/Lorex.Api set "Media:R2:AccountId" "<account id>"
+dotnet user-secrets --project src/LorEvolve.Api set "Media:R2:AccountId" "<account id>"
 ```
 
 ```bash
-dotnet user-secrets --project src/Lorex.Api set "Media:R2:Bucket" "lorex-media"
+dotnet user-secrets --project src/LorEvolve.Api set "Media:R2:Bucket" "lorex-media"
 ```
 
 ```bash
-dotnet user-secrets --project src/Lorex.Api set "Media:R2:AccessKeyId" "<access key id>"
+dotnet user-secrets --project src/LorEvolve.Api set "Media:R2:AccessKeyId" "<access key id>"
 ```
 
 ```bash
-dotnet user-secrets --project src/Lorex.Api set "Media:R2:SecretAccessKey" "<secret access key>"
+dotnet user-secrets --project src/LorEvolve.Api set "Media:R2:SecretAccessKey" "<secret access key>"
 ```
 
-Undo it with `dotnet user-secrets --project src/Lorex.Api clear`.
+Undo it with `dotnet user-secrets --project src/LorEvolve.Api clear`.
 
 ### Tests
 
@@ -182,7 +182,7 @@ about credentials, the bucket or App Service settings changes for this.
 
 ## Costs and limits
 
-R2 charges for stored bytes and for operations, and **not** for egress. Lorex's read path is
+R2 charges for stored bytes and for operations, and **not** for egress. LorEvolve's read path is
 server-mediated, so every image view is one `GetObject`; at one picture per entry, on a
 single-owner product, the class-B operation count is not a figure worth budgeting for.
 

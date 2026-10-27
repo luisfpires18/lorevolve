@@ -6,12 +6,12 @@ collaborators, and one gate decides what each may do. Kept as the history of the
 ## Context
 
 A universe is private. The whole product rests on a user never reaching another user's
-world. Lorex has one deployable host and one database, so the only thing standing
+world. LorEvolve has one deployable host and one database, so the only thing standing
 between two users is the code that reads the rows.
 
 ## Decision
 
-Every universe carries an `OwnerId` pointing at a `LorexUser`, and every read and write
+Every universe carries an `OwnerId` pointing at a `LorEvolveUser`, and every read and write
 filters on it in the same query that finds the row. There is no "load then check"
 step that could be forgotten, and no shared lookup helper that returns an unfiltered
 universe.

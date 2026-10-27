@@ -19,8 +19,8 @@ store that shares no transaction with the database; and some of what a world hol
 
 ### Backup -> validate -> restore as a new universe
 
-The one model: the author uploads a backup, Lorex validates it and shows what it holds, the author names the universe, and
-Lorex creates it. **There is no overwrite and no merge**: no route takes a universe id, so no request can make a restore
+The one model: the author uploads a backup, LorEvolve validates it and shows what it holds, the author names the universe, and
+LorEvolve creates it. **There is no overwrite and no merge**: no route takes a universe id, so no request can make a restore
 write into a universe that exists. Restoring the same file twice makes two universes. The primary entry point is the
 universes page, beside New universe, because a restore makes a universe rather than changing one; a universe's Settings
 links there.
@@ -66,20 +66,20 @@ are ignored; what it is, is decided by its bytes.
 | One picture | 8 MB | the ceiling it was uploaded under (ADR 0019) |
 | Entries | 5,001 | the document and 5,000 pictures |
 | Rows written | 1,000,000 | across every table |
-| JSON depth | 32 | Lorex writes about ten; duplicate properties refused |
+| JSON depth | 32 | LorEvolve writes about ten; duplicate properties refused |
 
 **The version is read before the shape.** `format` and `formatVersion` are read forward-only first, so a file from a newer
-Lorex is told it is newer (`backup_version_unsupported`) even when its payload would not parse. Versions 1-2 are a single
+LorEvolve is told it is newer (`backup_version_unsupported`) even when its payload would not parse. Versions 1-2 are a single
 JSON document and 3-11 an archive; a version 3+ `backup.json` uploaded on its own is pointed back at the ZIP.
 
 **Then the content, against what the destination already depends on - and nothing more.** Every id present, non-empty and
 unique across the whole file; every reference resolving to something of the right kind in the same file (an idea's reference
-kind is taken as written, never inferred); scenes and beats only within their own story; enums Lorex knows; text within its
+kind is taken as written, never inferred); scenes and beats only within their own story; enums LorEvolve knows; text within its
 column; unique indexes (type, field, option, alias and relation kind names, tag names by lower case, one field per declared
 meaning, live orders per container); a declared meaning only on a Number field; a symmetric kind with no older side; eras
 at most 20, years in an era from 1; months and days in range; an article - and every saved and pre-ADR-0028 copy of one - a
 document `LoreContent` accepts, so a backup cannot carry a `javascript:` link into the editor; a colour that is a colour; and
-every picture at exactly the path Lorex would have built from its entry's id, present, the size the document says, and
+every picture at exactly the path LorEvolve would have built from its entry's id, present, the size the document says, and
 decoded in full by the upload gate, with its crop. An archive holding any file the document does not name is refused.
 
 Nothing is judged for sense. No relationship is read from its name, no era guessed from a label, no Canon re-decided, no
@@ -91,18 +91,18 @@ exception message, SQL, a path on the machine or an object key.
 
 ### One restore path: older versions normalize into the current shape
 
-Every version Lorex has written restores, 1 to 11: each shape is a subset of the next and ADR 0014 records what each change
+Every version LorEvolve has written restores, 1 to 11: each shape is a subset of the next and ADR 0014 records what each change
 re-meant. `BackupFormatSupport.MaxVersion` is its own constant, held equal to `UniverseBackup.CurrentVersion` by a test, so
 bumping the export fails until the importer is taught the new version. Two passes, then one writer:
 
 1. **Project**: read the payload the way its version defines it. A member that version did not have is absent even if the
-   file carries one - a "version 4" file holding stories was not written by Lorex, and what version 4 means is what is restored.
+   file carries one - a "version 4" file holding stories was not written by LorEvolve, and what version 4 means is what is restored.
 2. **Normalize**, after validation, doing to the file what each migration did to a live database: version 1 is all live;
    before 4, no eras and no relationship constraint, and an icon is kept when it is a known key after trimming and lowercasing
    and cleared otherwise (ADR 0020); before 5, no stories; version 5 scenes are Unchaptered in their order; before 9 the
    entry's `content` becomes the article's row dated as the entry was, and its version 1; before 10 nothing is in the Trash
    and each manuscript is its own version 1; before 11, no ideas. For every version, the live rows of each ordered
-   collection are numbered 0, 1, 2… in the order their numbers put them - a no-op on a file Lorex wrote, and what keeps a gap
+   collection are numbered 0, 1, 2… in the order their numbers put them - a no-op on a file LorEvolve wrote, and what keeps a gap
    from colliding with the next append.
 
 A version newer than this build, or 0 and below, is refused as unsupported. There is no per-version database writer.
@@ -241,7 +241,7 @@ change: `BackupFormatSupport.MaxVersion` is 14.
 
 - **Versions.** Every version 1 to 14 restores. Projection: before 14 no kind has a family meaning, even in a file carrying one -
   and none is ever taken from what a kind is called. Normalization: none is needed; the column's absence is `None`.
-- **Validation.** The meaning must be one Lorex knows, and a kind that reads the same from both sides may not carry one, exactly as
+- **Validation.** The meaning must be one LorEvolve knows, and a kind that reads the same from both sides may not carry one, exactly as
   it may not name an older side. Nothing a kind is called is judged.
 - **Identity and writing.** The meaning travels with its kind, which already gets a new id from `RestoreIdentity`; no relationship
   row changes, because the meaning was never on one. A restored universe therefore derives the same family trees as the original,

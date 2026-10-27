@@ -78,7 +78,7 @@ One per universe (`UniverseArtworks`): the untouched original and one 16:10 card
 enlarged, cut on the server from the frame the author chose in the shared cropper, metadata stripped. 16:10 because
 the portal card is about as tall as wide with the picture as its top five eighths. Only the card is ever public. A
 hero cut for Task 011 is a new frame of the same original. The static Explore background is not universe artwork:
-`src/Lorex.Web/src/portal/explore-worlds-background.png`, owner-approved, 1916 x 821, 2,370,934 bytes, SHA-256
+`src/LorEvolve.Web/src/portal/explore-worlds-background.png`, owner-approved, 1916 x 821, 2,370,934 bytes, SHA-256
 `31e6995251e1145f792664fac61de586fd730f63b3f30dc7d4b8850fce5abe49`. Never edited, recompressed or converted; CSS crops
 it. Vite emits it unchanged under a content-hashed name, which the service worker may cache for good. Since 012 it is
 delivered as a derivative beside it, `explore-worlds-background.webp` (250,016 bytes, same 1916 x 821, PSNR 43 dB against
@@ -118,7 +118,7 @@ allow-list.
 | `genre` | One genre key: `fantasy`, `science-fiction`, `adventure`, `horror`, `mystery`, `historical`, `romance`, `thriller`, `supernatural`, `post-apocalyptic`, `contemporary`, `other`. Matches a universe listing it among its genres. |
 | `q` | Trimmed; a parameterized `LIKE` substring of the name, the public summary, the author's public name, or (015) the original creator or work - never the description, username, email, ids or content. Case-insensitive for ASCII only (SQLite `LIKE`); wildcards are literal. At most 100 characters. Blank is no search. |
 | `sort` | `recent` (default): first publication, most recent first; republishing does not move a universe. `az`: name, `NOCASE`. The slug breaks every tie, so pages never repeat or skip. |
-| `page`, `pageSize` | Clamped to 1+ and 1-48, as every Lorex list is. |
+| `page`, `pageSize` | Clamped to 1+ and 1-48, as every LorEvolve list is. |
 
 Keys are derived from the enum names (`MoviesAndTv` -> `movies-and-tv`), exact and lower case - one spelling per
 value. An unknown category, genre or sort, or a longer search, is a 400 validation problem naming each bad parameter;
@@ -131,7 +131,7 @@ the owner's portal reference: a solid bar with the search in it, a compact panor
 category row, then a wide grid of dark card panels. Its metrics, ratings, avatars and extra nav items are not copied:
 no such data or destinations exist.
 
-- **Bar.** Brand (to Lorex's home since 031), Explore (marked by a rule along the bar's foot), the search, then Log in
+- **Bar.** Brand (to LorEvolve's home since 031), Explore (marked by a rule along the bar's foot), the search, then Log in
   and Create account - or My workspace and the account menu. Below 52rem the search takes its own row; below 40rem the
   brand and the way in share the first row and Explore opens the second, beside the search. The home page has no
   search (section 23).
@@ -158,10 +158,10 @@ no such data or destinations exist.
   (lazy-loaded, never cropped further), fading into the panel; the name (serif, two lines, `dir="auto"`) set over the
   picture's lower edge; the genres as chips tinted per genre, the word always there; then "by" the public name (one
   line, cut with an ellipsis, full name in `title`) and the category where a streaming card puts its numbers. Every
-  authored string in `<bdi>`. No summary, counts or dates. A picture that fails keeps the panel with the Lorex mark.
+  authored string in `<bdi>`. No summary, counts or dates. A picture that fails keeps the panel with the LorEvolve mark.
 - **States.** Card-shaped skeletons while loading; "No worlds have been published yet." for an empty platform; "No
   published worlds match." with Clear search and filters; an error with Try again, never mistaken for empty.
-- **Visual boundary.** Since 013 the portal follows Lorex's one theme (section 20): dark, as built here, or its light
+- **Visual boundary.** Since 013 the portal follows LorEvolve's one theme (section 20): dark, as built here, or its light
   interpretation. `.portal` redefines the shared tokens inside it (so shared buttons, notices and menus draw in the
   portal's colours) plus a few `--portal-*` values; the workspace's tokens are untouched. Motion
   is a panel edge brightening and a 3% image lift on hover, the lift only without reduced motion.
@@ -169,7 +169,7 @@ no such data or destinations exist.
 
 ## 14. Public and private navigation
 
-The portal is the front door: `/` is Lorex's home (031, section 23), and `/`, `/explore` and `/worlds/{slug}` answer
+The portal is the front door: `/` is LorEvolve's home (031, section 23), and `/`, `/explore` and `/worlds/{slug}` answer
 without a session - directly, after a refresh, in a new browser. Signing in is a choice made from it, and it comes back:
 
 - **Log in** and **Create account** in the portal bar pass the current page (path and query) as router state
@@ -282,7 +282,7 @@ story is selected; never taken from the premise. A story selected in 010 without
 panel says "needs a public summary before readers can see it". What a story's page reads beyond this is section 22.
 
 **An author** (`/authors/{slug}`, ADR 0037). Their public name, their photo's square only if they chose to show it -
-otherwise their initial in a ring - "Creator on Lorex", how many public worlds, and those worlds as the Explore cards (the
+otherwise their initial in a ring - "Creator on LorEvolve", how many public worlds, and those worlds as the Explore cards (the
 author's name unlinked, since it would lead here). Only while they have a public world; otherwise the same not-found
 page as an address nobody holds. The address is minted from the public name at first publication and kept for good.
 
@@ -301,7 +301,7 @@ an owner or an id; nobody else sees either link.
 with nothing public, an address nobody held: "This page is not available. Its address may be wrong, or it is not
 public." A page that fails to load says so, with Try again, and is never mistaken for missing.
 
-**Front door.** `/` is Lorex's home (031); the installed app opens Explore: the manifest's `start_url` is `/explore` (its
+**Front door.** `/` is LorEvolve's home (031); the installed app opens Explore: the manifest's `start_url` is `/explore` (its
 `id` stays `/app`, the install's identity). Signed in or out, and whatever was used last, the portal comes first; My
 workspace is the way in. Deep links are unaffected.
 
@@ -327,12 +327,12 @@ worlds - no bio, followers, contact or counts of anything private.
 ## 19. Final polish and hardening (012)
 
 **Route set, final.** Public: `/explore`, `/worlds/{slug}`, `/worlds/{slug}/lore/{loreSlug}`,
-`/worlds/{slug}/stories/{storySlug}`, `/authors/{slug}`, and since 031 `/` (Lorex's home, no longer a redirect to
+`/worlds/{slug}/stories/{storySlug}`, `/authors/{slug}`, and since 031 `/` (LorEvolve's home, no longer a redirect to
 `/explore`). Everything else is the workspace or sign-in and is never indexed.
 
 **SEO (ADR 0038).** The API writes each public page's head into the shell on the server: `<title>` ("Explore Worlds |
-Lorex", "World | Lorex", "Entry — World | Lorex", "Story — World | Lorex", "Author | Lorex"), description from public text
-only (public summary; an entry's lead; a story's public summary - never the premise; "Name, creator on Lorex. Worlds: …"),
+LorEvolve", "World | LorEvolve", "Entry — World | LorEvolve", "Story — World | LorEvolve", "Author | LorEvolve"), description from public text
+only (public summary; an entry's lead; a story's public summary - never the premise; "Name, creator on LorEvolve. Worlds: …"),
 robots, canonical, Open Graph (`og:site_name`, `type`, `title`, `description`, `url`, `image`) and `twitter:card`.
 Images are the public derivatives (card, thumbnail, a shown photo) or `icon-512.png`. Hidden and missing public addresses
 are a 404 with a generic `noindex` head. Workspace, sign-in, profile and unknown paths are `noindex,nofollow`, header and
@@ -379,11 +379,11 @@ behaviour was not manually re-tested.
 **Polish.** One action order - primary first, then the way out, in sight and in Tab order - in drawers, inline forms,
 confirmations and now the entry form and article bars too. New-item drawers no longer say "A new moment" over "New
 moment". Settings' delete is a ruled danger panel with a quiet danger-ink first step and a filled last step; its
-confirmations take and return focus. A network failure reads "Lorex could not be reached…", never the browser's words.
+confirmations take and return focus. A network failure reads "LorEvolve could not be reached…", never the browser's words.
 
 ## 20. One theme (UI refinement 013)
 
-Lorex has one appearance preference, **Light** or **Dark**, and it applies to the portal and the workspace at once. Theme
+LorEvolve has one appearance preference, **Light** or **Dark**, and it applies to the portal and the workspace at once. Theme
 is not identity: the portal stays image-led, serif and atmospheric in both; the workspace stays the editorial workbench
 in both.
 
@@ -403,13 +403,13 @@ in both.
 
 ## 21. Front door and brand (UI refinement 014)
 
-- **Lorex's brand always leads to `/`, Lorex's home** (031; until then `/explore`): the portal bar, the workspace rail's
+- **LorEvolve's brand always leads to `/`, LorEvolve's home** (031; until then `/explore`): the portal bar, the workspace rail's
   "L", My workspace's bar, and the sign-in plate. It is not context-sensitive, and its accessible name says where it
-  goes: "Lorex – Home". Explore is always a link of its own. **My workspace** stays the deliberate way in. The universes are "All universes", at the head of the sidebar and of the
+  goes: "LorEvolve – Home". Explore is always a link of its own. **My workspace** stays the deliberate way in. The universes are "All universes", at the head of the sidebar and of the
   phone's Sections sheet.
 - **The installed app opens Explore**, signed in or out, whatever was used last. The cause of it opening the workspace
   or Login on real installs was the service worker keeping the pre-011 manifest (`start_url: /app`) - fixed in 014 by
-  never caching the manifest and bumping the worker's cache (ADR 0017 amendment). An unknown address lands on Lorex's
+  never caching the manifest and bumping the worker's cache (ADR 0017 amendment). An unknown address lands on LorEvolve's
   home (Explore before 031) rather than on the workspace's guard. Deep links - `/worlds/...`, `/authors/...`, `/app/...` - go where they
   say, `/app/...` by the sign-in rules. A device check is in the DEV runbook ("The installed app's front door").
 - **Publishing moved** from Settings to its own workspace page, Publish (`/app/universes/{id}/publish`), just above
@@ -420,7 +420,7 @@ in both.
 The hierarchy, made visible rather than implied:
 
 ```
-Lorex                              home, / (031)
+LorEvolve                              home, / (031)
 ├── Explore                        public side (PublicLayout)
 └── My workspace                   signed-in side
     ├── Universes      /app        ┐ WorkspaceLayout: one bar, two tabs
@@ -443,8 +443,8 @@ Lorex                              home, / (031)
 - **A universe** keeps rail, seal, sidebar, search and the Sections sheet. "All universes" and the sections are one
   landmark, `<nav aria-label="Universe">`. The `L` keeps its glyph on a 40px target. Explore from a universe is the `L`
   or the account menu's Go to; no text link is added to the rail.
-- **Titles.** One owner per screen: `WorkspaceLayout` ("Universes | Lorex", "Ideas | Lorex", "Profile | Lorex"), the
-  universe shell ("Lore — Hollowmere | Lorex", an entry or a story still its section), portal pages their own.
+- **Titles.** One owner per screen: `WorkspaceLayout` ("Universes | LorEvolve", "Ideas | LorEvolve", "Profile | LorEvolve"), the
+  universe shell ("Lore — Hollowmere | LorEvolve", an entry or a story still its section), portal pages their own.
 - **Focus.** Changing place - portal, an account-level screen, or a universe - moves the focus to the new `main`
   (`RouteFocus`); a section, a query string, an entry or an idea within the same place does not.
 - **Back** is the way to the exact deep screen left for Profile; no "return to" state is kept.
@@ -483,12 +483,12 @@ section, `h3` per part, scene or arc.
 **Attribution.** On Publish, under Public details: *This universe is based on someone else's work*, then *Original creator
 or source* (required, 120) and *Original work (optional)* (200). Unticked, both are cleared. The portal then credits:
 
-- Universe and story pages: "Based on works by **J.R.R. Tolkien** · *The Lord of the Rings*", "Curated on LoreX by
+- Universe and story pages: "Based on works by **J.R.R. Tolkien** · *The Lord of the Rings*", "Curated on LorEvolve by
   Unreally", and a quiet "Unofficial fan or reference project. Not affiliated with or endorsed by the original creator."
 - Explore card: "Based on works by …" on its own line, then "curated by Unreally" with the category.
 - An original world keeps "by Unreally".
 
-The original creator is text only - never a link, account or author page; only the Lorex author links, to their own page.
+The original creator is text only - never a link, account or author page; only the LorEvolve author links, to their own page.
 No claim is made about whether a project is permitted.
 
 **Publish page.** The one visibility action is the page header's: *Publish world* (primary) while private, *Make private*
@@ -500,23 +500,23 @@ is missing shows what and takes the focus there. The Status section and checklis
 **Not done:** chapter headings publicly, a per-scene reader address, and a Trash restore question for a selected scene or
 arc (ADR 0039).
 
-## 23. Lorex's home (Product refinement 031)
+## 23. LorEvolve's home (Product refinement 031)
 
-`/` is Lorex's own page, a route of `PublicLayout` (`pages/LandingPage.tsx`), no longer a redirect: what Lorex is, what it
+`/` is LorEvolve's own page, a route of `PublicLayout` (`pages/LandingPage.tsx`), no longer a redirect: what LorEvolve is, what it
 does, who it is for, that published worlds can be read, and how to start. `/explore` is unchanged and remains where
 published worlds are found.
 
 - **Bar.** Brand (to `/`), Explore, then Appearance, Log in and Create account - or My workspace and the account menu.
   No world search on `/`: `PublicLayout` leaves `PortalSearch` out there and nowhere else. A quiet footer on `/` only
   (033): the wordmark (to `/`) and its one line; a Product group of Explore, then Create account and Log in, or My
-  workspace; under a hairline `© <this year> LoreX` and `LoreX v<package version>` (`lib/buildInfo`), neither a link.
-  No Community, Legal or Support group: Lorex has no such destination yet, and an empty heading or a made-up link would
+  workspace; under a hairline `© <this year> LorEvolve` and `LorEvolve v<package version>` (`lib/buildInfo`), neither a link.
+  No Community, Legal or Support group: LorEvolve has no such destination yet, and an empty heading or a made-up link would
   be worse than none.
 - **Actions.** Signed out: *Start building* (`/register`) and *Explore worlds*; at the foot *Start building your
   universe* and *Log in*. Signed in: *Go to my workspace* (`/app`) and *Explore worlds*; at the foot *Open my
   workspace*. Nothing is drawn until the session is known, so neither set flashes before the other.
 - **Content, all of it true today.** Hero (the owner's citadel painting under a veil of the page's ground; three
-  sentences, one line each); Lorex in four live numbers; Build (Lore, Types, Family Tree, Timeline and Chronology, World
+  sentences, one line each); LorEvolve in four live numbers; Build (Lore, Types, Family Tree, Timeline and Chronology, World
   Rules); Connect (three things writing once does now: relationships read from both entries and drawn in the Family
   Tree, Canon's lifespan checks, a scene's lore at hand); Write (stories, chapters, scenes, manuscripts, plot arcs and
   beats, and the media a universe can serve); Explore (up to four real public worlds); trust (private until published,
@@ -530,6 +530,6 @@ published worlds are found.
   left out. Never in the page's head.
 - **Worlds.** `GET /api/public/universes?page=1&pageSize=4`, rendered with Explore's `WorldCard`; two on a phone. None
   published: a sentence and *Open Explore*, no placeholder card. A failed read: a sentence; Explore has them.
-- **Head.** "Lorex — Build connected fictional universes", a fixed description, canonical `/`, `index,follow` (any query
+- **Head.** "LorEvolve — Build connected fictional universes", a fixed description, canonical `/`, `index,follow` (any query
   `noindex,follow`), Open Graph with the static icon; `/` is in the sitemap (ADR 0038 amendment).
 - **Unknown addresses** outside `/app` land on `/`; under `/app` on `/app`. The installed app still opens `/explore`.

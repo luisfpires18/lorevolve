@@ -22,7 +22,7 @@ that cannot be read leaves a blank form and says so.
 **Offered, off:** the source's aliases (they name the source, in search and pickers); its link fields' values, the
 values pointing at other entries (only while the form keeps the source's type, and never one pointing into the Trash);
 and its article. The boxes read the form, so removing a copied alias by hand clears its box. When the article is
-chosen, the panel lists every link it carries - text and address, "inside Lorex" for a workspace link - because the
+chosen, the panel lists every link it carries - text and address, "inside LorEvolve" for a workspace link - because the
 article is copied as written, links and all.
 
 **Never copied, named in the panel:** the picture, relationships, story and scene links, eras, forms, appearances,

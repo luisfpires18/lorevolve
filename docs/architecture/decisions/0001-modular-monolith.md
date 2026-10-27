@@ -4,16 +4,16 @@ Status: accepted (2026-09-06)
 
 ## Context
 
-Lorex is a single product built by a very small team. Splitting into services early
+LorEvolve is a single product built by a very small team. Splitting into services early
 would add deployment and consistency cost with no benefit at this size.
 
 ## Decision
 
-One deployable ASP.NET Core host (`Lorex.Api`) plus one SPA (`Lorex.Web`).
-Backend code is organised by feature under `src/Lorex.Api/Features/<Feature>/`,
+One deployable ASP.NET Core host (`LorEvolve.Api`) plus one SPA (`LorEvolve.Web`).
+Backend code is organised by feature under `src/LorEvolve.Api/Features/<Feature>/`,
 each feature owning its endpoints, handlers and EF Core entity configuration.
 
-No generic `Repository<T>` or `IXxxService` layers over EF Core. `LorexDbContext`
+No generic `Repository<T>` or `IXxxService` layers over EF Core. `LorEvolveDbContext`
 is the data access abstraction; features use it directly.
 
 ## Consequences

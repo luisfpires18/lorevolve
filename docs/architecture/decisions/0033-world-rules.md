@@ -1,4 +1,4 @@
-# ADR 0033 - A world rule is a universe's own statement of how its world works, and means nothing to Lorex by itself
+# ADR 0033 - A world rule is a universe's own statement of how its world works, and means nothing to LorEvolve by itself
 
 Status: accepted (2026-09-15)
 
@@ -21,7 +21,7 @@ recoverable, searchable, backed-up and restorable content with a stable identity
 A world rule is its own kind of authored content. It is not lore (ADR 0007), a story, a timeline moment, plot, an idea
 (ADR 0030), a Canon finding (ADR 0010) or an instruction to anything.
 
-**A rule's words mean nothing to Lorex.** Nothing reads a title or a description for meaning, and no word is special: "One
+**A rule's words mean nothing to LorEvolve.** Nothing reads a title or a description for meaning, and no word is special: "One
 resurrection per person", "parent", "immortal", "teleportation" and "magic" are text. Saving, editing, deleting or restoring a
 rule never creates or changes an entry, a relationship, a timeline moment, a story, an idea, Canon, a Canon finding or a
 revision, and never runs the promotion gate or reconciles Canon. `WorldRuleEndpointTests` reads the lore, timeline, story, idea

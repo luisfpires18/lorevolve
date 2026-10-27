@@ -40,5 +40,5 @@ for the full convention.
 ## Hard boundaries
 
 - Modular monolith. No generic Repository/Service layers over EF Core.
-- Backend is feature-oriented: `src/Lorex.Api/Features/<Feature>/`.
+- Backend is feature-oriented: `src/LorEvolve.Api/Features/<Feature>/`.
 - No secrets in committed configuration.

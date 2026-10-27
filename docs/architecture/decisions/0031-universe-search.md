@@ -165,7 +165,7 @@ name the account.
 
 ### Backup: unchanged
 
-No format bump; version 11 stands. An index is derived by ADR 0014's own test - Lorex produces it again from what a person
+No format bump; version 11 stands. An index is derived by ADR 0014's own test - LorEvolve produces it again from what a person
 wrote - so it is not in a backup, and a backup does not change shape because text became searchable. A future importer's
 rows are indexed by the triggers as they are written; entries are reindexed by the lore write path or the startup backfill.
 

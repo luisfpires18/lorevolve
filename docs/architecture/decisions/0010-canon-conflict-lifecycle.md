@@ -20,7 +20,7 @@ live with it.
 
 ## Decision
 
-**Conflicts are derived, never authoritative.** Lorex records that something looks wrong
+**Conflicts are derived, never authoritative.** LorEvolve records that something looks wrong
 and changes nothing about the lore it describes. The whole table is regenerable from the
 lore by evaluating again, apart from the author's dismissals.
 

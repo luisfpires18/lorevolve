@@ -4,7 +4,7 @@ Status: accepted (2026-09-27)
 
 ## Context
 
-Lorex has been a private workspace: every universe route is owner-scoped (ADR 0006), and nothing answers without a
+LorEvolve has been a private workspace: every universe route is owner-scoped (ADR 0006), and nothing answers without a
 session. The public portal (Tasks 008-012) adds a second experience - anonymous discovery of worlds their authors
 chose to share - beside the workspace, in the same application. Task 008 is its foundation: how a universe becomes
 public, what exactly a public universe exposes, how anyone reads it, and what stays private no matter what.
@@ -37,7 +37,7 @@ universe that were somehow public but incomplete is simply not public.
 
 **One predicate, one allow-list, one anonymous API.** `PublicationRules.Public` is the only query the portal starts
 from. `/api/public/universes` (list, most recently first published first), `/{slug}` and
-`/{slug}/artwork/card/{cardId}` are the only anonymous routes in Lorex, `AllowAnonymous`, read-only. Responses are
+`/{slug}/artwork/card/{cardId}` are the only anonymous routes in LorEvolve, `AllowAnonymous`, read-only. Responses are
 built member by member into `PublicUniverse` (slug, name, publicSummary, category, genres, authorDisplayName,
 cardImageUrl, publishedAt) - no entity is serialised, so a property added to `Universe` cannot reach it. Private and
 missing are the same 404. No popularity or engagement exists and none is invented.
@@ -73,8 +73,8 @@ Public portal section in Settings; the public page does not yet know its viewer 
 
 - Backup format 15 carries the public details and artwork (authored) and never visibility, address, date or the
   author's name. Every restore is private; publishing the copy mints its own address. ADR 0014, 0032 amendments.
-- Unpublishing is immediate for everything Lorex serves. It cannot recall what a visitor already downloaded, and a
-  shared cache that ignores `no-cache` is outside Lorex's control; the bucket stays private and no URL is permanent.
+- Unpublishing is immediate for everything LorEvolve serves. It cannot recall what a visitor already downloaded, and a
+  shared cache that ignores `no-cache` is outside LorEvolve's control; the bucket stays private and no URL is permanent.
 - A slug is not reserved after deletion: a later world may take a deleted one's address. And a world colliding with a
   stem once held by a now-private world gets `-2`, which reveals the stem was taken - accepted, the world was public.
 - Deleting a universe cascades its artwork row; its objects stay in the private bucket unnamed, as entry pictures do.
@@ -164,7 +164,7 @@ The same principle, one level down: nothing inside a universe is public because 
 
 ## Amendment (2026-10-04, Product refinement 031) - four public counts
 
-- `GET /api/public/stats` answers `{ creators, universes, publishedWorlds, privateWorlds }` for Lorex's home page:
+- `GET /api/public/stats` answers `{ creators, universes, publishedWorlds, privateWorlds }` for LorEvolve's home page:
   accounts, universe rows (archived included), universes passing `PublicationRules.Public`, and the difference. Counts
   only - no name, slug, id, owner or per-account figure - so it cannot be used to find or enumerate a private universe.
   `no-cache`, like every public route.
@@ -174,7 +174,7 @@ The same principle, one level down: nothing inside a universe is public because 
 - "One application, two layouts" is now three frames over one session and router: `PublicLayout` (Explore),
   `WorkspaceLayout` (My workspace's account-level screens: Universes, Ideas, Profile) and a universe's own shell. The
   workspace's way across is **Explore**, not "Explore worlds"; the brand still leads to `/explore` from every frame (to
-  `/`, Lorex's home, since 031).
+  `/`, LorEvolve's home, since 031).
   Detail: `docs/public-portal/PUBLIC_PORTAL.md` 21.1. Navigation only - no API, schema or backup change.
 
 ## Amendment (2026-09-28, Task 011) - public reading: an entry's page, a story's page, and a story's public summary

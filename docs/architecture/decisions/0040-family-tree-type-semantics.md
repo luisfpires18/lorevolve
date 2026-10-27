@@ -53,7 +53,7 @@ integer column; no schema change. *This supersedes 0035's "family semantics only
 - **Authored, never derived.** The tree lists the focal entry's non-structural links under *Other family connections*,
   each read from the focal entry's side with the kind's own words (`RelationshipValidation.LabelFor`, the one wording every
   relation list uses): *Bilbo uncle of Frodo*, and from Frodo *nephew or niece of Bilbo*. It is never walked: an "uncle
-  of" makes nobody a parent, sibling, grandparent or grandchild, and LoreX never derives an uncle from parent links
+  of" makes nobody a parent, sibling, grandparent or grandchild, and LorEvolve never derives an uncle from parent links
   either. Derived ancestry and authored family stay two different things on screen.
 - **Symmetric kinds may carry it.** A parent meaning names a side and is still refused on a symmetric kind; "married to"
   names none, so it may be non-structural and reads the same from both ends.
@@ -82,7 +82,7 @@ kind manager move into their tabs unchanged, apart from the new meaning in the r
 `relationshipTypes[].familySemantic`. A bump, not an ignorable member: a version 17 reader does not know the new meaning
 and must never read it as a parent link, and eligibility is an authored choice. A file at version 17 or earlier reads each
 type through the starter rule above, even if it carries a value; a file at version 17 or earlier carrying
-`NonStructuralFamily` was not written by LoreX and is refused.
+`NonStructuralFamily` was not written by LorEvolve and is refused.
 
 ## Consequences
 
@@ -113,7 +113,7 @@ picture keeps its type's placeholder. The focal member is the same node with an 
 not Canon yet has a dashed ring, as a link not Canon yet is a faded line. Nothing else is on the node: type, status,
 positions and links are one press away. The portrait still takes the focus to that member's family.
 
-**The details are Lorex's modal `<dialog>`, as every drawer is** (`FamilyMemberDetails`, through `useDrawerGuard`): a
+**The details are LorEvolve's modal `<dialog>`, as every drawer is** (`FamilyMemberDetails`, through `useDrawerGuard`): a
 small popover held against its node on a wide screen, a sheet from the bottom of the screen at the tree's phone width
 (640px), placed and focused before it is painted. Escape and a press outside close it, the focus starts on its heading and
 goes back to the eye. The heading and actions keep their place and only the middle scrolls. It holds the name, type and

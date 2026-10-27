@@ -1,10 +1,10 @@
-# ADR 0059 - An account has a platform role; an Admin may block a Member, and reads only what LoreX records
+# ADR 0059 - An account has a platform role; an Admin may block a Member, and reads only what LorEvolve records
 
 Status: accepted (2026-10-25). Issue #40, `feat/admin-workspace`.
 
 ## Context
 
-The owner needs to run LoreX itself before the first external alpha: see the accounts, block one that abuses the
+The owner needs to run LorEvolve itself before the first external alpha: see the accounts, block one that abuses the
 service, and read figures about the service that are true. Until now every account was alike, and nothing but a
 universe role (ADR 0041) said what an account could do. Sessions are Identity cookies (ADR 0005) that Identity
 revalidates every 30 minutes; MCP connections are OpenIddict authorizations bound to `McpConnections` (ADR 0046).
@@ -15,7 +15,7 @@ the assistant's question count is held in process memory only (ADR 0045); there 
 
 ## Decision
 
-**A platform role, apart from every universe role.** `LorexUser.PlatformRole`, `Member` (0) or `Admin` (1), every
+**A platform role, apart from every universe role.** `LorEvolveUser.PlatformRole`, `Member` (0) or `Admin` (1), every
 existing and new account a Member. It grants nothing in any universe: an Admin reads another account's universe exactly
 as any non-member does - not at all.
 
@@ -38,7 +38,7 @@ block from the database on every request, before the body is bound. `/api/auth/m
 can offer the entry; the `/admin` route guard is courtesy.
 
 **A session is checked on every request.** The cookie's `OnValidatePrincipal` looks the account up by key (tagged
-`lorex:session-check`): gone, blocked, or a security stamp other than the cookie's, and the session is rejected and
+`lorevolve:session-check`): gone, blocked, or a security stamp other than the cookie's, and the session is rejected and
 signed out. Identity's own validator still runs after it. This is the one per-request query every signed-in request
 now pays.
 

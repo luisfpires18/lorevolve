@@ -6,7 +6,7 @@ counts against storage) and ADR 0050 (the progression carries appearances).
 ## Context
 
 Characters change outfits, armour and looks; places and ships change too. Issue 43 asks for visual history on the same entry,
-reusing the image storage Lorex has, with no new image dependency. The owner settled (2026-10-24): one Appearance record covers
+reusing the image storage LorEvolve has, with no new image dependency. The owner settled (2026-10-24): one Appearance record covers
 outfits and looks - a label, notes, an ordered gallery of zero or more pictures, and links to eras, forms and scenes; a form's
 look is the appearances linked to it; the entry's main picture is unchanged; removing a picture deletes it, and pictures are
 not versioned.

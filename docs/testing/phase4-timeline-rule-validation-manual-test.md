@@ -7,11 +7,11 @@ a session, not every combination: those are in `rule-validation.spec.ts` and the
 `RuleValidationMigrationTests`).
 
 About 20 minutes. Use a universe with two characters marked Canon - say Arlen and Mira - and an existing World Rule written before
-this change. Keep a second account for step 11. The names are only examples: nothing in Lorex knows them.
+this change. Keep a second account for step 11. The names are only examples: nothing in LorEvolve knows them.
 
 ## Before starting
 
-- Start Lorex (`Start-Lorex.cmd`) and sign in. Starting it applies the `AddRuleValidation` migration: it only adds three tables.
+- Start LorEvolve (`Start-LorEvolve.cmd`) and sign in. Starting it applies the `AddRuleValidation` migration: it only adds three tables.
   Every rule you already have stays words only, and every moment has no validation details.
 
 Known and accepted, so not bugs: there is exactly one kind of check; nothing is read from a rule's or a moment's words; only Canon

@@ -10,9 +10,9 @@ Second Age 3441 sorts after a Third Age 3018. ADR 0011 then had to make the chro
 down for any universe whose timeline used more than one label, because a birth year carried no era
 at all and could not be placed against a moment that did.
 
-The universes Lorex is for rarely count one way from one zero. "Before the Fall" counts down to a
+The universes LorEvolve is for rarely count one way from one zero. "Before the Fall" counts down to a
 catastrophe and "After the Fall" counts up from it; a third age may follow. To order those dates,
-and to prove a character was born after the moment it attends, Lorex has to know which eras exist,
+and to prove a character was born after the moment it attends, LorEvolve has to know which eras exist,
 which comes first, and which way each one's years run - from the author, not from the words.
 
 ## Decision

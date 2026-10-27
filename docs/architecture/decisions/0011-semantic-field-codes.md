@@ -10,13 +10,13 @@ with a Draft participant - so they never had to know what any field was *about*,
 work on types the author invents without knowing a single one of them.
 
 Chronology cannot be found that way. To say that a character dies before it is born, or
-that it attends a battle a century after its death, Lorex has to know which of an author's
+that it attends a battle a century after its death, LorEvolve has to know which of an author's
 custom fields is the birth year and which is the death year. Nothing in the model said so.
 
 The obvious shortcut is to match display names: look for a field called "Birth Year". It
 is wrong in every direction. Authors write "Born", "b.", "Geburtsjahr", "Year of Birth",
 or nothing like any of them; a rename would silently switch a rule off, and a coincidental
-name would silently switch one on. Fields are the author's, not Lorex's, and a matcher
+name would silently switch one on. Fields are the author's, not LorEvolve's, and a matcher
 turns every one of them into a guess. Inferring meaning with a model is worse: Canon
 Integrity's whole claim is that it is deterministic and provable, and a rule that fires
 because a model thought a field looked like a birth year is neither.
@@ -25,7 +25,7 @@ because a model thought a field looked like a birth year is neither.
 
 **Meaning is declared, once, on the field definition.** `EntityFieldDefinition` gains a
 nullable `EntityFieldSemantic`. Null is the normal case and the default: an ordinary custom
-field means nothing to Lorex, and nothing infers otherwise. Nothing about a field's name
+field means nothing to LorEvolve, and nothing infers otherwise. Nothing about a field's name
 reaches a rule except as wording in the explanation shown to the author.
 
 **A scalar column, not JSON.** The value is a nullable integer on the definition row, so
@@ -37,7 +37,7 @@ for the Tiptap article.
 This is deliberately not an ontology and not a taxonomy system: it is the vocabulary the
 chronology rules need. A member is added when a rule needs it, not in anticipation.
 
-**Every member is a Number, and the years are years.** The rest of Lorex counts fictional
+**Every member is a Number, and the years are years.** The rest of LorEvolve counts fictional
 time as signed integer years, not `DateTime` - see ADR 0009. `EntityFieldValue.DateValue`
 is a Gregorian `DateTime` and does not compare with a universe's own calendar, so there is
 deliberately no `BirthDate` or `DeathDate` member and a year meaning is refused on any
@@ -76,7 +76,7 @@ removing or renumbering a member is a migration, not an edit. Adding one is chea
 
 An age rule needs a structured way to say when an age was true - a reference year on the
 fact, or an age recorded against a timeline entry rather than against the entity. Neither
-exists, and neither should be invented to make one rule possible. Until then Lorex records
+exists, and neither should be invented to make one rule possible. Until then LorEvolve records
 that a field is an age and reasons about nothing.
 
 Exclusive-relationship overlap was considered for the same phase and dropped.

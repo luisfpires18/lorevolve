@@ -40,7 +40,7 @@ same words whoever's the foreign id is. The database does not carry a story id o
 story" is the API's job, as "same universe" already is for a scene's lore.
 
 **A link means only "relevant to this beat".** Not present, not the cause, not the point of view, not changed
-by it. Lorex infers nothing from titles either: there is no protagonist, romance or mystery arc.
+by it. LorEvolve infers nothing from titles either: there is no protagonist, romance or mystery arc.
 
 **The Trash follows ADR 0015, as scenes do (ADR 0024).** An entry linked and later trashed stays on the beat,
 reported with `isTrashed`, shown named and unlinked; the form sends it back and the write keeps it; a trashed

@@ -19,7 +19,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - **#54** in-process daily SQLite backup API snapshot -> private R2 bucket, manifest last after read-back, Admin status/Run
     now, retention proposed and off, `database-backup run|list|restore-drill` CLI (ADR 0064, `docs/recovery/database-backups.md`).
     **Off until the owner adds `DatabaseBackup__*` settings**; R2 path and DEV untested. Local drill measured (63.6 MB, 57.6 s).
-- **Idea boards (ADR 0066)** `feat/idea-boards` off `dev` at `237f103`, worktree `worktrees/LOREX-idea-boards`; not merged,
+- **Idea boards (ADR 0066)** `feat/idea-boards` off `dev` at `237f103`, worktree `worktrees/LOREVOLVE-idea-boards`; not merged,
   not pushed. Plan `docs/design/idea-boards-plan.md`. Done: ADR 0066 (amends 0030), step 2 backend (model, `AddIdeaBoards`,
   `/api/idea-boards`, universe-delete release, tests); step 3 backup format 36 (boards carried, outside ideas by title,
   restore links or turns them into notes); step 4 web app (`usePanZoom` out of `MapViewer`, canvas, list view, Boards
@@ -44,13 +44,13 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 - **Phase 020** (Full-Text Search) merged into `dev`. Entity search reads the article an author
   wrote, not only the name, aliases and summary, and orders hits by relevance. Index shape,
   synchronization and query semantics: ADR 0016.
-- **Phase 021** (PWA / Mobile Refinement) merged into `dev`. Lorex installs: a hand-written
+- **Phase 021** (PWA / Mobile Refinement) merged into `dev`. LorEvolve installs: a hand-written
   manifest, four icons, and a service worker that caches build output and refuses `/api`,
   non-`GET`, navigations and cross-origin outright - ADR 0017, which also says plainly that
   nothing works offline. Narrow-screen chrome folds into one sticky bar; desktop untouched.
 - **Phase 022** (Azure DEV + CI/CD) merged into `dev`. The deployment-blocking startup bug is
   fixed, and DEV has a topology, workflows and a runbook. The owner has since created it.
-  - The host no longer dies outside Development. `LorexDatabaseInitializer` migrates once per
+  - The host no longer dies outside Development. `LorEvolveDatabaseInitializer` migrates once per
     process in every environment, and the search-index backfill awaits it, so schema readiness is
     a dependency rather than an accident of registration order. ADR 0018.
   - DEV is **one Linux App Service** serving the API and the built client from one process, with
@@ -58,9 +58,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - `ci.yml` validates every pull request into `dev`; `deploy-dev.yml` calls it and then deploys,
     from `dev` only, over OIDC. No credential is stored in the repository.
   - Runbook, limitations and troubleshooting: `docs/deployment/azure-dev.md`.
-- **The Lorex mark** (`feat/lorex-brand-icon`, merged into `dev`). The owner supplied the
+- **The LorEvolve mark** (`feat/lorevolve-brand-icon`, merged into `dev`). The owner supplied the
   real icon - three interlocking red rings around a star - so the drawn stand-in is gone.
-  `assets/brand/lorex-icon.png` is the one source, unaltered, and `scripts/render-icons.py` now
+  `assets/brand/lorevolve-icon.png` is the one source, unaltered, and `scripts/render-icons.py` now
   resamples it into every shipped asset rather than reading geometry out of an SVG. The source has
   genuine transparency; the checkerboard a viewer shows is the viewer's.
   - **The icons keep the master's transparency** (`fix/transparent-app-icons`, merged into `dev`
@@ -104,7 +104,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 - **CI format fix + E2E sharding** (`fix/ci-format-and-pipeline-performance` off `dev` at `b6f0850`; committed, not
   merged, not pushed). Run 39239505293 failed only on Prettier for `lore-context.spec.ts` (formatted without the web
   `.prettierrc.json`); reformatted, no behaviour change. `ci.yml` E2E is now a 2-shard matrix (`--shard=N/2`, 2 workers,
-  own runner, API, Vite and `lorex-e2e-shard-N.db`), `fail-fast: false`, reports `playwright-report-shard-N-of-2`. Job
+  own runner, API, Vite and `lorevolve-e2e-shard-N.db`), `fail-fast: false`, reports `playwright-report-shard-N-of-2`. Job
   timeouts added. No cache or build-reuse change (seconds at most). Partition checked locally: 246 + 245 = 491, no
   overlap. actionlint 1.7.7 clean. Not yet measured on GitHub; estimate merge-to-DEV ~27 min -> ~15 min.
 - **CI: Playwright image + 4 E2E shards** (`chore/ci-playwright-image-shards`, merged into `dev` at `cd9cd5f`). E2E in
@@ -151,7 +151,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   wait for a choice; a group's list gains the Lore crumb. Phone: chips one scrolling line. Tests: Playwright
   `lore-catalog.spec.ts` 7 (new); `chooseLoreType` and 8 landing specs moved from the row to the cards; 26 Lore
   neighbour specs 188/189 on a fresh DB (one Vite dynamic-import flake in `timeline`, 15/15 alone). Count fix: API
-  `LoreCatalogCountTests` 1 (older backup with archived entries), Playwright count test (needs `LOREX_E2E_DB`).
+  `LoreCatalogCountTests` 1 (older backup with archived entries), Playwright count test (needs `LOREVOLVE_E2E_DB`).
 - **Issue #59 - MCP full creator authoring** (`feat/mcp-full-creator-authoring` off `origin/dev` at `dd0deef`, in the main
   checkout; committed locally, not pushed, not merged). ADR 0062 (new); 0046, 0047 amended. Five migrations:
   `AddSchemaProposals`, `AddDefinitionProposals`, `AddProgressionProposals`, `AddAiChangeMedia`, `AddMcpUniverseAliases`.
@@ -184,7 +184,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 - **Issues #56, #57, #58 - pre-alpha batch** (`feat/mcp-lore-images-shell-pwa` off `dev` at `f4a548d`, in the worktree
   `D:\Workspace\LOREX-pre-alpha`; committed, not merged, not pushed). No migration. Three scopes, one commit each.
   - **#56 MCP pictures.** ADR 0046 amendment; 0019 and 0053 amended. `list_lore_images` and `get_lore_image`
-    (`LorexMcpImageTools`): entry by id or exact name/alias (ambiguity refused with candidates), profile picture apart from
+    (`LorEvolveMcpImageTools`): entry by id or exact name/alias (ambiguity refused with candidates), profile picture apart from
     appearance pictures with their ticked forms/eras, a form/era/appearance narrows to explicit links only and says when
     none; one picture as an MCP image block + metadata + explicit Markdown fallback link to the canonical Lore/progression
     page - `preview` fitted within 1024px (new `ImagePreparation.PreviewAsync`), `thumbnail` as stored, `original` on request
@@ -193,12 +193,12 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     read, not only judged by the row's `ByteSize` - an object grown past its row is refused whole, never sent in part.
     Tests: `McpImageToolTests` 10 (+ tool list now 12). Raw Streamable HTTP image data is base64-decoded and checked as
     valid WebP with the expected dimensions. Owner's ChatGPT test showed a blank image tile despite dimensions in the
-    answer; a truthful, permission-checked LoreX page fallback was added. **ChatGPT rendering/fallback still needs a real
+    answer; a truthful, permission-checked LorEvolve page fallback was added. **ChatGPT rendering/fallback still needs a real
     client smoke test**, and the issue stays open until it passes; SDK/protocol success alone is not acceptance.
     `format: "png"` re-encodes the preview (WebP stays default) so the owner can compare in ChatGPT without a deploy;
     checklist `docs/testing/mcp-images-checklist.md`. `McpImageToolTests` 12 (PNG preview, no-picture entry). Branch
     `fix/mcp-image-client-fallback` off `origin/dev` `dd0deef`, local only. Not tried in a real client here: this
-    session's LoreX connector was invalidated and no ChatGPT access. Full API suite on this branch: 1911 passed, 0 failed, 1 skipped.
+    session's LorEvolve connector was invalidated and no ChatGPT access. Full API suite on this branch: 1911 passed, 0 failed, 1 skipped.
   - **#57 visible Lore article alignment.** Reopened after the owner screenshot showed that checking `.canvas` did not
     prove the article/details layout was balanced. `.entry__layout` kept its fixed-width article and details columns
     `justify-content: start`, leaving the details column short of the visible content edge on wide screens. It now uses
@@ -212,7 +212,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     desktop installs remain **unverified**; keep the issue open until the reporting device and build are checked using
     `docs/testing/pwa-checklist.md`. Full focused run: 11/11 passed.
 - **Issues #52 and #53 - Lore-linked maps, geography and calibration** (`feat/lore-linked-maps` off `dev` at `dd0deef`, in
-  the worktree `D:\Workspace\LOREX\worktrees\LOREX-maps`; implementation and verification committed locally, not merged, not pushed). Two migrations (`AddUniverseMaps`,
+  the worktree `D:\Workspace\LOREX\worktrees\LOREVOLVE-maps`; implementation and verification committed locally, not merged, not pushed). Two migrations (`AddUniverseMaps`,
   `AddMapCalibrations`), backup format 34 then 35. ADR 0060, ADR 0061; 0014, 0042, 0045, 0046 amended.
   - **#52 maps.** Several per universe; a picture kept whole with a fitted 4096px display copy, keys of ids, originals on the
     owner's storage; pins as fractions of the displayed picture linked to a live same-universe entry by id, once per map, on
@@ -466,7 +466,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `feat/controlled-ai-crud` off `dev` at `bd88d6c`; committed, not merged, not pushed). One migration
   (`AddAiChangeProposals`: two tables + `McpConnections.CanPropose`), backup format unchanged (proposals never in a backup).
   ADR 0047 (new); 0014, 0044, 0045, 0046 amendments.
-  - An AI proposes, a person approves in LoreX, only approved changes are applied. One staging/validation/commit service for
+  - An AI proposes, a person approves in LorEvolve, only approved changes are applied. One staging/validation/commit service for
     both entry points (`Features/AiChanges`); MCP and the assistant only parse into its contract. Nothing staged writes content.
   - Covered: lore entries + field values (create, update, Trash), relationships (create, update), stories, chapters, scenes
     (create, update, Trash), manuscripts (append; replace naming the version read), timeline moments (create, update).
@@ -477,7 +477,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     Reject cascades to what depends on it. Edit before approval moves the revision.
   - Roles: owner/Editor stage and approve what they write; Reviewer stages only entry/story/scene edits (SuggestChanges),
     approves nothing; Viewer nothing. Decision routes are session-only.
-  - MCP: opt-in scope `lorex.propose`, unticked consent choice, `CanPropose` on the connection, three tools hidden without it,
+  - MCP: opt-in scope `lorevolve.propose`, unticked consent choice, `CanPropose` on the connection, three tools hidden without it,
     turned off from Connected apps. Read-only V1 unchanged (challenge/discovery now list both scopes; per-client scope lists
     enforced; older registrations upgraded by a data-only migration). Assistant: explicit Propose changes switch (`mode: "propose"`).
   - UI: Pending AI Changes (`/app/ai-changes`, bar count; universe section "AI changes"), review page, drawer switch, consent
@@ -501,7 +501,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - A create on its way cannot be dismissed or changed (Escape, backdrop, Cancel, Use this one, inputs); its answer
     alone chooses; a failure gives the form back. Review fix after `4f85419`.
   - Tests: API `QuickCreateTests` 5; Playwright `contextual-quick-create.spec.ts` 9 (its leave questions now answer
-    LoreX's confirmation dialog, #50; the relation draft check drops the retired real-world start date, #18). On
+    LorEvolve's confirmation dialog, #50; the relation draft check drops the retired real-world start date, #18). On
     today's `dev`: API Quick Create + entity tests 27/27; Playwright Quick Create + entity-reference-target 13/13, with 15
     neighbouring specs 79/79.
 - **Issue 38 - compact MCP consent card** (`improve/mcp-oauth-consent` off `dev` at `80db857`; committed, not merged,
@@ -509,7 +509,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   stick to the screen's foot when the viewport is at least 34rem tall. Consent copy, form fields, antiforgery and OAuth
   untouched; Login/Register/Invitation keep `AuthLayout`. The intro is now the gist (read-only, manuscripts, goes to the
   AI service), on screen at 1280x720 with the longest warnings. Playwright `mcp-connect` +2 (10); with 3 neighbours 49/49.
-- **Roadmap task 049 - MCP V1** (GitHub issue 7; `feat/lorex-mcp-v1` off `dev` at `ac39b23`; committed, not merged, not
+- **Roadmap task 049 - MCP V1** (GitHub issue 7; `feat/lorevolve-mcp-v1` off `dev` at `ac39b23`; committed, not merged, not
   pushed). One migration (`AddMcpConnections`: OpenIddict's four tables + `McpConnections`), backup unchanged (account-level
   state, never in a universe backup). ADR 0046 (new); 0005 amendment.
   - An outside AI app (Claude, ChatGPT, any Streamable HTTP + OAuth 2.1 MCP client) reads **one universe**, as one member,
@@ -558,7 +558,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     comments, suggestions, history, Trash, accounts or images.
   - Eight read-only tools; ids parsed and read through the request's universe; invented tools `unknown_tool`. Answer =
     JSON segments recorded/inference/suggestion/note citing ids; a source counts only if read this question, titled by
-    LoreX; recorded with no source shown as inference; anything else 502.
+    LorEvolve; recorded with no source shown as inference; anything else 502.
   - Limits: 6 tool steps, 10 tools, 10k chars a result, 40k in all, question 1,000, history 6 x 1,500, 3,000 output
     tokens a step, 90 s, 20 questions per account per 10 minutes (429 `assistant_rate_limited`). Closing cancels.
   - Provider boundary `IAssistantProvider`: `Assistant:Provider` = `OpenAI` (Responses API, OpenAI 2.14.0, `store: false`;
@@ -569,12 +569,12 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - Follow-up (same branch): stateless reasoning - every request asks `include: reasoning.encrypted_content` and every
     returned item goes back unchanged; `insufficient_quota` 429 is `assistant_failed`, not busy. Long prose: `get_lore` /
     `get_scene` take `find`, the search index's own 64-token `snippet` of that row (no new index). Provider tests over a
-    stub transport; opt-in live smoke `AssistantOpenAISmokeTests` (skipped unless `LOREX_ASSISTANT_SMOKE_MODEL` +
+    stub transport; opt-in live smoke `AssistantOpenAISmokeTests` (skipped unless `LOREVOLVE_ASSISTANT_SMOKE_MODEL` +
     `OPENAI_API_KEY`). **Blocker:** the live smoke reached OpenAI (key valid; the request accepted by
     `responses/input_tokens` for `gpt-5.4-mini` and `gpt-4.1-mini`) but every Responses call answered 429
     `insufficient_quota`. No deployment model chosen yet.
   - Tests: API 1485 -> 1509 (`AssistantTests` 23, `AssistantUnconfiguredTests` 1, matrix +2 routes). Playwright
-    `universe-assistant.spec.ts` 5; focused + 26 neighbouring specs on a fresh DB: 182/183, the one a `Lorex could not be
+    `universe-assistant.spec.ts` 5; focused + 26 neighbouring specs on a fresh DB: 182/183, the one a `LorEvolve could not be
     reached` on universe creation in `manuscript.spec.ts` under four workers, green 3/3 alone. Full suite not run locally;
     delegated to GitHub Actions.
 - **Roadmap task 045 - suggested changes** (`feat/suggested-changes` off `dev` at `d312bf3`; merged into `dev` at
@@ -627,7 +627,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     workers: 126/126. Full suite not run locally; delegated to GitHub Actions.
 - **043.5 - PWA branding and launch** (interstitial, not a roadmap number; `feat/pwa-branded-launch` off `dev` at
   `0959b0b`; committed, not merged, not pushed). No backend, schema or backup change. ADR 0017 amendment.
-  - New owner mark is `assets/brand/lorex-icon.png`; every icon, favicon and the in-app `brand-mark.png` re-rendered.
+  - New owner mark is `assets/brand/lorevolve-icon.png`; every icon, favicon and the in-app `brand-mark.png` re-rendered.
     Maskable and Apple grounds now black; maskable padding 22% (safe zone measured in `pwa.spec.ts`).
   - Manifest `background_color` `#000000` (`theme_color` unchanged). Worker keeps `.webp` root files per build.
   - Launch layer in `index.html` (installed window, once per window): black, `launch-logo.webp` resolves in, lifts
@@ -668,7 +668,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     not run locally; delegated to GitHub Actions.
 - **Product refinement 040 - account storage quotas** (`claude/dreamy-dirac-u8i6eh` off `dev` at `9c42bbe`; committed and
   pushed, not merged). One migration (`AddAccountStorageQuota`), backup stays **22**. ADR 0042 (new); 0019, 0032, 0041 amendments.
-  - `LorexUser.StorageQuotaBytes`, 1 GiB for every account (column default for existing, initializer for new); never
+  - `LorEvolveUser.StorageQuotaBytes`, 1 GiB for every account (column default for existing, initializer for new); never
     unlimited, no route changes it. Usage = `SUM(EntityImages.ByteSize)` over universes the account owns, Trash included;
     thumbnails, artwork, profile photos and orphaned objects never count. Editor uploads count against the owner.
   - Upload judged by growth (new original - old). Growth <= 0 always allowed, even over the allowance; growth > 0 needs
@@ -754,35 +754,35 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     value never matches. Date deferred. ADR 0007 amendment.
 - **Product refinement 033 - app version, build-derived cache, public footer** (`feat/app-version-cache-footer` off `dev`
   at `e167a92`; committed, not merged, not pushed). No schema, migration, backend or backup change (backup **19**).
-  - One version: `src/Lorex.Web/package.json`, now `0.1.0`; Vite writes it and a build id into the bundle, read only via
-    `src/lib/buildInfo.ts`. Shown as "LoreX v0.1.0" in the home footer and at the foot of the account menu.
+  - One version: `src/LorEvolve.Web/package.json`, now `0.1.0`; Vite writes it and a build id into the bundle, read only via
+    `src/lib/buildInfo.ts`. Shown as "LorEvolve v0.1.0" in the home footer and at the foot of the account menu.
   - `CACHE_VERSION` is gone: the worker is registered as `/sw.js?build=<id>` and names its cache after the build, so
     every deployment drops the last cache. Nothing to bump by hand. ADR 0017 amendment.
   - Home footer: brand, Product links (Explore; Create account and Log in, or My workspace), year and version. No
-    Community or Legal group until Lorex has a real destination for one.
+    Community or Legal group until LorEvolve has a real destination for one.
 - **Product refinement 032 - product copy humanization** (`feat/product-copy-humanization` off `dev` at `afe7b7f`;
   committed, not merged, not pushed). No schema, migration or backup change (backup **19**).
   - **Copy rule, standing:** any change to user-facing text goes through the `humanizer` skill. No spaced em dash in
     visible copy; a bare `—` stays only as the empty-value glyph (custom field values, history, blank year inputs).
-  - Compound tab titles join with `|`, most specific first: `Overview | Hollowmere | Lorex`, `Salt Warden | Glass Ebb |
-    Lorex` (client `useDocumentTitle` and server `PageMetadata`, kept in step per ADR 0038). Home: `Lorex | Build
+  - Compound tab titles join with `|`, most specific first: `Overview | Hollowmere | LorEvolve`, `Salt Warden | Glass Ebb |
+    LorEvolve` (client `useDocumentTitle` and server `PageMetadata`, kept in step per ADR 0038). Home: `LorEvolve | Build
     connected fictional universes`. Chapter and arc labels: `Chapter 2: Ashes`, `Arc 1: Fall of the King`.
-  - E2E: `makeTestPassword()` (`tests/Lorex.E2E/specs/support/account.ts`) generates throwaway passwords at run time;
+  - E2E: `makeTestPassword()` (`tests/LorEvolve.E2E/specs/support/account.ts`) generates throwaway passwords at run time;
     the landing spec uses it. The other specs still carry the old literal; move them over when touched. GitGuardian's
     historical alert is a test-credential false positive, handled outside the repository; history was not rewritten.
-- **Product refinement 031 - public Lorex landing page** (`feat/public-landing-page` off `dev` at `a3f7922`; committed,
-  not merged, not pushed). `/` is Lorex's home, no longer a redirect (client route and server `FrontendHosting`);
+- **Product refinement 031 - public LorEvolve landing page** (`feat/public-landing-page` off `dev` at `a3f7922`; committed,
+  not merged, not pushed). `/` is LorEvolve's home, no longer a redirect (client route and server `FrontendHosting`);
   `/explore` unchanged. No schema, migration or backup change (backup **19**). `PUBLIC_PORTAL.md` section 23; ADR 0038
   amendment (0036, visual contract: brand notes).
-  - Brand -> `/` everywhere ("Lorex – Home": portal bar, rail L, My workspace bar, sign-in plate). Explore a named link
+  - Brand -> `/` everywhere ("LorEvolve – Home": portal bar, rail L, My workspace bar, sign-in plate). Explore a named link
     on every width (phone: the bar's second row, beside the search). Unknown public address -> `/`; `/app/*` -> `/app`.
     The installed app still opens `/explore` (manifest untouched).
-  - Home (`pages/LandingPage.tsx`): hero on the owner's citadel painting, veiled; Lorex in four live numbers
+  - Home (`pages/LandingPage.tsx`): hero on the owner's citadel painting, veiled; LorEvolve in four live numbers
     (correction `fix: replace landing screenshot with live metrics`: the workspace screenshot, its four WebPs and its
     capture script removed); Build, Connect, Write; up to four real public worlds (`pageSize=4`, two on a phone, empty
     and failed states); trust; session-aware last call; home-only footer. No search on `/`. Home's Log in, Create account
     and Start building carry no return path, so they land in `/app`. No pricing, trial or AI copy; no invented number.
-  - Server head for `/`: "Lorex — Build connected fictional universes", canonical `/`, indexable (a query ->
+  - Server head for `/`: "LorEvolve — Build connected fictional universes", canonical `/`, indexable (a query ->
     `noindex,follow`); `/` first in the sitemap.
   - `GET /api/public/stats` (anonymous, `no-cache`): `{ creators, universes, publishedWorlds, privateWorlds }` - accounts,
     universe rows (archived included), `PublicationRules.Public`, the difference; three COUNTs, nothing else exposed.
@@ -795,7 +795,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   merged into `dev` at `a3f7922`). Presentation only: no route, API, schema, migration or backup change (backup **19**).
   Contract section 22. Owner kept the current palette; references used for atmosphere, hierarchy and composition only.
   - Atmosphere layer behind the head of every universe screen and My workspace: the world's artwork card for its owner
-    (artwork is a Publish read, ADR 0041 - collaborators never ask), else Lorex's own `assets/atmosphere-citadel.webp`;
+    (artwork is a Publish read, ADR 0041 - collaborators never ask), else LorEvolve's own `assets/atmosphere-citadel.webp`;
     sign-in/invitation plate carries `assets/atmosphere-ridge.webp`. Owner's landing images as WebP q60 (163/196 KB).
   - Editorial type: page/document titles on `clamp()`, `.titlerule` under an entry's and Overview's title,
     `.sectionrule` group headings; article prose in the display face. Cards (world, entry, doorway) share one DNA; world
@@ -815,7 +815,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     30-day `InvitationLimits.Lifetime`, lapsed ones ignored and replaced. No email is sent.
   - **Unverified email is never permission** (review correction). An account holding the address at invite time is bound
     privately (`TargetUserId`): only it lists it in My workspace and accepts by id. Anything else needs the link,
-    `/invite/{token}` - a Data Protection claim token (`InvitationClaims`, purpose `Lorex.UniverseInvitation.Claim.v1`,
+    `/invite/{token}` - a Data Protection claim token (`InvitationClaims`, purpose `LorEvolve.UniverseInvitation.Claim.v1`,
     invitation id + address) - plus a matching email. An account registered later with the address is offered nothing.
     Bad/forged token 404, other account 403, expired 410; revoke, expiry, accept, decline end every token.
   - Owner-only `ManageCollaborators`: `.../collaborators` (username, role, joined; no member email), role change, removal
@@ -876,12 +876,12 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     `lore-controls.spec.ts` 6); nested-types' Up/Down test runs at 640px; type-filter's layout pins moved with Select.
 - **Tooling refinement 026 - two Playwright workers in CI** (`chore/ci-playwright-parallelism` off `dev` at `7b9c219`,
   committed, not merged, not pushed). No product code. E2E was the CI critical path (~34 of ~36 minutes) at one worker.
-  - `ci.yml` E2E step sets `LOREX_E2E_WORKERS=2` and `LOREX_E2E_DB=${{ runner.temp }}/lorex-e2e.db`; `playwright.config.ts`
-    lets a valid `LOREX_E2E_WORKERS` win in CI too (unset: CI 1, local Playwright's default). Retries (2) and the whole suite
+  - `ci.yml` E2E step sets `LOREVOLVE_E2E_WORKERS=2` and `LOREVOLVE_E2E_DB=${{ runner.temp }}/lorevolve-e2e.db`; `playwright.config.ts`
+    lets a valid `LOREVOLVE_E2E_WORKERS` win in CI too (unset: CI 1, local Playwright's default). Retries (2) and the whole suite
     unchanged; one job, one report.
   - Proof, fresh DB, 2 workers, retries 0, API logging every status: write-heavy 105/105, full 348/349 in 15m59s (one blank
     `/register` - dev-server flake - green 3/3 alone); 0 `database is locked`, 0 5xx. Shards considered and not taken
-    (`tests/Lorex.E2E/README.md`). Remote speed-up unproven until the next GitHub run.
+    (`tests/LorEvolve.E2E/README.md`). Remote speed-up unproven until the next GitHub run.
 - **Product refinement 025 - Lore type browser restore and Add child** (`feat/lore-type-browser-child-ux` off `dev` at
   `ee10cb9`, committed, not merged, not pushed). Frontend only; no migration, backup stays **19**. ADR 0007 amended.
   - Lore: 022's chooser and inline tree (`TypeTree.tsx`, `useOpenBranches.ts`, `lore__choose`, `typetree`/`typechooser` CSS)
@@ -901,10 +901,10 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     brand, "My workspace", Universes / Ideas `NavLink` tabs, Explore, account; two rows under 40rem, Explore then only in
     the account menu. Not over a universe.
   - Words: Explore (not "Explore worlds"/"Portal") for the public side, My workspace, Universes, All universes, Profile.
-    No outward arrows on same-tab links. Brand everywhere -> `/explore`, named "Lorex – Explore"; rail `L` on a 40px target.
+    No outward arrows on same-tab links. Brand everywhere -> `/explore`, named "LorEvolve – Explore"; rail `L` on a 40px target.
   - `AccountMenu` gains Go to (My workspace, Ideas, Explore) before Profile, Theme, Sign out; email breaks at @ and dots.
   - Universe sidebar is one `<nav aria-label="Universe">` holding All universes and the sections.
-  - Titles: shells own them (`lib/useDocumentTitle`): "Universes | Lorex", "Lore — Hollowmere | Lorex". `RouteFocus` moves
+  - Titles: shells own them (`lib/useDocumentTitle`): "Universes | LorEvolve", "Lore — Hollowmere | LorEvolve". `RouteFocus` moves
     focus to the new `main` on a change of place only.
   - Tests: Playwright 327 -> 341 (`global-navigation.spec.ts`, 14); full run 341/341, fresh DB, 2 workers, 0 retries.
   - Not done: publishing copy still says "public portal" in prose (Publish, Settings, Profile notes, a section purpose).
@@ -1007,7 +1007,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     for good. `POST .../entities/bulk-trash` (`{ entityIds }`, 1-100): checked whole, then `TrashCoreAsync` per entry in one
     Canon `RecordAsync`; a failure moves none. "N entries moved to the Trash." with a link; an emptied page falls back.
 - **Product refinement 019 - mass create lore** (`feat/mass-create-lore` off `dev` at `b4c9380`, merged into `dev` at
-  `1165f67`). "I have 40 names. Put them in Lorex." No migration, no backup format change. ADR 0012 amended (a batch is one
+  `1165f67`). "I have 40 names. Put them in LorEvolve." No migration, no backup format change. ADR 0012 amended (a batch is one
   candidate).
   - Lore's header: **Mass create** (secondary, icon-only on a phone) beside **New entry** (primary). One page inside the
     workspace, `lore/mass-create?type=<id>`: Default type (the type Lore was on, else the first; a type with required fields
@@ -1083,17 +1083,17 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - Publish page: *Publish world* / *Make private* (danger ink) is the `PageHeader` action; the Status section keeps the
     checklist and confirmations; publishing while incomplete shows and focuses what is missing.
   - Attribution: "This universe is based on someone else's work" -> `Universes.OriginalCreator` (required, 120) and
-    `OriginalWork` (200), cleared when unticked. Portal: "Based on works by X · Work", "Curated on LoreX by <author>", an
+    `OriginalWork` (200), cleared when unticked. Portal: "Based on works by X · Work", "Curated on LorEvolve by <author>", an
     unofficial note; Explore card "Based on works by X" + "curated by". The creator is never a link or a profile. Explore's
     `q` matches creator and work. Backup 17 carries it; v1-16 restore as original worlds; no version carries any selection.
-  - LOTR pilot fixture (`lorex-lotr-fellowship-pilot.zip`, v16, untracked, not committed) restored cleanly on a scratch
-    database and used for manual QA only. Its data has "NazgÃ»l" double-encoded - in the fixture, not Lorex.
+  - LOTR pilot fixture (`lorevolve-lotr-fellowship-pilot.zip`, v16, untracked, not committed) restored cleanly on a scratch
+    database and used for manual QA only. Its data has "NazgÃ»l" double-encoded - in the fixture, not LorEvolve.
   - Not done: public chapter headings, a per-scene reader address, a Trash restore question for a selected scene or arc.
 - **Lore pager centred on CI's 360px** (`fix/lore-pagination-ci-centering` off `dev` at `9c403ff`, committed, not merged,
   not pushed). Deploy DEV #58 failed E2E only, identically on all three attempts: `lore-pagination.spec.ts`, light 360
   page 1, centre 8.47px off. **The UI was wrong, not the test**: the pager's `1fr auto 1fr` side tracks have an `auto`
   minimum, and in CI's DejaVu "Previous" with its arrow is 117px against a 109px half, so its track grew and the position
-  moved right. Reproduced to the digit in Playwright's Linux image with DejaVu (`tests/Lorex.E2E/README.md`). Fixed in
+  moved right. Reproduced to the digit in Playwright's Linux image with DejaVu (`tests/LorEvolve.E2E/README.md`). Fixed in
   CSS: `minmax(0, 1fr) auto minmax(0, 1fr)` makes the halves equal by construction, and a container query (pager at most
   22rem) drops the decorative arrows so the words stay inside their halves - Lore's is the only pager with arrows; every
   pager gets the equal tracks. Spec now also checks 1536, 1024, 820 and a middle page, and that neither button reaches the
@@ -1105,7 +1105,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   place with the same `PageHeader`; Settings' tabs sit in the header's slot, and only their forms keep a 46rem left-aligned
   column. Lore: the grid's cards are 16.5rem minimum (four columns at 1536, five at 1920); **Items per page** 12/16/20/30/40,
   kept in the browser, back to page one on change, a page past the end clamped to the last; the shared pager is three
-  fixed slots with the position truly centred. Publish says "LoreX". No API or backend change (the API already clamps to
+  fixed slots with the position truly centred. Publish says "LorEvolve". No API or backend change (the API already clamps to
   50). Design contract §21.2-21.3.
 - **Workspace page layout consistency** (`fix/workspace-page-layout-consistency` off `dev` at `b50337e`, committed, not
   merged, not pushed). Chronology had kept Settings' centred 46rem column; it now sits in the worldbuilding shell like
@@ -1135,13 +1135,13 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     the 012 archive-while-public warning intact, now pointing at Publish.
   - **A universe's colour** is the author's own: picker + `#rrggbb`, or none. The palette is gone; stored colours kept.
   - **The installed PWA opened the workspace or Login because the service worker cached `/manifest.webmanifest`**
-    (cache-first, `v3`), so browsers that ran Lorex before 011 kept the old `start_url: /app`. Fixed: the worker never
+    (cache-first, `v3`), so browsers that ran LorEvolve before 011 kept the old `start_url: /app`. Fixed: the worker never
     touches the manifest and is `v4` (old cache deleted on activate); the client catch-all now lands on `/explore`.
     `start_url` `/explore` and `id` `/app` unchanged. ADR 0017 amendment; device checklist in the DEV runbook. Not
     verified on an installed device here.
 - **UI refinement 013 - unified theme** (`feat/unified-theme-system` off `dev` at `f081ec1`, committed, not merged, not
-  pushed). One Lorex theme, Light or Dark, for the portal and the workspace at once: `html[data-theme]`, set before the
-  first paint by an inline bootstrap in `index.html` (saved choice in `localStorage['lorex-theme']`, else the system's,
+  pushed). One LorEvolve theme, Light or Dark, for the portal and the workspace at once: `html[data-theme]`, set before the
+  first paint by an inline bootstrap in `index.html` (saved choice in `localStorage['lorevolve-theme']`, else the system's,
   followed live until a choice), changed by `lib/theme.ts`. Chosen in the account menu, the signed-out portal's
   Appearance menu and the Profile. Workspace dark = the existing dark tokens, now on the attribute; portal dark
   unchanged; a new portal light (parchment, graphite, pictures fading to paper). No backend, no migration.
@@ -1152,7 +1152,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `docs/public-portal/PUBLIC_PORTAL.md`.
 - **Entry images** (`feat/entity-images-r2`, merged into `dev`). An entry may carry one picture:
   uploaded through the API, decoded and thumbnailed server-side, stored as two objects in one
-  private Cloudflare R2 bucket, and served back only through an authenticated owner-scoped Lorex
+  private Cloudflare R2 bucket, and served back only through an authenticated owner-scoped LorEvolve
   route. ADR 0019.
   - **Live-DEV fixes** (`fix/entity-image-r2-cropper`, merged into `dev`). R2 refused every
     upload (`STREAMING-AWS4-HMAC-SHA256-PAYLOAD not implemented`): PutObject now sets
@@ -1161,7 +1161,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     thumbnail is now the square the author frames in a cropper (`react-easy-crop`); the browser
     sends fractions, the server cuts. "Edit thumbnail" reframes from the stored original and never
     touches it. The crop is persisted and exported as `image.crop`. ADR 0019 amendment, ADR 0014.
-  - **Backup is an archive.** Format version 3: the download is `lorex-<slug>-<date>.zip`
+  - **Backup is an archive.** Format version 3: the download is `lorevolve-<slug>-<date>.zip`
     holding `backup.json` plus `media/entities/{entityId}/original.{ext}`. Originals only -
     thumbnails are derived and regenerated. No object key, bucket, endpoint or URL is in the
     file, so a backup does not depend on R2 surviving. A media object that cannot be read fails
@@ -1194,7 +1194,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 - **Profile screen** (`feat/profile-page`, merged into `dev`). The signed-in account has a
   screen of its own at `/app/profile` - a user-level route beside the universe browser, not a
   section of a world - wearing the same bar. Under the circle are the username, the email, how many
-  universes the account owns and the account id, and a line saying that is all Lorex keeps. The
+  universes the account owns and the account id, and a line saying that is all LorEvolve keeps. The
   account is reached from the global chrome - see the account menu below.
   - **The circle holds a real photo.** `ProfileImages` is its own table keyed by the account, on
     the entry image's proven path: upload, frame a 1:1 square, edit that square from the stored
@@ -1271,7 +1271,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   (632.6, a second row too, but 11px under the line); CI's DejaVu did not.
   - Below 640px that tool reads "History" and keeps its whole accessible name, so the row keeps one line. Editor top at
     390px under CI's fonts 653 -> 622.8; the spec now also asserts the three tools share a line under their full names.
-  - CI's geometry is reproducible locally: `tests/Lorex.E2E/README.md`. Workflows unchanged; Deploy still needs Validate.
+  - CI's geometry is reproducible locally: `tests/LorEvolve.E2E/README.md`. Workflows unchanged; Deploy still needs Validate.
 - **Maintenance pass** (`chore/overnight-maintenance` from `dev` `91629ba`, merged into `dev` at `9e8c187`). No new
   product behaviour, no migration, no backup change. Five fixes, each measured:
   - **Every page route is fetched when it is first opened.** One 1,064 kB script became an entry of 318 kB and a chunk
@@ -1372,7 +1372,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     5,001 entries, 1M rows, depth 32, no duplicate JSON properties. Version read before shape: newer = `backup_version_unsupported`.
   - Structural validation only: unique ids, references in the file by explicit kind, enums, column bounds, unique indexes, live
     orders, semantic on Number, relation constraints, era years, article documents (no `javascript:` links), colours, pictures at
-    Lorex's own path decoded by the upload gate, no unnamed files. 20 issues listed, rest counted. No semantic inference.
+    LorEvolve's own path decoded by the upload gate, no unnamed files. 20 issues listed, rest counted. No semantic inference.
   - Versions 1-11 restore (1-2 bare JSON, 3+ zip): project by version, then normalize as the migrations did (article -> row + v1,
     manuscript v1, icons, Unchaptered, live orders renumbered). `BackupFormatSupport.MaxVersion` test-held to `CurrentVersion`.
     **Format stayed version 11** (12 since World Rules). No export gap found; `EntityImage.UploadedAt` is not authored and becomes restore time.
@@ -1433,7 +1433,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     deletes. Order indexes are partial on live rows. A chapter delete still moves its scenes to Unchaptered; a trashed chapter
     holds none and restores empty and last. Restores append; a parent in the Trash refuses with 409 `trash_parent_in_trash`,
     never attaching elsewhere. A beat keeps its hidden link to a trashed scene. One Trash lists six kinds, typed restores.
-  - Recovered drafts: IndexedDB `lorex-recovery`, keyed account/universe/kind/id, article and manuscript editors only; never
+  - Recovered drafts: IndexedDB `lorevolve-recovery`, keyed account/universe/kind/id, article and manuscript editors only; never
     sent to the API or a backup, never destroyed by sign-out, never offered to another account. Recover loads it as unsaved
     (Save still required, stale check intact); a failed, stale or orphaned save and a closed tab keep it; a matching save,
     Discard, Done, Load the saved version and leaving by choice let it go.
@@ -1560,7 +1560,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 
 ## Stabilization pass 001 - real-world UX
 
-Not a phase. AI work is not active. Lorex is being used to migrate a real world into it, and what that
+Not a phase. AI work is not active. LorEvolve is being used to migrate a real world into it, and what that
 turns up is fixed here. Branch `fix/entity-detail-and-relationship-integrity`, off `dev` at `d1f04ca`.
 Two issues, both from actual use; the owner's testing log lives outside this repository.
 
@@ -1611,7 +1611,7 @@ laid out left to right - worst when mixed with Latin, numbers or brackets: "آك
 far end. The same gap was on every title older than universe search.
 
 - **The rule:** whatever an author titled or named is isolated in a `<bdi>` inside the element that lays it out. It reads
-  in its own direction while the header, card or row keeps Lorex's left-to-right layout, so an RTL title sits exactly
+  in its own direction while the header, card or row keeps LorEvolve's left-to-right layout, so an RTL title sits exactly
   where any title sits. `dir="auto"` on the element itself only where a `<bdi>` cannot do it: title and name fields, and
   an element that cuts its text with an ellipsis, so that its end is what is cut. `NameList` isolates each alias of
   "also known as …" - left alone, two RTL aliases ran together and swapped places.
@@ -1627,22 +1627,22 @@ far end. The same gap was on every title older than universe search.
 ## Stabilization pass 003 - authored prose direction
 
 Branch `fix/authored-prose-directionality`, off `dev` at `7186fa5`. Presentation only: no API, schema, backup, search,
-route or stored-text change. Pass 002's owed task: prose inherited Lorex's left to right, so an Arabic summary's full stop
+route or stored-text change. Pass 002's owed task: prose inherited LorEvolve's left to right, so an Arabic summary's full stop
 sat on the wrong side and "آكرون — 12 / Wright قال: نعم!" threw its number to the far end.
 
 - **Prose is laid out paragraph by paragraph:** `unicode-bidi: plaintext`, one rule in `styles.css`, on every
   `textarea`, on `.prose`, and on the article's paragraphs and headings (editor, read view, history, recovery - all one
   ProseMirror surface). Each paragraph takes the direction of its own first letter and aligns to that side; nothing of
-  Lorex's moves. `dir="auto"` was measured first and rejected: it decides once, from the first paragraph, so an Arabic
+  LorEvolve's moves. `dir="auto"` was measured first and rejected: it decides once, from the first paragraph, so an Arabic
   paragraph after an English one still read left to right. On a textarea the two are the same thing - the UA gives
   `textarea[dir=auto]` exactly this rule. The TipTap schema, extensions and stored JSON are untouched.
 - `.prose` marks summaries, premises, descriptions, notes, excerpts, fact values, and the manuscript and idea previews.
-- **Sentences of Lorex's that name something** isolate the name, as Pass 002 isolates titles: `ContainerName` ("Chapter 1 —
+- **Sentences of LorEvolve's that name something** isolate the name, as Pass 002 isolates titles: `ContainerName` ("Chapter 1 —
   <bdi>…</bdi>", the manuscript's where-line, its outline, the scene picker, Move to…), `Quoted` beside `NameList`
   ("Ideas in “…”", the Ideas lede and notices, the Trash's rows and outcomes, the World Rules notice, a term's rename
   label), a relation kind's reading and a moment's validation line - which had wrapped the whole sentence in `dir="auto"`.
   Visually hidden announcements are left as strings.
-- **Limits seen after the fix:** a list's bullet and a quote's rule stay on Lorex's left while an RTL item or quote is
+- **Limits seen after the fix:** a list's bullet and a quote's rule stay on LorEvolve's left while an RTL item or quote is
   right-aligned - CSS cannot turn the block without knowing the text's direction, and a stored direction was out of scope.
   An empty paragraph starts left to right until its first letter is typed. The server's idea and rule excerpts join
   paragraphs into one, so the first letter decides a mixed excerpt.
@@ -1656,7 +1656,7 @@ Canon change; the Lore list gains query parameters in 003 and nothing else touch
 
 - **001 - Audit and direction** (`design/visual-system-audit` off `dev` at `379bd8b`, committed, not merged, not
   pushed). 31 screens of the running app at 1440, 1024, 820 and 390, light and dark, on a seeded world. The contract is
-  `docs/design/LOREX_VISUAL_REFACTOR.md`: problems measured in the live app, principles, tokens with checked contrast,
+  `docs/design/LOREVOLVE_VISUAL_REFACTOR.md`: problems measured in the live app, principles, tokens with checked contrast,
   components (and those rejected), cards, actions, responsive and accessibility rules, before/after, and the plan.
   Documentation only; no runtime code changed, so no suite was run.
 - **002 - App shell and shared foundation** (`refactor/app-shell-shared-components` off `dev` at `0da0faf`, committed,
@@ -1854,7 +1854,7 @@ A public, read-only discovery experience beside the workspace, in the same appli
   clean apart from the existing CA1859, no pending model changes.) Before it, 1156 / 287 (018: +6 API in `TimelineChronologyTests` - unbounded period years,
   rename, reorder, turn-around, year 0 worded - plus in-use wording/code pins; +4 in `chronology-date-periods.spec.ts`; era
   wording pins moved to date periods. API **1156/1156**. Full Playwright on a fresh database, two workers, retries 0, one run:
-  **286/287**, 14.3 min - `timeline.spec.ts` "an edit moves a moment…" met "Lorex could not be reached" on its listing fetch
+  **286/287**, 14.3 min - `timeline.spec.ts` "an edit moves a moment…" met "LorEvolve could not be reached" on its listing fetch
   (API/dev-server contention; plain years, no period code), green 3/3 alone; no second full run. Release build clean apart
   from the existing CA1859 in `StoryContentPublicationTests.cs`, no pending model changes.) Before it, 1150 / 283 (017: +7 in `editing-flow.spec.ts`, idea specs moved to create -> list,
   one announcer pin moved to the save status; no API change, API suite not rerun. Full Playwright on a fresh database, two
@@ -1863,7 +1863,7 @@ A public, read-only discovery experience beside the workspace, in the same appli
   Before it, 1150 / 275 (016: +13 API - 12 `FamilyTreeTypeSemanticsTests`, 1
   `EntityTypeFamilyTreeMigrationTests` - and +7 in `family-tree-semantics.spec.ts`; format pins 17 -> 18; specs moved to the Types
   tabs and the New type dialog. API **1150/1150**. Full Playwright on a fresh database, two workers, retries 0: run 1 273/275 -
-  two `restore.spec.ts` format pins, fixed; run 2 274/275 - `rule-validation.spec.ts` met "Lorex could not be reached"
+  two `restore.spec.ts` format pins, fixed; run 2 274/275 - `rule-validation.spec.ts` met "LorEvolve could not be reached"
   (dev-server/API contention, green 3/3 alone); run 3 **275/275**, 13.7 min. Release build clean, no pending model changes.)
   Before it, 1137 / 268 (015: +13 API - 6 `StoryContentPublicationTests`, 5
   `UniverseAttributionTests`, 1 `StoryContentPublicationMigrationTests`, 1 version-17 case - and +5 in
@@ -1871,14 +1871,14 @@ A public, read-only discovery experience beside the workspace, in the same appli
   copy pins updated. API **1137/1137** (run 1 was 1136/1137: `PlotArcEndpointTests` pinned the arc's keys, updated). Full Playwright on a fresh database **268/268** first time, one invocation, two workers, retries 0, 13.1 min.
   Release build clean, no pending model changes. Before it, 1124 / 263 (shell + pagination: +4 in `lore-pagination.spec.ts`; full Playwright
   on a fresh database **263/263**, one invocation, two workers, retries 0, 12.7 min; API **1124/1124**. Three earlier
-  complete runs were not green: the first lost `publishing.spec.ts` to its own stale "Lorex portal" wording (updated to
-  "LoreX"); the next two lost one test each to the dev server - a blank `/register`, and Vite failing to serve
+  complete runs were not green: the first lost `publishing.spec.ts` to its own stale "LorEvolve portal" wording (updated to
+  "LorEvolve"); the next two lost one test each to the dev server - a blank `/register`, and Vite failing to serve
   `TimelinePage.tsx` in a second tab of a test whose first tab had rendered it - both green 3/3 alone). Before it, 1124 / 259 (layout consistency: +1 in `workspace-settings.spec.ts`; full Playwright
   on a fresh database **259/259** first time, one invocation, two workers, retries 0, 12.1 min; API **1124/1124**). Before it, 1124 / 258 (014 follow-up: +2 in `workspace-settings.spec.ts`; specs moved to
   Chronology's own address; API **1124/1124**; full Playwright on a fresh database **258/258** first time, one invocation, two workers, retries 0, 11.8 min). Before it, 1124 / 256 (014: +8 in `workspace-settings.spec.ts`, +1 in `pwa.spec.ts`; no API
   change; API **1124/1124**, Release build clean, no pending model changes; full Playwright on a fresh database **256/256**, one invocation, two workers, retries 0, 11.1 min. The first complete run was
   253/256, all three caused by 014 and fixed in the tests: two `lore.spec.ts` steps clicked the first link named like
-  "Lore" - now the rail's brand, "Lorex - explore worlds" - and are exact now; `explore.spec.ts`'s forged-return test
+  "Lore" - now the rail's brand, "LorEvolve - explore worlds" - and are exact now; `explore.spec.ts`'s forged-return test
   expected an unknown same-origin path to fall into `/app`, which now lands on Explore - the property it guards, never
   leaving the origin, is unchanged).
   Before it, 1124 / 247 (013: +7 in `theme.spec.ts`, no API change; API **1124/1124**,
@@ -1915,7 +1915,7 @@ A public, read-only discovery experience beside the workspace, in the same appli
   Earlier phases' runs had the same shape: a rotating one to four specs lost in parallel, each green alone - the
   contention below, not the feature. No frontend unit runner exists; the web checks are `typecheck`, `lint`,
   `format:check` and `build`. The E2E
-  project has no format script of its own - its specs are held to the `src/Lorex.Web` Prettier settings, and
+  project has no format script of its own - its specs are held to the `src/LorEvolve.Web` Prettier settings, and
   Prettier has to be pointed at that config explicitly. CI runs all of it.
 - The test host no longer migrates itself, so every API test boots through the same startup path a
   deployment uses.
@@ -1923,9 +1923,9 @@ A public, read-only discovery experience beside the workspace, in the same appli
   16 logical processors, so eight browsers). Against a database the suite builds for itself, all 155 passed three runs
   out of three with nothing logged about a locked database. Against a copy of the long-lived development one, two runs
   out of two lost tests and logged `SQLite Error 5`, and running the same suite at four workers logged it just as
-  often - two more tests lost, at 1.7x the wall clock. So the worker count is left at Playwright's default and `LOREX_E2E_DB` - new, and the knob that
-  actually matters - points a run at a database of its own. `LOREX_E2E_WORKERS` exists for a machine that wants telling.
-  Numbers: `tests/Lorex.E2E/README.md`.
+  often - two more tests lost, at 1.7x the wall clock. So the worker count is left at Playwright's default and `LOREVOLVE_E2E_DB` - new, and the knob that
+  actually matters - points a run at a database of its own. `LOREVOLVE_E2E_WORKERS` exists for a machine that wants telling.
+  Numbers: `tests/LorEvolve.E2E/README.md`.
   - The mechanism, from the API log: a write's commit throws `database is locked` at once rather than after the
     provider's retry, and is answered as a 500. Once, the throw came from `SqliteConnection.Deactivate()` as the
     connection went back to the pool, and every later rent of that handle then failed to open with `unable to
@@ -1972,7 +1972,7 @@ A public, read-only discovery experience beside the workspace, in the same appli
 - No automated test reaches Cloudflare and none can: the API host registers an in-process object
   store, Playwright runs against `Media:Provider=InMemory`, and the R2 adapter tests answer the SDK
   from an in-process HTTP handler. That covers profile photos too - they use the same store.
-- Ten rules in `src/Lorex.Api/Features/CanonIntegrity/Rules/`: three structural (Medium), three
+- Ten rules in `src/LorEvolve.Api/Features/CanonIntegrity/Rules/`: three structural (Medium), three
   chronological (High), which compare across named eras, two relationship constraints (Medium), one world rule check
   (Medium) and one family circle (Medium). Behaviour: ADR 0010, 0011, 0012, 0022, 0023, 0034, 0035.
 
@@ -2044,7 +2044,7 @@ tool has changed the picture.
 - **Tooling trial verdict.** `docs/tooling/agent-tooling-trial.md` holds the evidence. Keep /
   conditional / remove is the owner's call, per tool.
 - **ImageSharp's licence.** `SixLabors.ImageSharp` is under the Six Labors Split License - free
-  for personal use and for organisations under $1M revenue, which is true of Lorex today. Worth
+  for personal use and for organisations under $1M revenue, which is true of LorEvolve today. Worth
   revisiting if that ever stops being true. ADR 0019.
 - **Collaboration, after 030** (ADR 0041) - not gaps: outbound email delivery of invitations (the link and model are
   ready for it), notifications, comment mentions/editing/anchors (comments done in 043), prose suggestions for articles and manuscripts, open-suggestion counts, replies on a suggestion (suggestions done in 045),
@@ -2057,7 +2057,7 @@ tool has changed the picture.
   drawing of any kind, a non-uniform scale.
 - **MCP (049, ADR 0046).** Owner step: set `Mcp__Origin` on DEV and connect Claude or ChatGPT once (runbook). Later, not
   gaps: any write through MCP (issue 32), AI-assisted import (issue 17), pre-registered clients, custom-scheme redirects,
-  a LoreX-styled page for the requests OpenIddict refuses before trusting a redirect.
+  a LorEvolve-styled page for the requests OpenIddict refuses before trusting a redirect.
 - **Permanent deletion.** Deferred by Phase 019, so nothing removes an entry - or, since content recovery, a story,
   chapter, scene, arc or beat - for good short of deleting the universe. Two dead ends follow: a type used only by trashed
   entries cannot be deleted until the entry is restored, moved to another type and trashed again (ADR 0015), and an era a

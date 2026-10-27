@@ -50,7 +50,7 @@ found live in that universe, so an outsider, a Reviewer or Viewer, another unive
 403 or 404 it got before, whatever version it names. A version is not a capability, and the owner has no bypass.
 
 **The client never overwrites.** One presentation, `EditConflict`: the notice says the item changed while the author was
-editing, that their work is still there unsaved, and that Lorex will not save over the newer version. The author must
+editing, that their work is still there unsaved, and that LorEvolve will not save over the newer version. The author must
 review the latest - a structured form shows each changed field as "Saved now" above "Yours", stacked so a phone reads it;
 an article or manuscript shows the latest text whole in its own scrolling region - before choosing **Keep my changes**
 (the form or editor stays exactly as typed, now measured against the latest, and the next save names the version they

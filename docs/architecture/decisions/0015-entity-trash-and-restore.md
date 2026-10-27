@@ -10,7 +10,7 @@ its stored values, its whole revision history (ADR 0013 made `EntityId` a cascad
 said Trash was a later concern - this is it), every relationship it stood at either end of, and
 every timeline participation naming it. References held by *other* entries were set to null.
 
-None of that was recoverable, and the confirmation said so. It is the only place in Lorex where
+None of that was recoverable, and the confirmation said so. It is the only place in LorEvolve where
 one click destroys a large amount of authored work. Universe deletion is the other, and it is
 already gated behind archiving.
 

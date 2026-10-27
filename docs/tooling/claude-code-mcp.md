@@ -1,11 +1,11 @@
-# Claude Code MCP servers for LoreX (issue #29)
+# Claude Code MCP servers for LorEvolve (issue #29)
 
-`.mcp.json` at the repository root is the whole setup: four servers, no secret, project-scoped so every LoreX session
+`.mcp.json` at the repository root is the whole setup: four servers, no secret, project-scoped so every LorEvolve session
 gets the same set.
 
 ## Acceptance status
 
-**Accepted (2026-10-26).** All four servers connect in LoreX sessions. Before that they were verified without owner
+**Accepted (2026-10-26).** All four servers connect in LorEvolve sessions. Before that they were verified without owner
 approval (Claude Code 2.1.296, Windows 11, Node 22.23.2, Chrome stable): `claude mcp list` loaded the file, each server
 answered `initialize`, `tools/list` and a real `tools/call`, and a non-interactive
 `claude -p --mcp-config .mcp.json --strict-mcp-config` run used them and reported correct results.
@@ -50,10 +50,10 @@ All four are maintained by their vendors (Microsoft, Upstash, OpenAI, Google's C
 ## Not set up (issue #29's later and skipped items)
 
 - **Later, when justified:** Azure MCP (active Azure DEV debugging), NuGet MCP (package and vulnerability upkeep),
-  Sentry MCP (once LoreX reports errors to Sentry). The `azure` and `sentry` plugins exist in `claude-plugins-official`.
+  Sentry MCP (once LorEvolve reports errors to Sentry). The `azure` and `sentry` plugins exist in `claude-plugins-official`.
 - **Skipped on purpose:** GitHub MCP (above), Playwright MCP, filesystem, SQLite, generic memory and reasoning MCPs.
   Note: the project's `.claude/settings.json` already enables the `playwright` plugin (owner's choice, which brings
-  `@playwright/mcp`); this setup does not change it. The Playwright CLI workflow (`tests/Lorex.E2E`) stays the way specs
+  `@playwright/mcp`); this setup does not change it. The Playwright CLI workflow (`tests/LorEvolve.E2E`) stays the way specs
   are written and run.
 
 ## Re-checking a server by hand

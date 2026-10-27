@@ -5,11 +5,11 @@ Status: accepted (2026-09-14), amended 2026-09-14 (ideas keep recovery copies to
 
 ## Context
 
-Phase 3's second feature asks Lorex to give authored writing back when it is lost. Writing is lost in three different ways,
+Phase 3's second feature asks LorEvolve to give authored writing back when it is lost. Writing is lost in three different ways,
 and each needs a different answer:
 
 - **Saved, then changed.** The author wants an earlier saved text back. Entries (ADR 0013) and articles (ADR 0028) already
-  keep saved versions. A scene's manuscript - the longest writing in Lorex - kept none: every save replaced the last.
+  keep saved versions. A scene's manuscript - the longest writing in LorEvolve - kept none: every save replaced the last.
 - **Deleted.** Lore entries go to a Trash (ADR 0015). Everything in a story did not: deleting a story took its chapters,
   scenes, every word of prose and its plot; deleting a scene took its prose and links; an arc took its beats; a chapter took
   its title, summary and notes. All permanent, behind a confirmation.
@@ -122,7 +122,7 @@ in stays in use, as the chronology refusal already says ("counting anything in t
 a backup. Saving stays explicit, and a recovered copy is only ever unsaved writing.
 
 **IndexedDB, native, no dependency.** `lib/localDrafts.ts` keeps one record per copy in the `drafts` store of the
-`lorex-recovery` database. `localStorage` was ruled out: an article is up to 200,000 characters of document and a manuscript
+`lorevolve-recovery` database. `localStorage` was ruled out: an article is up to 200,000 characters of document and a manuscript
 up to a million, `localStorage` holds a few megabytes for the whole site, is synchronous on the main thread and fails by
 throwing mid-keystroke. Each copy's reads, writes and deletes run in one queue per key, so a delete asked for after a write
 lands after it.
@@ -131,7 +131,7 @@ lands after it.
 a record is only handed to the account it names. No credential, token or cookie is stored. **Signing out destroys nothing** -
 that would defeat recovery - and another account on the same browser is never offered a copy; the owner is offered it again on
 return. Anyone with the browser profile itself can read its storage, as they could its cache: that trust boundary is the
-device's, not Lorex's.
+device's, not LorEvolve's.
 
 **Lifecycle** (`lib/useLocalDraft.ts`):
 

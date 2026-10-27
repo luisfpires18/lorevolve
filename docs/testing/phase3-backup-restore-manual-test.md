@@ -11,13 +11,13 @@ universe for step 9 and a second account for step 11. An old backup file, if you
 
 ## Before starting
 
-- Start Lorex (`Start-Lorex.cmd`) and sign in. There is no migration: nothing already stored changes.
+- Start LorEvolve (`Start-LorEvolve.cmd`) and sign in. There is no migration: nothing already stored changes.
 - In a universe's Settings, download a backup. Keep the `.zip` somewhere you can find it.
 
 Known and accepted, so not bugs: a restore always makes a new universe and never replaces or merges into one; it is the whole
 backup or nothing; ideas with no universe are in no universe's backup, so no restore brings them; a browser's recovered drafts
 are never in a backup; the restored universe's "created" date is the day you restored it (everything inside keeps its own
-dates); a restart of Lorex between checking a file and restoring it asks you to choose the file again; a very large backup takes
+dates); a restart of LorEvolve between checking a file and restoring it asks you to choose the file again; a very large backup takes
 a while and briefly holds up other saves.
 
 ## Steps
@@ -55,7 +55,7 @@ Tick each when it behaves as written. Note anything that surprised you, even if 
     belongs to that account, and none of it appears for the first account. Sign back in.
 12. **Refusals.** Try, one at a time: a photo or a text file; the `backup.json` taken out of the zip; a zip cut short (copy it and
     delete the end of it in a hex editor, or rename a different zip); an old backup from before today if you have one (it should
-    restore). Each refusal says in one sentence what is wrong - not a Lorex backup, choose the zip itself, damaged - says no universe
+    restore). Each refusal says in one sentence what is wrong - not a LorEvolve backup, choose the zip itself, damaged - says no universe
     was created, and focuses "This backup cannot be restored". Choose another file works straight away. All universes is unchanged.
 13. **The same file twice.** Restore the original's backup again under a third name. It is another separate universe: change
     something in one, and the others stay as they were.

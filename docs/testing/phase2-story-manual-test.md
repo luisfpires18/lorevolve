@@ -8,7 +8,7 @@ About 30-40 minutes. Use a fresh universe so nothing else on screen confuses the
 
 ## Before starting
 
-- Start Lorex (`Start-Lorex.cmd`) and sign in.
+- Start LorEvolve (`Start-LorEvolve.cmd`) and sign in.
 - Create a universe. In Lore, add three or four entries - a couple of characters, a place, an item.
 - Keep a second browser tab for step 11.
 
@@ -62,7 +62,7 @@ Tick each when it behaves as written. Note anything that surprised you, even if 
 17. **Backup.** Settings -> export the universe. Open `backup.json` in the zip: `formatVersion` is 8; your story
     has chapters, scenes (with `chapterId`, `sortOrder`, `manuscript.content`), `plotArcs` with `beats` and linked
     ids. No chapter or arc numbers, no entry names inside scenes.
-18. **Persistence.** Close the tab, reopen Lorex, open the story: everything above is still there. Canon, Timeline
+18. **Persistence.** Close the tab, reopen LorEvolve, open the story: everything above is still there. Canon, Timeline
     and Lore search show nothing that came from the story.
 
 ## When something is wrong

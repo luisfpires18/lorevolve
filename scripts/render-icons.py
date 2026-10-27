@@ -1,5 +1,5 @@
 """
-Renders every install and favicon asset from `assets/brand/lorex-icon.png`, which is the
+Renders every install and favicon asset from `assets/brand/lorevolve-icon.png`, which is the
 only source of the mark.
 
     python scripts/render-icons.py
@@ -21,7 +21,7 @@ Two grounds, and the reason for each:
                icon sits in whatever tab strip or launcher is behind it.
   black        #000000, which is also the manifest's background_color and the launch layer's
                ground (043.5), so an installed icon, the window the platform opens behind it
-               and the first frame Lorex paints are one surface. Used only where transparency
+               and the first frame LorEvolve paints are one surface. Used only where transparency
                is not an option:
 
                - the maskable icon, which a platform crops to its own shape and fills, and
@@ -31,17 +31,17 @@ Two grounds, and the reason for each:
                The mark was drawn on black; its red and gold read there at every size.
 
 The launch logo is not made here: it is a photograph-like raster with its own black ground, so
-it is resampled and encoded once with libwebp from `assets/brand/lorex-logo.png`:
+it is resampled and encoded once with libwebp from `assets/brand/lorevolve-logo.png`:
 
-    ffmpeg -i assets/brand/lorex-logo.png -vf scale=1200:-1:flags=area         -c:v libwebp -quality 82 -compression_level 6 src/Lorex.Web/public/launch-logo.webp
+    ffmpeg -i assets/brand/lorevolve-logo.png -vf scale=1200:-1:flags=area         -c:v libwebp -quality 82 -compression_level 6 src/LorEvolve.Web/public/launch-logo.webp
 """
 
 import struct
 import zlib
 from pathlib import Path
 
-SOURCE = Path(__file__).resolve().parent.parent / "assets" / "brand" / "lorex-icon.png"
-PUBLIC = Path(__file__).resolve().parent.parent / "src" / "Lorex.Web" / "public"
+SOURCE = Path(__file__).resolve().parent.parent / "assets" / "brand" / "lorevolve-icon.png"
+PUBLIC = Path(__file__).resolve().parent.parent / "src" / "LorEvolve.Web" / "public"
 
 #: The manifest's background_color and the launch layer's ground, so an installed icon and the
 #: window that opens behind it are the same surface.
@@ -67,7 +67,7 @@ TARGETS = [
     ("favicon-32.png", 32, 0.03, None),
     ("favicon-16.png", 16, 0.02, None),
     # The in-app symbol. Untrimmed of padding, because here the surface underneath is
-    # Lorex's own and the stylesheet decides the spacing.
+    # LorEvolve's own and the stylesheet decides the spacing.
     ("brand-mark.png", 384, 0.0, None),
 ]
 

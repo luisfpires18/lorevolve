@@ -5,8 +5,8 @@ Status: accepted (2026-09-28)
 ## Context
 
 Task 012 makes the public portal findable: search engines and link previews should see a public world, entry, story or
-author page as what it is. Lorex is one React application rendered in the browser. The API serves the built
-`index.html` for every client route, so a crawler or preview bot that runs no JavaScript saw one generic head - "Lorex" -
+author page as what it is. LorEvolve is one React application rendered in the browser. The API serves the built
+`index.html` for every client route, so a crawler or preview bot that runs no JavaScript saw one generic head - "LorEvolve" -
 on every address, and even a rendering crawler saw no canonical address. Changing `document.title` in React would not
 reach those readers. A framework migration (server rendering, a static site generator) is out of proportion for a head.
 
@@ -16,16 +16,16 @@ crawlers or name a production origin.
 
 ## Decision
 
-**The server writes each page's head into the shell.** `index.html` holds a block between `<!-- lorex:head -->` and
-`<!-- /lorex:head -->`. The API's fallback (`FrontendHosting`) reads the template once and, per request, replaces that block
+**The server writes each page's head into the shell.** `index.html` holds a block between `<!-- lorevolve:head -->` and
+`<!-- /lorevolve:head -->`. The API's fallback (`FrontendHosting`) reads the template once and, per request, replaces that block
 from `PageMetadataResolver`: title, description, robots, canonical, Open Graph and `twitter:card`. The body stays the empty
 shell; content is still fetched by the app from `/api/public`. The app also sets the same title while navigating
 (`useDocumentTitle`, `src/lib/`, which the workspace's shells now also use - refinement 024). Nothing else of the head changes on client navigation - crawlers load each address fresh.
 
 **The public predicates decide, and only public text is read.** `/worlds/{slug}`, `/lore/{slug}`, `/stories/{slug}` and
 `/authors/{slug}` resolve through `PublicationRules.Public`, `PublicLore` and `PublicStories` - the queries the public API
-reads. A universe's description is its public summary; an entry's is its lead (else "Type in World, on Lorex."); a
-story's is its public summary, never its premise; an author's is "Name, creator on Lorex. Worlds: …" and nothing
+reads. A universe's description is its public summary; an entry's is its lead (else "Type in World, on LorEvolve."); a
+story's is its public summary, never its premise; an author's is "Name, creator on LorEvolve. Worlds: …" and nothing
 invented. Pictures are the public derivatives the API already serves (card, entry thumbnail, a photo only if shown),
 else the static `icon-512.png`. Private, trashed, incomplete and missing addresses are one **404** with a generic
 `noindex` head that names nothing. Everything else - workspace, sign-in, profile, unknown paths - is `noindex,nofollow`
@@ -61,10 +61,10 @@ rendering crawler can draw a page and a preview can fetch its picture) and disal
   own load failure.
 - No schema change. No structured data (schema.org): the pages do not map cleanly enough to be worth a guess.
 
-## Amendment (2026-10-04, Product refinement 031) - Lorex's home is a page
+## Amendment (2026-10-04, Product refinement 031) - LorEvolve's home is a page
 
 - `/` is no longer redirected to `/explore` by the server (`FrontendHosting`) or the client: it is the app shell like
-  any other page, with its own head from `PageMetadataResolver` - "Lorex — Build connected fictional universes", a fixed
-  description Lorex writes, canonical `/`, `index,follow` (a query string makes it `noindex,follow` with the same
+  any other page, with its own head from `PageMetadataResolver` - "LorEvolve — Build connected fictional universes", a fixed
+  description LorEvolve writes, canonical `/`, `index,follow` (a query string makes it `noindex,follow` with the same
   canonical, as Explore's), Open Graph with the static icon. `/` is the sitemap's first address. `robots.txt` already
   allowed it. No new metadata mechanism.

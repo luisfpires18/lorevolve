@@ -8,7 +8,7 @@ second browser tab for step 6.
 
 ## Before starting
 
-- Start Lorex (`Start-Lorex.cmd`) and sign in. Starting it applies the `AddEntityArticles` migration to the local
+- Start LorEvolve (`Start-LorEvolve.cmd`) and sign in. Starting it applies the `AddEntityArticles` migration to the local
   database; existing articles move, unchanged, into their own rows.
 - Have three entries to hand: one with an article written before this change, one without, one you can put in the Trash.
 

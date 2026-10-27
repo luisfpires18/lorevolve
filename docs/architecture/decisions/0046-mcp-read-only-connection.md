@@ -1,11 +1,11 @@
-# ADR 0046 - An outside AI app reads one universe over MCP, as one member, through OAuth 2.1 issued by LoreX itself
+# ADR 0046 - An outside AI app reads one universe over MCP, as one member, through OAuth 2.1 issued by LorEvolve itself
 
 Status: accepted (2026-10-19). Roadmap task 049 (GitHub issue 7).
 
 ## Context
 
-Creators want Claude, ChatGPT and other AI apps to read their LoreX universe directly, between conversations, without
-pasting text and without handing over their LoreX password. The Model Context Protocol (MCP) is how those apps reach
+Creators want Claude, ChatGPT and other AI apps to read their LorEvolve universe directly, between conversations, without
+pasting text and without handing over their LorEvolve password. The Model Context Protocol (MCP) is how those apps reach
 outside tools; its authorization specification (revision 2026-07-28, read for this decision) makes the MCP server an
 OAuth 2.1 resource server and asks for: protected resource metadata (RFC 9728) found from a `401`, authorization server
 metadata (RFC 8414 / OIDC discovery), Authorization Code with PKCE S256, resource indicators (RFC 8707) with tokens
@@ -13,15 +13,15 @@ validated for exactly their audience, issuer identification (RFC 9207), client I
 dynamic client registration (RFC 7591, MAY, deprecated), short-lived access tokens, rotated refresh tokens for public
 clients, HTTPS everywhere but loopback redirects, exact redirect matching, and `Origin` checks on Streamable HTTP.
 
-LoreX authenticates people with a `SameSite=Strict` cookie (ADR 0005) and has no token surface. The assistant's read layer
+LorEvolve authenticates people with a `SameSite=Strict` cookie (ADR 0005) and has no token surface. The assistant's read layer
 (`UniverseReader`, ADR 0045) already reads a universe permission-safely for a non-screen consumer. ADR 0005 foresaw that a
 third-party client "would need a token surface added alongside this one".
 
 ## Decision
 
-**Standard pieces, not a protocol of LoreX's own.** OpenIddict 7.7 (Apache-2.0, maintained, built for ASP.NET Core and EF
-Core) is the authorization server and the token validator, on the one `LorexDbContext`. The official MCP C# SDK 2.2
-(`ModelContextProtocol.AspNetCore`, Apache-2.0) is the Streamable HTTP server. LoreX writes only what binds them to its
+**Standard pieces, not a protocol of LorEvolve's own.** OpenIddict 7.7 (Apache-2.0, maintained, built for ASP.NET Core and EF
+Core) is the authorization server and the token validator, on the one `LorEvolveDbContext`. The official MCP C# SDK 2.2
+(`ModelContextProtocol.AspNetCore`, Apache-2.0) is the Streamable HTTP server. LorEvolve writes only what binds them to its
 accounts and universes, as small handlers inside OpenIddict's own pipeline and a gate in front of the SDK. Nothing
 cryptographic is hand-written: codes, tokens, PKCE, rotation and replay detection are OpenIddict's.
 
@@ -37,7 +37,7 @@ the RFC 9728 path-inserted well-known address, the same for any id, so it reveal
 
 **The issuer.** The configured origin, one issuer for every universe. Discovery is served at both
 `/.well-known/oauth-authorization-server` and `/.well-known/openid-configuration`, built from the configured origin. It
-offers the code flow and refresh only, PKCE `S256` only, scopes `lorex.read` and `offline_access` (no `openid`: this is
+offers the code flow and refresh only, PKCE `S256` only, scopes `lorevolve.read` and `offline_access` (no `openid`: this is
 not an OpenID provider), `none`, `client_secret_basic` and `client_secret_post` at the token endpoint, `iss` on every
 authorization response, `client_id_metadata_document_supported`, and the registration endpoint. No JWKS: nothing issued
 is a JWT.
@@ -51,19 +51,19 @@ is a JWT.
   (`ConnectCallback`); no redirect, no proxy, no cookies, one 5 s deadline for the whole exchange (body included, so a
   byte-at-a-time answer is cut off), 32 KB. Fetches are rationed and refused rather than queued. Client ids never seen
   before, which anyone can make up before signing in, share one ration: 4 at once, 60 a minute
-  (`Mcp:MetadataFetchesPerMinute`). Checking again a client LoreX has already accepted draws first on a ration of its
+  (`Mcp:MetadataFetchesPerMinute`). Checking again a client LorEvolve has already accepted draws first on a ration of its
   own publishing host - 2 at once, 30 a minute (`Mcp:MetadataRechecksPerHostPerMinute`) - and then on one ceiling for all
   re-checks, 8 at once and 240 a minute (`Mcp:MetadataRechecksPerMinute`), so outbound work never grows with the number
   of hosts; a host over its own share spends none of the ceiling. Callers cannot be told apart behind App Service, so
   the per-host share is what keeps a flood of made-up ids, or one publisher's documents, from crowding out another
   publisher's clients. A known client that cannot be checked again may stand on its last document only for a grace its
   publisher allowed - a `max-age` without `no-store`, `no-cache` or `must-revalidate` - of at most that max-age and 5
-  minutes; LoreX never extends it. The document's `client_id` must be its URL; it must
+  minutes; LorEvolve never extends it. The document's `client_id` must be its URL; it must
   name the client, list 1-10 redirect URIs each HTTPS or loopback, accept `none` at the token endpoint and the code flow.
   A document is trusted for what its publisher said: not at all for `no-store`, `no-cache` or `max-age=0` (fetched
   again on every use), else its `max-age` up to 24 h, 1 h when it says nothing; then fetched again. A revalidation that
   fails is a refusal: grace is only for a spent ration, never for a failed check. Anything wrong
-  refuses the request as `invalid_client`, shown by LoreX, never redirected.
+  refuses the request as `invalid_client`, shown by LorEvolve, never redirected.
 - *Dynamic client registration*, at `POST /oauth/register`, for older clients: open by design, so bounded - a 16 KB body,
   30 registrations a minute across all callers (`Mcp:RegistrationsPerMinute`), the same redirect and name rules, only the
   code and refresh grants, a secret only when asked for (hashed by OpenIddict, written out once), no RFC 7592 management.
@@ -75,7 +75,7 @@ Redirect URIs are HTTPS or `http` on a loopback address: never a custom scheme (
 They match exactly, except that a loopback URI matches on any port (RFC 8252 section 7.3; Claude Code picks a free port).
 Client names refuse control and direction-override characters and are at most 80 characters.
 
-**Verified versus self-declared.** A CIMD client's host is the verified part: LoreX fetched its details from there. Its
+**Verified versus self-declared.** A CIMD client's host is the verified part: LorEvolve fetched its details from there. Its
 name is still the site's own claim. A registered client vouches for nothing and the consent screen says so in a warning.
 Every consent screen names the host the browser returns to, and adds a warning when every return address is on the
 person's own device (MCP: localhost impersonation).
@@ -85,15 +85,15 @@ usually from another site, so the Strict session cookie is not sent and nothing 
 validated the client, redirect URI, PKCE and scope, the request goes unchanged to the SPA's consent screen
 (`/connect/authorize`, behind the existing sign-in; signing in returns to it). The screen reads `GET
 /api/oauth/authorization-request` (session) for what to show, and posts the same parameters back to `/oauth/authorize`
-with `lorex_decision=approve|deny` and an ASP.NET Core antiforgery token (`lorex_consent_token`) it reads from `GET
+with `lorevolve_decision=approve|deny` and an ASP.NET Core antiforgery token (`lorevolve_consent_token`) it reads from `GET
 /api/oauth/consent-token` - bound to the signed-in account and to an HttpOnly, `SameSite=Strict` cookie
-(`lorex.consent`). That post is same-site, carries the session, and is validated by OpenIddict and by the antiforgery
+(`lorevolve.consent`). That post is same-site, carries the session, and is validated by OpenIddict and by the antiforgery
 check again. `SameSite=Strict` alone stops cross-site posts; the token also stops a same-site page that rides the
 session but could never read the token. Only an explicit approval by a signed-in member who can read that universe
 creates anything; a post without the session, or without a valid token, goes back to the screen; deny is `access_denied`; `prompt=none` is `consent_required`. There is no remembered consent:
 every connection is approved by a person. The screen and the OAuth endpoints refuse to be framed.
 
-**What an approval makes.** A permanent OpenIddict authorization (subject = account, client, scopes `lorex.read` and
+**What an approval makes.** A permanent OpenIddict authorization (subject = account, client, scopes `lorevolve.read` and
 `offline_access` whatever else was asked, resource = the universe) and one `McpConnection` row binding it to the account
 and the universe with cascading foreign keys. Approving the same app for the same universe again replaces the earlier
 connection. V1 grants read only; a later write permission would be a new scope and a new approval.
@@ -109,7 +109,7 @@ account, and the account must still be able to read the universe; otherwise `inv
 **The gate, on every MCP request.** Before the SDK sees anything: a foreign `Origin` header is refused (DNS rebinding);
 the bearer token comes from the `Authorization` header only (never a query string or form, never the session cookie);
 OpenIddict validates it against its live token and authorization entries; its audience must be this universe's resource;
-it must carry `lorex.read` (else `403 insufficient_scope`); its connection must still exist for this account, client and
+it must carry `lorevolve.read` (else `403 insufficient_scope`); its connection must still exist for this account, client and
 universe; and the account must be able to read the universe now (`UniverseAccess`, ADR 0041). Any failure is `401` with
 `WWW-Authenticate: Bearer` naming the resource metadata and scope. So a revoke, a removed member, a deleted universe or a
 token for another universe stops at the next request. "Last used" is written at most once per 5 minutes.
@@ -121,7 +121,7 @@ and DELETE answer 405.
 **The tools: ten, read-only, over `UniverseReader`.** `search_universe`, `get_universe_overview`, `get_lore_entry`,
 `get_lore_relationships`, `get_story`, `get_scene`, `search_scene_manuscript`, `read_scene_manuscript`,
 `get_timeline_moment`, `browse_timeline`. Annotated read-only, non-destructive, idempotent, closed-world. No tool takes a
-universe: the gate sets it from the token. Ids are LoreX's own GUIDs; one from another universe, the Trash or nowhere is
+universe: the gate sets it from the token. Ids are LorEvolve's own GUIDs; one from another universe, the Trash or nowhere is
 `not_found` alike. Results are JSON text, bounded by the reader's limits. MCP shares no code with the assistant's
 provider, conversation, allowance or models, and needs no model credentials; its reads do not count against the
 assistant's 20 questions.
@@ -160,13 +160,13 @@ and secrets in any case. No manuscript text is logged.
   any pool one party can spend another can too: a per-host share alone lets outbound work grow with the number of hosts,
   and a ceiling alone lets one publisher crowd out the rest. Both are kept. Reaching the ceiling (240 a minute) takes on
   the order of 1,200 known clients on at least 8 hosts, each a valid public document that passed the 60-a-minute
-  new-client ration and was connected through LoreX consent (or it is swept within the hour), since each is checked
+  new-client ration and was connected through LorEvolve consent (or it is swept within the hour), since each is checked
   again at most once per freshness (at least 5 minutes). Its effect is a delay - a known client past its
   publisher-allowed grace (at most 5 minutes) is asked to retry - never longer trust in an old document. Partitioning by
   registrable domain (a public suffix list) or reserving a share for established clients would raise that cost, not
   remove it; revisit if a real deployment ever sees contention.
 - Errors OpenIddict raises while validating a request (an unknown client, a bad redirect, missing PKCE) are its plain
-  error answer, never redirected and not styled as a LoreX page.
+  error answer, never redirected and not styled as a LorEvolve page.
 - The DEV limitations of ADR 0018 apply: SQLite's single writer (a refresh writes; "last used" writes at most every 5
   minutes per connection), and Data Protection keys unencrypted at rest - whoever can read them can read token payloads,
   as they can forge a session today. A restart keeps every connection.
@@ -176,10 +176,10 @@ and secrets in any case. No manuscript text is logged.
 
 ## Amendment (2026-10-23, roadmap 052, ADR 0047): a separate permission to propose
 
-V1's read grant is unchanged and still read-only. A second scope, `lorex.propose`, lets an app stage changes for a person
-to review in LoreX; it never writes. Discovery, the protected resource metadata and the 401 challenge now list both scopes;
+V1's read grant is unchanged and still read-only. A second scope, `lorevolve.propose`, lets an app stage changes for a person
+to review in LorEvolve; it never writes. Discovery, the protected resource metadata and the 401 challenge now list both scopes;
 the consent screen offers proposing as its own unticked choice, only when the app asked for it and the person's role can
-stage changes, and grants it only on that tick (`lorex_propose=allow`), recorded on the connection as `CanPropose`. A
+stage changes, and grants it only on that tick (`lorevolve_propose=allow`), recorded on the connection as `CanPropose`. A
 refresh never widens a grant. Per-client scope permissions stay enforced: registrations list both scopes, and clients
 registered before the scope existed were given it by the data-only `UpgradeMcpClientScopes` migration; consent decides. The gate passes `CanPropose` (token scope and connection both) to the tools; the three
 proposal tools are hidden and refused without it. Connected Apps lists it and turns it off without disconnecting
@@ -200,7 +200,7 @@ profile picture apart from the pictures of its appearances, each appearance with
 ticked. An optional form, era or appearance (id or exact name; unique within an entry) narrows the list to pictures
 explicitly linked to it; a form nothing was ticked for lists none, the answer says so, and the entry's portrait is
 reported as the base picture and never stands in. `get_lore_image` returns one picture, by the entry's id and the
-picture's id together, as an MCP image content block, an explicit Markdown fallback link to the canonical LoreX Lore or
+picture's id together, as an MCP image content block, an explicit Markdown fallback link to the canonical LorEvolve Lore or
 progression page, and a text block of metadata; the page link requires sign-in and current universe access and is not a
 media URL. `preview` (the default) is the whole picture fitted within 1024 pixels as WebP with no metadata, cut
 from the original on demand by the upload gate's own decoders; `thumbnail` is the stored square; `original` is the
@@ -211,16 +211,16 @@ a trashed entry or an id from another universe answers as every other read does.
 appearance pictures. Nothing uploads, changes or deletes a picture through MCP. Whether a given client draws an image
 block is the client's: the official SDK client (the tests) carries valid WebP bytes. An owner's ChatGPT test showed a
 blank image tile despite the response metadata, so the tool now states that display cannot be confirmed server-side and
-offers its authenticated LoreX page link as a fallback. The real ChatGPT display/fallback still requires a client smoke
+offers its authenticated LorEvolve page link as a fallback. The real ChatGPT display/fallback still requires a client smoke
 test; do not treat SDK acceptance as proof of visible rendering. `format: "png"` re-encodes the preview as PNG (same
 decoders, same bound), so the WebP-versus-PNG comparison can be made in a real client without a deploy; WebP stays the
 default until that comparison says otherwise. Smoke steps: `docs/testing/mcp-images-checklist.md`.
 
 ## Amendment (2026-10-25, issue 53, ADR 0061): geography, the same reader
 
-Four more read-only tools (`LorexMcpMapTools`), over the same `MapGeography` the built-in assistant reads: `list_maps`,
+Four more read-only tools (`LorEvolveMcpMapTools`), over the same `MapGeography` the built-in assistant reads: `list_maps`,
 `search_map_locations`, `get_map_location` (by id or exact name or alias, an ambiguous name refused with the candidates)
-and `measure_map_distance`. Every location carries an absolute link that opens the map on the pin, behind LoreX's sign-in;
+and `measure_map_distance`. Every location carries an absolute link that opens the map on the pin, behind LorEvolve's sign-in;
 a distance is given only on one calibrated map with confirmed pins and says its method, its unit as the creator named it,
 and the picture it rests on; otherwise the result says what is missing. The connection's gate, the live-entries rule and
 the one-universe rule apply unchanged. Sixteen tools in all.

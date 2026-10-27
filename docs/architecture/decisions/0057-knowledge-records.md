@@ -6,10 +6,10 @@ a continuity reading follows).
 ## Context
 
 Characters act on what they should not yet know. Issue 15 asks for a way to record who knows what and from when, so an
-author can see a continuity slip - a secret acted on before its reveal - without Lorex becoming a second maintenance
+author can see a continuity slip - a secret acted on before its reveal - without LorEvolve becoming a second maintenance
 system. The owner's initial model (2026-10-24): any member reads records, whoever edits content changes them; never
 public, never read by the assistant or MCP; every record names a scene unless it is known from the start; no anchor to a
-timeline moment; distinct from perspective and belief (issue 16); Lorex never infers Canon or invents a fact from a record.
+timeline moment; distinct from perspective and belief (issue 16); LorEvolve never infers Canon or invents a fact from a record.
 
 ## Decision
 

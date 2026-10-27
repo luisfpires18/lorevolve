@@ -1,7 +1,7 @@
 # Phase 4 - Family Trees: manual test
 
 The owner's pass over Family Trees (ADR 0035). One universe, about twenty minutes. Everything below is
-authored by hand: nothing in Lorex decides which entries are people, and nothing reads a relation kind's name.
+authored by hand: nothing in LorEvolve decides which entries are people, and nothing reads a relation kind's name.
 
 Use any universe with a few entries, or make one. Names in this document are examples; use your own.
 
@@ -12,7 +12,7 @@ Use any universe with a few entries, or make one. Names in this document are exa
 2. On an entry - say **Mara** - add a relation: `parent of` **Lia**.
 3. Open **Family Tree** in the sidebar and choose **Lia**.
 
-Expect: Lia alone. The kind's name said nothing, and Lorex read nothing from it.
+Expect: Lia alone. The kind's name said nothing, and LorEvolve read nothing from it.
 
 ## 2. Give the kind a meaning
 
@@ -47,7 +47,7 @@ Expect:
   parent links you wrote are there. Everything else is worked out while the page is drawn.
 
 Also expect no claim about how much family Lia and Tam share: a sibling is a sibling. If you record only one of
-someone's parents, Lorex says nothing about the other - unknown is not the same as none.
+someone's parents, LorEvolve says nothing about the other - unknown is not the same as none.
 
 ## 5. Children and grandchildren
 

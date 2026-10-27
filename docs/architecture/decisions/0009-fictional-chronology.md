@@ -5,7 +5,7 @@ Status: accepted (2026-09-08), amended 2026-09-13 (named eras: ADR 0022)
 ## Context
 
 A timeline entry places a moment in a universe: "Year 3018 - Frodo leaves the Shire".
-The universes Lorex is for do not run on the Gregorian calendar. Their years may count
+The universes LorEvolve is for do not run on the Gregorian calendar. Their years may count
 down to a reckoning and back up again, run past any real range, and belong to named eras
 that do not line up with each other. Authors also rarely know the whole date: a year on
 its own, a rough year, or a span is often all there is, and sometimes there is nothing
@@ -32,7 +32,7 @@ than claims about the story.
 Month and day stay optional under every kind, so a bare year is a complete claim rather
 than an incomplete date. A day requires a month and a month requires a year, because the
 smaller component means nothing without the larger. Months are bounded to 1-12 and days
-to 1-31, and nothing further: this is deliberately not a calendar engine, and Lorex does
+to 1-31, and nothing further: this is deliberately not a calendar engine, and LorEvolve does
 not decide how long a month runs in someone else's world.
 
 Responses carry the components as numbers plus a derived `TimelineDatePrecision`

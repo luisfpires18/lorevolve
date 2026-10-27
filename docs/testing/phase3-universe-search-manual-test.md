@@ -10,7 +10,7 @@ step 8, and a second account for step 11.
 
 ## Before starting
 
-- Start Lorex (`Start-Lorex.cmd`) and sign in. Starting it applies the `AddUniverseSearchIndex` migration: it adds three
+- Start LorEvolve (`Start-LorEvolve.cmd`) and sign in. Starting it applies the `AddUniverseSearchIndex` migration: it adds three
   search indexes and fills them from what is already written. Nothing you wrote changes.
 - The search reads saved text only. Unsaved writing, and a recovered draft this browser kept, are found once saved.
 

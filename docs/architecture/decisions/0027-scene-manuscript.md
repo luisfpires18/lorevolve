@@ -55,7 +55,7 @@ JavaScript both count them - refused with a 400 and nothing written. The web cli
 itself is unbounded; the bound is there so one request stays a bounded body (worst-case escaping keeps it far under
 Kestrel's 30 MB default).
 
-**No silent overwrite.** Lorex had no optimistic-concurrency pattern to reuse, and none is built here beyond one
+**No silent overwrite.** LorEvolve had no optimistic-concurrency pattern to reuse, and none is built here beyond one
 comparison. A save names the `updatedAt` it was written over - null for "nothing was saved yet". Inside the write's own
 transaction, SQLite's single writer, a mismatch is refused with 409 `scene_manuscript_changed` carrying the stored
 `updatedAt`, and nothing is written. The client keeps the author's text on screen and offers two choices: save it over
@@ -63,7 +63,7 @@ the other version, which re-sends the stored moment and is a person's decision, 
 after a confirmation. There is no merge, lock, presence or collaboration - this exists only so one author's two windows
 cannot quietly lose each other's prose.
 
-**Saving is explicit.** Lorex has no autosave to reuse, so there is none: a Save button and Ctrl+S / Cmd+S, which works
+**Saving is explicit.** LorEvolve has no autosave to reuse, so there is none: a Save button and Ctrl+S / Cmd+S, which works
 from anywhere on the page while a scene is open and never opens the browser's own save. Unsaved means the text differs
 from what the API last confirmed; it clears only when a save succeeds, so a failed save leaves the text and the state
 exactly as they were, and trying again is pressing Save again. The status is a live region beside the button.

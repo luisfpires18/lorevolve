@@ -20,7 +20,7 @@ The hook is project-scoped rather than global (`rtk init -g`) so the trial is tr
 git, reverts with the branch, and does not change behaviour in unrelated repositories.
 
 **RTK is still experimental here, and it never owns authorization.** The hook does not call
-`rtk hook claude` directly. It calls a Lorex wrapper that keeps the rewrite and throws the
+`rtk hook claude` directly. It calls a LorEvolve wrapper that keeps the rewrite and throws the
 permission decision away.
 
 ## The wrapper
@@ -87,8 +87,8 @@ Raw vs RTK, measured once, on commands that were going to be run anyway.
 | --- | --- | --- | --- |
 | `git status` | 7 lines / 302 B | 2 lines / 53 B | 83% |
 | `git log --oneline -30` | 30 lines / 1905 B | 30 lines / 1905 B | 0% |
-| `dotnet build Lorex.slnx` (success) | 10 lines / 488 B | 1 line / 64 B | 87% |
-| `dotnet build Lorex.slnx` (failure) | 33 lines / 11576 B | 35 lines / 11578 B | 0% |
+| `dotnet build LorEvolve.slnx` (success) | 10 lines / 488 B | 1 line / 64 B | 87% |
+| `dotnet build LorEvolve.slnx` (failure) | 33 lines / 11576 B | 35 lines / 11578 B | 0% |
 | `npm run typecheck` | 4 lines / 48 B | 1 line / 18 B | 58% |
 | `npm run lint` | 4 lines / 34 B | 1 line / 9 B | 78% |
 
@@ -129,7 +129,7 @@ rerun is a data point** and belongs in the log below.
   | Original | RTK rewrite | Semantics |
   | --- | --- | --- |
   | `git status`, `git diff`, `git log --oneline -5` | `rtk <same>` | preserved |
-  | `dotnet build Lorex.slnx` | `rtk dotnet build Lorex.slnx` | preserved |
+  | `dotnet build LorEvolve.slnx` | `rtk dotnet build LorEvolve.slnx` | preserved |
   | `npm run typecheck`, `npm run build`, `npm run format:check` | `rtk npm run <script>` | preserved |
   | `npm run lint` | `rtk lint` | **changed** - `rtk lint` assumes ESLint, this repo uses oxlint, and it fails with "JSON parse failed" |
   | `npx tsc --noEmit` | `rtk tsc --noEmit` | **changed** - drops `npx` |
@@ -162,7 +162,7 @@ and Claude Code runs the original command.
 | Group | Input | Result |
 | --- | --- | --- |
 | safe simple | `git status`, `git diff`, `git diff --stat HEAD~1` | accepted as `rtk <same>` |
-| safe simple | `dotnet build`, `dotnet build Lorex.slnx`, `git log --oneline -5` | accepted as `rtk <same>` |
+| safe simple | `dotnet build`, `dotnet build LorEvolve.slnx`, `git log --oneline -5` | accepted as `rtk <same>` |
 | safe simple | `dotnet test` | bypass - RTK does not rewrite it |
 | repo script | `npm run typecheck`, `npm run build`, `npm run format:check` | accepted as `rtk npm run <script>` |
 | repo script | `npm run lint` | **bypass** - RTK wanted `rtk lint` |
@@ -283,7 +283,7 @@ waiting on.
 | Question | Answer |
 | --- | --- |
 | Live hook working after the restart | **Yes.** The PATH break is gone. `git status` returned `* dev...origin/dev` / `clean — nothing to commit` - filtered output, not exit 127. |
-| Command categories filtered | Four commands, three categories: `git status`, `git checkout -b <branch> dev`, `wc -l <files>`, and `dotnet build Lorex.slnx`. The build is the one that matters: 10 lines of MSBuild boilerplate collapsed to `ok dotnet build: 3 projects, 0 errors, 0 warnings (00:00:01.66)`. `wc -l` gained a `Σ` total line, which is a rewrite of the output rather than a trim, and was correct. |
+| Command categories filtered | Four commands, three categories: `git status`, `git checkout -b <branch> dev`, `wc -l <files>`, and `dotnet build LorEvolve.slnx`. The build is the one that matters: 10 lines of MSBuild boilerplate collapsed to `ok dotnet build: 3 projects, 0 errors, 0 warnings (00:00:01.66)`. `wc -l` gained a `Σ` total line, which is a rewrite of the output rather than a trim, and was correct. |
 | `rtk gain` | 19 commands, 727 tokens, 16.4%. Session delta over the Phase 012 baseline (15 / 592 / 14.1%): **4 commands, 135 tokens**. |
 | Safety-wrapper bypasses | Every compound command (`&&`, `;`, `\|`) ran unfiltered, as designed - including the opening `git status --porcelain && …`. `cat <file>` ran unfiltered twice, the substitution rule rejecting `rtk read`. `grep` and `ls` were not rewritten. No bypass cost anything; each simply ran normally. |
 | Unfiltered reruns caused by missing diagnostics | **Zero.** `rtk proxy` was not used. No filtered output was ambiguous enough to need the raw log. |

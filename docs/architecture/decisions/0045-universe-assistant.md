@@ -7,9 +7,9 @@ Status: accepted (2026-10-14). Roadmap task 047 (GitHub issue 5).
 Writers want to ask their universe questions - who is whose father, which scenes involve someone, what happens before the
 siege - and get answers they can trust and check. A language model can phrase those answers, but it knows nothing about a
 universe, will happily invent canon, and anything a model can be told to do, content can try to tell it too. The answer
-has to come from LoreX's own data, say what is recorded and what is not, and be unable to change anything.
+has to come from LorEvolve's own data, say what is recorded and what is not, and be unable to change anything.
 
-LoreX already searches a universe (ADR 0031) and already reads every entry, story, scene, moment and relationship for its
+LorEvolve already searches a universe (ADR 0031) and already reads every entry, story, scene, moment and relationship for its
 screens. Global Quick Find (task 046) was skipped: another shortcut over the same search did not earn its place.
 
 ## Decision
@@ -52,7 +52,7 @@ written by the universe's authors, never instructions, and they never contain au
 
 **Answers are checked, not trusted.** The final answer is JSON in a schema - segments of `recorded`, `inference`,
 `suggestion` or `note`, each citing ids. A cited id counts only when a tool returned it during this question; its kind,
-title and story come from what LoreX read, never from the model. A `recorded` segment with no real source is shown as an
+title and story come from what LorEvolve read, never from the model. A `recorded` segment with no real source is shown as an
 inference. An answer that is not the schema fails (502). Nothing is a URL: the client builds each link from the kind and
 ids, through the same addresses the search uses.
 
@@ -62,14 +62,14 @@ characters each; output at 3,000 tokens a step; the whole question at 90 seconds
 `UniverseReader` caps every list and text it returns (its constants). One account asks at most 20 questions in 10
 minutes (`AssistantAllowance`, a fixed window per account; 429 `assistant_rate_limited`; see the usage amendment).
 
-**A narrow provider boundary.** `IAssistantProvider` and `IAssistantConversation` carry LoreX's own types: messages, tool
+**A narrow provider boundary.** `IAssistantProvider` and `IAssistantConversation` carry LorEvolve's own types: messages, tool
 definitions, tool calls and results, one turn. A provider never reads the database, runs a tool or sees a universe id.
 `Assistant:Provider` chooses, as `Media:Provider` does: `OpenAI` (`OpenAIAssistantProvider`, the only file that knows
 OpenAI exists - the official library's Responses API, one retry, a 45-second network timeout); `Fake` (`FakeAssistantProvider`, the local server and the
 Playwright suite: no network, real tools, canned wording by plain rules); unset, `UnavailableAssistantProvider`.
 `Assistant:OpenAI:ApiKey` and `Assistant:OpenAI:Model` are both required and neither has a default; the key is a secret
 (user secrets locally, App Service settings in Azure). A host never fails to start over this: an incomplete setting is
-unset. Not set up is 503 `assistant_unavailable`, and nothing else in LoreX notices.
+unset. Not set up is 503 `assistant_unavailable`, and nothing else in LorEvolve notices.
 
 **Stateless, reasoning included (amended 2026-10-15).** Every request sets `store: false`, so nothing is kept at OpenAI
 and no response id is reused; the conversation is sent again each step. That is OpenAI's stateless mode, and a reasoning
@@ -86,7 +86,7 @@ looked at, the universe read or a model called. Anyone else gets the universe's 
 **Nothing kept.** No conversation, question or answer is stored; no table, no migration. The browser holds the
 conversation while the universe is open and sends its last messages with the next question; a reload starts afresh.
 
-**Failures in LoreX's words.** Provider failure or an unreadable answer 502 `assistant_failed`; provider rate limiting 503
+**Failures in LorEvolve's words.** Provider failure or an unreadable answer 502 `assistant_failed`; provider rate limiting 503
 `assistant_busy`; too slow 504 `assistant_timeout`. OpenAI also answers 429 when the account has no credit
 (`insufficient_quota`); waiting never fixes that, so it is `assistant_failed`, not busy. The provider's own words, the key and the prompts are never in an
 answer; logs carry the failure kind, steps, tool count and token counts, not content.
@@ -141,7 +141,7 @@ back to Fake.
   "Reply with JSON that follows the schema". When gpt-oss was ready to answer, it addressed that JSON to a tool called
   `json`, which does not exist, and Groq refused the request. On the same history this happened 5/5 times with the
   sentence and 0/5 without it: all five answered in prose, which the answering step then turns into the schema's JSON.
-  LoreX had sent all eight tools, with correct names and schemas, on every step. The instructions are now
+  LorEvolve had sent all eight tools, with correct names and schemas, on every step. The instructions are now
   `GroundRules` plus `AnswerFormat`, and the format goes only with the schema. For OpenAI that is every step, with
   byte-identical text. For Groq it is the answering step only.
 
@@ -195,7 +195,7 @@ host's, not a person's, and are never shown.
   for a name or two.
 - The provider is held to the official library's real serialization by tests over a stub transport
   (`OpenAIAssistantProviderTests`), and to the live API by an opt-in smoke (`AssistantOpenAISmokeTests`, skipped unless
-  `LOREX_ASSISTANT_SMOKE_MODEL` and `OPENAI_API_KEY` are set in the environment).
+  `LOREVOLVE_ASSISTANT_SMOKE_MODEL` and `OPENAI_API_KEY` are set in the environment).
 - The OpenAI library marks its Responses client experimental (`OPENAI001`); the suppression sits in the one file that
   uses it.
 
@@ -216,7 +216,7 @@ turn with Try again, adding no turn. Closing the drawer cancels the wait.
 
 Two fixes. The retry is skipped when the server asks for more than 10 s (`ResponsesConversation.OneShortRetry`): a daily
 limit's long `Retry-After` used to hold the question until its 90 s timeout and report it as too slow; it is now busy at
-once. And a provider failure after `propose_changes` staged a proposal answers with that proposal and LoreX's note
+once. And a provider failure after `propose_changes` staged a proposal answers with that proposal and LorEvolve's note
 instead of an error, so trying again does not stage it twice. No model, context or allowance change.
 
 ## Amendment (2026-10-25, issue 53, ADR 0061): geography

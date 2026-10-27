@@ -9,7 +9,7 @@ Development must work from a clean clone with no database server to install.
 ## Decision
 
 EF Core with the SQLite provider. The development database lives at
-`src/Lorex.Api/App_Data/lorex.dev.db` (gitignored) and is created by applying
+`src/LorEvolve.Api/App_Data/lorevolve.dev.db` (gitignored) and is created by applying
 migrations at startup, in the `Development` environment only.
 
 Relative `Data Source` values are resolved against the content root by

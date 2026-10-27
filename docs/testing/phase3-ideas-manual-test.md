@@ -9,7 +9,7 @@ Keep a second browser tab for step 7, and a second account for step 10.
 
 ## Before starting
 
-- Start Lorex (`Start-Lorex.cmd`) and sign in. Starting it applies the `AddIdeas` migration: it only adds tables, and nothing
+- Start LorEvolve (`Start-LorEvolve.cmd`) and sign in. Starting it applies the `AddIdeas` migration: it only adds tables, and nothing
   that exists changes.
 - Recovered drafts live in this browser only. A private window, or clearing site data, starts with none.
 
@@ -45,7 +45,7 @@ Tick each when it behaves as written. Note anything that surprised you, even if 
    tab outright. Open the idea again: the saved idea is in the form, which does not take typing, and "Recovered draft" is
    offered. Show the draft reads it. Recover draft: your writing is back, "Unsaved changes", nothing saved. Save it; reopening
    offers nothing. Do the same on New idea before creating it.
-10. **Another account.** Leave an unsaved new idea behind (close the tab), open Lorex again and sign out from the universes
+10. **Another account.** Leave an unsaved new idea behind (close the tab), open LorEvolve again and sign out from the universes
     screen. Sign in as the second account and open New idea: nothing is offered, and none of the first account's ideas are
     listed. Sign back in as the first: the draft is offered again.
 11. **Leaving unsaved writing.** Type into an idea, then follow a link, press the browser's Back, and choose Sign out - each

@@ -5,12 +5,12 @@ version 34), ADR 0042 (what counts against storage) and ADR 0019 (the picture pi
 
 ## Context
 
-Creators draw or obtain maps of their worlds elsewhere and want them inside LoreX: a picture to pan and zoom, places
+Creators draw or obtain maps of their worlds elsewhere and want them inside LorEvolve: a picture to pan and zoom, places
 marked on it, each place opening the Lore entry it stands for, and each entry leading back to its place on the map. The
 owner asked for a viewer and pins, explicitly not a drawing studio, and asked that nothing about the data model block
 queryable geography and distance later (issue 53).
 
-LoreX already stores one picture per entry and a gallery per appearance in a private bucket, decodes every upload to
+LorEvolve already stores one picture per entry and a gallery per appearance in a private bucket, decodes every upload to
 decide what it is, keys objects by ids alone, writes derivatives before the row moves and sweeps after the commit (ADR
 0019, ADR 0053), counts originals against the owner's storage (ADR 0042), carries originals in a backup (ADR 0014) and
 gates every universe route by capability (ADR 0041). Maps reuse all of it.
@@ -26,7 +26,7 @@ a universe, five hundred pins a map.
 decoding it (JPEG, PNG, WebP; 8 MB; 10,000 px a side; 24 megapixels) - `ImagePreparation.FitAsync` - and the derivative
 is the whole picture fitted within 4,096 px on its longer side as WebP, never a crop: a map has nothing to frame. Two
 objects under ids alone, `universes/{u}/maps/{map}/{asset}/original.{ext}` and `.../display.webp`; the original counts
-against the universe owner's storage, the derivative never. Both are read through authenticated LoreX routes with the
+against the universe owner's storage, the derivative never. Both are read through authenticated LorEvolve routes with the
 asset id in the path (`private, immutable`), never a URL into the bucket, and never publicly: a map is read by the
 universe's members and by nobody else. The public portal shows none, and no public route exists for one.
 

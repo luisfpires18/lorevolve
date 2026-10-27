@@ -10,7 +10,7 @@ Keep a second browser tab for step 5, and a second account for step 11.
 
 ## Before starting
 
-- Start Lorex (`Start-Lorex.cmd`) and sign in. Starting it applies the `AddContentRecovery` migration to the local database:
+- Start LorEvolve (`Start-LorEvolve.cmd`) and sign in. Starting it applies the `AddContentRecovery` migration to the local database:
   every existing manuscript becomes version 1 of its own history, and nothing else changes.
 - Recovered drafts live in this browser only. A private window, or clearing site data, starts with none.
 
@@ -42,8 +42,8 @@ Tick each when it behaves as written. Note anything that surprised you, even if 
    your text as unsaved changes; Done asks before closing without saving. Try Discard draft on another round.
 7. **Choosing to leave.** Type without saving, then follow a sidebar link and answer that you do want to leave. Come back: no
    offer. The same for Sign out, the browser's Back button, and Done. Only closing the tab or the browser keeps a draft.
-8. **Failed and refused saves.** Stop the API (`Stop-Lorex.cmd` in another window, or turn the network off in dev tools),
-   type, press Save: it fails, your text stays. Close the tab, start Lorex again and reopen: the draft is offered.
+8. **Failed and refused saves.** Stop the API (`Stop-LorEvolve.cmd` in another window, or turn the network off in dev tools),
+   type, press Save: it fails, your text stays. Close the tab, start LorEvolve again and reopen: the draft is offered.
 9. **The Trash for a scene.** On the Scenes view, delete a scene that has prose and plot beats. The confirmation says it goes to
    the Trash. It is gone from Scenes, the Manuscript outline and the beats. In Trash it is listed as "Scene", "In “<story>”".
    Restore it: the message links to it, and it opens focused, last in its chapter, with its prose and history and its beats.
