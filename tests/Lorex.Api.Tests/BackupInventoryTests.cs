@@ -95,6 +95,11 @@ public sealed class BackupInventoryTests
         "IdeaSceneReferences",
         "IdeaStoryReferences",
 
+        // The idea boards that belong to this universe (ADR 0066).
+        "IdeaBoards",
+        "IdeaBoardCards",
+        "IdeaBoardConnections",
+
         // Maps.
         "UniverseMaps",
         "MapPins",
@@ -119,11 +124,6 @@ public sealed class BackupInventoryTests
     [
         ("AspNetUsers", "identity tables are not the world (ADR 0014)"),
 
-        // Pending, not settled: ADR 0066 carries universe boards in format 36, the next step on feat/idea-boards. Move these
-        // to Carried with the export, validation and restore; never merge them here.
-        ("IdeaBoards", "pending backup format 36 (ADR 0066)"),
-        ("IdeaBoardCards", "pending backup format 36 (ADR 0066)"),
-        ("IdeaBoardConnections", "pending backup format 36 (ADR 0066)"),
         ("AspNetRoles", "identity tables are not the world (ADR 0014)"),
         ("AspNetRoleClaims", "identity tables are not the world (ADR 0014)"),
         ("AspNetUserClaims", "identity tables are not the world (ADR 0014)"),

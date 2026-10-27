@@ -59,8 +59,13 @@ writes nothing. 300 cards is a few tens of kilobytes; per-card writes wait until
 
 ### Backup
 
-Universe boards are authored data about the universe and travel in its backup (format 36, carried with the ideas);
-unassigned boards, like unassigned ideas, are in no universe backup.
+Universe boards are authored data about the universe and travel in its backup (format 36): title, deleted marker, cards in
+draw order with their ids, and lines. Unassigned boards, like unassigned ideas, are in no universe backup.
+
+A universe board may hold unassigned ideas, which the file does not carry. Such a card carries the idea's title
+(`outsideIdeaTitle`). A restore links it back to the restoring account's own idea when that idea still exists, and otherwise
+keeps the card as a note holding the title - never dropped silently, never linked to someone else's idea. A version 35 file
+restores no board.
 
 ## Deliberately unsupported
 

@@ -21,8 +21,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     **Off until the owner adds `DatabaseBackup__*` settings**; R2 path and DEV untested. Local drill measured (63.6 MB, 57.6 s).
 - **Idea boards (ADR 0066)** `feat/idea-boards` off `dev` at `237f103`, worktree `worktrees/LOREX-idea-boards`; not merged,
   not pushed. Plan `docs/design/idea-boards-plan.md`. Done: ADR 0066 (amends 0030), step 2 backend (model, `AddIdeaBoards`,
-  `/api/idea-boards`, universe-delete release, tests). Next: step 3 backup format 36 - board tables sit in
-  `BackupInventoryTests.LeftOut` as **pending** and must move to Carried before merge; then frontend, E2E.
+  `/api/idea-boards`, universe-delete release, tests); step 3 backup format 36 (boards carried, outside ideas by title,
+  restore links or turns them into notes). Next: step 4 frontend, step 5 E2E. Pre-existing `dev` failures, not this
+  branch: `DatabaseFailureTests.Any_constraint...`, `TrashPermanentDeleteTests.Bulk_sweeps...` and `.An_entrys_picture_is_swept...` (intermittent).
 - **Issue #29 - Claude Code MCP toolchain** (merged into `dev`). `.mcp.json` (no secret): `microsoft-learn`, `context7`,
   `openai-docs` (HTTP, no auth), `chrome-devtools` (`chrome-devtools-mcp@1.12.0 --isolated`, telemetry and CrUX off), all
   four connected in sessions. `github` dropped by owner decision (2026-10-26): the `gh` CLI covers GitHub, and without a

@@ -281,8 +281,16 @@ public sealed record UniverseBackup(
     /// as fractions, the distance between them and the unit's name exactly as written, or null. Not ignorable: the numbers and the
     /// unit are the creator's, and a version 34 reader would restore every map unable to measure. A file at version 34 or earlier
     /// restores every map without a scale, even when it carries the member.
+    ///
+    /// 36 - An account may keep idea boards, and a board may belong to a universe (ADR 0066).
+    /// <see cref="UniverseBackupPayload.IdeaBoards"/> carries every board that belongs to this universe - title, deleted
+    /// marker, its cards in draw order and the lines between them. An idea card names an idea in this file, or one that is not
+    /// (an unassigned idea, which no universe backup holds) together with that idea's title, so a restore that cannot link it
+    /// keeps the words as a note. Not ignorable: notes and lines are authored, and a version 35 reader would restore the
+    /// universe with every board about it silently gone. A file at version 35 or earlier has none, even when it carries the
+    /// member. Boards that belong to no universe are never here.
     /// </summary>
-    public const int CurrentVersion = 35;
+    public const int CurrentVersion = 36;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -313,6 +321,9 @@ public sealed record UniverseBackup(
 ///
 /// <paramref name="EntityTypeGroups"/> is the universe's semantic groups by name (since version 23). Empty means none;
 /// absent - null, in any earlier file - means the same thing.
+///
+/// <paramref name="IdeaBoards"/> is every idea board that belongs to the universe, live ones first (since version 36).
+/// Empty means none; absent means the same thing. Boards that belong to no universe are never here.
 /// </summary>
 public sealed record UniverseBackupPayload(
     BackupUniverse Universe,
@@ -331,7 +342,42 @@ public sealed record UniverseBackupPayload(
     BackupChronologyCalendar? ChronologyCalendar = null,
     IReadOnlyList<BackupEntityTypeGroup>? EntityTypeGroups = null,
     IReadOnlyList<BackupKnowledgeRecord>? KnowledgeRecords = null,
-    IReadOnlyList<BackupMap>? Maps = null);
+    IReadOnlyList<BackupMap>? Maps = null,
+    IReadOnlyList<BackupIdeaBoard>? IdeaBoards = null);
+
+/// <summary>
+/// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
+/// cards are in draw order and keep their ids, which are unique only within the board; a restore gives the board a new id.
+/// </summary>
+public sealed record BackupIdeaBoard(
+    Guid Id,
+    string Title,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    DateTime? DeletedAt,
+    IReadOnlyList<BackupIdeaBoardCard> Cards,
+    IReadOnlyList<BackupIdeaBoardConnection> Connections);
+
+/// <summary>
+/// One card: a note's <paramref name="Text"/>, an entry of this file by <paramref name="EntityId"/>, or an idea by
+/// <paramref name="IdeaId"/>. An idea this file does not hold - the account's unassigned idea, or one since moved to another
+/// universe - also carries its <paramref name="OutsideIdeaTitle"/>: a restore links the card back when the restoring account
+/// still has that idea, and otherwise keeps the title as a note rather than losing the card.
+/// </summary>
+public sealed record BackupIdeaBoardCard(
+    Guid Id,
+    IdeaBoardCardKind Kind,
+    double X,
+    double Y,
+    double Width,
+    double Height,
+    string? Text,
+    Guid? IdeaId,
+    Guid? EntityId,
+    string? OutsideIdeaTitle);
+
+/// <summary>A line between two cards of the same board, by their ids.</summary>
+public sealed record BackupIdeaBoardConnection(Guid Id, Guid FromCardId, Guid ToCardId, string? Label);
 
 /// <summary>
 /// One map of the universe (since version 34, ADR 0060): its details, its picture and its pins in title order. Ids are

@@ -1,6 +1,6 @@
 # Idea boards - plan
 
-Status: approved 2026-10-27 with the recommended answers (ADR 0066). Step 2 (backend) done on `feat/idea-boards`.
+Status: approved 2026-10-27 with the recommended answers (ADR 0066). Steps 2 (backend) and 3 (backup 36) done on `feat/idea-boards`.
 
 ## What it is
 
