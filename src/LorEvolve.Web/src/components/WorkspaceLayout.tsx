@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { countProposals } from '../aiChanges/api'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { AccountMenu } from './AccountMenu'
 import { BRAND_LINK_LABEL, BrandMark } from './BrandMark'
@@ -30,23 +28,9 @@ function screenName(pathname: string) {
  * A universe is not drawn in this frame. It is one level deeper and keeps its own rail and sidebar, with All universes
  * at the head of the sidebar as the way back up.
  */
-/** How many proposals wait for the account (ADR 0047), read again on each screen. Nothing shown if it can't be read. */
-function useWaitingChanges(pathname: string) {
-  const [count, setCount] = useState(0)
-  useEffect(() => {
-    const controller = new AbortController()
-    countProposals(controller.signal)
-      .then((answer) => setCount(answer.open))
-      .catch(() => {})
-    return () => controller.abort()
-  }, [pathname])
-  return count
-}
-
 export function WorkspaceLayout() {
   const { pathname } = useLocation()
   useDocumentTitle(screenName(pathname))
-  const waiting = useWaitingChanges(pathname)
 
   return (
     <div className="home">
@@ -86,22 +70,6 @@ export function WorkspaceLayout() {
                 data-testid="workspacebar-ideas"
               >
                 Ideas
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                className="workspacebar__link"
-                to="/app/ai-changes"
-                data-testid="workspacebar-ai-changes"
-              >
-                AI changes
-                {waiting > 0 ? (
-                  <span className="workspacebar__count" data-testid="workspacebar-ai-changes-count">
-                    <span className="visually-hidden">, </span>
-                    {waiting}
-                    <span className="visually-hidden"> waiting</span>
-                  </span>
-                ) : null}
               </NavLink>
             </li>
           </ul>

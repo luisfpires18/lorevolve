@@ -50,7 +50,7 @@ async function upload(page: Page, universeId: string, entryId: string) {
 }
 
 async function expectStorage(page: Page, text: string | RegExp) {
-  await page.goto('/app/profile')
+  await page.goto('/app/profile?tab=usage')
   const section = page.getByTestId('profile-usage').getByTestId('usage-storage')
   await expect(section.getByRole('heading', { name: 'Storage' })).toBeVisible()
   await expect(section.getByTestId('usage-storage-amount')).toHaveText(text)

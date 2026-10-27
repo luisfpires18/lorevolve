@@ -289,68 +289,32 @@ test.describe('The brand leads home, and Explore stays its own place', () => {
   })
 })
 
-test.describe('The home page’s worlds are Explore’s', () => {
-  test('the preview shows exactly the first published worlds the API returns, four at most, and links to Explore', async ({
+test.describe('The home page points to Explore for published worlds', () => {
+  test('no world cards and no listing request: a line about published worlds and the link to Explore', async ({
     page,
     browser,
   }) => {
-    // At least one public world exists, whoever else is publishing.
+    // A public world exists, so a card would have something to show if the page still drew them.
     await account(page.request)
     await publishedWorld(page)
 
     const { context, page: visitor } = await stranger(browser, 1440)
-    const answered = visitor.waitForResponse(
-      (response) =>
-        response.url().includes('/api/public/universes?') && response.request().method() === 'GET',
-    )
+    const listings: string[] = []
+    visitor.on('request', (request) => {
+      if (request.url().includes('/api/public/universes')) listings.push(request.url())
+    })
     await visitor.goto('/')
-    const response = await answered
-    const url = new URL(response.url())
-    expect(url.searchParams.get('page')).toBe('1')
-    expect(url.searchParams.get('pageSize')).toBe('4')
-    const listed = ((await response.json()) as { items: { name: string }[] }).items.map(
-      (world) => world.name,
+    const section = visitor.locator('.landing-explore')
+    await expect(section.getByRole('heading', { level: 2 })).toHaveText(
+      'Read the worlds others have shared.',
     )
-    expect(listed.length).toBeGreaterThan(0)
-    expect(listed.length).toBeLessThanOrEqual(4)
-
-    const cards = visitor.getByTestId('landing-worlds').locator('.worldcard__name')
-    await expect(cards).toHaveText(listed)
-    await expect(visitor.getByTestId('landing-worlds-loading')).toHaveCount(0)
+    await expect(section.locator('.landing-lede')).toContainText('Anyone can read them in Explore')
+    await expect(visitor.locator('.landing .worldcard')).toHaveCount(0)
+    await expect(visitor.getByTestId('landing-explore-all')).toHaveText('Explore all worlds')
+    expect(listings).toEqual([])
 
     await visitor.getByTestId('landing-explore-all').click()
     await visitor.waitForURL('/explore')
-    await context.close()
-  })
-
-  test('no published worlds: the section says so and offers Explore, with no card, placeholder or skeleton', async ({
-    browser,
-  }) => {
-    const { context, page } = await stranger(browser)
-    await page.route('**/api/public/universes?**', (route) =>
-      route.fulfill({
-        json: { items: [], page: 1, pageSize: 4, totalCount: 0, totalPages: 0 },
-      }),
-    )
-    await page.goto('/')
-    await expect(page.getByTestId('landing-worlds-empty')).toHaveText(
-      'No worlds have been published yet. When an author makes a universe public, it appears in Explore.',
-    )
-    await expect(page.locator('.landing .worldcard')).toHaveCount(0)
-    await expect(page.getByTestId('landing-explore-all')).toHaveText('Open Explore')
-    await context.close()
-  })
-
-  test('the listing cannot be read: the page still stands and points to Explore', async ({
-    browser,
-  }) => {
-    const { context, page } = await stranger(browser)
-    await page.route('**/api/public/universes?**', (route) => route.abort())
-    await page.goto('/')
-    await expect(page.getByTestId('landing-worlds-error')).toBeVisible()
-    await expect(page.locator('.landing .worldcard')).toHaveCount(0)
-    await expect(page.getByTestId('landing-explore-all')).toHaveText('Explore all worlds')
-    await expect(page.getByTestId('landing-primary')).toHaveText('Start building')
     await context.close()
   })
 })
