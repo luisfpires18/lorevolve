@@ -124,6 +124,10 @@ jobs:
         with:
           app-name: ${{ vars.AZURE_WEBAPP_NAME }}
           package: publish
+          # Replace the site, not add to it: without this every deploy left its hashed bundles and source maps
+          # behind, and on the Free plan's 1 GB they filled /home - the database's disk too - by October 2026.
+          type: ZIP
+          clean: true
 
       # A deployment that answers is the only proof worth having. The wait is for the platform
       # to finish swapping in the new site, not for anything inside the app: LorEvolve applies its
