@@ -293,10 +293,15 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
         var (original, thumbnail) = await Picture(client, u, entity);
 
         var entityPresentWhenSwept = new System.Collections.Concurrent.ConcurrentQueue<bool>();
+        // The sweep deletes in parallel, and the test host's database is one shared SQLite connection, which is not safe
+        // to query from two threads at once: unserialized, a query here sometimes throws, the sweep logs it as an orphan and
+        // the count comes up short.
+        var oneQueryAtATime = new Lock();
         _factory.Media.FailDelete = key =>
         {
             if (key == original || key == thumbnail)
             {
+                using var serialized = oneQueryAtATime.EnterScope();
                 using var scope = _factory.Services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<LorEvolveDbContext>();
                 entityPresentWhenSwept.Enqueue(db.Entities.Any(row => row.Id == entity));
