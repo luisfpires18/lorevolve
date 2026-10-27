@@ -311,6 +311,12 @@ textarea,
   background: var(--paper);
 }
 
+.session-pending--unreachable {
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+
 /* ---------- Auth canvas ---------- */
 
 .auth {

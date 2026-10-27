@@ -38,6 +38,8 @@ interface EraDraft {
   momentCount: number
   yearCount: number
   sceneCount: number
+  entryEraCount: number
+  periodCount: number
 }
 
 function draftsFrom(chronology: Chronology): EraDraft[] {
@@ -51,6 +53,8 @@ function draftsFrom(chronology: Chronology): EraDraft[] {
     momentCount: era.momentCount,
     yearCount: era.yearCount,
     sceneCount: era.sceneCount,
+    entryEraCount: era.entryEraCount,
+    periodCount: era.periodCount,
   }))
 }
 
@@ -75,6 +79,10 @@ function usageOf(era: EraDraft) {
   if (era.momentCount > 0) parts.push(plural(era.momentCount, 'moment', 'moments'))
   if (era.yearCount > 0) parts.push(plural(era.yearCount, 'year on an entry', 'years on entries'))
   if (era.sceneCount > 0) parts.push(plural(era.sceneCount, 'scene', 'scenes'))
+  if (era.entryEraCount > 0)
+    parts.push(plural(era.entryEraCount, 'era of an entry', 'eras of entries'))
+  if (era.periodCount > 0)
+    parts.push(plural(era.periodCount, 'relationship period', 'relationship periods'))
   return parts.length === 0 ? null : `Dates ${parts.join(' and ')}`
 }
 
@@ -200,6 +208,8 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
         momentCount: 0,
         yearCount: 0,
         sceneCount: 0,
+        entryEraCount: 0,
+        periodCount: 0,
       },
     ])
   }

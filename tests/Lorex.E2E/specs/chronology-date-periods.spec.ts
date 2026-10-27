@@ -295,6 +295,28 @@ test.describe('chronology date periods', () => {
     await expect(card).toHaveCount(1)
   })
 
+  test('a period dated only by entry eras or relationship periods still says it is in use', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const id = await universe(page)
+    await seedPeriods(page, id, [{ name: 'First Age', abbreviation: 'FA' }])
+
+    // Seeding a progression era and a relationship period takes half the product; the editor only reads the counts.
+    await page.route(`**/api/universes/${id}/chronology`, async (route) => {
+      if (route.request().method() !== 'GET') return route.continue()
+      const response = await route.fetch()
+      const body = (await response.json()) as { eras: Record<string, unknown>[] }
+      body.eras[0] = { ...body.eras[0], entryEraCount: 1, periodCount: 2 }
+      await route.fulfill({ response, json: body })
+    })
+
+    await page.goto(`/app/universes/${id}/chronology`)
+    const card = page.getByTestId('era')
+    await expect(card).toContainText('Dates 1 era of an entry and 2 relationship periods')
+    await expect(card.getByTestId('era-remove')).toBeDisabled()
+  })
+
   test('periods read right in light and dark, on a phone and at 200% zoom, with right-to-left names isolated', async ({
     browser,
   }) => {

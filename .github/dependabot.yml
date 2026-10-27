@@ -1,0 +1,42 @@
+# Weekly, grouped, so updates arrive as a few reviewable PRs into dev rather than one per package.
+# ImageSharp is held at 3.x until the licensed 4.x upgrade (#33 M-1, issue #51).
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    groups:
+      nuget:
+        patterns: ['*']
+    ignore:
+      - dependency-name: SixLabors.ImageSharp
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: npm
+    directory: /src/Lorex.Web
+    target-branch: dev
+    schedule:
+      interval: weekly
+    groups:
+      web:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /tests/Lorex.E2E
+    target-branch: dev
+    schedule:
+      interval: weekly
+    groups:
+      e2e:
+        patterns: ['*']
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

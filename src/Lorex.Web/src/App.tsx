@@ -1,5 +1,12 @@
 import { lazy, Suspense, type ReactNode } from 'react'
-import { createBrowserRouter, Navigate, Route, RouterProvider, Routes } from 'react-router-dom'
+import {
+  createBrowserRouter,
+  Navigate,
+  Route,
+  RouterProvider,
+  Routes,
+  useRouteError,
+} from 'react-router-dom'
 import { AuthProvider } from './auth/AuthProvider'
 import { ConfirmHost } from './components/ConfirmDialog'
 import { RequireAdmin, RequireAuth, RequireGuest } from './auth/routes'
@@ -345,7 +352,45 @@ function Root() {
  * writing needs that (`HistoryLeaveGuard`, ADR 0028). Every route, layout and link resolves as it did under
  * `BrowserRouter`.
  */
-const router = createBrowserRouter([{ path: '*', element: <Root /> }])
+const router = createBrowserRouter([{ path: '*', element: <Root />, errorElement: <AppCrashed /> }])
+
+/** A screen's code that no longer exists on the server: the tab predates a deploy and asked for an old chunk. */
+function isStaleChunk(error: unknown) {
+  return (
+    error instanceof Error &&
+    /dynamically imported module|Importing a module script failed|error loading dynamically imported/i.test(
+      error.message,
+    )
+  )
+}
+
+/**
+ * What replaces the app when a screen throws while rendering, instead of the router's developer error page. The usual
+ * cause after a deploy is a stale chunk, and a reload is the whole fix; anything else is a bug, and a reload is still
+ * the only thing the author can do about it. Unsaved writing is kept by the local drafts (ADR 0028).
+ */
+function AppCrashed() {
+  const error = useRouteError()
+  const stale = isStaleChunk(error)
+  return (
+    <main className="session-pending session-pending--unreachable">
+      <div className="notice notice--error" role="alert">
+        <p>
+          {stale
+            ? 'Lorex was updated while this page was open. Reload to continue.'
+            : 'Something went wrong on this page. Reload to try again.'}
+        </p>
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={() => window.location.reload()}
+        >
+          Reload
+        </button>
+      </div>
+    </main>
+  )
+}
 
 export default function App() {
   return (

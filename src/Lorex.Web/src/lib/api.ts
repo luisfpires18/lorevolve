@@ -68,6 +68,13 @@ export function apiErrorFrom(status: number, payload: unknown) {
   return new ApiError(status, message, fieldErrors, problem.code ?? null, payload)
 }
 
+/**
+ * Fired on `window` when the API answers 401 outside `/api/auth/`: the session ended while the author was working. Only
+ * a missing session gets a 401 there (a wrong password is `/api/auth/` and stays the screen's own answer), so
+ * `AuthProvider` clears the user and the route guards send them to sign in, remembering where they were.
+ */
+export const SESSION_ENDED = 'lorex:session-ended'
+
 /** What any screen says when the server could not be reached at all. */
 export const NETWORK_FAILURE = 'Lorex could not be reached. Check your connection and try again.'
 
@@ -107,6 +114,9 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   const payload: unknown = isJson ? await response.json() : null
 
   if (!response.ok) {
+    if (response.status === 401 && !path.startsWith('/api/auth/')) {
+      window.dispatchEvent(new Event(SESSION_ENDED))
+    }
     throw apiErrorFrom(response.status, payload)
   }
 

@@ -67,7 +67,7 @@ internal static class MediaObjectWrites
     }
 
     /// <summary>
-    /// Deletes objects nothing points at any more, all at once, and never throws.
+    /// Deletes objects nothing points at any more, a few at a time, and never throws.
     ///
     /// Every caller has already decided what the truth is - either the write did not happen and
     /// these are litter, or it did and the superseded objects are litter - so the request has its
@@ -82,7 +82,8 @@ internal static class MediaObjectWrites
         ILogger logger,
         Action<ILogger, string, Exception> onOrphan,
         params string[] keys) =>
-        Task.WhenAll(keys.Select(async key =>
+        // Bounded: a failed restore can leave thousands of keys, and R2 throttles a burst that size.
+        Parallel.ForEachAsync(keys, new ParallelOptions { MaxDegreeOfParallelism = 8 }, async (key, _) =>
         {
             try
             {
@@ -92,5 +93,5 @@ internal static class MediaObjectWrites
             {
                 onOrphan(logger, key, exception);
             }
-        }));
+        });
 }
