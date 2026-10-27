@@ -32,7 +32,7 @@ universe, never promoted, not collaborative.
 - ADR 0014: backup content change = format bump + importer taught.
 - ADR 0043: whole-form save with stale check.
 - Memory rule: no new columns on `Universes` (SQLite rebuild breaks rollback tests). New tables only.
-- Feature folder: `src/Lorex.Api/Features/Ideas/` (boards are part of Ideas, not a new feature).
+- Feature folder: `src/LorEvolve.Api/Features/Ideas/` (boards are part of Ideas, not a new feature).
 
 ## Proposed V1
 
@@ -117,7 +117,7 @@ Rough size: backend 1.5-2 days, frontend 3-4 days, tests 1-2 days.
 ## Challenge
 
 - **Cheaper option?** A board that only holds existing ideas (no notes, no entries) cuts a table column and the entry
-  picker, but notes are what make a board feel like a board. Keeping notes, entries are the Lorex edge over WorldMatter
+  picker, but notes are what make a board feel like a board. Keeping notes, entries are the LorEvolve edge over WorldMatter
   (cards that stay linked to lore). Keep both; drop images.
 - **Library instead (React Flow / tldraw)?** React Flow (~150 KB) gives nodes/edges/pan/zoom free, but we already own
   pan/zoom/pinch in MapViewer, and our cards need our own pickers and stale-save flow anyway. tldraw is a whole drawing

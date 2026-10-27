@@ -1,6 +1,6 @@
 ---
 name: phase-workflow
-description: How a meaningful Lorex change is run end to end - investigate, constrain, plan, challenge, implement, validate, wrap up. Use when starting a feature, refactor, or any change big enough to need a plan, and again when closing one out. Trivial fixes skip it.
+description: How a meaningful LorEvolve change is run end to end - investigate, constrain, plan, challenge, implement, validate, wrap up. Use when starting a feature, refactor, or any change big enough to need a plan, and again when closing one out. Trivial fixes skip it.
 ---
 
 # Phase workflow

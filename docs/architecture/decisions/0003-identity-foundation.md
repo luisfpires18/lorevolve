@@ -10,7 +10,7 @@ product features, and the user entity shape is not decided yet.
 ## Decision
 
 Reference `Microsoft.AspNetCore.Identity.EntityFrameworkCore` now. Do not derive
-`LorexDbContext` from `IdentityDbContext`, register Identity services, or create
+`LorEvolveDbContext` from `IdentityDbContext`, register Identity services, or create
 Identity tables yet.
 
 The authentication phase changes the base class, adds the Identity migration and

@@ -18,10 +18,10 @@ One Azure App Service (Linux) and the plan it runs on. That is the whole environ
                                     |
                         App Service (Linux, B1, 1 worker)
                                     |
-    dotnet Lorex.Api.dll  ---  wwwroot/  (the built React client)
+    dotnet LorEvolve.Api.dll  ---  wwwroot/  (the built React client)
                                     |
                               /home/data/
-                          lorex.db   keys/
+                          lorevolve.db   keys/
 ```
 
 - **One process serves both halves.** The API is published with the built client in its
@@ -93,7 +93,7 @@ the federated credential and gives the owner a place to add a required reviewer 
 
 | File | Runs on | Does |
 | --- | --- | --- |
-| [`ci.yml`](../../.github/workflows/ci.yml) | Pull requests into `dev`; called by the deploy workflow | Backend Release build, tests in three shards by test class (`scripts/dotnet-test-shard.py`), pending-model check; web typecheck, lint, format, build; Playwright in six parallel shards inside Playwright's container image, each with its own fresh database and report (`tests/Lorex.E2E/README.md`) |
+| [`ci.yml`](../../.github/workflows/ci.yml) | Pull requests into `dev`; called by the deploy workflow | Backend Release build, tests in three shards by test class (`scripts/dotnet-test-shard.py`), pending-model check; web typecheck, lint, format, build; Playwright in six parallel shards inside Playwright's container image, each with its own fresh database and report (`tests/LorEvolve.E2E/README.md`) |
 | [`deploy-dev.yml`](../../.github/workflows/deploy-dev.yml) | Push to `dev`, or manual | Calls `ci.yml` and, alongside it, builds the client and publishes the API into an artifact (Package); once both pass, Deploy uploads that artifact and waits for `/health` |
 
 `dev` is the only branch that deploys, and the job is additionally guarded by
@@ -104,8 +104,8 @@ Package 20, Deploy 30), so a hung runner fails instead of holding the queue for 
 is named for one thing - install, build, test, publish, deploy, health check - so the run's own
 step timings show where the time went. Caching stays with `setup-node`'s npm cache: NuGet restore
 takes seconds, Chromium comes with the Playwright image, and the client is built again on purpose in Package,
-because its version and service-worker cache id come from that run (`LOREX_DEV_RUN`,
-`LOREX_BUILD_ID`).
+because its version and service-worker cache id come from that run (`LOREVOLVE_DEV_RUN`,
+`LOREVOLVE_BUILD_ID`).
 
 ## First deploy
 
@@ -119,8 +119,8 @@ because its version and service-worker cache id come from that run (`LOREX_DEV_R
 
 - The connection string lives in `appsettings.AzureDev.json`:
   `Data Source=/home/data/lorex.db`. It is not a secret and there is nothing to hide in it.
-- Override it without a redeploy with the app setting `ConnectionStrings__LorexDb`.
-- **The app migrates itself at startup.** `LorexDatabaseInitializer` runs before anything
+- Override it without a redeploy with the app setting `ConnectionStrings__LorEvolveDb`.
+- **The app migrates itself at startup.** `LorEvolveDatabaseInitializer` runs before anything
   queries a table, in every environment, and the search-index backfill waits on it. A cold
   start on an empty file therefore builds the whole schema and then serves.
 - To hand migrations to something else, set `Database__MigrateOnStartup` to `false`. The app
@@ -139,8 +139,8 @@ Limitations.
 
 ## Which version DEV is running
 
-The home page footer and the account menu show `LoreX v0.1.N-dev`. `N` comes from the Deploy DEV
-run number (`src/Lorex.Web/devVersion.ts`): run 101 is `0.1.1-dev`, run 102 is `0.1.2-dev`, and
+The home page footer and the account menu show `LorEvolve v0.1.N-dev`. `N` comes from the Deploy DEV
+run number (`src/LorEvolve.Web/devVersion.ts`): run 101 is `0.1.1-dev`, run 102 is `0.1.2-dev`, and
 so on. Nobody bumps it and no commit records it.
 
 - Every run gets a new, higher number, including a failed run and a rollback run that builds an
@@ -232,7 +232,7 @@ Check it after a deploy:
 - `curl -si -X POST https://<host>/mcp/universes/00000000-0000-0000-0000-000000000000` answers `401` with
   `WWW-Authenticate: Bearer resource_metadata="https://<host>/.well-known/oauth-protected-resource/mcp/universes/..."`.
 - In a universe, Connect to AI shows `https://<host>/mcp/universes/<id>`. Add it in Claude (Settings, Connectors, Add
-  custom connector) or ChatGPT (a connector in developer mode); the browser opens LoreX's consent screen; approve; ask
+  custom connector) or ChatGPT (a connector in developer mode); the browser opens LorEvolve's consent screen; approve; ask
   the app to call `get_universe_overview`. Profile, Connected apps lists it; Disconnect ends it.
 
 The site must be reachable from the internet for Claude and ChatGPT: their servers fetch the discovery documents and call
@@ -251,7 +251,7 @@ az webapp config appsettings set -g rg-lorex-dev -n lorex-dev-lfp18 --settings R
 
 ## Provision the owner's Admin account (ADR 0059)
 
-LoreX Admin (`/admin`) is closed to everyone until the server names its Admin. There is only ever one Admin: the
+LorEvolve Admin (`/admin`) is closed to everyone until the server names its Admin. There is only ever one Admin: the
 account this setting names. Nothing in the app grants the role, and a username, email or display name is never matched:
 only the account's immutable id.
 
@@ -261,7 +261,7 @@ only the account's immutable id.
 3. The log says `Platform Admin granted to account <id> from configuration.` (or nothing, if it already was). If another
    account was Admin, it also says it is a Member again. `PlatformAdmin:OwnerUserId names no account. No account is
    Admin.` means the id is wrong: fix it and restart.
-4. Reload LoreX: the account menu offers LoreX Admin, and `/api/auth/me` says `"isAdmin": true`.
+4. Reload LorEvolve: the account menu offers LorEvolve Admin, and `/api/auth/me` says `"isAdmin": true`.
 
 Keep the setting: every start re-applies it and changes nothing more. Changing it to another account's id moves the role
 there at the restart and makes the previous account a Member - never two Admins (the database refuses a second one).
@@ -281,16 +281,16 @@ setting at the production origin. Check with `curl -s https://<host>/worlds/<slu
 Over HTTPS, which the site is (`httpsOnly` is set), from a Chromium browser:
 
 1. Open `https://<app-name>.azurewebsites.net/`. DevTools -> Application -> Manifest should
-   show `Lorex`, `standalone`, start URL `/explore`, id `/app`, and four icons that all load.
+   show `LorEvolve`, `standalone`, start URL `/explore`, id `/app`, and four icons that all load.
 2. Application -> Service workers should show `sw.js` **activated** with scope `/`.
-3. Application -> Cache storage should hold only `lorex-static-v4`, containing `/assets/...` and
+3. Application -> Cache storage should hold only `lorevolve-static-v4`, containing `/assets/...` and
    root icons - **never** `/manifest.webmanifest` and never anything under `/api`. An older
-   `lorex-static-v3` still there means the new worker has not activated yet: reload once.
+   `lorevolve-static-v3` still there means the new worker has not activated yet: reload once.
 
 ### The installed app's front door (manual, on a device)
 
 The automated suite proves the worker, the manifest and the routes; only a device proves an install. On an install
-made before UI refinement 014, open Lorex once in the browser first so the v4 worker activates, then:
+made before UI refinement 014, open LorEvolve once in the browser first so the v4 worker activates, then:
 
 1. Close the installed app completely (remove it from recent apps).
 2. Launch it from its icon, signed out: it opens **Explore**, not Login.
@@ -312,7 +312,7 @@ Read the log first: `az webapp log tail --name <app-name> --resource-group <reso
 | `Database schema at '...' is up to date` | Normal restart. |
 | `SQLite Error 1: 'no such table: Entities'` | The schema was not applied before startup work ran. Check `Database__MigrateOnStartup`; if it is `false`, something else owes the migration. |
 | `Database__MigrateOnStartup is false: starting ... without applying migrations` | Deliberate. Remove the app setting to hand the job back to the app. |
-| `SQLite Error 14: 'unable to open database file'` | `/home/data` is not writable, or the path in `ConnectionStrings__LorexDb` is wrong. |
+| `SQLite Error 14: 'unable to open database file'` | `/home/data` is not writable, or the path in `ConnectionStrings__LorEvolveDb` is wrong. |
 | `No XML encryptor configured` | Expected. See Data Protection above. |
 | Sessions dropped after every restart | `DataProtection__KeyRingPath` is unset or points somewhere ephemeral. |
 | A 400 on every request | `AllowedHosts` does not match the hostname being used. |
@@ -323,20 +323,20 @@ Read the log first: `az webapp log tail --name <app-name> --resource-group <reso
 Same two commands the workflow runs, which is the point of it being two commands:
 
 ```bash
-npm --prefix src/Lorex.Web ci && npm --prefix src/Lorex.Web run build
+npm --prefix src/LorEvolve.Web ci && npm --prefix src/LorEvolve.Web run build
 ```
 
 ```bash
-rm -rf src/Lorex.Api/wwwroot && mkdir -p src/Lorex.Api/wwwroot && cp -r src/Lorex.Web/dist/. src/Lorex.Api/wwwroot/ && dotnet run --project src/Lorex.Api --no-launch-profile
+rm -rf src/LorEvolve.Api/wwwroot && mkdir -p src/LorEvolve.Api/wwwroot && cp -r src/LorEvolve.Web/dist/. src/LorEvolve.Api/wwwroot/ && dotnet run --project src/LorEvolve.Api --no-launch-profile
 ```
 
-`src/Lorex.Api/wwwroot` is build output and is gitignored. Set `ASPNETCORE_ENVIRONMENT`,
-`ConnectionStrings__LorexDb` and `DataProtection__KeyRingPath` to try the deployed
+`src/LorEvolve.Api/wwwroot` is build output and is gitignored. Set `ASPNETCORE_ENVIRONMENT`,
+`ConnectionStrings__LorEvolveDb` and `DataProtection__KeyRingPath` to try the deployed
 configuration without writing to the paths App Service uses.
 
 A Release build made while `wwwroot` held a copied client leaves
-`bin/Release/net10.0/Lorex.Api.staticwebassets.runtime.json` naming that folder, and a later build does not remove
+`bin/Release/net10.0/LorEvolve.Api.staticwebassets.runtime.json` naming that folder, and a later build does not remove
 it. Once `wwwroot` is gone, a local `dotnet ef migrations has-pending-model-changes --configuration Release` fails
-with `Error: ...\src\Lorex.Api\wwwroot\` and then cannot create `LorexDbContext`. It is a stale local file, not the
-repository - CI's clean checkout never has it. `dotnet clean src/Lorex.Api -c Release` (or deleting that file) clears
+with `Error: ...\src\LorEvolve.Api\wwwroot\` and then cannot create `LorEvolveDbContext`. It is a stale local file, not the
+repository - CI's clean checkout never has it. `dotnet clean src/LorEvolve.Api -c Release` (or deleting that file) clears
 it; nothing in hosting needs to change.

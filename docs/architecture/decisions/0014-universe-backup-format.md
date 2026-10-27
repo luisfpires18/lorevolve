@@ -12,7 +12,7 @@ moment's validation details - ADR 0034)
 
 ## Context
 
-Lorex is private, single-owner and runs on the author's own machine against a SQLite file
+LorEvolve is private, single-owner and runs on the author's own machine against a SQLite file
 (ADR 0002, ADR 0006). The only copy of a world is that file, and nothing in the product has
 so far let an author take one away with them.
 
@@ -47,7 +47,7 @@ carries the identity and shape of its picture and the archive-relative `mediaPat
 bytes sit. What it deliberately does not carry is the object key, the bucket, the endpoint or a
 URL: those are how *this installation* reaches the file today, they mean nothing on another
 machine, and a restore does not need any of them. The download is `application/zip`, named
-`lorex-<slug>-<date>.zip`.
+`lorevolve-<slug>-<date>.zip`.
 
 **Only the original, never the thumbnail.** A thumbnail is derived - a square cut from the
 original, scaled to a fixed size in a fixed format - so a reader regenerates it from the original.
@@ -67,7 +67,7 @@ in the archive and a chosen crop is still in `image.crop` - so this is not a bum
 reads both shapes.
 
 Entity types carry `icon`, now always one of the built-in icon keys or null (ADR 0020). Every value a
-version 3 file could have been given by Lorex itself is still a key, so that is not a bump either.
+version 3 file could have been given by LorEvolve itself is still a key, so that is not a bump either.
 
 **A picture that cannot be read fails the backup.** The archive is assembled whole in memory
 before a single byte is sent, so a missing object is a 500 carrying the code
@@ -77,7 +77,7 @@ archive that quietly left a picture out would break the promise at the exact mom
 A world with no pictures never touches the object store at all, so it exports whether or not
 media storage is configured.
 
-**An explicit envelope, and a version on it.** `format` is `lorex.universe.backup` and
+**An explicit envelope, and a version on it.** `format` is `lorevolve.universe.backup` and
 `formatVersion` is an integer, so a reader can refuse a file that is merely JSON, and a
 future importer can tell which contract it is looking at. The version is bumped when the
 payload's shape or meaning changes in a way a reader must notice.
@@ -213,7 +213,7 @@ pending or resolved finding; a dismissal is carried as ever, and a restore re-ap
 version 12 or earlier has none of these members; each reads as null and means none. The importer reads versions 1 to 13 (ADR 0032
 amendment).
 
-**Search indexes are never in a backup** (ADR 0016, ADR 0031). They are derived - Lorex produces them again from the
+**Search indexes are never in a backup** (ADR 0016, ADR 0031). They are derived - LorEvolve produces them again from the
 authored rows - so the universe search (2026-09-14) changed no member and no version: version 11 stands. An importer's rows are
 indexed as they are written.
 
@@ -226,7 +226,7 @@ Adding the importer changed no member and no version: **version 11 stands.** The
 this ADR said a "future importer" would do, it does, with one deliberate difference recorded below: ids are renumbered.
 
 **Only the authored data.** The test for inclusion is: did a person write this, or would
-Lorex produce it again from what a person wrote?
+LorEvolve produce it again from what a person wrote?
 
 | Carried | Left out |
 | --- | --- |
@@ -350,7 +350,7 @@ the one thing that must never happen is that a reader guesses it back from what 
 version number refuses the file instead.
 
 A file at version 13 or earlier has no `familySemantic`, and every kind in it reads as `None` whatever its name,
-even when the file carries the member - which Lorex never wrote. No derived relative is in a backup: siblings,
+even when the file carries the member - which LorEvolve never wrote. No derived relative is in a backup: siblings,
 grandparents and grandchildren are recomputed from the links, and a backup holds only the authored kinds and
 the authored links.
 
@@ -437,7 +437,7 @@ id and points memberships and targets at it, so a restored universe never names 
 group with a missing or duplicate id or name, a member that is not a type of the file or is listed twice, a group target
 that names no group of the file, sits on a non-link field or beside an exact type, and a link outside its field's group. A
 version 22 or older file restores with no groups and nothing is inferred from names; groups such a file carries are
-ignored, and a group target in it is refused as not written by Lorex.
+ignored, and a group target in it is refused as not written by LorEvolve.
 
 ## Amendment: version 24, a group enabled for the Family Tree (2026-10-20, Issue #37)
 
@@ -494,7 +494,7 @@ restores every entry with none, even when it carries the members.
 scenes of the file each belongs to - and each one's pictures in gallery order: the original's facts and its path in the archive,
 `media/entities/{entryId}/appearances/{imageId}/original.{ext}`. No framing: a gallery thumbnail is the centred square, cut
 again on restore. Not ignorable: a version 29 reader would restore every entry without them. Validation decodes every picture
-as an upload would and refuses a path Lorex would not write, a label twice, an era or form of another entry and more pictures
+as an upload would and refuses a path LorEvolve would not write, a label twice, an era or form of another entry and more pictures
 than a look holds; a restore holds the owner's storage for them with the entries' own pictures and gives everything new ids.
 A version 29 or older file restores every entry with none, even when it carries the member. A saved version's snapshot that
 has no `appearances` member, like one with no `forms`, restores leaving them as they are.

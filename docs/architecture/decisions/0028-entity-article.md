@@ -23,7 +23,7 @@ give the article everything else the brief asked for.
 ## Decision
 
 **Article and structured lore are different things.** The structured entry - name, summary, type, Canon status, aliases,
-tags, field values - is what Lorex can compare, filter and check. The article is what the author writes about it. It is
+tags, field values - is what LorEvolve can compare, filter and check. The article is what the author writes about it. It is
 one optional article per entry, reached by opening the entry: no second object, type, title, category or status.
 
 **The format is kept.** The article stays the Tiptap document the editor already writes, validated structurally by
@@ -163,7 +163,7 @@ uses `useBlocker` for history moves only, while a `useLeaveGuard` question is st
   the page being left.
 - Links and Sign out ask before they navigate, as before, and push or replace rather than move through history, so they are
   never held as well: every action asks once.
-- A move to a page from before Lorex loaded leaves the document, and the browser's own prompt asks about that.
+- A move to a page from before LorEvolve loaded leaves the document, and the browser's own prompt asks about that.
 - The manuscript editor shares the guard and asks the same way. That supersedes ADR 0027's decision.
 
 ## Amendment - recovered drafts (2026-09-14)
@@ -185,7 +185,7 @@ the universe search; the Lore search is unchanged.
 
 ## Amendment - the entry's three views (2026-09-22)
 
-Found by using Lorex to migrate a real world into it. The entry page worked and read badly: the type and the Canon
+Found by using LorEvolve to migrate a real world into it. The entry page worked and read badly: the type and the Canon
 control floated above a title they did not obviously belong to, the picture sat at one edge of a band that was mostly
 empty beside it, Relations and History stacked under the article so that an entry grew to whatever its author had
 written, and the entry's own Edit, Family tree and Move to Trash were at the bottom of all of it. No schema, API,

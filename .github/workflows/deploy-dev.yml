@@ -55,33 +55,33 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: src/Lorex.Web/package-lock.json
+          cache-dependency-path: src/LorEvolve.Web/package-lock.json
 
       # One process serves both halves, so the built client is copied into the API's wwwroot
       # before publish. wwwroot is build output and is not in the repository.
       #
-      # LOREX_DEV_RUN makes the shown version this run's DEV patch (src/Lorex.Web/devVersion.ts):
+      # LOREVOLVE_DEV_RUN makes the shown version this run's DEV patch (src/LorEvolve.Web/devVersion.ts):
       # it rises with every run and stays the same on a re-run. The build id names the service
       # worker's cache, so it carries the attempt too: every build, re-runs included, starts clean.
       # Re-running only a failed Deploy reuses this attempt's package, and with it its build id:
       # the same bytes under the same cache name.
       - name: Build the client
-        working-directory: src/Lorex.Web
+        working-directory: src/LorEvolve.Web
         env:
-          LOREX_DEV_RUN: ${{ github.run_number }}
-          LOREX_BUILD_ID: dev-${{ github.run_number }}.${{ github.run_attempt }}-${{ github.sha }}
+          LOREVOLVE_DEV_RUN: ${{ github.run_number }}
+          LOREVOLVE_BUILD_ID: dev-${{ github.run_number }}.${{ github.run_attempt }}-${{ github.sha }}
         run: |
           npm ci
           npm run build
 
       - name: Copy the client into wwwroot
         run: |
-          rm -rf src/Lorex.Api/wwwroot
-          mkdir -p src/Lorex.Api/wwwroot
-          cp -r src/Lorex.Web/dist/. src/Lorex.Api/wwwroot/
+          rm -rf src/LorEvolve.Api/wwwroot
+          mkdir -p src/LorEvolve.Api/wwwroot
+          cp -r src/LorEvolve.Web/dist/. src/LorEvolve.Api/wwwroot/
 
       - name: Publish the API
-        run: dotnet publish src/Lorex.Api -c Release -o publish
+        run: dotnet publish src/LorEvolve.Api -c Release -o publish
 
       - name: Upload the package
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -126,7 +126,7 @@ jobs:
           package: publish
 
       # A deployment that answers is the only proof worth having. The wait is for the platform
-      # to finish swapping in the new site, not for anything inside the app: Lorex applies its
+      # to finish swapping in the new site, not for anything inside the app: LorEvolve applies its
       # migrations during startup and does not report healthy before they are done.
       - name: Check that DEV answers
         env:

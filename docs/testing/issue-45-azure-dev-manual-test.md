@@ -22,9 +22,9 @@ universe** made for this pass; never a real one. Record expected and observed re
 | T5 | Create a moment `QA Crowning` (Canon, year 5, Arin); delete it | Gone from Timeline; Trash lists it as Timeline moment; restore brings it back with participants |
 | T6 | Download a backup while one link and one moment are in the Trash; restore it as a new universe | Restored universe's Trash holds both; both restorable |
 
-## AI proposals (MCP client and LoreX Assistant)
+## AI proposals (MCP client and LorEvolve Assistant)
 
-Ask each in plain words; never approve inside the AI tool. After each proposal, open its review link in LoreX.
+Ask each in plain words; never approve inside the AI tool. After each proposal, open its review link in LorEvolve.
 
 | # | Ask the AI to | Expected in Pending AI Changes, then after Approve |
 | --- | --- | --- |

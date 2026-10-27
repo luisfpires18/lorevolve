@@ -9,7 +9,7 @@ step 5, and a second account for step 10.
 
 ## Before starting
 
-- Start Lorex (`Start-Lorex.cmd`) and sign in. Starting it applies the `AddWorldRules` migration: it only adds a table and its
+- Start LorEvolve (`Start-LorEvolve.cmd`) and sign in. Starting it applies the `AddWorldRules` migration: it only adds a table and its
   search index, and nothing that exists changes.
 
 Known and accepted, so not bugs: nothing checks a rule against the timeline or the lore yet, and no screen says anything about

@@ -1,18 +1,18 @@
 # Universe recovery: backup, restore and readable export (issue #11)
 
-How a creator gets their world out of LoreX and back in, what each file holds, and where the limits are. The
+How a creator gets their world out of LorEvolve and back in, what each file holds, and where the limits are. The
 operator-side database snapshots are a separate layer: [database-backups.md](database-backups.md) (issue #54).
 
 | | Backup | Readable export |
 | --- | --- | --- |
 | Settings > Data | **Download backup** | **Download readable export** |
-| File | `lorex-{world}-{yyyyMMdd}.zip` | `lorex-{world}-{yyyyMMdd}-readable.zip` |
+| File | `lorevolve-{world}-{yyyyMMdd}.zip` | `lorevolve-{world}-{yyyyMMdd}-readable.zip` |
 | Inside | `backup.json` (format 35) + every picture's original | Markdown pages + every live picture's original |
-| Restorable into LoreX | **Yes**, as a new universe | No - for reading and keeping |
+| Restorable into LorEvolve | **Yes**, as a new universe | No - for reading and keeping |
 | Who may download | The universe's owner | The universe's owner |
 | Decision | ADR 0014, ADR 0032 | ADR 0063 |
 
-Both are taken by hand, per universe, by the owner. Neither is an account export, and neither depends on the LoreX
+Both are taken by hand, per universe, by the owner. Neither is an account export, and neither depends on the LorEvolve
 database or the picture bucket surviving once it is on the creator's disk.
 
 ## What a backup holds
@@ -56,13 +56,13 @@ media/universe/artwork/original.{ext}
 ```
 
 The readable export holds only the pictures its pages show, at the same paths. Thumbnails and display copies are never in
-either file: a restore cuts them again. If LoreX cannot read a picture when you download, the download is refused and says
+either file: a restore cuts them again. If LorEvolve cannot read a picture when you download, the download is refused and says
 so - you never receive a file that quietly lacks one. A picture of an entry in the Trash only blocks the backup.
 
 ## Restoring a backup
 
 1. Universes page > **Restore a backup** (or Settings > Data > Restore a backup), choose the `.zip`.
-2. LoreX validates the whole file first and shows what it would create: counts per kind, the format version, and every
+2. LorEvolve validates the whole file first and shows what it would create: counts per kind, the format version, and every
    problem it found (up to a limit). Nothing is written yet. The validated upload waits 30 minutes.
 3. Name the new universe and confirm. The restore is **one transaction**: either the whole universe appears, or nothing
    does and the upload keeps waiting. Pictures stored before a failure are swept.
@@ -74,13 +74,13 @@ like the world itself: whoever has the file has its contents, including the priv
 
 ## Compatibility and limits
 
-- Restores every format from version 1 to the current 35; a file from a newer LoreX is refused as unsupported rather than
+- Restores every format from version 1 to the current 35; a file from a newer LorEvolve is refused as unsupported rather than
   guessed at (`BackupVersionTests`, `BackupRoundTripTests`).
 - Refused before anything is written: an upload over **512 MB**, more than **1 GB** uncompressed, a document over 128 MB,
   more than **5,000 pictures**, more than 1,000,000 records, unsafe paths (`..`, absolute, symlinks), duplicate ids,
   dangling references, unreadable or mislabelled pictures (`BackupArchiveSafetyTests`, `BackupValidationTests`).
 - **A universe whose pictures approach the 1 GiB storage allowance can produce a backup larger than the 512 MB restore
-  ceiling.** It downloads, and its originals are safe in the file, but LoreX will refuse to restore it. Not raised for
+  ceiling.** It downloads, and its originals are safe in the file, but LorEvolve will refuse to restore it. Not raised for
   alpha; recorded as a follow-up.
 - The restorer needs storage allowance for the pictures; without room it is refused (409) and nothing is kept.
 - A backup is built whole in memory before download, and a restore holds the one SQLite writer while it writes.

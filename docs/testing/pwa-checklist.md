@@ -1,10 +1,10 @@
-# Installed Lorex (PWA): what is tested by automation, what is simulated, and what only a device proves
+# Installed LorEvolve (PWA): what is tested by automation, what is simulated, and what only a device proves
 
-Issue #58. Lorex installs (ADR 0017): a manifest, icons and a service worker that caches build output only. Nothing
+Issue #58. LorEvolve installs (ADR 0017): a manifest, icons and a service worker that caches build output only. Nothing
 works offline, by design. This page separates three kinds of evidence, because a green browser suite is not proof of an
 installed app, and says which is which for every check.
 
-## 1. What automation proves (Playwright, Chromium, `tests/Lorex.E2E`)
+## 1. What automation proves (Playwright, Chromium, `tests/LorEvolve.E2E`)
 
 Run in CI on every pull request into `dev`.
 
@@ -71,7 +71,7 @@ signed-in account, and the exact screen.
 
 ### 4.1 The reported path - do this first, on the reporting device
 
-1. Install Lorex from the browser (Safari: Share > Add to Home Screen; Chrome: Install app / Add to Home screen;
+1. Install LorEvolve from the browser (Safari: Share > Add to Home Screen; Chrome: Install app / Add to Home screen;
    desktop Chrome/Edge: the install icon in the address bar).
 2. Launch from the icon. Expect: black launch screen with the logo, then Explore.
 3. Sign in. Open a universe > Lore. Expect: "Choose a category to browse your lore." and the **Category** button.
@@ -105,7 +105,7 @@ signed-in account, and the exact screen.
   picture upload from the camera roll and the crop dialog, the image viewer, dialogs and confirmations.
 - **Stories, Scenes, Manuscript, Timeline, Ideas:** create, edit, navigate; the editor keeps the caret in view above the
   keyboard; drafts recovered after a crash or a kill (content recovery, ADR 0029) - never "offline editing", which
-  Lorex does not have.
+  LorEvolve does not have.
 - **Session:** launch while signed in; resume after 10 minutes and after an hour in the background; a session expired
   on the server sends to sign-in and back; a connection revoked in Connected Apps stops that app; a sign-out in the
   browser does not sign the installed app out (separate cookie jar on iOS) and that is expected.

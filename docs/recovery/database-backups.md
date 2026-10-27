@@ -26,7 +26,7 @@ backup and readable export are [universe-recovery.md](universe-recovery.md) (#11
 
 1. **Bucket.** In Cloudflare R2 create a bucket per environment, for example `lorex-db-backups-dev`. Leave it private: no
    custom domain, no public `r2.dev` access. Location hint: the region nearest the App Service.
-2. **Bucket lock (recommended).** Add an R2 bucket lock rule on prefix `lorex-db/` with a retention of 7 days, so a leaked
+2. **Bucket lock (recommended).** Add an R2 bucket lock rule on prefix `lorevolve-db/` with a retention of 7 days, so a leaked
    or misused token cannot delete or overwrite the last week's backups. Keep it shorter than the 30-day window pruning
    uses.
 3. **Token.** R2 > Manage API tokens > Create: permission **Object Read & Write**, **applied to that one bucket only**, no
@@ -45,8 +45,8 @@ backup and readable export are [universe-recovery.md](universe-recovery.md) (#11
    Optional: `DatabaseBackup__Interval` (default `1.00:00:00`), `DatabaseBackup__StaleAfter` (`1.02:00:00`),
    `DatabaseBackup__Automatic` (`false` = manual only), `DatabaseBackup__Retention__PruneEnabled` (see Retention).
    Saving restarts the site.
-5. **Prove it.** LoreX Admin > Main > Database backups > **Run backup now**. Within seconds: "Last verified backup" shows
-   a time, "Last attempt" says Succeeded. In R2 two objects appear under `lorex-db/dev/yyyy/MM/`. Open the
+5. **Prove it.** LorEvolve Admin > Main > Database backups > **Run backup now**. Within seconds: "Last verified backup" shows
+   a time, "Last attempt" says Succeeded. In R2 two objects appear under `lorevolve-db/dev/yyyy/MM/`. Open the
    `.manifest.json`: `integrityCheck` is `ok`, `sourceJournalMode` is `wal`, `schemaVersion` is the deployed migration.
 6. **Prove it restores** - the drill below, from your machine, against that bucket.
 
@@ -60,7 +60,7 @@ A misconfigured setting never falls back to anything: Admin shows the problem in
 - **Logs** (App Service log stream or Log Analytics), one line each:
   `Database backup verified: <key> (...)`, `Database backup FAILED (<trigger>, N in a row): <reason>`,
   `Database backup is STALE: the last verified backup is N hours old`, `Database backups are enabled but cannot run`.
-  An alert on `FAILED` or `STALE` is the owner's to configure; LoreX sends no mail.
+  An alert on `FAILED` or `STALE` is the owner's to configure; LorEvolve sends no mail.
 
 ## Retention and cost (proposal - pruning is off until the owner turns it on)
 
@@ -84,7 +84,7 @@ why it is safe to leave off until the policy is accepted. To enable: `DatabaseBa
 
 ## Failure modes
 
-| What happens | What LoreX does |
+| What happens | What LorEvolve does |
 | --- | --- |
 | Two runs at once (button pressed during a scheduled run) | The second is refused (409 `database_backup_running`) |
 | Two processes for a moment during a deploy | Each writes its own key; nothing is overwritten |
@@ -101,23 +101,23 @@ On a machine with the repository (or the published app) and the backup bucket's 
 secrets - the same `DatabaseBackup__*` names, plus `Media__*` for the media check:
 
 ```bash
-dotnet run --project src/Lorex.Api --no-launch-profile -- database-backup list
+dotnet run --project src/LorEvolve.Api --no-launch-profile -- database-backup list
 ```
 
 ```bash
-dotnet run --project src/Lorex.Api --no-launch-profile -- database-backup restore-drill --latest --target ./drill-restore --check-media
+dotnet run --project src/LorEvolve.Api --no-launch-profile -- database-backup restore-drill --latest --target ./drill-restore --check-media
 ```
 
 It downloads the newest verified backup (or `--key <manifest key>`), checks the object's SHA-256, decompresses and checks the
 database's SHA-256, runs `integrity_check` and `foreign_key_check`, refuses a backup with migrations this build does not
 know, applies this build's pending migrations to the copy, reads every universe whole, and with `--check-media` confirms
 every picture original the database names is in the media bucket. Each step is timed; `drill-report.json` is written
-beside the restored `lorex.db`. A failing check stops with `FAILED: <reason>` and exit code 1.
+beside the restored `lorevolve.db`. A failing check stops with `FAILED: <reason>` and exit code 1.
 
 Then start the app on the restored copy, on another port, with its own key ring:
 
 ```bash
-ConnectionStrings__LorexDb="Data Source=./drill-restore/lorex.db" DataProtection__KeyRingPath=./drill-keys dotnet run --project src/Lorex.Api --no-launch-profile --urls http://localhost:5297
+ConnectionStrings__LorEvolveDb="Data Source=./drill-restore/lorevolve.db" DataProtection__KeyRingPath=./drill-keys dotnet run --project src/LorEvolve.Api --no-launch-profile --urls http://localhost:5297
 ```
 
 and check `/health`, `/api/public/stats` (counts match the source), register, sign in, create and list a universe.
@@ -144,9 +144,9 @@ covered by tests against the in-memory media store, not run against real R2.
 
 1. Run the drill on the chosen backup first. Do not restore a backup that has not passed it.
 2. `az webapp stop --name <app> --resource-group <rg>` - nothing may write while the file is replaced.
-3. `az webapp ssh`: move `/home/data/lorex.db` aside (`lorex.db.before-restore-<date>`), along with any `lorex.db-wal`
-   and `lorex.db-shm` (they belong to the old file and must not be applied to the new one).
-4. Put the drill's restored `lorex.db` (already migrated to the running build) at `/home/data/lorex.db` - Kudu's file
+3. `az webapp ssh`: move `/home/data/lorex.db` aside (`lorevolve.db.before-restore-<date>`), along with any `lorevolve.db-wal`
+   and `lorevolve.db-shm` (they belong to the old file and must not be applied to the new one).
+4. Put the drill's restored `lorevolve.db` (already migrated to the running build) at `/home/data/lorex.db` - Kudu's file
    manager, or any way of writing the file while the site is stopped.
 5. `az webapp start`; `/health`; Admin > Main; sign in; open a universe with pictures.
 6. Everything written after the backup's `createdAt` is gone. Tell affected users.
@@ -162,7 +162,7 @@ RPO: the backup interval, 24 h (up to 25 h after a failed attempt). RTO on DEV: 
   them show a missing picture. `restore-drill --check-media` lists how many and which before you restore.
 - If the media bucket itself is lost, only creators' per-universe backups (#11) hold originals. Nothing copies the media
   bucket automatically; an R2-to-R2 media mirror is a follow-up, not part of #54.
-- Thumbnails and display copies are derived; LoreX does not re-cut them for a database restore.
+- Thumbnails and display copies are derived; LorEvolve does not re-cut them for a database restore.
 
 ## Security
 
@@ -172,4 +172,4 @@ RPO: the backup interval, 24 h (up to 25 h after a failed attempt). RTO on DEV: 
   Whoever can read the bucket can read all of it: keep the bucket private, the token in App Service settings only, and R2
   access limited to the owner.
 - Only an Admin can see backup status or start one; no route returns backup bytes, a key's contents or a signed URL.
-- Restore privilege is infrastructure access (Azure + R2), not anything inside LoreX.
+- Restore privilege is infrastructure access (Azure + R2), not anything inside LorEvolve.

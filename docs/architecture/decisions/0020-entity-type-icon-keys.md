@@ -62,7 +62,7 @@ been more code to maintain and less consistent.
 
 - The backup format does not change version (ADR 0014). `icon` is still an optional string on each
   entity type; it now always carries a key or null, and every value a version 3 file could have been
-  given by Lorex itself is still a key.
+  given by LorEvolve itself is still a key.
 - The icon is editable at any time from the Types screen and saved on choosing, like a field's
   meaning. It is not gated by the promotion gate and writes no revision: a type is not an entry, and an
   icon is presentation.

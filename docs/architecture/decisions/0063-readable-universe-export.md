@@ -4,18 +4,18 @@ Status: accepted (2026-10-26). GitHub issue #11 (Data Portability and Trust, pre
 
 ## Context
 
-Issue #11's promise is "you can always retrieve your world". LoreX already had the native backup (ADR 0014): one versioned
+Issue #11's promise is "you can always retrieve your world". LorEvolve already had the native backup (ADR 0014): one versioned
 ZIP per universe, `backup.json` plus every picture's original, restored as a new universe (ADR 0032). It is complete -
 `BackupInventoryTests` classifies every table as carried, derived or left out - but it is JSON with ids, written for a
-parser. A creator who wants to read their world outside LoreX, or keep it somewhere LoreX cannot reach, had nothing.
+parser. A creator who wants to read their world outside LorEvolve, or keep it somewhere LorEvolve cannot reach, had nothing.
 
 The issue asks for at least one human-readable whole-universe export, kept separate from the native backup and from
 third-party import (#17), with predictable media paths, the same permission boundaries, and no promise that is not tested.
 
 ## Decision
 
-**Markdown in a ZIP.** `GET /api/universes/{id}/export/readable` answers `lorex-{slug}-{yyyyMMdd}-readable.zip`. Markdown
-because it is plain text any editor opens, renders on every code host and note tool, diffs, and survives LoreX; HTML was the
+**Markdown in a ZIP.** `GET /api/universes/{id}/export/readable` answers `lorevolve-{slug}-{yyyyMMdd}-readable.zip`. Markdown
+because it is plain text any editor opens, renders on every code host and note tool, diffs, and survives LorEvolve; HTML was the
 other candidate and would have needed a stylesheet and a sanitiser for the same content. A ZIP because the pictures travel
 with the pages.
 

@@ -4,12 +4,12 @@ Status: accepted (2026-09-12)
 
 ## Context
 
-The Profile screen showed a monogram in a circle because the auth model had nothing else: `LorexUser`
+The Profile screen showed a monogram in a circle because the auth model had nothing else: `LorEvolveUser`
 is a bare `IdentityUser`, with a username and an email and no picture. The owner asked for a real
 photo, with the same framing, replacing and removing an entry's picture already has.
 
 Entry images (ADR 0019) had already answered every hard question this raises: a private bucket, bytes
-served only through an authenticated Lorex route, a server that decides what is an image by decoding
+served only through an authenticated LorEvolve route, a server that decides what is an image by decoding
 it, a square cut on the server from four fractions the browser chose, and a write ordering that
 survives two stores with no transaction between them. The question was not how to do it again. It was
 how much of it to reuse, and where a profile photo is genuinely *not* an entry's picture.
@@ -50,7 +50,7 @@ an address stops resolving the moment what it named is replaced.
 
 Not under `universes/`, deliberately: account media under a world's prefix would be swept up by any
 future per-universe lifecycle rule or bulk export. Ids only - no username, no email, no filename. The
-user id is the one segment Lorex did not mint itself, so it is refused into a key unless it is a
+user id is the one segment LorEvolve did not mint itself, so it is refused into a key unless it is a
 plain token. A new `{assetId}` for every upload and a new `{thumbnailId}` for every square mean
 nothing is ever written over an object that is currently live.
 
@@ -76,7 +76,7 @@ avatar could be shown squared off later without cutting it again.
 **The account is reached from the global chrome, never from a universe's sidebar.** `/app/profile`
 is the route, and one `AccountMenu` - a circular avatar that opens onto the username, the email,
 View profile and Sign out - is the way to it, on the workspace's black rail and in the universes
-header. The rail's mark and its accent seal are a pair, "Lorex" and "which world this is", so the
+header. The rail's mark and its accent seal are a pair, "LorEvolve" and "which world this is", so the
 avatar sits at the foot of the rail rather than between them; on a narrow screen the rail is the
 sticky bar and the same node lands at its right-hand end, so a phone needs no second account UI.
 The beige sidebar stays what it is: this universe's sections, and an account is not one of them.
@@ -95,7 +95,7 @@ a different feature's endpoint, and it changes while the session does not.
 - There is no history and no undo. Replacing or removing a photo deletes the objects it superseded,
   the same way a superseded entry image is deleted (ADR 0019), and for the same reason - keeping them
   would mean keeping every photo an account ever had with nothing that could ever read them.
-- The photo is private to its owner's session. Nothing else in Lorex shows another person's avatar
+- The photo is private to its owner's session. Nothing else in LorEvolve shows another person's avatar
   today, so there is no sharing story to get wrong; if one is ever wanted, it will need its own
   decision about who may see whom, and the read route is the single place that would change.
 - Orphaned objects are swept best-effort and never retried, exactly as ADR 0019 has it: a key that

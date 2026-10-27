@@ -6,7 +6,7 @@ host and in-memory database, as it does unsharded. After the run, the shard chec
 results that it ran exactly the classes dealt to it - no more, no fewer - so a filter that
 silently matched too much or too little fails the job instead of losing coverage.
 
-Expects a Release build of tests/Lorex.Api.Tests already in place (`--no-build`).
+Expects a Release build of tests/LorEvolve.Api.Tests already in place (`--no-build`).
 """
 
 import subprocess
@@ -15,7 +15,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-PROJECT = "tests/Lorex.Api.Tests"
+PROJECT = "tests/LorEvolve.Api.Tests"
 TRX = "{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}"
 
 

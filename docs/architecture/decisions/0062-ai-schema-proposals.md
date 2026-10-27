@@ -25,7 +25,7 @@ fields as they are stored: an entry can only use a field id that exists.
 (Issue #39: it leaves forms, filters and rules, keeps every value, and is restored in Types). Types and groups are never
 removed by an AI - neither has a Trash, and the app deletes them only by hand once nothing uses them; the refusal says so.
 Inputs: `AiLoreTypeInput` (name, description, icon key, accent, parent or root, the whole set of groups, Family Tree),
-`AiLoreFieldInput` (type, name, kind from the eight Lorex has, required, default, the whole list of choices, a link limited
+`AiLoreFieldInput` (type, name, kind from the eight LorEvolve has, required, default, the whole list of choices, a link limited
 to one type, one group or any entry), `AiLoreGroupInput` (name, Family Tree). Stored as `TypeValues`, `FieldValues`,
 `GroupValues`. **No member sets a field's meaning**: an update carries the stored one through unchanged (ADR 0011).
 
@@ -57,20 +57,20 @@ applies nothing of the batch.
 reach schema; a Viewer stages nothing.
 
 **A separate, explicit permission for apps.** `McpConnection.CanProposeSchema`, default false: a second unticked choice on
-the consent screen (`lorex_schema`), offered only beside proposals and only to a role that edits types; it is granted only
+the consent screen (`lorevolve_schema`), offered only beside proposals and only to a role that edits types; it is granted only
 with `CanPropose` and only by that tick. It is not an OAuth scope - the token is the same, so no client registration and no
 existing grant changes; a connection approved before it has none, and refreshing never adds it. Connected Apps shows it and
 takes it back on its own (`DELETE .../connected-apps/{id}/schema`, proposals and reading kept); stopping proposals stops it
 too. Staging refuses schema without it, the catalog says why, and a staged schema proposal from an app that lost it can only
-be rejected (`BlockedAsync`). The assistant's propose mode is a signed-in person asking in LoreX, so its role decides.
+be rejected (`BlockedAsync`). The assistant's propose mode is a signed-in person asking in LorEvolve, so its role decides.
 
 **The catalog is the real schema.** `get_change_options` lists every type with description, icon, parent, groups, live
 entry count, active fields (with version, default, choices, limit by id) and archived fields apart; every group with its
-types; the field kinds and icon keys Lorex has; and `schema` - whether this person through this entry point may propose
+types; the field kinds and icon keys LorEvolve has; and `schema` - whether this person through this entry point may propose
 schema now, why not, and notes: reuse what exists, a group is not a type or a choice, ask the person when two models fit
 (Orc as a type or as a Race choice), meaning stays the author's.
 
-**Review.** Schema changes are described by LoreX like content ("New lore type", "New field on WEAPON OF ORDER (new):
+**Review.** Schema changes are described by LorEvolve like content ("New lore type", "New field on WEAPON OF ORDER (new):
 WIELDER", kind, required, choices, what a link accepts, parent, groups); an archive says what it keeps. "Open it" goes to
 Types.
 
@@ -107,7 +107,7 @@ and appearances as a patch over the stored snapshot (`ProgressionSnapshot`, the 
 changes, one without is added, one left out stays exactly as stored, and **nothing is removed** - taking an era, a form or a
 look away is the author's, on the Progression page.
 
-New items get their ids from LoreX at staging, and an AI names them by keys (`{"key": "young"}`), so a new form can be
+New items get their ids from LorEvolve at staging, and an AI names them by keys (`{"key": "young"}`), so a new form can be
 available in a new era and a new outfit worn in a new form in one save, on the same entry - never a new entry per era. The
 check is the save's own normalisation (`ProgressionState.NormalizeAsync`, as a restore runs it so the given ids are taken,
 never one another entry's item holds); the change is bound to the progression's version; approval is
@@ -159,7 +159,7 @@ it used, and either spelling of the same universe passes the gate; another unive
 a grant to another universe by naming its alias. An alias that names nothing is answered like any address - the same 401
 with its own metadata address, the same metadata document - and a connection asked for with it is refused at the redirect
 (`invalid_target`); someone who cannot read the universe is refused as before. Connect to AI shows the friendly URL to copy,
-suggests a connection name ("LoreX - LOTR"), and says it survives a rename. The Azure App Service is not renamed.
+suggests a connection name ("LorEvolve - LOTR"), and says it survives a rename. The Azure App Service is not renamed.
 
 ## Consequences
 

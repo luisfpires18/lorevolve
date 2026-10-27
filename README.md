@@ -1,4 +1,4 @@
-# LOREX
+# LorEvolve
 
 Modular monolith. ASP.NET Core API + React/TypeScript (Vite) web client.
 
@@ -7,6 +7,6 @@ See [SYSTEMS.md](SYSTEMS.md) for the repository index and [STATE.md](STATE.md) f
 ## Quick start (Windows)
 
 ```
-Start-Lorex.cmd
-Stop-Lorex.cmd
+Start-LorEvolve.cmd
+Stop-LorEvolve.cmd
 ```

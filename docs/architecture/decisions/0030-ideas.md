@@ -8,7 +8,7 @@ Phase 3's third feature gives an author somewhere to keep possibilities - "Maybe
 Arlen?", "Explore a religion based on forgotten memories" - apart from what is true in a world. Lore is what is true, a
 story is how something is told, a plot is what an author means to develop. None of them is the right home for "maybe".
 
-The hard constraint is ownership. Everything authored in Lorex so far lives inside a universe (ADR 0006), and a universe's
+The hard constraint is ownership. Everything authored in LorEvolve so far lives inside a universe (ADR 0006), and a universe's
 deletion, Trash and backup all assume it. An idea often exists before any world does, or outlives one, so it cannot be
 forced into a universe - and a hidden "ideas universe" would be ownership faked.
 
@@ -168,7 +168,7 @@ and body. No cross-domain index is built here, and account-wide search is not pl
 
 ## Consequences
 
-- Lorex now holds authored data outside universes: `Ideas` is the first account-owned table of writing. Any future account
+- LorEvolve now holds authored data outside universes: `Ideas` is the first account-owned table of writing. Any future account
   deletion takes an account's ideas with it (`OwnerId` cascades).
 - A universe delete is now a transaction that writes to the account's ideas before it removes the universe.
 - Unassigned ideas have no file-level backup until an account export exists.

@@ -6,7 +6,7 @@ version 32) and ADR 0043 (a note's save names its version).
 ## Context
 
 A public or shared entry may need author-only context beside it: the reveal still to come, what the entry is really for, a
-loose end. Issue 23 asks for it without a second ambiguous note system - Lorex already has ideas (ADR 0030, account-owned
+loose end. Issue 23 asks for it without a second ambiguous note system - LorEvolve already has ideas (ADR 0030, account-owned
 possibilities) and review comments (ADR 0041 amendment, a conversation among members) - and with privacy that holds by
 construction, not by convention. The owner decided on 2026-10-24: a dedicated permission held by the owner only; no saved
 versions and no device recovery copy; the optimistic conflict check kept; notes in the owner's backup; nothing readable by

@@ -98,12 +98,12 @@ id minted by the server, `UniverseId` (cascade), `Email` as typed and `Normalize
 check constraint), `CreatedAt`, `ExpiresAt`. One row per universe and normalized address (unique index). Only pending
 invitations exist: accepting, declining and revoking delete the row. No history.
 
-**An email address is not an identity.** Lorex does not verify the address an account registers with; a unique address
+**An email address is not an identity.** LorEvolve does not verify the address an account registers with; a unique address
 is not a verified one. So email equality alone never entitles anyone to an invitation (corrected before 030 merged - the
 first cut listed and accepted by email match). An invitation is claimed only by its protected link.
 
 Every invitation's link carries a claim token, `/invite/{token}`, issued with ASP.NET Core Data Protection on the host's
-own key ring, purpose `Lorex.UniverseInvitation.Claim.v1`, payload the invitation id and its normalized address
+own key ring, purpose `LorEvolve.UniverseInvitation.Claim.v1`, payload the invitation id and its normalized address
 (`InvitationClaims`). The token is the proof: with it, the signed-in account whose normalized email matches may read,
 accept or decline it (`/api/invitations/claim/{token}`, `/accept`, `/decline`) - the email a consistency check, never
 the permission. A missing, forged, edited or truncated token is 404, exactly like a revoked invitation.
@@ -124,7 +124,7 @@ holds the address or not - no account is looked up, and no response carries an a
 collaborating here (400, the owner can see them anyway), a live invitation to the same address (409 `invitation_pending`
 naming its id, to change, copy or revoke - never a second row), and any role but Viewer, Reviewer or Editor (400).
 
-**Lorex sends no email.** The owner copies the link (`Copy invite link`, built from the page's own origin; each list read
+**LorEvolve sends no email.** The owner copies the link (`Copy invite link`, built from the page's own origin; each list read
 mints a fresh, equivalent token) and sends it by hand. Signed out, the link page says only that someone was invited and
 offers Sign in and Create account, which return to it through the existing router-state return path. Another account
 learns only "for a different account" (403 `invitation_other_account`), never which; a missing, revoked or spent

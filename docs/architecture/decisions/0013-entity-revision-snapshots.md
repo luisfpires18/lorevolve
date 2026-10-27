@@ -5,7 +5,7 @@ Status: accepted (2026-09-09), amended 2026-09-10 (an image change is recorded, 
 
 ## Context
 
-Authors need to see what an entry used to say and to put an old version back. Lorex is not
+Authors need to see what an entry used to say and to put an old version back. LorEvolve is not
 an audit product: nothing here is about who did what, or about proving a record was not
 tampered with. The question is editorial - "what did this character look like before I
 rewrote them" - and the answer has to survive the schema moving underneath it, because

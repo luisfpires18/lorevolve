@@ -1,4 +1,4 @@
-# ADR 0047 - An AI proposes changes; a person approves them in LoreX; only approved changes are applied, together, through each resource's own write path
+# ADR 0047 - An AI proposes changes; a person approves them in LorEvolve; only approved changes are applied, together, through each resource's own write path
 
 Status: accepted (2026-10-23). Roadmap 052 (GitHub issue 32), MCP V2 · Controlled AI CRUD.
 
@@ -97,20 +97,20 @@ A proposal whose proposer can no longer stage it, or whose app was disconnected 
 rejected. No approval comes from a token: the decision routes take the session cookie only (ADR 0005: `SameSite=Strict`
 and JSON bodies), and an MCP bearer token is not a session there.
 
-**MCP V2: a separate, opt-in permission, never write.** A new scope `lorex.propose`, registered beside `lorex.read`.
+**MCP V2: a separate, opt-in permission, never write.** A new scope `lorevolve.propose`, registered beside `lorevolve.read`.
 Discovery, protected resource metadata and the 401 challenge list both, so a client asks for both; the consent screen then
 offers proposing as its own choice, unticked, only when the app asked and the person's role can stage anything, and
 explains it ("propose changes for you to review"). Only a tick on that very screen grants it - the token's scopes and the
 connection's `CanPropose` - never a default, never an earlier approval: a read-only connection's refresh cannot widen it.
 Per-client scope permissions stay enforced: a client may only *ask* for the scopes its registration lists. New
-registrations (dynamic and metadata-document clients alike, `ClientRules.Describe`) list `lorex.read` and
-`lorex.propose`; a metadata-document client is re-described whenever its document is fetched again. Clients registered
-before this decision were given `lorex.propose` by a data-only migration, `UpgradeMcpClientScopes` - the same list a
+registrations (dynamic and metadata-document clients alike, `ClientRules.Describe`) list `lorevolve.read` and
+`lorevolve.propose`; a metadata-document client is re-described whenever its document is fetched again. Clients registered
+before this decision were given `lorevolve.propose` by a data-only migration, `UpgradeMcpClientScopes` - the same list a
 registration gets today, nothing more - so they keep working when the challenge asks for both; its rollback takes it back.
-This cannot grant more than the person authorizes: the permission lets a client ask; a token carries `lorex.propose` only
+This cannot grant more than the person authorizes: the permission lets a client ask; a token carries `lorevolve.propose` only
 after the tick on the consent screen from a role that can stage, and the gate also requires the connection's
 `CanPropose`. A client whose list lacks it (as before the migration) is refused by OpenIddict with a 400 before any
-consent, and still reads when it asks for `lorex.read` alone. No client is singled out by name or vendor. Three tools, listed only for a
+consent, and still reads when it asks for `lorevolve.read` alone. No client is singled out by name or vendor. Three tools, listed only for a
 connection whose token carries the scope and whose connection still allows it (a list-tools filter; a call-tool filter
 refuses them otherwise; each tool checks the role again): `get_change_options` (the role's allowed changes, lore types
 with active fields and choices, relationship kinds, stories with chapters, date periods and months), `propose_changes`
@@ -134,7 +134,7 @@ listed and approved).
 
 **Pending AI Changes.** `/app/ai-changes` (every universe the person can see proposals in, with a count on the workspace
 bar) and each universe's AI changes section (owner, Editor, Reviewer); `/app/universes/{id}/ai-changes/{proposal}`
-reviews one. Each change is described by LoreX - a title, before and after lines with names resolved live, prose as a
+reviews one. Each change is described by LorEvolve - a title, before and after lines with names resolved live, prose as a
 paragraph comparison, what a removal touches - never the AI's JSON, all as plain text. Selecting a change selects what it
 needs; unselecting one unselects what needs it.
 
@@ -156,7 +156,7 @@ articles, images, ideas, world rules, accounts, roles, publishing, imports, perm
 ## Consequences
 
 - A second, data-only migration, `UpgradeMcpClientScopes`, lets clients registered before this decision ask for
-  `lorex.propose` (no schema; rollback removes it).
+  `lorevolve.propose` (no schema; rollback removes it).
 - One additive migration, `AddAiChangeProposals`: two tables and `McpConnections.CanPropose` (default false, so every
   existing connection stays read-only). Rollback drops them.
 - **Backups carry no proposals** and restore none: they are review state about accounts and connections, like comments

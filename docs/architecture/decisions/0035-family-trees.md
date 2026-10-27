@@ -4,7 +4,7 @@ Status: accepted (2026-09-16); two statements superseded by ADR 0040 (2026-09-30
 
 ## Context
 
-Lorex already stores links between entries: one row, a source, a target, and an authored relation kind that
+LorEvolve already stores links between entries: one row, a source, a target, and an authored relation kind that
 carries both readings (ADR 0008). An author who wants a family tree has everything the tree needs recorded
 already - "Mara parent of Lia", "Oren adopted Lia" - and no way to see it as a family.
 
@@ -16,7 +16,7 @@ Three shapes were available.
 **Read the kind's name.** "Parent of", "mother", "father" are what most authors write. Rejected outright, for
 the reason ADR 0023 rejected it for age rules and ADR 0011 for field meanings: it fails in any other language,
 on "Bore", "Sired", "Whelped" and "Progenitor of", and on the author who meant something else by the same word.
-A name has no semantic authority anywhere in Lorex, and a family tree is the worst place to start.
+A name has no semantic authority anywhere in LorEvolve, and a family tree is the worst place to start.
 
 **A dedicated family-link table.** Parent links of their own, apart from relationships. It would duplicate the
 one thing the author has already recorded: the same two entries would be linked twice, in two systems, each
@@ -93,7 +93,7 @@ no ancestry can be derived from. Three answers were considered, and two are take
   live entries - a strongly connected group with every link between its members, fingerprinted over those links
   as a set (`UnorderedFrom`), so the same circle survives a restore's new ids and a link added to it is a new
   finding. Medium rather than High because a world with time travel or rebirth may mean exactly that, and
-  Lorex cannot tell which without reading words - the one thing this decision forbids. So nothing is refused,
+  LorEvolve cannot tell which without reading words - the one thing this decision forbids. So nothing is refused,
   and no link is ever rewritten or deleted on the author's behalf.
 
 **The Trash decides what a tree can see, and nothing new is invented.** A link is read only while both of its
@@ -128,7 +128,7 @@ EF Core's table rebuild, so nothing that points at `RelationshipTypes` is droppe
 `/app/universes/{universeId}/family-tree/{entityId}` - the entry in focus is in the address, so a reload, the
 browser's Back and Forward and a shared link all land on the same family. With no entry chosen, the page is an
 entry picker and an empty state. ~~Every entry's page offers "Family tree", because family is what an author
-recorded, not something Lorex decides an entry is eligible for.~~ *Superseded 2026-09-30 by ADR 0040: an entry's page
+recorded, not something LorEvolve decides an entry is eligible for.~~ *Superseded 2026-09-30 by ADR 0040: an entry's page
 offers it when its type is enabled for the Family Tree, or when a family link already touches it.*
 
 **The drawing is generations, not a graph.** Rows of cards - grandparents, parents, the focal entry with its
@@ -148,7 +148,7 @@ edge anywhere.
 
 - Spouses, partners, ex-partners, step-parents, guardians, in-laws, cousins, aunts and uncles, dynasties,
   houses, clans, succession, inheritance and family events. None of them is a parent link, and most are
-  relationships Lorex already stores perfectly well without a tree.
+  relationships LorEvolve already stores perfectly well without a tree.
 - Half and full siblings as claims, and any other genealogical classification that needs assumptions about
   parents nobody recorded.
 - A general relationship graph, a node editor, and editing the tree as a second relationship database.
@@ -169,7 +169,7 @@ edge anywhere.
   writes stay reconciled and ungated.
 - A circle longer than the tree reaches is not named by the tree - it cannot see it - and is named by Canon
   Integrity if its links are Canon. Both are honest about what they read.
-- The backup bump means a Lorex that predates this release refuses a new backup outright rather than
+- The backup bump means a LorEvolve that predates this release refuses a new backup outright rather than
   restoring a world whose families have quietly vanished.
 
 ## Amendment - explicit type eligibility and family without ancestry (2026-09-30, ADR 0040)

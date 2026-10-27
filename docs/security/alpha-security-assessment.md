@@ -61,7 +61,7 @@ maps, uploads, auth, publication, assistant limits, storage quota, headers).
 - **Reachability now.** `ImagePreparation.Decoding` registers only the JPEG, PNG and WebP decoders, so the BigTIFF loop
   (-wmxv) cannot be reached, nor can GHSA-v76p (High, tiled fax TIFF heap overflow; listed 2026-10-07, found by the
   2026-10-26 audit; fixed in 3.2.0 / 4.1.1). The three Highs are a histogram-equalization filter and TIFF encoders
-  LoreX never calls.
+  LorEvolve never calls.
   **-gwg2 (ICC CLUT allocation) is reachable** by any signed-in account uploading a JPEG/PNG/WebP with a crafted ICC
   profile: memory spike, possibly a process restart on the one instance. `SkipMetadata` would avoid ICC parsing but
   also loses the EXIF orientation uploads rely on.
@@ -150,7 +150,7 @@ maps, uploads, auth, publication, assistant limits, storage quota, headers).
 - **MCP OAuth (#32/#45/#59).** PKCE S256; opaque reference tokens; every call re-checks connection, client, subject,
   universe, block and role; a token for one universe never passes another's address (either spelling); propose needs
   the scope *and* the connection's tick *and* a role that may stage, re-read at each call; schema needs a second tick;
-  nothing commits without a person with `EditContent` approving in LoreX; proposal size and count capped.
+  nothing commits without a person with `EditContent` approving in LorEvolve; proposal size and count capped.
 - **AI change pictures.** Uploaded on the review page by an `EditContent` member, decoded by the upload gate, quarantined
   without FKs, readable by reviewers or the proposer only, swept hourly.
 - **Publishing.** Every public query goes through `PublicationRules`; maps have no public route; a trashed chapter holds no
@@ -206,7 +206,7 @@ now plants all three and asserts no page holds an unescaped `javascript:` target
 the user's own temp folder's ACL applies. Test: `DatabaseBackupTests.The_working_folder_is_the_owner_s_alone` (asserts the
 mode where the platform has one; CI runs Linux). Residual: Low - App Service's `/tmp` is already container-local.
 
-**R-3.** Mitigation (runbook step 2): an R2 bucket lock on `lorex-db/` for 7 days, shorter than the 30-day window pruning
+**R-3.** Mitigation (runbook step 2): an R2 bucket lock on `lorevolve-db/` for 7 days, shorter than the 30-day window pruning
 uses; the token is scoped to the one backup bucket and never shared with media. Residual: Low once the lock exists.
 
 **R-4.** Residual: Low. The next run uses a new folder; a restart clears `/tmp`. A start-up sweep of stale run folders is a
@@ -227,7 +227,7 @@ small follow-up if this is ever seen.
 | Partial uploads | Corrupted read-back, refused manifest, interrupted run | No manifest, object removed, reason reported (`A_run_that_cannot_verify_its_upload_...`) |
 | Overlap | Second run while one runs | Refused (`Runs_never_overlap_...`) |
 | Retention | Deleting another environment's or too-recent backups; pruning after a failure | Own prefix only, policy only, never after a failure (`Retention_keeps_...`) |
-| Restore privilege | Writing over the live database from the drill; restoring a newer schema | Refused (`The_restore_drill_proves_a_backup_...`, `The_drill_brings_an_older_schema_forward_...`); production restore needs Azure and R2 access, nothing inside LoreX grants it |
+| Restore privilege | Writing over the live database from the drill; restoring a newer schema | Refused (`The_restore_drill_proves_a_backup_...`, `The_drill_brings_an_older_schema_forward_...`); production restore needs Azure and R2 access, nothing inside LorEvolve grants it |
 | Failure logs | Keys, connection strings or secrets in log messages | Messages carry keys and reasons only; the exception is logged as the provider raised it (no credential in AWS SDK exceptions) |
 | CSRF on Run now | Cross-site POST | `SameSite=Strict` session; `azurewebsites.net` is a public suffix, so other sites there are cross-site |
 | Security headers | New routes | Global middleware (`SecurityHeadersTests`) |
@@ -252,4 +252,4 @@ No known Critical or High is open. H-1 (High) and R-1 (Medium, found in this reg
 M-4 is fixed in part. Open for the owner's acceptance before #34: M-1 (ImageSharp licence decision), M-2 (blocked on the
 App Service client-address check), M-3, M-5, M-6, the Low items, R-3 (bucket lock) and the runtime checks of Part 1.
 #33 is ready for the #34 go/no-go **on the condition** that the owner accepts those residual risks and completes the
-runtime checks; LoreX should not be called ready while H-level work is unmerged, and none of this branch is merged.
+runtime checks; LorEvolve should not be called ready while H-level work is unmerged, and none of this branch is merged.

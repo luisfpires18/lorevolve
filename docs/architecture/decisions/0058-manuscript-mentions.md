@@ -55,7 +55,7 @@ in the text changes.
 - An AI proposal that replaces a manuscript (ADR 0047) is written over rendered text, so its mentions come back as plain
   names; the reviewer sees the change before approving. Appends keep the stored text's tokens. *(Ceiling: give the proposal
   path the stored text if mentions inside AI-edited scenes matter.)*
-- The author sees the token in their own draft, and text copied out of Lorex carries it. A rich editor (option E2) can be
+- The author sees the token in their own draft, and text copied out of LorEvolve carries it. A rich editor (option E2) can be
   laid over the same storage later without touching a stored manuscript.
 - The universe search indexes the token's characters: its name is found, its id is noise nobody types.
 - Not done: mentions of scenes, stories or moments; variant or era selection (#30); clicking a mention inside the text box.

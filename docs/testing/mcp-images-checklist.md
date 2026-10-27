@@ -10,7 +10,7 @@ tokens, cookies or the connection URL's universe id into the issue.
 2. Test universe: LOTR. Entry **Bilbo Baggins** has a profile picture. One entry has an appearance whose
    picture is ticked for a form (or create one: Progression -> Forms, then an appearance ticked for that form,
    then upload a picture to the appearance).
-3. In ChatGPT (developer mode connector) remove and re-add the LoreX connection so the tool list is fresh: it must
+3. In ChatGPT (developer mode connector) remove and re-add the LorEvolve connection so the tool list is fresh: it must
    list `list_lore_images` and `get_lore_image` with the `format` argument.
 
 ## Steps
@@ -23,7 +23,7 @@ tokens, cookies or the connection URL's universe id into the issue.
 | 4 | "Show me the <form> look of <entry>" | Only the picture of the appearance ticked for that form | Right picture? Never the portrait |
 | 5 | "Show me <entry with no pictures>'s portrait" | "This entry has no pictures." | No invented image |
 | 6 | "Fetch the original of <large mural>" (> 4 MB) | `image_too_large`, preview offered | Refusal shown honestly |
-| 7 | If any image is blank: "Give me the LoreX link" | The Lore / progression page link from the result | Link opens LoreX; signed out -> sign-in first |
+| 7 | If any image is blank: "Give me the LorEvolve link" | The Lore / progression page link from the result | Link opens LorEvolve; signed out -> sign-in first |
 | 8 | Profile -> Connected apps: revoke the connection, ask again | Connection refused, nothing shown | ChatGPT reports the failure |
 
 ## Read the result

@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 <#
-    Lorex RTK safe hook wrapper.
+    LorEvolve RTK safe hook wrapper.
 
     Wraps the official `rtk hook claude` PreToolUse hook. RTK may compress the
     output of a command; it may not change which command runs, and it may not

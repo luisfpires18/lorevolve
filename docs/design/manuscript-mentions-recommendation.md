@@ -72,7 +72,7 @@ which is the natural home for clickable mentions.
 
 | Event | Effect | Manuscript text |
 | --- | --- | --- |
-| Typing elsewhere, paste, undo, redo | None: a token is ordinary characters. | Unchanged by Lorex. |
+| Typing elsewhere, paste, undo, redo | None: a token is ordinary characters. | Unchanged by LorEvolve. |
 | Editing inside a token (a bracket deleted) | It stops matching and is prose again; the mentions list no longer shows it. No hidden state can disagree with the text. | What the author typed. |
 | Deleting the token | The mention is gone. The scene's lore links are untouched (they are a separate decision, per the owner). | What the author typed. |
 | Entry renamed | The id still resolves; readers render the current name. The token keeps the name typed at insertion; the mentions list can say "written as X". | Unchanged. |

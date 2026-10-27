@@ -62,8 +62,8 @@ graphify-out/
 
 # ---------- Published frontend ----------
 # The built client is copied here at publish time so one process serves both halves.
-src/Lorex.Api/wwwroot/
+src/LorEvolve.Api/wwwroot/
 
-# ---------- Lorex launcher runtime ----------
-.lorex/
+# ---------- LorEvolve launcher runtime ----------
+.lorevolve/
 logs/

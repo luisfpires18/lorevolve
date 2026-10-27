@@ -4,7 +4,7 @@ Status: accepted (2026-10-26). GitHub issue #54 (pre-alpha reliability). Runbook
 
 ## Context
 
-LoreX keeps everything but pictures in one SQLite file (ADR 0002), on DEV at `/home/data/lorex.db` on the App Service's
+LorEvolve keeps everything but pictures in one SQLite file (ADR 0002), on DEV at `/home/data/lorex.db` on the App Service's
 Azure Files share (ADR 0018). It survives restarts and redeploys, not deletion of the App Service, a corrupting write, a
 bad migration or an operator mistake. The per-universe backup (ADR 0014, #11) is the creator's tool, taken by hand; nothing
 protected the service as a whole.
@@ -66,7 +66,7 @@ and always the newest 3; delete a backup manifest first, then its object. It run
 never after a failure, and only inside this environment's prefix. `DatabaseBackup:Retention:PruneEnabled` turns it on
 once the owner accepts the policy and its cost (runbook).
 
-**A restore drill is a command, not a hope.** `dotnet Lorex.Api.dll database-backup restore-drill --target <empty folder>
+**A restore drill is a command, not a hope.** `dotnet LorEvolve.Api.dll database-backup restore-drill --target <empty folder>
 --latest [--check-media]` downloads, checks both SHA-256s, `integrity_check` and `foreign_key_check`, refuses a backup
 holding migrations this build does not know, applies this build's pending migrations to the copy, reads every universe
 whole through `UniverseBackupBuilder`, and with `--check-media` confirms every picture original is in the media bucket. It
@@ -78,7 +78,7 @@ never writes over the configured database. `run` and `list` exist for operators 
   database to an earlier day brings back rows whose pictures were deleted since only if the bucket still holds them -
   `--check-media` names any that are gone. The per-universe backup (#11) carries originals; nothing copies the media bucket.
 - **Not point-in-time.** RPO is the interval (24 h) plus up to an hour when a run fails.
-- **Not client-side encrypted.** R2 encrypts at rest; transport is HTTPS. A key LoreX held would have to be backed up too.
+- **Not client-side encrypted.** R2 encrypts at rest; transport is HTTPS. A key LorEvolve held would have to be backed up too.
 
 ## Consequences
 

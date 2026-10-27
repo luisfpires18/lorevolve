@@ -20,9 +20,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0014 | A backup is one versioned archive holding a universe's authored data (amended #23: version 32, the owner's private notes; #15: version 33, knowledge records) | [0014-universe-backup-format.md](0014-universe-backup-format.md) |
 | 0015 | An entry is trashed by a marker, and nothing that points at it is destroyed (amended 020: bulk move, all or nothing) | [0015-entity-trash-and-restore.md](0015-entity-trash-and-restore.md) |
 | 0016 | Lore is searched by a SQLite FTS5 index the write path keeps in step | [0016-sqlite-full-text-search.md](0016-sqlite-full-text-search.md) |
-| 0017 | Lorex installs as an app shell and caches build output only | [0017-pwa-shell-and-caching.md](0017-pwa-shell-and-caching.md) |
+| 0017 | LorEvolve installs as an app shell and caches build output only | [0017-pwa-shell-and-caching.md](0017-pwa-shell-and-caching.md) |
 | 0018 | DEV is one App Service serving both halves, with state on the site's own share | [0018-azure-dev-single-app-service.md](0018-azure-dev-single-app-service.md) |
-| 0019 | An entry has one image, held in a private bucket and served by Lorex | [0019-entity-primary-image.md](0019-entity-primary-image.md) |
+| 0019 | An entry has one image, held in a private bucket and served by LorEvolve | [0019-entity-primary-image.md](0019-entity-primary-image.md) |
 | 0020 | An entity type's icon is a key from a closed, built-in set | [0020-entity-type-icon-keys.md](0020-entity-type-icon-keys.md) |
 | 0021 | An account's photo is its own user-level media, on the entry image's proven path | [0021-profile-photo.md](0021-profile-photo.md) |
 | 0022 | A universe keeps its own chronology: ordered eras, compared as structured points (amended 018: authors see "date periods", unbounded; 039: an optional custom calendar of months by id) | [0022-universe-chronology.md](0022-universe-chronology.md) |
@@ -36,7 +36,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0030 | Ideas are account-owned possibilities, optionally about one universe, and never lore | [0030-ideas.md](0030-ideas.md) |
 | 0031 | A universe is searched across its recorded content from one persistent bar, over derived FTS5 indexes | [0031-universe-search.md](0031-universe-search.md) |
 | 0032 | A backup is restored as a new universe: validated first, every id new, the account's own | [0032-backup-restore.md](0032-backup-restore.md) |
-| 0033 | A world rule is a universe's own statement of how its world works, and means nothing to Lorex by itself | [0033-world-rules.md](0033-world-rules.md) |
+| 0033 | A world rule is a universe's own statement of how its world works, and means nothing to LorEvolve by itself | [0033-world-rules.md](0033-world-rules.md) |
 | 0034 | A world rule may carry one explicit check, counted against the explicit details of Canon moments | [0034-timeline-rule-validation.md](0034-timeline-rule-validation.md) |
 | 0035 | A relation kind may carry an explicit family meaning, and a family tree derives the rest (amended by 0040: type eligibility, family without ancestry) | [0035-family-trees.md](0035-family-trees.md) |
 | 0036 | A universe is private until its owner publishes its shell, and the portal reads only an allow-list (amended for 010: entries and stories are published one by one, and a private universe overrides them; for 011: an entry's page carries its article, and a story needs a public summary) | [0036-universe-publication.md](0036-universe-publication.md) |
@@ -50,10 +50,10 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0043 | A protected save names the version it was written over, and a save over a newer one is refused (entries, articles, stories, scenes, manuscripts; #39: field definitions; #23: private notes) | [0043-concurrent-edit-protection.md](0043-concurrent-edit-protection.md) |
 | 0044 | A suggestion is bound to the version it was made over, and is accepted only through the target's own save | [0044-suggested-changes.md](0044-suggested-changes.md) |
 | 0045 | The universe assistant reads through permission-safe tools over a shared read layer, behind a narrow provider boundary | [0045-universe-assistant.md](0045-universe-assistant.md) |
-| 0046 | An outside AI app reads one universe over MCP, as one member, through OAuth 2.1 issued by LoreX itself (amended 052: a separate, opt-in proposal scope) | [0046-mcp-read-only-connection.md](0046-mcp-read-only-connection.md) |
-| 0047 | An AI proposes changes; a person approves them in LoreX; only approved changes are applied, together, through each resource's own write path | [0047-staged-ai-changes.md](0047-staged-ai-changes.md) |
+| 0046 | An outside AI app reads one universe over MCP, as one member, through OAuth 2.1 issued by LorEvolve itself (amended 052: a separate, opt-in proposal scope) | [0046-mcp-read-only-connection.md](0046-mcp-read-only-connection.md) |
+| 0047 | An AI proposes changes; a person approves them in LorEvolve; only approved changes are applied, together, through each resource's own write path | [0047-staged-ai-changes.md](0047-staged-ai-changes.md) |
 | 0048 | Relationships and timeline moments get a Trash; AI proposals reach every creator-authored resource | [0048-ai-changes-content-coverage.md](0048-ai-changes-content-coverage.md) |
-| 0049 | One LoreX confirmation replaces the browser's confirm(); only beforeunload stays the browser's | [0049-shared-confirmation-dialog.md](0049-shared-confirmation-dialog.md) |
+| 0049 | One LorEvolve confirmation replaces the browser's confirm(); only beforeunload stays the browser's | [0049-shared-confirmation-dialog.md](0049-shared-confirmation-dialog.md) |
 | 0050 | An entry's progression is its own aggregate, and an era holds only what differs then (#41) | [0050-entry-progression-eras.md](0050-entry-progression-eras.md) |
 | 0051 | A relationship holds during periods of its own, on the universe's time or an entry's era (#18) | [0051-temporal-relationships.md](0051-temporal-relationships.md) |
 | 0052 | An entry's forms and abilities are available exactly in the eras the author ticks (#42) | [0052-entry-forms-and-abilities.md](0052-entry-forms-and-abilities.md) |
@@ -63,7 +63,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0056 | An entry may carry one private author note, and the owner alone may read it (#23) | [0056-private-author-notes.md](0056-private-author-notes.md) |
 | 0057 | A knowledge record is an author's statement that one actor knows one thing from one scene, and nothing is inferred (#15) | [0057-knowledge-records.md](0057-knowledge-records.md) |
 | 0058 | A manuscript mention is one plain-text token, resolved by id, shown as stored while writing and as a name everywhere else (#31) | [0058-manuscript-mentions.md](0058-manuscript-mentions.md) |
-| 0059 | An account has a platform role; an Admin may block a Member, and reads only what LoreX records (#40) | [0059-platform-admin-workspace.md](0059-platform-admin-workspace.md) |
+| 0059 | An account has a platform role; an Admin may block a Member, and reads only what LorEvolve records (#40) | [0059-platform-admin-workspace.md](0059-platform-admin-workspace.md) |
 | 0060 | A universe's maps are uploaded pictures kept whole, with pins at fractions of them linked to Lore by id (#52) | [0060-lore-linked-maps.md](0060-lore-linked-maps.md) |
 | 0061 | Geography is read from the maps' pins through one shared reader, and a distance exists only on a calibrated map (#53) | [0061-map-geography-and-calibration.md](0061-map-geography-and-calibration.md) |
 | 0062 | An AI proposes schema - lore types, fields, groups - as its own reviewed proposal, through the Types screen's own write paths | [0062-ai-schema-proposals.md](0062-ai-schema-proposals.md) |
@@ -71,6 +71,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0064 | The web process takes a daily online SQLite snapshot and keeps it, verified, in a private R2 bucket (#54) | [0064-sqlite-backups-to-r2.md](0064-sqlite-backups-to-r2.md) |
 | 0065 | Lore's front page is a catalog of the universe's types, with a Browse by group choice above the cards (#60) | [0065-lore-front-page-catalog.md](0065-lore-front-page-catalog.md) |
 | 0066 | An idea board is an account-owned canvas of notes, ideas and entries, and never lore (amends 0030) | [0066-idea-boards.md](0066-idea-boards.md) |
+| 0067 | The product is LorEvolve; what was stored as Lorex is still read | [0067-rename-to-lorevolve.md](0067-rename-to-lorevolve.md) |
 
 All accepted. Next number: `0067`.
 
@@ -80,7 +81,7 @@ join and the missing era reassignment in 0022, the `Age` reference year and excl
 promotion gate does not claim about stored High conflicts in 0012, unbounded history
 growth in 0013, what a backup is not in 0014, the type that cannot be freed while a
 trashed entry still uses it in 0015, the loss of substring matching in 0016, what an
-installed Lorex does not do offline in 0017, and what the DEV topology costs - one
+installed LorEvolve does not do offline in 0017, and what the DEV topology costs - one
 writer, an outage on deploy, keys unencrypted at rest and no rollback for the schema -
 in 0018, and what an entry's image costs a backup and a revision restore in 0019, and what a
 profile photo is deliberately left out of - a backup, a history and anyone else's view - in

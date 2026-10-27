@@ -1,17 +1,17 @@
-# ADR 0017 - Lorex installs as an app shell and caches build output only
+# ADR 0017 - LorEvolve installs as an app shell and caches build output only
 
 Status: accepted (2026-09-10)
 
 ## Context
 
-Phase 021 made Lorex usable on a phone. Installing it - a home-screen entry, its own window,
+Phase 021 made LorEvolve usable on a phone. Installing it - a home-screen entry, its own window,
 no browser chrome - is the part of that which is not CSS: it needs a web app manifest, icons a
 platform will accept, and, before a browser will offer to install anything, a registered
 service worker with a fetch handler.
 
 A service worker is also the single most dangerous file in a frontend. It sits in front of every
 request the page makes, it outlives the page, and anything it writes to a cache is on the device
-until something deletes it. Lorex is server-backed and authenticated: every route past `/login`
+until something deletes it. LorEvolve is server-backed and authenticated: every route past `/login`
 is somebody's private worldbuilding, read through a cookie session (ADR 0005) and gated on
 ownership in every query (ADR 0006). A worker that "helpfully" cached responses would put a
 readable copy of a universe in `CacheStorage`, where it would survive sign-out, survive the
@@ -64,12 +64,12 @@ already carries the new asset URLs - so there is no waiting worker to prompt abo
 to update" banner, and no way to be held on stale frontend assets indefinitely.
 
 **Offline is not claimed anywhere.** There is no offline fallback page, no navigation cache and
-no background sync. Opening Lorex without a network fails the way it does in a normal tab.
+no background sync. Opening LorEvolve without a network fails the way it does in a normal tab.
 
 ## Consequences
 
-- **Lorex does not work offline, installed or not.** This is the intended behaviour. An
-  installed Lorex is the same app in its own window; it is not a local copy of a universe.
+- **LorEvolve does not work offline, installed or not.** This is the intended behaviour. An
+  installed LorEvolve is the same app in its own window; it is not a local copy of a universe.
 - **Nothing authenticated is ever written to device storage by the worker.** `pwa.spec.ts`
   proves it against the real `sw.js` and a real session: it fetches `/api/auth/me`,
   `/api/universes`, one universe, its entities and a `PUT`, then asserts every cache is free of
@@ -104,7 +104,7 @@ unrelated to it is a defect. The owner has since supplied the real thing - three
 red rings around a four-point star - so the stand-in is gone and the supplied artwork is the
 canonical mark. Nothing about the caching policy changes.
 
-**One source, in one place.** `assets/brand/lorex-icon.png`, the owner's file unaltered: 1299 x
+**One source, in one place.** `assets/brand/lorevolve-icon.png`, the owner's file unaltered: 1299 x
 1211, 8-bit RGBA, with genuine transparency - every edge pixel is `(0,0,0,0)`, and the
 checkerboard a viewer draws behind it is the viewer's. `scripts/render-icons.py` derives every
 shipped asset from it and nothing else does. `public/icon.svg` is deleted: the artwork is a
@@ -141,9 +141,9 @@ files are cached by path, so without a bump a browser keeps serving whichever ve
 first. `v1` to `v2` to `v3`. The policy is untouched; only the version moved.
 
 **Where the symbol appears in the product, and where it deliberately does not.** Large on the
-auth plate above the `Lore X` wordmark, and small beside that wordmark in the two paper bars.
+auth plate above the `LorEvolve` wordmark, and small beside that wordmark in the two paper bars.
 It is decorative in both - `alt=""` - because the wordmark beside it is the accessible name, and
-a screen reader should not say "Lorex Lorex". The workspace rail keeps its drawn `L`: the symbol
+a screen reader should not say "LorEvolve LorEvolve". The workspace rail keeps its drawn `L`: the symbol
 was tried there and at the ~30px a 3.5rem rail allows it reads as a red tangle, and it puts the
 only saturated colour in the chrome directly above the universe accent seal, which is the one
 thing in the rail that carries meaning.
@@ -159,7 +159,7 @@ still that link. Nothing in the worker changed: navigations were never cached, s
 
 The 011 amendment was wrong about the worker. Navigations were never cached, but the manifest was: `STATIC_ROOT_FILE`
 matched `*.webmanifest`, and the rule for root static files is cache-first until `CACHE_VERSION` changes. 011 changed
-`start_url` without bumping it, so every browser that had run Lorex before 011 kept answering the install and every
+`start_url` without bumping it, so every browser that had run LorEvolve before 011 kept answering the install and every
 manifest update check with the old file - `start_url: /app` - from its v3 cache. The installed app therefore kept
 launching `/app`, where `RequireAuth` sends a signed-in author to the universes and a signed-out one to Login. That is
 the behaviour the owner saw on a real install, with the correct manifest on the server the whole time.
@@ -182,23 +182,23 @@ and a link the system hands the app is that link; neither is changed.
 `CACHE_VERSION` is gone. Root files keep their names across builds (the icons twice needed a hand bump to stop browsers
 serving old bytes), and a constant somebody must remember to change is the failure that made both bumps necessary.
 
-- **The build names the cache.** Vite fixes a build id once per build (`LOREX_BUILD_ID`, else `GITHUB_SHA`, else random)
+- **The build names the cache.** Vite fixes a build id once per build (`LOREVOLVE_BUILD_ID`, else `GITHUB_SHA`, else random)
   and `pwa.ts` registers `/sw.js?build=<id>`. A new id is a new script URL, so the browser installs a new worker, which
-  caches under `lorex-static-<id>` and on activate deletes every other `lorex-static-*` cache. Root static files are
+  caches under `lorevolve-static-<id>` and on activate deletes every other `lorevolve-static-*` cache. Root static files are
   therefore read afresh once per build. The hand-bumped constant this amendment replaces is the "update strategy" above.
 - **Unchanged:** what is cached (build output and root static files, cache-first), what never is (`/api`, `/health`,
   navigations, the manifest, non-`GET`, cross-origin), the server's headers (`/assets` immutable, everything else
   `no-cache`), Vite's hashed names, user media, and production-only registration.
-- **Bare `/sw.js`**, which only the E2E suite registers against the dev server, caches as `lorex-static-unbuilt`.
+- **Bare `/sw.js`**, which only the E2E suite registers against the dev server, caches as `lorevolve-static-unbuilt`.
 - **A worker controls the page from `activating`, before its activate handler has swept the old cache.** Anything that
   checks the sweep waits for `activated`; `pwa.spec.ts` does.
-- The semantic version (`package.json`, shown as "LoreX v0.1.0") is separate: it says which release is running and
+- The semantic version (`package.json`, shown as "LorEvolve v0.1.0") is separate: it says which release is running and
   never invalidates anything.
 
 ## Amendment: the new mark, black grounds and the launch layer (2026-10-14, 043.5)
 
 **New mark, same pipeline.** The owner's new icon (a crimson star and X in a pale gold ring) replaces
-`assets/brand/lorex-icon.png`; `scripts/render-icons.py` re-renders every icon, favicon and `brand-mark.png` from it,
+`assets/brand/lorevolve-icon.png`; `scripts/render-icons.py` re-renders every icon, favicon and `brand-mark.png` from it,
 unaltered. The grounds that cannot be transparent - maskable and Apple touch - move from paper to black: the new mark was
 drawn on black and reads there, and black is now the launch's ground. The maskable padding grows to 22%, because the
 mark's diagonal spikes reach the corners of its own box; `pwa.spec.ts` measures that the whole mark stays inside the 80%
@@ -208,7 +208,7 @@ circle.
 surface. `theme_color` stays the plate, `#201f1d`.
 
 **The launch layer.** `index.html` draws a black layer with `launch-logo.webp` (encoded from
-`assets/brand/lorex-logo.png`) before the first paint, but only in the installed app (`display-mode: standalone`, or
+`assets/brand/lorevolve-logo.png`) before the first paint, but only in the installed app (`display-mode: standalone`, or
 iOS's `navigator.standalone`) and once per window (`sessionStorage`). The app starts underneath; `src/lib/launch.ts`
 lifts the layer once the logo has arrived and the shell shows no pending plate, about 1.1 s in all, a fade alone under
 reduced motion. A CSS failsafe hides it after 10 s if the app never starts. Browser tabs never draw it or fetch the logo.
@@ -216,4 +216,4 @@ reduced motion. A CSS failsafe hides it after 10 s if the app never starts. Brow
 **Caching.** `.webp` joins the root files the worker keeps per build, so the logo is local on a cold launch and fresh
 after each deployment; nothing else changes. An existing install picks up the new manifest and icons when the platform
 next refreshes its install - Android does so on its own schedule, iOS keeps the icon of the home-screen shortcut until it
-is added again. Lorex does not prompt.
+is added again. LorEvolve does not prompt.

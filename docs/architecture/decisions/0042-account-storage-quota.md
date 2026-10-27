@@ -4,7 +4,7 @@ Status: accepted (2026-10-06). Product refinement 040.
 
 ## Context
 
-Lorex stores one picture per Lore entry in a private bucket (ADR 0019), and until now nothing limited how much an
+LorEvolve stores one picture per Lore entry in a private bucket (ADR 0019), and until now nothing limited how much an
 account could put there. A limit is needed before anything else is built on storage, and it has to be one that a
 future billing system can raise without changing what it means.
 
@@ -18,7 +18,7 @@ transaction, and every transaction Microsoft.Data.Sqlite begins is `IMMEDIATE`.
 
 ## Decision
 
-**The allowance is the account's.** `LorexUser.StorageQuotaBytes`, non-null, 1 GiB (1,073,741,824 bytes) for every
+**The allowance is the account's.** `LorEvolveUser.StorageQuotaBytes`, non-null, 1 GiB (1,073,741,824 bytes) for every
 account: the migration's column default for those that existed, the property's initializer for new ones
 (`StorageQuota.DefaultBytes`). No value means unlimited - not zero, not `long.MaxValue` - and no route changes it. Only
 something trusted on the server, such as billing one day, may raise it. A positive value is held by that one write path;
@@ -31,7 +31,7 @@ account only collaborates on is not part of its storage. Who may upload is uncha
 
 **What counts is the original of each Lore picture.** `SUM(EntityImages.ByteSize)` over the owner's universes - live
 entries and entries in the Trash alike, because a trashed entry's picture is still stored and a restore brings it back.
-Not thumbnails (derived, Lorex's own cost), not objects a failed sweep left behind (no row names them, so they are
+Not thumbnails (derived, LorEvolve's own cost), not objects a failed sweep left behind (no row names them, so they are
 infrastructure litter, not the author's), not universe artwork, profile photos, text, backups or anything else. Usage
 falls the moment a row goes: Remove image, permanent deletion of an entry, permanent deletion of a universe, a smaller
 replacement.
@@ -97,7 +97,7 @@ Backup format stays 22.
 
 Permanent deletion of a universe removed its `EntityImages` and `UniverseArtworks` rows by cascade and never touched the
 bucket, so an owner could fill their allowance, delete the universe, get the room back and repeat, leaving every object
-behind for Lorex to pay for. Usage freeing at once was right; never attempting the cleanup was not.
+behind for LorEvolve to pay for. Usage freeing at once was right; never attempting the cleanup was not.
 
 The delete now follows the order every picture follows. Inside its transaction, after the owner and archived checks, it
 reads the exact stored keys - each entry picture's `OriginalKey` and `ThumbnailKey`, the Trash included, and the

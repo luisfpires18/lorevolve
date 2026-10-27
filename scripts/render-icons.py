@@ -1,5 +1,5 @@
 """
-Renders every install and favicon asset from `assets/brand/lorex-icon.png`, which is the
+Renders every install and favicon asset from `assets/brand/lorevolve-icon.png`, which is the
 only source of the mark.
 
     python scripts/render-icons.py
@@ -16,32 +16,36 @@ bleed dark fringes into the mark's edges.
 
 Two grounds, and the reason for each:
 
-  transparent  What the master is, and the default. The mark - a crimson star and X inside a
-               pale gold ring - carries its shape on a light or a dark surface alike, so the
+  transparent  What the master is, and the default. The mark - an open book, a crimson world of
+               spires and roads rising from its cream pages - carries its shape on a light or a dark surface alike, so the
                icon sits in whatever tab strip or launcher is behind it.
   black        #000000, which is also the manifest's background_color and the launch layer's
                ground (043.5), so an installed icon, the window the platform opens behind it
-               and the first frame Lorex paints are one surface. Used only where transparency
+               and the first frame LorEvolve paints are one surface. Used only where transparency
                is not an option:
 
                - the maskable icon, which a platform crops to its own shape and fills, and
                  where a transparent region is a defect rather than a choice;
                - the Apple touch icon, because iOS composites transparency onto black anyway.
 
-               The mark was drawn on black; its red and gold read there at every size.
+               The mark was drawn on black; its red and cream read there at every size. At 16 px it is
+               a book-shaped blob, not a picture - the tab strip asks no more.
 
-The launch logo is not made here: it is a photograph-like raster with its own black ground, so
-it is resampled and encoded once with libwebp from `assets/brand/lorex-logo.png`:
+The launch logo is not made here: it is a photograph-like raster. Its art comes transparent, so
+`assets/brand/lorevolve-logo.png` is that art flattened onto #000000 - the launch layer's ground
+(ffmpeg -f lavfi -i color=black:s=1774x887 -i art.png -filter_complex
+"[1]scale=1400:-1[l];[0][l]overlay=(W-w)/2:(H-h)/2,format=rgb24") - and
+it is resampled and encoded once with libwebp from `assets/brand/lorevolve-logo.png`:
 
-    ffmpeg -i assets/brand/lorex-logo.png -vf scale=1200:-1:flags=area         -c:v libwebp -quality 82 -compression_level 6 src/Lorex.Web/public/launch-logo.webp
+    ffmpeg -i assets/brand/lorevolve-logo.png -vf scale=1200:-1:flags=area         -c:v libwebp -quality 82 -compression_level 6 src/LorEvolve.Web/public/launch-logo.webp
 """
 
 import struct
 import zlib
 from pathlib import Path
 
-SOURCE = Path(__file__).resolve().parent.parent / "assets" / "brand" / "lorex-icon.png"
-PUBLIC = Path(__file__).resolve().parent.parent / "src" / "Lorex.Web" / "public"
+SOURCE = Path(__file__).resolve().parent.parent / "assets" / "brand" / "lorevolve-icon.png"
+PUBLIC = Path(__file__).resolve().parent.parent / "src" / "LorEvolve.Web" / "public"
 
 #: The manifest's background_color and the launch layer's ground, so an installed icon and the
 #: window that opens behind it are the same surface.
@@ -67,7 +71,7 @@ TARGETS = [
     ("favicon-32.png", 32, 0.03, None),
     ("favicon-16.png", 16, 0.02, None),
     # The in-app symbol. Untrimmed of padding, because here the surface underneath is
-    # Lorex's own and the stylesheet decides the spacing.
+    # LorEvolve's own and the stylesheet decides the spacing.
     ("brand-mark.png", 384, 0.0, None),
 ]
 

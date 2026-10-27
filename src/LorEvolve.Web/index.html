@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- PNG rather than SVG: the mark is the owner's raster artwork, and tracing it into
+         vectors would be redrawing it. Three sizes so the browser picks rather than
+         downsamples - at 16px the rings are already at the edge of legibility. -->
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- viewport-fit=cover is what makes env(safe-area-inset-*) meaningful, which the
+         bottom action bars on narrow screens rely on. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- The browser chrome continues the surface the app is painting: the paper in Light, the
+         plate in Dark. The bootstrap below sets it for the theme in use. -->
+    <meta name="theme-color" content="#f6f2ea" />
+
+    <!-- The theme, before anything is drawn (013). One LorEvolve theme for the portal and the
+         workspace: the choice saved in this browser, else the system's. Inline and first so
+         no page paints in one theme and then flips; lib/theme.ts owns it afterwards and uses
+         the same key and colours. Outside the lorevolve:head block, so the server's per-page head
+         never touches it. -->
+    <script>
+      ;(function () {
+        var theme = null
+        try {
+          theme = localStorage.getItem('lorevolve-theme') || localStorage.getItem('lorex-theme')
+        } catch (e) {}
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        }
+        var root = document.documentElement
+        root.setAttribute('data-theme', theme)
+        root.style.colorScheme = theme
+        var chrome = document.querySelector('meta[name="theme-color"]')
+        if (chrome) chrome.setAttribute('content', theme === 'dark' ? '#151617' : '#f6f2ea')
+      })()
+    </script>
+
+    <!-- The launch layer (043.5) and its opening: LorEvolve opens on black, the logo resolves, a book, a world, a game and a
+         screen draw themselves around it, a red edge rises and the curtain wipes onto the app, which has been starting
+         underneath all along. Every launch of the installed app, and a browser's first visit to LorEvolve's home in a
+         session; once per window either way, so a reload or a navigation never replays it. Decided here, before the
+         first paint, so the platform's black launch screen, this layer and the logo are one surface. src/lib/launch.ts
+         lifts it once the opening has played and the shell has drawn something real; the failsafe animation lifts it
+         anyway if the app never starts. A tap or a key skips it. -->
+    <script>
+      ;(function () {
+        var installed =
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.navigator.standalone === true
+        // A browser tab opens on it only at the front door, never on a shared deep link, and never under automation
+        // (the end-to-end suite would wait on it in every new browser); installed launches keep it everywhere.
+        var home = location.pathname === '/' && !window.navigator.webdriver
+        if (!installed && !home) return
+        try {
+          if (sessionStorage.getItem('lorevolve-launched')) return
+          sessionStorage.setItem('lorevolve-launched', '1')
+        } catch (e) {}
+        document.documentElement.setAttribute('data-launch', 'on')
+        var chrome = document.querySelector('meta[name="theme-color"]')
+        if (chrome) chrome.setAttribute('content', '#000000')
+        var logo = document.createElement('link')
+        logo.rel = 'preload'
+        logo.as = 'image'
+        logo.href = '/launch-logo.webp'
+        document.head.appendChild(logo)
+      })()
+    </script>
+    <style>
+      .launch {
+        display: none;
+      }
+      html[data-launch='on'] {
+        background: #000;
+      }
+      html[data-launch] .launch {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483000;
+        display: grid;
+        place-items: center;
+        background: #000;
+        animation: launch-failsafe 0.3s linear 10s forwards;
+      }
+      .launch > * {
+        grid-area: 1 / 1;
+      }
+      .launch__logo {
+        position: relative;
+        width: min(78vw, 560px, 110vh);
+        aspect-ratio: 2 / 1;
+        background: url('/launch-logo.webp') center / contain no-repeat;
+        opacity: 0;
+        transform: scale(0.965);
+        filter: saturate(0.35) brightness(0.75);
+        animation: launch-logo 480ms cubic-bezier(0.2, 0.7, 0.2, 1) 60ms forwards;
+      }
+      /* Leaving: the red edge rises at the right (below), then the whole layer wipes left onto the app. */
+      html[data-launch='leaving'] .launch {
+        pointer-events: none;
+        animation: launch-wipe 820ms cubic-bezier(0.65, 0, 0.35, 1) 300ms forwards;
+      }
+      @keyframes launch-logo {
+        to {
+          opacity: 1;
+          transform: none;
+          filter: none;
+        }
+      }
+      @keyframes launch-failsafe {
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+      @keyframes launch-fade-in {
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes launch-fade-out {
+        to {
+          opacity: 0;
+        }
+      }
+      /* The opening. Four forms of story - a book, a world, a game, a screen - in the wordmark's ivory, each with a spark
+         of its red, draw themselves around the logo and drift on their orbit; then a red edge stands at the right and the
+         layer wipes left onto the app. Transform, opacity and stroke only; nothing loops, so launch.ts can wait on it. */
+      .launch__form {
+        --size: clamp(54px, 15vw, 96px);
+        width: var(--size);
+        height: var(--size);
+        overflow: visible;
+        fill: none;
+        stroke: #ece5d8;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0;
+        transform: translate(var(--x), var(--y)) rotate(var(--r));
+        animation:
+          launch-form 900ms cubic-bezier(0.34, 1.3, 0.64, 1) var(--at) forwards,
+          launch-drift 800ms cubic-bezier(0.45, 0, 0.55, 1) calc(var(--at) + 900ms);
+      }
+      .launch__form > * {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        animation: launch-draw 800ms cubic-bezier(0.65, 0, 0.35, 1) calc(var(--at) + 120ms) forwards;
+      }
+      .launch__form .launch__red {
+        stroke: #e5483c;
+      }
+      .launch__form .launch__spark {
+        stroke: none;
+        fill: #e5483c;
+        stroke-dasharray: none;
+        opacity: 0;
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: launch-spark 700ms ease-out calc(var(--at) + 900ms) forwards;
+      }
+      .launch__form--book {
+        --x: calc(-1 * min(30vw, 250px));
+        --y: calc(-1 * clamp(96px, 19vw + 40px, 200px));
+        --r: -9deg;
+        --at: 380ms;
+      }
+      .launch__form--world {
+        --x: min(30vw, 250px);
+        --y: calc(-1 * clamp(96px, 19vw + 40px, 200px));
+        --r: 8deg;
+        --at: 470ms;
+      }
+      .launch__form--game {
+        --x: calc(-1 * min(30vw, 250px));
+        --y: clamp(96px, 19vw + 40px, 200px);
+        --r: 7deg;
+        --at: 560ms;
+      }
+      .launch__form--screen {
+        --x: min(30vw, 250px);
+        --y: clamp(96px, 19vw + 40px, 200px);
+        --r: -8deg;
+        --at: 650ms;
+      }
+      .launch__edge {
+        justify-self: end;
+        align-self: stretch;
+        width: 5px;
+        background: #e5483c;
+        box-shadow: 0 0 34px 5px rgba(229, 72, 60, 0.65);
+        transform: scaleY(0);
+        transform-origin: bottom;
+      }
+      html[data-launch='leaving'] .launch__edge {
+        animation: launch-edge 340ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+      }
+      @keyframes launch-form {
+        from {
+          opacity: 0;
+          transform: translate(var(--x), calc(var(--y) + 45vh)) rotate(calc(var(--r) * -5));
+        }
+        to {
+          opacity: 1;
+          transform: translate(var(--x), var(--y)) rotate(var(--r));
+        }
+      }
+      @keyframes launch-drift {
+        50% {
+          transform: translate(calc(var(--x) * 1.04), calc(var(--y) * 1.04 - 6px))
+            rotate(calc(var(--r) * -0.6));
+        }
+      }
+      @keyframes launch-draw {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      @keyframes launch-spark {
+        0% {
+          opacity: 0;
+          transform: scale(0.2);
+        }
+        45% {
+          opacity: 1;
+          transform: scale(1.5);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      @keyframes launch-edge {
+        to {
+          transform: scaleY(1);
+        }
+      }
+      @keyframes launch-wipe {
+        to {
+          transform: translateX(-100%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .launch__form,
+        .launch__edge {
+          display: none;
+        }
+        .launch__logo {
+          transform: none;
+          filter: none;
+          animation: launch-fade-in 160ms linear forwards;
+        }
+        html[data-launch='leaving'] .launch {
+          animation: launch-fade-out 160ms linear forwards;
+        }
+      }
+    </style>
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="LorEvolve" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- The server replaces everything between these two markers with each page's own head -
+         title, description, robots, canonical, Open Graph (ADR 0038). What stays here is the head
+         for anything served without that step: the dev server, and /index.html itself. -->
+    <!-- lorevolve:head -->
+    <title>LorEvolve</title>
+    <meta
+      name="description"
+      content="A workroom for the worlds you keep: their people, places, history and the rules that hold them together."
+    />
+    <meta name="robots" content="noindex,nofollow" />
+    <!-- /lorevolve:head -->
+  </head>
+  <body>
+    <div class="launch" id="launch" aria-hidden="true" data-testid="launch">
+      <!-- A book: the stories written down. -->
+      <svg class="launch__form launch__form--book" viewBox="0 0 64 64" data-testid="launch-form">
+        <path
+          pathLength="1"
+          d="M32 18C24 13 14 13 8 15V49C14 47 24 47 32 52C40 47 50 47 56 49V15C50 13 40 13 32 18Z"
+        />
+        <path pathLength="1" d="M32 18V52" />
+        <path
+          pathLength="1"
+          d="M14 24C19 23 24 23 28 25M14 31C19 30 24 30 28 32M14 38C19 37 24 37 28 39"
+        />
+        <path pathLength="1" class="launch__red" d="M43 14V27L46.5 24L50 27V15" />
+        <path
+          class="launch__spark"
+          d="M38 34L39.3 37.7L43 39L39.3 40.3L38 44L36.7 40.3L33 39L36.7 37.7Z"
+        />
+      </svg>
+      <!-- A world: the places they happen in, ringed like the mark. -->
+      <svg class="launch__form launch__form--world" viewBox="0 0 64 64" data-testid="launch-form">
+        <circle pathLength="1" cx="32" cy="32" r="19" />
+        <ellipse pathLength="1" cx="32" cy="32" rx="8.5" ry="19" />
+        <path pathLength="1" d="M13 32H51M15.5 22.5H48.5M15.5 41.5H48.5" />
+        <ellipse
+          pathLength="1"
+          class="launch__red"
+          cx="32"
+          cy="32"
+          rx="29"
+          ry="8"
+          transform="rotate(-22 32 32)"
+        />
+        <path
+          class="launch__spark"
+          d="M55 12L56.3 15.7L60 17L56.3 18.3L55 22L53.7 18.3L50 17L53.7 15.7Z"
+        />
+      </svg>
+      <!-- A game: the worlds you play. -->
+      <svg class="launch__form launch__form--game" viewBox="0 0 64 64" data-testid="launch-form">
+        <path
+          pathLength="1"
+          d="M20 21H44C52 21 57 29 58 39C59 47 54 51 49 47L43 41H21L15 47C10 51 5 47 6 39C7 29 12 21 20 21Z"
+        />
+        <path pathLength="1" d="M19 28V36M15 32H23" />
+        <circle pathLength="1" class="launch__red" cx="43" cy="29" r="2.2" />
+        <circle pathLength="1" class="launch__red" cx="48" cy="34" r="2.2" />
+        <path
+          class="launch__spark"
+          d="M32 4L33.3 7.7L37 9L33.3 10.3L32 14L30.7 10.3L27 9L30.7 7.7Z"
+        />
+      </svg>
+      <!-- A screen: the worlds you watch. -->
+      <svg class="launch__form launch__form--screen" viewBox="0 0 64 64" data-testid="launch-form">
+        <rect pathLength="1" x="8" y="18" width="48" height="32" rx="4" />
+        <path pathLength="1" d="M24 8L32 18L40 8M24 57H40M32 50V57" />
+        <path pathLength="1" class="launch__red" d="M28 27L38.5 34L28 41Z" />
+        <path
+          class="launch__spark"
+          d="M51 23L52.1 26.4L55.5 27.5L52.1 28.6L51 32L49.9 28.6L46.5 27.5L49.9 26.4Z"
+        />
+      </svg>
+      <div class="launch__logo"></div>
+      <i class="launch__edge"></i>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

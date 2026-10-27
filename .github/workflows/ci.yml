@@ -1,4 +1,4 @@
-# Validation for Lorex. Runs on every pull request into dev, and is called by the DEV
+# Validation for LorEvolve. Runs on every pull request into dev, and is called by the DEV
 # deployment before it publishes anything, so nothing reaches Azure that has not passed here.
 #
 # A change made only of documentation or agent tooling is skipped: no Markdown file, nothing under
@@ -53,10 +53,10 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
-        run: dotnet restore Lorex.slnx
+        run: dotnet restore LorEvolve.slnx
 
       - name: Build (Release)
-        run: dotnet build Lorex.slnx -c Release --no-restore
+        run: dotnet build LorEvolve.slnx -c Release --no-restore
 
       - name: Test (shard ${{ matrix.shard }}/${{ strategy.job-total }})
         run: python3 scripts/dotnet-test-shard.py ${{ matrix.shard }}/${{ strategy.job-total }}
@@ -70,7 +70,7 @@ jobs:
         run: |
           dotnet tool restore
           dotnet ef migrations has-pending-model-changes \
-            --project src/Lorex.Api --configuration Release --no-build
+            --project src/LorEvolve.Api --configuration Release --no-build
 
   web:
     name: Web
@@ -78,7 +78,7 @@ jobs:
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: src/Lorex.Web
+        working-directory: src/LorEvolve.Web
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -86,7 +86,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: src/Lorex.Web/package-lock.json
+          cache-dependency-path: src/LorEvolve.Web/package-lock.json
 
       - name: Install
         run: npm ci
@@ -108,7 +108,7 @@ jobs:
       - name: Format (end-to-end specs)
         run: >
           npx prettier --check --config .prettierrc.json
-          ../../tests/Lorex.E2E/specs ../../tests/Lorex.E2E/playwright.config.ts
+          ../../tests/LorEvolve.E2E/specs ../../tests/LorEvolve.E2E/playwright.config.ts
 
       - name: Build
         run: npm run build
@@ -123,7 +123,7 @@ jobs:
   # The job runs in Playwright's own image, which carries Chromium and every system package it
   # needs, so no runner downloads them: `playwright install --with-deps` was ~20 s on a good day
   # and 8-11 minutes when the Ubuntu mirror crawled. The tag must match @playwright/test in
-  # tests/Lorex.E2E/package-lock.json - bump both together. A mismatch fails at the first browser
+  # tests/LorEvolve.E2E/package-lock.json - bump both together. A mismatch fails at the first browser
   # launch, with Playwright naming the image it wants.
   e2e:
     name: End to end (shard ${{ matrix.shard }}/${{ strategy.job-total }})
@@ -135,7 +135,7 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
       options: --ipc=host
       # The image has no DejaVu, which the runner itself draws sans-serif and serif text in; layout
-      # assertions were written against that geometry (tests/Lorex.E2E/README.md). Lending the
+      # assertions were written against that geometry (tests/LorEvolve.E2E/README.md). Lending the
       # runner's own fonts keeps it without an apt download.
       volumes:
         - /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/dejavu:ro
@@ -156,8 +156,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: |
-            src/Lorex.Web/package-lock.json
-            tests/Lorex.E2E/package-lock.json
+            src/LorEvolve.Web/package-lock.json
+            tests/LorEvolve.E2E/package-lock.json
 
       # Fails here, rather than in a layout spec, if the fonts above did not arrive.
       - name: Check the runner's fonts are in use
@@ -167,16 +167,16 @@ jobs:
 
       - name: Install web dependencies
         run: npm ci
-        working-directory: src/Lorex.Web
+        working-directory: src/LorEvolve.Web
 
       - name: Install test dependencies
         run: npm ci
-        working-directory: tests/Lorex.E2E
+        working-directory: tests/LorEvolve.E2E
 
       # Built ahead of time so the API is already compiled when Playwright's webServer runs
       # `dotnet run`, which otherwise restores and builds inside that server's start timeout.
       - name: Build the API
-        run: dotnet build src/Lorex.Api
+        run: dotnet build src/LorEvolve.Api
 
       # Playwright starts the API and the Vite dev server itself; see playwright.config.ts.
       #
@@ -189,11 +189,11 @@ jobs:
       # path as the container sees it.
       - name: Run Playwright (shard ${{ matrix.shard }}/${{ strategy.job-total }})
         run: >
-          LOREX_E2E_DB="$RUNNER_TEMP/lorex-e2e-shard-${{ matrix.shard }}.db"
+          LOREVOLVE_E2E_DB="$RUNNER_TEMP/lorevolve-e2e-shard-${{ matrix.shard }}.db"
           npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
-        working-directory: tests/Lorex.E2E
+        working-directory: tests/LorEvolve.E2E
         env:
-          LOREX_E2E_WORKERS: '2'
+          LOREVOLVE_E2E_WORKERS: '2'
 
       # One report per shard, named for it, so none overwrites another.
       - name: Upload report
@@ -201,5 +201,5 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-report-shard-${{ matrix.shard }}-of-${{ strategy.job-total }}
-          path: tests/Lorex.E2E/playwright-report
+          path: tests/LorEvolve.E2E/playwright-report
           retention-days: 7

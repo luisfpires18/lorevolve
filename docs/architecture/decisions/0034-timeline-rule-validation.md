@@ -4,14 +4,14 @@ Status: accepted (2026-09-15)
 
 ## Context
 
-A world rule is words, and its words mean nothing to Lorex (ADR 0033). Phase 4's second step makes the first kind of rule
+A world rule is words, and its words mean nothing to LorEvolve (ADR 0033). Phase 4's second step makes the first kind of rule
 machine-checkable against the timeline. The owner approved exactly one pattern: *at most N occurrences per participant using a
 specified method* - "a person may be resurrected by Method A at most once" - checked against what the timeline records, and
 reported through Canon Integrity (ADR 0010).
 
 The hard constraint is the one ADR 0033 set: no meaning may come from prose. A rule titled "One resurrection per person" and a
 moment titled "Krillin revived" say nothing computationally. Meaning exists only where an author states it explicitly, on the
-rule and on the moments. The tests use invented names for the same reason: nothing in Lorex knows any particular world.
+rule and on the moments. The tests use invented names for the same reason: nothing in LorEvolve knows any particular world.
 
 The second constraint is honesty about what cannot be known. Canon findings are conflicts, and a missing participant or a
 half-described moment is not a conflict - but it is not proof that a rule holds either.

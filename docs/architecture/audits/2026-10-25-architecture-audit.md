@@ -15,18 +15,18 @@ touched a security-adjacent fact it is listed under "Hand-offs to #33" and not a
 | Files changed by this audit | this report only. No application code, no commit, no GitHub writes |
 | `AGENTS.md` | does not exist in the repository. `CLAUDE.md`, `.claude/CLAUDE.md`, `STATE.md`, `SYSTEMS.md` and the ADR index were read instead |
 
-Commands run (outputs in the session scratchpad, not the repo): `dotnet build Lorex.slnx -c Release`,
-`dotnet test tests/Lorex.Api.Tests -c Release --no-build` (in-memory SQLite, never touches
-`App_Data`), `npm run typecheck|lint|build|test` in `src/Lorex.Web` (output to gitignored `dist/`),
+Commands run (outputs in the session scratchpad, not the repo): `dotnet build LorEvolve.slnx -c Release`,
+`dotnet test tests/LorEvolve.Api.Tests -c Release --no-build` (in-memory SQLite, never touches
+`App_Data`), `npm run typecheck|lint|build|test` in `src/LorEvolve.Web` (output to gitignored `dist/`),
 read-only `gh issue view` / `gh run list|view`, and a read-only (`mode=ro`) inspection of
-`src/Lorex.Api/App_Data/lorex.dev.db`. No Playwright run locally (the full suite is CI's job); E2E
+`src/LorEvolve.Api/App_Data/lorevolve.dev.db`. No Playwright run locally (the full suite is CI's job); E2E
 evidence comes from CI logs.
 
 ## 1. As-is component and dependency diagram
 
 ```mermaid
 flowchart LR
-  subgraph Web["src/Lorex.Web (React 19, Vite, react-router 7)"]
+  subgraph Web["src/LorEvolve.Web (React 19, Vite, react-router 7)"]
     Pages["pages/*.tsx<br/>EntityPage, LorePage, StoryPage, MapPage, AiChangePage, AdminWorkspace ..."]
     Comps["components/*.tsx"]
     FeatApi["&lt;feature&gt;/api.ts + types.ts<br/>(hand-written contracts)"]
@@ -34,21 +34,21 @@ flowchart LR
     Pages --> Comps --> FeatApi --> LibApi
   end
 
-  subgraph Host["src/Lorex.Api Program.cs (one process)"]
-    HostMw["Hosting/ProxyHeaders, FrontendHosting (wwwroot + SPA fallback)<br/>Auth (Identity cookie) · UseAssistantAllowance · UseLorexMcp"]
+  subgraph Host["src/LorEvolve.Api Program.cs (one process)"]
+    HostMw["Hosting/ProxyHeaders, FrontendHosting (wwwroot + SPA fallback)<br/>Auth (Identity cookie) · UseAssistantAllowance · UseLorEvolveMcp"]
     subgraph Feat["Features/&lt;Feature&gt;/*Endpoints.cs (static minimal-API classes; over 140 universe routes)"]
       Content["Lore · Relationships · Timeline · Chronology · Stories · WorldRules<br/>RuleValidation · Ideas · Knowledge · Progression · Maps · FamilyTrees"]
       Collab["Universes (UniverseAccess) · Comments · Suggestions · Trash · Publishing/Reading/Seo · Admin · Profile · Storage"]
       Canon["CanonIntegrity: CanonPromotionGate → CanonIntegrityEvaluator → 10 ICanonIntegrityRule"]
       AiC["AiChanges: Staging → Checks → Commit (approval)"]
       Asst["Assistant: UniverseAssistant → IAssistantProvider (OpenAI/Groq/Fake via ResponsesConversation) → AssistantTools"]
-      Mcp["Mcp: McpEndpoints + OpenIddict OAuth → LorexMcpTools / Map / Image / Proposal tools"]
+      Mcp["Mcp: McpEndpoints + OpenIddict OAuth → LorEvolveMcpTools / Map / Image / Proposal tools"]
       Reader["Reading/UniverseReader (permission-safe reads)"]
       Backup["Export/UniverseBackupBuilder (format v35)<br/>Restore/BackupArchiveReader → BackupValidation → UniverseRestore"]
       Media["Media: IMediaObjectStore (R2MediaObjectStore / InMemory) · ImagePreparation (ImageSharp)<br/>Storage/AccountStorage quota holds"]
     end
-    Bg["Hosted services: LorexDatabaseInitializer · EntitySearchBackfill · PublicAuthorBackfill<br/>PlatformAdminProvisioning · AiChangeMediaSweep (hourly) · McpMaintenance (periodic)"]
-    Db["Data/LorexDbContext (EF Core 10, SQLite)<br/>71 migrations · FTS5 tables + triggers · EditVersion · DatabaseFailures"]
+    Bg["Hosted services: LorEvolveDatabaseInitializer · EntitySearchBackfill · PublicAuthorBackfill<br/>PlatformAdminProvisioning · AiChangeMediaSweep (hourly) · McpMaintenance (periodic)"]
+    Db["Data/LorEvolveDbContext (EF Core 10, SQLite)<br/>71 migrations · FTS5 tables + triggers · EditVersion · DatabaseFailures"]
   end
 
   LibApi -- "same-origin /api, cookie" --> HostMw --> Feat
@@ -57,7 +57,7 @@ flowchart LR
   Asst --> Reader
   Mcp --> Reader
   Asst -- "AssistantProposals" --> AiC
-  Mcp -- "LorexMcpProposalTools" --> AiC
+  Mcp -- "LorEvolveMcpProposalTools" --> AiC
   AiC -- "Commit inside gate.RunAsync" --> Canon
   AiC -- "calls *CoreAsync of Lore, Stories, Timeline, Relationships, WorldRules, Ideas, Progression" --> Content
   Content --> Canon
@@ -66,12 +66,12 @@ flowchart LR
   Feat --> Db
   Bg --> Db
   Media --> R2["Cloudflare R2"]
-  Db --> File["SQLite file: App_Data/lorex.dev.db (local) · /home/data/lorex.db (Azure SMB share)"]
+  Db --> File["SQLite file: App_Data/lorevolve.dev.db (local) · /home/data/lorex.db (Azure SMB share)"]
 ```
 
 Dependency facts behind the diagram (all from code):
 
-- Every endpoint takes `LorexDbContext` directly; no repository or service layer (CLAUDE.md hard
+- Every endpoint takes `LorEvolveDbContext` directly; no repository or service layer (CLAUDE.md hard
   boundary, held). `Program.cs:97-155` registers 56 `Map*Endpoints` calls.
 - One permission gate: `Features/Universes/UniverseAccess.cs:70-148`, 210 call sites
   (`DenyAsync` 170, `Allows` 17, `RoleAsync` 11, `AuthorizeAsync` 10). `AiChangePermissions`
@@ -81,7 +81,7 @@ Dependency facts behind the diagram (all from code):
   `TimelineEndpoints.*CoreAsync`, `RelationshipEndpoints.*CoreAsync`, `WorldRuleEndpoints.*CoreAsync`,
   `ProgressionEndpoints.WriteAsync`, and so on. So AiChanges depends on 15+ feature endpoint classes.
 - The Assistant and MCP share `Reading/UniverseReader` for reads and `AiChangeStaging.StageAsync`
-  for proposals (`Assistant/AssistantProposals.cs`, `Mcp/LorexMcpProposalTools.cs`).
+  for proposals (`Assistant/AssistantProposals.cs`, `Mcp/LorEvolveMcpProposalTools.cs`).
 - Interfaces in the API: 5 (`IAssistantProvider`, `IAssistantConversation`, `ICanonIntegrityRule`,
   `IMediaObjectStore`, `IPublishable`). Each has two or more real implementations, so there is no
   single-implementation indirection to remove.
@@ -106,7 +106,7 @@ follows from the code but was not exercised), Plausible (risk without a measurem
   `End to end (shard 5/6)` and `(6/6)` failed; `Deploy: skipped`. Reproduced locally in the
   Release test run:
   - `MapMigrationTests.Rolled_back_and_forward_only_the_map_tables_move...`
-    (`tests/Lorex.Api.Tests/MapMigrationTests.cs:66-68`) and
+    (`tests/LorEvolve.Api.Tests/MapMigrationTests.cs:66-68`) and
     `MapCalibrationMigrationTests.Rolled_back_and_forward...` (`MapCalibrationMigrationTests.cs:62`):
     `Assert.Equal() Failure: Collections differ`. The expected list still holds
     `IX_AiChangeMedia_OperationId on AiChangeMedia`. Cause: rolling back to before maps also rolls
@@ -150,7 +150,7 @@ follows from the code but was not exercised), Plausible (risk without a measurem
   compares an export with the export of its own restore. A table that is never exported is missing
   from both sides, so the test passes. What is carried or left out is recorded only in prose
   (`docs/architecture/decisions/0014-universe-backup-format.md:231` table, and the version notes in
-  `Features/Export/UniverseBackup.cs`). There is no test over `LorexDbContext`'s model that forces a
+  `Features/Export/UniverseBackup.cs`). There is no test over `LorEvolveDbContext`'s model that forces a
   decision for each new set (searched: no `GetEntityTypes` in `tests/`). The churn is measured: of
   59 migration-bearing merges since 2026-08-01, 37 touched `Features/Export` and 24 touched
   `Features/Restore`; the format is at version 35. Maps were remembered (`MapBackupTests`), and this
@@ -158,7 +158,7 @@ follows from the code but was not exercised), Plausible (risk without a measurem
 - **Impact.** Silent data loss in the one recovery path a creator controls. #33 already makes "a
   tested #54 restore path and acceptable #11 recovery/export provisions" a precondition for invites.
 - **Smallest change.** One test in the style of `UniverseAccessMatrixTests.Every_universe_route_is_in_the_catalog`
-  (`tests/Lorex.Api.Tests/UniverseAccessMatrixTests.cs:419-448`): enumerate
+  (`tests/LorEvolve.Api.Tests/UniverseAccessMatrixTests.cs:419-448`): enumerate
   `db.Model.GetEntityTypes()` and assert that each is in one of three hand-kept lists (Carried,
   Derived, Left out, the last with the ADR 0014 reason). The test fails when a new entity type is
   unclassified.
@@ -185,7 +185,7 @@ follows from the code but was not exercised), Plausible (risk without a measurem
 
 > **Status:** deferred. The M1 fix edited `LaterSchema.cs` and the migration tests in parallel; converting them now would collide with that work. Draft D stands.
 
-- **Evidence (Measured).** `tests/Lorex.Api.Tests/LaterSchema.cs`. Every `Before*` predicate
+- **Evidence (Measured).** `tests/LorEvolve.Api.Tests/LaterSchema.cs`. Every `Before*` predicate
   concatenates up to 25 arrays (`:298-323`), and each new migration must append its objects to every
   predicate that precedes it. `LaterSchema.cs` was touched in 22 of the 59 migration-bearing merges
   (section 3). M1 is this design failing: two tests bypassed it and a later migration broke them.
@@ -223,7 +223,7 @@ follows from the code but was not exercised), Plausible (risk without a measurem
   again, reconciles, then commits. `RecordAsync` runs one sweep. 27 call sites use the gate. Under
   SQLite's single writer, the sweeps run while the write lock is held.
 - **Measurement status: Not tracked yet.** No timing exists. The only real-ish data, the dev
-  database, has at most 45 entries in a universe (`App_Data/lorex.dev.db`, 7,183 universes, 8,631
+  database, has at most 45 entries in a universe (`App_Data/lorevolve.dev.db`, 7,183 universes, 8,631
   entries), so it cannot show scale. This is **not** called a bottleneck.
 - **Smallest change.** Time both sweeps with a `LoggerMessage` (elapsed ms, rule count, universe id
   hash) at Debug, or Information above a threshold, and add a seeded "large universe" fixture (for
@@ -243,7 +243,7 @@ follows from the code but was not exercised), Plausible (risk without a measurem
   WAL needs shared memory and is unsafe on a network file system, so WAL cannot simply be switched on
   everywhere. Production persistence is Phase 023's.
 - **Smallest change.** An experiment, not a fix: an opt-in `Database:JournalMode=WAL` for local and
-  CI runs only, then rerun the E2E contention measurement from `tests/Lorex.E2E/README.md` and compare
+  CI runs only, then rerun the E2E contention measurement from `tests/LorEvolve.E2E/README.md` and compare
   `SQLite Error 5` counts. Keep DEV on `delete`.
 - **Regression scope.** E2E full run in CI with the flag. **Risk.** Medium if it leaks into DEV.
   Guard it by configuration and leave it unset in `appsettings.AzureDev.json`.
@@ -369,7 +369,7 @@ follows from the code but was not exercised), Plausible (risk without a measurem
 - Restore stages the upload on disk with a bounded copy, then revalidates at commit
   (`Restore/BackupRestoreEndpoints.cs:43-124,199-261`).
 - `DatabaseFailures` stops a locked database from reading as a false 409 (`Data/DatabaseFailures.cs`).
-- Query-count pins exist for the story and plot reads (`tests/Lorex.Api.Tests/CommandCounter.cs`).
+- Query-count pins exist for the story and plot reads (`tests/LorEvolve.Api.Tests/CommandCounter.cs`).
 - `AsSplitQuery` is used on the multi-collection reads (13 sites, for example
   `Export/UniverseBackupBuilder.cs:72`).
 - Hosted services catch and log per round and await the schema first (`AiChangeMedia.cs:390-410`,
@@ -386,7 +386,7 @@ follows from the code but was not exercised), Plausible (risk without a measurem
   first-parent merge on `dev` since 2026-08-01 that added a migration (59 merges). Touched by those
   merges: `Features/Export` 37, `Features/Restore` 24, both 23, `UniverseAccessMatrixTests` 18,
   `Features/AiChanges` 6, `Features/Trash` 9.
-- Read-only database facts from `lorex.dev.db`: journal mode `delete`, 60 applied migrations (the file
+- Read-only database facts from `lorevolve.dev.db`: journal mode `delete`, 60 applied migrations (the file
   predates the latest 11), 7,183 universes, 8,631 entries, 1,488 relationships, 3,351 moments, 2,446
   scenes, 10,572 entry revisions, 940 canon conflicts; at most 45 entries in any one universe.
 - Web build: `LoreEditor` chunk 391.95 kB (123.35 kB gzip, lazy, TipTap), entry `index` 272.39 kB
@@ -453,7 +453,7 @@ follows from the code but was not exercised), Plausible (risk without a measurem
 > Done by `5ad7771`; kept for the record.
 
 > The backup round-trip test compares an export with the export of its own restore, so a table that
-> is never exported passes silently. Add one test that enumerates `LorexDbContext.Model.GetEntityTypes()`
+> is never exported passes silently. Add one test that enumerates `LorEvolveDbContext.Model.GetEntityTypes()`
 > and requires each to appear in exactly one of Carried / Derived / Left out (with the ADR 0014
 > reason). Model it on `UniverseAccessMatrixTests.Every_universe_route_is_in_the_catalog`. **Done
 > when:** the test exists, its lists match ADR 0014's table, and adding an unclassified entity makes
@@ -500,14 +500,14 @@ ImageSharp, or anyone else's in-progress work.
 
 | Commit | Finding | What changed |
 | --- | --- | --- |
-| `5ad7771` | M3 | `tests/Lorex.Api.Tests/BackupInventoryTests.cs` |
+| `5ad7771` | M3 | `tests/LorEvolve.Api.Tests/BackupInventoryTests.cs` |
 | `18a775b`, `51e408a` | W2 | `Hosting/UnhandledFailure.cs`, `Program.cs`, `appsettings.AzureDev.json`, a new test, 9 tests updated |
 | `6f63ab6`, `373a27a` | W3 | `CanonIntegrityEvaluator.cs` timing logs, a timing test, an opt-in benchmark |
-| `bed2346` | W6 | `tests/Lorex.E2E/specs/auth.spec.ts` |
+| `bed2346` | W6 | `tests/LorEvolve.E2E/specs/auth.spec.ts` |
 
 ### 7.1 M3: backup inventory test
 
-- `BackupInventoryTests` enumerates `LorexDbContext.Model.GetEntityTypes()`, keyed by table name, or by
+- `BackupInventoryTests` enumerates `LorEvolveDbContext.Model.GetEntityTypes()`, keyed by table name, or by
   CLR name for the 3 keyless FTS query shapes. It requires every one of the 101 entity types to be in
   exactly one list:
   - **Carried:** 73.
@@ -523,7 +523,7 @@ ImageSharp, or anyone else's in-progress work.
 
 ### 7.2 W2: traceable 500s
 
-- Outside Development, `UseLorexUnhandledFailures()` (placed after the forwarded and robots headers)
+- Outside Development, `UseLorEvolveUnhandledFailures()` (placed after the forwarded and robots headers)
   answers an unhandled exception with RFC 7807: status 500, a fixed title and detail, and
   `traceId` = `Activity.Current.Id`. Nothing about the cause is included.
 - `appsettings.AzureDev.json` sets `Logging:Console:IncludeScopes: true`, so the middleware's error
@@ -555,7 +555,7 @@ ImageSharp, or anyone else's in-progress work.
   - At one second or more they log a Warning (`CanonIntegrityEvaluator.Slow`).
   - DEV logs at Information, so only slow ones appear there.
 - **New test.** `CanonSweepTimingTests` captures the logs of one evaluation and checks both lines.
-- **New benchmark.** `CanonSweepBenchmark` (opt-in: `LOREX_BENCH=1`; otherwise it returns at once)
+- **New benchmark.** `CanonSweepBenchmark` (opt-in: `LOREVOLVE_BENCH=1`; otherwise it returns at once)
   produced the numbers in finding W9. Main result: a sweep is 5-160 ms, but reconciling an unchanged
   table is about 550 ms at 2,000+ entries and dominates a 0.8-1.1 s gated save.
 - Optimising that is **not** done here. It touches the conflict lifecycle; see Draft F.
@@ -575,8 +575,8 @@ ImageSharp, or anyone else's in-progress work.
 
 | Check | Result |
 | --- | --- |
-| `dotnet build Lorex.slnx -c Release` | success. No new warnings: the same CA1822/CA1859/CA1861/xUnit2029 lines, all in pre-existing tests, plus the ImageSharp NU190x |
-| `dotnet test tests/Lorex.Api.Tests -c Release` | **1,978 total: 1,977 passed, 0 failed, 1 skipped** (`AssistantOpenAISmokeTests`, which needs a real key); 15 m 47 s |
+| `dotnet build LorEvolve.slnx -c Release` | success. No new warnings: the same CA1822/CA1859/CA1861/xUnit2029 lines, all in pre-existing tests, plus the ImageSharp NU190x |
+| `dotnet test tests/LorEvolve.Api.Tests -c Release` | **1,978 total: 1,977 passed, 0 failed, 1 skipped** (`AssistantOpenAISmokeTests`, which needs a real key); 15 m 47 s |
 | E2E | `auth.spec.ts` only (7.4). Full Playwright left to CI, as usual |
 | Web | no web source changed; the checks in section 4 stand |
 

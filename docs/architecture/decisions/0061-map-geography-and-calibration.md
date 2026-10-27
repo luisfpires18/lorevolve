@@ -19,7 +19,7 @@ layer behind its own gate (ADR 0046). Geography follows the same shape.
 with their sizes and scales, every map one entry is pinned on, pins found by name, one pin, the separation of two pins -
 from the rows the map screen reads, bounded and flattened into `MapReadings`. The assistant's four tools (`list_maps`,
 `search_map_locations`, `get_map_location`, `measure_map_distance`, in `AssistantTools`) and the MCP tools of the same
-names (`LorexMcpMapTools`) are adapters over it: they parse arguments, shape JSON and refuse, and read nothing of their own.
+names (`LorEvolveMcpMapTools`) are adapters over it: they parse arguments, shape JSON and refuse, and read nothing of their own.
 A test asks both for the same two pins and compares the numbers and the words.
 
 **A location is a pin someone placed.** `get_map_location` takes an entry id (MCP also its exact name or alias, and refuses
@@ -33,7 +33,7 @@ it to ask when no entry is recorded for the role or several could be meant.
 
 **Calibration is the creator's, per map, per picture.** `MapCalibrations`, one row keyed by the map: two points as the same
 fractions a pin uses, a distance above zero, and a unit of up to 40 characters kept exactly as written - "km", "leagues",
-"days' ride" are names, never converted into one another, because LoreX knows nothing about what a league is in this
+"days' ride" are names, never converted into one another, because LorEvolve knows nothing about what a league is in this
 world. The points must be at least a pixel apart on the displayed picture. `AssetId` records the picture the points were
 chosen on; replacing the picture deletes the row in the same transaction, so a scale measured on one picture is never
 applied to another, and the screen says the scale is gone. Editors and the owner set and remove it (`PUT`/`DELETE

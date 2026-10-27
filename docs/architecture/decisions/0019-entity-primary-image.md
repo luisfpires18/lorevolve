@@ -1,4 +1,4 @@
-# ADR 0019 - An entry has one image, held in a private bucket and served by Lorex
+# ADR 0019 - An entry has one image, held in a private bucket and served by LorEvolve
 
 Status: accepted (2026-09-10). The two decisions it left open were taken the same day; see Consequences.
 Amended 2026-09-11 after live DEV testing: the author chooses the thumbnail's square, and R2 uploads need two
@@ -7,12 +7,12 @@ a "Fit full image" thumbnail mode was added and withdrawn. See the last amendmen
 
 ## Context
 
-An entry could carry a picture, and until now nothing in Lorex could hold one. SQLite is the
+An entry could carry a picture, and until now nothing in LorEvolve could hold one. SQLite is the
 only store the product has, and it is the wrong place for image bytes: it is one file on one
 share (ADR 0018), every backup and every read would carry the blobs, and the row that a card
 projection touches would stop being small.
 
-So this is the first time Lorex has two stores that must agree, and that - not resizing - is the
+So this is the first time LorEvolve has two stores that must agree, and that - not resizing - is the
 part worth deciding carefully. Object storage and a relational database cannot be committed
 together. Whatever is built has to say what happens when one of them succeeds and the other does
 not, and the answer has to be one an author would accept.
@@ -58,14 +58,14 @@ file is an image at all - by decoding it, not by reading its name - and the thin
 thumbnail. Handing both to the client would mean trusting the client with both. It would also
 mean opening CORS on the bucket.
 
-**Reads are an authenticated Lorex route, not a presigned URL.** Both were viable for a private
+**Reads are an authenticated LorEvolve route, not a presigned URL.** Both were viable for a private
 bucket. A presigned URL turns the URL itself into the credential: it survives in history and in
 anything the author pastes it into, it cannot be withdrawn before it expires, and it has to be
 reissued and threaded back into every `img` tag as it does.
 `GET /api/universes/{u}/entities/{e}/image/{assetId}/original` (and `.../thumbnail/{thumbnailId}`
 since the amendment) instead proves ownership through
 the same `LoreAccess` check as every other lore read (ADR 0006), streams the object, and points
-at nothing outside Lorex. The cost is bandwidth the product already pays for everything else it
+at nothing outside LorEvolve. The cost is bandwidth the product already pays for everything else it
 serves. For a single-owner world with one picture per entry, that is not a trade worth making
 the other way.
 
@@ -117,7 +117,7 @@ nothing.
 **Two dependencies, both justified.** `SixLabors.ImageSharp` decodes and resizes: it is fully
 managed, so there is no native asset to carry onto a Linux App Service and no per-RID build, and
 Windows development and Linux deployment behave identically. Its licence is the Six Labors Split
-License, which is free for personal use and for organisations under $1M revenue - true of Lorex
+License, which is free for personal use and for organisations under $1M revenue - true of LorEvolve
 today, and worth revisiting if that ever changes. `AWSSDK.S3` (Apache-2.0) speaks R2's
 S3-compatible API; hand-rolling SigV4 would be a few hundred lines of security-critical crypto
 to avoid a well-maintained package.
@@ -242,7 +242,7 @@ assert both flags on the request and, through a real SDK client configured exact
 is, that the wire carries `UNSIGNED-PAYLOAD` and no streaming or chunked marker - a test that fails
 with the live error's own header value if either flag is removed.
 
-**Storage failures are a 503 in Lorex's words.** Every SDK, network or timeout failure leaves the
+**Storage failures are a 503 in LorEvolve's words.** Every SDK, network or timeout failure leaves the
 adapter as `MediaStorageFailedException`, and every image route and the export answer it with the
 same 503 problem the unconfigured store already produced. The provider's message is logged, never
 returned. A write that fails part-way sweeps what it may have written.
@@ -274,7 +274,7 @@ ignore the member (ADR 0014), so it needs no version bump.
 Status: accepted
 
 Live DEV made the wait on an upload obvious, and measuring it said where it goes: the original's
-bytes crossing the network twice - the browser to Lorex, then Lorex to R2 - plus one bounded piece
+bytes crossing the network twice - the browser to LorEvolve, then LorEvolve to R2 - plus one bounded piece
 of CPU. Decoding a 4 MB phone photo, cutting the square and encoding it took 190-310 ms on a
 development machine, a multiple of that on an F1's shared core, and neither the format gate nor the
 server-side thumbnail is negotiable. So the only latency the code could actually give back was the
@@ -305,7 +305,7 @@ the upload limit takes that write-and-read-back off the path and holds no more m
 handler already held.
 
 **What this does not do.** It does not make a slow uplink fast. On a photo of a few megabytes the
-dominant term is the browser sending the original, and after that Lorex sending it on; overlapping
+dominant term is the browser sending the original, and after that LorEvolve sending it on; overlapping
 the thumbnail saves a round trip and the thumbnail's own transfer, which is the smaller half. The
 honest answer to "why does saving a photo feel slow" is that it is moving a few megabytes twice
 over a home connection to a shared-core App Service - so the wait is also *reported* now, rather
@@ -325,7 +325,7 @@ remove are untouched by the allowance.
 
 An MCP client reads an entry's picture through its connection's gate: `get_lore_image` streams the object out of the same
 store and hands the bytes over inline as an image block. If that client does not visibly render the block, the tool also
-offers the canonical LoreX page as a fallback. That URL is an app route, not a media URL; it still requires sign-in and
+offers the canonical LorEvolve page as a fallback. That URL is an app route, not a media URL; it still requires sign-in and
 current universe access, and no presigned or public media URL is returned. The preview it is given by default is derived
 on demand from the original by the upload gate's decoders, fitted within 1024 pixels, metadata stripped; the original
 goes out only when asked for and only up to 4 MB. Nothing here changes what is stored.

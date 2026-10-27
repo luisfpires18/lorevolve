@@ -9,7 +9,7 @@ had nothing to read. The Story domain already has its units (ADR 0024-0027): sce
 plain-text manuscript per scene; plot arcs with ordered beats. Nothing about them was publishable, and Task 011 deferred
 "public story prose" pending a decision about chapters and scenes.
 
-Separately, a fan or reference universe - the owner's Lord of the Rings pilot - was presented as its Lorex author's own
+Separately, a fan or reference universe - the owner's Lord of the Rings pilot - was presented as its LorEvolve author's own
 creation, with no honest way to credit the original creator.
 
 ## Decision
@@ -40,13 +40,13 @@ Empty prose is left out. No part has a slug, so no second address, no SEO or sit
 **No chapter is published**: its title and number would be structure nobody chose to show, so parts read as one ordered
 sequence. No counts, ids, notes, points of view, dates, lore or scene/beat links.
 
-**Attribution is the universe's, and the Lorex author stays the author of record.** `Universes.OriginalCreator` (120) and
+**Attribution is the universe's, and the LorEvolve author stays the author of record.** `Universes.OriginalCreator` (120) and
 `OriginalWork` (200), saved with the public details: `basedOnExternalWork: true` requires the creator (trimmed, no invisible
 controls, as a public name); `false` clears both; omitted keeps them. `PublicUniverse` gains `originalCreator` and
-`originalWork` (null for an original world). The portal then says "Based on works by {creator} · {work}", "Curated on LoreX
+`originalWork` (null for an original world). The portal then says "Based on works by {creator} · {work}", "Curated on LorEvolve
 by {author}" and "Unofficial fan or reference project. Not affiliated with or endorsed by the original creator." The
-original creator is text: never a link, never an account, never an author page; only the Lorex author links. Explore's `q`
-also matches the creator and work. The Lorex author's `PublicDisplayName` is never replaced by the creator's name - that
+original creator is text: never a link, never an account, never an author page; only the LorEvolve author links. Explore's `q`
+also matches the creator and work. The LorEvolve author's `PublicDisplayName` is never replaced by the creator's name - that
 would make an account appear to be someone it is not.
 
 **Backup format 17** carries the attribution (authored text a v16 reader would drop, crediting nobody). No version carries

@@ -4,8 +4,8 @@ Status: accepted (2026-09-10)
 
 ## Context
 
-Phase 022 had to put Lorex somewhere a browser can reach it, over HTTPS, and keep pushing to
-`dev` from being a manual chore. Two things about Lorex bound the answer.
+Phase 022 had to put LorEvolve somewhere a browser can reach it, over HTTPS, and keep pushing to
+`dev` from being a manual chore. Two things about LorEvolve bound the answer.
 
 It is one API and one first-party SPA on the same origin (ADR 0005): the session cookie is
 HttpOnly and `SameSite=Strict`, and every lore route is gated on ownership (ADR 0006). Splitting
@@ -34,7 +34,7 @@ Hashed assets under `/assets/` are served `immutable` for a year; everything els
 included, is `no-cache`. A stale service worker or a stale `index.html` would pin a browser to a
 frontend the API no longer matches, which is the one caching mistake this shape can make.
 
-**The app migrates itself, before anything reads a table.** `LorexDatabaseInitializer` is a
+**The app migrates itself, before anything reads a table.** `LorEvolveDatabaseInitializer` is a
 singleton registered as the first hosted service, exposing `EnsureSchemaAsync`. The search-index
 backfill awaits it. Schema readiness is therefore a dependency, not a consequence of
 registration order: reordering the two cannot bring the failure back, and nothing sleeps, polls

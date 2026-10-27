@@ -6,14 +6,14 @@ Status: accepted (2026-09-13)
 
 A relationship type is a pair of authored words (ADR 0008). "Parent of" suggests its source is the
 older of the two, and an author wants Canon Integrity to notice a parent born after the child. But
-Lorex does not read words for meaning anywhere: what a field means is a closed enum the author picks
+LorEvolve does not read words for meaning anywhere: what a field means is a closed enum the author picks
 (ADR 0011), and which way an era counts is configured rather than read from "Before" (ADR 0022).
 
 Three shapes were available. Infer the rule from the type's name - rejected outright: it fails in
 any other language, on "Master of" and "Ancient predecessor", and on the author who meant something
 else. A general rule language on the type - a DSL, a builder, stored expressions - is a large trust
 surface for a handful of useful checks. Or a small closed set of typed constraints the author turns
-on, each with one meaning Lorex can check deterministically.
+on, each with one meaning LorEvolve can check deterministically.
 
 ## Decision
 
@@ -47,7 +47,7 @@ or flipping the order makes a different entry the one at fault, which is a diffe
 absolute and independent of the order, so a link can break both, as two separately fixable conflicts.
 
 Medium, not High. The lifespan rules are High because dying before being born is impossible in any
-world. A constraint is something an author wrote on a type, and Lorex cannot tell a law of that world
+world. A constraint is something an author wrote on a type, and LorEvolve cannot tell a law of that world
 from a convention of the author's without reading the name - the one thing this decision forbids. So
 a breach is a likely inconsistency, reported and never refused.
 
