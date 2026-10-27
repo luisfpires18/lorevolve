@@ -30,7 +30,7 @@ are the owner's new art (`assets/brand/`).
 
 **Kept, not renamed:** the IndexedDB database `lorex-recovery`. It holds unsaved writing, and a new name would leave it
 behind with nothing to read it. Hosted resource names - the GitHub repository, the Azure app and resource group, the R2
-buckets, the DEV database file `/home/data/lorex.db` - change only when the owner carries out `TODO_rename.md`; until
+buckets, the DEV database file - change only when the owner carries out `TODO_rename.md`; until
 then the configuration and runbooks name them as they are.
 
 ## Consequences

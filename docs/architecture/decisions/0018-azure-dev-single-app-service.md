@@ -41,7 +41,7 @@ registration order: reordering the two cannot bring the failure back, and nothin
 or retries. `Database:MigrateOnStartup` hands the job to a deployment instead, and says so in
 the log when it does.
 
-**State lives on `/home`, not in the deployed content.** SQLite at `/home/data/lorex.db` and the
+**State lives on `/home`, not in the deployed content.** SQLite at `/home/data/lorevolve.db` and the
 Data Protection key ring at `/home/data/keys`. On Linux App Service `/home` is an Azure Files
 share mounted into the site: it survives restarts and redeploys, while the content directory
 does not. Both paths are ordinary configuration and can be overridden by an app setting.
