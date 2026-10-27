@@ -481,10 +481,15 @@ public sealed partial class TrashPermanentDeleteTests
         await Deleted(client, EntityPath(u, second));
 
         var presentWhenSwept = new System.Collections.Concurrent.ConcurrentQueue<bool>();
+        // The sweep deletes in parallel, and the test host's database is one shared SQLite connection, which is not safe
+        // to query from two threads at once: unserialized, a query here sometimes throws, the sweep logs it as an orphan and
+        // the count comes up short.
+        var oneQueryAtATime = new Lock();
         _factory.Media.FailDelete = key =>
         {
             if (keys.Contains(key))
             {
+                using var serialized = oneQueryAtATime.EnterScope();
                 using var scope = _factory.Services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<LorEvolveDbContext>();
                 presentWhenSwept.Enqueue(db.Entities.Any(row => row.Id == first || row.Id == second));
