@@ -3,8 +3,8 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <AspNetCoreVersion>10.0.11</AspNetCoreVersion>
-    <EfCoreVersion>10.0.11</EfCoreVersion>
+    <AspNetCoreVersion>10.0.14</AspNetCoreVersion>
+    <EfCoreVersion>10.0.14</EfCoreVersion>
   </PropertyGroup>
 
   <ItemGroup Label="ASP.NET Core">
@@ -15,9 +15,9 @@
 
   <ItemGroup Label="Media">
     <!-- R2 speaks the S3 API. Apache-2.0, and the only mature signer worth trusting. -->
-    <PackageVersion Include="AWSSDK.S3" Version="4.0.103.1" />
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.104.7" />
     <!-- Fully managed: no native asset to carry onto a Linux App Service. See ADR 0019. -->
-    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <PackageVersion Include="SixLabors.ImageSharp" Version="3.2.0" />
   </ItemGroup>
 
   <ItemGroup Label="Assistant">
@@ -28,7 +28,7 @@
   <ItemGroup Label="MCP">
     <!-- The official MCP C# SDK: the Streamable HTTP server (stateless) and, in tests, its client. Apache-2.0. ADR 0046. -->
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
-    <PackageVersion Include="ModelContextProtocol.Core" Version="2.2.0" />
+    <PackageVersion Include="ModelContextProtocol.Core" Version="2.3.0" />
     <!-- The OAuth 2.1 authorization server and token validation, on the one LorEvolveDbContext. Apache-2.0. ADR 0046. -->
     <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.7.2" />
     <PackageVersion Include="OpenIddict.Server.AspNetCore" Version="7.7.2" />
@@ -51,10 +51,10 @@
   </ItemGroup>
 
   <ItemGroup Label="Testing">
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
+    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
   </ItemGroup>
 
 </Project>
