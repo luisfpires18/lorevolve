@@ -202,7 +202,7 @@ export function MapForm(props: MapFormProps) {
                   type="text"
                   dir="auto"
                   maxLength={MAP_NAME_MAX_LENGTH}
-                  placeholder="The Known World"
+                  placeholder="Insert a name"
                   value={draft.name}
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, name: event.target.value }))

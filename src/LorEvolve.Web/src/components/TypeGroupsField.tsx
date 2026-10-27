@@ -183,7 +183,7 @@ export function TypeGroupsField({
               dir="auto"
               value={newName}
               autoFocus
-              placeholder="Runes, Factions, Places…"
+              placeholder="Insert a group name"
               aria-invalid={newError ? true : undefined}
               aria-describedby={`${ids}-new-hint`}
               onChange={(event) => setNewName(event.target.value)}

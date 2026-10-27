@@ -994,7 +994,7 @@ function TypeDialog({
             <Field
               label="Name"
               name="type-name"
-              placeholder={type ? undefined : 'Starship, Language, Ritual…'}
+              placeholder={type ? undefined : 'Insert a name'}
               dir="auto"
               value={name}
               onChange={(event) => setName(event.target.value)}

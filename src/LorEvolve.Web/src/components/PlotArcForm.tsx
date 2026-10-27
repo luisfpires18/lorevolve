@@ -154,7 +154,7 @@ export function PlotArcForm({
               ref={title}
               type="text"
               dir="auto"
-              placeholder="Fall of the King"
+              placeholder="Insert a title"
               value={draft.title}
               onChange={(event) => edit({ title: event.target.value })}
               aria-invalid={fieldErrors.title ? true : undefined}

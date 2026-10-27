@@ -706,7 +706,7 @@ export function IdeaEditor({
             dir="auto"
             value={draft.title}
             maxLength={IDEA_TITLE_MAX_LENGTH}
-            placeholder="Maybe this city floats"
+            placeholder="Insert a title"
             readOnly={isHeld}
             onChange={(event) => edit({ title: event.target.value })}
             aria-invalid={fieldErrors.title ? true : undefined}
@@ -733,7 +733,7 @@ export function IdeaEditor({
             className="field__input field__input--area idea__body"
             rows={10}
             value={draft.body}
-            placeholder="What if…"
+            placeholder="Insert the idea"
             readOnly={isHeld}
             spellCheck
             onChange={(event) => edit({ body: event.target.value })}

@@ -307,7 +307,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
                       <input
                         id={`${base}-name`}
                         className="field__input"
-                        placeholder="Frostwane"
+                        placeholder="Insert a name"
                         autoComplete="off"
                         value={month.name}
                         onChange={(event) => update(index, { name: event.target.value })}

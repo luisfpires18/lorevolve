@@ -156,7 +156,7 @@ export default function WorldRulesPage() {
         <EmptyState
           testId="world-rules-empty"
           title="No world rules yet."
-          hint="World Rules define explicit constraints for how this universe works: “Teleportation cannot cross the Veil.” “A bonded dragon dies if its rider dies.”"
+          hint="World Rules define explicit constraints for how this universe works. Each states one thing that is always true in it."
           action={
             access.editContent ? (
               <Link className="button" to={`${basePath}/new`} data-testid="empty-new-world-rule">

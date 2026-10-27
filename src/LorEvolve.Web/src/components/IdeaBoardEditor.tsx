@@ -798,7 +798,7 @@ export function IdeaBoardEditor({
             dir="auto"
             value={draft.title}
             maxLength={BOARD_TITLE_MAX_LENGTH}
-            placeholder="Who betrays whom"
+            placeholder="Insert a title"
             readOnly={isHeld}
             onChange={(event) => edit({ title: event.target.value })}
             aria-invalid={fieldErrors.title ? true : undefined}

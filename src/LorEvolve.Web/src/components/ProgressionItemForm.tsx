@@ -97,10 +97,10 @@ const SHOWN = [
 /** The server's limit on what a form or ability is (`ProgressionLimits.DescriptionMaxLength`). */
 const DESCRIPTION_MAX = 10000
 
-const WORDS: Record<Kind, { one: string; placeholder: string; list: string }> = {
-  form: { one: 'form', placeholder: 'Super Saiyan 3', list: 'forms' },
-  ability: { one: 'ability', placeholder: 'Instant Transmission', list: 'abilities' },
-  appearance: { one: 'appearance', placeholder: 'Battle armour', list: 'appearances' },
+const WORDS: Record<Kind, { one: string; list: string }> = {
+  form: { one: 'form', list: 'forms' },
+  ability: { one: 'ability', list: 'abilities' },
+  appearance: { one: 'appearance', list: 'appearances' },
 }
 
 /** An appearance's name and description are its label and notes (Issue #43), in its errors too. */
@@ -324,7 +324,7 @@ export function ProgressionItemForm({
               ref={nameInput}
               className="field__input"
               dir="auto"
-              placeholder={words.placeholder}
+              placeholder={isLook ? 'Insert a label' : 'Insert a name'}
               value={draft.name}
               onChange={(event) => edit({ name: event.target.value })}
               aria-invalid={errorOf('name') ? true : undefined}

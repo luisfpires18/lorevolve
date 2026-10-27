@@ -472,7 +472,7 @@ export function WorldRuleEditor({
             dir="auto"
             value={draft.title}
             maxLength={WORLD_RULE_TITLE_MAX_LENGTH}
-            placeholder="Teleportation cannot cross the Veil"
+            placeholder="Insert a title"
             onChange={(event) => edit({ title: event.target.value })}
             aria-invalid={fieldErrors.title ? true : undefined}
             aria-describedby={fieldErrors.title ? titleErrorId : undefined}

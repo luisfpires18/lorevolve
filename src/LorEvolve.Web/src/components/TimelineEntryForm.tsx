@@ -412,7 +412,7 @@ export function TimelineEntryForm({
               ref={title}
               type="text"
               dir="auto"
-              placeholder="Frodo leaves the Shire"
+              placeholder="Insert a title"
               value={draft.title}
               onChange={(event) => edit({ title: event.target.value })}
               aria-invalid={fieldErrors.title ? true : undefined}

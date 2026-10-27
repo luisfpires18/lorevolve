@@ -135,7 +135,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
           <Field
             label="Name"
             name="family-kind-name"
-            placeholder="uncle of, married to, guardian of"
+            placeholder="Insert a name"
             dir="auto"
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -151,7 +151,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
             <Field
               label="Inverse name"
               name="family-kind-inverse"
-              placeholder="nephew or niece of"
+              placeholder="Insert an inverse name"
               dir="auto"
               value={inverseName}
               onChange={(event) => setInverseName(event.target.value)}
