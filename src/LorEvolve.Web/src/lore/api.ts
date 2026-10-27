@@ -27,7 +27,10 @@ const PAGE_SIZE_KEY = 'lorevolve-lore-page-size'
 /** The author's choice in this browser, or the default: a browsing preference, not an account setting. */
 export function readLorePageSize(): number {
   try {
-    const stored = Number(localStorage.getItem(PAGE_SIZE_KEY))
+    // The key before the rename to LorEvolve (ADR 0067) is read while the new one is unset.
+    const stored = Number(
+      localStorage.getItem(PAGE_SIZE_KEY) ?? localStorage.getItem('lorex-lore-page-size'),
+    )
     return (LORE_PAGE_SIZES as readonly number[]).includes(stored) ? stored : ENTITY_PAGE_SIZE
   } catch {
     return ENTITY_PAGE_SIZE

@@ -219,10 +219,10 @@ interface RecoveryCopy {
 function recoveryCopies(page: Page) {
   return page.evaluate(async () => {
     const databases = await indexedDB.databases()
-    if (!databases.some((database) => database.name === 'lorevolve-recovery')) return []
+    if (!databases.some((database) => database.name === 'lorex-recovery')) return []
 
     return new Promise<RecoveryCopy[]>((resolve, reject) => {
-      const opened = indexedDB.open('lorevolve-recovery')
+      const opened = indexedDB.open('lorex-recovery')
       opened.onerror = () => reject(opened.error)
       opened.onsuccess = () => {
         const database = opened.result

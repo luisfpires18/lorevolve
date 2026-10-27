@@ -243,13 +243,13 @@ function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id
         </p>
         {details.verifiedHost ? (
           <p className="consent__identity" data-testid="consent-verified">
-            Its details are published by <strong>{details.verifiedHost}</strong>, and LorEvolve fetched
-            them from there. The name is the one that site gives.
+            Its details are published by <strong>{details.verifiedHost}</strong>, and LorEvolve
+            fetched them from there. The name is the one that site gives.
           </p>
         ) : (
           <p className="callout callout--warning consent__warning" data-testid="consent-unverified">
-            LorEvolve can&rsquo;t confirm who made this app. It registered itself, and it chose its own
-            name. Approve only if you just added LorEvolve to an app you trust.
+            LorEvolve can&rsquo;t confirm who made this app. It registered itself, and it chose its
+            own name. Approve only if you just added LorEvolve to an app you trust.
           </p>
         )}
         <p className="consent__identity" data-testid="consent-return">
@@ -339,9 +339,9 @@ function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
       <p className="consent__identity" id="consent-propose-what">
         It could send new or changed lore, articles, relationships, stories, scenes, prose, plot,
         timeline moments, world rules and - if you own this universe - your ideas to Pending AI
-        Changes in LorEvolve, as you. Removals only go to the Trash. Nothing changes until you, or the
-        universe&rsquo;s owner or an Editor, approves it there. You can turn this off in Connected
-        apps.
+        Changes in LorEvolve, as you. Removals only go to the Trash. Nothing changes until you, or
+        the universe&rsquo;s owner or an Editor, approves it there. You can turn this off in
+        Connected apps.
       </p>
       {details.canProposeSchema ? (
         <>

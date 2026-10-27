@@ -427,7 +427,7 @@ public sealed partial class DatabaseBackupRunner(
         try
         {
             var manifest = await JsonSerializer.DeserializeAsync<DatabaseBackupManifest>(stream, DatabaseBackupManifest.Json, cancellationToken);
-            return manifest is { Format: DatabaseBackupManifest.FormatName } ? manifest : null;
+            return manifest is not null && DatabaseBackupManifest.IsKnownFormat(manifest.Format) ? manifest : null;
         }
         catch (JsonException)
         {

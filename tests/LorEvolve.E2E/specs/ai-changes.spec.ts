@@ -340,7 +340,9 @@ test.describe('Pending AI Changes', () => {
         resource,
       },
     })
-    expect(((await token.json()) as { scope: string }).scope.split(' ')).toContain('lorevolve.propose')
+    expect(((await token.json()) as { scope: string }).scope.split(' ')).toContain(
+      'lorevolve.propose',
+    )
 
     // Connected apps says so, and turns it off without disconnecting.
     await page.goto('/app/profile#connected-apps')

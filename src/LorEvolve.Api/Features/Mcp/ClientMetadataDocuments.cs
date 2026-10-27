@@ -18,6 +18,9 @@ internal static class ClientRules
     /// <summary>Who vouched for a client's details: its own metadata document (CIMD), or nobody (DCR).</summary>
     public const string SourceProperty = "lorevolve_source";
 
+    /// <summary>The marker's name before the rename to LorEvolve (ADR 0067), on clients not fetched again since.</summary>
+    public const string LegacySourceProperty = "lorex_source";
+
     public const string MetadataDocumentSource = "metadata_document";
 
     public const string RegistrationSource = "registration";

@@ -24,6 +24,11 @@ public sealed record DatabaseBackupManifest(
 {
     public const string FormatName = "lorevolve-sqlite-backup";
 
+    /// <summary>The format's name before the rename to LorEvolve (ADR 0067). Snapshots taken earlier still restore.</summary>
+    public const string LegacyFormatName = "lorex-sqlite-backup";
+
+    public static bool IsKnownFormat(string? format) => format is FormatName or LegacyFormatName;
+
     public const int CurrentVersion = 1;
 
     public static JsonSerializerOptions Json { get; } = new(JsonSerializerDefaults.Web)

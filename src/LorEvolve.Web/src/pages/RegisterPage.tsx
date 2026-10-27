@@ -84,8 +84,8 @@ export default function RegisterPage() {
     >
       {inviteOnly && !inviteToken ? (
         <p className="form__message" role="status" data-testid="register-invite-only">
-          LorEvolve is invitation-only for now. Open the invitation link you were sent to create your
-          account.
+          LorEvolve is invitation-only for now. Open the invitation link you were sent to create
+          your account.
         </p>
       ) : (
         <form className="form" onSubmit={handleSubmit} noValidate>

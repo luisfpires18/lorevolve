@@ -358,8 +358,8 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
       <fieldset className="reltype__canon" data-testid="reltype-family">
         <legend className="reltype__legend">Family meaning</legend>
         <p className="field__hint">
-          Optional. Only a kind given a family meaning here appears in the Family Tree, and LorEvolve
-          never infers one from the relationship name.
+          Optional. Only a kind given a family meaning here appears in the Family Tree, and
+          LorEvolve never infers one from the relationship name.
         </p>
 
         {draft.isSymmetric ? (

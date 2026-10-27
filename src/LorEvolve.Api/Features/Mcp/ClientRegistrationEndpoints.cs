@@ -31,6 +31,9 @@ public static class ClientRegistrationEndpoints
     /// <summary>LorEvolve's own client ids carry this prefix, so they can never be taken for a metadata document's URL.</summary>
     public const string ClientIdPrefix = "lorevolve-dcr-";
 
+    /// <summary>The prefix before the rename to LorEvolve (ADR 0067). Such registrations keep working; unused ones are swept.</summary>
+    public const string LegacyClientIdPrefix = "lorex-dcr-";
+
     /// <summary>
     /// A registration's id: the prefix, when it was made (Unix seconds as ten hex digits, so ids sort by age as plain
     /// strings and the sweep can ask the database for the old ones), then 128 random bits.

@@ -334,7 +334,8 @@ function AssistantDrawer({
         <div className="drawer__body assistant__body">
           {availability === 'unavailable' ? (
             <p className="history__quiet" data-testid="assistant-unavailable">
-              The assistant isn&rsquo;t set up on this LorEvolve yet. Everything else works as usual.
+              The assistant isn&rsquo;t set up on this LorEvolve yet. Everything else works as
+              usual.
             </p>
           ) : turns.length === 0 ? (
             <div className="assistantempty" data-testid="assistant-empty">

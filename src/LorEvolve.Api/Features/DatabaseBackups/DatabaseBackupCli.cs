@@ -192,7 +192,7 @@ public static class DatabaseBackupCli
                 ?? throw new DatabaseBackupException($"The manifest names an object the store does not hold: {manifest.StoredObject.Key}");
         }
 
-        if (manifest.Format != DatabaseBackupManifest.FormatName || manifest.ManifestVersion > DatabaseBackupManifest.CurrentVersion)
+        if (!DatabaseBackupManifest.IsKnownFormat(manifest.Format) || manifest.ManifestVersion > DatabaseBackupManifest.CurrentVersion)
         {
             throw new DatabaseBackupException("This is not a LorEvolve database backup manifest this build can read.");
         }

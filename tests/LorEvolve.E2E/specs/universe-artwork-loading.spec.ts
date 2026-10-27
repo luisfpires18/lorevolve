@@ -244,7 +244,9 @@ test.describe('universe artwork arrives with the universe', () => {
     expect(lookups).toEqual([])
   })
 
-  test('a world without artwork is ready with LorEvolve’s atmosphere, settled', async ({ page }) => {
+  test('a world without artwork is ready with LorEvolve’s atmosphere, settled', async ({
+    page,
+  }) => {
     await account(page)
     const world = await universe(page)
     const first = await recordFirstRenders(page)

@@ -78,7 +78,9 @@ test.describe('export', () => {
     const readableDownloading = page.waitForEvent('download')
     await page.getByTestId('export-readable').click()
     const readable = await readableDownloading
-    expect(readable.suggestedFilename()).toMatch(/^lorevolve-tidewatch-[a-z0-9]+-\d{8}-readable\.zip$/)
+    expect(readable.suggestedFilename()).toMatch(
+      /^lorevolve-tidewatch-[a-z0-9]+-\d{8}-readable\.zip$/,
+    )
 
     const book = await readFile((await readable.path())!)
     expect(book.subarray(0, 4)).toEqual(ZIP_SIGNATURE)

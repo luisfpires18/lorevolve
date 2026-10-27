@@ -89,6 +89,7 @@ internal sealed partial class McpMaintenance(
         {
             var unused = await db.Set<OpenIddictEntityFrameworkCoreApplication>().AsNoTracking()
                 .Where(application => ((application.ClientId!.CompareTo(registrationsFrom) >= 0 && application.ClientId.CompareTo(registrationsBefore) < 0)
+                        || application.ClientId.StartsWith(ClientRegistrationEndpoints.LegacyClientIdPrefix)
                         || application.ClientId.StartsWith("https://"))
                     && !db.Set<OpenIddictEntityFrameworkCoreAuthorization>().Any(authorization => authorization.Application!.Id == application.Id))
                 .Select(application => application.ClientId!)

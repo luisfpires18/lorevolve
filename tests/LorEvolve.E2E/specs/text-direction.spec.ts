@@ -506,7 +506,10 @@ test.describe('text direction', () => {
     await page.goto(base)
     await expectIsolated(page.getByTestId('workspace-name'), universeName)
     await expectIsolated(page.getByTestId('overview-name'), universeName)
-    await expectLorEvolveStaysLeftToRight(page, [page.locator('.sidebar__nav'), page.locator('.rail')])
+    await expectLorEvolveStaysLeftToRight(page, [
+      page.locator('.sidebar__nav'),
+      page.locator('.rail'),
+    ])
 
     // ---- The Trash: the name, isolated, over LorEvolve's word for the kind - both where a row's text starts ----
 

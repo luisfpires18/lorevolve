@@ -211,7 +211,7 @@ public static class McpEndpoints
             return Challenge(metadata, "The access token was issued for a different resource.");
         }
 
-        if (!principal.HasScope(McpLimits.ReadScope))
+        if (!principal.HasScope(McpLimits.ReadScope) && !principal.HasScope(McpLimits.LegacyReadScope))
         {
             return InsufficientScope(metadata);
         }
@@ -269,7 +269,7 @@ public static class McpEndpoints
             connection.UniverseName,
             connection.Id,
             connection.ClientName,
-            principal.HasScope(McpLimits.ProposeScope) && connection.CanPropose,
+            (principal.HasScope(McpLimits.ProposeScope) || principal.HasScope(McpLimits.LegacyProposeScope)) && connection.CanPropose,
             connection.CanProposeSchema);
 
         // The MCP endpoint is not a cookie-session endpoint: whatever else the request carried, the caller is the token.

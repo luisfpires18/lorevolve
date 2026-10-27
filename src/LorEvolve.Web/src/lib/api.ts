@@ -76,7 +76,8 @@ export function apiErrorFrom(status: number, payload: unknown) {
 export const SESSION_ENDED = 'lorevolve:session-ended'
 
 /** What any screen says when the server could not be reached at all. */
-export const NETWORK_FAILURE = 'LorEvolve could not be reached. Check your connection and try again.'
+export const NETWORK_FAILURE =
+  'LorEvolve could not be reached. Check your connection and try again.'
 
 /**
  * Calls the API on the same origin. The session cookie is HttpOnly, so the browser

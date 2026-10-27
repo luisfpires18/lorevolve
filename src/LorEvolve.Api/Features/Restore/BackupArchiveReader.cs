@@ -477,7 +477,7 @@ internal static class BackupArchiveReader
         var json = SkipByteOrderMark(bytes);
         var (format, version) = ReadEnvelope(json);
 
-        if (!string.Equals(format, UniverseBackup.FormatName, StringComparison.Ordinal))
+        if (!UniverseBackup.IsKnownFormat(format))
         {
             throw NotABackup();
         }
@@ -582,7 +582,7 @@ internal static class BackupArchiveReader
         }
         catch (JsonException)
         {
-            if (string.Equals(format, UniverseBackup.FormatName, StringComparison.Ordinal))
+            if (UniverseBackup.IsKnownFormat(format))
             {
                 throw Damaged("backup.json is not complete, well-formed JSON. The backup may be damaged.");
             }

@@ -18,6 +18,15 @@ public static class McpLimits
     /// </summary>
     public const string ProposeScope = "lorevolve.propose";
 
+    /// <summary>
+    /// The two scopes' names before the rename to LorEvolve (ADR 0067). Still registered and still honoured, so a
+    /// connection made earlier - its refresh token, its registration's permissions - keeps working without reconnecting.
+    /// Nothing issues them any more.
+    /// </summary>
+    public const string LegacyReadScope = "lorex.read";
+
+    public const string LegacyProposeScope = "lorex.propose";
+
     /// <summary>Short-lived (MCP: SHOULD). Every request is checked against the live authorization anyway.</summary>
     public static readonly TimeSpan AccessTokenLifetime = TimeSpan.FromMinutes(15);
 
@@ -161,7 +170,8 @@ public static class McpSetup
                 // PKCE on every request, S256 only (OAuth 2.1, MCP).
                 server.RequireProofKeyForCodeExchange();
 
-                server.RegisterScopes(McpLimits.ReadScope, McpLimits.ProposeScope, Scopes.OfflineAccess);
+                server.RegisterScopes(
+                    McpLimits.ReadScope, McpLimits.ProposeScope, McpLimits.LegacyReadScope, McpLimits.LegacyProposeScope, Scopes.OfflineAccess);
                 server.Configure(options =>
                 {
                     options.CodeChallengeMethods.Remove(CodeChallengeMethods.Plain);

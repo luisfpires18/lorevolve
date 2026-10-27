@@ -33,6 +33,11 @@ public sealed record UniverseBackup(
     /// <summary>Discriminator, so a reader can refuse a file that is merely JSON.</summary>
     public const string FormatName = "lorevolve.universe.backup";
 
+    /// <summary>The discriminator before the rename to LorEvolve (ADR 0067). Backups taken earlier still import.</summary>
+    public const string LegacyFormatName = "lorex.universe.backup";
+
+    public static bool IsKnownFormat(string? format) => format is FormatName or LegacyFormatName;
+
     /// <summary>
     /// Bumped whenever the payload's shape or meaning changes in a way a reader must notice.
     /// Adding a nullable member that an older reader can ignore does not count; removing,

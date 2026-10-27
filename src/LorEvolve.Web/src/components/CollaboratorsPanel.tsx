@@ -89,8 +89,9 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
               Invitation created
             </p>
             <p className="settings__note">
-              LorEvolve does not send email. Send <bdi className="collab__email">{created.email}</bdi>{' '}
-              this link; they accept it signed in with that email:
+              LorEvolve does not send email. Send{' '}
+              <bdi className="collab__email">{created.email}</bdi> this link; they accept it signed
+              in with that email:
             </p>
             <CopyLink
               claimToken={created.claimToken}

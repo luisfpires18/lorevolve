@@ -57,8 +57,8 @@ export function WorldRuleCheckSection({
     >
       <legend className="rule__legend">Check against the timeline</legend>
       <p className="field__hint" id={hintId}>
-        Optional. LorEvolve never reads the words above. A check counts only what you set here and what
-        moments record in their validation details.
+        Optional. LorEvolve never reads the words above. A check counts only what you set here and
+        what moments record in their validation details.
       </p>
 
       <div className="rule__choices">

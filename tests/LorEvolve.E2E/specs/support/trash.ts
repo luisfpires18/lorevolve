@@ -196,7 +196,7 @@ export async function keepCopies(page: Page, accountId: string, copies: Copy[]) 
   await page.evaluate(
     async ({ accountId, copies }) => {
       const database = await new Promise<IDBDatabase>((resolve, reject) => {
-        const opened = indexedDB.open('lorevolve-recovery', 1)
+        const opened = indexedDB.open('lorex-recovery', 1)
         opened.onupgradeneeded = () => {
           const store = opened.result.createObjectStore('drafts', { keyPath: 'key' })
           store.createIndex('account-universe', ['accountId', 'universeId'])
@@ -233,7 +233,7 @@ export function heldCopies(page: Page) {
   return page.evaluate(
     () =>
       new Promise<string[]>((resolve, reject) => {
-        const opened = indexedDB.open('lorevolve-recovery', 1)
+        const opened = indexedDB.open('lorex-recovery', 1)
         opened.onsuccess = () => {
           const all = opened.result.transaction('drafts', 'readonly').objectStore('drafts').getAll()
           all.onsuccess = () => {

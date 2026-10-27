@@ -98,8 +98,8 @@ export function EditConflict<T>({
           <>
             <p className="editconflict__title">This {what} changed while you were editing.</p>
             <p className="editconflict__text">
-              Your changes are still here and haven&rsquo;t been saved. LorEvolve won&rsquo;t save over
-              the newer version. Look at it first, then decide what to keep.
+              Your changes are still here and haven&rsquo;t been saved. LorEvolve won&rsquo;t save
+              over the newer version. Look at it first, then decide what to keep.
             </p>
           </>
         )}

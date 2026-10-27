@@ -473,7 +473,10 @@ function UsersScreen() {
 
   return (
     <>
-      <Heading title="Users" lede="Every LorEvolve account. Universe content is never shown here." />
+      <Heading
+        title="Users"
+        lede="Every LorEvolve account. Universe content is never shown here."
+      />
 
       <SignUpLink />
 
@@ -766,8 +769,8 @@ function SignUpLink() {
         Sign-up link
       </h2>
       <p className="settings__note">
-        For someone to join LorEvolve while registration is invitation-only. The link lets that email
-        address, and only that one, create an account.
+        For someone to join LorEvolve while registration is invitation-only. The link lets that
+        email address, and only that one, create an account.
       </p>
       <form className="form" onSubmit={submit} noValidate>
         <label className="field__label" htmlFor="admin-signup-email">

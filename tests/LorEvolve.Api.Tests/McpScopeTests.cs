@@ -73,6 +73,37 @@ public sealed class McpScopeTests(LorEvolveApiFactory factory) : IClassFixture<L
     }
 
     [Fact]
+    public async Task A_client_registered_before_the_rename_still_connects_with_the_old_scope_names()
+    {
+        var w = await CollaborationTestClient.NewSharedWorld(_factory, "scopelegacy");
+        var owner = await SignIn(_factory, "user-scopelegacy-owner");
+        var clientId = await RegisterPublicClient(_factory.CreateClient());
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var applications = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+            var application = await applications.FindByClientIdAsync(clientId);
+            var descriptor = new OpenIddictApplicationDescriptor();
+            await applications.PopulateAsync(descriptor, application!);
+            descriptor.Permissions.Remove(Permissions.Prefixes.Scope + McpLimits.ReadScope);
+            descriptor.Permissions.Remove(Permissions.Prefixes.Scope + McpLimits.ProposeScope);
+            descriptor.Permissions.Add(Permissions.Prefixes.Scope + McpLimits.LegacyReadScope);
+            descriptor.Permissions.Add(Permissions.Prefixes.Scope + McpLimits.LegacyProposeScope);
+            await applications.UpdateAsync(application!, descriptor);
+        }
+
+        var (verifier, challenge) = Pkce();
+        var request = AuthorizeRequest(clientId, Resource(w.U), challenge, scope: "lorex.read lorex.propose offline_access");
+        request[OAuthEndpoints.ProposeField] = OAuthEndpoints.AllowProposals;
+        var approved = RedirectParameters(await Decide(owner, request, "approve"));
+        var tokens = await Exchange(_factory.CreateClient(), clientId, approved["code"], verifier, Resource(w.U));
+
+        Assert.Equal(HttpStatusCode.OK, tokens.Status);
+        Assert.Equal(HttpStatusCode.OK, (await Post(_factory.CreateClient(), w.U, tokens.AccessToken, ListTools())).StatusCode);
+        await PlotTestClient.WithDb(_factory, async db => Assert.True(await db.McpConnections.Where(row => row.ClientId == clientId).Select(row => row.CanPropose).SingleAsync()));
+        Assert.Equal(HttpStatusCode.OK, (await Refresh(_factory.CreateClient(), clientId, tokens.RefreshToken!, Resource(w.U))).Status);
+    }
+
+    [Fact]
     public async Task Denying_a_request_for_proposals_makes_nothing()
     {
         var w = await CollaborationTestClient.NewSharedWorld(_factory, "scopedeny");

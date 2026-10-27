@@ -41,6 +41,15 @@ public sealed class BackupValidationTests(LorEvolveApiFactory factory) : IClassF
         Assert.Equal(payload.Entities.Count(entity => entity.DeletedAt is not null), validated.Preview.Counts.EntriesInTrash);
     }
 
+    [Fact]
+    public async Task A_backup_taken_before_the_rename_still_validates()
+    {
+        var (client, archive) = await Setup("legacy-format");
+        var legacy = Rewrite(archive, document => document["format"] = UniverseBackup.LegacyFormatName);
+
+        Assert.Equal("Validation world", (await Validated(client, legacy)).Preview.UniverseName);
+    }
+
     // ---------- Not a backup, or not one this LorEvolve reads ----------
 
     [Fact]

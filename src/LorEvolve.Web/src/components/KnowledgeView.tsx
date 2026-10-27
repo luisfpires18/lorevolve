@@ -130,8 +130,8 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
       </div>
       <p className="relations__quiet">
         What <bdi>{entityName}</bdi> knows, in the order the stories tell it, and who knows about{' '}
-        <bdi>{entityName}</bdi>. Every line is yours: LorEvolve infers nothing from a scene, a relation
-        or the prose.
+        <bdi>{entityName}</bdi>. Every line is yours: LorEvolve infers nothing from a scene, a
+        relation or the prose.
       </p>
 
       {message ? (

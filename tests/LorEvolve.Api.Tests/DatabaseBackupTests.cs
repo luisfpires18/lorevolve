@@ -182,7 +182,8 @@ public sealed class DatabaseBackupTests : IDisposable
             await db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync(previous);
         }
 
-        var (manifest, data) = await Package(older, "older");
+        // Taken before the rename to LorEvolve, too: its manifest still carries the old format name (ADR 0067).
+        var (manifest, data) = await Package(older, "older", DatabaseBackupManifest.LegacyFormatName);
         var report = await DatabaseBackupCli.RestoreDrillAsync(
             new DatabaseBackupCli.DrillSource(null, null, manifest, data), Path.Combine(_folder, "drill-older"), null, null, CancellationToken.None);
         Assert.Equal($"applied 1, up to {latest}", report.Steps.Single(step => step.Name == "migrations").Detail);
@@ -392,7 +393,7 @@ public sealed class DatabaseBackupTests : IDisposable
         clock ?? TimeProvider.System,
         NullLogger<DatabaseBackupRunner>.Instance);
 
-    private async Task<(string Manifest, string Data)> Package(string databasePath, string name)
+    private async Task<(string Manifest, string Data)> Package(string databasePath, string name, string format = DatabaseBackupManifest.FormatName)
     {
         SqliteConnection.ClearAllPools();
         var data = Path.Combine(_folder, name + ".db.gz");
@@ -405,7 +406,7 @@ public sealed class DatabaseBackupTests : IDisposable
 
         var (bytes, sha) = await DatabaseSnapshot.HashAsync(data, CancellationToken.None);
         var manifest = new DatabaseBackupManifest(
-            DatabaseBackupManifest.FormatName, 1, "test", DateTime.UtcNow, DateTime.UtcNow, "test",
+            format, 1, "test", DateTime.UtcNow, DateTime.UtcNow, "test",
             new DatabaseBackupProvenance("test", "test", null, databasePath),
             await DatabaseSnapshot.InspectAsync(databasePath, null, CancellationToken.None),
             new DatabaseBackupObject(name, "gzip", bytes, sha));

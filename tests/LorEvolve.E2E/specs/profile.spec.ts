@@ -178,7 +178,9 @@ async function newUniverse(page: Page) {
 }
 
 test.describe('profile', () => {
-  test('is reached from a universe and shows the account LorEvolve actually has', async ({ page }) => {
+  test('is reached from a universe and shows the account LorEvolve actually has', async ({
+    page,
+  }) => {
     const account = await signUp(page)
     await newUniverse(page)
 

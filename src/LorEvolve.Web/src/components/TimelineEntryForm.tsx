@@ -510,8 +510,8 @@ export function TimelineEntryForm({
                 Year label
               </label>
               <p className="field__hint">
-                Optional text shown beside the year: AC, Before the Flood. LorEvolve does not order by
-                it. To order dates by named periods, add date periods in Chronology.
+                Optional text shown beside the year: AC, Before the Flood. LorEvolve does not order
+                by it. To order dates by named periods, add date periods in Chronology.
               </p>
               <input
                 id="moment-era"

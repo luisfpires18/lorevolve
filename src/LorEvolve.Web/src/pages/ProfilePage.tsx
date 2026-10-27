@@ -110,11 +110,11 @@ export default function ProfilePage() {
       </section>
 
       <p className="profile__note">
-        LorEvolve keeps only what it needs to sign you in: a username, an email address, and the photo
-        above if you add one - and the public name above, if you choose one, which is the only thing
-        the public portal shows about you, with your author page's address. Your photo is private -
-        served only to your own signed-in session - unless you choose to show it on your author
-        page, and it is never part of a universe backup.
+        LorEvolve keeps only what it needs to sign you in: a username, an email address, and the
+        photo above if you add one - and the public name above, if you choose one, which is the only
+        thing the public portal shows about you, with your author page's address. Your photo is
+        private - served only to your own signed-in session - unless you choose to show it on your
+        author page, and it is never part of a universe backup.
       </p>
     </article>
   )

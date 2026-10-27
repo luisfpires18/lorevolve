@@ -939,8 +939,8 @@ function FieldDialog({
               </p>
               {field && field.entryCount > 0 ? (
                 <p className="field__hint">
-                  LorEvolve refuses a narrower choice while an entry links somewhere it would not allow,
-                  and never clears a link to make it fit.
+                  LorEvolve refuses a narrower choice while an entry links somewhere it would not
+                  allow, and never clears a link to make it fit.
                 </p>
               ) : null}
               {fieldErrors.target ? <p className="field__error">{fieldErrors.target}</p> : null}
@@ -1005,8 +1005,8 @@ function FieldDialog({
             </label>
             {field && isRequired && !field.isRequired ? (
               <p className="field__hint">
-                Every {type.name} entry will need a value. If some don&rsquo;t have one yet, LorEvolve
-                says how many and changes nothing.
+                Every {type.name} entry will need a value. If some don&rsquo;t have one yet,
+                LorEvolve says how many and changes nothing.
               </p>
             ) : null}
           </div>

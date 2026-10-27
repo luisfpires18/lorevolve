@@ -171,7 +171,9 @@ test.describe('The brand leads to LorEvolve’s home from every shell, and says 
     }
 
     await page.goto(`/app/universes/${w.id}/lore/${w.entryId}`)
-    const mark = page.getByRole('navigation', { name: 'LorEvolve' }).getByRole('link', { name: BRAND })
+    const mark = page
+      .getByRole('navigation', { name: 'LorEvolve' })
+      .getByRole('link', { name: BRAND })
     await expect(mark).toHaveText('L')
     // Named for where it goes, not by a tooltip.
     await expect(mark).not.toHaveAttribute('title', /.*/)

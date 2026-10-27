@@ -190,7 +190,7 @@ public static class OAuthEndpoints
         // Read, and the refresh that keeps the connection between conversations. Proposing only when the app asked for it, the
         // person ticked it on this very screen, and their role can propose at all - never by default, never from an earlier
         // approval (ADR 0047). Whatever else was asked for, nothing more.
-        var canPropose = request.HasScope(McpLimits.ProposeScope)
+        var canPropose = (request.HasScope(McpLimits.ProposeScope) || request.HasScope(McpLimits.LegacyProposeScope))
             && form[ProposeField] == AllowProposals
             && AiChanges.AiChangePermissions.MayStageAnything(role);
         // Schema rides on proposing: a second tick on this same screen, from a role that edits types (ADR 0062). It is no
@@ -328,7 +328,8 @@ public static class OAuthEndpoints
         }
 
         var properties = await applications.GetPropertiesAsync(application, cancellationToken);
-        var verified = properties.TryGetValue(ClientRules.SourceProperty, out var source)
+        var verified = (properties.TryGetValue(ClientRules.SourceProperty, out var source)
+                || properties.TryGetValue(ClientRules.LegacySourceProperty, out source))
             && source.GetString() == ClientRules.MetadataDocumentSource;
         var redirects = await applications.GetRedirectUrisAsync(application, cancellationToken);
 
@@ -340,7 +341,8 @@ public static class OAuthEndpoints
             universe.Id,
             universe.Name,
             effective,
-            (scope ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains(McpLimits.ProposeScope, StringComparer.Ordinal),
+            (scope ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Any(asked => asked is McpLimits.ProposeScope or McpLimits.LegacyProposeScope),
             AiChanges.AiChangePermissions.MayStageAnything(effective),
             AiChanges.AiChangePermissions.MayStage(effective, AiChanges.AiChangeResource.LoreType, AiChanges.AiChangeAction.Create)));
     }

@@ -75,7 +75,7 @@ internal static class OAuthServerEvents
     /// <summary>
     /// The discovery document says how a client gets an id here - a metadata document (CIMD, preferred) or registration
     /// (DCR, for older clients) - and that public clients are welcome; it stops offering what an OpenID provider would,
-    /// because this is not one.
+    /// because this is not one, and the scopes' old names.
     /// </summary>
     private sealed class DescribeClientRegistration(McpSite site) : IOpenIddictServerHandler<HandleConfigurationRequestContext>
     {
@@ -89,6 +89,10 @@ internal static class OAuthServerEvents
             context.Claims.Clear();
             context.IdTokenSigningAlgorithms.Clear();
             context.SubjectTypes.Clear();
+
+            // Honoured for connections made before the rename (ADR 0067), never offered to a new one.
+            context.Scopes.Remove(McpLimits.LegacyReadScope);
+            context.Scopes.Remove(McpLimits.LegacyProposeScope);
 
             return ValueTask.CompletedTask;
         }

@@ -368,7 +368,9 @@ test.describe('world rule checks', () => {
     await page.reload()
     await expect(none).toBeChecked()
     await expect(page.getByTestId('world-rule-check')).toHaveCount(0)
-    await expect(page.getByTestId('world-rule-description')).toHaveValue('Words LorEvolve never reads.')
+    await expect(page.getByTestId('world-rule-description')).toHaveValue(
+      'Words LorEvolve never reads.',
+    )
     expect((await readRule(page, universeId, rule.id)).validation).toBeNull()
   })
 

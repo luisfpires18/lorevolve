@@ -46,7 +46,8 @@ export interface LocalDraft extends DraftScope {
   savedAt: string
 }
 
-const DATABASE = 'lorevolve-recovery'
+// Named before the rename to LorEvolve (ADR 0067) and kept: it holds unsaved writing, and a new name would orphan it.
+const DATABASE = 'lorex-recovery'
 const VERSION = 1
 const STORE = 'drafts'
 const BY_UNIVERSE = 'account-universe'

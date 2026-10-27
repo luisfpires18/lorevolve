@@ -16,6 +16,9 @@ export type Theme = 'light' | 'dark'
 /** Also read by the bootstrap in `index.html`; keep the two in step. */
 export const THEME_STORAGE_KEY = 'lorevolve-theme'
 
+/** The key before the rename to LorEvolve (ADR 0067): read when the new one is unset, never written. */
+export const LEGACY_THEME_STORAGE_KEY = 'lorex-theme'
+
 /** The browser chrome's colour in each theme - the same values the bootstrap writes. */
 export const THEME_COLOR: Record<Theme, string> = { light: '#f6f2ea', dark: '#151617' }
 
@@ -24,7 +27,8 @@ const systemDark = () => window.matchMedia('(prefers-color-scheme: dark)')
 
 function saved(): Theme | null {
   try {
-    const value = localStorage.getItem(THEME_STORAGE_KEY)
+    const value =
+      localStorage.getItem(THEME_STORAGE_KEY) ?? localStorage.getItem(LEGACY_THEME_STORAGE_KEY)
     return value === 'light' || value === 'dark' ? value : null
   } catch {
     return null

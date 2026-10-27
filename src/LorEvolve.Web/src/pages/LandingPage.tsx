@@ -85,8 +85,8 @@ export default function LandingPage() {
             <span className="landing-hero__turn">Whatever form it takes.</span>
           </h1>
           <p className="landing-hero__lede">
-            LorEvolve keeps worldbuilding and writing together: the people, places and history of your
-            universe, and the stories told inside it.
+            LorEvolve keeps worldbuilding and writing together: the people, places and history of
+            your universe, and the stories told inside it.
           </p>
           {/* Empty until the session is known, so a signed-in visitor never sees "Start building" first; the row keeps
               its height meanwhile (`.landing-actions`). */}

@@ -237,7 +237,8 @@ public static class ConnectedAppEndpoints
         }
 
         using var json = System.Text.Json.JsonDocument.Parse(properties);
-        return json.RootElement.TryGetProperty(ClientRules.SourceProperty, out var source)
+        return (json.RootElement.TryGetProperty(ClientRules.SourceProperty, out var source)
+                || json.RootElement.TryGetProperty(ClientRules.LegacySourceProperty, out source))
             && source.ValueKind == System.Text.Json.JsonValueKind.String
             && source.GetString() == ClientRules.MetadataDocumentSource;
     }

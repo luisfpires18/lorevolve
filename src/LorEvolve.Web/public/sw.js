@@ -69,7 +69,12 @@ self.addEventListener('activate', (event) => {
       const names = await caches.keys()
       await Promise.all(
         names
-          .filter((name) => name.startsWith(CACHE_PREFIX) && name !== STATIC_CACHE)
+          // lorex-static-: the prefix before the rename to LorEvolve (ADR 0067).
+          .filter(
+            (name) =>
+              (name.startsWith(CACHE_PREFIX) || name.startsWith('lorex-static-')) &&
+              name !== STATIC_CACHE,
+          )
           .map((name) => caches.delete(name)),
       )
       await self.clients.claim()

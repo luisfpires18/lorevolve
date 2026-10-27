@@ -28,7 +28,7 @@
       ;(function () {
         var theme = null
         try {
-          theme = localStorage.getItem('lorevolve-theme')
+          theme = localStorage.getItem('lorevolve-theme') || localStorage.getItem('lorex-theme')
         } catch (e) {}
         if (theme !== 'light' && theme !== 'dark') {
           theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'

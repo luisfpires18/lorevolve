@@ -136,7 +136,10 @@ test.describe('LorEvolve’s home is /', () => {
     expect(await footer.evaluate((node) => node.tagName)).toBe('FOOTER')
 
     // The brand goes home; the one group of links goes somewhere real, each of them.
-    await expect(footer.getByRole('link', { name: 'LorEvolve – Home' })).toHaveAttribute('href', '/')
+    await expect(footer.getByRole('link', { name: 'LorEvolve – Home' })).toHaveAttribute(
+      'href',
+      '/',
+    )
     const product = footer.getByRole('navigation', { name: 'Product' })
     await expect(product.getByRole('link')).toHaveText(['Explore', 'Create account', 'Log in'])
     for (const [name, href] of [

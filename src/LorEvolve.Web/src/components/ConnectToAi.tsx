@@ -222,8 +222,8 @@ function ConnectSteps({
             ) : null}
           </li>
           <li>
-            The app opens LorEvolve in your browser. Sign in if you&rsquo;re asked to, check which app
-            is asking, and approve it.
+            The app opens LorEvolve in your browser. Sign in if you&rsquo;re asked to, check which
+            app is asking, and approve it.
           </li>
         </ol>
       </section>
@@ -244,7 +244,8 @@ function ConnectSteps({
         <p className="settings__note">
           What the app reads is sent to the AI service behind it, under that service&rsquo;s terms.
           Long manuscripts can use up a lot of the app&rsquo;s context, so it reads prose a section
-          at a time. Questions asked this way don&rsquo;t count toward LorEvolve&rsquo;s own Assistant.
+          at a time. Questions asked this way don&rsquo;t count toward LorEvolve&rsquo;s own
+          Assistant.
         </p>
       </section>
 

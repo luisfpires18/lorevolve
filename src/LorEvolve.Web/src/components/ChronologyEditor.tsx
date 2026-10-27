@@ -332,8 +332,8 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                   plain year
                 </strong>{' '}
                 ({unplacedParts.join(' and ')}). Once you save, {one ? 'it stays' : 'they stay'}{' '}
-                saved, but LorEvolve won’t guess which period {one ? 'it belongs' : 'they belong'} to:{' '}
-                {one ? 'it sits' : 'they sit'} apart on the timeline until{' '}
+                saved, but LorEvolve won’t guess which period {one ? 'it belongs' : 'they belong'}{' '}
+                to: {one ? 'it sits' : 'they sit'} apart on the timeline until{' '}
                 {one ? 'it is' : 'each is'} given one.
               </>
             )}
