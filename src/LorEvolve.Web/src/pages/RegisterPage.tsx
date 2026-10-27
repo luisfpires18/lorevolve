@@ -22,14 +22,18 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const inviteToken = inviteTokenFor(location.search, location.state)
-  // Unknown until the API answers; the form shows meanwhile, and the API refuses an uninvited registration either way.
-  const [inviteOnly, setInviteOnly] = useState(false)
+  // Unknown (null) until the API answers, and nothing is drawn meanwhile: showing the form first and then taking it away
+  // was the flash an uninvited visitor saw. Someone holding an invite registers either way, so their form shows at once.
+  // If the question fails the form shows, and the API still refuses an uninvited registration.
+  const [inviteOnly, setInviteOnly] = useState<boolean | null>(inviteToken ? false : null)
 
   useEffect(() => {
     const controller = new AbortController()
     apiFetch<{ inviteOnly: boolean }>('/api/auth/registration', { signal: controller.signal })
       .then((registration) => setInviteOnly(registration.inviteOnly))
-      .catch(() => undefined)
+      .catch(() => {
+        if (!controller.signal.aborted) setInviteOnly(false)
+      })
     return () => controller.abort()
   }, [])
 
@@ -82,7 +86,7 @@ export default function RegisterPage() {
         </>
       }
     >
-      {inviteOnly && !inviteToken ? (
+      {inviteOnly === null ? null : inviteOnly && !inviteToken ? (
         <p className="form__message" role="status" data-testid="register-invite-only">
           LorEvolve is invitation-only for now. Open the invitation link you were sent to create
           your account.
