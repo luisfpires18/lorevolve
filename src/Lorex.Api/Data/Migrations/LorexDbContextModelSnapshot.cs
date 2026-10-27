@@ -626,6 +626,117 @@ namespace Lorex.Api.Data.Migrations
                     b.ToTable("Ideas", (string)null);
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Ideas.IdeaBoard", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "DeletedAt", "UpdatedAt");
+
+                    b.HasIndex("UniverseId", "DeletedAt", "UpdatedAt");
+
+                    b.ToTable("IdeaBoards", (string)null);
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Ideas.IdeaBoardCard", b =>
+                {
+                    b.Property<Guid>("BoardId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Height")
+                        .HasColumnType("REAL");
+
+                    b.Property<Guid?>("IdeaId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Width")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("X")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Y")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("Z")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("BoardId", "Id");
+
+                    b.HasIndex("EntityId");
+
+                    b.HasIndex("IdeaId");
+
+                    b.ToTable("IdeaBoardCards", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_IdeaBoardCards_Payload", "(\"Kind\" = 0 AND \"Text\" IS NOT NULL AND \"IdeaId\" IS NULL AND \"EntityId\" IS NULL) OR (\"Kind\" = 1 AND \"Text\" IS NULL AND \"IdeaId\" IS NOT NULL AND \"EntityId\" IS NULL) OR (\"Kind\" = 2 AND \"Text\" IS NULL AND \"IdeaId\" IS NULL AND \"EntityId\" IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Ideas.IdeaBoardConnection", b =>
+                {
+                    b.Property<Guid>("BoardId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FromCardId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ToCardId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("BoardId", "Id");
+
+                    b.HasIndex("BoardId", "FromCardId");
+
+                    b.HasIndex("BoardId", "ToCardId");
+
+                    b.ToTable("IdeaBoardConnections", (string)null);
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Ideas.IdeaEntityReference", b =>
                 {
                     b.Property<Guid>("IdeaId")
@@ -3812,6 +3923,68 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("Universe");
                 });
 
+            modelBuilder.Entity("Lorex.Api.Features.Ideas.IdeaBoard", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Auth.LorexUser", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Ideas.IdeaBoardCard", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Ideas.IdeaBoard", "Board")
+                        .WithMany("Cards")
+                        .HasForeignKey("BoardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
+                        .WithMany()
+                        .HasForeignKey("EntityId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Lorex.Api.Features.Ideas.Idea", "Idea")
+                        .WithMany()
+                        .HasForeignKey("IdeaId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Board");
+
+                    b.Navigation("Entity");
+
+                    b.Navigation("Idea");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Ideas.IdeaBoardConnection", b =>
+                {
+                    b.HasOne("Lorex.Api.Features.Ideas.IdeaBoardCard", "FromCard")
+                        .WithMany()
+                        .HasForeignKey("BoardId", "FromCardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lorex.Api.Features.Ideas.IdeaBoardCard", "ToCard")
+                        .WithMany()
+                        .HasForeignKey("BoardId", "ToCardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FromCard");
+
+                    b.Navigation("ToCard");
+                });
+
             modelBuilder.Entity("Lorex.Api.Features.Ideas.IdeaEntityReference", b =>
                 {
                     b.HasOne("Lorex.Api.Features.Lore.LoreEntity", "Entity")
@@ -5277,6 +5450,11 @@ namespace Lorex.Api.Data.Migrations
                     b.Navigation("SceneReferences");
 
                     b.Navigation("StoryReferences");
+                });
+
+            modelBuilder.Entity("Lorex.Api.Features.Ideas.IdeaBoard", b =>
+                {
+                    b.Navigation("Cards");
                 });
 
             modelBuilder.Entity("Lorex.Api.Features.Lore.EntityFieldDefinition", b =>

@@ -155,6 +155,7 @@ app.MapSuggestionEndpoints();
 app.MapAiChangeEndpoints();
 app.MapAiChangeMediaEndpoints();
 app.MapIdeaEndpoints();
+app.MapIdeaBoardEndpoints();
 app.MapUniverseSearchEndpoints();
 app.MapAssistantEndpoints();
 app.MapOAuthEndpoints();

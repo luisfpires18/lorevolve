@@ -70,8 +70,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0063 | A readable export is Markdown pages rendered from the backup snapshot, for reading, never read back (#11) | [0063-readable-universe-export.md](0063-readable-universe-export.md) |
 | 0064 | The web process takes a daily online SQLite snapshot and keeps it, verified, in a private R2 bucket (#54) | [0064-sqlite-backups-to-r2.md](0064-sqlite-backups-to-r2.md) |
 | 0065 | Lore's front page is a catalog of the universe's types, with a Browse by group choice above the cards (#60) | [0065-lore-front-page-catalog.md](0065-lore-front-page-catalog.md) |
+| 0066 | An idea board is an account-owned canvas of notes, ideas and entries, and never lore (amends 0030) | [0066-idea-boards.md](0066-idea-boards.md) |
 
-All accepted. Next number: `0065`.
+All accepted. Next number: `0067`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

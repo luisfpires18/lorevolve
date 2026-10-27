@@ -19,6 +19,10 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - **#54** in-process daily SQLite backup API snapshot -> private R2 bucket, manifest last after read-back, Admin status/Run
     now, retention proposed and off, `database-backup run|list|restore-drill` CLI (ADR 0064, `docs/recovery/database-backups.md`).
     **Off until the owner adds `DatabaseBackup__*` settings**; R2 path and DEV untested. Local drill measured (63.6 MB, 57.6 s).
+- **Idea boards (ADR 0066)** `feat/idea-boards` off `dev` at `237f103`, worktree `worktrees/LOREX-idea-boards`; not merged,
+  not pushed. Plan `docs/design/idea-boards-plan.md`. Done: ADR 0066 (amends 0030), step 2 backend (model, `AddIdeaBoards`,
+  `/api/idea-boards`, universe-delete release, tests). Next: step 3 backup format 36 - board tables sit in
+  `BackupInventoryTests.LeftOut` as **pending** and must move to Carried before merge; then frontend, E2E.
 - **Issue #29 - Claude Code MCP toolchain** (merged into `dev`). `.mcp.json` (no secret): `microsoft-learn`, `context7`,
   `openai-docs` (HTTP, no auth), `chrome-devtools` (`chrome-devtools-mcp@1.12.0 --isolated`, telemetry and CrUX off), all
   four connected in sessions. `github` dropped by owner decision (2026-10-26): the `gh` CLI covers GitHub, and without a

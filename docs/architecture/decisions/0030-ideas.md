@@ -228,3 +228,8 @@ no new table, no migration; backup stays version **20**.
 
 Still deliberately unsupported: promotion or conversion to lore, a story or a scene; rich text, Markdown, checklists;
 images; diagrams or canvases; tags, folders, statuses, priorities; autosave; sharing; any classification by content.
+
+## Amendment - idea boards (2026-10-27, ADR 0066)
+
+"Boards" and "diagrams or canvases" are lifted from the unsupported lists above: an account-owned board of notes, ideas and
+entries, one system shown in all ideas and in a universe's Ideas, never lore. Everything else here stands. See ADR 0066.
