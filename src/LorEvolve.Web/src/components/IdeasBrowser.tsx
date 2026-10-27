@@ -521,7 +521,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
           <EmptyState
             testId="ideas-empty"
             title="No ideas yet."
-            hint="“Maybe this city floats.” “What if Mira betrays Arlen?” Keep possibilities here, apart from what is true in your world."
+            hint="Keep possibilities here, apart from what is true in your world."
             action={
               <Link className="button" to={`${basePath}/new`} data-testid="empty-new-idea">
                 <ActionIcon icon={Plus} />

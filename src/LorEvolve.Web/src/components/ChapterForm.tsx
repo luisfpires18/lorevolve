@@ -154,7 +154,7 @@ export function ChapterForm({
               ref={title}
               type="text"
               dir="auto"
-              placeholder="Arrival"
+              placeholder="Insert a title"
               value={draft.title}
               onChange={(event) => edit({ title: event.target.value })}
               aria-invalid={fieldErrors.title ? true : undefined}

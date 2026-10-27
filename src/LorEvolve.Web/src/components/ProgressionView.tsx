@@ -349,7 +349,7 @@ export function ProgressionView({
         <EmptyState
           testId="progression-empty"
           title={`${entry.name} has no eras yet.`}
-          hint="An era is a stretch of this entry's story, like “The Frieza Saga”. It holds only what changes then; everything else stays as on the main profile."
+          hint="An era is a stretch of this entry's story. It holds only what changes then; everything else stays as on the main profile."
         />
       ) : (
         <>

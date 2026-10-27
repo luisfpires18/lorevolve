@@ -549,7 +549,7 @@ export default function TimelinePage() {
             type="search"
             name="q"
             autoComplete="off"
-            placeholder="Titles, scenes, names…"
+            placeholder="Search titles, scenes and names"
             value={typed}
             onChange={(event) => setTyped(event.target.value)}
             data-testid="chron-search"

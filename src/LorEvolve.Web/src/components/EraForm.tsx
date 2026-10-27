@@ -328,7 +328,7 @@ export function EraForm({
               ref={nameInput}
               className="field__input"
               dir="auto"
-              placeholder="The Frieza Saga"
+              placeholder="Insert a name"
               value={draft.name}
               onChange={(event) => edit({ name: event.target.value })}
               aria-invalid={errorOf('name') ? true : undefined}

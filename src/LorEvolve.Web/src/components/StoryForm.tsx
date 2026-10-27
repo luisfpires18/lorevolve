@@ -202,7 +202,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
               ref={title}
               type="text"
               dir="auto"
-              placeholder="The Long Winter"
+              placeholder="Insert a title"
               value={draft.title}
               onChange={(event) => edit({ title: event.target.value })}
               aria-invalid={fieldErrors.title ? true : undefined}
@@ -220,7 +220,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
               id="story-premise"
               className="field__input field__input--area"
               rows={4}
-              placeholder="A siege, told from its last day back to its first."
+              placeholder="Insert a premise"
               value={draft.premise}
               onChange={(event) => edit({ premise: event.target.value })}
               aria-invalid={fieldErrors.premise ? true : undefined}

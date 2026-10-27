@@ -397,7 +397,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                         <input
                           id={`${base}-name`}
                           className="field__input"
-                          placeholder="Third Age, Reign of Arannis…"
+                          placeholder="Insert a name"
                           autoComplete="off"
                           value={era.name}
                           onChange={(event) => update(index, { name: event.target.value })}
@@ -416,7 +416,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                         <input
                           id={`${base}-abbreviation`}
                           className="field__input"
-                          placeholder="TA, AC, BF…"
+                          placeholder="Insert an abbreviation"
                           autoComplete="off"
                           value={era.abbreviation}
                           onChange={(event) => update(index, { abbreviation: event.target.value })}

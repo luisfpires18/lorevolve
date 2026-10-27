@@ -90,7 +90,7 @@ export function ChronologyPointFields({
           step="1"
           min={reckonsInEras ? 1 : undefined}
           inputMode="numeric"
-          placeholder={reckonsInEras ? '10' : '3018'}
+          placeholder="Insert a year"
           value={value.year}
           onChange={(event) => onChange('year', event.target.value)}
           aria-invalid={errors.year ? true : undefined}
@@ -138,7 +138,7 @@ export function ChronologyPointFields({
             min={1}
             max={12}
             inputMode="numeric"
-            placeholder="—"
+            placeholder="Insert a month"
             value={value.month}
             onChange={(event) => onChange('month', event.target.value)}
             aria-invalid={errors.month ? true : undefined}
@@ -165,7 +165,7 @@ export function ChronologyPointFields({
           min={1}
           max={custom ? month?.dayCount : 31}
           inputMode="numeric"
-          placeholder="—"
+          placeholder="Insert a day"
           disabled={custom && !month && value.day === ''}
           value={value.day}
           onChange={(event) => onChange('day', event.target.value)}

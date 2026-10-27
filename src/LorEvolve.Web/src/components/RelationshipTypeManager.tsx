@@ -243,7 +243,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
       <Field
         label="Reads as"
         name="reltype-name"
-        placeholder="rules, parent of, married to"
+        placeholder="Insert how it reads"
         dir="auto"
         value={draft.name}
         onChange={(event) => edit({ name: event.target.value })}
@@ -258,7 +258,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
         <Field
           label="Reads as, from the other side"
           name="reltype-inverse"
-          placeholder="ruled by, child of"
+          placeholder="Insert how it reads from the other side"
           dir="auto"
           value={draft.inverseName}
           onChange={(event) => edit({ inverseName: event.target.value })}

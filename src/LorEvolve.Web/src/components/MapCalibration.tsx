@@ -263,7 +263,7 @@ export function MapCalibrationForm({
             type="text"
             dir="auto"
             maxLength={MAP_UNIT_MAX_LENGTH}
-            placeholder="km, miles, leagues…"
+            placeholder="Insert a unit"
             value={unit}
             onChange={(event) => setUnit(event.target.value)}
             aria-invalid={errors.unit ? true : undefined}
