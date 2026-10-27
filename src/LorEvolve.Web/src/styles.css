@@ -13486,8 +13486,11 @@ body:has(.portal) {
     height: 1.625rem;
   }
 
+  /* LorEvolve is nine letters where LoreX was five: tracked as wide as the desktop bar's, it pushed a 360px page 20px
+     sideways in CI's wider fallback faces. This size and tracking win back about 25px (ADR 0067). */
   .portal__bar .wordmark {
-    font-size: 1rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
   }
 
   .portal__session {
