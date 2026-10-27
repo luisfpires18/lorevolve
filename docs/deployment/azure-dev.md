@@ -89,6 +89,10 @@ a credential.
 Also create the GitHub environment named `dev`. The deploy job targets it, which is what binds
 the federated credential and gives the owner a place to add a required reviewer later.
 
+**An environment variable wins over a repository variable of the same name.** DEV keeps all four on
+the `dev` environment as well; change `AZURE_WEBAPP_NAME` there (`gh variable set ... --env dev`),
+or the deploy goes on to the old app.
+
 ## Workflows
 
 | File | Runs on | Does |
@@ -118,7 +122,7 @@ because its version and service-worker cache id come from that run (`LOREVOLVE_D
 ## The database, and who migrates it
 
 - The connection string lives in `appsettings.AzureDev.json`:
-  `Data Source=/home/data/lorex.db`. It is not a secret and there is nothing to hide in it.
+  `Data Source=/home/data/lorevolve.db`. It is not a secret and there is nothing to hide in it.
 - Override it without a redeploy with the app setting `ConnectionStrings__LorEvolveDb`.
 - **The app migrates itself at startup.** `LorEvolveDatabaseInitializer` runs before anything
   queries a table, in every environment, and the search-index backfill waits on it. A cold
@@ -246,7 +250,7 @@ only with the address it names. Existing accounts and sign-in are untouched. The
 (#34, #51) assumes it is on.
 
 ```bash
-az webapp config appsettings set -g rg-lorex-dev -n lorex-dev-lfp18 --settings Registration__InviteOnly=true
+az webapp config appsettings set -g rg-lorex-dev -n dev-lorevolve --settings Registration__InviteOnly=true
 ```
 
 ## Provision the owner's Admin account (ADR 0059)
@@ -308,14 +312,16 @@ Read the log first: `az webapp log tail --name <app-name> --resource-group <reso
 
 | What you see | What it means |
 | --- | --- |
-| `Applying N migration(s) to '/home/data/lorex.db'` | Normal cold start on a new or upgraded database. |
+| `Applying N migration(s) to '/home/data/lorevolve.db'` | Normal cold start on a new or upgraded database. |
 | `Database schema at '...' is up to date` | Normal restart. |
 | `SQLite Error 1: 'no such table: Entities'` | The schema was not applied before startup work ran. Check `Database__MigrateOnStartup`; if it is `false`, something else owes the migration. |
 | `Database__MigrateOnStartup is false: starting ... without applying migrations` | Deliberate. Remove the app setting to hand the job back to the app. |
 | `SQLite Error 14: 'unable to open database file'` | `/home/data` is not writable, or the path in `ConnectionStrings__LorEvolveDb` is wrong. |
 | `No XML encryptor configured` | Expected. See Data Protection above. |
 | Sessions dropped after every restart | `DataProtection__KeyRingPath` is unset or points somewhere ephemeral. |
-| A 400 on every request | `AllowedHosts` does not match the hostname being used. |
+| A 400 on every request | `AllowedHosts` does not match the hostname being used - check it after any move to a new app name. |
+| A 503 on every request after a deploy | The startup command names a DLL the package no longer has (`dotnet LorEvolve.Api.dll`). The template sets it, but only a template deployment applies it: `az webapp config set --startup-file`. |
+| A deploy fails at the upload, or `/home` writes fail | The Free plan's 1 GB is full (`az rest` on the plan's `usages`, `FileSystemStorage`). Deploys are clean (`clean: true`), so the usual cause is the database or a second app on the plan. |
 | The app shell loads but every API call 404s | `wwwroot` was published but the API routes were not - check the publish step, not the client. |
 
 ## Running the deployed shape locally

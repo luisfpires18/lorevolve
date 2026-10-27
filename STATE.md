@@ -5,9 +5,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 
 ## Roadmap position
 
-- **Rename to LorEvolve (ADR 0067)** `chore/rename-lorevolve` merged into `dev` (`1602262`), local only;
-  not pushed. Code, docs, tooling, icon and logo renamed; old stored names still read. Hosted names
-  (repo, Azure app, R2 buckets, DEV DB file) and the local folder: owner steps in `TODO_rename.md`.
+- **Rename to LorEvolve (ADR 0067)** merged and deployed. DEV is https://dev-lorevolve.azurewebsites.net (old
+  `lorex-dev-lfp18` stopped); repo `luisfpires18/lorevolve`; media in R2 `lorevolve-media-dev`. Cleanup and the
+  local folder move: `TODO_rename.md`.
 - Phases 001-022 done and merged. Sequence log: `docs/architecture/branching.md`.
 - **Pre-alpha gate: #33 security, #11 recovery, #54 database backups** (`feat/pre-alpha-recovery-security` off `dev` at
   `c1721c5`, in the main checkout; committed locally, not merged, not pushed; issues left open).

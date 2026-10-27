@@ -17,7 +17,7 @@ backup and readable export are [universe-recovery.md](universe-recovery.md) (#11
 
 | Fact | Source | Status |
 | --- | --- | --- |
-| Live file `/home/data/lorex.db` on the Azure Files share mounted at `/home` | `appsettings.AzureDev.json`, ADR 0018 | From the repository |
+| Live file `/home/data/lorevolve.db` on the Azure Files share mounted at `/home` | `appsettings.AzureDev.json`, ADR 0018 | From the repository |
 | WAL journal mode | EF Core creates SQLite databases in WAL; every app-created database here reports `wal` | **Owner check**: the first DEV manifest's `provenance.sourceJournalMode` |
 | One writer process (one worker, no autoscale); hosted services write from inside it | ADR 0018, `Program.cs` | From the repository |
 | Safe execution point: inside that process, through SQLite's online backup API | ADR 0064 | Tested; measured locally below |
@@ -144,9 +144,9 @@ covered by tests against the in-memory media store, not run against real R2.
 
 1. Run the drill on the chosen backup first. Do not restore a backup that has not passed it.
 2. `az webapp stop --name <app> --resource-group <rg>` - nothing may write while the file is replaced.
-3. `az webapp ssh`: move `/home/data/lorex.db` aside (`lorevolve.db.before-restore-<date>`), along with any `lorevolve.db-wal`
+3. `az webapp ssh`: move `/home/data/lorevolve.db` aside (`lorevolve.db.before-restore-<date>`), along with any `lorevolve.db-wal`
    and `lorevolve.db-shm` (they belong to the old file and must not be applied to the new one).
-4. Put the drill's restored `lorevolve.db` (already migrated to the running build) at `/home/data/lorex.db` - Kudu's file
+4. Put the drill's restored `lorevolve.db` (already migrated to the running build) at `/home/data/lorevolve.db` - Kudu's file
    manager, or any way of writing the file while the site is stopped.
 5. `az webapp start`; `/health`; Admin > Main; sign in; open a universe with pictures.
 6. Everything written after the backup's `createdAt` is gone. Tell affected users.

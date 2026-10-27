@@ -94,7 +94,7 @@ signed-in account, and the exact screen.
 | iOS / iPadOS Safari, Home Screen web app | Share > Add to Home Screen | **unverified** |
 | Android Chrome, installed PWA | Install app (WebAPK) | **unverified** |
 | Desktop Chrome or Edge, installed | Address bar install | **unverified** |
-| Azure DEV (`https://lorex-dev-lfp18.azurewebsites.net`) as the origin for all three | - | **unverified** |
+| Azure DEV (`https://dev-lorevolve.azurewebsites.net`) as the origin for all three | - | **unverified** |
 
 ### 4.3 Journeys per platform
 

@@ -4,7 +4,7 @@ Status: accepted (2026-10-26). GitHub issue #54 (pre-alpha reliability). Runbook
 
 ## Context
 
-LorEvolve keeps everything but pictures in one SQLite file (ADR 0002), on DEV at `/home/data/lorex.db` on the App Service's
+LorEvolve keeps everything but pictures in one SQLite file (ADR 0002), on DEV at `/home/data/lorevolve.db` on the App Service's
 Azure Files share (ADR 0018). It survives restarts and redeploys, not deletion of the App Service, a corrupting write, a
 bad migration or an operator mistake. The per-universe backup (ADR 0014, #11) is the creator's tool, taken by hand; nothing
 protected the service as a whole.
