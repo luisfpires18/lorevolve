@@ -18,7 +18,7 @@
  * editor can carry on writing and saving without it.
  */
 
-export type DraftKind = 'article' | 'manuscript' | 'idea'
+export type DraftKind = 'article' | 'manuscript' | 'idea' | 'idea-board'
 
 /**
  * Which recovery copy: whose, in which universe, of what, and of which article, scene or idea.

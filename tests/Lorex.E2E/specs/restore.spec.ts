@@ -15,7 +15,7 @@ import { entryText } from './support/zip'
  */
 
 /** The backup format the API writes today (`UniverseBackup.CurrentVersion`); a file one past it is from a newer Lorex. */
-const CURRENT_FORMAT_VERSION = 35
+const CURRENT_FORMAT_VERSION = 36
 
 function unique(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`
