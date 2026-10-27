@@ -111,6 +111,10 @@ jobs:
           name: dev-package
           path: publish
 
+      # type: ZIP below takes a .zip file, not a folder.
+      - name: Zip the package
+        run: cd publish && zip -qr ../publish.zip .
+
       - name: Sign in to Azure
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
@@ -123,7 +127,7 @@ jobs:
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3.0.8
         with:
           app-name: ${{ vars.AZURE_WEBAPP_NAME }}
-          package: publish
+          package: publish.zip
           # Replace the site, not add to it: without this every deploy left its hashed bundles and source maps
           # behind, and on the Free plan's 1 GB they filled /home - the database's disk too - by October 2026.
           type: ZIP
