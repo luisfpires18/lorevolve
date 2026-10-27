@@ -1,12 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-/**
- * The mark is drawn "Lore X" and spoken "LorEvolve".
- *
- * Both halves are asserted, at both sizes it is used. The split is a typographic
- * treatment and not a rename: nothing about the product's name changed, so the accessible
- * name has to keep saying so even though the drawn letters no longer spell it.
- */
+/** The mark is the product's name, drawn as it is spoken: LorEvolve, at both sizes it is used. */
 
 const PASSWORD = 'Test-password-123!'
 
@@ -18,18 +12,7 @@ async function expectTheMark(page: Page) {
   const mark = page.getByTestId('wordmark')
   await expect(mark).toBeVisible()
 
-  // Drawn: "Lore" and an X, parted by a set gap rather than by a space character.
-  await expect(mark.locator('[aria-hidden="true"]')).toHaveText('LorEvolve')
-  await expect(mark.locator('.wordmark__x')).toHaveText('X')
-
-  // Spoken: still LorEvolve, which is what assistive technology and the product both use.
-  await expect(mark.locator('.wordmark__name')).toHaveText('LorEvolve')
-
-  // The X takes the accent. Which accent depends on the surface, so compare rather than
-  // pin a colour: what matters is that the X is not painted in the surrounding ink.
-  const ink = await mark.evaluate((node) => getComputedStyle(node).color)
-  const accent = await mark.locator('.wordmark__x').evaluate((node) => getComputedStyle(node).color)
-  expect(accent).not.toBe(ink)
+  await expect(mark).toHaveText('LorEvolve')
 }
 
 test.describe('wordmark', () => {

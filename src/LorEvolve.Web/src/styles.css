@@ -281,29 +281,6 @@ textarea,
   display: block;
 }
 
-/* The X carries the accent and a gap on top of the tracking, so the mark reads as
-   "Lore X" without the letters drifting apart. */
-.wordmark__x {
-  color: var(--accent);
-  margin-left: 0.22em;
-}
-
-.auth__plate .wordmark__x {
-  color: var(--plate-ink-accent);
-}
-
-/* The spoken name, "LorEvolve", which the drawn mark no longer spells. */
-.wordmark__name {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* ---------- Session hold ---------- */
 
 .session-pending {
@@ -13232,10 +13209,6 @@ body:has(.portal) {
   font-size: 1.5rem;
 }
 
-.portal__bar .wordmark__x {
-  color: var(--accent);
-}
-
 .portal__brand {
   display: flex;
   align-items: center;
@@ -15651,10 +15624,6 @@ body:has(.portal) {
 
 .portal__footerhome .wordmark {
   font-size: 1.25rem;
-}
-
-.portal__footerhome .wordmark__x {
-  color: var(--accent);
 }
 
 /* A small gap: each link's tap height spaces it from the label; this keeps the focus ring clear of it. */

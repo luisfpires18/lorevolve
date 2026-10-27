@@ -16,8 +16,8 @@ bleed dark fringes into the mark's edges.
 
 Two grounds, and the reason for each:
 
-  transparent  What the master is, and the default. The mark - a crimson star and X inside a
-               pale gold ring - carries its shape on a light or a dark surface alike, so the
+  transparent  What the master is, and the default. The mark - an open book, a crimson world of
+               spires and roads rising from its cream pages - carries its shape on a light or a dark surface alike, so the
                icon sits in whatever tab strip or launcher is behind it.
   black        #000000, which is also the manifest's background_color and the launch layer's
                ground (043.5), so an installed icon, the window the platform opens behind it
@@ -28,9 +28,13 @@ Two grounds, and the reason for each:
                  where a transparent region is a defect rather than a choice;
                - the Apple touch icon, because iOS composites transparency onto black anyway.
 
-               The mark was drawn on black; its red and gold read there at every size.
+               The mark was drawn on black; its red and cream read there at every size. At 16 px it is
+               a book-shaped blob, not a picture - the tab strip asks no more.
 
-The launch logo is not made here: it is a photograph-like raster with its own black ground, so
+The launch logo is not made here: it is a photograph-like raster. Its art comes transparent, so
+`assets/brand/lorevolve-logo.png` is that art flattened onto #000000 - the launch layer's ground
+(ffmpeg -f lavfi -i color=black:s=1774x887 -i art.png -filter_complex
+"[1]scale=1400:-1[l];[0][l]overlay=(W-w)/2:(H-h)/2,format=rgb24") - and
 it is resampled and encoded once with libwebp from `assets/brand/lorevolve-logo.png`:
 
     ffmpeg -i assets/brand/lorevolve-logo.png -vf scale=1200:-1:flags=area         -c:v libwebp -quality 82 -compression_level 6 src/LorEvolve.Web/public/launch-logo.webp

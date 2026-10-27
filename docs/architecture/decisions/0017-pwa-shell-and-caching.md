@@ -141,7 +141,7 @@ files are cached by path, so without a bump a browser keeps serving whichever ve
 first. `v1` to `v2` to `v3`. The policy is untouched; only the version moved.
 
 **Where the symbol appears in the product, and where it deliberately does not.** Large on the
-auth plate above the `Lore X` wordmark, and small beside that wordmark in the two paper bars.
+auth plate above the `LorEvolve` wordmark, and small beside that wordmark in the two paper bars.
 It is decorative in both - `alt=""` - because the wordmark beside it is the accessible name, and
 a screen reader should not say "LorEvolve LorEvolve". The workspace rail keeps its drawn `L`: the symbol
 was tried there and at the ~30px a 3.5rem rail allows it reads as a red tangle, and it puts the
