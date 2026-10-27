@@ -5,6 +5,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 
 ## Roadmap position
 
+- **Rename to LorEvolve (ADR 0067)** `chore/rename-lorevolve` off `dev` at `15bcc46`, worktree `worktrees/LOREX-rename`;
+  not merged, not pushed. Code, docs, tooling, icon and logo renamed; old stored names still read. Hosted names
+  (repo, Azure app, R2 buckets, DEV DB file) and the local folder: owner steps in `TODO_rename.md`.
 - Phases 001-022 done and merged. Sequence log: `docs/architecture/branching.md`.
 - **Pre-alpha gate: #33 security, #11 recovery, #54 database backups** (`feat/pre-alpha-recovery-security` off `dev` at
   `c1721c5`, in the main checkout; committed locally, not merged, not pushed; issues left open).
@@ -19,7 +22,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - **#54** in-process daily SQLite backup API snapshot -> private R2 bucket, manifest last after read-back, Admin status/Run
     now, retention proposed and off, `database-backup run|list|restore-drill` CLI (ADR 0064, `docs/recovery/database-backups.md`).
     **Off until the owner adds `DatabaseBackup__*` settings**; R2 path and DEV untested. Local drill measured (63.6 MB, 57.6 s).
-- **Idea boards (ADR 0066)** `feat/idea-boards` off `dev` at `237f103`, worktree `worktrees/LOREVOLVE-idea-boards`; not merged,
+- **Idea boards (ADR 0066)** `feat/idea-boards` off `dev` at `237f103`, worktree `worktrees/LOREX-idea-boards`; not merged,
   not pushed. Plan `docs/design/idea-boards-plan.md`. Done: ADR 0066 (amends 0030), step 2 backend (model, `AddIdeaBoards`,
   `/api/idea-boards`, universe-delete release, tests); step 3 backup format 36 (boards carried, outside ideas by title,
   restore links or turns them into notes); step 4 web app (`usePanZoom` out of `MapViewer`, canvas, list view, Boards
@@ -1433,7 +1436,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     deletes. Order indexes are partial on live rows. A chapter delete still moves its scenes to Unchaptered; a trashed chapter
     holds none and restores empty and last. Restores append; a parent in the Trash refuses with 409 `trash_parent_in_trash`,
     never attaching elsewhere. A beat keeps its hidden link to a trashed scene. One Trash lists six kinds, typed restores.
-  - Recovered drafts: IndexedDB `lorevolve-recovery`, keyed account/universe/kind/id, article and manuscript editors only; never
+  - Recovered drafts: IndexedDB `lorex-recovery` (name kept, ADR 0067), keyed account/universe/kind/id, article and manuscript editors only; never
     sent to the API or a backup, never destroyed by sign-out, never offered to another account. Recover loads it as unsaved
     (Save still required, stale check intact); a failed, stale or orphaned save and a closed tab keep it; a matching save,
     Discard, Done, Load the saved version and leaving by choice let it go.

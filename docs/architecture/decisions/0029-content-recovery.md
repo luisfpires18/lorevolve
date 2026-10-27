@@ -122,7 +122,7 @@ in stays in use, as the chronology refusal already says ("counting anything in t
 a backup. Saving stays explicit, and a recovered copy is only ever unsaved writing.
 
 **IndexedDB, native, no dependency.** `lib/localDrafts.ts` keeps one record per copy in the `drafts` store of the
-`lorevolve-recovery` database. `localStorage` was ruled out: an article is up to 200,000 characters of document and a manuscript
+`lorex-recovery` database (name kept through the LorEvolve rename, ADR 0067). `localStorage` was ruled out: an article is up to 200,000 characters of document and a manuscript
 up to a million, `localStorage` holds a few megabytes for the whole site, is synchronous on the main thread and fails by
 throwing mid-keystroke. Each copy's reads, writes and deletes run in one queue per key, so a delete asked for after a write
 lands after it.

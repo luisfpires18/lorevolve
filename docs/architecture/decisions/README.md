@@ -71,6 +71,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0064 | The web process takes a daily online SQLite snapshot and keeps it, verified, in a private R2 bucket (#54) | [0064-sqlite-backups-to-r2.md](0064-sqlite-backups-to-r2.md) |
 | 0065 | Lore's front page is a catalog of the universe's types, with a Browse by group choice above the cards (#60) | [0065-lore-front-page-catalog.md](0065-lore-front-page-catalog.md) |
 | 0066 | An idea board is an account-owned canvas of notes, ideas and entries, and never lore (amends 0030) | [0066-idea-boards.md](0066-idea-boards.md) |
+| 0067 | The product is LorEvolve; what was stored as Lorex is still read | [0067-rename-to-lorevolve.md](0067-rename-to-lorevolve.md) |
 
 All accepted. Next number: `0067`.
 

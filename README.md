@@ -1,4 +1,4 @@
-# LOREVOLVE
+# LorEvolve
 
 Modular monolith. ASP.NET Core API + React/TypeScript (Vite) web client.
 
