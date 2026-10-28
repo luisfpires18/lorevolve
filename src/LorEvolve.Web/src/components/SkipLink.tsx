@@ -17,10 +17,8 @@ export function SkipLink() {
       className="skiplink"
       href={`#${MAIN_CONTENT_ID}`}
       onClick={(event) => {
-        const main = document.getElementById(MAIN_CONTENT_ID)
-        if (!main) return
         event.preventDefault()
-        main.focus()
+        document.getElementById(MAIN_CONTENT_ID)?.focus()
       }}
       data-testid="skip-link"
     >

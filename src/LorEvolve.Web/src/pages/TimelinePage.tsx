@@ -685,9 +685,19 @@ export default function TimelinePage() {
       ) : null}
 
       {state.kind === 'error' ? (
-        <p className="notice notice--error" role="alert">
-          {state.message}
-        </p>
+        <div className="notice notice--error" role="alert">
+          <p>{state.message}</p>
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => {
+              setState({ kind: 'loading' })
+              reload()
+            }}
+          >
+            Try again
+          </button>
+        </div>
       ) : null}
 
       {result && result.items.length > 0 ? (

@@ -186,6 +186,7 @@ export function UniverseAssistant({
         className="button button--secondary assistanttrigger"
         type="button"
         aria-haspopup="dialog"
+        title="Assistant"
         onClick={() => setOpenAt(location.key)}
         data-testid="assistant-trigger"
       >

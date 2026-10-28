@@ -5,6 +5,7 @@ import { Check, X } from 'lucide-react'
 import { ApiError } from '../lib/api'
 import type { ImageCrop } from '../lib/imageCrop'
 import { ActionIcon } from './ActionIcon'
+import { useReturnFocus } from '../lib/returnFocus'
 
 /**
  * How far the author may zoom out: to the picture exactly covering the square, and no further. With
@@ -104,6 +105,7 @@ export function ImageCropDialog({
   // One flag for "a save is in flight", derived rather than stored: two pieces of state that had
   // to agree would eventually not.
   const saving = stage !== null
+  useReturnFocus()
 
   useEffect(() => {
     // showModal, not the open attribute: it brings the focus trap, the backdrop and Escape.

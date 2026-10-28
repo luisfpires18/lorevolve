@@ -30,6 +30,7 @@ import {
 import { CANON_LABELS, CANON_ORDER, CanonStatus, type CanonStatusValue } from '../lore/types'
 import { StatusBadge } from './StatusBadge'
 import { ActionIcon } from './ActionIcon'
+import { EmptyState } from './EmptyState'
 import { ActionMenu } from './ActionMenu'
 import { EntityTile } from './EntityTile'
 import { Pencil, Plus, Trash } from 'lucide-react'
@@ -504,9 +505,14 @@ export function RelationshipSection({
       </div>
 
       {(message ?? readError) ? (
-        <p className="form__message" role="alert" data-testid="relationship-error">
-          {message ?? readError}
-        </p>
+        <div className="notice notice--error" role="alert" data-testid="relationship-error">
+          <p>{message ?? readError}</p>
+          {readError && !message ? (
+            <button className="button button--secondary" type="button" onClick={() => void load()}>
+              Try again
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
       {/* Which relations hold at one time (Issue #18): the universe's own date, as precise as wanted. */}
@@ -612,20 +618,23 @@ export function RelationshipSection({
           Reading the relations…
         </p>
       ) : views.length === 0 && !isAdding ? (
-        <p className="relations__quiet" data-testid="relations-empty">
-          {shownAt ? (
-            'No relation holds then.'
-          ) : readError ? (
-            'Nothing could be shown.'
-          ) : types.length === 0 ? (
-            <>
-              Relations need a kind first, like who rules what or who is married to whom. Name one
-              under <Link to={`/app/universes/${universeId}/types`}>Types</Link>.
-            </>
-          ) : (
-            'Nothing connects to this yet. Add the first relation.'
-          )}
-        </p>
+        <EmptyState
+          testId="relations-empty"
+          title={
+            shownAt ? (
+              'No relation holds then.'
+            ) : readError ? (
+              'Nothing could be shown.'
+            ) : types.length === 0 ? (
+              <>
+                Relations need a kind first, like who rules what or who is married to whom. Name one
+                under <Link to={`/app/universes/${universeId}/types`}>Types</Link>.
+              </>
+            ) : (
+              'Nothing connects to this yet. Add the first relation.'
+            )
+          }
+        />
       ) : (
         <ul className="relations__list" data-testid="relationship-list">
           {byReading(views).map(([label, group]) => (
