@@ -86,8 +86,8 @@ Written through their own screens' cores: `RelationshipTypeEndpoints.CreateCoreA
 moves; an AI change may not, and is refused with the reason, nothing written:
 
 - A relationship kind relationships already use keeps its direction (symmetric or not). Renaming it or its inverse is a
-  plain before/after line in the review. Its Canon age rules and family meaning (ADR 0035) are carried through unchanged: what
-  a kind means to the rules is the author's, like a field's meaning.
+  plain before/after line in the review. Its Canon age rules (ADR 0035) are carried through unchanged: what a kind means to
+  the rules is the author's, like a field's meaning. Its family meaning may be proposed (amendment, 2026-10-28, below).
 - The reckoning is one change, written whole. Every existing date period and month is listed by id, **in its stored order**;
   new ones go anywhere among periods and after the months. Leaving one out, reordering, an id that is not this universe's, a
   period that dates anything turning its count around, a month shortened below a day in use, and starting a custom calendar
@@ -142,6 +142,17 @@ refuses the approval whole and the picture stays in quarantine. Every hold is gi
 **Nothing is left behind.** `AiChangeMediaSweep` (hourly, after start-up) deletes the objects, then the row, of every
 quarantined picture whose change is no longer waiting - rejected, expired, its proposal or universe gone. Backups carry none
 of it (ADR 0047). A migration rollback drops the table and leaves its objects in the bucket - a migration has no store.
+
+## Amendment, 2026-10-28: a relationship kind's family meaning can be proposed
+
+Seeding a universe over MCP showed the gap: an AI could make "parent of" and every parent link, but not say that "parent of"
+is a parent, so the Family Tree (ADR 0040) drew nobody until a person found the setting by hand. `AiRelationshipKindInput`
+now takes an optional `familyMeaning` - `biological_parent`, `adoptive_parent`, `other_family` or `none` - on create and
+update; left out, a new kind is `none` and an existing one keeps what is stored. It goes through the Types screen's own
+validation (no parent meaning on a symmetric kind), the review page shows it as a before/after "Family meaning" line in the
+Types screen's own words, and the catalog lists each kind's current `familyMeaning`. Nothing is written until the person
+approves, as for every change, so the meaning is still the author's decision; only the typing moves. Canon age rules stay
+hand-only. No migration: the meaning rides in the stored kind values, which already carried it.
 
 ## A friendly MCP address per universe
 

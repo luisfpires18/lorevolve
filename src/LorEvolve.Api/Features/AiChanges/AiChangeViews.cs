@@ -331,6 +331,7 @@ internal static class AiChangeViews
                 Line("Name", old?.Name, kind.Name);
                 Line("Reads back as", old is null ? null : old.Symmetric ? "The same both ways" : old.InverseName, kind.Symmetric ? "The same both ways" : kind.InverseName);
                 Line("Description", old?.Description, kind.Description);
+                Line("Family meaning", old is null ? null : AiFamilyMeanings.Label(old.FamilySemantic), AiFamilyMeanings.Label(kind.FamilySemantic));
                 return (work.Action == AiChangeAction.Create ? $"New relationship kind: {kind.Name}" : $"Edit relationship kind: {old?.Name ?? kind.Name}", lines);
             }
 
