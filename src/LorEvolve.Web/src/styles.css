@@ -1412,6 +1412,18 @@ a.button--danger:visited {
   margin-bottom: var(--space-6);
 }
 
+/* A way back that reads as one: the arrow and the words, never a bare word. */
+.aichange__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.aichange__back svg {
+  width: 1rem;
+  height: 1rem;
+}
+
 .pageheader__crumb {
   font-size: var(--text-sm);
   color: var(--muted);

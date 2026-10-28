@@ -220,6 +220,11 @@ test.describe('Pending AI Changes', () => {
     await expect(page.getByTestId('ai-change-proposal')).toHaveCount(1)
     await expect(page.getByTestId('ai-change-source')).toHaveText('LorEvolve Assistant')
 
+    // A proposal opened from the account-wide list goes back to that list.
+    await page.getByTestId('ai-change-proposal').getByRole('link').first().click()
+    await page.getByTestId('ai-change-back').click()
+    await expect(page).toHaveURL(/\/app\/ai-changes$/)
+
     // The universe's own section lists it too.
     await page.goto(`/app/universes/${universeId}`)
     await page.getByTestId('workspace-ai-changes').click()
