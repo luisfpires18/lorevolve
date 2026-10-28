@@ -8,6 +8,10 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 - **Rename to LorEvolve (ADR 0067)** merged and deployed. DEV is https://dev-lorevolve.azurewebsites.net (old
   `lorex-dev-lfp18` stopped); repo `luisfpires18/lorevolve`; media in R2 `lorevolve-media-dev`. Cleanup and the
   local folder move: `TODO_rename.md`.
+- **Custom domain `lorevolve.com`** (bought 2026-10-28, dominios.pt): plan `docs/design/custom-domain-plan.md` on
+  `docs/custom-domain-setup`. Owner steps pending: nameservers to Cloudflare, Pages apex + `www`, Turnstile hostnames;
+  DEV on `dev.lorevolve.com` needs the plan scaled F1 -> B1 (owner cost call), then `AllowedHosts`, `Mcp__Origin`, AI
+  apps reconnect.
 - Phases 001-022 done and merged. Sequence log: `docs/architecture/branching.md`.
 - **Pre-alpha gate: #33 security, #11 recovery, #54 database backups** (`feat/pre-alpha-recovery-security` off `dev` at
   `c1721c5`, in the main checkout; committed locally, not merged, not pushed; issues left open).

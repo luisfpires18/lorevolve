@@ -191,7 +191,8 @@ Accepted deliberately. Each one is a reason this topology is not a production to
   not on `/home` - so a restart or redeploy in between asks the author to choose the file again.
 - **`AllowedHosts` is `*` by default.** Narrow it to the site hostname
   (`az webapp config appsettings set --settings AllowedHosts=<app-name>.azurewebsites.net`)
-  once DEV is reachable; adding a custom domain later means updating it again.
+  once DEV is reachable; adding a custom domain later means updating it again
+  (`dev.lorevolve.com`: [../design/custom-domain-plan.md](../design/custom-domain-plan.md)).
 - **Migrations run on the web process.** A long migration delays the first response after a
   deploy, and two instances would race - another reason there is only one.
 - **Nothing works offline.** The service worker caches build output only, by design - ADR 0017.
@@ -223,7 +224,8 @@ To turn it on, set one app setting, never in a file:
 
 - `Mcp__Origin=https://<app-name>.azurewebsites.net` - the site's own HTTPS origin, no path. It becomes the OAuth issuer
   and the start of every universe's MCP URL. Setting it does not touch indexing or canonical URLs (that is
-  `PublicSite__Origin`). A custom domain later means changing it, and every app connected before has to connect again.
+  `PublicSite__Origin`). A custom domain later means changing it, and every app connected before has to connect again
+  ([../design/custom-domain-plan.md](../design/custom-domain-plan.md) section 4).
 
 Nothing else is needed: no secret, no certificate, no extra resource. Tokens are protected by the Data Protection key ring
 already on `/home/data/keys`, and the OAuth tables live in the same SQLite file, so connections survive restarts and
