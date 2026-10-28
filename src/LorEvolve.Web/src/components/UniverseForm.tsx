@@ -26,11 +26,17 @@ function normalizeHex(text: string) {
 }
 
 /** The universe as a save sends it. */
-function inputOf(name: string, description: string, accentColor: string): UniverseInput {
+function inputOf(
+  name: string,
+  description: string,
+  accentColor: string,
+  aiHelp: boolean | undefined,
+): UniverseInput {
   return {
     name: name.trim(),
     description: description.trim() || null,
     accentColor: accentColor || null,
+    aiHelp,
   }
 }
 
@@ -63,6 +69,9 @@ export function UniverseForm({
   const [accentColor, setAccentColor] = useState(initial?.accentColor ?? '')
   const [colourText, setColourText] = useState(initial?.accentColor ?? '')
   const showDetails = fields !== 'colour'
+  const [aiHelpChoice, setAiHelp] = useState(initial?.aiHelp ?? true)
+  // Only the form that shows the choice sends it; the colour form leaves what is stored alone.
+  const aiHelp = showDetails ? aiHelpChoice : undefined
   const showColour = fields !== 'details'
   const colourInvalid = colourText.trim() !== '' && !HEX.test(normalizeHex(colourText))
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -74,9 +83,11 @@ export function UniverseForm({
   // Unsaved is the universe as it would be sent against the one the form opened on, so a change put back is none. Not
   // once it is sent: a new universe opens as it is created, and the page it leaves can stay on screen until the next
   // one has loaded. A save that fails asks again.
-  const [opened] = useState(() => payloadKey(inputOf(name, description, accentColor)))
+  const [opened] = useState(() => payloadKey(inputOf(name, description, accentColor, aiHelp)))
   const isDirty =
-    !isSubmitting && !isSaved && payloadKey(inputOf(name, description, accentColor)) !== opened
+    !isSubmitting &&
+    !isSaved &&
+    payloadKey(inputOf(name, description, accentColor, aiHelp)) !== opened
   useLeaveGuard(
     isDirty
       ? initial
@@ -101,7 +112,7 @@ export function UniverseForm({
     setIsSubmitting(true)
 
     try {
-      await onSubmit(inputOf(name, description, accentColor))
+      await onSubmit(inputOf(name, description, accentColor, aiHelp))
       setIsSaved(true)
       onDone?.()
     } catch (error: unknown) {
@@ -158,6 +169,22 @@ export function UniverseForm({
             {fieldErrors.description ? (
               <p className="field__error">{fieldErrors.description}</p>
             ) : null}
+          </div>
+
+          <div className="field">
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={aiHelpChoice}
+                onChange={(event) => setAiHelp(event.target.checked)}
+                data-testid="universe-ai-help"
+              />
+              AI help
+            </label>
+            <p className="field__hint">
+              Shows the AI assistant, Connect to AI and AI Changes in this universe. Turn it off to
+              hide them.
+            </p>
           </div>
         </>
       ) : null}

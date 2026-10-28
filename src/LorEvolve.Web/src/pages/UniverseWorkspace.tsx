@@ -185,7 +185,7 @@ export default function UniverseWorkspace() {
   // What this account may do here, for what is drawn: the API decides every request on its own (ADR 0041).
   const access = capabilitiesOf(universe.accessRole)
   const shared = universe.accessRole !== UniverseRole.Owner
-  const groups = SECTION_GROUPS.map((group) => offered(group, access)).filter(
+  const groups = SECTION_GROUPS.map((group) => offered(group, access, universe.aiHelp)).filter(
     (group) => group.length > 0,
   )
   const section = currentSection(pathname, id)
@@ -333,12 +333,14 @@ export default function UniverseWorkspace() {
             reason, keyed the same way so one world's conversation never follows the author into the next (ADR 0045). */}
         <div className="workspace__top">
           <UniverseSearch key={universe.id} universeId={universe.id} />
-          <UniverseAssistant
-            key={universe.id}
-            universeId={universe.id}
-            universeName={universe.name}
-            canPropose={access.suggestChanges}
-          />
+          {universe.aiHelp ? (
+            <UniverseAssistant
+              key={universe.id}
+              universeId={universe.id}
+              universeName={universe.name}
+              canPropose={access.suggestChanges}
+            />
+          ) : null}
         </div>
 
         <main className="canvas" id={MAIN_CONTENT_ID} tabIndex={-1}>

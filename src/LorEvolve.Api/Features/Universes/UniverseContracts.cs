@@ -1,10 +1,10 @@
 namespace LorEvolve.Api.Features.Universes;
 
 /// <summary>Create input. Bound explicitly so no client can set ownership or timestamps.</summary>
-public sealed record CreateUniverseRequest(string? Name, string? Description, string? AccentColor);
+public sealed record CreateUniverseRequest(string? Name, string? Description, string? AccentColor, bool? AiHelp = null);
 
-/// <summary>Update input. Same reason: the entity is never model-bound.</summary>
-public sealed record UpdateUniverseRequest(string? Name, string? Description, string? AccentColor);
+/// <summary>Update input. Same reason: the entity is never model-bound. A null <c>AiHelp</c> leaves it as it is.</summary>
+public sealed record UpdateUniverseRequest(string? Name, string? Description, string? AccentColor, bool? AiHelp = null);
 
 /// <summary>
 /// Which card of a universe's artwork is current: the two ids the owner-only card address is built from, and nothing
@@ -32,7 +32,10 @@ public sealed record UniverseSummary(
     UniverseRole AccessRole,
     UniverseArtworkIdentity? Artwork);
 
-/// <summary>Single-universe view, with the caller's effective role and artwork as on <see cref="UniverseSummary"/>.</summary>
+/// <summary>
+/// Single-universe view, with the caller's effective role and artwork as on <see cref="UniverseSummary"/>.
+/// <see cref="AiHelp"/> false hides the workspace's AI controls (<see cref="UniverseAiHelpOff"/>).
+/// </summary>
 public sealed record UniverseDetail(
     Guid Id,
     string Name,
@@ -42,7 +45,8 @@ public sealed record UniverseDetail(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     UniverseRole AccessRole,
-    UniverseArtworkIdentity? Artwork);
+    UniverseArtworkIdentity? Artwork,
+    bool AiHelp = true);
 
 /// <summary>One page of the universes the caller owns or is a member of.</summary>
 public sealed record UniversePage(

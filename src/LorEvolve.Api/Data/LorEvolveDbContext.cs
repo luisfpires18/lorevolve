@@ -213,6 +213,9 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     /// <summary>Each universe's friendly MCP address, once made (ADR 0062).</summary>
     public DbSet<LorEvolve.Api.Features.Mcp.McpUniverseAlias> McpUniverseAliases => Set<LorEvolve.Api.Features.Mcp.McpUniverseAlias>();
 
+    /// <summary>Universes whose owner turned AI help off; no row means on.</summary>
+    public DbSet<UniverseAiHelpOff> UniverseAiHelpOff => Set<UniverseAiHelpOff>();
+
     public DbSet<Features.Admin.AdminAuditRecord> AdminAuditRecords => Set<Features.Admin.AdminAuditRecord>();
 
     protected override void OnModelCreating(ModelBuilder builder)

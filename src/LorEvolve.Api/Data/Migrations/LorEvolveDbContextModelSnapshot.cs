@@ -15,7 +15,7 @@ namespace LorEvolve.Api.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
             modelBuilder.Entity("LorEvolve.Api.Features.Admin.AdminAuditRecord", b =>
                 {
@@ -3357,6 +3357,16 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("Universes");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Universes.UniverseAiHelpOff", b =>
+                {
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UniverseId");
+
+                    b.ToTable("UniverseAiHelpOff", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Universes.UniverseInvitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5301,6 +5311,17 @@ namespace LorEvolve.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Universes.UniverseAiHelpOff", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Universe");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Universes.UniverseInvitation", b =>
