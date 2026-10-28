@@ -4977,7 +4977,8 @@ a.button--danger:visited {
 
 /* A nested type, shown once its parent is expanded: set in from the edge so it reads as belonging to the one before. */
 .lorecatalog__nestedcard > .typecard {
-  border-inline-start: 3px solid color-mix(in srgb, var(--type-accent, var(--accent)) 45%, var(--rule));
+  border-inline-start: 3px solid
+    color-mix(in srgb, var(--type-accent, var(--accent)) 45%, var(--rule));
 }
 
 .lorecatalog__expand {
