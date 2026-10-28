@@ -132,7 +132,7 @@ jobs:
     # at about twice that, rather than holding six runners for 45 minutes each.
     timeout-minutes: 25
     container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
       # The image has no DejaVu, which the runner itself draws sans-serif and serif text in; layout
       # assertions were written against that geometry (tests/LorEvolve.E2E/README.md). Lending the
