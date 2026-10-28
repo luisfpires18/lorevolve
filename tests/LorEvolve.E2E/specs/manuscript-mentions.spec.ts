@@ -231,6 +231,24 @@ test.describe('manuscript mentions', () => {
     const read = viewer.page.getByTestId('manuscript-read')
     await expect(read).toHaveText('Then Akron Wright spoke, and Akron Wright again.')
     await expect(viewer.page.getByTestId('manuscript-editor')).toHaveCount(0)
+    // Each mention is a link to its entry.
+    await expect(read.getByTestId('manuscript-mention')).toHaveCount(2)
+    await expect(read.getByTestId('manuscript-mention').first()).toHaveAttribute(
+      'href',
+      /\/lore\/[0-9a-f-]{36}$/,
+    )
+
+    // The author switches to Read and gets the same links.
+    await page.goto(manuscriptPage)
+    await page.getByTestId('manuscript-mode-read').click()
+    await expect(page.getByTestId('manuscript-read')).toHaveText(
+      'Then Akron Wright spoke, and Akron Wright again.',
+    )
+    await expect(page.getByTestId('manuscript-read').getByTestId('manuscript-mention')).toHaveCount(
+      2,
+    )
+    await page.getByTestId('manuscript-mode-write').click()
+    await expect(page.getByTestId('manuscript-editor')).toBeVisible()
 
     await owner.context.close()
     await viewer.context.close()
