@@ -186,6 +186,34 @@ test.describe('LorEvolve Admin', () => {
     expect((await second.request.get('/api/admin/overview')).status()).toBe(200)
   })
 
+  test('a member reports a bug from any page, and only an admin reads it', async ({ browser }) => {
+    const member = await newMember(browser)
+    await member.page.goto('/app/profile')
+    await member.page.getByTestId('feedback-open').click()
+    const dialog = member.page.getByTestId('feedback-dialog')
+    await expect(dialog).toBeVisible()
+    await dialog.getByTestId('feedback-send').click()
+    await expect(dialog.getByTestId('feedback-error')).toBeVisible()
+    await dialog.getByTestId('feedback-kind-feature').click()
+    await dialog.getByTestId('feedback-text').fill('Insert a description of the request.')
+    await dialog.getByTestId('feedback-send').click()
+    await expect(dialog).toHaveCount(0)
+    await expect(member.page.getByTestId('feedback-sent')).toBeVisible()
+
+    // The list is the Admin's alone.
+    expect((await member.page.request.get('/api/admin/feedback')).status()).toBe(403)
+
+    const admin = await newAdmin(browser)
+    await admin.page.goto('/admin/feedback')
+    const report = admin.page
+      .getByTestId('admin-feedback-report')
+      .filter({ hasText: member.username })
+      .first()
+    await expect(report).toContainText('Feature request')
+    await expect(report).toContainText('/app/profile')
+    await expect(report).toContainText('Insert a description of the request.')
+  })
+
   test('an admin account offers no block, its own included', async ({ browser }) => {
     const { page, username } = await newAdmin(browser)
     await openUser(page, username)

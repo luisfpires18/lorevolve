@@ -123,6 +123,7 @@ public sealed class BackupInventoryTests
     private static readonly (string Table, string Why)[] LeftOut =
     [
         ("AspNetUsers", "identity tables are not the world (ADR 0014)"),
+        ("FeedbackReports", "bug reports and feature requests sent to the Admin, not the world"),
         ("UniverseAiHelpOff", "a workspace display preference; a restored universe starts with AI help on"),
 
         ("AspNetRoles", "identity tables are not the world (ADR 0014)"),
