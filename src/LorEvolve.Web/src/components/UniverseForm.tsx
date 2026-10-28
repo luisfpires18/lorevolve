@@ -31,12 +31,14 @@ function inputOf(
   description: string,
   accentColor: string,
   aiHelp: boolean | undefined,
+  starterTypes?: boolean,
 ): UniverseInput {
   return {
     name: name.trim(),
     description: description.trim() || null,
     accentColor: accentColor || null,
     aiHelp,
+    ...(starterTypes === undefined ? {} : { starterTypes }),
   }
 }
 
@@ -72,6 +74,9 @@ export function UniverseForm({
   const [aiHelpChoice, setAiHelp] = useState(initial?.aiHelp ?? true)
   // Only the form that shows the choice sends it; the colour form leaves what is stored alone.
   const aiHelp = showDetails ? aiHelpChoice : undefined
+  // A new universe starts empty: the author makes their own lore types unless they ask for the starter set.
+  const [starterChoice, setStarterTypes] = useState(false)
+  const starterTypes = initial ? undefined : starterChoice
   const showColour = fields !== 'details'
   const colourInvalid = colourText.trim() !== '' && !HEX.test(normalizeHex(colourText))
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -83,11 +88,13 @@ export function UniverseForm({
   // Unsaved is the universe as it would be sent against the one the form opened on, so a change put back is none. Not
   // once it is sent: a new universe opens as it is created, and the page it leaves can stay on screen until the next
   // one has loaded. A save that fails asks again.
-  const [opened] = useState(() => payloadKey(inputOf(name, description, accentColor, aiHelp)))
+  const [opened] = useState(() =>
+    payloadKey(inputOf(name, description, accentColor, aiHelp, starterTypes)),
+  )
   const isDirty =
     !isSubmitting &&
     !isSaved &&
-    payloadKey(inputOf(name, description, accentColor, aiHelp)) !== opened
+    payloadKey(inputOf(name, description, accentColor, aiHelp, starterTypes)) !== opened
   useLeaveGuard(
     isDirty
       ? initial
@@ -112,7 +119,7 @@ export function UniverseForm({
     setIsSubmitting(true)
 
     try {
-      await onSubmit(inputOf(name, description, accentColor, aiHelp))
+      await onSubmit(inputOf(name, description, accentColor, aiHelp, starterTypes))
       setIsSaved(true)
       onDone?.()
     } catch (error: unknown) {
@@ -186,6 +193,24 @@ export function UniverseForm({
               hide them.
             </p>
           </div>
+
+          {initial ? null : (
+            <div className="field">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={starterChoice}
+                  onChange={(event) => setStarterTypes(event.target.checked)}
+                  data-testid="universe-starter-types"
+                />
+                Start with starter lore types
+              </label>
+              <p className="field__hint">
+                Off, the universe starts empty and you make your own lore types in Types. On, it
+                starts with a few common ones and groups you can rename or delete.
+              </p>
+            </div>
+          )}
         </>
       ) : null}
 

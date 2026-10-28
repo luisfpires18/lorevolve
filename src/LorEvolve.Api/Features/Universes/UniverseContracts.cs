@@ -1,7 +1,16 @@
 namespace LorEvolve.Api.Features.Universes;
 
-/// <summary>Create input. Bound explicitly so no client can set ownership or timestamps.</summary>
-public sealed record CreateUniverseRequest(string? Name, string? Description, string? AccentColor, bool? AiHelp = null);
+/// <summary>
+/// Create input. Bound explicitly so no client can set ownership or timestamps. <c>StarterTypes</c> false starts the
+/// universe with no lore types or groups, as the web form does unless asked; left out, it gets the starter set
+/// (<c>EntityTypeDefaults</c>), as every caller did before the choice existed.
+/// </summary>
+public sealed record CreateUniverseRequest(
+    string? Name,
+    string? Description,
+    string? AccentColor,
+    bool? AiHelp = null,
+    bool? StarterTypes = null);
 
 /// <summary>Update input. Same reason: the entity is never model-bound. A null <c>AiHelp</c> leaves it as it is.</summary>
 public sealed record UpdateUniverseRequest(string? Name, string? Description, string? AccentColor, bool? AiHelp = null);

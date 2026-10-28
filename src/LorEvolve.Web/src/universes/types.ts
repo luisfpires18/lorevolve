@@ -55,6 +55,8 @@ export interface UniverseInput {
   accentColor: string | null
   /** Left out, a save keeps what is stored. */
   aiHelp?: boolean
+  /** Creating only: start with the starter lore types and groups. The form sends false unless the author ticks it. */
+  starterTypes?: boolean
 }
 
 export interface UniverseQuery {

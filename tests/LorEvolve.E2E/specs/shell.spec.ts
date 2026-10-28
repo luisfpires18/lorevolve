@@ -29,6 +29,8 @@ async function signUp(page: Page) {
 async function newUniverse(page: Page) {
   await page.getByTestId('new-universe').click()
   await page.getByLabel('Name').fill(unique('Saltmarrow '))
+  // The starter lore types this spec builds on: a new universe starts empty otherwise.
+  await page.getByTestId('universe-starter-types').check()
   await page.getByRole('button', { name: 'Create universe' }).click()
   await page.waitForURL(/\/app\/universes\/[0-9a-f-]+$/)
   return new URL(page.url()).pathname

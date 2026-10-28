@@ -189,9 +189,12 @@ public static partial class UniverseEndpoints
             return NameTakenProblem();
         }
 
-        // A universe starts with the default entity types, written here and only here: after this they are the
-        // author's, and no read puts back one they removed.
-        await EntityTypeDefaults.EnsureAsync(db, universe.Id, cancellationToken);
+        // A universe starts empty, or with the starter types when asked, written here and only here: after this they are
+        // the author's, and no read puts back one they removed.
+        if (request.StarterTypes != false)
+        {
+            await EntityTypeDefaults.EnsureAsync(db, universe.Id, cancellationToken);
+        }
 
         return Results.Created($"/api/universes/{universe.Id}", ToDetail(universe, artwork: null, aiHelp: request.AiHelp != false));
     }

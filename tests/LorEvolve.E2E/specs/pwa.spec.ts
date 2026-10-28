@@ -304,6 +304,8 @@ test.describe('what the worker is allowed to keep', () => {
 
     await page.getByTestId('new-universe').click()
     await page.getByLabel('Name').fill(unique('Private World '))
+    // The starter lore types this spec builds on: a new universe starts empty otherwise.
+    await page.getByTestId('universe-starter-types').check()
     await page.getByRole('button', { name: 'Create universe' }).click()
     await page.waitForURL(/\/app\/universes\/[0-9a-f-]+$/)
     const universeId = page.url().split('/').pop()!
