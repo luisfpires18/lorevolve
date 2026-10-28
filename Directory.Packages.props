@@ -17,7 +17,7 @@
     <!-- R2 speaks the S3 API. Apache-2.0, and the only mature signer worth trusting. -->
     <PackageVersion Include="AWSSDK.S3" Version="4.0.104.7" />
     <!-- Fully managed: no native asset to carry onto a Linux App Service. See ADR 0019. -->
-    <PackageVersion Include="SixLabors.ImageSharp" Version="3.2.0" />
+    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.12" />
   </ItemGroup>
 
   <ItemGroup Label="Assistant">
@@ -27,7 +27,7 @@
 
   <ItemGroup Label="MCP">
     <!-- The official MCP C# SDK: the Streamable HTTP server (stateless) and, in tests, its client. Apache-2.0. ADR 0046. -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.3.0" />
     <PackageVersion Include="ModelContextProtocol.Core" Version="2.3.0" />
     <!-- The OAuth 2.1 authorization server and token validation, on the one LorEvolveDbContext. Apache-2.0. ADR 0046. -->
     <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.7.2" />
