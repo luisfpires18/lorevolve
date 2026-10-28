@@ -9,13 +9,6 @@ name: Deploy DEV
 on:
   push:
     branches: [dev]
-    # Documentation and agent tooling only: nothing to build, test or ship (see ci.yml). Run it by
-    # hand (workflow_dispatch) if DEV ever needs redeploying without a code change.
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - '.claude/**'
-      - '.mcp.json'
   workflow_dispatch:
 
 permissions:
