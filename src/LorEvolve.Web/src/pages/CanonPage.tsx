@@ -24,6 +24,7 @@ import { ConflictEntry } from '../components/ConflictEntry'
 import { ApiError } from '../lib/api'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
+import { WipBadge } from '../components/WipBadge'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
 type LoadState =
@@ -129,8 +130,13 @@ export default function CanonPage() {
   return (
     <article className="integrity">
       <PageHeader
-        title="Canon integrity"
-        lede="What this world says twice, and differently. Findings are derived from your lore and change nothing in it."
+        title={
+          <>
+            Canon integrity
+            <WipBadge />
+          </>
+        }
+        lede="Work in progress: this does not work reliably yet. It is meant to find where your lore breaks this world's World Rules. Findings are derived from your lore and change nothing in it."
         actions={
           // Evaluating writes the findings, so it is editing (ADR 0041); everyone reads what the last one found.
           access.editContent ? (

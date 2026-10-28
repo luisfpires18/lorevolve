@@ -30,6 +30,8 @@ export interface Section {
    * the rest regardless. Absent means every member reads it.
    */
   requires?: keyof UniverseCapabilities
+  /** Shown, but marked as not yet working properly. */
+  wip?: boolean
 }
 
 /** The front page. */
@@ -43,7 +45,7 @@ export const FRONT: readonly Section[] = [
   },
 ]
 
-/** The world itself: what is true in it, when, and how it works. */
+/** The world itself: its entries, the kinds they come in, its families and its places. */
 export const WORLD: readonly Section[] = [
   {
     segment: 'lore',
@@ -53,11 +55,11 @@ export const WORLD: readonly Section[] = [
     purpose: 'Every entry: people, places, things and ideas.',
   },
   {
-    segment: 'maps',
-    label: 'Maps',
-    testId: 'workspace-maps',
-    icon: Map,
-    purpose: 'Pictures of the world, with pins that open the Lore they stand for.',
+    segment: 'types',
+    label: 'Types',
+    testId: 'workspace-types',
+    icon: Blocks,
+    purpose: 'The kinds of entry and relation this world uses.',
   },
   {
     segment: 'family-tree',
@@ -67,18 +69,37 @@ export const WORLD: readonly Section[] = [
     purpose: 'Families worked out from recorded connections.',
   },
   {
-    segment: 'chronology',
-    label: 'Chronology',
-    testId: 'workspace-chronology',
-    icon: CalendarRange,
-    purpose: 'How its dates are written and ordered: plain years, or named date periods.',
+    segment: 'maps',
+    label: 'Maps',
+    testId: 'workspace-maps',
+    icon: Map,
+    purpose: 'Pictures of the world, with pins that open the Lore they stand for.',
   },
+]
+
+/** The rules it keeps: how it works, where the lore breaks that, and how its dates run. */
+export const RULES: readonly Section[] = [
   {
     segment: 'world-rules',
     label: 'World Rules',
     testId: 'workspace-world-rules',
     icon: Scale,
     purpose: 'How this universe works, stated plainly.',
+  },
+  {
+    segment: 'canon',
+    label: 'Canon',
+    testId: 'workspace-canon',
+    icon: BadgeCheck,
+    purpose: 'Where the lore breaks its own World Rules. Still being built.',
+    wip: true,
+  },
+  {
+    segment: 'chronology',
+    label: 'Chronology',
+    testId: 'workspace-chronology',
+    icon: CalendarRange,
+    purpose: 'How its dates are written and ordered: plain years, or named date periods.',
   },
 ]
 
@@ -108,25 +129,11 @@ export const WRITING: readonly Section[] = [
   },
 ]
 
-/** Keeping the world consistent and shaped. */
-export const KEEPING: readonly Section[] = [
-  {
-    segment: 'canon',
-    label: 'Canon',
-    testId: 'workspace-canon',
-    icon: BadgeCheck,
-    purpose: 'What this world says twice, and differently.',
-  },
-  {
-    segment: 'types',
-    label: 'Types',
-    testId: 'workspace-types',
-    icon: Blocks,
-    purpose: 'The kinds of entry and relation this world uses.',
-  },
+/** What an AI proposed, waiting for review. */
+export const REVIEW: readonly Section[] = [
   {
     segment: 'ai-changes',
-    label: 'AI changes',
+    label: 'AI Changes',
     testId: 'workspace-ai-changes',
     icon: Sparkles,
     purpose: 'Changes an AI proposed, waiting for someone to approve or reject them.',
@@ -167,7 +174,7 @@ export const UPKEEP: readonly Section[] = [
 
 /**
  * The sections a universe has, in the order the sidebar lists them, grouped as the sidebar spaces them: the front page;
- * the world itself; the writing done with it; keeping it consistent; and, set apart, its upkeep. The worldbuilding groups
+ * the world itself; the rules it keeps; the writing done with it; AI review; and, set apart, its upkeep. The worldbuilding groups
  * carry no labels - the spacing says it. Held as data rather than as markup because the narrow layout needs the same list
  * twice: once as the list of links, and once to name the section the author is currently in.
  *
@@ -182,7 +189,8 @@ export function offered(sections: readonly Section[], access: UniverseCapabiliti
 export const SECTION_GROUPS: readonly (readonly Section[])[] = [
   FRONT,
   WORLD,
+  RULES,
   WRITING,
-  KEEPING,
+  REVIEW,
   UPKEEP,
 ]

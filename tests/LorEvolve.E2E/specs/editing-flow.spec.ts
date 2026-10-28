@@ -335,8 +335,8 @@ test.describe('workspace navigation', () => {
     const universeId = await seedUniverse(page)
     await page.goto(`/app/universes/${universeId}`)
 
-    // Issue #48: the world's four, then the writing - Stories, the Timeline it is told against, Ideas.
-    const world = ['Lore', 'Maps', 'Family Tree', 'Chronology', 'World Rules']
+    // The world, its rules, then the writing - Stories, the Timeline it is told against, Ideas (Issue #48).
+    const world = ['Lore', 'Types', 'Family Tree', 'Maps', 'World Rules', 'Canon', 'Chronology']
     const writing = ['Stories', 'Timeline', 'Ideas']
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
     await expect(sections.getByRole('link')).toContainText([
@@ -346,14 +346,19 @@ test.describe('workspace navigation', () => {
       ...writing,
     ])
     await expect(page.locator('[data-testid="overview-lore"]')).toBeVisible()
-    const links = (await sections.getByRole('link').allTextContents()).map((text) => text.trim())
+    // Canon carries a WIP badge after its name.
+    const links = (await sections.getByRole('link').allTextContents()).map((text) =>
+      text.replace(/WIP$/, '').trim(),
+    )
     expect(links.slice(2, 2 + world.length + writing.length)).toEqual([...world, ...writing])
 
     const doorways = [
       'lore',
+      'types',
       'family-tree',
-      'chronology',
+      'maps',
       'world-rules',
+      'chronology',
       'stories',
       'timeline',
       'ideas',

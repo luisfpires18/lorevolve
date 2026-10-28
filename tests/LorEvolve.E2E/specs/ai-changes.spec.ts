@@ -213,7 +213,7 @@ test.describe('Pending AI Changes', () => {
     await expect(
       page
         .getByRole('navigation', { name: 'My workspace' })
-        .getByRole('link', { name: /AI changes/ }),
+        .getByRole('link', { name: /AI Changes/ }),
     ).toHaveCount(0)
     await page.goto('/app/ai-changes')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Pending AI Changes')
@@ -276,13 +276,13 @@ test.describe('Pending AI Changes', () => {
       ).toBe(true)
     }
 
-    // A reviewer may suggest changes, so AI changes follows Types; Trash needs more than a reviewer has.
+    // A reviewer may suggest changes, so AI Changes is offered; Trash needs more than a reviewer has.
     await reviewer.page.goto(`/app/universes/${universeId}`)
     const reviewerSections = reviewer.page.getByRole('navigation', {
       name: 'Universe',
       exact: true,
     })
-    await expect(reviewerSections.getByRole('link')).toContainText(['Types', 'AI changes'])
+    await expect(reviewerSections.getByRole('link')).toContainText(['Types', 'AI Changes'])
     await expect(reviewer.page.getByTestId('workspace-trash')).toHaveCount(0)
 
     // The sections are on screen before the absence is read, so it is not the empty sidebar of a page still loading.

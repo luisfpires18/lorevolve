@@ -204,7 +204,7 @@ function routes(world: World) {
     ['Timeline', `${base}/timeline`],
     ['Canon', `${base}/canon`],
     ['Types', `${base}/types`],
-    ['AI changes', `${base}/ai-changes`],
+    ['AI Changes', `${base}/ai-changes`],
     ['Trash', `${base}/trash`],
     ['Publish', `${base}/publish`],
     ['Settings', `${base}/settings`],
