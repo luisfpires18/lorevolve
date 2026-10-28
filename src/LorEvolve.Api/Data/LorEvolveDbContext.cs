@@ -216,6 +216,9 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     /// <summary>Universes whose owner turned AI help off; no row means on.</summary>
     public DbSet<UniverseAiHelpOff> UniverseAiHelpOff => Set<UniverseAiHelpOff>();
 
+    /// <summary>Bug reports and feature requests, read by an Admin.</summary>
+    public DbSet<Features.Feedback.FeedbackReport> FeedbackReports => Set<Features.Feedback.FeedbackReport>();
+
     public DbSet<Features.Admin.AdminAuditRecord> AdminAuditRecords => Set<Features.Admin.AdminAuditRecord>();
 
     protected override void OnModelCreating(ModelBuilder builder)

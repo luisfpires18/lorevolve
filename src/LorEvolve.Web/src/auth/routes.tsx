@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { FeedbackButton } from '../components/FeedbackButton'
 import { NETWORK_FAILURE } from '../lib/api'
 import { returnPath } from './returnPath'
 import { useAuth } from './useAuth'
@@ -33,7 +34,13 @@ export function RequireAuth() {
     return (
       <Navigate to="/login" state={{ from: `${location.pathname}${location.search}` }} replace />
     )
-  return <Outlet />
+  return (
+    <>
+      <Outlet />
+      {/* Report a bug or ask for a feature, from every signed-in page. */}
+      <FeedbackButton />
+    </>
+  )
 }
 
 /**

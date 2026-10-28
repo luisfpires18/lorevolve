@@ -1,5 +1,6 @@
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Admin;
+using LorEvolve.Api.Features.Feedback;
 using LorEvolve.Api.Features.AiChanges;
 using LorEvolve.Api.Features.Assistant;
 using LorEvolve.Api.Features.Auth;
@@ -107,6 +108,7 @@ app.UseLorEvolveMcp();
 app.MapHealthEndpoints();
 app.MapAuthEndpoints();
 app.MapAdminEndpoints();
+app.MapFeedbackEndpoints();
 app.MapDatabaseBackupEndpoints();
 app.MapProfileImageEndpoints();
 app.MapAccountStorageEndpoints();

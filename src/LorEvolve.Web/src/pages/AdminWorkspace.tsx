@@ -27,6 +27,7 @@ import { formatBytes } from '../lib/bytes'
 import { confirmAction } from '../lib/confirm'
 import { formatDateTime } from '../lib/dates'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { FeedbackKind, listFeedback } from '../feedback/api'
 
 /**
  * LorEvolve Admin (#40): the service's own workspace, apart from My workspace and from every universe. Main, Users and
@@ -77,6 +78,7 @@ const NOT_TRACKED = 'Not tracked yet'
 function screenName(pathname: string) {
   if (pathname.startsWith('/admin/users')) return 'Users'
   if (pathname.startsWith('/admin/tracing')) return 'Tracing'
+  if (pathname.startsWith('/admin/feedback')) return 'Feedback'
   return 'Main'
 }
 
@@ -115,6 +117,15 @@ export default function AdminWorkspace() {
             <li>
               <NavLink
                 className="workspacebar__link"
+                to="/admin/feedback"
+                data-testid="admin-nav-feedback"
+              >
+                Feedback
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                className="workspacebar__link"
                 to="/admin/tracing"
                 data-testid="admin-nav-tracing"
               >
@@ -136,6 +147,7 @@ export default function AdminWorkspace() {
           <Route path="users" element={<UsersScreen />} />
           <Route path="users/:userId" element={<UserScreen />} />
           <Route path="tracing" element={<TracingScreen />} />
+          <Route path="feedback" element={<FeedbackScreen />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </main>
@@ -926,6 +938,79 @@ function TracingScreen() {
         title="Tracing is not available yet."
         hint="Block and unblock actions are recorded, with who, why and when, on each account's details."
       />
+    </>
+  )
+}
+
+/** Bug reports and feature requests from the button on every signed-in page, newest first. Read only. */
+function FeedbackScreen() {
+  const [page, setPage] = useState(1)
+  const load = useCallback((signal: AbortSignal) => listFeedback(page, signal), [page])
+  const { state, retry } = useLoad(load)
+
+  return (
+    <>
+      <Heading
+        title="Feedback"
+        lede="Bug reports and feature requests, newest first, with the page each was sent from. Times are UTC."
+      />
+      {state.kind === 'loading' ? (
+        <p className="notice" role="status">
+          Reading&hellip;
+        </p>
+      ) : null}
+      {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
+      {state.kind === 'ready' && state.value.items.length === 0 ? (
+        <p className="notice" data-testid="admin-feedback-empty">
+          Nothing sent yet.
+        </p>
+      ) : null}
+      {state.kind === 'ready' && state.value.items.length > 0 ? (
+        <>
+          <ul className="feedbackreports" data-testid="admin-feedback">
+            {state.value.items.map((report) => (
+              <li className="feedbackreport" key={report.id} data-testid="admin-feedback-report">
+                <p className="feedbackreport__meta">
+                  <strong>{report.kind === FeedbackKind.Bug ? 'Bug' : 'Feature request'}</strong>
+                  {' · '}
+                  <bdi>{report.userName ?? 'A removed account'}</bdi>
+                  {' · '}
+                  {formatDateTime(report.createdAt)}
+                  {report.page ? (
+                    <>
+                      {' · '}
+                      <code>{report.page}</code>
+                    </>
+                  ) : null}
+                </p>
+                <p className="feedbackreport__text" dir="auto">
+                  {report.text}
+                </p>
+              </li>
+            ))}
+          </ul>
+          {state.value.totalCount > state.value.pageSize ? (
+            <nav className="pager" aria-label="Pagination">
+              <button
+                className="button button--secondary"
+                type="button"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+              >
+                Newer
+              </button>
+              <button
+                className="button button--secondary"
+                type="button"
+                disabled={page * state.value.pageSize >= state.value.totalCount}
+                onClick={() => setPage(page + 1)}
+              >
+                Older
+              </button>
+            </nav>
+          ) : null}
+        </>
+      ) : null}
     </>
   )
 }
