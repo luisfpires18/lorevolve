@@ -23,6 +23,11 @@ working backups: PROD holds the only copy of alpha users' work.
 
 Nothing is shared: PROD has its own database, key ring, R2 buckets, backup bucket, Admin account and AI connections.
 
+Created 2026-10-28: resource group `rg-lorevolve-prod` (West Europe), plan `prod-lorevolve-plan` (B1), app
+`prod-lorevolve`, federated credential `github-lorevolve-prod`, GitHub environment `prod`, R2 buckets
+`lorevolve-media-prod` and `lorevolve-db-backups-prod` (lock rule `keep-7-days` on `lorevolve-db/`), and the non-secret
+settings below. Left for the owner: the two R2 tokens, the first deploy, the Admin account, DNS and the certificate.
+
 ## First setup (owner)
 
 1. **Resources.** The DEV template, with PROD values. A new resource group is cleaner (insert a name); same region as
