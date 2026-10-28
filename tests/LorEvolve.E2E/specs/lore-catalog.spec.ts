@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
 import { markArchived } from './support/admin'
+import { expandAllTypes } from './support/lore'
 
 /**
  * Lore's front page (Issue #60): with no type chosen, Lore is a catalog of the universe's own types - a card each, in the
@@ -139,8 +140,13 @@ const chip = (page: Page, name: string) =>
   page.locator(`[data-testid="lore-browse-group"][data-group-name="${name}"]`)
 const heading = (page: Page) => page.getByRole('heading', { level: 1 })
 const entryCards = (page: Page) => page.getByTestId('entity-card')
-const cardNames = (page: Page) =>
-  typeCards(page).evaluateAll((cards) => cards.map((card) => card.getAttribute('data-type-name')))
+/** Every type card, with every nested type unfolded first when the catalog shows all types. */
+const cardNames = async (page: Page) => {
+  if ((await page.getByTestId('lore-type-expand').count()) > 0) await expandAllTypes(page)
+  return typeCards(page).evaluateAll((cards) =>
+    cards.map((card) => card.getAttribute('data-type-name')),
+  )
+}
 const entryNames = (page: Page) =>
   entryCards(page)
     .evaluateAll((cards) => cards.map((card) => card.getAttribute('data-entity-name')))
@@ -223,9 +229,10 @@ test.describe('Lore front page: the types as cards', () => {
 
     // Back is the catalog again, Forward the list, and a reload keeps it.
     await page.goBack()
-    await expect(page).toHaveURL(/\/lore$/)
+    // The catalog as it was left, unfolded types and all.
+    await expect(page).toHaveURL(/\/lore(\?open=[^&]*)?$/)
     await expect(heading(page)).toHaveText('Lore')
-    await expect(typeCards(page)).toHaveCount(w.order.length)
+    await expect.poll(() => cardNames(page)).toEqual(w.order)
     await page.goForward()
     await expect(heading(page)).toHaveText('Runes')
     await page.reload()
@@ -328,7 +335,7 @@ test.describe('Lore front page: the types as cards', () => {
     // A group the universe does not have is taken out of the address; every type shows.
     await page.goto(w.lore('?browse=00000000-0000-0000-0000-000000000000'))
     await expect(page).toHaveURL(/\/lore$/)
-    await expect(typeCards(page)).toHaveCount(w.order.length)
+    await expect.poll(() => cardNames(page)).toEqual(w.order)
 
     // A saved group link opens the group's list directly.
     await page.goto(w.lore(`?group=${w.groups.magic}`))
@@ -477,6 +484,7 @@ test.describe('Lore front page: the types as cards', () => {
     markArchived(archived)
 
     await page.goto(`/app/universes/${u}/lore`)
+    await expandAllTypes(page)
     for (const [name, count] of [
       ['Runes', '3 entries'],
       ['Nature Runes', '2 entries'],

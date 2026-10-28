@@ -1,5 +1,5 @@
-import { useId, useState } from 'react'
-import { Link, type To } from 'react-router-dom'
+import { useId } from 'react'
+import { Link, useSearchParams, type To } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Layers } from 'lucide-react'
 import type { EntityTypeGroup } from '../lore/types'
 import { branchIds, type TypeNode, type TypeTree } from '../lore/typeTree'
@@ -95,7 +95,9 @@ export function LoreCatalog({
   typesUrl: string
 }) {
   const headingId = useId()
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
+  // The unfolded types are the address's `open`, replacing its entry, so Back from a type finds them still open.
+  const [params, setParams] = useSearchParams()
+  const expanded = new Set((params.get('open') ?? '').split(',').filter(Boolean))
   const members = browsing ? new Set(browsing.typeIds) : null
   // A group is read as it is, flat. All types starts at the top of the hierarchy: a type's nested types follow it once
   // it is expanded, each card naming where it sits.
@@ -104,12 +106,18 @@ export function LoreCatalog({
     : tree.ordered.filter((node) => node.path.slice(0, -1).every((above) => expanded.has(above.id)))
 
   function toggle(id: string) {
-    setExpanded((current) => {
-      const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    const next = new Set(expanded)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setParams(
+      (current) => {
+        const copy = new URLSearchParams(current)
+        if (next.size === 0) copy.delete('open')
+        else copy.set('open', [...next].join(','))
+        return copy
+      },
+      { replace: true },
+    )
   }
 
   return (

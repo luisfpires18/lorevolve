@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { expandAllTypes } from './support/lore'
 
 /**
  * Product refinement 025. Lore's type navigation is the wrapped row it had before 022 - a menu on a phone - with every type
@@ -117,6 +118,7 @@ test.describe('Lore: the type row again, without All', () => {
     await expect(heading(page)).toHaveText('Lore')
 
     // The catalog (Issue #60): a card per type, no All, no row yet - and no entry card, list control or read.
+    await expandAllTypes(page)
     await expect(typeCard(page, 'Material Runes')).toContainText('In Runes')
     await expect(page.getByRole('link', { name: 'All', exact: true })).toHaveCount(0)
     await expect(row(page)).toHaveCount(0)

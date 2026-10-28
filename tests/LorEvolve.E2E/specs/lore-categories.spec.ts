@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { expandAllTypes } from './support/lore'
 
 /**
  * Product refinement 028: Lore browses the type hierarchy as categories and what is inside them. The top-level types are
@@ -134,6 +135,9 @@ test.describe('Lore categories on a desktop', () => {
 
     // Bare Lore is the catalog (Issue #60): every category a card, a nested one saying where it sits, the row waiting.
     await expect(typeCard(page, 'Runes')).toBeVisible()
+    // Nested types are folded under their parent until asked for.
+    await expect(typeCard(page, RUNES[0])).toHaveCount(0)
+    await expandAllTypes(page)
     for (const nested of RUNES) await expect(typeCard(page, nested)).toContainText('In Runes')
     await expect(typeCard(page, 'Weapons of Order')).toContainText('In Weapons')
     await expect(typeCard(page, 'Runes')).toContainText(`3 entries · ${RUNES.length} nested types`)

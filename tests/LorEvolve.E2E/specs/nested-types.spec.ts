@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
+import { expandAllTypes } from './support/lore'
 
 /**
  * Product refinement 022: nested Lore types. Lore has no "All" - it starts with no type chosen and reads nothing until
@@ -123,6 +124,7 @@ test.describe('Lore with nested types', () => {
     await page.goto(lore(w.u, '?q=rune&status=0'))
     await expect(heading(page)).toHaveText('Lore')
     // The catalog (Issue #60): every type a card, nested ones by where they sit; the row waits for a choice.
+    await expandAllTypes(page)
     await expect(typeCard(page, 'Metal Runes')).toContainText('In Runes › Material Runes')
     await expect(row(page)).toHaveCount(0)
     // No panel asks, no entry card, no skeleton, no Filters, no Select, no All - only the way to choose.
