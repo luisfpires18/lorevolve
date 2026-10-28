@@ -29,6 +29,8 @@ async function createUniverse(page: Page, name: string, description?: string) {
   if (description) {
     await page.getByLabel('Description').fill(description)
   }
+  // The starter lore types this spec builds on: a new universe starts empty otherwise.
+  await page.getByTestId('universe-starter-types').check()
   await page.getByRole('button', { name: 'Create universe' }).click()
   await page.waitForURL(/\/app\/universes\/[0-9a-f-]+$/)
 }
@@ -128,9 +130,27 @@ test.describe('universes', () => {
 
     await page.getByTestId('new-universe').click()
     await page.getByLabel('Name').fill(name)
+    // The starter lore types this spec builds on: a new universe starts empty otherwise.
+    await page.getByTestId('universe-starter-types').check()
     await page.getByRole('button', { name: 'Create universe' }).click()
 
     await expect(page.getByText('You already have a universe with that name.')).toBeVisible()
+  })
+
+  test('a new universe starts with no lore types unless the author asks for the starter set', async ({
+    page,
+  }) => {
+    await registerAndSignIn(page)
+
+    await page.getByTestId('new-universe').click()
+    await page.getByLabel('Name').fill(unique('Blank World '))
+    await expect(page.getByTestId('universe-starter-types')).not.toBeChecked()
+    await page.getByRole('button', { name: 'Create universe' }).click()
+    await page.waitForURL(/\/app\/universes\/[0-9a-f-]+$/)
+
+    await page.getByTestId('workspace-lore').click()
+    await expect(page.getByTestId('lore-no-types')).toBeVisible()
+    await expect(page.getByTestId('lore-type-card')).toHaveCount(0)
   })
 
   test('a signed-out visitor cannot open a universe', async ({ page }) => {

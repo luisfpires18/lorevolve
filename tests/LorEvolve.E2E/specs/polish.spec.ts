@@ -191,6 +191,9 @@ test.describe('product-wide polish', () => {
     await expect.poll(() => asked.at(-1)).toBe(DISCARD)
     await expect(page.getByLabel('Name')).toBeVisible()
 
+    // The starter lore types this spec builds on: a new universe starts empty otherwise.
+
+    await page.getByTestId('universe-starter-types').check()
     await page.getByRole('button', { name: 'Create universe' }).click()
     await page.waitForURL(/\/app\/universes\/[0-9a-f-]+$/)
     const created = asked.length
