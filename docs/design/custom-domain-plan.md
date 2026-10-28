@@ -52,8 +52,8 @@ Only after the pre-alpha gate is merged (#33 security, #11 recovery, #54 backups
    - `Media__*` for a new R2 bucket (insert a name), `DatabaseBackup__*` for a new private bucket: PROD must not start
      without backups.
    - `Assistant__*` only if PROD offers the assistant.
-   - `PlatformAdmin__OwnerUserId`: after signing up on PROD (by an Admin sign-up link is impossible before an Admin
-     exists, so register with `Registration__InviteOnly` briefly off, or set it after the first account).
+   - `PlatformAdmin__OwnerUserId`: set after the owner's own PROD account exists. No Admin exists yet to make a sign-up
+     link, so the owner registers first with `Registration__InviteOnly` unset, then turns it on.
 3. **Custom domain** `lorevolve.com`: `dev-lorevolve` is not involved.
    - Azure: `prod-lorevolve` > Custom domains > copy the **Custom Domain Verification ID** and the app's **IP address**.
    - Cloudflare DNS, **DNS only (grey cloud)**: delete the placeholder `A @ 192.0.2.1`, add `A` `@` -> the app's IP,
