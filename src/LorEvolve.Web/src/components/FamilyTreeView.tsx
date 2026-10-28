@@ -3,7 +3,7 @@ import { Eye } from 'lucide-react'
 import { EntityTile } from './EntityTile'
 import { FamilyMemberDetails } from './FamilyMemberDetails'
 import { readFamilyTree } from '../familyTree/reading'
-import { POSITION_LABELS, type FamilyPosition, type FamilyTree } from '../familyTree/types'
+import { type FamilyRow, type FamilyTree } from '../familyTree/types'
 import type { FamilyTreeNode } from '../familyTree/types'
 import { FamilySemantic } from '../relationships/types'
 
@@ -19,16 +19,21 @@ interface Edge {
   d: string
   semantic: number
   canonStatus: number
+  /** A recorded family link that is not parentage ("uncle of", "married to"), with its words at the line's middle. */
+  label?: { text: string; x: number; y: number }
 }
 
-/** The rows, top to bottom. The focal entry stands in the middle row with its siblings beside it. */
-const ROWS: { position: FamilyPosition; label: string }[] = [
-  { position: 'grandparents', label: POSITION_LABELS.grandparents.many },
-  { position: 'parents', label: POSITION_LABELS.parents.many },
-  { position: 'siblings', label: 'This entry and siblings' },
-  { position: 'children', label: POSITION_LABELS.children.many },
-  { position: 'grandchildren', label: POSITION_LABELS.grandchildren.many },
+/** The rows, top to bottom. The focal entry stands in the middle row with its siblings and cousins beside it. */
+const ROWS: { position: FamilyRow; label: string }[] = [
+  { position: 'grandparents', label: 'Grandparents' },
+  { position: 'parents', label: 'Parents, aunts and uncles' },
+  { position: 'siblings', label: 'This entry, siblings and cousins' },
+  { position: 'children', label: 'Children, nieces and nephews' },
+  { position: 'grandchildren', label: 'Grandchildren' },
 ]
+
+/** Marks a line as a recorded family link rather than a parent link. */
+const CONNECTION = -1
 
 /**
  * A family, drawn as generations rather than as a graph: grandparents and parents above, the focal entry and
@@ -45,6 +50,26 @@ const ROWS: { position: FamilyPosition; label: string }[] = [
  */
 export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
   const family = useMemo(() => readFamilyTree(tree), [tree])
+  // The focal entry's recorded family who hold no derived position - a spouse, or an uncle recorded as one - drawn at the
+  // end of the entry's own row, so every recorded link is on the tree.
+  const others = useMemo(() => {
+    const placed = new Set(
+      Object.values(family.rows)
+        .flat()
+        .map((member) => member.node.entityId),
+    )
+    placed.add(tree.focalEntityId)
+    const ids = new Set(
+      tree.connections
+        .filter((connection) => connection.entityId === tree.focalEntityId)
+        .map((connection) => connection.relatedEntityId)
+        .filter((id) => !placed.has(id)),
+    )
+    return [...ids]
+      .map((id) => family.nodes.get(id))
+      .filter((node): node is FamilyTreeNode => !!node)
+      .sort((first, second) => first.name.localeCompare(second.name))
+  }, [family, tree])
   const scroller = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLDivElement>(null)
   const focalCard = useRef<HTMLLIElement>(null)
@@ -91,9 +116,41 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
       })
     }
 
+    // Recorded family that is not parentage, once per link, read from the side of the member listed first: a low arc
+    // between the two portraits, its words at the top of the arc.
+    const seen = new Set<string>()
+    for (const connection of tree.connections) {
+      if (seen.has(connection.relationshipId)) continue
+      const from = cards.current.get(connection.entityId)
+      const to = cards.current.get(connection.relatedEntityId)
+      if (!from || !to || from === to) continue
+      seen.add(connection.relationshipId)
+
+      const a = from.getBoundingClientRect()
+      const b = to.getBoundingClientRect()
+      const x1 = a.left + a.width / 2 - bounds.left
+      const x2 = b.left + b.width / 2 - bounds.left
+      const y1 = a.top - bounds.top
+      const y2 = b.top - bounds.top
+      const lift = Math.max(28, Math.abs(x2 - x1) / 5)
+      const top = Math.min(y1, y2) - lift
+
+      drawn.push({
+        id: connection.relationshipId,
+        d: `M ${x1} ${y1} C ${x1} ${top}, ${x2} ${top}, ${x2} ${y2}`,
+        semantic: CONNECTION,
+        canonStatus: connection.canonStatus,
+        label: {
+          text: `${family.nodes.get(connection.entityId)?.name ?? ''} ${connection.label.charAt(0).toLowerCase()}${connection.label.slice(1)} ${family.nodes.get(connection.relatedEntityId)?.name ?? ''}`,
+          x: (x1 + x2) / 2,
+          y: top + lift * 0.25 - 4,
+        },
+      })
+    }
+
     setEdges(drawn)
     setSize({ width: root.scrollWidth, height: root.scrollHeight })
-  }, [tree])
+  }, [tree, family])
 
   useLayoutEffect(() => {
     measure()
@@ -201,13 +258,24 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
             viewBox={`0 0 ${Math.max(size.width, 1)} ${Math.max(size.height, 1)}`}
           >
             {edges.map((edge) => (
-              <path
-                key={edge.id}
-                className="familytree__line"
-                d={edge.d}
-                data-semantic={edge.semantic}
-                data-canon={edge.canonStatus}
-              />
+              <g key={edge.id}>
+                <path
+                  className="familytree__line"
+                  d={edge.d}
+                  data-semantic={edge.semantic}
+                  data-canon={edge.canonStatus}
+                />
+                {edge.label ? (
+                  <text
+                    className="familytree__linelabel"
+                    x={edge.label.x}
+                    y={edge.label.y}
+                    textAnchor="middle"
+                  >
+                    {edge.label.text}
+                  </text>
+                ) : null}
+              </g>
             ))}
           </svg>
 
@@ -233,6 +301,7 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
                   {before.map((member) => node(member.node, false))}
                   {isFocalRow && focal ? node(focal, true) : null}
                   {after.map((member) => node(member.node, false))}
+                  {isFocalRow ? others.map((other) => node(other, false)) : null}
                 </ul>
               </section>
             )
@@ -253,6 +322,8 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
           aria-hidden="true"
         />
         <span>Adoptive</span>
+        <span className="familytree__key" data-semantic={CONNECTION} aria-hidden="true" />
+        <span>Other recorded family</span>
         <span className="familytree__legendnote">
           Faded lines and dashed rings mark what is not Canon yet. Open the eye beside a portrait to
           see that person&rsquo;s details, with every connection written out.

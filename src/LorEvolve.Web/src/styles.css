@@ -12262,6 +12262,22 @@ a.idearef__name {
   opacity: 0.4;
 }
 
+/* Recorded family that is not parentage: a dotted arc in the accent, named at its top. */
+.familytree__line[data-semantic='-1'] {
+  stroke: color-mix(in srgb, var(--accent) 70%, var(--rule-strong));
+  stroke-dasharray: 2 4;
+  stroke-linecap: round;
+}
+
+.familytree__linelabel {
+  fill: var(--muted);
+  font-size: 0.7rem;
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
 .familytree__row {
   position: relative;
   display: flex;
@@ -12433,6 +12449,11 @@ a.idearef__name {
 
 .familytree__key[data-semantic='2'] {
   border-top-style: dashed;
+}
+
+.familytree__key[data-semantic='-1'] {
+  border-top-style: dotted;
+  border-top-color: color-mix(in srgb, var(--accent) 70%, var(--rule-strong));
 }
 
 .familytree__legendnote {

@@ -352,7 +352,9 @@ test.describe('family discovery', () => {
     test(`at ${width}px the families stack in one column and nothing scrolls sideways`, async ({
       browser,
     }) => {
-      const context = await browser.newContext({ viewport: { width, height: 800 } })
+      const context = await browser.newContext({
+        viewport: { width, height: 800 },
+      })
       const page = await context.newPage()
       await account(page)
       const { world } = await threeFamilies(page)

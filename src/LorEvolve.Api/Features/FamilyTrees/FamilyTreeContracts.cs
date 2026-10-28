@@ -10,7 +10,9 @@ namespace LorEvolve.Api.Features.FamilyTrees;
 /// Every relative lists the paths that make it one. A path is the ids of the parent links it walks, starting from the link that
 /// touches the focal entry: a parent's path is its one link; a grandparent's is the parent's link, then the grandparent's; a
 /// sibling's is the shared parent's link to the focal entry, then that parent's link to the sibling; a grandchild's is the
-/// child's link, then the grandchild's. Several paths are several recorded ways of being that relative - two shared parents, or
+/// child's link, then the grandchild's. An aunt or uncle's is the parent's link, the grandparent's link to that parent, then
+/// the grandparent's link to the aunt or uncle; a cousin's adds the aunt or uncle's link to the cousin; a niece or nephew's is
+/// the sibling's path, then the sibling's link to them. Several paths are several recorded ways of being that relative - two shared parents, or
 /// one parent through a biological and an adoptive link - and nothing more is claimed from them: a sibling is never called
 /// full or half.
 ///
@@ -32,7 +34,10 @@ public sealed record FamilyTreeResponse(
     IReadOnlyList<FamilyTreeRelative> Children,
     IReadOnlyList<FamilyTreeRelative> Grandchildren,
     IReadOnlyList<FamilyTreeLoop> Loops,
-    IReadOnlyList<FamilyTreeConnection> Connections);
+    IReadOnlyList<FamilyTreeConnection> Connections,
+    IReadOnlyList<FamilyTreeRelative> AuntsUncles,
+    IReadOnlyList<FamilyTreeRelative> Cousins,
+    IReadOnlyList<FamilyTreeRelative> NiecesNephews);
 
 /// <summary>
 /// An entry in the tree: enough to recognise it, and its thumbnail's identity. Never a URL, an article or a field.

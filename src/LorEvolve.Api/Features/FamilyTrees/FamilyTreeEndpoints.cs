@@ -133,15 +133,34 @@ public static class FamilyTreeEndpoints
                 .ToListAsync(cancellationToken);
 
         var rows = near.Concat(far).DistinctBy(row => row.RelationshipId).ToList();
-        var links = rows
-            .Select(row => new FamilyLink(
-                row.RelationshipId, row.RelationshipTypeId, row.ParentEntityId, row.ChildEntityId, row.Semantic))
-            .ToList();
-        var family = FamilyTreeDerivation.Relatives(entityId, links);
+        var family = FamilyTreeDerivation.Relatives(entityId, Links(rows));
+
+        // Out to the side: a grandparent's children (aunts and uncles) and a sibling's children (nieces and nephews), then an
+        // aunt or uncle's children (cousins). One query each.
+        var grandparentsAndSiblings = family.Grandparents.Concat(family.Siblings).Select(relative => relative.EntityId).ToList();
+        if (grandparentsAndSiblings.Count > 0)
+        {
+            rows = [.. rows.Concat(await ParentLinksFrom(db, universeId, grandparentsAndSiblings, cancellationToken)).DistinctBy(row => row.RelationshipId)];
+            family = FamilyTreeDerivation.Relatives(entityId, Links(rows));
+        }
+
+        var auntsUncles = family.AuntsUncles.Select(relative => relative.EntityId).ToList();
+        if (auntsUncles.Count > 0)
+        {
+            rows = [.. rows.Concat(await ParentLinksFrom(db, universeId, auntsUncles, cancellationToken)).DistinctBy(row => row.RelationshipId)];
+            family = FamilyTreeDerivation.Relatives(entityId, Links(rows));
+        }
+
+        var links = Links(rows);
 
         // Only links a relative's path walks are drawn or checked for a circle, so the tree says nothing about a link it does
         // not show.
-        var used = new[] { family.Parents, family.Grandparents, family.Siblings, family.Children, family.Grandchildren }
+        var positions = new[]
+        {
+            family.Parents, family.Grandparents, family.Siblings, family.Children, family.Grandchildren,
+            family.AuntsUncles, family.Cousins, family.NiecesNephews,
+        };
+        var used = positions
             .SelectMany(relatives => relatives.SelectMany(relative => relative.Paths.SelectMany(path => path)))
             .ToHashSet();
         var shown = rows.Where(row => used.Contains(row.RelationshipId)).ToList();
@@ -149,7 +168,7 @@ public static class FamilyTreeEndpoints
 
         // Everyone drawn, and in one query every authored non-structural family link touching any of them, so each member's
         // details can list its own (Issue #37). Listed, never walked: the positions above are already settled.
-        var drawn = new[] { family.Parents, family.Grandparents, family.Siblings, family.Children, family.Grandchildren }
+        var drawn = positions
             .SelectMany(relatives => relatives.Select(relative => relative.EntityId))
             .Append(entityId)
             .ToHashSet();
@@ -211,8 +230,29 @@ public static class FamilyTreeEndpoints
                     [.. loop.EntityIds.OrderBy(NameOf, StringComparer.Ordinal).ThenBy(id => id)],
                     loop.RelationshipIds)),
             ],
-            [.. Connections(drawn, entityId, authored, NameOf)]));
+            [.. Connections(drawn, entityId, authored, NameOf)],
+            Named(family.AuntsUncles),
+            Named(family.Cousins),
+            Named(family.NiecesNephews)));
     }
+
+    private static List<FamilyLink> Links(IEnumerable<LinkRow> rows) =>
+    [
+        .. rows.Select(row => new FamilyLink(
+            row.RelationshipId, row.RelationshipTypeId, row.ParentEntityId, row.ChildEntityId, row.Semantic)),
+    ];
+
+    /// <summary>Every live parent link whose parent is one of <paramref name="parentIds"/>.</summary>
+    private static Task<List<LinkRow>> ParentLinksFrom(
+        LorEvolveDbContext db,
+        Guid universeId,
+        List<Guid> parentIds,
+        CancellationToken cancellationToken) =>
+        LiveLinks(db, universeId)
+            .Where(relationship => RelationshipFamilySemantics.Parent.Contains(relationship.RelationshipType!.FamilySemantic))
+            .Where(relationship => parentIds.Contains(relationship.SourceEntityId))
+            .Select(ToRow)
+            .ToListAsync(cancellationToken);
 
     /// <summary>
     /// Every drawn member's non-structural family links, each read from that member's side with the kind's own wording - the

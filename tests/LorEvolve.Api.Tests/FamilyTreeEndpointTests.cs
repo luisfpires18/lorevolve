@@ -185,7 +185,7 @@ public sealed class FamilyTreeEndpointTests(LorEvolveApiFactory factory) : IClas
         // A sibling is a position, not a claim about how much of a family two entries share: the answer has no word for it.
         using var document = JsonDocument.Parse(await TreeText(family, lia));
         Assert.Equal(
-            ["focalEntityId", "generationsEachWay", "nodes", "links", "parents", "grandparents", "siblings", "children", "grandchildren", "loops", "connections"],
+            ["focalEntityId", "generationsEachWay", "nodes", "links", "parents", "grandparents", "siblings", "children", "grandchildren", "loops", "connections", "auntsUncles", "cousins", "niecesNephews"],
             document.RootElement.EnumerateObject().Select(property => property.Name));
         Assert.Equal(
             ["entityId", "paths"],
@@ -499,7 +499,8 @@ public sealed class FamilyTreeEndpointTests(LorEvolveApiFactory factory) : IClas
         Assert.Equal(5, tree.Children.Count);
         Assert.Equal(10, tree.Grandchildren.Count);
         Assert.Equal(8, tree.Connections.Count);
-        Assert.InRange(queries, 1, 6);
+        // Two more than before for the side of the family: aunts and uncles with nieces and nephews, then cousins.
+        Assert.InRange(queries, 1, 8);
 
         // No more for an entry with nobody around it: the walk is bounded, not proportional.
         var alone = await Person(family, "Alone");
