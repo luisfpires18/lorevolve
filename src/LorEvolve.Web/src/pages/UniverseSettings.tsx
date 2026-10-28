@@ -370,7 +370,7 @@ export default function UniverseSettings() {
                     Make it private first
                   </Link>
                   <button
-                    className="button button--text"
+                    className="button button--secondary"
                     type="button"
                     onClick={() => {
                       archiveCancelled.current = true

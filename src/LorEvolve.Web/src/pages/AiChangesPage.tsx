@@ -70,11 +70,9 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
             : 'Changes an AI proposed for your universes, from a connected app or the Assistant. Nothing in them is applied until someone approves it.'
         }
       >
-        <div className="aichanges__tabs" role="group" aria-label="Which proposals">
+        <div className="segmented" role="group" aria-label="Which proposals">
           <button
-            className={
-              state === 'open' ? 'button button--sm' : 'button button--secondary button--sm'
-            }
+            className="segmented__option"
             type="button"
             aria-pressed={state === 'open'}
             onClick={() => show('open')}
@@ -83,9 +81,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
             Waiting
           </button>
           <button
-            className={
-              state === 'decided' ? 'button button--sm' : 'button button--secondary button--sm'
-            }
+            className="segmented__option"
             type="button"
             aria-pressed={state === 'decided'}
             onClick={() => show('decided')}
@@ -104,7 +100,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
         <div className="notice notice--error" role="alert">
           <p>The proposals couldn&rsquo;t be loaded.</p>
           <button
-            className="button button--secondary button--sm"
+            className="button button--secondary"
             type="button"
             onClick={() => setReads((count) => count + 1)}
           >

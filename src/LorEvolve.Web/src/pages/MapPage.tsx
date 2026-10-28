@@ -293,7 +293,7 @@ export default function MapPage() {
                   <ActionIcon icon={ImageUp} />
                   Replace picture
                 </button>
-                <div className="actionmenu__divider" role="separator" />
+                <hr className="actionmenu__divider" />
                 <button
                   className="actionmenu__item actionmenu__item--danger"
                   type="button"

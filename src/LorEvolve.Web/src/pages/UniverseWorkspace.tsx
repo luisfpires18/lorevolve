@@ -256,7 +256,12 @@ export default function UniverseWorkspace() {
       >
         <div className="sidebar__head">
           <Link className="sidebar__back" to="/app">
-            <ArrowLeft className="sidebar__backicon" aria-hidden="true" focusable="false" />
+            <ArrowLeft
+              className="sidebar__backicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
             All universes
           </Link>
           {/* The world's artwork in miniature beside its name, when its owner has given it one. Decorative. */}

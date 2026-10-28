@@ -164,7 +164,7 @@ function World({ world }: { world: PublicUniverse }) {
         {hasLore ? (
           <section className="pworld__section" id="lore" aria-labelledby="lore-heading">
             <h2 className="pworld__heading" id="lore-heading">
-              <ScrollText aria-hidden="true" size={20} strokeWidth={1.5} />
+              <ScrollText aria-hidden="true" size={20} strokeWidth={1.75} />
               Lore
             </h2>
             <ul className="plore-grid" data-testid="public-lore-list">
@@ -179,7 +179,7 @@ function World({ world }: { world: PublicUniverse }) {
         {hasStories ? (
           <section className="pworld__section" id="stories" aria-labelledby="stories-heading">
             <h2 className="pworld__heading" id="stories-heading">
-              <BookOpen aria-hidden="true" size={20} strokeWidth={1.5} />
+              <BookOpen aria-hidden="true" size={20} strokeWidth={1.75} />
               Stories
             </h2>
             <ul className="pstory-grid" data-testid="public-story-list">

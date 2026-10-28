@@ -131,7 +131,7 @@ export default function AiChangePage() {
       <div className="notice notice--error" role="alert">
         <p>This proposal couldn&rsquo;t be loaded.</p>
         <button
-          className="button button--secondary button--sm"
+          className="button button--secondary"
           type="button"
           onClick={() => setReads((count) => count + 1)}
         >

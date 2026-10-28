@@ -12,6 +12,16 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `docs/design/custom-domain-plan.md` on `docs/custom-domain-setup`. Alpha page -> `demo.lorevolve.com` (owner steps
   pending); apex -> new PROD app `prod-lorevolve` on B1 (`deploy-prod.yml` manual from `master`, `appsettings.AzureProd.json`, runbook `docs/deployment/azure-prod.md`; owner setup after the pre-alpha gate);
   DEV stays F1 on azurewebsites.
+- **UI polish pass 2 - one vocabulary** (`chore/ui-polish-vocabulary` off the pass 1 tip `a15280e`, same worktree; committed,
+  not merged, not pushed). Presentation only. Every Try again is the secondary; a Cancel beside a primary is the secondary
+  (Trash restore, Settings archive); the first step of a destructive flow (Admin Block, Trash bulk Delete) is
+  `button--secondary button--danger-quiet`, the fill kept for the last word, and that rule now sits beside
+  `.button--danger`; the AI changes filter is `.segmented`; Ideas' tabs are `.views` links (`.ideatabs` keeps only the
+  hairline); one `hr.actionmenu__divider`, and one before every destructive last item (entry, era); a token's remove is
+  the lucide X; a period's remove carries a `title`; Admin's sign-up link is on `Field`; every bare lucide icon at 1.75
+  (18 sites). One spec pin moved: `trash-bulk-delete` reads the bulk Delete's ink, not its fill.
+  - Tests: web checks green; Playwright by substring on a fresh DB (169 tests, 2 workers) 168 passed, the one loss
+    (`lore-type-browser` Add child, a fill timing out under load) green alone. Full suite delegated to CI.
 - **UI polish pass 1 - defects and missing states** (`fix/ui-polish-defects` off `origin/dev` at `873a034`, in the worktree
   `.claude/worktrees/fix+ui-polish-defects`; committed, not merged, not pushed). Presentation only: no route, API, schema,
   backup or copy change. Plan approved 2026-10-28: three passes, one branch each, cut from the previous tip; `Inter` leaves
@@ -31,8 +41,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     server under load (`ERR_CONNECTION_REFUSED`, `EADDRINUSE ::1`, dynamic-import fetch), 69/70 on a two-worker rerun,
     the last green alone. Full suite delegated to CI. Checked by hand at 1440 and 390 in both themes: the Lore and
     article-editing feet, the editor ring, the light chevron, the Relations empty state.
-  - Next: pass 2 `chore/ui-polish-vocabulary` (button variants, segmented choices, one view switcher, icon stroke), pass 3
-    `chore/ui-polish-constants` (12px floor, radii and layer tokens, the 860 fold, touch-gated hover, the font stack).
+  - Next: pass 3 `chore/ui-polish-constants` (12px floor, radii and layer tokens, the 860 fold, touch-gated hover, the
+    font stack), off the pass 2 tip.
 - Phases 001-022 done and merged. Sequence log: `docs/architecture/branching.md`.
 - **Pre-alpha gate: #33 security, #11 recovery, #54 database backups** (`feat/pre-alpha-recovery-security` off `dev` at
   `c1721c5`, in the main checkout; committed locally, not merged, not pushed; issues left open).
