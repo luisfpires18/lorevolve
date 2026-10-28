@@ -855,6 +855,14 @@ a.button--danger:visited {
     border-left: 0;
   }
 
+  /* More places than a phone's width holds (Admin has four): the row scrolls inside itself, never the page. */
+  .workspacebar__links {
+    min-width: 0;
+    gap: var(--space-4);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
   .workspacebar__explore {
     display: none;
   }
