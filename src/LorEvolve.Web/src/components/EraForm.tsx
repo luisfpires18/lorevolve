@@ -195,7 +195,7 @@ export function EraForm({
     isDirty,
     era
       ? `“${era.name}” has unsaved changes. Leave without saving them?`
-      : 'This new era has not been saved. Leave without saving it?',
+      : 'This new stage has not been saved. Leave without saving it?',
     onClose,
   )
 
@@ -251,10 +251,10 @@ export function EraForm({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this era can be saved.',
+            : 'Some details need a change before this stage can be saved.',
         )
       } else {
-        setMessage('That era could not be saved.')
+        setMessage('That stage could not be saved.')
       }
     } finally {
       setIsSaving(false)
@@ -278,10 +278,10 @@ export function EraForm({
       >
         <header className="drawer__head">
           <p className="drawer__eyebrow">
-            {era ? `An era of ${entityName}` : `New era of ${entityName}`}
+            {era ? `A stage of ${entityName}` : `New stage of ${entityName}`}
           </p>
           <h2 className="drawer__title" id="era-heading">
-            {era ? era.name : 'New era'}
+            {era ? era.name : 'New stage'}
           </h2>
         </header>
 
@@ -347,7 +347,7 @@ export function EraForm({
               What happens then
             </label>
             <p className="field__hint">
-              Who {entityName} is in this era, and what changes for them.
+              Who {entityName} is in this stage, and what changes for them.
             </p>
             <textarea
               id="era-description"
@@ -403,10 +403,10 @@ export function EraForm({
 
           {definitions.length > 0 ? (
             <fieldset className="erafields" data-testid="era-fields">
-              <legend className="field__label">Details in this era</legend>
+              <legend className="field__label">Details in this stage</legend>
               <p className="field__hint">
-                A detail this era doesn&rsquo;t set reads from {entityName}&rsquo;s main profile. No
-                other era is consulted.
+                A detail this stage doesn&rsquo;t set reads from {entityName}&rsquo;s main profile.
+                No other stage is consulted.
               </p>
               {definitions.map((definition) => (
                 <EraFieldRow
@@ -435,7 +435,7 @@ export function EraForm({
             disabled={isSaving}
             data-testid="save-era"
           >
-            {isSaving ? 'Saving' : era ? 'Save era' : 'Add era'}
+            {isSaving ? 'Saving' : era ? 'Save stage' : 'Add stage'}
           </button>
           <button
             className="button button--secondary"
@@ -498,8 +498,8 @@ function EraPoint({
 
 const MODE_LABELS: Record<Mode, string> = {
   inherit: 'From the main profile',
-  set: 'Set for this era',
-  cleared: 'None in this era',
+  set: 'Set for this stage',
+  cleared: 'None in this stage',
 }
 
 function EraFieldRow({
@@ -535,7 +535,7 @@ function EraFieldRow({
           className="field__input field__input--select erafield__mode"
           value={field.mode}
           onChange={(event) => onChange({ mode: event.target.value as Mode })}
-          aria-label={`${definition.name} in this era`}
+          aria-label={`${definition.name} in this stage`}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           data-testid={`era-field-mode-${definition.name}`}
@@ -565,7 +565,7 @@ function EraFieldRow({
           onChange={(value) => onChange({ value })}
         />
       ) : (
-        <p className="erafield__inherited">Left empty in this era.</p>
+        <p className="erafield__inherited">Left empty in this stage.</p>
       )}
 
       {error ? (
@@ -651,7 +651,7 @@ function EraStories({
         <label className="field__label" htmlFor={storySelect}>
           Stories
         </label>
-        <p className="field__hint">The stories this era covers, if any.</p>
+        <p className="field__hint">The stories this stage covers, if any.</p>
         {stories.length > 0 ? (
           <ul className="storylinks__list">
             {stories.map((story) => (
@@ -717,7 +717,7 @@ function EraStories({
             Scenes
           </label>
           <p className="field__hint">
-            Scenes of those stories that fall in this era, if you want to name them.
+            Scenes of those stories that fall in this stage, if you want to name them.
           </p>
           {scenes.length > 0 ? (
             <ul className="storylinks__list">

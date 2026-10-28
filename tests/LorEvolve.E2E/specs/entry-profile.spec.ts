@@ -183,7 +183,7 @@ test('one entry reads as a profile: an overview, then each era with only what ho
   const overview = page.getByTestId('progression-overview')
   await expect(overview).toContainText('A Saiyan raised on Earth.')
   await expect(overview.getByTestId('progression-counts')).toHaveText(
-    '4 eras · 2 forms · 1 appearance',
+    '4 stages · 2 forms · 1 appearance',
   )
 
   // The Frieza Saga: Super Saiyan first unlocked, its look, Vegeta as rival and Chi-Chi always - and nothing of the Buu Saga.
@@ -202,7 +202,7 @@ test('one entry reads as a profile: an overview, then each era with only what ho
     relations.getByTestId('era-relations-holding').getByTestId('era-relation-Bulma'),
   ).toHaveCount(0)
   const unplaced = relations.getByTestId('era-relations-unplaced-group')
-  await expect(unplaced).toContainText('1 relation can’t be placed in this era')
+  await expect(unplaced).toContainText('1 relation can’t be placed in this stage')
   await expect(unplaced.getByTestId('era-relation-Bulma')).toBeHidden()
   await unplaced.locator('summary').click()
   await expect(unplaced.getByTestId('era-relation-Bulma')).toBeVisible()

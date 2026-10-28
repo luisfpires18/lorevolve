@@ -5610,6 +5610,39 @@ a.button--danger:visited {
   box-shadow: var(--shadow-2);
 }
 
+/* A stage's picture, chosen above the frame's picture: a quiet row of choices, the shown one marked. */
+.entry__stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  max-width: 100%;
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--rule);
+}
+
+.entry__stage {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.entry__stage:hover {
+  color: var(--ink);
+  border-color: var(--rule-strong);
+}
+
+.entry__stage[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--ink);
+}
+
 .entry__media img {
   display: block;
   width: auto;
@@ -5632,6 +5665,12 @@ a.button--danger:visited {
   background: color-mix(in srgb, var(--raised) 88%, transparent);
   color: var(--ink);
   box-shadow: var(--shadow-1);
+}
+
+/* With the stage choices across the frame's top, the expand button moves to the picture's foot. */
+.entry__media:has(.entry__stages) .entry__expand {
+  top: auto;
+  bottom: var(--space-4);
 }
 
 .entry__expand:hover:not(:disabled) {
@@ -17360,9 +17399,10 @@ details.reviewsection > .reviewsection__list {
 
 .gallery__thumb {
   display: block;
-  width: 6rem;
-  height: 6rem;
-  object-fit: cover;
+  width: auto;
+  height: 8rem;
+  max-width: 16rem;
+  object-fit: contain;
   border-radius: var(--radius-xs);
 }
 
@@ -17390,8 +17430,8 @@ details.reviewsection > .reviewsection__list {
 }
 
 .eralooks__item .gallery__thumb {
-  width: 4rem;
-  height: 4rem;
+  height: 5rem;
+  max-width: 10rem;
 }
 
 /* ---------- Entry: the progression profile (Issue #44) ----------

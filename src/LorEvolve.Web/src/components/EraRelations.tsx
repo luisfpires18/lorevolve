@@ -37,7 +37,7 @@ export function EraRelations({
   if (views === null) {
     return (
       <p className="muted" role="status">
-        Reading the relations in this era…
+        Reading the relations in this stage…
       </p>
     )
   }
@@ -45,7 +45,7 @@ export function EraRelations({
   if (views === 'failed') {
     return (
       <p className="form__message" role="alert">
-        The relations in this era could not be read.
+        The relations in this stage could not be read.
       </p>
     )
   }
@@ -57,7 +57,7 @@ export function EraRelations({
 
   return (
     <div className="rail__block" data-testid="era-relations">
-      <h4 className="rail__heading">Relations in this era</h4>
+      <h4 className="rail__heading">Relations in this stage</h4>
       {holding.length > 0 ? (
         <RelationRows universeId={universeId} views={holding} testId="era-relations-holding" />
       ) : null}
@@ -66,8 +66,8 @@ export function EraRelations({
         <details className="erarelations__unplaced" data-testid="era-relations-unplaced-group">
           <summary className="field__hint">
             {unplaced.length === 1
-              ? '1 relation can’t be placed in this era'
-              : `${unplaced.length} relations can’t be placed in this era`}
+              ? '1 relation can’t be placed in this stage'
+              : `${unplaced.length} relations can’t be placed in this stage`}
           </summary>
           <RelationRows universeId={universeId} views={unplaced} testId="era-relations-unplaced" />
         </details>

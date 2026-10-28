@@ -375,7 +375,7 @@ export function ProgressionItemForm({
 
               <div className="field">
                 <label className="field__label" htmlFor="item-unlock-era">
-                  In the era
+                  In the stage
                 </label>
                 <select
                   id="item-unlock-era"
@@ -385,7 +385,7 @@ export function ProgressionItemForm({
                   aria-invalid={errorOf('unlockEraId') ? true : undefined}
                   data-testid={`${kind}-unlock-era`}
                 >
-                  <option value="">{base.eras.length === 0 ? 'No eras yet' : 'Not said'}</option>
+                  <option value="">{base.eras.length === 0 ? 'No stages yet' : 'Not said'}</option>
                   {base.eras.map((era) => (
                     <option key={era.id} value={era.id}>
                       {era.name}
@@ -420,11 +420,11 @@ export function ProgressionItemForm({
 
           {base.eras.length > 0 ? (
             <fieldset className="itemeras" data-testid={`${kind}-eras`}>
-              <legend className="field__label">{isLook ? 'Eras' : 'Available in'}</legend>
+              <legend className="field__label">{isLook ? 'Stages' : 'Available in'}</legend>
               <p className="field__hint">
                 {isLook
-                  ? 'Tick every era it belongs to. Nothing is assumed from the order of eras.'
-                  : 'Tick every era it can be used in. Nothing is assumed from the order of eras or from when it was first unlocked.'}
+                  ? 'Tick every stage it belongs to. Nothing is assumed from the order of stages.'
+                  : 'Tick every stage it can be used in. Nothing is assumed from the order of stages or from when it was first unlocked.'}
               </p>
               {base.eras.map((era) => (
                 <label className="check" key={era.id}>
@@ -446,7 +446,7 @@ export function ProgressionItemForm({
                   onClick={fromUnlockOn}
                   data-testid={`${kind}-eras-from-unlock`}
                 >
-                  Tick {base.eras[unlockAt].name} and every later era
+                  Tick {base.eras[unlockAt].name} and every later stage
                 </button>
               ) : null}
               {errorOf('eraIds') ? <p className="field__error">{errorOf('eraIds')}</p> : null}
