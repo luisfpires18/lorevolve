@@ -1391,12 +1391,7 @@ function EntityScreen({ view }: { view: EntryView }) {
             ) : null}
 
             {detail ? (
-              <LoreOnMaps
-                key={detail.id}
-                universeId={universe.id}
-                entityId={detail.id}
-                canEdit={access.editContent}
-              />
+              <LoreOnMaps key={detail.id} universeId={universe.id} entityId={detail.id} />
             ) : null}
 
             {detail ? (

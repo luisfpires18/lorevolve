@@ -92,8 +92,9 @@ test.describe('a map of the world', () => {
     const capital = unique('Sylvara ')
     const entityId = await createEntry(page, universeId, capital)
 
-    // The entry is on no map yet, and says so.
-    await expect(page.getByTestId('entry-maps-none')).toBeVisible()
+    // The entry is on no map yet: no Maps block at all.
+    await expect(page.locator('.entry__rail')).toBeVisible()
+    await expect(page.getByTestId('entry-maps')).toHaveCount(0)
 
     const mapName = unique('The Known World ')
     const mapId = await createMap(page, universeId, mapName)
@@ -285,7 +286,8 @@ test.describe('a map of the world', () => {
       0,
     )
     await page.goto(`/app/universes/${universeId}/lore/${entityId}`)
-    await expect(page.getByTestId('entry-maps-none')).toBeVisible()
+    await expect(page.locator('.entry__rail')).toBeVisible()
+    await expect(page.getByTestId('entry-maps')).toHaveCount(0)
   })
 })
 
