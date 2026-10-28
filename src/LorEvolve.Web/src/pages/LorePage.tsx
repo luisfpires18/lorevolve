@@ -354,6 +354,7 @@ export default function LorePage() {
       type: typeId,
       group: null,
       browse: null,
+      open: null,
       [FIELD_FILTER_PARAM]: null,
     }).toString()
     return { search: next ? `?${next}` : '' }
@@ -367,6 +368,7 @@ export default function LorePage() {
       group: groupId,
       type: null,
       browse: null,
+      open: null,
       [FIELD_FILTER_PARAM]: null,
     }).toString()
     return { search: `?${next}` }

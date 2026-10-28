@@ -1,6 +1,6 @@
 import { useId } from 'react'
-import { Link, type To } from 'react-router-dom'
-import { Layers } from 'lucide-react'
+import { Link, useSearchParams, type To } from 'react-router-dom'
+import { ChevronDown, ChevronRight, Layers } from 'lucide-react'
 import type { EntityTypeGroup } from '../lore/types'
 import { branchIds, type TypeNode, type TypeTree } from '../lore/typeTree'
 import { TypeIcon } from './TypeIcon'
@@ -95,8 +95,30 @@ export function LoreCatalog({
   typesUrl: string
 }) {
   const headingId = useId()
+  // The unfolded types are the address's `open`, replacing its entry, so Back from a type finds them still open.
+  const [params, setParams] = useSearchParams()
+  const expanded = new Set((params.get('open') ?? '').split(',').filter(Boolean))
   const members = browsing ? new Set(browsing.typeIds) : null
-  const shown = tree.ordered.filter((node) => !members || members.has(node.type.id))
+  // A group is read as it is, flat. All types starts at the top of the hierarchy: a type's nested types follow it once
+  // it is expanded, each card naming where it sits.
+  const shown = members
+    ? tree.ordered.filter((node) => members.has(node.type.id))
+    : tree.ordered.filter((node) => node.path.slice(0, -1).every((above) => expanded.has(above.id)))
+
+  function toggle(id: string) {
+    const next = new Set(expanded)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setParams(
+      (current) => {
+        const copy = new URLSearchParams(current)
+        if (next.size === 0) copy.delete('open')
+        else copy.set('open', [...next].join(','))
+        return copy
+      },
+      { replace: true },
+    )
+  }
 
   return (
     <section className="lorecatalog" aria-labelledby={headingId} data-testid="lore-catalog">
@@ -176,15 +198,38 @@ export function LoreCatalog({
 
       {shown.length > 0 ? (
         <ul className="lorecatalog__grid" data-testid="lore-type-cards">
-          {shown.map((node) => (
-            <li key={node.type.id}>
-              <TypeCard
-                node={node}
-                count={listedEntries(node, tree.byId)}
-                href={typeHref(node.type.id)}
-              />
-            </li>
-          ))}
+          {shown.map((node) => {
+            const isOpen = expanded.has(node.type.id)
+            const Chevron = isOpen ? ChevronDown : ChevronRight
+            return (
+              <li
+                key={node.type.id}
+                className={node.path.length > 1 ? 'lorecatalog__nestedcard' : undefined}
+              >
+                <TypeCard
+                  node={node}
+                  count={listedEntries(node, tree.byId)}
+                  href={typeHref(node.type.id)}
+                />
+                {!members && node.children.length > 0 ? (
+                  <button
+                    className="button button--text button--sm lorecatalog__expand"
+                    type="button"
+                    aria-expanded={isOpen}
+                    onClick={() => toggle(node.type.id)}
+                    data-testid="lore-type-expand"
+                    data-type-name={node.type.name}
+                  >
+                    <Chevron aria-hidden="true" focusable="false" />
+                    {isOpen ? 'Hide' : 'Show'}{' '}
+                    {node.children.length === 1
+                      ? '1 nested type'
+                      : `${node.children.length} nested types`}
+                  </button>
+                ) : null}
+              </li>
+            )
+          })}
         </ul>
       ) : null}
     </section>

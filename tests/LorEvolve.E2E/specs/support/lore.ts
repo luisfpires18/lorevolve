@@ -38,3 +38,18 @@ export async function chooseLoreType(page: Page, ...path: string[]) {
   }
   await expect(page).toHaveURL(/[?&]type=/)
 }
+
+/**
+ * The catalog shows top-level types first; each type that holds others folds them away behind Show nested types. Opens
+ * every fold, deepest last, so every type is a card.
+ */
+export async function expandAllTypes(page: Page) {
+  const closed = page.locator('[data-testid="lore-type-expand"][aria-expanded="false"]')
+  await expect(page.getByTestId('lore-type-cards')).toBeVisible()
+  while ((await closed.count()) > 0) {
+    const name = await closed.first().getAttribute('data-type-name')
+    const fold = page.locator(`[data-testid="lore-type-expand"][data-type-name="${name}"]`)
+    await fold.click()
+    await expect(fold).toHaveAttribute('aria-expanded', 'true')
+  }
+}
