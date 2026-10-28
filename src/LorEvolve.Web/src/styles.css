@@ -2692,6 +2692,20 @@ a.button--danger:visited {
 /* A section: its icon and its name, 36px tall. Where you are is the accent wash, the ink label at
    500 and the universe's own colour as a bar on the inside edge - never the ink fill, which means
    "act". `aria-current="page"` comes from the router's NavLink. */
+.wipbadge {
+  display: inline-block;
+  margin-inline-start: var(--space-2);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
 .sidebar__link {
   position: relative;
   display: flex;
@@ -3006,7 +3020,7 @@ a.button--danger:visited {
   margin-top: var(--space-8);
 }
 
-/* Writing and Keeping side by side once there is room for both: two short groups, read as a pair. */
+/* The shorter groups two across once there is room. */
 .contents__pair {
   display: grid;
   gap: var(--space-8) var(--space-7);
@@ -3059,8 +3073,8 @@ a.button--danger:visited {
 }
 
 /* A doorway into a part of the world: a medallion with the part's icon, its name in the display face, what it holds,
-   and the way through at its foot. Raised and lit from above; under the pointer it rises and its edge warms. Keeping's
-   doorways (Canon, Types) are upkeep, so they lie flatter: no fill until pointed at. */
+   and the way through at its foot. Raised and lit from above; under the pointer it rises and its edge warms. Review's
+   doorway (AI Changes) is upkeep, so it lies flatter: no fill until pointed at. */
 .doorway {
   display: flex;
   flex-direction: column;
@@ -3082,7 +3096,7 @@ a.button--danger:visited {
     transform var(--duration-2) var(--ease);
 }
 
-.contents--keeping .doorway {
+.contents--review .doorway {
   background: transparent;
   box-shadow: none;
 }

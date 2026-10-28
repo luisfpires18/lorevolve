@@ -10,6 +10,7 @@ import { getChronology } from '../chronology/api'
 import type { Chronology } from '../chronology/types'
 import { getUniverse } from '../universes/api'
 import { offered, SECTION_GROUPS, UPKEEP } from '../universes/sections'
+import { WipBadge } from '../components/WipBadge'
 import { capabilitiesOf, ROLE_LABELS, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -289,7 +290,7 @@ export default function UniverseWorkspace() {
               data-testid={UPKEEP.includes(group[0]) ? 'sidebar-upkeep' : undefined}
             >
               <ul className="sidebar__links">
-                {group.map(({ segment, label, testId, icon: Icon }) => (
+                {group.map(({ segment, label, testId, icon: Icon, wip }) => (
                   <li key={label}>
                     <NavLink
                       to={segment === '' ? '.' : segment}
@@ -304,6 +305,7 @@ export default function UniverseWorkspace() {
                         strokeWidth={1.75}
                       />
                       {label}
+                      {wip ? <WipBadge /> : null}
                     </NavLink>
                   </li>
                 ))}

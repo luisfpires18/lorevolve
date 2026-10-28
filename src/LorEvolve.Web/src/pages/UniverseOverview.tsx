@@ -1,18 +1,20 @@
 import { Link, useOutletContext } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { ConnectToAi } from '../components/ConnectToAi'
+import { WipBadge } from '../components/WipBadge'
 import { PageHeader } from '../components/PageHeader'
 import { formatDate } from '../lib/dates'
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, useUniverseAccess } from '../universes/access'
-import { KEEPING, offered, WORLD, WRITING, type Section } from '../universes/sections'
+import { offered, REVIEW, RULES, WORLD, WRITING, type Section } from '../universes/sections'
 import { UniverseRole } from '../universes/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
-/** The contents page's three parts: the sidebar's worldbuilding groups, between the front page and the upkeep. */
+/** The contents page's parts: the sidebar's worldbuilding groups, between the front page and the upkeep. */
 const CONTENTS = [
   { heading: 'World', name: 'world', sections: WORLD },
+  { heading: 'Rules', name: 'rules', sections: RULES },
   { heading: 'Writing', name: 'writing', sections: WRITING },
-  { heading: 'Keeping', name: 'keeping', sections: KEEPING },
+  { heading: 'Review', name: 'review', sections: REVIEW },
 ]
 
 /**
@@ -21,7 +23,7 @@ const CONTENTS = [
  * count would mean reading every list just to print a number, and a contents page does not need
  * one to say where things are.
  *
- * The world's parts take the full width; writing and keeping, two short groups, sit side by side once there is room.
+ * The world's parts take the full width; the shorter groups sit side by side once there is room.
  */
 export default function UniverseOverview() {
   const { universe } = useOutletContext<WorkspaceContext>()
@@ -96,13 +98,16 @@ function Contents({
         {heading}
       </h2>
       <ul className="contents__list">
-        {sections.map(({ segment, label, icon: Icon, purpose }) => (
+        {sections.map(({ segment, label, icon: Icon, purpose, wip }) => (
           <li key={segment}>
             <Link className="doorway" to={segment} data-testid={`overview-${segment}`}>
               <span className="doorway__medallion" aria-hidden="true">
                 <Icon className="doorway__icon" focusable="false" strokeWidth={1.75} />
               </span>
-              <span className="doorway__name">{label}</span>
+              <span className="doorway__name">
+                {label}
+                {wip ? <WipBadge /> : null}
+              </span>
               <span className="doorway__purpose">{purpose}</span>
               <span className="doorway__go" aria-hidden="true">
                 <ArrowRight focusable="false" strokeWidth={1.75} />

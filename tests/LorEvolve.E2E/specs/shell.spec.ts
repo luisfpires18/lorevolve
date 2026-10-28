@@ -69,7 +69,7 @@ test.describe('the shell', () => {
 
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
     // The way up, then fifteen sections: Publish joined the foot in 014, Chronology left Settings for a section of its
-    // own, AI changes joined the keeping group (ADR 0047) and Maps followed Lore (ADR 0060). All universes shares the
+    // own, AI Changes joined (ADR 0047) and Maps (ADR 0060). All universes shares the
     // landmark since refinement 024.
     await expect(sections.getByRole('link')).toHaveCount(16)
     await expect(sections.getByRole('link').first()).toHaveText('All universes')
@@ -183,15 +183,15 @@ test.describe('the shell', () => {
 
       const at = async (testId: string) => (await page.getByTestId(testId).boundingBox())!
 
-      // Overview and the world's four sections fill the first column, top to bottom; the writing
+      // Overview and the world's sections fill the first column, top to bottom; the writing
       // and the upkeep start the second - not a zigzag across the two.
       const overview = await at('workspace-overview')
       const lore = await at('workspace-lore')
-      const rules = await at('workspace-world-rules')
+      const maps = await at('workspace-maps')
       const stories = await at('workspace-stories')
       expect(Math.abs(lore.x - overview.x)).toBeLessThanOrEqual(1)
       expect(lore.y).toBeGreaterThan(overview.y)
-      expect(Math.abs(rules.x - overview.x)).toBeLessThanOrEqual(1)
+      expect(Math.abs(maps.x - overview.x)).toBeLessThanOrEqual(1)
       // Groups stay whole: the writing pair shares a column. The upkeep - Trash, Publish, Settings - is one row
       // across the sheet's foot, under everything else.
       const ideas = await at('workspace-ideas')
