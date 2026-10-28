@@ -350,7 +350,7 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
     }
 
     [Fact]
-    public async Task Schema_is_a_second_tick_that_an_app_never_gets_by_default_and_loses_on_its_own()
+    public async Task A_creator_proposes_schema_with_no_second_choice_and_loses_it_on_its_own()
     {
         var (browser, _, u, character) = await OwnerAsync("mcpschema");
         object SchemaChange(string name) => new
@@ -359,22 +359,13 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
             operations = new object[] { new { id = "t", action = "create", resource = "lore_type", loreType = new { name } } },
         };
 
-        // Proposing without the schema tick: content yes, schema no - and the catalog says why.
-        var (content, _) = await ConnectAsync(browser, u, allowProposals: true);
-        var options = Body(await CallAsync(content, LorEvolveMcpProposalTools.OptionsTool, new { }));
-        Assert.False(options.GetProperty("schema").GetProperty("canPropose").GetBoolean());
-        Assert.DoesNotContain(options.GetProperty("allowed").EnumerateArray(), allowed => allowed.GetString() == "create lore_type");
-        var refused = await CallAsync(content, LorEvolveMcpProposalTools.ProposeTool, SchemaChange("Kingdom"));
-        Assert.True(refused.GetProperty("isError").GetBoolean());
-        Assert.Equal(AiChangeCodes.NotAllowed, Body(refused).GetProperty("problems")[0].GetProperty("code").GetString());
+        // A Reader gets no proposal tools at all, schema or not.
+        var (reader, _) = await ConnectAsync(browser, u, allowProposals: false, allowSchema: true);
+        Assert.DoesNotContain(LorEvolveMcpProposalTools.ProposeTool, await ToolsAsync(reader));
 
-        // The schema tick alone, without proposals, grants nothing.
-        var (schemaOnly, _) = await ConnectAsync(browser, u, allowProposals: false, allowSchema: true);
-        Assert.DoesNotContain(LorEvolveMcpProposalTools.ProposeTool, await ToolsAsync(schemaOnly));
-
-        // Both ticks: the catalog is the universe's real schema, and a type is staged.
-        var (schema, _) = await ConnectAsync(browser, u, allowProposals: true, allowSchema: true);
-        options = Body(await CallAsync(schema, LorEvolveMcpProposalTools.OptionsTool, new { }));
+        // A Creator: the catalog is the universe's real schema, and a type is staged.
+        var (schema, _) = await ConnectAsync(browser, u, allowProposals: true);
+        var options = Body(await CallAsync(schema, LorEvolveMcpProposalTools.OptionsTool, new { }));
         Assert.True(options.GetProperty("schema").GetProperty("canPropose").GetBoolean());
         Assert.Contains(options.GetProperty("allowed").EnumerateArray(), allowed => allowed.GetString() == "remove lore_field");
         Assert.Contains(options.GetProperty("schema").GetProperty("fieldKinds").EnumerateArray(), kind => kind.GetString() == "link");

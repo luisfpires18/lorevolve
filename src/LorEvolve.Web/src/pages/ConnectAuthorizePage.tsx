@@ -11,7 +11,6 @@ import {
   getConsentToken,
   PROPOSE_FIELD,
   READABLE,
-  SCHEMA_FIELD,
   type ConnectionRequestDetails,
   type ConsentToken,
 } from '../mcp/api'
@@ -302,17 +301,16 @@ function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id
 }
 
 /**
- * The separate permission to propose changes (ADR 0047), offered only when the app asked and the role could allow it -
- * and never ticked for the person. Proposing is not writing: what the app sends waits in Pending AI Changes.
+ * What the app may do, as one of two levels, offered only when the app asked to propose and the role could allow it:
+ * Reader, the default, or Creator, which proposes changes of every kind the role allows - lore, types and fields included
+ * (ADR 0047, ADR 0062). Proposing is not writing: what the app sends waits in Pending AI Changes.
  */
 function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
-  const [proposing, setProposing] = useState(false)
-
   if (!details.canPropose) {
     return (
-      <section className="consent__part" aria-label="Proposing changes">
+      <section className="consent__part" aria-label="Access level">
         <p className="consent__identity" data-testid="consent-propose-unavailable">
-          The app also asked to propose changes. Your role here only reads, so it gets read-only
+          The app also asked to propose changes. Your role here only reads, so it gets Reader
           access.
         </p>
       </section>
@@ -320,53 +318,42 @@ function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
   }
 
   return (
-    <section className="consent__part consent__propose" aria-label="Proposing changes">
-      <p className="consent__label">Optional</p>
+    <fieldset className="consent__part consent__propose" aria-describedby="consent-propose-what">
+      <legend className="consent__label">Access level</legend>
+      <div className="consent__check">
+        <input
+          id="consent-reader"
+          type="radio"
+          name={PROPOSE_FIELD}
+          value="read"
+          defaultChecked
+          data-testid="consent-reader"
+        />
+        <label htmlFor="consent-reader">
+          <strong>Reader</strong>: <bdi>{details.clientName}</bdi> only reads this universe
+        </label>
+      </div>
       <div className="consent__check">
         <input
           id="consent-propose"
-          type="checkbox"
+          type="radio"
           name={PROPOSE_FIELD}
           value="allow"
-          aria-describedby="consent-propose-what"
           data-testid="consent-propose"
-          onChange={(event) => setProposing(event.target.checked)}
         />
         <label htmlFor="consent-propose">
-          Also let <bdi>{details.clientName}</bdi> propose changes for you to review
+          <strong>Creator</strong>: it also proposes new and changed content for you to review
         </label>
       </div>
       <p className="consent__identity" id="consent-propose-what">
-        It could send new or changed lore, articles, relationships, stories, scenes, prose, plot,
-        timeline moments, world rules and - if you own this universe - your ideas to Pending AI
-        Changes in LorEvolve, as you. Removals only go to the Trash. Nothing changes until you, or
-        the universe&rsquo;s owner or an Editor, approves it there. You can turn this off in
-        Connected apps.
+        A Creator can send lore entries, articles, relationships, stories, scenes, prose, plot,
+        timeline moments, world rules
+        {details.canProposeSchema ? ', lore types, fields and groups' : ''} and - if you own this
+        universe - your ideas to Pending AI Changes in LorEvolve, as you. Removals only go to the
+        Trash, and a field is only ever archived. Nothing changes until you, or the universe&rsquo;s
+        owner or an Editor, approves it there. You can make it a Reader again in Connected apps.
       </p>
-      {details.canProposeSchema ? (
-        <>
-          <div className="consent__check">
-            <input
-              id="consent-schema"
-              type="checkbox"
-              name={SCHEMA_FIELD}
-              value="allow"
-              disabled={!proposing}
-              aria-describedby="consent-schema-what"
-              data-testid="consent-schema"
-            />
-            <label htmlFor="consent-schema">
-              Also let it propose new lore types, fields and groups
-            </label>
-          </div>
-          <p className="consent__identity" id="consent-schema-what">
-            Schema changes how every entry of a type is shaped, so it is a separate choice. They
-            arrive in their own proposal, are reviewed and approved like any other change, and are
-            never deleted by the app: a field is only ever archived.
-          </p>
-        </>
-      ) : null}
-    </section>
+    </fieldset>
   )
 }
 

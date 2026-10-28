@@ -6,7 +6,6 @@ import {
   disconnectApp,
   listConnectedApps,
   stopProposals,
-  stopSchemaProposals,
   type ConnectedApp,
   type ConnectedAppStatusValue,
 } from '../mcp/api'
@@ -118,7 +117,6 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
   const [app, setApp] = useState(listed)
   const [stopping, setStopping] = useState(false)
   const [stopped, setStopped] = useState(false)
-  const [stoppingSchema, setStoppingSchema] = useState(false)
   const id = useId()
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -162,22 +160,9 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
       setApp({ ...app, canPropose: false, canProposeSchema: false })
       setStopped(true)
     } catch {
-      setError('Proposals couldn’t be turned off. Try again.')
+      setError('It couldn’t be made a Reader. Try again.')
     } finally {
       setStopping(false)
-    }
-  }
-
-  async function stopSchema() {
-    setStoppingSchema(true)
-    setError(null)
-    try {
-      await stopSchemaProposals(app.id)
-      setApp({ ...app, canProposeSchema: false })
-    } catch {
-      setError('Schema proposals couldn’t be turned off. Try again.')
-    } finally {
-      setStoppingSchema(false)
     }
   }
 
@@ -196,11 +181,9 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
             'Unverified app'
           )}
           {' · '}
-          {app.canProposeSchema
-            ? 'Reads, and can propose changes, types, fields and groups for review'
-            : app.canPropose
-              ? 'Reads, and can propose changes for review'
-              : 'Read-only'}
+          {app.canPropose
+            ? 'Creator: reads, and proposes changes for review'
+            : 'Reader: reads only'}
         </p>
         <p className="connectedapps__meta">
           Reads <bdi>{app.universeName}</bdi>
@@ -222,28 +205,16 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
         </p>
       </div>
       <div className="connectedapps__controls">
-        {app.canProposeSchema ? (
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => void stopSchema()}
-            disabled={busy || stopping || stoppingSchema}
-            aria-label={`Stop ${app.clientName} proposing types, fields and groups to ${app.universeName}`}
-            data-testid="stop-app-schema"
-          >
-            {stoppingSchema ? 'Stopping' : 'Stop schema proposals'}
-          </button>
-        ) : null}
         {app.canPropose ? (
           <button
             className="button button--secondary"
             type="button"
             onClick={() => void stop()}
             disabled={busy || stopping}
-            aria-label={`Stop ${app.clientName} proposing changes to ${app.universeName}`}
+            aria-label={`Make ${app.clientName} a Reader of ${app.universeName}`}
             data-testid="stop-app-proposals"
           >
-            {stopping ? 'Stopping' : 'Stop proposals'}
+            {stopping ? 'Changing' : 'Make Reader'}
           </button>
         ) : null}
         <button
@@ -297,8 +268,8 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
       ) : null}
       {stopped ? (
         <p className="connectedapps__meta" role="status" data-testid="app-proposals-stopped">
-          It can&rsquo;t propose changes any more, and can still read. What it already proposed can
-          only be rejected.
+          It is a Reader now: it can still read, and can&rsquo;t propose changes. What it already
+          proposed can only be rejected.
         </p>
       ) : null}
       {error ? (
