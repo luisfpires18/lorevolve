@@ -30,7 +30,7 @@ The page sends no email. Applications are read by hand in D1.
    - `TURNSTILE_SECRET`, type Secret, the secret key.
 6. Retry the deployment so the bindings apply. Open `https://<project name>.pages.dev` and send a test application.
 
-Custom domain `lorevolve.com` (DNS on Cloudflare, `www` redirect, Turnstile hostnames): `docs/design/custom-domain-plan.md`.
+Custom domain `demo.lorevolve.com` (DNS on Cloudflare, apex and `www` redirect, Turnstile hostname): `docs/design/custom-domain-plan.md`.
 
 Without `DB` or `TURNSTILE_SECRET` the form refuses every application (503) instead of storing unchecked input.
 

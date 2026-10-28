@@ -8,7 +8,7 @@ alpha page and DEV on it. Nothing here needs a code change: every origin LorEvol
 | Question | Recommendation | Why |
 | --- | --- | --- |
 | DNS | **Move the nameservers to Cloudflare** (Free plan) | Pages can only serve the apex when the zone is on Cloudflare; Email Routing needs it too; one dashboard for every record. dominios.pt stays the registrar and keeps billing the renewal. |
-| Alpha page | **`lorevolve.com`**, with `www.lorevolve.com` redirecting to it | The page is the public face of LorEvolve for now and the apex is otherwise empty. When a product page replaces it, it takes the same address. `alpha.lorevolve.com` would leave the apex blank. |
+| Alpha page | **`demo.lorevolve.com`** (owner, 2026-10-28); `lorevolve.com` and `www` redirect to it with a temporary 302 | The apex stays free for the product page or the prod app later; a 302 is not cached for good, so taking the apex back is one rule deleted. Prod app later: `app.lorevolve.com`. |
 | DEV | **`dev.lorevolve.com`**, only if the plan moves to Basic B1 (see 1.1) | Alpha testers are invited onto DEV, so its address is the one they see. |
 | `PublicSite__Origin` on DEV | **Leave unset** | ADR 0038: DEV stays out of search indexes. `Mcp__Origin` is the only origin DEV needs. |
 | Privacy note and footer | **Do not name the domain** | They are served from it; naming the host adds nothing and would need editing if it moved. The contact address stays `lorevolve@gmail.com` until a `@lorevolve.com` inbox is tested (section 5). |
@@ -40,14 +40,17 @@ Order matters only where a step says so.
 2. **dominios.pt**: in the domain's panel, turn **DNSSEC off** if it is on (a stale DS record breaks the move), then
    replace the nameservers with Cloudflare's two. Wait until Cloudflare says the zone is Active (minutes to hours).
 3. Optional, after Active: Cloudflare DNS > Settings > enable DNSSEC, and add the DS record it shows at dominios.pt.
-4. **Pages**: Workers & Pages > `lorevolve` > Custom domains > Set up a custom domain > `lorevolve.com`. Cloudflare adds
-   the record itself. Repeat for `www.lorevolve.com`.
-5. **Redirect www**: Rules > Redirect Rules > Create, from template "Redirect from WWW to root": hostname equals
-   `www.lorevolve.com`, dynamic target `concat("https://lorevolve.com", http.request.uri.path)`, 301, keep query string.
-6. **Turnstile**: the widget > Hostname management > add `lorevolve.com` and `www.lorevolve.com`. Keep
-   `lorevolve.pages.dev` so both addresses work. Without this step the form refuses every application on the new
-   address.
-7. Open `https://lorevolve.com`, send a test application, check it in D1, delete the test row.
+4. **Pages**: Workers & Pages > `lorevolve` > Custom domains > Set up a custom domain > `demo.lorevolve.com`.
+   Cloudflare adds the record itself.
+5. **Placeholder records** so the apex and `www` reach Cloudflare's redirect: DNS > Add record, `A` `@` `192.0.2.1`,
+   Proxied; `AAAA` `www` `100::`, Proxied. Both addresses are reserved and never contacted.
+6. **Redirect**: Rules > Create rule > Redirect Rule. Custom filter: `Hostname` `is in` `lorevolve.com`,
+   `www.lorevolve.com`. Dynamic target `concat("https://demo.lorevolve.com", http.request.uri.path)`, **302**, keep query
+   string.
+7. **Turnstile**: the widget > Hostname management > add `demo.lorevolve.com`. Keep `lorevolve.pages.dev` so both
+   addresses work. Without this step the form refuses every application on the new address.
+8. Open `https://demo.lorevolve.com`, send a test application, check it in D1, delete the test row. Open
+   `https://lorevolve.com` and `https://www.lorevolve.com`: both land on the demo page.
 
 `lorevolve.pages.dev` keeps working. It is `noindex`, so it competes with nothing.
 
@@ -116,5 +119,5 @@ Parked in `alpha-demo-page-plan.md` section 6 until a domain existed. With the z
 ## 6. Claude steps
 
 1. This plan, plus the runbook and README updates on branch `docs/custom-domain-setup` (done).
-2. After the owner's steps: run the checks in 3.6 and section 2.7 and record the result in `STATE.md`.
+2. After the owner's steps: run the checks in 3.6 and section 2.8 and record the result in `STATE.md`.
 3. Later, on request: email (section 5).

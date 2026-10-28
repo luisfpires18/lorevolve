@@ -153,8 +153,8 @@ Secrets never go in the repo; they live only in the Cloudflare (or Google) dashb
 - **Step 2, app email**: SMTP sender in the API behind `Email__*` settings, off when unset; starts on Gmail SMTP
   (`lorevolve@gmail.com`, app password in App Service settings). Admin "Email link" next to copy; forgot password and
   reset page. Welcome email: owner to decide.
-- **Domain bought early (2026-10-28)**: `lorevolve.com`, set up in `custom-domain-plan.md` (apex for this page, not an
-  `alpha.` subdomain). Now unblocked, still not built: Cloudflare Email Routing inbox, a real
+- **Domain bought early (2026-10-28)**: `lorevolve.com`, set up in `custom-domain-plan.md` (this page on
+  `demo.lorevolve.com`, the apex redirecting to it). Now unblocked, still not built: Cloudflare Email Routing inbox, a real
   `noreply@` sender (Resend or Workspace) with SPF, DKIM and DMARC. Switching the app is a settings change.
 
 ## 7. Open decisions
