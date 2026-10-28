@@ -2,7 +2,9 @@ import { CanonStatus, type CanonStatusValue } from '../lore/types'
 import { FAMILY_SEMANTIC_WORDS } from '../relationships/types'
 import {
   FAMILY_POSITIONS,
+  ROW_OF,
   type FamilyPosition,
+  type FamilyRow,
   type FamilyTree,
   type FamilyTreeLink,
   type FamilyTreeNode,
@@ -32,7 +34,7 @@ export interface FamilyMember {
 export interface FamilyReading {
   focal: FamilyTreeNode | null
   /** Members by the row they are drawn in. An entry with several positions is drawn once, in the nearest one. */
-  rows: Record<FamilyPosition, FamilyMember[]>
+  rows: Record<FamilyRow, FamilyMember[]>
   links: Map<string, FamilyTreeLink>
   nodes: Map<string, FamilyTreeNode>
 }
@@ -48,6 +50,9 @@ const PLACE_ORDER: FamilyPosition[] = [
   'siblings',
   'grandparents',
   'grandchildren',
+  'auntsUncles',
+  'niecesNephews',
+  'cousins',
 ]
 
 /**
@@ -70,7 +75,7 @@ export function readFamilyTree(tree: FamilyTree): FamilyReading {
     }
   }
 
-  const rows: Record<FamilyPosition, FamilyMember[]> = {
+  const rows: Record<FamilyRow, FamilyMember[]> = {
     grandparents: [],
     parents: [],
     siblings: [],
@@ -87,11 +92,16 @@ export function readFamilyTree(tree: FamilyTree): FamilyReading {
         relations.some((relation) => relation.position === candidate),
       ) ?? relations[0].position
 
-    rows[place].push({ node, place, relations })
+    rows[ROW_OF[place]].push({ node, place, relations })
   }
 
-  for (const position of FAMILY_POSITIONS) {
-    rows[position].sort((first, second) => first.node.name.localeCompare(second.node.name))
+  // The direct family first in each row, then the side of it, each by name.
+  const rank = (member: FamilyMember) => FAMILY_POSITIONS.indexOf(member.place)
+  for (const row of Object.values(rows)) {
+    row.sort(
+      (first, second) =>
+        rank(first) - rank(second) || first.node.name.localeCompare(second.node.name),
+    )
   }
 
   return { focal, rows, links, nodes }
@@ -123,6 +133,11 @@ function reading(
 
     if (position === 'parents') return capitalised(`${word(first)} parent`)
     if (position === 'children') return capitalised(`${word(first)} child`)
+
+    // The side of the family, named by the relative it comes through.
+    if (position === 'auntsUncles') return `${name(first?.parentEntityId ?? focalId)}'s sibling`
+    if (position === 'cousins') return `${name(steps[2]?.childEntityId ?? focalId)}'s child`
+    if (position === 'niecesNephews') return `${name(second?.childEntityId ?? focalId)}'s child`
 
     // A sibling is a shared parent and nothing more. Which links each of them holds is worth saying; how much
     // of a family they share is not something the recorded links prove.

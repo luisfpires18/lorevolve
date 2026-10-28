@@ -75,18 +75,42 @@ export interface FamilyTree {
   grandchildren: FamilyTreeRelative[]
   loops: FamilyTreeLoop[]
   connections: FamilyTreeConnection[]
+  /** A parent's sibling: the parent's link, the grandparent's link to the parent, the grandparent's to them. */
+  auntsUncles: FamilyTreeRelative[]
+  /** An aunt or uncle's child: the aunt or uncle's path, then their link to the cousin. */
+  cousins: FamilyTreeRelative[]
+  /** A sibling's child: the sibling's path, then the sibling's link to them. */
+  niecesNephews: FamilyTreeRelative[]
 }
 
 /** Where a relative sits relative to the focal entry. The order is the order the tree is drawn in. */
 export const FAMILY_POSITIONS = [
   'grandparents',
   'parents',
+  'auntsUncles',
   'siblings',
+  'cousins',
   'children',
+  'niecesNephews',
   'grandchildren',
 ] as const
 
 export type FamilyPosition = (typeof FAMILY_POSITIONS)[number]
+
+/** The generations the tree draws, top to bottom. */
+export type FamilyRow = 'grandparents' | 'parents' | 'siblings' | 'children' | 'grandchildren'
+
+/** Which generation each position stands in: aunts and uncles beside the parents, cousins beside the entry, and so on. */
+export const ROW_OF: Record<FamilyPosition, FamilyRow> = {
+  grandparents: 'grandparents',
+  parents: 'parents',
+  auntsUncles: 'parents',
+  siblings: 'siblings',
+  cousins: 'siblings',
+  children: 'children',
+  niecesNephews: 'children',
+  grandchildren: 'grandchildren',
+}
 
 /** What each position is called on screen, for one relative and for the group. */
 export const POSITION_LABELS: Record<FamilyPosition, { one: string; many: string }> = {
@@ -95,6 +119,9 @@ export const POSITION_LABELS: Record<FamilyPosition, { one: string; many: string
   siblings: { one: 'Sibling', many: 'Siblings' },
   children: { one: 'Child', many: 'Children' },
   grandchildren: { one: 'Grandchild', many: 'Grandchildren' },
+  auntsUncles: { one: 'Aunt or uncle', many: 'Aunts and uncles' },
+  cousins: { one: 'Cousin', many: 'Cousins' },
+  niecesNephews: { one: 'Niece or nephew', many: 'Nieces and nephews' },
 }
 
 /** A member named on a family's summary. */

@@ -19,7 +19,10 @@ public sealed record DerivedFamily(
     IReadOnlyList<DerivedRelative> Grandparents,
     IReadOnlyList<DerivedRelative> Siblings,
     IReadOnlyList<DerivedRelative> Children,
-    IReadOnlyList<DerivedRelative> Grandchildren);
+    IReadOnlyList<DerivedRelative> Grandchildren,
+    IReadOnlyList<DerivedRelative> AuntsUncles,
+    IReadOnlyList<DerivedRelative> Cousins,
+    IReadOnlyList<DerivedRelative> NiecesNephews);
 
 /// <summary>A circle of parent links: entries each reachable from every other, and the links between them.</summary>
 public sealed record DerivedLoop(IReadOnlyList<Guid> EntityIds, IReadOnlyList<Guid> RelationshipIds);
@@ -29,7 +32,7 @@ public sealed record DerivedLoop(IReadOnlyList<Guid> EntityIds, IReadOnlyList<Gu
 /// type, an alias, a date or a word, and nothing it derives is stored: a sibling is two parent links from one parent,
 /// recomputed on every read.
 ///
-/// Bounded by construction. Every position is a fixed walk of one or two links from the focal entry, so no circle of links can
+/// Bounded by construction. Every position is a fixed walk of one to four links from the focal entry, so no circle of links can
 /// make it recurse, and the same entry reached through several branches is one relative with several paths. Circles are found
 /// on their own, by <see cref="Loops"/>.
 /// </summary>
@@ -43,6 +46,24 @@ public static class FamilyTreeDerivation
 
         var parentLinks = byChild[focalEntityId].ToList();
         var childLinks = byParent[focalEntityId].ToList();
+        var parentIds = parentLinks.Select(link => link.ParentEntityId).ToHashSet();
+        var childIds = childLinks.Select(link => link.ChildEntityId).ToHashSet();
+
+        // A sibling: the shared parent's link to the focal entry, then that parent's link to the sibling.
+        var siblingSteps = parentLinks
+            .SelectMany(parent => byParent[parent.ParentEntityId].Select(sibling => (Parent: parent, Sibling: sibling)))
+            .Where(step => step.Sibling.ChildEntityId != focalEntityId)
+            .ToList();
+        var siblingIds = siblingSteps.Select(step => step.Sibling.ChildEntityId).ToHashSet();
+
+        // A parent's sibling: the parent's link, the grandparent's link to the parent, then the grandparent's link to the other
+        // child. A parent is never also named an aunt or uncle.
+        var uncleSteps = parentLinks
+            .SelectMany(parent => byChild[parent.ParentEntityId].Select(grandparent => (Parent: parent, Grandparent: grandparent)))
+            .SelectMany(step => byParent[step.Grandparent.ParentEntityId]
+                .Where(uncle => uncle.ChildEntityId != step.Parent.ParentEntityId && !parentIds.Contains(uncle.ChildEntityId))
+                .Select(uncle => (step.Parent, step.Grandparent, Uncle: uncle)))
+            .ToList();
 
         return new DerivedFamily(
             Parents: Collect(focalEntityId, parentLinks.Select(link => (link.ParentEntityId, Path(link)))),
@@ -58,7 +79,20 @@ public static class FamilyTreeDerivation
             Grandchildren: Collect(
                 focalEntityId,
                 childLinks.SelectMany(child => byParent[child.ChildEntityId]
-                    .Select(grandchild => (grandchild.ChildEntityId, Path(child, grandchild))))));
+                    .Select(grandchild => (grandchild.ChildEntityId, Path(child, grandchild))))),
+            AuntsUncles: Collect(
+                focalEntityId,
+                uncleSteps.Select(step => (step.Uncle.ChildEntityId, Path(step.Parent, step.Grandparent, step.Uncle)))),
+            Cousins: Collect(
+                focalEntityId,
+                uncleSteps.SelectMany(step => byParent[step.Uncle.ChildEntityId]
+                    .Where(cousin => !siblingIds.Contains(cousin.ChildEntityId))
+                    .Select(cousin => (cousin.ChildEntityId, Path(step.Parent, step.Grandparent, step.Uncle, cousin))))),
+            NiecesNephews: Collect(
+                focalEntityId,
+                siblingSteps.SelectMany(step => byParent[step.Sibling.ChildEntityId]
+                    .Where(niece => !childIds.Contains(niece.ChildEntityId))
+                    .Select(niece => (niece.ChildEntityId, Path(step.Parent, step.Sibling, niece))))));
     }
 
     /// <summary>

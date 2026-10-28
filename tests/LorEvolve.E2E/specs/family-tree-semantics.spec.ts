@@ -432,7 +432,7 @@ test.describe('family tree semantics', () => {
     await page.getByTestId('save-family-link').click()
     await expect(form).toHaveCount(0)
 
-    // ---- In Bilbo's details, and nowhere in the tree ----
+    // ---- In Bilbo's details, and beside him in the tree, with no generation of its own ----
 
     // No separate list below the tree any more: the link is with the member it belongs to.
     await expect(page.getByTestId('family-other-connections')).toHaveCount(0)
@@ -441,10 +441,11 @@ test.describe('family tree semantics', () => {
     await expect(details.getByTestId('family-details-connection')).toHaveText([
       'uncle of Frodo (Idea connection)',
     ])
-    await expect(details).toContainText('These links put nobody in the tree')
+    await expect(details).toContainText('place nobody in a generation')
     await page.keyboard.press('Escape')
     await expect(details).toHaveCount(0)
-    await expect(node(page, 'Frodo')).toHaveCount(0)
+    await expect(node(page, 'Frodo')).toHaveCount(1)
+    await expect(page.locator('.familytree__linelabel')).toHaveText('Bilbo uncle of Frodo')
 
     await page.goto(treeUrl(universeId, frodo))
     details = await openDetails(page, 'Frodo')
@@ -456,9 +457,9 @@ test.describe('family tree semantics', () => {
     await page.waitForURL(`**/lore/${bilbo}**`)
     await expect(page.getByTestId('entry-name')).toHaveText('Bilbo')
     await page.goBack()
-    await expect(node(page, 'Bilbo')).toHaveCount(0)
-    // The tree holds the entry in focus and nobody else.
-    await expect(page.locator('.familynode')).toHaveCount(1)
+    // The tree holds the entry in focus and, beside it, the uncle it recorded.
+    await expect(node(page, 'Bilbo')).toHaveCount(1)
+    await expect(page.locator('.familynode')).toHaveCount(2)
 
     // An ordinary relation on the entry, in its own words.
     const relations = (await (

@@ -113,9 +113,9 @@ export function FamilyMemberDetails({
   const isFocal = entityId === tree.focalEntityId
   const member = isFocal
     ? null
-    : Object.values(family.rows)
+    : (Object.values(family.rows)
         .flat()
-        .find((candidate) => candidate.node.entityId === entityId)
+        .find((candidate) => candidate.node.entityId === entityId) ?? null)
   const parentLinks = tree.links.filter(
     (link) => link.parentEntityId === entityId || link.childEntityId === entityId,
   )
@@ -229,8 +229,8 @@ export function FamilyMemberDetails({
                   })}
                 </ul>
                 <p className="familydetails__note">
-                  Recorded as you wrote them. These links put nobody in the tree and imply no other
-                  relative.
+                  Recorded as you wrote them. These links are drawn as dotted lines, place nobody in
+                  a generation and imply no other relative.
                 </p>
               </>
             )}

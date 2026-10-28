@@ -176,9 +176,10 @@ test.describe('family tree redesign', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto(treeUrl(universeId, ids.Lia))
 
-    // Only the ancestry is drawn: four relatives and Lia. The spouse, brother, guardian and rival are not members.
-    await expect(page.locator('.familynode')).toHaveCount(5)
-    for (const name of ['Oren', 'Tam', 'Wen', 'Rook']) {
+    // The ancestry, four relatives and Lia, and Lia's own recorded family beside her: her brother and guardian. Her
+    // mother's spouse and her rival are not drawn.
+    await expect(page.locator('.familynode')).toHaveCount(7)
+    for (const name of ['Oren', 'Rook']) {
       await expect(node(page, name)).toHaveCount(0)
     }
 
@@ -221,7 +222,7 @@ test.describe('family tree redesign', () => {
     await expectDetails(page, 'Sel', 'Draft')
 
     // One thin line per parent link, starting under the parent and arriving on top of the child.
-    await expect(page.locator('.familytree__line')).toHaveCount(4)
+    await expect(page.locator('.familytree__line:not([data-semantic="-1"])')).toHaveCount(4)
   })
 
   test('details open as a popover beside the node, by keyboard too, and close back to the eye', async ({
@@ -412,7 +413,9 @@ test.describe('family tree redesign', () => {
     for (const width of [1440, 900]) {
       await page.setViewportSize({ width, height: 900 })
       await page.goto(treeUrl(universeId, ids.Lia))
-      await expect(page.locator('.familytree__line')).toHaveCount(4)
+      // Four parent lines, and a dotted arc each to the brother and the guardian.
+      await expect(page.locator('.familytree__line:not([data-semantic="-1"])')).toHaveCount(4)
+      await expect(page.locator('.familytree__line[data-semantic="-1"]')).toHaveCount(2)
 
       // The line from Mara down to Lia starts under Mara's name and ends on top of Lia's circle, centred on both.
       const ends = await page.evaluate(() => {

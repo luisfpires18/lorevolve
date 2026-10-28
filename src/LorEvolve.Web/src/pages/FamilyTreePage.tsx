@@ -207,7 +207,7 @@ export default function FamilyTreePage() {
       <PageHeader
         title="Family Tree"
         titleId={headingId}
-        lede="Parents, grandparents, siblings, children and grandchildren, worked out from the connections you have recorded. Only a relation kind you have given a family meaning counts."
+        lede="Parents, grandparents, siblings, aunts and uncles, cousins, nieces and nephews, children and grandchildren, worked out from the connections you have recorded. Only a relation kind you have given a family meaning counts."
       />
 
       {entityId ? (
@@ -378,8 +378,8 @@ export default function FamilyTreePage() {
             Relatives are worked out from the parent connections themselves, every time this page is
             opened. Nothing on it is stored as a connection of its own, and a sibling here means one
             shared parent that somebody wrote down, and nothing more. Other family you recorded,
-            like a spouse or a guardian, is listed in each person&rsquo;s details and puts nobody in
-            the tree.
+            like a spouse or a guardian, is drawn as a dotted line with its words and listed in each
+            person&rsquo;s details; it places nobody in a generation.
           </p>
 
           {otherRelations.length > 0 ? (
