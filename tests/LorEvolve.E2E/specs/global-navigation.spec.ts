@@ -143,7 +143,10 @@ test.describe('Explore: the public side, called one thing', () => {
       page.getByRole('navigation', { name: 'Explore' }).getByRole('link', { name: 'Explore' }),
     ).toHaveAttribute('aria-current', 'page')
     await expect(page.getByRole('navigation', { name: 'Portal' })).toHaveCount(0)
-    await expect(page.getByText('Explore worlds')).toHaveCount(0)
+    // The page's own heading says Explore Worlds; what is gone is a link by that name. Wait for the page first, or
+    // the count is taken before it renders and passes by accident.
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Explore Worlds')
+    await expect(page.getByRole('link', { name: 'Explore worlds' })).toHaveCount(0)
 
     const workspace = page.getByTestId('portal-workspace')
     await expect(workspace).toHaveText('My workspace')
