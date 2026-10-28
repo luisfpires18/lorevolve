@@ -102,6 +102,11 @@
 
 html {
   scroll-behavior: smooth;
+  /* The parts the browser draws carry the palette too. */
+  accent-color: var(--accent);
+  caret-color: var(--accent);
+  scrollbar-color: rgb(var(--portal-ink-rgb) / 0.24) var(--portal-bg);
+  interpolate-size: allow-keywords;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -109,7 +114,8 @@ html {
     scroll-behavior: auto;
   }
 
-  .feature summary::after {
+  .feature summary::after,
+  .feature::details-content {
     transition: none;
   }
 }
@@ -424,15 +430,55 @@ button {
   list-style: none;
 }
 
+/* On a wide window the heading stays beside the list instead of leaving half the page empty. */
+@media (min-width: 64rem) {
+  .features-section {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    align-items: start;
+    gap: clamp(3rem, 6vw, 5.5rem);
+  }
+
+  .features__intro {
+    position: sticky;
+    top: var(--space-7);
+  }
+
+  .features {
+    max-width: none;
+    margin-top: 0;
+  }
+}
+
 .feature {
   overflow: hidden;
   border: 1px solid var(--portal-line);
   border-radius: var(--portal-radius);
   background: var(--portal-card);
+  transition: border-color var(--duration-2) var(--ease);
 }
 
 .feature[open] {
   border-color: var(--accent-rule);
+}
+
+/* Opening a row unfolds it instead of jumping; browsers without ::details-content simply open it. */
+.feature::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 280ms var(--ease),
+    content-visibility 280ms allow-discrete;
+}
+
+.feature[open]::details-content {
+  block-size: auto;
+}
+
+/* The one row that is not a screen of the app: a quiet accent says so. */
+.feature--ai {
+  border-color: var(--accent-rule);
+  background: color-mix(in srgb, var(--accent) 7%, var(--portal-card));
 }
 
 .feature summary {
@@ -443,6 +489,11 @@ button {
   padding: var(--space-4) var(--space-5);
   cursor: pointer;
   list-style: none;
+  transition: background-color var(--duration-2) var(--ease);
+}
+
+.feature summary:hover {
+  background: rgb(var(--portal-ink-rgb) / 0.035);
 }
 
 .feature summary::-webkit-details-marker {
@@ -458,7 +509,7 @@ button {
   border-bottom: 2px solid var(--accent);
   content: '';
   transform: rotate(45deg);
-  transition: transform 160ms ease-out;
+  transition: transform var(--duration-2) var(--ease);
 }
 
 .feature[open] summary::after {

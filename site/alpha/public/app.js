@@ -170,6 +170,18 @@ dialog.addEventListener('close', () => {
   }
 })
 
+// A feature picture not made yet is dropped rather than left as an empty frame. Lazy pictures load, and fail, on opening.
+document.addEventListener(
+  'error',
+  (event) => {
+    if (event.target instanceof HTMLImageElement && event.target.classList.contains('feature__shot')) event.target.remove()
+  },
+  true,
+)
+for (const shot of document.querySelectorAll('.feature__shot')) {
+  if (shot.complete && shot.currentSrc && shot.naturalWidth === 0) shot.remove()
+}
+
 // A click on the backdrop (the dialog element itself, outside the form) closes it.
 dialog.addEventListener('click', (event) => {
   if (event.target === dialog) closeDialog()
