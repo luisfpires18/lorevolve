@@ -1,0 +1,4 @@
+# EF Core writes these files. Style rules are not enforced on generated code.
+[*.cs]
+dotnet_analyzer_diagnostic.category-Style.severity = none
+generated_code = true

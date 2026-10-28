@@ -1,0 +1,33 @@
+{
+    "name": "LorEvolve",
+    "short_name": "LorEvolve",
+    "description": "A workroom for the worlds you keep: their people, places, history and the rules that hold them together.",
+    "id": "/app",
+    "start_url": "/explore",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#000000",
+    "theme_color": "#201f1d",
+    "categories": ["productivity", "books"],
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "type": "image/png",
+            "sizes": "192x192",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-512.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-maskable-512.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "maskable"
+        }
+    ]
+}

@@ -1,0 +1,205 @@
+# Validation for LorEvolve. Runs on every pull request into dev, and is called by the DEV
+# deployment before it publishes anything, so nothing reaches Azure that has not passed here.
+#
+# A change made only of documentation or agent tooling is skipped: no Markdown file, nothing under
+# docs/ and nothing under .claude/ is an input to either build or to any test. A change that touches
+# anything else as well runs in full.
+name: CI
+
+on:
+  pull_request:
+    branches: [dev]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.claude/**'
+      - '.mcp.json'
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Superseding a pull request's run is free. Cancelling the validation a queued deployment is
+  # waiting on is not, so only pull requests cancel.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  NODE_VERSION: '22.x'
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+
+jobs:
+  # The backend suite is CPU-bound, so it is split across three runners by test class
+  # (scripts/dotnet-test-shard.py): each class runs whole, with its own host and in-memory
+  # database, in exactly one shard, and each shard proves from its own results that it ran exactly
+  # the classes dealt to it. fail-fast is off so one failing shard does not hide another's.
+  backend:
+    name: Backend (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore LorEvolve.slnx
+
+      - name: Build (Release)
+        run: dotnet build LorEvolve.slnx -c Release --no-restore
+
+      - name: Test (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+        run: python3 scripts/dotnet-test-shard.py ${{ matrix.shard }}/${{ strategy.job-total }}
+
+      # The schema and the model have to agree. Raw-SQL migrations are invisible to this check
+      # by design - see ADR 0016 - so a green result means "no EF Core model change is owed",
+      # not "the schema is certainly complete". It reads the build, not the tests, so one shard
+      # runs it.
+      - name: Check for pending model changes
+        if: matrix.shard == 1
+        run: |
+          dotnet tool restore
+          dotnet ef migrations has-pending-model-changes \
+            --project src/LorEvolve.Api --configuration Release --no-build
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: src/LorEvolve.Web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: src/LorEvolve.Web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format
+        run: npm run format:check
+
+      - name: Version rule
+        run: npm test
+
+      # The E2E project has no Prettier of its own: its specs are held to these settings, and
+      # Prettier has to be pointed at this config explicitly to read them from outside the tree.
+      - name: Format (end-to-end specs)
+        run: >
+          npx prettier --check --config .prettierrc.json
+          ../../tests/LorEvolve.E2E/specs ../../tests/LorEvolve.E2E/playwright.config.ts
+
+      - name: Build
+        run: npm run build
+
+  # The suite is split across six runners with Playwright's own sharding: each shard is a
+  # complementary sixth of the whole suite (fullyParallel, so Playwright partitions by test, and
+  # no spec list is kept here). Each runner has its own API, Vite server and fresh database, so
+  # sharding adds no concurrency against any one SQLite file: two browsers per database, as before.
+  # fail-fast is off so a failing shard does not cancel the others and hide their evidence; any
+  # failing shard still fails this job, and with it the deployment that needs it.
+  #
+  # The job runs in Playwright's own image, which carries Chromium and every system package it
+  # needs, so no runner downloads them: `playwright install --with-deps` was ~20 s on a good day
+  # and 8-11 minutes when the Ubuntu mirror crawled. The tag must match @playwright/test in
+  # tests/LorEvolve.E2E/package-lock.json - bump both together. A mismatch fails at the first browser
+  # launch, with Playwright naming the image it wants.
+  e2e:
+    name: End to end (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+    runs-on: ubuntu-latest
+    # The slowest shard of the last twenty runs took 11 minutes, retries included. A hung shard stops
+    # at about twice that, rather than holding six runners for 45 minutes each.
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --ipc=host
+      # The image has no DejaVu, which the runner itself draws sans-serif and serif text in; layout
+      # assertions were written against that geometry (tests/LorEvolve.E2E/README.md). Lending the
+      # runner's own fonts keeps it without an apt download.
+      volumes:
+        - /usr/share/fonts/truetype/dejavu:/usr/share/fonts/truetype/dejavu:ro
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # The image ships its own Node; this pins the one the rest of the pipeline uses.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            src/LorEvolve.Web/package-lock.json
+            tests/LorEvolve.E2E/package-lock.json
+
+      # Fails here, rather than in a layout spec, if the fonts above did not arrive.
+      - name: Check the runner's fonts are in use
+        run: |
+          fc-match sans-serif | grep DejaVu
+          fc-match serif | grep DejaVu
+
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: src/LorEvolve.Web
+
+      - name: Install test dependencies
+        run: npm ci
+        working-directory: tests/LorEvolve.E2E
+
+      # Built ahead of time so the API is already compiled when Playwright's webServer runs
+      # `dotnet run`, which otherwise restores and builds inside that server's start timeout.
+      - name: Build the API
+        run: dotnet build src/LorEvolve.Api
+
+      # Playwright starts the API and the Vite dev server itself; see playwright.config.ts.
+      #
+      # Two browsers share that one API and one database this shard builds for itself. The
+      # database is named explicitly, under this runner's own temporary directory, rather than left
+      # to the runner happening to be fresh: a fresh database is the condition parallel browsers
+      # were proved on, and a long-lived one is where SQLite contention showed (README.md, "How many
+      # browsers at once"). Retries, traces and screenshots are unchanged (playwright.config.ts).
+      # $RUNNER_TEMP, not the runner.temp context: in a container job only the variable holds the
+      # path as the container sees it.
+      - name: Run Playwright (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+        run: >
+          LOREVOLVE_E2E_DB="$RUNNER_TEMP/lorevolve-e2e-shard-${{ matrix.shard }}.db"
+          npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+        working-directory: tests/LorEvolve.E2E
+        env:
+          LOREVOLVE_E2E_WORKERS: '2'
+
+      # One report per shard, named for it, so none overwrites another.
+      - name: Upload report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}-of-${{ strategy.job-total }}
+          path: tests/LorEvolve.E2E/playwright-report
+          retention-days: 7

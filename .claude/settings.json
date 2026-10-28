@@ -1,9 +1,49 @@
 {
+  "permissions": {
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(rtk git push:*)",
+      "Bash(git merge:*)",
+      "Bash(rtk git merge:*)",
+      "Bash(git remote:*)",
+      "Bash(rtk git remote:*)",
+      "Bash(git branch -d:*)",
+      "Bash(rtk git branch -d:*)",
+      "Bash(git branch -D:*)",
+      "Bash(rtk git branch -D:*)",
+      "Bash(git branch --delete:*)",
+      "Bash(rtk git branch --delete:*)",
+      "Bash(gh pr create:*)",
+      "Bash(rtk gh pr create:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(rtk gh pr merge:*)",
+      "Bash(gh repo:*)",
+      "Bash(rtk gh repo:*)",
+      "Bash(git push --force:*)",
+      "Bash(rtk git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(rtk git push -f:*)"
+    ]
+  },
   "enabledPlugins": {
     "security-guidance@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
     "caveman@caveman": true,
     "humanizer@humanizer": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/rtk-safe-hook.ps1\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
   }
 }

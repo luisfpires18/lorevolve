@@ -55,32 +55,15 @@ secrets.json
 .DS_Store
 Thumbs.db
 
-# ---------- Lorex launcher runtime ----------
-.lorex/
-logs/
+# ---------- Graphify ----------
+# Rebuildable from source with "graphify update ." (AST only, no API cost).
+graphify-out/
+*.graphify-bak
 
-# ---------- Additional .NET rules (from the GitHub Dotnet.gitignore) ----------
-[Dd]ebugPublic/
-[Rr]eleases/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-[Ll]ogs/
-project.lock.json
-project.fragment.lock.json
-ScaffoldingReadMe.txt
-*.nupkg
-*.snupkg
-CodeCoverage/
-*.binlog
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-*.VisualState.xml
-TestResult.xml
-nunit-*.xml
-~$*
-*~
+# ---------- Published frontend ----------
+# The built client is copied here at publish time so one process serves both halves.
+src/LorEvolve.Api/wwwroot/
+
+# ---------- LorEvolve launcher runtime ----------
+.lorevolve/
+logs/

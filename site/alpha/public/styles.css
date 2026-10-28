@@ -1,0 +1,789 @@
+/*
+  LorEvolve alpha page. A trimmed copy of the app's portal and landing styles
+  (src/LorEvolve.Web/src/styles.css: the tokens at the top, `.portal`, `.landing*`), plus the
+  feature cards and the application dialog. Copied, not imported, so it will not follow later
+  landing changes. Dark by default, parchment when the system asks for light.
+*/
+
+:root {
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-full: 999px;
+
+  --display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --ui:
+    Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui,
+    sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-ui: 0.875rem;
+  --text-body: 1rem;
+  --text-item: 1.125rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+  --space-8: 3rem;
+  --space-9: 4rem;
+  --control-md: 2.5rem;
+  --control-touch: 2.75rem;
+
+  --duration-1: 120ms;
+  --duration-2: 180ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --z-sticky: 10;
+  --z-modal: 40;
+
+  /* The portal at night. */
+  --portal-bar-bg: #0e1115;
+  --portal-bg: #0b0d10;
+  --portal-surface: #15181d;
+  --portal-card: #13161b;
+  --portal-raised: #1d2025;
+  --portal-ink: #f1ece3;
+  --portal-muted: #aba59b;
+  --portal-ink-rgb: 241 236 227;
+  --portal-shade-rgb: 9 11 14;
+  --portal-accent-rgb: 163 179 236;
+  --portal-drop-rgb: 0 0 0;
+  --portal-glow-rgb: 0 0 0;
+  --portal-line: rgb(var(--portal-ink-rgb) / 0.1);
+  --portal-line-strong: rgb(var(--portal-ink-rgb) / 0.24);
+  --portal-width: 92rem;
+  --landing-width: 76rem;
+  --portal-gutter: clamp(1rem, 2.5vw, 2rem);
+  --portal-radius: 0.75rem;
+
+  --accent: #a3b3ec;
+  --danger: #eea197;
+  --border-control: #767a81;
+  --primary-ink: #111214;
+  --accent-rule: color-mix(in srgb, var(--accent) 45%, transparent);
+  --focus-ring: var(--accent);
+  --shadow-3: 0 22px 50px -14px rgb(var(--portal-drop-rgb) / 0.8);
+
+  color-scheme: dark;
+}
+
+/* The portal in the light: warm parchment instead of night. */
+@media (prefers-color-scheme: light) {
+  :root {
+    --portal-bar-bg: #ece6da;
+    --portal-bg: #f3eee5;
+    --portal-surface: #e9e2d5;
+    --portal-card: #faf7f1;
+    --portal-raised: #fffdf9;
+    --portal-ink: #1f1c18;
+    --portal-muted: #5f574b;
+    --portal-ink-rgb: 31 28 24;
+    --portal-shade-rgb: 243 238 229;
+    --portal-accent-rgb: 46 71 149;
+    --portal-drop-rgb: 64 46 20;
+    --portal-glow-rgb: 250 246 238;
+
+    --accent: #2e4795;
+    --danger: #96271f;
+    --border-control: #8c8170;
+    --primary-ink: #fdfbf7;
+    --shadow-3: 0 18px 44px -14px rgb(40 30 15 / 0.3);
+
+    color-scheme: light;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--portal-bg);
+  color: var(--portal-ink);
+  font-family: var(--ui);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A dialog open: the page behind it stays put. */
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgb(var(--portal-accent-rgb) / 0.36);
+  color: var(--portal-ink);
+}
+
+.skiplink {
+  position: fixed;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: var(--z-modal);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--portal-ink);
+  color: var(--primary-ink);
+  transform: translateY(-200%);
+}
+
+.skiplink:focus {
+  transform: none;
+}
+
+/* ---------- The bar ---------- */
+
+.portal__bar {
+  position: relative;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 4rem;
+  padding: 0 max(var(--portal-gutter), (100% - var(--portal-width)) / 2);
+  border-bottom: 1px solid var(--portal-line);
+  background: var(--portal-bar-bg);
+}
+
+.portal__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--portal-ink);
+  text-decoration: none;
+}
+
+.brandmark {
+  flex: none;
+  width: 2.15rem;
+  height: 2.15rem;
+  object-fit: contain;
+}
+
+.wordmark {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  letter-spacing: 0.14em;
+}
+
+/* ---------- The page ---------- */
+
+.landing {
+  --landing-space: clamp(4.5rem, 9vw, 8rem);
+
+  padding-bottom: var(--landing-space);
+}
+
+.landing-section,
+.landing-hero__inner,
+.portal__footer {
+  width: min(100% - 2 * var(--portal-gutter), var(--landing-width));
+  margin-inline: auto;
+}
+
+.landing-section {
+  padding-top: var(--landing-space);
+  scroll-margin-top: var(--space-5);
+}
+
+/* -- The hero: the painting, its veil, and what is said. -- */
+
+.landing-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  min-height: clamp(32rem, 74svh, 44rem);
+  overflow: hidden;
+  padding: clamp(3rem, 7vw, 5.5rem) 0 clamp(5rem, 9vw, 7.5rem);
+}
+
+.landing-hero__image {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 45% 42%;
+}
+
+.landing-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      to right,
+      rgb(var(--portal-shade-rgb) / 0.92) 0,
+      rgb(var(--portal-shade-rgb) / 0.7) 34%,
+      rgb(var(--portal-shade-rgb) / 0.12) 70%
+    ),
+    linear-gradient(
+      to top,
+      var(--portal-bg) 0,
+      rgb(var(--portal-shade-rgb) / 0.6) 22%,
+      rgb(var(--portal-shade-rgb) / 0) 52%
+    ),
+    linear-gradient(rgb(var(--portal-shade-rgb) / 0.32), rgb(var(--portal-shade-rgb) / 0) 30%);
+}
+
+.landing-hero__eyebrow {
+  margin: 0 0 var(--space-5);
+  color: rgb(var(--portal-ink-rgb) / 0.86);
+  font-family: var(--display);
+  font-size: 0.9375rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 12px rgb(var(--portal-glow-rgb) / 0.7);
+}
+
+.landing-hero__title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(2rem, 8.8vw, 4.25rem);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+  text-shadow: 0 2px 24px rgb(var(--portal-glow-rgb) / 0.55);
+}
+
+.landing-hero__title span {
+  display: block;
+}
+
+.landing-hero__turn {
+  color: rgb(var(--portal-ink-rgb) / 0.74);
+}
+
+.landing-hero__lede {
+  max-width: 34rem;
+  margin: var(--space-6) 0 0;
+  color: rgb(var(--portal-ink-rgb) / 0.9);
+  font-size: clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+  text-shadow: 0 1px 12px rgb(var(--portal-glow-rgb) / 0.7);
+}
+
+/* -- Actions: one filled pill, one outlined. -- */
+
+.landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+}
+
+.landing-actions--center {
+  justify-content: center;
+}
+
+.landing-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0 1.5rem;
+  border: 1px solid var(--portal-line-strong);
+  border-radius: var(--radius-full);
+  background: rgb(var(--portal-shade-rgb) / 0.42);
+  color: var(--portal-ink);
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color var(--duration-2) var(--ease),
+    border-color var(--duration-2) var(--ease),
+    transform var(--duration-1) var(--ease);
+}
+
+.landing-button:hover {
+  border-color: rgb(var(--portal-ink-rgb) / 0.55);
+  background: rgb(var(--portal-ink-rgb) / 0.1);
+}
+
+.landing-button:active {
+  transform: translateY(1px);
+}
+
+.landing-button:focus-visible {
+  outline-offset: 3px;
+}
+
+.landing-button:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.landing-button--primary {
+  border-color: var(--portal-ink);
+  background: var(--portal-ink);
+  color: var(--primary-ink);
+}
+
+.landing-button--primary:hover {
+  border-color: color-mix(in srgb, var(--portal-ink) 86%, var(--portal-bg));
+  background: color-mix(in srgb, var(--portal-ink) 86%, var(--portal-bg));
+}
+
+.landing-button--small {
+  min-height: var(--control-md);
+  padding: 0 1.125rem;
+  font-size: var(--text-ui);
+}
+
+/* -- Section type -- */
+
+.landing-heading {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.875rem, 1.3rem + 1.9vw, 2.875rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+
+.landing-lede,
+.prose p {
+  max-width: 36rem;
+  margin: var(--space-5) 0 0;
+  color: rgb(var(--portal-ink-rgb) / 0.8);
+  font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.prose p:first-child {
+  margin-top: 0;
+}
+
+.landing-split {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (min-width: 56rem) {
+  .landing-split {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    align-items: start;
+    gap: clamp(3rem, 7vw, 6.5rem);
+  }
+}
+
+/* -- The features: one card each, a picture over what it is and why. -- */
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+  margin: clamp(2rem, 4vw, 3rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: var(--space-5);
+  border: 1px solid var(--portal-line);
+  border-radius: var(--portal-radius);
+  background: var(--portal-card);
+}
+
+.feature__shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top left;
+  border-bottom: 1px solid var(--portal-line);
+  background: var(--portal-surface);
+}
+
+.feature h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-5) var(--space-5) 0;
+  font-family: var(--display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.feature p {
+  margin: var(--space-2) var(--space-5) 0;
+  color: rgb(var(--portal-ink-rgb) / 0.86);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.feature .feature__why {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--accent-rule);
+  color: rgb(var(--portal-ink-rgb) / 0.72);
+}
+
+.feature__tag {
+  padding: 0.125rem 0.625rem;
+  border: 1px solid var(--accent-rule);
+  border-radius: var(--radius-full);
+  color: var(--accent);
+  font-family: var(--ui);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* -- The last word -- */
+
+.landing-final {
+  width: min(100% - 2 * var(--portal-gutter), 46rem);
+  margin: var(--landing-space) auto 0;
+  padding-top: var(--landing-space);
+  border-top: 1px solid var(--portal-line);
+  text-align: center;
+}
+
+.landing-final .landing-lede {
+  margin-inline: auto;
+  text-wrap: balance;
+}
+
+/* -- The footer -- */
+
+.portal__footer {
+  padding: var(--space-6) 0 var(--space-7);
+  border-top: 1px solid var(--portal-line);
+  color: var(--portal-muted);
+  font-size: var(--text-sm);
+}
+
+.portal__footerbase {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+}
+
+.portal__footerbase p {
+  margin: 0;
+}
+
+.portal__footerbase a {
+  color: rgb(var(--portal-ink-rgb) / 0.82);
+}
+
+/* ---------- The application dialog ---------- */
+
+.apply {
+  width: min(100% - 2 * var(--portal-gutter), 36rem);
+  max-height: min(100dvh - 2rem, 52rem);
+  padding: 0;
+  border: 1px solid var(--portal-line-strong);
+  border-radius: var(--portal-radius);
+  background: var(--portal-raised);
+  color: var(--portal-ink);
+  box-shadow: var(--shadow-3);
+}
+
+.apply::backdrop {
+  background: rgb(var(--portal-shade-rgb) / 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.apply__form {
+  padding: var(--space-5) clamp(1.25rem, 4vw, 2rem) clamp(1.25rem, 4vw, 2rem);
+}
+
+.apply__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.apply__step {
+  margin: 0;
+  color: var(--portal-muted);
+  font-size: var(--text-sm);
+  letter-spacing: 0.04em;
+}
+
+.apply__close {
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-touch);
+  height: var(--control-touch);
+  margin-right: calc(-1 * var(--space-3));
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--portal-muted);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.apply__close:hover {
+  background: rgb(var(--portal-ink-rgb) / 0.08);
+  color: var(--portal-ink);
+}
+
+.apply__page {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.apply__page[hidden] {
+  display: none;
+}
+
+.apply__title {
+  padding: 0;
+  margin: var(--space-2) 0 0;
+  font-family: var(--display);
+  font-size: clamp(1.625rem, 1.3rem + 1vw, 2rem);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.apply__title:focus {
+  outline: none;
+}
+
+.apply__intro {
+  margin: var(--space-3) 0 0;
+  color: rgb(var(--portal-ink-rgb) / 0.8);
+}
+
+.apply__note {
+  margin: var(--space-5) 0 0;
+  color: var(--portal-muted);
+  font-size: var(--text-sm);
+}
+
+.apply__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.apply__turnstile {
+  margin-top: var(--space-5);
+}
+
+.apply__turnstile:empty {
+  display: none;
+}
+
+.apply__error {
+  margin: var(--space-5) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--portal-ink);
+}
+
+/* -- Fields -- */
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.field__label {
+  padding: 0;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.field__hint {
+  margin: 0;
+  color: var(--portal-muted);
+  font-size: var(--text-ui);
+}
+
+.field input,
+.field textarea,
+.choice__other {
+  width: 100%;
+  min-height: var(--control-touch);
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  background: var(--portal-bg);
+  color: var(--portal-ink);
+  /* 16px or more, so a phone does not zoom into the field. */
+  font: inherit;
+  font-size: max(1rem, 16px);
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field input:user-invalid,
+.field textarea:user-invalid {
+  border-color: var(--danger);
+}
+
+.money {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 12rem;
+}
+
+.money > span {
+  margin-top: var(--space-1);
+  color: var(--portal-muted);
+}
+
+.check,
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  line-height: 1.45;
+}
+
+.check {
+  margin-top: var(--space-5);
+}
+
+.choice {
+  align-items: center;
+  min-height: var(--control-touch);
+}
+
+.check input,
+.choice input {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--accent);
+}
+
+.choice input {
+  margin: 0;
+}
+
+.check input:user-invalid {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
+}
+
+/* ---------- Narrower windows ---------- */
+
+@media (max-width: 56rem) {
+  .landing-hero::after {
+    background:
+      linear-gradient(rgb(var(--portal-shade-rgb) / 0.42), rgb(var(--portal-shade-rgb) / 0.42)),
+      linear-gradient(to right, rgb(var(--portal-shade-rgb) / 0.82) 0, rgb(var(--portal-shade-rgb) / 0.2) 85%),
+      linear-gradient(to top, var(--portal-bg) 0, rgb(var(--portal-shade-rgb) / 0) 45%);
+  }
+}
+
+@media (max-width: 40rem) {
+  .landing-hero {
+    align-items: flex-start;
+    min-height: 0;
+    padding: var(--space-8) 0 4.5rem;
+  }
+
+  .landing-hero__image {
+    object-position: 82% 45%;
+  }
+
+  .landing-hero::after {
+    background:
+      linear-gradient(rgb(var(--portal-shade-rgb) / 0.62), rgb(var(--portal-shade-rgb) / 0.62)),
+      linear-gradient(to top, var(--portal-bg) 0, rgb(var(--portal-shade-rgb) / 0) 40%);
+  }
+
+  .landing-hero__eyebrow {
+    font-size: 0.8125rem;
+  }
+
+  .wordmark {
+    font-size: 1.25rem;
+  }
+
+  /* A phone: the dialog takes the whole screen, so the keyboard never hides the field being typed in. */
+  .apply {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .apply__form {
+    padding-bottom: max(var(--space-6), env(safe-area-inset-bottom));
+  }
+}
+
+.prose__heading {
+  margin: var(--space-8) 0 0;
+  font-family: var(--display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.25;
+}

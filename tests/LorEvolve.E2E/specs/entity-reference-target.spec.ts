@@ -1,0 +1,436 @@
+import { expect, test, type Locator, type Page } from '@playwright/test'
+import { makeTestPassword } from './support/account'
+import {
+  discardField,
+  editField,
+  fieldDialog,
+  fieldSummary,
+  fillField,
+  showFields,
+} from './support/typeFields'
+
+/**
+ * A link-to-an-entity field limited to one type (036): a Character's "Kingdom" that offers, accepts and filters by Kingdoms
+ * only, chosen on the Types screen by type and never by name. The picker searches that type through the API; the API
+ * refuses anything else whatever the picker offered.
+ *
+ * Each test registers its own account and builds its own universe.
+ */
+
+function unique(prefix: string) {
+  return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`
+}
+
+async function account(page: Page) {
+  const username = unique('linker')
+  const password = makeTestPassword()
+  expect(
+    (
+      await page.request.post('/api/auth/register', {
+        data: { username, email: `${username}@example.test`, password },
+      })
+    ).ok(),
+  ).toBe(true)
+  expect(
+    (
+      await page.request.post('/api/auth/login', { data: { usernameOrEmail: username, password } })
+    ).ok(),
+  ).toBe(true)
+}
+
+async function post<T = { id: string }>(page: Page, path: string, data: unknown) {
+  const response = await page.request.post(path, { data })
+  expect(response.ok(), `${path}: ${await response.text()}`).toBe(true)
+  return (await response.json()) as T
+}
+
+async function world(page: Page) {
+  const u = (await post(page, '/api/universes', { name: unique('Arkhos '), description: null })).id
+  const types = (await (await page.request.get(`/api/universes/${u}/entity-types`)).json()) as {
+    id: string
+    name: string
+  }[]
+  const character = types.find((type) => type.name === 'Character')!.id
+  const type = async (name: string) =>
+    (
+      await post(page, `/api/universes/${u}/entity-types`, {
+        name,
+        description: null,
+        icon: null,
+        accentColor: null,
+        displayOrder: null,
+      })
+    ).id
+  const kingdoms = await type('Kingdoms')
+  const runes = await type('Runes')
+  const entry = async (typeId: string, name: string) =>
+    (
+      await post(page, `/api/universes/${u}/entities`, {
+        entityTypeId: typeId,
+        name,
+        summary: null,
+        canonStatus: 2,
+        aliases: [],
+        tags: [],
+        fields: [],
+      })
+    ).id
+  return {
+    u,
+    character,
+    kingdoms,
+    runes,
+    arkazia: await entry(kingdoms, 'Arkazia'),
+    zandres: await entry(kingdoms, 'Zandres'),
+    magnetism: await entry(runes, 'Magnetism Rune'),
+    nanite: await entry(runes, 'Nanite Rune'),
+    mara: await entry(character, 'Mara'),
+  }
+}
+
+type World = Awaited<ReturnType<typeof world>>
+
+const typesUrl = (w: World) => `/app/universes/${w.u}/types`
+
+async function selectedText(select: Locator) {
+  return select.evaluate((element: HTMLSelectElement) => element.selectedOptions[0]?.text ?? '')
+}
+
+/** The names a picker offers right now, once it has settled. */
+async function offered(scope: Locator) {
+  const list = scope.getByRole('listbox')
+  await expect(scope.locator('.picker__none', { hasText: 'Looking' })).toHaveCount(0)
+  // Entries only: an entry form's picker also offers Create "…" as a last option (Issue #25).
+  const names = await list
+    .locator('[data-testid^="picker-option-"]')
+    .evaluateAll((options) =>
+      options.map((option) =>
+        (option.getAttribute('data-testid') ?? '').replace('picker-option-', ''),
+      ),
+    )
+  // The listing's own order is most recently changed first; what matters here is which entries, not their order.
+  return names.sort()
+}
+
+async function addKingdomField(page: Page, w: World, allowed: string) {
+  await page.goto(typesUrl(w))
+  await showFields(page, 'Character')
+  await page.getByTestId('new-field-Character').click()
+  const dialog = fieldDialog(page)
+  await fillField(dialog, { name: 'Kingdom', kind: 'Link to an entity' })
+  const allowedType = dialog.getByTestId('field-target')
+  // A new link field has no target until the author picks one - Any Lore type included - and nothing is picked from the
+  // field's name. Saving before then says so and keeps the draft.
+  expect(await selectedText(allowedType)).toBe('Choose what it can link to…')
+  await dialog.getByTestId('save-field').click()
+  await expect(dialog).toContainText('Choose what this field can link to.')
+  await allowedType.selectOption({ label: allowed })
+  await dialog.getByTestId('save-field').click()
+  await expect(dialog).toHaveCount(0)
+  await expect(page.getByTestId('field-row-Kingdom')).toBeVisible()
+}
+
+function noSideways(page: Page) {
+  return page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  )
+}
+
+test.describe('a link field limited to one type', () => {
+  test('Kingdom offers, keeps and filters by Kingdoms only, and the API holds the line', async ({
+    page,
+  }) => {
+    await account(page)
+    const w = await world(page)
+
+    // ---------- The field, on the Types screen ----------
+    await addKingdomField(page, w, 'Kingdoms')
+    await page.reload()
+    await showFields(page, 'Character')
+    await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to Kingdoms')
+
+    // ---------- The entry's own picker ----------
+    await page.goto(`/app/universes/${w.u}/lore/${w.mara}`)
+    await page.getByTestId('edit-entity').click()
+    const picker = page
+      .locator('.picker')
+      .filter({ has: page.getByText('Kingdom', { exact: true }) })
+    await picker.getByTestId('picker-input').click()
+    await expect.poll(() => offered(picker)).toEqual(['Arkazia', 'Zandres'])
+
+    await picker.getByTestId('picker-input').fill('rune')
+    await expect(picker.locator('.picker__none')).toHaveText('Nothing here by that name.')
+
+    await picker.getByTestId('picker-input').fill('arka')
+    await picker.getByTestId('picker-option-Arkazia').click()
+    await page.getByTestId('save-entity').click()
+    await expect(page.getByTestId('entry-fields')).toContainText('Arkazia')
+    await page.reload()
+    await expect(page.getByTestId('entry-fields')).toContainText('Arkazia')
+
+    // ---------- The Lore filter ----------
+    await page.goto(`/app/universes/${w.u}/lore?type=${w.character}`)
+    await page.getByTestId('lore-add-field-filter').click()
+    await page
+      .getByTestId('lore-field-filter-menu')
+      .getByRole('button', { name: 'Kingdom', exact: true })
+      .click()
+    const editor = page.getByTestId('lore-field-filter-editor')
+    await editor.getByTestId('picker-input').click()
+    await expect.poll(() => offered(editor)).toEqual(['Arkazia', 'Zandres'])
+    await editor.getByTestId('picker-input').fill('arka')
+    await editor.getByTestId('picker-option-Arkazia').click()
+    await editor.getByTestId('lore-field-filter-apply').click()
+    await expect(page.getByTestId('entity-card')).toHaveCount(1)
+    await expect(page.getByTestId('entity-card')).toHaveAttribute('data-entity-name', 'Mara')
+
+    // ---------- Straight at the API: a rune is refused, and so is another universe's entry ----------
+    const types = (await (await page.request.get(`/api/universes/${w.u}/entity-types`)).json()) as {
+      id: string
+      fields: { id: string; name: string }[]
+    }[]
+    const kingdom = types
+      .find((type) => type.id === w.character)!
+      .fields.find((f) => f.name === 'Kingdom')!
+    const mara = `/api/universes/${w.u}/entities/${w.mara}`
+    const version = async () =>
+      ((await (await page.request.get(mara)).json()) as { version: number }).version
+    const save = async (referencedEntityId: string) =>
+      page.request.put(mara, {
+        data: {
+          expectedVersion: await version(),
+          entityTypeId: w.character,
+          name: 'Mara',
+          summary: null,
+          canonStatus: 2,
+          aliases: [],
+          tags: [],
+          fields: [
+            {
+              fieldDefinitionId: kingdom.id,
+              text: null,
+              number: null,
+              boolean: null,
+              date: null,
+              optionIds: null,
+              referencedEntityId,
+            },
+          ],
+        },
+      })
+    expect((await save(w.nanite)).status()).toBe(400)
+
+    const elsewhere = await world(page)
+    const foreign = await save(elsewhere.arkazia)
+    expect(foreign.status()).toBe(400)
+    expect(await foreign.text()).not.toContain(elsewhere.arkazia)
+
+    // ---------- Opened to any type, explicitly ----------
+    await page.goto(typesUrl(w))
+    await showFields(page, 'Character')
+    await editField(page, 'Kingdom', { target: 'Any Lore type' })
+    await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to any Lore type')
+
+    await page.goto(`/app/universes/${w.u}/lore/${w.mara}`)
+    await page.getByTestId('edit-entity').click()
+    await picker.getByTestId('picker-clear').click()
+    await picker.getByTestId('picker-input').fill('rune')
+    await expect.poll(() => offered(picker)).toEqual(['Magnetism Rune', 'Nanite Rune'])
+
+    // ---------- Back to Kingdoms, then the type renamed: the field follows the type, not its name ----------
+    await page.goto(typesUrl(w))
+    await showFields(page, 'Character')
+    await editField(page, 'Kingdom', { target: 'Kingdoms' })
+    await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to Kingdoms')
+    expect(
+      (
+        await page.request.put(`/api/universes/${w.u}/entity-types/${w.kingdoms}`, {
+          data: {
+            name: 'Realms',
+            description: null,
+            icon: null,
+            accentColor: null,
+            displayOrder: null,
+          },
+        })
+      ).ok(),
+    ).toBe(true)
+    await page.reload()
+    await showFields(page, 'Character')
+    await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to Realms')
+  })
+
+  test('a field limited to a parent type offers, saves and filters by entries of its nested types (#61)', async ({
+    page,
+  }) => {
+    await account(page)
+    const w = await world(page)
+    const nature = (
+      await post(page, `/api/universes/${w.u}/entity-types`, {
+        name: 'Nature Runes',
+        description: null,
+        icon: null,
+        accentColor: null,
+        displayOrder: null,
+        parent: { id: w.runes },
+      })
+    ).id
+    await post(page, `/api/universes/${w.u}/entities`, {
+      entityTypeId: nature,
+      name: 'Life Rune',
+      summary: null,
+      canonStatus: 2,
+      aliases: [],
+      tags: [],
+      fields: [],
+    })
+    await post(page, `/api/universes/${w.u}/entity-types/${w.character}/fields`, {
+      name: 'Bound rune',
+      kind: 7,
+      isRequired: false,
+      displayOrder: null,
+      defaultValue: null,
+      options: null,
+      targetEntityTypeId: w.runes,
+    })
+
+    await page.goto(typesUrl(w))
+    await showFields(page, 'Character')
+    await page.getByTestId('edit-field-Bound rune').click()
+    await expect(fieldDialog(page)).toContainText('any type nested beneath it')
+    await fieldDialog(page).getByTestId('cancel-field').click()
+    await expect(fieldDialog(page)).toHaveCount(0)
+
+    // The entry's picker offers Runes and Nature Runes entries, never a Kingdom.
+    await page.goto(`/app/universes/${w.u}/lore/${w.mara}`)
+    await page.getByTestId('edit-entity').click()
+    const picker = page
+      .locator('.picker')
+      .filter({ has: page.getByText('Bound rune', { exact: true }) })
+    await picker.getByTestId('picker-input').click()
+    await expect.poll(() => offered(picker)).toEqual(['Life Rune', 'Magnetism Rune', 'Nanite Rune'])
+
+    // Quick Create offers the type and its nested type, and takes neither without asking.
+    await picker.getByTestId('picker-input').fill('Ember Rune')
+    await picker.getByTestId('picker-create').click()
+    const create = page.getByTestId('quick-create-dialog')
+    const choices = create.getByTestId('quick-create-type-select').locator('option')
+    await expect(choices).toHaveText(['Choose a type', 'Runes', 'Nature Runes'])
+    await create.getByTestId('quick-create-cancel').click()
+    await expect(create).toHaveCount(0)
+
+    await picker.getByTestId('picker-input').fill('life')
+    await picker.getByTestId('picker-option-Life Rune').click()
+    await page.getByTestId('save-entity').click()
+    await expect(page.getByTestId('entry-fields')).toContainText('Life Rune')
+
+    // The Lore filter's picker searches the same branch and finds Mara by it.
+    await page.goto(`/app/universes/${w.u}/lore?type=${w.character}`)
+    await page.getByTestId('lore-add-field-filter').click()
+    await page
+      .getByTestId('lore-field-filter-menu')
+      .getByRole('button', { name: 'Bound rune', exact: true })
+      .click()
+    const editor = page.getByTestId('lore-field-filter-editor')
+    await editor.getByTestId('picker-input').fill('life')
+    await editor.getByTestId('picker-option-Life Rune').click()
+    await editor.getByTestId('lore-field-filter-apply').click()
+    await expect(page.getByTestId('entity-card')).toHaveCount(1)
+    await expect(page.getByTestId('entity-card')).toHaveAttribute('data-entity-name', 'Mara')
+  })
+
+  test('a field limited to a type cannot be narrowed past the links it holds, and says why', async ({
+    page,
+  }) => {
+    await account(page)
+    const w = await world(page)
+    await addKingdomField(page, w, 'Any Lore type')
+
+    const types = (await (await page.request.get(`/api/universes/${w.u}/entity-types`)).json()) as {
+      id: string
+      fields: { id: string; name: string }[]
+    }[]
+    const kingdom = types
+      .find((type) => type.id === w.character)!
+      .fields.find((f) => f.name === 'Kingdom')!
+    expect(
+      (
+        await page.request.put(`/api/universes/${w.u}/entities/${w.mara}`, {
+          data: {
+            expectedVersion: (
+              (await (
+                await page.request.get(`/api/universes/${w.u}/entities/${w.mara}`)
+              ).json()) as {
+                version: number
+              }
+            ).version,
+            entityTypeId: w.character,
+            name: 'Mara',
+            summary: null,
+            canonStatus: 2,
+            aliases: [],
+            tags: [],
+            fields: [
+              {
+                fieldDefinitionId: kingdom.id,
+                text: null,
+                number: null,
+                boolean: null,
+                date: null,
+                optionIds: null,
+                referencedEntityId: w.nanite,
+              },
+            ],
+          },
+        })
+      ).ok(),
+    ).toBe(true)
+
+    await page.reload()
+    await showFields(page, 'Character')
+    const refused = await editField(page, 'Kingdom', { target: 'Kingdoms' }, { saved: false })
+    await expect(refused.getByTestId('field-dialog-error')).toContainText(
+      'Some entries link this field to entries of a type that is neither this type nor nested beneath it.',
+    )
+    // The draft is kept until the author lets it go; the field is as it was.
+    expect(await selectedText(refused.getByTestId('field-target'))).toBe('Kingdoms')
+    await discardField(page)
+    await expect(fieldSummary(page, 'Kingdom')).toContainText('Links to any Lore type')
+  })
+
+  for (const width of [390, 360]) {
+    test(`at ${width}px the allowed type, the entry picker and the filter picker all fit`, async ({
+      browser,
+    }) => {
+      const context = await browser.newContext({ viewport: { width, height: 800 } })
+      const page = await context.newPage()
+      await account(page)
+      const w = await world(page)
+      await addKingdomField(page, w, 'Kingdoms')
+      expect(await noSideways(page)).toBeLessThanOrEqual(0)
+
+      await page.goto(`/app/universes/${w.u}/lore/${w.mara}`)
+      await page.getByTestId('edit-entity').click()
+      const picker = page
+        .locator('.picker')
+        .filter({ has: page.getByText('Kingdom', { exact: true }) })
+      await picker.getByTestId('picker-input').fill('arka')
+      await expect(picker.getByTestId('picker-option-Arkazia')).toBeVisible()
+      expect(await noSideways(page)).toBeLessThanOrEqual(0)
+
+      await page.goto(`/app/universes/${w.u}/lore?type=${w.character}`)
+      // On a phone the filters fold behind Filters.
+      await page.getByTestId('lore-filters-toggle').click()
+      await page.getByTestId('lore-add-field-filter').click()
+      await page
+        .getByTestId('lore-field-filter-menu')
+        .getByRole('button', { name: 'Kingdom', exact: true })
+        .click()
+      const editor = page.getByTestId('lore-field-filter-editor')
+      await editor.getByTestId('picker-input').fill('zan')
+      await expect(editor.getByTestId('picker-option-Zandres')).toBeVisible()
+      expect(await noSideways(page)).toBeLessThanOrEqual(0)
+      await context.close()
+    })
+  }
+})
