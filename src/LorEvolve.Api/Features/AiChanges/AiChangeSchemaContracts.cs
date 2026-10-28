@@ -92,7 +92,27 @@ public sealed record AiRelationshipKindInput(
     string? Name = null,
     [property: Description("How the relationship reads from the target's side, such as \"child of\" for \"parent of\". Not for a symmetric kind.")] string? InverseName = null,
     [property: Description("true when it reads the same both ways, such as \"sibling of\".")] bool? Symmetric = null,
-    [property: Description("On update, \"\" clears it.")] string? Description = null);
+    [property: Description("On update, \"\" clears it.")] string? Description = null,
+    [property: Description("What the kind means to the Family Tree: biological_parent or adoptive_parent (the source is the target's parent; only these place anyone in a generation, and never on a symmetric kind), other_family (family that places nobody, such as \"married to\" or \"guardian of\", drawn as a dotted line), or none. Siblings come from shared parents, so \"sibling of\" needs no parent meaning. A new kind is none unless you say; on update, leave it out to keep it.")] string? FamilyMeaning = null);
+
+/// <summary>The wire words for a kind's family meaning (ADR 0062 amendment), and how the review page names each one.</summary>
+public static class AiFamilyMeanings
+{
+    private static readonly (string Wire, Relationships.RelationshipFamilySemantic Semantic, string Label)[] All =
+    [
+        ("none", Relationships.RelationshipFamilySemantic.None, "Not a family connection"),
+        ("biological_parent", Relationships.RelationshipFamilySemantic.BiologicalParent, "Source is the biological parent"),
+        ("adoptive_parent", Relationships.RelationshipFamilySemantic.AdoptiveParent, "Source is the adoptive parent"),
+        ("other_family", Relationships.RelationshipFamilySemantic.NonStructuralFamily, "Family relationship, does not define ancestry"),
+    ];
+
+    public static Relationships.RelationshipFamilySemantic? Parse(string wire) =>
+        All.FirstOrDefault(meaning => meaning.Wire == wire.Trim().ToLowerInvariant()) is { Wire: not null } found ? found.Semantic : null;
+
+    public static string Wire(Relationships.RelationshipFamilySemantic semantic) => All.First(meaning => meaning.Semantic == semantic).Wire;
+
+    public static string Label(Relationships.RelationshipFamilySemantic semantic) => All.First(meaning => meaning.Semantic == semantic).Label;
+}
 
 [Description("The universe's reckoning, written whole: its date periods (eras) earliest first and, optionally, a custom calendar's months in the order of the year. Existing periods and months are listed by id, in their current order; new ones go without an id. Nothing is removed or reordered here.")]
 public sealed record AiChronologyInput(
@@ -116,9 +136,9 @@ public sealed record AiMonthInput(
 public sealed record AiTermInput(string? Name = null);
 
 /// <summary>
-/// A relationship kind as a change stores it. <paramref name="Constraints"/> and <paramref name="FamilySemantic"/> are the
-/// stored Canon age rules and family meaning, carried through unchanged: what a kind means to the rules is the author's to say
-/// (ADR 0035, ADR 0062), like a field's meaning.
+/// A relationship kind as a change stores it. <paramref name="Constraints"/> are the stored Canon age rules, carried through
+/// unchanged: what a kind means to the rules is the author's to say (ADR 0035, ADR 0062). <paramref name="FamilySemantic"/>
+/// may be proposed (ADR 0062 amendment): the Family Tree is useless without it, and the person approves it like any change.
 /// </summary>
 public sealed record RelationshipKindValues(
     string Name,

@@ -42,7 +42,7 @@ public sealed record AiChangeOptionType(
     int Entries = 0);
 
 /// <summary>A relationship kind; <paramref name="Relationships"/> counts the links using it, which keep it from changing direction.</summary>
-public sealed record AiChangeOptionRelationshipType(Guid Id, string Name, string? InverseName, bool Symmetric, string? Description = null, int Relationships = 0);
+public sealed record AiChangeOptionRelationshipType(Guid Id, string Name, string? InverseName, bool Symmetric, string? Description = null, int Relationships = 0, string? FamilyMeaning = null);
 
 public sealed record AiChangeOptionChapter(Guid Id, string Title);
 
@@ -133,8 +133,9 @@ internal static class AiChangeCatalog
         + "type, or as a choice of a Race field on Character - ask the person which they want before proposing. Use only the field "
         + "kinds listed; a field's meaning for LorEvolve's rules is set by the author in LorEvolve, never here. A change can refer to a type or "
         + "group another change of the same proposal creates with {\"ref\": id}. remove on a lore_field archives it: it keeps every "
-        + "value and can be restored in LorEvolve; no other definition is ever removed here. A relationship kind's Canon age rules and family "
-        + "meaning stay the author's; a kind relationships already use keeps its direction. chronology is written whole: list every "
+        + "value and can be restored in LorEvolve; no other definition is ever removed here. A relationship kind's Canon age rules stay the "
+        + "author's; its familyMeaning can be proposed, and without biological_parent on the parent kind the Family Tree draws nobody. "
+        + "A kind relationships already use keeps its direction. chronology is written whole: list every "
         + "existing date period and month by id, in its current order, and add new ones; nothing dated is moved, so existing periods are "
         + "never reordered or removed, a period that dates anything keeps the way its years count, and a calendar can't start while "
         + "simple dates use month numbers (schema.chronology says which). Once a schema proposal is approved, read this catalog again "
@@ -335,7 +336,8 @@ internal static class AiChangeCatalog
                     type.InverseName,
                     type.IsSymmetric,
                     type.Description,
-                    db.Relationships.Count(relationship => relationship.RelationshipTypeId == type.Id)))
+                    db.Relationships.Count(relationship => relationship.RelationshipTypeId == type.Id),
+                    AiFamilyMeanings.Wire(type.FamilySemantic)))
                 .ToListAsync(cancellationToken),
             [.. stories.Take(StoryLimit).Select(story => new AiChangeOptionStory(story.Id, story.Title, story.Chapters, story.PlotArcs))],
             stories.Count > StoryLimit,

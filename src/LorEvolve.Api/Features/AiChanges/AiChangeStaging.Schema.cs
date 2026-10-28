@@ -159,15 +159,29 @@ internal static partial class AiChangeStaging
                 return null;
             }
 
+            Relationships.RelationshipFamilySemantic? family = null;
+            if (kind.FamilyMeaning is { } wire)
+            {
+                family = AiFamilyMeanings.Parse(wire);
+                if (family is null)
+                {
+                    Fail(AiChangeCodes.Invalid, "familyMeaning is biological_parent, adoptive_parent, other_family or none.", "relationshipKind.familyMeaning");
+                    return null;
+                }
+            }
+
             return action == AiChangeAction.Create
-                ? Work(null, null, KindForm(kind, null))
+                ? Work(null, null, KindForm(kind, null, family))
                 : await StoredAsync(
                     () => AiChangeSnapshots.RelationshipKindAsync(db, universeId, input.TargetId!.Value, cancellationToken),
-                    stored => Work(stored, null, KindForm(kind, stored)));
+                    stored => Work(stored, null, KindForm(kind, stored, family)));
         }
 
-        /// <summary>A kind's Canon age rules and family meaning are kept as stored: an AI never sets what a kind means (ADR 0062).</summary>
-        private static RelationshipKindValues KindForm(AiRelationshipKindInput kind, RelationshipKindValues? before)
+        /// <summary>
+        /// A kind's Canon age rules are kept as stored: an AI never sets what a kind means to the rules (ADR 0062). Its family
+        /// meaning is the one exception, proposed or else kept (ADR 0062 amendment).
+        /// </summary>
+        private static RelationshipKindValues KindForm(AiRelationshipKindInput kind, RelationshipKindValues? before, Relationships.RelationshipFamilySemantic? family)
         {
             var symmetric = kind.Symmetric ?? before?.Symmetric ?? false;
             return new RelationshipKindValues(
@@ -176,7 +190,7 @@ internal static partial class AiChangeStaging
                 symmetric,
                 Cleared(kind.Description, before?.Description),
                 before?.Constraints,
-                before?.FamilySemantic ?? Relationships.RelationshipFamilySemantic.None);
+                family ?? before?.FamilySemantic ?? Relationships.RelationshipFamilySemantic.None);
         }
 
         /// <summary>

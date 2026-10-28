@@ -5,6 +5,7 @@ using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Timeline;
+using LorEvolve.Api.Features.Universes;
 using LorEvolve.Api.Features.WorldRules;
 using Microsoft.EntityFrameworkCore;
 using static LorEvolve.Api.Tests.AiChangeTestClient;
@@ -82,6 +83,45 @@ public sealed class AiChangeDefinitionTests(LorEvolveApiFactory factory) : IClas
         Assert.Equal("father or mother of", after.Name);
         Assert.Equal(RelationshipFamilySemantic.BiologicalParent, after.FamilySemantic);
         Assert.Equal((RelationshipAgeOrder.SourceOlder, 12), (after.CanonConstraints.AgeOrder, after.CanonConstraints.MinAgeDifferenceYears));
+    }
+
+    [Fact]
+    public async Task A_family_meaning_can_be_proposed_shown_in_review_and_held_to_the_types_screen_rules()
+    {
+        var (owner, ownerId, u) = await World("defkindfamily");
+        var married = await PostJson<RelationshipTypeResponse>(owner, $"/api/universes/{u}/relationship-types", new RelationshipTypeRequest(
+            "married to", null, true, null, null, RelationshipTypeCanonConstraints.None, RelationshipFamilySemantic.None));
+
+        // A new parent kind and a meaning for an existing symmetric one, both shown on the review page before approval.
+        var proposalId = await StagedSchema(
+            _factory,
+            u,
+            ownerId,
+            new AiChangeOperationInput("parent", "create", "relationship_kind", RelationshipKind: new AiRelationshipKindInput("parent of", "child of", FamilyMeaning: "biological_parent")),
+            new AiChangeOperationInput("wed", "update", "relationship_kind", married.Id, RelationshipKind: new AiRelationshipKindInput(FamilyMeaning: "other_family")));
+        var review = await Read(owner, u, proposalId);
+        Assert.Contains(review.Operations.Single(op => op.Key == "parent").Lines, line => line.Label == "Family meaning" && line.After == "Source is the biological parent");
+        Assert.Contains(review.Operations.Single(op => op.Key == "wed").Lines, line => line.Label == "Family meaning" && line.Before == "Not a family connection" && line.After == "Family relationship, does not define ancestry");
+        var made = (await ApproveAll(owner, u, proposalId)).Applied.ToDictionary(line => line.Key, line => line.ResultId!.Value);
+
+        var kinds = (await owner.GetFromJsonAsync<List<RelationshipTypeResponse>>($"/api/universes/{u}/relationship-types"))!;
+        Assert.Equal(RelationshipFamilySemantic.BiologicalParent, kinds.Single(kind => kind.Id == made["parent"]).FamilySemantic);
+        Assert.Equal(RelationshipFamilySemantic.NonStructuralFamily, kinds.Single(kind => kind.Id == married.Id).FamilySemantic);
+        Assert.Equal("biological_parent", (await CatalogFor(u, ownerId)).RelationshipTypes.Single(kind => kind.Id == made["parent"]).FamilyMeaning);
+
+        // An unknown word, and a parent meaning on a kind that reads the same both ways, are refused as the Types screen refuses them.
+        var unknown = await StageSchema(_factory, u, ownerId, new AiChangeOperationInput("odd", "update", "relationship_kind", married.Id, RelationshipKind: new AiRelationshipKindInput(FamilyMeaning: "cousin")));
+        Assert.Equal(AiChangeCodes.Invalid, Assert.Single(unknown.Issues).Code);
+        var symmetricParent = await StageSchema(_factory, u, ownerId, new AiChangeOperationInput("bad", "update", "relationship_kind", married.Id, RelationshipKind: new AiRelationshipKindInput(FamilyMeaning: "biological_parent")));
+        Assert.Null(symmetricParent.Proposal);
+        Assert.NotEmpty(symmetricParent.Issues);
+    }
+
+    private async Task<AiChangeOptions> CatalogFor(Guid u, string userId)
+    {
+        AiChangeOptions? options = null;
+        await WithDb(_factory, async db => options = await AiChangeCatalog.ReadAsync(db, u, (await UniverseAccess.RoleAsync(db, u, userId, default))!.Value, default, schemaAllowed: true));
+        return options!;
     }
 
     [Fact]
