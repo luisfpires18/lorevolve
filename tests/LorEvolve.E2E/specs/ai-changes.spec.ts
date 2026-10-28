@@ -352,10 +352,10 @@ test.describe('Pending AI Changes', () => {
     // Connected apps says so, and turns it off without disconnecting.
     await page.goto('/app/profile?tab=connected-apps#connected-apps')
     const row = page.getByTestId('connected-app').filter({ hasText: 'E2E proposing client' })
-    await expect(row).toContainText('can propose changes for review')
+    await expect(row).toContainText('Creator')
     await row.getByTestId('stop-app-proposals').click()
     await expect(row.getByTestId('app-proposals-stopped')).toBeVisible()
-    await expect(row).toContainText('Read-only')
+    await expect(row).toContainText('Reader: reads only')
   })
 })
 

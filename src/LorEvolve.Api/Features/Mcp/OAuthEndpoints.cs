@@ -193,10 +193,10 @@ public static class OAuthEndpoints
         var canPropose = (request.HasScope(McpLimits.ProposeScope) || request.HasScope(McpLimits.LegacyProposeScope))
             && form[ProposeField] == AllowProposals
             && AiChanges.AiChangePermissions.MayStageAnything(role);
-        // Schema rides on proposing: a second tick on this same screen, from a role that edits types (ADR 0062). It is no
-        // OAuth scope - the token is the same either way - so no client registration changes; the connection carries it.
+        // Two levels: Reader, or Creator. A Creator proposes everything its role may, types, fields and groups included
+        // (ADR 0062), so schema rides on proposing with no second choice. It is no OAuth scope - the token is the same
+        // either way - so no client registration changes; the connection carries it.
         var canProposeSchema = canPropose
-            && form[SchemaField] == AllowProposals
             && AiChanges.AiChangePermissions.MayStage(role, AiChanges.AiChangeResource.LoreType, AiChanges.AiChangeAction.Create);
         principal.SetScopes(canPropose
             ? [McpLimits.ReadScope, McpLimits.ProposeScope, Scopes.OfflineAccess]
