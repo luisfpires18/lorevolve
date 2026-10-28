@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react'
-import { Link, useOutletContext, useParams } from 'react-router-dom'
+import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import {
   approveChanges,
   ChangeAction,
@@ -64,6 +65,7 @@ function approvable(change: Change) {
  */
 export default function AiChangePage() {
   const { universe } = useOutletContext<WorkspaceContext>()
+  const location = useLocation()
   const { proposalId = '' } = useParams<{ proposalId: string }>()
   const [load, setLoad] = useState<Load>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
@@ -141,6 +143,10 @@ export default function AiChangePage() {
 
   const changes = proposal.operations
   const open = proposal.proposal.status === ProposalStatus.Open
+  // Back to the list this was opened from - the account-wide one keeps every universe - else the universe's own.
+  const backTo =
+    (location.state as { backTo?: string } | null)?.backTo ??
+    `/app/universes/${universe.id}/ai-changes`
   const canDecide = proposal.canReview && open
   const canApprove = canDecide && proposal.blocked === null
   const pending = changes.filter((change) => change.status === ChangeStatus.Pending)
@@ -260,7 +266,12 @@ export default function AiChangePage() {
   return (
     <section className="aichange" aria-labelledby="aichange-title" data-testid="ai-change">
       <PageHeader
-        crumb={<Link to={`/app/universes/${universe.id}/ai-changes`}>Pending AI Changes</Link>}
+        crumb={
+          <Link className="aichange__back" to={backTo} data-testid="ai-change-back">
+            <ArrowLeft aria-hidden="true" focusable="false" strokeWidth={1.75} />
+            Back to Pending AI Changes
+          </Link>
+        }
         title={
           <span dir="auto">
             {proposal.proposal.summary ?? `${proposal.proposal.operationCount} proposed changes`}
