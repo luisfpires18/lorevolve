@@ -22,8 +22,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - **#54** in-process daily SQLite backup API snapshot -> private R2 bucket, manifest last after read-back, Admin status/Run
     now, retention proposed and off, `database-backup run|list|restore-drill` CLI (ADR 0064, `docs/recovery/database-backups.md`).
     **Off until the owner adds `DatabaseBackup__*` settings**; R2 path and DEV untested. Local drill measured (63.6 MB, 57.6 s).
-- **Idea boards (ADR 0066)** `feat/idea-boards` off `dev` at `237f103`, worktree `worktrees/LOREX-idea-boards`; not merged,
-  not pushed. Plan `docs/design/idea-boards-plan.md`. Done: ADR 0066 (amends 0030), step 2 backend (model, `AddIdeaBoards`,
+- **Idea boards (ADR 0066)** `feat/idea-boards` off `dev` at `237f103`; merged into `dev`. Plan `docs/design/idea-boards-plan.md`. Done: ADR 0066 (amends 0030), step 2 backend (model, `AddIdeaBoards`,
   `/api/idea-boards`, universe-delete release, tests); step 3 backup format 36 (boards carried, outside ideas by title,
   restore links or turns them into notes); step 4 web app (`usePanZoom` out of `MapViewer`, canvas, list view, Boards
   tab and routes in both Ideas views, recovery copy `idea-board`); step 5 `idea-boards.spec` (desktop, stale save, phone).
@@ -184,8 +183,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - **Unverified:** a real external MCP client (Claude/ChatGPT) staging schema, progression and pictures, and connecting by
     the friendly URL - needs DEV with `Mcp__Origin` and a fresh connection ticking schema. The assistant's 10,000-character
     tool-result cap (ADR 0045) can cut a large catalog.
-- **Issues #56, #57, #58 - pre-alpha batch** (`feat/mcp-lore-images-shell-pwa` off `dev` at `f4a548d`, in the worktree
-  `D:\Workspace\LOREX-pre-alpha`; committed, not merged, not pushed). No migration. Three scopes, one commit each.
+- **Issues #56, #57, #58 - pre-alpha batch** (`feat/mcp-lore-images-shell-pwa` off `dev` at `f4a548d`; merged into `dev`). No migration. Three scopes, one commit each.
   - **#56 MCP pictures.** ADR 0046 amendment; 0019 and 0053 amended. `list_lore_images` and `get_lore_image`
     (`LorEvolveMcpImageTools`): entry by id or exact name/alias (ambiguity refused with candidates), profile picture apart from
     appearance pictures with their ticked forms/eras, a form/era/appearance narrows to explicit links only and says when
@@ -214,8 +212,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     reproduced there and this does not verify the owner's deployed build or native WebKit behavior. Real iOS / Android /
     desktop installs remain **unverified**; keep the issue open until the reporting device and build are checked using
     `docs/testing/pwa-checklist.md`. Full focused run: 11/11 passed.
-- **Issues #52 and #53 - Lore-linked maps, geography and calibration** (`feat/lore-linked-maps` off `dev` at `dd0deef`, in
-  the worktree `D:\Workspace\LOREX\worktrees\LOREVOLVE-maps`; implementation and verification committed locally, not merged, not pushed). Two migrations (`AddUniverseMaps`,
+- **Issues #52 and #53 - Lore-linked maps, geography and calibration** (`feat/lore-linked-maps` off `dev` at `dd0deef`; merged into
+  `dev`). Two migrations (`AddUniverseMaps`,
   `AddMapCalibrations`), backup format 34 then 35. ADR 0060, ADR 0061; 0014, 0042, 0045, 0046 amended.
   - **#52 maps.** Several per universe; a picture kept whole with a fitted 4096px display copy, keys of ids, originals on the
     owner's storage; pins as fractions of the displayed picture linked to a live same-universe entry by id, once per map, on
