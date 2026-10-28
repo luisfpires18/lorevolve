@@ -45,23 +45,13 @@ export async function onRequestPost({ request, env }) {
   const row = result.row
   const now = new Date().toISOString()
 
-  // One row per address: sending again updates the answers and keeps created_at, wave and invited_at.
+  // Insert only, never update: the address is not verified, so a send naming someone else's email must not replace
+  // their answers. A second send from the same address is a second row; read the latest per email.
   await env.DB.prepare(
     `INSERT INTO applications
        (email, name, use_case, consent_at, privacy_version, pay_preference, pay_other,
-        price_too_cheap, price_too_expensive, suggestion, created_at, updated_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?4, ?4)
-     ON CONFLICT (email) DO UPDATE SET
-       name = excluded.name,
-       use_case = excluded.use_case,
-       consent_at = excluded.consent_at,
-       privacy_version = excluded.privacy_version,
-       pay_preference = excluded.pay_preference,
-       pay_other = excluded.pay_other,
-       price_too_cheap = excluded.price_too_cheap,
-       price_too_expensive = excluded.price_too_expensive,
-       suggestion = excluded.suggestion,
-       updated_at = excluded.updated_at`,
+        price_too_cheap, price_too_expensive, suggestion, created_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?4)`,
   )
     .bind(
       row.email,

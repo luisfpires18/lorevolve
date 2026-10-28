@@ -94,14 +94,14 @@ Two options; owner picks one:
 | How | A small Pages Function receives the form and writes one row to a D1 table | The form posts to a Google Apps Script that adds a row to a Sheet owned by `lorevolve@gmail.com` |
 | Where you read it | Cloudflare dashboard, D1 console (table view, SQL, CSV export) | Google Sheets, phone included |
 | Spam protection | Turnstile (free, cookieless), checked server-side | Turnstile can be checked in the script, but weaker and more fiddly |
-| Same email twice | Updates the earlier row | Adds a second row |
+| Same email twice | Adds a second row (never overwrites: addresses are not verified) | Adds a second row |
 | Data held by | Your Cloudflare account | Your Google account |
 | Code to maintain | One function (~80 lines), one table | One script (~40 lines) |
 
 Hosted form tools (Tally, Formspree, Google Forms) are dropped: they cannot drive the custom two-step modal without an
 iframe that breaks the branding.
 
-Table or sheet columns: `created_at`, `updated_at`, `email`, `name`, `use_case`, `consent_at`, `privacy_version`,
+Table or sheet columns: `created_at`, `email`, `name`, `use_case`, `consent_at`, `privacy_version`,
 `pay_preference`, `pay_other`, `price_too_cheap`, `price_too_expensive`, `suggestion`, plus two columns the owner fills
 by hand: `wave`, `invited_at`.
 

@@ -7,7 +7,7 @@ Plan: `docs/design/alpha-demo-page-plan.md`. Nothing here imports or calls the a
 | --- | --- |
 | `public/` | What is served: `index.html`, `privacy.html`, `styles.css` (a trimmed copy of the app's portal and landing styles), `app.js` (the dialog), `_headers`, `assets/` |
 | `public/assets/shots/` | One 1280x800 WebP per feature card, named as `index.html` references them |
-| `functions/api/apply.js` | `POST /api/apply`: Turnstile check, validation, one row per email in D1 |
+| `functions/api/apply.js` | `POST /api/apply`: Turnstile check, validation, one row per send in D1 (never overwrites: addresses are not verified) |
 | `functions/api/config.js` | `GET /api/config`: the public Turnstile site key |
 | `lib/application.js` | Validation, shared by the function and its check |
 | `schema.sql` | The `applications` table |
@@ -40,9 +40,14 @@ Dashboard: D1 > the database > Console, or the Tables view. From a terminal:
 npx wrangler d1 execute <database name> --remote --command "SELECT * FROM applications ORDER BY created_at"
 ```
 
+The same address may appear more than once (each send is kept, so nobody can overwrite another person's answers by
+typing their email). Treat the latest row per email as current; an entry whose details look wrong was not
+necessarily sent by the owner of that address.
+
 - CSV: Console > run the SELECT > Download, or `npx wrangler d1 export <database name> --remote --output applications.sql`.
 - Mark a wave invited (after sending the sign-up link from the app's Admin workspace):
-  `UPDATE applications SET wave = 1, invited_at = datetime('now') WHERE email = '<email>';`
+  `UPDATE applications SET wave = 1, invited_at = datetime('now') WHERE email = '<email>';` (marks every row for that address)
+- Latest answers per address: `SELECT * FROM applications a WHERE id = (SELECT MAX(id) FROM applications WHERE email = a.email);`
 - A request for a copy: `SELECT * FROM applications WHERE email = '<email>';`
 - A request to delete: `DELETE FROM applications WHERE email = '<email>';`
 - When the alpha ends: `DROP TABLE applications;` (or delete the database).
