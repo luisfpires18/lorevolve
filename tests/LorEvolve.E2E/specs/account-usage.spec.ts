@@ -44,13 +44,22 @@ function assistantUsage(page: Page) {
 async function expectUsage(page: Page, used: number, percent: number, left: string) {
   const item = assistantUsage(page)
   await expect(item.getByTestId('usage-assistant-amount')).toHaveText(
-    `${used} of 20 questions used`,
+    `${used} of 10 questions used`,
   )
   await expect(item.getByTestId('usage-assistant-percent')).toHaveText(`${percent}%`)
   await expect(item.getByTestId('usage-assistant-left')).toHaveText(left)
-  const meter = item.getByRole('meter', { name: 'AI Assistant' })
+  const meter = item.getByRole('meter', { name: 'Questions' })
   await expect(meter).toHaveAttribute('aria-valuenow', `${percent}`)
-  await expect(meter).toHaveAttribute('aria-valuetext', `${used} of 20 questions used, ${percent}%`)
+  await expect(meter).toHaveAttribute('aria-valuetext', `${used} of 10 questions used, ${percent}%`)
+}
+
+/** A usage body as the server sends it: `used` questions, no change requests. */
+function usageBody(used: number, resetsAt: Date | null = null) {
+  return {
+    ask: { used, limit: 10, remaining: 10 - used, resetsAt },
+    propose: { used: 0, limit: 5, remaining: 5, resetsAt: null },
+    windowSeconds: 3600,
+  }
 }
 
 function stubUsage(page: Page, body: object) {
@@ -66,8 +75,8 @@ test('a new account has its whole allowance, and asking counts without reloading
   const section = page.getByTestId('profile-usage')
   await expect(section.getByRole('heading', { level: 2, name: 'Usage' })).toBeVisible()
   await expect(section.getByRole('heading', { level: 3, name: 'AI Assistant' })).toBeVisible()
-  await expectUsage(page, 0, 0, '20 questions left')
-  await expect(section).toContainText('A question counts even when the answer fails.')
+  await expectUsage(page, 0, 0, '10 questions left')
+  await expect(section).toContainText('One counts even when the answer fails.')
   // Read only: nothing to buy or raise.
   await expect(section.getByRole('button')).toHaveCount(0)
   await expect(section.getByRole('link')).toHaveCount(0)
@@ -89,25 +98,25 @@ test('a new account has its whole allowance, and asking counts without reloading
   await page.waitForURL('**/app/profile')
   await page.getByTestId('profile-tab-usage').click()
   expect(await page.evaluate(() => (window as unknown as { kept?: number }).kept)).toBe(marker)
-  await expectUsage(page, 1, 5, '19 questions left')
+  await expectUsage(page, 1, 10, '9 questions left')
 
-  // A question the assistant refuses still counts, as the server counts it.
+  // A blank question never reaches the model, so it is not counted.
   const refused = await page.request.post(`/api/universes/${universeId}/assistant`, {
     data: { question: '   ', history: [] },
   })
   expect(refused.status()).toBe(400)
   await page.reload()
-  await expectUsage(page, 2, 10, '18 questions left')
+  await expectUsage(page, 1, 10, '9 questions left')
 })
 
 test('a used-up allowance says when the next question can be asked', async ({ page }) => {
   await signUp(page)
   const resetsAt = new Date(Date.now() + 4 * 60_000)
-  await stubUsage(page, { used: 20, limit: 20, remaining: 0, windowSeconds: 600, resetsAt })
+  await stubUsage(page, usageBody(10, resetsAt))
   await page.goto('/app/profile?tab=usage')
 
   const item = assistantUsage(page)
-  await expect(item.getByTestId('usage-assistant-amount')).toHaveText('20 of 20 questions used')
+  await expect(item.getByTestId('usage-assistant-amount')).toHaveText('10 of 10 questions used')
   await expect(item.getByTestId('usage-assistant-percent')).toHaveText('100%')
   const at = await page.evaluate(
     (iso) =>
@@ -119,11 +128,8 @@ test('a used-up allowance says when the next question can be asked', async ({ pa
   await expect(item.getByTestId('usage-assistant-left')).toHaveText(
     `No questions left. You can ask again at ${at}.`,
   )
-  await expect(item.getByRole('meter', { name: 'AI Assistant' })).toHaveAttribute(
-    'data-state',
-    'full',
-  )
-  await expect(item.getByRole('meter', { name: 'AI Assistant' })).toHaveAttribute(
+  await expect(item.getByRole('meter', { name: 'Questions' })).toHaveAttribute('data-state', 'full')
+  await expect(item.getByRole('meter', { name: 'Questions' })).toHaveAttribute(
     'aria-valuenow',
     '100',
   )
@@ -142,7 +148,7 @@ test('loading is announced, and a failed read offers to try again', async ({ pag
       await route.fulfill({ status: 500, json: { title: 'Synthetic failure' } })
     } else {
       await route.fulfill({
-        json: { used: 7, limit: 20, remaining: 13, windowSeconds: 600, resetsAt: null },
+        json: usageBody(7),
       })
     }
   })
@@ -159,17 +165,17 @@ test('loading is announced, and a failed read offers to try again', async ({ pag
   failing = false
   await error.getByRole('button', { name: 'Try again' }).click()
 
-  await expectUsage(page, 7, 35, '13 questions left')
+  await expectUsage(page, 7, 70, '3 questions left')
   await expect(item).toHaveAttribute('aria-busy', 'false')
 })
 
 test('the Usage section fits a phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 })
   await signUp(page)
-  await stubUsage(page, { used: 19, limit: 20, remaining: 1, windowSeconds: 600, resetsAt: null })
+  await stubUsage(page, usageBody(9))
   await page.goto('/app/profile?tab=usage')
 
-  await expectUsage(page, 19, 95, '1 question left')
+  await expectUsage(page, 9, 90, '1 question left')
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -188,14 +194,18 @@ test('one Usage section holds Storage, then the AI Assistant', async ({ page }) 
   await expect(page.getByRole('heading', { level: 2, name: 'Usage' })).toHaveCount(1)
   await expect(page.getByRole('heading', { level: 2, name: 'Storage' })).toHaveCount(0)
   await expect(section.getByRole('heading', { level: 3 })).toHaveText(['Storage', 'AI Assistant'])
-  await expect(section.getByRole('meter')).toHaveCount(2)
+  await expect(section.getByRole('meter')).toHaveCount(3)
   await expect(section.getByRole('meter', { name: 'Storage' })).toHaveAttribute(
     'aria-valuetext',
     '0 MB used of 1 GB, 0%',
   )
-  await expect(section.getByRole('meter', { name: 'AI Assistant' })).toHaveAttribute(
+  await expect(section.getByRole('meter', { name: 'Questions' })).toHaveAttribute(
     'aria-valuetext',
-    '0 of 20 questions used, 0%',
+    '0 of 10 questions used, 0%',
+  )
+  await expect(section.getByRole('meter', { name: 'Change requests' })).toHaveAttribute(
+    'aria-valuetext',
+    '0 of 5 change requests used, 0%',
   )
 })
 
@@ -210,13 +220,13 @@ test('one usage that fails to load leaves the other in place', async ({ page }) 
       ? route.fulfill({ status: 500, json: { title: 'Synthetic failure' } })
       : route.fallback(),
   )
-  await stubUsage(page, { used: 3, limit: 20, remaining: 17, windowSeconds: 600, resetsAt: null })
+  await stubUsage(page, usageBody(3))
   await page.goto('/app/profile?tab=usage')
 
   const storageError = section.getByTestId('usage-storage-error')
   await expect(storageError).toHaveRole('alert')
   await expect(section.getByTestId('usage-assistant-error')).toHaveCount(0)
-  await expectUsage(page, 3, 15, '17 questions left')
+  await expectUsage(page, 3, 30, '7 questions left')
 
   storageFails = false
   await storageError.getByRole('button', { name: 'Try again' }).click()
@@ -240,13 +250,7 @@ test('both allowances used up say so in words', async ({ page }) => {
       json: { usedBytes: GiB, quotaBytes: GiB, remainingBytes: 0, loreImagesBytes: GiB },
     }),
   )
-  await stubUsage(page, {
-    used: 20,
-    limit: 20,
-    remaining: 0,
-    windowSeconds: 600,
-    resetsAt: new Date(Date.now() + 5 * 60_000),
-  })
+  await stubUsage(page, usageBody(10, new Date(Date.now() + 5 * 60_000)))
   await page.goto('/app/profile?tab=usage')
 
   const section = page.getByTestId('profile-usage')
@@ -260,7 +264,7 @@ test('both allowances used up say so in words', async ({ page }) => {
     'full',
   )
   await expect(section.getByTestId('usage-assistant-left')).toContainText('No questions left.')
-  await expect(section.getByRole('meter', { name: 'AI Assistant' })).toHaveAttribute(
+  await expect(section.getByRole('meter', { name: 'Questions' })).toHaveAttribute(
     'data-state',
     'full',
   )
@@ -275,17 +279,11 @@ for (const theme of ['light', 'dark'] as const) {
       await page.addInitScript((chosen) => localStorage.setItem('lorevolve-theme', chosen), theme)
       await page.setViewportSize({ width, height: 900 })
       await signUp(page)
-      await stubUsage(page, {
-        used: 7,
-        limit: 20,
-        remaining: 13,
-        windowSeconds: 600,
-        resetsAt: null,
-      })
+      await stubUsage(page, usageBody(7))
       await page.goto('/app/profile?tab=usage')
 
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
-      await expectUsage(page, 7, 35, '13 questions left')
+      await expectUsage(page, 7, 70, '3 questions left')
       const section = page.getByTestId('profile-usage')
       await expect(section.getByTestId('usage-storage-amount')).toHaveText('0 MB used of 1 GB')
 

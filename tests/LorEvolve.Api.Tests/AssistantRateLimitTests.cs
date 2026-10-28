@@ -109,7 +109,7 @@ public sealed class AssistantRateLimitTests
     [Fact]
     public async Task A_wait_longer_than_the_retry_allows_is_busy_at_once_not_slept_through_until_the_question_times_out()
     {
-        // A daily limit, say: waiting it out would hold the question until its own 90 s timeout, reported as too slow.
+        // A daily limit, say: waiting it out would hold the question until its own timeout, reported as too slow.
         var groq = new LimitedGroq(limited: 1, retryAfter: "120");
         var clock = Stopwatch.StartNew();
 

@@ -282,7 +282,7 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
         }
 
         var usage = await viewer.GetFromJsonAsync<JsonElement>("/api/profile/assistant-usage");
-        Assert.Equal(0, usage.GetProperty("used").GetInt32());
+        Assert.Equal(0, usage.GetProperty("ask").GetProperty("used").GetInt32());
     }
 
     // ---------- Helpers ----------

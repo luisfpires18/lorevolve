@@ -18,9 +18,10 @@ namespace LorEvolve.Api.Features.Assistant;
 /// the next answer needs; the universe is read afresh each time.
 ///
 /// <b>Failures in LorEvolve's words.</b> Not set up is 503 <see cref="UnavailableCode"/>; a provider that failed, refused or
-/// sent an unreadable answer is 502 <see cref="FailedCode"/>; one that is rate limiting this host is 503
-/// <see cref="BusyCode"/>; too slow is 504 <see cref="TimedOutCode"/>; asking too often is 429
-/// <see cref="AssistantSetup.RateLimitedCode"/>. The provider's own words are only ever logged.
+/// sent an unreadable answer is 502 <see cref="FailedCode"/>; one that is rate limiting this host, or a line of other
+/// questions that did not move in time (<see cref="AssistantLine"/>), is 503 <see cref="BusyCode"/>; too slow is 504
+/// <see cref="TimedOutCode"/>; asking too often is 429 <see cref="AssistantSetup.RateLimitedCode"/>. The provider's own
+/// words are only ever logged.
 /// </summary>
 public static partial class AssistantEndpoints
 {
@@ -39,7 +40,7 @@ public static partial class AssistantEndpoints
             .RequireAuthorization();
 
         group.MapGet("/", StatusAsync).WithName("GetAssistantStatus");
-        group.MapPost("/", AskAsync).WithName("AskAssistant").WithMetadata(new AssistantQuestionMetadata());
+        group.MapPost("/", AskAsync).WithName("AskAssistant");
 
         // The signed-in account's own allowance, read from the session alone like the rest of /api/profile.
         endpoints.MapGet("/api/profile/assistant-usage", (ClaimsPrincipal principal, AssistantAllowance allowance) =>
@@ -50,39 +51,6 @@ public static partial class AssistantEndpoints
 
         return endpoints;
     }
-
-    /// <summary>
-    /// Counts each question against the asking account's allowance (ADR 0045). Runs after authorization and before the
-    /// endpoint, so the body has not been read yet: a question counts whatever happens next - a body that is not JSON, a
-    /// refused question, an outsider's 404, a failed answer. Only endpoints marked <see cref="AssistantQuestionMetadata"/>
-    /// are counted, and only for a signed-in account; one past the allowance is refused with how long until the window
-    /// ends, and is not counted.
-    /// </summary>
-    public static IApplicationBuilder UseAssistantAllowance(this IApplicationBuilder app) =>
-        app.Use(async (http, next) =>
-        {
-            if (http.GetEndpoint()?.Metadata.GetMetadata<AssistantQuestionMetadata>() is null
-                || http.User.Identity?.IsAuthenticated != true)
-            {
-                await next(http);
-                return;
-            }
-
-            var allowance = http.RequestServices.GetRequiredService<AssistantAllowance>();
-            if (allowance.TryTake(http.User.RequireUserId()) is not { } wait)
-            {
-                await next(http);
-                return;
-            }
-
-            http.Response.Headers.RetryAfter = ((int)Math.Ceiling(wait.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture);
-            await Problem(
-                    StatusCodes.Status429TooManyRequests,
-                    AssistantSetup.RateLimitedCode,
-                    "Too many questions",
-                    "You've asked a lot in the last few minutes. Wait a little, then try again.")
-                .ExecuteAsync(http);
-        });
 
     private static async Task<IResult> StatusAsync(
         Guid universeId,
@@ -105,6 +73,9 @@ public static partial class AssistantEndpoints
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         IAssistantProvider provider,
+        AssistantAllowance allowance,
+        AssistantLine line,
+        HttpContext http,
         ILoggerFactory loggers,
         TimeProvider clock,
         CancellationToken cancellationToken)
@@ -165,6 +136,23 @@ public static partial class AssistantEndpoints
             new AssistantMessage(AssistantRole.User, question),
         ];
 
+        // A question that will reach the model counts against its kind's allowance, whether its answer comes or fails.
+        var accountId = principal.RequireUserId();
+        var kind = proposing is null ? AssistantQuestionKind.Ask : AssistantQuestionKind.Propose;
+        if (allowance.TryTake(accountId, kind) is { } wait)
+        {
+            return TooMany(http, wait, kind);
+        }
+
+        // Its turn with the model, behind every other account's question on this host. Not reached in time, it is busy and
+        // given back: it never reached the model.
+        using var place = await line.EnterAsync(cancellationToken);
+        if (place is null)
+        {
+            allowance.GiveBack(accountId, kind);
+            return Busy();
+        }
+
         var logger = loggers.CreateLogger("LorEvolve.Assistant");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(UniverseAssistant.Timeout);
@@ -179,7 +167,7 @@ public static partial class AssistantEndpoints
 
             return exception.Failure switch
             {
-                AssistantFailure.Busy => Problem(StatusCodes.Status503ServiceUnavailable, BusyCode, "Assistant busy", "The assistant is busy right now. Try again in a minute."),
+                AssistantFailure.Busy => Busy(),
                 AssistantFailure.TimedOut => TimedOut(),
                 _ => Problem(StatusCodes.Status502BadGateway, FailedCode, "No answer", "The assistant couldn't answer that. Try again."),
             };
@@ -197,6 +185,22 @@ public static partial class AssistantEndpoints
     [LoggerMessage(Level = LogLevel.Warning, Message = "Assistant took longer than {Timeout} and was stopped.")]
     private static partial void LogTimedOut(ILogger logger, TimeSpan timeout);
 
+    private static IResult Busy() =>
+        Problem(StatusCodes.Status503ServiceUnavailable, BusyCode, "Assistant busy", "The assistant is busy right now. Try again in a minute.");
+
+    /// <summary>Past the allowance: refused, uncounted, with how long until its window ends.</summary>
+    private static IResult TooMany(HttpContext http, TimeSpan wait, AssistantQuestionKind kind)
+    {
+        http.Response.Headers.RetryAfter = ((int)Math.Ceiling(wait.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return Problem(
+            StatusCodes.Status429TooManyRequests,
+            AssistantSetup.RateLimitedCode,
+            "Too many questions",
+            kind == AssistantQuestionKind.Propose
+                ? $"You've used your {AssistantSetup.ProposeQuestionsPerWindow} change requests for this hour. Wait a little, then try again."
+                : $"You've used your {AssistantSetup.AskQuestionsPerWindow} questions for this hour. Wait a little, then try again.");
+    }
+
     private static IResult TimedOut() =>
         Problem(StatusCodes.Status504GatewayTimeout, TimedOutCode, "Took too long", "That took too long to answer. Try again, or ask something narrower.");
 
@@ -207,6 +211,3 @@ public static partial class AssistantEndpoints
             statusCode: status,
             extensions: new Dictionary<string, object?> { ["code"] = code });
 }
-
-/// <summary>Marks the one route whose requests are questions counted by <see cref="AssistantEndpoints.UseAssistantAllowance"/>.</summary>
-public sealed class AssistantQuestionMetadata;

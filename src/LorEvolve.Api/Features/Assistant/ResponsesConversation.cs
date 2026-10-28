@@ -99,10 +99,14 @@ internal sealed class ResponsesConversation : IAssistantConversation
     /// Retry-After, whichever is longer - but only while that wait is at most <see cref="MaxWait"/>. A server asking for
     /// longer (a daily limit, say) is answered as busy at once, instead of the question sleeping until its own timeout and
     /// then being reported as too slow (Issue #46). Cancellation still stops the wait.
+    ///
+    /// A minute, because a tokens-per-minute limit never asks for more: Groq's free tier allows 8,000 tokens a minute and
+    /// one propose-mode step sends about 6,500, so the second step of every such question is refused for up to a minute.
+    /// Waiting that out is the only way the question finishes; a 10 s cap answered every one of them busy.
     /// </summary>
     internal sealed class OneShortRetry() : ClientRetryPolicy(maxRetries: 1)
     {
-        public static readonly TimeSpan MaxWait = TimeSpan.FromSeconds(10);
+        public static readonly TimeSpan MaxWait = TimeSpan.FromSeconds(60);
 
         // The first retry is the only one, so its delay is always the first try's.
         protected override bool ShouldRetry(PipelineMessage message, Exception? exception) =>

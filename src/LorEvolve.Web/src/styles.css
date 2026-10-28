@@ -12875,6 +12875,16 @@ a.idearef__name {
   font-variant-numeric: tabular-nums;
 }
 
+.usage__kind + .usage__kind {
+  margin-top: var(--space-4);
+}
+
+.usage__kind-name {
+  margin: 0 0 var(--space-1);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .usage__percent {
   color: var(--muted);
 }
