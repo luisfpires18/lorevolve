@@ -9,6 +9,10 @@ name: Deploy DEV
 on:
   push:
     branches: [dev]
+    # The alpha page (site/) is deployed by Cloudflare Pages, not here. A push that touches only
+    # site/ skips the app redeploy; a push that also changes anything else deploys as usual.
+    paths-ignore:
+      - 'site/**'
   workflow_dispatch:
 
 permissions:
