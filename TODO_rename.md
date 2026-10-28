@@ -42,7 +42,7 @@ az ad app federated-credential delete --id 5b627c11-0050-4130-a062-4f41b7d02ed1 
 - [ ] Optional names that still say lorex but nobody sees: resource group `rg-lorex-dev`, plan
       `lorex-dev-lfp18-plan`, R2 token `lorex-dev`. Renaming any of them means recreating it; leaving them is fine.
 
-## Local folder (last; close every Claude session and editor on the repo first)
+## Local folder (done 2026-10-28)
 
 ```powershell
 Move-Item D:\Workspace\LOREX D:\Workspace\LOREVOLVE
@@ -52,11 +52,11 @@ Move-Item D:\Workspace\LOREX D:\Workspace\LOREVOLVE
 git -C /d/Workspace/LOREVOLVE worktree repair
 ```
 
-- [ ] Copy Claude's memory: `C:\Users\Victus\.claude\projects\D--Workspace-LOREX\memory` ->
+- [x] Copy Claude's memory: `C:\Users\Victus\.claude\projects\D--Workspace-LOREX\memory` ->
       `C:\Users\Victus\.claude\projects\D--Workspace-LOREVOLVE\memory` (open one session in the new path first).
-- [ ] `python -m graphify update .` in the new folder.
-- [ ] Replace the remaining `Workspace\LOREX` paths in the repository (`git grep -n "Workspace.LOREX"`).
-- [ ] Verify: `Start-LorEvolve.cmd` boots the app.
+- [x] `python -m graphify update .` in the new folder.
+- [x] Replace the remaining `Workspace\LOREX` paths in the repository (`git grep -n "Workspace.LOREX"`).
+- [x] Verify: `Start-LorEvolve.cmd` boots the app.
 
 ## Done
 
