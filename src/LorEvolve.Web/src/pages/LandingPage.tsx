@@ -2,18 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Archive, Lock, Users } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
-import { WorldCard } from '../components/WorldCard'
 import { useWholeTitle } from '../lib/useDocumentTitle'
-import {
-  getPublicStats,
-  listPublicUniverses,
-  type PublicStats,
-  type PublicUniverse,
-} from '../portal/api'
+import { getPublicStats, type PublicStats } from '../portal/api'
 import heroImage from '../assets/atmosphere-citadel.webp'
-
-/** How many published worlds the home page shows. The rest are Explore's. */
-const PREVIEW_SIZE = 4
 
 /** The same words the server writes into this page's head (`PageMetadataResolver`, ADR 0038). */
 const HOME_TITLE = 'LorEvolve | Build connected fictional universes'
@@ -30,8 +21,6 @@ const count = new Intl.NumberFormat('en')
 
 type Stats = { kind: 'ready'; value: PublicStats } | { kind: 'error' } | null
 
-type Worlds = { kind: 'ready'; items: PublicUniverse[] } | { kind: 'error' } | null
-
 /**
  * LorEvolve's home (031): what LorEvolve is, what it does, who it is for, that others' worlds can be read, and how to start -
  * then out, to Explore or into the workspace. A page of the portal, inside `PublicLayout`, so the bar, the session and
@@ -39,15 +28,13 @@ type Worlds = { kind: 'ready'; items: PublicUniverse[] } | { kind: 'error' } | n
  *
  * Everything on it is real. Under the hero, LorEvolve in four live numbers (`/api/public/stats`): shown as they are, zeros
  * included, never counted up and never guessed while they load; if they cannot be read the row simply is not there.
- * The worlds are the first page of the public listing, as Explore would show them; with none published, the section
- * says so rather than inventing any. Nothing here claims a feature LorEvolve does not have today, and no private workspace
+ * Published worlds are not pictured here; the section points to Explore, which lists them. Nothing here claims a feature LorEvolve does not have today, and no private workspace
  * is pictured.
  */
 export default function LandingPage() {
   useWholeTitle(HOME_TITLE)
   const { user, isLoading } = useAuth()
   const [stats, setStats] = useState<Stats>(null)
-  const [worlds, setWorlds] = useState<Worlds>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -55,11 +42,6 @@ export default function LandingPage() {
       .then((value) => setStats({ kind: 'ready', value }))
       .catch(() => {
         if (!controller.signal.aborted) setStats({ kind: 'error' })
-      })
-    listPublicUniverses({}, 1, controller.signal, PREVIEW_SIZE)
-      .then((page) => setWorlds({ kind: 'ready', items: page.items }))
-      .catch(() => {
-        if (!controller.signal.aborted) setWorlds({ kind: 'error' })
       })
     return () => {
       controller.abort()
@@ -190,23 +172,21 @@ export default function LandingPage() {
           </p>
           <ul className="landing-links">
             <li>
-              <p className="landing-links__cause">Record that Aurek is Ilse’s father.</p>
+              <p className="landing-links__cause">Record how two characters are related.</p>
               <p className="landing-links__effect">
                 Both entries show it, and the Family Tree draws it.
               </p>
             </li>
             <li>
-              <p className="landing-links__cause">
-                Date the night the city fell, and who was there.
-              </p>
+              <p className="landing-links__cause">Date an event, and say who was there.</p>
               <p className="landing-links__effect">
                 If someone takes part after their recorded death, Canon says so.
               </p>
             </li>
             <li>
-              <p className="landing-links__cause">Link a scene to Ilse and the sunken bell.</p>
+              <p className="landing-links__cause">Link a scene to the lore it involves.</p>
               <p className="landing-links__effect">
-                While you write it, both entries are one step away.
+                While you write it, those entries are one step away.
               </p>
             </li>
           </ul>
@@ -225,10 +205,7 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="landing-media" data-testid="landing-audience">
-            <p className="landing-media__list">
-              Novels, films and series. Comics and manga. Games and tabletop campaigns. Animation
-              and audio drama.
-            </p>
+            <p className="landing-media__list">Novels, films, comics, games and more.</p>
             <p className="landing-media__turn">
               Whatever form the story takes, the universe underneath it is the same.
             </p>
@@ -244,52 +221,14 @@ export default function LandingPage() {
             </h2>
             <p className="landing-lede">
               Authors can publish a universe, and choose which of its entries and stories go with
-              it. Anyone can read them, signed in or not.
+              it. Anyone can read them in Explore, signed in or not.
             </p>
           </div>
           <Link className="landing-more" to="/explore" data-testid="landing-explore-all">
-            {worlds?.kind === 'ready' && worlds.items.length === 0
-              ? 'Open Explore'
-              : 'Explore all worlds'}
+            Explore all worlds
             <ArrowRight aria-hidden="true" size={18} strokeWidth={1.75} />
           </Link>
         </div>
-
-        {worlds === null ? (
-          <ul className="landing-worlds" aria-hidden="true" data-testid="landing-worlds-loading">
-            {Array.from({ length: PREVIEW_SIZE }, (_, index) => (
-              <li className="worldcard worldcard--skeleton" key={index}>
-                <span className="worldcard__art" />
-                <span className="worldcard__text">
-                  <span className="worldcard__bone worldcard__bone--name" />
-                  <span className="worldcard__bone worldcard__bone--chips" />
-                  <span className="worldcard__bone worldcard__bone--short" />
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        {worlds?.kind === 'ready' && worlds.items.length > 0 ? (
-          <ul className="landing-worlds" data-testid="landing-worlds">
-            {worlds.items.map((world) => (
-              <WorldCard key={world.slug} world={world} />
-            ))}
-          </ul>
-        ) : null}
-
-        {worlds?.kind === 'ready' && worlds.items.length === 0 ? (
-          <p className="landing-quiet" data-testid="landing-worlds-empty">
-            No worlds have been published yet. When an author makes a universe public, it appears in
-            Explore.
-          </p>
-        ) : null}
-
-        {worlds?.kind === 'error' ? (
-          <p className="landing-quiet" data-testid="landing-worlds-error">
-            The published worlds could not be loaded here. Explore has them all.
-          </p>
-        ) : null}
       </section>
 
       <section className="landing-section landing-trust" aria-labelledby="landing-trust">

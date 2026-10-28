@@ -251,7 +251,11 @@ function ConnectSteps({
 
       <p className="connect__manage">
         To disconnect an app, go to{' '}
-        <Link to="/app/profile#connected-apps" onClick={onFollow} data-testid="connect-ai-manage">
+        <Link
+          to="/app/profile?tab=connected-apps#connected-apps"
+          onClick={onFollow}
+          data-testid="connect-ai-manage"
+        >
           Profile, Connected apps
         </Link>
         .

@@ -5,9 +5,18 @@ import { ConnectedApps } from '../components/ConnectedApps'
 import { ProfileAvatar } from '../components/ProfileAvatar'
 import { PublicAuthorSection } from '../components/PublicAuthorSection'
 import { PublicNameForm } from '../components/PublicNameForm'
+import { QueryTabList, TabPanel } from '../components/QueryTabs'
 import { StorageUsage } from '../components/StorageUsage'
 import { ThemeSwitch } from '../components/ThemeSwitch'
+import { useQueryTab } from '../lib/queryTab'
 import { listUniverses } from '../universes/api'
+
+/** The profile's tabs, as Settings' are: kept in the address (`?tab=`), Account the page itself. */
+const TABS = [
+  { id: 'account', label: 'Account' },
+  { id: 'usage', label: 'Usage' },
+  { id: 'connected-apps', label: 'Connected apps' },
+] as const
 
 /**
  * The signed-in account, and only what LorEvolve genuinely knows about it.
@@ -20,9 +29,13 @@ import { listUniverses } from '../universes/api'
  * The circle near the top is the account's photo, or its initial when there is none. The username is
  * the account's name here; the public name is a separate, chosen one, shown only as the author of
  * published universes (ADR 0036). The page shows only what LorEvolve genuinely holds.
+ *
+ * Under the name, three tabs in Settings' pattern (`QueryTabList`): Account (the facts, publishing, appearance),
+ * Usage, and Connected apps, which `/app/profile?tab=connected-apps` opens directly.
  */
 export default function ProfilePage() {
   const { user } = useAuth()
+  const [tab, choose] = useQueryTab(TABS)
 
   const [universeCount, setUniverseCount] = useState<number | null>(null)
 
@@ -53,69 +66,71 @@ export default function ProfilePage() {
         {user.username}
       </p>
 
-      <dl className="profile__facts">
-        <div className="profile__fact">
-          <dt className="profile__label">Email</dt>
-          <dd className="profile__value" data-testid="profile-email">
-            {user.email}
-          </dd>
-        </div>
-        {universeCount === null ? null : (
+      <QueryTabList label="Profile" idPrefix="profile" tabs={TABS} tab={tab} onChoose={choose} />
+
+      <TabPanel idPrefix="profile" id="account" tab={tab}>
+        <dl className="profile__facts">
           <div className="profile__fact">
-            <dt className="profile__label">Universes</dt>
-            <dd className="profile__value" data-testid="profile-universes">
-              {universeCount}
+            <dt className="profile__label">Email</dt>
+            <dd className="profile__value" data-testid="profile-email">
+              {user.email}
             </dd>
           </div>
-        )}
-        <div className="profile__fact">
-          <dt className="profile__label">Account ID</dt>
-          <dd className="profile__value profile__value--id" data-testid="profile-id">
-            {user.id}
-          </dd>
-        </div>
-      </dl>
+          {universeCount === null ? null : (
+            <div className="profile__fact">
+              <dt className="profile__label">Universes</dt>
+              <dd className="profile__value" data-testid="profile-universes">
+                {universeCount}
+              </dd>
+            </div>
+          )}
+        </dl>
 
-      <section
-        className="profile__public usage"
-        aria-labelledby="profile-usage-heading"
-        data-testid="profile-usage"
-      >
-        <h2 className="profile__subtitle" id="profile-usage-heading">
-          Usage
-        </h2>
-        <StorageUsage />
-        <AssistantUsage />
-      </section>
+        <section className="profile__public" aria-labelledby="profile-public-heading">
+          <h2 className="profile__subtitle" id="profile-public-heading">
+            Publishing
+          </h2>
+          <PublicNameForm />
+          <PublicAuthorSection />
+        </section>
 
-      <ConnectedApps />
+        <section className="profile__public" aria-labelledby="profile-appearance-heading">
+          <h2 className="profile__subtitle" id="profile-appearance-heading">
+            Appearance
+          </h2>
+          <p className="settings__note">
+            One theme for the whole of LorEvolve - the public portal and your workspace. It is kept
+            in this browser.
+          </p>
+          <ThemeSwitch />
+        </section>
 
-      <section className="profile__public" aria-labelledby="profile-public-heading">
-        <h2 className="profile__subtitle" id="profile-public-heading">
-          Publishing
-        </h2>
-        <PublicNameForm />
-        <PublicAuthorSection />
-      </section>
-
-      <section className="profile__public" aria-labelledby="profile-appearance-heading">
-        <h2 className="profile__subtitle" id="profile-appearance-heading">
-          Appearance
-        </h2>
-        <p className="settings__note">
-          One theme for the whole of LorEvolve - the public portal and your workspace. It is kept in
-          this browser.
+        <p className="profile__note">
+          LorEvolve keeps only what it needs to sign you in: a username, an email address, and the
+          photo above if you add one - and the public name above, if you choose one, which is the
+          only thing the public portal shows about you, with your author page's address. Your photo
+          is private - served only to your own signed-in session - unless you choose to show it on
+          your author page, and it is never part of a universe backup.
         </p>
-        <ThemeSwitch />
-      </section>
+      </TabPanel>
 
-      <p className="profile__note">
-        LorEvolve keeps only what it needs to sign you in: a username, an email address, and the
-        photo above if you add one - and the public name above, if you choose one, which is the only
-        thing the public portal shows about you, with your author page's address. Your photo is
-        private - served only to your own signed-in session - unless you choose to show it on your
-        author page, and it is never part of a universe backup.
-      </p>
+      <TabPanel idPrefix="profile" id="usage" tab={tab}>
+        <section
+          className="profile__public usage"
+          aria-labelledby="profile-usage-heading"
+          data-testid="profile-usage"
+        >
+          <h2 className="profile__subtitle" id="profile-usage-heading">
+            Usage
+          </h2>
+          <StorageUsage />
+          <AssistantUsage />
+        </section>
+      </TabPanel>
+
+      <TabPanel idPrefix="profile" id="connected-apps" tab={tab}>
+        <ConnectedApps />
+      </TabPanel>
     </article>
   )
 }

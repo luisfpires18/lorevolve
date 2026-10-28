@@ -364,7 +364,7 @@ test.describe('reading a public universe', () => {
       [w.name],
     )
 
-    // The account's own page stays in the workspace: email and id there, and the choice to show the photo.
+    // The account's own page stays in the workspace: email there, and the choice to show the photo.
     await page.goto('/app/profile')
     await expect(page.getByTestId('profile')).toBeVisible()
     await expect(page.locator('.portal')).toHaveCount(0)

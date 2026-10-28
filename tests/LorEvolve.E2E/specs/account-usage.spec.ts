@@ -61,7 +61,7 @@ test('a new account has its whole allowance, and asking counts without reloading
   page,
 }) => {
   await signUp(page)
-  await page.goto('/app/profile')
+  await page.goto('/app/profile?tab=usage')
 
   const section = page.getByTestId('profile-usage')
   await expect(section.getByRole('heading', { level: 2, name: 'Usage' })).toBeVisible()
@@ -87,6 +87,7 @@ test('a new account has its whole allowance, and asking counts without reloading
   await page.getByTestId('account-menu-trigger').first().click()
   await page.getByTestId('account-menu-profile').click()
   await page.waitForURL('**/app/profile')
+  await page.getByTestId('profile-tab-usage').click()
   expect(await page.evaluate(() => (window as unknown as { kept?: number }).kept)).toBe(marker)
   await expectUsage(page, 1, 5, '19 questions left')
 
@@ -103,7 +104,7 @@ test('a used-up allowance says when the next question can be asked', async ({ pa
   await signUp(page)
   const resetsAt = new Date(Date.now() + 4 * 60_000)
   await stubUsage(page, { used: 20, limit: 20, remaining: 0, windowSeconds: 600, resetsAt })
-  await page.goto('/app/profile')
+  await page.goto('/app/profile?tab=usage')
 
   const item = assistantUsage(page)
   await expect(item.getByTestId('usage-assistant-amount')).toHaveText('20 of 20 questions used')
@@ -145,7 +146,7 @@ test('loading is announced, and a failed read offers to try again', async ({ pag
       })
     }
   })
-  await page.goto('/app/profile')
+  await page.goto('/app/profile?tab=usage')
 
   const item = assistantUsage(page)
   await expect(item.getByRole('status')).toHaveText('Checking your usage…')
@@ -166,7 +167,7 @@ test('the Usage section fits a phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 })
   await signUp(page)
   await stubUsage(page, { used: 19, limit: 20, remaining: 1, windowSeconds: 600, resetsAt: null })
-  await page.goto('/app/profile')
+  await page.goto('/app/profile?tab=usage')
 
   await expectUsage(page, 19, 95, '1 question left')
 
@@ -181,7 +182,7 @@ test('the Usage section fits a phone', async ({ page }) => {
 
 test('one Usage section holds Storage, then the AI Assistant', async ({ page }) => {
   await signUp(page)
-  await page.goto('/app/profile')
+  await page.goto('/app/profile?tab=usage')
 
   const section = page.getByTestId('profile-usage')
   await expect(page.getByRole('heading', { level: 2, name: 'Usage' })).toHaveCount(1)
@@ -210,7 +211,7 @@ test('one usage that fails to load leaves the other in place', async ({ page }) 
       : route.fallback(),
   )
   await stubUsage(page, { used: 3, limit: 20, remaining: 17, windowSeconds: 600, resetsAt: null })
-  await page.goto('/app/profile')
+  await page.goto('/app/profile?tab=usage')
 
   const storageError = section.getByTestId('usage-storage-error')
   await expect(storageError).toHaveRole('alert')
@@ -246,7 +247,7 @@ test('both allowances used up say so in words', async ({ page }) => {
     windowSeconds: 600,
     resetsAt: new Date(Date.now() + 5 * 60_000),
   })
-  await page.goto('/app/profile')
+  await page.goto('/app/profile?tab=usage')
 
   const section = page.getByTestId('profile-usage')
   await expect(section.getByTestId('usage-storage-amount')).toHaveText('1 GB used of 1 GB')
@@ -281,7 +282,7 @@ for (const theme of ['light', 'dark'] as const) {
         windowSeconds: 600,
         resetsAt: null,
       })
-      await page.goto('/app/profile')
+      await page.goto('/app/profile?tab=usage')
 
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
       await expectUsage(page, 7, 35, '13 questions left')

@@ -199,6 +199,26 @@ test.describe('profile', () => {
     await expect(page.getByTestId('profile-name')).toHaveText(account.username)
     await expect(page.getByTestId('profile-email')).toHaveText(account.email)
     await expect(page.getByTestId('profile-universes')).toHaveText('1')
+    await expect(page.getByText('Account ID')).toHaveCount(0)
+
+    // Three tabs, Settings' pattern; Account is the page itself, and each other tab is its own address.
+    await expect(page.getByTestId('profile-tabs').getByRole('tab')).toHaveText([
+      'Account',
+      'Usage',
+      'Connected apps',
+    ])
+    await expect(page.getByTestId('profile-tab-account')).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByTestId('profile-usage')).toBeHidden()
+    await expect(page.getByTestId('connected-apps')).toBeHidden()
+    await page.getByTestId('profile-tab-connected-apps').click()
+    await expect(page).toHaveURL('/app/profile?tab=connected-apps')
+    await expect(page.getByTestId('connected-apps')).toBeVisible()
+    await expect(page.getByTestId('profile-email')).toBeHidden()
+    await page.keyboard.press('ArrowLeft')
+    await expect(page.getByTestId('profile-tab-usage')).toBeFocused()
+    await expect(page.getByTestId('profile-usage')).toBeVisible()
+    await page.getByTestId('profile-tab-account').click()
+    await expect(page).toHaveURL('/app/profile')
 
     // No stored picture exists, so the circle carries the account's initial.
     await expect(page.getByTestId('profile-avatar')).toHaveText(account.username[0]!.toUpperCase())

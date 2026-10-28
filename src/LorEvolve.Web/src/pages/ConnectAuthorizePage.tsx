@@ -164,7 +164,7 @@ export default function ConnectAuthorizePage() {
         user ? (
           <>
             Signed in as <bdi>{user.username}</bdi>.{' '}
-            <Link to="/app/profile#connected-apps">See connected apps</Link>
+            <Link to="/app/profile?tab=connected-apps#connected-apps">See connected apps</Link>
           </>
         ) : null
       }

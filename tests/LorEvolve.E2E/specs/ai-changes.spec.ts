@@ -200,7 +200,7 @@ test.describe('Pending AI Changes', () => {
     expect(await hasSideScroll(page)).toBe(false)
   })
 
-  test('proposals from every universe are listed together, and the bar counts what waits', async ({
+  test('proposals from every universe are listed together, and the workspace bar leaves them to each universe', async ({
     page,
   }) => {
     await signUp(page)
@@ -208,9 +208,14 @@ test.describe('Pending AI Changes', () => {
     const name = unique('Hal ')
     await propose(page, universeId, [name])
 
+    // AI changes is a universe's section, not a workspace tab; the account-wide list keeps its address.
     await page.goto('/app')
-    await expect(page.getByTestId('workspacebar-ai-changes-count')).toContainText('1')
-    await page.getByTestId('workspacebar-ai-changes').click()
+    await expect(
+      page
+        .getByRole('navigation', { name: 'My workspace' })
+        .getByRole('link', { name: /AI changes/ }),
+    ).toHaveCount(0)
+    await page.goto('/app/ai-changes')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Pending AI Changes')
     await expect(page.getByTestId('ai-change-proposal')).toHaveCount(1)
     await expect(page.getByTestId('ai-change-source')).toHaveText('LorEvolve Assistant')
@@ -345,7 +350,7 @@ test.describe('Pending AI Changes', () => {
     )
 
     // Connected apps says so, and turns it off without disconnecting.
-    await page.goto('/app/profile#connected-apps')
+    await page.goto('/app/profile?tab=connected-apps#connected-apps')
     const row = page.getByTestId('connected-app').filter({ hasText: 'E2E proposing client' })
     await expect(row).toContainText('can propose changes for review')
     await row.getByTestId('stop-app-proposals').click()

@@ -128,7 +128,7 @@ test.describe('Connect to AI', () => {
     // The way to disconnect leads to the Profile's section.
     await page.getByRole('button', { name: 'Connect to AI' }).click()
     await page.getByTestId('connect-ai-manage').click()
-    await page.waitForURL('/app/profile#connected-apps')
+    await page.waitForURL('/app/profile?tab=connected-apps#connected-apps')
     await expect(page.getByTestId('connected-apps-empty')).toBeVisible()
   })
 
@@ -200,7 +200,7 @@ test.describe('Consent and connected apps', () => {
 
     // This tab went off to the app's address, where nothing listens; the Profile is read in another.
     const profile = await page.context().newPage()
-    await profile.goto('/app/profile#connected-apps')
+    await profile.goto('/app/profile?tab=connected-apps#connected-apps')
     const row = profile.getByTestId('connected-app')
     await expect(row).toHaveCount(1)
     await expect(row).toContainText('E2E MCP client')
@@ -282,7 +282,7 @@ test.describe('Consent and connected apps', () => {
 
     // This tab went off to the app's address, where nothing listens; the Profile is read in another.
     const profile = await page.context().newPage()
-    await profile.goto('/app/profile')
+    await profile.goto('/app/profile?tab=connected-apps')
     await expect(profile.getByTestId('connected-apps-empty')).toBeVisible()
   })
 
