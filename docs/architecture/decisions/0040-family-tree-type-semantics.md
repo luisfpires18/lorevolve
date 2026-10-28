@@ -153,3 +153,28 @@ edit types switch it.
 Spouses, siblings and other authored family drawn as lines or peripheral nodes; a switch for an existing type's own
 eligibility on the Types screen (still set at creation, or through a group); a group's Family Tree state shown in the type
 editor.
+
+## Amendment: couples, shared stems, and no words on lines (2026-10-28)
+
+A realistic three-generation family (the Hollowtide demo on DEV) fell apart: a spouse stood at the far end of the row,
+recorded family crossed generations as long dotted arcs, and every arc carried a sentence that ran into the next.
+
+**Couples come from structure, never from a kind's name.** Two members are a couple when they are co-parents of a drawn
+child, or when recorded family joins them within one generation and they are not already siblings by a shared parent.
+The focal entry's unplaced relatives (a spouse with no parent links) count as its generation. A couple stands side by
+side, joined by a short line: solid for co-parents, dotted for recorded family alone. Joins are taken only while each
+member keeps two neighbours at most and no circle forms, so a unit is always a simple line; a join left out shows on
+hover only. `familyTree/layout.ts` (`arrangeFamily`) holds the rule and orders each generation under its parents by a
+down, up and down barycentre sweep; `familyLayout.test.ts` checks it.
+
+**Children hang from one stem.** From between two co-parents who are joined, otherwise from under the single parent;
+siblings share the bar and drop from it. A sibling is read from that bar, so no sibling line is drawn, and a stem from
+the middle of a couple only ever means both are recorded parents.
+
+**No permanent line for other recorded family, and no words on any line.** Pointing at or focusing a member draws their
+recorded family that no join shows, and a caption beneath the tree writes out each link. The details list them as
+before. Still listed, never walked.
+
+**Phone.** Still no lines. A couple is held in one soft band, so the row never wraps between them.
+
+Derivation, the API, the queries and the backup format are unchanged.

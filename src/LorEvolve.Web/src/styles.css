@@ -12421,20 +12421,33 @@ a.idearef__name {
   opacity: 0.4;
 }
 
-/* Recorded family that is not parentage: a dotted arc in the accent, named at its top. */
+/* Recorded family that is not parentage: dotted, in the accent. A couple joined only by it, or the arcs of the member
+   pointed at; never words on a line - those are in the caption and the details. */
 .familytree__line[data-semantic='-1'] {
   stroke: color-mix(in srgb, var(--accent) 70%, var(--rule-strong));
   stroke-dasharray: 2 4;
   stroke-linecap: round;
 }
 
-.familytree__linelabel {
-  fill: var(--muted);
-  font-size: 0.7rem;
-  paint-order: stroke;
-  stroke: var(--paper);
-  stroke-width: 4px;
-  stroke-linejoin: round;
+/* A couple, or a chain of them: one item, so a phone never wraps between them, and a little closer than strangers. */
+.familyunit {
+  flex: none;
+}
+
+.familyunit__members {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--familynode-gap) * 0.5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.familytree__caption {
+  min-height: 1.4em;
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
 }
 
 .familytree__row {
@@ -12654,8 +12667,23 @@ a.idearef__name {
     width: calc(var(--familynode-size) + 1.5rem);
   }
 
-  .familynode--focal {
+  .familynode--focal,
+  .familyunit:has(.familynode--focal) {
     order: -1;
+  }
+
+  /* No lines on a phone: a couple is read from the soft band that holds them together. A longer chain may wrap
+     inside its band, never outside the screen. */
+  .familyunit {
+    max-width: 100%;
+    padding: 0.35rem 0.25rem 0;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+
+  .familyunit__members {
+    flex-wrap: wrap;
+    row-gap: 1.25rem;
   }
 }
 
