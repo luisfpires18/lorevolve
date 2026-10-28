@@ -197,6 +197,7 @@ export default function UniverseSettings() {
                 name: universe.name,
                 description: universe.description,
                 accentColor: universe.accentColor,
+                aiHelp: universe.aiHelp,
               }}
               submitLabel="Save changes"
               busyLabel="Saving"

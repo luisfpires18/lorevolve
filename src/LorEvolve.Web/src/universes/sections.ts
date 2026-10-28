@@ -174,9 +174,16 @@ export const UPKEEP: readonly Section[] = [
  * One icon per section, none shared with an entry type's, each decorative: the label names the destination and is what a
  * screen reader reads.
  */
-/** The sections a role is offered: those it needs nothing for, and those whose capability it has. */
-export function offered(sections: readonly Section[], access: UniverseCapabilities) {
-  return sections.filter((section) => !section.requires || access[section.requires])
+/**
+ * The sections a role is offered: those it needs nothing for, and those whose capability it has. AI Changes only while
+ * the universe has AI help on.
+ */
+export function offered(sections: readonly Section[], access: UniverseCapabilities, aiHelp = true) {
+  return sections.filter(
+    (section) =>
+      (!section.requires || access[section.requires]) &&
+      (aiHelp || section.segment !== 'ai-changes'),
+  )
 }
 
 export const SECTION_GROUPS: readonly (readonly Section[])[] = [

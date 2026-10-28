@@ -246,12 +246,12 @@ public sealed class UniverseArtworkIdentityTests(LorEvolveApiFactory factory) : 
         var universe = await CreateUniverse(owner, "Ident write queries");
         await UploadedArtwork(owner, universe.Id, Png(320, 200));
 
-        // Access check, the tracked universe, the update, and the artwork's two ids.
+        // Access check, the tracked universe, the update, and the artwork's two ids, and whether AI help is off.
         var (archiveQueries, archived) = await CommandCounter.CountAsync(
             [universe.Id],
             () => Answered(owner.PostAsync($"/api/universes/{universe.Id}/archive", null)));
         Assert.NotNull(archived.Artwork);
-        Assert.Equal(4, archiveQueries);
+        Assert.Equal(5, archiveQueries);
     }
 
     private static async Task AssertReadsAre(HttpClient owner, Guid universeId, Guid assetId, Guid cardId)

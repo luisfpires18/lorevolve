@@ -30,7 +30,7 @@ export default function UniverseOverview() {
 
   const groups = CONTENTS.map((group) => ({
     ...group,
-    sections: offered(group.sections, access),
+    sections: offered(group.sections, access, universe.aiHelp),
   })).filter(({ sections }) => sections.length > 0)
   const [world, ...rest] = groups
 
@@ -42,7 +42,11 @@ export default function UniverseOverview() {
         titleClassName="titlerule"
         // An outside AI app reading this universe over MCP (ADR 0046): any member may connect their own, so every
         // member's front page offers it.
-        actions={<ConnectToAi universeId={universe.id} universeName={universe.name} />}
+        actions={
+          universe.aiHelp ? (
+            <ConnectToAi universeId={universe.id} universeName={universe.name} />
+          ) : undefined
+        }
         lede={
           <>
             {universe.description ? (

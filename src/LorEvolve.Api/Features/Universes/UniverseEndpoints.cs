@@ -132,7 +132,8 @@ public static partial class UniverseEndpoints
                 role,
                 row.Artwork != null
                     ? new UniverseArtworkIdentity(row.Artwork.AssetId, row.Artwork.CardId)
-                    : null))
+                    : null,
+                !db.UniverseAiHelpOff.Any(off => off.UniverseId == row.Universe.Id)))
             .FirstOrDefaultAsync(cancellationToken);
 
         return universe is null ? Results.NotFound() : Results.Ok(universe);
@@ -173,6 +174,10 @@ public static partial class UniverseEndpoints
         };
 
         db.Universes.Add(universe);
+        if (request.AiHelp == false)
+        {
+            db.UniverseAiHelpOff.Add(new UniverseAiHelpOff { UniverseId = universe.Id });
+        }
 
         try
         {
@@ -188,7 +193,7 @@ public static partial class UniverseEndpoints
         // author's, and no read puts back one they removed.
         await EntityTypeDefaults.EnsureAsync(db, universe.Id, cancellationToken);
 
-        return Results.Created($"/api/universes/{universe.Id}", ToDetail(universe, artwork: null));
+        return Results.Created($"/api/universes/{universe.Id}", ToDetail(universe, artwork: null, aiHelp: request.AiHelp != false));
     }
 
     private static async Task<IResult> UpdateAsync(
@@ -231,6 +236,16 @@ public static partial class UniverseEndpoints
         universe.AccentColor = NormalizeAccent(request.AccentColor);
         universe.UpdatedAt = DateTime.UtcNow;
 
+        var off = await db.UniverseAiHelpOff.FindAsync([id], cancellationToken);
+        if (request.AiHelp == false && off is null)
+        {
+            db.UniverseAiHelpOff.Add(new UniverseAiHelpOff { UniverseId = id });
+        }
+        else if (request.AiHelp == true && off is not null)
+        {
+            db.UniverseAiHelpOff.Remove(off);
+        }
+
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -240,7 +255,8 @@ public static partial class UniverseEndpoints
             return NameTakenProblem();
         }
 
-        return Results.Ok(ToDetail(universe, await ArtworkIdentityAsync(db, universe.Id, cancellationToken)));
+        var aiHelp = request.AiHelp ?? off is null;
+        return Results.Ok(ToDetail(universe, await ArtworkIdentityAsync(db, universe.Id, cancellationToken), aiHelp));
     }
 
     private static Task<IResult> ArchiveAsync(
@@ -284,7 +300,10 @@ public static partial class UniverseEndpoints
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        return Results.Ok(ToDetail(universe, await ArtworkIdentityAsync(db, universe.Id, cancellationToken)));
+        return Results.Ok(ToDetail(
+            universe,
+            await ArtworkIdentityAsync(db, universe.Id, cancellationToken),
+            !await db.UniverseAiHelpOff.AnyAsync(off => off.UniverseId == universe.Id, cancellationToken)));
     }
 
     /// <summary>
@@ -392,9 +411,9 @@ public static partial class UniverseEndpoints
     /// Only ever answered to the owner: every route that returns it is the owner's, so the artwork is always theirs to
     /// see. A write answers with what the universe has now, or the client would draw it without its art.
     /// </summary>
-    private static UniverseDetail ToDetail(Universe universe, UniverseArtworkIdentity? artwork) =>
+    private static UniverseDetail ToDetail(Universe universe, UniverseArtworkIdentity? artwork, bool aiHelp) =>
         new(universe.Id, universe.Name, universe.Description, universe.AccentColor,
-            universe.IsArchived, universe.CreatedAt, universe.UpdatedAt, UniverseRole.Owner, artwork);
+            universe.IsArchived, universe.CreatedAt, universe.UpdatedAt, UniverseRole.Owner, artwork, aiHelp);
 
     /// <summary>
     /// Each universe beside its artwork row - only where <paramref name="callerId"/> owns the universe, null for every

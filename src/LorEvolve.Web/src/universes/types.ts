@@ -37,6 +37,8 @@ export interface UniverseSummary {
 
 export interface UniverseDetail extends UniverseSummary {
   createdAt: string
+  /** False hides the assistant, Connect to AI and AI Changes in this universe's workspace. */
+  aiHelp: boolean
 }
 
 export interface UniversePage {
@@ -51,6 +53,8 @@ export interface UniverseInput {
   name: string
   description: string | null
   accentColor: string | null
+  /** Left out, a save keeps what is stored. */
+  aiHelp?: boolean
 }
 
 export interface UniverseQuery {
