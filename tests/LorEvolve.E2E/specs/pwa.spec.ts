@@ -131,10 +131,8 @@ test.describe('installability', () => {
     // expectation would fail the next time they change it. What is asserted is everything a
     // wrong build would get wrong: the size, the ground, and that the mark is actually on it.
     //
-    // `transparent` is the default, so the icon sits in whatever tab strip or launcher is
-    // behind it rather than as a pale tile in a dark one. The two exceptions are the ones
-    // where transparency is not an option: a maskable icon is cropped to a platform shape and
-    // filled, and iOS composites a touch icon onto black - so both sit on black, the launch's ground.
+    // Every one is transparent, the maskable and Apple icons included (the owner's choice), so
+    // the icon is just the mark in whatever tab strip or launcher is behind it.
     const transparent: Record<string, number> = {
       '/icon-192.png': 192,
       '/icon-512.png': 512,
@@ -142,8 +140,6 @@ test.describe('installability', () => {
       '/favicon-32.png': 32,
       '/favicon-16.png': 16,
       '/brand-mark.png': 384,
-    }
-    const opaque: Record<string, number> = {
       '/icon-maskable-512.png': 512,
       '/apple-touch-icon.png': 180,
     }
@@ -167,11 +163,9 @@ test.describe('installability', () => {
         const { data } = context.getImageData(0, 0, image.width, image.height)
 
         let clear = 0
-        let solid = 0
         let red = 0
         for (let i = 0; i < data.length; i += 4) {
           if (data[i + 3] === 0) clear += 1
-          if (data[i + 3] > 250) solid += 1
           // The mark is the only red in the artwork; any ground is neutral and warm.
           if (data[i + 3] > 200 && data[i] - data[i + 2] > 40 && data[i + 1] < 140) red += 1
         }
@@ -182,7 +176,6 @@ test.describe('installability', () => {
           height: image.height,
           corner: [data[0], data[1], data[2], data[3]],
           clearFraction: clear / pixels,
-          solidFraction: solid / pixels,
           redFraction: red / pixels,
         }
       }, url)
@@ -202,26 +195,13 @@ test.describe('installability', () => {
       // not so much that changing the artwork breaks the test.
       expect(shape.redFraction, `${src} carries no mark`).toBeGreaterThan(0.005)
     }
-
-    for (const [src, size] of Object.entries(opaque)) {
-      const shape = await probe(src)
-
-      expect(shape.width, `${src} is the wrong width`).toBe(size)
-      expect(shape.height, `${src} is not square`).toBe(size)
-
-      // Black, which is also the manifest's background_color. Fully opaque, because a platform
-      // mask fills a transparent region and iOS fills it with black.
-      expect(shape.corner, `${src} does not sit on the black ground`).toEqual([0, 0, 0, 255])
-      expect(shape.solidFraction, `${src} has transparent pixels`).toBe(1)
-      expect(shape.redFraction, `${src} carries no mark`).toBeGreaterThan(0.02)
-    }
   })
 
   test('the maskable icon keeps the whole mark inside the safe zone a platform mask leaves', async ({
     page,
   }) => {
     // A platform may crop a maskable icon to any shape that contains the centred circle of 80% of the canvas. Every
-    // pixel of the mark - anything brighter than the black ground - has to lie inside that circle, spikes included.
+    // pixel of the mark - anything not fully clear - has to lie inside that circle, spikes included.
     await page.goto('/login')
     const furthest = await page.evaluate(async () => {
       const image = new Image()
@@ -238,7 +218,7 @@ test.describe('installability', () => {
       for (let y = 0; y < image.height; y += 1) {
         for (let x = 0; x < image.width; x += 1) {
           const at = (y * image.width + x) * 4
-          if (Math.max(data[at], data[at + 1], data[at + 2]) > 24) {
+          if (data[at + 3] > 24) {
             furthest = Math.max(furthest, Math.hypot(x + 0.5 - centre, y + 0.5 - centre))
           }
         }
