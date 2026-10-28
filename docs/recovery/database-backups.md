@@ -24,7 +24,7 @@ backup and readable export are [universe-recovery.md](universe-recovery.md) (#11
 
 ## Turning it on (owner)
 
-1. **Bucket.** In Cloudflare R2 create a bucket per environment, for example `lorex-db-backups-dev`. Leave it private: no
+1. **Bucket.** In Cloudflare R2 create a bucket per environment, for example `lorevolve-db-backups-dev`. Leave it private: no
    custom domain, no public `r2.dev` access. Location hint: the region nearest the App Service.
 2. **Bucket lock (recommended).** Add an R2 bucket lock rule on prefix `lorevolve-db/` with a retention of 7 days, so a leaked
    or misused token cannot delete or overwrite the last week's backups. Keep it shorter than the 30-day window pruning
@@ -38,7 +38,7 @@ backup and readable export are [universe-recovery.md](universe-recovery.md) (#11
    | `DatabaseBackup__Enabled` | `true` |
    | `DatabaseBackup__Environment` | `dev` (letters, digits, hyphens; becomes part of every key) |
    | `DatabaseBackup__R2__AccountId` | the Cloudflare account id |
-   | `DatabaseBackup__R2__Bucket` | `lorex-db-backups-dev` |
+   | `DatabaseBackup__R2__Bucket` | `lorevolve-db-backups-dev` |
    | `DatabaseBackup__R2__AccessKeyId` | from step 3 |
    | `DatabaseBackup__R2__SecretAccessKey` | from step 3 |
 
