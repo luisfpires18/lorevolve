@@ -215,6 +215,27 @@ public sealed class AiChangeSchemaTests(LorEvolveApiFactory factory) : IClassFix
     }
 
     [Fact]
+    public async Task A_nested_type_never_inherits_its_parents_fields_and_the_refusal_says_so()
+    {
+        var (owner, ownerId, u, character) = await World("schemanested");
+        var title = await Field(owner, u, character, new FieldDefinitionRequest("Title", EntityFieldKind.ShortText, false, null, null, null));
+        var squire = (await ApproveAll(owner, u, await StagedSchema(_factory, u, ownerId, NewType("squire", new AiLoreTypeInput("Squire", Parent: Id(character))))))
+            .Applied.Single().ResultId!.Value;
+
+        // The catalog tells the AI before it tries.
+        var catalog = await CatalogAsync(u, ownerId);
+        Assert.Contains("never inherits its parent's fields", catalog.Notes, StringComparison.Ordinal);
+        Assert.Contains("never its parent's", catalog.Schema!.Notes, StringComparison.Ordinal);
+
+        // A Squire using Character's field is refused with the owning type named.
+        var staged = await Stage(_factory, u, ownerId, NewLore("pip", squire, "Pip", new AiFieldInput(title.Id, Text: "Sir")));
+        Assert.Null(staged.Proposal);
+        var issue = Assert.Single(staged.Issues);
+        Assert.Equal(AiChangeCodes.NotFound, issue.Code);
+        Assert.Contains("belongs to Character, not Squire", issue.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_field_edit_is_held_to_the_types_screen_rules_and_keeps_the_meaning_the_author_gave_it()
     {
         var (owner, ownerId, u, character) = await World("schemaedit");

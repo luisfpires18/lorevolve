@@ -756,7 +756,16 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
         {
             if (!active.TryGetValue(value.FieldId, out var definition))
             {
-                work.Problem(AiChangeCodes.NotFound, "That field isn't one of this type's fields. Choose fields from get_change_options.", $"fields.{value.FieldId}");
+                // Fields are never inherited (EntityFieldFilters), so name the type that owns it: an AI that nested types
+                // otherwise reads "not one of this type's fields" and cannot tell why.
+                var owner = _types.Values.FirstOrDefault(other => other.Fields.Any(field => field.Id == value.FieldId)).Name;
+                work.Problem(
+                    AiChangeCodes.NotFound,
+                    owner is null
+                        ? "That field isn't one of this type's fields. Choose fields from get_change_options."
+                        : $"That field belongs to {owner}, not {type.Name}: a type has only its own fields, never its parent's. "
+                          + $"Choose from {type.Name}'s fields in get_change_options, or propose the field on {type.Name} first.",
+                    $"fields.{value.FieldId}");
                 continue;
             }
 
