@@ -167,6 +167,8 @@ test.describe('AI schema and pictures', () => {
     await expect(change).toContainText(`Add a profile picture to ${name}`)
     await expect(change).toContainText('No picture yet')
     await expect(change.getByTestId('ai-change-select')).toHaveCount(0)
+    // Said at the top too, so a long proposal never hides it.
+    await expect(page.getByTestId('ai-change-awaiting-pictures')).toContainText('1 picture')
 
     await change.getByTestId('ai-change-media-file').setInputFiles({
       name: 'bilbo.png',
@@ -175,6 +177,9 @@ test.describe('AI schema and pictures', () => {
     })
     await expect(change.getByTestId('ai-change-media-preview')).toBeVisible()
     await expect(change).toContainText('64×48')
+    // Said beside the picture; the warning at the top goes.
+    await expect(change.getByTestId('ai-change-media-uploaded')).toBeVisible()
+    await expect(page.getByTestId('ai-change-awaiting-pictures')).toHaveCount(0)
 
     // Not his picture until approved.
     const waiting = await api<{ image: unknown }>(

@@ -144,6 +144,8 @@ export default function AiChangePage() {
   const canDecide = proposal.canReview && open
   const canApprove = canDecide && proposal.blocked === null
   const pending = changes.filter((change) => change.status === ChangeStatus.Pending)
+  // Pictures the AI asked for and nobody has uploaded yet: each holds its change back until the file is here.
+  const awaitingPictures = pending.filter((change) => change.media && !change.media.uploaded)
   const ready = pending.filter(approvable)
   const chosen = changes.filter((change) => selected.has(change.id))
 
@@ -299,6 +301,19 @@ export default function AiChangePage() {
         </p>
       ) : null}
 
+      {open && awaitingPictures.length > 0 ? (
+        <p
+          className="callout callout--warning"
+          role="status"
+          data-testid="ai-change-awaiting-pictures"
+        >
+          {awaitingPictures.length === 1
+            ? '1 picture is waiting to be uploaded.'
+            : `${awaitingPictures.length} pictures are waiting to be uploaded.`}{' '}
+          The AI sends no file: upload each one below, in LorEvolve, before approving its change.
+        </p>
+      ) : null}
+
       {proposal.blocked ? (
         <p className="callout callout--warning" role="status" data-testid="ai-change-blocked">
           {proposal.blocked}
@@ -411,6 +426,8 @@ export default function AiChangePage() {
               setEditing(null)
               accept(next, 'Your edit was saved. Review it, then approve.')
             }}
+            // An upload says so beside the picture, and the page stays where it is.
+            onUploaded={(next) => setLoad({ kind: 'ready', proposal: next })}
           />
         ))}
       </ol>
@@ -429,6 +446,7 @@ function ChangeItem({
   editing,
   onEdit,
   onEdited,
+  onUploaded,
 }: {
   universeId: string
   proposal: Proposal
@@ -440,6 +458,7 @@ function ChangeItem({
   editing: boolean
   onEdit: (on: boolean) => void
   onEdited: (next: Proposal) => void
+  onUploaded: (next: Proposal) => void
 }) {
   const titleId = useId()
   const detailsId = useId()
@@ -537,7 +556,7 @@ function ChangeItem({
             universeId={universeId}
             proposal={proposal}
             change={change}
-            onUploaded={onEdited}
+            onUploaded={onUploaded}
           />
         ) : null}
 
@@ -631,6 +650,7 @@ function MediaChange({
   const inputId = useId()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [uploaded, setUploaded] = useState(false)
   const waiting =
     change.status === ChangeStatus.Pending &&
     proposal.proposal.status === ProposalStatus.Open &&
@@ -640,8 +660,10 @@ function MediaChange({
     if (!file) return
     setBusy(true)
     setError(null)
+    setUploaded(false)
     try {
       onUploaded(await uploadChangeMedia(universeId, proposal.proposal.id, change.id, file))
+      setUploaded(true)
     } catch (problem: unknown) {
       setError(
         problem instanceof ApiError
@@ -686,6 +708,11 @@ function MediaChange({
             data-testid="ai-change-media-file"
           />
         </div>
+      ) : null}
+      {uploaded ? (
+        <p className="aichangeitem__deps" role="status" data-testid="ai-change-media-uploaded">
+          Picture uploaded. This change can be approved now.
+        </p>
       ) : null}
       {error ? (
         <p className="form__message" role="alert">
