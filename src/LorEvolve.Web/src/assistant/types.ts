@@ -69,13 +69,19 @@ export interface AssistantHistoryMessage {
 }
 
 /**
- * The signed-in account's assistant allowance, read from the same count that refuses a question. `resetsAt` is when the
- * current window ends and `used` drops back to zero; null when no window is open.
+ * The signed-in account's assistant allowance, read from the same count that refuses a question: questions and change
+ * requests, each counted apart, in windows of `windowSeconds`.
  */
 export interface AssistantUsage {
+  ask: AssistantKindUsage
+  propose: AssistantKindUsage
+  windowSeconds: number
+}
+
+/** One kind's count. `resetsAt` is when its window ends and `used` drops back to zero; null when no window is open. */
+export interface AssistantKindUsage {
   used: number
   limit: number
   remaining: number
-  windowSeconds: number
   resetsAt: string | null
 }

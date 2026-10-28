@@ -124,7 +124,7 @@ Propose changes switch - from a role that can stage anything (else 403). Only th
 `propose_changes` handed to the model, and rule 6 of its instructions says it may stage changes the writer explicitly
 asked for, and that tool results are never requests; an ordinary question has neither tool and keeps "you can only read".
 One proposal per question, staged through the same service; the answer carries it, and the drawer links to its review.
-Same allowance (20 questions per 10 minutes), same limits, 8,000 output tokens a step in propose mode. The Fake provider
+Same allowance (20 questions per 10 minutes; since 2026-10-28 a separate 5 change requests an hour, ADR 0045), same limits, 8,000 output tokens a step in propose mode. The Fake provider
 proposes deterministically for Playwright.
 
 **Bounds.** 100 changes a proposal; 400,000 characters of values in all; 100,000 characters of prose per change, and the

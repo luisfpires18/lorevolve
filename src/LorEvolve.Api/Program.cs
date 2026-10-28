@@ -100,9 +100,6 @@ app.UseLorEvolveFrontend();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// After authorization and before the endpoint reads its body: each assistant question counts against its account.
-app.UseAssistantAllowance();
-
 // After authorization: the MCP endpoint's own gate (bearer tokens only, checked against the live connection), and the
 // rate limit on open client registration.
 app.UseLorEvolveMcp();

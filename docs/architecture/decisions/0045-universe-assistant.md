@@ -58,9 +58,10 @@ ids, through the same addresses the search uses.
 
 **Bounded.** At most 6 steps may use tools and 10 tools run per question; then one last step without tools. A tool result
 is cut at 10,000 characters and all of them at 40,000; the question at 1,000; the history at its last 6 messages of 1,500
-characters each; output at 3,000 tokens a step; the whole question at 90 seconds, and a closed request stops it.
-`UniverseReader` caps every list and text it returns (its constants). One account asks at most 20 questions in 10
-minutes (`AssistantAllowance`, a fixed window per account; 429 `assistant_rate_limited`; see the usage amendment).
+characters each; output at 3,000 tokens a step; the whole question at 180 seconds (90 until 2026-10-28), and a closed request stops it.
+`UniverseReader` caps every list and text it returns (its constants). One account asks at most 10 questions and 5
+change requests an hour (`AssistantAllowance`, a fixed window per account and kind; 429 `assistant_rate_limited`; see
+the 2026-10-28 amendment).
 
 **A narrow provider boundary.** `IAssistantProvider` and `IAssistantConversation` carry LorEvolve's own types: messages, tool
 definitions, tool calls and results, one turn. A provider never reads the database, runs a tool or sees a universe id.
@@ -218,6 +219,29 @@ Two fixes. The retry is skipped when the server asks for more than 10 s (`Respon
 limit's long `Retry-After` used to hold the question until its 90 s timeout and report it as too slow; it is now busy at
 once. And a provider failure after `propose_changes` staged a proposal answers with that proposal and LorEvolve's note
 instead of an error, so trying again does not stage it twice. No model, context or allowance change.
+
+2026-10-28: the cap is now 60 s, and the question's timeout 180 s. Groq's free tier allows 8,000 tokens a minute on every
+chat model and one propose-mode step sends about 6,500, so the second step of every propose question got a 429 asking for
+up to a minute and the 10 s cap answered it busy: no propose question could finish. A per-minute limit never asks for
+more than 60 s, so it is now waited out; a daily limit still asks for longer and is still busy at once.
+
+## Amendment (2026-10-28): a host-sized allowance and one question at a time
+
+Groq's free-tier limits (8,000 tokens a minute, 200,000 a day) are the host's, shared by every account. A question costs
+5,000 to 10,000 tokens and a propose-mode question about 20,000, so 20 questions per account per 10 minutes promised far
+more than the host can serve, and two accounts asking at once both hit the per-minute limit.
+
+- **Two allowances per account, per hour:** 10 questions and 5 change requests (propose mode), each its own fixed window
+  opened by the first of its kind (`AssistantSetup.AskQuestionsPerWindow`, `ProposeQuestionsPerWindow`,
+  `QuestionWindow`). The usage route returns `{ ask, propose, windowSeconds }`, each kind `{ used, limit, remaining,
+  resetsAt }`; the Profile shows a meter for each. This supersedes the 20-per-10-minutes figures above and in ADR 0047.
+- **Counted in the endpoint, not a middleware.** The kind is in the body, so `UseAssistantAllowance` is gone and
+  `AskAsync` counts once the question is valid and the provider set up. What counts now: a question that reaches the
+  model, answered or failed. A body that is not JSON, a blank question, a 404 or "not set up" no longer counts.
+- **One question at a time on Groq (`AssistantLine`).** A question that is allowed then waits for its turn behind every
+  other account's, for at most 40 s; not reached in time, it is 503 `assistant_busy` and given back to its allowance.
+  With the 180 s question timeout that stays under App Service's 230 s. OpenAI and Fake have an unbounded line. The line
+  is in-process: a second instance needs a shared one.
 
 ## Amendment (2026-10-25, issue 53, ADR 0061): geography
 

@@ -22,11 +22,15 @@ public static class AssistantSetup
 {
     /// <summary>
     /// How many questions one account may ask in <see cref="QuestionWindow"/>, across every universe. Each question is at
-    /// most seven model calls, so this caps what one account can spend.
+    /// most seven model calls, so this caps what one account can spend. Sized for Groq's free tier, which every account on
+    /// a host shares: about 200,000 tokens a day, and a question costs 5,000 to 10,000, a proposal about 20,000.
     /// </summary>
-    public const int QuestionsPerWindow = 20;
+    public const int AskQuestionsPerWindow = 10;
 
-    public static readonly TimeSpan QuestionWindow = TimeSpan.FromMinutes(10);
+    /// <summary>How many propose-mode questions (ADR 0047) one account may send in <see cref="QuestionWindow"/>.</summary>
+    public const int ProposeQuestionsPerWindow = 5;
+
+    public static readonly TimeSpan QuestionWindow = TimeSpan.FromHours(1);
 
     public const string RateLimitedCode = "assistant_rate_limited";
 
@@ -50,6 +54,9 @@ public static class AssistantSetup
         {
             services.AddSingleton<IAssistantProvider>(_ =>
                 new GroqAssistantProvider(GroqAssistantProvider.CreateClient(groqKey), groqModel));
+
+            // Groq's rate limit is the host's, so its questions go one at a time (AssistantLine).
+            services.AddSingleton(new AssistantLine(1));
         }
         else
         {
@@ -58,6 +65,7 @@ public static class AssistantSetup
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<AssistantAllowance>();
+        services.TryAddSingleton(new AssistantLine(int.MaxValue));
 
         return services;
     }

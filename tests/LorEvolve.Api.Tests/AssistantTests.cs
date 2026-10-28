@@ -738,7 +738,7 @@ public sealed class AssistantTests(AssistantFixture fixture) : IClassFixture<Ass
         var (other, others) = await SignedInWithUniverse(_api, "asrateother");
         _model.Use(_ => Answer(("note", "Yes.", [])));
 
-        for (var asked = 0; asked < AssistantSetup.QuestionsPerWindow; asked++)
+        for (var asked = 0; asked < AssistantSetup.AskQuestionsPerWindow; asked++)
         {
             (await Ask(client, universe.Id, "Again?")).EnsureSuccessStatusCode();
         }

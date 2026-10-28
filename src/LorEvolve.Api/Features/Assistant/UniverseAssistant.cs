@@ -40,8 +40,11 @@ internal static partial class UniverseAssistant
 
     public const int SegmentLength = 4_000;
 
-    /// <summary>The whole question, every step and every tool included.</summary>
-    public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(90);
+    /// <summary>
+    /// The whole question, every step and every tool included. Room for two per-minute rate-limit waits
+    /// (<see cref="ResponsesConversation.OneShortRetry"/>), and under App Service's 230 s request limit.
+    /// </summary>
+    public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(180);
 
     public const string AnswerSchema = """
         {"type":"object","properties":{"segments":{"type":"array","items":{"type":"object","properties":{"kind":{"type":"string","enum":["recorded","inference","suggestion","note"]},"text":{"type":"string"},"sources":{"type":"array","items":{"type":"string"}}},"required":["kind","text","sources"],"additionalProperties":false}}},"required":["segments"],"additionalProperties":false}
