@@ -14,22 +14,13 @@ the correct filter for a reduction this large and is about thirty lines. Alpha i
 premultiplied before averaging and divided out afterwards, so the transparent margin cannot
 bleed dark fringes into the mark's edges.
 
-Two grounds, and the reason for each:
-
-  transparent  What the master is, and the default. The mark - an open book, a crimson world of
-               spires and roads rising from its cream pages - carries its shape on a light or a dark surface alike, so the
-               icon sits in whatever tab strip or launcher is behind it.
-  black        #000000, which is also the manifest's background_color and the launch layer's
-               ground (043.5), so an installed icon, the window the platform opens behind it
-               and the first frame LorEvolve paints are one surface. Used only where transparency
-               is not an option:
-
-               - the maskable icon, which a platform crops to its own shape and fills, and
-                 where a transparent region is a defect rather than a choice;
-               - the Apple touch icon, because iOS composites transparency onto black anyway.
-
-               The mark was drawn on black; its red and cream read there at every size. At 16 px it is
-               a book-shaped blob, not a picture - the tab strip asks no more.
+Every icon is transparent: just the mark - an open book, a crimson world of spires and roads
+rising from its cream pages - which carries its shape on a light or a dark surface alike, so the
+icon sits in whatever tab strip or launcher is behind it. The owner's choice (2026-10-28), over
+the black ground the maskable and Apple icons used to carry. What a platform does with the clear
+region is the platform's: an Android launcher may lay a maskable icon on its own plate, and iOS
+paints a touch icon's clear pixels black. At 16 px the mark is a book-shaped blob, not a picture -
+the tab strip asks no more.
 
 The launch logo is not made here: it is a photograph-like raster. Its art comes transparent, so
 `assets/brand/lorevolve-logo.png` is that art flattened onto #000000 - the launch layer's ground
@@ -47,10 +38,6 @@ from pathlib import Path
 SOURCE = Path(__file__).resolve().parent.parent / "assets" / "brand" / "lorevolve-icon.png"
 PUBLIC = Path(__file__).resolve().parent.parent / "src" / "LorEvolve.Web" / "public"
 
-#: The manifest's background_color and the launch layer's ground, so an installed icon and the
-#: window that opens behind it are the same surface.
-BLACK = (0x00, 0x00, 0x00)
-
 #: Alpha at or below this is margin rather than mark, when measuring the artwork's own edges.
 EDGE = 8
 
@@ -65,8 +52,8 @@ EDGE = 8
 TARGETS = [
     ("icon-192.png", 192, 0.08, None),
     ("icon-512.png", 512, 0.08, None),
-    ("icon-maskable-512.png", 512, 0.22, BLACK),
-    ("apple-touch-icon.png", 180, 0.12, BLACK),
+    ("icon-maskable-512.png", 512, 0.22, None),
+    ("apple-touch-icon.png", 180, 0.12, None),
     ("favicon-48.png", 48, 0.04, None),
     ("favicon-32.png", 32, 0.03, None),
     ("favicon-16.png", 16, 0.02, None),
