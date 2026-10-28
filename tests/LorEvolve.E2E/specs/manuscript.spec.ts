@@ -614,8 +614,8 @@ test.describe('manuscript', () => {
     await saveWith(page, () => page.keyboard.press('Control+s'))
     await expect(editor).toBeFocused()
 
-    // History is just above the prose: opened, a version read, and back to writing.
-    await tabTo('manuscript-history-toggle', 'Shift+Tab', 4)
+    // History is just above the prose, past the Write and Read switch: opened, a version read, and back to writing.
+    await tabTo('manuscript-history-toggle', 'Shift+Tab', 6)
     await page.keyboard.press('Enter')
     const list = page.getByTestId('manuscript-history-list')
     await expect(list.getByTestId('manuscript-version-view')).toHaveCount(2)

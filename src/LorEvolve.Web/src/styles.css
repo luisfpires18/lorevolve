@@ -10301,6 +10301,24 @@ a.lorechip--pov:focus-visible .lorechip__name {
 .manuscript__read {
   overflow-y: auto;
   resize: none;
+  white-space: pre-wrap;
+}
+
+.manuscript__mode {
+  align-self: flex-start;
+  margin-bottom: var(--space-2);
+}
+
+/* A Lore mention in read prose: the name, linked to its entry, set off by the accent rather than a button's chrome. */
+.mention {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  text-underline-offset: 0.18em;
+}
+
+.mention:hover {
+  text-decoration-color: var(--accent);
 }
 
 /* Save stays in reach however far down the sheet the author is: the bar holds to the bottom of the screen. */
