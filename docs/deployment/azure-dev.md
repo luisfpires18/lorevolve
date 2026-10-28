@@ -191,7 +191,8 @@ Accepted deliberately. Each one is a reason this topology is not a production to
   not on `/home` - so a restart or redeploy in between asks the author to choose the file again.
 - **`AllowedHosts` is `*` by default.** Narrow it to the site hostname
   (`az webapp config appsettings set --settings AllowedHosts=<app-name>.azurewebsites.net`)
-  once DEV is reachable; adding a custom domain later means updating it again.
+  once DEV is reachable; adding a custom domain later means updating it again
+  (DEV stays on F1 without one: [../design/custom-domain-plan.md](../design/custom-domain-plan.md)).
 - **Migrations run on the web process.** A long migration delays the first response after a
   deploy, and two instances would race - another reason there is only one.
 - **Nothing works offline.** The service worker caches build output only, by design - ADR 0017.

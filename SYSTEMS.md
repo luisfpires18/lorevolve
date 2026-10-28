@@ -23,7 +23,7 @@ Repository index. Paths and one-line responsibilities only.
 | `docs/testing/pwa-checklist.md` | Issue #58: what automation proves, what `pwa-standalone.spec.ts` simulates and cannot, the category-selector report's reproduction status (unverified on a real install), the manual real-device checklist per platform and journey, and where findings route (#33, #34). |
 | `assets/brand/lorevolve-icon.png` | The LorEvolve mark, as the owner supplied it (replaced in 043.5). The one source every icon is derived from; not shipped. |
 | `assets/brand/lorevolve-logo.png` | The LorEvolve logo on its own black ground, as the owner supplied it (043.5). Source of `public/launch-logo.webp`; not shipped. |
-| `.github/workflows/` | CI on pull requests, and the DEV deployment from `dev`. |
+| `.github/workflows/` | CI on pull requests, the DEV deployment from `dev`, and the manual PROD deployment from `master`. |
 | `infra/main.bicep` | The two DEV Azure resources: the Linux App Service plan and the site. |
 | `infra/main.parameters.json` | Deployment parameters. Placeholder name; no secret. |
 
@@ -317,6 +317,7 @@ Repository index. Paths and one-line responsibilities only.
 | `appsettings.json` | Non-secret defaults; empty connection string; the assistant off (`Assistant:Provider` empty, no key, no model); OpenIddict and the MCP SDK logging at Warning. |
 | `appsettings.Development.json` | Dev connection string and CORS origins; the assistant on its Fake provider. |
 | `appsettings.AzureDev.json` | Azure DEV paths, forwarded headers and log levels. No secret. |
+| `appsettings.AzureProd.json` | Azure PROD, same shape as DEV's (`docs/deployment/azure-prod.md`). No secret. |
 
 ## `src/LorEvolve.Web` - React client
 
@@ -698,6 +699,7 @@ Repository index. Paths and one-line responsibilities only.
 | `testing/phase4-world-rules-manual-test.md` | The owner's manual pass over World Rules: the section, creating and editing, two tabs, unsaved changes, words that sound like facts changing nothing, search, the Trash, another account, backup and restore, phone and dark. |
 | `testing/phase3-content-recovery-manual-test.md` | The owner's manual pass over content recovery: recovered drafts, manuscript history, the Trash for story content, two accounts, phone and dark, and the backup. |
 | `deployment/azure-dev.md` | The DEV runbook: topology, setup, deploy, limitations, troubleshooting. |
+| `deployment/azure-prod.md` | The PROD runbook (`lorevolve.com`): what differs from DEV, first setup, release, rollback. |
 | `deployment/cloudflare-r2.md` | The R2 runbook: bucket, token, config keys, the SDK upload flags R2 needs, and what a backup does not hold. |
 | `architecture/decisions/README.md` | One-line index of every ADR. |
 | `architecture/decisions/` | ADRs; one small file per durable decision. |

@@ -19,7 +19,7 @@ The page sends no email. Applications are read by hand in D1.
 1. **D1**: Workers & Pages > D1 > Create, name it (insert a name). Then run the schema once:
    `npx wrangler d1 execute <database name> --remote --file site/alpha/schema.sql`
 2. **Turnstile**: Turnstile > Add widget, hostname `<project name>.pages.dev`, mode Managed. Keep the site key and the
-   secret key.
+   secret key. With a custom domain, add its hostnames to the widget too, or the form refuses every application there.
 3. **Pages**: Workers & Pages > Create > Pages > Connect to Git > `luisfpires18/lorevolve`.
    - Production branch `dev`. Framework preset None. Build command empty. Build output directory `public`.
    - Root directory `site/alpha`.
@@ -29,6 +29,8 @@ The page sends no email. Applications are read by hand in D1.
    - `TURNSTILE_SITE_KEY`, type Text, the site key.
    - `TURNSTILE_SECRET`, type Secret, the secret key.
 6. Retry the deployment so the bindings apply. Open `https://<project name>.pages.dev` and send a test application.
+
+Custom domain `demo.lorevolve.com` (DNS on Cloudflare, apex and `www` redirect, Turnstile hostname): `docs/design/custom-domain-plan.md`.
 
 Without `DB` or `TURNSTILE_SECRET` the form refuses every application (503) instead of storing unchecked input.
 
