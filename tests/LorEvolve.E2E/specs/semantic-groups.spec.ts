@@ -266,6 +266,8 @@ test.describe('semantic groups', () => {
     })
 
     await page.goto(`/app/universes/${w.u}/types`)
+    // Each row names the groups its type is in.
+    await expect(page.getByTestId('type-groups-Elemental Runes')).toContainText('Runes')
 
     // Leaving the group: refused in the drawer, which stays open with the author's draft.
     const editor = await openEditor(page, 'Elemental Runes')
