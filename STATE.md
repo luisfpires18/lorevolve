@@ -10,7 +10,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   local folder move: `TODO_rename.md`.
 - **Custom domain `lorevolve.com`** (bought 2026-10-28, dominios.pt, DNS now on Cloudflare): plan
   `docs/design/custom-domain-plan.md` on `docs/custom-domain-setup`. Alpha page -> `demo.lorevolve.com` (owner steps
-  pending); apex -> new PROD app `prod-lorevolve` on B1 (not built: deploy workflow, runbook, after the pre-alpha gate);
+  pending); apex -> new PROD app `prod-lorevolve` on B1 (`deploy-prod.yml` manual from `master`, `appsettings.AzureProd.json`, runbook `docs/deployment/azure-prod.md`; owner setup after the pre-alpha gate);
   DEV stays F1 on azurewebsites.
 - Phases 001-022 done and merged. Sequence log: `docs/architecture/branching.md`.
 - **Pre-alpha gate: #33 security, #11 recovery, #54 database backups** (`feat/pre-alpha-recovery-security` off `dev` at

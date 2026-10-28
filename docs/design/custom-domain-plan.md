@@ -1,7 +1,7 @@
 # Custom domain plan: lorevolve.com
 
 The owner bought `lorevolve.com` at dominios.pt on 2026-10-28, earlier than the alpha plan assumed. Every origin
-LorEvolve uses is configuration, so the domain itself needs no code change. A PROD app does: section 4.
+LorEvolve uses is configuration, so the domain itself needs no code change. PROD's deployment: section 4.
 
 ## 1. Layout (owner, 2026-10-28)
 
@@ -37,14 +37,14 @@ LorEvolve uses is configuration, so the domain itself needs no code change. A PR
 
 ## 3. Owner steps: PROD on lorevolve.com
 
-Only after the pre-alpha gate is merged (#33 security, #11 recovery, #54 backups) and section 4 is built.
+Only after the pre-alpha gate is merged (#33 security, #11 recovery, #54 backups). Steps 1 and 2 in full, with
+commands: [../deployment/azure-prod.md](../deployment/azure-prod.md).
 
 1. **Azure**: a new **Linux B1** plan (a B1 plan is billed whether or not an app runs on it) and an App Service
    `prod-lorevolve`, .NET 10, same region as DEV. `httpsOnly` on. Its own resource group is cleaner (insert a name).
 2. **Settings** (app settings, never in a file). PROD has its own database, keys and buckets; nothing is shared with
    DEV.
-   - `ASPNETCORE_ENVIRONMENT`, `Hosting__UseForwardedHeaders=true`, `Database`/`DataProtection` paths: as section 4
-     decides.
+   - `ASPNETCORE_ENVIRONMENT=AzureProd` (the template sets it), `Hosting__UseForwardedHeaders=true`.
    - `AllowedHosts=prod-lorevolve.azurewebsites.net;lorevolve.com`
    - `Mcp__Origin=https://lorevolve.com`
    - `PublicSite__Origin=https://lorevolve.com`; `PublicSite__AllowIndexing` unset (false) until launch.
@@ -66,17 +66,13 @@ Only after the pre-alpha gate is merged (#33 security, #11 recovery, #54 backups
    `https://lorevolve.com/` as `issuer`; `https://www.lorevolve.com` lands on the apex; sign up, sign in, upload a
    picture, run a backup from Admin.
 
-## 4. Claude steps for PROD (not built)
+## 4. PROD deployment (built 2026-10-28)
 
-1. `deploy-prod.yml`: manual (`workflow_dispatch`) from `master`, the same `ci.yml` validation and package as DEV,
-   GitHub environment `prod` (with a required reviewer), its own `AZURE_WEBAPP_NAME`. DEV's every-push deploy is
-   unchanged.
-2. Owner: a federated credential on the Azure app registration for subject `...:environment:prod`, and the `prod`
-   environment variables. The workflow names them.
-3. PROD's config file: reuse `AzureDev` (same `/home/data` layout) or add `appsettings.AzureProd.json`. The second
-   keeps a later DEV-only setting from leaking into PROD.
-4. Runbook `docs/deployment/azure-prod.md`: section 3, the release steps, rollback (redeploy the previous run).
-5. Release flow: merge `dev` into `master`, run Deploy PROD.
+- `.github/workflows/deploy-prod.yml`: manual, `master` only, same validation and package as DEV, environment `prod`,
+  app name from `AZURE_PROD_WEBAPP_NAME`.
+- `appsettings.AzureProd.json`: PROD's own config file, a copy of DEV's today, so a later DEV-only setting cannot leak.
+- Runbook and owner setup: [../deployment/azure-prod.md](../deployment/azure-prod.md). Release: merge `dev` into
+  `master`, run Deploy PROD.
 
 ## 5. MCP connections
 
