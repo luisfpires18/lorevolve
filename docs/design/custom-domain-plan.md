@@ -1,123 +1,95 @@
 # Custom domain plan: lorevolve.com
 
-The owner bought `lorevolve.com` at dominios.pt on 2026-10-28, earlier than the alpha plan assumed. This plan puts the
-alpha page and DEV on it. Nothing here needs a code change: every origin LorEvolve uses is configuration.
+The owner bought `lorevolve.com` at dominios.pt on 2026-10-28, earlier than the alpha plan assumed. Every origin
+LorEvolve uses is configuration, so the domain itself needs no code change. A PROD app does: section 4.
 
-## 1. Decisions
+## 1. Layout (owner, 2026-10-28)
 
-| Question | Recommendation | Why |
+| Address | What | Where |
 | --- | --- | --- |
-| DNS | **Move the nameservers to Cloudflare** (Free plan) | Pages can only serve the apex when the zone is on Cloudflare; Email Routing needs it too; one dashboard for every record. dominios.pt stays the registrar and keeps billing the renewal. |
-| Alpha page | **`demo.lorevolve.com`** (owner, 2026-10-28); `lorevolve.com` and `www` redirect to it with a temporary 302 | The apex stays free for the product page or the prod app later; a 302 is not cached for good, so taking the apex back is one rule deleted. Prod app later: `app.lorevolve.com`. |
-| DEV | **`dev.lorevolve.com`**, only if the plan moves to Basic B1 (see 1.1) | Alpha testers are invited onto DEV, so its address is the one they see. |
-| `PublicSite__Origin` on DEV | **Leave unset** | ADR 0038: DEV stays out of search indexes. `Mcp__Origin` is the only origin DEV needs. |
-| Privacy note and footer | **Do not name the domain** | They are served from it; naming the host adds nothing and would need editing if it moved. The contact address stays `lorevolve@gmail.com` until a `@lorevolve.com` inbox is tested (section 5). |
-| `noindex` on the alpha page | **Keep** | The page is still link-only. Removing `X-Robots-Tag` in `_headers` and the meta tag is a separate owner call. |
+| `demo.lorevolve.com` | Alpha page (`site/alpha/`) | Cloudflare Pages project `lorevolve` |
+| `lorevolve.com` | PROD app | New App Service `prod-lorevolve`, **Basic B1** plan |
+| `www.lorevolve.com` | 301 to `lorevolve.com` | Cloudflare redirect rule, never reaches Azure |
+| `dev-lorevolve.azurewebsites.net` | DEV, unchanged | Existing Free F1 plan, no custom domain (F1 cannot take one) |
 
-### 1.1 Blocker for DEV: the Free plan
+- **DNS on Cloudflare** (Free plan): done 2026-10-28, nameservers `kristina` and `luke.ns.cloudflare.com`. dominios.pt
+  stays the registrar; the registrar lock is back on after the change.
+- **One domain.** `demo-lorevolve.com` would be a second purchase and a second zone for no gain.
+- **Until PROD exists** the apex and `www` send visitors to the demo page with a temporary 302 (2.3). Deleted when PROD
+  takes the apex (3.4).
+- **Privacy note and footer** do not name the domain: they are served from it. The contact address stays
+  `lorevolve@gmail.com` until a `@lorevolve.com` inbox is tested (section 6).
+- **`noindex` on the alpha page** stays while it is link-only.
+- **DEV keeps** `Mcp__Origin=https://dev-lorevolve.azurewebsites.net` and no `PublicSite__Origin` (ADR 0038). Nothing
+  changes for DEV or its MCP connections.
 
-DEV runs on the Free (F1) App Service plan. F1 cannot take a custom domain at all, and the free App Service managed
-certificate needs **Basic (B1) or higher**. Options:
+## 2. Owner steps: alpha page on demo.lorevolve.com
 
-- **A. Scale the plan to B1** (paid, roughly 12 to 13 EUR a month for Linux B1; check the Azure price for the region).
-  Custom domain plus free managed certificate, DNS-only record, no other change. B1 also drops F1's daily CPU quota and
-  allows Always On. **Recommended if the cost is acceptable.**
-- **B. Keep DEV on `dev-lorevolve.azurewebsites.net`** until a paid tier is wanted. Zero cost, zero work; only the alpha
-  page moves. Testers see the Azure address.
-- Not recommended: proxying `dev.lorevolve.com` through a Cloudflare Worker to the Azure address. It stays free, but
-  Cloudflare's Free plan caps a request body at 100 MB (a universe backup restore can be larger), the client IP arrives
-  in another header, and it adds a hop to debug.
+1. **Pages**: Workers & Pages > `lorevolve` > Custom domains > Set up a custom domain > `demo.lorevolve.com` > Activate.
+2. **Turnstile**: the widget > Hostname management > `demo.lorevolve.com` (done 2026-10-28, with `lorevolve.com`,
+   `www.lorevolve.com` and `lorevolve.pages.dev`).
+3. **Temporary redirect, until PROD**: DNS > Add record `A` `@` `192.0.2.1` Proxied, and `AAAA` `www` `100::` Proxied
+   (reserved addresses, never contacted). Rules > Create rule > Redirect Rule `root to demo`: `Hostname` `is in`
+   `lorevolve.com`, `www.lorevolve.com`; dynamic `concat("https://demo.lorevolve.com", http.request.uri.path)`, **302**,
+   keep query string.
+4. Check: `https://demo.lorevolve.com` loads; a test application lands in D1 (delete it after); the apex and `www` land
+   on the demo page.
 
-The rest of this plan assumes A for DEV. With B, skip section 3.
+## 3. Owner steps: PROD on lorevolve.com
 
-## 2. Owner steps: DNS and the alpha page
+Only after the pre-alpha gate is merged (#33 security, #11 recovery, #54 backups) and section 4 is built.
 
-Order matters only where a step says so.
+1. **Azure**: a new **Linux B1** plan (a B1 plan is billed whether or not an app runs on it) and an App Service
+   `prod-lorevolve`, .NET 10, same region as DEV. `httpsOnly` on. Its own resource group is cleaner (insert a name).
+2. **Settings** (app settings, never in a file). PROD has its own database, keys and buckets; nothing is shared with
+   DEV.
+   - `ASPNETCORE_ENVIRONMENT`, `Hosting__UseForwardedHeaders=true`, `Database`/`DataProtection` paths: as section 4
+     decides.
+   - `AllowedHosts=prod-lorevolve.azurewebsites.net;lorevolve.com`
+   - `Mcp__Origin=https://lorevolve.com`
+   - `PublicSite__Origin=https://lorevolve.com`; `PublicSite__AllowIndexing` unset (false) until launch.
+   - `Registration__InviteOnly=true`
+   - `Media__*` for a new R2 bucket (insert a name), `DatabaseBackup__*` for a new private bucket: PROD must not start
+     without backups.
+   - `Assistant__*` only if PROD offers the assistant.
+   - `PlatformAdmin__OwnerUserId`: after signing up on PROD (by an Admin sign-up link is impossible before an Admin
+     exists, so register with `Registration__InviteOnly` briefly off, or set it after the first account).
+3. **Custom domain** `lorevolve.com`: `dev-lorevolve` is not involved.
+   - Azure: `prod-lorevolve` > Custom domains > copy the **Custom Domain Verification ID** and the app's **IP address**.
+   - Cloudflare DNS, **DNS only (grey cloud)**: delete the placeholder `A @ 192.0.2.1`, add `A` `@` -> the app's IP,
+     and `TXT` `asuid` -> the verification ID. A proxied record blocks the managed certificate.
+   - Azure: Add custom domain > All other domain services > `lorevolve.com` > App Service Managed Certificate, SNI SSL.
+     If issuance fails and the zone has CAA records, add CAA `0 issue "digicert.com"`.
+4. **Redirect rule**: edit `root to demo` into `www to root`: `Hostname` equals `www.lorevolve.com`, dynamic
+   `concat("https://lorevolve.com", http.request.uri.path)`, **301**. The `www` placeholder stays proxied.
+5. Check: `https://lorevolve.com/health` is 200; `/.well-known/oauth-authorization-server` names
+   `https://lorevolve.com/` as `issuer`; `https://www.lorevolve.com` lands on the apex; sign up, sign in, upload a
+   picture, run a backup from Admin.
 
-1. **Cloudflare**: Add a domain, `lorevolve.com`, Free plan. Review the scanned records: delete any dominios.pt parking
-   records (A, AAAA or CNAME on `@` or `www` pointing at dominios.pt, and its MX unless mail is wanted there). Cloudflare
-   then shows two nameservers.
-2. **dominios.pt**: in the domain's panel, turn **DNSSEC off** if it is on (a stale DS record breaks the move), then
-   replace the nameservers with Cloudflare's two. Wait until Cloudflare says the zone is Active (minutes to hours).
-3. Optional, after Active: Cloudflare DNS > Settings > enable DNSSEC, and add the DS record it shows at dominios.pt.
-4. **Pages**: Workers & Pages > `lorevolve` > Custom domains > Set up a custom domain > `demo.lorevolve.com`.
-   Cloudflare adds the record itself.
-5. **Placeholder records** so the apex and `www` reach Cloudflare's redirect: DNS > Add record, `A` `@` `192.0.2.1`,
-   Proxied; `AAAA` `www` `100::`, Proxied. Both addresses are reserved and never contacted.
-6. **Redirect**: Rules > Create rule > Redirect Rule. Custom filter: `Hostname` `is in` `lorevolve.com`,
-   `www.lorevolve.com`. Dynamic target `concat("https://demo.lorevolve.com", http.request.uri.path)`, **302**, keep query
-   string.
-7. **Turnstile**: the widget > Hostname management > add `demo.lorevolve.com`. Keep `lorevolve.pages.dev` so both
-   addresses work. Without this step the form refuses every application on the new address.
-8. Open `https://demo.lorevolve.com`, send a test application, check it in D1, delete the test row. Open
-   `https://lorevolve.com` and `https://www.lorevolve.com`: both land on the demo page.
+## 4. Claude steps for PROD (not built)
 
-`lorevolve.pages.dev` keeps working. It is `noindex`, so it competes with nothing.
+1. `deploy-prod.yml`: manual (`workflow_dispatch`) from `master`, the same `ci.yml` validation and package as DEV,
+   GitHub environment `prod` (with a required reviewer), its own `AZURE_WEBAPP_NAME`. DEV's every-push deploy is
+   unchanged.
+2. Owner: a federated credential on the Azure app registration for subject `...:environment:prod`, and the `prod`
+   environment variables. The workflow names them.
+3. PROD's config file: reuse `AzureDev` (same `/home/data` layout) or add `appsettings.AzureProd.json`. The second
+   keeps a later DEV-only setting from leaking into PROD.
+4. Runbook `docs/deployment/azure-prod.md`: section 3, the release steps, rollback (redeploy the previous run).
+5. Release flow: merge `dev` into `master`, run Deploy PROD.
 
-## 3. Owner steps: DEV on dev.lorevolve.com (option A)
+## 5. MCP connections
 
-1. **Azure**: the plan `lorex-dev-lfp18-plan` > Scale up > Basic B1.
-   `az appservice plan update -g rg-lorex-dev -n lorex-dev-lfp18-plan --sku B1`
-2. **Azure**: `dev-lorevolve` > Custom domains > copy the **Custom Domain Verification ID**.
-3. **Cloudflare DNS**, both **DNS only (grey cloud)**. A proxied record blocks the managed certificate.
-   - `CNAME` `dev` -> `dev-lorevolve.azurewebsites.net`
-   - `TXT` `asuid.dev` -> the verification ID
-4. **Azure**: Custom domains > Add custom domain > All other domain services, `dev.lorevolve.com`, certificate
-   **App Service Managed Certificate**, SNI SSL. Validate, Add. The certificate takes a few minutes. If it fails and the
-   zone has CAA records, add CAA `0 issue "digicert.com"`.
-5. **Azure app settings** (one save, one restart). Order: only after step 4 shows the binding as Secured.
+PROD is a new origin with its own issuer, so PROD connections start fresh. DEV connections are not affected: DEV's
+`Mcp__Origin` does not change.
 
-   ```bash
-   az webapp config appsettings set -g rg-lorex-dev -n dev-lorevolve --settings "AllowedHosts=dev-lorevolve.azurewebsites.net;dev.lorevolve.com" "Mcp__Origin=https://dev.lorevolve.com"
-   ```
-
-   `AllowedHosts` keeps the Azure host: the deploy workflow's health check calls it, and without the new host every
-   request to `dev.lorevolve.com` answers 400.
-6. Check:
-   - `curl -s https://dev.lorevolve.com/health` answers 200.
-   - `curl -s https://dev.lorevolve.com/.well-known/oauth-authorization-server` names `https://dev.lorevolve.com/` as
-     `issuer`.
-   - Connect to AI in a universe shows `https://dev.lorevolve.com/mcp/universes/<id>`.
-7. Reconnect AI apps (section 4) and tell testers the new address.
-
-Nothing else changes: CORS is empty (one origin serves the client and the API), cookies are host-only (no `Domain`),
-`httpsOnly` is already set, the GitHub deploy targets the app by name, and `Hosting__UseForwardedHeaders` stays.
-
-### What moves with the address
-
-- **Sign-in**: the session cookie belongs to the host that set it. Everyone signs in once on `dev.lorevolve.com`. The
-  Azure address still works with its own session; nothing redirects between them.
-- **Installed PWA**: an install is tied to its origin. Install again from the new address and remove the old one.
-- **Invitation and sign-up links** already copied keep the address they were made on; they still work there. New ones
-  use whatever address the Admin is on.
-
-## 4. MCP connections
-
-The OAuth issuer and every universe's MCP resource URL are built from `Mcp__Origin`. After the switch:
-
-- Every app connected to `https://dev-lorevolve.azurewebsites.net/mcp/universes/<id>` stops working: its tokens name the
-  old issuer and resource, so calls and refreshes are refused.
-- To reconnect: in Claude, Settings > Connectors, remove the old LorEvolve connector, then Add custom connector with the
-  URL Connect to AI now shows, approve on LorEvolve's consent screen (sign in on the new address first). ChatGPT: same,
-  as a developer mode connector.
-- On LorEvolve, Profile > Connected apps: Disconnect the old entries. They are dead anyway; this only tidies the list.
-
-Do this in the same sitting as step 3.5, so no connector is left half working. Anthropic's servers must reach the new
-host; a DNS-only record to App Service is enough.
-
-## 5. Email: now unblocked, not built
+## 6. Email: now unblocked, not built
 
 Parked in `alpha-demo-page-plan.md` section 6 until a domain existed. With the zone on Cloudflare:
 
-- **Inbox**: Cloudflare Email Routing can forward a `@lorevolve.com` address (insert a name) to `lorevolve@gmail.com`.
-  It adds its own MX and SPF records. It only receives; replying as that address needs a sender (next point).
+- **Inbox**: Cloudflare Email Routing (free) forwards a `@lorevolve.com` address (insert a name) to
+  `lorevolve@gmail.com`. It adds its own MX and SPF records. It only receives; replying as that address needs a sender.
 - **`noreply@` sender**: Resend or Google Workspace, with SPF, DKIM and DMARC records in Cloudflare. The app's SMTP
   sender (step 2 of the alpha plan) is still not built.
 - When an inbox is live and tested, swap `lorevolve@gmail.com` on the alpha page and in `privacy.html` in one commit.
   A contact address change is not a change in substance, so `PRIVACY_VERSION` stays.
-
-## 6. Claude steps
-
-1. This plan, plus the runbook and README updates on branch `docs/custom-domain-setup` (done).
-2. After the owner's steps: run the checks in 3.6 and section 2.8 and record the result in `STATE.md`.
-3. Later, on request: email (section 5).

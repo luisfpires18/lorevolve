@@ -154,7 +154,7 @@ Secrets never go in the repo; they live only in the Cloudflare (or Google) dashb
   (`lorevolve@gmail.com`, app password in App Service settings). Admin "Email link" next to copy; forgot password and
   reset page. Welcome email: owner to decide.
 - **Domain bought early (2026-10-28)**: `lorevolve.com`, set up in `custom-domain-plan.md` (this page on
-  `demo.lorevolve.com`, the apex redirecting to it). Now unblocked, still not built: Cloudflare Email Routing inbox, a real
+  `demo.lorevolve.com`, the apex for the PROD app). Now unblocked, still not built: Cloudflare Email Routing inbox, a real
   `noreply@` sender (Resend or Workspace) with SPF, DKIM and DMARC. Switching the app is a settings change.
 
 ## 7. Open decisions
