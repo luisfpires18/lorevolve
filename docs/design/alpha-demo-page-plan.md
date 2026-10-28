@@ -1,6 +1,6 @@
 # Alpha demo page plan
 
-Status: **plan only, nothing built.** Step 1 is the page. App email is step 2, a custom domain is parked.
+Status: **step 1 built** in `site/alpha/` (feature screenshots still to capture). Step 1 is the page. App email is step 2, a custom domain is parked.
 
 ## 1. Decisions so far (owner, 2026-10-28)
 
