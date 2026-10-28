@@ -56,8 +56,8 @@ interface ProgressionViewProps {
 }
 
 const SOURCE_LABELS: Record<FieldSource, string> = {
-  era: 'Set for this era',
-  cleared: 'None in this era',
+  era: 'Set for this stage',
+  cleared: 'None in this stage',
   entry: 'From the main profile',
 }
 
@@ -122,7 +122,7 @@ export function ProgressionView({
   if (failed) {
     return (
       <p className="form__message" role="alert">
-        The eras could not be read.{' '}
+        The stages could not be read.{' '}
         <button className="linkbutton" type="button" onClick={() => void load()}>
           Try again
         </button>
@@ -131,7 +131,7 @@ export function ProgressionView({
   }
 
   if (!progression) {
-    return <p className="muted">Reading eras…</p>
+    return <p className="muted">Reading stages…</p>
   }
 
   const selectedId = params.get('era')
@@ -164,7 +164,7 @@ export function ProgressionView({
       done?.()
     } catch (error: unknown) {
       if (isChangedElsewhere(error, PROGRESSION_CHANGED)) {
-        setMessage('These eras were changed somewhere else. The latest are shown now; try again.')
+        setMessage('These stages were changed somewhere else. The latest are shown now; try again.')
         void load()
       } else {
         setMessage(error instanceof ApiError ? error.message : 'That change could not be saved.')
@@ -186,9 +186,9 @@ export function ProgressionView({
   async function remove(era: Era) {
     if (
       !(await confirmAction({
-        title: `Remove the era “${era.name}”?`,
-        message: `What it sets for ${entry.name} goes with it; forms, abilities and appearances stop belonging to it. The main profile is not changed. Era history can bring it back.`,
-        confirmLabel: 'Remove era',
+        title: `Remove the stage “${era.name}”?`,
+        message: `What it sets for ${entry.name} goes with it; forms, abilities and appearances stop belonging to it. The main profile is not changed. Stage history can bring it back.`,
+        confirmLabel: 'Remove stage',
         variant: 'destructive',
       }))
     ) {
@@ -213,8 +213,8 @@ export function ProgressionView({
         title: `Remove the ${what} “${item.name}”?`,
         message:
           kind === 'form'
-            ? `Abilities and appearances stop belonging to it. Era history can bring it back.`
-            : `Era history can bring it back.`,
+            ? `Abilities and appearances stop belonging to it. Stage history can bring it back.`
+            : `Stage history can bring it back.`,
         confirmLabel: `Remove ${what}`,
         variant: 'destructive',
       }))
@@ -243,8 +243,8 @@ export function ProgressionView({
         title: `Remove the appearance “${appearance.label}”?`,
         message:
           pictures === 0
-            ? 'Era history can bring it back.'
-            : `Its ${pictures === 1 ? 'picture is' : `${pictures} pictures are`} deleted for good; era history keeps the appearance but not its pictures.`,
+            ? 'Stage history can bring it back.'
+            : `Its ${pictures === 1 ? 'picture is' : `${pictures} pictures are`} deleted for good; stage history keeps the appearance but not its pictures.`,
         confirmLabel: 'Remove appearance',
         variant: 'destructive',
       }))
@@ -260,7 +260,7 @@ export function ProgressionView({
       if (latest.version !== progression!.version) {
         ticket.current++
         setProgression(latest)
-        setMessage('These eras were changed somewhere else. The latest are shown now; try again.')
+        setMessage('These stages were changed somewhere else. The latest are shown now; try again.')
         return
       }
       for (const image of appearance.images) {
@@ -330,7 +330,7 @@ export function ProgressionView({
             data-testid="add-era"
           >
             <ActionIcon icon={Plus} />
-            Add era
+            Add stage
           </button>
         ) : null}
       </div>
@@ -348,12 +348,12 @@ export function ProgressionView({
       {progression.eras.length === 0 ? (
         <EmptyState
           testId="progression-empty"
-          title={`${entry.name} has no eras yet.`}
-          hint="An era is a stretch of this entry's story. It holds only what changes then; everything else stays as on the main profile."
+          title={`${entry.name} has no stages yet.`}
+          hint="A stage is a stretch of this entry's story. It holds only what changes then; everything else stays as on the main profile."
         />
       ) : (
         <>
-          <nav className="eranav" aria-label={`Eras of ${entry.name}`} data-testid="era-nav">
+          <nav className="eranav" aria-label={`Stages of ${entry.name}`} data-testid="era-nav">
             <ul className="eranav__list">
               <li>
                 <Link
@@ -585,7 +585,7 @@ function EraPanel({
     <article className="erapanel" aria-labelledby="era-title" data-testid="era-panel">
       <header className="erapanel__head">
         <div>
-          <p className="erapanel__eyebrow">Era of {entry.name}</p>
+          <p className="erapanel__eyebrow">Stage of {entry.name}</p>
           <h3
             className="erapanel__title"
             id="era-title"
@@ -610,7 +610,7 @@ function EraPanel({
               data-testid="edit-era"
             >
               <ActionIcon icon={Pencil} />
-              Edit era
+              Edit stage
             </button>
             <ActionMenu label={`More actions for ${era.name}`} triggerTestId="era-actions">
               <button
@@ -641,7 +641,7 @@ function EraPanel({
                 data-testid="remove-era"
               >
                 <ActionIcon icon={Trash} />
-                Remove era
+                Remove stage
               </button>
             </ActionMenu>
           </div>
@@ -710,9 +710,9 @@ function EraPanel({
         </dl>
       ) : null}
 
-      <EraItems heading="Forms in this era" era={era} items={forms} testId="era-forms" />
+      <EraItems heading="Forms in this stage" era={era} items={forms} testId="era-forms" />
       <EraItems
-        heading="Abilities in this era"
+        heading="Abilities in this stage"
         era={era}
         items={abilities}
         testId="era-abilities"
@@ -720,7 +720,7 @@ function EraPanel({
 
       {looks.length > 0 ? (
         <div className="rail__block">
-          <h4 className="rail__heading">Appearances in this era</h4>
+          <h4 className="rail__heading">Appearances in this stage</h4>
           <ul className="eralooks" data-testid="era-appearances">
             {looks.map((look) => (
               <li
@@ -736,11 +736,11 @@ function EraPanel({
                       entry.id,
                       look.id,
                       look.images[0].id,
-                      'thumbnail',
+                      'original',
                     )}
                     alt=""
-                    width={64}
-                    height={64}
+                    width={look.images[0].width}
+                    height={look.images[0].height}
                     loading="lazy"
                   />
                 ) : null}
@@ -759,11 +759,15 @@ function EraPanel({
         eraId={era.id}
       />
 
-      <nav className="erasteps" aria-label={`Other eras of ${entry.name}`} data-testid="era-steps">
+      <nav
+        className="erasteps"
+        aria-label={`Other stages of ${entry.name}`}
+        data-testid="era-steps"
+      >
         {previous ? (
           <Link className="erasteps__link" to={{ search: withEra(params, previous.id) }} rel="prev">
             <span aria-hidden="true">← </span>
-            <span className="visually-hidden">Earlier era: </span>
+            <span className="visually-hidden">Earlier stage: </span>
             <bdi>{previous.name}</bdi>
           </Link>
         ) : null}
@@ -776,7 +780,7 @@ function EraPanel({
         </Link>
         {next ? (
           <Link className="erasteps__link" to={{ search: withEra(params, next.id) }} rel="next">
-            <span className="visually-hidden">Later era: </span>
+            <span className="visually-hidden">Later stage: </span>
             <bdi>{next.name}</bdi>
             <span aria-hidden="true"> →</span>
           </Link>
@@ -800,7 +804,7 @@ function Overview({
   progression: Progression
 }) {
   const counts = [
-    [progression.eras.length, 'era', 'eras'],
+    [progression.eras.length, 'stage', 'stages'],
     [progression.forms.length, 'form', 'forms'],
     [progression.abilities.length, 'ability', 'abilities'],
     [progression.appearances.length, 'appearance', 'appearances'],
@@ -921,7 +925,7 @@ function ItemList({
       {items.length === 0 ? (
         <p className="muted">
           {kind === 'form'
-            ? `No forms. A form is a state ${entryName} can take, like a transformation or a stage.`
+            ? `No forms. A form is a state ${entryName} can take, like a transformation.`
             : `No abilities. Add only the ones that matter to the story.`}
         </p>
       ) : (
@@ -998,7 +1002,7 @@ function ItemList({
                     <dt>Available in</dt>
                     <dd data-testid={`${kind}-available`}>
                       {item.eras.length === 0
-                        ? 'No era ticked'
+                        ? 'No stage ticked'
                         : item.eras.map((era) => era.name).join(', ')}
                     </dd>
                   </div>
@@ -1080,7 +1084,7 @@ function ProgressionHistory({
     listProgressionRevisions(universeId, entityId, controller.signal)
       .then(setRevisions)
       .catch(() => {
-        if (!controller.signal.aborted) setMessage('Era history could not be read.')
+        if (!controller.signal.aborted) setMessage('Stage history could not be read.')
       })
     return () => controller.abort()
   }, [open, universeId, entityId])
@@ -1101,9 +1105,9 @@ function ProgressionHistory({
   async function restore(revision: ProgressionRevisionSummary) {
     if (
       !(await confirmAction({
-        title: `Put version ${revision.number} of the eras back?`,
+        title: `Put version ${revision.number} of the stages back?`,
         message:
-          'The eras, forms and abilities become exactly what they were then; a version from before forms existed leaves them as they are. This is saved as a new version, so it can be undone.',
+          'The stages, forms and abilities become exactly what they were then; a version from before forms existed leaves them as they are. This is saved as a new version, so it can be undone.',
         confirmLabel: 'Restore this version',
       }))
     ) {
@@ -1116,7 +1120,7 @@ function ProgressionHistory({
       )
     } catch (error: unknown) {
       if (isChangedElsewhere(error, PROGRESSION_CHANGED)) {
-        setMessage('The eras changed since this history was read. The latest are shown now.')
+        setMessage('The stages changed since this history was read. The latest are shown now.')
         onStale()
       } else {
         setMessage(
@@ -1135,7 +1139,7 @@ function ProgressionHistory({
     >
       <summary className="erahistory__summary">
         <ActionIcon icon={History} />
-        Era history
+        Stage history
       </summary>
       {message ? (
         <p className="form__message" role="alert">
@@ -1187,7 +1191,7 @@ function ProgressionHistory({
               {opened?.id === revision.id ? (
                 <ul className="namelist" data-testid={`era-version-${revision.number}-eras`}>
                   {opened.eras.length === 0 ? (
-                    <li>No eras</li>
+                    <li>No stages</li>
                   ) : (
                     opened.eras.map((era) => <li key={era.id}>{era.name}</li>)
                   )}

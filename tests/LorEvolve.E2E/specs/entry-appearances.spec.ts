@@ -139,6 +139,18 @@ test('a look belongs to the eras and forms ticked and holds an ordered gallery',
   await page.getByTestId('image-viewer-close').click()
   await expect(page.getByTestId('image-viewer')).toBeHidden()
 
+  // The article offers each stage's picture above its own, and shows the one chosen.
+  await page.goto(w.entry.replace(/\/progression$/, ''))
+  await page
+    .getByTestId('entry-picture-stages')
+    .getByRole('button', { name: 'Frieza Saga' })
+    .click()
+  await expect(page.getByTestId('entry-image').locator('img')).toHaveAttribute(
+    'src',
+    /\/appearances\//,
+  )
+  await page.goto(w.entry)
+
   // The Frieza Saga shows the look; the Saiyan Saga does not.
   await page.getByTestId('era-nav-Frieza Saga').click()
   await expect(

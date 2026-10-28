@@ -172,7 +172,7 @@ function AppearanceItem({
     if (
       !(await confirmAction({
         title: `Delete picture ${index + 1} of “${appearance.label}”?`,
-        message: 'The picture is deleted for good. Era history does not keep pictures.',
+        message: 'The picture is deleted for good. Stage history does not keep pictures.',
         confirmLabel: 'Delete picture',
         variant: 'destructive',
       }))
@@ -186,7 +186,7 @@ function AppearanceItem({
 
   const facts = [
     {
-      term: 'Eras',
+      term: 'Stages',
       value: appearance.eras.map((era) => era.name).join(', '),
       testId: 'appearance-eras',
     },
@@ -284,11 +284,12 @@ function AppearanceItem({
                       entityId,
                       appearance.id,
                       image.id,
-                      'thumbnail',
+                      'original',
                     )}
                     alt=""
-                    width={96}
-                    height={96}
+                    // The picture's own shape: the square thumbnail cut wide and tall pictures down to their middle.
+                    width={image.width}
+                    height={image.height}
                     loading="lazy"
                   />
                 </button>

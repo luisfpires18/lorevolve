@@ -112,7 +112,7 @@ test('a creator adds eras, reads each with its own details and comes back to one
   await expect(panel.getByTestId('era-title')).toHaveText('Saiyan Saga')
   await expect(panel.getByTestId('era-span')).toHaveText('737 – 762')
   await expect(panel.getByTestId('era-fact-Title')).toContainText('Kakarot')
-  await expect(panel.getByTestId('era-fact-Title')).toContainText('Set for this era')
+  await expect(panel.getByTestId('era-fact-Title')).toContainText('Set for this stage')
   await expect(panel.getByTestId('era-fact-Motto')).toContainText('Train hard')
   await expect(panel.getByTestId('era-fact-Motto')).toContainText('From the main profile')
 
@@ -125,7 +125,7 @@ test('a creator adds eras, reads each with its own details and comes back to one
   await expect(panel.getByTestId('era-title')).toHaveText('Frieza Saga')
   await expect(panel.getByTestId('era-fact-Title')).toContainText('Goku')
   await expect(panel.getByTestId('era-fact-Title')).toContainText('From the main profile')
-  await expect(panel.getByTestId('era-fact-Motto')).toContainText('None in this era')
+  await expect(panel.getByTestId('era-fact-Motto')).toContainText('None in this stage')
 
   // Switching eras is a link: Back returns to the one before, and a reload lands where it was.
   await page.getByTestId('era-nav-Saiyan Saga').click()

@@ -68,6 +68,7 @@ import { suggestEntryChanges } from '../suggestions/api'
 import { useUniverseAccess } from '../universes/access'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { EmptyState } from '../components/EmptyState'
+import { useStagePictures } from '../progression/stagePictures'
 import { confirmAction } from '../lib/confirm'
 
 interface Draft {
@@ -284,6 +285,27 @@ function EntityScreen({ view }: { view: EntryView }) {
 
   // The full picture is page state, not an address: opening it is never a step Back has to undo.
   const [isViewing, setIsViewing] = useState(false)
+
+  // Which picture the article shows: the main one, or a stage's (Progression), chosen above it.
+  const stagePictures = useStagePictures(
+    universe.id,
+    entityId ?? '',
+    view === 'article' && !isNew && !!detail?.hasProgression,
+  )
+  const [chosenPicture, setChosenPicture] = useState<{ entityId?: string; id: string } | null>(null)
+  const stagePicture =
+    (chosenPicture?.entityId === entityId &&
+      stagePictures.find((one) => one.id === chosenPicture?.id)) ||
+    null
+  const mainPicture =
+    detail?.image && entityId
+      ? {
+          src: entityImageUrl(universe.id, entityId, detail.image, 'original'),
+          width: detail.image.width,
+          height: detail.image.height,
+        }
+      : null
+  const picture = stagePicture ?? mainPicture ?? (isEditing ? null : (stagePictures[0] ?? null))
   const expandButton = useRef<HTMLButtonElement>(null)
 
   // Back to the button that opened it, once the viewer has gone - after the dialog's own close, which
@@ -1251,19 +1273,53 @@ function EntityScreen({ view }: { view: EntryView }) {
       ) : view === 'article' ? (
         <div
           className="entry__layout"
-          data-picture={detail?.image ? 'true' : 'false'}
-          data-shape={detail?.image ? pictureShape(detail.image) : undefined}
+          data-picture={picture ? 'true' : 'false'}
+          data-shape={picture ? pictureShape(picture) : undefined}
         >
-          {detail?.image ? (
+          {picture ? (
             <figure className="entry__media" data-testid="entry-image">
+              {stagePictures.length > 0 ? (
+                // One choice per stage with a picture, the main picture first when there is one: the article shows
+                // the entry as it looks then.
+                <div
+                  className="entry__stages"
+                  role="group"
+                  aria-label="Picture"
+                  data-testid="entry-picture-stages"
+                >
+                  {mainPicture ? (
+                    <button
+                      className="entry__stage"
+                      type="button"
+                      aria-pressed={picture === mainPicture}
+                      onClick={() => setChosenPicture(null)}
+                    >
+                      Main
+                    </button>
+                  ) : null}
+                  {stagePictures.map((one) => (
+                    <button
+                      key={one.id}
+                      className="entry__stage"
+                      type="button"
+                      aria-pressed={picture === one}
+                      onClick={() => setChosenPicture({ entityId, id: one.id })}
+                      data-testid="entry-picture-stage"
+                    >
+                      <bdi>{one.name}</bdi>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <img
-                src={entityImageUrl(universe.id, detail.id, detail.image, 'original')}
-                alt={detail.name}
+                key={picture.src}
+                src={picture.src}
+                alt={detail?.name ?? ''}
                 // The original's own dimensions, which give the browser the picture's shape before a byte
                 // of it has loaded: the space it will occupy is reserved from its own aspect ratio, so the
                 // article never jumps down the page as one arrives.
-                width={detail.image.width}
-                height={detail.image.height}
+                width={picture.width}
+                height={picture.height}
                 decoding="async"
               />
               <button
@@ -1462,12 +1518,12 @@ function EntityScreen({ view }: { view: EntryView }) {
         </footer>
       ) : null}
 
-      {isViewing && detail?.image ? (
+      {isViewing && detail && picture ? (
         <ImageViewer
-          src={entityImageUrl(universe.id, detail.id, detail.image, 'original')}
+          src={picture.src}
           name={detail.name}
-          width={detail.image.width}
-          height={detail.image.height}
+          width={picture.width}
+          height={picture.height}
           onClose={() => setIsViewing(false)}
         />
       ) : null}

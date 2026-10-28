@@ -54,7 +54,7 @@ export function RelationshipPeriodsField({
         {value.length === 0
           ? 'Always, unless you add a period. A relation that ended and began again gets a second period.'
           : 'It holds during any of these.'}
-        {erasFailed ? ' The entries’ eras could not be read, so none can be chosen now.' : ''}
+        {erasFailed ? ' The entries’ stages could not be read, so none can be chosen now.' : ''}
       </p>
 
       {errors['periods'] ? <p className="field__error">{errors['periods']}</p> : null}
@@ -67,7 +67,7 @@ export function RelationshipPeriodsField({
         // A stored era stays chosen and named even before - or without - the eras being read.
         const options =
           period.entityEraId && !eras.some((era) => era.id === period.entityEraId)
-            ? [{ id: period.entityEraId, label: period.eraLabel ?? 'Chosen era' }, ...eras]
+            ? [{ id: period.entityEraId, label: period.eraLabel ?? 'Chosen stage' }, ...eras]
             : eras
 
         return (
@@ -89,11 +89,11 @@ export function RelationshipPeriodsField({
                   className="segmented__option"
                   aria-pressed={period.kind === 'era'}
                   disabled={noEras && period.kind !== 'era'}
-                  title={noEras ? 'Neither entry has eras yet.' : undefined}
+                  title={noEras ? 'Neither entry has stages yet.' : undefined}
                   onClick={() => patch(index, { kind: 'era' })}
                   data-testid={`relation-period-${index}-era`}
                 >
-                  An era
+                  A stage
                 </button>
               </div>
               <button
@@ -129,7 +129,7 @@ export function RelationshipPeriodsField({
                   aria-describedby={eraError ? `${period.key}-era-error` : undefined}
                   data-testid={`relation-period-${index}-era-select`}
                 >
-                  <option value="">{erasReading ? 'Reading eras…' : 'Choose an era'}</option>
+                  <option value="">{erasReading ? 'Reading stages…' : 'Choose a stage'}</option>
                   {options.map((era) => (
                     <option key={era.id} value={era.id}>
                       {era.label}
