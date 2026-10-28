@@ -9,7 +9,7 @@ import {
   useSensors,
   type DragMoveEvent,
 } from '@dnd-kit/core'
-import { ArrowDown, ArrowUp, GripVertical, ListTree, Pencil, Plus } from 'lucide-react'
+import { ArrowDown, ArrowUp, GripVertical, Layers, ListTree, Pencil, Plus } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { Field } from '../components/Field'
@@ -546,6 +546,19 @@ export default function UniverseTypes() {
                           </span>
                         ) : null}
                       </span>
+                      {groups.some((group) => group.typeIds.includes(type.id)) ? (
+                        <span className="types__groups" data-testid={`type-groups-${type.name}`}>
+                          {groups
+                            .filter((group) => group.typeIds.includes(type.id))
+                            .map((group) => (
+                              <span className="types__group" key={group.id}>
+                                <Layers aria-hidden="true" focusable="false" strokeWidth={1.75} />
+                                <bdi>{group.name}</bdi>
+                                <span className="visually-hidden"> (group)</span>
+                              </span>
+                            ))}
+                        </span>
+                      ) : null}
                       <span className="types__count" data-testid={`type-count-${type.name}`}>
                         {type.entityCount === 1 ? '1 entry' : `${type.entityCount} entries`}
                         {type.trashedEntityCount > 0 ? (

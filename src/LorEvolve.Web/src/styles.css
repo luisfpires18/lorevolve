@@ -7440,6 +7440,31 @@ html:has(.viewer[open]) {
   opacity: 0.6;
 }
 
+/* The semantic groups a type is in, beside its name, each with the layers mark so a group is never read as a type. */
+.types__groups {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.types__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.types__group svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
 .types__count {
   font-size: var(--text-sm);
   color: var(--muted);

@@ -346,10 +346,7 @@ test.describe('workspace navigation', () => {
       ...writing,
     ])
     await expect(page.locator('[data-testid="overview-lore"]')).toBeVisible()
-    // Canon carries a WIP badge after its name.
-    const links = (await sections.getByRole('link').allTextContents()).map((text) =>
-      text.replace(/WIP$/, '').trim(),
-    )
+    const links = (await sections.getByRole('link').allTextContents()).map((text) => text.trim())
     expect(links.slice(2, 2 + world.length + writing.length)).toEqual([...world, ...writing])
 
     const doorways = [
@@ -387,7 +384,7 @@ test.describe('workspace navigation', () => {
         .getByRole('navigation', { name: 'Universe', exact: true })
         .getByRole('link')
         .allTextContents()
-    ).map((text) => text.replace(/WIP$/, '').trim())
+    ).map((text) => text.trim())
     expect(
       sheet.slice(sheet.indexOf('Lore'), sheet.indexOf('Lore') + world.length + writing.length),
     ).toEqual([...world, ...writing])
