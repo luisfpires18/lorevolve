@@ -183,15 +183,15 @@ test.describe('the shell', () => {
 
       const at = async (testId: string) => (await page.getByTestId(testId).boundingBox())!
 
-      // Overview and the world's four sections fill the first column, top to bottom; the writing
+      // Overview and the world's sections fill the first column, top to bottom; the writing
       // and the upkeep start the second - not a zigzag across the two.
       const overview = await at('workspace-overview')
       const lore = await at('workspace-lore')
-      const rules = await at('workspace-world-rules')
+      const maps = await at('workspace-maps')
       const stories = await at('workspace-stories')
       expect(Math.abs(lore.x - overview.x)).toBeLessThanOrEqual(1)
       expect(lore.y).toBeGreaterThan(overview.y)
-      expect(Math.abs(rules.x - overview.x)).toBeLessThanOrEqual(1)
+      expect(Math.abs(maps.x - overview.x)).toBeLessThanOrEqual(1)
       // Groups stay whole: the writing pair shares a column. The upkeep - Trash, Publish, Settings - is one row
       // across the sheet's foot, under everything else.
       const ideas = await at('workspace-ideas')

@@ -387,7 +387,7 @@ test.describe('workspace navigation', () => {
         .getByRole('navigation', { name: 'Universe', exact: true })
         .getByRole('link')
         .allTextContents()
-    ).map((text) => text.trim())
+    ).map((text) => text.replace(/WIP$/, '').trim())
     expect(
       sheet.slice(sheet.indexOf('Lore'), sheet.indexOf('Lore') + world.length + writing.length),
     ).toEqual([...world, ...writing])
