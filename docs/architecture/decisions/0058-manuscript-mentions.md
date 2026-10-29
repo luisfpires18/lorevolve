@@ -80,5 +80,13 @@ sits in the text (UTF-16 offsets) and the entry's public slug. The page draws th
 A mention of an entry that is not published stays plain text, and no entry id, private name or slug of an unpublished
 entry is ever sent. One more query per story page, only when its prose holds a mention.
 
+**Link names from this scene's Lore** (owner's go-ahead, 2026-10-29). Plain names in the prose were never mentions, so
+nothing linked them. An action in the scene's menu finds where the prose names an entry of the scene's Lore in plain
+words: its name, an alias, or the first word of a multi-word name (at least three letters) that no other entry's name
+holds, so a shared family name never counts. Whole words, exact case, outside existing mentions, longer terms first. It
+lists each name with its count; nothing changes until the author confirms, and then each ticked name becomes a mention
+everywhere it appears, written as the prose wrote it, in one edit of the text box (one undo step), unsaved until Save.
+`nameTerms`, `findNames` and `linkNames` in `lore/mentions.ts`; no server change.
+
 **Ceiling.** The faded markup still takes the width of a GUID. Hiding it needs a rich editor over the same storage
 (option E2 above): a larger change the owner decides on.

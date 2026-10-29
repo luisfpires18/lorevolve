@@ -344,4 +344,86 @@ test.describe('manuscript mentions', () => {
     await anon.close()
     await owner.context.close()
   })
+
+  test('Link names from this scene Lore lists what the prose names and links only what is ticked', async ({
+    browser,
+  }) => {
+    test.setTimeout(120_000)
+    const owner = await person(browser, 'mentionlinker')
+    const page = owner.page
+    const { universeId, akron, storyId } = await world(page)
+    const u = `/api/universes/${universeId}`
+    const types = (await (await page.request.get(`${u}/entity-types`)).json()) as {
+      id: string
+      name: string
+    }[]
+    const sabine = await post(page, `${u}/entities`, {
+      entityTypeId: types.find((type) => type.name === 'Character')!.id,
+      name: 'Sabine Varrow',
+      summary: null,
+      canonStatus: 0,
+      aliases: ['the Warden'],
+      tags: [],
+      fields: [],
+    })
+    const sceneId = await post(page, `${u}/stories/${storyId}/scenes`, {
+      title: 'The Wall',
+      summary: null,
+      notes: null,
+      povEntityId: null,
+      chronology: null,
+      entityIds: [akron, sabine],
+      chapterId: null,
+    })
+    const text = 'Akron watched. Sabine Varrow held the wall; Sabine held it, the Warden.'
+    const saved = await page.request.put(`${u}/stories/${storyId}/scenes/${sceneId}/manuscript`, {
+      data: { content: text, expectedVersion: 0 },
+    })
+    expect(saved.ok(), await saved.text()).toBe(true)
+
+    await page.goto(`/app/universes/${universeId}/stories/${storyId}/manuscript/${sceneId}`)
+    await expect(editor(page)).toHaveValue(text)
+    await page.getByTestId('manuscript-scene-actions').click()
+    await page.getByTestId('manuscript-link-names').click()
+
+    // Each name the prose uses is listed with its count; nothing has changed yet.
+    const linker = page.getByTestId('name-linker')
+    const rows = linker.getByTestId('name-linker-row')
+    await expect(rows).toHaveCount(4)
+    await expect(linker).toContainText('“Akron” as Akron Wright, once')
+    await expect(linker).toContainText('“Sabine Varrow”, once')
+    await expect(linker).toContainText('“Sabine” as Sabine Varrow, once')
+    await expect(linker).toContainText('“the Warden” as Sabine Varrow, once')
+    await expect(editor(page)).toHaveValue(text)
+
+    // Only the ticked names become mentions, as one undo step; nothing is saved until Save.
+    await linker.locator('[data-term="Akron"]').uncheck()
+    await linker.getByTestId('name-linker-apply').click()
+    await expect(linker).toHaveCount(0)
+    const linked =
+      `Akron watched. @[Sabine Varrow](lore:${sabine}) held the wall; ` +
+      `@[Sabine](lore:${sabine}) held it, @[the Warden](lore:${sabine}).`
+    await expect(editor(page)).toHaveValue(linked)
+    await expect(page.locator('.manuscript__backdrop').getByTestId('manuscript-mark')).toHaveText([
+      'Sabine Varrow',
+      'Sabine',
+      'the Warden',
+    ])
+    await page.keyboard.press('Control+z')
+    await expect(editor(page)).toHaveValue(text)
+    await page.keyboard.press('Control+Shift+z')
+    await expect(editor(page)).toHaveValue(linked)
+    await page.keyboard.press('Control+s')
+    await expect(page.getByTestId('manuscript-status')).toHaveText('Saved')
+
+    // Asked again, only the name left unlinked is offered.
+    await page.getByTestId('manuscript-scene-actions').click()
+    await page.getByTestId('manuscript-link-names').click()
+    await expect(linker.getByTestId('name-linker-row')).toHaveCount(1)
+    await expect(linker).toContainText('“Akron” as Akron Wright, once')
+    await linker.getByTestId('name-linker-close').click()
+    await expect(linker).toHaveCount(0)
+
+    await owner.context.close()
+  })
 })

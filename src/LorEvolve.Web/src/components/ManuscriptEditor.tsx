@@ -10,7 +10,7 @@ import {
 } from 'react'
 import { useUniverseAccess } from '../universes/access'
 import { SaveAction } from './SaveAction'
-import { FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
+import { AtSign, FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
@@ -21,6 +21,7 @@ import { useMentionSearch } from '../lore/mentionSearch'
 import { caretPoint } from '../lib/caret'
 import { findMentions, mentionQueryAt, mentionToken, plainMentions } from '../lore/mentions'
 import { MentionMarks, MentionProse } from './MentionProse'
+import { NameLinker } from './NameLinker'
 import type { EntitySummary } from '../lore/types'
 import { ManuscriptHistory } from './ManuscriptHistory'
 import { ReviewComments } from './ReviewComments'
@@ -155,6 +156,7 @@ export function ManuscriptEditor({
   const [historyKey, setHistoryKey] = useState(0)
   // Write shows the manuscript as stored, mentions as their markup; Read shows it as prose, each mention a link.
   const [isReading, setIsReading] = useState(false)
+  const [isLinking, setIsLinking] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const inFlight = useRef(false)
   const editor = useRef<HTMLTextAreaElement>(null)
@@ -345,6 +347,20 @@ export function ManuscriptEditor({
     setAnnouncement(`Mentioned ${row.name}.`)
   }
 
+  /** The names the author confirmed, made mentions as one edit of the text box: one undo step, unsaved until Save. */
+  function linkFromLore(next: string, count: number) {
+    setIsLinking(false)
+    const box = editor.current
+    if (!box) return
+    box.focus()
+    box.select()
+    if (!document.execCommand('insertText', false, next)) {
+      box.value = next
+      setDraft(next)
+    }
+    setAnnouncement(count === 1 ? 'Linked 1 name.' : `Linked ${count} names.`)
+  }
+
   function onEditorKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
     if (mention === null) return
     const rows = suggestions.rows
@@ -512,6 +528,20 @@ export function ManuscriptEditor({
                 >
                   <ActionIcon icon={FilePenLine} />
                   Suggest changes
+                </button>
+              ) : null}
+              {access.editContent && scene.entities.some((entity) => !entity.isTrashed) ? (
+                <button
+                  className="actionmenu__item"
+                  type="button"
+                  onClick={() => {
+                    setIsReading(false)
+                    setIsLinking(true)
+                  }}
+                  data-testid="manuscript-link-names"
+                >
+                  <ActionIcon icon={AtSign} />
+                  Link names from this scene’s Lore
                 </button>
               ) : null}
               <Link
@@ -693,6 +723,15 @@ export function ManuscriptEditor({
             </div>
           ) : null}
 
+          {isLinking && access.editContent && !isReading && !isHeld ? (
+            <NameLinker
+              universeId={universeId}
+              entities={scene.entities}
+              text={draft}
+              onLink={linkFromLore}
+              onClose={() => setIsLinking(false)}
+            />
+          ) : null}
           {access.editContent && !isReading ? (
             <div className="manuscript__write" data-marked={isMarked ? 'true' : undefined}>
               {isMarked ? (
