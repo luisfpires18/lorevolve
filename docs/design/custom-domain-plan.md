@@ -89,5 +89,7 @@ PROD is a new origin with its own issuer, so PROD connections start fresh. DEV c
 - **DMARC**: `_dmarc` `v=DMARC1; p=none;`. Tighten to `quarantine` once sending is steady.
 - **Alpha page and privacy note** name `support@lorevolve.com` (`lorevolve@gmail.com` was never the owner's).
   A contact address change is not a change in substance, so `PRIVACY_VERSION` stays.
-- **Not built**: the app's own sender (`noreply@lorevolve.com`, step 2 of the alpha plan), with its own Resend key.
+- **App sender** (built 2026-10-29): `noreply@lorevolve.com` through Resend's web API, `Email__ApiKey` (its own
+  sending-only key) and `Email__From` in App Service settings, off when unset. Sends the Admin sign-up link (Admin >
+  Users > Email link). Collaborator invitations (#68) and forgot password (#69) are follow-ups.
 - **Limits**: Resend free plan, 100 emails a day and 3,000 a month. New domain: first emails may land in Promotions.

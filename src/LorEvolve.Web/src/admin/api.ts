@@ -85,6 +85,14 @@ export function createSignUpLink(email: string) {
   })
 }
 
+/** The same sign-up link, emailed to that address by LorEvolve. The link itself never comes back here. */
+export function emailSignUpLink(email: string) {
+  return apiFetch<{ expiresAt: string }>('/api/admin/signup-links/email', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
 /** Database backups to R2 (#54, ADR 0064): what is off the host, and the last attempt. */
 export interface VerifiedBackup {
   key: string
