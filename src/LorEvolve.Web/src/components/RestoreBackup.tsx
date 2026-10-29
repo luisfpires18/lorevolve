@@ -381,11 +381,7 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
             </p>
           ) : null}
 
-          {stage.kind === 'restoring' ? (
-            <p className="restore__stage" role="status" data-testid="restore-restoring">
-              Restoring the universe… A large backup can take a little while.
-            </p>
-          ) : null}
+          {stage.kind === 'restoring' ? <Restoring /> : null}
 
           <div className="form__actions">
             <button
@@ -491,4 +487,42 @@ function summaryRows(counts: BackupPreviewCounts): [string, string][] {
   }
 
   return rows
+}
+
+/**
+ * The restore itself happens on the server, which says nothing until it is done, so this is no percentage: a moving bar
+ * and the time so far, so a long restore of a universe with many pictures reads as working rather than stuck.
+ */
+function Restoring() {
+  const [seconds, setSeconds] = useState(0)
+
+  useEffect(() => {
+    const started = Date.now()
+    const tick = window.setInterval(
+      () => setSeconds(Math.floor((Date.now() - started) / 1000)),
+      1000,
+    )
+    return () => window.clearInterval(tick)
+  }, [])
+
+  const elapsed = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+
+  return (
+    <div className="restore__progress" data-testid="restore-restoring">
+      <div
+        className="progressbar"
+        role="progressbar"
+        aria-label="Restoring the universe"
+        data-state="working"
+      >
+        <span className="progressbar__fill" />
+      </div>
+      <p className="restore__stage">
+        Restoring the universe and its pictures… <span aria-hidden="true">{elapsed}</span>
+      </p>
+      <p className="restore__stage" role="status">
+        A large backup can take a few minutes. Keep this page open.
+      </p>
+    </div>
+  )
 }
