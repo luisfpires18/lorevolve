@@ -126,12 +126,20 @@ jobs:
           type: ZIP
           clean: true
 
+      # A ZIP deploy swaps files under the running process. On 2026-10-29 PROD went on serving from a mix of old and
+      # new assemblies (BadImageFormatException on every /api request) until it was restarted, so restart it outright.
+      - name: Restart the app
+        env:
+          APP: ${{ vars.AZURE_PROD_WEBAPP_NAME }}
+        run: az webapp restart --ids "$(az resource list --name "$APP" --resource-type Microsoft.Web/sites --query '[0].id' -o tsv)"
+
       # LorEvolve applies its migrations during startup and does not report healthy before they are done.
+      # /api/health, not /health: on 2026-10-29 /health answered 200 while every /api route failed.
       - name: Check that PROD answers
         env:
-          HEALTH_URL: ${{ steps.deploy.outputs.webapp-url }}/health
+          HEALTH_URL: ${{ steps.deploy.outputs.webapp-url }}/api/health
         run: |
-          for attempt in $(seq 1 10); do
+          for attempt in $(seq 1 20); do
             code=$(curl -sS -o /dev/null -w '%{http_code}' "$HEALTH_URL" || echo 000)
             echo "attempt $attempt: $code"
             if [ "$code" = "200" ]; then exit 0; fi
