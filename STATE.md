@@ -5,6 +5,10 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 
 ## Roadmap position
 
+- **Performance audit** (`chore/performance-audit` off `dev` at `0f43927`, not merged). Report
+  `docs/architecture/audits/2026-10-29-performance-audit.md`. Done: Brotli/gzip (OAuth, MCP excluded), React vendor chunk,
+  brand mark 192 px, Explore WebP only, Lore first read without the debounce, article parses memoized. Mobile LCP -34% to
+  -44%, cold transfer -52% to -59%. Eight owner questions in the report; bigger items ranked, not done.
 - **Rename to LorEvolve (ADR 0067)** done. DEV is https://dev-lorevolve.azurewebsites.net in `rg-lorevolve-dev`
   (plan `dev-lorevolve-plan`, F1; moved 2026-10-29 with its data); repo `luisfpires18/lorevolve`; media in R2
   `lorevolve-media-dev`. Every old `lorex` resource is deleted; `lorex` in code is only ADR 0067's read-old fallbacks.
