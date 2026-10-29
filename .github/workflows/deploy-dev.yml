@@ -77,8 +77,13 @@ jobs:
           mkdir -p src/LorEvolve.Api/wwwroot
           cp -r src/LorEvolve.Web/dist/. src/LorEvolve.Api/wwwroot/
 
+      # The same -dev version the client shows (devVersion.ts), so /api/health reads it too.
       - name: Publish the API
-        run: dotnet publish src/LorEvolve.Api -c Release -o publish
+        env:
+          LOREVOLVE_DEV_RUN: ${{ github.run_number }}
+        run: |
+          version=$(node -e "import('./src/LorEvolve.Web/devVersion.ts').then(m => console.log(m.displayVersion(require('./src/LorEvolve.Web/package.json').version, process.env.LOREVOLVE_DEV_RUN)))")
+          dotnet publish src/LorEvolve.Api -c Release -o publish -p:Version="$version"
 
       - name: Upload the package
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
