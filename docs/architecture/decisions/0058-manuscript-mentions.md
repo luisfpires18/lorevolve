@@ -1,6 +1,6 @@
 # ADR 0058 - A manuscript mention is one plain-text token, resolved by id, shown as stored while writing and as a name everywhere else
 
-Status: accepted (2026-10-25). GitHub issue 31. Amends ADR 0027 (what a manuscript's text may hold and how it is read),
+Status: accepted (2026-10-25), amended 2026-10-29 (the Write view's backdrop; public links). GitHub issue 31. Amends ADR 0027 (what a manuscript's text may hold and how it is read),
 ADR 0032 (one rewrite inside authored text on restore) and ADR 0046 (what an outside app reads of prose).
 
 ## Context
@@ -59,3 +59,34 @@ in the text changes.
   laid over the same storage later without touching a stored manuscript.
 - The universe search indexes the token's characters: its name is found, its id is noise nobody types.
 - Not done: mentions of scenes, stories or moments; variant or era selection (#30); clicking a mention inside the text box.
+
+## Amendment (2026-10-29): the name marked while writing, and a link on the public page when the entry is public
+
+The owner reported on PROD that a mention "still fails" in the editor and on the public page. What each showed: Write, the
+raw token as stored (this ADR's ceiling); Read, the name as a link (working); the public story page, the name in plain
+text, never a link (this ADR's decision, which read as broken next to the workspace's links).
+
+**Write.** The text box stays the text box: same stored text, native undo and redo, the `@` suggestions, the caret and
+the selection. When the prose holds at least one mention, a backdrop under it draws the same characters in the same box
+(same class, so same font, padding, width and wrapping; `scrollbar-gutter: stable` on both, scroll kept in step), and
+the text box's own text goes transparent. In the backdrop each mention's name is marked and its markup (`@[`,
+`](lore:<id>)`) faded. Nothing in the backdrop may change a glyph's width, so the markup is still there, only quiet: the
+token cannot be collapsed to its name without leaving the text box. Prose with no mention, and a held box, are the plain
+text box as before. `markedPieces` in `lore/mentions.ts` cuts the text, and joins back to it exactly.
+
+**Public story page.** Each part's text is still the prose with each mention as its name. Alongside it the API now sends
+`links`: for each mention whose entry is itself published in this universe (`PublicationRules.PublicLore`), where its name
+sits in the text (UTF-16 offsets) and the entry's public slug. The page draws those as links to the entry's public page.
+A mention of an entry that is not published stays plain text, and no entry id, private name or slug of an unpublished
+entry is ever sent. One more query per story page, only when its prose holds a mention.
+
+**Link names from this scene's Lore** (owner's go-ahead, 2026-10-29). Plain names in the prose were never mentions, so
+nothing linked them. An action in the scene's menu finds where the prose names an entry of the scene's Lore in plain
+words: its name, an alias, or the first word of a multi-word name (at least three letters) that no other entry's name
+holds, so a shared family name never counts. Whole words, exact case, outside existing mentions, longer terms first. It
+lists each name with its count; nothing changes until the author confirms, and then each ticked name becomes a mention
+everywhere it appears, written as the prose wrote it, in one edit of the text box (one undo step), unsaved until Save.
+`nameTerms`, `findNames` and `linkNames` in `lore/mentions.ts`; no server change.
+
+**Ceiling.** The faded markup still takes the width of a GUID. Hiding it needs a rich editor over the same storage
+(option E2 above): a larger change the owner decides on.

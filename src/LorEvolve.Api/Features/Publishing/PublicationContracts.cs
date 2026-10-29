@@ -203,8 +203,14 @@ public sealed record PublicStoryDetail(
     IReadOnlyList<PublicStoryScene> Scenes,
     IReadOnlyList<PublicPlotArc> Plot);
 
-/// <summary>One scene's published prose, under the scene's title. Plain text, exactly as written.</summary>
-public sealed record PublicManuscriptPart(string Title, string Text);
+/// <summary>
+/// One scene's published prose, under the scene's title. Plain text as written, each mention as its name; <c>Links</c>
+/// marks the mentions whose entry is itself published (ADR 0058 amendment), by where the name sits in <c>Text</c>.
+/// </summary>
+public sealed record PublicManuscriptPart(string Title, string Text, IReadOnlyList<PublicMentionLink> Links);
+
+/// <summary>A mention's name in a part's text, in UTF-16 code units, and the published entry it opens.</summary>
+public sealed record PublicMentionLink(int Start, int Length, string LoreSlug);
 
 /// <summary>One scene's published outline: its title and summary (null when it has none).</summary>
 public sealed record PublicStoryScene(string Title, string? Summary);

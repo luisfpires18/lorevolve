@@ -42,7 +42,8 @@ As of 2026-10-29 `origin/master..origin/dev` is empty: everything on `dev` is in
 
 One line per branch. Delete the line when it merges.
 
-- Nothing. Forgot password (#69), app email reply-to and the health version are on `dev`, not yet on PROD.
+- `feat/publish-everything`: Publish page "Publish everything" (Canon lore, Complete stories with scenes and text; plot
+  arcs never). Committed locally, not merged.
 
 ## Committed, not on `dev`
 

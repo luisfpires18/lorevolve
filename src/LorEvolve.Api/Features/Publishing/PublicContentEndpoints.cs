@@ -160,8 +160,8 @@ public static class PublicContentEndpoints
     /// One published story's page (ADR 0039): its listing's members, and what its author published inside it - scene prose,
     /// scene outlines and plot arcs, each through its own predicate, which holds the story's inside it. Same 404 as the
     /// listing for a private universe, a private or trashed story and an address nobody holds. Five queries whatever the
-    /// story holds. Reading order is the workspace's: Unchaptered first, then chapter by chapter, each in its own order;
-    /// no chapter title or number is read, since no chapter is published.
+    /// story holds, and a sixth when its prose mentions Lore. Reading order is the workspace's: Unchaptered first, then
+    /// chapter by chapter, each in its own order; no chapter title or number is read, since no chapter is published.
     /// </summary>
     private static async Task<IResult> GetStoryAsync(
         string slug,
@@ -176,7 +176,7 @@ public static class PublicContentEndpoints
 
         var story = await PublicationRules.PublicStories(db).AsNoTracking()
             .Where(candidate => candidate.PublicSlug == storySlug && candidate.Universe!.PublicSlug == slug)
-            .Select(candidate => new { candidate.Id, Listing = new PublicStory(candidate.PublicSlug!, candidate.Title, candidate.PublicSummary!, candidate.PublishedAt!.Value) })
+            .Select(candidate => new { candidate.Id, candidate.UniverseId, Listing = new PublicStory(candidate.PublicSlug!, candidate.Title, candidate.PublicSummary!, candidate.PublishedAt!.Value) })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (story is null)
@@ -191,6 +191,18 @@ public static class PublicContentEndpoints
                 Text = db.SceneManuscripts.Where(prose => prose.SceneId == scene.Id).Select(prose => prose.Content).FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
+
+        // A mention links only to an entry that is itself published in this universe; any other reads as its name.
+        var prose = manuscript
+            .Where(part => !string.IsNullOrWhiteSpace(part.Text))
+            .Select(part => (part.Title, Rendered: Stories.ManuscriptMentions.PlainWithMentions(part.Text!)))
+            .ToList();
+        var mentioned = prose.SelectMany(part => part.Rendered.Mentions).Select(mention => mention.EntityId).Distinct().ToList();
+        var publicLore = mentioned.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await PublicationRules.PublicLore(db).AsNoTracking()
+                .Where(entity => entity.UniverseId == story.UniverseId && mentioned.Contains(entity.Id))
+                .ToDictionaryAsync(entity => entity.Id, entity => entity.PublicSlug!, cancellationToken);
 
         var scenes = await InReadingOrder(PublicationRules.PublicScenes(db).AsNoTracking().Where(scene => scene.StoryId == story.Id))
             .Select(scene => new PublicStoryScene(scene.Title, scene.Summary))
@@ -221,8 +233,13 @@ public static class PublicContentEndpoints
             listing.PublicSummary,
             listing.PublishedAt,
             // Published prose with nothing in it is not a part a reader can read, so it is left out rather than shown empty.
-            // A mention is its name in plain text, as the author wrote it (ADR 0058): never a link, never anything else of the entry.
-            [.. manuscript.Where(part => !string.IsNullOrWhiteSpace(part.Text)).Select(part => new PublicManuscriptPart(part.Title, Stories.ManuscriptMentions.Plain(part.Text!)))],
+            // A mention is its name as the author wrote it (ADR 0058), linked only when its entry is published.
+            [.. prose.Select(part => new PublicManuscriptPart(
+                part.Title,
+                part.Rendered.Text,
+                [.. part.Rendered.Mentions
+                    .Where(mention => publicLore.ContainsKey(mention.EntityId))
+                    .Select(mention => new PublicMentionLink(mention.Start, mention.Length, publicLore[mention.EntityId]))]))],
             scenes,
             [.. arcs.Select(arc => new PublicPlotArc(
                 arc.Title,

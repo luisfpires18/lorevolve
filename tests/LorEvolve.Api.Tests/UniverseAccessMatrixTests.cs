@@ -256,6 +256,8 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             // ---------- Publishing ----------
             new("publication", Get, $"{u}/publication", May.Own),
             new("selected lore", Get, $"{u}/publication/selected-lore", May.Own),
+            new("publish everything preview", Get, $"{u}/publication/everything", May.Own),
+            new("publish everything", Post, $"{u}/publication/everything", May.Own),
             new("save publication", Put, $"{u}/publication", May.Own, Json(new PublicationDetailsRequest("A drowned coast.", null, null))),
             new("publish universe", Post, $"{u}/publish", May.Own),
             new("unpublish universe", Post, $"{u}/unpublish", May.Own),

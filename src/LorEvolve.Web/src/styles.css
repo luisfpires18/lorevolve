@@ -3514,6 +3514,18 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   list-style: none;
 }
 
+/* Publish everything, under the counts: its note, its button and its confirmation, one after the other. */
+.publish__everything {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  margin-top: var(--space-5);
+}
+
+.publish__everything > .publication__confirm {
+  justify-self: stretch;
+}
+
 .publish__content li {
   display: flex;
   flex-wrap: wrap;
@@ -10355,6 +10367,62 @@ a.lorechip--pov:focus-visible .lorechip__name {
 /* @ mentions (issue 31): the text box sits in a frame the suggestions are drawn in, at the caret, over the prose. */
 .manuscript__write {
   position: relative;
+  /* The text box's top margin stays inside the frame, where the backdrop's matches it. */
+  display: flow-root;
+}
+
+/* Prose with a mention (ADR 0058 amendment): the text box's own text goes transparent over a backdrop that draws the same
+   characters in the same box, each mention's name marked and its markup faded. Same class, so same font, padding, width
+   and wrapping; the gutter is kept on both so a scrollbar never wraps one differently from the other. */
+.manuscript__write[data-marked='true'] .manuscript__text {
+  scrollbar-gutter: stable;
+}
+
+.manuscript__backdrop {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  height: auto;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.manuscript__write[data-marked='true'] textarea.manuscript__text {
+  position: relative;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--ink);
+}
+
+.manuscript__write[data-marked='true'] textarea.manuscript__text::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: transparent;
+}
+
+.mentionmark__name {
+  border-radius: 0.2em;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  text-underline-offset: 0.18em;
+}
+
+.namelinker {
+  margin: 0.75rem 0 0;
+}
+
+.namelinker__list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mentionmark__markup {
+  color: color-mix(in srgb, var(--muted) 45%, transparent);
 }
 
 .mentionsuggest {
