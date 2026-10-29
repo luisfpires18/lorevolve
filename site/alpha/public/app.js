@@ -170,6 +170,15 @@ dialog.addEventListener('close', () => {
   }
 })
 
+// The Discord invite: paste it here and every Discord link on the page appears. Empty keeps them hidden.
+const DISCORD_INVITE = ''
+if (DISCORD_INVITE) {
+  for (const element of document.querySelectorAll('[data-discord]')) {
+    element.hidden = false
+    if (element instanceof HTMLAnchorElement) element.href = DISCORD_INVITE
+  }
+}
+
 // A feature picture not made yet is dropped rather than left as an empty frame. Lazy pictures load, and fail, on opening.
 document.addEventListener(
   'error',

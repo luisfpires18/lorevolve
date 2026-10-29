@@ -311,6 +311,11 @@ button {
   text-shadow: 0 1px 12px rgb(var(--portal-glow-rgb) / 0.7);
 }
 
+/* A class's display must never undo hidden: the Discord links stay hidden until app.js has an invite. */
+[hidden] {
+  display: none !important;
+}
+
 /* -- Actions: one filled pill, one outlined. -- */
 
 .landing-actions {
