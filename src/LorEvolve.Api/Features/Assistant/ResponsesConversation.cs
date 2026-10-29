@@ -209,14 +209,25 @@ internal sealed class ResponsesConversation : IAssistantConversation
         {
             var answer = await NextAsync([], toolsAllowed: false, cancellationToken);
 
-            // The caller allowed tools, so its budget is not spent: wanting another lookup here is no "ran out of room".
-            // Nothing can run the refused call from here either, so the question fails as any provider fault does.
+            // The answering step sends no tools, yet the model may still ask for one, and the server refuses it. The free
+            // text it already wrote is the answer it meant: it goes back as one note, citing nothing, rather than failing a
+            // question the model did answer. With no free text there is nothing to fall back on, so it fails as before.
             if (answer.StillLooking)
             {
-                throw new AssistantProviderException(
-                    AssistantFailure.Failed,
-                    $"{_server} answered in free text with lookups left, then asked for a tool on the answering step "
-                    + $"({ToolUseFailed}: {ToolUseCategory.ToolRequestedWithNoneAllowed}).");
+                var freeText = response.GetOutputText()?.Trim();
+                if (string.IsNullOrEmpty(freeText))
+                {
+                    throw new AssistantProviderException(
+                        AssistantFailure.Failed,
+                        $"{_server} answered in free text with lookups left, then asked for a tool on the answering step "
+                        + $"({ToolUseFailed}: {ToolUseCategory.ToolRequestedWithNoneAllowed}).");
+                }
+
+                return new AssistantModelTurn(
+                    [],
+                    FreeTextAnswer(freeText),
+                    inputTokens + answer.InputTokens,
+                    outputTokens + answer.OutputTokens);
             }
 
             return answer with
@@ -232,6 +243,10 @@ internal sealed class ResponsesConversation : IAssistantConversation
             inputTokens,
             outputTokens);
     }
+
+    /// <summary>Free text in the answer schema's shape: one note with no sources, since nothing in it is cited.</summary>
+    internal static string FreeTextAnswer(string text) =>
+        JsonSerializer.Serialize(new { segments = new[] { new { kind = "note", text, sources = Array.Empty<string>() } } });
 
     /// <summary>What one request came to: a response, a refused lookup on a step with no tools, or neither (send again).</summary>
     private readonly record struct Sent(ResponseResult? Response, bool StillLooking);

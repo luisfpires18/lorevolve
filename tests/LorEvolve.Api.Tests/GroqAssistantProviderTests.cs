@@ -266,24 +266,44 @@ public sealed class GroqAssistantProviderTests
     }
 
     [Fact]
-    public async Task After_free_text_with_lookups_left_a_tool_called_on_the_answering_step_fails_without_claiming_the_budget_ran_out()
+    public async Task After_free_text_with_lookups_left_a_tool_called_on_the_answering_step_answers_with_the_free_text()
     {
         var groq = new StubOpenAI(
             (HttpStatusCode.OK, Response(Message("Arin is a smith."))),
             (HttpStatusCode.BadRequest, ToolWithNoneAllowed));
         var conversation = Provider(groq).Begin(Brief);
 
-        var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], toolsAllowed: true, CancellationToken.None));
+        var turn = await conversation.NextAsync([], toolsAllowed: true, CancellationToken.None);
 
         Assert.Equal(2, groq.Requests.Count);
         AssertToolStep(groq.Requests[0]);
         AssertAnswerStep(groq.Requests[1]);
+        Assert.False(turn.StillLooking);
+        Assert.Empty(turn.ToolCalls);
+        // The free text, as one note citing nothing; never what the refused call asked for.
+        using var answer = JsonDocument.Parse(turn.Answer!);
+        var segment = Assert.Single(answer.RootElement.GetProperty("segments").EnumerateArray());
+        Assert.Equal("note", segment.GetProperty("kind").GetString());
+        Assert.Equal("Arin is a smith.", segment.GetProperty("text").GetString());
+        Assert.Equal(0, segment.GetProperty("sources").GetArrayLength());
+        Assert.DoesNotContain(Generated, turn.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task With_no_free_text_a_tool_called_on_the_answering_step_still_fails_without_claiming_the_budget_ran_out()
+    {
+        var groq = new StubOpenAI(
+            (HttpStatusCode.OK, Response(Message("   "))),
+            (HttpStatusCode.BadRequest, ToolWithNoneAllowed));
+        var conversation = Provider(groq).Begin(Brief);
+
+        var thrown = await Assert.ThrowsAsync<AssistantProviderException>(() => conversation.NextAsync([], toolsAllowed: true, CancellationToken.None));
+
         Assert.Equal(AssistantFailure.Failed, thrown.Failure);
         Assert.Equal(
             "Groq answered in free text with lookups left, then asked for a tool on the answering step (tool_use_failed: tool_requested_with_none_allowed).",
             thrown.Message);
         Assert.DoesNotContain("ran out", thrown.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Null(thrown.InnerException);
         Assert.DoesNotContain(Generated, thrown.ToString(), StringComparison.Ordinal);
     }
 
