@@ -542,17 +542,15 @@ test.describe('Settings', () => {
 })
 
 test.describe('LorEvolve opens on the portal', () => {
-  test('signed out, the front door and any unknown address are LorEvolve’s home, never Login; the installed app opens Explore; a workspace link still asks', async ({
+  test('signed out, the front door and any unknown address are LorEvolve’s home, never Login; the installed app opens the landing page; a workspace link still asks', async ({
     browser,
   }) => {
     const { context, page } = await fresh(browser)
     const manifest = await (await page.request.get('/manifest.webmanifest')).json()
-    expect(manifest.start_url).toBe('/explore')
+    expect(manifest.start_url).toBe('/')
     expect(manifest.id).toBe('/app')
 
     await page.goto(manifest.start_url)
-    await expect(page).toHaveURL('/explore')
-    await page.goto('/')
     await expect(page).toHaveURL('/')
     await expect(page.getByTestId('landing')).toBeVisible()
     await page.goto('/somewhere-nobody-links')
@@ -578,11 +576,8 @@ test.describe('LorEvolve opens on the portal', () => {
     ))!.publicSlug
     await page.goto(`/app/universes/${w.id}/timeline`)
 
-    // A cold launch is the manifest's start_url in a new window: the portal, with the way in offered, not taken.
+    // A cold launch is the manifest's start_url in a new window: the landing page, with the way in offered, not taken.
     const launch = await page.context().newPage()
-    await launch.goto('/explore')
-    await expect(launch).toHaveURL('/explore')
-    await expect(launch.getByTestId('portal-workspace')).toBeVisible()
     await launch.goto('/')
     await expect(launch).toHaveURL('/')
     await expect(launch.getByTestId('landing-primary')).toHaveText('Go to my workspace')

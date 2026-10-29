@@ -12,6 +12,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `docs/design/custom-domain-plan.md` on `docs/custom-domain-setup`. Alpha page -> `demo.lorevolve.com` (owner steps
   pending); apex -> new PROD app `prod-lorevolve` on B1 (`deploy-prod.yml` manual from `master`, `appsettings.AzureProd.json`, runbook `docs/deployment/azure-prod.md`; owner setup after the pre-alpha gate);
   DEV stays F1 on azurewebsites.
+- **PWA opens the landing page** (`fix/pwa-opens-landing` off `dev` at `e7c1270`; committed, not merged, not
+  pushed). Manifest `start_url` `/explore` -> `/`, signed in or out (ADR 0017 amendment); four specs follow.
 - **Consent screen polish** (`fix/consent-polish` off `dev` at `7d4f873`; merged into `dev` at `ec2a219`, pushed). Missed by the
   three passes (they hunted defects, not drift on this page). CSS only: part labels in sentence case (no capitals, contract
   8.2); the access level a plain group, not the boxed fieldset, its legend floated under the part's rule; Reader and
