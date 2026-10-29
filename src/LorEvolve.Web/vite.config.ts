@@ -59,5 +59,19 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          // React and the router change only when their versions do, while the entry chunk's hash changes on every
+          // deploy (DEV deploys on every push). Kept apart, a returning visitor refetches only the app.
+          groups: [
+            {
+              name: 'vendor',
+              test: /[\\/]node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom)[\\/]/,
+            },
+          ],
+        },
+      },
+    },
   },
 })

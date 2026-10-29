@@ -59,7 +59,7 @@ TARGETS = [
     ("favicon-16.png", 16, 0.02, None),
     # The in-app symbol. Untrimmed of padding, because here the surface underneath is
     # LorEvolve's own and the stylesheet decides the spacing.
-    ("brand-mark.png", 384, 0.0, None),
+    ("brand-mark.png", 192, 0.0, None),
 ]
 
 

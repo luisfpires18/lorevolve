@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { Editor } from '@tiptap/react'
 import { Check, History, Pencil, X } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
@@ -154,10 +154,11 @@ export function EntityArticleSection({
   )
 
   const isReady = load.kind === 'ready'
-  const hasArticle = !isEmptyDocument(stored.content)
+  // Parsing up to 200k characters is the cost here, so only the draft is read again on every keystroke.
+  const hasArticle = useMemo(() => !isEmptyDocument(stored.content), [stored.content])
+  const saved = useMemo(() => comparable(baseline ?? stored.content), [baseline, stored.content])
   const outgoing = comparable(draft)
-  const isDirty =
-    isReady && isEditing && draft !== null && outgoing !== comparable(baseline ?? stored.content)
+  const isDirty = isReady && isEditing && draft !== null && outgoing !== saved
   const isTooLong = outgoing.length > ARTICLE_MAX_LENGTH
 
   // A recovery copy that differs from what is saved is offered. Writing waits for the author's choice - and, for the

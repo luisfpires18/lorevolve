@@ -45,6 +45,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
+builder.Services.AddLorEvolveResponseCompression();
 
 builder.Services.AddLorEvolveForwardedHeaders(builder.Configuration);
 builder.Services.AddLorEvolveDataProtection(builder.Configuration, builder.Environment);
@@ -98,6 +99,7 @@ if (corsOrigins.Length > 0)
 // Dev runs the client on the Vite dev server over plain HTTP, so the local launcher does not
 // depend on a trusted dev certificate. A deployment serves the built client from wwwroot and
 // terminates TLS in front of the app.
+app.UseLorEvolveResponseCompression();
 app.UseLorEvolveFrontend();
 
 app.UseAuthentication();

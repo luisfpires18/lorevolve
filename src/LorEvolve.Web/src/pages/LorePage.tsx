@@ -272,8 +272,14 @@ export default function LorePage() {
   const entityTypeId = selectedType?.id ?? null
   const entityTypeGroupId = selectedGroup?.id ?? null
 
+  // The search text the last read was asked for. Only a change of it waits for typing to pause; the first read and a
+  // type, page, sort or filter change go out at once.
+  const searchRead = useRef<string | null>(null)
+
   useEffect(() => {
     if (entityTypeId === null && entityTypeGroupId === null) return
+    const delay = searchRead.current !== null && searchRead.current !== search ? 150 : 0
+    searchRead.current = search
     const controller = new AbortController()
     const timer = setTimeout(() => {
       listEntities(
@@ -297,7 +303,7 @@ export default function LorePage() {
         .catch(() => {
           if (!controller.signal.aborted) setState({ kind: 'error' })
         })
-    }, 150)
+    }, delay)
 
     return () => {
       clearTimeout(timer)

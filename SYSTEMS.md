@@ -55,6 +55,7 @@ Repository index. Paths and one-line responsibilities only.
 | `Features/Seo/SeoEndpoints.cs` | `/robots.txt`, `/sitemap.xml` (effective-public addresses only, per request, `no-cache`), the shell renderer and `ShellTemplate` (the `lorevolve:head` markers), `X-Robots-Tag: noindex` on `/api`. |
 | `Hosting/ProxyHeaders.cs` | Honouring `X-Forwarded-Proto` behind a TLS-terminating proxy. |
 | `Hosting/SecurityHeaders.cs` | Issue #33 M-4: every response (including the exception handler's 500) carries `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin` and CSP `frame-ancestors 'none'; object-src 'none'; base-uri 'self'` (no `script-src` yet); HSTS outside Development. A route's own header wins. |
+| `Hosting/ResponseCompression.cs` | Performance audit P01: Brotli then gzip for text responses over HTTPS, `/oauth` and `/mcp` left out by path (BREACH reasoning in the file). |
 | `Features/Health/HealthEndpoints.cs` | `/health` and `/api/health`. |
 | `Features/Auth/AuthSetup.cs` | Identity registration and cookie session configuration; the cookie's `OnValidatePrincipal` is `AccountSessions`. |
 | `Features/Auth/AccountSessions.cs` | ADR 0059: every signed-in request - account gone, blocked, or a stamp other than the cookie's ends the session; one keyed read tagged `lorevolve:session-check`, then Identity's own validator. |
@@ -491,6 +492,8 @@ Repository index. Paths and one-line responsibilities only.
 | `LorEvolve.Api.Tests/SceneChapterTests.cs` | Scenes per container: create, reorder one container, moves in every direction with nothing lost, the edit that moves, foreign chapters refused. |
 | `LorEvolve.Api.Tests/StoryBackupTests.cs` | Stories in the current backup: order, chapters and each scene's place in one, references, no copied lore, determinism, and version 5 and 4 files. |
 | `LorEvolve.Api.Tests/CommandCounter.cs` | Counts the database commands a request runs, for every read that promises a fixed query count. |
+| `LorEvolve.Api.Tests/ReadPathBenchmark.cs` | A measurement, opt-in with `LOREVOLVE_BENCH=1`: median, p95 and query count of ten common reads at 2,000 entries, and the search backfill time. |
+| `LorEvolve.Api.Tests/ResponseCompressionTests.cs` | Brotli when asked with `Vary: Accept-Encoding`, nothing when not asked, never on `/oauth/token`. |
 | `LorEvolve.Api.Tests/PlotTestClient.cs` | The HTTP steps the plot tests share, and reading a backup back. Not a test. |
 | `LorEvolve.Api.Tests/PlotArcEndpointTests.cs` | Arc CRUD, order and refusals, what deleting an arc, story or universe takes and never takes, no Canon, the plot read's fixed query count, and ownership. |
 | `LorEvolve.Api.Tests/PlotBeatEndpointTests.cs` | Beat CRUD, order per arc, moves between arcs, scene and lore links through scene moves, deletes and the Trash, foreign ids refused alike, and ownership. |
@@ -688,6 +691,7 @@ Repository index. Paths and one-line responsibilities only.
 | Path | Responsibility |
 | --- | --- |
 | `architecture/branching.md` | Branch naming and merge rules. |
+| `architecture/audits/2026-10-29-performance-audit.md` | Performance audit: measured baseline (bundle, page loads, interactions, wire, API reads), ranked findings P01..P19, the six quick wins and their before/after numbers. |
 | `design/LOREVOLVE_VISUAL_REFACTOR.md` | The visual design contract for the refactor (Tasks 002-007): audit findings, principles, tokens, components, cards, actions, responsive and accessibility rules, and the task plan. |
 | `history/` | Archived, unmaintained records: `state-archive-2026-10.md` (STATE.md before the trim), `design/` (decided plans), `testing/` (one-time manual passes for merged phases). |
 | `deployment/azure-dev.md` | The DEV runbook: topology, setup, deploy, limitations, troubleshooting. |

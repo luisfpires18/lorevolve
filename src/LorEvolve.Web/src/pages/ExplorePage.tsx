@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { WorldCard } from '../components/WorldCard'
 import { listPublicUniverses, type ExploreQuery, type PublicUniverse } from '../portal/api'
-import heroImage from '../portal/explore-worlds-background.png'
 import heroImageWebp from '../portal/explore-worlds-background.webp'
 import { CATEGORIES, GENRES } from '../publishing/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -106,13 +105,12 @@ export default function ExplorePage() {
   return (
     <div className="explore" data-testid="explore">
       <section className="explore-hero" aria-labelledby="explore-title">
-        {/* A WebP delivery copy of the approved panorama (Task 012: 250 kB for 2.37 MB), the untouched PNG behind it
-            for a browser without WebP. Same pixels, same crop. */}
+        {/* A WebP delivery copy of the approved panorama (Task 012: 250 kB for 2.37 MB). Every supported browser reads
+            WebP, so the PNG master stays in src/portal and out of the build. */}
         <picture className="explore-hero__picture">
-          <source srcSet={heroImageWebp} type="image/webp" />
           <img
             className="explore-hero__image"
-            src={heroImage}
+            src={heroImageWebp}
             alt=""
             width={1916}
             height={821}
