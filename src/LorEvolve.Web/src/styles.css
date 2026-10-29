@@ -658,6 +658,14 @@ a.button--danger:visited {
   border-color: color-mix(in srgb, var(--danger) 86%, var(--surface));
 }
 
+/* The first step of something that cannot be taken back: a secondary in the danger ink. The fill is kept for the
+   confirmation's last word. */
+.button--secondary.button--danger-quiet,
+.button--secondary.button--danger-quiet:hover:not(:disabled) {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border-control));
+}
+
 /* The dense size, for a row's own tools (an era's Earlier and Later, a version's View and Restore); 44px under a
    finger all the same. */
 .button--sm {
@@ -3516,12 +3524,6 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
 
 .settings__section--danger .settings__heading {
   color: var(--danger);
-}
-
-.button--secondary.button--danger-quiet,
-.button--secondary.button--danger-quiet:hover:not(:disabled) {
-  color: var(--danger);
-  border-color: color-mix(in srgb, var(--danger) 55%, var(--border-control));
 }
 
 /* Attribution (ADR 0039): one checkbox, and the creator and work under it only when it is ticked. */
@@ -6939,11 +6941,12 @@ html:has(.viewer[open]) {
 }
 
 .token__remove {
+  display: inline-flex;
+  align-items: center;
   border: 0;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  font-size: 0.9rem;
   line-height: 1;
   padding: 0 0.25rem;
 }
@@ -11289,8 +11292,6 @@ h2.trash__confirmtitle {
 
   /* The cross is small on purpose; the area around it does not have to be. */
   .token__remove {
-    display: inline-flex;
-    align-items: center;
     justify-content: center;
     min-width: var(--control-touch);
     min-height: var(--control-touch);
@@ -16927,12 +16928,6 @@ details.reviewsection > .reviewsection__list {
 
 /* ---------- Pending AI Changes (ADR 0047) ---------- */
 
-.aichanges__tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
 .aichanges__list,
 .aichange__list {
   display: grid;
@@ -18681,28 +18676,10 @@ details.reviewsection > .reviewsection__list {
 
 /* ---------- Idea boards (ADR 0066) ---------- */
 
+/* The two ideas views are `.views` links, as an entry's or a story's; this only hangs the hairline under the row. */
 .ideatabs {
-  display: flex;
-  gap: var(--space-4);
   margin-bottom: var(--space-4);
   border-bottom: 1px solid var(--rule);
-}
-
-.ideatabs__tab {
-  padding: var(--space-2) 0;
-  margin-bottom: -1px;
-  border-bottom: 2px solid transparent;
-  color: var(--muted);
-  text-decoration: none;
-}
-
-.ideatabs__tab:hover {
-  color: var(--ink);
-}
-
-.ideatabs__tab[aria-current='page'] {
-  border-bottom-color: var(--accent);
-  color: var(--ink);
 }
 
 .board__fields {

@@ -218,7 +218,12 @@ export default function FamilyTreePage() {
             to={`/app/universes/${universe.id}/family-tree${familiesFrom}`}
             data-testid="family-browse"
           >
-            <ArrowLeft className="family__browseicon" aria-hidden="true" focusable="false" />
+            <ArrowLeft
+              className="family__browseicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
             Browse families
           </Link>
           <div className="family__picker">

@@ -121,12 +121,12 @@ export function ProgressionView({
 
   if (failed) {
     return (
-      <p className="form__message" role="alert">
-        The stages could not be read.{' '}
-        <button className="linkbutton" type="button" onClick={() => void load()}>
+      <div className="notice notice--error" role="alert">
+        <p>The stages could not be read.</p>
+        <button className="button button--secondary" type="button" onClick={() => void load()}>
           Try again
         </button>
-      </p>
+      </div>
     )
   }
 
@@ -633,6 +633,7 @@ function EraPanel({
                 <ActionIcon icon={ArrowDown} />
                 Move later
               </button>
+              <hr className="actionmenu__divider" />
               <button
                 className="actionmenu__item actionmenu__item--danger"
                 type="button"

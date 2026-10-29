@@ -63,6 +63,12 @@ async function background(locator: Locator) {
   return locator.evaluate((node) => getComputedStyle(node).backgroundColor)
 }
 
+/** A control's resting ink, measured the same way. */
+async function colour(locator: Locator) {
+  await locator.page().mouse.move(0, 0)
+  return locator.evaluate((node) => getComputedStyle(node).color)
+}
+
 /** Bins Relic 01 to Relic <count>, answering each one's id by name. */
 async function binEntries(page: Page, universeId: string, count: number) {
   const seed = seeder(page, universeId)
@@ -123,10 +129,11 @@ test.describe('deleting a selection from the Trash permanently', () => {
     await expect(bulkDelete(page)).toHaveText('Delete permanently (2)')
     await expect(bulkDelete(page)).toBeEnabled()
 
-    // Red is the established danger treatment, on that button only; the selection's tools stay neutral.
+    // Red ink is the established danger treatment, on that button only - quiet, since the question comes after it; the
+    // selection's tools stay neutral.
     const danger = await dangerColour(page)
-    await expect(bulkDelete(page)).toHaveClass(/button--danger/)
-    await expect.poll(() => background(bulkDelete(page))).toBe(danger)
+    await expect(bulkDelete(page)).toHaveClass(/button--danger-quiet/)
+    await expect.poll(() => colour(bulkDelete(page))).toBe(danger)
     for (const id of [
       'trash-select-page',
       'trash-clear-selection',

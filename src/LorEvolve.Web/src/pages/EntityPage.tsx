@@ -1136,16 +1136,19 @@ function EntityScreen({ view }: { view: EntryView }) {
                     </Link>
                   ) : null}
                   {access.manageTrash ? (
-                    <button
-                      className="actionmenu__item actionmenu__item--danger"
-                      type="button"
-                      onClick={() => void moveToTrash()}
-                      disabled={isSaving}
-                      data-testid="trash-entity"
-                    >
-                      <ActionIcon icon={Trash} />
-                      Move to Trash
-                    </button>
+                    <>
+                      <hr className="actionmenu__divider" />
+                      <button
+                        className="actionmenu__item actionmenu__item--danger"
+                        type="button"
+                        onClick={() => void moveToTrash()}
+                        disabled={isSaving}
+                        data-testid="trash-entity"
+                      >
+                        <ActionIcon icon={Trash} />
+                        Move to Trash
+                      </button>
+                    </>
                   ) : null}
                 </ActionMenu>
               ) : null}

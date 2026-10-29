@@ -133,7 +133,12 @@ export default function UniversesPage() {
             Filter universes
           </label>
           <span className="controls__searchfield">
-            <Search className="controls__searchicon" aria-hidden="true" focusable="false" />
+            <Search
+              className="controls__searchicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
             <input
               id="universe-search"
               className="field__input"

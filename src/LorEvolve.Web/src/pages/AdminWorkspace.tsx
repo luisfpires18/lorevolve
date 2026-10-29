@@ -20,6 +20,7 @@ import { ActionIcon } from '../components/ActionIcon'
 import { Avatar } from '../components/Avatar'
 import { BRAND_LINK_LABEL, BrandMark } from '../components/BrandMark'
 import { EmptyState } from '../components/EmptyState'
+import { Field } from '../components/Field'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { Wordmark } from '../components/Wordmark'
 import { ApiError } from '../lib/api'
@@ -498,7 +499,12 @@ function UsersScreen() {
             Find an account
           </label>
           <span className="controls__searchfield">
-            <Search className="controls__searchicon" aria-hidden="true" focusable="false" />
+            <Search
+              className="controls__searchicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
             <input
               id="admin-user-search"
               className="field__input"
@@ -785,12 +791,9 @@ function SignUpLink() {
         email address, and only that one, create an account.
       </p>
       <form className="form" onSubmit={submit} noValidate>
-        <label className="field__label" htmlFor="admin-signup-email">
-          Their email address
-        </label>
-        <input
-          id="admin-signup-email"
-          className="field__input"
+        <Field
+          label="Their email address"
+          name="admin-signup-email"
           type="email"
           autoComplete="off"
           value={email}
@@ -916,7 +919,7 @@ function BlockSection({
           ) : null}
         </div>
         <button
-          className={block ? 'button button--danger' : 'button'}
+          className={block ? 'button button--secondary button--danger-quiet' : 'button'}
           type="submit"
           data-testid={block ? 'admin-block' : 'admin-unblock'}
         >

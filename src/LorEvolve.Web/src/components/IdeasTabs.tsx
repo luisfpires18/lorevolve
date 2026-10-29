@@ -9,9 +9,9 @@ export function IdeasTabs({
   current: 'ideas' | 'boards'
 }) {
   return (
-    <nav className="ideatabs" aria-label="Ideas views" data-testid="ideas-tabs">
+    <nav className="views ideatabs" aria-label="Ideas views" data-testid="ideas-tabs">
       <Link
-        className="ideatabs__tab"
+        className="views__link"
         to={basePath}
         aria-current={current === 'ideas' ? 'page' : undefined}
         data-testid="ideas-tab-list"
@@ -19,7 +19,7 @@ export function IdeasTabs({
         Ideas
       </Link>
       <Link
-        className="ideatabs__tab"
+        className="views__link"
         to={`${basePath}/boards`}
         aria-current={current === 'boards' ? 'page' : undefined}
         data-testid="ideas-tab-boards"

@@ -159,7 +159,12 @@ export function LoreCatalog({
                 data-testid="lore-browse-group"
                 data-group-name={group.name}
               >
-                <Layers className="lorecatalog__groupicon" aria-hidden="true" focusable="false" />
+                <Layers
+                  className="lorecatalog__groupicon"
+                  aria-hidden="true"
+                  focusable="false"
+                  strokeWidth={1.75}
+                />
                 <bdi>{group.name}</bdi>
                 <span className="visually-hidden"> (group)</span>
                 <span className="lorecatalog__groupcount" aria-hidden="true">
@@ -220,7 +225,7 @@ export function LoreCatalog({
                     data-testid="lore-type-expand"
                     data-type-name={node.type.name}
                   >
-                    <Chevron aria-hidden="true" focusable="false" />
+                    <Chevron aria-hidden="true" focusable="false" strokeWidth={1.75} />
                     {isOpen ? 'Hide' : 'Show'}{' '}
                     {node.children.length === 1
                       ? '1 nested type'

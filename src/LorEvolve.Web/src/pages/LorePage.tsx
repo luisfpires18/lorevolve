@@ -615,7 +615,12 @@ export default function LorePage() {
             <label className="visually-hidden" htmlFor="lore-search">
               Filter entries
             </label>
-            <ListFilter className="lore__searchicon" aria-hidden="true" focusable="false" />
+            <ListFilter
+              className="lore__searchicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
             <input
               id="lore-search"
               ref={searchRef}

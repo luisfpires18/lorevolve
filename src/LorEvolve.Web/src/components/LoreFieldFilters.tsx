@@ -157,7 +157,7 @@ export function LoreFieldFilters({
                       }}
                       data-testid="lore-remove-field-filter"
                     >
-                      <X aria-hidden="true" focusable="false" />
+                      <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
                     </button>
                   </li>
                 )

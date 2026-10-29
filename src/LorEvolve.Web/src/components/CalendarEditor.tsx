@@ -384,7 +384,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
                       title="Earlier"
                       data-testid="month-earlier"
                     >
-                      <ArrowUp aria-hidden="true" />
+                      <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
                     </button>
                     <button
                       className="iconbutton"
@@ -395,7 +395,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
                       title="Later"
                       data-testid="month-later"
                     >
-                      <ArrowDown aria-hidden="true" />
+                      <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
                     </button>
                     <button
                       className="iconbutton"
@@ -407,7 +407,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
                       title={inUse ? 'In use. Change its dates before removing it.' : 'Remove'}
                       data-testid="month-remove"
                     >
-                      <X aria-hidden="true" />
+                      <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
                     </button>
                     {inUse ? (
                       <span className="visually-hidden" id={`${base}-keep`}>

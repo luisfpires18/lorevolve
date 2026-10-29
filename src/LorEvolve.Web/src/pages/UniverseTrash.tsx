@@ -859,7 +859,7 @@ export default function UniverseTrash() {
             {/* The one red control on the screen while selecting; the selection's own tools stay neutral. */}
             <button
               ref={bulkDeleteRef}
-              className="button button--danger"
+              className="button button--secondary button--danger-quiet"
               type="button"
               onClick={askToBulkErase}
               disabled={selected.length === 0}
@@ -982,7 +982,7 @@ function RestorePublicConfirm({
           Restore as private
         </button>
         <button
-          className="button button--text"
+          className="button button--secondary"
           type="button"
           onClick={onCancel}
           data-testid="trash-confirm-cancel"
@@ -1176,7 +1176,7 @@ function KindTile({ kind }: { kind: TrashKindValue }) {
   const Icon = KIND_ICONS[kind]
   return (
     <span className="tile tile--blank trash__tile" aria-hidden="true">
-      <Icon className="tile__icon" />
+      <Icon className="tile__icon" strokeWidth={1.75} />
     </span>
   )
 }
