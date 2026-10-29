@@ -9,7 +9,7 @@ For meaningful work. A typo, a one-line fix or a doc tweak needs none of this ce
 
 ## Order
 
-1. **Investigate.** Read only what the task touches. `STATE.md` for position, `SYSTEMS.md`
+1. **Investigate.** Read only what the task touches. `STATE.md` for current state, `SYSTEMS.md`
    for paths, `docs/architecture/decisions/README.md` for decisions already taken.
 2. **Constraints.** Name what may not break: existing ADRs, ownership boundaries, schema,
    response contracts.
@@ -35,16 +35,18 @@ Report failures with their output. A skipped step is reported as skipped, not om
 
 ## Wrap-up
 
-Update only: roadmap position and blockers in `STATE.md`; deferred / owner decisions;
-`SYSTEMS.md` when paths or responsibilities moved; an ADR **only** when a durable decision
-was actually taken.
+`STATE.md` is current state, not a log. On merge, delete your line under "In flight" or "Committed,
+not on `dev`". Add a line only for something a later session must act on: an owner step, an unverified
+item, a new risk or blocker. Never test counts, review narratives or shipped detail: git history and
+ADRs hold those.
 
-No narrative diary. A completed phase is not by itself durable knowledge.
+Also update `SYSTEMS.md` when paths or responsibilities moved, and an ADR **only** when a durable
+decision was actually taken.
 
 ## Report
 
 Concise, caveman style, three headings:
 
-    ROADMAP / CURRENT STEP
+    DONE / WHERE IT IS
     BLOCKED
-    DEFERRED / OWNER DECISIONS
+    OWNER STEPS

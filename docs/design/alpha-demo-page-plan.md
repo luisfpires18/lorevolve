@@ -1,3 +1,6 @@
+Update 2026-10-29: the page is live at https://demo.lorevolve.com, deployed from the `demo` branch. Where this plan says
+"no custom domain" or `pages.dev`, that is superseded by `docs/design/custom-domain-plan.md`.
+
 # Alpha demo page plan
 
 Status: **step 1 built** in `site/alpha/` (feature screenshots still to capture). Step 1 is the page. App email is step 2, a custom domain is parked.

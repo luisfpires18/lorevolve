@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/testing/phase2-story-manual-test.md`: a one-time manual pass for work merged into `dev`; reusable checklists stay in `docs/testing/`. Kept verbatim below.
+
 # Phase 2 Story - manual test plan
 
 For the owner's first full pass over Stories, once Phase 2 is merged into `dev`. It follows a real writing session

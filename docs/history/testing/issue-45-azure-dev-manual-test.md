@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/testing/issue-45-azure-dev-manual-test.md`: a one-time manual pass for work merged into `dev`; reusable checklists stay in `docs/testing/`. Kept verbatim below.
+
 # Issue #45 - MCP V2 completion: Azure DEV manual test
 
 For the owner, once `feat/mcp-v2-content-coverage` is merged into `dev` and deployed to Azure DEV. Use a **disposable

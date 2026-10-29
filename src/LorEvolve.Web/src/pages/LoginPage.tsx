@@ -73,6 +73,11 @@ export default function LoginPage() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
+        <p className="form__aside">
+          <Link to="/forgot-password" data-testid="forgot-password-link">
+            Forgot your password?
+          </Link>
+        </p>
 
         <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
           {isSubmitting ? 'Signing in' : 'Sign in'}

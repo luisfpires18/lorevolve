@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/testing/phase3-lore-article-manual-test.md`: a one-time manual pass for work merged into `dev`; reusable checklists stay in `docs/testing/`. Kept verbatim below.
+
 # Phase 3 Lore articles - manual test plan
 
 For the owner's pass over entry articles. It follows one author writing about a few entries, not every edge case: those

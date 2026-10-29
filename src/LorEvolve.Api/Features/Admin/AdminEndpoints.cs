@@ -18,7 +18,7 @@ namespace LorEvolve.Api.Features.Admin;
 
 /// <summary>
 /// The Admin workspace's API (#40), every route behind <see cref="AdminSetup.Policy"/>: the Main dashboard's counts, the
-/// Users grid and an account's details, and the only two account actions V1 has - block and unblock a Member.
+/// Users grid and an account's details, block and unblock a Member, and email an account a password reset link (#69).
 ///
 /// <para><b>Privacy.</b> Nothing here reads a universe's content, its name or anything inside it, and an Admin gains no
 /// universe role: counts only. No email, password, token or photo of another account leaves this API.</para>
@@ -42,6 +42,7 @@ public static class AdminEndpoints
         group.MapGet("/users/{userId}", GetUserAsync).WithName("GetAdminUser");
         group.MapPost("/users/{userId}/block", BlockAsync).WithName("BlockAdminUser");
         group.MapPost("/users/{userId}/unblock", UnblockAsync).WithName("UnblockAdminUser");
+        group.MapPost("/users/{userId}/password-reset-email", EmailPasswordResetAsync).WithName("EmailAdminPasswordReset");
         group.MapPost("/signup-links", SignUpLink).WithName("CreateAdminSignUpLink");
         group.MapPost("/signup-links/email", EmailSignUpLinkAsync).WithName("EmailAdminSignUpLink");
         return endpoints;
@@ -202,6 +203,53 @@ public static class AdminEndpoints
         }
 
         return Results.Ok(new SignUpLinkEmailResponse(expiresAt));
+    }
+
+    /// <summary>
+    /// Forgot password on the account's behalf (#69): the same reset link the sign-in page sends, to the account's own
+    /// address. The Admin never sees the address or the link; the send is kept in the account's audit history. A blocked
+    /// account gets none, since its reset would be refused.
+    /// </summary>
+    private static async Task<IResult> EmailPasswordResetAsync(
+        string userId,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        UserManager<LorEvolveUser> userManager,
+        AppEmail email,
+        PublicSite site,
+        TimeProvider clock,
+        CancellationToken cancellationToken)
+    {
+        if (await userManager.FindByIdAsync(userId) is not { Email: not null } user)
+        {
+            return Results.NotFound();
+        }
+
+        if (user.BlockedAt is not null)
+        {
+            return StateChanged("This account is blocked. Unblock it first.");
+        }
+
+        if (!email.IsConfigured || site.Origin is null)
+        {
+            return Results.Problem(
+                title: "Email is not set up",
+                detail: "This LorEvolve cannot send email yet.",
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                extensions: new Dictionary<string, object?> { ["code"] = EmailOffCode });
+        }
+
+        if (!await email.SendAsync(await PasswordReset.MessageAsync(userManager, user, site), cancellationToken))
+        {
+            return Results.Problem(
+                title: "The email was not sent",
+                detail: "The email service did not accept it. Try again.",
+                statusCode: StatusCodes.Status502BadGateway,
+                extensions: new Dictionary<string, object?> { ["code"] = EmailFailedCode });
+        }
+
+        await RecordAsync(db, principal.RequireUserId(), userId, AdminAction.PasswordResetSent, string.Empty, clock.GetUtcNow().UtcDateTime, cancellationToken);
+        return Results.Ok(await DetailAsync(db, userId, cancellationToken));
     }
 
     private static async Task<IResult> BlockAsync(

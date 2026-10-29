@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LorEvolve.Api.Features.Auth;
 
-/// <summary>Registration, login, logout and the current-user probe.</summary>
+/// <summary>Registration, login, logout, the current-user probe and forgot password (<see cref="PasswordReset"/>).</summary>
 public static class AuthEndpoints
 {
     /// <summary>
@@ -43,6 +43,7 @@ public static class AuthEndpoints
         group.MapPost("/login", LoginAsync).WithName("Login");
         group.MapPost("/logout", LogoutAsync).WithName("Logout").RequireAuthorization();
         group.MapGet("/me", GetCurrentUser).WithName("GetCurrentUser").RequireAuthorization();
+        PasswordReset.Map(group);
 
         return endpoints;
     }
@@ -274,7 +275,7 @@ public static class AuthEndpoints
     private static AuthUserResponse ToResponse(LorEvolveUser user) =>
         new(user.Id, user.UserName ?? string.Empty, user.Email ?? string.Empty, user.PlatformRole == Admin.PlatformRole.Admin);
 
-    private static Dictionary<string, string[]> ToValidationErrors(IdentityResult result)
+    internal static Dictionary<string, string[]> ToValidationErrors(IdentityResult result)
     {
         var errors = new Dictionary<string, List<string>>();
 

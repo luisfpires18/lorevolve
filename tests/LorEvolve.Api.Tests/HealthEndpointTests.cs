@@ -29,5 +29,13 @@ public sealed class HealthEndpointTests(LorEvolveApiFactory factory) : IClassFix
         Assert.NotNull(payload);
         Assert.Equal("healthy", payload.Status);
         Assert.Equal("LorEvolve.Api", payload.Service);
+        Assert.Equal(HealthEndpoints.BuildVersion, payload.Version);
+    }
+
+    [Fact]
+    public void Build_version_is_the_web_version_not_the_bare_assembly_version()
+    {
+        Assert.NotEqual("1.0.0.0", HealthEndpoints.BuildVersion);
+        Assert.Matches(@"^\d+\.\d+\.\d+(-(alpha|beta|rc\.\d+|dev))?$", HealthEndpoints.BuildVersion);
     }
 }

@@ -26,6 +26,11 @@ public sealed partial class AppEmail(IHttpClientFactory clients, IConfiguration 
 
     private string? From => configuration[$"{SectionName}:From"]?.Trim() is { Length: > 0 } from ? from : null;
 
+    /// <summary>Where a reply goes, since <c>Email:From</c> only sends: <c>Email:ReplyTo</c>, else the support inbox.</summary>
+    private string ReplyTo => configuration[$"{SectionName}:ReplyTo"]?.Trim() is { Length: > 0 } replyTo ? replyTo : DefaultReplyTo;
+
+    public const string DefaultReplyTo = "support@lorevolve.com";
+
     public bool IsConfigured => ApiKey is not null && From is not null;
 
     /// <summary>Sends one email. False when not configured or when Resend refuses or cannot be reached.</summary>
@@ -45,6 +50,7 @@ public sealed partial class AppEmail(IHttpClientFactory clients, IConfiguration 
                 subject = message.Subject,
                 html = message.Html,
                 text = message.Text,
+                reply_to = new[] { ReplyTo },
             }),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);

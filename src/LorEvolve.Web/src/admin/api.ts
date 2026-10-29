@@ -20,7 +20,7 @@ export interface AdminUserPage {
 
 export interface AdminAuditEntry {
   id: string
-  action: 'Block' | 'Unblock'
+  action: 'Block' | 'Unblock' | 'PasswordResetSent'
   reason: string
   createdAt: string
   actorUserId: string
@@ -74,6 +74,14 @@ export function setBlocked(userId: string, block: boolean, reason: string) {
   return apiFetch<AdminUserDetail>(
     `/api/admin/users/${encodeURIComponent(userId)}/${block ? 'block' : 'unblock'}`,
     { method: 'POST', body: JSON.stringify({ reason }) },
+  )
+}
+
+/** Emails the account its own password reset link (#69). Neither its address nor the link comes back here. */
+export function emailPasswordReset(userId: string) {
+  return apiFetch<AdminUserDetail>(
+    `/api/admin/users/${encodeURIComponent(userId)}/password-reset-email`,
+    { method: 'POST' },
   )
 }
 

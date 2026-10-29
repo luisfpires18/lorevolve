@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/testing/phase3-universe-search-manual-test.md`: a one-time manual pass for work merged into `dev`; reusable checklists stay in `docs/testing/`. Kept verbatim below.
+
 # Phase 3 Universe search - manual test plan
 
 For the owner's pass over the persistent search bar (ADR 0031): "a search bar on top that allows to enter anything", searching

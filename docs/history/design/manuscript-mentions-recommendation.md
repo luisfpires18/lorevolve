@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/design/manuscript-mentions-recommendation.md`: decided and built; ADR 0058 holds the decision. Kept verbatim below.
+
 # Interactive @Lore mentions (issue 31) - persistence recommendation
 
 Status: decided 2026-10-25 - the owner chose E1, implemented under ADR 0058. Kept as the record of the options weighed

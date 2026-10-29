@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/testing/phase4-timeline-rule-validation-manual-test.md`: a one-time manual pass for work merged into `dev`; reusable checklists stay in `docs/testing/`. Kept verbatim below.
+
 # Phase 4 Timeline rule validation - manual test plan
 
 For the owner's pass over the first checkable World Rule (ADR 0034): a rule that limits how many Canon moments one participant has
