@@ -148,11 +148,11 @@ uncommon path; Low = payload or hygiene with no measured time cost.
 
 | ID | Area | File:Line | Sev | Effort | Evidence | Smallest change | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| P01 | Wire | `src/LorEvolve.Api/Program.cs:101` | High | S | Measured: CSS 263 KB and entry JS 309 KB sent raw (2.4); about 1 MB per cold mobile page, LCP 5.8 to 6.3 s; MCP `DocumentLatency` flags compression | Response compression, Brotli then gzip, OAuth and MCP excluded (QW-A) | Planned |
-| P02 | Bundle | `src/LorEvolve.Web/vite.config.ts:59-62` | Medium | S | Measured: react-dom and scheduler in the entry chunk (2.1); the entry's hash changes on every deploy, and DEV deploys on every push, so returning visitors refetch about 96 KB gzip of unchanged React | One `vendor` chunk group for react, react-dom, scheduler, react-router (QW-B) | Planned |
-| P03 | Images | `scripts/render-icons.py:62`; `src/LorEvolve.Web/src/components/BrandMark.tsx:30-31` | Medium | S | Measured: 160.2 KB at 384 px, drawn at 34 px in every bar and at most 88 px on the sign-in plate | Render at 192 px (2x of the largest placement) (QW-C) | Planned |
-| P04 | Request chain | `src/LorEvolve.Web/src/pages/LorePage.tsx:274-300` | Medium | S | Measured: Lore desktop ready 618 ms vs 505 to 568 ms on the other signed-in pages; Code-read: the 150 ms debounce also delays the first load and every type, page and sort change | Debounce only a change of the search text (QW-F) | Planned |
-| P05 | Interaction | `src/LorEvolve.Web/src/components/EntityArticle.tsx:157-160` | Medium | S | Measured: 4x CPU, 130 events over 16 ms, max 128 ms, 4 long tasks while typing 30 chars; Code-read: three full parses of up to 200k chars per render, two of them of values that do not change while typing | Memoize the stored-content parses (QW-H) | Planned |
+| P01 | Wire | `src/LorEvolve.Api/Program.cs:101` | High | S | Measured: CSS 263 KB and entry JS 309 KB sent raw (2.4); about 1 MB per cold mobile page, LCP 5.8 to 6.3 s; MCP `DocumentLatency` flags compression | Response compression, Brotli then gzip, OAuth and MCP excluded (QW-A) | Done |
+| P02 | Bundle | `src/LorEvolve.Web/vite.config.ts:59-62` | Medium | S | Measured: react-dom and scheduler in the entry chunk (2.1); the entry's hash changes on every deploy, and DEV deploys on every push, so returning visitors refetch about 96 KB gzip of unchanged React | One `vendor` chunk group for react, react-dom, scheduler, react-router (QW-B) | Done |
+| P03 | Images | `scripts/render-icons.py:62`; `src/LorEvolve.Web/src/components/BrandMark.tsx:30-31` | Medium | S | Measured: 160.2 KB at 384 px, drawn at 34 px in every bar and at most 88 px on the sign-in plate | Render at 192 px (2x of the largest placement) (QW-C) | Done |
+| P04 | Request chain | `src/LorEvolve.Web/src/pages/LorePage.tsx:274-300` | Medium | S | Measured: Lore desktop ready 618 ms vs 505 to 568 ms on the other signed-in pages; Code-read: the 150 ms debounce also delays the first load and every type, page and sort change | Debounce only a change of the search text (QW-F) | Done |
+| P05 | Interaction | `src/LorEvolve.Web/src/components/EntityArticle.tsx:157-160` | Medium | S | Measured: 4x CPU, 130 events over 16 ms, max 128 ms, 4 long tasks while typing 30 chars; Code-read: three full parses of up to 200k chars per render, two of them of values that do not change while typing | Memoize the stored-content parses (QW-H) | Done |
 | P06 | Interaction | `src/LorEvolve.Web/src/components/LoreEditor.tsx:146` | Medium | M | Code-read: `JSON.stringify(editor.getJSON())` of the whole document on every Tiptap update, feeding P05 | Serialize on idle or on save; needs the dirty check reworked | Listed |
 | P07 | Write path | `src/LorEvolve.Api/Features/Lore/EntitySearchIndex.cs:139-141`; `Data/Migrations/20260909234511_AddEntitySearchIndex.cs:27-35` | Medium | M | Code-read: FTS5 keyed by `EntityId UNINDEXED`, so `DELETE ... WHERE EntityId = ?` scans the whole index on every entry or article save; the 26 universe-search triggers share the shape | Key by rowid or a side table mapping EntityId to rowid; a migration | Listed |
 | P08 | Startup | `src/LorEvolve.Api/Features/Lore/EntitySearchIndex.cs:240-256` | Medium | S | Measured: 1,928 ms for 2,000 rows, one autocommit per row | One transaction around the loop | Listed |
@@ -161,7 +161,7 @@ uncommon path; Low = payload or hygiene with no measured time cost.
 | P11 | Read path | `src/LorEvolve.Api/Features/Lore/EntityEndpoints.cs:227-228` | Low | S | Measured: exact search 3.8 ms; Code-read: `lower(Name)` defeats any index | `COLLATE NOCASE` index on `(UniverseId, Name)` | Listed |
 | P12 | Request chain | `src/LorEvolve.Web/src/pages/UniverseWorkspace.tsx:75-103,142-148` | Medium | L | Measured: Lore card to entry, 4x CPU, 1,674 ms wall, 4 long tasks; Code-read: `/me` -> universe + chronology -> page chunk -> types -> entries in sequence; no client cache, types refetched by 6 components | Client reference-data cache; start the page chunk import with the universe fetch | Listed |
 | P13 | Images | `src/LorEvolve.Web/src/components/AppearanceList.tsx:280-294`; `ProgressionView.tsx:733-746` | Low | M | Code-read: galleries draw the `original` variant at 8rem | Fitted display copy (owner question 7) | Listed |
-| P14 | Deploy size | `src/LorEvolve.Web/src/pages/ExplorePage.tsx:6,112-115` | Low | S | Measured: 2.37 MB PNG in `dist` beside the 250 KB WebP; Chrome fetched only the WebP (Explore mobile 1,102 KB total) | WebP only (QW-D); closes F58 | Planned |
+| P14 | Deploy size | `src/LorEvolve.Web/src/pages/ExplorePage.tsx:6,112-115` | Low | S | Measured: 2.37 MB PNG in `dist` beside the 250 KB WebP; Chrome fetched only the WebP (Explore mobile 1,102 KB total) | WebP only (QW-D); closes F58 | Done |
 | P15 | Deploy size | `src/LorEvolve.Web/vite.config.ts:61` | Low | S | Measured: 7.5 MB of the 13.1 MB `dist` is source maps, copied to `wwwroot` on F1's 1 GB `/home` | `sourcemap: 'hidden'` or off (owner question 5) | Listed |
 | P16 | Rendering | `src/LorEvolve.Web/src/components/LoreEditor.tsx:186-206` | Low | M | Code-read: read-only article views mount a Tiptap editor | Render read-only documents as HTML | Listed |
 | P17 | Rendering | `src/LorEvolve.Web/src/components/FamilyTreeView.tsx:119-278`; `UniverseTypes.tsx:123-142`; `IdeaBoardCanvas.tsx:218-222,281` | Low | M | Code-read: hover and drag re-measure the DOM per event | Measure once per gesture | Listed |
@@ -171,7 +171,7 @@ uncommon path; Low = payload or hygiene with no measured time cost.
 | F07 | Memory | `src/LorEvolve.Api/Features/Media/ImagePreparation.cs:130` | Medium | M | Cross-reference: no ImageSharp `MemoryAllocator` cap | As F07 | Open |
 | F24 | Read path | `src/LorEvolve.Api/Features/Publishing/PublicContentEndpoints.cs:186-192` | Medium | M | Cross-reference: anonymous story GET returns every manuscript unpaged | As F24 | Open |
 | F46 | Health | `src/LorEvolve.Api/Program.cs:48` | Low | S | Cross-reference: `/health` has no DB check | As F46, with the SMB flap caveat | Open |
-| F58 | Bundle | `src/LorEvolve.Web/src/pages/ExplorePage.tsx:6,115` | Low | S | Cross-reference: same as P14 | QW-D | Planned |
+| F58 | Bundle | `src/LorEvolve.Web/src/pages/ExplorePage.tsx:6,115` | Low | S | Cross-reference: same as P14 | QW-D | Done |
 | W4 | Database | `src/LorEvolve.Api/Data/DatabaseSetup.cs:26` | Medium | M | Cross-reference, 2026-10-25 audit: rollback journal; WAL untested off the SMB share | Phase 023 experiment; DEV stays on `delete` | Open |
 
 ## 4. Checked and found sound, or looks bad but is fine
@@ -232,3 +232,84 @@ journal mode (W4), export in memory (ADR 0014).
 
 | Commit | Finding | Change | Before | After |
 | --- | --- | --- | --- | --- |
+| `eaf032e` | P01 | Brotli then gzip, `/oauth` and `/mcp` excluded | CSS 263,158 B, entry JS 309,282 B, shell 11,912 B, all raw | CSS 76,849 B br, entry 38,193 B + vendor 125,145 B br, shell 4,969 B br |
+| `655c1e0` | P02 | `vendor` chunk group | entry 309.3 KB raw holding react-dom | entry 98.5 KB raw; vendor hash unchanged after an app-only change (`vendor-BMz_cmJY.js` both builds) |
+| `931e8f0` | P03 | brand mark at 192 px | 160,172 B | 45,744 B |
+| `4f6d011` | P14, F58 | Explore hero WebP only | `dist` 13.1 MB with a 2.37 MB PNG | `dist` 10.6 MB |
+| `b5656b8` | P04 | debounce only the search text | Lore desktop ready 618 ms | 523 ms |
+| `4bbc93c` | P05 | memoized stored-article parses | typing at 4x CPU: max event 128 ms, long tasks 276 ms | max event 88 ms, long tasks 69 ms |
+
+## 8. Before and after
+
+Same harness, same seeded database copy, same devices, 3 runs each; after = the branch tip with all six quick wins.
+The raw baseline files were deleted from the scratchpad by a concurrent cleanup after section 2 was written from them;
+the after run is kept in the shared session notes folder. Delta is (after - before) / before. On desktop the server is
+on loopback, so compression cannot save network time there and the desktop rows move within a few tens of ms either
+way; the mobile rows, with a real network model, are the ones that show the change.
+
+### 8.1 Bytes
+
+| What | Before | After | Delta |
+| --- | --- | --- | --- |
+| Stylesheet on the wire | 263,158 B | 76,849 B | -71% |
+| Entry JS on the wire (first visit, entry + vendor) | 309,282 B | 163,338 B | -47% |
+| Entry JS refetched after an app-only deploy | 309,282 B | 38,193 B | -88% |
+| App shell `index.html` | 11,912 B | 4,969 B | -58% |
+| Brand mark | 160,172 B | 45,744 B | -71% |
+| `dist` (and the deploy zip) | 13.1 MB | 10.6 MB | -19% |
+| Cold page transfer, landing | 1,007 KB | 455 KB | -55% |
+| Cold page transfer, Lore list | 929 KB | 445 KB | -52% |
+| Cold page transfer, 150k article | 1,671 KB | 688 KB | -59% |
+| Cold page transfer, map | 1,097 KB | 446 KB | -59% |
+| `/api/public/stats` (77-byte JSON) | 77 B | 81 B | +5% (a body this small does not shrink) |
+
+### 8.2 Page loads, mobile (CPU 4x, slow 4G)
+
+| Page | Metric | Before | After | Delta |
+| --- | --- | --- | --- | --- |
+| `/` | FCP | 4,120 | 2,148 | -48% |
+| `/` | LCP | 5,760 | 3,208 | -44% |
+| `/explore` | FCP | 4,164 | 2,076 | -50% |
+| `/explore` | LCP | 6,288 | 3,588 | -43% |
+| `/login` | FCP | 4,692 | 2,716 | -42% |
+| `/login` | LCP | 6,296 | 3,740 | -41% |
+| Lore by type | LCP | 6,156 | 4,072 | -34% |
+| Lore by type | Ready (first entry card) | 6,012 | 3,780 | -37% |
+
+### 8.3 Page loads, desktop (no throttling, loopback)
+
+| Page | Metric | Before | After | Delta |
+| --- | --- | --- | --- | --- |
+| `/` | LCP | 420 | 232 | -45% |
+| `/explore` | LCP | 408 | 460 | +13% (loopback noise; nothing on this page got heavier) |
+| `/login` | LCP | 432 | 496 | +15% (loopback noise) |
+| Lore by type | Ready | 618 | 523 | -15% |
+| 150k article | Ready | 529 | 509 | no change |
+| 150k manuscript | Ready | 542 | 505 | -7% |
+| Timeline | Ready | 568 | 497 | -13% |
+| Map | Ready | 505 | 460 | -9% |
+
+### 8.4 Interactions (desktop, CPU 4x)
+
+| Interaction | Metric | Before | After | Delta |
+| --- | --- | --- | --- | --- |
+| Typing in the 150k article | Max event | 128 ms | 88 ms | -31% |
+| Typing in the 150k article | Mean processing per event | 14 ms | 8 ms | -43% |
+| Typing in the 150k article | Long tasks | 276 ms (4) | 69 ms (1) | -75% |
+| Typing in the 150k manuscript | Max event | 56 ms | 64 ms | no change (not touched) |
+| Map drag 300 px | Max event | 40 ms | 24 ms | no change (not touched) |
+| Lore card to entry heading | Wall time | 1,674 ms | 1,492 ms | -11% |
+| Lore card to entry heading | Long tasks | 693 ms | 442 ms | -36% |
+
+### 8.5 API
+
+No server read path changed; the rerun is within run-to-run noise (for example entities browse 3.5 -> 5.4 ms, universe
+search 11.1 -> 9.0 ms, same query counts; backfill 1,928 -> 1,845 ms). Compression adds a few milliseconds of CPU per
+text response at Brotli `Fastest`; it was not measurable here.
+
+### 8.6 What the after numbers suggest next
+
+- Brotli at `Fastest` gives the stylesheet 76.8 KB, where gzip at Vite's level gives 45.1 KB. Compressing the built
+  files once at build or publish time (`MapStaticAssets` precompression, or a precompression step) would get the
+  smaller size with no per-request CPU on F1. Listed with P01's follow-ups; it moves cache rules into MSBuild, so it is
+  not a quick win.
