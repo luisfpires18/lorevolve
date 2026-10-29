@@ -5,6 +5,15 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 
 ## Roadmap position
 
+- **Issue #69 - forgot password** (`feat/forgot-password` off `dev` at `0f43927`; committed locally, not pushed, not merged).
+  No migration (`AdminAction.PasswordResetSent = 3`). Sign-in "Forgot your password?" -> `/forgot-password` ->
+  `POST /api/auth/forgot-password` (same 204 for any address, email sent after the answer, one per account per 2 min,
+  none to blocked) -> email link `/reset-password?user=&token=` -> `POST /api/auth/reset-password` (Identity token, 1 h,
+  single use; ends every session; clears lockout). Admin > Users > account > Password: Email a reset link
+  (`POST /api/admin/users/{id}/password-reset-email`, audit row, 409 blocked, 503 email off). Per-IP limit skipped:
+  forwarded headers carry only the scheme, so every request shares the App Service front end's IP.
+  Tests: API `PasswordResetTests` 4 + Admin/SignUp/Auth/matrix neighbours 99 green; Playwright `forgot-password` 2,
+  `admin-workspace` +1, `auth` 16/16, neighbours 61/61 on a fresh DB.
 - **Rename to LorEvolve (ADR 0067)** done. DEV is https://dev-lorevolve.azurewebsites.net in `rg-lorevolve-dev`
   (plan `dev-lorevolve-plan`, F1; moved 2026-10-29 with its data); repo `luisfpires18/lorevolve`; media in R2
   `lorevolve-media-dev`. Every old `lorex` resource is deleted; `lorex` in code is only ADR 0067's read-old fallbacks.

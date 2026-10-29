@@ -41,6 +41,7 @@ const ExplorePage = lazy(() => import('./pages/ExplorePage'))
 const FamilyTreePage = lazy(() => import('./pages/FamilyTreePage'))
 const IdeaBoardPage = lazy(() => import('./pages/IdeaBoardPage'))
 const IdeaBoardsPage = lazy(() => import('./pages/IdeaBoardsPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
 const IdeaPage = lazy(() => import('./pages/IdeaPage'))
 const IdeasPage = lazy(() => import('./pages/IdeasPage'))
 const InvitationPage = lazy(() => import('./pages/InvitationPage'))
@@ -56,6 +57,7 @@ const PublicLorePage = lazy(() => import('./pages/PublicLorePage'))
 const PublicStoryPage = lazy(() => import('./pages/PublicStoryPage'))
 const PublicWorldPage = lazy(() => import('./pages/PublicWorldPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const StoriesPage = lazy(() => import('./pages/StoriesPage'))
 const StoryPage = lazy(() => import('./pages/StoryPage'))
 const TimelinePage = lazy(() => import('./pages/TimelinePage'))
@@ -145,7 +147,11 @@ function Root() {
           <Route element={<RequireGuest />}>
             <Route path="/login" element={asScreen('login', <LoginPage />)} />
             <Route path="/register" element={asScreen('register', <RegisterPage />)} />
+            <Route path="/forgot-password" element={asScreen('forgot', <ForgotPasswordPage />)} />
           </Route>
+
+          {/* A password reset link (#69): outside both guards, so it works from any browser, signed in or not. */}
+          <Route path="/reset-password" element={asScreen('reset', <ResetPasswordPage />)} />
 
           <Route element={<RequireAuth />}>
             {/* An AI app's request to read a universe (ADR 0046), handed here by the authorization endpoint. Signed in,
