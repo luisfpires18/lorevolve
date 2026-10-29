@@ -171,11 +171,15 @@ dialog.addEventListener('close', () => {
 })
 
 // The Discord invite: paste it here and every Discord link on the page appears. Empty keeps them hidden.
-const DISCORD_INVITE = ''
+const DISCORD_INVITE = 'https://discord.gg/VPv7X7tpY'
 if (DISCORD_INVITE) {
   for (const element of document.querySelectorAll('[data-discord]')) {
     element.hidden = false
-    if (element instanceof HTMLAnchorElement) element.href = DISCORD_INVITE
+    if (element instanceof HTMLAnchorElement) {
+      element.href = DISCORD_INVITE
+      element.target = '_blank'
+      element.rel = 'noopener'
+    }
   }
 }
 
