@@ -139,7 +139,7 @@ test.describe('installability', () => {
       '/favicon-48.png': 48,
       '/favicon-32.png': 32,
       '/favicon-16.png': 16,
-      '/brand-mark.png': 384,
+      '/brand-mark.png': 192,
       '/icon-maskable-512.png': 512,
       '/apple-touch-icon.png': 180,
     }
