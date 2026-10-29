@@ -591,6 +591,16 @@ button {
   background: var(--portal-surface);
 }
 
+.feature__clip {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--portal-line);
+  border-radius: var(--radius-sm);
+  background: var(--portal-surface);
+}
+
 .feature p {
   margin: var(--space-3) 0 0;
   color: rgb(var(--portal-ink-rgb) / 0.86);

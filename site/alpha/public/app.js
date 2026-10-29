@@ -412,6 +412,20 @@ if (DISCORD_INVITE) {
   }
 }
 
+// A clip loads and plays only while its row is open. With reduced motion it waits for the viewer's own play.
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)')
+for (const clip of document.querySelectorAll('.feature__clip')) {
+  const row = clip.closest('details')
+  row.addEventListener('toggle', () => {
+    if (!row.open) {
+      clip.pause()
+      return
+    }
+    if (reduceMotion.matches) clip.controls = true
+    else clip.play().catch(() => (clip.controls = true))
+  })
+}
+
 // A feature picture not made yet is dropped rather than left as an empty frame. Lazy pictures load, and fail, on opening.
 document.addEventListener(
   'error',
