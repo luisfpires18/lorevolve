@@ -3,7 +3,7 @@
     "short_name": "LorEvolve",
     "description": "A workroom for the worlds you keep: their people, places, history and the rules that hold them together.",
     "id": "/app",
-    "start_url": "/explore",
+    "start_url": "/",
     "scope": "/",
     "display": "standalone",
     "orientation": "any",

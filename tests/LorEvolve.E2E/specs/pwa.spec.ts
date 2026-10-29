@@ -85,9 +85,9 @@ test.describe('installability', () => {
 
     expect(manifest.name).toBe('LorEvolve')
     expect(manifest.short_name).toBe('LorEvolve')
-    // The portal is the front door (Task 011): launching the installed app opens Explore, signed in or not. The id
+    // The landing page is the front door: launching the installed app opens it, signed in or not. The id
     // stays `/app`, which is the installed app's identity - changing it would orphan every existing install.
-    expect(manifest.start_url).toBe('/explore')
+    expect(manifest.start_url).toBe('/')
     expect(manifest.id).toBe('/app')
     expect(manifest.scope).toBe('/')
     expect(manifest.display).toBe('standalone')
@@ -398,7 +398,7 @@ test.describe('what the worker is allowed to keep', () => {
       await fetch('/manifest.webmanifest')
       return (await fetch('/manifest.webmanifest')).json()
     })
-    expect(manifest.start_url).toBe('/explore')
+    expect(manifest.start_url).toBe('/')
     expect(manifest.id).toBe('/app')
     expect(served.length).toBeGreaterThan(0)
     expect(served.every((fromWorker) => !fromWorker)).toBe(true)
