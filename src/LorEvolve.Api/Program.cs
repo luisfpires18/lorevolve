@@ -121,6 +121,7 @@ app.MapCollaboratorEndpoints();
 app.MapInvitationEndpoints();
 app.MapPublicationEndpoints();
 app.MapContentPublicationEndpoints();
+app.MapPublishEverythingEndpoints();
 app.MapUniverseArtworkEndpoints();
 app.MapPublicNameEndpoints();
 app.MapPublicUniverseEndpoints();

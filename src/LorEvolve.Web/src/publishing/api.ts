@@ -8,6 +8,8 @@ import type {
   PublicationDetails,
   PublicationState,
   PublicAuthorSettings,
+  PublishEverythingPreview,
+  PublishEverythingResult,
   SelectedLore,
   StoryPartKind,
   StoryPartPublicationState,
@@ -23,6 +25,20 @@ export function getPublication(universeId: string, signal?: AbortSignal) {
 /** The entries publishing would make public, for the owner to review in the confirmation. Reads only. */
 export function getSelectedLore(universeId: string, signal?: AbortSignal) {
   return apiFetch<SelectedLore>(`${base(universeId)}/publication/selected-lore`, { signal })
+}
+
+/** What Publish everything would select now, read fresh for its confirmation. */
+export function getPublishEverything(universeId: string, signal?: AbortSignal) {
+  return apiFetch<PublishEverythingPreview>(`${base(universeId)}/publication/everything`, {
+    signal,
+  })
+}
+
+/** Selects every Canon entry and Complete story, with its scenes. Only adds; the server decides what is eligible. */
+export function publishEverything(universeId: string) {
+  return apiFetch<PublishEverythingResult>(`${base(universeId)}/publication/everything`, {
+    method: 'POST',
+  })
 }
 
 /** Saves the public details. Visibility is never part of it: only publish and unpublish change that. */

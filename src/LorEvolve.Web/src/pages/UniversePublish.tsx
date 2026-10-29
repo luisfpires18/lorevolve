@@ -9,7 +9,9 @@ import { ApiError } from '../lib/api'
 import { listPublicLore, listPublicStories, worldPath } from '../portal/api'
 import {
   getPublication,
+  getPublishEverything,
   getSelectedLore,
+  publishEverything,
   publishUniverse,
   unpublishUniverse,
 } from '../publishing/api'
@@ -19,6 +21,8 @@ import {
   categoryLabel,
   genreLabel,
   type PublicationState,
+  type PublishEverythingPreview,
+  type PublishEverythingResult,
   type SelectedLore,
 } from '../publishing/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
@@ -57,6 +61,8 @@ export default function UniversePublish() {
   const [problem, setProblem] = useState<string[] | null>(null)
   const [announcement, setAnnouncement] = useState<string | null>(null)
   const [counted, setCounted] = useState<Published>(null)
+  // Bumped after Publish everything, so the counts below are read again.
+  const [countRound, setCountRound] = useState(0)
   const panel = useRef<HTMLDivElement>(null)
   const problemRef = useRef<HTMLDivElement>(null)
 
@@ -102,7 +108,7 @@ export default function UniversePublish() {
     return () => {
       controller.abort()
     }
-  }, [isPublic, slug])
+  }, [isPublic, slug, countRound])
 
   // Counts belong to the address they were read for, and only while the universe is public.
   const published = isPublic && counted?.slug === slug ? counted : null
@@ -549,6 +555,12 @@ export default function UniversePublish() {
               </Link>
             </li>
           </ul>
+          {isPublic ? (
+            <PublishEverything
+              universeId={universeId}
+              onPublished={() => setCountRound((round) => round + 1)}
+            />
+          ) : null}
         </Section>
       </div>
     </article>
@@ -597,6 +609,212 @@ function SelectedLoreReview({ selected }: { selected: SelectedLore }) {
       <p className="settings__note">
         Once the world is public, each entry's page lets you make it private again.
       </p>
+    </div>
+  )
+}
+
+const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
+function publishedSentence({ lore, stories, scenes }: PublishEverythingResult) {
+  if (lore + stories + scenes === 0) return 'Nothing new was published: it was all public already.'
+  return `Published ${count(lore, 'lore entry', 'lore entries')}, ${count(stories, 'story', 'stories')} and ${count(scenes, 'scene', 'scenes')}.`
+}
+
+/**
+ * Publish everything: every Canon lore entry and every Complete story, with its scenes and their text, in one action. The
+ * confirmation names each of them, read fresh from the server, and the stories skipped for want of a public summary. It
+ * only adds: Idea and Draft lore, unfinished stories, plot arcs and anything already public are left as they are.
+ */
+function PublishEverything({
+  universeId,
+  onPublished,
+}: {
+  universeId: string
+  onPublished: () => void
+}) {
+  const [preview, setPreview] = useState<PublishEverythingPreview | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState<string | null>(null)
+  const panel = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (preview) panel.current?.focus()
+  }, [preview])
+
+  async function ask() {
+    setError(null)
+    setDone(null)
+    setBusy(true)
+    try {
+      setPreview(await getPublishEverything(universeId))
+    } catch (failure: unknown) {
+      setError(failure instanceof Error ? failure.message : 'That could not be checked. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function confirm() {
+    setBusy(true)
+    setError(null)
+    try {
+      const result = await publishEverything(universeId)
+      setPreview(null)
+      setDone(publishedSentence(result))
+      onPublished()
+    } catch (failure: unknown) {
+      setError(failure instanceof Error ? failure.message : 'It could not be published. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const nothing = preview !== null && preview.lore.length === 0 && preview.stories.length === 0
+
+  return (
+    <div className="publish__everything" data-testid="publish-everything">
+      <p className="settings__note">
+        Or publish everything finished at once: every Canon lore entry and every Complete story,
+        with its scenes and their text. Idea and Draft lore, unfinished stories and plot arcs stay
+        private.
+      </p>
+      {!preview ? (
+        <button
+          className="button button--secondary"
+          type="button"
+          disabled={busy}
+          aria-busy={busy}
+          onClick={() => void ask()}
+          data-testid="publish-everything-open"
+        >
+          <ActionIcon icon={Globe} />
+          Publish everything
+        </button>
+      ) : null}
+
+      {error ? (
+        <p className="form__message" role="alert" data-testid="publish-everything-error">
+          {error}
+        </p>
+      ) : null}
+      {done ? (
+        <p className="settings__saved" role="status" data-testid="publish-everything-done">
+          {done}
+        </p>
+      ) : null}
+
+      {preview ? (
+        <div
+          className="publication__confirm"
+          role="group"
+          aria-labelledby="publish-everything-title"
+          tabIndex={-1}
+          ref={panel}
+          data-testid="publish-everything-confirm"
+        >
+          <h3 className="publication__confirmtitle" id="publish-everything-title">
+            {nothing ? 'Nothing new to publish' : 'Publish everything finished?'}
+          </h3>
+          {nothing ? (
+            <p className="settings__note">
+              Every Canon lore entry and Complete story is already public.
+            </p>
+          ) : (
+            <>
+              <p className="settings__note">Anyone will be able to read:</p>
+              {preview.lore.length > 0 ? (
+                <div className="publication__selected">
+                  <p className="settings__note" id="publish-everything-lore">
+                    <strong>{count(preview.lore.length, 'lore entry', 'lore entries')}</strong>
+                  </p>
+                  <ul
+                    className="publication__selectedlist"
+                    aria-labelledby="publish-everything-lore"
+                    tabIndex={0}
+                  >
+                    {preview.lore.map((entry) => (
+                      <li key={entry.id} data-testid="publish-everything-entry">
+                        <bdi>{entry.name}</bdi>{' '}
+                        <span className="publication__selectedtype">
+                          · <bdi>{entry.typeName}</bdi>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {preview.stories.length > 0 ? (
+                <div className="publication__selected">
+                  <p className="settings__note" id="publish-everything-stories">
+                    <strong>{count(preview.stories.length, 'story', 'stories')}</strong>
+                  </p>
+                  <ul
+                    className="publication__selectedlist"
+                    aria-labelledby="publish-everything-stories"
+                    tabIndex={0}
+                  >
+                    {preview.stories.map((story) => (
+                      <li key={story.id} data-testid="publish-everything-story">
+                        <bdi>{story.title}</bdi>{' '}
+                        <span className="publication__selectedtype">
+                          · {count(story.scenes, 'scene', 'scenes')} and their text
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </>
+          )}
+          {preview.skippedStories.length > 0 ? (
+            <div className="publication__selected" data-testid="publish-everything-skipped">
+              <p className="settings__note" id="publish-everything-skipped">
+                <strong>Skipped:</strong> these Complete stories need a public summary first, on
+                each story's page.
+              </p>
+              <ul
+                className="publication__selectedlist"
+                aria-labelledby="publish-everything-skipped"
+                tabIndex={0}
+              >
+                {preview.skippedStories.map((story) => (
+                  <li key={story.id}>
+                    <bdi>{story.title}</bdi>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <div className="form__actions">
+            {nothing ? null : (
+              <button
+                className="button"
+                type="button"
+                disabled={busy}
+                aria-busy={busy}
+                onClick={() => void confirm()}
+                data-testid="publish-everything-confirm-button"
+              >
+                {busy ? 'Publishing' : 'Publish everything'}
+              </button>
+            )}
+            <button
+              className="button button--secondary"
+              type="button"
+              disabled={busy}
+              onClick={() => setPreview(null)}
+            >
+              {nothing ? 'Close' : 'Keep private'}
+            </button>
+          </div>
+          {nothing ? null : (
+            <p className="settings__note">
+              Each entry's and story's page lets you make it private again.
+            </p>
+          )}
+        </div>
+      ) : null}
     </div>
   )
 }

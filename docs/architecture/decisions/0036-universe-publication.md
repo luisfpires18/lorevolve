@@ -197,3 +197,14 @@ The same principle, one level down: nothing inside a universe is public because 
   owner-scoped, answers the owner's own universe, entry and story ids; everyone else gets a 404. The portal asks it only
   when someone is signed in, and shows "Edit this world" / "Edit in workspace" to the owner alone.
 - Backup format 16 carries a story's public summary; publication never. Every restore is private.
+
+## Amendment (2026-10-29): Publish everything
+
+- **One owner action selects everything finished.** `GET` and `POST /api/universes/{id}/publication/everything`
+  (Publish capability, owner only). It selects every live Canon lore entry and every live Complete story that has a
+  public summary, with that story's live scenes' outlines and manuscripts. Idea and Draft lore, Planning and Drafting
+  stories, plot arcs (planning, ADR 0039) and the Trash are never touched; a Complete story without a summary is skipped
+  and named. It only adds: nothing becomes private, and an item already public keeps its address and first date.
+- **Explicit, still.** The Publish page offers it only while the universe is public, and only after a confirmation that
+  names every entry and story it would select, read fresh from `GET`. `POST` reads the same rule again inside one
+  transaction, so it applies exactly what is eligible when it runs. Per-item selection is unchanged.
