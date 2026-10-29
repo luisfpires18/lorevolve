@@ -453,6 +453,37 @@ button {
     max-width: none;
     margin-top: 0;
   }
+
+  .features__groups {
+    max-width: none;
+    margin-top: 0;
+  }
+}
+
+/* The feature list in three groups: a small heading over each list. */
+.features__groups {
+  display: grid;
+  gap: clamp(2.5rem, 5vw, 3.5rem);
+  max-width: 56rem;
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.features__grouptitle {
+  margin: 0;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.features__grouplede {
+  margin: var(--space-2) 0 0;
+  color: rgb(var(--portal-ink-rgb) / 0.72);
+}
+
+.features__group .features {
+  margin-top: var(--space-4);
 }
 
 .feature {
@@ -521,7 +552,7 @@ button {
   transform: rotate(-135deg);
 }
 
-.feature summary:hover h3 {
+.feature summary:hover :is(h3, h4) {
   color: var(--accent);
 }
 
@@ -530,7 +561,7 @@ button {
   outline-offset: -2px;
 }
 
-.feature h3 {
+.feature :is(h3, h4) {
   margin: 0;
   font-family: var(--display);
   font-size: 1.375rem;
