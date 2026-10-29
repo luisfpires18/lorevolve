@@ -44,6 +44,24 @@ const FEATURES = [
 const one = (name, label, options) => ({ kind: 'one', name, label, options })
 const free = (name, label, max = 2000) => ({ kind: 'text', name, label, max })
 
+// How someone would prefer to pay, asked on the second page after applying and again at the end of the alpha.
+const PRICING = [
+  {
+    kind: 'one',
+    name: 'payPreference',
+    label: 'If LorEvolve were paid, how would you prefer to pay?',
+    options: [
+      ['subscription', 'A monthly subscription'],
+      ['usage', 'Only for what I use'],
+      ['one-time', 'A one-time purchase'],
+      ['other', 'Something else'],
+    ],
+    other: { name: 'payOther', label: 'How else would you prefer to pay?' },
+  },
+  { kind: 'price', name: 'priceTooCheap', label: "At what monthly price would it feel so cheap you'd doubt it?" },
+  { kind: 'price', name: 'priceTooExpensive', label: 'At what monthly price would it be too expensive to consider?' },
+]
+
 const QUESTIONS = {
   signup: [
     one('publish', 'Would you publish your universe for others to read?', [
@@ -91,9 +109,10 @@ const QUESTIONS = {
       ['maybe', 'Maybe'],
       ['no', 'No'],
     ]),
-    { kind: 'pick', name: 'interests', label: 'Which features interest you most?', hint: 'Pick up to 5.', max: 5 },
+    { kind: 'pick', name: 'interests', label: 'Which features interest you most?', hint: 'Pick as many as you like.' },
     free('wished', "Which features would you like that LorEvolve doesn't have?"),
   ],
+  'signup-pricing': PRICING,
   'end-features': [{ kind: 'grid', name: 'usefulness' }],
   'end-more': [
     one('typesEffort', 'Defining your own types and fields felt:', [
@@ -112,15 +131,7 @@ const QUESTIONS = {
     free('missMost', 'Which feature would you miss most if it disappeared?'),
     free('confused', 'What confused you or got in your way?'),
     free('wished', "Which features would you like that LorEvolve doesn't have?"),
-    one('payPreference', 'If LorEvolve were paid, how would you prefer to pay?', [
-      ['subscription', 'A monthly subscription'],
-      ['usage', 'Only for what I use'],
-      ['one-time', 'A one-time purchase'],
-      ['other', 'Something else'],
-    ]),
-    { kind: 'other', name: 'payOther', label: 'How else would you prefer to pay?' },
-    { kind: 'price', name: 'priceTooCheap', label: "At what monthly price would it feel so cheap you'd doubt it?" },
-    { kind: 'price', name: 'priceTooExpensive', label: 'At what monthly price would it be too expensive to consider?' },
+    ...PRICING,
   ],
 }
 
@@ -136,19 +147,22 @@ const radios = (name, options) =>
 
 function render(question) {
   switch (question.kind) {
-    case 'one':
-      return `<fieldset class="field"><legend class="field__label">${question.label}</legend>${radios(question.name, question.options)}</fieldset>`
+    case 'one': {
+      // A choice with "Something else" carries its own text box, shown only while that choice is made.
+      const other = question.other
+        ? `<input class="choice__other" name="${question.other.name}" type="text" maxlength="200" aria-label="${question.other.label}" hidden />`
+        : ''
+      return `<fieldset class="field"><legend class="field__label">${question.label}</legend>${radios(question.name, question.options)}${other}</fieldset>`
+    }
     case 'text':
       return `<label class="field"><span class="field__label">${question.label}</span><textarea name="${question.name}" rows="3" maxlength="${question.max}"></textarea></label>`
     case 'pick':
-      return `<fieldset class="field" data-pick="${question.max}"><legend class="field__label">${question.label}</legend><p class="field__hint">${question.hint}</p>${FEATURES.map(([key, label]) => `<label class="choice"><input type="checkbox" name="${question.name}" value="${key}" /> ${label}</label>`).join('')}</fieldset>`
+      return `<fieldset class="field"><legend class="field__label">${question.label}</legend><p class="field__hint">${question.hint}</p>${FEATURES.map(([key, label]) => `<label class="choice"><input type="checkbox" name="${question.name}" value="${key}" /> ${label}</label>`).join('')}</fieldset>`
     case 'grid':
       return FEATURES.map(
         ([key, label]) =>
           `<fieldset class="field rate"><legend class="field__label">${label}</legend><div class="rate__options">${RATINGS.map(([value, text]) => `<label><input type="radio" name="u_${key}" value="${value}" /><span>${text}</span></label>`).join('')}</div></fieldset>`,
       ).join('')
-    case 'other':
-      return `<input class="choice__other" name="${question.name}" type="text" maxlength="200" aria-label="${question.label}" hidden />`
     case 'price':
       return `<label class="field"><span class="field__label">${question.label}</span><span class="field__hint">In euros, per month.</span><span class="money"><span aria-hidden="true">€</span><input name="${question.name}" type="number" inputmode="decimal" min="0" max="10000" step="0.01" /></span></label>`
   }
@@ -157,9 +171,6 @@ function render(question) {
 for (const container of form.querySelectorAll('[data-questions]')) {
   container.innerHTML = QUESTIONS[container.dataset.questions].map(render).join('')
 }
-// "Something else" opens its text box right under the choice.
-const payOther = form.elements.payOther
-form.querySelector('input[name="payPreference"][value="other"]').closest('label').after(payOther)
 
 // Read page by page: the signup and end-of-alpha surveys share some question names (wished).
 function answers(pages) {
@@ -175,6 +186,7 @@ function answers(pages) {
         result[question.name] = [...section.querySelectorAll(`[name="${question.name}"]:checked`)].map((box) => box.value)
       } else {
         result[question.name] = value(question.name)
+        if (question.other) result[question.other.name] = value(question.other.name)
       }
     }
   }
@@ -183,7 +195,7 @@ function answers(pages) {
 
 // -- Pages --
 
-const STEPS = { 'end-features': 'Part 1 of 2', 'end-more': 'Part 2 of 2' }
+const STEPS = { signup: 'Part 1 of 2', 'signup-pricing': 'Part 2 of 2', 'end-features': 'Part 1 of 2', 'end-more': 'Part 2 of 2' }
 
 function showPage(page) {
   for (const section of form.querySelectorAll('[data-page]')) section.hidden = section.dataset.page !== page
@@ -301,7 +313,7 @@ async function sendApplication() {
 }
 
 async function sendSurvey() {
-  const pages = surveyPart === 'end' ? ['end-features', 'end-more'] : ['signup']
+  const pages = surveyPart === 'end' ? ['end-features', 'end-more'] : ['signup', 'signup-pricing']
   const { ok, reply } = await post('/api/survey', { token: surveyToken, part: surveyPart, answers: answers(pages) })
   if (!ok) {
     showError(MESSAGES[reply.error] ?? "Something went wrong and your answers weren't saved. Please try again in a moment.")
@@ -339,9 +351,9 @@ async function send(event) {
 dialog.addEventListener('close', () => {
   // Once an application or a survey is sent, or skipped, the next open starts a fresh application.
   // A half-filled application or end-of-alpha survey is kept for when the dialog opens again.
-  if (['applied', 'signup', 'thanks', 'badlink'].includes(currentPage())) {
+  if (['applied', 'signup', 'signup-pricing', 'thanks', 'badlink'].includes(currentPage())) {
     form.reset()
-    payOther.hidden = true
+    for (const box of form.querySelectorAll('.choice__other')) box.hidden = true
     surveyToken = null
     surveyPart = null
     showPage('apply')
@@ -364,19 +376,12 @@ for (const button of dialog.querySelectorAll('[data-goto]')) {
 }
 form.addEventListener('submit', send)
 
+// "Something else" shows its text box; any other choice hides it again.
 form.addEventListener('change', (event) => {
-  const { target } = event
-  if (target.name === 'payPreference') {
-    payOther.hidden = target.value !== 'other'
-    if (!payOther.hidden) payOther.focus()
-  }
-  // Up to five interests: the rest are disabled once five are picked.
-  const pick = target.closest('[data-pick]')
-  if (pick) {
-    const boxes = [...pick.querySelectorAll('input[type="checkbox"]')]
-    const full = boxes.filter((box) => box.checked).length >= Number(pick.dataset.pick)
-    for (const box of boxes) box.disabled = full && !box.checked
-  }
+  const other = event.target.closest('fieldset')?.querySelector('.choice__other')
+  if (!other || event.target.type !== 'radio') return
+  other.hidden = event.target.value !== 'other'
+  if (!other.hidden) other.focus()
 })
 
 // The end-of-alpha survey: /?survey=<token> opens the dialog on it, greeting the tester by name.

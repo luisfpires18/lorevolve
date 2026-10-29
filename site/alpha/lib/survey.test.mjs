@@ -20,10 +20,18 @@ test('unknown parts, questions and choices are refused', () => {
   assert.equal(readSurvey('signup', []).field, 'answers')
 })
 
-test('up to five interests, each a known feature', () => {
+test('any number of interests, each a known feature, duplicates dropped', () => {
   assert.deepEqual(readSurvey('signup', { interests: ['maps', 'maps', 'lore'] }).answers.interests, ['maps', 'lore'])
-  assert.equal(readSurvey('signup', { interests: ['lore', 'types', 'maps', 'ideas', 'plot', 'search'] }).field, 'interests')
+  assert.equal(readSurvey('signup', { interests: ['lore', 'types', 'maps', 'ideas', 'plot', 'search'] }).answers.interests.length, 6)
   assert.equal(readSurvey('signup', { interests: ['teleporting'] }).field, 'interests')
+})
+
+test('pricing is asked after applying too', () => {
+  assert.deepEqual(readSurvey('signup', { payPreference: 'other', payOther: ' yearly ', priceTooExpensive: '12' }).answers, {
+    payPreference: 'other',
+    payOther: 'yearly',
+    priceTooExpensive: 12,
+  })
 })
 
 test('the usefulness grid takes known features and known ratings only', () => {

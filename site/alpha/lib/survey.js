@@ -33,6 +33,14 @@ export const FEATURES = [
 const one = (...values) => ({ kind: 'one', values })
 const free = (max = 2000) => ({ kind: 'text', max })
 
+// How someone would prefer to pay and the two price questions: asked after applying and again at the end of the alpha.
+const PRICING = {
+  payPreference: one('subscription', 'usage', 'one-time', 'other'),
+  payOther: free(200),
+  priceTooCheap: { kind: 'price' },
+  priceTooExpensive: { kind: 'price' },
+}
+
 export const QUESTIONS = {
   signup: {
     publish: one('all', 'parts', 'no'),
@@ -44,8 +52,9 @@ export const QUESTIONS = {
     ai: one('never', 'search', 'propose'),
     mcpKnew: one('yes', 'no'),
     mcpConnect: one('yes', 'maybe', 'no'),
-    interests: { kind: 'pick', values: FEATURES, max: 5 },
+    interests: { kind: 'pick', values: FEATURES, max: FEATURES.length },
     wished: free(),
+    ...PRICING,
   },
   end: {
     usefulness: { kind: 'grid', rows: FEATURES, values: ['must', 'nice', 'no', 'untried'] },
@@ -56,10 +65,7 @@ export const QUESTIONS = {
     missMost: free(),
     confused: free(),
     wished: free(),
-    payPreference: one('subscription', 'usage', 'one-time', 'other'),
-    payOther: free(200),
-    priceTooCheap: { kind: 'price' },
-    priceTooExpensive: { kind: 'price' },
+    ...PRICING,
   },
 }
 
