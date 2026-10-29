@@ -27,8 +27,8 @@ export function BrandMark({ className = 'brandmark' }: { className?: string }) {
       className={className}
       src="/brand-mark.png"
       alt=""
-      width={384}
-      height={384}
+      width={192}
+      height={192}
       decoding="async"
       data-testid="brand-mark"
     />
