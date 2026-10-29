@@ -1,6 +1,6 @@
 # ADR 0066 - An idea board is an account-owned canvas of notes, ideas and entries, and never lore
 
-Status: accepted (2026-10-27). Amends ADR 0030. Plan: `docs/design/idea-boards-plan.md`.
+Status: accepted (2026-10-27). Amends ADR 0030. Plan: `docs/history/design/idea-boards-plan.md`.
 
 ## Context
 

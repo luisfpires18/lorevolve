@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/testing/phase4-world-rules-manual-test.md`: a one-time manual pass for work merged into `dev`; reusable checklists stay in `docs/testing/`. Kept verbatim below.
+
 # Phase 4 World Rules - manual test plan
 
 For the owner's pass over World Rules (ADR 0033): explicit statements about how one universe works, kept exactly as the author

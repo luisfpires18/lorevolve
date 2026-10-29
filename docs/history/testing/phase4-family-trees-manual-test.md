@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/testing/phase4-family-trees-manual-test.md`: a one-time manual pass for work merged into `dev`; reusable checklists stay in `docs/testing/`. Kept verbatim below.
+
 # Phase 4 - Family Trees: manual test
 
 The owner's pass over Family Trees (ADR 0035). One universe, about twenty minutes. Everything below is
