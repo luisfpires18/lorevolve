@@ -3,8 +3,12 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   findMentions,
+  findNames,
+  linkNames,
+  markedPieces,
   mentionQueryAt,
   mentionToken,
+  nameTerms,
   plainExcerpt,
   plainMentions,
 } from './src/lore/mentions.ts'
@@ -55,4 +59,53 @@ test('an @ opens a mention only where a mention could start', () => {
   assert.equal(mentionQueryAt('@Akron\nWr', 9), null)
   assert.equal(mentionQueryAt(`${token}`, token.length), null)
   assert.equal(mentionQueryAt('no at here', 10), null)
+})
+
+test('the backdrop pieces are the text exactly, each name apart from its markup', () => {
+  const text = `${token} sat with him.\n\n@[Akron](lore:not-an-id) and ${token}\n`
+  const pieces = markedPieces(text)
+  assert.equal(pieces.map((piece) => piece.text).join(''), text)
+  assert.deepEqual(
+    pieces.filter((piece) => piece.part === 'name').map((piece) => piece.text),
+    ['Akron Wright', 'Akron Wright'],
+  )
+  assert.deepEqual(pieces.slice(0, 3), [
+    { text: '@[', part: 'markup' },
+    { text: 'Akron Wright', part: 'name' },
+    { text: `](lore:${ID})`, part: 'markup' },
+  ])
+  assert.deepEqual(markedPieces('No mention here.'), [{ text: 'No mention here.' }])
+  assert.deepEqual(markedPieces(''), [])
+})
+
+test('names from the scene Lore are found as whole words, longest first, outside mentions', () => {
+  const MAREN = '11111111-1111-4111-8111-111111111111'
+  const SABINE = '22222222-2222-4222-8222-222222222222'
+  const KEEP = '33333333-3333-4333-8333-333333333333'
+  const entries = [
+    { entityId: MAREN, name: 'Maren Varrow', aliases: [] },
+    { entityId: SABINE, name: 'Sabine Varrow', aliases: ['the Warden'] },
+    { entityId: KEEP, name: 'Varrow Keep', aliases: [] },
+  ]
+  // A first name counts; a word another entry's name shares ("Varrow") does not.
+  assert.deepEqual(
+    nameTerms(entries).map((term) => term.term),
+    ['Maren Varrow', 'Sabine Varrow', 'the Warden', 'Varrow Keep', 'Maren', 'Sabine'],
+  )
+  const text = `@[Maren Varrow](lore:${MAREN}) told Sabine. Sabine Varrow, the Warden, held Varrow Keep; Sabines and sabine did not.`
+  const found = findNames(text, entries)
+  assert.deepEqual(
+    found.map((match) => [text.slice(match.start, match.start + match.length), match.entityId]),
+    [
+      ['Sabine', SABINE],
+      ['Sabine Varrow', SABINE],
+      ['the Warden', SABINE],
+      ['Varrow Keep', KEEP],
+    ],
+  )
+  assert.equal(
+    linkNames(text, found.slice(0, 1)),
+    text.replace('told Sabine.', `told @[Sabine](lore:${SABINE}).`),
+  )
+  assert.deepEqual(findNames('Nobody here.', entries), [])
 })

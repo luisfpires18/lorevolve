@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -9,7 +10,7 @@ import {
 } from 'react'
 import { useUniverseAccess } from '../universes/access'
 import { SaveAction } from './SaveAction'
-import { FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
+import { AtSign, FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
@@ -19,7 +20,8 @@ import { MentionSuggestions } from './MentionSuggestions'
 import { useMentionSearch } from '../lore/mentionSearch'
 import { caretPoint } from '../lib/caret'
 import { findMentions, mentionQueryAt, mentionToken, plainMentions } from '../lore/mentions'
-import { MentionProse } from './MentionProse'
+import { MentionMarks, MentionProse } from './MentionProse'
+import { NameLinker } from './NameLinker'
 import type { EntitySummary } from '../lore/types'
 import { ManuscriptHistory } from './ManuscriptHistory'
 import { ReviewComments } from './ReviewComments'
@@ -154,9 +156,11 @@ export function ManuscriptEditor({
   const [historyKey, setHistoryKey] = useState(0)
   // Write shows the manuscript as stored, mentions as their markup; Read shows it as prose, each mention a link.
   const [isReading, setIsReading] = useState(false)
+  const [isLinking, setIsLinking] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const inFlight = useRef(false)
   const editor = useRef<HTMLTextAreaElement>(null)
+  const backdrop = useRef<HTMLDivElement>(null)
   const shortcut = useRef<() => void>(() => {})
   const suggestionsId = useId()
   // The @ mention being typed (issue 31): where its `@` is, the words after it, and where to draw the suggestions.
@@ -202,6 +206,13 @@ export function ManuscriptEditor({
   // copy is still being looked for the box waits too, so nothing typed can overwrite a copy nobody has seen yet.
   const offer = isReady && found && found.content !== stored.content ? found : null
   const isHeld = isReady && (offer !== null || found === undefined)
+  const mentioned = isReady ? findMentions(draft) : []
+  // Only prose that holds a mention gets the backdrop; everything else is the plain text box it always was.
+  const isMarked = mentioned.length > 0 && !isHeld
+  useLayoutEffect(() => {
+    // The backdrop follows the text box wherever a render leaves it (its first showing included); scrolling is onScroll.
+    if (backdrop.current && editor.current) backdrop.current.scrollTop = editor.current.scrollTop
+  })
 
   // A copy identical to what is saved is nothing to recover: it goes without a word.
   useEffect(() => {
@@ -336,6 +347,20 @@ export function ManuscriptEditor({
     setAnnouncement(`Mentioned ${row.name}.`)
   }
 
+  /** The names the author confirmed, made mentions as one edit of the text box: one undo step, unsaved until Save. */
+  function linkFromLore(next: string, count: number) {
+    setIsLinking(false)
+    const box = editor.current
+    if (!box) return
+    box.focus()
+    box.select()
+    if (!document.execCommand('insertText', false, next)) {
+      box.value = next
+      setDraft(next)
+    }
+    setAnnouncement(count === 1 ? 'Linked 1 name.' : `Linked ${count} names.`)
+  }
+
   function onEditorKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
     if (mention === null) return
     const rows = suggestions.rows
@@ -467,7 +492,7 @@ export function ManuscriptEditor({
               storyId={storyId}
               scene={scene}
               chronology={chronology}
-              mentions={isReady ? findMentions(draft) : []}
+              mentions={mentioned}
               onSceneSaved={onSceneSaved}
               onSceneChanged={onSceneChanged}
             />
@@ -503,6 +528,20 @@ export function ManuscriptEditor({
                 >
                   <ActionIcon icon={FilePenLine} />
                   Suggest changes
+                </button>
+              ) : null}
+              {access.editContent && scene.entities.some((entity) => !entity.isTrashed) ? (
+                <button
+                  className="actionmenu__item"
+                  type="button"
+                  onClick={() => {
+                    setIsReading(false)
+                    setIsLinking(true)
+                  }}
+                  data-testid="manuscript-link-names"
+                >
+                  <ActionIcon icon={AtSign} />
+                  Link names from this scene’s Lore
                 </button>
               ) : null}
               <Link
@@ -684,8 +723,26 @@ export function ManuscriptEditor({
             </div>
           ) : null}
 
+          {isLinking && access.editContent && !isReading && !isHeld ? (
+            <NameLinker
+              universeId={universeId}
+              entities={scene.entities}
+              text={draft}
+              onLink={linkFromLore}
+              onClose={() => setIsLinking(false)}
+            />
+          ) : null}
           {access.editContent && !isReading ? (
-            <div className="manuscript__write">
+            <div className="manuscript__write" data-marked={isMarked ? 'true' : undefined}>
+              {isMarked ? (
+                <div
+                  className="manuscript__text manuscript__backdrop"
+                  ref={backdrop}
+                  aria-hidden="true"
+                >
+                  <MentionMarks text={draft} />
+                </div>
+              ) : null}
               <label className="visually-hidden" htmlFor={editorId}>
                 Manuscript of “{scene.title}”
               </label>
@@ -697,6 +754,9 @@ export function ManuscriptEditor({
                 onChange={(event) => {
                   setDraft(event.target.value)
                   trackMention(event.target)
+                }}
+                onScroll={(event) => {
+                  if (backdrop.current) backdrop.current.scrollTop = event.currentTarget.scrollTop
                 }}
                 onSelect={onEditorSelect}
                 onKeyDown={onEditorKeyDown}

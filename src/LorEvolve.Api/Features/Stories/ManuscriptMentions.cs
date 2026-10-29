@@ -46,6 +46,26 @@ public static partial class ManuscriptMentions
         text.Contains("](lore:", StringComparison.Ordinal) ? Token().Replace(text, match => match.Groups[1].Value) : text;
 
     /// <summary>
+    /// <see cref="Plain"/>, with each mention where its name now sits in the plain text - what the public story page needs to
+    /// link a mention whose entry is itself public (ADR 0058 amendment).
+    /// </summary>
+    public static (string Text, IReadOnlyList<Mention> Mentions) PlainWithMentions(string text)
+    {
+        var mentions = new List<Mention>();
+        var plain = new System.Text.StringBuilder(text.Length);
+        var at = 0;
+        foreach (var mention in Find(text))
+        {
+            plain.Append(text, at, mention.Start - at);
+            mentions.Add(mention with { Start = plain.Length, Length = mention.Name.Length });
+            plain.Append(mention.Name);
+            at = mention.Start + mention.Length;
+        }
+
+        return mentions.Count == 0 ? (text, mentions) : (plain.Append(text, at, text.Length - at).ToString(), mentions);
+    }
+
+    /// <summary>
     /// <see cref="Plain"/>, for a window into the prose that may cut a mention in two: whatever of a mention's markup is left
     /// at either edge goes too and the part of the name it held stays, so a passage never shows <c>](lore:</c> to a reader.
     /// </summary>

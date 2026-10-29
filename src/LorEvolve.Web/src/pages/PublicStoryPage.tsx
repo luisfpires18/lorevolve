@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowUpRight } from 'lucide-react'
 import { PortalError, PortalMissing } from '../components/PortalMissing'
@@ -7,6 +7,7 @@ import { formatDate } from '../lib/dates'
 import {
   getPublicStory,
   getPublicUniverse,
+  lorePath,
   worldPath,
   type PublicStoryDetail,
   type PublicUniverse,
@@ -70,12 +71,39 @@ export default function PublicStoryPage() {
   return <Story world={current.world} story={current.story} />
 }
 
-/** Plain prose as its author wrote it: a blank line starts a paragraph, a single line break stays a line break. */
-function paragraphs(text: string) {
-  return text
-    .replace(/\r\n?/g, '\n')
-    .split(/\n[ \t]*\n+/)
-    .filter((paragraph) => paragraph.trim().length > 0)
+/**
+ * Plain prose as its author wrote it: a blank line starts a paragraph, a single line break stays a line break. A mention
+ * whose entry is published is a link to it (ADR 0058 amendment); a name never holds a line break, so none is split.
+ */
+function paragraphs(world: string, { text, links }: PublicStoryDetail['manuscript'][number]) {
+  const out: ReactNode[][] = [[]]
+  const add = (chunk: string) =>
+    chunk
+      .replace(/\r\n?/g, '\n')
+      .split(/\n[ \t]*\n+/)
+      .forEach((piece, at) => {
+        if (at > 0) out.push([])
+        if (piece !== '') out[out.length - 1].push(piece)
+      })
+  let at = 0
+  for (const link of links) {
+    add(text.slice(at, link.start))
+    out[out.length - 1].push(
+      <Link
+        key={link.start}
+        className="mention"
+        to={lorePath(world, link.loreSlug)}
+        data-testid="public-story-mention"
+      >
+        {text.slice(link.start, link.start + link.length)}
+      </Link>,
+    )
+    at = link.start + link.length
+  }
+  add(text.slice(at))
+  return out.filter((paragraph) =>
+    paragraph.some((node) => typeof node !== 'string' || node.trim().length > 0),
+  )
 }
 
 function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDetail }) {
@@ -184,7 +212,7 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
                 <bdi>{part.title}</bdi>
               </h3>
               <div className="pstory__prose">
-                {paragraphs(part.text).map((paragraph, at) => (
+                {paragraphs(world.slug, part).map((paragraph, at) => (
                   <p key={at}>{paragraph}</p>
                 ))}
               </div>

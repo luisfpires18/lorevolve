@@ -34,6 +34,28 @@ export function findMentions(text: string): Mention[] {
   }))
 }
 
+/**
+ * The text in pieces for the Write view's backdrop (ADR 0058 amendment): each mention's name apart from its markup, the
+ * rest as it is. Joined, the pieces are exactly `text`, character for character - the backdrop lines up with the text box
+ * only while that holds.
+ */
+export function markedPieces(text: string): { text: string; part?: 'markup' | 'name' }[] {
+  const pieces: { text: string; part?: 'markup' | 'name' }[] = []
+  let at = 0
+  for (const mention of findMentions(text)) {
+    if (mention.start > at) pieces.push({ text: text.slice(at, mention.start) })
+    const nameEnd = mention.start + 2 + mention.name.length
+    pieces.push(
+      { text: '@[', part: 'markup' },
+      { text: mention.name, part: 'name' },
+      { text: text.slice(nameEnd, mention.start + mention.length), part: 'markup' },
+    )
+    at = mention.start + mention.length
+  }
+  if (at < text.length) pieces.push({ text: text.slice(at) })
+  return pieces
+}
+
 /** The prose as a reader reads it: each mention as its name, in plain text. */
 export function plainMentions(text: string) {
   return text.includes('](lore:') ? text.replace(TOKEN, (_whole, name: string) => name) : text
@@ -74,4 +96,78 @@ export function mentionQueryAt(
   const previous = start === 0 ? '' : text[start - 1]
   if (previous !== '' && !/[\s([{"'“‘«—–-]/.test(previous)) return null
   return { start, query }
+}
+
+/** An entry of the scene's Lore the prose may name: its name and aliases. */
+export interface NameSource {
+  entityId: string
+  name: string
+  aliases: string[]
+}
+
+/** A place the prose names an entry in plain words, not yet a mention. `term` is the name or alias it matched. */
+export interface NameMatch {
+  start: number
+  length: number
+  entityId: string
+  term: string
+}
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * The terms each entry is known by: its name, its aliases, and the first word of a name of two or more words (a first
+ * name, "Sabine" for "Sabine Varrow") when that word is at least three letters and no other entry's name holds it - so
+ * a shared family name never counts.
+ */
+export function nameTerms(entries: NameSource[]): { entityId: string; term: string }[] {
+  const words = (name: string) => name.split(/\s+/).filter(Boolean)
+  const terms = new Map<string, string>()
+  for (const entry of entries) {
+    for (const term of [entry.name, ...entry.aliases].map((value) => value.trim())) {
+      if (term !== '' && !/[[\]\r\n]/.test(term) && !terms.has(term))
+        terms.set(term, entry.entityId)
+    }
+  }
+  for (const entry of entries) {
+    const [first, ...rest] = words(entry.name)
+    if (rest.length === 0 || first.length < 3 || terms.has(first)) continue
+    const shared = entries.some(
+      (other) => other.entityId !== entry.entityId && words(other.name).includes(first),
+    )
+    if (!shared) terms.set(first, entry.entityId)
+  }
+  return Array.from(terms, ([term, entityId]) => ({ entityId, term }))
+}
+
+/**
+ * Every place `text` names one of `entries` as a whole word, exactly as written (case counts), outside any mention it
+ * already holds. Longer terms win, so "Sabine Varrow" is one match, not "Sabine" and more. In order, never overlapping.
+ */
+export function findNames(text: string, entries: NameSource[]): NameMatch[] {
+  const taken = findMentions(text).map((mention) => [mention.start, mention.start + mention.length])
+  const matches: NameMatch[] = []
+  const free = (start: number, end: number) => !taken.some(([from, to]) => start < to && end > from)
+  const terms = nameTerms(entries).sort((a, b) => b.term.length - a.term.length)
+  for (const { entityId, term } of terms) {
+    const pattern = new RegExp(`(?<![\\p{L}\\p{N}_])${escapeRegExp(term)}(?![\\p{L}\\p{N}_])`, 'gu')
+    for (const match of text.matchAll(pattern)) {
+      const end = match.index + term.length
+      if (!free(match.index, end)) continue
+      matches.push({ start: match.index, length: term.length, entityId, term })
+      taken.push([match.index, end])
+    }
+  }
+  return matches.sort((a, b) => a.start - b.start)
+}
+
+/** `text` with each of `matches` made a mention, named as the prose names it. */
+export function linkNames(text: string, matches: NameMatch[]) {
+  let out = ''
+  let at = 0
+  for (const match of [...matches].sort((a, b) => a.start - b.start)) {
+    out += text.slice(at, match.start) + mentionToken(match.term, match.entityId)
+    at = match.start + match.length
+  }
+  return out + text.slice(at)
 }

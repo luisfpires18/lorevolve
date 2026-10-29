@@ -97,7 +97,7 @@ public sealed partial class StoryContentPublicationTests(LorEvolveApiFactory fac
 
         using var document = JsonDocument.Parse(body);
         Assert.Equal(["summary", "title"], Keys(document.RootElement.GetProperty("scenes")[0]));
-        Assert.Equal(["text", "title"], Keys(document.RootElement.GetProperty("manuscript")[0]));
+        Assert.Equal(["links", "text", "title"], Keys(document.RootElement.GetProperty("manuscript")[0]));
         Assert.Equal(["beats", "description", "title"], Keys(document.RootElement.GetProperty("plot")[0]));
         Assert.Equal(["description", "title"], Keys(document.RootElement.GetProperty("plot")[0].GetProperty("beats")[0]));
 
