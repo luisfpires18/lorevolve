@@ -529,11 +529,11 @@
     <dialog class="apply" id="apply" aria-labelledby="apply-title">
       <form class="apply__form" id="apply-form" novalidate>
         <div class="apply__head">
-          <p class="apply__step" id="apply-step">Step 1 of 2</p>
+          <p class="apply__step" id="apply-step"></p>
           <button class="apply__close" type="button" data-close-apply aria-label="Close">×</button>
         </div>
 
-        <fieldset class="apply__page" data-page="1">
+        <fieldset class="apply__page" data-page="apply">
           <legend class="apply__title" id="apply-title">Join the alpha</legend>
           <p class="apply__intro">
             Tell me a little about yourself. I'll email you when there's a spot.
@@ -565,60 +565,77 @@
             or sold, and you can ask for it to be deleted at any time.
           </p>
 
-          <div class="apply__actions">
-            <button class="landing-button landing-button--primary" type="button" data-next>
-              Next
-            </button>
-          </div>
-        </fieldset>
-
-        <fieldset class="apply__page" data-page="2" hidden>
-          <legend class="apply__title">Optional: help with pricing</legend>
-          <p class="apply__intro">
-            Every question here is optional. Answer any you like to help me work out what
-            LorEvolve should cost one day, or leave them empty and press Send.
-          </p>
-
-          <fieldset class="field">
-            <legend class="field__label">If LorEvolve were paid, how would you prefer to pay?</legend>
-            <label class="choice"><input type="radio" name="payPreference" value="subscription" /> A monthly subscription</label>
-            <label class="choice"><input type="radio" name="payPreference" value="usage" /> Only for what I use</label>
-            <label class="choice"><input type="radio" name="payPreference" value="one-time" /> A one-time purchase</label>
-            <label class="choice"><input type="radio" name="payPreference" value="other" /> Something else</label>
-            <input class="choice__other" name="payOther" type="text" maxlength="200" aria-label="How else would you prefer to pay?" hidden />
-          </fieldset>
-
-          <label class="field">
-            <span class="field__label">At what monthly price would it feel so cheap you'd doubt it?</span>
-            <span class="money"><span aria-hidden="true">€</span><input name="priceTooCheap" type="number" inputmode="decimal" min="0" max="10000" step="0.01" aria-describedby="per-month" /></span>
-          </label>
-          <label class="field">
-            <span class="field__label">At what monthly price would it be too expensive to consider?</span>
-            <span class="money"><span aria-hidden="true">€</span><input name="priceTooExpensive" type="number" inputmode="decimal" min="0" max="10000" step="0.01" aria-describedby="per-month" /></span>
-          </label>
-          <p class="field__hint" id="per-month">In euros, per month.</p>
-
-          <label class="field">
-            <span class="field__label">Anything you'd like to see in it, or any suggestion?</span>
-            <textarea name="suggestion" rows="4" maxlength="2000"></textarea>
-          </label>
-
           <div class="apply__turnstile" id="turnstile"></div>
-          <p class="apply__error" id="apply-error" role="alert" hidden></p>
-
+          <p class="apply__error" data-error role="alert" hidden></p>
           <div class="apply__actions">
-            <button class="landing-button" type="button" data-back>Back</button>
             <button class="landing-button landing-button--primary" type="submit" data-send>Send</button>
           </div>
         </fieldset>
 
-        <div class="apply__page apply__done" data-page="done" hidden>
+        <div class="apply__page" data-page="applied" hidden>
           <h2 class="apply__title" tabindex="-1">You're on the list.</h2>
           <p class="apply__intro" id="apply-thanks"></p>
+          <p class="apply__intro">
+            Want to help shape LorEvolve? A few questions about how you'd use it, about two
+            minutes, every one optional.
+          </p>
           <div class="apply__actions">
-            <button class="landing-button landing-button--primary" type="button" data-close-apply>
-              Close
+            <button class="landing-button" type="button" data-close-apply>No thanks</button>
+            <button class="landing-button landing-button--primary" type="button" data-goto="signup">
+              Answer a few questions
             </button>
+          </div>
+        </div>
+
+        <fieldset class="apply__page" data-page="signup" hidden>
+          <legend class="apply__title">A few questions</legend>
+          <p class="apply__intro">All optional. Skip any you like, or all of them.</p>
+          <div data-questions="signup"></div>
+          <p class="apply__error" data-error role="alert" hidden></p>
+          <div class="apply__actions">
+            <button class="landing-button" type="button" data-close-apply>Skip</button>
+            <button class="landing-button landing-button--primary" type="submit" data-send>Send answers</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="apply__page" data-page="end-features" hidden>
+          <legend class="apply__title">How useful was each part?</legend>
+          <p class="apply__intro" id="end-greeting">
+            Thanks for testing LorEvolve. Every question is optional.
+          </p>
+          <div data-questions="end-features"></div>
+          <div class="apply__actions">
+            <button class="landing-button landing-button--primary" type="button" data-goto="end-more">Next</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="apply__page" data-page="end-more" hidden>
+          <legend class="apply__title">A few more questions</legend>
+          <p class="apply__intro">Still all optional.</p>
+          <div data-questions="end-more"></div>
+          <p class="apply__error" data-error role="alert" hidden></p>
+          <div class="apply__actions">
+            <button class="landing-button" type="button" data-goto="end-features">Back</button>
+            <button class="landing-button landing-button--primary" type="submit" data-send>Send answers</button>
+          </div>
+        </fieldset>
+
+        <div class="apply__page" data-page="thanks" hidden>
+          <h2 class="apply__title" tabindex="-1">Thank you.</h2>
+          <p class="apply__intro">Your answers are in. They go straight into what gets built next.</p>
+          <div class="apply__actions">
+            <button class="landing-button landing-button--primary" type="button" data-close-apply>Close</button>
+          </div>
+        </div>
+
+        <div class="apply__page" data-page="badlink" hidden>
+          <h2 class="apply__title" tabindex="-1">This link doesn't work.</h2>
+          <p class="apply__intro">
+            It may be incomplete. Copy the whole link from the email, or write to
+            <a href="mailto:support@lorevolve.com">support@lorevolve.com</a> for a new one.
+          </p>
+          <div class="apply__actions">
+            <button class="landing-button landing-button--primary" type="button" data-close-apply>Close</button>
           </div>
         </div>
       </form>

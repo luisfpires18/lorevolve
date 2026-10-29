@@ -1,29 +1,209 @@
-// The application dialog: two steps, Next and Back keep what was typed, Send posts everything to /api/apply.
-// Turnstile is loaded the first time the dialog opens, so the page itself talks to nobody but its own host.
+// The dialog. Apply: one page, sent to /api/apply. After it, optional questions sent to /api/survey with the token the
+// application returned. The end-of-alpha survey opens the same dialog from a personal link, /?survey=<token>.
+// Turnstile is loaded the first time the application page opens, so the page itself talks to nobody but its own host.
+// The questions mirror lib/survey.js, which is what the server accepts.
 
 const dialog = document.getElementById('apply')
 const form = document.getElementById('apply-form')
 const stepLabel = document.getElementById('apply-step')
-const errorBox = document.getElementById('apply-error')
-const sendButton = form.querySelector('[data-send]')
-const payOther = form.elements.payOther
 
 let turnstileReady = null
 let widgetId = null
+let surveyToken = null
+let surveyPart = null
+
+// -- The questions --
+
+const FEATURES = [
+  ['lore', 'Lore entries and custom types'],
+  ['types', 'Nested types and groups'],
+  ['relations', 'Relations and relation kinds'],
+  ['progression', 'Progression stages'],
+  ['canonStatus', 'Idea, Draft, Canon status'],
+  ['history', 'Version history and Trash'],
+  ['privateNotes', 'Private notes'],
+  ['review', 'Comments and suggestions'],
+  ['knowledge', 'Character knowledge'],
+  ['familyTree', 'Family trees'],
+  ['maps', 'Maps and pins'],
+  ['worldRules', 'World rules'],
+  ['canonIntegrity', 'Canon checks'],
+  ['calendar', 'Custom calendar'],
+  ['stories', 'Stories and manuscript'],
+  ['plot', 'Plot arcs and beats'],
+  ['timeline', 'Timeline'],
+  ['ideas', 'Ideas'],
+  ['collaboration', 'Collaboration'],
+  ['assistant', 'AI assistant'],
+  ['mcp', 'Connecting Claude or ChatGPT (MCP)'],
+  ['publishing', 'Publishing and Explore'],
+  ['backup', 'Backup and export'],
+  ['search', 'Search'],
+]
+
+const one = (name, label, options) => ({ kind: 'one', name, label, options })
+const free = (name, label, max = 2000) => ({ kind: 'text', name, label, max })
+
+const QUESTIONS = {
+  signup: [
+    one('publish', 'Would you publish your universe for others to read?', [
+      ['all', 'Yes, all of it'],
+      ['parts', 'Yes, parts of it'],
+      ['no', 'No, it stays private'],
+    ]),
+    one('browse', "Would you browse other authors' published universes?", [
+      ['often', 'Often'],
+      ['sometimes', 'Sometimes'],
+      ['no', 'No'],
+    ]),
+    one('votes', 'Votes on published universes?', [
+      ['updown', 'Upvotes and downvotes'],
+      ['up', 'Upvotes only'],
+      ['none', 'No votes'],
+    ]),
+    one('brainstorm', 'How do you brainstorm?', [
+      ['text', 'Writing text'],
+      ['board', 'Cards on a board'],
+      ['both', 'Both'],
+      ['none', "I don't"],
+    ]),
+    one('ideasLive', 'Where should ideas live?', [
+      ['universe', 'Inside a universe'],
+      ['loose', 'Loose, before they belong to one'],
+      ['both', 'Both'],
+    ]),
+    one('invite', 'Would you invite others into a universe?', [
+      ['cowriters', 'Yes, as co-writers'],
+      ['reviewers', 'Yes, as reviewers or readers'],
+      ['no', 'No'],
+    ]),
+    one('ai', 'Would you use an AI assistant in your universe?', [
+      ['never', 'Never'],
+      ['search', 'Only to search my lore and answer questions'],
+      ['propose', 'Also to propose changes I approve'],
+    ]),
+    one('mcpKnew', 'Did you know what an MCP connection is before this?', [
+      ['yes', 'Yes'],
+      ['no', 'No'],
+    ]),
+    one('mcpConnect', 'Would you connect Claude or ChatGPT to your universe?', [
+      ['yes', 'Yes'],
+      ['maybe', 'Maybe'],
+      ['no', 'No'],
+    ]),
+    { kind: 'pick', name: 'interests', label: 'Which features interest you most?', hint: 'Pick up to 5.', max: 5 },
+    free('wished', "Which features would you like that LorEvolve doesn't have?"),
+  ],
+  'end-features': [{ kind: 'grid', name: 'usefulness' }],
+  'end-more': [
+    one('typesEffort', 'Defining your own types and fields felt:', [
+      ['freeing', 'Freeing'],
+      ['right', 'About right'],
+      ['toomuch', 'Like too much work'],
+    ]),
+    free('progressionMissing', 'Is anything missing from Progression for your stories?'),
+    one('timelineAuto', 'Which dates should fill the timeline in on their own?', [
+      ['birthsDeaths', 'Births and deaths'],
+      ['characterEvents', 'Other character events too'],
+      ['everyDate', 'Every dated field'],
+      ['none', 'None, I add moments myself'],
+    ]),
+    free('mapsWish', 'What would you want from interactive maps?'),
+    free('missMost', 'Which feature would you miss most if it disappeared?'),
+    free('confused', 'What confused you or got in your way?'),
+    free('wished', "Which features would you like that LorEvolve doesn't have?"),
+    one('payPreference', 'If LorEvolve were paid, how would you prefer to pay?', [
+      ['subscription', 'A monthly subscription'],
+      ['usage', 'Only for what I use'],
+      ['one-time', 'A one-time purchase'],
+      ['other', 'Something else'],
+    ]),
+    { kind: 'other', name: 'payOther', label: 'How else would you prefer to pay?' },
+    { kind: 'price', name: 'priceTooCheap', label: "At what monthly price would it feel so cheap you'd doubt it?" },
+    { kind: 'price', name: 'priceTooExpensive', label: 'At what monthly price would it be too expensive to consider?' },
+  ],
+}
+
+const RATINGS = [
+  ['must', 'Must have'],
+  ['nice', 'Nice to have'],
+  ['no', "Don't need"],
+  ['untried', "Didn't try"],
+]
+
+const radios = (name, options) =>
+  options.map(([value, label]) => `<label class="choice"><input type="radio" name="${name}" value="${value}" /> ${label}</label>`).join('')
+
+function render(question) {
+  switch (question.kind) {
+    case 'one':
+      return `<fieldset class="field"><legend class="field__label">${question.label}</legend>${radios(question.name, question.options)}</fieldset>`
+    case 'text':
+      return `<label class="field"><span class="field__label">${question.label}</span><textarea name="${question.name}" rows="3" maxlength="${question.max}"></textarea></label>`
+    case 'pick':
+      return `<fieldset class="field" data-pick="${question.max}"><legend class="field__label">${question.label}</legend><p class="field__hint">${question.hint}</p>${FEATURES.map(([key, label]) => `<label class="choice"><input type="checkbox" name="${question.name}" value="${key}" /> ${label}</label>`).join('')}</fieldset>`
+    case 'grid':
+      return FEATURES.map(
+        ([key, label]) =>
+          `<fieldset class="field rate"><legend class="field__label">${label}</legend><div class="rate__options">${RATINGS.map(([value, text]) => `<label><input type="radio" name="u_${key}" value="${value}" /><span>${text}</span></label>`).join('')}</div></fieldset>`,
+      ).join('')
+    case 'other':
+      return `<input class="choice__other" name="${question.name}" type="text" maxlength="200" aria-label="${question.label}" hidden />`
+    case 'price':
+      return `<label class="field"><span class="field__label">${question.label}</span><span class="field__hint">In euros, per month.</span><span class="money"><span aria-hidden="true">€</span><input name="${question.name}" type="number" inputmode="decimal" min="0" max="10000" step="0.01" /></span></label>`
+  }
+}
+
+for (const container of form.querySelectorAll('[data-questions]')) {
+  container.innerHTML = QUESTIONS[container.dataset.questions].map(render).join('')
+}
+// "Something else" opens its text box right under the choice.
+const payOther = form.elements.payOther
+form.querySelector('input[name="payPreference"][value="other"]').closest('label').after(payOther)
+
+// Read page by page: the signup and end-of-alpha surveys share some question names (wished).
+function answers(pages) {
+  const result = {}
+  for (const page of pages) {
+    const section = form.querySelector(`[data-page="${page}"]`)
+    const value = (name) =>
+      section.querySelector(`[name="${name}"]:is(textarea, input:not([type="radio"])), [name="${name}"]:checked`)?.value ?? ''
+    for (const question of QUESTIONS[page]) {
+      if (question.kind === 'grid') {
+        result.usefulness = Object.fromEntries(FEATURES.map(([key]) => [key, value(`u_${key}`)]).filter(([, rating]) => rating))
+      } else if (question.kind === 'pick') {
+        result[question.name] = [...section.querySelectorAll(`[name="${question.name}"]:checked`)].map((box) => box.value)
+      } else {
+        result[question.name] = value(question.name)
+      }
+    }
+  }
+  return result
+}
+
+// -- Pages --
+
+const STEPS = { 'end-features': 'Part 1 of 2', 'end-more': 'Part 2 of 2' }
 
 function showPage(page) {
   for (const section of form.querySelectorAll('[data-page]')) section.hidden = section.dataset.page !== page
-  stepLabel.textContent = page === 'done' ? '' : `Step ${page} of 2`
+  stepLabel.textContent = STEPS[page] ?? ''
   const target = form.querySelector(`[data-page="${page}"]`)
-  const first = page === 'done' ? target.querySelector('.apply__title') : target.querySelector('input, textarea')
+  const first = target.querySelector('h2.apply__title') ?? target.querySelector('input, textarea')
   dialog.scrollTop = 0
   first?.focus({ preventScroll: true })
-  if (page === '2') renderTurnstile()
+  if (page === 'apply') renderTurnstile()
+}
+
+function currentPage() {
+  return form.querySelector('[data-page]:not([hidden])')?.dataset.page ?? 'apply'
 }
 
 function showError(message) {
-  errorBox.textContent = message
-  errorBox.hidden = !message
+  for (const box of form.querySelectorAll('[data-error]')) {
+    box.textContent = message
+    box.hidden = !message || box.closest('[data-page]').hidden
+  }
 }
 
 function loadTurnstile() {
@@ -62,15 +242,10 @@ function openDialog() {
   showError('')
   if (!dialog.open) dialog.showModal()
   showPage(currentPage())
-  loadTurnstile().catch(() => {})
 }
 
-function currentPage() {
-  return form.querySelector('[data-page]:not([hidden])')?.dataset.page ?? '1'
-}
-
-function stepOneValid() {
-  for (const field of form.querySelector('[data-page="1"]').querySelectorAll('input, textarea')) {
+function pageValid(page) {
+  for (const field of form.querySelector(`[data-page="${page}"]`).querySelectorAll('input, textarea')) {
     if (!field.checkValidity()) {
       field.reportValidity()
       return false
@@ -79,98 +254,152 @@ function stepOneValid() {
   return true
 }
 
-function payload() {
+// -- Sending --
+
+const MESSAGES = {
+  verification: "The spam check didn't go through. Please try it again.",
+  email: "That email address doesn't look right. Could you check it?",
+  too_long: 'One of the answers is too long. Please shorten it.',
+  unknown_token: "This survey link doesn't work any more. Write to support@lorevolve.com for a new one.",
+}
+
+async function post(url, body) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const reply = await response.json().catch(() => ({}))
+  return { ok: response.ok, reply }
+}
+
+async function sendApplication() {
   const values = form.elements
-  return {
+  const body = {
     email: values.email.value,
     name: values.name.value,
     useCase: values.useCase.value,
     consent: values.consent.checked,
-    payPreference: values.payPreference.value || null,
-    payOther: values.payOther.value,
-    priceTooCheap: values.priceTooCheap.value,
-    priceTooExpensive: values.priceTooExpensive.value,
-    suggestion: values.suggestion.value,
     turnstileToken: widgetId === null ? null : window.turnstile.getResponse(widgetId),
   }
+  if (!body.turnstileToken) {
+    showError('Please wait a moment for the spam check to finish, then press Send again.')
+    return false
+  }
+  const { ok, reply } = await post('/api/apply', body)
+  if (!ok) {
+    showError(MESSAGES[reply.error] ?? MESSAGES[reply.field] ?? "Something went wrong and your answers weren't saved. Please try again in a moment.")
+    return false
+  }
+  surveyToken = reply.surveyToken
+  surveyPart = 'signup'
+  document.getElementById('apply-thanks').textContent =
+    `Thanks, ${body.name.trim()}. Invitations go out in small waves, so it may take a little while. ` +
+    `I'll write to ${body.email.trim()} when it's your turn.`
+  showPage('applied')
+  return true
 }
 
-const MESSAGES = {
-  verification: "The spam check didn't go through. Please try it again.",
-  email: "That email address doesn't look right. Go back and check it?",
-  too_long: 'One of the answers is too long. Please shorten it.',
+async function sendSurvey() {
+  const pages = surveyPart === 'end' ? ['end-features', 'end-more'] : ['signup']
+  const { ok, reply } = await post('/api/survey', { token: surveyToken, part: surveyPart, answers: answers(pages) })
+  if (!ok) {
+    showError(MESSAGES[reply.error] ?? "Something went wrong and your answers weren't saved. Please try again in a moment.")
+    return false
+  }
+  showPage('thanks')
+  return true
 }
 
 async function send(event) {
   event.preventDefault()
   showError('')
-  // Enter in a step 1 field submits the form; there it means Next.
-  if (currentPage() === '1') {
-    if (stepOneValid()) showPage('2')
-    return
-  }
-  if (!stepOneValid()) {
-    showPage('1')
-    return
-  }
-  for (const field of form.querySelector('[data-page="2"]').querySelectorAll('input, textarea')) {
-    if (!field.checkValidity()) {
-      field.reportValidity()
-      return
-    }
-  }
-  const body = payload()
-  if (!body.turnstileToken) {
-    showError('Please wait a moment for the spam check to finish, then press Send again.')
-    return
-  }
+  const page = currentPage()
+  if (!pageValid(page)) return
 
-  sendButton.disabled = true
-  sendButton.textContent = 'Sending…'
+  const button = form.querySelector(`[data-page="${page}"] [data-send]`)
+  const label = button.textContent
+  button.disabled = true
+  button.textContent = 'Sending…'
   try {
-    const response = await fetch('/api/apply', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    if (response.ok) {
-      document.getElementById('apply-thanks').textContent =
-        `Thanks, ${body.name.trim()}. Invitations go out in small waves, so it may take a little while. ` +
-        `I'll write to ${body.email.trim()} when it's your turn.`
-      showPage('done')
-      return
-    }
-    const problem = await response.json().catch(() => ({}))
-    showError(
-      MESSAGES[problem.error] ??
-        MESSAGES[problem.field] ??
-        "Something went wrong and your answers weren't saved. Please try again in a moment.",
-    )
+    if (page === 'apply') await sendApplication()
+    else await sendSurvey()
   } catch {
     showError("Your answers couldn't be sent. Check your connection and try again; nothing you typed is lost.")
   } finally {
-    sendButton.disabled = false
-    sendButton.textContent = 'Send'
-    // A token is good for one check; after a failed send the next try needs a fresh one.
-    if (currentPage() !== 'done' && widgetId !== null) window.turnstile.reset(widgetId)
+    button.disabled = false
+    button.textContent = label
+    // A Turnstile token is good for one check; after a failed send the next try needs a fresh one.
+    if (currentPage() === 'apply' && widgetId !== null) window.turnstile.reset(widgetId)
   }
 }
 
-function closeDialog() {
-  dialog.close()
-}
+// -- Wiring --
 
-// After a successful send, the next open starts a fresh application.
 dialog.addEventListener('close', () => {
-  if (!form.querySelector('[data-page="done"]').hidden) {
+  // Once an application or a survey is sent, or skipped, the next open starts a fresh application.
+  // A half-filled application or end-of-alpha survey is kept for when the dialog opens again.
+  if (['applied', 'signup', 'thanks', 'badlink'].includes(currentPage())) {
     form.reset()
     payOther.hidden = true
-    showPage('1')
+    surveyToken = null
+    surveyPart = null
+    showPage('apply')
     if (widgetId !== null) window.turnstile.reset(widgetId)
   }
 })
 
-// The Discord invite: paste it here and every Discord link on the page appears. Empty keeps them hidden.
+// A click on the backdrop (the dialog element itself, outside the form) closes it.
+dialog.addEventListener('click', (event) => {
+  if (event.target === dialog) dialog.close()
+})
+
+for (const button of document.querySelectorAll('[data-open-apply]')) button.addEventListener('click', openDialog)
+for (const button of dialog.querySelectorAll('[data-close-apply]')) button.addEventListener('click', () => dialog.close())
+for (const button of dialog.querySelectorAll('[data-goto]')) {
+  button.addEventListener('click', () => {
+    showError('')
+    showPage(button.dataset.goto)
+  })
+}
+form.addEventListener('submit', send)
+
+form.addEventListener('change', (event) => {
+  const { target } = event
+  if (target.name === 'payPreference') {
+    payOther.hidden = target.value !== 'other'
+    if (!payOther.hidden) payOther.focus()
+  }
+  // Up to five interests: the rest are disabled once five are picked.
+  const pick = target.closest('[data-pick]')
+  if (pick) {
+    const boxes = [...pick.querySelectorAll('input[type="checkbox"]')]
+    const full = boxes.filter((box) => box.checked).length >= Number(pick.dataset.pick)
+    for (const box of boxes) box.disabled = full && !box.checked
+  }
+})
+
+// The end-of-alpha survey: /?survey=<token> opens the dialog on it, greeting the tester by name.
+const linkToken = new URLSearchParams(location.search).get('survey')
+if (linkToken) {
+  fetch(`/api/survey?token=${encodeURIComponent(linkToken)}`)
+    .then((response) => (response.ok ? response.json() : null))
+    .catch(() => null)
+    .then((found) => {
+      dialog.showModal()
+      if (!found) {
+        showPage('badlink')
+        return
+      }
+      surveyToken = linkToken
+      surveyPart = 'end'
+      document.getElementById('end-greeting').textContent =
+        `Thanks for testing LorEvolve, ${found.name}. Rate each part you used. Every question is optional.`
+      showPage('end-features')
+    })
+}
+
+// The Discord invite: every Discord link on the page appears once it is set. Empty keeps them hidden.
 const DISCORD_INVITE = 'https://discord.gg/VPv7X7tpY'
 if (DISCORD_INVITE) {
   for (const element of document.querySelectorAll('[data-discord]')) {
@@ -194,26 +423,3 @@ document.addEventListener(
 for (const shot of document.querySelectorAll('.feature__shot')) {
   if (shot.complete && shot.currentSrc && shot.naturalWidth === 0) shot.remove()
 }
-
-// A click on the backdrop (the dialog element itself, outside the form) closes it.
-dialog.addEventListener('click', (event) => {
-  if (event.target === dialog) closeDialog()
-})
-
-for (const button of document.querySelectorAll('[data-open-apply]')) button.addEventListener('click', openDialog)
-for (const button of dialog.querySelectorAll('[data-close-apply]')) button.addEventListener('click', closeDialog)
-
-form.querySelector('[data-next]').addEventListener('click', () => {
-  if (stepOneValid()) showPage('2')
-})
-form.querySelector('[data-back]').addEventListener('click', () => {
-  showError('')
-  showPage('1')
-})
-form.addEventListener('submit', send)
-
-form.addEventListener('change', (event) => {
-  if (event.target.name !== 'payPreference') return
-  payOther.hidden = event.target.value !== 'other'
-  if (!payOther.hidden) payOther.focus()
-})
