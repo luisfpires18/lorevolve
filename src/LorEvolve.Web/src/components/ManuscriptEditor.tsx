@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -19,7 +20,7 @@ import { MentionSuggestions } from './MentionSuggestions'
 import { useMentionSearch } from '../lore/mentionSearch'
 import { caretPoint } from '../lib/caret'
 import { findMentions, mentionQueryAt, mentionToken, plainMentions } from '../lore/mentions'
-import { MentionProse } from './MentionProse'
+import { MentionMarks, MentionProse } from './MentionProse'
 import type { EntitySummary } from '../lore/types'
 import { ManuscriptHistory } from './ManuscriptHistory'
 import { ReviewComments } from './ReviewComments'
@@ -157,6 +158,7 @@ export function ManuscriptEditor({
   const [announcement, setAnnouncement] = useState('')
   const inFlight = useRef(false)
   const editor = useRef<HTMLTextAreaElement>(null)
+  const backdrop = useRef<HTMLDivElement>(null)
   const shortcut = useRef<() => void>(() => {})
   const suggestionsId = useId()
   // The @ mention being typed (issue 31): where its `@` is, the words after it, and where to draw the suggestions.
@@ -202,6 +204,13 @@ export function ManuscriptEditor({
   // copy is still being looked for the box waits too, so nothing typed can overwrite a copy nobody has seen yet.
   const offer = isReady && found && found.content !== stored.content ? found : null
   const isHeld = isReady && (offer !== null || found === undefined)
+  const mentioned = isReady ? findMentions(draft) : []
+  // Only prose that holds a mention gets the backdrop; everything else is the plain text box it always was.
+  const isMarked = mentioned.length > 0 && !isHeld
+  useLayoutEffect(() => {
+    // The backdrop follows the text box wherever a render leaves it (its first showing included); scrolling is onScroll.
+    if (backdrop.current && editor.current) backdrop.current.scrollTop = editor.current.scrollTop
+  })
 
   // A copy identical to what is saved is nothing to recover: it goes without a word.
   useEffect(() => {
@@ -467,7 +476,7 @@ export function ManuscriptEditor({
               storyId={storyId}
               scene={scene}
               chronology={chronology}
-              mentions={isReady ? findMentions(draft) : []}
+              mentions={mentioned}
               onSceneSaved={onSceneSaved}
               onSceneChanged={onSceneChanged}
             />
@@ -685,7 +694,16 @@ export function ManuscriptEditor({
           ) : null}
 
           {access.editContent && !isReading ? (
-            <div className="manuscript__write">
+            <div className="manuscript__write" data-marked={isMarked ? 'true' : undefined}>
+              {isMarked ? (
+                <div
+                  className="manuscript__text manuscript__backdrop"
+                  ref={backdrop}
+                  aria-hidden="true"
+                >
+                  <MentionMarks text={draft} />
+                </div>
+              ) : null}
               <label className="visually-hidden" htmlFor={editorId}>
                 Manuscript of “{scene.title}”
               </label>
@@ -697,6 +715,9 @@ export function ManuscriptEditor({
                 onChange={(event) => {
                   setDraft(event.target.value)
                   trackMention(event.target)
+                }}
+                onScroll={(event) => {
+                  if (backdrop.current) backdrop.current.scrollTop = event.currentTarget.scrollTop
                 }}
                 onSelect={onEditorSelect}
                 onKeyDown={onEditorKeyDown}

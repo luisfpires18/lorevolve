@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   findMentions,
+  markedPieces,
   mentionQueryAt,
   mentionToken,
   plainExcerpt,
@@ -55,4 +56,21 @@ test('an @ opens a mention only where a mention could start', () => {
   assert.equal(mentionQueryAt('@Akron\nWr', 9), null)
   assert.equal(mentionQueryAt(`${token}`, token.length), null)
   assert.equal(mentionQueryAt('no at here', 10), null)
+})
+
+test('the backdrop pieces are the text exactly, each name apart from its markup', () => {
+  const text = `${token} sat with him.\n\n@[Akron](lore:not-an-id) and ${token}\n`
+  const pieces = markedPieces(text)
+  assert.equal(pieces.map((piece) => piece.text).join(''), text)
+  assert.deepEqual(
+    pieces.filter((piece) => piece.part === 'name').map((piece) => piece.text),
+    ['Akron Wright', 'Akron Wright'],
+  )
+  assert.deepEqual(pieces.slice(0, 3), [
+    { text: '@[', part: 'markup' },
+    { text: 'Akron Wright', part: 'name' },
+    { text: `](lore:${ID})`, part: 'markup' },
+  ])
+  assert.deepEqual(markedPieces('No mention here.'), [{ text: 'No mention here.' }])
+  assert.deepEqual(markedPieces(''), [])
 })

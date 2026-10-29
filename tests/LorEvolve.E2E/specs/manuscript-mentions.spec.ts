@@ -1,14 +1,16 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
+import { png } from './support/png'
 import { invite, PASSWORD, post, unique } from './support/trash'
 
 /**
- * Issue 31: @ mentions in a scene's manuscript (ADR 0058). The text box shows the stored token while writing; every place
- * prose is read shows the name. Each test builds its own accounts and universe.
+ * Issue 31: @ mentions in a scene's manuscript (ADR 0058). The text box keeps the stored token while writing, drawn over a
+ * backdrop that marks the name and fades the markup; every place prose is read shows the name, and the public page links
+ * it when its entry is published. Each test builds its own accounts and universe.
  *
  * Under test: `@` opens suggestions only where a mention can start; choosing one inserts the token as a single undo step;
  * Escape leaves the `@word` as prose; the token saves and reloads exactly; the Lore drawer lists each mention with its
  * current name, a preview and an "Add to this scene's Lore" that links only when pressed and is gone once linked; history,
- * a read-only member and the public page read names, never markup.
+ * a read-only member and the public page read names, never markup; the public page links only a published entry.
  */
 
 interface Person {
@@ -252,5 +254,94 @@ test.describe('manuscript mentions', () => {
 
     await owner.context.close()
     await viewer.context.close()
+  })
+
+  test('Write marks each mention by its name, and the public page links only published entries', async ({
+    browser,
+  }) => {
+    test.setTimeout(120_000)
+    const owner = await person(browser, 'mentionpublic')
+    const page = owner.page
+    const { universeId, akron, storyId, sceneId, manuscriptPage } = await world(page)
+    const u = `/api/universes/${universeId}`
+    const types = (await (await page.request.get(`${u}/entity-types`)).json()) as {
+      id: string
+      name: string
+    }[]
+    const hidden = await post(page, `${u}/entities`, {
+      entityTypeId: types.find((type) => type.name === 'Character')!.id,
+      name: 'Hidden Heir',
+      summary: null,
+      canonStatus: 0,
+      aliases: [],
+      tags: [],
+      fields: [],
+    })
+    const text = `@[Akron Wright](lore:${akron}) sat with @[the heir](lore:${hidden}).\n\nAkron kept the vigil.\n`
+    const saved = await page.request.put(`${u}/stories/${storyId}/scenes/${sceneId}/manuscript`, {
+      data: { content: text, expectedVersion: 0 },
+    })
+    expect(saved.ok(), await saved.text()).toBe(true)
+
+    // Write: the text box still holds the token exactly; the backdrop under it draws the same characters, names marked.
+    await page.goto(manuscriptPage)
+    await expect(editor(page)).toHaveValue(text)
+    const backdrop = page.locator('.manuscript__backdrop')
+    await expect(backdrop.getByTestId('manuscript-mark')).toHaveText(['Akron Wright', 'the heir'])
+    expect((await backdrop.textContent())!.replace('\u200b', '')).toBe(text)
+    await expect(editor(page)).toHaveCSS('color', 'rgba(0, 0, 0, 0)')
+    // The two boxes line up exactly, so the caret sits on the character it is drawn beside.
+    const [box, back] = [await editor(page).boundingBox(), await backdrop.boundingBox()]
+    expect(back).toEqual(box)
+    // Typing and undo are the text box's own; prose with no mention is the plain text box again.
+    await editor(page).press('Control+End')
+    await page.keyboard.type('More.')
+    await expect(editor(page)).toHaveValue(`${text}More.`)
+    await editor(page).press('Control+a')
+    await editor(page).press('Delete')
+    await page.keyboard.type('No mention.')
+    await expect(backdrop).toHaveCount(0)
+    await expect(editor(page)).not.toHaveCSS('color', 'rgba(0, 0, 0, 0)')
+
+    // Publish the entry, the story, the scene's prose and the universe; not the hidden heir.
+    const api = async (path: string, method: 'post' | 'put', data?: object) => {
+      const response = await page.request[method](path, data ? { data } : undefined)
+      expect(response.ok(), `${path}: ${await response.text()}`).toBe(true)
+    }
+    await api(`${u}/publication`, 'put', { publicSummary: 'A world.', category: 4, genres: [1] })
+    const artwork = await page.request.put(`${u}/artwork`, {
+      multipart: {
+        file: {
+          name: 'art.png',
+          mimeType: 'image/png',
+          buffer: png(800, 500, (x, y) => [(x * 3) % 255, 60 + (y % 90), 110]),
+        },
+      },
+    })
+    expect(artwork.ok()).toBe(true)
+    await api('/api/profile/public-name', 'put', { publicDisplayName: 'Mention Author' })
+    await api(`${u}/entities/${akron}/publish`, 'post')
+    await api(`${u}/stories/${storyId}/publication`, 'put', { publicSummary: 'For readers.' })
+    await api(`${u}/stories/${storyId}/publish`, 'post')
+    await api(`${u}/stories/${storyId}/scenes/${sceneId}/manuscript/publish`, 'post')
+    await api(`${u}/publish`, 'post')
+    const publication = await page.request.get(`${u}/publication`)
+    const slug = ((await publication.json()) as { publicSlug: string }).publicSlug
+
+    const anon = await browser.newContext()
+    const reader = await anon.newPage()
+    await reader.goto(`/worlds/${slug}/stories/the-road`)
+    const prose = reader.getByTestId('public-story-part')
+    const paragraphs = ['Akron Wright sat with the heir.', 'Akron kept the vigil.']
+    await expect(prose.locator('p')).toHaveText(paragraphs)
+    await expect(prose).not.toContainText('lore:')
+    const link = prose.getByTestId('public-story-mention')
+    await expect(link).toHaveText(['Akron Wright'])
+    await link.click()
+    await expect(reader).toHaveURL(new RegExp(`/worlds/${slug}/lore/[a-z0-9-]+$`))
+    await expect(reader.getByRole('heading', { level: 1 })).toHaveText('Akron Wright')
+
+    await anon.close()
+    await owner.context.close()
   })
 })

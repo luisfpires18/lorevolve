@@ -35,6 +35,12 @@ public sealed class ManuscriptMentionTests(LorEvolveApiFactory factory) : IClass
         Assert.Equal((8, Token("Akron Wright", id).Length, "Akron Wright", id), (found.Start, found.Length, found.Name, found.EntityId));
         Assert.Equal("She saw Akron Wright at dusk.", ManuscriptMentions.Plain(text));
 
+        // Where each name lands in the plain text, for the public page's links.
+        var (plain, placed) = ManuscriptMentions.PlainWithMentions($"{text} {Token("Akron", id)}!");
+        Assert.Equal("She saw Akron Wright at dusk. Akron!", plain);
+        Assert.Equal(["Akron Wright", "Akron"], placed.Select(mention => plain.Substring(mention.Start, mention.Length)));
+        Assert.Equal(("plain prose", 0), (ManuscriptMentions.PlainWithMentions("plain prose").Text, ManuscriptMentions.PlainWithMentions("plain prose").Mentions.Count));
+
         foreach (var prose in new[]
         {
             "mail me at a@example.test",
@@ -123,6 +129,37 @@ public sealed class ManuscriptMentionTests(LorEvolveApiFactory factory) : IClass
         Assert.DoesNotContain("lore:", body, StringComparison.Ordinal);
         Assert.DoesNotContain(secretEntry.ToString(), body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Private Heir", body, StringComparison.Ordinal);
+        Assert.Empty(page.Manuscript[0].Links);
+    }
+
+    [Fact]
+    public async Task The_public_page_links_a_mention_only_when_its_entry_is_published()
+    {
+        var (owner, _) = await Account(_factory, "mn-public-link");
+        var universe = await Ready(owner, "Mention linked world");
+        var u = universe.Id;
+        var shown = await CreateEntity(owner, u, "Sabine Varrow");
+        var secret = await CreateEntity(owner, u, "Hidden Heir");
+        (await owner.PostAsync($"/api/universes/{u}/entities/{shown}/publish", null)).EnsureSuccessStatusCode();
+        var story = (await PostJson<StoryDetail>(owner, Stories(u), new StoryRequest("Linked tale", null, StoryStatus.Drafting))).Id;
+        (await owner.PutAsJsonAsync($"{Story(u, story)}/publication", new StoryPublicationRequest("For readers."))).EnsureSuccessStatusCode();
+        (await owner.PostAsync($"{Story(u, story)}/publish", null)).EnsureSuccessStatusCode();
+        var scene = await CreateScene(owner, u, story, "The Wall");
+        await WriteManuscript(owner, u, story, scene, $"{Token("the heir", secret)} waited.\r\n\r\nThen {Token("Sabine", shown)} held it, {Token("Sabine", shown)} alone.");
+        (await owner.PostAsync($"{Story(u, story)}/scenes/{scene}/manuscript/publish", null)).EnsureSuccessStatusCode();
+        var world = await Published(owner, u);
+
+        var body = await Anonymous(_factory).GetStringAsync($"{PublicRoute}/{world.PublicSlug}/stories/linked-tale");
+        var page = System.Text.Json.JsonSerializer.Deserialize<PublicStoryDetail>(body, System.Text.Json.JsonSerializerOptions.Web)!;
+        var lore = await Anonymous(_factory).GetStringAsync($"{PublicRoute}/{world.PublicSlug}/lore");
+
+        var part = Assert.Single(page.Manuscript);
+        Assert.Equal("the heir waited.\r\n\r\nThen Sabine held it, Sabine alone.", part.Text);
+        Assert.Equal(2, part.Links.Count);
+        Assert.All(part.Links, link => Assert.Equal("Sabine", part.Text.Substring(link.Start, link.Length)));
+        Assert.Contains($"\"slug\":\"{part.Links[0].LoreSlug}\"", lore, StringComparison.Ordinal);
+        Assert.DoesNotContain(secret.ToString(), body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(shown.ToString(), body, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

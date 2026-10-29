@@ -120,7 +120,12 @@ export interface PublicStory {
  * order - scene prose, scene outlines, plot arcs. Nothing here says what is not published.
  */
 export interface PublicStoryDetail extends PublicStory {
-  manuscript: { title: string; text: string }[]
+  /** Each mention is its name in `text`; `links` marks those whose entry is published, by where the name sits. */
+  manuscript: {
+    title: string
+    text: string
+    links: { start: number; length: number; loreSlug: string }[]
+  }[]
   scenes: { title: string; summary: string | null }[]
   plot: {
     title: string

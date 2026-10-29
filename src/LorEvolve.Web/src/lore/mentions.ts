@@ -34,6 +34,28 @@ export function findMentions(text: string): Mention[] {
   }))
 }
 
+/**
+ * The text in pieces for the Write view's backdrop (ADR 0058 amendment): each mention's name apart from its markup, the
+ * rest as it is. Joined, the pieces are exactly `text`, character for character - the backdrop lines up with the text box
+ * only while that holds.
+ */
+export function markedPieces(text: string): { text: string; part?: 'markup' | 'name' }[] {
+  const pieces: { text: string; part?: 'markup' | 'name' }[] = []
+  let at = 0
+  for (const mention of findMentions(text)) {
+    if (mention.start > at) pieces.push({ text: text.slice(at, mention.start) })
+    const nameEnd = mention.start + 2 + mention.name.length
+    pieces.push(
+      { text: '@[', part: 'markup' },
+      { text: mention.name, part: 'name' },
+      { text: text.slice(nameEnd, mention.start + mention.length), part: 'markup' },
+    )
+    at = mention.start + mention.length
+  }
+  if (at < text.length) pieces.push({ text: text.slice(at) })
+  return pieces
+}
+
 /** The prose as a reader reads it: each mention as its name, in plain text. */
 export function plainMentions(text: string) {
   return text.includes('](lore:') ? text.replace(TOKEN, (_whole, name: string) => name) : text
