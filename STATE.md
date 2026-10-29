@@ -24,9 +24,10 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     passed. The one loss, `ai-changes.spec.ts` "an AI app asks to propose separately", is a timing race in the spec:
     the unserved OAuth callback's error page lands while the next `goto` starts. It fails the same way on the pass 2
     tree and passes on a cold API (5.6 s) but not a warm one (2 s), so it is not this pass's; `mcp-connect` and
-    `ai-schema` (12) pass on the same servers. Left for a spec fix of its own (wait for the callback request to fail
-    before the `goto`). Full suite delegated to CI. **Owner next:** review and merge the three branches in order
-    (pass 1, 2, 3; each is cut from the previous tip), then the worktree can go.
+    `ai-schema` (12) pass on the same servers. Fixed in a fourth commit on this branch: the spec now waits for the
+    callback request to fail and the error page to land before its `goto`; 4/4 warm, the file 8/8. Full suite
+    delegated to CI. **Owner next:** review and merge the three branches in order (pass 1, 2, 3; each is cut from
+    the previous tip), then the worktree can go.
 - **UI polish pass 2 - one vocabulary** (`chore/ui-polish-vocabulary` off the pass 1 tip `a15280e`, same worktree; committed,
   not merged, not pushed). Presentation only. Every Try again is the secondary; a Cancel beside a primary is the secondary
   (Trash restore, Settings archive); the first step of a destructive flow (Admin Block, Trash bulk Delete) is

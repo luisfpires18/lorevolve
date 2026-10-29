@@ -339,7 +339,14 @@ test.describe('Pending AI Changes', () => {
     await choice.check()
     const back = page.waitForRequest((request) => request.url().startsWith(CALLBACK))
     await page.getByTestId('consent-approve').click()
-    const code = new URL((await back).url()).searchParams.get('code')!
+    const returned = await back
+    const code = new URL(returned.url()).searchParams.get('code')!
+    // Nothing listens at the callback, so the browser is on its way to its own error page. Let it arrive before the
+    // next address is asked for: a `goto` that starts first is cut short by it.
+    await returned.response().catch(() => null)
+    await page
+      .waitForURL('chrome-error://chromewebdata/', { waitUntil: 'commit', timeout: 5_000 })
+      .catch(() => undefined)
     const token = await page.request.post('/oauth/token', {
       form: {
         grant_type: 'authorization_code',
