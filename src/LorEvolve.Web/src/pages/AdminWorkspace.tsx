@@ -7,6 +7,7 @@ import {
   getUser,
   listUsers,
   createSignUpLink,
+  emailSignUpLink,
   runDatabaseBackup,
   setBlocked,
   type AdminOverview,
@@ -761,11 +762,33 @@ function SignUpLink() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null)
+  const [sent, setSent] = useState<{ to: string; expiresAt: string } | null>(null)
+  const [sending, setSending] = useState(false)
+
+  async function sendEmail() {
+    setError(null)
+    setLink(null)
+    setSent(null)
+    setSending(true)
+    try {
+      const made = await emailSignUpLink(email.trim())
+      setSent({ to: email.trim(), expiresAt: made.expiresAt })
+    } catch (failure: unknown) {
+      setError(
+        failure instanceof ApiError
+          ? (failure.fieldErrors.email ?? failure.message)
+          : 'The email could not be sent.',
+      )
+    } finally {
+      setSending(false)
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
     setLink(null)
+    setSent(null)
     try {
       const made = await createSignUpLink(email.trim())
       setLink({
@@ -788,7 +811,8 @@ function SignUpLink() {
       </h2>
       <p className="settings__note">
         For someone to join LorEvolve while registration is invitation-only. The link lets that
-        email address, and only that one, create an account.
+        email address, and only that one, create an account. Email link sends it to them from
+        noreply@lorevolve.com; Make link shows it for you to send yourself.
       </p>
       <form className="form" onSubmit={submit} noValidate>
         <Field
@@ -805,10 +829,32 @@ function SignUpLink() {
             {error}
           </p>
         ) : null}
-        <button className="button" type="submit" data-testid="admin-signup-create">
-          Make link
-        </button>
+        <div className="form__actions">
+          <button
+            className="button"
+            type="button"
+            onClick={() => void sendEmail()}
+            disabled={sending}
+            aria-busy={sending}
+            data-testid="admin-signup-email-send"
+          >
+            {sending ? 'Sending' : 'Email link'}
+          </button>
+          <button
+            className="button button--secondary"
+            type="submit"
+            disabled={sending}
+            data-testid="admin-signup-create"
+          >
+            Make link
+          </button>
+        </div>
       </form>
+      {sent ? (
+        <p className="settings__note" role="status" data-testid="admin-signup-sent">
+          Sent to <bdi>{sent.to}</bdi>. The link works until {formatDateTime(sent.expiresAt)}.
+        </p>
+      ) : null}
       {link ? (
         <p className="settings__note" role="status">
           Send them this link, valid until {formatDateTime(link.expiresAt)}:{' '}

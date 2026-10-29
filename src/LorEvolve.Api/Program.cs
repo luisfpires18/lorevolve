@@ -51,6 +51,7 @@ builder.Services.AddLorEvolveDataProtection(builder.Configuration, builder.Envir
 builder.Services.AddLorEvolveDatabase(builder.Configuration, builder.Environment);
 builder.Services.AddLorEvolveAuth(builder.Environment);
 builder.Services.AddLorEvolveAdmin();
+LorEvolve.Api.Features.Email.AppEmail.AddAppEmail(builder.Services);
 builder.Services.AddCanonIntegrity();
 builder.Services.AddLoreSearch();
 builder.Services.AddHostedService<LorEvolve.Api.Features.Publishing.PublicAuthorBackfill>();

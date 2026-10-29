@@ -58,3 +58,6 @@ public sealed record SignUpLinkRequest(string? Email);
 
 /// <summary>The link's token (the client puts it in <c>/register?invite=</c>) and when it stops working.</summary>
 public sealed record SignUpLinkResponse(string Token, DateTime ExpiresAt);
+
+/// <summary>A sign-up link sent by email: only when it stops working. The token never comes back to the browser.</summary>
+public sealed record SignUpLinkEmailResponse(DateTime ExpiresAt);

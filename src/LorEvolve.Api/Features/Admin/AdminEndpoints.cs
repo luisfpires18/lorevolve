@@ -2,8 +2,10 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Auth;
+using LorEvolve.Api.Features.Email;
 using LorEvolve.Api.Features.Mcp;
 using LorEvolve.Api.Features.Publishing;
+using LorEvolve.Api.Features.Seo;
 using LorEvolve.Api.Features.Storage;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.DataProtection;
@@ -41,6 +43,7 @@ public static class AdminEndpoints
         group.MapPost("/users/{userId}/block", BlockAsync).WithName("BlockAdminUser");
         group.MapPost("/users/{userId}/unblock", UnblockAsync).WithName("UnblockAdminUser");
         group.MapPost("/signup-links", SignUpLink).WithName("CreateAdminSignUpLink");
+        group.MapPost("/signup-links/email", EmailSignUpLinkAsync).WithName("EmailAdminSignUpLink");
         return endpoints;
     }
 
@@ -150,6 +153,56 @@ public static class AdminEndpoints
     }
 
     private static readonly EmailAddressAttribute EmailValidator = new();
+
+    public const string EmailOffCode = "email_not_configured";
+
+    public const string EmailFailedCode = "email_failed";
+
+    /// <summary>
+    /// The same sign-up link, sent to that address from <c>noreply@lorevolve.com</c> (<see cref="SignUpEmail"/>). The link
+    /// is built on <c>PublicSite:Origin</c>, the configured origin, never the request's host. Refused with 503 while email
+    /// or the origin is not configured, and with 502 when the sender refuses it; either way the Admin can still make the
+    /// link and send it themselves.
+    /// </summary>
+    private static async Task<IResult> EmailSignUpLinkAsync(
+        [FromBody] SignUpLinkRequest request,
+        IDataProtectionProvider protection,
+        UserManager<LorEvolveUser> userManager,
+        AppEmail email,
+        PublicSite site,
+        TimeProvider clock,
+        CancellationToken cancellationToken)
+    {
+        var address = request.Email?.Trim() ?? string.Empty;
+        if (EmailValidator.GetValidationResult(address, new ValidationContext(address)) != ValidationResult.Success || address.Length == 0)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]> { ["email"] = ["Enter a valid email address."] });
+        }
+
+        if (!email.IsConfigured || site.Origin is null)
+        {
+            return Results.Problem(
+                title: "Email is not set up",
+                detail: "This LorEvolve cannot send email yet. Make the link and send it yourself.",
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                extensions: new Dictionary<string, object?> { ["code"] = EmailOffCode });
+        }
+
+        var expiresAt = clock.GetUtcNow().UtcDateTime + SignUpLinks.Lifetime;
+        var token = SignUpLinks.Issue(protection, userManager.NormalizeEmail(address), expiresAt);
+        var link = site.Absolute($"/register?invite={Uri.EscapeDataString(token)}")!;
+
+        if (!await email.SendAsync(SignUpEmail.For(address, link, expiresAt), cancellationToken))
+        {
+            return Results.Problem(
+                title: "The email was not sent",
+                detail: "The email service did not accept it. Try again, or make the link and send it yourself.",
+                statusCode: StatusCodes.Status502BadGateway,
+                extensions: new Dictionary<string, object?> { ["code"] = EmailFailedCode });
+        }
+
+        return Results.Ok(new SignUpLinkEmailResponse(expiresAt));
+    }
 
     private static async Task<IResult> BlockAsync(
         string userId,
