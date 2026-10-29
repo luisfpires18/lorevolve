@@ -12,6 +12,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `docs/design/custom-domain-plan.md` on `docs/custom-domain-setup`. Alpha page -> `demo.lorevolve.com` (owner steps
   pending); apex -> new PROD app `prod-lorevolve` on B1 (`deploy-prod.yml` manual from `master`, `appsettings.AzureProd.json`, runbook `docs/deployment/azure-prod.md`; owner setup after the pre-alpha gate);
   DEV stays F1 on azurewebsites.
+- **Lore exact name and sort** (`feat/lore-exact-search-and-sort`). Exact name toggle inside the Lore search
+  (`exact=1`: name or alias equal, ignoring case) and a Sort by select (best match / last edited, name, date
+  created; `sort=`). API `exact`, `sort` on the entity list.
 - **AI change approval progress** (`feat/ai-changes-apply-progress` off `dev` at `36dd64f`; merged into `dev` at `de96320`,
   pushed). Approving shows a bar under the toolbar: sweeping while checked, then `N of M applied`, read every
   500 ms from `GET .../approve/{approvalId}/progress` (in-memory `AiChangeProgress`, starter only, gone on answer;
