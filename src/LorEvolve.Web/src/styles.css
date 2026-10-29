@@ -1906,7 +1906,7 @@ a.button--danger:visited {
 
 /* A save bar stuck across the foot (an entry's or a drawer's `.actionbar`, the manuscript's bar) owns the corner the
    pill sits in, Save included: the pill rises above it. */
-body:has(.actionbar, .article__bar, .manuscript__bar) {
+body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   --feedback-lift: calc(var(--control-touch) + var(--space-3));
 }
 
@@ -1929,9 +1929,23 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
 
   /* A phone's foot holds one thing (ADR 0028): while the page keeps its own control there - a save bar, or the fixed
      "New …" of Lore and a story - the pill leaves. Feedback stays a tap away on every other screen. */
-  body:has(.actionbar, .article__bar, .manuscript__bar, .lore__create, .story__create)
+  body:has(
+      .actionbar,
+      .article__bar,
+      .manuscript__bar,
+      .consent__actions,
+      .lore__create,
+      .story__create
+    )
     .feedbackbutton,
-  body:has(.actionbar, .article__bar, .manuscript__bar, .lore__create, .story__create)
+  body:has(
+      .actionbar,
+      .article__bar,
+      .manuscript__bar,
+      .consent__actions,
+      .lore__create,
+      .story__create
+    )
     .feedbackbutton__thanks {
     display: none;
   }
@@ -16822,13 +16836,14 @@ details.reviewsection > .reviewsection__list {
   margin-top: calc(-1 * var(--space-1));
 }
 
+/* A part's name: sentence case, quiet, the metadata size - the letter-spaced capitals retired everywhere else (contract
+   section 8.2). */
 .consent__label {
   margin: 0;
+  padding: 0;
   color: var(--muted);
   font-size: var(--text-sm);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .consent__app,
@@ -17274,10 +17289,48 @@ details.reviewsection > .reviewsection__list {
   margin: 0;
 }
 
+/* The access level: a plain group, not the browser's boxed fieldset. Each level is a row to press, the chosen one on the
+   accent wash with an accent edge - the contract's "selected" - and its name the one bold thing in it. */
+.consent__propose {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Floated, so it leaves the fieldset's edge and sits inside like any other part's label, under the part's own rule. */
+.consent__propose > legend {
+  float: left;
+  width: 100%;
+  margin-bottom: var(--space-1);
+}
+
 .consent__check {
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-ui);
+  font-weight: 400;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-1) var(--ease),
+    border-color var(--duration-1) var(--ease);
+}
+
+.consent__check:has(input:checked) {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule));
+  background: var(--accent-wash);
+}
+
+.consent__check label {
+  flex: 1;
+  cursor: pointer;
+}
+
+.consent__check strong {
   font-weight: 600;
 }
 
@@ -17287,6 +17340,18 @@ details.reviewsection > .reviewsection__list {
   height: 1.25rem;
   margin-top: 0.1rem;
   accent-color: var(--accent);
+}
+
+@media (pointer: coarse) {
+  .consent__check {
+    min-height: var(--control-touch);
+    align-items: center;
+  }
+}
+
+/* What a Creator can do reads as the hint under the choice, not as a third option. */
+.consent__propose .consent__identity {
+  color: var(--muted);
 }
 
 @media (max-width: 640px) {
