@@ -37,6 +37,7 @@ public sealed class SignUpEmailTests
         Assert.Equal("LorEvolve <noreply@lorevolve.example>", body.RootElement.GetProperty("from").GetString());
         Assert.Equal("New.Person@Example.test", body.RootElement.GetProperty("to")[0].GetString());
         Assert.Equal(SignUpEmail.Subject, body.RootElement.GetProperty("subject").GetString());
+        Assert.Equal(AppEmail.DefaultReplyTo, body.RootElement.GetProperty("reply_to")[0].GetString());
         var text = body.RootElement.GetProperty("text").GetString()!;
         Assert.Contains($"{Origin}/register?invite=", text);
         Assert.Contains($"{Origin}/register?invite=", body.RootElement.GetProperty("html").GetString()!);
@@ -47,6 +48,19 @@ public sealed class SignUpEmailTests
         var token = Uri.UnescapeDataString(text.Split("invite=")[1].Split('\n')[0].Trim());
         var read = SignUpLinks.Read(api.Services.GetRequiredService<IDataProtectionProvider>(), token);
         Assert.Equal("NEW.PERSON@EXAMPLE.TEST", read?.NormalizedEmail);
+    }
+
+    [Fact]
+    public async Task A_configured_reply_to_replaces_the_support_inbox()
+    {
+        var resend = new RecordingHandler(HttpStatusCode.OK);
+        using var api = Host(resend, configured: true, replyTo: " help@lorevolve.example ");
+        var (admin, _) = await Admin(api);
+
+        (await admin.PostAsJsonAsync("/api/admin/signup-links/email", new SignUpLinkRequest("someone@example.test"))).EnsureSuccessStatusCode();
+
+        using var body = JsonDocument.Parse(Assert.Single(resend.Bodies));
+        Assert.Equal("help@lorevolve.example", Assert.Single(body.RootElement.GetProperty("reply_to").EnumerateArray()).GetString());
     }
 
     [Fact]
@@ -80,11 +94,12 @@ public sealed class SignUpEmailTests
         Assert.Single(resend.Bodies);
     }
 
-    private static WebApplicationFactory<Program> Host(RecordingHandler resend, bool configured)
+    private static WebApplicationFactory<Program> Host(RecordingHandler resend, bool configured, string? replyTo = null)
     {
         var settings = new Dictionary<string, string?>
         {
             ["PublicSite:Origin"] = Origin,
+            ["Email:ReplyTo"] = replyTo,
         };
         if (configured)
         {
