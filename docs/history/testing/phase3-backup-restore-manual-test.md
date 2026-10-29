@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/testing/phase3-backup-restore-manual-test.md`: a one-time manual pass for work merged into `dev`; reusable checklists stay in `docs/testing/`. Kept verbatim below.
+
 # Phase 3 Backup restore - manual test plan
 
 For the owner's pass over restoring a backup (ADR 0032): a universe's backup, checked and restored as a **new** universe. It

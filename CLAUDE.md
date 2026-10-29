@@ -33,9 +33,9 @@ Never, without an explicit request:
 - delete a branch
 - change a remote
 
-Never work directly on `master` or `main`. Work on numbered branches,
-`<type>/<NNN>/<short-kebab-description>`. `docs/architecture/branching.md` is authoritative
-for the full convention.
+Never work directly on `master` or `main`. Work on `<type>/<short-kebab-description>` branches;
+commit subjects start with `[FEAT]`, `[FIX]`, `[CONFIG]`, `[DOCS]` or `[TEST]`.
+`docs/architecture/branching.md` is authoritative for the full convention, including `demo`.
 
 ## Hard boundaries
 

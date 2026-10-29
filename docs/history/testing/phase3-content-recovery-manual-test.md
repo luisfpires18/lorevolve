@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/testing/phase3-content-recovery-manual-test.md`: a one-time manual pass for work merged into `dev`; reusable checklists stay in `docs/testing/`. Kept verbatim below.
+
 # Phase 3 Content recovery - manual test plan
 
 For the owner's pass over content recovery (ADR 0029): saved versions of a manuscript, the Trash for story content, and

@@ -8,7 +8,7 @@ ADR 0032 (one rewrite inside authored text on restore) and ADR 0046 (what an out
 Issue 31 asks for intentional `@` autocomplete in a scene's manuscript that inserts a stable reference to a Lore entry,
 reads as natural prose, and opens a preview - without giving up what ADR 0027 and 0029 settled: plain text stored exactly,
 explicit save, native undo and paste, the version check (ADR 0043), whole-text saved versions and device recovery copies.
-The owner chose, on 2026-10-25, the smallest form (`docs/design/manuscript-mentions-recommendation.md`, option E1): keep the
+The owner chose, on 2026-10-25, the smallest form (`docs/history/design/manuscript-mentions-recommendation.md`, option E1): keep the
 textarea, store a token in the text, show it as stored while editing, render it as the name everywhere else. Each mention
 in a scene's list has its own optional "Add to this scene's Lore"; public pages show each mention as its name in plain text.
 

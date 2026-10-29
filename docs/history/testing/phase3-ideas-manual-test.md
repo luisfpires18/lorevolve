@@ -1,3 +1,5 @@
+Archived 2026-10-29 from `docs/testing/phase3-ideas-manual-test.md`: a one-time manual pass for work merged into `dev`; reusable checklists stay in `docs/testing/`. Kept verbatim below.
+
 # Phase 3 Ideas - manual test plan
 
 For the owner's pass over Ideas (ADR 0030): possibilities kept apart from lore, owned by the account, optionally about one

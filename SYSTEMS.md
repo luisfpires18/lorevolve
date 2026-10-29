@@ -12,7 +12,7 @@ Repository index. Paths and one-line responsibilities only.
 | `dotnet-tools.json` | Local .NET tool manifest (`dotnet-ef`). |
 | `Start-LorEvolve.cmd` / `Stop-LorEvolve.cmd` | Windows entry points for the local launcher. |
 | `CLAUDE.md` | Traffic controller for Claude sessions. |
-| `STATE.md` | Operational state only: roadmap position, blockers, deferred decisions. |
+| `STATE.md` | Current state only: what is live, releases, in-flight and unmerged work, open issues, owner steps, risks. History: `docs/history/`. |
 | `graphify-out/` | Generated knowledge graph. Gitignored, manual-only; rebuild with `python -m graphify update .`. |
 | `.mcp.json` | Issue #29: the project's Claude Code MCP servers (Microsoft Learn, Context7, OpenAI docs, Chrome DevTools isolated). No secrets. GitHub is the `gh` CLI, not a server. |
 | `docs/tooling/` | Agent tooling trial notes (RTK and Graphify evaluation); `claude-code-mcp.md`, the MCP setup, owner steps and verification (#29). |
@@ -689,15 +689,7 @@ Repository index. Paths and one-line responsibilities only.
 | --- | --- |
 | `architecture/branching.md` | Branch naming and merge rules. |
 | `design/LOREVOLVE_VISUAL_REFACTOR.md` | The visual design contract for the refactor (Tasks 002-007): audit findings, principles, tokens, components, cards, actions, responsive and accessibility rules, and the task plan. |
-| `testing/phase2-story-manual-test.md` | The owner's manual Phase 2 Story pass: one writing session from an empty story to a backup, in eighteen steps. |
-| `testing/phase3-lore-article-manual-test.md` | The owner's manual pass over entry articles: writing, two tabs, unsaved text, history, search, Trash, phone, dark and backup, in fourteen steps. |
-| `testing/phase3-ideas-manual-test.md` | The owner's manual pass over Ideas: global and universe ideas, references, two tabs, recovered drafts, two accounts, delete and restore, a deleted universe, backup, phone and dark. |
-| `testing/phase3-universe-search-manual-test.md` | The owner's manual pass over the universe search bar: every screen, every kind opened, the keyboard, anything typed, one universe only, unsaved writing, the Trash, two accounts, phone and dark, and the backup. |
-| `testing/phase3-backup-restore-manual-test.md` | The owner's manual pass over restoring a backup: where it lives, checking and the preview, the name, what comes back in lore, story, recovery, ideas, search and Canon, another account, refusals, the same file twice, phone and dark. |
-| `testing/phase4-timeline-rule-validation-manual-test.md` | The owner's manual pass over world rule checks: a rule's check, an ordinary moment, matching moments and the Canon finding, a changed method, what cannot be counted, the Trash, Types, another account, backup and restore, phone and dark. |
-| `testing/phase4-family-trees-manual-test.md` | The owner's manual pass over Family Trees: giving a kind a family meaning, the tree and what it derives, biological against adoptive, adding a connection, a name that means nothing, a circle, the Trash, another account, backup and restore, phone and dark. |
-| `testing/phase4-world-rules-manual-test.md` | The owner's manual pass over World Rules: the section, creating and editing, two tabs, unsaved changes, words that sound like facts changing nothing, search, the Trash, another account, backup and restore, phone and dark. |
-| `testing/phase3-content-recovery-manual-test.md` | The owner's manual pass over content recovery: recovered drafts, manuscript history, the Trash for story content, two accounts, phone and dark, and the backup. |
+| `history/` | Archived, unmaintained records: `state-archive-2026-10.md` (STATE.md before the trim), `design/` (decided plans), `testing/` (one-time manual passes for merged phases). |
 | `deployment/azure-dev.md` | The DEV runbook: topology, setup, deploy, limitations, troubleshooting. |
 | `deployment/azure-prod.md` | The PROD runbook (`lorevolve.com`): what differs from DEV, first setup, release, rollback. |
 | `deployment/cloudflare-r2.md` | The R2 runbook: bucket, token, config keys, the SDK upload flags R2 needs, and what a backup does not hold. |

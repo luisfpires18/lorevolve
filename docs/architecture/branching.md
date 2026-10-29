@@ -2,9 +2,11 @@
 
 ## Permanent branches
 
-- `dev` - default integration/development branch. All work merges here.
-- `master` - future production branch. Receives changes only through an explicit
-  `dev` -> `master` merge, and only when the repository owner asks for it.
+- `dev` - default branch. All work merges here; every push deploys DEV.
+- `master` - production. Receives changes only through an explicit `dev` -> `master` merge, and
+  only when the repository owner asks; PROD deploys from it by hand (`deploy-prod.yml`).
+- `demo` - the demo and alpha page (`demo.lorevolve.com`) deploys only from here. Demo-only work
+  merges into `demo`, never into `dev` or `master`.
 
 Never work directly on `master`. Avoid direct feature work on `dev`.
 
@@ -16,44 +18,22 @@ commit, joined once with `--allow-unrelated-histories`. Nothing else needs that 
 Format:
 
 ```
-<type>/<NNN>/<short-kebab-description>
+<type>/<short-kebab-description>
 ```
 
-- `<type>` is one of `feat`, `fix`, `chore`, `refactor`, `test`, `docs`.
-- `<NNN>` is mandatory for a numbered implementation phase: zero-padded, sequential,
-  starting at `001`.
-- One project-wide sequence shared by every branch type.
-- Numbers are never reused.
-- The description is concise kebab-case.
-
-Examples:
-
-```
-feat/001/repository-bootstrap
-feat/002/authentication
-fix/003/login-validation
-chore/004/update-tooling
-refactor/005/entity-model
-test/006/canon-conflicts
-docs/007/architecture-update
-```
-
-### Stabilization branches
-
-Numbered implementation paused after `022`. A small stabilization fix found during
-manual use - a bug, a polish pass, a doc correction - takes an unnumbered branch:
-
-```
-fix/<short-kebab-description>
-chore/<short-kebab-description>
-```
-
-- The same `<type>` vocabulary, without `<NNN>`, and no entry in the sequence log.
-- They do not consume the next free number: `023` stays reserved for Phase 023.
+- `<type>` is one of `feat`, `fix`, `chore`, `refactor`, `test`, `docs`, `config`, `ci`.
 - One accepted issue per branch. Unrelated fixes do not travel together.
-- `feat/<short-kebab-description>` is allowed too, and is how a feature the owner asks for
-  during this period is carried. It is unnumbered for the same reason the others are: the
-  number belongs to the roadmap, and stabilization work is not on it.
+- Worktree sessions may run on the app's own `claude/<name>` branch; the rules are the same.
+
+Numbered implementation paused after `022`. A numbered phase, if the owner restarts one, takes
+`<type>/<NNN>/<short-kebab-description>` and a row in the sequence log below. `023` is reserved
+for Phase 023 (production hardening / PostgreSQL); an unnumbered branch never takes a number.
+
+## Commit messages
+
+The subject starts with one of `[FEAT]`, `[FIX]`, `[CONFIG]`, `[DOCS]`, `[TEST]`, then plain text:
+`[FIX] Alpha page contact address is support@lorevolve.com`. No `feat:` / `docs:` / `chore:`
+prefixes. No em or en dashes.
 
 ## Sequence log
 
