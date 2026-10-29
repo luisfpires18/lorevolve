@@ -17064,6 +17064,23 @@ details.reviewsection > .reviewsection__list {
   gap: 0.5rem;
 }
 
+/* A running approval's count under the buttons: the shared bar, sweeping while the changes are checked, then filling as
+   each one is applied. */
+.aichange__progress {
+  display: flex;
+  flex: 1 0 100%;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.aichange__count {
+  flex: none;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
 .aichangeitem > .button {
   justify-self: start;
 }

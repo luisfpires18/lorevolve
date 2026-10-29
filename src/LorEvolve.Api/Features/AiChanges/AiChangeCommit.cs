@@ -39,6 +39,7 @@ internal static class AiChangeCommit
     public static async Task<IResult> ApproveAsync(
         LorEvolveDbContext db,
         CanonPromotionGate gate,
+        AiChangeProgress progress,
         TimeProvider clock,
         Guid universeId,
         Guid proposalId,
@@ -71,6 +72,7 @@ internal static class AiChangeCommit
         // before the approval's transaction, as every upload holds it before its commit; the commit consumes it, and every
         // hold is given back afterwards - one already consumed is gone, so giving it back does nothing.
         var holds = new Dictionary<Guid, StorageHold?>();
+        progress.Report(approvalId, approverId, 0, selected.Count);
         try
         {
             var staged = await db.AiChangeMedia.AsNoTracking()
@@ -93,11 +95,12 @@ internal static class AiChangeCommit
 
             return await gate.RunAsync(
                 universeId,
-                token => ApplyAsync(db, clock, universeId, proposalId, approverId, approvalId, revision, selected, holds, token),
+                token => ApplyAsync(db, clock, progress, universeId, proposalId, approverId, approvalId, revision, selected, holds, token),
                 cancellationToken);
         }
         finally
         {
+            progress.Finish(approvalId);
             foreach (var hold in holds.Values)
             {
                 await AccountStorage.ReleaseAsync(db, hold, NullLogger.Instance);
@@ -156,6 +159,7 @@ internal static class AiChangeCommit
     private static async Task<IResult> ApplyAsync(
         LorEvolveDbContext db,
         TimeProvider clock,
+        AiChangeProgress progress,
         Guid universeId,
         Guid proposalId,
         string approverId,
@@ -270,6 +274,7 @@ internal static class AiChangeCommit
             .ToDictionary(work => work.Key, work => work.ResultId!.Value, StringComparer.Ordinal);
         var now = clock.GetUtcNow().UtcDateTime;
 
+        var applied = 0;
         foreach (var work in Ordered(picked, pickedKeys))
         {
             var (resultId, problem) = await RunAsync(db, clock, universeId, approverId, work, made, holds, cancellationToken);
@@ -289,6 +294,7 @@ internal static class AiChangeCommit
             row.ApprovalId = approvalId;
             row.ResolvedByUserId = approverId;
             row.ResolvedAt = now;
+            progress.Report(approvalId, approverId, ++applied, picked.Count);
         }
 
         Close(proposal, now);

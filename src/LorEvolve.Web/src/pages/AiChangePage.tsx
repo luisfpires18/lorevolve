@@ -3,6 +3,7 @@ import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom
 import { ArrowLeft } from 'lucide-react'
 import {
   approveChanges,
+  getApprovalProgress,
   ChangeAction,
   ChangeResource,
   ChangeStatus,
@@ -71,6 +72,8 @@ export default function AiChangePage() {
   const [reads, setReads] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<'approve' | 'reject' | null>(null)
+  // A running approval's count, read from the server while the one request that applies everything is open.
+  const [applied, setApplied] = useState<{ done: number; total: number } | null>(null)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   // One approval keeps its id until it is answered, so pressing again after a lost answer applies nothing twice.
@@ -200,13 +203,23 @@ export default function AiChangePage() {
     if (approval.current?.key !== key) approval.current = { key, id: crypto.randomUUID() }
     setBusy('approve')
     setFeedback(null)
+    setApplied({ done: 0, total: ids.length })
+    const approvalId = approval.current.id
+    const watch = new AbortController()
+    const timer = window.setInterval(() => {
+      getApprovalProgress(universe.id, proposal.proposal.id, approvalId, watch.signal)
+        .then((count) => {
+          if (!watch.signal.aborted) setApplied(count)
+        })
+        .catch(() => undefined)
+    }, 500)
     try {
       const receipt = await approveChanges(
         universe.id,
         proposal.proposal.id,
         proposal.revision,
         ids,
-        approval.current.id,
+        approvalId,
       )
       approval.current = null
       accept(
@@ -231,6 +244,9 @@ export default function AiChangePage() {
         setReads((count) => count + 1)
       }
     } finally {
+      window.clearInterval(timer)
+      watch.abort()
+      setApplied(null)
       setBusy(null)
     }
   }
@@ -405,6 +421,34 @@ export default function AiChangePage() {
               Reject all
             </button>
           </div>
+          {applied ? (
+            <div className="aichange__progress" data-testid="ai-change-progress">
+              <div
+                className="progressbar"
+                role="progressbar"
+                aria-label="Applying changes"
+                aria-valuemin={0}
+                aria-valuemax={applied.total}
+                aria-valuenow={applied.done}
+                aria-valuetext={`${applied.done} of ${applied.total} applied`}
+                data-state={applied.done === 0 ? 'working' : 'sending'}
+              >
+                <span
+                  className="progressbar__fill"
+                  style={
+                    applied.done === 0
+                      ? undefined
+                      : { width: `${(applied.done / applied.total) * 100}%` }
+                  }
+                />
+              </div>
+              <p className="aichange__count">
+                {applied.done === 0
+                  ? `Checking ${applied.total === 1 ? '1 change' : `${applied.total} changes`}…`
+                  : `${applied.done} of ${applied.total} applied`}
+              </p>
+            </div>
+          ) : null}
         </div>
       ) : !proposal.canReview && open && proposal.proposal.proposedByMe ? (
         <div className="aichange__toolbar">

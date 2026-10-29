@@ -118,9 +118,33 @@ test.describe('Pending AI Changes', () => {
     // Choosing the relationship chooses the two entries it needs.
     await item(page, 'link-1').getByTestId('ai-change-select').check()
     await expect(checked(page)).toHaveCount(3)
+
+    // While the one request runs, a bar says how far it has got: checking first, then a count read from the server.
+    // The request is held here and the count stood in for, so the in-between states can be seen at all.
+    let release = () => {}
+    const held = new Promise<void>((resolve) => (release = resolve))
+    await page.route('**/approve', async (route) => {
+      await held
+      await route.continue()
+    })
+    let count: { done: number; total: number } | null = null
+    await page.route('**/approve/*/progress', (route) =>
+      count
+        ? route.fulfill({ json: count })
+        : route.fulfill({ status: 404, json: { title: 'Not found' } }),
+    )
     await page.getByTestId('ai-change-approve').click()
+    const progress = page.getByTestId('ai-change-progress')
+    await expect(progress).toContainText('Checking 3 changes')
+    await expect(page.getByTestId('ai-change-approve')).toHaveText('Applying')
+    count = { done: 2, total: 3 }
+    await expect(progress).toContainText('2 of 3 applied')
+    await expect(progress.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2')
+    release()
 
     await expect(page.getByTestId('ai-change-feedback')).toHaveText('3 changes were applied.')
+    await expect(progress).toHaveCount(0)
+    await page.unrouteAll()
     await expect(page.getByTestId('ai-change-status')).toHaveText('Approved')
     await expect(page.getByTestId('ai-change-outcome').first()).toContainText('Applied')
     expect(await names(page, universeId, arin)).toEqual([arin])
