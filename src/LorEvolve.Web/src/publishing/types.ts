@@ -145,6 +145,19 @@ export interface SelectedLore {
   items: { id: string; name: string; typeName: string }[]
 }
 
+/** What Publish everything would select now: Canon lore, Complete stories with their scenes, and stories it skips. */
+export interface PublishEverythingPreview {
+  lore: { id: string; name: string; typeName: string }[]
+  stories: { id: string; title: string; scenes: number }[]
+  skippedStories: { id: string; title: string }[]
+}
+
+export interface PublishEverythingResult {
+  lore: number
+  stories: number
+  scenes: number
+}
+
 export interface PublicationDetails {
   publicSummary: string | null
   category: CategoryValue | null

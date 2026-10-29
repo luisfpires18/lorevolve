@@ -3514,6 +3514,18 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   list-style: none;
 }
 
+/* Publish everything, under the counts: its note, its button and its confirmation, one after the other. */
+.publish__everything {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  margin-top: var(--space-5);
+}
+
+.publish__everything > .publication__confirm {
+  justify-self: stretch;
+}
+
 .publish__content li {
   display: flex;
   flex-wrap: wrap;
