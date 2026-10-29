@@ -624,6 +624,13 @@ button {
   text-align: center;
 }
 
+/* Right under the hero it continues the hero, not a new section: no rule and no second gap. */
+.landing-hero + .landing-final {
+  margin-top: 0;
+  padding-top: clamp(1rem, 3vw, 2rem);
+  border-top: 0;
+}
+
 .landing-final .landing-lede {
   margin-inline: auto;
   text-wrap: balance;
