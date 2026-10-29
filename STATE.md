@@ -5,9 +5,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 
 ## Roadmap position
 
-- **Rename to LorEvolve (ADR 0067)** merged and deployed. DEV is https://dev-lorevolve.azurewebsites.net (old
-  `lorex-dev-lfp18` stopped); repo `luisfpires18/lorevolve`; media in R2 `lorevolve-media-dev`. Cleanup and the
-  local folder move: `TODO_rename.md`.
+- **Rename to LorEvolve (ADR 0067)** done. DEV is https://dev-lorevolve.azurewebsites.net in `rg-lorevolve-dev`
+  (plan `dev-lorevolve-plan`, F1; moved 2026-10-29 with its data); repo `luisfpires18/lorevolve`; media in R2
+  `lorevolve-media-dev`. Every old `lorex` resource is deleted; `lorex` in code is only ADR 0067's read-old fallbacks.
 - **Custom domain `lorevolve.com`** (bought 2026-10-28, dominios.pt, DNS now on Cloudflare): plan
   `docs/design/custom-domain-plan.md` on `docs/custom-domain-setup`. Alpha page -> `demo.lorevolve.com` (owner steps
   pending); apex -> new PROD app `prod-lorevolve` on B1 (`deploy-prod.yml` manual from `master`, `appsettings.AzureProd.json`, runbook `docs/deployment/azure-prod.md`; owner setup after the pre-alpha gate);
