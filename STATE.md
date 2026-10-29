@@ -12,6 +12,21 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `docs/design/custom-domain-plan.md` on `docs/custom-domain-setup`. Alpha page -> `demo.lorevolve.com` (owner steps
   pending); apex -> new PROD app `prod-lorevolve` on B1 (`deploy-prod.yml` manual from `master`, `appsettings.AzureProd.json`, runbook `docs/deployment/azure-prod.md`; owner setup after the pre-alpha gate);
   DEV stays F1 on azurewebsites.
+- **UI polish pass 3 - constants** (`chore/ui-polish-constants` off the pass 2 tip `5a3ea61`, same worktree; committed, not
+  merged, not pushed). CSS and the wordmark only. Nothing under 12px (six labels to `--text-xs`); every pill radius on
+  `--radius-full`; the cropper, composer, article editor and manuscript box on `--radius-md`; the Archived mark one shape
+  (`--radius-xs`); the folded rail on `--z-drawer`; the sign-in fold at 860px (was 900); hover gated by `(hover: hover)` on
+  the button family, `.iconbutton` and the lifting cards (plate, doorway, entity, type, world card) so a tap leaves no
+  hover state behind; `Inter` out of the `--ui` stack (owner decision); `translate="no"` on the wordmark. The contract
+  gains section 23 (the three passes, what was kept on purpose, what is left to the owner: the browser chrome colour and
+  a Send feedback menu item on phones).
+  - Tests: web checks green; Playwright by substring reached the whole suite (623 tests, 2 workers, fresh DB): 622
+    passed. The one loss, `ai-changes.spec.ts` "an AI app asks to propose separately", is a timing race in the spec:
+    the unserved OAuth callback's error page lands while the next `goto` starts. It fails the same way on the pass 2
+    tree and passes on a cold API (5.6 s) but not a warm one (2 s), so it is not this pass's; `mcp-connect` and
+    `ai-schema` (12) pass on the same servers. Left for a spec fix of its own (wait for the callback request to fail
+    before the `goto`). Full suite delegated to CI. **Owner next:** review and merge the three branches in order
+    (pass 1, 2, 3; each is cut from the previous tip), then the worktree can go.
 - **UI polish pass 2 - one vocabulary** (`chore/ui-polish-vocabulary` off the pass 1 tip `a15280e`, same worktree; committed,
   not merged, not pushed). Presentation only. Every Try again is the secondary; a Cancel beside a primary is the secondary
   (Trash restore, Settings archive); the first step of a destructive flow (Admin Block, Trash bulk Delete) is
@@ -41,8 +56,6 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     server under load (`ERR_CONNECTION_REFUSED`, `EADDRINUSE ::1`, dynamic-import fetch), 69/70 on a two-worker rerun,
     the last green alone. Full suite delegated to CI. Checked by hand at 1440 and 390 in both themes: the Lore and
     article-editing feet, the editor ring, the light chevron, the Relations empty state.
-  - Next: pass 3 `chore/ui-polish-constants` (12px floor, radii and layer tokens, the 860 fold, touch-gated hover, the
-    font stack), off the pass 2 tip.
 - Phases 001-022 done and merged. Sequence log: `docs/architecture/branching.md`.
 - **Pre-alpha gate: #33 security, #11 recovery, #54 database backups** (`feat/pre-alpha-recovery-security` off `dev` at
   `c1721c5`, in the main checkout; committed locally, not merged, not pushed; issues left open).
