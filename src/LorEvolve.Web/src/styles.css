@@ -64,8 +64,7 @@
   /* Type. The two large steps scale with the window between a phone's size and a laptop's. */
   --display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
   --ui:
-    Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui,
-    sans-serif;
+    -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;
   --text-ui: 0.875rem;
@@ -549,9 +548,13 @@ a.button:visited {
   text-decoration: none;
 }
 
-.button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--primary-bg) 86%, var(--surface));
-  border-color: color-mix(in srgb, var(--primary-bg) 86%, var(--surface));
+/* Hover is for a pointer that hovers. Under a finger a tapped button would keep its hover fill until the next tap, so
+   the family's hover rules, and the cards that lift, wait for `(hover: hover)`; press states and focus rings do not. */
+@media (hover: hover) {
+  .button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--primary-bg) 86%, var(--surface));
+    border-color: color-mix(in srgb, var(--primary-bg) 86%, var(--surface));
+  }
 }
 
 .button:active:not(:disabled) {
@@ -602,10 +605,12 @@ a.button--secondary:visited {
   color: var(--ink);
 }
 
-.button--secondary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ink) 6%, var(--raised));
-  border-color: var(--ink);
-  color: var(--ink);
+@media (hover: hover) {
+  .button--secondary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ink) 6%, var(--raised));
+    border-color: var(--ink);
+    color: var(--ink);
+  }
 }
 
 .button--secondary:disabled {
@@ -627,10 +632,12 @@ a.button--text:visited {
   color: var(--muted);
 }
 
-.button--text:hover:not(:disabled) {
-  background: var(--hover-wash);
-  border-color: transparent;
-  color: var(--ink);
+@media (hover: hover) {
+  .button--text:hover:not(:disabled) {
+    background: var(--hover-wash);
+    border-color: transparent;
+    color: var(--ink);
+  }
 }
 
 .button--text:active:not(:disabled) {
@@ -653,9 +660,11 @@ a.button--danger:visited {
   color: var(--raised);
 }
 
-.button--danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--danger) 86%, var(--surface));
-  border-color: color-mix(in srgb, var(--danger) 86%, var(--surface));
+@media (hover: hover) {
+  .button--danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger) 86%, var(--surface));
+    border-color: color-mix(in srgb, var(--danger) 86%, var(--surface));
+  }
 }
 
 /* The first step of something that cannot be taken back: a secondary in the danger ink. The fill is kept for the
@@ -702,9 +711,11 @@ a.button--danger:visited {
     color var(--duration-1) var(--ease);
 }
 
-.iconbutton:hover:not(:disabled) {
-  background: var(--hover-wash);
-  color: var(--ink);
+@media (hover: hover) {
+  .iconbutton:hover:not(:disabled) {
+    background: var(--hover-wash);
+    color: var(--ink);
+  }
 }
 
 .iconbutton:active:not(:disabled),
@@ -943,7 +954,7 @@ a.button--danger:visited {
   width: 100%;
   height: 0.4rem;
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--paper);
 }
 
@@ -1604,6 +1615,7 @@ a.button--danger:visited {
   margin-top: 2rem;
   padding: 1.75rem;
   border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
   background: var(--paper);
 }
 
@@ -1858,7 +1870,7 @@ a.button--danger:visited {
   min-height: 2.75rem;
   padding: 0 var(--space-4);
   border: 1px solid var(--rule-strong);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--raised) 92%, transparent);
   box-shadow: var(--shadow-2);
   color: var(--muted);
@@ -2041,10 +2053,12 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
     transform var(--duration-2) var(--ease);
 }
 
-.plate:hover {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
-  box-shadow: var(--shadow-2);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .plate:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
+    box-shadow: var(--shadow-2);
+    transform: translateY(-2px);
+  }
 }
 
 .plate:focus-visible {
@@ -2112,8 +2126,10 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
   transition: transform var(--duration-3) var(--ease);
 }
 
-.plate:hover .plate__image {
-  transform: scale(1.03);
+@media (hover: hover) {
+  .plate:hover .plate__image {
+    transform: scale(1.03);
+  }
 }
 
 .plate__spine {
@@ -2178,7 +2194,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
 
 .plate__archived {
   border: 1px solid var(--rule-strong);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-xs);
   padding: 0.1rem var(--space-2);
   font-size: var(--text-xs);
 }
@@ -2840,7 +2856,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
   border: 1px solid var(--rule-strong);
   border-radius: var(--radius-sm);
   color: var(--muted);
-  font-size: 0.625rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   line-height: 1.5;
@@ -3061,7 +3077,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
 
 .unisearch__kind {
   padding-top: 0.22rem;
-  font-size: 0.68rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3242,11 +3258,13 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
   box-shadow: none;
 }
 
-.doorway:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--rule-strong));
-  background-color: var(--raised);
-  box-shadow: var(--shadow-2);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .doorway:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--rule-strong));
+    background-color: var(--raised);
+    box-shadow: var(--shadow-2);
+    transform: translateY(-2px);
+  }
 }
 
 .doorway:active {
@@ -3304,9 +3322,11 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
   height: 1rem;
 }
 
-.doorway:hover .doorway__go {
-  border-color: var(--accent);
-  color: var(--accent);
+@media (hover: hover) {
+  .doorway:hover .doorway__go {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 }
 
 /* A phone: each doorway one compact row - the medallion, the name over what it holds, the way through. */
@@ -4742,10 +4762,12 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
     transform var(--duration-2) var(--ease);
 }
 
-.entitycard:hover {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
-  box-shadow: var(--shadow-2);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .entitycard:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
+    box-shadow: var(--shadow-2);
+    transform: translateY(-2px);
+  }
 }
 
 .entitycard:active {
@@ -5163,10 +5185,12 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
     transform var(--duration-2) var(--ease);
 }
 
-.typecard:hover {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
-  box-shadow: var(--shadow-2);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .typecard:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
+    box-shadow: var(--shadow-2);
+    transform: translateY(-2px);
+  }
 }
 
 .typecard:active {
@@ -5794,7 +5818,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar) {
 .entry__stage {
   padding: var(--space-1) var(--space-3);
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--muted);
   font: inherit;
@@ -6315,6 +6339,7 @@ html:has(.viewer[open]) {
   max-width: calc(100vw - 2rem);
   max-height: calc(100dvh - 2rem);
   padding: 0;
+  border-radius: var(--radius-md);
   border: 1px solid var(--rule-strong);
   background: var(--raised);
   color: var(--ink);
@@ -6458,6 +6483,7 @@ html:has(.viewer[open]) {
 .editor {
   max-width: calc(62ch + 2.5rem);
   border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
   background: var(--raised);
 }
 
@@ -7499,7 +7525,7 @@ html:has(.viewer[open]) {
   gap: 0.25rem;
   padding: 0 var(--space-2);
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   color: var(--muted);
   font-size: var(--text-sm);
   white-space: nowrap;
@@ -8145,7 +8171,7 @@ html:has(.viewer[open]) {
 }
 
 .picker__kind {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   white-space: nowrap;
 }
@@ -8343,7 +8369,7 @@ html:has(.viewer[open]) {
 
 /* ---------- Narrow screens ---------- */
 
-@media (max-width: 900px) {
+@media (max-width: 860px) {
   .auth {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
@@ -8390,7 +8416,7 @@ html:has(.viewer[open]) {
   .rail {
     position: sticky;
     top: 0;
-    z-index: 30;
+    z-index: var(--z-drawer);
     flex-direction: row;
     align-items: center;
     gap: 0.6rem;
@@ -8448,6 +8474,7 @@ html:has(.viewer[open]) {
   .rail__archived {
     flex: none;
     border: 1px solid var(--plate-muted);
+    border-radius: var(--radius-xs);
     padding: 0 0.3rem;
     font-size: var(--text-xs);
   }
@@ -9937,7 +9964,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
 }
 
 .beat__where {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
 }
 
 /* A linked scene's manuscript, beside its chip on a beat (Issue #48): an icon link, the chip's height. */
@@ -10025,7 +10052,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
 
 .scenepick__heading {
   margin: 0.55rem 0 0.1rem;
-  font-size: 0.64rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--muted);
@@ -10246,7 +10273,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
   margin-top: 1rem;
   padding: 1.25rem 1.5rem;
   border: 1px solid var(--border-control);
-  border-radius: 0;
+  border-radius: var(--radius-md);
   background: var(--raised);
   color: var(--ink);
   font-family: var(--display);
@@ -10962,7 +10989,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
 
 .refusal__rule {
   margin: 0;
-  font-size: 0.62rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.1em;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -14194,10 +14221,12 @@ body:has(.portal) {
   transition: box-shadow var(--duration-3) var(--ease);
 }
 
-.worldcard__panel:hover {
-  box-shadow:
-    inset 0 0 0 1px rgb(var(--portal-ink-rgb) / 0.2),
-    0 18px 40px -20px rgb(var(--portal-drop-rgb) / 1);
+@media (hover: hover) {
+  .worldcard__panel:hover {
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--portal-ink-rgb) / 0.2),
+      0 18px 40px -20px rgb(var(--portal-drop-rgb) / 1);
+  }
 }
 
 .worldcard__panel:has(.worldcard__link:focus-visible) {
@@ -14484,8 +14513,10 @@ body:has(.portal) {
     transition: transform var(--duration-3) var(--ease);
   }
 
-  .worldcard__panel:hover .worldcard__image {
-    transform: scale(1.03);
+  @media (hover: hover) {
+    .worldcard__panel:hover .worldcard__image {
+      transform: scale(1.03);
+    }
   }
 
   .worldcard--skeleton {
@@ -16443,7 +16474,7 @@ details.reviewsection > .reviewsection__list {
   min-height: var(--control-sm);
   padding: 0.3rem 0.85rem;
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--ink);
   font: inherit;
@@ -17326,7 +17357,7 @@ details.reviewsection > .reviewsection__list {
   min-height: 2rem;
   padding: 0.25rem var(--space-3);
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   color: var(--muted);
   font-size: var(--text-sm);
   text-decoration: none;
