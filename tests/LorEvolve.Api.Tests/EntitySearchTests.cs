@@ -629,6 +629,44 @@ public sealed class EntitySearchTests(LorEvolveApiFactory factory) : IClassFixtu
         Assert.Equal(1, await IndexedRows(entity.Id));
     }
 
+    // ---------- Exact and order ----------
+
+    [Fact]
+    public async Task Exact_finds_only_the_entry_called_that_by_name_or_alias_ignoring_case()
+    {
+        var (client, universe) = await SignedInWithUniverse("exact");
+        var type = await FirstDefaultType(client, universe.Id);
+
+        await CreateEntity(client, universe.Id, type.Id, "Goku", aliases: ["Kakarot"]);
+        await CreateEntity(client, universe.Id, type.Id, "Goku Black");
+        await CreateEntity(client, universe.Id, type.Id, "Raditz", summary: "Goku's older brother.");
+
+        Assert.Equal(3, (await SearchNames(client, universe.Id, "goku")).Count);
+        Assert.Equal(["Goku"], await SearchNames(client, universe.Id, "GOKU", "&exact=true"));
+        Assert.Equal(["Goku"], await SearchNames(client, universe.Id, " kakarot ", "&exact=true"));
+        Assert.Empty(await SearchNames(client, universe.Id, "Gok", "&exact=true"));
+    }
+
+    [Fact]
+    public async Task The_list_reads_by_name_ignoring_case_or_newest_created_first()
+    {
+        var (client, universe) = await SignedInWithUniverse("sort");
+        var type = await FirstDefaultType(client, universe.Id);
+
+        var bel = await CreateEntity(client, universe.Id, type.Id, "bel", summary: "A wandering hero.");
+        await CreateEntity(client, universe.Id, type.Id, "Cara", summary: "A wandering hero.");
+        await CreateEntity(client, universe.Id, type.Id, "Arin", summary: "A wandering hero.");
+        // Edited last, so it leads the default order but not the created one.
+        await UpdateEntity(client, universe.Id, bel, name: "Bel");
+
+        var path = $"/api/universes/{universe.Id}/entities?pageSize=50";
+        Assert.Equal(["Arin", "Bel", "Cara"], (await ListEntities(client, universe.Id, "pageSize=50&sort=name")).Items.Select(item => item.Name));
+        Assert.Equal(["Arin", "Cara", "Bel"], (await ListEntities(client, universe.Id, "pageSize=50&sort=created")).Items.Select(item => item.Name));
+        Assert.Equal("Bel", (await ListEntities(client, universe.Id, "pageSize=50")).Items[0].Name);
+        Assert.Equal(["Arin", "Bel", "Cara"], await SearchNames(client, universe.Id, "hero", "&sort=name"));
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync($"{path}&sort=size")).StatusCode);
+    }
+
     // ---------- Helpers ----------
 
     /// <summary>A Tiptap document, one paragraph per argument.</summary>
