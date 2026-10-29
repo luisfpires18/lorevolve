@@ -582,9 +582,19 @@
           <legend class="apply__title">A few questions</legend>
           <p class="apply__intro">All optional. Skip any you like, or all of them.</p>
           <div data-questions="signup"></div>
-          <p class="apply__error" data-error role="alert" hidden></p>
           <div class="apply__actions">
             <button class="landing-button" type="button" data-close-apply>Skip</button>
+            <button class="landing-button landing-button--primary" type="button" data-goto="signup-pricing">Next</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="apply__page" data-page="signup-pricing" hidden>
+          <legend class="apply__title">And pricing</legend>
+          <p class="apply__intro">Still optional. It helps me work out what LorEvolve should cost one day.</p>
+          <div data-questions="signup-pricing"></div>
+          <p class="apply__error" data-error role="alert" hidden></p>
+          <div class="apply__actions">
+            <button class="landing-button" type="button" data-goto="signup">Back</button>
             <button class="landing-button landing-button--primary" type="submit" data-send>Send answers</button>
           </div>
         </fieldset>
