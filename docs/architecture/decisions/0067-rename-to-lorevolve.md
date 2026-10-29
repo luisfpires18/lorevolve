@@ -1,6 +1,6 @@
 # ADR 0067 - The product is LorEvolve; what was stored as Lorex is still read
 
-Status: accepted (2026-10-27). Outside steps: `TODO_rename.md`.
+Status: accepted (2026-10-27). Outside steps: done 2026-10-29 (the `TODO_rename.md` checklist is deleted; see `STATE.md`).
 
 ## Context
 

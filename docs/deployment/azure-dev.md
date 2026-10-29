@@ -251,7 +251,7 @@ only with the address it names. Existing accounts and sign-in are untouched. The
 (#34, #51) assumes it is on.
 
 ```bash
-az webapp config appsettings set -g rg-lorex-dev -n dev-lorevolve --settings Registration__InviteOnly=true
+az webapp config appsettings set -g rg-lorevolve-dev -n dev-lorevolve --settings Registration__InviteOnly=true
 ```
 
 ## Provision the owner's Admin account (ADR 0059)
