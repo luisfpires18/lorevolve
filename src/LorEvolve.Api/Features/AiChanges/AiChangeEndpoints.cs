@@ -28,7 +28,7 @@ public static class AiChangeEndpoints
         universe.MapPut("/{proposalId:guid}/operations/{operationId:guid}", EditAsync).WithName("EditAiChange");
         universe.MapPost("/{proposalId:guid}/approve", ApproveAsync).WithName("ApproveAiChange");
         universe.MapPost("/{proposalId:guid}/reject", RejectAsync).WithName("RejectAiChange");
-        universe.MapGet("/{proposalId:guid}/approve/{approvalId:guid}/progress", ReadProgress).WithName("AiChangeApprovalProgress");
+        universe.MapGet("/{proposalId:guid}/approve/{approvalId:guid}/progress", ReadProgressAsync).WithName("AiChangeApprovalProgress");
 
         return endpoints;
     }
@@ -147,13 +147,27 @@ public static class AiChangeEndpoints
     }
 
     /// <summary>
-    /// How far the caller's own running approval has got, read while its request is still open. Missing once it has
-    /// finished, or when it is someone else's; the approval's answer is what says what was applied.
+    /// How far the caller's own running approval has got, read while its request is still open. Behind the same gate as
+    /// approving. Missing once it has finished, or when it is someone else's; the approval's answer is what says what was
+    /// applied.
     /// </summary>
-    private static IResult ReadProgress(Guid approvalId, ClaimsPrincipal principal, AiChangeProgress progress) =>
-        progress.Read(approvalId, principal.RequireUserId()) is { } entry
+    private static async Task<IResult> ReadProgressAsync(
+        Guid universeId,
+        Guid approvalId,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        AiChangeProgress progress,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        return progress.Read(approvalId, principal.RequireUserId()) is { } entry
             ? Results.Ok(new { done = entry.Done, total = entry.Total })
             : Results.NotFound();
+    }
 
     /// <summary>Reject: a reviewer any proposal of the universe, anyone else only their own (a withdrawal). Nothing else changes.</summary>
     private static async Task<IResult> RejectAsync(
