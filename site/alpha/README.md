@@ -1,6 +1,7 @@
 # LorEvolve alpha page
 
-A static page, separate from the app, that explains LorEvolve and takes alpha applications plus a short pricing survey.
+A static page, separate from the app, that explains LorEvolve and takes alpha applications, with two optional surveys:
+opinion questions right after applying, and an end-of-alpha survey opened from a personal link.
 Plan: `docs/design/alpha-demo-page-plan.md`. Nothing here imports or calls the app.
 
 | Path | What |
@@ -8,9 +9,10 @@ Plan: `docs/design/alpha-demo-page-plan.md`. Nothing here imports or calls the a
 | `public/` | What is served: `index.html`, `privacy.html`, `styles.css` (a trimmed copy of the app's portal and landing styles), `app.js` (the dialog), `_headers`, `assets/` |
 | `public/assets/shots/` | One 1280x800 WebP per feature card, named as `index.html` references them |
 | `functions/api/apply.js` | `POST /api/apply`: Turnstile check, validation, one row per send in D1 (never overwrites: addresses are not verified) |
+| `functions/api/survey.js` | `GET`/`POST /api/survey`: survey answers keyed by the application's survey token, one row per send |
 | `functions/api/config.js` | `GET /api/config`: the public Turnstile site key |
-| `lib/application.js` | Validation, shared by the function and its check |
-| `schema.sql` | The `applications` table |
+| `lib/application.js`, `lib/survey.js` | Validation, shared by the functions and their checks |
+| `schema.sql` | The `applications` and `surveys` tables (`migrations/0002-surveys.sql` updates a database made before the surveys) |
 
 The page sends no email. Applications are read by hand in D1.
 
@@ -52,10 +54,21 @@ necessarily sent by the owner of that address.
 - Latest answers per address: `SELECT * FROM applications a WHERE id = (SELECT MAX(id) FROM applications WHERE email = a.email);`
 - A request for a copy: `SELECT * FROM applications WHERE email = '<email>';`
 - A request to delete: `DELETE FROM applications WHERE email = '<email>';`
-- When the alpha ends: `DROP TABLE applications;` (or delete the database).
+- When the alpha ends: `DROP TABLE surveys; DROP TABLE applications;` (or delete the database).
 
 If the consent wording or `privacy.html` changes in substance, bump `PRIVACY_VERSION` in `lib/application.js` and the
 version line in `privacy.html`.
+
+## Surveys
+
+- Signup answers: `SELECT a.email, s.answers, s.created_at FROM surveys s JOIN applications a ON a.id = s.application_id WHERE s.part = 'signup';`
+- End-of-alpha links: each tester's link is `https://demo.lorevolve.com/?survey=<survey_token>`. List them with
+  `SELECT email, name, 'https://demo.lorevolve.com/?survey=' || survey_token AS link FROM applications WHERE wave IS NOT NULL;`
+  and email each person their own. The link opens the end-of-alpha survey greeting them by name.
+- End-of-alpha answers: the same query with `s.part = 'end'`. `answers` is JSON; the latest row per application and part counts.
+- Deleting a person's data: `DELETE FROM applications WHERE email = '<email>';` also deletes their survey rows.
+  D1 applies the cascade only with `PRAGMA foreign_keys = ON` in effect, so check `SELECT COUNT(*) FROM surveys` after,
+  or delete their survey rows first.
 
 ## Running it locally
 
@@ -70,4 +83,4 @@ The throwaway `wrangler.toml` for the first command only needs `[[d1_databases]]
 `database_name` and `database_id` both `alpha-local`. It is not committed: a `wrangler.toml` in this folder would
 override the bindings set in the Pages dashboard.
 
-Validation check: `node site/alpha/lib/application.test.mjs`.
+Validation checks: `node --test site/alpha/lib/application.test.mjs site/alpha/lib/survey.test.mjs`.

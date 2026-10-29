@@ -311,6 +311,11 @@ button {
   text-shadow: 0 1px 12px rgb(var(--portal-glow-rgb) / 0.7);
 }
 
+/* A class's display must never undo hidden: the Discord links stay hidden until app.js has an invite. */
+[hidden] {
+  display: none !important;
+}
+
 /* -- Actions: one filled pill, one outlined. -- */
 
 .landing-actions {
@@ -448,6 +453,37 @@ button {
     max-width: none;
     margin-top: 0;
   }
+
+  .features__groups {
+    max-width: none;
+    margin-top: 0;
+  }
+}
+
+/* The feature list in three groups: a small heading over each list. */
+.features__groups {
+  display: grid;
+  gap: clamp(2.5rem, 5vw, 3.5rem);
+  max-width: 56rem;
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.features__grouptitle {
+  margin: 0;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.features__grouplede {
+  margin: var(--space-2) 0 0;
+  color: rgb(var(--portal-ink-rgb) / 0.72);
+}
+
+.features__group .features {
+  margin-top: var(--space-4);
 }
 
 .feature {
@@ -516,7 +552,7 @@ button {
   transform: rotate(-135deg);
 }
 
-.feature summary:hover h3 {
+.feature summary:hover :is(h3, h4) {
   color: var(--accent);
 }
 
@@ -525,7 +561,7 @@ button {
   outline-offset: -2px;
 }
 
-.feature h3 {
+.feature :is(h3, h4) {
   margin: 0;
   font-family: var(--display);
   font-size: 1.375rem;
@@ -549,6 +585,16 @@ button {
   aspect-ratio: 16 / 10;
   object-fit: cover;
   object-position: top left;
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--portal-line);
+  border-radius: var(--radius-sm);
+  background: var(--portal-surface);
+}
+
+.feature__clip {
+  display: block;
+  width: 100%;
+  height: auto;
   margin-bottom: var(--space-2);
   border: 1px solid var(--portal-line);
   border-radius: var(--radius-sm);
@@ -810,6 +856,50 @@ button {
 
 .choice input {
   margin: 0;
+}
+
+/* The usefulness grid: one row per feature, its four ratings as pills that wrap on a phone. */
+.rate {
+  margin-top: var(--space-4);
+}
+
+.rate__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.rate__options label {
+  position: relative;
+}
+
+.rate__options input {
+  position: absolute;
+  opacity: 0;
+}
+
+.rate__options span {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-md);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--portal-line-strong);
+  border-radius: var(--radius-full);
+  color: rgb(var(--portal-ink-rgb) / 0.8);
+  font-size: var(--text-ui);
+  cursor: pointer;
+}
+
+.rate__options input:checked + span {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--portal-ink);
+}
+
+.rate__options input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .check input:user-invalid {

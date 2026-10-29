@@ -44,7 +44,8 @@
           </h1>
           <p class="landing-hero__lede">
             LorEvolve is a place to build a fictional world and write the stories that happen in
-            it. I'm opening it to a small group of early testers, and I'd love your help shaping it.
+            it. No AI unless you switch it on. I'm opening it to a small group of early testers,
+            and I'd love your help shaping it.
           </p>
         </div>
       </section>
@@ -61,6 +62,7 @@
           <button class="landing-button landing-button--primary" type="button" data-open-apply>
             Join the alpha
           </button>
+          <a class="landing-button" href="#" data-discord hidden>Join the Discord</a>
         </div>
         <noscript>
           <p class="landing-lede">
@@ -94,258 +96,420 @@
         </div>
       </section>
 
+      <section class="landing-section" id="ai" aria-labelledby="ai-title">
+        <div class="landing-split">
+          <div>
+            <h2 class="landing-heading" id="ai-title">AI is optional. And off.</h2>
+          </div>
+          <div class="prose">
+            <p>
+              Every world has an AI help switch, and it starts off. With it off, there's no
+              assistant, no AI connection and no AI review page anywhere in that world. Your
+              writing stays yours, and LorEvolve never trains an AI on it.
+            </p>
+            <p>
+              If you want it, you can switch it on when you create a world or later in its
+              settings. Then an AI can read your lore to answer questions, like "has this
+              character ever been to the capital?", from what you actually wrote.
+            </p>
+            <p>
+              It can also suggest changes, but it never makes them. Every suggestion waits on a
+              review page where you see exactly what would change, and you accept or reject each
+              one. You choose per connection whether an AI may only read, or also suggest.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section class="landing-section features-section" id="features" aria-labelledby="features-title">
         <div class="features__intro">
           <h2 class="landing-heading" id="features-title">What you can do with it</h2>
           <p class="landing-lede">Open any part to see what it does and why it's there.</p>
         </div>
+        <div class="features__groups">
+          <div class="features__group">
+            <h3 class="features__grouptitle">A universe</h3>
+            <p class="features__grouplede">Everything inside one world: its lore, its history and its stories.</p>
+            <ul class="features">
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Lore entries</h4>
+                    <span class="feature__hook">A page for every character, place and thing.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/lore.webp" alt="A lore page with a picture, an article, aliases, tags and details." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Every character, place, faction or object gets a page: a picture cropped the way you want, an article, the other names it goes by, tags, and the details its type asks for.</p>
+                  <p>Make many entries at once from a list of names, or create one on the spot while you link to it.</p>
+                  <p class="feature__why">No more digging through one long document. Anything in your world is a search away.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Your own types</h4>
+                    <span class="feature__hook">Your world's structure, designed by you.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/types.webp" alt="The list of lore types, nested ones folded under their parent, each with its groups." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>A new world starts empty. You decide what kinds of things it has and what each records: a character might have a birth year and a house, a ship a crew and a captain.</p>
+                  <p>Types can sit inside other types, fields can be grouped in sections, choice fields hold your own lists, and groups such as Places collect several types. Or start from a ready-made set and change it.</p>
+                  <p class="feature__why">The structure fits your world, instead of your world bending to someone else's template.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Canon, history and private notes</h4>
+                    <span class="feature__hook">Nothing you write is lost.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/history.webp" alt="A page's history, with earlier versions ready to restore." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Mark each entry as an Idea, a Draft or Canon. Every save is kept as a version you can read and bring back, and anything you remove waits in the Trash before it is gone for good.</p>
+                  <p>Each entry can carry a private note only you can see, never shown to collaborators, readers or an AI.</p>
+                  <p class="feature__why">Try a big rewrite without worrying. The old version is one click away.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Relations</h4>
+                    <span class="feature__hook">How things connect, and for how long.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/relations.webp" alt="An entry's relations, each with its kind and when it held." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Invent your own kinds of relation, such as rules, sworn to or owes a debt to, read correctly from both ends. A relation can hold for a stretch of time, or for one stage of an entry's life, and leaving a faction and coming back is the same relation with two periods.</p>
+                  <p class="feature__why">Your world's web of loyalties and feuds, kept straight.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Family trees</h4>
+                    <span class="feature__hook">Record who's related. The tree draws itself.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/family-tree.webp" alt="A family tree spanning several generations, with cousins and in-laws." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Record parents and partners, and the tree works out the rest: siblings, aunts and uncles, cousins, nieces and nephews, across as many generations as you have. Other family you record, such as a guardian, shows as a labelled line.</p>
+                  <p class="feature__why">Big families get confusing fast. The tree shows it at a glance and stays right as you change things.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Progression</h4>
+                    <span class="feature__hook">How characters change over the story.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/progression.webp" alt="A character's stages, each with its own picture and details." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Give an entry stages, a character across arcs or a city across the years, each with its own picture and its own details. Add the forms it can take, what it can do, and how it looks, each with pictures.</p>
+                  <p class="feature__why">You always know what a character was like at any point in the story.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Knowledge</h4>
+                    <span class="feature__hook">Who knows what, and since when.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/knowledge.webp" alt="A list of what one character knows, each from a given scene." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Record what a character knows, secretly or not, and from which scene, kept apart from what the lore says is true.</p>
+                  <p class="feature__why">Mysteries and betrayals stay consistent: nobody acts on a secret before they learned it.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Maps</h4>
+                    <span class="feature__hook">Your maps, with your lore pinned on them.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/maps.webp" alt="A map with pins linked to places and characters." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Upload your own maps and pin your lore onto them. Each pin opens its page, and a pinned page shows where it is. Give a map a scale in your own unit and measure distances on it. Interactive maps are being considered.</p>
+                  <p class="feature__why">You can see where things are and how far apart, without holding it all in your head.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>World rules and canon checks</h4>
+                    <span class="feature__hook">How your world works, checked for you.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/canon.webp" alt="A list of problems found in the lore, each naming the pages involved." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Write down how your world works, in your own words. A rule can carry a simple check, such as no one bound more than three times, that runs against your timeline.</p>
+                  <p>LorEvolve also lists where your canon contradicts itself, such as a parent younger than their child. It never changes your lore; you fix it or dismiss it.</p>
+                  <p class="feature__why">The mistakes readers would spot get spotted first, by you.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Your own calendar</h4>
+                    <span class="feature__hook">Your world's own eras, months and dates.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/chronology.webp" alt="A world's eras listed in order, with its own months." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Named eras that count up or down, your own months with their own lengths, and dates written the way they would be inside the story.</p>
+                  <p class="feature__why">Dates read like your world, not squeezed into ours.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Stories and plot</h4>
+                    <span class="feature__hook">Write the story inside the world.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/stories.webp" alt="A scene being written, with mentioned characters shown as links." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Write in chapters and scenes, each with its own point of view and date. Type @ to mention a character or place and it becomes a link. Switch between writing and reading, and every saved version of a scene is kept.</p>
+                  <p>Plan plot arcs and their beats, linked to the scenes they play out in and the lore they concern.</p>
+                  <p class="feature__why">The lore sits right next to the page, so checking a detail doesn't mean switching apps.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Timeline</h4>
+                    <span class="feature__hook">Everything in order, in your world's own dates.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/timeline.webp" alt="Events and dated scenes in order on a timeline." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Add moments with who took part and which stories they matter to. Scenes set at a date appear on the same line by themselves.</p>
+                  <p class="feature__why">You can see what happened when, across every story set in the world.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Comments and suggestions</h4>
+                    <span class="feature__hook">Feedback right where it belongs.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/review.webp" alt="A comment thread and a suggested change on an entry." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Collaborators can comment on an entry, a story or a scene, and suggest a change you accept or reject, with what it was and what it would become side by side.</p>
+                  <p class="feature__why">Feedback stays attached to the page it is about, not lost in a chat.</p>
+                  </div>
+                </details>
+              </li>
+            </ul>
+          </div>
+          <div class="features__group">
+            <h3 class="features__grouptitle">Your workspace</h3>
+            <p class="features__grouplede">Around your worlds: ideas, people, your data and your tools.</p>
+            <ul class="features">
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Ideas</h4>
+                    <span class="feature__hook">Room for what isn't settled yet.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/ideas.webp" alt="A board of notes and pages joined by lines." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Write ideas as text, or lay them out on a board of cards and lines. Keep them under one universe, or loose before they belong to any, linked to the lore, stories, scenes and plot they're about.</p>
+                  <p class="feature__why">Half-formed ideas get a home without cluttering the world you've already settled.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Collaboration</h4>
+                    <span class="feature__hook">Invite the people you trust.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/collaboration.webp" alt="The collaborators of a universe, each with their role." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Invite people into a universe as Editor, Reviewer or Viewer. They see it, you keep it.</p>
+                  <p class="feature__why">Co-writers and test readers in the same place as the work.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature feature--ai">
+                  <summary>
+                    <h4>Your own AI, if you want it</h4>
+                    <span class="feature__hook">Off by default. Claude, ChatGPT and others, on your terms.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <video class="feature__clip" muted loop playsinline preload="none" poster="/assets/clips/mcp-poster.webp" width="936" height="778" aria-label="In Claude, the author asks for a character with exact details. Claude stages only those details for review and says what it left empty. In LorEvolve the author approves, and the character's page and relations appear.">
+                    <source src="/assets/clips/mcp.mp4" type="video/mp4" />
+                  </video>
+                  <p>Switch on AI help for a universe and you get a chat assistant inside LorEvolve. As a Reader it searches and answers from your lore; as a Creator it can also propose changes, which wait for your approval.</p>
+                  <p>It also speaks MCP, an open standard that lets an AI app use another app's data. Connect Claude or ChatGPT to one universe, so a writing assistant or a game engine works from the story you created instead of guessing, or bring a whole world in quickly, as proposals you review one by one.</p>
+                  <p class="feature__why">Disconnect at any time. Leave AI help off and none of this exists in your world.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Backup, export and search</h4>
+                    <span class="feature__hook">Your world, in files you keep.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/export.webp" alt="The export page with a readable export and a full backup." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Download a full backup that LorEvolve can restore, or a readable export of Markdown pages with every original picture. Search across a universe's lore, stories and articles.</p>
+                  <p class="feature__why">Your work never gets locked in here.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>An app on every screen</h4>
+                    <span class="feature__hook">Install it, and tell me what's wrong.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/install.webp" alt="LorEvolve installed as an app on a phone." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Install LorEvolve as an app on your phone or computer. It needs a connection; there is no offline mode. A Feedback button on every page sends a bug or a wish straight to me.</p>
+                  <p class="feature__why">Your world goes where you go.</p>
+                  </div>
+                </details>
+              </li>
+            </ul>
+          </div>
+          <div class="features__group">
+            <h3 class="features__grouptitle">Public portal</h3>
+            <p class="features__grouplede">When you're ready, share it.</p>
+            <ul class="features">
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Publishing</h4>
+                    <span class="feature__hook">Share the world, keep your notes.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/portal.webp" alt="A published world as a reader sees it." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Publish a universe piece by piece: you choose what is public, down to each entry, story and map. Everything else stays private.</p>
+                  <p class="feature__why">Share your world with readers or players without handing over your notes.</p>
+                  </div>
+                </details>
+              </li>
+              <li>
+                <details class="feature">
+                  <summary>
+                    <h4>Explore and author pages</h4>
+                    <span class="feature__hook">Read other people's worlds.</span>
+                  </summary>
+                  <div class="feature__body">
+                  <img class="feature__shot" src="/assets/shots/explore.webp" alt="The Explore page listing published worlds." width="1280" height="800" loading="lazy" decoding="async" />
+                  <p>Browse other authors' published universes, each author with a public page and a profile picture. Upvotes and downvotes are being considered.</p>
+                  <p class="feature__why">Find readers, and find worlds worth reading.</p>
+                  </div>
+                </details>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
+      <section class="landing-section features-section" id="faq" aria-labelledby="faq-title">
+        <div class="features__intro">
+          <h2 class="landing-heading" id="faq-title">Questions</h2>
+          <p class="landing-lede">
+            Something missing? Ask on <a href="#" data-discord hidden>Discord</a> or write to
+            <a href="mailto:support@lorevolve.com">support@lorevolve.com</a>.
+          </p>
+        </div>
         <ul class="features">
           <li>
             <details class="feature">
-              <summary>
-                <h3>Lore</h3>
-                <span class="feature__hook">A page for every character, place and thing.</span>
-              </summary>
+              <summary><h3>Is there AI in it?</h3></summary>
               <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/lore.webp" alt="A lore page with an article, a picture and a list of details." width="1280" height="800" loading="lazy" decoding="async" />
                 <p>
-                  Every character, place, faction or object gets a page of its own, with an
-                  article, a picture and whatever details you want to keep track of.
-                </p>
-                <p class="feature__why">
-                  No more digging through one long document. Anything in your world is a search
-                  away.
+                  Only if you switch it on, one world at a time. It starts off. With it off, no AI
+                  feature appears in that world, and nothing of yours is sent to an AI service.
+                  With it on, the built-in assistant sends the parts of your lore it needs to
+                  answer a question to OpenAI. LorEvolve never trains an AI on your work.
                 </p>
               </div>
             </details>
           </li>
           <li>
             <details class="feature">
-              <summary>
-                <h3>Lore types</h3>
-                <span class="feature__hook">Your world's structure, designed by you.</span>
-              </summary>
+              <summary><h3>What does it cost?</h3></summary>
               <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/types.webp" alt="The list of lore types, some nested inside others." width="1280" height="800" loading="lazy" decoding="async" />
                 <p>
-                  You decide what kinds of things your world has and what each one records. A
-                  character might have a birth date and a home; a ship might have a crew. Types can
-                  sit inside other types.
-                </p>
-                <p class="feature__why">
-                  The structure fits your world, instead of your world bending to someone else's
-                  template.
+                  Nothing during the alpha. The price after it isn't decided yet, and the optional
+                  questions in the alpha form help decide it.
                 </p>
               </div>
             </details>
           </li>
           <li>
             <details class="feature">
-              <summary>
-                <h3>Family Tree</h3>
-                <span class="feature__hook">Record who's related. The tree draws itself.</span>
-              </summary>
+              <summary><h3>Are there limits?</h3></summary>
               <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/family-tree.webp" alt="A family tree spanning three generations." width="1280" height="800" loading="lazy" decoding="async" />
                 <p>
-                  Record how characters are related and the tree draws itself: parents, children,
-                  partners, across as many generations as you have.
-                </p>
-                <p class="feature__why">
-                  Big families get confusing fast. The tree shows it at a glance and stays right as
-                  you change things.
+                  Each account has 1 GB for pictures and maps. Text has no set limit.
                 </p>
               </div>
             </details>
           </li>
           <li>
             <details class="feature">
-              <summary>
-                <h3>Maps</h3>
-                <span class="feature__hook">Your maps, with your lore pinned on them.</span>
-              </summary>
+              <summary><h3>Can I take my world with me?</h3></summary>
               <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/maps.webp" alt="A map with pins linked to places and characters." width="1280" height="800" loading="lazy" decoding="async" />
                 <p>
-                  Upload your own maps and pin your lore onto them. Each pin opens its page. Give a
-                  map a scale and you can measure distances on it.
-                </p>
-                <p class="feature__why">
-                  You can see where things are and how far apart, without holding it all in your
-                  head.
+                  Yes. Export it as Markdown pages with all your original pictures, which open in
+                  any editor, or as a full backup that LorEvolve can restore.
                 </p>
               </div>
             </details>
           </li>
           <li>
             <details class="feature">
-              <summary>
-                <h3>World Rules</h3>
-                <span class="feature__hook">How your world works, written down and checked.</span>
-              </summary>
+              <summary><h3>Who can see my world?</h3></summary>
               <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/world-rules.webp" alt="A list of world rules, one with a check attached." width="1280" height="800" loading="lazy" decoding="async" />
                 <p>
-                  Write down how your world works, in your own words. Some rules can carry a check
-                  that LorEvolve runs against your timeline.
-                </p>
-                <p class="feature__why">
-                  Your world stays consistent, and you hear about it when an event breaks one of
-                  your own rules.
+                  Only you, and anyone you invite to work on it with you. Nothing is public until
+                  you publish it, and then only the pages and stories you pick.
                 </p>
               </div>
             </details>
           </li>
           <li>
             <details class="feature">
-              <summary>
-                <h3>Chronology</h3>
-                <span class="feature__hook">Your world's own ages, eras and calendar.</span>
-              </summary>
+              <summary><h3>Does it work offline, or on my phone?</h3></summary>
               <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/chronology.webp" alt="A world's eras listed in order." width="1280" height="800" loading="lazy" decoding="async" />
                 <p>
-                  Your world keeps its own time: its own ages and eras, and its own calendar if it
-                  needs one.
-                </p>
-                <p class="feature__why">
-                  Dates read the way they would inside the story, not squeezed into ours.
+                  It works in any browser, on a phone too, and you can install it like an app. It
+                  needs an internet connection; there's no offline mode.
                 </p>
               </div>
             </details>
           </li>
           <li>
             <details class="feature">
-              <summary>
-                <h3>Stories</h3>
-                <span class="feature__hook">Write the story inside the world.</span>
-              </summary>
+              <summary><h3>How do I sign in?</h3></summary>
               <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/stories.webp" alt="A scene being written, with the lore it mentions beside it." width="1280" height="800" loading="lazy" decoding="async" />
-                <p>
-                  Write your stories inside the world, in chapters and scenes, and plan the plot
-                  alongside them. Mention a character or a place as you write.
-                </p>
-                <p class="feature__why">
-                  The lore sits right next to the page, so checking a detail doesn't mean switching
-                  apps.
-                </p>
-              </div>
-            </details>
-          </li>
-          <li>
-            <details class="feature">
-              <summary>
-                <h3>Timeline</h3>
-                <span class="feature__hook">Everything in order, with mistakes caught.</span>
-              </summary>
-              <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/timeline.webp" alt="Events in order on a timeline." width="1280" height="800" loading="lazy" decoding="async" />
-                <p>Events in order, and who was there for each one.</p>
-                <p class="feature__why">
-                  You can see what happened when, and LorEvolve points out what doesn't add up, like
-                  a character turning up after their own death.
-                </p>
-              </div>
-            </details>
-          </li>
-          <li>
-            <details class="feature">
-              <summary>
-                <h3>Ideas</h3>
-                <span class="feature__hook">Room for what isn't settled yet.</span>
-              </summary>
-              <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/ideas.webp" alt="A list of ideas, kept apart from the lore until they are decided." width="1280" height="800" loading="lazy" decoding="async" />
-                <p>
-                  Somewhere for thoughts that aren't part of the world yet, and boards where you can
-                  lay out notes and pages and draw lines between them.
-                </p>
-                <p class="feature__why">
-                  Half-formed ideas get a home without cluttering the world you've already settled.
-                </p>
-              </div>
-            </details>
-          </li>
-          <li>
-            <details class="feature">
-              <summary>
-                <h3>Progression stages</h3>
-                <span class="feature__hook">How characters change across eras.</span>
-              </summary>
-              <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/progression.webp" alt="A character's stages across several eras." width="1280" height="800" loading="lazy" decoding="async" />
-                <p>
-                  People and things change. Record how someone looks, what they can do and which
-                  forms they take in each era.
-                </p>
-                <p class="feature__why">
-                  You always know what a character was like at any point in the story.
-                </p>
-              </div>
-            </details>
-          </li>
-          <li>
-            <details class="feature">
-              <summary>
-                <h3>Public portal</h3>
-                <span class="feature__hook">Share the world, keep your notes.</span>
-              </summary>
-              <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/portal.webp" alt="A published world as a reader sees it." width="1280" height="800" loading="lazy" decoding="async" />
-                <p>
-                  When you're ready, publish your world for others to read. You pick exactly which
-                  pages and stories go public. The rest stays private.
-                </p>
-                <p class="feature__why">
-                  Share your world with readers or players without handing over your notes.
-                </p>
-              </div>
-            </details>
-          </li>
-          <li>
-            <details class="feature feature--ai">
-              <summary>
-                <h3>Your own AI, connected</h3>
-                <span class="feature__hook">Claude, ChatGPT and others can work with your world.</span>
-              </summary>
-              <div class="feature__body">
-                <img class="feature__shot" src="/assets/shots/assistant.webp" alt="The review page listing changes an AI proposed, each waiting to be approved." width="1280" height="800" loading="lazy" decoding="async" />
-                <p>
-                  LorEvolve speaks MCP, an open standard that lets an AI app use another app's data.
-                  You sign in to LorEvolve from Claude, ChatGPT or any app that supports it, pick one
-                  world, and choose what it may do.
-                </p>
-                <p>
-                  It can read: search your lore, follow family lines, read your scenes, walk the
-                  timeline, look at your pictures and measure distances on your maps. Ask "has this
-                  character ever been to the capital?" and the answer comes from what you wrote, not
-                  from guesses.
-                </p>
-                <p>
-                  Only if you allow it, it can also suggest changes: draft characters, add events,
-                  write a scene. Each one waits in a review list inside LorEvolve, where you see
-                  exactly what would change and accept or reject it. Nothing is written behind your
-                  back.
-                </p>
-                <p class="feature__why">
-                  It runs on the AI app you already use, it's off until you connect it, and you can
-                  disconnect at any time. There's also a built-in assistant if you'd rather stay
-                  inside LorEvolve.
-                </p>
+                <p>With an email address and a password. Alpha accounts are opened by invitation.</p>
               </div>
             </details>
           </li>
         </ul>
       </section>
-
     </main>
 
     <footer class="portal__footer">
       <div class="portal__footerbase">
         <p>LorEvolve, 2026</p>
         <p>
+          <a href="#" data-discord hidden>Discord</a>
+          <span aria-hidden="true" data-discord hidden>·</span>
           <a href="mailto:support@lorevolve.com">support@lorevolve.com</a>
           <span aria-hidden="true">·</span>
           <a href="/privacy">Privacy note</a>
@@ -356,11 +520,11 @@
     <dialog class="apply" id="apply" aria-labelledby="apply-title">
       <form class="apply__form" id="apply-form" novalidate>
         <div class="apply__head">
-          <p class="apply__step" id="apply-step">Step 1 of 2</p>
+          <p class="apply__step" id="apply-step"></p>
           <button class="apply__close" type="button" data-close-apply aria-label="Close">×</button>
         </div>
 
-        <fieldset class="apply__page" data-page="1">
+        <fieldset class="apply__page" data-page="apply">
           <legend class="apply__title" id="apply-title">Join the alpha</legend>
           <p class="apply__intro">
             Tell me a little about yourself. I'll email you when there's a spot.
@@ -392,59 +556,77 @@
             or sold, and you can ask for it to be deleted at any time.
           </p>
 
-          <div class="apply__actions">
-            <button class="landing-button landing-button--primary" type="button" data-next>
-              Next
-            </button>
-          </div>
-        </fieldset>
-
-        <fieldset class="apply__page" data-page="2" hidden>
-          <legend class="apply__title">A few quick questions</legend>
-          <p class="apply__intro">
-            All optional. They help me work out what LorEvolve should cost one day.
-          </p>
-
-          <fieldset class="field">
-            <legend class="field__label">If LorEvolve were paid, how would you prefer to pay?</legend>
-            <label class="choice"><input type="radio" name="payPreference" value="subscription" /> A monthly subscription</label>
-            <label class="choice"><input type="radio" name="payPreference" value="usage" /> Only for what I use</label>
-            <label class="choice"><input type="radio" name="payPreference" value="one-time" /> A one-time purchase</label>
-            <label class="choice"><input type="radio" name="payPreference" value="other" /> Something else</label>
-            <input class="choice__other" name="payOther" type="text" maxlength="200" aria-label="How else would you prefer to pay?" hidden />
-          </fieldset>
-
-          <label class="field">
-            <span class="field__label">At what monthly price would it feel so cheap you'd doubt it?</span>
-            <span class="money"><span aria-hidden="true">€</span><input name="priceTooCheap" type="number" inputmode="decimal" min="0" max="10000" step="0.01" aria-describedby="per-month" /></span>
-          </label>
-          <label class="field">
-            <span class="field__label">At what monthly price would it be too expensive to consider?</span>
-            <span class="money"><span aria-hidden="true">€</span><input name="priceTooExpensive" type="number" inputmode="decimal" min="0" max="10000" step="0.01" aria-describedby="per-month" /></span>
-          </label>
-          <p class="field__hint" id="per-month">In euros, per month.</p>
-
-          <label class="field">
-            <span class="field__label">Anything you'd like to see in it, or any suggestion?</span>
-            <textarea name="suggestion" rows="4" maxlength="2000"></textarea>
-          </label>
-
           <div class="apply__turnstile" id="turnstile"></div>
-          <p class="apply__error" id="apply-error" role="alert" hidden></p>
-
+          <p class="apply__error" data-error role="alert" hidden></p>
           <div class="apply__actions">
-            <button class="landing-button" type="button" data-back>Back</button>
             <button class="landing-button landing-button--primary" type="submit" data-send>Send</button>
           </div>
         </fieldset>
 
-        <div class="apply__page apply__done" data-page="done" hidden>
+        <div class="apply__page" data-page="applied" hidden>
           <h2 class="apply__title" tabindex="-1">You're on the list.</h2>
           <p class="apply__intro" id="apply-thanks"></p>
+          <p class="apply__intro">
+            Want to help shape LorEvolve? A few questions about how you'd use it, about two
+            minutes, every one optional.
+          </p>
           <div class="apply__actions">
-            <button class="landing-button landing-button--primary" type="button" data-close-apply>
-              Close
+            <button class="landing-button" type="button" data-close-apply>No thanks</button>
+            <button class="landing-button landing-button--primary" type="button" data-goto="signup">
+              Answer a few questions
             </button>
+          </div>
+        </div>
+
+        <fieldset class="apply__page" data-page="signup" hidden>
+          <legend class="apply__title">A few questions</legend>
+          <p class="apply__intro">All optional. Skip any you like, or all of them.</p>
+          <div data-questions="signup"></div>
+          <p class="apply__error" data-error role="alert" hidden></p>
+          <div class="apply__actions">
+            <button class="landing-button" type="button" data-close-apply>Skip</button>
+            <button class="landing-button landing-button--primary" type="submit" data-send>Send answers</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="apply__page" data-page="end-features" hidden>
+          <legend class="apply__title">How useful was each part?</legend>
+          <p class="apply__intro" id="end-greeting">
+            Thanks for testing LorEvolve. Every question is optional.
+          </p>
+          <div data-questions="end-features"></div>
+          <div class="apply__actions">
+            <button class="landing-button landing-button--primary" type="button" data-goto="end-more">Next</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="apply__page" data-page="end-more" hidden>
+          <legend class="apply__title">A few more questions</legend>
+          <p class="apply__intro">Still all optional.</p>
+          <div data-questions="end-more"></div>
+          <p class="apply__error" data-error role="alert" hidden></p>
+          <div class="apply__actions">
+            <button class="landing-button" type="button" data-goto="end-features">Back</button>
+            <button class="landing-button landing-button--primary" type="submit" data-send>Send answers</button>
+          </div>
+        </fieldset>
+
+        <div class="apply__page" data-page="thanks" hidden>
+          <h2 class="apply__title" tabindex="-1">Thank you.</h2>
+          <p class="apply__intro">Your answers are in. They go straight into what gets built next.</p>
+          <div class="apply__actions">
+            <button class="landing-button landing-button--primary" type="button" data-close-apply>Close</button>
+          </div>
+        </div>
+
+        <div class="apply__page" data-page="badlink" hidden>
+          <h2 class="apply__title" tabindex="-1">This link doesn't work.</h2>
+          <p class="apply__intro">
+            It may be incomplete. Copy the whole link from the email, or write to
+            <a href="mailto:support@lorevolve.com">support@lorevolve.com</a> for a new one.
+          </p>
+          <div class="apply__actions">
+            <button class="landing-button landing-button--primary" type="button" data-close-apply>Close</button>
           </div>
         </div>
       </form>

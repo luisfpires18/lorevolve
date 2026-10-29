@@ -1,4 +1,4 @@
-// POST /api/apply: one alpha application and its survey answers, stored in D1. Sends nothing anywhere else.
+// POST /api/apply: one alpha application, stored in D1. Sends nothing anywhere else.
 // Bindings (Pages project settings): DB (D1), TURNSTILE_SECRET (secret). Without them it refuses rather than store
 // unchecked input.
 import { PRIVACY_VERSION, readApplication } from '../../lib/application.js'
@@ -47,25 +47,15 @@ export async function onRequestPost({ request, env }) {
 
   // Insert only, never update: the address is not verified, so a send naming someone else's email must not replace
   // their answers. A second send from the same address is a second row; read the latest per email.
+  // The survey token is what /api/survey accepts for this application: handed back once, here, and in the
+  // end-of-alpha link the owner sends. 122 random bits, so nobody reaches another person's answers by guessing.
+  const surveyToken = crypto.randomUUID().replaceAll('-', '')
   await env.DB.prepare(
-    `INSERT INTO applications
-       (email, name, use_case, consent_at, privacy_version, pay_preference, pay_other,
-        price_too_cheap, price_too_expensive, suggestion, created_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?4)`,
+    `INSERT INTO applications (email, name, use_case, consent_at, privacy_version, created_at, survey_token)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?4, ?6)`,
   )
-    .bind(
-      row.email,
-      row.name,
-      row.useCase,
-      now,
-      PRIVACY_VERSION,
-      row.payPreference,
-      row.payOther,
-      row.priceTooCheap,
-      row.priceTooExpensive,
-      row.suggestion,
-    )
+    .bind(row.email, row.name, row.useCase, now, PRIVACY_VERSION, surveyToken)
     .run()
 
-  return reply(200, { ok: true })
+  return reply(200, { ok: true, surveyToken })
 }
