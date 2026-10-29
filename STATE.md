@@ -12,8 +12,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `docs/design/custom-domain-plan.md` on `docs/custom-domain-setup`. Alpha page -> `demo.lorevolve.com` (owner steps
   pending); apex -> new PROD app `prod-lorevolve` on B1 (`deploy-prod.yml` manual from `master`, `appsettings.AzureProd.json`, runbook `docs/deployment/azure-prod.md`; owner setup after the pre-alpha gate);
   DEV stays F1 on azurewebsites.
-- **AI change approval progress** (`feat/ai-changes-apply-progress` off `dev` at `36dd64f`; committed, not merged,
-  not pushed). Approving shows a bar under the toolbar: sweeping while checked, then `N of M applied`, read every
+- **AI change approval progress** (`feat/ai-changes-apply-progress` off `dev` at `36dd64f`; merged into `dev` at `de96320`,
+  pushed). Approving shows a bar under the toolbar: sweeping while checked, then `N of M applied`, read every
   500 ms from `GET .../approve/{approvalId}/progress` (in-memory `AiChangeProgress`, starter only, gone on answer;
   single-instance). Still one transaction. Api AiChange tests 25/25, `ai-changes` E2E 8/8.
 - **PWA opens the landing page** (`fix/pwa-opens-landing` off `dev` at `e7c1270`; merged into `dev` at `5ace80d`,
