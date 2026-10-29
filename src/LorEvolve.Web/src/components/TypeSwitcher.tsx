@@ -191,7 +191,12 @@ export function TypeSwitcher({
                     {chosen ?? (depth === 0 ? 'Choose category' : `All ${level.parent!.type.name}`)}
                   </bdi>
                 </span>
-                <ChevronDown className="typemenu__chevron" aria-hidden="true" focusable="false" />
+                <ChevronDown
+                  className="typemenu__chevron"
+                  aria-hidden="true"
+                  focusable="false"
+                  strokeWidth={1.75}
+                />
               </>
             }
           >
@@ -223,7 +228,12 @@ export function TypeSwitcher({
                     aria-current={group.id === selectedGroupId ? 'page' : undefined}
                     data-group-name={group.name}
                   >
-                    <Layers className="typemenu__icon" aria-hidden="true" focusable="false" />
+                    <Layers
+                      className="typemenu__icon"
+                      aria-hidden="true"
+                      focusable="false"
+                      strokeWidth={1.75}
+                    />
                     <bdi>{group.name}</bdi>
                     <span className="visually-hidden"> (group)</span>
                   </Link>
@@ -271,7 +281,12 @@ export function GroupSwitcher({
               data-testid="lore-group"
               data-group-name={group.name}
             >
-              <Layers className="typeswitch__icon" aria-hidden="true" focusable="false" />
+              <Layers
+                className="typeswitch__icon"
+                aria-hidden="true"
+                focusable="false"
+                strokeWidth={1.75}
+              />
               <span className="typeswitch__name">
                 <bdi>{group.name}</bdi>
                 <span className="visually-hidden"> (group)</span>

@@ -40,6 +40,7 @@ import {
   CANON_ORDER,
   type CanonStatusValue,
   type EntityPage,
+  type EntitySort,
   type EntityType,
   type EntityTypeGroup,
 } from '../lore/types'
@@ -70,6 +71,10 @@ function readStatus(value: string | null): CanonStatusValue | null {
     : null
 }
 
+function readSort(value: string | null): EntitySort | null {
+  return value === 'updated' || value === 'name' || value === 'created' ? value : null
+}
+
 function readPage(value: string | null) {
   const page = Number(value)
   return Number.isInteger(page) && page > 1 ? page : 1
@@ -78,7 +83,8 @@ function readPage(value: string | null) {
 /**
  * The Lore browser. Where the author is - which type, which status, what is typed in the filter, which of the type's own
  * fields narrow it, which page - is the address and nothing else:
- * `lore?type=<id>&status=<0|1|2>&q=<text>&field=<id>:<op>:<value>&page=<n>` (`field` once per filter, 034).
+ * `lore?type=<id>&status=<0|1|2>&q=<text>&exact=1&sort=<updated|name|created>&field=<id>:<op>:<value>&page=<n>`
+ * (`field` once per filter, 034).
  *
  * Choosing a type or a page is a move, so it is a history entry Back returns through; typing and
  * the status replace the entry they are on, so a word typed is not twenty steps of Back. Adding or removing a field filter
@@ -129,6 +135,8 @@ export default function LorePage() {
   const browseParam = params.get('browse')
   const canonStatus = readStatus(params.get('status'))
   const search = params.get('q') ?? ''
+  const exact = params.get('exact') === '1'
+  const sort = readSort(params.get('sort'))
   const page = readPage(params.get('page'))
   const addressFilters = readFieldFilters(params)
 
@@ -280,6 +288,8 @@ export default function LorePage() {
           page,
           pageSize,
           fieldFilters,
+          exact,
+          sort,
         },
         controller.signal,
       )
@@ -297,6 +307,8 @@ export default function LorePage() {
   }, [
     universe.id,
     search,
+    exact,
+    sort,
     entityTypeId,
     entityTypeGroupId,
     canonStatus,
@@ -344,7 +356,12 @@ export default function LorePage() {
   // Everything that narrows, gone at once and the scope kept. A move, so Back brings the filters back.
   const searchRef = useRef<HTMLInputElement>(null)
   const clearedSearch = (): To => {
-    const next = withParams({ q: null, status: null, [FIELD_FILTER_PARAM]: null }).toString()
+    const next = withParams({
+      q: null,
+      exact: null,
+      status: null,
+      [FIELD_FILTER_PARAM]: null,
+    }).toString()
     return { search: next ? `?${next}` : '' }
   }
 
@@ -488,6 +505,8 @@ export default function LorePage() {
   const offerPageSize =
     (result?.totalCount ?? 0) > LORE_PAGE_SIZES[0] || pageSize !== LORE_PAGE_SIZES[0]
   const isFiltered = search.trim().length > 0 || canonStatus !== null || fieldFilters.length > 0
+  // A search that is not exact is read best match first, unless another order is chosen.
+  const ranked = search.trim().length > 0 && !exact
   const activeFilters =
     (search.trim() ? 1 : 0) + (canonStatus !== null ? 1 : 0) + fieldFilters.length
   // Under a group, the member types a field filter could be added from - each a link to that type, search and status kept.
@@ -615,7 +634,12 @@ export default function LorePage() {
             <label className="visually-hidden" htmlFor="lore-search">
               Filter entries
             </label>
-            <ListFilter className="lore__searchicon" aria-hidden="true" focusable="false" />
+            <ListFilter
+              className="lore__searchicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
             <input
               id="lore-search"
               ref={searchRef}
@@ -626,6 +650,16 @@ export default function LorePage() {
               value={search}
               onChange={(event) => update({ q: event.target.value }, true)}
             />
+            <button
+              className="lore__exact"
+              type="button"
+              aria-pressed={exact}
+              title="Only entries named exactly this, or with it as an alias"
+              onClick={() => update({ exact: exact ? null : '1', page: null }, true)}
+              data-testid="lore-exact"
+            >
+              Exact name
+            </button>
           </div>
 
           <div className="segmented" role="group" aria-label="Status">
@@ -695,8 +729,25 @@ export default function LorePage() {
           ) : null}
         </div>
 
-        {offerPageSize || (access.manageTrash && pageItems.length > 0) || isSelecting ? (
+        {chosenName ? (
           <div className="lore__resultactions" data-testid="lore-result-actions">
+            <div className="lore__pagesize">
+              <label className="lore__pagesizelabel" htmlFor="lore-sort">
+                Sort by
+              </label>
+              <select
+                id="lore-sort"
+                className="field__input lore__pagesizeselect"
+                value={sort ?? ''}
+                onChange={(event) => update({ sort: event.target.value || null, page: null }, true)}
+                data-testid="lore-sort"
+              >
+                <option value="">{ranked ? 'Best match' : 'Last edited'}</option>
+                {ranked ? <option value="updated">Last edited</option> : null}
+                <option value="name">Name</option>
+                <option value="created">Date created</option>
+              </select>
+            </div>
             {offerPageSize ? (
               <div className="lore__pagesize">
                 <label className="lore__pagesizelabel" htmlFor="lore-page-size">

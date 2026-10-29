@@ -143,7 +143,7 @@ export function ActionMenu({
         type="button"
         ref={button}
         aria-label={label}
-        title={trigger ? undefined : label}
+        title={label}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((wasOpen) => !wasOpen)}

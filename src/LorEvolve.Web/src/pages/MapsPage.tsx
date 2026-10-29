@@ -159,6 +159,14 @@ export default function MapsPage() {
                 ? 'Upload a picture of this world - a continent, a city, a ship - and pin the Lore that lives on it.'
                 : 'Nobody has uploaded a map of this world yet.'
             }
+            action={
+              access.editContent ? (
+                <button className="button" type="button" onClick={() => setCreating(true)}>
+                  <ActionIcon icon={Plus} />
+                  New map
+                </button>
+              ) : undefined
+            }
           />
         ) : null}
       </TabPanel>

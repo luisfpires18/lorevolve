@@ -9,7 +9,8 @@ Status: **step 1 built** in `site/alpha/` (feature screenshots still to capture)
   the alpha succeeds.
 - The page sends no email. It only stores each request and its survey answers for the owner to read and act on by
   hand (pick testers, issue sign-up links in the app's Admin workspace).
-- Contact address: `lorevolve@gmail.com`.
+- Contact address: `support@lorevolve.com` (2026-10-29). `lorevolve@gmail.com`, planned at first, was never the
+  owner's address.
 - Email sending is built in the app later (step 2), not on the page.
 
 ## 2. What exists today (checked in code)
@@ -37,7 +38,7 @@ Plain HTML, CSS and a little JS. No build step, nothing imported from the app.
    portal, AI help (optional, off unless you turn it on).
 4. **About the alpha**: small, by invitation, in waves; things will change and break; feedback is the point.
    Button again: "Join the alpha".
-5. **Footer**: privacy note, `lorevolve@gmail.com`.
+5. **Footer**: privacy note, `support@lorevolve.com`.
 
 **Copy rules**: written like a person explaining their project to a friend, not marketing. Checked with the
 `humanizer` skill before review. No em or en dashes. No franchise names; screenshots show a demo universe with
@@ -91,7 +92,7 @@ Two options; owner picks one:
 
 | | **A. Cloudflare D1** (recommended) | B. Google Sheet |
 | --- | --- | --- |
-| How | A small Pages Function receives the form and writes one row to a D1 table | The form posts to a Google Apps Script that adds a row to a Sheet owned by `lorevolve@gmail.com` |
+| How | A small Pages Function receives the form and writes one row to a D1 table | The form posts to a Google Apps Script that adds a row to a Sheet owned by the owner's Google account |
 | Where you read it | Cloudflare dashboard, D1 console (table view, SQL, CSV export) | Google Sheets, phone included |
 | Spam protection | Turnstile (free, cookieless), checked server-side | Turnstile can be checked in the script, but weaker and more fiddly |
 | Same email twice | Adds a second row (never overwrites: addresses are not verified) | Adds a second row |
@@ -110,7 +111,7 @@ by hand: `wave`, `invited_at`.
 - Basis: consent (the checkbox), wording versioned.
 - Privacy note page: who keeps the data (the owner), why (alpha invitations and the survey), what is kept, how long
   (deleted when the alpha ends, or sooner on request), who processes it (Cloudflare, or Google for option B), how to
-  ask for a copy or deletion (`lorevolve@gmail.com`).
+  ask for a copy or deletion (`support@lorevolve.com`).
 - Deletion or copy on request: one documented query (or deleting a sheet row).
 - No analytics, no cookies, so no cookie banner.
 
@@ -132,7 +133,7 @@ Secrets never go in the repo; they live only in the Cloudflare (or Google) dashb
 2. Cloudflare: create a Turnstile widget for `<insert a name>.pages.dev`. The site key is public; the secret key goes in
    the Pages project as `TURNSTILE_SECRET`.
 3. Option A: create the D1 database, bind it to the Pages project as `DB`, run `schema.sql` (Claude gives the command).
-   Option B: create the Sheet and deploy the Apps Script as a web app from `lorevolve@gmail.com` (Claude gives the
+   Option B: create the Sheet and deploy the Apps Script as a web app from the owner's Google account (Claude gives the
    script and the steps).
 4. Review and approve: page copy, screenshots, privacy note.
 
@@ -150,12 +151,12 @@ Secrets never go in the repo; they live only in the Cloudflare (or Google) dashb
 
 ## 6. Later
 
-- **Step 2, app email**: SMTP sender in the API behind `Email__*` settings, off when unset; starts on Gmail SMTP
-  (`lorevolve@gmail.com`, app password in App Service settings). Admin "Email link" next to copy; forgot password and
+- **Step 2, app email**: SMTP sender in the API behind `Email__*` settings, off when unset; sends as
+  `noreply@lorevolve.com` through Resend (`smtp.resend.com`, the API key in App Service settings). Admin "Email link" next to copy; forgot password and
   reset page. Welcome email: owner to decide.
 - **Domain bought early (2026-10-28)**: `lorevolve.com`, set up in `custom-domain-plan.md` (this page on
-  `demo.lorevolve.com`, the apex for the PROD app). Now unblocked, still not built: Cloudflare Email Routing inbox, a real
-  `noreply@` sender (Resend or Workspace) with SPF, DKIM and DMARC. Switching the app is a settings change.
+  `demo.lorevolve.com`, the apex for the PROD app). Email set up 2026-10-29 (`custom-domain-plan.md` section 6);
+  the app's own sender is still not built.
 
 ## 7. Open decisions
 

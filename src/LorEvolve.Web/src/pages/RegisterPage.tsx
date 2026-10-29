@@ -87,7 +87,7 @@ export default function RegisterPage() {
       }
     >
       {inviteOnly === null ? null : inviteOnly && !inviteToken ? (
-        <p className="form__message" role="status" data-testid="register-invite-only">
+        <p className="callout" role="status" data-testid="register-invite-only">
           LorEvolve is invitation-only for now. Open the invitation link you were sent to create
           your account.
         </p>
@@ -143,7 +143,7 @@ export default function RegisterPage() {
             onChange={(event) => setConfirmPassword(event.target.value)}
           />
 
-          <button className="button" type="submit" disabled={isSubmitting}>
+          <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
             {isSubmitting ? 'Creating account' : 'Create account'}
           </button>
         </form>

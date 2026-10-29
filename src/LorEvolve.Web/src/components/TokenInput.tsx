@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent } from 'react'
+import { X } from 'lucide-react'
 
 interface TokenInputProps {
   label: string
@@ -49,7 +50,7 @@ export function TokenInput({ label, name, placeholder, values, onChange }: Token
               aria-label={`Remove ${value}`}
               onClick={() => onChange(values.filter((candidate) => candidate !== value))}
             >
-              &times;
+              <X aria-hidden="true" focusable="false" size={14} strokeWidth={1.75} />
             </button>
           </span>
         ))}

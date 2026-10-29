@@ -133,7 +133,12 @@ export default function UniversesPage() {
             Filter universes
           </label>
           <span className="controls__searchfield">
-            <Search className="controls__searchicon" aria-hidden="true" focusable="false" />
+            <Search
+              className="controls__searchicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
             <input
               id="universe-search"
               className="field__input"
@@ -205,6 +210,21 @@ export default function UniversesPage() {
                 ? 'Try a different word, or clear the search.'
                 : 'Start one, and everything you invent will hang off it.'}
             </>
+          }
+          action={
+            isFiltered ? undefined : (
+              <button
+                className="button"
+                type="button"
+                onClick={() => {
+                  setRestoring(false)
+                  setIsCreating(true)
+                }}
+              >
+                <ActionIcon icon={Plus} />
+                New universe
+              </button>
+            )
           }
         />
       ) : null}

@@ -51,11 +51,13 @@ builder.Services.AddLorEvolveDataProtection(builder.Configuration, builder.Envir
 builder.Services.AddLorEvolveDatabase(builder.Configuration, builder.Environment);
 builder.Services.AddLorEvolveAuth(builder.Environment);
 builder.Services.AddLorEvolveAdmin();
+LorEvolve.Api.Features.Email.AppEmail.AddAppEmail(builder.Services);
 builder.Services.AddCanonIntegrity();
 builder.Services.AddLoreSearch();
 builder.Services.AddHostedService<LorEvolve.Api.Features.Publishing.PublicAuthorBackfill>();
 builder.Services.AddLorEvolveMedia(builder.Configuration);
 builder.Services.AddHostedService<LorEvolve.Api.Features.AiChanges.AiChangeMediaSweep>();
+builder.Services.AddSingleton<LorEvolve.Api.Features.AiChanges.AiChangeProgress>();
 builder.Services.AddBackupRestore();
 builder.Services.AddLorEvolveDatabaseBackups(builder.Configuration);
 builder.Services.AddLorEvolveSeo(builder.Configuration);

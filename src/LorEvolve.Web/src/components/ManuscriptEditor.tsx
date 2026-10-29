@@ -19,6 +19,7 @@ import { MentionSuggestions } from './MentionSuggestions'
 import { useMentionSearch } from '../lore/mentionSearch'
 import { caretPoint } from '../lib/caret'
 import { findMentions, mentionQueryAt, mentionToken, plainMentions } from '../lore/mentions'
+import { MentionProse } from './MentionProse'
 import type { EntitySummary } from '../lore/types'
 import { ManuscriptHistory } from './ManuscriptHistory'
 import { ReviewComments } from './ReviewComments'
@@ -151,6 +152,8 @@ export function ManuscriptEditor({
   // On a phone the scene's planning folds behind Details, so the prose starts on the first screen. Wider, it is always shown.
   const [isContextOpen, setIsContextOpen] = useState(false)
   const [historyKey, setHistoryKey] = useState(0)
+  // Write shows the manuscript as stored, mentions as their markup; Read shows it as prose, each mention a link.
+  const [isReading, setIsReading] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const inFlight = useRef(false)
   const editor = useRef<HTMLTextAreaElement>(null)
@@ -655,6 +658,33 @@ export function ManuscriptEditor({
           ) : null}
 
           {access.editContent ? (
+            <div
+              className="segmented manuscript__mode"
+              role="group"
+              aria-label="Show the manuscript"
+            >
+              <button
+                className="segmented__option"
+                type="button"
+                aria-pressed={!isReading}
+                onClick={() => setIsReading(false)}
+                data-testid="manuscript-mode-write"
+              >
+                Write
+              </button>
+              <button
+                className="segmented__option"
+                type="button"
+                aria-pressed={isReading}
+                onClick={() => setIsReading(true)}
+                data-testid="manuscript-mode-read"
+              >
+                Read
+              </button>
+            </div>
+          ) : null}
+
+          {access.editContent && !isReading ? (
             <div className="manuscript__write">
               <label className="visually-hidden" htmlFor={editorId}>
                 Manuscript of “{scene.title}”
@@ -700,7 +730,8 @@ export function ManuscriptEditor({
               ) : null}
             </div>
           ) : (
-            // A collaborator who reads (ADR 0041 amendment) reads the prose as prose: each mention as its name (issue 31).
+            // Read, and a collaborator who only reads (ADR 0041 amendment): the prose as prose, each mention a link to its
+            // entry (issue 31).
             <div
               className="manuscript__text manuscript__read prose"
               role="region"
@@ -711,7 +742,7 @@ export function ManuscriptEditor({
               {draft === '' ? (
                 <p className="entry__blank">Nothing written yet.</p>
               ) : (
-                plainMentions(draft)
+                <MentionProse universeId={universeId} text={draft} />
               )}
             </div>
           )}

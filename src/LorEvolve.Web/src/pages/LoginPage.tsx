@@ -74,7 +74,7 @@ export default function LoginPage() {
           onChange={(event) => setPassword(event.target.value)}
         />
 
-        <button className="button" type="submit" disabled={isSubmitting}>
+        <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
           {isSubmitting ? 'Signing in' : 'Sign in'}
         </button>
       </form>

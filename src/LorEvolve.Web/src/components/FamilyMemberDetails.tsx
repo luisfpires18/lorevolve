@@ -229,8 +229,8 @@ export function FamilyMemberDetails({
                   })}
                 </ul>
                 <p className="familydetails__note">
-                  Recorded as you wrote them. These links are drawn as dotted lines, place nobody in
-                  a generation and imply no other relative.
+                  Recorded as you wrote them. These links are drawn dotted while this person is
+                  pointed at, place nobody in a generation and imply no other relative.
                 </p>
               </>
             )}

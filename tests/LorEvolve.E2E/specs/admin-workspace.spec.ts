@@ -214,6 +214,22 @@ test.describe('LorEvolve Admin', () => {
     await expect(report).toContainText('Insert a description of the request.')
   })
 
+  test('a sign-up link is made to copy, and email says when it is not set up', async ({
+    browser,
+  }) => {
+    const admin = await newAdmin(browser)
+    await admin.page.goto('/admin/users')
+    await admin.page.getByTestId('admin-signup-email').fill('insert.an.address@example.test')
+
+    // This test host has no email settings: nothing is sent, and the Admin is told to send the link themselves.
+    await admin.page.getByTestId('admin-signup-email-send').click()
+    await expect(admin.page.getByRole('alert')).toContainText('cannot send email yet')
+    await expect(admin.page.getByTestId('admin-signup-sent')).toHaveCount(0)
+
+    await admin.page.getByTestId('admin-signup-create').click()
+    await expect(admin.page.getByTestId('admin-signup-url')).toContainText('/register?invite=')
+  })
+
   test('an admin account offers no block, its own included', async ({ browser }) => {
     const { page, username } = await newAdmin(browser)
     await openUser(page, username)

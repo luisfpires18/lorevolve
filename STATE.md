@@ -5,13 +5,73 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
 
 ## Roadmap position
 
-- **Rename to LorEvolve (ADR 0067)** merged and deployed. DEV is https://dev-lorevolve.azurewebsites.net (old
-  `lorex-dev-lfp18` stopped); repo `luisfpires18/lorevolve`; media in R2 `lorevolve-media-dev`. Cleanup and the
-  local folder move: `TODO_rename.md`.
+- **Rename to LorEvolve (ADR 0067)** done. DEV is https://dev-lorevolve.azurewebsites.net in `rg-lorevolve-dev`
+  (plan `dev-lorevolve-plan`, F1; moved 2026-10-29 with its data); repo `luisfpires18/lorevolve`; media in R2
+  `lorevolve-media-dev`. Every old `lorex` resource is deleted; `lorex` in code is only ADR 0067's read-old fallbacks.
 - **Custom domain `lorevolve.com`** (bought 2026-10-28, dominios.pt, DNS now on Cloudflare): plan
   `docs/design/custom-domain-plan.md` on `docs/custom-domain-setup`. Alpha page -> `demo.lorevolve.com` (owner steps
   pending); apex -> new PROD app `prod-lorevolve` on B1 (`deploy-prod.yml` manual from `master`, `appsettings.AzureProd.json`, runbook `docs/deployment/azure-prod.md`; owner setup after the pre-alpha gate);
   DEV stays F1 on azurewebsites.
+- **Lore exact name and sort** (`feat/lore-exact-search-and-sort`). Exact name toggle inside the Lore search
+  (`exact=1`: name or alias equal, ignoring case) and a Sort by select (best match / last edited, name, date
+  created; `sort=`). API `exact`, `sort` on the entity list.
+- **AI change approval progress** (`feat/ai-changes-apply-progress` off `dev` at `36dd64f`; merged into `dev` at `de96320`,
+  pushed). Approving shows a bar under the toolbar: sweeping while checked, then `N of M applied`, read every
+  500 ms from `GET .../approve/{approvalId}/progress` (in-memory `AiChangeProgress`, starter only, gone on answer;
+  single-instance). Still one transaction. Api AiChange tests 25/25, `ai-changes` E2E 8/8.
+- **PWA opens the landing page** (`fix/pwa-opens-landing` off `dev` at `e7c1270`; merged into `dev` at `5ace80d`,
+  pushed). Manifest `start_url` `/explore` -> `/`, signed in or out (ADR 0017 amendment); four specs follow.
+- **Consent screen polish** (`fix/consent-polish` off `dev` at `7d4f873`; merged into `dev` at `ec2a219`, pushed). Missed by the
+  three passes (they hunted defects, not drift on this page). CSS only: part labels in sentence case (no capitals, contract
+  8.2); the access level a plain group, not the boxed fieldset, its legend floated under the part's rule; Reader and
+  Creator as rows to press, the chosen one on the accent wash, only the level's name bold, 44px under a finger; the
+  Creator explanation as a muted hint; the feedback pill yields to the consent bar like the other foot bars. Wording
+  untouched (the "read-only" heading above a Creator choice stays with the copy plan). Tests: web checks; `mcp-connect`,
+  `ai-changes`, `ai-schema` 20/20; checked at 1280 dark and 390 light.
+- **UI polish pass 3 - constants** (`chore/ui-polish-constants` off the pass 2 tip `5a3ea61`, same worktree; merged into
+  `dev` at `42fe4fe`, pushed). CSS and the wordmark only. Nothing under 12px (six labels to `--text-xs`); every pill radius on
+  `--radius-full`; the cropper, composer, article editor and manuscript box on `--radius-md`; the Archived mark one shape
+  (`--radius-xs`); the folded rail on `--z-drawer`; the sign-in fold at 860px (was 900); hover gated by `(hover: hover)` on
+  the button family, `.iconbutton` and the lifting cards (plate, doorway, entity, type, world card) so a tap leaves no
+  hover state behind; `Inter` out of the `--ui` stack (owner decision); `translate="no"` on the wordmark. The contract
+  gains section 23 (the three passes, what was kept on purpose, what is left to the owner: the browser chrome colour and
+  a Send feedback menu item on phones).
+  - Tests: web checks green; Playwright by substring reached the whole suite (623 tests, 2 workers, fresh DB): 622
+    passed. The one loss, `ai-changes.spec.ts` "an AI app asks to propose separately", is a timing race in the spec:
+    the unserved OAuth callback's error page lands while the next `goto` starts. It fails the same way on the pass 2
+    tree and passes on a cold API (5.6 s) but not a warm one (2 s), so it is not this pass's; `mcp-connect` and
+    `ai-schema` (12) pass on the same servers. Fixed in a fourth commit on this branch: the spec now waits for the
+    callback request to fail and the error page to land before its `goto`; 4/4 warm, the file 8/8. Full suite
+    delegated to CI. All three merged into `dev` on 2026-10-29; the worktree can go.
+- **UI polish pass 2 - one vocabulary** (`chore/ui-polish-vocabulary` off the pass 1 tip `a15280e`, same worktree; merged into
+  `dev` at `0f79e27`, pushed). Presentation only. Every Try again is the secondary; a Cancel beside a primary is the secondary
+  (Trash restore, Settings archive); the first step of a destructive flow (Admin Block, Trash bulk Delete) is
+  `button--secondary button--danger-quiet`, the fill kept for the last word, and that rule now sits beside
+  `.button--danger`; the AI changes filter is `.segmented`; Ideas' tabs are `.views` links (`.ideatabs` keeps only the
+  hairline); one `hr.actionmenu__divider`, and one before every destructive last item (entry, era); a token's remove is
+  the lucide X; a period's remove carries a `title`; Admin's sign-up link is on `Field`; every bare lucide icon at 1.75
+  (18 sites). One spec pin moved: `trash-bulk-delete` reads the bulk Delete's ink, not its fill.
+  - Tests: web checks green; Playwright by substring on a fresh DB (169 tests, 2 workers) 168 passed, the one loss
+    (`lore-type-browser` Add child, a fill timing out under load) green alone. Full suite delegated to CI.
+- **UI polish pass 1 - defects and missing states** (`fix/ui-polish-defects` off `origin/dev` at `873a034`, in the worktree
+  `.claude/worktrees/fix+ui-polish-defects`; merged into `dev` at `2f9347c`, pushed). Presentation only: no route, API, schema,
+  backup or copy change. Plan approved 2026-10-28: three passes, one branch each, cut from the previous tip; `Inter` leaves
+  the UI font stack in pass 3. Copy wording stays with `docs/design/humanize-copy-plan.md`.
+  - The floating feedback pill no longer covers the foot: `--feedback-lift` raises it above a stuck save bar
+    (`body:has(.actionbar, .article__bar, .manuscript__bar)`) and at 640px and below it leaves the foot to the page's own
+    control (a save bar, Lore's and a story's fixed New). The shell keys its search and assistant once, on their wrapper
+    (the duplicate-key warning is gone). Every failed read offers Try again (entry, timeline, relations, history, types,
+    world rule); the entry's error branch now precedes its loading guard, which had said "Opening…" for good.
+    `ImageViewer`, `ImageCropDialog` and the feedback dialog return focus; the article editor and the manuscript box show
+    the field's accent ring; 44px under a finger for All universes, the account trigger, token removes, the theme switch,
+    pin rows and stage pills; `EmptyState` with the header's create on Universes and Maps, and for Relations, History and
+    Admin feedback; the Explore chevron in the light theme; the Register invite notice in the accent tone; `aria-busy`
+    on the auth submits; `ActionMenu` triggers always titled; the portal search label matches its placeholder; the
+    folded rail's universe name and the account name carry a `title`. No spec changed.
+  - Tests: web checks green. Playwright by substring on a fresh DB (623 tests, 8 workers): 553 passed, 69 lost to the dev
+    server under load (`ERR_CONNECTION_REFUSED`, `EADDRINUSE ::1`, dynamic-import fetch), 69/70 on a two-worker rerun,
+    the last green alone. Full suite delegated to CI. Checked by hand at 1440 and 390 in both themes: the Lore and
+    article-editing feet, the editor ring, the light chevron, the Relations empty state.
 - Phases 001-022 done and merged. Sequence log: `docs/architecture/branching.md`.
 - **Pre-alpha gate: #33 security, #11 recovery, #54 database backups** (`feat/pre-alpha-recovery-security` off `dev` at
   `c1721c5`, in the main checkout; committed locally, not merged, not pushed; issues left open).
@@ -239,8 +299,6 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     `editing-flow` save-controls flake also passed alone. Release build green.
   - **Owner checks on DEV:** `docs/testing/maps-checklist.md` - a real map, real-device touch, Groq's phrasing over the
     geography tools, Claude/ChatGPT over MCP. Unverified here.
-  - Pre-existing, not fixed: `UniverseWorkspace.tsx` renders two siblings keyed by the universe id (a React duplicate-key
-    warning in the console on every universe screen).
 - **Fix: Deploy DEV E2E shard 6** (`fix/trash-e2e-row` off `dev` at `52a913c`; merged into `dev`, pushed). Runs
   40137578174, 40180740487 and 40184813329 failed on one test, `trash-permanent-delete` "names isolated", on all three
   attempts: its 14-context size loop ran out of Playwright's default 30 s (~24 s locally). `test.setTimeout(120_000)`, as

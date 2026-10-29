@@ -221,8 +221,9 @@ test.describe('family tree redesign', () => {
     await expect(node(page, 'Sel')).toHaveAttribute('data-canon', String(Canon.draft))
     await expectDetails(page, 'Sel', 'Draft')
 
-    // One thin line per parent link, starting under the parent and arriving on top of the child.
-    await expect(page.locator('.familytree__line:not([data-semantic="-1"])')).toHaveCount(4)
+    // One thin drop per child from the bar its parents' stem ends in, and no words on any line.
+    await expect(page.locator('.familytree__line[data-part="drop"]')).toHaveCount(4)
+    await expect(page.locator('.familytree__lines text')).toHaveCount(0)
   })
 
   test('details open as a popover beside the node, by keyboard too, and close back to the eye', async ({
@@ -413,40 +414,119 @@ test.describe('family tree redesign', () => {
     for (const width of [1440, 900]) {
       await page.setViewportSize({ width, height: 900 })
       await page.goto(treeUrl(universeId, ids.Lia))
-      // Four parent lines, and a dotted arc each to the brother and the guardian.
-      await expect(page.locator('.familytree__line:not([data-semantic="-1"])')).toHaveCount(4)
-      await expect(page.locator('.familytree__line[data-semantic="-1"]')).toHaveCount(2)
+      // Four drops, one per child, and Lia joined to her brother and her guardian beside her: no arc of its own.
+      await expect(page.locator('.familytree__line[data-part="drop"]')).toHaveCount(4)
+      await expect(page.locator('.familytree__line[data-part="couple"]')).toHaveCount(2)
+      await expect(page.locator('.familytree__line[data-part="other"]')).toHaveCount(0)
 
-      // The line from Mara down to Lia starts under Mara's name and ends on top of Lia's circle, centred on both.
+      // Mara's stem starts under her name, centred, and ends on the bar Lia's drop falls from to the top of her circle.
       const ends = await page.evaluate(() => {
         const svg = document.querySelector('.familytree__lines')!.getBoundingClientRect()
         const box = (name: string) =>
           document.querySelector(`[data-testid="family-node-${name}"]`)!.getBoundingClientRect()
+        const numbers = (part: string) =>
+          [...document.querySelectorAll(`.familytree__line[data-part="${part}"]`)].map((path) =>
+            (path.getAttribute('d') ?? '').match(/-?\d+(\.\d+)?/g)!.map(Number),
+          )
         const mara = box('Mara')
         const lia = box('Lia')
-        const paths = [...document.querySelectorAll('.familytree__line')].map((path) =>
-          (path.getAttribute('d') ?? '').match(/-?\d+(\.\d+)?/g)!.map(Number),
-        )
         return {
-          paths: paths.map((numbers) => ({
-            x1: numbers[0] + svg.left,
-            y1: numbers[1] + svg.top,
-            x2: numbers[6] + svg.left,
-            y2: numbers[7] + svg.top,
-          })),
+          stems: numbers('stem').map(([x, y, bar]) => ({ x: x + svg.left, y: y + svg.top, bar })),
+          drops: numbers('drop').map(([x, bar, y]) => ({ x: x + svg.left, bar, y: y + svg.top })),
           mara: { x: mara.left + mara.width / 2, bottom: mara.bottom },
           lia: { x: lia.left + lia.width / 2, top: lia.top },
         }
       })
-      const line = ends.paths.find(
-        (path) =>
-          Math.abs(path.x1 - ends.mara.x) < 1.5 &&
-          Math.abs(path.y1 - ends.mara.bottom) < 1.5 &&
-          Math.abs(path.x2 - ends.lia.x) < 1.5,
+      const stem = ends.stems.find(
+        (path) => Math.abs(path.x - ends.mara.x) < 1.5 && Math.abs(path.y - ends.mara.bottom) < 1.5,
       )
-      expect(line, `line Mara to Lia at ${width}px`).toBeTruthy()
-      expect(Math.abs(line!.y2 - ends.lia.top)).toBeLessThan(1.5)
+      expect(stem, `stem under Mara at ${width}px`).toBeTruthy()
+      const drop = ends.drops.find(
+        (path) => Math.abs(path.x - ends.lia.x) < 1.5 && Math.abs(path.bar - stem!.bar) < 0.5,
+      )
+      expect(drop, `drop to Lia at ${width}px`).toBeTruthy()
+      expect(Math.abs(drop!.y - ends.lia.top)).toBeLessThan(1.5)
     }
+  })
+
+  test('couples stand together, children hang between them, and other family shows on hover or focus', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const universeId = await newUniverse(page, unique('Houses '))
+    const character = await characterTypeId(page, universeId)
+    const bore = await seedKind(page, universeId, 'bore', 'born to', Family.biological)
+    const partner = await seedKind(page, universeId, 'partner of', null, Family.other, true)
+    const sibling = await seedKind(page, universeId, 'sibling of', null, Family.other, true)
+    const guardian = await seedKind(page, universeId, 'guardian of', 'ward of', Family.other)
+    const ids: Record<string, string> = {}
+    for (const name of ['Al', 'Ma', 'Sa', 'Ed', 'To', 'Is', 'Co', 'Wr']) {
+      ids[name] = await seedPerson(page, universeId, character, name)
+    }
+    for (const child of ['Sa', 'Ed', 'To']) {
+      await seedLink(page, universeId, bore, ids.Al, ids[child])
+      await seedLink(page, universeId, bore, ids.Ma, ids[child])
+    }
+    for (const child of ['Co', 'Wr']) await seedLink(page, universeId, bore, ids.Ed, ids[child])
+    await seedLink(page, universeId, partner, ids.Al, ids.Ma)
+    await seedLink(page, universeId, partner, ids.Ed, ids.Is)
+    await seedLink(page, universeId, sibling, ids.Ed, ids.To)
+    await seedLink(page, universeId, guardian, ids.Ma, ids.Wr)
+
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto(treeUrl(universeId, ids.Ed))
+
+    // Ed's spouse, who has no parent links, stands right beside him, and he stays between his siblings.
+    const box = async (name: string) => (await node(page, name).boundingBox())!
+    const [sa, ed, is, to] = await Promise.all(['Sa', 'Ed', 'Is', 'To'].map(box))
+    expect(Math.abs(is.y - ed.y)).toBeLessThan(1)
+    expect(is.x - (ed.x + ed.width)).toBeLessThan(40)
+    expect(sa.x).toBeLessThan(ed.x)
+    expect(to.x).toBeGreaterThan(is.x)
+
+    // Two joins: the co-parents, solid, and Ed and Is, dotted. Siblings and the guardian draw nothing by themselves.
+    await expect(page.locator('.familytree__line[data-part="couple"]')).toHaveCount(2)
+    await expect(
+      page.locator('.familytree__line[data-part="couple"][data-semantic="-1"]'),
+    ).toHaveCount(1)
+    await expect(page.locator('.familytree__line[data-part="other"]')).toHaveCount(0)
+
+    // The parents' stem drops from between them.
+    const between = await page.evaluate(() => {
+      const svg = document.querySelector('.familytree__lines')!.getBoundingClientRect()
+      const centre = (name: string) => {
+        const face = document
+          .querySelector(`[data-testid="family-node-${name}"] .familynode__face`)!
+          .getBoundingClientRect()
+        return face.left + face.width / 2
+      }
+      const stems = [...document.querySelectorAll('.familytree__line[data-part="stem"]')].map(
+        (path) => Number((path.getAttribute('d') ?? '').match(/-?\d+(\.\d+)?/)![0]) + svg.left,
+      )
+      return { stems, middle: (centre('Al') + centre('Ma')) / 2 }
+    })
+    expect(between.stems.some((x) => Math.abs(x - between.middle) < 1.5)).toBe(true)
+
+    // Pointing at Ma draws her guardianship and writes it out; leaving takes it away again.
+    const caption = page.getByTestId('family-caption')
+    await node(page, 'Ma').hover()
+    await expect(page.locator('.familytree__line[data-part="other"]')).toHaveCount(1)
+    await expect(caption).toContainText('Ma guardian of Wr')
+    await page.mouse.move(0, 0)
+    await expect(page.locator('.familytree__line[data-part="other"]')).toHaveCount(0)
+    await expect(caption).not.toContainText('guardian')
+
+    // The keyboard reaches the same words.
+    await page.getByTestId('family-details-Wr').focus()
+    await expect(caption).toContainText('Wr ward of Ma')
+
+    // A phone: no lines, and a couple never wraps apart.
+    await page.setViewportSize({ width: 390, height: 800 })
+    await page.goto(treeUrl(universeId, ids.Ed))
+    await expect(page.locator('.familytree__lines')).toBeHidden()
+    const [phoneEd, phoneIs] = await Promise.all(['Ed', 'Is'].map(box))
+    expect(Math.abs(phoneEd.y - phoneIs.y)).toBeLessThan(1)
+    expect(await scrollsSideways(page)).toBe(false)
   })
 
   test('a group is enabled for the tree on purpose, and being in one enables nothing', async ({

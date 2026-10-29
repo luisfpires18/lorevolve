@@ -397,7 +397,7 @@ test.describe('reading a public universe', () => {
     await context.close()
   })
 
-  test('LorEvolve’s home is the front door, signed in or out, and the installed app opens Explore', async ({
+  test('LorEvolve’s home is the front door, signed in or out, and the installed app opens it', async ({
     page,
     browser,
     request,
@@ -405,23 +405,19 @@ test.describe('reading a public universe', () => {
     const manifest = JSON.parse(await (await request.get('/manifest.webmanifest')).text()) as {
       start_url: string
     }
-    expect(manifest.start_url).toBe('/explore')
+    expect(manifest.start_url).toBe('/')
 
     const { context, page: visitor } = await stranger(browser)
     await visitor.goto(manifest.start_url)
-    await expect(visitor).toHaveURL(/\/explore$/)
-    await visitor.goto('/')
     await expect(visitor.getByTestId('landing')).toBeVisible()
     await expect(visitor.getByTestId('portal-login')).toBeVisible()
     await context.close()
 
-    // Signed in, and last seen in the workspace: still the portal first.
+    // Signed in, and last seen in the workspace: still the landing page first.
     await signUp(page)
     await page.goto('/app')
     await page.goto(manifest.start_url)
-    await expect(page).toHaveURL(/\/explore$/)
-    await expect(page.getByTestId('portal-workspace')).toBeVisible()
-    await page.goto('/')
+    await expect(page).toHaveURL(/\/$/)
     await expect(page.getByTestId('landing')).toBeVisible()
     await expect(page.getByTestId('portal-workspace')).toBeVisible()
 

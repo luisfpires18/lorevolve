@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { LoreArticle } from './LoreEditor'
 import { CanonBlockNotice } from './CanonBlockNotice'
+import { EmptyState } from './EmptyState'
 import { NameList } from './NameList'
 import { VersionActor } from './VersionActor'
 import { blockingFindingsOf } from '../canon/blocked'
@@ -74,6 +75,7 @@ export function EntityHistory({
   const [busyId, setBusyId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
+  const [reads, setReads] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -90,7 +92,7 @@ export function EntityHistory({
     return () => {
       controller.abort()
     }
-  }, [universeId, entityId, reloadKey])
+  }, [universeId, entityId, reloadKey, reads])
 
   // A version stays open only for the history it was opened against. When a write moves
   // the list underneath it, the expansion is stale rather than closed by an effect, so
@@ -162,10 +164,6 @@ export function EntityHistory({
     }
   }
 
-  if (status === 'loading') {
-    return null
-  }
-
   return (
     <section className="history" aria-labelledby="history-heading">
       <div className="history__head">
@@ -195,14 +193,25 @@ export function EntityHistory({
         </p>
       ) : null}
 
-      {status === 'error' ? (
-        <p className="history__quiet" role="status">
-          This entry&rsquo;s history could not be read.
-        </p>
+      {status === 'loading' ? null : status === 'error' ? (
+        <div className="notice notice--error" role="alert">
+          <p>This entry&rsquo;s history could not be read.</p>
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => {
+              setStatus('loading')
+              setReads((count) => count + 1)
+            }}
+          >
+            Try again
+          </button>
+        </div>
       ) : revisions.length === 0 ? (
-        <p className="history__quiet" data-testid="history-empty">
-          Nothing recorded yet. The next save starts this entry&rsquo;s history.
-        </p>
+        <EmptyState
+          testId="history-empty"
+          title={<>Nothing recorded yet. The next save starts this entry&rsquo;s history.</>}
+        />
       ) : (
         <ol className="history__list" data-testid="history-list">
           {revisions.map((revision, index) => (

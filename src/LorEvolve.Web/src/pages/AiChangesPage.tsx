@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, useLocation, useOutletContext } from 'react-router-dom'
 import {
   listProposals,
   ProposalStatus,
@@ -20,6 +20,7 @@ type Load = { kind: 'loading' } | { kind: 'ready'; page: ProposalPage } | { kind
  * assistant alike, newest first. Account-wide in My workspace; one universe's inside it. Each opens its review.
  */
 export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boolean }) {
+  const location = useLocation()
   const context = useOutletContext<WorkspaceContext | undefined>()
   const universeId = inUniverse ? (context?.universe.id ?? null) : null
   const [state, setState] = useState<ProposalState>('open')
@@ -69,11 +70,9 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
             : 'Changes an AI proposed for your universes, from a connected app or the Assistant. Nothing in them is applied until someone approves it.'
         }
       >
-        <div className="aichanges__tabs" role="group" aria-label="Which proposals">
+        <div className="segmented" role="group" aria-label="Which proposals">
           <button
-            className={
-              state === 'open' ? 'button button--sm' : 'button button--secondary button--sm'
-            }
+            className="segmented__option"
             type="button"
             aria-pressed={state === 'open'}
             onClick={() => show('open')}
@@ -82,9 +81,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
             Waiting
           </button>
           <button
-            className={
-              state === 'decided' ? 'button button--sm' : 'button button--secondary button--sm'
-            }
+            className="segmented__option"
             type="button"
             aria-pressed={state === 'decided'}
             onClick={() => show('decided')}
@@ -103,7 +100,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
         <div className="notice notice--error" role="alert">
           <p>The proposals couldn&rsquo;t be loaded.</p>
           <button
-            className="button button--secondary button--sm"
+            className="button button--secondary"
             type="button"
             onClick={() => setReads((count) => count + 1)}
           >
@@ -123,7 +120,12 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
           <ul className="aichanges__list">
             {load.page.items.map((proposal) => (
               <li className="aichanges__item" key={proposal.id} data-testid="ai-change-proposal">
-                <Link className="aichanges__link" to={reviewPath(proposal.universeId, proposal.id)}>
+                <Link
+                  className="aichanges__link"
+                  to={reviewPath(proposal.universeId, proposal.id)}
+                  // The proposal's Back returns to this list, account-wide or the universe's.
+                  state={{ backTo: `${location.pathname}${location.search}` }}
+                >
                   <span className="aichanges__summary" dir="auto">
                     {proposal.summary ??
                       `${proposal.operationCount} proposed ${proposal.operationCount === 1 ? 'change' : 'changes'}`}

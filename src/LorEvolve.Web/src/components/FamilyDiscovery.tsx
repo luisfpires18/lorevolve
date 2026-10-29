@@ -131,7 +131,12 @@ export function FamilyDiscovery({
               Search families by member
             </label>
             <span className="controls__searchfield">
-              <Search className="controls__searchicon" aria-hidden="true" focusable="false" />
+              <Search
+                className="controls__searchicon"
+                aria-hidden="true"
+                focusable="false"
+                strokeWidth={1.75}
+              />
               <input
                 id={searchId}
                 className="field__input"
@@ -256,6 +261,7 @@ export function FamilyDiscovery({
                       className="familycard__chevron"
                       aria-hidden="true"
                       focusable="false"
+                      strokeWidth={1.75}
                     />
                   </Link>
                 </li>

@@ -72,7 +72,12 @@ export function AccountMenu({
       {variant === 'bar' ? (
         // A label beside the circle on a wide header, where there is room for it and a bare
         // avatar would be the only unlabelled thing in the bar. Hidden on a narrow one.
-        <span className="accountmenu__name" dir="auto" data-testid="signed-in-user">
+        <span
+          className="accountmenu__name"
+          dir="auto"
+          title={user.username}
+          data-testid="signed-in-user"
+        >
           {user.username}
         </span>
       ) : null}

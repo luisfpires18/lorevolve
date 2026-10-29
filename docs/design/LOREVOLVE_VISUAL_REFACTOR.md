@@ -1478,3 +1478,28 @@ from the existing tokens and translates to Light and Dark on its own. No route, 
 Not adopted from the references, on purpose: a global top bar, notification bell and ⌘K hint (no such features; 024's
 shell stands), corner brackets and frames on every panel, AI-painted section images on doorways (no fake imagery),
 disabled "future settings" controls in the type editor, and the references' navy/gold palette (owner's call).
+
+## 23. Polish pass (2026-10-28)
+
+Three branches cut one from the next, after a read of the whole client against this contract and the design skills
+the owner named (Impeccable's polish discipline, Emil Kowalski's interaction checklist, Vercel's Web Interface
+Guidelines; the redesign-minded ones rejected, as section 3.4 already does). Presentation only; copy untouched
+(`docs/design/humanize-copy-plan.md` owns it). Nothing new to learn: the contract's own sections re-applied where
+screens had drifted from them.
+
+- **Defects and states** (`fix/ui-polish-defects`): sections 2.4, 10, 13.3, 13.4 and 13.5. The feedback pill yields
+  the foot to a page's own bottom control (a `--feedback-lift` above a stuck bar; hidden at 640px and below while one is
+  there, since a phone's foot holds one thing); every failed read offers Try again; dialogs return focus; the article
+  editor and the manuscript box show the field's ring; 44px under a finger; `EmptyState` with the header's create.
+- **One vocabulary** (`chore/ui-polish-vocabulary`): sections 5.1 and 7. Secondary for every Try again and for a Cancel
+  beside a primary; `button--danger-quiet` for the first step of a destructive flow, the fill for the last word; the AI
+  changes filter on `.segmented`; Ideas' tabs on `.views`; one menu divider, one before each destructive last item; one
+  icon stroke (1.75) everywhere.
+- **Constants** (`chore/ui-polish-constants`): sections 8.2, 9.2 and 11. Nothing under 12px; radii and layers on their
+  tokens; the sign-in fold at 860; `Inter` out of the UI stack (owner decision: the system sans, as 8.1 says).
+
+Deliberate, and kept: the ThemeSwitch's own track (a tint over menu panels, not paper); hover gated for touch only on the
+button family and the lifting cards, where a tapped control would otherwise keep its hover state, not on the ~90
+colour-only hovers a tap navigates away from. Left for the owner: the browser chrome colour (three values are in play:
+the light meta `#f6f2ea`, the dark `#151617`, the manifest's plate `#201f1d`), and a Send feedback item in the account
+menu on phones in place of the floating pill.

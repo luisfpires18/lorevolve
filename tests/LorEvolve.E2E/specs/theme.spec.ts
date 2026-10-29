@@ -244,11 +244,11 @@ test.describe('one theme', () => {
     await context.close()
   })
 
-  test('the installed app still starts at Explore, and the server head is untouched by the theme', async ({
+  test('the installed app still starts at the landing page, and the server head is untouched by the theme', async ({
     page,
   }) => {
     const manifest = await (await page.request.get('/manifest.webmanifest')).json()
-    expect(manifest.start_url).toBe('/explore')
+    expect(manifest.start_url).toBe('/')
     expect(manifest.id).toBe('/app')
 
     await signUp(page)

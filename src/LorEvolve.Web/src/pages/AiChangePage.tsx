@@ -1,7 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react'
-import { Link, useOutletContext, useParams } from 'react-router-dom'
+import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import {
   approveChanges,
+  getApprovalProgress,
   ChangeAction,
   ChangeResource,
   ChangeStatus,
@@ -64,11 +66,14 @@ function approvable(change: Change) {
  */
 export default function AiChangePage() {
   const { universe } = useOutletContext<WorkspaceContext>()
+  const location = useLocation()
   const { proposalId = '' } = useParams<{ proposalId: string }>()
   const [load, setLoad] = useState<Load>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<'approve' | 'reject' | null>(null)
+  // A running approval's count, read from the server while the one request that applies everything is open.
+  const [applied, setApplied] = useState<{ done: number; total: number } | null>(null)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   // One approval keeps its id until it is answered, so pressing again after a lost answer applies nothing twice.
@@ -129,7 +134,7 @@ export default function AiChangePage() {
       <div className="notice notice--error" role="alert">
         <p>This proposal couldn&rsquo;t be loaded.</p>
         <button
-          className="button button--secondary button--sm"
+          className="button button--secondary"
           type="button"
           onClick={() => setReads((count) => count + 1)}
         >
@@ -141,9 +146,15 @@ export default function AiChangePage() {
 
   const changes = proposal.operations
   const open = proposal.proposal.status === ProposalStatus.Open
+  // Back to the list this was opened from - the account-wide one keeps every universe - else the universe's own.
+  const backTo =
+    (location.state as { backTo?: string } | null)?.backTo ??
+    `/app/universes/${universe.id}/ai-changes`
   const canDecide = proposal.canReview && open
   const canApprove = canDecide && proposal.blocked === null
   const pending = changes.filter((change) => change.status === ChangeStatus.Pending)
+  // Pictures the AI asked for and nobody has uploaded yet: each holds its change back until the file is here.
+  const awaitingPictures = pending.filter((change) => change.media && !change.media.uploaded)
   const ready = pending.filter(approvable)
   const chosen = changes.filter((change) => selected.has(change.id))
 
@@ -192,13 +203,23 @@ export default function AiChangePage() {
     if (approval.current?.key !== key) approval.current = { key, id: crypto.randomUUID() }
     setBusy('approve')
     setFeedback(null)
+    setApplied({ done: 0, total: ids.length })
+    const approvalId = approval.current.id
+    const watch = new AbortController()
+    const timer = window.setInterval(() => {
+      getApprovalProgress(universe.id, proposal.proposal.id, approvalId, watch.signal)
+        .then((count) => {
+          if (!watch.signal.aborted) setApplied(count)
+        })
+        .catch(() => undefined)
+    }, 500)
     try {
       const receipt = await approveChanges(
         universe.id,
         proposal.proposal.id,
         proposal.revision,
         ids,
-        approval.current.id,
+        approvalId,
       )
       approval.current = null
       accept(
@@ -223,6 +244,9 @@ export default function AiChangePage() {
         setReads((count) => count + 1)
       }
     } finally {
+      window.clearInterval(timer)
+      watch.abort()
+      setApplied(null)
       setBusy(null)
     }
   }
@@ -260,7 +284,12 @@ export default function AiChangePage() {
   return (
     <section className="aichange" aria-labelledby="aichange-title" data-testid="ai-change">
       <PageHeader
-        crumb={<Link to={`/app/universes/${universe.id}/ai-changes`}>Pending AI Changes</Link>}
+        crumb={
+          <Link className="aichange__back" to={backTo} data-testid="ai-change-back">
+            <ArrowLeft aria-hidden="true" focusable="false" strokeWidth={1.75} />
+            Back to Pending AI Changes
+          </Link>
+        }
         title={
           <span dir="auto">
             {proposal.proposal.summary ?? `${proposal.proposal.operationCount} proposed changes`}
@@ -296,6 +325,19 @@ export default function AiChangePage() {
           {open
             ? ` If no one decides, this proposal closes on ${formatDateTime(proposal.proposal.expiresAt)}.`
             : null}
+        </p>
+      ) : null}
+
+      {open && awaitingPictures.length > 0 ? (
+        <p
+          className="callout callout--warning"
+          role="status"
+          data-testid="ai-change-awaiting-pictures"
+        >
+          {awaitingPictures.length === 1
+            ? '1 picture is waiting to be uploaded.'
+            : `${awaitingPictures.length} pictures are waiting to be uploaded.`}{' '}
+          The AI sends no file: upload each one below, in LorEvolve, before approving its change.
         </p>
       ) : null}
 
@@ -379,6 +421,34 @@ export default function AiChangePage() {
               Reject all
             </button>
           </div>
+          {applied ? (
+            <div className="aichange__progress" data-testid="ai-change-progress">
+              <div
+                className="progressbar"
+                role="progressbar"
+                aria-label="Applying changes"
+                aria-valuemin={0}
+                aria-valuemax={applied.total}
+                aria-valuenow={applied.done}
+                aria-valuetext={`${applied.done} of ${applied.total} applied`}
+                data-state={applied.done === 0 ? 'working' : 'sending'}
+              >
+                <span
+                  className="progressbar__fill"
+                  style={
+                    applied.done === 0
+                      ? undefined
+                      : { width: `${(applied.done / applied.total) * 100}%` }
+                  }
+                />
+              </div>
+              <p className="aichange__count">
+                {applied.done === 0
+                  ? `Checking ${applied.total === 1 ? '1 change' : `${applied.total} changes`}…`
+                  : `${applied.done} of ${applied.total} applied`}
+              </p>
+            </div>
+          ) : null}
         </div>
       ) : !proposal.canReview && open && proposal.proposal.proposedByMe ? (
         <div className="aichange__toolbar">
@@ -411,6 +481,8 @@ export default function AiChangePage() {
               setEditing(null)
               accept(next, 'Your edit was saved. Review it, then approve.')
             }}
+            // An upload says so beside the picture, and the page stays where it is.
+            onUploaded={(next) => setLoad({ kind: 'ready', proposal: next })}
           />
         ))}
       </ol>
@@ -429,6 +501,7 @@ function ChangeItem({
   editing,
   onEdit,
   onEdited,
+  onUploaded,
 }: {
   universeId: string
   proposal: Proposal
@@ -440,6 +513,7 @@ function ChangeItem({
   editing: boolean
   onEdit: (on: boolean) => void
   onEdited: (next: Proposal) => void
+  onUploaded: (next: Proposal) => void
 }) {
   const titleId = useId()
   const detailsId = useId()
@@ -537,7 +611,7 @@ function ChangeItem({
             universeId={universeId}
             proposal={proposal}
             change={change}
-            onUploaded={onEdited}
+            onUploaded={onUploaded}
           />
         ) : null}
 
@@ -631,6 +705,7 @@ function MediaChange({
   const inputId = useId()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [uploaded, setUploaded] = useState(false)
   const waiting =
     change.status === ChangeStatus.Pending &&
     proposal.proposal.status === ProposalStatus.Open &&
@@ -640,8 +715,10 @@ function MediaChange({
     if (!file) return
     setBusy(true)
     setError(null)
+    setUploaded(false)
     try {
       onUploaded(await uploadChangeMedia(universeId, proposal.proposal.id, change.id, file))
+      setUploaded(true)
     } catch (problem: unknown) {
       setError(
         problem instanceof ApiError
@@ -686,6 +763,11 @@ function MediaChange({
             data-testid="ai-change-media-file"
           />
         </div>
+      ) : null}
+      {uploaded ? (
+        <p className="aichangeitem__deps" role="status" data-testid="ai-change-media-uploaded">
+          Picture uploaded. This change can be approved now.
+        </p>
       ) : null}
       {error ? (
         <p className="form__message" role="alert">

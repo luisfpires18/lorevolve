@@ -202,6 +202,41 @@ test.describe('Lore controls: the types keep their row whatever the list holds',
     await expect(page.getByTestId('lore-selectbar')).toHaveCount(0)
   })
 
+  test('Exact name finds only the entry called that, and Sort by orders the list', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    await signUp(page)
+    const w = await world(page, 14)
+    await page.goto(w.character)
+    const cards = page.getByTestId('entity-card')
+    const names = cards.locator('.entitycard__name')
+    await expect(cards).toHaveCount(12)
+
+    // A search finds every entry that mentions the words; Exact name only the one called that, whatever its case.
+    await page.getByLabel('Filter entries').fill('wanderer')
+    await expect(cards).toHaveCount(12)
+    await page.getByLabel('Filter entries').fill('WANDERER 05')
+    await page.getByTestId('lore-exact').click()
+    await expect(page.getByTestId('lore-exact')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page).toHaveURL(/[?&]exact=1/)
+    await expect(cards).toHaveCount(1)
+    await expect(names.first()).toHaveText('Wanderer 05')
+    await page.getByTestId('lore-reset-filters').click()
+    await expect(page.getByTestId('lore-exact')).toHaveAttribute('aria-pressed', 'false')
+    await expect(cards).toHaveCount(12)
+
+    // Last edited first by default; by name A to Z; by date created, newest first.
+    const sort = page.getByTestId('lore-result-actions').getByTestId('lore-sort')
+    await expect(names.first()).toHaveText('Wanderer 14')
+    await sort.selectOption('name')
+    await expect(page).toHaveURL(/[?&]sort=name/)
+    await expect(names.first()).toHaveText('Wanderer 01')
+    await sort.selectOption('created')
+    await expect(names.first()).toHaveText('Wanderer 14')
+    expect(await sideways(page)).toBeLessThanOrEqual(0)
+  })
+
   for (const width of [390, 360]) {
     test(`${width}px: the type menu keeps its width, Filters stays beside it, Select stays reachable`, async ({
       page,

@@ -217,3 +217,10 @@ reduced motion. A CSS failsafe hides it after 10 s if the app never starts. Brow
 after each deployment; nothing else changes. An existing install picks up the new manifest and icons when the platform
 next refreshes its install - Android does so on its own schedule, iOS keeps the icon of the home-screen shortcut until it
 is added again. LorEvolve does not prompt.
+
+## Amendment: the installed app opens the landing page (2026-10-29)
+
+Owner decision: the manifest's `start_url` is `/`, so launching the installed app opens the landing page, signed in or
+not, exactly as a browser's front door does; a signed-in author goes on with "Go to my workspace". Supersedes the 011
+amendment's `/explore`. `id` stays `/app`, and nothing in the worker changes: the manifest is never cached (014), so an
+existing install picks up the new start on its platform's next manifest update check, or at once on reinstall.

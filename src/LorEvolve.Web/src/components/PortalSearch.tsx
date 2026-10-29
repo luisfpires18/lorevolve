@@ -56,7 +56,7 @@ export function PortalSearch() {
   return (
     <form className="portal-search" role="search" onSubmit={submit}>
       <label className="visually-hidden" htmlFor="portal-q">
-        Search worlds
+        Search worlds and authors
       </label>
       <Search className="portal-search__icon" aria-hidden="true" size={18} strokeWidth={1.75} />
       <input

@@ -445,7 +445,9 @@ test.describe('family tree semantics', () => {
     await page.keyboard.press('Escape')
     await expect(details).toHaveCount(0)
     await expect(node(page, 'Frodo')).toHaveCount(1)
-    await expect(page.locator('.familytree__linelabel')).toHaveText('Bilbo uncle of Frodo')
+    // No words on the line: the relation is written out while Bilbo is pointed at.
+    await node(page, 'Bilbo').hover()
+    await expect(page.getByTestId('family-caption')).toContainText('Bilbo uncle of Frodo')
 
     await page.goto(treeUrl(universeId, frodo))
     details = await openDetails(page, 'Frodo')

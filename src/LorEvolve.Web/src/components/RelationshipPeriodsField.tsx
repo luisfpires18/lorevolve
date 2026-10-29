@@ -100,6 +100,7 @@ export function RelationshipPeriodsField({
                 type="button"
                 className="iconbutton"
                 aria-label={`Remove ${label.toLowerCase()}`}
+                title={`Remove ${label.toLowerCase()}`}
                 onClick={() => onChange(value.filter((_, at) => at !== index))}
                 data-testid={`relation-period-${index}-remove`}
               >

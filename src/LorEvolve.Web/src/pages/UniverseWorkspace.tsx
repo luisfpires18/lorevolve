@@ -10,7 +10,6 @@ import { getChronology } from '../chronology/api'
 import type { Chronology } from '../chronology/types'
 import { getUniverse } from '../universes/api'
 import { offered, SECTION_GROUPS, UPKEEP } from '../universes/sections'
-import { WipBadge } from '../components/WipBadge'
 import { capabilitiesOf, ROLE_LABELS, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -215,7 +214,7 @@ export default function UniverseWorkspace() {
             direction rather than a <bdi>, because it is cut with an ellipsis: only the clipping element's
             direction puts the cut at the end of a name written right to left, not at its start. */}
         <p className="rail__where" data-testid="workspace-where">
-          <span className="rail__universe" dir="auto">
+          <span className="rail__universe" dir="auto" title={universe.name}>
             {universe.name}
           </span>
           <span className="rail__section">{section}</span>
@@ -257,7 +256,12 @@ export default function UniverseWorkspace() {
       >
         <div className="sidebar__head">
           <Link className="sidebar__back" to="/app">
-            <ArrowLeft className="sidebar__backicon" aria-hidden="true" focusable="false" />
+            <ArrowLeft
+              className="sidebar__backicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
             All universes
           </Link>
           {/* The world's artwork in miniature beside its name, when its owner has given it one. Decorative. */}
@@ -290,7 +294,7 @@ export default function UniverseWorkspace() {
               data-testid={UPKEEP.includes(group[0]) ? 'sidebar-upkeep' : undefined}
             >
               <ul className="sidebar__links">
-                {group.map(({ segment, label, testId, icon: Icon, wip }) => (
+                {group.map(({ segment, label, testId, icon: Icon }) => (
                   <li key={label}>
                     <NavLink
                       to={segment === '' ? '.' : segment}
@@ -305,7 +309,6 @@ export default function UniverseWorkspace() {
                         strokeWidth={1.75}
                       />
                       {label}
-                      {wip ? <WipBadge /> : null}
                     </NavLink>
                   </li>
                 ))}
@@ -331,11 +334,10 @@ export default function UniverseWorkspace() {
             search typed in one world is never left standing in the next. Search was the sidebar's last greyed section;
             it is not a section, it is how any section's content is reached. The assistant sits beside it for the same
             reason, keyed the same way so one world's conversation never follows the author into the next (ADR 0045). */}
-        <div className="workspace__top">
-          <UniverseSearch key={universe.id} universeId={universe.id} />
+        <div className="workspace__top" key={universe.id}>
+          <UniverseSearch universeId={universe.id} />
           {universe.aiHelp ? (
             <UniverseAssistant
-              key={universe.id}
               universeId={universe.id}
               universeName={universe.name}
               canPropose={access.suggestChanges}

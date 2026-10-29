@@ -136,7 +136,9 @@ back to Fake.
   `tool_choice: none`, and with an explicit "do not call any tool" instruction (0/5), so none of those is the fix. The
   refusal is reported as a turn that is `StillLooking`, never as an invented call or answer. When the tool budget is
   spent, the assistant gives its existing "ran out of room" note, incomplete, as it does for OpenAI. If the model reached
-  the answering step early, after free text with lookups left, the question fails instead: the budget did not run out.
+  the answering step early, after free text with lookups left, that free text is the answer: it goes back as one note
+  citing nothing (amended 2026-10-29, after a live failure on DEV). Only with no free text does the question fail, and
+  never as "ran out of room", since the budget did not run out.
 - **Groq's tool steps are not told to reply with JSON** (Azure DEV: `tool_use_failed: unknown_tool after 2 of 2`;
   live diagnosis 2026-10-18, fictional data). The tool steps carry no answer schema, but the instructions still ended
   "Reply with JSON that follows the schema". When gpt-oss was ready to answer, it addressed that JSON to a tool called

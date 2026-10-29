@@ -6,7 +6,11 @@ interface WordmarkProps {
 /** LorEvolve, in the book face: one word, drawn as it is spoken (the logo's own lettering, ADR 0067). */
 export function Wordmark({ large = false }: WordmarkProps) {
   return (
-    <span className={large ? 'wordmark wordmark--large' : 'wordmark'} data-testid="wordmark">
+    <span
+      className={large ? 'wordmark wordmark--large' : 'wordmark'}
+      translate="no"
+      data-testid="wordmark"
+    >
       LorEvolve
     </span>
   )

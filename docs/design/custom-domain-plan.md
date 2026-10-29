@@ -17,8 +17,8 @@ LorEvolve uses is configuration, so the domain itself needs no code change. PROD
 - **One domain.** `demo-lorevolve.com` would be a second purchase and a second zone for no gain.
 - **Until PROD exists** the apex and `www` send visitors to the demo page with a temporary 302 (2.3). Deleted when PROD
   takes the apex (3.4).
-- **Privacy note and footer** do not name the domain: they are served from it. The contact address stays
-  `lorevolve@gmail.com` until a `@lorevolve.com` inbox is tested (section 6).
+- **Privacy note and footer** do not name the domain: they are served from it. The contact address is
+  `support@lorevolve.com` (section 6).
 - **`noindex` on the alpha page** stays while it is link-only.
 - **DEV keeps** `Mcp__Origin=https://dev-lorevolve.azurewebsites.net` and no `PublicSite__Origin` (ADR 0038). Nothing
   changes for DEV or its MCP connections.
@@ -79,13 +79,17 @@ commands: [../deployment/azure-prod.md](../deployment/azure-prod.md).
 PROD is a new origin with its own issuer, so PROD connections start fresh. DEV connections are not affected: DEV's
 `Mcp__Origin` does not change.
 
-## 6. Email: now unblocked, not built
+## 6. Email (set up 2026-10-29)
 
-Parked in `alpha-demo-page-plan.md` section 6 until a domain existed. With the zone on Cloudflare:
-
-- **Inbox**: Cloudflare Email Routing (free) forwards a `@lorevolve.com` address (insert a name) to
-  `lorevolve@gmail.com`. It adds its own MX and SPF records. It only receives; replying as that address needs a sender.
-- **`noreply@` sender**: Resend or Google Workspace, with SPF, DKIM and DMARC records in Cloudflare. The app's SMTP
-  sender (step 2 of the alpha plan) is still not built.
-- When an inbox is live and tested, swap `lorevolve@gmail.com` on the alpha page and in `privacy.html` in one commit.
+- **Receiving**: Cloudflare Email Routing forwards `support@lorevolve.com` to the owner's own inbox (a destination
+  address in Cloudflare, never in the repository). Catch-all off. Its MX, SPF and DKIM records sit on the apex.
+- **Sending by hand**: Resend, domain `lorevolve.com` verified (region Ireland, records `resend._domainkey`, `send`,
+  `rsend`; receiving off so the apex MX stays Cloudflare's). Gmail "Send mail as" `support@lorevolve.com` through
+  `smtp.resend.com:587`, user `resend`, a sending-only API key. Checked: SPF, DKIM and DMARC pass.
+- **DMARC**: `_dmarc` `v=DMARC1; p=none;`. Tighten to `quarantine` once sending is steady.
+- **Alpha page and privacy note** name `support@lorevolve.com` (`lorevolve@gmail.com` was never the owner's).
   A contact address change is not a change in substance, so `PRIVACY_VERSION` stays.
+- **App sender** (built 2026-10-29): `noreply@lorevolve.com` through Resend's web API, `Email__ApiKey` (its own
+  sending-only key) and `Email__From` in App Service settings, off when unset. Sends the Admin sign-up link (Admin >
+  Users > Email link). Collaborator invitations (#68) and forgot password (#69) are follow-ups.
+- **Limits**: Resend free plan, 100 emails a day and 3,000 a month. New domain: first emails may land in Promotions.

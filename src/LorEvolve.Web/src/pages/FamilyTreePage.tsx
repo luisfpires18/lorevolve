@@ -218,7 +218,12 @@ export default function FamilyTreePage() {
             to={`/app/universes/${universe.id}/family-tree${familiesFrom}`}
             data-testid="family-browse"
           >
-            <ArrowLeft className="family__browseicon" aria-hidden="true" focusable="false" />
+            <ArrowLeft
+              className="family__browseicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
             Browse families
           </Link>
           <div className="family__picker">
@@ -378,8 +383,9 @@ export default function FamilyTreePage() {
             Relatives are worked out from the parent connections themselves, every time this page is
             opened. Nothing on it is stored as a connection of its own, and a sibling here means one
             shared parent that somebody wrote down, and nothing more. Other family you recorded,
-            like a spouse or a guardian, is drawn as a dotted line with its words and listed in each
-            person&rsquo;s details; it places nobody in a generation.
+            like a spouse or a guardian, is listed in each person&rsquo;s details and shown while
+            you point at or focus them; a spouse stands beside them. It places nobody in a
+            generation.
           </p>
 
           {otherRelations.length > 0 ? (

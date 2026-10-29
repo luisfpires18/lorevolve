@@ -129,11 +129,18 @@ public static class EntityEndpoints
         [FromQuery] bool includeDescendants = false,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = DefaultPageSize,
-        [FromQuery(Name = "field")] string[]? field = null)
+        [FromQuery(Name = "field")] string[]? field = null,
+        [FromQuery] bool exact = false,
+        [FromQuery] string? sort = null)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.Read, cancellationToken) is { } denied)
         {
             return denied;
+        }
+
+        if (sort is not (null or "updated" or "name" or "created"))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]> { ["sort"] = ["Sort by updated, name or created."] });
         }
 
         // Custom-field filters, all checked before anything is read: one that does not resolve is refused, never dropped.
@@ -213,7 +220,14 @@ public static class EntityEndpoints
         IQueryable<EntitySearchMatch>? matches = null;
         string? expression = null;
 
-        if (!string.IsNullOrWhiteSpace(search))
+        // Exact: only the entry called what was typed, by its name or one of its aliases, whole and ignoring case - never one
+        // that merely mentions it. A filter like the others, so it is ordered like browsing.
+        if (exact && !string.IsNullOrWhiteSpace(search))
+        {
+            var wanted = search.Trim().ToLower();
+            query = query.Where(entity => entity.Name.ToLower() == wanted || entity.Aliases.Any(alias => alias.Value.ToLower() == wanted));
+        }
+        else if (!string.IsNullOrWhiteSpace(search))
         {
             expression = EntitySearchIndex.BuildMatchExpression(search);
 
@@ -235,10 +249,16 @@ public static class EntityEndpoints
 
         if (matches is null)
         {
-            // Browsing. Most recently authored first, which is the order the grid has always had.
+            // Browsing. Most recently authored first unless another order is asked for, which is the order the grid has always
+            // had. A name sorts ignoring case, so "arin" does not file after "Zed".
             totalCount = await query.CountAsync(cancellationToken);
-            items = await query
-                .OrderByDescending(entity => entity.UpdatedAt)
+            var ordered = sort switch
+            {
+                "name" => query.OrderBy(entity => EF.Functions.Collate(entity.Name, "NOCASE")),
+                "created" => query.OrderByDescending(entity => entity.CreatedAt),
+                _ => query.OrderByDescending(entity => entity.UpdatedAt),
+            };
+            items = await ordered
                 .ThenBy(entity => entity.Id)
                 .Skip(skip)
                 .Take(pageSize)
@@ -264,8 +284,15 @@ public static class EntityEndpoints
             // nothing else. A card's aliases and tags are read separately, by id: a correlated
             // collection cannot be projected through a join to a keyless row, and asking for one
             // is how you get a query EF Core refuses to translate at all.
-            var ranked = await scored
-                .OrderBy(row => row.Rank)
+            // An order the reader chose wins over the rank; the search still decides which entries are in.
+            var sorted = sort switch
+            {
+                "name" => scored.OrderBy(row => EF.Functions.Collate(row.Entity.Name, "NOCASE")),
+                "created" => scored.OrderByDescending(row => row.Entity.CreatedAt),
+                "updated" => scored.OrderByDescending(row => row.Entity.UpdatedAt),
+                _ => scored.OrderBy(row => row.Rank),
+            };
+            var ranked = await sorted
                 .ThenBy(row => row.Entity.Id)
                 .Skip(skip)
                 .Take(pageSize)

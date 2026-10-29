@@ -3,6 +3,7 @@ import { MessageSquareWarning } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { ApiError } from '../lib/api'
 import { useDrawerGuard } from '../lib/drawerGuard'
+import { useReturnFocus } from '../lib/returnFocus'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
 
 /**
@@ -51,6 +52,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
   const headingId = useId()
   const textId = useId()
   const { pathname } = useLocation()
+  useReturnFocus()
   const [kind, setKind] = useState<FeedbackKindValue>(FeedbackKind.Bug)
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
