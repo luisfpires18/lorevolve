@@ -77,7 +77,13 @@ async function download(path: string, fallbackMessage: string): Promise<string> 
   }
 
   const fileName = fileNameFrom(response.headers.get('content-disposition'))
-  save(await response.blob(), fileName)
+  // Read as an ArrayBuffer and wrapped, never `response.blob()`: Chrome fails `blob()` with "Failed to fetch" on an
+  // archive of a few tens of megabytes (a universe with its pictures), while the same response reads whole this way.
+  const body = await response.arrayBuffer()
+  save(
+    new Blob([body], { type: response.headers.get('content-type') ?? 'application/zip' }),
+    fileName,
+  )
 
   return fileName
 }
