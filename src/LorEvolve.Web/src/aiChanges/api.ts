@@ -247,6 +247,19 @@ export function approveChanges(
   })
 }
 
+/** How far the caller's own running approval has got; missing once it has finished. */
+export function getApprovalProgress(
+  universeId: string,
+  proposalId: string,
+  approvalId: string,
+  signal?: AbortSignal,
+) {
+  return apiFetch<{ done: number; total: number }>(
+    `${proposalPath(universeId, proposalId)}/approve/${approvalId}/progress`,
+    { signal },
+  )
+}
+
 export function rejectChanges(
   universeId: string,
   proposalId: string,

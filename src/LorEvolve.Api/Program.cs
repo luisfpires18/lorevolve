@@ -56,6 +56,7 @@ builder.Services.AddLoreSearch();
 builder.Services.AddHostedService<LorEvolve.Api.Features.Publishing.PublicAuthorBackfill>();
 builder.Services.AddLorEvolveMedia(builder.Configuration);
 builder.Services.AddHostedService<LorEvolve.Api.Features.AiChanges.AiChangeMediaSweep>();
+builder.Services.AddSingleton<LorEvolve.Api.Features.AiChanges.AiChangeProgress>();
 builder.Services.AddBackupRestore();
 builder.Services.AddLorEvolveDatabaseBackups(builder.Configuration);
 builder.Services.AddLorEvolveSeo(builder.Configuration);
