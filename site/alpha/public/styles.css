@@ -858,6 +858,16 @@ button {
   margin: 0;
 }
 
+/* A group heading inside the feature lists of the surveys, matching the page's three groups. */
+.field__group {
+  margin: var(--space-4) 0 var(--space-1);
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* The usefulness grid: one row per feature, its four ratings as pills that wrap on a phone. */
 .rate {
   margin-top: var(--space-4);

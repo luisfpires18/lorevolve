@@ -14,32 +14,52 @@ let surveyPart = null
 
 // -- The questions --
 
-const FEATURES = [
-  ['lore', 'Lore entries and custom types'],
-  ['types', 'Nested types and groups'],
-  ['relations', 'Relations and relation kinds'],
-  ['progression', 'Progression stages'],
-  ['canonStatus', 'Idea, Draft, Canon status'],
-  ['history', 'Version history and Trash'],
-  ['privateNotes', 'Private notes'],
-  ['review', 'Comments and suggestions'],
-  ['knowledge', 'Character knowledge'],
-  ['familyTree', 'Family trees'],
-  ['maps', 'Maps and pins'],
-  ['worldRules', 'World rules'],
-  ['canonIntegrity', 'Canon checks'],
-  ['calendar', 'Custom calendar'],
-  ['stories', 'Stories and manuscript'],
-  ['plot', 'Plot arcs and beats'],
-  ['timeline', 'Timeline'],
-  ['ideas', 'Ideas'],
-  ['collaboration', 'Collaboration'],
-  ['assistant', 'AI assistant'],
-  ['mcp', 'Connecting Claude or ChatGPT (MCP)'],
-  ['publishing', 'Publishing and Explore'],
-  ['backup', 'Backup and export'],
-  ['search', 'Search'],
+// The page's feature list, by group and in the same order. lib/survey.js holds the same keys.
+const FEATURE_GROUPS = [
+  [
+    'A universe',
+    [
+      ['lore', 'Lore entries: pictures, articles, aliases, tags'],
+      ['massCreate', 'Mass create and quick create'],
+      ['types', 'Your own types, fields and groups'],
+      ['canonStatus', 'Idea, Draft, Canon status'],
+      ['history', 'Version history and Trash'],
+      ['privateNotes', 'Private notes'],
+      ['relations', 'Relations and when they hold'],
+      ['familyTree', 'Family trees'],
+      ['progression', 'Progression: stages, forms, abilities, looks'],
+      ['knowledge', 'Character knowledge'],
+      ['maps', 'Maps, pins and distances'],
+      ['worldRules', 'World rules and their checks'],
+      ['canonIntegrity', 'Canon checks'],
+      ['calendar', 'Your own calendar'],
+      ['stories', 'Stories, chapters, scenes and manuscript'],
+      ['plot', 'Plot arcs and beats'],
+      ['timeline', 'Timeline'],
+      ['review', 'Comments and suggestions'],
+    ],
+  ],
+  [
+    'Your workspace',
+    [
+      ['ideas', 'Ideas and idea boards'],
+      ['collaboration', 'Collaboration'],
+      ['assistant', 'AI assistant'],
+      ['mcp', 'Connecting Claude or ChatGPT (MCP)'],
+      ['backup', 'Backup and export'],
+      ['search', 'Search'],
+      ['installApp', 'Installing it as an app'],
+    ],
+  ],
+  [
+    'Public portal',
+    [
+      ['publishing', 'Publishing'],
+      ['explore', 'Explore and author pages'],
+    ],
+  ],
 ]
+const FEATURES = FEATURE_GROUPS.flatMap(([, items]) => items)
 
 const one = (name, label, options) => ({ kind: 'one', name, label, options })
 const free = (name, label, max = 2000) => ({ kind: 'text', name, label, max })
@@ -64,6 +84,10 @@ const PRICING = [
 
 const QUESTIONS = {
   signup: [
+    { kind: 'pick', name: 'interests', label: 'Which features interest you most?', hint: 'Pick as many as you like.' },
+    free('wished', "Which features would you like that LorEvolve doesn't have?"),
+  ],
+  'signup-pricing': [
     one('publish', 'Would you publish your universe for others to read?', [
       ['all', 'Yes, all of it'],
       ['parts', 'Yes, parts of it'],
@@ -109,10 +133,8 @@ const QUESTIONS = {
       ['maybe', 'Maybe'],
       ['no', 'No'],
     ]),
-    { kind: 'pick', name: 'interests', label: 'Which features interest you most?', hint: 'Pick as many as you like.' },
-    free('wished', "Which features would you like that LorEvolve doesn't have?"),
+    ...PRICING,
   ],
-  'signup-pricing': PRICING,
   'end-features': [{ kind: 'grid', name: 'usefulness' }],
   'end-more': [
     one('typesEffort', 'Defining your own types and fields felt:', [
@@ -157,11 +179,17 @@ function render(question) {
     case 'text':
       return `<label class="field"><span class="field__label">${question.label}</span><textarea name="${question.name}" rows="3" maxlength="${question.max}"></textarea></label>`
     case 'pick':
-      return `<fieldset class="field"><legend class="field__label">${question.label}</legend><p class="field__hint">${question.hint}</p>${FEATURES.map(([key, label]) => `<label class="choice"><input type="checkbox" name="${question.name}" value="${key}" /> ${label}</label>`).join('')}</fieldset>`
+      return `<fieldset class="field"><legend class="field__label">${question.label}</legend><p class="field__hint">${question.hint}</p>${FEATURE_GROUPS.map(([group, items]) => `<p class="field__group">${group}</p>${items.map(([key, label]) => `<label class="choice"><input type="checkbox" name="${question.name}" value="${key}" /> ${label}</label>`).join('')}`).join('')}</fieldset>`
     case 'grid':
-      return FEATURES.map(
-        ([key, label]) =>
-          `<fieldset class="field rate"><legend class="field__label">${label}</legend><div class="rate__options">${RATINGS.map(([value, text]) => `<label><input type="radio" name="u_${key}" value="${value}" /><span>${text}</span></label>`).join('')}</div></fieldset>`,
+      return FEATURE_GROUPS.map(
+        ([group, items]) =>
+          `<p class="field__group">${group}</p>` +
+          items
+            .map(
+              ([key, label]) =>
+                `<fieldset class="field rate"><legend class="field__label">${label}</legend><div class="rate__options">${RATINGS.map(([value, text]) => `<label><input type="radio" name="u_${key}" value="${value}" /><span>${text}</span></label>`).join('')}</div></fieldset>`,
+            )
+            .join(''),
       ).join('')
     case 'price':
       return `<label class="field"><span class="field__label">${question.label}</span><span class="field__hint">In euros, per month.</span><span class="money"><span aria-hidden="true">€</span><input name="${question.name}" type="number" inputmode="decimal" min="0" max="10000" step="0.01" /></span></label>`
