@@ -1,23 +1,26 @@
 /**
- * The version a build shows. package.json holds the release version and is the base; a DEV deployment is that version's
- * MAJOR.MINOR with a patch counted on by Deploy DEV's run number, marked `-dev`. Everything else - a local build, CI, a
- * future release - shows package.json's version unchanged.
+ * The version a build shows. package.json holds the release version and is the base, optionally marked as a pre-release
+ * (`1.0.0-alpha`, `-beta`, `-rc.1`); PROD shows it unchanged. A DEV deployment is that version's MAJOR.MINOR with a patch
+ * counted on by Deploy DEV's run number, marked `-dev` in place of any pre-release mark. Everything else - a local build,
+ * CI - shows package.json's version unchanged.
  *
  * `github.run_number` only ever rises, never returns for a re-run (a re-run is the same number, a new attempt), and needs
  * no commit, token or store. So the version is never written down anywhere and never bumped by hand.
  *
- * `DEV_RUN_BASELINE` is the last Deploy DEV run that showed package.json's version as it is. Run 101 is therefore
- * `0.1.1-dev`, run 102 `0.1.2-dev`. When package.json's version changes, set the baseline to the latest run number in
- * the same commit, so the next DEV build is the new version's `.1-dev`.
+ * `DEV_RUN_BASELINE` is the last Deploy DEV run before package.json's version last changed: with `1.0.0-alpha` and a
+ * baseline of 182, run 183 is `1.0.1-dev`, run 184 `1.0.2-dev`. When package.json's version changes, set the baseline to
+ * the latest run number in the same commit, so the next DEV build is the new version's `.1-dev`.
  */
-export const DEV_RUN_BASELINE = 100
+export const DEV_RUN_BASELINE = 182
 
 export function displayVersion(packageVersion: string, devRun: string | undefined): string {
   if (!devRun) return packageVersion
 
-  const release = /^(\d+)\.(\d+)\.(\d+)$/.exec(packageVersion)
+  const release = /^(\d+)\.(\d+)\.(\d+)(?:-(?:alpha|beta|rc(?:\.\d+)?))?$/.exec(packageVersion)
   if (!release) {
-    throw new Error(`package.json's version "${packageVersion}" is not MAJOR.MINOR.PATCH.`)
+    throw new Error(
+      `package.json's version "${packageVersion}" is not MAJOR.MINOR.PATCH, optionally -alpha, -beta or -rc.N.`,
+    )
   }
 
   // A run at or below the baseline would reuse a version already shown, or go backwards: refuse to build at all.
