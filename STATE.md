@@ -12,8 +12,8 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `docs/design/custom-domain-plan.md` on `docs/custom-domain-setup`. Alpha page -> `demo.lorevolve.com` (owner steps
   pending); apex -> new PROD app `prod-lorevolve` on B1 (`deploy-prod.yml` manual from `master`, `appsettings.AzureProd.json`, runbook `docs/deployment/azure-prod.md`; owner setup after the pre-alpha gate);
   DEV stays F1 on azurewebsites.
-- **UI polish pass 3 - constants** (`chore/ui-polish-constants` off the pass 2 tip `5a3ea61`, same worktree; committed, not
-  merged, not pushed). CSS and the wordmark only. Nothing under 12px (six labels to `--text-xs`); every pill radius on
+- **UI polish pass 3 - constants** (`chore/ui-polish-constants` off the pass 2 tip `5a3ea61`, same worktree; merged into
+  `dev` at `42fe4fe`, pushed). CSS and the wordmark only. Nothing under 12px (six labels to `--text-xs`); every pill radius on
   `--radius-full`; the cropper, composer, article editor and manuscript box on `--radius-md`; the Archived mark one shape
   (`--radius-xs`); the folded rail on `--z-drawer`; the sign-in fold at 860px (was 900); hover gated by `(hover: hover)` on
   the button family, `.iconbutton` and the lifting cards (plate, doorway, entity, type, world card) so a tap leaves no
@@ -26,10 +26,9 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     tree and passes on a cold API (5.6 s) but not a warm one (2 s), so it is not this pass's; `mcp-connect` and
     `ai-schema` (12) pass on the same servers. Fixed in a fourth commit on this branch: the spec now waits for the
     callback request to fail and the error page to land before its `goto`; 4/4 warm, the file 8/8. Full suite
-    delegated to CI. **Owner next:** review and merge the three branches in order (pass 1, 2, 3; each is cut from
-    the previous tip), then the worktree can go.
-- **UI polish pass 2 - one vocabulary** (`chore/ui-polish-vocabulary` off the pass 1 tip `a15280e`, same worktree; committed,
-  not merged, not pushed). Presentation only. Every Try again is the secondary; a Cancel beside a primary is the secondary
+    delegated to CI. All three merged into `dev` on 2026-10-29; the worktree can go.
+- **UI polish pass 2 - one vocabulary** (`chore/ui-polish-vocabulary` off the pass 1 tip `a15280e`, same worktree; merged into
+  `dev` at `0f79e27`, pushed). Presentation only. Every Try again is the secondary; a Cancel beside a primary is the secondary
   (Trash restore, Settings archive); the first step of a destructive flow (Admin Block, Trash bulk Delete) is
   `button--secondary button--danger-quiet`, the fill kept for the last word, and that rule now sits beside
   `.button--danger`; the AI changes filter is `.segmented`; Ideas' tabs are `.views` links (`.ideatabs` keeps only the
@@ -39,7 +38,7 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   - Tests: web checks green; Playwright by substring on a fresh DB (169 tests, 2 workers) 168 passed, the one loss
     (`lore-type-browser` Add child, a fill timing out under load) green alone. Full suite delegated to CI.
 - **UI polish pass 1 - defects and missing states** (`fix/ui-polish-defects` off `origin/dev` at `873a034`, in the worktree
-  `.claude/worktrees/fix+ui-polish-defects`; committed, not merged, not pushed). Presentation only: no route, API, schema,
+  `.claude/worktrees/fix+ui-polish-defects`; merged into `dev` at `2f9347c`, pushed). Presentation only: no route, API, schema,
   backup or copy change. Plan approved 2026-10-28: three passes, one branch each, cut from the previous tip; `Inter` leaves
   the UI font stack in pass 3. Copy wording stays with `docs/design/humanize-copy-plan.md`.
   - The floating feedback pill no longer covers the foot: `--feedback-lift` raises it above a stuck save bar
