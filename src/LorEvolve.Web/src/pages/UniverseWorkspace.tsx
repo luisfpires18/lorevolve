@@ -214,7 +214,7 @@ export default function UniverseWorkspace() {
             direction rather than a <bdi>, because it is cut with an ellipsis: only the clipping element's
             direction puts the cut at the end of a name written right to left, not at its start. */}
         <p className="rail__where" data-testid="workspace-where">
-          <span className="rail__universe" dir="auto">
+          <span className="rail__universe" dir="auto" title={universe.name}>
             {universe.name}
           </span>
           <span className="rail__section">{section}</span>
@@ -329,11 +329,10 @@ export default function UniverseWorkspace() {
             search typed in one world is never left standing in the next. Search was the sidebar's last greyed section;
             it is not a section, it is how any section's content is reached. The assistant sits beside it for the same
             reason, keyed the same way so one world's conversation never follows the author into the next (ADR 0045). */}
-        <div className="workspace__top">
-          <UniverseSearch key={universe.id} universeId={universe.id} />
+        <div className="workspace__top" key={universe.id}>
+          <UniverseSearch universeId={universe.id} />
           {universe.aiHelp ? (
             <UniverseAssistant
-              key={universe.id}
               universeId={universe.id}
               universeName={universe.name}
               canPropose={access.suggestChanges}

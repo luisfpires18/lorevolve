@@ -12,6 +12,27 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
   `docs/design/custom-domain-plan.md` on `docs/custom-domain-setup`. Alpha page -> `demo.lorevolve.com` (owner steps
   pending); apex -> new PROD app `prod-lorevolve` on B1 (`deploy-prod.yml` manual from `master`, `appsettings.AzureProd.json`, runbook `docs/deployment/azure-prod.md`; owner setup after the pre-alpha gate);
   DEV stays F1 on azurewebsites.
+- **UI polish pass 1 - defects and missing states** (`fix/ui-polish-defects` off `origin/dev` at `873a034`, in the worktree
+  `.claude/worktrees/fix+ui-polish-defects`; committed, not merged, not pushed). Presentation only: no route, API, schema,
+  backup or copy change. Plan approved 2026-10-28: three passes, one branch each, cut from the previous tip; `Inter` leaves
+  the UI font stack in pass 3. Copy wording stays with `docs/design/humanize-copy-plan.md`.
+  - The floating feedback pill no longer covers the foot: `--feedback-lift` raises it above a stuck save bar
+    (`body:has(.actionbar, .article__bar, .manuscript__bar)`) and at 640px and below it leaves the foot to the page's own
+    control (a save bar, Lore's and a story's fixed New). The shell keys its search and assistant once, on their wrapper
+    (the duplicate-key warning is gone). Every failed read offers Try again (entry, timeline, relations, history, types,
+    world rule); the entry's error branch now precedes its loading guard, which had said "Opening…" for good.
+    `ImageViewer`, `ImageCropDialog` and the feedback dialog return focus; the article editor and the manuscript box show
+    the field's accent ring; 44px under a finger for All universes, the account trigger, token removes, the theme switch,
+    pin rows and stage pills; `EmptyState` with the header's create on Universes and Maps, and for Relations, History and
+    Admin feedback; the Explore chevron in the light theme; the Register invite notice in the accent tone; `aria-busy`
+    on the auth submits; `ActionMenu` triggers always titled; the portal search label matches its placeholder; the
+    folded rail's universe name and the account name carry a `title`. No spec changed.
+  - Tests: web checks green. Playwright by substring on a fresh DB (623 tests, 8 workers): 553 passed, 69 lost to the dev
+    server under load (`ERR_CONNECTION_REFUSED`, `EADDRINUSE ::1`, dynamic-import fetch), 69/70 on a two-worker rerun,
+    the last green alone. Full suite delegated to CI. Checked by hand at 1440 and 390 in both themes: the Lore and
+    article-editing feet, the editor ring, the light chevron, the Relations empty state.
+  - Next: pass 2 `chore/ui-polish-vocabulary` (button variants, segmented choices, one view switcher, icon stroke), pass 3
+    `chore/ui-polish-constants` (12px floor, radii and layer tokens, the 860 fold, touch-gated hover, the font stack).
 - Phases 001-022 done and merged. Sequence log: `docs/architecture/branching.md`.
 - **Pre-alpha gate: #33 security, #11 recovery, #54 database backups** (`feat/pre-alpha-recovery-security` off `dev` at
   `c1721c5`, in the main checkout; committed locally, not merged, not pushed; issues left open).
@@ -239,8 +260,6 @@ Operational state only. Architecture: `docs/architecture/decisions/README.md`. P
     `editing-flow` save-controls flake also passed alone. Release build green.
   - **Owner checks on DEV:** `docs/testing/maps-checklist.md` - a real map, real-device touch, Groq's phrasing over the
     geography tools, Claude/ChatGPT over MCP. Unverified here.
-  - Pre-existing, not fixed: `UniverseWorkspace.tsx` renders two siblings keyed by the universe id (a React duplicate-key
-    warning in the console on every universe screen).
 - **Fix: Deploy DEV E2E shard 6** (`fix/trash-e2e-row` off `dev` at `52a913c`; merged into `dev`, pushed). Runs
   40137578174, 40180740487 and 40184813329 failed on one test, `trash-permanent-delete` "names isolated", on all three
   attempts: its 14-context size loop ran out of Playwright's default 30 s (~24 s locally). `test.setTimeout(120_000)`, as

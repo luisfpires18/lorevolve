@@ -76,6 +76,7 @@ function WorldRuleReading({
   listPath: string
 }) {
   const [state, setState] = useState<Reading>({ kind: 'loading' })
+  const [reads, setReads] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -96,7 +97,7 @@ function WorldRuleReading({
     return () => {
       controller.abort()
     }
-  }, [universeId, ruleId])
+  }, [universeId, ruleId, reads])
 
   return (
     <article className="rule" data-testid="world-rule-reading">
@@ -119,9 +120,19 @@ function WorldRuleReading({
         </p>
       ) : null}
       {state.kind === 'error' ? (
-        <p className="notice notice--error" role="alert">
-          {state.message}
-        </p>
+        <div className="notice notice--error" role="alert">
+          <p>{state.message}</p>
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => {
+              setState({ kind: 'loading' })
+              setReads((count) => count + 1)
+            }}
+          >
+            Try again
+          </button>
+        </div>
       ) : null}
       {state.kind === 'ready' ? (
         <>

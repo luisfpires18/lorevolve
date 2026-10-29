@@ -436,9 +436,21 @@ export default function UniverseTypes() {
 
       <TabPanel idPrefix="types" id="lore" tab={tab}>
         {message ? (
-          <p className="form__message" role="alert" data-testid="types-error">
-            {message}
-          </p>
+          <div className="notice notice--error" role="alert" data-testid="types-error">
+            <p>{message}</p>
+            {!types ? (
+              <button
+                className="button button--secondary"
+                type="button"
+                onClick={() => {
+                  setMessage(null)
+                  void refresh().catch(() => setMessage('The types could not be loaded.'))
+                }}
+              >
+                Try again
+              </button>
+            ) : null}
+          </div>
         ) : null}
 
         <p className="types__notice" role="status" data-testid="types-notice">
@@ -446,9 +458,11 @@ export default function UniverseTypes() {
         </p>
 
         {!types ? (
-          <p className="notice" role="status">
-            Reading the types…
-          </p>
+          message ? null : (
+            <p className="notice" role="status">
+              Reading the types…
+            </p>
+          )
         ) : (
           <DndContext
             sensors={sensors}

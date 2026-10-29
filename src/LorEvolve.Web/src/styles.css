@@ -1202,7 +1202,7 @@ a.button--danger:visited {
 
 @media (pointer: coarse) {
   .themeswitch__option {
-    min-height: calc(var(--control-touch) - 6px);
+    min-height: var(--control-touch);
   }
 }
 
@@ -1842,8 +1842,8 @@ a.button--danger:visited {
 .feedbackbutton {
   position: fixed;
   right: max(var(--space-4), env(safe-area-inset-right));
-  bottom: max(var(--space-4), env(safe-area-inset-bottom));
-  z-index: 40;
+  bottom: calc(max(var(--space-4), env(safe-area-inset-bottom)) + var(--feedback-lift, 0px));
+  z-index: var(--z-sticky);
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -1872,14 +1872,22 @@ a.button--danger:visited {
 .feedbackbutton__thanks {
   position: fixed;
   right: max(var(--space-4), env(safe-area-inset-right));
-  bottom: calc(max(var(--space-4), env(safe-area-inset-bottom)) + 3.5rem);
-  z-index: 40;
+  bottom: calc(
+    max(var(--space-4), env(safe-area-inset-bottom)) + 3.5rem + var(--feedback-lift, 0px)
+  );
+  z-index: var(--z-sticky);
   margin: 0;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   background: var(--raised);
   box-shadow: var(--shadow-2);
   font-size: var(--text-sm);
+}
+
+/* A save bar stuck across the foot (an entry's or a drawer's `.actionbar`, the manuscript's bar) owns the corner the
+   pill sits in, Save included: the pill rises above it. */
+body:has(.actionbar, .article__bar, .manuscript__bar) {
+  --feedback-lift: calc(var(--control-touch) + var(--space-3));
 }
 
 /* On a phone the pill shrinks to its icon, out of the way of the page's own buttons. */
@@ -1897,6 +1905,15 @@ a.button--danger:visited {
     width: 2.75rem;
     padding: 0;
     justify-content: center;
+  }
+
+  /* A phone's foot holds one thing (ADR 0028): while the page keeps its own control there - a save bar, or the fixed
+     "New …" of Lore and a story - the pill leaves. Feedback stays a tap away on every other screen. */
+  body:has(.actionbar, .article__bar, .manuscript__bar, .lore__create, .story__create)
+    .feedbackbutton,
+  body:has(.actionbar, .article__bar, .manuscript__bar, .lore__create, .story__create)
+    .feedbackbutton__thanks {
+    display: none;
   }
 }
 
@@ -5794,6 +5811,12 @@ a.button--danger:visited {
   color: var(--ink);
 }
 
+@media (pointer: coarse) {
+  .entry__stage {
+    min-height: var(--control-touch);
+  }
+}
+
 .entry__media img {
   display: block;
   width: auto;
@@ -6436,6 +6459,13 @@ html:has(.viewer[open]) {
   background: var(--raised);
 }
 
+/* One box for the whole editor: the accent edge and halo every field shows, while the writing surface holds the
+   focus - its own outline is off, so without this the article editor had no visible focus at all. */
+.editor:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
 .editor__bar {
   display: flex;
   flex-wrap: wrap;
@@ -6632,7 +6662,7 @@ html:has(.viewer[open]) {
 .article__bar {
   position: sticky;
   bottom: 0;
-  z-index: 5;
+  z-index: var(--z-sticky);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -10232,6 +10262,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
 .manuscript__text:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 /* @ mentions (issue 31): the text box sits in a frame the suggestions are drawn in, at the caret, over the prose. */
@@ -10325,7 +10356,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
 .manuscript__bar {
   position: sticky;
   bottom: 0;
-  z-index: 5;
+  z-index: var(--z-sticky);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -11261,8 +11292,8 @@ h2.trash__confirmtitle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 2.25rem;
-    min-height: 2.25rem;
+    min-width: var(--control-touch);
+    min-height: var(--control-touch);
     padding: 0;
   }
 
@@ -11296,6 +11327,12 @@ h2.trash__confirmtitle {
     align-items: center;
   }
 
+  /* The avatar is 32px wide; the target around it is not. */
+  .accountmenu__trigger {
+    min-width: var(--control-touch);
+    justify-content: center;
+  }
+
   .rail__mark {
     min-width: 2.75rem;
     min-height: 2.75rem;
@@ -11322,7 +11359,7 @@ h2.trash__confirmtitle {
   .sidebar__back {
     display: inline-flex;
     align-items: center;
-    min-height: 2.5rem;
+    min-height: var(--control-touch);
   }
 
   .colourfield__picker {
@@ -14020,6 +14057,11 @@ body:has(.portal) {
   font: inherit;
   font-size: var(--text-ui);
   cursor: pointer;
+}
+
+/* In the light theme the chevron takes the parchment's muted ink; a data URI cannot read a token. */
+:root[data-theme='light'] .portal .explore-select__control {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235f574b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
 }
 
 .explore-select__control:hover {
@@ -18470,11 +18512,17 @@ details.reviewsection > .reviewsection__list {
 }
 
 .pinlist__item:hover {
-  background: var(--paper);
+  background: var(--hover-wash);
 }
 
 .pinlist__item[aria-pressed='true'] {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+@media (pointer: coarse) {
+  .pinlist__item {
+    min-height: var(--control-touch);
+  }
 }
 
 .pinlist__icon {

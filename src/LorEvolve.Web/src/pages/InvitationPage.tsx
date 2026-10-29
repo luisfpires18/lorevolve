@@ -171,6 +171,7 @@ export default function InvitationPage() {
                 type="button"
                 onClick={() => void accept()}
                 disabled={busy}
+                aria-busy={busy}
                 data-testid="invitation-accept"
               >
                 {busy ? 'Working' : 'Accept invitation'}
@@ -180,6 +181,7 @@ export default function InvitationPage() {
                 type="button"
                 onClick={() => void decline()}
                 disabled={busy}
+                aria-busy={busy}
                 data-testid="invitation-decline"
               >
                 Decline

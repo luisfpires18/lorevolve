@@ -961,9 +961,7 @@ function FeedbackScreen() {
       ) : null}
       {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
       {state.kind === 'ready' && state.value.items.length === 0 ? (
-        <p className="notice" data-testid="admin-feedback-empty">
-          Nothing sent yet.
-        </p>
+        <EmptyState testId="admin-feedback-empty" title="Nothing sent yet." />
       ) : null}
       {state.kind === 'ready' && state.value.items.length > 0 ? (
         <>

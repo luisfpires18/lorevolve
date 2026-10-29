@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 import { X } from 'lucide-react'
+import { useReturnFocus } from '../lib/returnFocus'
 
 /**
  * An entry's picture, whole: the original the author uploaded, fitted inside the window with its
@@ -30,6 +31,7 @@ export function ImageViewer({
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
+  useReturnFocus()
 
   useEffect(() => {
     const element = dialog.current

@@ -228,6 +228,7 @@ function EntityScreen({ view }: { view: EntryView }) {
   const [isSuggesting, setIsSuggesting] = useState(false)
   // A suggestion just sent from here, said where it can be seen.
   const [sent, setSent] = useState(false)
+  const [reads, setReads] = useState(0)
 
   // The entry's form belongs to the Article view - it edits what that view shows. Deriving this rather
   // than clearing it on a view change is what makes the browser's Back honest: going back to Relations
@@ -352,7 +353,7 @@ function EntityScreen({ view }: { view: EntryView }) {
     return () => {
       controller.abort()
     }
-  }, [universe.id, entityId, isNew])
+  }, [universe.id, entityId, isNew, reads])
 
   // The entry being copied, and its article, read once. One that cannot be read - gone to the Trash since, say - leaves an
   // ordinary blank form and a line saying so.
@@ -789,18 +790,29 @@ function EntityScreen({ view }: { view: EntryView }) {
     )
   }
 
+  // Before the loading guard: a failed read leaves the draft null, and the guard would otherwise say "Opening…" for good.
+  if (status === 'error') {
+    return (
+      <div className="notice notice--error" role="alert">
+        <p>This entry could not be opened.</p>
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={() => {
+            setStatus('loading')
+            setReads((count) => count + 1)
+          }}
+        >
+          Try again
+        </button>
+      </div>
+    )
+  }
+
   if (status === 'loading' || !draft) {
     return (
       <p className="notice" role="status">
         Opening…
-      </p>
-    )
-  }
-
-  if (status === 'error') {
-    return (
-      <p className="notice notice--error" role="alert">
-        This entry could not be opened.
       </p>
     )
   }
