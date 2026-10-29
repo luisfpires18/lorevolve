@@ -7,6 +7,7 @@ import {
   getUser,
   listUsers,
   createSignUpLink,
+  emailPasswordReset,
   emailSignUpLink,
   runDatabaseBackup,
   setBlocked,
@@ -725,6 +726,8 @@ function UserDetail({
 
       <BlockSection user={user} isSelf={me?.id === user.id} onChange={onChange} onStale={onStale} />
 
+      <PasswordSection user={user} onChange={onChange} onStale={onStale} />
+
       <section className="adminsection" aria-labelledby="admin-history">
         <h2 className="settings__heading" id="admin-history">
           Admin actions
@@ -738,13 +741,15 @@ function UserDetail({
             {user.history.map((entry) => (
               <li className="adminhistory__item" key={entry.id} data-testid="admin-history-item">
                 <p className="adminhistory__line">
-                  <strong>{entry.action === 'Block' ? 'Blocked' : 'Unblocked'}</strong> by{' '}
+                  <strong>{HISTORY_LABELS[entry.action]}</strong> by{' '}
                   {entry.actorUsername ?? 'a removed account'} &middot;{' '}
                   <time dateTime={entry.createdAt}>{formatDateTime(entry.createdAt)}</time>
                 </p>
-                <p className="adminhistory__reason" dir="auto">
-                  {entry.reason}
-                </p>
+                {entry.reason ? (
+                  <p className="adminhistory__reason" dir="auto">
+                    {entry.reason}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ol>
@@ -859,6 +864,78 @@ function SignUpLink() {
         <p className="settings__note" role="status">
           Send them this link, valid until {formatDateTime(link.expiresAt)}:{' '}
           <code data-testid="admin-signup-url">{link.url}</code>
+        </p>
+      ) : null}
+    </section>
+  )
+}
+
+const HISTORY_LABELS: Record<AdminUserDetail['history'][number]['action'], string> = {
+  Block: 'Blocked',
+  Unblock: 'Unblocked',
+  PasswordResetSent: 'Sent a password reset link',
+}
+
+/**
+ * Forgot password on the account's behalf (#69): LorEvolve emails the account its own reset link. The Admin sees
+ * neither the address nor the link, and the send goes into the account's history.
+ */
+function PasswordSection({
+  user,
+  onChange,
+  onStale,
+}: {
+  user: AdminUserDetail
+  onChange: (user: AdminUserDetail) => void
+  onStale: () => void
+}) {
+  const [sent, setSent] = useState(false)
+
+  async function send() {
+    setSent(false)
+    const done = await confirmAction({
+      title: `Email ${user.username} a password reset link?`,
+      message:
+        'LorEvolve sends the link to their account email address. It works once, for 1 hour, and choosing a new password signs them out everywhere.',
+      confirmLabel: 'Send the link',
+      busyLabel: 'Sending…',
+      variant: 'neutral',
+      action: async () => {
+        try {
+          onChange(await emailPasswordReset(user.id))
+        } catch (failure: unknown) {
+          if (failure instanceof ApiError && failure.status === 409) onStale()
+          throw failure
+        }
+      },
+    })
+    if (done) setSent(true)
+  }
+
+  return (
+    <section className="adminsection" aria-labelledby="admin-password">
+      <h2 className="settings__heading" id="admin-password">
+        Password
+      </h2>
+      <p className="settings__note">
+        {user.isBlocked
+          ? 'A blocked account cannot reset its password. Unblock it first.'
+          : 'For someone who cannot sign in. They can also use Forgot your password? on the sign-in page.'}
+      </p>
+      <div className="form__actions">
+        <button
+          className="button button--secondary"
+          type="button"
+          disabled={user.isBlocked}
+          onClick={() => void send()}
+          data-testid="admin-password-reset"
+        >
+          Email a reset link
+        </button>
+      </div>
+      {sent ? (
+        <p className="settings__note" role="status" data-testid="admin-password-reset-sent">
+          Sent. The link works for 1 hour.
         </p>
       ) : null}
     </section>

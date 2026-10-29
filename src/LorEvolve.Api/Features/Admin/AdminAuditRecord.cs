@@ -10,11 +10,12 @@ public enum PlatformRole
     Admin = 1,
 }
 
-/// <summary>What an Admin did to an account. Block and unblock are the only actions V1 has (#40).</summary>
+/// <summary>What an Admin did to an account (#40), and the password reset link an Admin emailed it (#69).</summary>
 public enum AdminAction
 {
     Block = 1,
     Unblock = 2,
+    PasswordResetSent = 3,
 }
 
 /// <summary>

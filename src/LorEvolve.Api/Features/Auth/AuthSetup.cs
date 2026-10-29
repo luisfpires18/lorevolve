@@ -72,6 +72,9 @@ public static class AuthSetup
             .AddSignInManager()
             .AddDefaultTokenProviders();
 
+        // Password reset is the only token the default provider issues (#69).
+        services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = PasswordReset.Lifetime);
+
         services.AddAuthorization();
 
         return services;

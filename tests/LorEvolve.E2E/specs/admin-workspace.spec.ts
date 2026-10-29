@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { makeTestPassword, openAccountMenu } from './support/account'
 import { currentUserId, grantAdmin } from './support/admin'
-import { acceptConfirm } from './support/confirm'
+import { acceptConfirm, confirmDialog } from './support/confirm'
 
 /**
  * LorEvolve Admin (#40): a separate workspace only an Admin is offered or let into - by the server, not by a hidden link -
@@ -143,6 +143,8 @@ test.describe('LorEvolve Admin', () => {
     await expect(history).toHaveCount(1)
     await expect(history.first()).toContainText(`Blocked by ${adminName}`)
     await expect(history.first()).toContainText('Spam in shared universes.')
+    // A blocked account's reset would be refused, so none is offered.
+    await expect(admin.getByTestId('admin-password-reset')).toBeDisabled()
 
     // The member's open session ends at its next request; signing in again is refused with the reason it is.
     await member.goto('/app/profile')
@@ -228,6 +230,22 @@ test.describe('LorEvolve Admin', () => {
 
     await admin.page.getByTestId('admin-signup-create').click()
     await expect(admin.page.getByTestId('admin-signup-url')).toContainText('/register?invite=')
+  })
+
+  test('a password reset link is asked before it is sent, and email says when it is not set up', async ({
+    browser,
+  }) => {
+    const { page: admin } = await newAdmin(browser)
+    const { username: memberName } = await newMember(browser)
+    await openUser(admin, memberName)
+
+    // This test host has no email settings: the confirmation stays open and says so, and nothing is recorded.
+    await admin.getByTestId('admin-password-reset').click()
+    await acceptConfirm(admin, /works once, for 1 hour/)
+    await expect(confirmDialog(admin)).toContainText('cannot send email yet')
+    await confirmDialog(admin).getByTestId('confirm-dialog-cancel').click()
+    await expect(admin.getByTestId('admin-password-reset-sent')).toHaveCount(0)
+    await expect(admin.getByTestId('admin-history-empty')).toBeVisible()
   })
 
   test('an admin account offers no block, its own included', async ({ browser }) => {
