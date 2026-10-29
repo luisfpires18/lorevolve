@@ -1,7 +1,7 @@
 using System.Globalization;
-using System.Reflection;
 using System.Text.Json;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.Health;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -57,9 +57,6 @@ public sealed partial class DatabaseBackupRunner(
 
     /// <summary>After a failure, the schedule waits this long before trying again, so a broken store is not hammered.</summary>
     public static readonly TimeSpan RetryAfterFailure = TimeSpan.FromHours(1);
-
-    private static readonly string AppVersion =
-        typeof(DatabaseBackupRunner).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
 
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Lock _state = new();
@@ -249,7 +246,7 @@ public sealed partial class DatabaseBackupRunner(
                 started,
                 clock.GetUtcNow().UtcDateTime,
                 trigger,
-                new DatabaseBackupProvenance(AppVersion, System.Environment.MachineName, System.Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"), dataSource, snapshot.SourceJournalMode),
+                new DatabaseBackupProvenance(HealthEndpoints.BuildVersion, System.Environment.MachineName, System.Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"), dataSource, snapshot.SourceJournalMode),
                 snapshot.Database,
                 new DatabaseBackupObject(dataKey, "gzip", snapshot.CompressedBytes, snapshot.CompressedSha256));
 

@@ -3,6 +3,9 @@
   <PropertyGroup>
     <RootNamespace>LorEvolve.Api</RootNamespace>
     <UserSecretsId>lorevolve-api-dev</UserSecretsId>
+    <!-- The version /api/health reports is the web's: package.json's, unless Deploy DEV passes its -dev one. No commit. -->
+    <Version Condition="'$(Version)' == ''">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../LorEvolve.Web/package.json')), '"version"\s*:\s*"([^"]+)"').Groups[1].Value)</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
