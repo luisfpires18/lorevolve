@@ -2,18 +2,18 @@
 // offered right after it is sent, and 'end', opened from the personal link sent at the end of the alpha. Every answer is
 // optional; anything not listed here is refused rather than stored. The dialog (public/app.js) asks the same questions.
 
-// The features both surveys name, by key. Order is the order they are shown in.
+// The features both surveys name, by key: the rows of the page's feature list, in the same order.
 export const FEATURES = [
   'lore',
+  'massCreate',
   'types',
-  'relations',
-  'progression',
   'canonStatus',
   'history',
   'privateNotes',
-  'review',
-  'knowledge',
+  'relations',
   'familyTree',
+  'progression',
+  'knowledge',
   'maps',
   'worldRules',
   'canonIntegrity',
@@ -21,13 +21,16 @@ export const FEATURES = [
   'stories',
   'plot',
   'timeline',
+  'review',
   'ideas',
   'collaboration',
   'assistant',
   'mcp',
-  'publishing',
   'backup',
   'search',
+  'installApp',
+  'publishing',
+  'explore',
 ]
 
 const one = (...values) => ({ kind: 'one', values })
