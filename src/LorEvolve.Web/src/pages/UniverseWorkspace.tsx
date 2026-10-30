@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { AccountMenu } from '../components/AccountMenu'
@@ -8,11 +8,14 @@ import { UniverseAssistant } from '../components/UniverseAssistant'
 import { UniverseSearch } from '../components/UniverseSearch'
 import { getChronology } from '../chronology/api'
 import type { Chronology } from '../chronology/types'
+import { listEntityTypeGroups, listEntityTypes } from '../lore/api'
+import type { EntityType, EntityTypeGroup } from '../lore/types'
 import { getUniverse } from '../universes/api'
 import { offered, SECTION_GROUPS, UPKEEP } from '../universes/sections'
 import { capabilitiesOf, ROLE_LABELS, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { preloadSections } from '../screens'
 import type { UniverseDetail } from '../universes/types'
 import { artworkUrl } from '../publishing/api'
 import type { UniverseArtworkRef } from '../publishing/types'
@@ -40,6 +43,19 @@ export interface WorkspaceContext {
 
   /** Hands the shell a changed artwork (Publish), so the world's atmosphere follows it without a reload. */
   setArtwork: (next: UniverseArtworkRef | null) => void
+
+  /**
+   * The universe's types and groups, read beside the universe itself rather than after a screen has mounted, so Lore,
+   * an entry, the Family Tree, Mass create and Types open on them. Null while the first read is out; 'failed' when it was
+   * refused and nothing was read before. Read through `useWorkspaceTypes`, which also reads them again.
+   */
+  types: EntityType[] | 'failed' | null
+  groups: EntityTypeGroup[] | 'failed' | null
+  setTypes: (next: EntityType[]) => void
+  setGroups: (next: EntityTypeGroup[]) => void
+  /** Reads both again. Rejects when the read fails; what was read before stays meanwhile and after a failure. */
+  refreshTypes: () => Promise<void>
+  revalidateTypes: () => void
 }
 
 /** The part of the URL below this universe, without its surrounding slashes. */
@@ -55,10 +71,20 @@ function currentSection(pathname: string, id: string | undefined) {
   return SECTIONS.find((section) => section.segment === segment)?.label ?? 'Overview'
 }
 
+/** One workspace per universe: another universe's address starts a new one, so nothing read for the last carries over. */
 export default function UniverseWorkspace() {
+  const { id } = useParams<{ id: string }>()
+  return <Workspace key={id} />
+}
+
+function Workspace() {
   const { id } = useParams<{ id: string }>()
   const { pathname } = useLocation()
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
+  const [types, setTypes] = useState<EntityType[] | 'failed' | null>(null)
+  const [typeGroups, setTypeGroups] = useState<EntityTypeGroup[] | 'failed' | null>(null)
+  const typesRead = useRef<AbortController | null>(null)
+  const typesClaimed = useRef(false)
 
   // Only the narrow layout hides the section list; on a wide screen CSS keeps it open and
   // the toggle is not shown at all, so one piece of state serves both without measuring
@@ -94,13 +120,73 @@ export default function UniverseWorkspace() {
     [id],
   )
 
+  // The latest read wins: a new one cancels the one before, so an older answer never lands over a newer one.
+  const readTypes = useCallback(() => {
+    if (!id) return Promise.resolve()
+    typesRead.current?.abort()
+    const controller = new AbortController()
+    typesRead.current = controller
+    const { signal } = controller
+    return Promise.all([
+      listEntityTypes(id, signal).then(setTypes, (error: unknown) => {
+        if (!signal.aborted) setTypes((current) => (Array.isArray(current) ? current : 'failed'))
+        throw error
+      }),
+      listEntityTypeGroups(id, signal).then(setTypeGroups, (error: unknown) => {
+        if (!signal.aborted)
+          setTypeGroups((current) => (Array.isArray(current) ? current : 'failed'))
+        throw error
+      }),
+    ]).then(
+      () => undefined,
+      (error: unknown) => {
+        if (!signal.aborted) throw error
+      },
+    )
+  }, [id])
+
+  // Read again on request: a failure shown gives way to the read; a copy already read stays on screen while it is out.
+  const refreshTypes = useCallback(() => {
+    setTypes((current) => (current === 'failed' ? null : current))
+    setTypeGroups((current) => (current === 'failed' ? null : current))
+    return readTypes()
+  }, [readTypes])
+
+  const revalidateTypes = useCallback(() => {
+    if (!typesClaimed.current) {
+      typesClaimed.current = true
+      return
+    }
+    refreshTypes().catch(() => undefined)
+  }, [refreshTypes])
+
+  // The types leave with the universe and its chronology, not after the screen that needs them has loaded and mounted.
   useEffect(() => {
     const controller = new AbortController()
     load(controller.signal)
+    readTypes().catch(() => undefined)
     return () => {
       controller.abort()
+      typesRead.current?.abort()
     }
-  }, [load])
+  }, [load, readTypes])
+
+  // Once the universe is open and the browser has nothing better to do, every section's code and an entry's are fetched,
+  // so the first visit to another one opens without a fallback.
+  const isReady = state.kind === 'ready'
+  useEffect(() => {
+    if (!isReady) return
+    // Safari has no idle callback; a second's wait stands in for it there.
+    if (typeof window.requestIdleCallback === 'function') {
+      const handle = window.requestIdleCallback(preloadSections)
+      return () => window.cancelIdleCallback(handle)
+    }
+    const timer = window.setTimeout(preloadSections, 1000)
+    return () => window.clearTimeout(timer)
+  }, [isReady])
+
+  const setTypeList = useCallback((next: EntityType[]) => setTypes(next), [])
+  const setGroupList = useCallback((next: EntityTypeGroup[]) => setTypeGroups(next), [])
 
   const refresh = useCallback(
     (next?: UniverseDetail) => {
@@ -166,7 +252,14 @@ export default function UniverseWorkspace() {
     return (
       <div className="notice notice--error" role="alert">
         <p>{state.message}</p>
-        <button className="button button--secondary" type="button" onClick={() => refresh()}>
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={() => {
+            refresh()
+            refreshTypes().catch(() => undefined)
+          }}
+        >
           Try again
         </button>
       </div>
@@ -355,6 +448,12 @@ export default function UniverseWorkspace() {
                   chronology,
                   setChronology,
                   setArtwork,
+                  types,
+                  groups: typeGroups,
+                  setTypes: setTypeList,
+                  setGroups: setGroupList,
+                  refreshTypes,
+                  revalidateTypes,
                 } satisfies WorkspaceContext
               }
             />

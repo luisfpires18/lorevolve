@@ -220,6 +220,7 @@ main:focus {
    `dir="auto"`: that decides once, from the first paragraph, for all of them. Every textarea holds prose. */
 textarea,
 .prose,
+.manuscript__writer p,
 :is(.editor__surface, .article__body) :is(p, h1, h2, h3, h4, h5, h6) {
   unicode-bidi: plaintext;
 }
@@ -10354,59 +10355,40 @@ a.lorechip--pov:focus-visible .lorechip__name {
   resize: vertical;
 }
 
-.manuscript__text::placeholder {
-  color: var(--muted);
-}
-
 .manuscript__text:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
-/* @ mentions (issue 31): the text box sits in a frame the suggestions are drawn in, at the caret, over the prose. */
+/* @ mentions (issue 31): the editor sits in a frame the suggestions are drawn in, at the caret, over the prose. */
 .manuscript__write {
   position: relative;
-  /* The text box's top margin stays inside the frame, where the backdrop's matches it. */
   display: flow-root;
 }
 
-/* Prose with a mention (ADR 0058 amendment): the text box's own text goes transparent over a backdrop that draws the same
-   characters in the same box, each mention's name marked and its markup faded. Same class, so same font, padding, width
-   and wrapping; the gutter is kept on both so a scrollbar never wraps one differently from the other. */
-.manuscript__write[data-marked='true'] .manuscript__text {
-  scrollbar-gutter: stable;
+/* Write (ADR 0058 amendment): an editor drawn as the text box was, a paragraph per line of the stored text. */
+.manuscript__writer {
+  overflow-y: auto;
+
+  p {
+    margin: 0;
+  }
 }
 
-.manuscript__backdrop {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  height: auto;
-  overflow: hidden;
+.manuscript__writer[data-placeholder]::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--muted);
   pointer-events: none;
 }
 
-.manuscript__write[data-marked='true'] textarea.manuscript__text {
-  position: relative;
-  background: transparent;
-  color: transparent;
-  caret-color: var(--ink);
-}
-
-.manuscript__write[data-marked='true'] textarea.manuscript__text::selection {
-  background: color-mix(in srgb, var(--accent) 30%, transparent);
-  color: transparent;
-}
-
-.mentionmark__name {
+/* A mention while writing: its entry's name as one chip, never its stored form. */
+.mention--chip {
+  padding: 0 0.15em;
   border-radius: 0.2em;
   background: color-mix(in srgb, var(--accent) 16%, transparent);
-  color: var(--ink);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent);
-  text-underline-offset: 0.18em;
 }
 
 .namelinker {
@@ -10419,10 +10401,6 @@ a.lorechip--pov:focus-visible .lorechip__name {
   margin: 0.6rem 0 0;
   padding: 0;
   list-style: none;
-}
-
-.mentionmark__markup {
-  color: color-mix(in srgb, var(--muted) 45%, transparent);
 }
 
 .mentionsuggest {

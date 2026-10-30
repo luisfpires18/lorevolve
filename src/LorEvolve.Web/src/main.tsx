@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import { preloadPath } from './screens'
 import { watchTheme } from './lib/theme'
 import { revealWhenReady } from './lib/launch'
 import { registerServiceWorker } from './pwa'
@@ -18,6 +19,10 @@ window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()
   window.location.reload()
 })
+
+// The screen this address opens on, fetched now, beside the session check, rather than once the session and the
+// universe have answered.
+preloadPath(window.location.pathname)
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {

@@ -2,8 +2,8 @@
  * A Lore mention inside a scene's plain-text manuscript (issue 31, ADR 0058): `@[Akron Wright](lore:<entry id>)`.
  *
  * Mirrors `Features/Stories/ManuscriptMentions.cs`. The manuscript stays plain text: a mention is ordinary characters, and
- * it is a mention only while it matches this exact pattern. The editor shows it as stored; every place prose is read
- * shows the name instead (`plainMentions`). The id is the identity; the bracketed name is what the prose said when the
+ * it is a mention only while it matches this exact pattern. The Write editor shows it as a chip (`manuscriptDoc`); every
+ * place prose is read shows the name instead (`plainMentions`). The id is the identity; the bracketed name is what the prose said when the
  * mention was chosen, and the fallback whenever the id names nothing.
  */
 
@@ -34,26 +34,54 @@ export function findMentions(text: string): Mention[] {
   }))
 }
 
+/** A node of the manuscript as the Write view's editor holds it, in the editor's JSON shape. */
+export interface ManuscriptNode {
+  type: string
+  text?: string
+  attrs?: { id: string; name: string }
+  content?: ManuscriptNode[]
+}
+
 /**
- * The text in pieces for the Write view's backdrop (ADR 0058 amendment): each mention's name apart from its markup, the
- * rest as it is. Joined, the pieces are exactly `text`, character for character - the backdrop lines up with the text box
- * only while that holds.
+ * The text as the Write view's editor holds it (ADR 0058 amendment): one paragraph per line, each mention a node carrying
+ * its name and its id exactly as stored, the rest as text. `manuscriptText` gives back exactly `text`, line breaks read as
+ * `\n`.
  */
-export function markedPieces(text: string): { text: string; part?: 'markup' | 'name' }[] {
-  const pieces: { text: string; part?: 'markup' | 'name' }[] = []
-  let at = 0
-  for (const mention of findMentions(text)) {
-    if (mention.start > at) pieces.push({ text: text.slice(at, mention.start) })
-    const nameEnd = mention.start + 2 + mention.name.length
-    pieces.push(
-      { text: '@[', part: 'markup' },
-      { text: mention.name, part: 'name' },
-      { text: text.slice(nameEnd, mention.start + mention.length), part: 'markup' },
-    )
-    at = mention.start + mention.length
+export function manuscriptDoc(text: string): ManuscriptNode {
+  return {
+    type: 'doc',
+    content: text.split(/\r\n?|\n/).map((line) => {
+      const content: ManuscriptNode[] = []
+      let at = 0
+      for (const mention of findMentions(line)) {
+        if (mention.start > at) content.push({ type: 'text', text: line.slice(at, mention.start) })
+        const end = mention.start + mention.length
+        // The id as written, not as findMentions lowercases it, so an untouched mention is saved as it was read.
+        content.push({
+          type: 'mention',
+          attrs: { id: line.slice(end - 37, end - 1), name: mention.name },
+        })
+        at = end
+      }
+      if (at < line.length) content.push({ type: 'text', text: line.slice(at) })
+      return content.length > 0 ? { type: 'paragraph', content } : { type: 'paragraph' }
+    }),
   }
-  if (at < text.length) pieces.push({ text: text.slice(at) })
-  return pieces
+}
+
+/** The stored text of the editor's document: its lines joined by `\n`, each mention in its stored form. */
+export function manuscriptText(doc: ManuscriptNode) {
+  return (doc.content ?? [])
+    .map((line) =>
+      (line.content ?? [])
+        .map((node) =>
+          node.type === 'mention' && node.attrs
+            ? `@[${node.attrs.name}](lore:${node.attrs.id})`
+            : (node.text ?? ''),
+        )
+        .join(''),
+    )
+    .join('\n')
 }
 
 /** The prose as a reader reads it: each mention as its name, in plain text. */
@@ -66,15 +94,20 @@ export function plainExcerpt(text: string) {
   return plainMentions(text).replace(CUT_HEAD, '$1').replace(CUT_TAIL, '$1')
 }
 
-/** The stored form of a mention. A `[`, `]` or line break in a name would end it early, so those become spaces. */
-export function mentionToken(name: string, entityId: string) {
-  const safe =
+/** A name as a mention can carry it. A `[`, `]` or line break would end the mention early, so those become spaces. */
+export function mentionName(name: string) {
+  return (
     name
       .replace(/[[\]\r\n]+/g, ' ')
       .replace(/\s{2,}/g, ' ')
       .trim()
       .slice(0, 200) || 'Lore'
-  return `@[${safe}](lore:${entityId})`
+  )
+}
+
+/** The stored form of a mention. */
+export function mentionToken(name: string, entityId: string) {
+  return `@[${mentionName(name)}](lore:${entityId})`
 }
 
 /**

@@ -13,10 +13,12 @@ namespace LorEvolve.Api.Features.Auth;
 public static class AuthEndpoints
 {
     /// <summary>
-    /// One message for every failed sign-in, so the response cannot be used to tell a
-    /// wrong password from an account that does not exist.
+    /// One message for every failed sign-in, so the response cannot be used to tell a wrong password from an account that
+    /// does not exist, or from one locked out by failed attempts: only real accounts lock, so a separate lockout answer
+    /// would name them (N-3). The message mentions the lockout so a person who is locked out knows to wait or reset.
     /// </summary>
-    private const string InvalidCredentials = "That username or email and password combination is not correct.";
+    internal const string InvalidCredentials =
+        "That username or email and password combination is not correct, or there were too many attempts. Try again in a few minutes, or reset your password.";
 
     /// <summary>A correct password for a blocked account (#40).</summary>
     public const string BlockedCode = "account_blocked";
@@ -224,14 +226,12 @@ public static class AuthEndpoints
 
         // The password first, then the block (#40): only someone who knows the password learns the account is blocked,
         // and a blocked account never gets a session.
+        // Locked out answers exactly like a wrong password (InvalidCredentials says why), in the same time: Identity
+        // refuses a locked account before hashing, so the decoy's work is done instead.
         var signIn = await signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
-
         if (signIn.IsLockedOut)
         {
-            return Results.Problem(
-                title: "Account temporarily locked",
-                detail: "Too many failed sign-in attempts. Try again in a few minutes.",
-                statusCode: StatusCodes.Status423Locked);
+            userManager.PasswordHasher.VerifyHashedPassword(TimingDecoy, TimingDecoy.PasswordHash!, password);
         }
 
         if (!signIn.Succeeded)

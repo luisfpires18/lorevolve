@@ -253,3 +253,27 @@ M-4 is fixed in part. Open for the owner's acceptance before #34: M-1 (ImageShar
 App Service client-address check), M-3, M-5, M-6, the Low items, R-3 (bucket lock) and the runtime checks of Part 1.
 #33 is ready for the #34 go/no-go **on the condition** that the owner accepts those residual risks and completes the
 runtime checks; LorEvolve should not be called ready while H-level work is unmerged, and none of this branch is merged.
+
+## Part 3 - Same-site and auth hardening (2026-10-30)
+
+A defensive review of what Parts 1 and 2 did not reach: the sibling subdomains, the metadata fetch's address list, the
+lockout answer and the reset link added by #69.
+
+| ID | Sev. | Status | Boundary | Finding |
+| --- | --- | --- | --- | --- |
+| N-1 | Medium | **Fixed** | Browser | `SameSite=Strict` is per registrable domain: `demo.lorevolve.com` (or any `*.lorevolve.com`) is same-site, so its pages send the session cookie. Body-less POSTs (`publish`, `archive`, invitation `accept`, admin `block`) and multipart uploads (antiforgery off) accept a plain HTML form |
+| N-2 | Low | **Fixed** | MCP / SSRF | `IsPublicAddress` let through `168.63.129.16`, Azure's platform address, which sits in a public range |
+| N-3 | Low | **Fixed** | Auth | Login answered 423 for a locked account and 401 for an unknown one, so six tries named an account; a locked account also skipped the hash, a timing tell |
+| N-4 | Low | **Fixed** | Auth | The reset token rode in the query string, which App Service request logs keep, for its one-hour life |
+
+- **N-1 fix.** `Hosting/SameOriginWrites.cs`: an unsafe method on `/api` is refused (403 `cross_origin_write`) when
+  `Sec-Fetch-Site` is not `same-origin`/`none`, or, without it, when `Origin` is neither the request's own nor in
+  `Cors:AllowedOrigins`. No header at all passes (not a browser). `/oauth` and `/mcp` are outside `/api`. Deployed, the
+  cookie is `__Host-lorevolve.session`, so no subdomain can set or overwrite it; plain-HTTP hosts keep the bare name.
+  The rename signs everyone out once. Tests: `SameOriginWritesTests`.
+- **N-2 fix.** One more refused address. Test: `McpClientInteropTests.Only_public_addresses_are_ever_connected_to`.
+- **N-3 fix.** A lockout answers the one 401, whose message now mentions too many attempts and the reset; the decoy hash
+  runs for a locked account. Test: `AuthEndpointTests.A_locked_out_account_answers_like_one_that_does_not_exist`.
+- **N-4 fix.** The link is `/reset-password#user=&token=`; the page reads the fragment, and a `?` link sent before
+  still works. Tests: `PasswordResetTests`, `forgot-password.spec.ts`.
+- **Residual.** A browser that sends neither `Sec-Fetch-Site` nor `Origin` on a form POST is not covered (none current).

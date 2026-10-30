@@ -5,7 +5,9 @@ import {
   findMentions,
   findNames,
   linkNames,
-  markedPieces,
+  manuscriptDoc,
+  manuscriptText,
+  mentionName,
   mentionQueryAt,
   mentionToken,
   nameTerms,
@@ -61,21 +63,33 @@ test('an @ opens a mention only where a mention could start', () => {
   assert.equal(mentionQueryAt('no at here', 10), null)
 })
 
-test('the backdrop pieces are the text exactly, each name apart from its markup', () => {
-  const text = `${token} sat with him.\n\n@[Akron](lore:not-an-id) and ${token}\n`
-  const pieces = markedPieces(text)
-  assert.equal(pieces.map((piece) => piece.text).join(''), text)
-  assert.deepEqual(
-    pieces.filter((piece) => piece.part === 'name').map((piece) => piece.text),
-    ['Akron Wright', 'Akron Wright'],
-  )
-  assert.deepEqual(pieces.slice(0, 3), [
-    { text: '@[', part: 'markup' },
-    { text: 'Akron Wright', part: 'name' },
-    { text: `](lore:${ID})`, part: 'markup' },
-  ])
-  assert.deepEqual(markedPieces('No mention here.'), [{ text: 'No mention here.' }])
-  assert.deepEqual(markedPieces(''), [])
+test('the Write editor holds the text exactly: a paragraph per line, each mention a node', () => {
+  const upper = `@[ Odd  name ](lore:${ID.toUpperCase()})`
+  for (const text of [
+    '',
+    '\n',
+    `${token} sat with him.\n\n@[Akron](lore:not-an-id) and ${token}\n`,
+    `  indented\tand  spaced  \n\n\n${upper}`,
+  ]) {
+    assert.equal(manuscriptText(manuscriptDoc(text)), text)
+  }
+  assert.deepEqual(manuscriptDoc(`Saw ${token}.\n`), {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Saw ' },
+          { type: 'mention', attrs: { id: ID, name: 'Akron Wright' } },
+          { type: 'text', text: '.' },
+        ],
+      },
+      { type: 'paragraph' },
+    ],
+  })
+  // Windows line breaks read as line breaks; the editor writes them back as `\n`.
+  assert.equal(manuscriptText(manuscriptDoc('a\r\nb\rc')), 'a\nb\nc')
+  assert.equal(mentionName('  [Akron]\nWright  '), 'Akron Wright')
 })
 
 test('names from the scene Lore are found as whole words, longest first, outside mentions', () => {

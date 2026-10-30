@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
 import { PASSWORD, post, unique } from './support/trash'
+import { expectWritten } from './support/manuscript'
 
 /**
  * Concurrent edit protection (roadmap 044, ADR 0043): two people in their own browsers, working on the same entry or the
@@ -214,7 +215,7 @@ test.describe('concurrent edits', () => {
 
     for (const { page } of [owner, editor]) {
       await page.goto(sceneUrl)
-      await expect(page.getByTestId('manuscript-editor')).toHaveValue('')
+      await expectWritten(page.getByTestId('manuscript-editor'), '')
     }
 
     await owner.page
@@ -232,7 +233,7 @@ test.describe('concurrent edits', () => {
     expect(refused.status()).toBe(409)
     const conflict = editor.page.getByTestId('manuscript-conflict')
     await expect(conflict).toBeVisible()
-    await expect(box).toHaveValue(prose)
+    await expectWritten(box, prose)
     await expect(editor.page.getByTestId('manuscript-status')).toHaveText('Unsaved changes')
 
     // The latest is readable whole, on the phone, without the page scrolling sideways.
@@ -241,12 +242,12 @@ test.describe('concurrent edits', () => {
       'The tide came in before she reached the gate.',
     )
     expect(await sideways(editor.page)).toBeLessThanOrEqual(0)
-    await expect(box).toHaveValue(prose)
+    await expectWritten(box, prose)
 
     await conflict.getByTestId('manuscript-conflict-keep').click()
     await expect(conflict).toHaveCount(0)
     await expect(box).toBeFocused()
-    await expect(box).toHaveValue(prose)
+    await expectWritten(box, prose)
     const retried = await saved(editor.page, manuscriptPath, () =>
       editor.page.getByTestId('manuscript-save').click(),
     )

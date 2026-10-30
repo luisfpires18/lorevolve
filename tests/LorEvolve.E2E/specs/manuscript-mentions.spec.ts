@@ -1,11 +1,12 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
+import { expectWritten, writtenSelection } from './support/manuscript'
 import { png } from './support/png'
 import { invite, PASSWORD, post, unique } from './support/trash'
 
 /**
- * Issue 31: @ mentions in a scene's manuscript (ADR 0058). The text box keeps the stored token while writing, drawn over a
- * backdrop that marks the name and fades the markup; every place prose is read shows the name, and the public page links
- * it when its entry is published. Each test builds its own accounts and universe.
+ * Issue 31: @ mentions in a scene's manuscript (ADR 0058). Write draws each mention as a chip with its name while the
+ * stored text keeps the token; every place prose is read shows the name, and the public page links it when its entry is
+ * published. Each test builds its own accounts and universe.
  *
  * Under test: `@` opens suggestions only where a mention can start; choosing one inserts the token as a single undo step;
  * Escape leaves the `@word` as prose; the token saves and reloads exactly; the Lore drawer lists each mention with its
@@ -109,14 +110,14 @@ test.describe('manuscript mentions', () => {
     await expect(editor(page)).toHaveAttribute('aria-activedescendant', /.+/)
     await page.keyboard.press('Enter')
     await expect(suggestions(page)).toHaveCount(0)
-    await expect(editor(page)).toHaveValue(`Write to me@example.test. Then ${token} `)
+    await expectWritten(editor(page), `Write to me@example.test. Then ${token} `)
     await expect(page.getByTestId('manuscript-announcer')).toHaveText('Mentioned Akron Wright.')
 
-    // The insertion is one step of the text box's own undo, and redo puts it back.
+    // The insertion is one step of the editor's undo, and redo puts it back.
     await page.keyboard.press('Control+z')
-    await expect(editor(page)).toHaveValue('Write to me@example.test. Then @Akr')
+    await expectWritten(editor(page), 'Write to me@example.test. Then @Akr')
     await page.keyboard.press('Control+Shift+z')
-    await expect(editor(page)).toHaveValue(`Write to me@example.test. Then ${token} `)
+    await expectWritten(editor(page), `Write to me@example.test. Then ${token} `)
 
     // Escape closes the suggestions and the @word stays prose, however it goes on.
     await page.keyboard.type('met @Ak')
@@ -126,13 +127,13 @@ test.describe('manuscript mentions', () => {
     await page.keyboard.type('ron again.')
     await expect(suggestions(page)).toHaveCount(0)
     const text = `Write to me@example.test. Then ${token} met @Akron again.`
-    await expect(editor(page)).toHaveValue(text)
+    await expectWritten(editor(page), text)
 
     // Saved and read back exactly, token and all.
     await page.keyboard.press('Control+s')
     await expect(page.getByTestId('manuscript-status')).toHaveText('Saved')
     await page.reload()
-    await expect(editor(page)).toHaveValue(text)
+    await expectWritten(editor(page), text)
 
     // A choice by pointer works the same, and a name with no match says so.
     await editor(page).press('End')
@@ -283,25 +284,42 @@ test.describe('manuscript mentions', () => {
     })
     expect(saved.ok(), await saved.text()).toBe(true)
 
-    // Write: the text box still holds the token exactly; the backdrop under it draws the same characters, names marked.
+    // Write: each mention is a chip with its name, never its markup, and the editor still holds the token exactly.
     await page.goto(manuscriptPage)
-    await expect(editor(page)).toHaveValue(text)
-    const backdrop = page.locator('.manuscript__backdrop')
-    await expect(backdrop.getByTestId('manuscript-mark')).toHaveText(['Akron Wright', 'the heir'])
-    expect((await backdrop.textContent())!.replace('\u200b', '')).toBe(text)
-    await expect(editor(page)).toHaveCSS('color', 'rgba(0, 0, 0, 0)')
-    // The two boxes line up exactly, so the caret sits on the character it is drawn beside.
-    const [box, back] = [await editor(page).boundingBox(), await backdrop.boundingBox()]
-    expect(back).toEqual(box)
-    // Typing and undo are the text box's own; prose with no mention is the plain text box again.
+    await expectWritten(editor(page), text)
+    const chips = editor(page).getByTestId('manuscript-chip')
+    await expect(chips).toHaveText(['Akron Wright', 'the heir'])
+    await expect(editor(page)).not.toContainText('lore:')
+    await expect(editor(page)).not.toContainText('@[')
+    // A chip is one piece of the prose: Backspace after it takes it whole, and undo puts it back.
+    await editor(page).press('Control+Home')
+    await editor(page).press('ArrowRight')
+    await page.keyboard.press('Backspace')
+    await expectWritten(editor(page), text.replace(`@[Akron Wright](lore:${akron})`, ''))
+    await page.keyboard.press('Control+z')
+    await expectWritten(editor(page), text)
+    // Typing goes on around the chips as in any prose.
     await editor(page).press('Control+End')
     await page.keyboard.type('More.')
-    await expect(editor(page)).toHaveValue(`${text}More.`)
+    await expectWritten(editor(page), `${text}More.`)
+
+    // Copied out, the prose reads as names; pasted back as plain text, a stored mention is a chip again.
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
     await editor(page).press('Control+a')
-    await editor(page).press('Delete')
-    await page.keyboard.type('No mention.')
-    await expect(backdrop).toHaveCount(0)
-    await expect(editor(page)).not.toHaveCSS('color', 'rgba(0, 0, 0, 0)')
+    await editor(page).press('Control+c')
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      'Akron Wright sat with the heir.\n\nAkron kept the vigil.\nMore.',
+    )
+    await page.evaluate(
+      (token) => navigator.clipboard.writeText(`Again, ${token}.`),
+      `@[Akron Wright](lore:${akron})`,
+    )
+    await editor(page).press('Control+End')
+    // The editor reads the caret's move from the browser a moment later; until then everything is still selected.
+    await expect.poll(async () => new Set(await writtenSelection(editor(page))).size).toBe(1)
+    await editor(page).press('Control+v')
+    await expect(chips).toHaveText(['Akron Wright', 'the heir', 'Akron Wright'])
+    await expectWritten(editor(page), `${text}More.Again, @[Akron Wright](lore:${akron}).`)
 
     // Publish the entry, the story, the scene's prose and the universe; not the hidden heir.
     const api = async (path: string, method: 'post' | 'put', data?: object) => {
@@ -382,7 +400,7 @@ test.describe('manuscript mentions', () => {
     expect(saved.ok(), await saved.text()).toBe(true)
 
     await page.goto(`/app/universes/${universeId}/stories/${storyId}/manuscript/${sceneId}`)
-    await expect(editor(page)).toHaveValue(text)
+    await expectWritten(editor(page), text)
     await page.getByTestId('manuscript-scene-actions').click()
     await page.getByTestId('manuscript-link-names').click()
 
@@ -394,7 +412,7 @@ test.describe('manuscript mentions', () => {
     await expect(linker).toContainText('“Sabine Varrow”, once')
     await expect(linker).toContainText('“Sabine” as Sabine Varrow, once')
     await expect(linker).toContainText('“the Warden” as Sabine Varrow, once')
-    await expect(editor(page)).toHaveValue(text)
+    await expectWritten(editor(page), text)
 
     // Only the ticked names become mentions, as one undo step; nothing is saved until Save.
     await linker.locator('[data-term="Akron"]').uncheck()
@@ -403,16 +421,16 @@ test.describe('manuscript mentions', () => {
     const linked =
       `Akron watched. @[Sabine Varrow](lore:${sabine}) held the wall; ` +
       `@[Sabine](lore:${sabine}) held it, @[the Warden](lore:${sabine}).`
-    await expect(editor(page)).toHaveValue(linked)
-    await expect(page.locator('.manuscript__backdrop').getByTestId('manuscript-mark')).toHaveText([
+    await expectWritten(editor(page), linked)
+    await expect(editor(page).getByTestId('manuscript-chip')).toHaveText([
       'Sabine Varrow',
       'Sabine',
       'the Warden',
     ])
     await page.keyboard.press('Control+z')
-    await expect(editor(page)).toHaveValue(text)
+    await expectWritten(editor(page), text)
     await page.keyboard.press('Control+Shift+z')
-    await expect(editor(page)).toHaveValue(linked)
+    await expectWritten(editor(page), linked)
     await page.keyboard.press('Control+s')
     await expect(page.getByTestId('manuscript-status')).toHaveText('Saved')
 

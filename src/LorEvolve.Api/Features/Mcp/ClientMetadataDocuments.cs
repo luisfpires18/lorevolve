@@ -411,6 +411,7 @@ internal sealed partial class ClientMetadataDocuments(
     /// <summary>
     /// Whether an address is on the public internet: not loopback, private, carrier-grade NAT, link-local, documentation,
     /// benchmarking, multicast or reserved, in either family (an IPv4-mapped IPv6 address is judged as its IPv4 self).
+    /// Also not Azure's platform address, 168.63.129.16: public by range, but the host's own (N-2).
     /// IPv6 is public only within global unicast, less documentation, Teredo and 6to4.
     /// </summary>
     public static bool IsPublicAddress(IPAddress address)
@@ -431,7 +432,8 @@ internal sealed partial class ClientMetadataDocuments(
                 || (b[0] == 192 && b[1] == 168)
                 || (b[0] == 198 && b[1] is 18 or 19)
                 || (b[0] == 198 && b[1] == 51 && b[2] == 100)
-                || (b[0] == 203 && b[1] == 0 && b[2] == 113));
+                || (b[0] == 203 && b[1] == 0 && b[2] == 113)
+                || (b[0] == 168 && b[1] == 63 && b[2] == 129 && b[3] == 16));
         }
 
         if (address.AddressFamily != AddressFamily.InterNetworkV6)
