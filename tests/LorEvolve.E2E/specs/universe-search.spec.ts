@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { answerConfirms } from './support/confirm'
+import { expectWritten } from './support/manuscript'
 
 /**
  * The universe's persistent search bar (ADR 0031): on every screen of a universe and on none outside one; lore and
@@ -354,7 +355,8 @@ test.describe('universe search', () => {
     await expect(prose).toContainText('In the prose')
     await prose.click()
     await page.waitForURL(`${story}/manuscript/${world.proseSceneId}`)
-    await expect(page.getByTestId('manuscript-editor')).toHaveValue(
+    await expectWritten(
+      page.getByTestId('manuscript-editor'),
       'The hall had emptied long before the Hollowmere bells rang.',
     )
 
@@ -703,7 +705,7 @@ test.describe('universe search', () => {
     // A manuscript with unsaved prose. A click on a result asks; staying keeps the prose, the page and the list.
     await page.goto(`${base}/stories/${world.storyId}/manuscript/${world.proseSceneId}`)
     const prose = page.getByTestId('manuscript-editor')
-    await expect(prose).toHaveValue('The hall had emptied long before the Hollowmere bells rang.')
+    await expectWritten(prose, 'The hall had emptied long before the Hollowmere bells rang.')
     await prose.fill('Unsaved prose.')
     await expect(page.getByTestId('manuscript-status')).toHaveText('Unsaved changes')
 
@@ -714,7 +716,7 @@ test.describe('universe search', () => {
     await expect(page).toHaveURL(
       `${base}/stories/${world.storyId}/manuscript/${world.proseSceneId}`,
     )
-    await expect(prose).toHaveValue('Unsaved prose.')
+    await expectWritten(prose, 'Unsaved prose.')
     await expect(result(page, 'Lore', 'Quennell of the Salt Road')).toBeVisible()
 
     // Enter asks the same question, once; leaving goes.

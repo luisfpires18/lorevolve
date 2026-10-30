@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { openAccountMenu } from './support/account'
 import { chooseFromMenu, openMenuFor } from './support/rowMenu'
 import { acceptConfirm, dismissConfirm } from './support/confirm'
+import { expectWritten, writtenText } from './support/manuscript'
 
 /**
  * The Story workspace as one product rather than three screens: Scenes, Plot and Manuscript under one header, reached
@@ -306,14 +307,14 @@ test.describe('story workspace', () => {
     await chooseFromMenu(page, 'manuscript-show-scene')
     await dismissConfirm(page, '“The Council” has unsaved changes')
     await expect(page).toHaveURL(new RegExp(`/manuscript/${council}$`))
-    await expect(editor).toHaveValue('The hall had emptied.')
+    await expectWritten(editor, 'The hall had emptied.')
 
     // So does signing out, which is a button rather than a link.
     await openAccountMenu(page)
     await page.getByRole('button', { name: 'Sign out' }).click()
     await dismissConfirm(page, '“The Council” has unsaved changes')
     await expect(page).toHaveURL(new RegExp(`/manuscript/${council}$`))
-    await expect(editor).toHaveValue('The hall had emptied.')
+    await expectWritten(editor, 'The hall had emptied.')
     await page.keyboard.press('Escape')
 
     await Promise.all([
@@ -366,7 +367,7 @@ test.describe('story workspace', () => {
     // The lore the prose is about is a link from the manuscript; with the words saved it simply goes there.
     await scene(page, 'The Council').getByTestId('scene-write').click()
     await page.waitForURL(new RegExp(`/manuscript/${council}$`))
-    await expect(editor).toHaveValue('The hall had emptied.')
+    await expectWritten(editor, 'The hall had emptied.')
     await page.getByTestId('manuscript-lore').getByRole('link', { name: 'Arlen' }).click()
     await page.waitForURL(/\/lore\/[0-9a-f-]+$/)
 
@@ -468,7 +469,7 @@ test.describe('story workspace', () => {
       // Manuscript: a real stretch of the prose is on the first screen, beneath its planning and its tools.
       await page.goto(`${storyUrl}/manuscript/${council}`)
       const editor = page.getByTestId('manuscript-editor')
-      await expect(editor).not.toHaveValue('')
+      await expect.poll(() => writtenText(editor)).not.toBe('')
       expect(await scrollsSideways(page), `manuscript at ${width}px`).toBe(false)
 
       // The scene's tools keep to one line, each under its whole name - History, then the menu holding Edit scene and

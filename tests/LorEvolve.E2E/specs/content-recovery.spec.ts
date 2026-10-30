@@ -3,6 +3,7 @@ import { clickSignOut } from './support/account'
 import { entryText } from './support/zip'
 import { chooseFromMenu } from './support/rowMenu'
 import { acceptConfirm, confirmDialog } from './support/confirm'
+import { expectWritten } from './support/manuscript'
 
 /**
  * Content recovery, end to end (ADR 0029): the three ways LorEvolve gives writing back, kept apart.
@@ -428,7 +429,7 @@ test.describe('content recovery', () => {
     await page.goto(manuscriptUrl)
     const editor = page.getByTestId('manuscript-editor')
     const status = page.getByTestId('manuscript-status')
-    await expect(editor).toHaveValue('Second saved version.')
+    await expectWritten(editor, 'Second saved version.')
 
     // The history opens on request, newest first, and a version's text is read only when it is opened.
     const toggle = page.getByTestId('manuscript-history-toggle')
@@ -456,7 +457,7 @@ test.describe('content recovery', () => {
     await first.getByTestId('manuscript-version-restore').click()
     await acceptConfirm(page, 'nothing in the history is lost')
     await expect(page.getByTestId('manuscript-history-message')).toContainText('Version 1 is back')
-    await expect(editor).toHaveValue('First saved version.')
+    await expectWritten(editor, 'First saved version.')
     await expect(status).toHaveText('Saved')
     await expect(list.locator('li')).toHaveCount(3)
     await expect(list.locator('[data-version="3"]')).toContainText('Restored version 1')
@@ -471,7 +472,7 @@ test.describe('content recovery', () => {
     await expect(page.getByTestId('manuscript-history-message')).toContainText(
       'saved somewhere else',
     )
-    await expect(editor).toHaveValue('Saved in another window.')
+    await expectWritten(editor, 'Saved in another window.')
     expect((await readManuscript(page, universeId, storyId, sceneId)).content).toBe(
       'Saved in another window.',
     )
@@ -486,17 +487,17 @@ test.describe('content recovery', () => {
     const reopened = tab.getByTestId('manuscript-editor')
     const recovery = tab.getByTestId('manuscript-recovery')
     await expect(recovery).toBeVisible()
-    await expect(reopened).toHaveValue('Saved in another window.')
-    await expect(reopened).toHaveAttribute('readonly', '')
+    await expectWritten(reopened, 'Saved in another window.')
+    await expect(reopened).not.toBeEditable()
     await recovery.getByTestId('manuscript-recovery-preview-toggle').click()
     await expect(recovery.getByTestId('manuscript-recovery-preview')).toContainText(
       'Second paragraph, indented.',
     )
 
     await recovery.getByTestId('manuscript-recovery-recover').click()
-    await expect(reopened).toHaveValue(prose)
+    await expectWritten(reopened, prose)
     await expect(reopened).toBeFocused()
-    await expect(reopened).not.toHaveAttribute('readonly', '')
+    await expect(reopened).toBeEditable()
     await expect(tab.getByTestId('manuscript-status')).toHaveText('Unsaved changes')
     expect((await readManuscript(tab, universeId, storyId, sceneId)).content).toBe(
       'Saved in another window.',
@@ -509,7 +510,7 @@ test.describe('content recovery', () => {
     await expect.poll(async () => (await recoveryCopies(tab)).length).toBe(0)
 
     await tab.reload()
-    await expect(tab.getByTestId('manuscript-editor')).toHaveValue(prose)
+    await expectWritten(tab.getByTestId('manuscript-editor'), prose)
     await expect(tab.getByTestId('manuscript-recovery')).toHaveCount(0)
   })
 
@@ -526,7 +527,7 @@ test.describe('content recovery', () => {
 
     await page.goto(url)
     const editor = page.getByTestId('manuscript-editor')
-    await expect(editor).toHaveValue('Saved words.')
+    await expectWritten(editor, 'Saved words.')
     await editor.fill('Mine.')
     await writeManuscript(page, universeId, storyId, first, 'Theirs.')
     await page.getByTestId('manuscript-save').click()
@@ -536,12 +537,12 @@ test.describe('content recovery', () => {
     let tab = await crashAndReopen(page, url)
     const recovery = tab.getByTestId('manuscript-recovery')
     await expect(recovery).toHaveAttribute('data-saved-since', 'true')
-    await expect(tab.getByTestId('manuscript-editor')).toHaveValue('Theirs.')
+    await expectWritten(tab.getByTestId('manuscript-editor'), 'Theirs.')
 
     await recovery.getByTestId('manuscript-recovery-discard').click()
     await acceptConfirm(tab)
     await expect(recovery).toHaveCount(0)
-    await expect(tab.getByTestId('manuscript-editor')).toHaveValue('Theirs.')
+    await expectWritten(tab.getByTestId('manuscript-editor'), 'Theirs.')
     await expect(tab.getByTestId('manuscript-editor')).toBeFocused()
     await expect.poll(async () => (await recoveryCopies(tab)).length).toBe(0)
     expect((await readManuscript(tab, universeId, storyId, first)).content).toBe('Theirs.')
@@ -555,7 +556,7 @@ test.describe('content recovery', () => {
     await expect.poll(async () => (await recoveryCopies(tab)).length).toBe(0)
 
     await tab.goto(url)
-    await expect(tab.getByTestId('manuscript-editor')).toHaveValue('Theirs.')
+    await expectWritten(tab.getByTestId('manuscript-editor'), 'Theirs.')
     await expect(tab.getByTestId('manuscript-recovery')).toHaveCount(0)
     await expect(confirmDialog(tab)).toHaveCount(0)
   })
@@ -603,7 +604,7 @@ test.describe('content recovery', () => {
     await page.waitForURL(new RegExp(`/stories/${storyId}#scene-${council}$`))
     await expect(scene(page, 'The Council')).toBeFocused()
     await page.goto(`${storyUrl}/manuscript/${council}`)
-    await expect(page.getByTestId('manuscript-editor')).toHaveValue('Prose of the council.')
+    await expectWritten(page.getByTestId('manuscript-editor'), 'Prose of the council.')
 
     // A scene thrown away on its own, then its whole story.
     expect(

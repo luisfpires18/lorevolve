@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { chooseFromMenu, openMenuFor } from './support/rowMenu'
 import { acceptConfirm, confirmDialog, dismissConfirm } from './support/confirm'
+import { expectWritten } from './support/manuscript'
 
 /**
  * A story's manuscript, end to end: the prose an author writes, scene by scene, on the story's Manuscript view. Each
@@ -249,7 +250,7 @@ test.describe('manuscript', () => {
       ])
     await expect(outlineScene(page, 'Prologue')).toHaveAttribute('aria-current', 'page')
     await expect(page.getByTestId('manuscript-scene-title')).toHaveText('Prologue')
-    await expect(editor).toHaveValue('')
+    await expectWritten(editor, '')
     await expect(status).toHaveText('Nothing saved yet')
     await expect(save).toBeDisabled()
 
@@ -269,7 +270,7 @@ test.describe('manuscript', () => {
 
     // Exactly the same after a reload, on screen and in the API.
     await page.reload()
-    await expect(editor).toHaveValue(councilProse)
+    await expectWritten(editor, councilProse)
     await expect(status).toHaveText('Saved')
     expect((await readManuscript(page, universeId, storyId, council)).content).toBe(councilProse)
 
@@ -277,7 +278,7 @@ test.describe('manuscript', () => {
     await outlineScene(page, 'The Gates').click()
     await page.waitForURL(new RegExp(`/manuscript/${gates}$`))
     await expect(page.getByTestId('manuscript-scene-title')).toHaveText('The Gates')
-    await expect(editor).toHaveValue('')
+    await expectWritten(editor, '')
 
     const gatesProse = 'Snow at the gates.\n\nNo one came to open them.'
     await editor.fill(gatesProse)
@@ -285,9 +286,9 @@ test.describe('manuscript', () => {
 
     // Back and forth: each scene keeps its own.
     await outlineScene(page, 'The Council').click()
-    await expect(editor).toHaveValue(councilProse)
+    await expectWritten(editor, councilProse)
     await outlineScene(page, 'The Gates').click()
-    await expect(editor).toHaveValue(gatesProse)
+    await expectWritten(editor, gatesProse)
 
     // The Council moves to another chapter on the Scenes view. Same scene, same address, same prose.
     await page.getByTestId('story-view-scenes').click()
@@ -301,7 +302,7 @@ test.describe('manuscript', () => {
 
     await page.goto(`${storyUrl}/manuscript/${council}`)
     await expect(where).toHaveText('Chapter 2: Ashes · Scene 2 of 2')
-    await expect(editor).toHaveValue(councilProse)
+    await expectWritten(editor, councilProse)
     await expect
       .poll(() => outline(page))
       .toEqual([
@@ -321,7 +322,7 @@ test.describe('manuscript', () => {
 
     await page.goto(`${storyUrl}/manuscript/${council}`)
     await expect(where).toHaveText('Chapter 2: Ashes · Scene 1 of 2')
-    await expect(editor).toHaveValue(councilProse)
+    await expectWritten(editor, councilProse)
 
     // Arrival is deleted: The Gates goes to Unchaptered with every word it had.
     await page.goto(storyUrl)
@@ -331,7 +332,7 @@ test.describe('manuscript', () => {
 
     await page.goto(`${storyUrl}/manuscript/${gates}`)
     await expect(where).toHaveText('Unchaptered · Scene 2 of 2')
-    await expect(editor).toHaveValue(gatesProse)
+    await expectWritten(editor, gatesProse)
     await expect
       .poll(() => outline(page))
       .toEqual([
@@ -373,7 +374,7 @@ test.describe('manuscript', () => {
 
     await page.goto(`${storyUrl}/manuscript/${first}`)
     await expect(page.getByTestId('manuscript-where')).toHaveText('Scene 1 of 2')
-    await expect(editor).toHaveValue('Saved words.')
+    await expectWritten(editor, 'Saved words.')
     await expect(status).toHaveText('Saved')
     await expect(save).toBeDisabled()
 
@@ -386,7 +387,7 @@ test.describe('manuscript', () => {
     await dismissConfirm(page, '“First” has unsaved changes')
     await expect(page).toHaveURL(firstUrl)
     await expect(outlineScene(page, 'First')).toHaveAttribute('aria-current', 'page')
-    await expect(editor).toHaveValue('Saved words. And more.')
+    await expectWritten(editor, 'Saved words. And more.')
 
     // So does leaving for another view of the story, or another section of the universe.
     for (const control of ['story-view-plot', 'story-view-scenes', 'workspace-lore']) {
@@ -394,7 +395,7 @@ test.describe('manuscript', () => {
       await expect(confirmDialog(page), control).toBeVisible()
       await dismissConfirm(page)
       await expect(page).toHaveURL(firstUrl)
-      await expect(editor).toHaveValue('Saved words. And more.')
+      await expectWritten(editor, 'Saved words. And more.')
     }
 
     // A save the server fails changes nothing on screen, says so, and can be tried again.
@@ -405,7 +406,7 @@ test.describe('manuscript', () => {
     )
     await save.click()
     await expect(page.getByTestId('manuscript-error')).toContainText('could not be saved')
-    await expect(editor).toHaveValue('Saved words. And more.')
+    await expectWritten(editor, 'Saved words. And more.')
     await expect(status).toHaveText('Unsaved changes')
     await expect(save).toBeEnabled()
     expect((await readManuscript(page, universeId, storyId, first)).content).toBe('Saved words.')
@@ -422,7 +423,7 @@ test.describe('manuscript', () => {
     await page.waitForURL(new RegExp(`/manuscript/${second}$`))
     await expect(page.getByTestId('manuscript-scene-title')).toHaveText('Second')
     await expect(confirmDialog(page)).toHaveCount(0)
-    await expect(editor).toHaveValue('')
+    await expectWritten(editor, '')
 
     // Choosing to leave does leave, and what was unsaved is gone - from the screen and from the API alike.
     await editor.fill('A draft that is never saved.')
@@ -431,26 +432,26 @@ test.describe('manuscript', () => {
     await page.goBack()
     await dismissConfirm(page)
     await expect(page).toHaveURL(new RegExp(`/manuscript/${second}$`))
-    await expect(editor).toHaveValue('A draft that is never saved.')
+    await expectWritten(editor, 'A draft that is never saved.')
 
     await outlineScene(page, 'First').click()
     await acceptConfirm(page)
     await page.waitForURL(firstUrl)
-    await expect(editor).toHaveValue('Saved words. And more.')
+    await expectWritten(editor, 'Saved words. And more.')
     await outlineScene(page, 'Second').click()
     await expect(page.getByTestId('manuscript-scene-title')).toHaveText('Second')
-    await expect(editor).toHaveValue('')
+    await expectWritten(editor, '')
     expect((await readManuscript(page, universeId, storyId, second)).content).toBe('')
 
     // Another window saves First while this one is writing. This save is refused, and nothing is lost either way.
     await outlineScene(page, 'First').click()
-    await expect(editor).toHaveValue('Saved words. And more.')
+    await expectWritten(editor, 'Saved words. And more.')
     await editor.fill('Written in this window.')
     await writeManuscript(page, universeId, storyId, first, 'Written in another window.')
 
     await save.click()
     await expect(conflict).toBeVisible()
-    await expect(editor).toHaveValue('Written in this window.')
+    await expectWritten(editor, 'Written in this window.')
     await expect(status).toHaveText('Unsaved changes')
     expect((await readManuscript(page, universeId, storyId, first)).content).toBe(
       'Written in another window.',
@@ -463,7 +464,7 @@ test.describe('manuscript', () => {
     )
     await conflict.getByTestId('manuscript-conflict-keep').click()
     await expect(conflict).toHaveCount(0)
-    await expect(editor).toHaveValue('Written in this window.')
+    await expectWritten(editor, 'Written in this window.')
     await expect(status).toHaveText('Unsaved changes')
     await saveWith(page, () => save.click())
     expect((await readManuscript(page, universeId, storyId, first)).content).toBe(
@@ -478,7 +479,7 @@ test.describe('manuscript', () => {
     await conflict.getByTestId('manuscript-conflict-review').click()
     await conflict.getByTestId('manuscript-conflict-use-latest').click()
     await acceptConfirm(page)
-    await expect(editor).toHaveValue('Theirs again.')
+    await expectWritten(editor, 'Theirs again.')
     await expect(status).toHaveText('Saved')
     await expect(conflict).toHaveCount(0)
 
@@ -549,7 +550,7 @@ test.describe('manuscript', () => {
       .getByTestId('manuscript-plot')
       .getByRole('link', { name: 'Fall of the King: Capital is breached' })
     await expect(beatChip).toBeVisible()
-    await expect(page.getByTestId('manuscript-editor')).toHaveValue('')
+    await expectWritten(page.getByTestId('manuscript-editor'), '')
     expect(reads.length).toBeGreaterThan(0)
     expect(reads.every((url) => url.includes(`/scenes/${council}/`))).toBe(true)
 
@@ -565,7 +566,7 @@ test.describe('manuscript', () => {
 
     await expect(page.getByTestId('manuscript-scene-title')).toHaveText('The Council of Nine')
     await expect(outlineScene(page, 'The Council of Nine')).toBeVisible()
-    await expect(editor).toHaveValue('A draft written while the planning changes.')
+    await expectWritten(editor, 'A draft written while the planning changes.')
     await expect(page.getByTestId('manuscript-status')).toHaveText('Unsaved changes')
     expect((await readManuscript(page, universeId, storyId, council)).content).toBe('')
 
@@ -594,7 +595,7 @@ test.describe('manuscript', () => {
     await page.waitForURL(new RegExp(`/manuscript/${first}$`))
 
     const editor = page.getByTestId('manuscript-editor')
-    await expect(editor).toHaveValue('One.')
+    await expectWritten(editor, 'One.')
 
     /** Presses a key until the focus lands on `testId`, and says how many presses that took. */
     async function tabTo(testId: string, key = 'Tab', limit = 12) {
@@ -713,7 +714,7 @@ test.describe('manuscript', () => {
       await page.goto(`${storyUrl}/manuscript/${first}`)
 
       const editor = page.getByTestId('manuscript-editor')
-      await expect(editor).toHaveValue(prose)
+      await expectWritten(editor, prose)
       expect(await scrollsSideways(page), `manuscript at ${width}px`).toBe(false)
 
       if (colorScheme === 'dark') {
