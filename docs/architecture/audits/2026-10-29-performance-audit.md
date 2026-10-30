@@ -238,6 +238,9 @@ journal mode (W4), export in memory (ADR 0014).
 | `4f6d011` | P14, F58 | Explore hero WebP only | `dist` 13.1 MB with a 2.37 MB PNG | `dist` 10.6 MB |
 | `b5656b8` | P04 | debounce only the search text | Lore desktop ready 618 ms | 523 ms |
 | `4bbc93c` | P05 | memoized stored-article parses | typing at 4x CPU: max event 128 ms, long tasks 276 ms | max event 88 ms, long tasks 69 ms |
+| `9d2149a` | W2 (section 9) | types and groups read beside the universe | Lore `entity-types` sent at 490 ms | sent at 139 ms |
+| `c2e8ab7` | W1 (section 9) | section chunks preloaded, no Suspense fallback | 255 to 269 ms throttle timer after the chunk | none |
+| `51f5a65` | W3 (section 9) | types list counts in grouped queries | `GET entity-types` 23.8 ms | 13.8 ms |
 
 ## 8. Before and after
 
@@ -313,3 +316,63 @@ text response at Brotli `Fastest`; it was not measurable here.
   files once at build or publish time (`MapStaticAssets` precompression, or a precompression step) would get the
   smaller size with no per-request CPU on F1. Listed with P01's follow-ups; it moves cache rules into MSBuild, so it is
   not a quick win.
+
+## 9. Workspace load chain (2026-10-30)
+
+On `fix/workspace-load-chain`, cut from `dev` at `e9346f2`. The owner still saw about a second before a workspace page
+was drawn, piece by piece. A production trace of the signed-in Lore landing page on lorevolve.com that day put the
+catalog's paint at about 986 ms with the server answering every read in 60 to 90 ms. Three causes, one commit each.
+
+| Id | Cause | Fix |
+| --- | --- | --- |
+| W1 | React's Suspense fallback throttle: the Outlet's fallback showed at ~360 ms, the `LorePage` chunk arrived ~30 ms later, and React held the fallback until 300 ms after it first showed (`TimerInstall` 265 ms, re-armed 255 ms, fired at 664). Every first visit to a lazy section paid it. | `lazyWithPreload` (`src/lib/lazyWithPreload.ts`): a screen whose code is here is drawn directly, so its boundary never suspends. `main.tsx` preloads the screen at the address beside the session check; the workspace prefetches every section's code and an entry's when open and idle. The lazy screens moved to `src/screens.ts`. |
+| W2 | The mount-order chain: `me` -> universe + chronology -> chunk -> throttle -> types + groups (`LorePage`'s mount effect) -> paint. Types and groups need only the universe id. | `UniverseWorkspace` reads both in the same effect as the universe and hands them down through the Outlet context with a refresh (`useWorkspaceTypes`); Lore, an entry, the Family Tree, Mass create and Types use it. The first screen uses that read; later screens read again as they open, showing the copy they have, so entry counts stay current. `QuickCreateDialog` still reads on open, as its comment asks. |
+| W3 | `LoadTypesAsync`: one projection with three correlated entry counts per type and four correlated distinct counts per field. Production median 152 ms beside 60 to 90 ms for every other read. | Types, fields and sections read plain; per-type entry counts, per-field holders (own values unioned with era overrides) and fields in history in one grouped query each, composed in memory. Response unchanged. `AsSplitQuery` was tried first: no faster (24.1 against 23.8 ms) and four more queries, so not used. |
+
+### 9.1 Method
+
+Section 0's staged server (Release on :5181, `dist/*` in `wwwroot`, a copy of `lorevolve.dev.db`), one throwaway local
+account registered through the UI, one universe with 20 entries over four types. Chrome DevTools MCP
+`performance_start_trace` (reload, cache ignored, service worker warm), desktop, no throttling, loopback; three runs
+each of the Lore landing page and one entry page. Times are ms from navigation start, read from the saved traces
+(`ResourceSendRequest`, `ResourceFinish`, `TimerInstall` of 100 ms or more). The first run after a new build or server
+start is a warm-up and is not counted. Server side: `ReadPathBenchmark`, now seeding six fields on every type and a
+value in each Character field for all 2,000 entries (12,000 values), so the types read carries per-field counts.
+
+### 9.2 Before and after (median of 3)
+
+| Page | Metric | Before | After | Delta |
+| --- | --- | --- | --- | --- |
+| Lore landing | `entity-types` sent | 490 | 139 | -72% |
+| Lore landing | Types and groups answered (the catalog's data) | 529 | 164 | -69% |
+| Lore landing | Fallback throttle timer after the chunk | 254 to 269 ms, every run | none | gone |
+| Entry page | `entity-types` sent | 482 | 171 | -65% |
+| Entry page | Entry read sent | 483 | 194 | -60% |
+| Entry page | Last read answered (map pins) | 543 | 262 | -52% |
+| Entry page | Fallback throttle timer after the chunk | 246 to 257 ms, every run | none | gone |
+| Both | JS chunks fetched in the trace | 25 (Lore), 46 (entry) | 81 | the idle prefetch, after the page's reads |
+
+Loopback hides the network, so on production the saving is the throttle (about 270 ms) plus the chain (the types no
+longer wait for the chunk, about 320 ms in the trace) plus W3's server time.
+
+| Read (`ReadPathBenchmark`, warm, N=20, Release) | Before | After |
+| --- | --- | --- |
+| `GET entity-types` | median 23.8 ms, p95 25.6 ms, 2 queries | median 13.8 ms, p95 14.7 ms, 5 queries |
+| `GET entity-types`, empty fields (section 2.5's seed) | 5.1 ms | not rerun |
+
+The very first run with the new seed read 36.4 ms on the old code; it ran on a cold machine and every read in it was
+slower, so the same-session 23.8 ms is the fair baseline.
+
+### 9.3 Checks and what is left
+
+- Focused Playwright (`--retries=0 --workers=2`, fresh database): 145 of 146 passed. `nested-types.spec.ts` failed 3 of
+  3 alone: Lore now draws its heading from the workspace's copy of the types before its own entries read has gone out,
+  and the spec counted that read as the crumb's. `320a82a` waits for the entries first; 15 of 15 then.
+- `UniverseAccessMatrixTests.Every_member_lacking_a_capability_is_refused_with_403_and_nothing_changes` fails on this
+  branch and on its base backend alike ("Reviewer: restore entry version: expected 403, got 404"); no server file it
+  touches changed here. Not fixed in this pass.
+- `entity detail` in the bench went from 5.0 ms to 46 to 72 ms with the new seed: it has its own per-field reads, not
+  `LoadTypesAsync`. A candidate for the same treatment.
+- The idle prefetch fetches every section's code, the rich-text editor's included, once per workspace visit until the
+  service worker holds it. If that ever shows on a metered phone, prefetch only the entry page and the sidebar
+  sections the author actually uses.

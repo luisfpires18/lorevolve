@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   DndContext,
   DragOverlay,
@@ -29,7 +29,6 @@ import {
   createEntityType,
   deleteEntityType,
   listEntityTypeGroups,
-  listEntityTypes,
   moveEntityType,
   reorderEntityType,
   updateEntityType,
@@ -43,7 +42,7 @@ import {
   type TypeTree,
 } from '../lore/typeTree'
 import { PageHeader } from '../components/PageHeader'
-import type { WorkspaceContext } from './UniverseWorkspace'
+import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { confirmAction } from '../lib/confirm'
 
 /** Three vocabularies, one screen: kept apart as tabs so none of them is a long scroll below another. */
@@ -60,6 +59,9 @@ const LEDES: Record<(typeof TABS)[number]['id'], string> = {
   events: 'The event kinds and methods a moment and a world rule’s check can name.',
 }
 
+/** Groups not read: none to offer, one stable list. */
+const NO_GROUPS: EntityTypeGroup[] = []
+
 /**
  * The universe's vocabularies (Product refinement 016): Lore Types, Relation Kinds, and Event Kinds & Methods, each a tab
  * in the address (`?tab=`) as real steps of history - Back and Forward walk the tabs, unlike Settings. Every panel stays mounted, so a half-written relation kind
@@ -67,12 +69,22 @@ const LEDES: Record<(typeof TABS)[number]['id'], string> = {
  */
 export default function UniverseTypes() {
   const access = useUniverseAccess()
-  const { universe } = useOutletContext<WorkspaceContext>()
+  // The types and groups are the workspace's, read with the universe, so what is changed here is what Lore shows next.
+  const {
+    universe,
+    types: typesRead,
+    groups: groupsRead,
+    setTypes,
+    setGroups,
+    refreshTypes,
+  } = useWorkspaceTypes()
   const [tab, chooseTab] = useQueryTab(TABS, { history: 'push' })
 
-  const [types, setTypes] = useState<EntityType[] | null>(null)
-  const [groups, setGroups] = useState<EntityTypeGroup[]>([])
-  const [message, setMessage] = useState<string | null>(null)
+  const types = Array.isArray(typesRead) ? typesRead : null
+  // Groups are an extra: without them the types still work, and the group controls simply have none to offer.
+  const groups = Array.isArray(groupsRead) ? groupsRead : NO_GROUPS
+  const [reported, setMessage] = useState<string | null>(null)
+  const message = reported ?? (typesRead === 'failed' ? 'The types could not be loaded.' : null)
   // The type editor: a new type, or the existing one being edited. One drawer for both. A new type opened from a row's
   // Add child starts inside that row's type.
   const [editing, setEditing] = useState<EntityType | 'new' | null>(null)
@@ -246,36 +258,12 @@ export default function UniverseTypes() {
       : { typeId: lastOf(at).type.id, edge: 'after' as const }
   })()
 
-  useEffect(() => {
-    const controller = new AbortController()
-    listEntityTypes(universe.id, controller.signal)
-      .then(setTypes)
-      .catch(() => {
-        // Leaving the screen aborts this read. That is not a failure to report: the message
-        // belongs to a request that was answered badly, not to one LorEvolve cancelled itself.
-        if (controller.signal.aborted) return
-        setMessage('The types could not be loaded.')
-      })
-    // Groups are an extra: without them the types still work, and the group controls simply have none to offer.
-    listEntityTypeGroups(universe.id, controller.signal)
-      .then(setGroups)
-      .catch(() => undefined)
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id])
-
   function report(error: unknown, fallback: string) {
     setMessage(error instanceof ApiError ? error.message : fallback)
   }
 
-  async function refresh() {
-    const [nextTypes, nextGroups] = await Promise.all([
-      listEntityTypes(universe.id),
-      listEntityTypeGroups(universe.id),
-    ])
-    setTypes(nextTypes)
-    setGroups(nextGroups)
+  function refresh() {
+    return refreshTypes()
   }
 
   async function refreshGroups() {
@@ -444,7 +432,7 @@ export default function UniverseTypes() {
                 type="button"
                 onClick={() => {
                   setMessage(null)
-                  void refresh().catch(() => setMessage('The types could not be loaded.'))
+                  refresh().catch(() => undefined)
                 }}
               >
                 Try again

@@ -1,12 +1,5 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react'
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useOutletContext,
-  useSearchParams,
-  type To,
-} from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams, type To } from 'react-router-dom'
 import {
   ArrowLeft,
   ArrowRight,
@@ -30,8 +23,6 @@ import {
   LORE_PAGE_SIZES,
   bulkTrashEntities,
   listEntities,
-  listEntityTypeGroups,
-  listEntityTypes,
   readLorePageSize,
   saveLorePageSize,
 } from '../lore/api'
@@ -41,7 +32,6 @@ import {
   type CanonStatusValue,
   type EntityPage,
   type EntitySort,
-  type EntityType,
   type EntityTypeGroup,
 } from '../lore/types'
 import {
@@ -56,7 +46,7 @@ import {
 import { buildTypeTree } from '../lore/typeTree'
 import type { MassCreatedState } from './MassCreatePage'
 import { useUniverseAccess } from '../universes/access'
-import type { WorkspaceContext } from './UniverseWorkspace'
+import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { confirmAction } from '../lib/confirm'
 
 type LoadState =
@@ -64,6 +54,9 @@ type LoadState =
 
 /** How many card shapes stand in for the first page while it is read. */
 const SKELETON_CARDS = 6
+
+/** Groups that could not be read: none to offer, one stable list. */
+const EMPTY_GROUPS: EntityTypeGroup[] = []
 
 function readStatus(value: string | null): CanonStatusValue | null {
   return value === '0' || value === '1' || value === '2'
@@ -111,7 +104,7 @@ function readPage(value: string | null) {
  * matches that type's own entries only.
  */
 export default function LorePage() {
-  const { universe } = useOutletContext<WorkspaceContext>()
+  const { universe, types: typesRead, groups: groupsRead, refreshTypes } = useWorkspaceTypes()
   const access = useUniverseAccess()
   const [params, setParams] = useSearchParams()
   const filtersId = useId()
@@ -152,40 +145,19 @@ export default function LorePage() {
   const trashing = useRef(false)
   const [trashed, setTrashed] = useState<{ text: string; list: string } | null>(null)
 
-  const [types, setTypes] = useState<EntityType[] | null>(null)
-  // A failed read of the types is not a universe without any: `types` stays unknown, so nothing below reads the failure as
-  // "no types" or takes a chosen type out of the address as one that does not exist (#58).
-  const [typesFailed, setTypesFailed] = useState(false)
-  const [typeReads, setTypeReads] = useState(0)
-  const [groups, setGroups] = useState<EntityTypeGroup[] | null>(null)
+  // The types and groups come with the universe (`useWorkspaceTypes`). A failed read of the types is not a universe without
+  // any: `types` stays unknown, so nothing below reads the failure as "no types" or takes a chosen type out of the address
+  // as one that does not exist (#58).
+  const types = Array.isArray(typesRead) ? typesRead : null
+  const typesFailed = typesRead === 'failed'
+  // Groups are a second way in, not a requirement: if they cannot be read, Lore is browsed by type alone.
+  const groups = groupsRead === 'failed' ? EMPTY_GROUPS : groupsRead
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(false)
   // Entries per page: the author's own preference in this browser, never in the address - a link someone shares opens at
   // their reader's size, not the sender's.
   const [pageSize, setPageSize] = useState(readLorePageSize)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listEntityTypes(universe.id, controller.signal)
-      .then((read) => {
-        setTypesFailed(false)
-        setTypes(read)
-      })
-      .catch(() => {
-        // Without its types Lore has nothing to choose from; the page says the read failed and offers it again.
-        if (!controller.signal.aborted) setTypesFailed(true)
-      })
-    // Groups are a second way in, not a requirement: if they cannot be read, Lore is browsed by type alone.
-    listEntityTypeGroups(universe.id, controller.signal)
-      .then(setGroups)
-      .catch(() => {
-        if (!controller.signal.aborted) setGroups([])
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, typeReads])
 
   const tree = useMemo(() => buildTypeTree(types ?? []), [types])
   const selectedNode = (typeParam && tree.byId.get(typeParam)) || null
@@ -828,8 +800,7 @@ export default function LorePage() {
             className="button button--secondary"
             type="button"
             onClick={() => {
-              setTypesFailed(false)
-              setTypeReads((count) => count + 1)
+              refreshTypes().catch(() => undefined)
             }}
           >
             Try again
