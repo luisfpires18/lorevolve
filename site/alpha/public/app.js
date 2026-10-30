@@ -467,6 +467,22 @@ for (const link of document.querySelectorAll('[data-open-feature]')) {
   })
 }
 
+// A video's first play on this page load is counted (/api/play): which video and when, nothing about the viewer.
+for (const video of document.querySelectorAll('video[data-play]')) {
+  video.addEventListener(
+    'play',
+    () => {
+      fetch('/api/play', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ video: video.dataset.play }),
+        keepalive: true,
+      }).catch(() => {})
+    },
+    { once: true },
+  )
+}
+
 // A feature picture not made yet is dropped rather than left as an empty frame. Lazy pictures load, and fail, on opening.
 document.addEventListener(
   'error',
