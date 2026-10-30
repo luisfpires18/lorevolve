@@ -30,6 +30,8 @@ public sealed class HealthEndpointTests(LorEvolveApiFactory factory) : IClassFix
         Assert.Equal("healthy", payload.Status);
         Assert.Equal("LorEvolve.Api", payload.Service);
         Assert.Equal(HealthEndpoints.BuildVersion, payload.Version);
+        Assert.Equal(HealthEndpoints.StartedUtc, payload.StartedUtc);
+        Assert.True(payload.StartedUtc <= payload.TimestampUtc);
     }
 
     [Fact]

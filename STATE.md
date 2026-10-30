@@ -35,6 +35,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 2. When the owner asks: merge `dev` into `master` and push `master`.
 3. `gh workflow run deploy-prod.yml --ref master` (or Actions > Deploy PROD). The `prod` environment has a required
    reviewer. Never push, merge or deploy without the owner's explicit go-ahead.
+4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
 As of 2026-10-29 `origin/master..origin/dev` is empty: everything on `dev` is in PROD.
 
@@ -89,6 +90,8 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 - PROD `PublicSite__AllowIndexing`: unset, so search engines are told not to index. Set at public launch.
 - PROD `Assistant__*`: only if PROD offers the assistant (`docs/deployment/assistant-limits-and-cost.md`).
+- DEV then PROD `WEBSITE_RUN_FROM_PACKAGE=1`, `SCM_MAX_ZIP_PACKAGE_COUNT=2`: stops the deploy swapping assemblies under
+  the running app (`docs/deployment/azure-dev.md`, How a deploy replaces the app). Until set, Deploy warns and restarts.
 - Backup retention deletion is proposed and off (ADR 0064, `docs/recovery/database-backups.md`).
 - DEV `Mcp__Origin` and `PlatformAdmin__OwnerUserId` were owner steps; not rechecked here. Unset means MCP is off and
   nobody is Admin on DEV.
