@@ -32,7 +32,8 @@ test('the reset page needs the email link, and a wrong one says to ask again', a
   await page.goto('/reset-password')
   await expect(page.getByTestId('reset-link-missing')).toBeVisible()
 
-  await page.goto('/reset-password?user=nobody&token=not-a-token')
+  // The emailed link carries its token after '#', so it never reaches a request log.
+  await page.goto('/reset-password#user=nobody&token=not-a-token')
   await page.getByLabel('New password', { exact: true }).fill('insert-a-pass-1')
   await page.getByLabel('Confirm new password').fill('insert-a-pass-2')
   await page.getByRole('button', { name: 'Save the new password' }).click()

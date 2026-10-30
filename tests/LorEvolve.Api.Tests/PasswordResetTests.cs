@@ -152,7 +152,7 @@ public sealed partial class PasswordResetTests
         return (Uri.UnescapeDataString(match.Groups[1].Value), Uri.UnescapeDataString(match.Groups[2].Value), body);
     }
 
-    [GeneratedRegex(@"https://lorevolve\.example/reset-password\?user=([^&\s]+)&token=(\S+)")]
+    [GeneratedRegex(@"https://lorevolve\.example/reset-password#user=([^&\s]+)&token=(\S+)")]
     private static partial Regex LinkPattern();
 
     private static WebApplicationFactory<Program> Host(RecordingHandler resend, bool configured)

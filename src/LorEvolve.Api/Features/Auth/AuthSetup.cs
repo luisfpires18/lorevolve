@@ -10,6 +10,8 @@ public static class AuthSetup
     /// <summary>Cookie lifetime. Sliding, so an active session is not interrupted.</summary>
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromDays(7);
 
+    public const string SessionCookieName = "lorevolve.session";
+
     public static IServiceCollection AddLorEvolveAuth(this IServiceCollection services, IHostEnvironment environment)
     {
         services.AddAuthentication(IdentityConstants.ApplicationScheme)
@@ -17,7 +19,6 @@ public static class AuthSetup
 
         services.ConfigureApplicationCookie(options =>
         {
-            options.Cookie.Name = "lorevolve.session";
             options.Cookie.HttpOnly = true;
             options.Cookie.SameSite = SameSiteMode.Strict;
 
@@ -29,6 +30,12 @@ public static class AuthSetup
             // drop the cookie. Every deployed environment is served over HTTPS, so it is the
             // deployment that has to opt out of plain HTTP, not the other way round.
             var servesPlainHttp = environment.IsDevelopment() || environment.IsEnvironment("Testing");
+
+            // Deployed, the __Host- prefix makes the browser refuse this cookie unless it is Secure, host-only and on "/":
+            // no other *.lorevolve.com host can set or overwrite the session (N-1). A browser needs Secure for the prefix,
+            // so plain-HTTP hosts keep the bare name. Renaming signs everyone out once.
+            options.Cookie.Name = servesPlainHttp ? SessionCookieName : "__Host-" + SessionCookieName;
+            options.Cookie.Path = "/";
             options.Cookie.SecurePolicy = servesPlainHttp
                 ? CookieSecurePolicy.SameAsRequest
                 : CookieSecurePolicy.Always;

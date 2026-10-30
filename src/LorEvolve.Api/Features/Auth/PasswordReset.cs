@@ -37,11 +37,14 @@ public static class PasswordReset
         group.MapPost("/reset-password", ResetAsync).WithName("ResetPassword");
     }
 
-    /// <summary>The reset email for one account, its link built on the configured public origin, never the request's host.</summary>
+    /// <summary>
+    /// The reset email for one account, its link built on the configured public origin, never the request's host. The token
+    /// rides after <c>#</c>: a browser never sends the fragment, so it stays out of server and proxy request logs (N-4).
+    /// </summary>
     public static async Task<AppEmailMessage> MessageAsync(UserManager<LorEvolveUser> userManager, LorEvolveUser user, PublicSite site)
     {
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
-        var link = site.Absolute($"/reset-password?user={Uri.EscapeDataString(user.Id)}&token={Uri.EscapeDataString(token)}")!;
+        var link = site.Absolute($"/reset-password#user={Uri.EscapeDataString(user.Id)}&token={Uri.EscapeDataString(token)}")!;
         return PasswordResetEmail.For(user.Email!, link);
     }
 
