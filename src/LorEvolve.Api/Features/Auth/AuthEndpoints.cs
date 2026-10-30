@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LorEvolve.Api.Features.Auth;
 
 /// <summary>Registration, login, logout, the current-user probe and forgot password (<see cref="PasswordReset"/>).</summary>
-public static class AuthEndpoints
+public static partial class AuthEndpoints
 {
     /// <summary>
     /// One message for every failed sign-in, so the response cannot be used to tell a wrong password from an account that
@@ -92,8 +92,10 @@ public static class AuthEndpoints
         IDataProtectionProvider protection,
         LorEvolveDbContext db,
         TimeProvider clock,
+        ILoggerFactory loggers,
         CancellationToken cancellationToken)
     {
+        var log = Log(loggers);
         string? invitedEmail = null;
         if (InviteOnly(configuration))
         {
@@ -187,6 +189,7 @@ public static class AuthEndpoints
         }
 
         await signInManager.SignInAsync(user, isPersistent: true);
+        AccountCreated(log, user.Id, user.UserName!, invitedEmail is not null);
         return Results.Ok(ToResponse(user));
     }
 
@@ -194,8 +197,10 @@ public static class AuthEndpoints
         [FromBody] LoginRequest request,
         UserManager<LorEvolveUser> userManager,
         SignInManager<LorEvolveUser> signInManager,
+        ILoggerFactory loggers,
         CancellationToken cancellationToken)
     {
+        var log = Log(loggers);
         var identifier = request.UsernameOrEmail?.Trim() ?? string.Empty;
         var password = request.Password ?? string.Empty;
 
@@ -221,6 +226,8 @@ public static class AuthEndpoints
             // disclose whether the account exists.
             userManager.PasswordHasher.VerifyHashedPassword(
                 TimingDecoy, TimingDecoy.PasswordHash!, password);
+            // What was typed is never written down: it may be an email address, or a password in the wrong field.
+            SignInRefusedUnknown(log);
             return InvalidCredentialsProblem();
         }
 
@@ -236,11 +243,13 @@ public static class AuthEndpoints
 
         if (!signIn.Succeeded)
         {
+            SignInRefused(log, user.Id, user.UserName!, signIn.IsLockedOut ? "locked out" : "wrong password");
             return InvalidCredentialsProblem();
         }
 
         if (user.BlockedAt is not null)
         {
+            SignInRefused(log, user.Id, user.UserName!, "blocked");
             return Results.Problem(
                 title: "Account blocked",
                 detail: "This account has been blocked by a LorEvolve administrator.",
@@ -249,8 +258,27 @@ public static class AuthEndpoints
         }
 
         await signInManager.SignInAsync(user, isPersistent: true);
+        SignedIn(log, user.Id, user.UserName!);
         return Results.Ok(ToResponse(user));
     }
+
+    /// <summary>
+    /// Account events in the server's log (Azure's Log Stream), one line each, under one category so they can be filtered:
+    /// the account's id and username, never its email address, a password or what was typed to sign in.
+    /// </summary>
+    private static ILogger Log(ILoggerFactory loggers) => loggers.CreateLogger("LorEvolve.Auth");
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Account created: {UserId} ({UserName}), by invitation: {Invited}.")]
+    private static partial void AccountCreated(ILogger logger, string userId, string userName, bool invited);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Signed in: {UserId} ({UserName}).")]
+    private static partial void SignedIn(ILogger logger, string userId, string userName);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Sign-in refused for {UserId} ({UserName}): {Reason}.")]
+    private static partial void SignInRefused(ILogger logger, string userId, string userName, string reason);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Sign-in refused: no account matches what was typed.")]
+    private static partial void SignInRefusedUnknown(ILogger logger);
 
     private static async Task<IResult> LogoutAsync(SignInManager<LorEvolveUser> signInManager)
     {
