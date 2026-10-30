@@ -40,6 +40,8 @@ test.describe('app recovery', () => {
 
     await page.goto(`/app/universes/${id}/chronology`)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    // A workspace read still in flight would meet the missing cookie first and sign out from here, not from Timeline.
+    await page.waitForLoadState('networkidle')
 
     // The cookie goes; the next request the open tab makes is answered 401.
     await context.clearCookies()
