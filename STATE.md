@@ -42,7 +42,10 @@ As of 2026-10-29 `origin/master..origin/dev` is empty: everything on `dev` is in
 
 One line per branch. Delete the line when it merges.
 
-- Nothing. Forgot password (#69), app email reply-to and the health version are on `dev`, not yet on PROD.
+- Forgot password (#69), app email reply-to and the health version are on `dev`, not yet on PROD.
+- **Workspace load chain** (`fix/workspace-load-chain` off `dev` at `e9346f2`, not merged): types read beside the
+  universe, section chunks preloaded with no Suspense fallback, types counts in grouped queries. Lore's data at 164 ms
+  instead of 529 on loopback, no 300 ms throttle. Audit section 9.
 
 ## Committed, not on `dev`
 
