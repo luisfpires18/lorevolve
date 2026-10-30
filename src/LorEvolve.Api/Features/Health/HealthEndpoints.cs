@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 
 namespace LorEvolve.Api.Features.Health;
@@ -12,6 +13,12 @@ public static class HealthEndpoints
     public static readonly string BuildVersion =
         typeof(HealthEndpoints).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
 
+    /// <summary>
+    /// When this process started. The deploy workflows wait for one newer than the deployment, so a release is only called
+    /// good once the restarted process answers, not the old one still running beside the upload.
+    /// </summary>
+    public static readonly DateTimeOffset StartedUtc = Process.GetCurrentProcess().StartTime.ToUniversalTime();
+
     public static IEndpointRouteBuilder MapHealthEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapHealthChecks("/health");
@@ -20,6 +27,7 @@ public static class HealthEndpoints
                 Status: "healthy",
                 Service: "LorEvolve.Api",
                 Version: BuildVersion,
+                StartedUtc: StartedUtc,
                 TimestampUtc: DateTimeOffset.UtcNow)))
             .WithName("GetHealth")
             .WithSummary("Reports API liveness.");
@@ -28,4 +36,4 @@ public static class HealthEndpoints
     }
 }
 
-public sealed record HealthResponse(string Status, string Service, string Version, DateTimeOffset TimestampUtc);
+public sealed record HealthResponse(string Status, string Service, string Version, DateTimeOffset StartedUtc, DateTimeOffset TimestampUtc);
