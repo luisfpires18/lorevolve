@@ -98,7 +98,7 @@ or the deploy goes on to the old app.
 | File | Runs on | Does |
 | --- | --- | --- |
 | [`ci.yml`](../../.github/workflows/ci.yml) | Pull requests into `dev`; called by the deploy workflow | Backend Release build, tests in three shards by test class (`scripts/dotnet-test-shard.py`), pending-model check; web typecheck, lint, format, build; Playwright in six parallel shards inside Playwright's container image, each with its own fresh database and report (`tests/LorEvolve.E2E/README.md`) |
-| [`deploy-dev.yml`](../../.github/workflows/deploy-dev.yml) | Push to `dev`, or manual | Calls `ci.yml` and, alongside it, builds the client and publishes the API into an artifact (Package); once both pass, Deploy uploads that artifact and waits for `/health` |
+| [`deploy-dev.yml`](../../.github/workflows/deploy-dev.yml) | Push to `dev`, or manual | Calls `ci.yml` and, alongside it, builds the client and publishes the API into an artifact (Package); once both pass, Deploy uploads that artifact and waits until `/api/health` answers from a process started after the upload (see How a deploy replaces the app) |
 
 `dev` is the only branch that deploys, and the job is additionally guarded by
 `if: github.ref == 'refs/heads/dev'`.
@@ -117,7 +117,8 @@ because its version and service-worker cache id come from that run (`LOREVOLVE_D
 2. Create the app registration, the federated credential, the `dev` GitHub environment and the
    four variables.
 3. Push to `dev`, or run **Deploy DEV** from the Actions tab.
-4. The workflow's last step polls `/health` and fails the run if DEV never answers 200.
+4. The workflow's last step polls `/api/health` and fails the run if no process started after the deploy answers
+   within 12 minutes.
 
 ## The database, and who migrates it
 
@@ -173,6 +174,31 @@ so on. Nobody bumps it and no commit records it.
   [../recovery/database-backups.md](../recovery/database-backups.md). Creators back up and export single universes from
   Settings > Data ([../recovery/universe-recovery.md](../recovery/universe-recovery.md)). Never copy the live `.db` file
   out by hand while the site runs: it can miss what is still in the WAL.
+
+## How a deploy replaces the app
+
+`/api/health` reports `startedUtc`, when the answering process started. Deploy marks the time before the upload and
+passes only once `startedUtc` is later, so a release is called good by the new process, never by the old one still
+running beside the upload. A plain 200 proved nothing: on 2026-10-30 PROD's check passed against the old process, and
+the new container took nine minutes after the restart to answer.
+
+`WEBSITE_RUN_FROM_PACKAGE=1` makes App Service keep the ZIP in `/home/data/SitePackages` and mount it read-only as
+`wwwroot`, so the running process never sees a half-swapped folder. Without it the upload replaces files under the
+running process, which on 2026-10-29 and 2026-10-30 threw `BadImageFormatException` until a restart. Nothing the app
+writes lives in `wwwroot` (database and keys are on `/home/data`, restore staging in the temp folder), so read-only is
+safe. Deploy reads the setting: with it, the upload itself restarts the app; without it, Deploy warns and restarts the
+app by hand. Either way the redeploy is a short planned outage, as before.
+
+**Owner step, once per environment (DEV first, then PROD after a good Deploy DEV run):**
+
+```bash
+az webapp config appsettings set -g <resource group> -n <app name> --settings WEBSITE_RUN_FROM_PACKAGE=1 SCM_MAX_ZIP_PACKAGE_COUNT=2
+```
+
+Saving restarts the site, still on the old files; the next deploy is the first from a package. App Service keeps five
+packages by default, on the same `/home` disk as the database (1 GB on F1), so keep two. The old extracted files in
+`/home/site/wwwroot` are then unused and can be deleted from Kudu's console. The Bicep template sets the first setting
+for a new site. To go back, delete the setting and redeploy.
 
 ## Known DEV limitations
 

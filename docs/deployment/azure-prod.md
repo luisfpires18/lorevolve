@@ -57,9 +57,11 @@ settings below. Left for the owner: the two R2 tokens, the first deploy, the Adm
    | `DatabaseBackup__*` | `Environment=prod`, a new private bucket and its own token ([../recovery/database-backups.md](../recovery/database-backups.md)) |
    | `Assistant__*` | only if PROD offers the assistant |
    | `Registration__InviteOnly` | `true`, but only after step 6 |
+   | `WEBSITE_RUN_FROM_PACKAGE`, `SCM_MAX_ZIP_PACKAGE_COUNT` | `1`, `2` ([azure-dev.md](azure-dev.md), How a deploy replaces the app) |
 
 5. **First deploy.** Merge `dev` into `master`, push `master`, Actions > Deploy PROD > Run workflow on `master`, approve.
-   It ends by waiting for `https://prod-lorevolve.azurewebsites.net/health`.
+   It ends by waiting until `https://prod-lorevolve.azurewebsites.net/api/health` answers from a process started
+   after the upload.
 
 6. **Admin.** Open `https://prod-lorevolve.azurewebsites.net`, register the owner's account (open registration: no
    Admin exists yet to make a sign-up link), then follow "Provision the owner's Admin account" in
@@ -74,9 +76,12 @@ settings below. Left for the owner: the two R2 tokens, the first deploy, the Adm
 ## Release
 
 1. `dev` is green on DEV and checked there.
+   Owner, once: if PROD lacks `WEBSITE_RUN_FROM_PACKAGE=1` (Deploy PROD warns), set it as in
+   [azure-dev.md](azure-dev.md), How a deploy replaces the app, after a good Deploy DEV run with it.
 2. Merge `dev` into `master` and push `master` (on request only; never automatic).
 3. Actions > Deploy PROD > Run workflow, branch `master`. Approve the `prod` environment.
-4. After: `https://lorevolve.com/health` is 200, sign in, open a universe.
+4. Deploy PROD passes only once the new process answers (up to 12 minutes; a B1 restart has taken nine). After:
+   sign in, open a universe.
 
 A release with a migration cannot be undone by redeploying (migrations are forward-only, see azure-dev.md). Take
 Admin > Run backup now before releasing one.
