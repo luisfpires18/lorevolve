@@ -7,6 +7,7 @@ Plan: `docs/design/alpha-demo-page-plan.md`. Nothing here imports or calls the a
 | Path | What |
 | --- | --- |
 | `public/` | What is served: `index.html`, `privacy.html`, `styles.css` (a trimmed copy of the app's portal and landing styles), `app.js` (the dialog), `_headers`, `assets/` |
+| `?v=` on `/app.js` and `/styles.css` | Browsers keep those two for 4 hours (the zone's cache setting); bump the date in `index.html` and `privacy.html` whenever either changes, or returning visitors run the old one |
 | `public/assets/shots/` | One 1280x800 WebP per feature card, named as `index.html` references them |
 | `functions/api/apply.js` | `POST /api/apply`: Turnstile check, validation, one row per send in D1 (never overwrites: addresses are not verified) |
 | `functions/api/survey.js` | `GET`/`POST /api/survey`: survey answers keyed by the application's survey token, one row per send |
