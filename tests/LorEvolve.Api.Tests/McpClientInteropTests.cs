@@ -202,6 +202,8 @@ public sealed class McpClientInteropTests(McpInteropFixture fixture) : IClassFix
     [InlineData("255.255.255.255", false)]
     [InlineData("192.0.2.1", false)]
     [InlineData("198.18.0.1", false)]
+    [InlineData("168.63.129.16", false)]
+    [InlineData("168.63.129.17", true)]
     [InlineData("::1", false)]
     [InlineData("::", false)]
     [InlineData("fe80::1", false)]

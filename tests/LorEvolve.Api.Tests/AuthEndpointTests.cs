@@ -121,6 +121,27 @@ public sealed class AuthEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
     }
 
     [Fact]
+    public async Task A_locked_out_account_answers_like_one_that_does_not_exist()
+    {
+        using var registrar = _factory.CreateClient();
+        await Register(registrar, "lockouttarget");
+
+        using var attacker = _factory.CreateClient();
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            await Login(attacker, "lockouttarget", "Not-the-password-9!");
+        }
+
+        // Locked now: even the right password is refused, and nothing tells this account from a made-up one (N-3).
+        var locked = await Login(attacker, "lockouttarget", Password);
+        var noSuchUser = await Login(attacker, "nobodyhere", "Not-the-password-9!");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, locked.StatusCode);
+        Assert.Equal(noSuchUser.StatusCode, locked.StatusCode);
+        Assert.Equal(await noSuchUser.Content.ReadAsStringAsync(), await locked.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Me_requires_authentication()
     {
         using var client = _factory.CreateClient();

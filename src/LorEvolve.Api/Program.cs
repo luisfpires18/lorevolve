@@ -82,6 +82,7 @@ var app = builder.Build();
 app.UseLorEvolveForwardedHeaders();
 app.UseLorEvolveSecurityHeaders();
 app.UseLorEvolveRobotsHeaders();
+app.UseLorEvolveSameOriginWrites(corsOrigins);
 
 // Early, so whatever follows that throws answers RFC 7807 with a trace id rather than an empty 500.
 app.UseLorEvolveUnhandledFailures();

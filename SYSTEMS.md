@@ -55,9 +55,10 @@ Repository index. Paths and one-line responsibilities only.
 | `Features/Seo/SeoEndpoints.cs` | `/robots.txt`, `/sitemap.xml` (effective-public addresses only, per request, `no-cache`), the shell renderer and `ShellTemplate` (the `lorevolve:head` markers), `X-Robots-Tag: noindex` on `/api`. |
 | `Hosting/ProxyHeaders.cs` | Honouring `X-Forwarded-Proto` behind a TLS-terminating proxy. |
 | `Hosting/SecurityHeaders.cs` | Issue #33 M-4: every response (including the exception handler's 500) carries `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin` and CSP `frame-ancestors 'none'; object-src 'none'; base-uri 'self'` (no `script-src` yet); HSTS outside Development. A route's own header wins. |
+| `Hosting/SameOriginWrites.cs` | N-1 (#33 Part 3): an unsafe method on `/api` refused (403 `cross_origin_write`) when `Sec-Fetch-Site` or `Origin` says another origin; a sibling subdomain is same-site, so the Strict cookie alone does not cover it. |
 | `Hosting/ResponseCompression.cs` | Performance audit P01: Brotli then gzip for text responses over HTTPS, `/oauth` and `/mcp` left out by path (BREACH reasoning in the file). |
 | `Features/Health/HealthEndpoints.cs` | `/health` and `/api/health`. |
-| `Features/Auth/AuthSetup.cs` | Identity registration and cookie session configuration; the cookie's `OnValidatePrincipal` is `AccountSessions`. |
+| `Features/Auth/AuthSetup.cs` | Identity registration and cookie session configuration (deployed name `__Host-lorevolve.session`, N-1); the cookie's `OnValidatePrincipal` is `AccountSessions`. |
 | `Features/Auth/AccountSessions.cs` | ADR 0059: every signed-in request - account gone, blocked, or a stamp other than the cookie's ends the session; one keyed read tagged `lorevolve:session-check`, then Identity's own validator. |
 | `Features/Auth/DataProtectionSetup.cs` | Where the key ring lives, when a path is configured. |
 | `Features/Auth/AuthEndpoints.cs` | Register, login, logout and current-user endpoints. Login checks the password, then the block (403 `account_blocked`); `me` carries `isAdmin` (ADR 0059). |

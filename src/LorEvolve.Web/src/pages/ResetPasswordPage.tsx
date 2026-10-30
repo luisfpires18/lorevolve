@@ -5,11 +5,15 @@ import { Field } from '../components/Field'
 import { ApiError, apiFetch } from '../lib/api'
 
 /**
- * The page a password reset email opens (#69): `/reset-password?user=&token=`. A new password ends every session the
- * account had, so it signs in afresh rather than here.
+ * The page a password reset email opens (#69): `/reset-password#user=&token=`, the token in the fragment so it never
+ * reaches a request log. A `?user=&token=` link sent before that change still works. A new password ends every session
+ * the account had, so it signs in afresh rather than here.
  */
 export default function ResetPasswordPage() {
-  const query = new URLSearchParams(useLocation().search)
+  const location = useLocation()
+  const query = new URLSearchParams(
+    location.hash.length > 1 ? location.hash.slice(1) : location.search,
+  )
   const userId = query.get('user') ?? ''
   const token = query.get('token') ?? ''
 
