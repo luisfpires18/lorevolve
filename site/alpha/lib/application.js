@@ -3,7 +3,7 @@
 // that counts. Survey answers are not part of it: they go to /api/survey (lib/survey.js).
 
 // Bump when the consent wording or privacy.html changes in substance, so every row says what its sender agreed to.
-export const PRIVACY_VERSION = '1'
+export const PRIVACY_VERSION = '2'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
