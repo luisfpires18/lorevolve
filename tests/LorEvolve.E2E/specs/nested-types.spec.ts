@@ -227,7 +227,11 @@ test.describe('Lore with nested types', () => {
     await expect(page.getByLabel('Entry type').locator('option:checked')).toHaveText(
       'Runes › Material Runes',
     )
-    await page.goBack()
+    // Back on the type, its page is read at once; that read is over before the crumb is pressed.
+    await Promise.all([
+      page.waitForResponse((response) => /\/entities\?/.test(response.url())),
+      page.goBack(),
+    ])
     await expect(heading(page)).toHaveText('Material Runes')
 
     // The Lore crumb is Lore with no type chosen - nothing current, nothing read - not every entry.
