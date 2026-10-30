@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test'
 import { PASSWORD, post, unique } from './support/trash'
 import { acceptConfirm, dismissConfirm } from './support/confirm'
+import { expectWritten, selectWritten, writtenSelection } from './support/manuscript'
 
 /**
  * Lore Context (task 048): the manuscript's Lore drawer. Each test builds its own account and universe.
@@ -129,7 +130,7 @@ test.describe('Lore Context', () => {
     // Unsaved prose with a selection in it.
     const editor = page.getByTestId('manuscript-editor')
     await editor.fill('The ferry left at dawn.')
-    await editor.evaluate((box: HTMLTextAreaElement) => box.setSelectionRange(4, 9))
+    await selectWritten(editor, 4, 9)
     await expect(page.getByTestId('manuscript-save')).toBeEnabled()
 
     // Closed by default; opened from the manuscript's tools.
@@ -189,10 +190,8 @@ test.describe('Lore Context', () => {
     await drawer.getByTestId('lore-context-close').click()
     await expect(drawer).toHaveCount(0)
     await expect(trigger).toBeFocused()
-    await expect(editor).toHaveValue('The ferry left at dawn.')
-    expect(
-      await editor.evaluate((box: HTMLTextAreaElement) => [box.selectionStart, box.selectionEnd]),
-    ).toEqual([4, 9])
+    await expectWritten(editor, 'The ferry left at dawn.')
+    expect(await writtenSelection(editor)).toEqual([4, 9])
     await expect(page.getByTestId('manuscript-save')).toBeEnabled()
     await expect(page.getByTestId('manuscript-lore')).toContainText('Mira Holt')
     await expect(page.getByTestId('manuscript-lore')).not.toContainText('Akron Vale')
@@ -204,7 +203,7 @@ test.describe('Lore Context', () => {
     await page.keyboard.press('Control+s')
     await expect(page.getByTestId('manuscript-status')).toHaveText('Saved')
     await page.reload()
-    await expect(page.getByTestId('manuscript-editor')).toHaveValue('The ferry left at dawn.')
+    await expectWritten(page.getByTestId('manuscript-editor'), 'The ferry left at dawn.')
     await page.getByTestId('lore-context-trigger').click()
     await expect(drawer.getByTestId('lore-context-linked')).toHaveCount(1)
     await expect(drawer.getByTestId('lore-context-linked')).toContainText('Mira Holt')
@@ -226,7 +225,7 @@ test.describe('Lore Context', () => {
     await drawer.getByTestId('lore-preview-open').click()
     await dismissConfirm(page)
     await expect(page).toHaveURL(/\/manuscript\//)
-    await expect(page.getByTestId('manuscript-editor')).toHaveValue('Not saved yet.')
+    await expectWritten(page.getByTestId('manuscript-editor'), 'Not saved yet.')
 
     await drawer.getByTestId('lore-preview-open').click()
     await acceptConfirm(page)
@@ -292,7 +291,7 @@ test.describe('Lore Context', () => {
       'That didn’t save. Try again.',
     )
     await expect(drawer.getByTestId('lore-context-linked')).toHaveCount(2)
-    await expect(page.getByTestId('manuscript-editor')).toHaveValue('Draft in progress.')
+    await expectWritten(page.getByTestId('manuscript-editor'), 'Draft in progress.')
   })
 
   test('search and preview work from the keyboard, and Escape closes', async ({ page }) => {
@@ -415,7 +414,7 @@ test.describe('Lore Context', () => {
     await expect(drawer.getByTestId('lore-context-linked')).toContainText('Akron Vale')
     await drawer.getByTestId('lore-context-close').click()
     await expect(drawer).toHaveCount(0)
-    await expect(page.getByTestId('manuscript-editor')).toHaveValue('Written on the train.')
+    await expectWritten(page.getByTestId('manuscript-editor'), 'Written on the train.')
   })
 })
 

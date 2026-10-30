@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { chooseLoreType } from './support/lore'
+import { expectWritten, writtenSelection } from './support/manuscript'
 
 /**
  * Titles and names written right to left, or mixing scripts, drawn in their own direction.
@@ -1041,19 +1042,19 @@ test.describe('authored prose direction', () => {
     // ---- The text: typed, saved from the keyboard, read back exactly ----
 
     const editor = page.getByTestId('manuscript-editor')
-    expect(await isParagraphwise(editor)).toBe('plaintext')
+    // Each line of the editor is a paragraph of its own, laid out by its own first letter.
+    expect(await isParagraphwise(editor.locator('p').first())).toBe('plaintext')
     expect(await computedDirection(editor)).toBe('ltr')
     const prose = [Prose.english, Prose.year, Prose.after, Prose.hebrew].join('\n\n')
     await editor.click()
     await page.keyboard.type(prose)
-    await expect(editor).toHaveValue(prose)
+    await expectWritten(editor, prose)
 
     // The caret still moves through the text logically.
-    const caret = () => editor.evaluate((field: HTMLTextAreaElement) => field.selectionStart)
     await page.keyboard.press('ControlOrMeta+Home')
-    expect(await caret()).toBe(0)
+    await expect.poll(() => writtenSelection(editor)).toEqual([0, 0])
     await page.keyboard.press('ControlOrMeta+End')
-    expect(await caret()).toBe(prose.length)
+    await expect.poll(() => writtenSelection(editor)).toEqual([prose.length, prose.length])
 
     await Promise.all([
       page.waitForResponse(
@@ -1073,7 +1074,7 @@ test.describe('authored prose direction', () => {
     expect(stored.content).toBe(prose)
 
     await page.reload()
-    await expect(page.getByTestId('manuscript-editor')).toHaveValue(prose)
+    await expectWritten(page.getByTestId('manuscript-editor'), prose)
     await expectLorEvolveStaysLeftToRight(page, [
       page.getByTestId('story-views'),
       page.locator('.manuscript__tools'),

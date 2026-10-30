@@ -1,6 +1,6 @@
 # ADR 0058 - A manuscript mention is one plain-text token, resolved by id, shown as stored while writing and as a name everywhere else
 
-Status: accepted (2026-10-25), amended 2026-10-29 (the Write view's backdrop; public links). GitHub issue 31. Amends ADR 0027 (what a manuscript's text may hold and how it is read),
+Status: accepted (2026-10-25), amended 2026-10-29 (the Write view's backdrop; public links) and 2026-10-30 (Write is a Tiptap editor). GitHub issue 31. Amends ADR 0027 (what a manuscript's text may hold and how it is read),
 ADR 0032 (one rewrite inside authored text on restore) and ADR 0046 (what an outside app reads of prose).
 
 ## Context
@@ -90,3 +90,27 @@ everywhere it appears, written as the prose wrote it, in one edit of the text bo
 
 **Ceiling.** The faded markup still takes the width of a GUID. Hiding it needs a rich editor over the same storage
 (option E2 above): a larger change the owner decides on.
+
+## Amendment (2026-10-30): Write is a Tiptap editor, each mention a chip
+
+The owner chose option E2 (the ceiling above): the text box and its backdrop are gone, and Write is a Tiptap editor over
+the same storage. Nothing stored changes: the manuscript is still plain text, each mention still `@[Name](lore:<id>)`, so
+the public page, the assistant, MCP, search, history, recovery copies, the version check and backups read exactly what
+they read before.
+
+**What the editor holds.** Its own schema, nothing more (`components/ManuscriptWriter.tsx`): a paragraph per line of the
+stored text, keeping its spacing as typed, plain text, and a mention node carrying the name and the id exactly as stored.
+No marks and no other blocks, so nothing can be written that the plain text cannot hold. `manuscriptDoc` and
+`manuscriptText` in `lore/mentions.ts` turn the text into that document and back, exactly; line breaks read as `\n`.
+A mention is drawn as a chip with its name; the caret steps over it and Backspace takes it whole.
+
+**What moved, unchanged in effect.** The `@` suggestions (same rules, read from the end of the caret's line only),
+Enter, Tab, Up, Down and Escape, `aria-activedescendant` on the editor; undo and redo are the editor's own, a chosen
+mention and "Link names from this scene's Lore" each one step of their own. A recovered draft or a restored version
+replaces the editor's text without becoming a step to undo. A held editor is read-only (`aria-readonly`). Copying gives
+other programs the prose with names; plain text pasted in is read as stored text, so a pasted token is a chip again;
+markup from other pages is taken as plain text so its spacing and line breaks are not folded.
+
+**Speed.** Measured in development mode at 99,000 characters with 830 mentions: no long task while typing, each
+keystroke painted within a frame. At 4x CPU throttling a keystroke costs about 65 ms, most of it React development
+re-rendering the page around the editor; the editor's own reading of its text back is about 1.5 ms of that.

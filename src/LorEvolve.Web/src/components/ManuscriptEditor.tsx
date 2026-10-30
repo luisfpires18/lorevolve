@@ -1,13 +1,6 @@
-import {
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-  type SyntheticEvent,
-} from 'react'
+import { closeHistory } from '@tiptap/pm/history'
+import type { Editor } from '@tiptap/react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useUniverseAccess } from '../universes/access'
 import { SaveAction } from './SaveAction'
 import { AtSign, FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
@@ -16,13 +9,10 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EditConflict, LatestText } from './EditConflict'
 import { LoreContext } from './LoreContext'
-import { MentionSuggestions } from './MentionSuggestions'
-import { useMentionSearch } from '../lore/mentionSearch'
-import { caretPoint } from '../lib/caret'
-import { findMentions, mentionQueryAt, mentionToken, plainMentions } from '../lore/mentions'
-import { MentionMarks, MentionProse } from './MentionProse'
+import { findMentions, manuscriptDoc, plainMentions } from '../lore/mentions'
+import { MentionProse } from './MentionProse'
+import { ManuscriptWriter } from './ManuscriptWriter'
 import { NameLinker } from './NameLinker'
-import type { EntitySummary } from '../lore/types'
 import { ManuscriptHistory } from './ManuscriptHistory'
 import { ReviewComments } from './ReviewComments'
 import { describeSceneSuggestion } from '../stories/sceneDraft'
@@ -91,8 +81,9 @@ interface ManuscriptEditorProps {
 }
 
 /**
- * One scene's prose, and nothing but: a plain text box that keeps every line break, blank line and character exactly as
- * typed. No formatting, no Markdown and no reading of the text - a name written here links to nothing.
+ * One scene's prose, and nothing but: plain text that keeps every line break, blank line and character exactly as typed.
+ * No formatting and no Markdown. The one thing read in it is a Lore mention, drawn in Write as a chip with its name and
+ * stored as `@[Name](lore:<id>)` (ADR 0058).
  *
  * Above it, where the scene is told, its title, and the manuscript's own history - the one tool beside the title, because
  * recovering a version is part of writing - and Lore, the scene's lore in a drawer over the prose (task 048). Edit scene, which opens the scene's own drawer in place, and Show in Scenes,
@@ -130,7 +121,6 @@ export function ManuscriptEditor({
   const access = useUniverseAccess()
   const sceneId = scene.id
   const titleId = useId()
-  const editorId = useId()
   const statusId = useId()
   const tooLongId = useId()
   const recoveryId = useId()
@@ -154,26 +144,14 @@ export function ManuscriptEditor({
   // On a phone the scene's planning folds behind Details, so the prose starts on the first screen. Wider, it is always shown.
   const [isContextOpen, setIsContextOpen] = useState(false)
   const [historyKey, setHistoryKey] = useState(0)
-  // Write shows the manuscript as stored, mentions as their markup; Read shows it as prose, each mention a link.
+  // Write is the editor, each mention a chip; Read shows the prose as a reader reads it, each mention a link.
   const [isReading, setIsReading] = useState(false)
   const [isLinking, setIsLinking] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const inFlight = useRef(false)
-  const editor = useRef<HTMLTextAreaElement>(null)
-  const backdrop = useRef<HTMLDivElement>(null)
+  const editor = useRef<Editor | null>(null)
   const shortcut = useRef<() => void>(() => {})
-  const suggestionsId = useId()
-  // The @ mention being typed (issue 31): where its `@` is, the words after it, and where to draw the suggestions.
-  const [mention, setMention] = useState<{
-    start: number
-    query: string
-    top: number
-    left: number
-  } | null>(null)
-  const [activeSuggestion, setActiveSuggestion] = useState(0)
-  // An `@` the author closed the suggestions on with Escape: it stays prose until the caret is at another one.
-  const dismissed = useRef<number | null>(null)
-  const suggestions = useMentionSearch(universeId, mention?.query ?? null)
+  const focusEditor = () => editor.current?.commands.focus(null, { scrollIntoView: false })
 
   useEffect(() => {
     const controller = new AbortController()
@@ -207,12 +185,6 @@ export function ManuscriptEditor({
   const offer = isReady && found && found.content !== stored.content ? found : null
   const isHeld = isReady && (offer !== null || found === undefined)
   const mentioned = isReady ? findMentions(draft) : []
-  // Only prose that holds a mention gets the backdrop; everything else is the plain text box it always was.
-  const isMarked = mentioned.length > 0 && !isHeld
-  useLayoutEffect(() => {
-    // The backdrop follows the text box wherever a render leaves it (its first showing included); scrolling is onScroll.
-    if (backdrop.current && editor.current) backdrop.current.scrollTop = editor.current.scrollTop
-  })
 
   // A copy identical to what is saved is nothing to recover: it goes without a word.
   useEffect(() => {
@@ -272,7 +244,7 @@ export function ManuscriptEditor({
       // than leave it nowhere, it goes back to the prose.
       requestAnimationFrame(() => {
         const active = document.activeElement
-        if (!active || active === document.body) editor.current?.focus({ preventScroll: true })
+        if (!active || active === document.body) focusEditor()
       })
     }
   }
@@ -298,92 +270,20 @@ export function ManuscriptEditor({
     }
   }, [])
 
-  /**
-   * Opens, moves or closes the mention suggestions to match the caret (issue 31): open while the caret ends an `@query`
-   * that could start a mention, closed for a selection, an email address, a finished mention, or an `@` closed with Escape.
-   * Reads the box, writes nothing to it.
-   */
-  function trackMention(box: HTMLTextAreaElement) {
-    const at =
-      box.readOnly || box.selectionStart !== box.selectionEnd
-        ? null
-        : mentionQueryAt(box.value, box.selectionStart)
-    if (at === null || at.start === dismissed.current) {
-      if (at === null) dismissed.current = null
-      setMention(null)
-      return
-    }
-    const point = caretPoint(box, at.start)
-    const width = box.clientWidth
-    setMention((current) => {
-      if (current === null || current.start !== at.start) setActiveSuggestion(0)
-      return {
-        start: at.start,
-        query: at.query,
-        top: box.offsetTop + point.top + point.lineHeight + 4,
-        left: box.offsetLeft + Math.max(0, Math.min(point.left, width - 288)),
-      }
-    })
-  }
-
-  /**
-   * Puts the chosen entry in place of the `@query` as one stored mention, through the browser's own insertion so it is one
-   * step of the text box's undo, exactly like typing it. The prose changes as any edit does: unsaved until Save.
-   */
-  function chooseMention(row: EntitySummary) {
-    const box = editor.current
-    if (!box || mention === null) return
-    const caret = box.selectionStart
-    const next = box.value[caret]
-    const text = mentionToken(row.name, row.id) + (next === undefined || /\S/.test(next) ? ' ' : '')
-    box.focus()
-    box.setSelectionRange(mention.start, caret)
-    if (!document.execCommand('insertText', false, text)) {
-      box.setRangeText(text, mention.start, caret, 'end')
-      setDraft(box.value)
-    }
-    dismissed.current = null
-    setMention(null)
-    setAnnouncement(`Mentioned ${row.name}.`)
-  }
-
-  /** The names the author confirmed, made mentions as one edit of the text box: one undo step, unsaved until Save. */
+  /** The names the author confirmed, made mentions as one edit: one undo step, unsaved until Save. */
   function linkFromLore(next: string, count: number) {
     setIsLinking(false)
-    const box = editor.current
-    if (!box) return
-    box.focus()
-    box.select()
-    if (!document.execCommand('insertText', false, next)) {
-      box.value = next
-      setDraft(next)
-    }
+    if (!editor.current) return
+    editor.current
+      .chain()
+      .command(({ tr }) => {
+        closeHistory(tr)
+        return true
+      })
+      .setContent(manuscriptDoc(next))
+      .run()
+    focusEditor()
     setAnnouncement(count === 1 ? 'Linked 1 name.' : `Linked ${count} names.`)
-  }
-
-  function onEditorKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
-    if (mention === null) return
-    const rows = suggestions.rows
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      event.stopPropagation()
-      dismissed.current = mention.start
-      setMention(null)
-      return
-    }
-    if (rows.length === 0) return
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault()
-      const step = event.key === 'ArrowDown' ? 1 : -1
-      setActiveSuggestion((current) => (current + step + rows.length) % rows.length)
-    } else if ((event.key === 'Enter' || event.key === 'Tab') && !event.shiftKey) {
-      event.preventDefault()
-      chooseMention(rows[Math.min(activeSuggestion, rows.length - 1)])
-    }
-  }
-
-  function onEditorSelect(event: SyntheticEvent<HTMLTextAreaElement>) {
-    trackMention(event.currentTarget)
   }
 
   function reread() {
@@ -402,7 +302,7 @@ export function ManuscriptEditor({
     setConflict(false)
     setHistoryKey((key) => key + 1)
     setAnnouncement('Your changes are still unsaved. Save when you’re ready.')
-    requestAnimationFrame(() => editor.current?.focus())
+    requestAnimationFrame(() => editor.current?.commands.focus())
   }
 
   /** Lets this window's unsaved prose go for the latest. The conflict notice has already asked. */
@@ -417,13 +317,13 @@ export function ManuscriptEditor({
     settle()
     setDraft(offer.content)
     setAnnouncement('The recovered draft is in the editor. It is not saved yet.')
-    requestAnimationFrame(() => editor.current?.focus())
+    requestAnimationFrame(() => editor.current?.commands.focus())
   }
 
   function discardDraft() {
     discard()
     setAnnouncement('The recovered draft was discarded. The saved manuscript is unchanged.')
-    requestAnimationFrame(() => editor.current?.focus())
+    requestAnimationFrame(() => editor.current?.commands.focus())
   }
 
   const hasContext =
@@ -733,62 +633,20 @@ export function ManuscriptEditor({
             />
           ) : null}
           {access.editContent && !isReading ? (
-            <div className="manuscript__write" data-marked={isMarked ? 'true' : undefined}>
-              {isMarked ? (
-                <div
-                  className="manuscript__text manuscript__backdrop"
-                  ref={backdrop}
-                  aria-hidden="true"
-                >
-                  <MentionMarks text={draft} />
-                </div>
-              ) : null}
-              <label className="visually-hidden" htmlFor={editorId}>
-                Manuscript of “{scene.title}”
-              </label>
-              <textarea
-                ref={editor}
-                id={editorId}
-                className="manuscript__text"
-                value={draft}
-                onChange={(event) => {
-                  setDraft(event.target.value)
-                  trackMention(event.target)
-                }}
-                onScroll={(event) => {
-                  if (backdrop.current) backdrop.current.scrollTop = event.currentTarget.scrollTop
-                }}
-                onSelect={onEditorSelect}
-                onKeyDown={onEditorKeyDown}
-                onBlur={() => setMention(null)}
-                readOnly={isHeld}
-                placeholder="Write the scene. Type @ to mention Lore."
-                spellCheck
-                aria-describedby={describedBy}
-                aria-invalid={isTooLong ? true : undefined}
-                aria-keyshortcuts="Control+S Meta+S"
-                aria-autocomplete="list"
-                aria-controls={mention && suggestions.rows.length > 0 ? suggestionsId : undefined}
-                aria-activedescendant={
-                  mention && suggestions.rows.length > 0
-                    ? `${suggestionsId}-${Math.min(activeSuggestion, suggestions.rows.length - 1)}`
-                    : undefined
-                }
-                data-testid="manuscript-editor"
-                data-held={isHeld ? 'true' : 'false'}
-              />
-              {mention && !isHeld ? (
-                <MentionSuggestions
-                  id={suggestionsId}
-                  search={suggestions}
-                  query={mention.query}
-                  active={Math.min(activeSuggestion, Math.max(0, suggestions.rows.length - 1))}
-                  position={{ top: mention.top, left: mention.left }}
-                  onChoose={chooseMention}
-                  onHover={setActiveSuggestion}
-                />
-              ) : null}
-            </div>
+            <ManuscriptWriter
+              universeId={universeId}
+              value={draft}
+              onChange={setDraft}
+              readOnly={isHeld}
+              label={`Manuscript of “${scene.title}”`}
+              placeholder="Write the scene. Type @ to mention Lore."
+              describedBy={describedBy}
+              invalid={isTooLong}
+              onAnnounce={setAnnouncement}
+              onReady={(made) => {
+                editor.current = made
+              }}
+            />
           ) : (
             // Read, and a collaborator who only reads (ADR 0041 amendment): the prose as prose, each mention a link to its
             // entry (issue 31).
