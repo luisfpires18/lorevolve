@@ -114,6 +114,23 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
+      # With WEBSITE_RUN_FROM_PACKAGE=1 the ZIP is mounted read-only as wwwroot and only a restarted process sees it, so
+      # nothing serves from a mix of old and new assemblies. Without it the upload swaps files under the running process:
+      # on 2026-10-29 and 2026-10-30 that threw BadImageFormatException until a restart. Setting it is an owner step.
+      - name: Read the app's settings
+        env:
+          APP: ${{ vars.AZURE_PROD_WEBAPP_NAME }}
+        run: |
+          id=$(az resource list --name "$APP" --resource-type Microsoft.Web/sites --query '[0].id' -o tsv)
+          rfp=$(az webapp config appsettings list --ids "$id" --query "[?name=='WEBSITE_RUN_FROM_PACKAGE'].value | [0]" -o tsv)
+          echo "APP_ID=$id" >> "$GITHUB_ENV"
+          echo "RUN_FROM_PACKAGE=$rfp" >> "$GITHUB_ENV"
+          [ "$rfp" = "1" ] || echo "::warning::WEBSITE_RUN_FROM_PACKAGE is not 1 on $APP: the deploy swaps files under the running process. See docs/deployment/azure-prod.md"
+
+      # Health below accepts only a process started after this moment.
+      - name: Mark the deploy start
+        run: echo "DEPLOY_STARTED=$(date -u +%s)" >> "$GITHUB_ENV"
+
       - name: Deploy to App Service
         id: deploy
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3.0.8
@@ -126,26 +143,32 @@ jobs:
           type: ZIP
           clean: true
 
-      # A ZIP deploy swaps files under the running process. On 2026-10-29 PROD went on serving from a mix of old and
-      # new assemblies (BadImageFormatException on every /api request) until it was restarted, so restart it outright.
+      # Without run-from-package the old process keeps serving from swapped files, so restart it outright. With it, the
+      # deploy restarts the app to mount the new package and a second restart would only lengthen the outage.
       - name: Restart the app
-        env:
-          APP: ${{ vars.AZURE_PROD_WEBAPP_NAME }}
-        run: az webapp restart --ids "$(az resource list --name "$APP" --resource-type Microsoft.Web/sites --query '[0].id' -o tsv)"
+        if: env.RUN_FROM_PACKAGE != '1'
+        run: az webapp restart --ids "$APP_ID"
 
-      # LorEvolve applies its migrations during startup and does not report healthy before they are done.
-      # /api/health, not /health: on 2026-10-29 /health answered 200 while every /api route failed.
-      - name: Check that PROD answers
+      # A release is good only once the new process answers. az webapp restart returns at once, and on 2026-10-30 the old
+      # process passed this check while the new container took nine minutes to come up, so 200 alone proves nothing:
+      # wait for /api/health's startedUtc to be later than the deploy start. LorEvolve applies its migrations during
+      # startup and does not answer before they are done. /api/health, not /health: on 2026-10-29 /health answered 200
+      # while every /api route failed.
+      - name: Check that PROD answers from the new process
         env:
           HEALTH_URL: ${{ steps.deploy.outputs.webapp-url }}/api/health
         run: |
-          for attempt in $(seq 1 20); do
-            code=$(curl -sS -o /dev/null -w '%{http_code}' "$HEALTH_URL" || echo 000)
-            echo "attempt $attempt: $code"
-            if [ "$code" = "200" ]; then exit 0; fi
+          deadline=$(( $(date -u +%s) + 720 ))
+          while [ "$(date -u +%s)" -lt "$deadline" ]; do
+            started=$(curl -sS -f --max-time 10 "$HEALTH_URL" | jq -r '.startedUtc // empty' || true)
+            if [ -n "$started" ] && [ "$(date -u -d "$started" +%s)" -gt "$DEPLOY_STARTED" ]; then
+              echo "new process answers, started $started"
+              exit 0
+            fi
+            echo "$(date -u +%T): ${started:-no answer}, want a process started after $(date -u -d "@$DEPLOY_STARTED" +%T)"
             sleep 15
           done
-          echo "PROD did not answer 200 at $HEALTH_URL"
+          echo "::error::PROD did not answer from a process started after the deploy within 12 minutes at $HEALTH_URL"
           exit 1
 
       - name: Sign out of Azure
