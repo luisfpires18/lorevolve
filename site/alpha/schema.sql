@@ -37,3 +37,10 @@ CREATE TABLE IF NOT EXISTS surveys (
 );
 
 CREATE INDEX IF NOT EXISTS surveys_application ON surveys (application_id, part);
+
+-- One row per video play, at most once per video per page load. Only which video and when: nothing about the viewer.
+CREATE TABLE IF NOT EXISTS video_plays (
+  id INTEGER PRIMARY KEY,
+  video TEXT NOT NULL CHECK (video IN ('walkthrough', 'mcp')),
+  created_at TEXT NOT NULL
+);

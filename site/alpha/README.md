@@ -11,6 +11,7 @@ Plan: `docs/design/alpha-demo-page-plan.md`. Nothing here imports or calls the a
 | `functions/api/apply.js` | `POST /api/apply`: Turnstile check, validation, one row per send in D1 (never overwrites: addresses are not verified) |
 | `functions/api/survey.js` | `GET`/`POST /api/survey`: survey answers keyed by the application's survey token, one row per send |
 | `functions/api/config.js` | `GET /api/config`: the public Turnstile site key |
+| `functions/api/play.js` | `POST /api/play`: counts a video play, one row per play, nothing about the viewer |
 | `lib/application.js`, `lib/survey.js` | Validation, shared by the functions and their checks |
 | `schema.sql` | The `applications` and `surveys` tables (`migrations/0002-surveys.sql` updates a database made before the surveys) |
 
@@ -69,6 +70,14 @@ version line in `privacy.html`.
 - Deleting a person's data: `DELETE FROM applications WHERE email = '<email>';` also deletes their survey rows.
   D1 applies the cascade only with `PRAGMA foreign_keys = ON` in effect, so check `SELECT COUNT(*) FROM surveys` after,
   or delete their survey rows first.
+
+## Video plays
+
+`POST /api/play` stores one row per video per page load in `video_plays` (which video, when; nothing about the viewer).
+On a database made before it: `npx wrangler d1 execute <database name> --remote --file site/alpha/migrations/0003-video-plays.sql`.
+
+- Totals: `SELECT video, COUNT(*) FROM video_plays GROUP BY video;`
+- Per day: `SELECT video, date(created_at) AS day, COUNT(*) FROM video_plays GROUP BY video, day ORDER BY day;`
 
 ## Running it locally
 
