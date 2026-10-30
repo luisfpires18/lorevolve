@@ -15,6 +15,7 @@ import { offered, SECTION_GROUPS, UPKEEP } from '../universes/sections'
 import { capabilitiesOf, ROLE_LABELS, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { preloadSections } from '../screens'
 import type { UniverseDetail } from '../universes/types'
 import { artworkUrl } from '../publishing/api'
 import type { UniverseArtworkRef } from '../publishing/types'
@@ -169,6 +170,20 @@ function Workspace() {
       typesRead.current?.abort()
     }
   }, [load, readTypes])
+
+  // Once the universe is open and the browser has nothing better to do, every section's code and an entry's are fetched,
+  // so the first visit to another one opens without a fallback.
+  const isReady = state.kind === 'ready'
+  useEffect(() => {
+    if (!isReady) return
+    // Safari has no idle callback; a second's wait stands in for it there.
+    if (typeof window.requestIdleCallback === 'function') {
+      const handle = window.requestIdleCallback(preloadSections)
+      return () => window.cancelIdleCallback(handle)
+    }
+    const timer = window.setTimeout(preloadSections, 1000)
+    return () => window.clearTimeout(timer)
+  }, [isReady])
 
   const setTypeList = useCallback((next: EntityType[]) => setTypes(next), [])
   const setGroupList = useCallback((next: EntityTypeGroup[]) => setTypeGroups(next), [])

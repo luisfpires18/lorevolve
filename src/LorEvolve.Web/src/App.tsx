@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from 'react'
+import { Suspense, type ReactNode } from 'react'
 import {
   createBrowserRouter,
   Navigate,
@@ -18,57 +18,46 @@ import { HistoryLeaveGuard } from './lib/leaveGuard'
 import { ProfileImageProvider } from './profile/ProfileImageProvider'
 import UniverseOverview from './pages/UniverseOverview'
 import UniverseWorkspace from './pages/UniverseWorkspace'
-
-/*
- * Screens are fetched when they are first opened, not when LorEvolve is.
- *
- * Everything below this comment is a leaf: a screen the author reaches by going somewhere. The
- * shell they go there from - the providers, the guards, the workspace chrome and its overview -
- * is imported directly above, because making the chrome a chunk of its own would only mean
- * fetching the frame before the frame can say which screen to fetch next. That is the waterfall
- * this split exists to avoid, not to create.
- *
- * `EntityPage` is why this is worth doing: it carries the rich-text editor, which is the largest
- * dependency LorEvolve has and is needed on exactly one screen.
- */
-const AdminWorkspace = lazy(() => import('./pages/AdminWorkspace'))
-const AiChangePage = lazy(() => import('./pages/AiChangePage'))
-const AiChangesPage = lazy(() => import('./pages/AiChangesPage'))
-const CanonPage = lazy(() => import('./pages/CanonPage'))
-const ConnectAuthorizePage = lazy(() => import('./pages/ConnectAuthorizePage'))
-const EntityPage = lazy(() => import('./pages/EntityPage'))
-const ExplorePage = lazy(() => import('./pages/ExplorePage'))
-const FamilyTreePage = lazy(() => import('./pages/FamilyTreePage'))
-const IdeaBoardPage = lazy(() => import('./pages/IdeaBoardPage'))
-const IdeaBoardsPage = lazy(() => import('./pages/IdeaBoardsPage'))
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
-const IdeaPage = lazy(() => import('./pages/IdeaPage'))
-const IdeasPage = lazy(() => import('./pages/IdeasPage'))
-const InvitationPage = lazy(() => import('./pages/InvitationPage'))
-const LandingPage = lazy(() => import('./pages/LandingPage'))
-const LoginPage = lazy(() => import('./pages/LoginPage'))
-const LorePage = lazy(() => import('./pages/LorePage'))
-const MapPage = lazy(() => import('./pages/MapPage'))
-const MapsPage = lazy(() => import('./pages/MapsPage'))
-const MassCreatePage = lazy(() => import('./pages/MassCreatePage'))
-const ProfilePage = lazy(() => import('./pages/ProfilePage'))
-const PublicAuthorPage = lazy(() => import('./pages/PublicAuthorPage'))
-const PublicLorePage = lazy(() => import('./pages/PublicLorePage'))
-const PublicStoryPage = lazy(() => import('./pages/PublicStoryPage'))
-const PublicWorldPage = lazy(() => import('./pages/PublicWorldPage'))
-const RegisterPage = lazy(() => import('./pages/RegisterPage'))
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
-const StoriesPage = lazy(() => import('./pages/StoriesPage'))
-const StoryPage = lazy(() => import('./pages/StoryPage'))
-const TimelinePage = lazy(() => import('./pages/TimelinePage'))
-const ChronologyPage = lazy(() => import('./pages/ChronologyPage'))
-const UniversePublish = lazy(() => import('./pages/UniversePublish'))
-const UniverseSettings = lazy(() => import('./pages/UniverseSettings'))
-const UniverseTrash = lazy(() => import('./pages/UniverseTrash'))
-const UniverseTypes = lazy(() => import('./pages/UniverseTypes'))
-const UniversesPage = lazy(() => import('./pages/UniversesPage'))
-const WorldRulePage = lazy(() => import('./pages/WorldRulePage'))
-const WorldRulesPage = lazy(() => import('./pages/WorldRulesPage'))
+import {
+  AdminWorkspace,
+  AiChangePage,
+  AiChangesPage,
+  CanonPage,
+  ChronologyPage,
+  ConnectAuthorizePage,
+  EntityPage,
+  ExplorePage,
+  FamilyTreePage,
+  ForgotPasswordPage,
+  IdeaBoardPage,
+  IdeaBoardsPage,
+  IdeaPage,
+  IdeasPage,
+  InvitationPage,
+  LandingPage,
+  LoginPage,
+  LorePage,
+  MapPage,
+  MapsPage,
+  MassCreatePage,
+  ProfilePage,
+  PublicAuthorPage,
+  PublicLorePage,
+  PublicStoryPage,
+  PublicWorldPage,
+  RegisterPage,
+  ResetPasswordPage,
+  StoriesPage,
+  StoryPage,
+  TimelinePage,
+  UniversePublish,
+  UniverseSettings,
+  UniverseTrash,
+  UniverseTypes,
+  UniversesPage,
+  WorldRulePage,
+  WorldRulesPage,
+} from './screens'
 
 /**
  * Held while a whole screen's code is fetched. The same plate the session probe holds behind
