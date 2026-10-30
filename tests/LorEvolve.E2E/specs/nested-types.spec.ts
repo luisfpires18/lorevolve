@@ -229,6 +229,9 @@ test.describe('Lore with nested types', () => {
     )
     await page.goBack()
     await expect(heading(page)).toHaveText('Material Runes')
+    // The screen opens on the workspace's copy of the types, so its heading is drawn before its own entries are read:
+    // wait for them, so the reads counted below are only the crumb's.
+    await expect.poll(() => names(page)).toEqual(['Granite rune', 'Iron rune', 'Silver rune'])
 
     // The Lore crumb is Lore with no type chosen - nothing current, nothing read - not every entry.
     const reads: string[] = []
