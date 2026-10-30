@@ -1739,11 +1739,11 @@ public static class EntityTypeEndpoints
     }
 
     /// <summary>
-    /// One field as the types list reads it, active or archived, with how many entries hold a value for it, how many of
-    /// those are in the Trash and whether an older version records one - what decides whether it can be deleted, and what an
-    /// archived field still keeps. The history check reads one index row per field at most.
+    /// One field as the types list reads it, active or archived. Its counts - how many entries hold a value for it, how many
+    /// of those are in the Trash, whether an older version records one - are read for every field at once and put in by
+    /// <see cref="LoadTypesAsync"/>: what decides whether it can be deleted, and what an archived field still keeps.
     /// </summary>
-    private static Expression<Func<EntityFieldDefinition, FieldDefinitionResponse>> ToFieldResponse(LorEvolveDbContext db) =>
+    private static readonly Expression<Func<EntityFieldDefinition, FieldDefinitionResponse>> ToFieldResponse =
         field => new FieldDefinitionResponse(
             field.Id,
             field.Name,
@@ -1759,38 +1759,25 @@ public static class EntityTypeEndpoints
             field.TargetEntityTypeId,
             field.TargetGroupId,
             field.ArchivedAt,
-            // An entry holds the field through its own value or an era's override of it (Issue #41): its own values' holders,
-            // plus the entries holding only an override - both read through the field's index, as before.
-            field.Values.Select(value => value.EntityId).Distinct().Count()
-                + db.EntityEraFieldValues
-                    .Where(value => value.FieldDefinitionId == field.Id
-                        && !db.EntityFieldValues.Any(own => own.FieldDefinitionId == field.Id && own.EntityId == value.EntityEra!.EntityId))
-                    .Select(value => value.EntityEra!.EntityId)
-                    .Distinct()
-                    .Count(),
-            field.Values.Where(value => value.Entity!.DeletedAt != null).Select(value => value.EntityId).Distinct().Count()
-                + db.EntityEraFieldValues
-                    .Where(value => value.FieldDefinitionId == field.Id
-                        && value.EntityEra!.Entity!.DeletedAt != null
-                        && !db.EntityFieldValues.Any(own => own.FieldDefinitionId == field.Id && own.EntityId == value.EntityEra.EntityId))
-                    .Select(value => value.EntityEra!.EntityId)
-                    .Distinct()
-                    .Count(),
-            db.EntityRevisionFieldValues.Any(value => value.FieldDefinitionId == field.Id),
+            0,
+            0,
+            false,
             field.Version,
             field.SectionId);
 
-
+    /// <summary>
+    /// The universe's types with their fields, sections and counts. The counts are read in three grouped queries over the
+    /// whole universe and composed here, rather than as correlated counts per type and four per field inside one projection,
+    /// which cost the most on the slowest plan (workspace load chain, 2026-10-30). The response is unchanged.
+    /// </summary>
     internal static async Task<List<EntityTypeResponse>> LoadTypesAsync(
         LorEvolveDbContext db,
         Guid universeId,
         CancellationToken cancellationToken)
     {
         var familyTree = FamilyTreeEligibility.TypeIds(db, universeId);
-        var toField = ToFieldResponse(db);
 
-        return EntityTypeHierarchy.Preorder(
-            await db.EntityTypes.AsNoTracking()
+        var types = await db.EntityTypes.AsNoTracking()
             .Where(type => type.UniverseId == universeId)
             .Select(type => new EntityTypeResponse(
                 type.Id,
@@ -1799,13 +1786,13 @@ public static class EntityTypeEndpoints
                 type.Icon,
                 type.AccentColor,
                 type.DisplayOrder,
-                db.Entities.Count(entity => entity.EntityTypeId == type.Id),
-                db.Entities.Count(entity => entity.EntityTypeId == type.Id && entity.DeletedAt != null),
+                0,
+                0,
                 type.Fields.AsQueryable()
                     .Where(field => field.ArchivedAt == null)
                     .OrderBy(field => field.DisplayOrder)
                     .ThenBy(field => field.Name)
-                    .Select(toField)
+                    .Select(ToFieldResponse)
                     .ToList(),
                 type.FamilyTreeEligible,
                 type.ParentId,
@@ -1814,7 +1801,7 @@ public static class EntityTypeEndpoints
                     .Where(field => field.ArchivedAt != null)
                     .OrderBy(field => field.DisplayOrder)
                     .ThenBy(field => field.Name)
-                    .Select(toField)
+                    .Select(ToFieldResponse)
                     .ToList(),
                 type.FieldSections
                     .OrderBy(section => section.DisplayOrder)
@@ -1823,9 +1810,65 @@ public static class EntityTypeEndpoints
                     .Select(section => new FieldSectionResponse(section.Id, section.Name, section.DisplayOrder, section.StartsCollapsed))
                     .ToList(),
                 type.FieldLayoutVersion,
-                // What Lore's listing shows of the type's own entries (EntityEndpoints.ListAsync): live and not archived.
-                db.Entities.Count(entity => entity.EntityTypeId == type.Id && entity.DeletedAt == null && !entity.IsArchived)))
-            .ToListAsync(cancellationToken),
+                0))
+            .ToListAsync(cancellationToken);
+
+        // What Lore's listing shows of a type's own entries (EntityEndpoints.ListAsync) is the live, unarchived ones.
+        var entries = await db.Entities
+            .Where(entity => entity.UniverseId == universeId)
+            .GroupBy(entity => entity.EntityTypeId)
+            .Select(group => new
+            {
+                TypeId = group.Key,
+                All = group.Count(),
+                Trashed = group.Count(entity => entity.DeletedAt != null),
+                Listed = group.Count(entity => entity.DeletedAt == null && !entity.IsArchived),
+            })
+            .ToDictionaryAsync(row => row.TypeId, cancellationToken);
+
+        // An entry holds a field through its own value or an era's override of it (Issue #41): one row per entry and field,
+        // whichever way it holds it, so an entry holding both is counted once.
+        var holders = await db.EntityFieldValues
+            .Where(value => value.Entity!.UniverseId == universeId)
+            .Select(value => new { value.FieldDefinitionId, value.EntityId, Trashed = value.Entity!.DeletedAt != null })
+            .Union(db.EntityEraFieldValues
+                .Where(value => value.EntityEra!.Entity!.UniverseId == universeId)
+                .Select(value => new
+                {
+                    value.FieldDefinitionId,
+                    value.EntityEra!.EntityId,
+                    Trashed = value.EntityEra.Entity!.DeletedAt != null,
+                }))
+            .GroupBy(holder => holder.FieldDefinitionId)
+            .Select(group => new { FieldId = group.Key, All = group.Count(), Trashed = group.Count(holder => holder.Trashed) })
+            .ToDictionaryAsync(row => row.FieldId, cancellationToken);
+
+        // Whether an older version records the field: one index row per field at most.
+        var inHistory = (await db.EntityFieldDefinitions
+            .Where(field => field.EntityType!.UniverseId == universeId
+                && db.EntityRevisionFieldValues.Any(value => value.FieldDefinitionId == field.Id))
+            .Select(field => field.Id)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        FieldDefinitionResponse WithCounts(FieldDefinitionResponse field) =>
+            holders.TryGetValue(field.Id, out var held)
+                ? field with { EntryCount = held.All, TrashedEntryCount = held.Trashed, UsedInHistory = inHistory.Contains(field.Id) }
+                : field with { UsedInHistory = inHistory.Contains(field.Id) };
+
+        return EntityTypeHierarchy.Preorder(
+            types.Select(type =>
+            {
+                entries.TryGetValue(type.Id, out var counted);
+                return type with
+                {
+                    EntityCount = counted?.All ?? 0,
+                    TrashedEntityCount = counted?.Trashed ?? 0,
+                    ListedEntityCount = counted?.Listed ?? 0,
+                    Fields = [.. type.Fields.Select(WithCounts)],
+                    ArchivedFields = [.. type.ArchivedFields!.Select(WithCounts)],
+                };
+            }).ToList(),
             type => type.Id,
             type => type.ParentId,
             type => type.DisplayOrder,

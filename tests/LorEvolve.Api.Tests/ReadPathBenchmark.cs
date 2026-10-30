@@ -27,6 +27,7 @@ public sealed class ReadPathBenchmark(LorEvolveApiFactory factory, ITestOutputHe
     private const int Moments = 1_000;
     private const int Scenes = 200;
     private const int Runs = 20;
+    private const int FieldsPerType = 6;
 
     [Fact]
     public async Task The_common_reads_take()
@@ -63,6 +64,25 @@ public sealed class ReadPathBenchmark(LorEvolveApiFactory factory, ITestOutputHe
                 CreatedAt = now,
                 UpdatedAt = now,
             }));
+            // Fields on every type, and a value in each Character field for every entry, so the types read carries the
+            // per-field counts a real universe asks of it (workspace load chain, 2026-10-30).
+            var typeIds = await db.EntityTypes.Where(row => row.UniverseId == u).Select(row => row.Id).ToListAsync();
+            var fields = typeIds.SelectMany(typeId => Enumerable.Range(0, FieldsPerType).Select(index => new EntityFieldDefinition
+            {
+                Id = Guid.NewGuid(),
+                EntityTypeId = typeId,
+                Name = $"Bench field {index}",
+                Kind = EntityFieldKind.ShortText,
+                DisplayOrder = 100 + index,
+            })).ToList();
+            db.EntityFieldDefinitions.AddRange(fields);
+            db.EntityFieldValues.AddRange(fields.Where(field => field.EntityTypeId == type).SelectMany(field => ids.Select(id => new EntityFieldValue
+            {
+                Id = Guid.NewGuid(),
+                EntityId = id,
+                FieldDefinitionId = field.Id,
+                TextValue = "A value",
+            })));
             var kind = new RelationshipType { Id = Guid.NewGuid(), UniverseId = u, Name = "Knows", CreatedAt = now, UpdatedAt = now };
             db.RelationshipTypes.Add(kind);
             var random = new Random(Entries);
