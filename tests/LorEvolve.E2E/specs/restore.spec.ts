@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
+import { expectWritten } from './support/manuscript'
 import { png } from './support/png'
 import { entryText } from './support/zip'
 
@@ -256,7 +257,8 @@ test.describe('restore a backup', () => {
     )
     const council = detail.scenes.find((scene) => scene.title === 'The Harbour Council')!
     await page.goto(`/app/universes/${restoredId}/stories/${story.id}/manuscript/${council.id}`)
-    await expect(page.locator('textarea.manuscript__text')).toHaveValue(
+    await expectWritten(
+      page.getByTestId('manuscript-editor'),
       'Snow fell on the Vellmarch quay while the council argued.',
     )
     await page.goto(`/app/universes/${restoredId}/stories/${story.id}/plot`)
