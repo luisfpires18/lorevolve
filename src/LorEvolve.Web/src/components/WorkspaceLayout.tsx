@@ -34,8 +34,6 @@ export function WorkspaceLayout() {
 
   return (
     <div className="home">
-      {/* LorEvolve's own atmosphere behind the bar and the heading; decorative, out of the flow. */}
-      <div className="atmosphere" aria-hidden="true" data-source="lorevolve" />
       <header className="workspacebar">
         <Link
           className="home__brand workspacebar__brand"

@@ -164,7 +164,8 @@ The same principle, one level down: nothing inside a universe is public because 
 
 ## Amendment (2026-10-04, Product refinement 031) - four public counts
 
-- `GET /api/public/stats` answers `{ creators, universes, publishedWorlds, privateWorlds }` for LorEvolve's home page:
+- `GET /api/public/stats` answers `{ creators, universes, publishedWorlds, privateWorlds }` for LorEvolve's home page
+  (which stopped showing them on 2026-10-30, ADR 0068; the endpoint stays):
   accounts, universe rows (archived included), universes passing `PublicationRules.Public`, and the difference. Counts
   only - no name, slug, id, owner or per-account figure - so it cannot be used to find or enumerate a private universe.
   `no-cache`, like every public route.

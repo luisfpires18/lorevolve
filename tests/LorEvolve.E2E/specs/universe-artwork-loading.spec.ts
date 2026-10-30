@@ -244,16 +244,16 @@ test.describe('universe artwork arrives with the universe', () => {
     expect(lookups).toEqual([])
   })
 
-  test('a world without artwork is ready with LorEvolve’s atmosphere, settled', async ({
-    page,
-  }) => {
+  test('a world without artwork is ready with no atmosphere at all, settled', async ({ page }) => {
     await account(page)
     const world = await universe(page)
     const first = await recordFirstRenders(page)
 
     await page.goto(`/app/universes/${world.id}`)
     await expect(page.getByTestId('workspace-name')).toHaveText(world.name)
-    expect(await first.atmosphere()).toEqual(['lorevolve'])
+    // No stock picture stands in for a missing card (ADR 0068): the element is simply not there.
+    expect(await first.atmosphere()).toEqual([])
+    await expect(page.getByTestId('workspace-atmosphere')).toHaveCount(0)
     await expect(page.locator('img.sidebar__art')).toHaveCount(0)
   })
 
@@ -285,7 +285,8 @@ test.describe('universe artwork arrives with the universe', () => {
 
       await card.click()
       await expect(member.getByTestId('workspace-name')).toHaveText(world.name)
-      expect(await first.atmosphere()).toEqual(['lorevolve'])
+      expect(await first.atmosphere()).toEqual([])
+      await expect(member.getByTestId('workspace-atmosphere')).toHaveCount(0)
       expect(lookups).toEqual([])
       await context.close()
     }

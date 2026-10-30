@@ -77,13 +77,9 @@ they have a public universe. Their photo is shown there only if they choose, per
 One per universe (`UniverseArtworks`): the untouched original and one 16:10 card, at most 960 px wide, never
 enlarged, cut on the server from the frame the author chose in the shared cropper, metadata stripped. 16:10 because
 the portal card is about as tall as wide with the picture as its top five eighths. Only the card is ever public. A
-hero cut for Task 011 is a new frame of the same original. The static Explore background is not universe artwork:
-`src/LorEvolve.Web/src/portal/explore-worlds-background.png`, owner-approved, 1916 x 821, 2,370,934 bytes, SHA-256
-`31e6995251e1145f792664fac61de586fd730f63b3f30dc7d4b8850fce5abe49`. Never edited, recompressed or converted; CSS crops
-it. Vite emits it unchanged under a content-hashed name, which the service worker may cache for good. Since 012 it is
-delivered as a derivative beside it, `explore-worlds-background.webp` (250,016 bytes, same 1916 x 821, PSNR 43 dB against
-the PNG, made with `ffmpeg -i explore-worlds-background.png -c:v libwebp -quality 86 -compression_level 6 -preset photo`),
-through `<picture>` with the untouched PNG as the fallback (section 19).
+hero cut for Task 011 is a new frame of the same original. Explore has had no static
+background since ADR 0068 (2026-10-30; the owner's panorama and its WebP copy left the repository): the cards' artwork
+is the only imagery on the page.
 
 ## 11. Slug model
 
@@ -127,22 +123,20 @@ nothing is reinterpreted. The web client's `publishing/types.ts` carries the sam
 ## 13. Explore (009)
 
 `/explore` answers one question - what worlds can I explore? - with one card per public universe. The layout follows
-the owner's portal reference: a solid bar with the search in it, a compact panoramic band holding the title and the
-category row, then a wide grid of dark card panels. Its metrics, ratings, avatars and extra nav items are not copied:
+the owner's portal reference: a solid bar with the search in it, a plain head holding the title and the category row
+(the panoramic band left with ADR 0068), then a wide grid of dark card panels. Its metrics, ratings, avatars and extra nav items are not copied:
 no such data or destinations exist.
 
 - **Bar.** Brand (to LorEvolve's home since 031), Explore (marked by a rule along the bar's foot), the search, then Log in
   and Create account - or My workspace and the account menu. Below 52rem the search takes its own row; below 40rem the
   brand and the way in share the first row and Explore opens the second, beside the search. The home page has no
   search (section 23).
-- **Band.** The approved panorama behind "Explore Worlds", one line of support, the category pills and the genre and
-  sort selects. On a wide screen the picture is drawn 1.3x from its left edge (a CSS transform; the file is
-  untouched), which carries the castle out from under the title; narrower, it is cropped at 38% 35% and shaded
-  whole. A shade on the reading side and a fall into the page keep it legible. Loaded eagerly: it is above the fold.
-- **Categories.** Pills: All plus the eight, each a link to Explore filtered to it, dark translucent so they read
-  over the picture, the chosen one `aria-current` and filled cream. Below 52rem they scroll sideways in their own
+- **Head.** "Explore Worlds", one line of support, the category pills and the genre and sort selects, on the page's
+  own ground over a hairline. No picture since ADR 0068 (2026-10-30); the panorama that stood here left the repository.
+- **Categories.** Pills: All plus the eight, each a link to Explore filtered to it, outlined like the bar's pills,
+  the chosen one `aria-current` and filled cream. Below 52rem they scroll sideways in their own
   strip, edge to edge, rather than stacking.
-- **Genre and sort.** Native selects, labelled "Genre" and "Sort by": one genre or all; Recently published or A-Z. No
+- **Genre and sort.** Native selects, labelled "Genre" and "Sort by": one genre or all; Recently published or A to Z. No
   popularity, trending or rating sort exists, because no such data does.
 - **Search.** In the bar, on every portal page. On Explore it is `q`: sent 300 ms after typing stops, at once on
   Enter or when emptied; earlier requests are aborted and a stale answer is never shown; starting or clearing a
@@ -175,7 +169,7 @@ without a session - directly, after a refresh, in a new browser. Signing in is a
 - **Log in** and **Create account** in the portal bar pass the current page (path and query) as router state
   (`{ from }`) - the same mechanism `RequireAuth` uses. Signing in or registering returns there, not to the workspace;
   the Login and Register screens' links to each other carry it along. Signing out from the portal stays on the page.
-  The home page is the exception: its Log in, Create account and Start building carry nothing, so they land in the
+  The home page is the exception: its Log in and Create account carry nothing, so they land in the
   workspace as any sign-in does (031).
 - **My workspace** is the one way into the workspace from the portal; My workspace's bar's **Explore** (and the account
   menu's Go to on every screen) is the way back. Both are plain same-tab links - no outward arrow (refinement 024). Visibility belongs to universes; the two sides are the portal and the workspace, never "public
@@ -360,8 +354,8 @@ Unset (DEV today): no canonical or absolute URL, `robots.txt` disallows everythi
   portal's own control), and an archived public universe's Settings says "Still public." Restoring from the archive
   never asks. Deleting (archived only) says a public page goes with it.
 
-**Performance.** Explore's hero ships as WebP (250 kB, was 2.37 MB) with the PNG fallback. Cards and thumbnails were
-already lazy with explicit dimensions; the hero is eager (above the fold). Page screens are split chunks; the rich-text
+**Performance.** Explore and the home page carry no stock picture since ADR 0068 (before it, a 250 kB WebP hero above
+the fold). Cards and thumbnails are lazy with explicit dimensions. Page screens are split chunks; the rich-text
 editor (393 kB) loads only on screens that render an article. `/assets/*` is `immutable` for a year; the shell,
 manifest, icons and `sw.js` are `no-cache`. A public hero stays the 960-wide card (blurred behind): privacy over
 sharpness; a larger public derivative is future image-pipeline work.
@@ -384,7 +378,7 @@ confirmations take and return focus. A network failure reads "LorEvolve could no
 ## 20. One theme (UI refinement 013)
 
 LorEvolve has one appearance preference, **Light** or **Dark**, and it applies to the portal and the workspace at once. Theme
-is not identity: the portal stays image-led, serif and atmospheric in both; the workspace stays the editorial workbench
+is not identity: the portal stays serif and quiet in both, its only pictures the worlds' own; the workspace stays the editorial workbench
 in both.
 
 - **Portal Dark** is the 009-012 portal, unchanged in look. Its translucent inks, shades, drops and glows now read RGB
@@ -393,7 +387,7 @@ in both.
 - **Portal Light** (`:root[data-theme='light'] .portal`): warm parchment ground (`#f3eee5`), a deeper parchment bar, soft
   near-white card panels, warm graphite ink (`#1f1c18`) and muted (`#5f574b`), lines as the ink at low alpha, the
   workspace's accent and danger (they already pass on paper). Pictures fade into paper instead of into black; a card's
-  fade holds more in the light so its graphite name reads over the picture's foot. The hero, cards and artwork keep their
+  fade holds more in the light so its graphite name reads over the picture's foot. Cards and artwork keep their
   weight; no picture changes with the theme.
 - **Where it is chosen:** the account menu (portal bar and workspace rail alike); signed out, "Appearance" beside Log in;
   and the Profile's Appearance section.
@@ -512,24 +506,20 @@ published worlds are found.
   workspace; under a hairline `© <this year> LorEvolve` and `LorEvolve v<package version>` (`lib/buildInfo`), neither a link.
   No Community, Legal or Support group: LorEvolve has no such destination yet, and an empty heading or a made-up link would
   be worse than none.
-- **Actions.** Signed out: *Start building* (`/register`) and *Explore worlds*; at the foot *Start building your
-  universe* and *Log in*. Signed in: *Go to my workspace* (`/app`) and *Explore worlds*; at the foot *Open my
-  workspace*. Nothing is drawn until the session is known, so neither set flashes before the other.
-- **Content, all of it true today.** Hero (the owner's citadel painting under a veil of the page's ground; three
-  sentences, one line each); LorEvolve in four live numbers; Build (Lore, Types, Family Tree, Timeline and Chronology, World
-  Rules); Connect (three things writing once does now: relationships read from both entries and drawn in the Family
-  Tree, Canon's lifespan checks, a scene's lore at hand); Write (stories, chapters, scenes, manuscripts, plot arcs and
-  beats, and the media a universe can serve); Explore (up to four real public worlds); trust (private until published,
-  collaborators by role, downloadable backups); a last call. No prices, trials, metrics, testimonials or AI.
-- **Numbers, not a picture of a workspace** (031 correction: the Lore screenshot and its capture script are gone). On the
-  hero's foot: Creators, Universes, Published worlds, Private worlds from anonymous `GET /api/public/stats`, as `en`
-  numbers in full, zeros included. Creators = registered accounts (each once). Universes = universe rows (archived
-  included; a deleted universe is gone). Published worlds = `PublicationRules.Public`, the portal's own predicate; an
-  entry published inside a private universe counts for nothing. Private worlds = universes - published. Counts only,
-  `no-cache` like the rest of the public API. No count-up; while loading quiet bars hold the row; unreadable, the row is
-  left out. Never in the page's head.
-- **Worlds.** `GET /api/public/universes?page=1&pageSize=4`, rendered with Explore's `WorldCard`; two on a phone. None
-  published: a sentence and *Open Explore*, no placeholder card. A failed read: a sentence; Explore has them.
-- **Head.** "LorEvolve — Build connected fictional universes", a fixed description, canonical `/`, `index,follow` (any query
+- **Actions.** Signed out: *Create account* (`/register`) and *Explore worlds*; at the foot *Create account* and *Log
+  in*. Signed in: *Go to my workspace* (`/app`) and *Explore worlds*; at the foot *Go to my workspace*. One name per
+  intent, the bar's own (ADR 0068). Nothing is drawn until the session is known, so neither set flashes before the other.
+- **Content, all of it true today.** A text head (two sentences, one line each, no picture; ADR 0068); Build (Lore,
+  Types, Family Tree, Timeline and Chronology, World Rules); Connect (three things writing once does now: relationships
+  read from both entries and drawn in the Family Tree, Canon's lifespan checks, a scene's lore at hand); Write (stories,
+  chapters, scenes, manuscripts, plot arcs and beats, and the media a universe can serve); Explore (a line about
+  published worlds and the way to them; no cards here); trust (private until published, collaborators by role,
+  downloadable backups, as three plain paragraphs); a last call. No prices, trials, metrics, testimonials or AI.
+- **No numbers and no picture of a workspace.** The four live counts that sat on the hero's foot (031: Creators,
+  Universes, Published worlds, Private worlds from anonymous `GET /api/public/stats`) left the page with ADR 0068
+  (2026-10-30); the endpoint stays, with no web consumer. The Lore screenshot and its capture script were already gone
+  (031 correction), and no world cards are fetched here: Explore has them. The page asks the API for nothing but the
+  session.
+- **Head.** "LorEvolve | Build connected fictional universes", a fixed description, canonical `/`, `index,follow` (any query
   `noindex,follow`), Open Graph with the static icon; `/` is in the sitemap (ADR 0038 amendment).
 - **Unknown addresses** outside `/app` land on `/`; under `/app` on `/app`. The installed app still opens `/explore`.
