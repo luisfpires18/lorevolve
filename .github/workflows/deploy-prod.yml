@@ -122,7 +122,9 @@ jobs:
           APP: ${{ vars.AZURE_PROD_WEBAPP_NAME }}
         run: |
           id=$(az resource list --name "$APP" --resource-type Microsoft.Web/sites --query '[0].id' -o tsv)
-          rfp=$(az webapp config appsettings list --ids "$id" --query "[?name=='WEBSITE_RUN_FROM_PACKAGE'].value | [0]" -o tsv)
+          # appsettings list takes a name and resource group, not --ids.
+          group=$(az resource list --name "$APP" --resource-type Microsoft.Web/sites --query '[0].resourceGroup' -o tsv)
+          rfp=$(az webapp config appsettings list --name "$APP" --resource-group "$group" --query "[?name=='WEBSITE_RUN_FROM_PACKAGE'].value | [0]" -o tsv)
           echo "APP_ID=$id" >> "$GITHUB_ENV"
           echo "RUN_FROM_PACKAGE=$rfp" >> "$GITHUB_ENV"
           [ "$rfp" = "1" ] || echo "::warning::WEBSITE_RUN_FROM_PACKAGE is not 1 on $APP: the deploy swaps files under the running process. See docs/deployment/azure-prod.md"
