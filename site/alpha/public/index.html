@@ -52,6 +52,20 @@
         </div>
       </section>
 
+      <section class="landing-walkthrough" aria-labelledby="walkthrough-title">
+        <h2 class="landing-heading" id="walkthrough-title">See it in action</h2>
+        <p class="landing-lede">
+          One world, The Ashen Reach, built in LorEvolve in under four minutes: types, lore, relations,
+          family tree, maps, rules, calendar, timeline, stories and publishing. Recorded in the app.
+        </p>
+        <video class="walkthrough__video" controls playsinline preload="none" poster="/assets/clips/walkthrough-poster.webp" width="1920" height="1080" aria-label="A walkthrough of LorEvolve: an author signs in, creates the universe The Ashen Reach, and goes through each feature, from custom types and lore entries to the family tree, a map with pins, the custom calendar timeline, a story scene, publishing, and the app on a phone.">
+          <source src="/assets/clips/walkthrough.mp4" type="video/mp4" />
+        </video>
+        <p class="walkthrough__ai">
+          AI user? <a href="#feature-ai" data-open-feature>Check the MCP video</a>
+        </p>
+      </section>
+
       <section class="landing-final" aria-labelledby="alpha-title">
         <h2 class="landing-heading" id="alpha-title">Want to try it early?</h2>
         <p class="landing-lede">
@@ -341,7 +355,7 @@
                 </details>
               </li>
               <li>
-                <details class="feature feature--ai">
+                <details class="feature feature--ai" id="feature-ai">
                   <summary>
                     <h4>AI</h4>
                     <span class="feature__hook">Off by default. Claude, ChatGPT and others, on your terms.</span>

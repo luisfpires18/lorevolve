@@ -459,6 +459,14 @@ for (const clip of document.querySelectorAll('.feature__clip')) {
   })
 }
 
+// A link to a feature row opens that row (and so plays its clip) before the browser jumps to it.
+for (const link of document.querySelectorAll('[data-open-feature]')) {
+  link.addEventListener('click', () => {
+    const row = document.querySelector(link.getAttribute('href'))
+    if (row instanceof HTMLDetailsElement) row.open = true
+  })
+}
+
 // A feature picture not made yet is dropped rather than left as an empty frame. Lazy pictures load, and fail, on opening.
 document.addEventListener(
   'error',

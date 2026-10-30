@@ -636,6 +636,35 @@ button {
   text-wrap: balance;
 }
 
+/* -- The walkthrough, between the hero and the call to join -- */
+
+.landing-walkthrough {
+  width: min(100% - 2 * var(--portal-gutter), 64rem);
+  margin: 0 auto;
+  padding-top: clamp(1rem, 3vw, 2rem);
+  text-align: center;
+}
+
+.landing-walkthrough .landing-lede {
+  margin-inline: auto;
+  text-wrap: balance;
+}
+
+.walkthrough__video {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: var(--space-4);
+  border: 1px solid var(--portal-line);
+  border-radius: var(--radius-sm);
+  background: var(--portal-surface);
+}
+
+.walkthrough__ai {
+  margin: var(--space-3) 0 0;
+  color: rgb(var(--portal-ink-rgb) / 0.86);
+}
+
 /* -- The footer -- */
 
 .portal__footer {
