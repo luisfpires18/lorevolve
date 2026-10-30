@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import { Link, useNavigate, useOutletContext, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Check, Plus, X } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
 import { CanonBlockNotice } from '../components/CanonBlockNotice'
@@ -8,7 +8,7 @@ import { blockingFindingsOf } from '../canon/blocked'
 import type { CanonBlockingFinding } from '../canon/types'
 import { ApiError } from '../lib/api'
 import { useLeaveGuard } from '../lib/leaveGuard'
-import { bulkCreateEntities, listEntityTypes } from '../lore/api'
+import { bulkCreateEntities } from '../lore/api'
 import { typeChoices } from '../lore/typeTree'
 import {
   MASS_CREATE_MAX,
@@ -29,9 +29,12 @@ import {
   type CanonStatusValue,
   type EntityType,
 } from '../lore/types'
-import type { WorkspaceContext } from './UniverseWorkspace'
+import { useWorkspaceTypes } from './useWorkspaceTypes'
 
 type Load = { kind: 'loading' } | { kind: 'ready'; types: EntityType[] } | { kind: 'error' }
+
+/** No types read yet: one stable empty list for what is worked out from them. */
+const NO_TYPES: EntityType[] = []
 
 /** What the API said about one row of a refused batch. */
 interface ServerProblem {
@@ -73,28 +76,20 @@ function Problem({ problem }: { problem: RowProblem }) {
  * request go, and the API checks it all again; either way a problem is shown on the row it belongs to.
  */
 export default function MassCreatePage() {
-  const { universe } = useOutletContext<WorkspaceContext>()
+  const { universe, types: typesRead, refreshTypes } = useWorkspaceTypes()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const id = useId()
   const lorePath = `/app/universes/${universe.id}/lore`
 
-  const [load, setLoad] = useState<Load>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listEntityTypes(universe.id, controller.signal)
-      .then((types) => setLoad({ kind: 'ready', types }))
-      .catch(() => {
-        if (!controller.signal.aborted) setLoad({ kind: 'error' })
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, reads])
-
-  const types = useMemo(() => (load.kind === 'ready' ? load.types : []), [load])
+  // The universe's types, read with it.
+  const load: Load =
+    typesRead === 'failed'
+      ? { kind: 'error' }
+      : typesRead
+        ? { kind: 'ready', types: typesRead }
+        : { kind: 'loading' }
+  const types = load.kind === 'ready' ? load.types : NO_TYPES
   const typesById = useMemo(() => new Map(types.map((type) => [type.id, type])), [types])
   // One exact type a row: every type in the hierarchy's order, named by its path.
   const choices = useMemo(() => typeChoices(types), [types])
@@ -377,8 +372,7 @@ export default function MassCreatePage() {
             className="button button--secondary"
             type="button"
             onClick={() => {
-              setLoad({ kind: 'loading' })
-              setReads((count) => count + 1)
+              refreshTypes().catch(() => undefined)
             }}
           >
             Try again

@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
 import { EntityPicker, type EntityChoice } from '../components/EntityPicker'
@@ -14,7 +14,6 @@ import { getFamilyTree } from '../familyTree/api'
 import { confirmLeaving } from '../lib/leaveGuard'
 import { linkSentence } from '../familyTree/reading'
 import type { FamilyTree } from '../familyTree/types'
-import { listEntityTypeGroups, listEntityTypes } from '../lore/api'
 import { CANON_LABELS, CanonStatus, type EntityType, type EntityTypeGroup } from '../lore/types'
 import { listEntityRelationships, listRelationshipTypes } from '../relationships/api'
 import {
@@ -23,7 +22,7 @@ import {
   type RelationshipView,
 } from '../relationships/types'
 import { PageHeader } from '../components/PageHeader'
-import type { WorkspaceContext } from './UniverseWorkspace'
+import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { EmptyState } from '../components/EmptyState'
 
 /** The types and groups the page reads to say where the tree is offered: none yet, read, or not readable. */
@@ -59,7 +58,7 @@ type LoadState =
  */
 export default function FamilyTreePage() {
   const access = useUniverseAccess()
-  const { universe } = useOutletContext<WorkspaceContext>()
+  const { universe, types, groups, setGroups, refreshTypes } = useWorkspaceTypes()
   const { entityId } = useParams<{ entityId: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -67,29 +66,18 @@ export default function FamilyTreePage() {
 
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [kinds, setKinds] = useState<RelationshipType[] | null>(null)
-  const [setup, setSetup] = useState<Setup>(null)
+  // The types and groups, read with the universe: where the tree is offered.
+  const setup: Setup =
+    types === 'failed' || groups === 'failed'
+      ? 'failed'
+      : types && groups
+        ? { types, groups }
+        : null
   const [setupReads, setSetupReads] = useState(0)
   const [others, setOthers] = useState<{ entityId: string; views: RelationshipView[] } | null>(null)
   const [addingFor, setAddingFor] = useState<string | null>(null)
   const [isCreatingKind, setIsCreatingKind] = useState(false)
   const [reads, setReads] = useState(0)
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    Promise.all([
-      listEntityTypes(universe.id, controller.signal),
-      listEntityTypeGroups(universe.id, controller.signal),
-    ])
-      .then(([types, groups]) => setSetup({ types, groups }))
-      .catch(() => {
-        if (!controller.signal.aborted) setSetup('failed')
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, setupReads])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -465,16 +453,8 @@ export default function FamilyTreePage() {
           onChanged={(changed) => {
             // Shown at once as the API answered; what it changes - the types offered, the families listing and the open
             // tree's notes - is read again.
-            setSetup((current) =>
-              typeof current === 'object' && current !== null
-                ? {
-                    ...current,
-                    groups: current.groups.map((group) =>
-                      group.id === changed.id ? changed : group,
-                    ),
-                  }
-                : current,
-            )
+            setGroups(setup.groups.map((group) => (group.id === changed.id ? changed : group)))
+            refreshTypes().catch(() => undefined)
             setSetupReads((current) => current + 1)
             setReads((current) => current + 1)
           }}

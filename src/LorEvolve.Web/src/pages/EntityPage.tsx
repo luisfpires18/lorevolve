@@ -4,7 +4,6 @@ import {
   NavLink,
   useLocation,
   useNavigate,
-  useOutletContext,
   useParams,
   useSearchParams,
 } from 'react-router-dom'
@@ -39,14 +38,7 @@ import { ApiError } from '../lib/api'
 import { formatDate } from '../lib/dates'
 import { differing, isChangedElsewhere, type Change } from '../lib/editConflict'
 import { useLeaveGuard } from '../lib/leaveGuard'
-import {
-  createEntity,
-  deleteEntity,
-  ENTRY_CHANGED,
-  getEntity,
-  listEntityTypes,
-  updateEntity,
-} from '../lore/api'
+import { createEntity, deleteEntity, ENTRY_CHANGED, getEntity, updateEntity } from '../lore/api'
 import {
   CANON_LABELS,
   CANON_ORDER,
@@ -66,7 +58,7 @@ import { typeChoices } from '../lore/typeTree'
 import { StatusBadge } from '../components/StatusBadge'
 import { suggestEntryChanges } from '../suggestions/api'
 import { useUniverseAccess } from '../universes/access'
-import type { WorkspaceContext } from './UniverseWorkspace'
+import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { EmptyState } from '../components/EmptyState'
 import { useStagePictures } from '../progression/stagePictures'
 import { confirmAction } from '../lib/confirm'
@@ -125,6 +117,9 @@ interface CopySource {
   detail: EntityDetail
   article: EntityArticle | null
 }
+
+/** No types read: one stable empty list, so what is worked out from the types is not worked out again each render. */
+const NO_TYPES: EntityType[] = []
 
 /**
  * A new entry's starting form when it is copied from another: the source's type, summary, tags and field values, named
@@ -200,7 +195,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
 }
 
 function EntityScreen({ view }: { view: EntryView }) {
-  const { universe, chronology } = useOutletContext<WorkspaceContext>()
+  const { universe, chronology, types: typesFound } = useWorkspaceTypes()
   const access = useUniverseAccess()
   const { entityId } = useParams<{ entityId: string }>()
   const navigate = useNavigate()
@@ -219,8 +214,9 @@ function EntityScreen({ view }: { view: EntryView }) {
   const [source, setSource] = useState<CopySource | null>(null)
   const [sourceStatus, setSourceStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading')
   const [copyArticle, setCopyArticle] = useState(false)
-  const [types, setTypes] = useState<EntityType[]>([])
-  const [typesRead, setTypesRead] = useState(false)
+  // The universe's types, read with it. The page still works without them; a link field searches for itself.
+  const typesRead = Array.isArray(typesFound)
+  const types = typesRead ? typesFound : NO_TYPES
   const [detail, setDetail] = useState<EntityDetail | null>(null)
   const [editedDraft, setDraft] = useState<Draft | null>(null)
   const [isFormOpen, setIsEditing] = useState(isNew)
@@ -316,23 +312,6 @@ function EntityScreen({ view }: { view: EntryView }) {
     if (wasViewing.current && !isViewing) expandButton.current?.focus()
     wasViewing.current = isViewing
   }, [isViewing])
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listEntityTypes(universe.id, controller.signal)
-      .then((loadedTypes) => {
-        setTypes(loadedTypes)
-        setTypesRead(true)
-      })
-      .catch(() => {
-        /* The page still works without the types; a link field searches for itself. */
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id])
 
   useEffect(() => {
     if (isNew) return
