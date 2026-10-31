@@ -12,7 +12,7 @@ export function PortalMissing({ title, testId }: { title: string; testId: string
     <div className="pmissing" data-testid={testId}>
       <h1 className="pmissing__title">{title}</h1>
       <p className="pmissing__hint">Its address may be wrong, or it is not public.</p>
-      <Link className="portal__pill" to="/explore">
+      <Link className="portal__pill" to="/">
         Explore
       </Link>
     </div>

@@ -304,7 +304,7 @@ test.describe('search and social metadata', () => {
     // The app keeps the tab title in the same words while moving between pages.
     await page.goto(`/worlds/${w.slug}`)
     await expect(page).toHaveTitle(`${w.name} | LorEvolve`)
-    await page.goto('/explore')
+    await page.goto('/')
     await expect(page).toHaveTitle('Explore Worlds | LorEvolve')
   })
 
@@ -400,7 +400,7 @@ test.describe('states and zoom', () => {
     const state = await setup.storageState()
 
     const portal = [
-      '/explore',
+      '/',
       `/worlds/${w.slug}`,
       `/worlds/${w.slug}/lore/archivist-of-the-seventeen-drowned-libraries`,
       `/worlds/${w.slug}/stories/a-very-long-story-title-about-the-tide-that-counts`,

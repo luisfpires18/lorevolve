@@ -17,7 +17,7 @@ namespace LorEvolve.Api.Tests;
 /// <summary>
 /// Search and social metadata (Task 012, ADR 0038).
 ///
-/// The claims this file carries. LorEvolve's home (031) is a page with its own fixed head, not a redirect. The app shell's head
+/// The claims this file carries. Explore is the front door at "/" with its own head, and "/explore" is a 301 to it (ADR 0069). The app shell's head
 /// is written on the server from the public predicates alone: a public universe, entry, story or author page has its own title, a description from public text only (a story's public summary,
 /// never its premise), a canonical address and Open Graph on the configured origin - never the request's Host - while
 /// anything private, trashed, incomplete or missing is one 404 with a generic noindex head that names nothing. Workspace
@@ -188,7 +188,7 @@ public sealed partial class SeoTests : IClassFixture<LorEvolveApiFactory>, IDisp
     }
 
     [Fact]
-    public async Task Workspace_sign_in_and_unknown_pages_are_noindex_and_home_and_Explore_have_one_canonical()
+    public async Task Workspace_sign_in_and_unknown_pages_are_noindex_and_Explore_at_the_front_door_has_one_canonical()
     {
         var anonymous = _site.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
@@ -203,30 +203,34 @@ public sealed partial class SeoTests : IClassFixture<LorEvolveApiFactory>, IDisp
             Assert.Null(Meta(html, "property", "og:title"));
         }
 
-        var explore = await anonymous.GetStringAsync("/explore");
-        Assert.Contains("<title>Explore Worlds | LorEvolve</title>", explore, StringComparison.Ordinal);
-        Assert.Equal("index,follow", Meta(explore, "name", "robots"));
-        Assert.Equal($"{Origin}/explore", Canonical(explore));
-
-        var searched = await anonymous.GetStringAsync("/explore?q=salt&category=books");
-        Assert.Equal("noindex,follow", Meta(searched, "name", "robots"));
-        Assert.Equal($"{Origin}/explore", Canonical(searched));
-
-        // LorEvolve's home (031) is a page of its own, not a redirect to Explore: its own head and one canonical address, which
-        // a tracking query does not change.
+        // Explore is the front door (ADR 0069): one page at "/", one canonical address, which neither a search nor a
+        // tracking query changes.
         var root = await anonymous.GetAsync("/");
-        var home = await root.Content.ReadAsStringAsync();
+        var explore = await root.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.OK, root.StatusCode);
-        Assert.Equal(PageMetadataResolver.HomeTitle, Meta(home, "property", "og:title"));
-        Assert.Contains("<title>LorEvolve | Build connected fictional universes</title>", home, StringComparison.Ordinal);
-        Assert.Equal(PageMetadataResolver.HomeDescription, Meta(home, "name", "description"));
-        Assert.Equal("index,follow", Meta(home, "name", "robots"));
-        Assert.Equal($"{Origin}/", Canonical(home));
-        Assert.Equal($"{Origin}/icon-512.png", Meta(home, "property", "og:image"));
+        Assert.Contains("<title>Explore Worlds | LorEvolve</title>", explore, StringComparison.Ordinal);
+        Assert.Equal("Explore Worlds | LorEvolve", Meta(explore, "property", "og:title"));
+        Assert.Equal(PageMetadataResolver.ExploreDescription, Meta(explore, "name", "description"));
+        Assert.Equal("index,follow", Meta(explore, "name", "robots"));
+        Assert.Equal($"{Origin}/", Canonical(explore));
+        Assert.Equal($"{Origin}/icon-512.png", Meta(explore, "property", "og:image"));
+
+        var searched = await anonymous.GetStringAsync("/?q=salt&category=books");
+        Assert.Equal("noindex,follow", Meta(searched, "name", "robots"));
+        Assert.Equal($"{Origin}/", Canonical(searched));
 
         var tagged = await anonymous.GetStringAsync("/?ref=elsewhere");
         Assert.Equal("noindex,follow", Meta(tagged, "name", "robots"));
         Assert.Equal($"{Origin}/", Canonical(tagged));
+
+        // Explore's old address is a permanent redirect to the front door, search and all.
+        var moved = await anonymous.GetAsync("/explore");
+        Assert.Equal(HttpStatusCode.MovedPermanently, moved.StatusCode);
+        Assert.Equal("/", moved.Headers.Location?.ToString());
+
+        var movedSearch = await anonymous.GetAsync("/explore?q=salt&category=books");
+        Assert.Equal(HttpStatusCode.MovedPermanently, movedSearch.StatusCode);
+        Assert.Equal("/?q=salt&category=books", movedSearch.Headers.Location?.ToString());
 
         // The API is not a page to index, and an unknown API path is still a 404, not the shell.
         var api = await anonymous.GetAsync("/api/public/universes");
@@ -266,7 +270,7 @@ public sealed partial class SeoTests : IClassFixture<LorEvolveApiFactory>, IDisp
         var locations = Locations(await map.Content.ReadAsStringAsync());
 
         Assert.Contains($"{Origin}/", locations);
-        Assert.Contains($"{Origin}/explore", locations);
+        Assert.DoesNotContain($"{Origin}/explore", locations);
         Assert.Contains($"{Origin}/worlds/{world.PublicSlug}", locations);
         Assert.Contains($"{Origin}/worlds/{world.PublicSlug}/lore/lighthouse", locations);
         Assert.Contains($"{Origin}/worlds/{world.PublicSlug}/stories/told-story", locations);
@@ -312,11 +316,7 @@ public sealed partial class SeoTests : IClassFixture<LorEvolveApiFactory>, IDisp
         Assert.Equal("User-agent: *\nDisallow: /\n", await anonymous.GetStringAsync("/robots.txt"));
         Assert.Equal(HttpStatusCode.NotFound, (await anonymous.GetAsync("/sitemap.xml")).StatusCode);
 
-        var home = await anonymous.GetStringAsync("/");
-        Assert.Equal("noindex,nofollow", Meta(home, "name", "robots"));
-        Assert.Null(Canonical(home));
-
-        var explore = await anonymous.GetStringAsync("/explore");
+        var explore = await anonymous.GetStringAsync("/");
         Assert.Equal("noindex,nofollow", Meta(explore, "name", "robots"));
         Assert.Null(Canonical(explore));
         Assert.Null(Meta(explore, "property", "og:url"));

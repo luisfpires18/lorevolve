@@ -371,7 +371,7 @@ test.describe('what the worker is allowed to keep', () => {
   test('an install made before 011 is freed: the old cache with its /app manifest goes, and the manifest is always fresh', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
     // What a browser that ran LorEvolve before Task 011 still holds: v3's cache, with the manifest that said /app.
     await page.evaluate(async () => {
       const stale = await caches.open('lorevolve-static-v3')
@@ -388,7 +388,7 @@ test.describe('what the worker is allowed to keep', () => {
     // Activation deleted every older cache, the stale manifest with it.
     expect(await page.evaluate(() => caches.keys())).not.toContain('lorevolve-static-v3')
 
-    // And the worker never answers for the manifest again: every read is the server's, and says /explore.
+    // And the worker never answers for the manifest again: every read is the server's, and says /.
     const served: boolean[] = []
     page.on('response', (response) => {
       if (response.url().endsWith('/manifest.webmanifest'))
@@ -408,7 +408,7 @@ test.describe('what the worker is allowed to keep', () => {
   test('each build keeps its own cache: a new build drops the last one and reads stable root files afresh', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
     const first = `b${Date.now().toString(36)}a`
     const second = `b${Date.now().toString(36)}b`
 

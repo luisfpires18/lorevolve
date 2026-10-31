@@ -68,3 +68,11 @@ rendering crawler can draw a page and a preview can fetch its picture) and disal
   description LorEvolve writes, canonical `/`, `index,follow` (a query string makes it `noindex,follow` with the same
   canonical, as Explore's), Open Graph with the static icon. `/` is the sitemap's first address. `robots.txt` already
   allowed it. No new metadata mechanism.
+
+## Amendment (2026-10-31, ADR 0069) - Explore is the front door
+
+- `/` is Explore: its head is Explore's ("Explore Worlds | LorEvolve", the fixed Explore description), canonical `/`,
+  `index,follow`; a query state is `noindex,follow` with the same canonical. The fixed home-page head of the 031
+  amendment is gone.
+- `/explore` is a permanent redirect (301) to `/` with the query string kept, mapped in `FrontendHosting` before the
+  shell fallback. It leaves the sitemap, and `robots.txt` no longer names it: `/` is allowed by default.

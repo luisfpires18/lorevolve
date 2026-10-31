@@ -224,3 +224,8 @@ Owner decision: the manifest's `start_url` is `/`, so launching the installed ap
 not, exactly as a browser's front door does; a signed-in author goes on with "Go to my workspace". Supersedes the 011
 amendment's `/explore`. `id` stays `/app`, and nothing in the worker changes: the manifest is never cached (014), so an
 existing install picks up the new start on its platform's next manifest update check, or at once on reinstall.
+
+## Amendment: the front door is Explore (2026-10-31, ADR 0069)
+
+`start_url` stays `/`; `/` is now Explore itself, the page about LorEvolve having been retired, so the installed app
+opens the worlds again, as the 011 amendment intended. Nothing in the worker or the manifest changes.

@@ -111,7 +111,7 @@ export function AccountMenu({
             <ActionIcon icon={StickyNote} />
             Ideas
           </Link>
-          <Link className="actionmenu__item" to="/explore" data-testid="account-menu-explore">
+          <Link className="actionmenu__item" to="/" data-testid="account-menu-explore">
             <ActionIcon icon={Telescope} />
             Explore
           </Link>

@@ -8,5 +8,5 @@ export const APP_VERSION = __LOREVOLVE_VERSION__
 /** Which build is running: a commit or deployment id, or a random one per local build. Not a version, and not shown. */
 export const BUILD_ID = __LOREVOLVE_BUILD_ID__
 
-/** How the version reads wherever it is shown: the home page's footer and the account menu. */
+/** How the version reads wherever it is shown: the site footer and the account menu. */
 export const VERSION_LABEL = `LorEvolve v${APP_VERSION}`

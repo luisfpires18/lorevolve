@@ -21,7 +21,7 @@ type Results =
   | { key: string; kind: 'error' }
 
 /**
- * Explore: the public portal's front page. One question - what worlds can I explore? - answered with the
+ * Explore: the public portal's front page, at `/` (ADR 0069; `/explore` comes here). One question - what worlds can I explore? - answered with the
  * universes their authors have published, one card each, and nothing invented: no metrics, no featured row, no
  * placeholder worlds (ADR 0036).
  *

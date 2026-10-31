@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { openAccountMenu } from './support/account'
+import { openAccountMenu, expectedVersionLabel } from './support/account'
 
 /**
  * Product refinement 024: global navigation and wayfinding. LorEvolve has two sides - Explore, the public one, and My
@@ -137,7 +137,7 @@ test.describe('Explore: the public side, called one thing', () => {
     page,
   }) => {
     await signUp(page)
-    await page.goto('/explore')
+    await page.goto('/')
 
     await expect(
       page.getByRole('navigation', { name: 'Explore' }).getByRole('link', { name: 'Explore' }),
@@ -164,13 +164,13 @@ test.describe('The brand leads to LorEvolve’s home from every shell, and says 
     await signUp(page)
     const w = await world(page)
 
-    for (const path of ['/explore', '/app', '/app/profile']) {
+    for (const path of ['/', '/app', '/app/profile']) {
       await page.goto(path)
       const brand = page.getByRole('link', { name: BRAND })
       await expect(brand).toHaveCount(1)
       await brand.click()
       await expect(page).toHaveURL('/')
-      await expect(page.getByTestId('landing')).toBeVisible()
+      await expect(page.getByTestId('explore')).toBeVisible()
     }
 
     await page.goto(`/app/universes/${w.id}/lore/${w.entryId}`)
@@ -216,7 +216,7 @@ test.describe('The account menu: Go to, then the account', () => {
     await page.goto(manuscript)
     await openAccountMenu(page)
     await page.getByTestId('account-menu-explore').click()
-    await expect(page).toHaveURL('/explore')
+    await expect(page).toHaveURL('/')
 
     await page.goto(`/app/universes/${w.id}/lore/${w.entryId}`)
     await openAccountMenu(page)
@@ -278,7 +278,7 @@ test.describe('Changing place moves the focus to what was opened', () => {
     await signUp(page)
     const w = await world(page)
 
-    await page.goto('/explore')
+    await page.goto('/')
     await page.getByTestId('portal-workspace').click()
     await expect(page).toHaveURL('/app')
     await expect(main(page)).toBeFocused()
@@ -359,7 +359,7 @@ test.describe('Narrow screens', () => {
       await expect(page).toHaveURL('/app/ideas')
       await openAccountMenu(page)
       await page.getByTestId('account-menu-explore').click()
-      await expect(page).toHaveURL('/explore')
+      await expect(page).toHaveURL('/')
     })
   }
 
@@ -437,5 +437,58 @@ test.describe('Narrow screens', () => {
     const panel = (await page.getByTestId('account-menu-panel').boundingBox())!
     expect(panel.x + panel.width).toBeLessThanOrEqual(360)
     expect(await sideways(page)).toBe(false)
+  })
+})
+
+test.describe('Explore is the front door (ADR 0069)', () => {
+  test('the old address comes to /, search and all; unknown addresses land there; the bar says where you are', async ({
+    page,
+  }) => {
+    await page.goto('/explore')
+    await expect(page).toHaveURL('/')
+    await expect(page.getByTestId('explore')).toBeVisible()
+    await expect(page).toHaveTitle('Explore Worlds | LorEvolve')
+    await expect(page.getByTestId('portal-explore')).toHaveAttribute('aria-current', 'page')
+
+    await page.goto('/explore?q=salt&category=books')
+    await expect(page).toHaveURL('/?q=salt&category=books')
+    await expect(page.getByTestId('explore-search')).toHaveValue('salt')
+
+    await page.goto('/somewhere-nobody-links')
+    await expect(page).toHaveURL('/')
+    await expect(page.getByTestId('explore')).toBeVisible()
+  })
+
+  test('the footer sits at the foot of the front door, My workspace and a universe, and says the real ways on', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    const footer = page.getByTestId('portal-footer')
+    await expect(footer).toBeVisible()
+    const links = footer.getByTestId('portal-footer-links').getByRole('link')
+    await expect(links).toHaveText(['Explore', 'Create account', 'Log in'])
+    await expect(links.nth(0)).toHaveAttribute('href', '/')
+    await expect(links.nth(1)).toHaveAttribute('href', '/register')
+    await expect(links.nth(2)).toHaveAttribute('href', '/login')
+    await expect(footer.getByTestId('portal-footer-copyright')).toHaveText(
+      `© ${new Date().getFullYear()} LorEvolve`,
+    )
+    await expect(footer.getByTestId('portal-footer-version')).toHaveText(expectedVersionLabel())
+
+    await signUp(page)
+    const w = await world(page)
+    // Inside the workspace, no link to the screen you are on: Explore alone.
+    await page.goto('/app')
+    await expect(page.getByTestId('portal-footer-links').getByRole('link')).toHaveText(['Explore'])
+    await page.goto(`/app/universes/${w.id}`)
+    await expect(page.getByTestId('workspace-name')).toBeVisible()
+    await expect(page.getByTestId('portal-footer')).toBeVisible()
+    await expect(page.getByTestId('portal-footer-version')).toHaveText(expectedVersionLabel())
+
+    await page.goto('/')
+    await expect(page.getByTestId('portal-footer-links').getByRole('link')).toHaveText([
+      'Explore',
+      'My workspace',
+    ])
   })
 })

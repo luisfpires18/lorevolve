@@ -16,7 +16,7 @@ export function useDocumentTitle(...parts: string[]) {
   useWholeTitle(named.length > 0 ? `${named.join(' | ')} | ${BRAND}` : BRAND)
 }
 
-/** The tab's whole title as given - for LorEvolve's home, the one page whose title leads with the brand (031). */
+/** The tab's whole title as given. */
 export function useWholeTitle(full: string) {
   useEffect(() => {
     const previous = document.title

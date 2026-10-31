@@ -116,8 +116,7 @@ export default function InvitationPage() {
         intro="Sign in or create an account to continue."
         footer={
           <>
-            Use the email address the invitation was sent to.{' '}
-            <Link to="/explore">Explore LorEvolve</Link>
+            Use the email address the invitation was sent to. <Link to="/">Explore LorEvolve</Link>
           </>
         }
       >
