@@ -50,7 +50,7 @@ export interface ExploreQuery {
 
 /**
  * One page of public universes. Works signed in or out; sends nothing about the session. `pageSize` left out is the
- * API's own (24); the home page asks for the few it shows.
+ * API's own (24).
  */
 export function listPublicUniverses(
   query: ExploreQuery,
@@ -196,16 +196,4 @@ export function getWorkspaceLink(
     `/api/universes/by-address/${encodeURIComponent(world)}${query ? `?${query}` : ''}`,
     { signal },
   )
-}
-
-/** LorEvolve in four numbers, for its home page (031): counts only, the same for everyone. */
-export interface PublicStats {
-  creators: number
-  universes: number
-  publishedWorlds: number
-  privateWorlds: number
-}
-
-export function getPublicStats(signal?: AbortSignal) {
-  return apiFetch<PublicStats>('/api/public/stats', { signal })
 }

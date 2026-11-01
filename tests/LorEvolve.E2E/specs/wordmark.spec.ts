@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator } from '@playwright/test'
 
 /** The mark is the product's name, drawn as it is spoken: LorEvolve, at both sizes it is used. */
 
@@ -8,8 +8,7 @@ function unique(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`
 }
 
-async function expectTheMark(page: Page) {
-  const mark = page.getByTestId('wordmark')
+async function expectTheMark(mark: Locator) {
   await expect(mark).toBeVisible()
 
   await expect(mark).toHaveText('LorEvolve')
@@ -19,8 +18,9 @@ test.describe('wordmark', () => {
   test('the auth plate carries the large mark', async ({ page }) => {
     await page.goto('/login')
 
-    await expect(page.getByTestId('wordmark')).toHaveClass(/wordmark--large/)
-    await expectTheMark(page)
+    const mark = page.getByTestId('wordmark')
+    await expect(mark).toHaveClass(/wordmark--large/)
+    await expectTheMark(mark)
   })
 
   test('the home bar carries the same mark at bar size', async ({ page }) => {
@@ -33,7 +33,9 @@ test.describe('wordmark', () => {
     await page.getByRole('button', { name: 'Create account' }).click()
     await page.waitForURL('/app')
 
-    await expect(page.getByTestId('wordmark')).not.toHaveClass(/wordmark--large/)
-    await expectTheMark(page)
+    // The footer draws the mark too (ADR 0069); the bar's is the one this test is about.
+    const mark = page.getByRole('banner').getByTestId('wordmark')
+    await expect(mark).not.toHaveClass(/wordmark--large/)
+    await expectTheMark(mark)
   })
 })

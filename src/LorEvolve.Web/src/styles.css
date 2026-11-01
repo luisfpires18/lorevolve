@@ -4,8 +4,8 @@
   A bound reference volume that is also a workbench. A graphite plate carries the wordmark, warm
   paper carries the work, and what can be opened rises off the page - lighter as it rises, in both
   schemes. One accent, an ink blue, for links, focus and "you are here"; the primary action is ink.
-  The world's artwork - or LorEvolve's own, when a world has none to show - sits in the upper page as
-  atmosphere and fades into the working surface. The design contract is
+  A world's own artwork, when its owner has given it one, sits in the upper page as atmosphere and
+  fades into the working surface; LorEvolve itself shows no stock pictures (ADR 0068). The design contract is
   docs/design/LOREVOLVE_VISUAL_REFACTOR.md; its section 9.3 is this token sheet, section 22 the polish pass.
 
   Tokens first, then the shared patterns every screen draws from (buttons, fields, menus, views,
@@ -303,41 +303,11 @@ textarea,
 }
 
 .auth__plate {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
   background: var(--plate);
   color: var(--plate-ink);
   padding: clamp(2rem, 5vw, 4.5rem);
   display: flex;
   align-items: flex-end;
-}
-
-/* LorEvolve's own art behind the plate, veiled to the plate's night from the foot up so the mark and its line read on it.
-   The plate is graphite in both schemes, so the veil is too. Decorative; one image, cached. */
-.auth__plate::before,
-.auth__plate::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.auth__plate::before {
-  background: url('./assets/atmosphere-ridge.webp') 30% 40% / cover no-repeat;
-  opacity: 0.55;
-}
-
-.auth__plate::after {
-  background:
-    linear-gradient(
-      to top,
-      var(--plate) 18%,
-      color-mix(in srgb, var(--plate) 55%, transparent) 60%,
-      color-mix(in srgb, var(--plate) 25%, transparent)
-    ),
-    linear-gradient(to right, color-mix(in srgb, var(--plate) 40%, transparent), transparent);
 }
 
 .auth__mark {
@@ -755,17 +725,10 @@ a.button--danger:visited {
 /* ---------- Universe home ---------- */
 
 .home {
-  position: relative;
-  isolation: isolate;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--surface);
-}
-
-/* My workspace's atmosphere is LorEvolve's own, under the bar as well as the heading. */
-.home > .atmosphere {
-  height: clamp(18rem, 34vw, 30rem);
 }
 
 /* My workspace's bar (`WorkspaceLayout`): the brand, the workspace by name and its two places, Explore, the account.
@@ -2623,15 +2586,14 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
 
 /* ---------- Atmosphere ----------
 
-   A page's artwork as its environment, not its decoration: the world's own card when its owner has given it one,
-   LorEvolve's citadel when not, laid behind the head of the screen and fading into the working surface - down, and in
-   from the reading edge - under a veil of the canvas itself, so a title over it reads as it would over plain canvas.
-   One element, out of the flow, never a target; the image is fetched once and cached. Its parent is the stacking
-   context (`isolation`), so it paints above the parent's ground and below everything in it. */
+   A world's artwork as its environment, not its decoration: the universe's own card, laid behind the head of the
+   screen and fading into the working surface - down, and in from the reading edge - under a veil of the canvas
+   itself, so a title over it reads as it would over plain canvas. Drawn only when the world has a card (ADR 0068):
+   the shell renders the element with `--atmosphere-image` set inline and never without one, so there is no stock
+   fallback. One element, out of the flow, never a target; the image is fetched once and cached. Its parent is the
+   stacking context (`isolation`), so it paints above the parent's ground and below everything in it. */
 
 .atmosphere {
-  --atmosphere-image: url('./assets/atmosphere-citadel.webp');
-
   position: absolute;
   inset: 0 0 auto;
   z-index: -1;
@@ -13581,9 +13543,6 @@ body:has(.portal) {
   --portal-line: rgb(var(--portal-ink-rgb) / 0.1);
   --portal-line-strong: rgb(var(--portal-ink-rgb) / 0.24);
   --portal-width: 92rem;
-  /* The home page's measure. Here rather than on .landing: the footer is the layout's, outside .landing, and lines up
-     with it. */
-  --landing-width: 76rem;
   --portal-gutter: clamp(1rem, 2.5vw, 2rem);
   --portal-radius: 0.75rem;
 
@@ -13998,53 +13957,13 @@ body:has(.portal) {
   }
 }
 
-/* ---------- Explore: the band ----------
+/* ---------- Explore: the head ----------
 
-   The owner's panorama, as supplied (explore-worlds-background.png, 1916 x 821, delivered as its WebP copy), as a wide band that holds the
-   title and the category row. The file is never edited: on a wide screen the picture is drawn a third larger
-   from its left edge, which carries the castle out from under the title to the right of it; on a narrow one it
-   is simply cropped. A shade on the reading side and a fall into the page along the bottom keep it legible. */
+   The title, one line of support and the category row, on the page's own ground with a hairline beneath: no picture
+   (ADR 0068). The worlds' own artwork, on the cards below, is the only imagery on the page. */
 .explore-hero {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  padding: clamp(2rem, 4vw, 3.25rem) 0 clamp(1.5rem, 2.5vw, 2rem);
-}
-
-.explore-hero__picture {
-  display: contents;
-}
-
-.explore-hero__image {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 0 32%;
-  transform: scale(1.3);
-  transform-origin: 0 32%;
-}
-
-.explore-hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    linear-gradient(
-      to right,
-      rgb(var(--portal-shade-rgb) / 0.88) 0,
-      rgb(var(--portal-shade-rgb) / 0.55) 30%,
-      rgb(var(--portal-shade-rgb) / 0.08) 62%
-    ),
-    linear-gradient(
-      to top,
-      var(--portal-bg) 0,
-      rgb(var(--portal-shade-rgb) / 0.35) 36%,
-      rgb(var(--portal-shade-rgb) / 0) 70%
-    );
+  padding: clamp(2.5rem, 5vw, 4rem) 0 clamp(1.5rem, 2.5vw, 2rem);
+  border-bottom: 1px solid var(--portal-line);
 }
 
 .explore-hero__inner {
@@ -14056,11 +13975,10 @@ body:has(.portal) {
   margin: 0 0 var(--space-2);
   font-family: var(--display);
   font-weight: 600;
-  font-size: clamp(2.25rem, 1.4rem + 2.6vw, 3.625rem);
+  font-size: clamp(2rem, 1.3rem + 2.2vw, 3.25rem);
   line-height: 1.05;
   letter-spacing: -0.01em;
   text-wrap: balance;
-  text-shadow: 0 2px 20px rgb(var(--portal-glow-rgb) / 0.55);
 }
 
 .explore-hero__lede {
@@ -14070,26 +13988,6 @@ body:has(.portal) {
   font-size: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);
   line-height: 1.5;
   text-wrap: pretty;
-  text-shadow: 0 1px 12px rgb(var(--portal-glow-rgb) / 0.7);
-}
-
-/* Narrower, the band is taller than the picture is wide enough to shade from one side: shade it all a little. */
-@media (max-width: 52rem) {
-  .explore-hero__image {
-    object-position: 38% 35%;
-    transform: none;
-  }
-
-  .explore-hero::after {
-    background:
-      linear-gradient(rgb(var(--portal-shade-rgb) / 0.4), rgb(var(--portal-shade-rgb) / 0.4)),
-      linear-gradient(
-        to right,
-        rgb(var(--portal-shade-rgb) / 0.7) 0,
-        rgb(var(--portal-shade-rgb) / 0) 75%
-      ),
-      linear-gradient(to top, var(--portal-bg) 0, rgb(var(--portal-shade-rgb) / 0) 45%);
-  }
 }
 
 /* ---------- Explore: discovery ---------- */
@@ -14129,9 +14027,9 @@ body:has(.portal) {
   align-items: center;
   min-height: 2.25rem;
   padding: 0 var(--space-4);
-  border: 1px solid rgb(var(--portal-ink-rgb) / 0.12);
+  border: 1px solid var(--portal-line-strong);
   border-radius: var(--radius-full);
-  background: rgb(var(--portal-shade-rgb) / 0.62);
+  background: transparent;
   color: rgb(var(--portal-ink-rgb) / 0.92);
   font-size: var(--text-ui);
   font-weight: 500;
@@ -14143,8 +14041,8 @@ body:has(.portal) {
 }
 
 .explore-cats__chip:hover {
-  border-color: rgb(var(--portal-ink-rgb) / 0.32);
-  background: rgb(var(--portal-panel-rgb) / 0.86);
+  border-color: rgb(var(--portal-ink-rgb) / 0.5);
+  background: var(--hover-wash);
   color: var(--portal-ink);
 }
 
@@ -14171,7 +14069,6 @@ body:has(.portal) {
 .explore-select__label {
   color: rgb(var(--portal-ink-rgb) / 0.84);
   font-size: var(--text-ui);
-  text-shadow: 0 1px 8px rgb(var(--portal-glow-rgb) / 0.6);
 }
 
 .explore-select__control {
@@ -14179,9 +14076,9 @@ body:has(.portal) {
   min-width: 0;
   height: var(--control-md);
   padding: 0 2rem 0 var(--space-3);
-  border: 1px solid var(--portal-line-strong);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-md);
-  background: rgb(var(--portal-shade-rgb) / 0.78)
+  background: var(--portal-bg)
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23aba59b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E")
     no-repeat right 0.625rem center;
   color: var(--portal-ink);
@@ -15539,511 +15436,38 @@ body:has(.portal) {
   }
 }
 
-/* ---------- LorEvolve's home (031) ----------
+/* ---------- Site footer (ADR 0069) ----------
 
-   The portal's own page about LorEvolve itself, in the portal's look: night or parchment, the display serif for what is
-   said and the interface face for what is done, the one ink-blue accent, artwork as atmosphere. One of the owner's two
-   landing paintings is the hero, under a veil of the page's own ground; LorEvolve's live numbers sit on the hero's foot;
-   then the sections, each laid out its own way rather than as a stack of cards. Pills are the interactive shape,
-   as in the bar; the world cards keep the portal's radius. Nothing on the page moves by itself. */
+   Where else there is to go, and nothing invented: the wordmark and its line, the real ways on, and under a hairline the
+   year and the running version, quieter than any link. Drawn at the foot of Explore (the front door), My workspace and a
+   universe's column, from the shared tokens alone, so the portal dresses it in night and the workspace in paper without
+   a second set of rules. Each frame lines it up with its own content below. */
 
-.landing {
-  --landing-space: clamp(4.5rem, 9vw, 8rem);
-
-  padding-bottom: var(--landing-space);
-}
-
-.landing-section,
-.landing-connect__inner,
-.landing-hero__inner,
-.portal__footer {
-  width: min(100% - 2 * var(--portal-gutter), var(--landing-width));
-  margin-inline: auto;
-}
-
-.landing-section {
-  padding-top: var(--landing-space);
-}
-
-/* -- The hero: the painting, its veil, and four things said. -- */
-
-.landing-hero {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  align-items: center;
-  min-height: clamp(32rem, 74svh, 44rem);
-  overflow: hidden;
-  padding: clamp(3rem, 7vw, 5.5rem) 0 clamp(5rem, 9vw, 7.5rem);
-}
-
-.landing-hero__image {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
+.sitefooter {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  /* Where the window is narrower than the painting, its left is cropped first, which keeps the citadel to the right of
-     the title from a laptop down to a tablet. */
-  object-position: 45% 42%;
-}
-
-/* The page's own ground over the painting: whole along the reading edge, thin where the citadel stands, and whole
-   again at the foot, where the numbers sit. */
-.landing-hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    linear-gradient(
-      to right,
-      rgb(var(--portal-shade-rgb) / 0.92) 0,
-      rgb(var(--portal-shade-rgb) / 0.7) 34%,
-      rgb(var(--portal-shade-rgb) / 0.12) 70%
-    ),
-    linear-gradient(
-      to top,
-      var(--portal-bg) 0,
-      rgb(var(--portal-shade-rgb) / 0.6) 22%,
-      rgb(var(--portal-shade-rgb) / 0) 52%
-    ),
-    linear-gradient(rgb(var(--portal-shade-rgb) / 0.32), rgb(var(--portal-shade-rgb) / 0) 30%);
-}
-
-.landing-hero__eyebrow {
-  margin: 0 0 var(--space-5);
-  color: rgb(var(--portal-ink-rgb) / 0.86);
-  font-family: var(--display);
-  font-size: 0.9375rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  text-shadow: 0 1px 12px rgb(var(--portal-glow-rgb) / 0.7);
-}
-
-.landing-hero__title {
-  margin: 0;
-  font-family: var(--display);
-  /* Sized so the longest sentence holds one line from a 360px phone up, and stops short of the citadel. */
-  font-size: clamp(2rem, 8.8vw, 4.25rem);
-  font-weight: 600;
-  line-height: 1.04;
-  letter-spacing: -0.018em;
-  text-wrap: balance;
-  text-shadow: 0 2px 24px rgb(var(--portal-glow-rgb) / 0.55);
-}
-
-/* Each sentence a line of its own: three short thoughts, read as three. */
-.landing-hero__title span {
-  display: block;
-}
-
-.landing-hero__turn {
-  color: rgb(var(--portal-ink-rgb) / 0.74);
-}
-
-.landing-hero__lede {
-  max-width: 34rem;
-  margin: var(--space-6) 0 0;
-  color: rgb(var(--portal-ink-rgb) / 0.9);
-  font-size: clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem);
-  line-height: 1.55;
-  text-wrap: pretty;
-  text-shadow: 0 1px 12px rgb(var(--portal-glow-rgb) / 0.7);
-}
-
-/* -- Actions: one filled pill, one outlined, the size of a decision rather than of the bar's links. -- */
-
-.landing-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  min-height: 3rem;
-  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
-}
-
-.landing-actions--center {
-  justify-content: center;
-}
-
-.landing-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 3rem;
-  padding: 0 1.5rem;
-  border: 1px solid var(--portal-line-strong);
-  border-radius: var(--radius-full);
-  background: rgb(var(--portal-shade-rgb) / 0.42);
-  color: var(--portal-ink);
-  font-size: var(--text-body);
-  font-weight: 600;
-  line-height: 1.2;
-  text-align: center;
-  text-decoration: none;
-  transition:
-    background-color var(--duration-2) var(--ease),
-    border-color var(--duration-2) var(--ease),
-    transform var(--duration-1) var(--ease);
-}
-
-.landing-button:hover {
-  border-color: rgb(var(--portal-ink-rgb) / 0.55);
-  background: rgb(var(--portal-ink-rgb) / 0.1);
-}
-
-.landing-button:active {
-  transform: translateY(1px);
-}
-
-.landing-button:focus-visible {
-  outline-offset: 3px;
-}
-
-.landing-button--primary {
-  border-color: var(--portal-ink);
-  background: var(--portal-ink);
-  color: var(--primary-ink);
-}
-
-.landing-button--primary:hover {
-  border-color: color-mix(in srgb, var(--portal-ink) 86%, var(--portal-bg));
-  background: color-mix(in srgb, var(--portal-ink) 86%, var(--portal-bg));
-}
-
-/* -- LorEvolve in numbers: four live counts on the hero's foot, read as type, not as a dashboard. -- */
-
-.landing-metrics {
-  position: relative;
-  width: min(100% - 2 * var(--portal-gutter), var(--landing-width));
-  margin: calc(-1 * clamp(2.5rem, 5vw, 4rem)) auto 0;
-}
-
-.landing-metrics__list {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 0;
-  border-block: 1px solid var(--portal-line);
-}
-
-.landing-metric {
-  display: flex;
-  flex-direction: column-reverse;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  min-width: 0;
-  padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1rem, 2.5vw, 2rem);
-}
-
-.landing-metric + .landing-metric {
-  border-left: 1px solid var(--portal-line);
-}
-
-.landing-metric:first-child {
-  padding-left: 0;
-}
-
-.landing-metric__value {
-  display: flex;
-  align-items: center;
-  min-height: 1.1em;
-  margin: 0;
-  font-family: var(--display);
-  font-size: clamp(2.25rem, 1.6rem + 2.2vw, 3.5rem);
-  font-weight: 600;
-  font-variant-numeric: lining-nums tabular-nums;
-  line-height: 1.05;
-  letter-spacing: -0.015em;
-  overflow-wrap: anywhere;
-}
-
-.landing-metric__label {
-  color: rgb(var(--portal-ink-rgb) / 0.78);
-  font-size: var(--text-ui);
-  letter-spacing: 0.01em;
-}
-
-/* Waiting: a quiet bar where the number will be, the row already its final height. */
-.landing-metric__wait {
-  display: block;
-  width: 2.5ch;
-  height: 0.62em;
-  border-radius: var(--radius-xs);
-  background: rgb(var(--portal-ink-rgb) / 0.08);
-}
-
-/* Two by two below a tablet: the rules become a cross, and the first column loses its inset. */
-@media (max-width: 48rem) {
-  .landing-metrics__list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .landing-metric:nth-child(3) {
-    border-left: 0;
-    padding-left: 0;
-  }
-
-  .landing-metric:nth-child(n + 3) {
-    border-top: 1px solid var(--portal-line);
-  }
-}
-
-/* -- Section type: one heading voice, one lede voice, for every section below. -- */
-
-.landing-heading {
-  margin: 0;
-  font-family: var(--display);
-  font-size: clamp(1.875rem, 1.3rem + 1.9vw, 2.875rem);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.012em;
-  text-wrap: balance;
-}
-
-.landing-heading--statement {
-  font-size: clamp(2.125rem, 1.4rem + 2.6vw, 3.5rem);
-}
-
-.landing-lede {
-  max-width: 36rem;
-  margin: var(--space-5) 0 0;
-  color: rgb(var(--portal-ink-rgb) / 0.8);
-  font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
-  line-height: 1.6;
-  text-wrap: pretty;
-}
-
-/* -- Build and Write: a column of argument beside what it is about. -- */
-
-.landing-split {
-  display: grid;
-  gap: var(--space-8);
-}
-
-@media (min-width: 56rem) {
-  .landing-split {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-    align-items: start;
-    gap: clamp(3rem, 7vw, 6.5rem);
-  }
-}
-
-.landing-facets {
-  margin: 0;
-}
-
-.landing-facet {
-  display: grid;
-  gap: var(--space-1) var(--space-6);
-  padding: var(--space-5) 0;
-}
-
-.landing-facet + .landing-facet {
-  border-top: 1px solid var(--portal-line);
-}
-
-.landing-facet:first-child {
-  padding-top: var(--space-2);
-}
-
-@media (min-width: 40rem) {
-  .landing-facet {
-    grid-template-columns: 15rem minmax(0, 1fr);
-    align-items: baseline;
-  }
-}
-
-.landing-facet dt {
-  font-family: var(--display);
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.landing-facet dd {
-  margin: 0;
-  color: rgb(var(--portal-ink-rgb) / 0.78);
-  line-height: 1.55;
-  text-wrap: pretty;
-}
-
-/* -- Connect: one band, a statement, and three things that follow from writing once. -- */
-
-.landing-connect {
-  margin-top: var(--landing-space);
-  padding: var(--landing-space) 0;
-  border-block: 1px solid var(--portal-line);
-  background: var(--portal-surface);
-  text-align: center;
-}
-
-.landing-connect .landing-lede,
-.landing-final .landing-lede {
-  margin-inline: auto;
-  text-wrap: balance;
-}
-
-.landing-links {
-  display: grid;
-  gap: var(--space-7);
-  margin: clamp(2.5rem, 5vw, 4rem) 0 0;
-  padding: 0;
-  list-style: none;
-  text-align: left;
-}
-
-@media (min-width: 56rem) {
-  .landing-links {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(2rem, 4vw, 3.5rem);
-  }
-}
-
-.landing-links li {
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--accent-rule);
-}
-
-.landing-links__cause {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 1.3125rem;
-  line-height: 1.3;
-}
-
-.landing-links__effect {
-  margin: var(--space-2) 0 0;
-  color: rgb(var(--portal-ink-rgb) / 0.78);
-  line-height: 1.55;
-}
-
-/* -- Write: who it is for, in a sentence rather than a list of logos. -- */
-
-.landing-media {
-  padding-left: clamp(1.25rem, 2.5vw, 2rem);
-  border-left: 1px solid var(--accent-rule);
-}
-
-.landing-media__list {
-  margin: 0;
-  font-family: var(--display);
-  font-size: clamp(1.5rem, 1.15rem + 1.2vw, 2.125rem);
-  line-height: 1.3;
-  text-wrap: pretty;
-}
-
-.landing-media__turn {
-  margin: var(--space-5) 0 0;
-  color: rgb(var(--portal-ink-rgb) / 0.78);
-  font-size: var(--text-item);
-}
-
-/* -- Explore: a line about published worlds, and the way to them. -- */
-
-.landing-explore__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-5) var(--space-8);
-}
-
-.landing-more {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--control-touch);
-  color: var(--portal-ink);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: var(--accent-rule);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.35em;
-  white-space: nowrap;
-  transition: text-decoration-color var(--duration-2) var(--ease);
-}
-
-.landing-more:hover {
-  text-decoration-color: currentColor;
-}
-
-.landing-more svg {
-  flex: none;
-  color: var(--accent);
-}
-
-/* -- Trust: three promises LorEvolve already keeps. -- */
-
-.landing-assurances {
-  display: grid;
-  gap: var(--space-7);
-  margin: clamp(2rem, 4vw, 3rem) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-@media (min-width: 48rem) {
-  .landing-assurances {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(1.5rem, 3.5vw, 3rem);
-  }
-}
-
-.landing-assurance {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-content: start;
-  align-items: center;
-  gap: var(--space-2) var(--space-4);
-}
-
-/* The workspace's doorway medallion, small: a ring of the accent around the mark. */
-.landing-assurance svg {
-  box-sizing: content-box;
-  padding: 0.625rem;
-  border-radius: 50%;
-  background: rgb(var(--portal-accent-rgb) / 0.1);
-  box-shadow: inset 0 0 0 1px rgb(var(--portal-accent-rgb) / 0.35);
-  color: var(--accent);
-}
-
-.landing-assurance h3 {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.landing-assurance p {
-  grid-column: 1 / -1;
-  margin: var(--space-2) 0 0;
-  color: rgb(var(--portal-ink-rgb) / 0.78);
-  line-height: 1.55;
-}
-
-/* -- The last word: one way on. -- */
-
-.landing-final {
-  width: min(100% - 2 * var(--portal-gutter), 46rem);
-  margin: var(--landing-space) auto 0;
-  padding-top: var(--landing-space);
-  border-top: 1px solid var(--portal-line);
-  text-align: center;
-}
-
-/* -- The footer: where else there is to go, and nothing invented. The brand and the real ways on above a hairline;
-   the year and the running version below it, quieter than any link. No Community or Legal column until LorEvolve has one. -- */
-
-.portal__footer {
+  margin-top: auto;
   padding: var(--space-8) 0 var(--space-7);
-  border-top: 1px solid var(--portal-line);
-  color: var(--portal-muted);
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
   font-size: var(--text-ui);
 }
 
-.portal__footertop {
+.portal .sitefooter {
+  width: min(100% - 2 * var(--portal-gutter), var(--portal-width));
+  margin-inline: auto;
+}
+
+.home .sitefooter {
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.workspace__column .sitefooter {
+  padding-inline: max(var(--gutter), calc((100% - var(--canvas-max)) / 2));
+}
+
+.sitefooter__top {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -16051,38 +15475,38 @@ body:has(.portal) {
   gap: var(--space-7) var(--space-9);
 }
 
-.portal__footerbrand {
+.sitefooter__brand {
   display: grid;
   gap: var(--space-2);
 }
 
-.portal__footerbrand p {
+.sitefooter__brand p {
   margin: 0;
 }
 
-.portal__footerhome {
+.sitefooter__home {
   justify-self: start;
-  color: var(--portal-ink);
+  color: var(--ink);
   text-decoration: none;
 }
 
-.portal__footerhome .wordmark {
+.sitefooter__home .wordmark {
   font-size: 1.25rem;
 }
 
 /* A small gap: each link's tap height spaces it from the label; this keeps the focus ring clear of it. */
-.portal__footernav {
+.sitefooter__nav {
   display: grid;
   gap: var(--space-1);
 }
 
-.portal__footerheading {
+.sitefooter__heading {
   margin: 0;
-  color: var(--portal-muted);
+  color: var(--muted);
   font-size: var(--text-sm);
 }
 
-.portal__footernav ul {
+.sitefooter__nav ul {
   display: flex;
   flex-wrap: wrap;
   gap: 0 var(--space-6);
@@ -16091,87 +15515,32 @@ body:has(.portal) {
   list-style: none;
 }
 
-.portal__footernav a {
+.sitefooter__nav a {
   display: inline-flex;
   align-items: center;
   min-height: var(--control-md);
-  color: rgb(var(--portal-ink-rgb) / 0.82);
+  color: var(--ink);
   text-decoration: none;
 }
 
-.portal__footernav a:hover {
-  color: var(--portal-ink);
+.sitefooter__nav a:hover {
   text-decoration: underline;
   text-underline-offset: 0.3em;
 }
 
-.portal__footerbase {
+.sitefooter__base {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--space-1) var(--space-6);
   margin-top: var(--space-7);
   padding-top: var(--space-5);
-  border-top: 1px solid var(--portal-line);
+  border-top: 1px solid var(--rule);
   font-size: var(--text-sm);
 }
 
-.portal__footerbase p {
+.sitefooter__base p {
   margin: 0;
-}
-
-/* A tablet: the title reaches across the citadel, so the veil covers the whole painting a little. */
-@media (max-width: 56rem) {
-  .landing-hero::after {
-    background:
-      linear-gradient(rgb(var(--portal-shade-rgb) / 0.42), rgb(var(--portal-shade-rgb) / 0.42)),
-      linear-gradient(
-        to right,
-        rgb(var(--portal-shade-rgb) / 0.82) 0,
-        rgb(var(--portal-shade-rgb) / 0.2) 85%
-      ),
-      linear-gradient(to top, var(--portal-bg) 0, rgb(var(--portal-shade-rgb) / 0) 45%);
-  }
-}
-
-/* -- A phone: the hero gives its height to the words, and the picture comes sooner. -- */
-
-@media (max-width: 40rem) {
-  .landing-hero {
-    align-items: flex-start;
-    min-height: 0;
-    padding: var(--space-8) 0 4.5rem;
-  }
-
-  .landing-hero__image {
-    object-position: 82% 45%;
-  }
-
-  .landing-hero::after {
-    background:
-      linear-gradient(rgb(var(--portal-shade-rgb) / 0.62), rgb(var(--portal-shade-rgb) / 0.62)),
-      linear-gradient(to top, var(--portal-bg) 0, rgb(var(--portal-shade-rgb) / 0) 40%);
-  }
-
-  .landing-hero__eyebrow {
-    font-size: 0.8125rem;
-  }
-
-  .landing-actions .landing-button {
-    flex: 1 1 12rem;
-  }
-
-  .landing-metrics {
-    margin-top: -2rem;
-  }
-
-  .landing-explore__head {
-    display: block;
-  }
-
-  .landing-more {
-    margin-top: var(--space-3);
-  }
 }
 
 /* ---------- Review comments (043) ----------

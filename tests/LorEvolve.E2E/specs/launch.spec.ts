@@ -46,7 +46,7 @@ test.describe('the launch layer', () => {
   }) => {
     await asInstalled(page)
     const logo = watchLogo(page)
-    await page.goto('/explore')
+    await page.goto('/')
 
     // Black, from the first paint, with the browser chrome black too while it shows.
     const layer = page.getByTestId('launch')
@@ -116,7 +116,7 @@ test.describe('the launch layer', () => {
 
   test('a browser tab starts as it always has: no layer, no logo fetched', async ({ page }) => {
     const logo = watchLogo(page)
-    await page.goto('/explore')
+    await page.goto('/login')
     await expect(page.getByRole('main')).toBeVisible()
     await expect(page.getByTestId('launch')).toHaveCount(0)
     await expect(page.locator('html')).not.toHaveAttribute('data-launch')
@@ -170,7 +170,7 @@ test.describe('the launch layer', () => {
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await asInstalled(page)
-    await page.goto('/explore')
+    await page.goto('/')
 
     await expect(page.locator('html')).toHaveAttribute('data-launch', /on|leaving/)
     const logo = await page.evaluate(() => {

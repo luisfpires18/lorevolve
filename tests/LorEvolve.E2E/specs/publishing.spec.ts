@@ -319,7 +319,7 @@ test.describe('publishing a universe', () => {
     // Explore lists it, and the workspace's front door leads there.
     await page.goto('/app')
     await page.getByTestId('home-explore').click()
-    await page.waitForURL('/explore')
+    await page.waitForURL('/')
     await expect(page.getByTestId('explore-list').getByRole('link', { name })).toBeVisible()
 
     // Signed out, the same page, with the way in instead of the way back.
@@ -472,7 +472,7 @@ test.describe('publishing a universe', () => {
     await expect(world.getByTestId('public-world-author').locator('bdi')).toHaveText('مارا فيل')
     await expect(world).toContainText('עיר שקועה, 12 שערים (וגשר אחד).')
     await noSidewaysScroll(visitor)
-    await visitor.goto('/explore')
+    await visitor.goto('/')
     await expect(visitor.getByTestId('explore-list')).toBeVisible()
     await noSidewaysScroll(visitor)
     await context.close()

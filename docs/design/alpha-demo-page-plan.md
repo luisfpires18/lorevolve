@@ -21,9 +21,9 @@ Status: **step 1 built** in `site/alpha/` (feature screenshots still to capture)
 - Registration is invitation-only: an Admin issues a sign-up link (`Features/Auth/SignUpLinks.cs`, 7 days, one
   address) and copies it by hand (`AdminEndpoints.cs:149`).
 - The app sends no email at all. No password reset either.
-- The landing page (`src/LorEvolve.Web/src/pages/LandingPage.tsx`, `.landing*` rules in `styles.css` ~15085-15700)
-  uses system fonts, the theme tokens at the top of `styles.css`, one hero painting (`src/assets/atmosphere-citadel.webp`)
-  and the brand mark (`public/brand-mark.png`). Copying its look is cheap.
+- The landing page this plan drew from was retired on 2026-10-31 (ADR 0069; Explore is the front door at `/`). The
+  alpha site keeps its own copy of the look and of the hero painting under `site/alpha/public/assets/`; nothing in `dev`
+  is shared with it any more.
 
 ## 3. The page
 

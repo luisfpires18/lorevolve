@@ -22,7 +22,7 @@ export function PortalSearch() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const onExplore = pathname === '/explore'
+  const onExplore = pathname === '/'
   const q = onExplore ? (params.get('q') ?? '').trim().slice(0, SEARCH_MAX) : ''
 
   const [draft, setDraft] = useState(q)
@@ -50,7 +50,7 @@ export function PortalSearch() {
       return
     }
     const next = draft.trim().slice(0, SEARCH_MAX)
-    void navigate(next ? `/explore?${new URLSearchParams({ q: next })}` : '/explore')
+    void navigate(next ? `/?${new URLSearchParams({ q: next })}` : '/')
   }
 
   return (

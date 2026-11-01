@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { AccountMenu } from './AccountMenu'
 import { BRAND_LINK_LABEL, BrandMark } from './BrandMark'
+import { SiteFooter } from './SiteFooter'
 import { MAIN_CONTENT_ID } from './SkipLink'
 import { Wordmark } from './Wordmark'
 
@@ -34,8 +35,6 @@ export function WorkspaceLayout() {
 
   return (
     <div className="home">
-      {/* LorEvolve's own atmosphere behind the bar and the heading; decorative, out of the flow. */}
-      <div className="atmosphere" aria-hidden="true" data-source="lorevolve" />
       <header className="workspacebar">
         <Link
           className="home__brand workspacebar__brand"
@@ -75,7 +74,7 @@ export function WorkspaceLayout() {
           </ul>
         </nav>
 
-        <Link className="workspacebar__explore" to="/explore" data-testid="home-explore">
+        <Link className="workspacebar__explore" to="/" data-testid="home-explore">
           Explore
         </Link>
         <AccountMenu variant="bar" />
@@ -84,6 +83,7 @@ export function WorkspaceLayout() {
       <main className="home__body" id={MAIN_CONTENT_ID} tabIndex={-1}>
         <Outlet />
       </main>
+      <SiteFooter />
     </div>
   )
 }

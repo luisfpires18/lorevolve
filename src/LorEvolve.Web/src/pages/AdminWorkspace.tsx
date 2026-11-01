@@ -91,7 +91,6 @@ export default function AdminWorkspace() {
 
   return (
     <div className="home">
-      <div className="atmosphere" aria-hidden="true" data-source="lorevolve" />
       <header className="workspacebar">
         <Link className="home__brand workspacebar__brand" to="/" aria-label={BRAND_LINK_LABEL}>
           <BrandMark />

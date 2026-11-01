@@ -44,7 +44,6 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0038 | Public pages carry server-rendered metadata from the public predicates, on a configured origin | [0038-public-page-metadata.md](0038-public-page-metadata.md) |
 | 0039 | A story's parts are published one by one on its own page; a world may credit the work it is based on | [0039-story-content-publication-and-attribution.md](0039-story-content-publication-and-attribution.md) |
 | 0040 | A type may be enabled for the Family Tree, and a relation kind may mean family without ancestry (supersedes two statements of 0035; amended #37: portrait nodes with details, groups enabled for the tree) | [0040-family-tree-type-semantics.md](0040-family-tree-type-semantics.md) |
-
 | 0041 | A universe has one owner and may have collaborators, and one gate decides what each may do (supersedes 0006's access rule; amended 030: invitations by email and collaborator management; 042: history names who made each version; 043: review comments; 045: suggested changes; #23: private notes, the owner's alone) | [0041-universe-collaboration-access.md](0041-universe-collaboration-access.md) |
 | 0042 | An account has a storage allowance (1 GiB), counted from the originals of the Lore pictures in the universes it owns and held during uploads | [0042-account-storage-quota.md](0042-account-storage-quota.md) |
 | 0043 | A protected save names the version it was written over, and a save over a newer one is refused (entries, articles, stories, scenes, manuscripts; #39: field definitions; #23: private notes) | [0043-concurrent-edit-protection.md](0043-concurrent-edit-protection.md) |
@@ -72,8 +71,10 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0065 | Lore's front page is a catalog of the universe's types, with a Browse by group choice above the cards (#60) | [0065-lore-front-page-catalog.md](0065-lore-front-page-catalog.md) |
 | 0066 | An idea board is an account-owned canvas of notes, ideas and entries, and never lore (amends 0030) | [0066-idea-boards.md](0066-idea-boards.md) |
 | 0067 | The product is LorEvolve; what was stored as Lorex is still read | [0067-rename-to-lorevolve.md](0067-rename-to-lorevolve.md) |
+| 0068 | LorEvolve shows no stock artwork; only authors' pictures and the brand mark | [0068-no-stock-artwork.md](0068-no-stock-artwork.md) |
+| 0069 | Explore is the front door at `/`; the page about LorEvolve is retired, `/explore` redirects | [0069-explore-is-the-front-door.md](0069-explore-is-the-front-door.md) |
 
-All accepted. Next number: `0067`.
+All accepted. Next number: `0070`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

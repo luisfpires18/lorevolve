@@ -5,6 +5,7 @@ import { AccountMenu } from '../components/AccountMenu'
 import { BRAND_LINK_LABEL } from '../components/BrandMark'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { UniverseAssistant } from '../components/UniverseAssistant'
+import { SiteFooter } from '../components/SiteFooter'
 import { UniverseSearch } from '../components/UniverseSearch'
 import { getChronology } from '../chronology/api'
 import type { Chronology } from '../chronology/types'
@@ -271,7 +272,7 @@ function Workspace() {
 
   // The world's own artwork as the atmosphere at the head of every screen, from the universe itself, so the first
   // ready render already has it. The API sends it to the owner only (ADR 0041); anyone else, and a world without
-  // artwork, gets LorEvolve's.
+  // artwork, gets no atmosphere at all: LorEvolve shows no stock pictures (ADR 0068).
   const artwork = universe.artwork ? artworkUrl(universe.id, universe.artwork, 'card') : null
 
   // What this account may do here, for what is drawn: the API decides every request on its own (ADR 0041).
@@ -369,7 +370,7 @@ function Workspace() {
           </div>
           {shared ? (
             <span className="sidebar__role" data-testid="workspace-role">
-              Shared · {ROLE_LABELS[universe.accessRole]}
+              Shared as {ROLE_LABELS[universe.accessRole]}
             </span>
           ) : null}
           {universe.isArchived ? <span className="sidebar__archived">Archived</span> : null}
@@ -412,16 +413,19 @@ function Workspace() {
       </nav>
 
       <div className="workspace__column">
-        {/* The atmosphere: the world's artwork - or LorEvolve's own - behind the head of every screen, fading into the
-            working surface. Decorative, out of the flow, never a target; the front page takes it taller. */}
-        <div
-          className="atmosphere"
-          aria-hidden="true"
-          data-testid="workspace-atmosphere"
-          data-source={artwork ? 'world' : 'lorevolve'}
-          data-size={section === 'Overview' ? 'hero' : undefined}
-          style={artwork ? { ['--atmosphere-image' as string]: `url("${artwork}")` } : undefined}
-        />
+        {/* The atmosphere: the world's own artwork behind the head of every screen, fading into the working surface.
+            Decorative, out of the flow, never a target; the front page takes it taller. Nothing is drawn for a world
+            without a picture (ADR 0068). */}
+        {artwork ? (
+          <div
+            className="atmosphere"
+            aria-hidden="true"
+            data-testid="workspace-atmosphere"
+            data-source="world"
+            data-size={section === 'Overview' ? 'hero' : undefined}
+            style={{ ['--atmosphere-image' as string]: `url("${artwork}")` }}
+          />
+        ) : null}
 
         {/* The universe's search, above every screen in it rather than on any one of them. Keyed by the universe, so a
             search typed in one world is never left standing in the next. Search was the sidebar's last greyed section;
@@ -459,6 +463,7 @@ function Workspace() {
             />
           </UniverseAccessContext.Provider>
         </main>
+        <SiteFooter />
       </div>
     </div>
   )

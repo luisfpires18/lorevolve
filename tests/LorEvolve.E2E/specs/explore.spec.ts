@@ -117,7 +117,7 @@ test.describe('Explore worlds', () => {
     })
 
     const { context, page: visitor } = await stranger(browser)
-    await visitor.goto(`/explore?q=${word}`)
+    await visitor.goto(`/?q=${word}`)
 
     await expect(visitor.getByRole('heading', { level: 1 })).toHaveText('Explore Worlds')
     await expect(visitor.getByRole('heading', { level: 1 })).toHaveCount(1)
@@ -161,7 +161,7 @@ test.describe('Explore worlds', () => {
 
   test('signed in: My workspace and Explore lead across and back', async ({ page }) => {
     await author(page, 'Iris Hale')
-    await page.goto('/explore')
+    await page.goto('/')
 
     const workspace = page.getByTestId('portal-workspace')
     await expect(workspace).toHaveText('My workspace')
@@ -173,7 +173,7 @@ test.describe('Explore worlds', () => {
     await workspace.click()
     await page.waitForURL('/app')
     await page.getByTestId('home-explore').click()
-    await page.waitForURL('/explore')
+    await page.waitForURL('/')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Explore Worlds')
   })
 
@@ -192,14 +192,14 @@ test.describe('Explore worlds', () => {
       summary: `Starships over glass seas, ${word}sum.`,
     })
 
-    await page.goto('/explore')
+    await page.goto('/')
     const search = page.getByTestId('explore-search')
     await search.fill(word)
-    await page.waitForURL(`/explore?q=${word}`)
+    await page.waitForURL(`/?q=${word}`)
     await expect(cards(page)).toHaveText([`${word} Cedar`, `${word} birch`, `${word} Alder`])
 
     await page.getByTestId('explore-category-games').click()
-    await page.waitForURL(`/explore?q=${word}&category=games`)
+    await page.waitForURL(`/?q=${word}&category=games`)
     await expect(page.getByTestId('explore-category-games')).toHaveAttribute('aria-current', 'true')
     await expect(page.getByTestId('explore-category-all')).not.toHaveAttribute(
       'aria-current',
@@ -208,22 +208,22 @@ test.describe('Explore worlds', () => {
     await expect(cards(page)).toHaveText([`${word} Cedar`, `${word} Alder`])
 
     await page.getByTestId('explore-genre').selectOption({ label: 'Fantasy' })
-    await page.waitForURL(`/explore?q=${word}&category=games&genre=fantasy`)
+    await page.waitForURL(`/?q=${word}&category=games&genre=fantasy`)
     await expect(cards(page)).toHaveText([`${word} Alder`])
 
     await page.goBack()
-    await page.waitForURL(`/explore?q=${word}&category=games`)
+    await page.waitForURL(`/?q=${word}&category=games`)
     await expect(page.getByTestId('explore-genre')).toHaveValue('')
     await expect(cards(page)).toHaveText([`${word} Cedar`, `${word} Alder`])
     await page.goBack()
-    await page.waitForURL(`/explore?q=${word}`)
+    await page.waitForURL(`/?q=${word}`)
     await expect(cards(page)).toHaveCount(3)
     await page.goForward()
-    await page.waitForURL(`/explore?q=${word}&category=games`)
+    await page.waitForURL(`/?q=${word}&category=games`)
     await expect(cards(page)).toHaveCount(2)
 
     await page.getByTestId('explore-sort').selectOption('az')
-    await page.waitForURL(`/explore?q=${word}&category=games&sort=az`)
+    await page.waitForURL(`/?q=${word}&category=games&sort=az`)
     await expect(cards(page)).toHaveText([`${word} Alder`, `${word} Cedar`])
 
     await page.reload()
@@ -234,12 +234,12 @@ test.describe('Explore worlds', () => {
 
     // "All" drops the category and keeps the rest.
     await page.getByTestId('explore-category-all').click()
-    await page.waitForURL(`/explore?q=${word}&sort=az`)
+    await page.waitForURL(`/?q=${word}&sort=az`)
     await expect(cards(page)).toHaveText([`${word} Alder`, `${word} birch`, `${word} Cedar`])
 
     // The public summary and the author's public name are searched too.
     await search.fill(`${word}sum`)
-    await page.waitForURL(`/explore?q=${word}sum&sort=az`)
+    await page.waitForURL(`/?q=${word}sum&sort=az`)
     await expect(cards(page)).toHaveText([`${word} Cedar`])
     await search.fill(writer)
     await page.waitForURL(new RegExp(`q=Author\\+${word}`))
@@ -247,7 +247,7 @@ test.describe('Explore worlds', () => {
 
     // Clearing is immediate, and the address forgets the search.
     await page.getByTestId('explore-search-clear').click()
-    await page.waitForURL('/explore?sort=az')
+    await page.waitForURL('/?sort=az')
     await expect(search).toHaveValue('')
     await expect(search).toBeFocused()
   })
@@ -256,11 +256,11 @@ test.describe('Explore worlds', () => {
     page,
   }) => {
     const word = token()
-    await page.goto(`/explore?q=${word}&genre=horror`)
+    await page.goto(`/?q=${word}&genre=horror`)
     await expect(page.getByTestId('explore-no-match')).toContainText('No published worlds match.')
     await expect(page.getByTestId('explore-empty')).toHaveCount(0)
     await page.getByRole('button', { name: 'Clear search and filters' }).click()
-    await page.waitForURL('/explore')
+    await page.waitForURL('/')
     await expect(page.getByTestId('explore-search')).toHaveValue('')
 
     // A failing API is not "no worlds".
@@ -304,7 +304,7 @@ test.describe('Explore worlds', () => {
       return route.continue({ url: url.toString() })
     })
 
-    await page.goto(`/explore?q=${word}&category=original`)
+    await page.goto(`/?q=${word}&category=original`)
     await expect(cards(page)).toHaveText([`${word} Cedar`, `${word} Birch`])
     await expect(page.getByTestId('explore-count')).toHaveText('Showing 2 of 3 worlds')
     await page.getByTestId('explore-more').click()
@@ -331,7 +331,7 @@ test.describe('Explore worlds', () => {
 
     for (const width of [390, 360]) {
       const { context, page: visitor } = await stranger(browser, width)
-      await visitor.goto(`/explore?q=${word}`)
+      await visitor.goto(`/?q=${word}`)
       await expect(cards(visitor)).toHaveText([`${word} Wren`])
       await expect(
         visitor.getByTestId('portal-session').getByRole('link', { name: 'Create account' }),
@@ -340,7 +340,7 @@ test.describe('Explore worlds', () => {
 
       // The last category is off the edge of its strip; choosing it scrolls the strip, never the page.
       await visitor.getByTestId('explore-category-other').click()
-      await visitor.waitForURL(`/explore?q=${word}&category=other`)
+      await visitor.waitForURL(`/?q=${word}&category=other`)
       await expect(visitor.getByTestId('explore-no-match')).toBeVisible()
       await noSidewaysScroll(visitor)
 
@@ -349,11 +349,11 @@ test.describe('Explore worlds', () => {
       await visitor.keyboard.press('Shift+Tab')
       await expect(visitor.getByTestId('explore-category-games')).toBeFocused()
       await visitor.keyboard.press('Enter')
-      await visitor.waitForURL(`/explore?q=${word}&category=games`)
+      await visitor.waitForURL(`/?q=${word}&category=games`)
       await expect(cards(visitor)).toHaveText([`${word} Wren`])
 
       await visitor.getByTestId('explore-genre').selectOption('science-fiction')
-      await visitor.waitForURL(`/explore?q=${word}&category=games&genre=science-fiction`)
+      await visitor.waitForURL(`/?q=${word}&category=games&genre=science-fiction`)
       await expect(cards(visitor)).toHaveText([`${word} Wren`])
       const target = await visitor.getByTestId('explore-genre').boundingBox()
       expect(target!.height).toBeGreaterThanOrEqual(40)
@@ -382,7 +382,7 @@ test.describe('Explore worlds', () => {
     })
 
     const { context, page: visitor } = await stranger(browser, 390)
-    await visitor.goto(`/explore?q=${word}&sort=az`)
+    await visitor.goto(`/?q=${word}&sort=az`)
     const titles = cards(visitor)
     // Code point order, case aside: Hebrew letters come before Arabic ones.
     await expect(titles.locator('bdi')).toHaveText([`ירושלים של אש ${word}`, name])
@@ -420,7 +420,7 @@ test.describe('Explore worlds', () => {
 
     const { context, page: visitor } = await stranger(browser)
     await visitor.route('**/artwork/card/**', (route) => route.fulfill({ status: 404, body: '' }))
-    await visitor.goto(`/explore?q=${word}`)
+    await visitor.goto(`/?q=${word}`)
     const card = visitor.getByTestId('explore-list').locator('.worldcard').first()
     await expect(card.getByTestId('worldcard-fallback')).toBeVisible()
     await expect(card.locator('.worldcard__name')).toHaveText(`${word} Lost Picture`)
@@ -460,14 +460,14 @@ test.describe('the portal is the front door', () => {
       genres: [FANTASY],
     })
 
-    // From LorEvolve's home (031), Explore is one named link away.
+    // Explore is the front door (ADR 0069): its old address comes here, and the bar's Explore link is current.
     const { context, page: visitor } = await stranger(browser)
-    await visitor.goto('/')
-    await visitor.getByTestId('portal-explore').click()
-    await visitor.waitForURL('/explore')
+    await visitor.goto('/explore')
+    await visitor.waitForURL('/')
     await expect(visitor.getByRole('heading', { level: 1 })).toHaveText('Explore Worlds')
+    await expect(visitor.getByTestId('portal-explore')).toHaveAttribute('aria-current', 'page')
     await visitor.reload()
-    await expect(visitor).toHaveURL(/\/explore$/)
+    await expect(visitor).toHaveURL(/\/$/)
     await expect(visitor.getByTestId('portal-login')).toBeVisible()
     await context.close()
 
@@ -484,7 +484,7 @@ test.describe('the portal is the front door', () => {
     // The bar's search is on every portal page; from a world it opens Explore with the search.
     await fresh.page.getByTestId('explore-search').fill(word)
     await fresh.page.getByTestId('explore-search').press('Enter')
-    await fresh.page.waitForURL(`/explore?q=${word}`)
+    await fresh.page.waitForURL(`/?q=${word}`)
     await expect(cards(fresh.page)).toHaveText([`${word} Open Door`])
     await fresh.context.close()
   })
@@ -494,11 +494,11 @@ test.describe('the portal is the front door', () => {
     request,
   }) => {
     const username = await account(request)
-    await page.goto(`/explore?category=games`)
+    await page.goto(`/?category=games`)
     await page.getByTestId('portal-login').click()
     await logInOnPage(page, username)
 
-    await page.waitForURL('/explore?category=games')
+    await page.waitForURL('/?category=games')
     await expect(page.getByTestId('portal-workspace')).toHaveText('My workspace')
     await expect(page.getByTestId('portal-login')).toHaveCount(0)
     await expect(page.getByTestId('explore-category-games')).toHaveAttribute('aria-current', 'true')
@@ -506,13 +506,13 @@ test.describe('the portal is the front door', () => {
     await page.getByTestId('portal-workspace').click()
     await page.waitForURL('/app')
     await page.getByTestId('home-explore').click()
-    await page.waitForURL('/explore')
+    await page.waitForURL('/')
 
     // Signing out in the portal leaves the visitor where they were reading.
     await page.getByTestId('account-menu-trigger').click()
     await page.getByRole('button', { name: 'Sign out' }).click()
     await expect(page.getByTestId('portal-login')).toBeVisible()
-    await expect(page).toHaveURL(/\/explore$/)
+    await expect(page).toHaveURL(/\/$/)
   })
 
   test('Log in from a public world comes back to that world', async ({

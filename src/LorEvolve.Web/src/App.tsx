@@ -5,6 +5,7 @@ import {
   Route,
   RouterProvider,
   Routes,
+  useLocation,
   useRouteError,
 } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthProvider'
@@ -34,7 +35,6 @@ import {
   IdeaPage,
   IdeasPage,
   InvitationPage,
-  LandingPage,
   LoginPage,
   LorePage,
   MapPage,
@@ -98,6 +98,15 @@ function screen(key: string, hold: ReactNode, page: ReactNode) {
 }
 
 const asScreen = (key: string, page: ReactNode) => screen(key, <ScreenPending />, page)
+
+/**
+ * Explore's address until ADR 0069. Kept, and sent to the front door with its search intact, so an old link or
+ * bookmark still lands on the worlds; the server answers the same address with a 301 for crawlers and previews.
+ */
+function ExploreRedirect() {
+  const { search } = useLocation()
+  return <Navigate to={{ pathname: '/', search }} replace />
+}
 const asSection = (key: string, page: ReactNode) => screen(key, <SectionPending />, page)
 
 /** The app's providers and routes, exactly as they are declared - the router below only holds them. */
@@ -112,11 +121,11 @@ function Root() {
         <RouteFocus />
         <Routes>
           {/* The public portal: outside both guards, so it answers signed in or out, and outside the
-              workspace, so none of its chrome is mounted. It reads only the anonymous API (ADR 0036). `/` is
-              LorEvolve's home (031); Explore is where the published worlds are found. */}
+              workspace, so none of its chrome is mounted. It reads only the anonymous API (ADR 0036). Explore is the
+              front door, at `/` (ADR 0069); `/explore`, its old address, goes there. */}
           <Route element={<PublicLayout />}>
-            <Route path="/" element={asScreen('home', <LandingPage />)} />
-            <Route path="/explore" element={asScreen('explore', <ExplorePage />)} />
+            <Route path="/" element={asScreen('explore', <ExplorePage />)} />
+            <Route path="/explore" element={<ExploreRedirect />} />
             <Route path="/worlds/:slug" element={asScreen('world', <PublicWorldPage />)} />
             <Route
               path="/worlds/:slug/lore/:loreSlug"
@@ -370,7 +379,7 @@ function Root() {
             <Route path="/admin/*" element={asScreen('admin', <AdminWorkspace />)} />
           </Route>
 
-          {/* An address nobody holds: inside the workspace, the universes; anywhere else, LorEvolve's home (031). */}
+          {/* An address nobody holds: inside the workspace, the universes; anywhere else, the front door (ADR 0069). */}
           <Route path="/app/*" element={<Navigate to="/app" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -305,10 +305,14 @@ test.describe('chronology date periods', () => {
     // Seeding a progression era and a relationship period takes half the product; the editor only reads the counts.
     await page.route(`**/api/universes/${id}/chronology`, async (route) => {
       if (route.request().method() !== 'GET') return route.continue()
-      const response = await route.fetch()
-      const body = (await response.json()) as { eras: Record<string, unknown>[] }
-      body.eras[0] = { ...body.eras[0], entryEraCount: 1, periodCount: 2 }
-      await route.fulfill({ response, json: body })
+      try {
+        const response = await route.fetch()
+        const body = (await response.json()) as { eras: Record<string, unknown>[] }
+        body.eras[0] = { ...body.eras[0], entryEraCount: 1, periodCount: 2 }
+        await route.fulfill({ response, json: body })
+      } catch {
+        // Aborted by the page when a newer read of the chronology replaced it; that read is answered instead.
+      }
     })
 
     await page.goto(`/app/universes/${id}/chronology`)

@@ -1446,11 +1446,11 @@ from the existing tokens and translates to Light and Dark on its own. No route, 
 - **Atmosphere** (`.atmosphere`, one element, out of the flow, `z-index: -1` inside an `isolation: isolate` parent):
   artwork laid behind the head of a screen at `--atmosphere-opacity` (0.32 light, 0.44 dark) under a veil of
   `--atmosphere-veil` (the canvas) that thins toward the top right and is whole at the foot and the start edge. Used by
-  the universe shell (every screen; `data-size="hero"` on Overview, taller and stronger) and My workspace. The source is
-  the world's own artwork card - **owner only**, since artwork is a Publish-capability read (ADR 0041) - else LorEvolve's
-  own `assets/atmosphere-citadel.webp`. The sign-in plate (login, register, an invitation) carries
-  `assets/atmosphere-ridge.webp` under the plate's own veil. Both are the owner's landing images as WebP (q60, ~160 and
-  ~195 KB), fetched once and cached; no filter or blur layer.
+  the universe shell (every screen; `data-size="hero"` on Overview, taller and stronger). The source is the world's own
+  artwork card - **owner only**, since artwork is a Publish-capability read (ADR 0041) - and nothing else: since ADR 0068
+  (2026-10-30) the element is not drawn for a world without a card, My workspace and Admin draw none, and the sign-in
+  plate is plain graphite. The two stock paintings that stood in (`atmosphere-citadel.webp`, `atmosphere-ridge.webp`)
+  left the repository. No filter or blur layer.
 - **Editorial headings.** `--text-page` and `--text-document` are `clamp()`s now (30-42px, 36-52px), tracked
   `--title-tracking`, `text-wrap: balance`; the fixed one-step-down at 640 is gone. A document's front page - an entry,
   a universe's Overview - carries `.titlerule`: a fine accent rule with a small diamond, masked over `--accent`.

@@ -85,7 +85,7 @@ test.describe('LorEvolve leads home', () => {
       await page.waitForURL('/')
     }
 
-    await page.goto('/explore')
+    await page.goto('/')
     await page.locator('.portal__brand').click()
     await page.waitForURL('/')
 
@@ -542,7 +542,7 @@ test.describe('Settings', () => {
 })
 
 test.describe('LorEvolve opens on the portal', () => {
-  test('signed out, the front door and any unknown address are LorEvolve’s home, never Login; the installed app opens the landing page; a workspace link still asks', async ({
+  test('signed out, the front door and any unknown address are Explore, never Login; the installed app opens Explore; a workspace link still asks', async ({
     browser,
   }) => {
     const { context, page } = await fresh(browser)
@@ -552,10 +552,10 @@ test.describe('LorEvolve opens on the portal', () => {
 
     await page.goto(manifest.start_url)
     await expect(page).toHaveURL('/')
-    await expect(page.getByTestId('landing')).toBeVisible()
+    await expect(page.getByTestId('explore')).toBeVisible()
     await page.goto('/somewhere-nobody-links')
     await expect(page).toHaveURL('/')
-    await expect(page.getByTestId('landing')).toBeVisible()
+    await expect(page.getByTestId('explore')).toBeVisible()
 
     // An explicit workspace address is a deep link, and follows the sign-in rules.
     await page.goto('/app/universes')
@@ -576,11 +576,12 @@ test.describe('LorEvolve opens on the portal', () => {
     ))!.publicSlug
     await page.goto(`/app/universes/${w.id}/timeline`)
 
-    // A cold launch is the manifest's start_url in a new window: the landing page, with the way in offered, not taken.
+    // A cold launch is the manifest's start_url in a new window: Explore, with the way in offered, not taken.
     const launch = await page.context().newPage()
     await launch.goto('/')
     await expect(launch).toHaveURL('/')
-    await expect(launch.getByTestId('landing-primary')).toHaveText('Go to my workspace')
+    await expect(launch.getByTestId('explore')).toBeVisible()
+    await expect(launch.getByTestId('portal-workspace')).toBeVisible()
     await launch.goto('/not-a-page')
     await expect(launch).toHaveURL('/')
 

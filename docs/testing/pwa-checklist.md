@@ -109,7 +109,7 @@ signed-in account, and the exact screen.
 - **Session:** launch while signed in; resume after 10 minutes and after an hour in the background; a session expired
   on the server sends to sign-in and back; a connection revoked in Connected Apps stops that app; a sign-out in the
   browser does not sign the installed app out (separate cookie jar on iOS) and that is expected.
-- **Install and update:** `start_url` is `/explore`, scope `/`; after a DEV deploy the next launch runs the new build
+- **Install and update:** `start_url` is `/` (Explore), scope `/`; after a DEV deploy the next launch runs the new build
   (a new worker, old cache dropped) with no stale screen; with the network off every screen fails plainly (no cached
   universe, by design); with it back, a retry works.
 - **Touch and accessibility:** targets at least 44 px (`pointer: coarse` rules), portrait and landscape, no sideways

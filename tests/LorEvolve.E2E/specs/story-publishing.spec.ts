@@ -369,7 +369,7 @@ test.describe('attribution', () => {
     await expect(anon.getByRole('heading', { level: 1 })).toHaveText(author)
 
     // Explore credits the original creator on the card, briefly.
-    await anon.goto(`/explore?q=${encodeURIComponent(w.name)}`)
+    await anon.goto(`/?q=${encodeURIComponent(w.name)}`)
     const card = anon.locator('.worldcard').filter({ hasText: w.name })
     await expect(card.getByTestId('worldcard-original')).toHaveText(
       'Based on works by Odile Varnas',
