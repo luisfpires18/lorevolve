@@ -379,3 +379,35 @@ if (DISCORD_INVITE) {
     }
   }
 }
+
+// -- Counting (D1, nothing about the visitor: no IP, cookie or user agent, the day only) --
+
+// A video's first play on this page load is counted (/api/play).
+for (const video of document.querySelectorAll('video[data-play]')) {
+  video.addEventListener(
+    'play',
+    () => navigator.sendBeacon('/api/play', JSON.stringify({ video: video.dataset.play })),
+    { once: true },
+  )
+}
+
+// Human guess: a real (trusted) pointer, key or touch input happened and the browser is not automated. Scrolling alone
+// does not count; a script can scroll.
+let human = false
+const markHuman = (event) => {
+  if (event.isTrusted && !navigator.webdriver) human = true
+}
+for (const type of ['pointerdown', 'keydown', 'touchstart']) addEventListener(type, markHuman, { capture: true, passive: true })
+
+const sendEvent = (event) => navigator.sendBeacon('/api/event', JSON.stringify({ ...event, human }))
+
+// A click on a feature link counts as that feature; any other link or button counts by its data-track name.
+document.addEventListener('click', (event) => {
+  if (!event.isTrusted) return
+  const el = event.target.closest('a, button')
+  const target = el?.dataset.track ?? (el?.hash?.length > 1 ? el.hash.slice(1) : null)
+  if (target) sendEvent({ kind: 'click', target })
+})
+
+// One view per page load, sent when the page is hidden for good, so it carries whether input ever happened.
+addEventListener('pagehide', () => sendEvent({ kind: 'view' }), { once: true })

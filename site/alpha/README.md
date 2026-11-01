@@ -6,12 +6,15 @@ imports or calls the app.
 
 | Path | What |
 | --- | --- |
-| `public/` | What is served: `index.html`, `privacy.html`, `styles.css` (a trimmed copy of the app's portal and landing styles), `app.js` (the feature index and the survey dialog), `_headers`, `assets/` (brand mark and icons only) |
+| `public/` | What is served: `index.html`, `privacy.html`, `styles.css` (a trimmed copy of the app's portal and landing styles), `app.js` (the feature index and the survey dialog), `_headers`, `assets/` (brand mark and icons; feature screenshots in `shots/`; the walkthrough and MCP videos with their posters in `clips/`) |
 | `?v=` on `/app.js` and `/styles.css` | Browsers keep those two for 4 hours (the zone's cache setting); bump the date in `index.html` and `privacy.html` whenever either changes, or returning visitors run the old one |
 | `functions/api/survey.js` | `POST /api/survey`: Turnstile check, validation, one row per send in D1, nothing about the sender |
+| `functions/api/play.js` | `POST /api/play`: one row per video play (`walkthrough`, `mcp`), day only |
+| `functions/api/event.js` | `POST /api/event`: one row per page view or click, with a human/bot guess, day only |
 | `functions/api/config.js` | `GET /api/config`: the public Turnstile site key |
 | `lib/survey.js` | The questions the server accepts and their validation, shared by the function and its check |
 | `schema.sql` | The `survey_answers` table, for a new database |
+| `migrations/0005-video-plays-and-page-events.sql` | Adds `video_plays` and `page_events` to an existing database |
 | `migrations/0004-anonymous-survey.sql` | Moves a database from the old alpha application form to the anonymous survey (drops `applications`, `surveys`, `video_plays`) |
 
 The page sends no email and collects nothing that identifies a person.
@@ -49,6 +52,9 @@ npx wrangler d1 execute <database name> --remote --command "SELECT * FROM survey
 - Per day: `SELECT created_on, COUNT(*) FROM survey_answers GROUP BY created_on;`
 - One answer across sends: `SELECT json_extract(answers, '$.payPreference') AS pay, COUNT(*) FROM survey_answers GROUP BY pay;`
 - CSV: Console > run the SELECT > Download.
+- Video plays: `SELECT video, COUNT(*) FROM video_plays GROUP BY video;`
+- Visits, people vs bots: `SELECT created_on, human, COUNT(*) FROM page_events WHERE kind = 'view' GROUP BY created_on, human;`
+- Clicks by people: `SELECT target, COUNT(*) FROM page_events WHERE kind = 'click' AND human = 1 GROUP BY target ORDER BY 2 DESC;`
 - When the alpha ends: `DROP TABLE survey_answers;` (or delete the database).
 
 If the survey or `privacy.html` changes in substance, bump the version line in `privacy.html`.
