@@ -10,11 +10,11 @@ imports or calls the app.
 | `?v=` on `/app.js` and `/styles.css` | Browsers keep those two for 4 hours (the zone's cache setting); bump the date in `index.html` and `privacy.html` whenever either changes, or returning visitors run the old one |
 | `functions/api/survey.js` | `POST /api/survey`: Turnstile check, validation, one row per send in D1, nothing about the sender |
 | `functions/api/play.js` | `POST /api/play`: one row per video play (`walkthrough`, `mcp`), day only |
-| `functions/api/event.js` | `POST /api/event`: one row per page view or click, with a human/bot guess, day only |
 | `functions/api/config.js` | `GET /api/config`: the public Turnstile site key |
 | `lib/survey.js` | The questions the server accepts and their validation, shared by the function and its check |
 | `schema.sql` | The `survey_answers` table, for a new database |
-| `migrations/0005-video-plays-and-page-events.sql` | Adds `video_plays` and `page_events` to an existing database |
+| `migrations/0005-video-plays-and-page-events.sql` | Adds `video_plays` (and the since-dropped `page_events`) to an existing database |
+| `migrations/0006-drop-page-events.sql` | Drops `page_events`: page views and clicks are no longer counted (2026-11-01) |
 | `migrations/0004-anonymous-survey.sql` | Moves a database from the old alpha application form to the anonymous survey (drops `applications`, `surveys`, `video_plays`) |
 
 The page sends no email and collects nothing that identifies a person.
@@ -53,8 +53,7 @@ npx wrangler d1 execute <database name> --remote --command "SELECT * FROM survey
 - One answer across sends: `SELECT json_extract(answers, '$.payPreference') AS pay, COUNT(*) FROM survey_answers GROUP BY pay;`
 - CSV: Console > run the SELECT > Download.
 - Video plays: `SELECT video, COUNT(*) FROM video_plays GROUP BY video;`
-- Visits, people vs bots: `SELECT created_on, human, COUNT(*) FROM page_events WHERE kind = 'view' GROUP BY created_on, human;`
-- Clicks by people: `SELECT target, COUNT(*) FROM page_events WHERE kind = 'click' AND human = 1 GROUP BY target ORDER BY 2 DESC;`
+- Visits: Cloudflare Web Analytics on the zone; the page counts no views or clicks of its own.
 - When the alpha ends: `DROP TABLE survey_answers;` (or delete the database).
 
 If the survey or `privacy.html` changes in substance, bump the version line in `privacy.html`.
