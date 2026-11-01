@@ -1,7 +1,7 @@
 # LorEvolve alpha page
 
-A static page, separate from the app, that shows what LorEvolve does (type and the brand mark only: no artwork, no
-screenshots, no videos) and takes an anonymous survey. Plan: `docs/design/alpha-demo-page-plan.md`. Nothing here
+A static page, separate from the app, that shows what LorEvolve does (the brand mark, no artwork, and one screenshot
+per feature from the Lord of the Rings universe on DEV, in `public/assets/shots/`) and takes an anonymous survey. Plan: `docs/design/alpha-demo-page-plan.md`. Nothing here
 imports or calls the app.
 
 | Path | What |
