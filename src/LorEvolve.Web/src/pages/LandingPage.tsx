@@ -1,76 +1,36 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Archive, Lock, Users } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
 import { useWholeTitle } from '../lib/useDocumentTitle'
-import { getPublicStats, type PublicStats } from '../portal/api'
-import heroImage from '../assets/atmosphere-citadel.webp'
 
 /** The same words the server writes into this page's head (`PageMetadataResolver`, ADR 0038). */
 const HOME_TITLE = 'LorEvolve | Build connected fictional universes'
-
-/** The four numbers, in the order they are read, under the words LorEvolve uses for them. */
-const METRICS: { key: keyof PublicStats; label: string }[] = [
-  { key: 'creators', label: 'Creators' },
-  { key: 'universes', label: 'Universes' },
-  { key: 'publishedWorlds', label: 'Published worlds' },
-  { key: 'privateWorlds', label: 'Private worlds' },
-]
-
-const count = new Intl.NumberFormat('en')
-
-type Stats = { kind: 'ready'; value: PublicStats } | { kind: 'error' } | null
 
 /**
  * LorEvolve's home (031): what LorEvolve is, what it does, who it is for, that others' worlds can be read, and how to start -
  * then out, to Explore or into the workspace. A page of the portal, inside `PublicLayout`, so the bar, the session and
  * the theme are the portal's own; only its search stays on Explore, where it means something.
  *
- * Everything on it is real. Under the hero, LorEvolve in four live numbers (`/api/public/stats`): shown as they are, zeros
- * included, never counted up and never guessed while they load; if they cannot be read the row simply is not there.
- * Published worlds are not pictured here; the section points to Explore, which lists them. Nothing here claims a feature LorEvolve does not have today, and no private workspace
- * is pictured.
+ * Words on the portal's own ground, and nothing else (ADR 0068): no stock painting, no picture of a workspace, no
+ * counts. Nothing here claims a feature LorEvolve does not have today. Published worlds are not pictured here; the
+ * section points to Explore, which lists them. The way in has one name wherever it appears, in the bar and on the
+ * page: Create account, or Go to my workspace once signed in.
  */
 export default function LandingPage() {
   useWholeTitle(HOME_TITLE)
   const { user, isLoading } = useAuth()
-  const [stats, setStats] = useState<Stats>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    getPublicStats(controller.signal)
-      .then((value) => setStats({ kind: 'ready', value }))
-      .catch(() => {
-        if (!controller.signal.aborted) setStats({ kind: 'error' })
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [])
 
   return (
     <div className="landing" data-testid="landing">
       <section className="landing-hero" aria-labelledby="landing-title">
-        <img
-          className="landing-hero__image"
-          src={heroImage}
-          alt=""
-          width={1672}
-          height={941}
-          fetchPriority="high"
-          decoding="async"
-        />
         <div className="landing-hero__inner">
-          <p className="landing-hero__eyebrow">A workspace for fictional universes</p>
           <h1 className="landing-hero__title" id="landing-title">
-            <span>Build the world.</span> <span>Tell the story.</span>{' '}
-            <span className="landing-hero__turn">Whatever form it takes.</span>
+            <span>Build the world.</span> <span>Tell the story.</span>
           </h1>
           <p className="landing-hero__lede">
             LorEvolve keeps worldbuilding and writing together: the people, places and history of
             your universe, and the stories told inside it.
           </p>
-          {/* Empty until the session is known, so a signed-in visitor never sees "Start building" first; the row keeps
+          {/* Empty until the session is known, so a signed-in visitor never sees "Create account" first; the row keeps
               its height meanwhile (`.landing-actions`). */}
           <div className="landing-actions" data-testid="landing-hero-actions">
             {isLoading ? null : user ? (
@@ -87,7 +47,7 @@ export default function LandingPage() {
                 to="/register"
                 data-testid="landing-primary"
               >
-                Start building
+                Create account
               </Link>
             )}
             {isLoading ? null : (
@@ -98,31 +58,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {stats?.kind === 'error' ? null : (
-        <section
-          className="landing-metrics"
-          aria-label="LorEvolve in numbers"
-          data-testid="landing-metrics"
-        >
-          {/* While loading, the labels hold the row's place and the numbers are quiet bars - never a 0 that is not
-              true. */}
-          <dl className="landing-metrics__list" aria-busy={stats === null}>
-            {METRICS.map(({ key, label }) => (
-              <div className="landing-metric" key={key}>
-                <dt className="landing-metric__label">{label}</dt>
-                <dd className="landing-metric__value" data-testid={`landing-metric-${key}`}>
-                  {stats?.kind === 'ready' ? (
-                    count.format(stats.value[key])
-                  ) : (
-                    <span className="landing-metric__wait" aria-hidden="true" />
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
 
       <section className="landing-section landing-build" aria-labelledby="landing-build">
         <div className="landing-split">
@@ -164,7 +99,7 @@ export default function LandingPage() {
 
       <section className="landing-connect" aria-labelledby="landing-connect">
         <div className="landing-connect__inner">
-          <h2 className="landing-heading landing-heading--statement" id="landing-connect">
+          <h2 className="landing-heading" id="landing-connect">
             Everything in it is connected.
           </h2>
           <p className="landing-lede">
@@ -226,7 +161,6 @@ export default function LandingPage() {
           </div>
           <Link className="landing-more" to="/explore" data-testid="landing-explore-all">
             Explore all worlds
-            <ArrowRight aria-hidden="true" size={18} strokeWidth={1.75} />
           </Link>
         </div>
       </section>
@@ -235,57 +169,41 @@ export default function LandingPage() {
         <h2 className="landing-heading" id="landing-trust">
           Your world stays yours.
         </h2>
-        <ul className="landing-assurances">
-          <li className="landing-assurance">
-            <Lock aria-hidden="true" size={20} strokeWidth={1.75} />
-            <h3>Private until you publish</h3>
-            <p>
-              A universe stays private until its owner publishes it, and then only the entries and
-              stories they choose are public.
-            </p>
-          </li>
-          <li className="landing-assurance">
-            <Users aria-hidden="true" size={20} strokeWidth={1.75} />
-            <h3>Shared on your terms</h3>
-            <p>
-              Invite collaborators as Editors, Reviewers or Viewers. Sharing a universe never
-              publishes it.
-            </p>
-          </li>
-          <li className="landing-assurance">
-            <Archive aria-hidden="true" size={20} strokeWidth={1.75} />
-            <h3>Yours to keep</h3>
-            <p>
-              Download a backup of a universe, pictures included, and restore it whenever you need
-              to.
-            </p>
-          </li>
-        </ul>
+        <div className="landing-prose">
+          <p>
+            A universe stays private until its owner publishes it, and then only the entries and
+            stories they choose are public.
+          </p>
+          <p>
+            Invite collaborators as Editors, Reviewers or Viewers. Sharing a universe never
+            publishes it.
+          </p>
+          <p>
+            Download a backup of a universe, pictures included, and restore it whenever you need to.
+          </p>
+        </div>
       </section>
 
       <section className="landing-final" aria-labelledby="landing-final">
-        <h2 className="landing-heading landing-heading--statement" id="landing-final">
+        <h2 className="landing-heading" id="landing-final">
           Every universe starts with a name.
         </h2>
         <p className="landing-lede">
           {isLoading
-            ? ' '
+            ? ' '
             : user
               ? 'Your universes are where you left them.'
               : 'Create an account, name your first universe and begin with what you already know.'}
         </p>
-        <div
-          className="landing-actions landing-actions--center"
-          data-testid="landing-final-actions"
-        >
+        <div className="landing-actions" data-testid="landing-final-actions">
           {isLoading ? null : user ? (
             <Link className="landing-button landing-button--primary" to="/app">
-              Open my workspace
+              Go to my workspace
             </Link>
           ) : (
             <>
               <Link className="landing-button landing-button--primary" to="/register">
-                Start building your universe
+                Create account
               </Link>
               <Link className="landing-button" to="/login">
                 Log in

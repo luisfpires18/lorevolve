@@ -205,7 +205,7 @@ test.describe('collaborators', () => {
 
     // Accepting opens the universe, and says whose role this is.
     await ana.page.waitForURL(`/app/universes/${world.id}`)
-    await expect(ana.page.getByTestId('workspace-role')).toHaveText('Shared · Editor')
+    await expect(ana.page.getByTestId('workspace-role')).toHaveText('Shared as Editor')
     await expect(ana.page.getByTestId('overview-role')).toContainText('Shared with you as Editor.')
 
     // An Editor writes.
@@ -219,7 +219,7 @@ test.describe('collaborators', () => {
     const card = ana.page.locator(
       `[data-testid="universe-card"][data-universe-name="${world.name}"]`,
     )
-    await expect(card.getByTestId('universe-card-role')).toHaveText('Shared · Editor')
+    await expect(card.getByTestId('universe-card-role')).toHaveText('Shared as Editor')
     await expect(ana.page.getByTestId('received-invitations')).toHaveCount(0)
 
     // The owner's own card carries no badge.
@@ -270,7 +270,7 @@ test.describe('collaborators', () => {
     await page.getByTestId('invitation-accept').click()
 
     await page.waitForURL(`/app/universes/${world.id}`)
-    await expect(page.getByTestId('workspace-role')).toHaveText('Shared · Reviewer')
+    await expect(page.getByTestId('workspace-role')).toHaveText('Shared as Reviewer')
 
     await owner.context.close()
     await context.close()
@@ -320,7 +320,7 @@ test.describe('collaborators', () => {
 
     // The change holds on Ana's next request.
     await ana.page.goto(`/app/universes/${world.id}`)
-    await expect(ana.page.getByTestId('workspace-role')).toHaveText('Shared · Viewer')
+    await expect(ana.page.getByTestId('workspace-role')).toHaveText('Shared as Viewer')
 
     await member.getByRole('button', { name: `Remove ${ana.username}` }).click()
     const confirm = owner.page.getByTestId('remove-collaborator-confirm')

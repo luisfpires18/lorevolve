@@ -78,9 +78,8 @@ test.describe('LorEvolve’s home is /', () => {
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      'Build the world. Tell the story. Whatever form it takes.',
+      'Build the world. Tell the story.',
     )
-    await expect(page.getByText('A workspace for fictional universes').first()).toBeVisible()
     await expect(page.getByRole('banner')).toHaveCount(1)
     await expect(page.getByRole('main')).toHaveCount(1)
     await expect(page.getByRole('contentinfo')).toHaveCount(1)
@@ -103,12 +102,9 @@ test.describe('LorEvolve’s home is /', () => {
     await expect(page.getByTestId('portal-appearance')).toBeVisible()
     await expect(page.getByTestId('portal-workspace')).toHaveCount(0)
 
-    // The painting is decoration, and no workspace is pictured: the only other pictures are public worlds' cards.
-    await expect(page.locator('.landing-hero__image')).toHaveAttribute('alt', '')
+    // No picture of any kind: no stock painting, no workspace pictured (ADR 0068).
     await expect(page.getByTestId('landing-shot')).toHaveCount(0)
-    await expect(
-      page.locator('.landing img:not(.landing-hero__image):not(.worldcard__image)'),
-    ).toHaveCount(0)
+    await expect(page.locator('.landing img')).toHaveCount(0)
 
     // Nothing the page does not offer: no prices, trials or artificial intelligence.
     const text = (await page.getByTestId('landing').innerText()).toLowerCase()
@@ -170,15 +166,15 @@ test.describe('LorEvolve’s home is /', () => {
     await context.close()
   })
 
-  test('signed out: Start building opens registration, which then lands in the workspace; Explore worlds opens Explore', async ({
+  test('signed out: Create account opens registration, which then lands in the workspace; Explore worlds opens Explore', async ({
     browser,
   }) => {
     const { context, page } = await stranger(browser)
     await page.goto('/')
     const primary = page.getByTestId('landing-primary')
-    await expect(primary).toHaveText('Start building')
+    await expect(primary).toHaveText('Create account')
     await expect(page.getByTestId('landing-final-actions').getByRole('link')).toHaveText([
-      'Start building your universe',
+      'Create account',
       'Log in',
     ])
 
@@ -196,7 +192,7 @@ test.describe('LorEvolve’s home is /', () => {
     await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
     await page.getByLabel('Confirm password').fill(PASSWORD)
     await page.getByRole('button', { name: 'Create account' }).click()
-    // "Start building" means start: the workspace, not back to the page that offered it.
+    // Creating the account means start: the workspace, not back to the page that offered it.
     await page.waitForURL('/app')
     await context.close()
   })
@@ -215,7 +211,7 @@ test.describe('LorEvolve’s home is /', () => {
     await expect(page.getByTestId('landing-primary')).toHaveText('Go to my workspace')
     await expect(page.getByTestId('landing-explore')).toHaveText('Explore worlds')
     await expect(page.getByTestId('landing-final-actions').getByRole('link')).toHaveText([
-      'Open my workspace',
+      'Go to my workspace',
     ])
     await expect(page.getByTestId('portal-footer-links').getByRole('link')).toHaveText([
       'Explore',
@@ -228,7 +224,7 @@ test.describe('LorEvolve’s home is /', () => {
       (await page.getByTestId('portal-footer-version').textContent())!,
     )
     await page.keyboard.press('Escape')
-    await expect(page.getByText('Start building')).toHaveCount(0)
+    await expect(page.getByText('Create account')).toHaveCount(0)
 
     await page.getByTestId('landing-primary').click()
     await page.waitForURL('/app')
@@ -240,7 +236,7 @@ test.describe('LorEvolve’s home is /', () => {
     await page.getByRole('button', { name: 'Sign out' }).click()
     await expect(page.getByTestId('portal-login')).toBeVisible()
     await expect(page).toHaveURL('/')
-    await expect(page.getByTestId('landing-primary')).toHaveText('Start building')
+    await expect(page.getByTestId('landing-primary')).toHaveText('Create account')
   })
 
   test('Log in from the home page lands in the workspace rather than back on the page that offered it', async ({
@@ -330,7 +326,7 @@ test.describe('Every width, both themes', () => {
     [390, 844],
     [360, 780],
   ] as const) {
-    test(`${width}px: three-line title, the way in, Explore in the bar, nothing sideways`, async ({
+    test(`${width}px: two-line title, the way in, Explore in the bar, nothing sideways`, async ({
       browser,
     }) => {
       const { context, page } = await stranger(browser, width, height)
@@ -344,17 +340,7 @@ test.describe('Every width, both themes', () => {
         .evaluate((heading) =>
           [...heading.querySelectorAll('span')].map((span) => span.getClientRects().length),
         )
-      expect(lines).toEqual([1, 1, 1])
-
-      // The four numbers: one row from a tablet up, two by two below it, never four stacked rows.
-      const tops = await page
-        .getByTestId('landing-metrics')
-        .locator('.landing-metric')
-        .evaluateAll((metrics) =>
-          metrics.map((metric) => Math.round(metric.getBoundingClientRect().top)),
-        )
-      expect(tops).toHaveLength(4)
-      expect(new Set(tops).size).toBe(width >= 768 ? 1 : 2)
+      expect(lines).toEqual([1, 1])
 
       // The bar keeps brand, Explore, Appearance and both ways in reachable, and nothing in it touches: the brand keeps
       // at least the session's own margin of air (--space-2) whatever faces the platform has.
@@ -430,109 +416,6 @@ test.describe('Every width, both themes', () => {
       .getByTestId('landing-primary')
       .evaluate((link) => getComputedStyle(link).outlineStyle)
     expect(outline).toBe('solid')
-    await context.close()
-  })
-})
-
-test.describe('LorEvolve in numbers', () => {
-  const metric = (page: Page, key: string) => page.getByTestId(`landing-metric-${key}`)
-  const KEYS = ['creators', 'universes', 'publishedWorlds', 'privateWorlds'] as const
-
-  async function shown(page: Page) {
-    return Promise.all(KEYS.map((key) => metric(page, key).innerText()))
-  }
-
-  test('the four live counts are the API’s, the same signed out and signed in', async ({
-    page,
-    browser,
-  }) => {
-    await account(page.request)
-
-    const { context, page: visitor } = await stranger(browser, 1280)
-    const answered = visitor.waitForResponse((response) =>
-      response.url().endsWith('/api/public/stats'),
-    )
-    await visitor.goto('/')
-    const stats = (await (await answered).json()) as Record<(typeof KEYS)[number], number>
-    const expected = KEYS.map((key) => new Intl.NumberFormat('en').format(stats[key]))
-    await expect(metric(visitor, 'privateWorlds')).not.toBeEmpty()
-    expect(await shown(visitor)).toEqual(expected)
-    await expect(visitor.getByTestId('landing-metrics').locator('dt')).toHaveText([
-      'Creators',
-      'Universes',
-      'Published worlds',
-      'Private worlds',
-    ])
-    expect(stats.universes).toBe(stats.publishedWorlds + stats.privateWorlds)
-    await context.close()
-
-    // Signed in: the same global numbers, not this account's.
-    const signedIn = page.waitForResponse((response) =>
-      response.url().endsWith('/api/public/stats'),
-    )
-    await page.goto('/')
-    const again = (await (await signedIn).json()) as Record<string, number>
-    await expect(metric(page, 'privateWorlds')).not.toBeEmpty()
-    expect(await shown(page)).toEqual(
-      KEYS.map((key) => new Intl.NumberFormat('en').format(again[key])),
-    )
-    expect(again.creators).toBeGreaterThanOrEqual(stats.creators)
-  })
-
-  test('whatever the API says is what is shown: zeros as zeros, large numbers in full', async ({
-    browser,
-  }) => {
-    for (const [answer, words] of [
-      [{ creators: 0, universes: 0, publishedWorlds: 0, privateWorlds: 0 }, ['0', '0', '0', '0']],
-      [
-        { creators: 1284, universes: 12500, publishedWorlds: 7, privateWorlds: 12493 },
-        ['1,284', '12,500', '7', '12,493'],
-      ],
-    ] as const) {
-      const { context, page } = await stranger(browser, 1280)
-      await page.route('**/api/public/stats', (route) => route.fulfill({ json: answer }))
-      await page.goto('/')
-      await expect(metric(page, 'creators')).toHaveText(words[0])
-      expect(await shown(page)).toEqual(words)
-      await context.close()
-    }
-  })
-
-  test('while the numbers load nothing says 0, and the row already holds its place', async ({
-    browser,
-  }) => {
-    const { context, page } = await stranger(browser, 1280)
-    let release: () => void = () => {}
-    const held = new Promise<void>((resolve) => (release = resolve))
-    await page.route('**/api/public/stats', async (route) => {
-      await held
-      await route.fulfill({
-        json: { creators: 5, universes: 9, publishedWorlds: 2, privateWorlds: 7 },
-      })
-    })
-    await page.goto('/')
-    await expect(page.getByTestId('landing-metrics').locator('dt')).toHaveCount(4)
-    expect(await shown(page)).toEqual(['', '', '', ''])
-    const before = (await page.getByTestId('landing-metrics').boundingBox())!.height
-    release()
-    await expect(metric(page, 'creators')).toHaveText('5')
-    const after = (await page.getByTestId('landing-metrics').boundingBox())!.height
-    expect(Math.abs(after - before)).toBeLessThan(2)
-    await context.close()
-  })
-
-  test('numbers that cannot be read leave quietly, and the page still works', async ({
-    browser,
-  }) => {
-    const { context, page } = await stranger(browser, 1280)
-    await page.route('**/api/public/stats', (route) => route.abort())
-    await page.goto('/')
-    await expect(page.getByTestId('landing-primary')).toHaveText('Start building')
-    await expect(page.getByTestId('landing-metrics')).toHaveCount(0)
-    await expect(page.getByRole('alert')).toHaveCount(0)
-    await expect(page.getByRole('heading', { level: 2 }).first()).toHaveText(
-      'Hold a whole universe, not one long document.',
-    )
     await context.close()
   })
 })

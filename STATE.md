@@ -45,6 +45,8 @@ One line per branch. Delete the line when it merges.
 
 - `feat/publish-everything`: Publish page "Publish everything" (Canon lore, Complete stories with scenes and text; plot
   arcs never). Committed locally, not merged.
+- `feat/no-stock-artwork`: the home page, Explore, My workspace, Admin, the sign-in plate and the universe shell lose
+  the stock paintings (ADR 0068); the landing's counts and icon trio go; "Shared as Role". Committed locally, not merged.
 
 ## Committed, not on `dev`
 

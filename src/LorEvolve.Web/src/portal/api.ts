@@ -197,15 +197,3 @@ export function getWorkspaceLink(
     { signal },
   )
 }
-
-/** LorEvolve in four numbers, for its home page (031): counts only, the same for everyone. */
-export interface PublicStats {
-  creators: number
-  universes: number
-  publishedWorlds: number
-  privateWorlds: number
-}
-
-export function getPublicStats(signal?: AbortSignal) {
-  return apiFetch<PublicStats>('/api/public/stats', { signal })
-}

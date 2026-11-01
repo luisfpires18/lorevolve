@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { WorldCard } from '../components/WorldCard'
 import { listPublicUniverses, type ExploreQuery, type PublicUniverse } from '../portal/api'
-import heroImageWebp from '../portal/explore-worlds-background.webp'
 import { CATEGORIES, GENRES } from '../publishing/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
@@ -105,26 +104,11 @@ export default function ExplorePage() {
   return (
     <div className="explore" data-testid="explore">
       <section className="explore-hero" aria-labelledby="explore-title">
-        {/* A WebP delivery copy of the approved panorama (Task 012: 250 kB for 2.37 MB). Every supported browser reads
-            WebP, so the PNG master stays in src/portal and out of the build. */}
-        <picture className="explore-hero__picture">
-          <img
-            className="explore-hero__image"
-            src={heroImageWebp}
-            alt=""
-            width={1916}
-            height={821}
-            fetchPriority="high"
-            decoding="async"
-          />
-        </picture>
         <div className="explore-hero__inner">
           <h1 className="explore-hero__title" id="explore-title">
             Explore Worlds
           </h1>
-          <p className="explore-hero__lede">
-            Discover universes their authors have chosen to share.
-          </p>
+          <p className="explore-hero__lede">Universes their authors have chosen to share.</p>
           <div className="explore-filters">
             <nav className="explore-cats" aria-label="Categories">
               <ul className="explore-cats__list">
@@ -175,7 +159,7 @@ export default function ExplorePage() {
                   data-testid="explore-sort"
                 >
                   <option value="recent">Recently published</option>
-                  <option value="az">A–Z</option>
+                  <option value="az">A to Z</option>
                 </select>
               </label>
             </div>
