@@ -546,6 +546,16 @@ button {
   background: var(--portal-surface);
 }
 
+/* Small print over the features: the example universe is not ours. */
+.index__note {
+  max-width: 40rem;
+  /* Half the gap between pages, so the note sits close to the feature under it. */
+  margin: 0 0 calc(clamp(3rem, 8vw, 4.5rem) / -2);
+  color: var(--portal-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
 .index__page p:not(.index__hook) {
   margin: 0 0 var(--space-4);
   line-height: 1.65;
