@@ -1,7 +1,7 @@
 /*
   LorEvolve alpha page. A trimmed copy of the app's portal and landing styles
   (src/LorEvolve.Web/src/styles.css: the tokens at the top, `.portal`, `.landing*`), plus the
-  feature index and the survey dialog. No pictures: type and the brand mark only. Copied, not imported, so it will not follow later
+  feature index and the survey dialog. No artwork: type, the brand mark and app screenshots only. Copied, not imported, so it will not follow later
   landing changes. Dark by default, parchment when the system asks for light.
 */
 
@@ -533,6 +533,17 @@ button {
   font-family: var(--display);
   font-size: 1.25rem;
   line-height: 1.4;
+}
+
+/* A screenshot of the feature, taken in the app on the Lord of the Rings demo universe. */
+.index__shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: var(--space-6);
+  border: 1px solid var(--portal-line);
+  border-radius: var(--radius-sm);
+  background: var(--portal-surface);
 }
 
 .index__page p:not(.index__hook) {
