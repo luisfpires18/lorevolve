@@ -6,7 +6,7 @@ imports or calls the app.
 
 | Path | What |
 | --- | --- |
-| `public/` | What is served: `index.html`, `privacy.html`, `styles.css` (a trimmed copy of the app's portal and landing styles), `app.js` (the feature index and the survey dialog), `_headers`, `assets/` (brand mark and icons only) |
+| `public/` | What is served: `index.html`, `privacy.html`, `styles.css` (a trimmed copy of the app's portal and landing styles), `app.js` (the feature index and the survey dialog), `_headers`, `assets/` (brand mark and icons; feature screenshots in `shots/`; the walkthrough and MCP videos with their posters in `clips/`) |
 | `?v=` on `/app.js` and `/styles.css` | Browsers keep those two for 4 hours (the zone's cache setting); bump the date in `index.html` and `privacy.html` whenever either changes, or returning visitors run the old one |
 | `functions/api/survey.js` | `POST /api/survey`: Turnstile check, validation, one row per send in D1, nothing about the sender |
 | `functions/api/play.js` | `POST /api/play`: one row per video play (`walkthrough`, `mcp`), day only |

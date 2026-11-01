@@ -546,6 +546,25 @@ button {
   background: var(--portal-surface);
 }
 
+/* The walkthrough between the hero and the features: one video recorded in the app, no sound. */
+.walkthrough__video {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: var(--space-6);
+  border: 1px solid var(--portal-line);
+  border-radius: var(--radius-sm);
+  background: var(--portal-surface);
+}
+
+.walkthrough__note {
+  max-width: 40rem;
+  margin: var(--space-3) 0 0;
+  color: var(--portal-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
 /* Small print over the features: the example universe is not ours. */
 .index__note {
   max-width: 40rem;

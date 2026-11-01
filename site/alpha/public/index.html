@@ -13,7 +13,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png" />
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-    <link rel="stylesheet" href="/styles.css?v=20261101c" />
+    <link rel="stylesheet" href="/styles.css?v=20261101d" />
     <script src="/app.js?v=20261101e" defer></script>
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "d6ae62bd19004d4cb642f10bc26d0616"}'></script>
   </head>
@@ -48,6 +48,14 @@
             </p>
           </noscript>
         </div>
+      </section>
+
+      <section class="landing-section walkthrough" id="walkthrough" aria-labelledby="walkthrough-title">
+        <h2 class="landing-heading" id="walkthrough-title">A walkthrough</h2>
+        <video class="walkthrough__video" data-play="walkthrough" controls playsinline preload="none" poster="/assets/clips/walkthrough-poster.webp?v=20261101" width="1920" height="1080" aria-label="A walkthrough of LorEvolve on a Lord of the Rings demo universe, one feature after another: lore entries, types, history and private notes, relations, family trees, progression, knowledge, maps with pins, world rules, the calendar, stories and plot, the timeline, comments and suggestions, ideas, collaboration, AI changes, backup and search, the app on a phone, publishing and Explore.">
+          <source src="/assets/clips/walkthrough.mp4?v=20261101" type="video/mp4" />
+        </video>
+        <p class="walkthrough__note">Recorded in the app, without sound, on a demo universe that uses The Lord of the Rings purely as an example.</p>
       </section>
 
       <section class="landing-section index" id="features" aria-labelledby="features-title">
@@ -206,6 +214,9 @@
           <h3 id="ai-title">AI</h3>
           <p class="index__hook">Off by default. Claude, ChatGPT and others, on your terms.</p>
           <img class="index__shot" src="/assets/shots/ai.webp?v=20261101d" alt="AI changes already decided, each one approved by the author." width="1280" height="800" loading="lazy" decoding="async" />
+          <video class="index__shot" data-play="mcp" controls playsinline preload="none" poster="/assets/clips/mcp-poster.webp?v=20261101" width="1920" height="1080" aria-label="In Claude, connected to the demo universe over MCP, the author asks who wields Andúril and how many Nazgûl exist, then asks Claude to create the Balrog as a Creature and Gondolin with its article. In LorEvolve the author reviews and approves each proposal.">
+            <source src="/assets/clips/mcp.mp4?v=20261101" type="video/mp4" />
+          </video>
           <p>Switch on AI help for a universe and you get a chat assistant inside LorEvolve. As a Reader it searches and answers from your lore; as a Creator it can also propose changes, which wait for your approval.</p>
           <p>It also provides a MCP, an open standard that lets an AI app use another app's data. Connect Claude or ChatGPT to one universe, so a writing assistant or a game engine works from the story you created instead of guessing, or bring a whole world in quickly, as proposals you review one by one.</p>
           <p class="index__why">Disconnect at any time. Leave AI help off and none of this exists in your world.</p>
