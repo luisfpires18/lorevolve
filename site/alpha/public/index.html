@@ -14,7 +14,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png" />
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="/styles.css?v=20261101c" />
-    <script src="/app.js?v=20261101" defer></script>
+    <script src="/app.js?v=20261101e" defer></script>
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "d6ae62bd19004d4cb642f10bc26d0616"}'></script>
   </head>
   <body class="portal">
@@ -37,7 +37,7 @@
             LorEvolve is a place to build a fictional world and write the stories that happen in it.
             Each fact is written once, and the rest of the world reads it from there.
           </p>
-          <button class="landing-button landing-button--primary" type="button" data-open-survey>
+          <button class="landing-button landing-button--primary" type="button" data-open-survey data-track="survey">
             Fill in the survey anonymously
           </button>
           <p class="landing-hero__note">About two minutes, every question optional. No name, no email.</p>
@@ -81,6 +81,10 @@
           <ul>
             <li><a href="#publishing">Publishing</a></li>
             <li><a href="#explore-and-author-pages">Explore and author pages</a></li>
+          </ul>
+          <p class="index__group">What comes next</p>
+          <ul>
+            <li><a href="#not-finished-yet">We're not finished yet</a></li>
           </ul>
         </nav>
         <div class="index__pages">
@@ -233,6 +237,12 @@
           <img class="index__shot" src="/assets/shots/explore.webp?v=20261101d" alt="The Explore page listing published worlds." width="1280" height="800" loading="lazy" decoding="async" />
           <p>Browse other authors' published universes, each author with a public page and a profile picture. Upvotes and downvotes are being considered.</p>
           <p class="index__why">Find readers, and find worlds worth reading.</p>
+        </article>
+        <article class="index__page" id="not-finished-yet" aria-labelledby="not-finished-yet-title">
+          <h3 id="not-finished-yet-title">We're not finished yet</h3>
+          <p class="index__hook">Tell us what your world needs.</p>
+          <p>Everything above is where LorEvolve is today, not where it stops. We're happy to hear what works, what doesn't and what's missing, and to build new things from what you tell us.</p>
+          <p class="index__why">The anonymous survey is the quickest way to shape what comes next.</p>
         </article>
         </div>
       </section>

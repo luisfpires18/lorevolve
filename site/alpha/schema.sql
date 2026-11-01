@@ -9,3 +9,22 @@ CREATE TABLE IF NOT EXISTS survey_answers (
   answers TEXT NOT NULL,
   created_on TEXT NOT NULL
 );
+
+-- One row per video play, at most once per video per page load. Which video and the day: nothing about the viewer.
+CREATE TABLE IF NOT EXISTS video_plays (
+  id INTEGER PRIMARY KEY,
+  video TEXT NOT NULL CHECK (video IN ('walkthrough', 'mcp')),
+  created_on TEXT NOT NULL
+);
+
+-- One row per page view or click, nothing about the visitor: no IP, no cookie, no user agent, the day only.
+-- kind: 'view' (sent when the page is left) or 'click' (target: the link's #feature or a data-track name).
+-- human: 1 when the browser reported a real pointer, key or touch input and no automation flag, and the user agent
+-- does not name a crawler; 0 otherwise. A guess, not proof: a careful bot can pass, a keyboard-free reader cannot fail.
+CREATE TABLE IF NOT EXISTS page_events (
+  id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('view', 'click')),
+  target TEXT,
+  human INTEGER NOT NULL CHECK (human IN (0, 1)),
+  created_on TEXT NOT NULL
+);
