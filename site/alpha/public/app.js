@@ -1,18 +1,66 @@
-// The dialog. Apply: one page, sent to /api/apply. After it, optional questions sent to /api/survey with the token the
-// application returned. The end-of-alpha survey opens the same dialog from a personal link, /?survey=<token>.
-// Turnstile is loaded the first time the application page opens, so the page itself talks to nobody but its own host.
-// The questions mirror lib/survey.js, which is what the server accepts.
+// The page's two behaviours: the feature index (one feature read at a time) and the anonymous survey
+// dialog, sent to /api/survey. Turnstile is loaded the first time the dialog opens, so the page itself talks to nobody
+// but its own host. The questions mirror lib/survey.js, which is what the server accepts.
 
-const dialog = document.getElementById('apply')
-const form = document.getElementById('apply-form')
-const stepLabel = document.getElementById('apply-step')
+// -- The feature index --
+
+// With JavaScript the list sits beside one feature at a time (above it, as a scrolling row, on a phone). Without it,
+// every feature shows in turn.
+const index = document.querySelector('.index')
+const pages = [...index.querySelectorAll('.index__page')]
+const nav = index.querySelector('.index__nav')
+const links = [...nav.querySelectorAll('a')]
+
+function showFeature(id) {
+  const page = pages.find((candidate) => candidate.id === id) ?? pages[0]
+  for (const candidate of pages) candidate.classList.toggle('is-current', candidate === page)
+  for (const link of links) {
+    if (link.hash === `#${page.id}`) {
+      link.setAttribute('aria-current', 'true')
+      // On a phone the row scrolls the choice into the middle; never the page itself.
+      nav.scrollLeft = link.offsetLeft - (nav.clientWidth - link.offsetWidth) / 2
+    } else link.removeAttribute('aria-current')
+  }
+}
+
+function choose(link) {
+  // A choice swaps the feature in place instead of jumping down the page.
+  history.replaceState(null, '', link.hash)
+  showFeature(link.hash.slice(1))
+  // On a phone, reading far into one feature and choosing the next starts the next at its top.
+  if (!wide.matches && index.getBoundingClientRect().top < 0) index.scrollIntoView()
+}
+
+const wide = matchMedia('(min-width: 56rem)')
+index.classList.add('is-indexed')
+showFeature(location.hash.slice(1))
+
+for (const link of links) {
+  link.addEventListener('click', (event) => {
+    event.preventDefault()
+    choose(link)
+  })
+}
+
+// The arrow keys move through the list, the way a list of choices usually works.
+const STEP = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }
+nav.addEventListener('keydown', (event) => {
+  const at = links.indexOf(document.activeElement)
+  if (at < 0 || !STEP[event.key]) return
+  event.preventDefault()
+  const next = links[Math.min(links.length - 1, Math.max(0, at + STEP[event.key]))]
+  next.focus()
+  choose(next)
+})
+
+// -- The survey questions --
+
+const dialog = document.getElementById('survey')
+const form = document.getElementById('survey-form')
+const stepLabel = document.getElementById('survey-step')
 
 let turnstileReady = null
 let widgetId = null
-let surveyToken = null
-let surveyPart = null
-
-// -- The questions --
 
 // The page's feature list, by group and in the same order. lib/survey.js holds the same keys.
 const FEATURE_GROUPS = [
@@ -59,35 +107,17 @@ const FEATURE_GROUPS = [
     ],
   ],
 ]
-const FEATURES = FEATURE_GROUPS.flatMap(([, items]) => items)
 
 const one = (name, label, options) => ({ kind: 'one', name, label, options })
-const free = (name, label, max = 2000) => ({ kind: 'text', name, label, max })
-
-// How someone would prefer to pay, asked on the second page after applying and again at the end of the alpha.
-const PRICING = [
-  {
-    kind: 'one',
-    name: 'payPreference',
-    label: 'If LorEvolve were paid, how would you prefer to pay?',
-    options: [
-      ['subscription', 'A monthly subscription'],
-      ['usage', 'Only for what I use'],
-      ['one-time', 'A one-time purchase'],
-      ['other', 'Something else'],
-    ],
-    other: { name: 'payOther', label: 'How else would you prefer to pay?' },
-  },
-  { kind: 'price', name: 'priceTooCheap', label: "At what monthly price would it feel so cheap you'd doubt it?" },
-  { kind: 'price', name: 'priceTooExpensive', label: 'At what monthly price would it be too expensive to consider?' },
-]
+const free = (name, label, max = 2000, hint = '') => ({ kind: 'text', name, label, max, hint })
 
 const QUESTIONS = {
-  signup: [
+  interests: [
+    free('useCase', 'What would you use LorEvolve for?', 1000, "A world you're building, a book, a game, anything. Leave out names and contact details."),
     { kind: 'pick', name: 'interests', label: 'Which features interest you most?', hint: 'Pick as many as you like.' },
     free('wished', "Which features would you like that LorEvolve doesn't have?"),
   ],
-  'signup-pricing': [
+  use: [
     one('publish', 'Would you publish your universe for others to read?', [
       ['all', 'Yes, all of it'],
       ['parts', 'Yes, parts of it'],
@@ -133,36 +163,32 @@ const QUESTIONS = {
       ['maybe', 'Maybe'],
       ['no', 'No'],
     ]),
-    ...PRICING,
-  ],
-  'end-features': [{ kind: 'grid', name: 'usefulness' }],
-  'end-more': [
-    one('typesEffort', 'Defining your own types and fields felt:', [
-      ['freeing', 'Freeing'],
-      ['right', 'About right'],
-      ['toomuch', 'Like too much work'],
+    one('appKind', 'Would you rather use LorEvolve in a browser or as a desktop app?', [
+      ['web', 'In a browser'],
+      ['desktop', 'As a desktop app'],
+      ['both', 'Both'],
     ]),
-    free('progressionMissing', 'Is anything missing from Progression for your stories?'),
-    one('timelineAuto', 'Which dates should fill the timeline in on their own?', [
-      ['birthsDeaths', 'Births and deaths'],
-      ['characterEvents', 'Other character events too'],
-      ['everyDate', 'Every dated field'],
-      ['none', 'None, I add moments myself'],
+    one('storage', 'Where should your worlds be stored?', [
+      ['cloud', 'Online, reachable from any device'],
+      ['local', 'On my own computer'],
+      ['both', 'Both'],
     ]),
-    free('mapsWish', 'What would you want from interactive maps?'),
-    free('missMost', 'Which feature would you miss most if it disappeared?'),
-    free('confused', 'What confused you or got in your way?'),
-    free('wished', "Which features would you like that LorEvolve doesn't have?"),
-    ...PRICING,
+    {
+      kind: 'one',
+      name: 'payPreference',
+      label: 'If LorEvolve were paid, how would you prefer to pay?',
+      options: [
+        ['subscription', 'A monthly subscription'],
+        ['usage', 'Only for what I use'],
+        ['one-time', 'A one-time purchase'],
+        ['other', 'Something else'],
+      ],
+      other: { name: 'payOther', label: 'How else would you prefer to pay?' },
+    },
+    { kind: 'price', name: 'priceTooCheap', label: "At what monthly price would it feel so cheap you'd doubt it?" },
+    { kind: 'price', name: 'priceTooExpensive', label: 'At what monthly price would it be too expensive to consider?' },
   ],
 }
-
-const RATINGS = [
-  ['must', 'Must have'],
-  ['nice', 'Nice to have'],
-  ['no', "Don't need"],
-  ['untried', "Didn't try"],
-]
 
 const radios = (name, options) =>
   options.map(([value, label]) => `<label class="choice"><input type="radio" name="${name}" value="${value}" /> ${label}</label>`).join('')
@@ -176,21 +202,12 @@ function render(question) {
         : ''
       return `<fieldset class="field"><legend class="field__label">${question.label}</legend>${radios(question.name, question.options)}${other}</fieldset>`
     }
-    case 'text':
-      return `<label class="field"><span class="field__label">${question.label}</span><textarea name="${question.name}" rows="3" maxlength="${question.max}"></textarea></label>`
+    case 'text': {
+      const hint = question.hint ? `<span class="field__hint">${question.hint}</span>` : ''
+      return `<label class="field"><span class="field__label">${question.label}</span>${hint}<textarea name="${question.name}" rows="3" maxlength="${question.max}"></textarea></label>`
+    }
     case 'pick':
       return `<fieldset class="field"><legend class="field__label">${question.label}</legend><p class="field__hint">${question.hint}</p>${FEATURE_GROUPS.map(([group, items]) => `<p class="field__group">${group}</p>${items.map(([key, label]) => `<label class="choice"><input type="checkbox" name="${question.name}" value="${key}" /> ${label}</label>`).join('')}`).join('')}</fieldset>`
-    case 'grid':
-      return FEATURE_GROUPS.map(
-        ([group, items]) =>
-          `<p class="field__group">${group}</p>` +
-          items
-            .map(
-              ([key, label]) =>
-                `<fieldset class="field rate"><legend class="field__label">${label}</legend><div class="rate__options">${RATINGS.map(([value, text]) => `<label><input type="radio" name="u_${key}" value="${value}" /><span>${text}</span></label>`).join('')}</div></fieldset>`,
-            )
-            .join(''),
-      ).join('')
     case 'price':
       return `<label class="field"><span class="field__label">${question.label}</span><span class="field__hint">In euros, per month.</span><span class="money"><span aria-hidden="true">€</span><input name="${question.name}" type="number" inputmode="decimal" min="0" max="10000" step="0.01" /></span></label>`
   }
@@ -200,22 +217,15 @@ for (const container of form.querySelectorAll('[data-questions]')) {
   container.innerHTML = QUESTIONS[container.dataset.questions].map(render).join('')
 }
 
-// Read page by page: the signup and end-of-alpha surveys share some question names (wished).
-function answers(pages) {
+function answers() {
   const result = {}
-  for (const page of pages) {
-    const section = form.querySelector(`[data-page="${page}"]`)
-    const value = (name) =>
-      section.querySelector(`[name="${name}"]:is(textarea, input:not([type="radio"])), [name="${name}"]:checked`)?.value ?? ''
-    for (const question of QUESTIONS[page]) {
-      if (question.kind === 'grid') {
-        result.usefulness = Object.fromEntries(FEATURES.map(([key]) => [key, value(`u_${key}`)]).filter(([, rating]) => rating))
-      } else if (question.kind === 'pick') {
-        result[question.name] = [...section.querySelectorAll(`[name="${question.name}"]:checked`)].map((box) => box.value)
-      } else {
-        result[question.name] = value(question.name)
-        if (question.other) result[question.other.name] = value(question.other.name)
-      }
+  const value = (name) => form.querySelector(`[name="${name}"]:is(textarea, input:not([type="radio"])), [name="${name}"]:checked`)?.value ?? ''
+  for (const question of Object.values(QUESTIONS).flat()) {
+    if (question.kind === 'pick') {
+      result[question.name] = [...form.querySelectorAll(`[name="${question.name}"]:checked`)].map((box) => box.value)
+    } else {
+      result[question.name] = value(question.name)
+      if (question.other) result[question.other.name] = value(question.other.name)
     }
   }
   return result
@@ -223,7 +233,7 @@ function answers(pages) {
 
 // -- Pages --
 
-const STEPS = { signup: 'Part 1 of 2', 'signup-pricing': 'Part 2 of 2', 'end-features': 'Part 1 of 2', 'end-more': 'Part 2 of 2' }
+const STEPS = { interests: 'Part 1 of 2', use: 'Part 2 of 2' }
 
 function showPage(page) {
   for (const section of form.querySelectorAll('[data-page]')) section.hidden = section.dataset.page !== page
@@ -232,11 +242,10 @@ function showPage(page) {
   const first = target.querySelector('h2.apply__title') ?? target.querySelector('input, textarea')
   dialog.scrollTop = 0
   first?.focus({ preventScroll: true })
-  if (page === 'apply') renderTurnstile()
 }
 
 function currentPage() {
-  return form.querySelector('[data-page]:not([hidden])')?.dataset.page ?? 'apply'
+  return form.querySelector('[data-page]:not([hidden])')?.dataset.page ?? 'interests'
 }
 
 function showError(message) {
@@ -282,110 +291,56 @@ function openDialog() {
   showError('')
   if (!dialog.open) dialog.showModal()
   showPage(currentPage())
-}
-
-function pageValid(page) {
-  for (const field of form.querySelector(`[data-page="${page}"]`).querySelectorAll('input, textarea')) {
-    if (!field.checkValidity()) {
-      field.reportValidity()
-      return false
-    }
-  }
-  return true
+  renderTurnstile()
 }
 
 // -- Sending --
 
 const MESSAGES = {
   verification: "The spam check didn't go through. Please try it again.",
-  email: "That email address doesn't look right. Could you check it?",
   too_long: 'One of the answers is too long. Please shorten it.',
-  unknown_token: "This survey link doesn't work any more. Write to support@lorevolve.com for a new one.",
-}
-
-async function post(url, body) {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  const reply = await response.json().catch(() => ({}))
-  return { ok: response.ok, reply }
-}
-
-async function sendApplication() {
-  const values = form.elements
-  const body = {
-    email: values.email.value,
-    name: values.name.value,
-    useCase: values.useCase.value,
-    consent: values.consent.checked,
-    turnstileToken: widgetId === null ? null : window.turnstile.getResponse(widgetId),
-  }
-  if (!body.turnstileToken) {
-    showError('Please wait a moment for the spam check to finish, then press Send again.')
-    return false
-  }
-  const { ok, reply } = await post('/api/apply', body)
-  if (!ok) {
-    showError(MESSAGES[reply.error] ?? MESSAGES[reply.field] ?? "Something went wrong and your answers weren't saved. Please try again in a moment.")
-    return false
-  }
-  surveyToken = reply.surveyToken
-  surveyPart = 'signup'
-  document.getElementById('apply-thanks').textContent =
-    `Thanks, ${body.name.trim()}. Invitations go out in small waves, so it may take a little while. ` +
-    `I'll write to ${body.email.trim()} when it's your turn.`
-  showPage('applied')
-  return true
-}
-
-async function sendSurvey() {
-  const pages = surveyPart === 'end' ? ['end-features', 'end-more'] : ['signup', 'signup-pricing']
-  const { ok, reply } = await post('/api/survey', { token: surveyToken, part: surveyPart, answers: answers(pages) })
-  if (!ok) {
-    showError(MESSAGES[reply.error] ?? "Something went wrong and your answers weren't saved. Please try again in a moment.")
-    return false
-  }
-  showPage('thanks')
-  return true
 }
 
 async function send(event) {
   event.preventDefault()
   showError('')
-  const page = currentPage()
-  if (!pageValid(page)) return
+  const turnstileToken = widgetId === null ? null : window.turnstile.getResponse(widgetId)
+  if (!turnstileToken) {
+    showError('Please wait a moment for the spam check to finish, then press Send answers again.')
+    return
+  }
 
-  const button = form.querySelector(`[data-page="${page}"] [data-send]`)
+  const button = form.querySelector('[data-send]')
   const label = button.textContent
   button.disabled = true
   button.textContent = 'Sending…'
   try {
-    if (page === 'apply') await sendApplication()
-    else await sendSurvey()
+    const response = await fetch('/api/survey', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ answers: answers(), turnstileToken }),
+    })
+    const reply = await response.json().catch(() => ({}))
+    if (response.ok) showPage('thanks')
+    else showError(MESSAGES[reply.error] ?? "Something went wrong and your answers weren't saved. Please try again in a moment.")
   } catch {
     showError("Your answers couldn't be sent. Check your connection and try again; nothing you typed is lost.")
   } finally {
     button.disabled = false
     button.textContent = label
-    // A Turnstile token is good for one check; after a failed send the next try needs a fresh one.
-    if (currentPage() === 'apply' && widgetId !== null) window.turnstile.reset(widgetId)
+    // A Turnstile token is good for one check; the next send needs a fresh one.
+    if (widgetId !== null) window.turnstile.reset(widgetId)
   }
 }
 
 // -- Wiring --
 
 dialog.addEventListener('close', () => {
-  // Once an application or a survey is sent, or skipped, the next open starts a fresh application.
-  // A half-filled application or end-of-alpha survey is kept for when the dialog opens again.
-  if (['applied', 'signup', 'signup-pricing', 'thanks', 'badlink'].includes(currentPage())) {
+  // Once the answers are sent, the next open starts a fresh survey. A half-filled one is kept for when it opens again.
+  if (currentPage() === 'thanks') {
     form.reset()
     for (const box of form.querySelectorAll('.choice__other')) box.hidden = true
-    surveyToken = null
-    surveyPart = null
-    showPage('apply')
-    if (widgetId !== null) window.turnstile.reset(widgetId)
+    showPage('interests')
   }
 })
 
@@ -394,8 +349,8 @@ dialog.addEventListener('click', (event) => {
   if (event.target === dialog) dialog.close()
 })
 
-for (const button of document.querySelectorAll('[data-open-apply]')) button.addEventListener('click', openDialog)
-for (const button of dialog.querySelectorAll('[data-close-apply]')) button.addEventListener('click', () => dialog.close())
+for (const button of document.querySelectorAll('[data-open-survey]')) button.addEventListener('click', openDialog)
+for (const button of dialog.querySelectorAll('[data-close-survey]')) button.addEventListener('click', () => dialog.close())
 for (const button of dialog.querySelectorAll('[data-goto]')) {
   button.addEventListener('click', () => {
     showError('')
@@ -412,26 +367,6 @@ form.addEventListener('change', (event) => {
   if (!other.hidden) other.focus()
 })
 
-// The end-of-alpha survey: /?survey=<token> opens the dialog on it, greeting the tester by name.
-const linkToken = new URLSearchParams(location.search).get('survey')
-if (linkToken) {
-  fetch(`/api/survey?token=${encodeURIComponent(linkToken)}`)
-    .then((response) => (response.ok ? response.json() : null))
-    .catch(() => null)
-    .then((found) => {
-      dialog.showModal()
-      if (!found) {
-        showPage('badlink')
-        return
-      }
-      surveyToken = linkToken
-      surveyPart = 'end'
-      document.getElementById('end-greeting').textContent =
-        `Thanks for testing LorEvolve, ${found.name}. Rate each part you used. Every question is optional.`
-      showPage('end-features')
-    })
-}
-
 // The Discord invite: every Discord link on the page appears once it is set. Empty keeps them hidden.
 const DISCORD_INVITE = 'https://discord.gg/VPv7X7tpY'
 if (DISCORD_INVITE) {
@@ -443,54 +378,4 @@ if (DISCORD_INVITE) {
       element.rel = 'noopener'
     }
   }
-}
-
-// A clip loads and plays only while its row is open. With reduced motion it waits for the viewer's own play.
-const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)')
-for (const clip of document.querySelectorAll('.feature__clip')) {
-  const row = clip.closest('details')
-  row.addEventListener('toggle', () => {
-    if (!row.open) {
-      clip.pause()
-      return
-    }
-    if (reduceMotion.matches) clip.controls = true
-    else clip.play().catch(() => (clip.controls = true))
-  })
-}
-
-// A link to a feature row opens that row (and so plays its clip) before the browser jumps to it.
-for (const link of document.querySelectorAll('[data-open-feature]')) {
-  link.addEventListener('click', () => {
-    const row = document.querySelector(link.getAttribute('href'))
-    if (row instanceof HTMLDetailsElement) row.open = true
-  })
-}
-
-// A video's first play on this page load is counted (/api/play): which video and when, nothing about the viewer.
-for (const video of document.querySelectorAll('video[data-play]')) {
-  video.addEventListener(
-    'play',
-    () => {
-      fetch('/api/play', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ video: video.dataset.play }),
-        keepalive: true,
-      }).catch(() => {})
-    },
-    { once: true },
-  )
-}
-
-// A feature picture not made yet is dropped rather than left as an empty frame. Lazy pictures load, and fail, on opening.
-document.addEventListener(
-  'error',
-  (event) => {
-    if (event.target instanceof HTMLImageElement && event.target.classList.contains('feature__shot')) event.target.remove()
-  },
-  true,
-)
-for (const shot of document.querySelectorAll('.feature__shot')) {
-  if (shot.complete && shot.currentSrc && shot.naturalWidth === 0) shot.remove()
 }

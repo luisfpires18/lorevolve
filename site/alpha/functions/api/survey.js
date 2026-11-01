@@ -1,12 +1,10 @@
-// /api/survey: the optional survey answers tied to one application, stored in D1. Sends nothing anywhere else.
-// The application's survey token is the only key: /api/apply hands it back once, and the owner puts it in the
-// end-of-alpha link (/?survey=<token>). No Turnstile here: the token was issued after one, and is unguessable.
-//   GET  ?token=        { name } when the token names an application, so the dialog can greet before asking.
-//   POST { token, part, answers }   one row per send, never updated; the latest per application and part counts.
+// POST /api/survey { answers, turnstileToken }: one anonymous survey send, stored in D1. Sends nothing anywhere else.
+// Nothing about the sender is stored: no name, no email, no IP, no cookie, and only the day it arrived.
+// Bindings (Pages project settings): DB (D1), TURNSTILE_SECRET (secret). Without them it refuses rather than store
+// unchecked input.
 import { readSurvey } from '../../lib/survey.js'
 
 const MAX_BODY = 16 * 1024
-const TOKEN = /^[0-9a-f]{32}$/
 
 const reply = (status, body) =>
   new Response(JSON.stringify(body), {
@@ -14,20 +12,19 @@ const reply = (status, body) =>
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   })
 
-const findApplication = (db, token) =>
-  typeof token === 'string' && TOKEN.test(token)
-    ? db.prepare('SELECT id, name FROM applications WHERE survey_token = ?1').bind(token).first()
-    : null
-
-export async function onRequestGet({ request, env }) {
-  if (!env.DB) return reply(503, { error: 'not_configured' })
-  const application = await findApplication(env.DB, new URL(request.url).searchParams.get('token'))
-  if (!application) return reply(404, { error: 'unknown_token' })
-  return reply(200, { name: application.name })
+async function turnstilePassed(token, secret) {
+  if (typeof token !== 'string' || !token || token.length > 2048) return false
+  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    body: new URLSearchParams({ secret, response: token }),
+  })
+  if (!response.ok) return false
+  const outcome = await response.json()
+  return outcome.success === true
 }
 
 export async function onRequestPost({ request, env }) {
-  if (!env.DB) return reply(503, { error: 'not_configured' })
+  if (!env.DB || !env.TURNSTILE_SECRET) return reply(503, { error: 'not_configured' })
 
   const origin = request.headers.get('origin')
   if (origin && origin !== new URL(request.url).origin) return reply(403, { error: 'origin' })
@@ -42,14 +39,13 @@ export async function onRequestPost({ request, env }) {
     return reply(400, { error: 'invalid', field: 'body' })
   }
 
-  const application = await findApplication(env.DB, body?.token)
-  if (!application) return reply(404, { error: 'unknown_token' })
+  if (!(await turnstilePassed(body?.turnstileToken, env.TURNSTILE_SECRET))) return reply(400, { error: 'verification' })
 
-  const result = readSurvey(body.part, body.answers)
+  const result = readSurvey(body.answers)
   if (!result.answers) return reply(400, { error: result.error, field: result.field })
 
-  await env.DB.prepare('INSERT INTO surveys (application_id, part, answers, created_at) VALUES (?1, ?2, ?3, ?4)')
-    .bind(application.id, body.part, JSON.stringify(result.answers), new Date().toISOString())
+  await env.DB.prepare('INSERT INTO survey_answers (answers, created_on) VALUES (?1, ?2)')
+    .bind(JSON.stringify(result.answers), new Date().toISOString().slice(0, 10))
     .run()
 
   return reply(200, { ok: true })
