@@ -271,6 +271,13 @@ button {
   text-wrap: pretty;
 }
 
+/* The survey first, the Discord invite beside it as the quieter second choice. */
+.landing-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
 .landing-hero__note {
   margin: var(--space-3) 0 0;
   color: var(--portal-muted);
