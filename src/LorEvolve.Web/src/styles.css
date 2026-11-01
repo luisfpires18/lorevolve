@@ -13543,9 +13543,6 @@ body:has(.portal) {
   --portal-line: rgb(var(--portal-ink-rgb) / 0.1);
   --portal-line-strong: rgb(var(--portal-ink-rgb) / 0.24);
   --portal-width: 92rem;
-  /* The home page's measure. Here rather than on .landing: the footer is the layout's, outside .landing, and lines up
-     with it. */
-  --landing-width: 76rem;
   --portal-gutter: clamp(1rem, 2.5vw, 2rem);
   --portal-radius: 0.75rem;
 
@@ -15439,321 +15436,38 @@ body:has(.portal) {
   }
 }
 
-/* ---------- LorEvolve's home (031) ----------
+/* ---------- Site footer (ADR 0069) ----------
 
-   The portal's own page about LorEvolve itself, in the portal's look: night or parchment, the display serif for what is
-   said and the interface face for what is done, the one ink-blue accent, and no pictures at all (ADR 0068): words on
-   the page's own ground, a hairline under the head, then the sections, each laid out its own way rather than as a
-   stack of cards. Pills are the interactive shape, as in the bar. Nothing on the page moves by itself. */
+   Where else there is to go, and nothing invented: the wordmark and its line, the real ways on, and under a hairline the
+   year and the running version, quieter than any link. Drawn at the foot of Explore (the front door), My workspace and a
+   universe's column, from the shared tokens alone, so the portal dresses it in night and the workspace in paper without
+   a second set of rules. Each frame lines it up with its own content below. */
 
-.landing {
-  --landing-space: clamp(4.5rem, 9vw, 8rem);
-
-  padding-bottom: var(--landing-space);
-}
-
-.landing-section,
-.landing-connect__inner,
-.landing-hero__inner,
-.landing-final,
-.portal__footer {
-  width: min(100% - 2 * var(--portal-gutter), var(--landing-width));
-  margin-inline: auto;
-}
-
-.landing-section {
-  padding-top: var(--landing-space);
-}
-
-/* -- The head: two sentences, one paragraph, the way in. Words on the page's own ground, a hairline beneath. -- */
-
-.landing-hero {
-  padding: clamp(3.5rem, 8vw, 6.5rem) 0 clamp(3rem, 6vw, 5rem);
-  border-bottom: 1px solid var(--portal-line);
-}
-
-.landing-hero__title {
-  margin: 0;
-  font-family: var(--display);
-  /* Sized so each sentence holds one line from a 360px phone up. */
-  font-size: clamp(2rem, 7vw, 4.5rem);
-  font-weight: 600;
-  line-height: 1.04;
-  letter-spacing: -0.018em;
-  text-wrap: balance;
-}
-
-/* Each sentence a line of its own. */
-.landing-hero__title span {
-  display: block;
-}
-
-.landing-hero__lede {
-  max-width: 34rem;
-  margin: var(--space-6) 0 0;
-  color: rgb(var(--portal-ink-rgb) / 0.9);
-  font-size: clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem);
-  line-height: 1.55;
-  text-wrap: pretty;
-}
-
-/* -- Actions: one filled pill, one outlined, the size of a decision rather than of the bar's links. -- */
-
-.landing-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  min-height: 3rem;
-  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
-}
-
-.landing-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 3rem;
-  padding: 0 1.5rem;
-  border: 1px solid var(--portal-line-strong);
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--portal-ink);
-  font-size: var(--text-body);
-  font-weight: 600;
-  line-height: 1.2;
-  text-align: center;
-  text-decoration: none;
-  transition:
-    background-color var(--duration-2) var(--ease),
-    border-color var(--duration-2) var(--ease),
-    transform var(--duration-1) var(--ease);
-}
-
-.landing-button:hover {
-  border-color: rgb(var(--portal-ink-rgb) / 0.55);
-  background: rgb(var(--portal-ink-rgb) / 0.1);
-}
-
-.landing-button:active {
-  transform: translateY(1px);
-}
-
-.landing-button:focus-visible {
-  outline-offset: 3px;
-}
-
-.landing-button--primary {
-  border-color: var(--portal-ink);
-  background: var(--portal-ink);
-  color: var(--primary-ink);
-}
-
-.landing-button--primary:hover {
-  border-color: color-mix(in srgb, var(--portal-ink) 86%, var(--portal-bg));
-  background: color-mix(in srgb, var(--portal-ink) 86%, var(--portal-bg));
-}
-
-/* -- Section type: one heading voice, one lede voice, for every section below. -- */
-
-.landing-heading {
-  margin: 0;
-  font-family: var(--display);
-  font-size: clamp(1.875rem, 1.3rem + 1.9vw, 2.875rem);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.012em;
-  text-wrap: balance;
-}
-
-.landing-lede {
-  max-width: 36rem;
-  margin: var(--space-5) 0 0;
-  color: rgb(var(--portal-ink-rgb) / 0.8);
-  font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
-  line-height: 1.6;
-  text-wrap: pretty;
-}
-
-/* -- Build and Write: a column of argument beside what it is about. -- */
-
-.landing-split {
-  display: grid;
-  gap: var(--space-8);
-}
-
-@media (min-width: 56rem) {
-  .landing-split {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-    align-items: start;
-    gap: clamp(3rem, 7vw, 6.5rem);
-  }
-}
-
-.landing-facets {
-  margin: 0;
-}
-
-.landing-facet {
-  display: grid;
-  gap: var(--space-1) var(--space-6);
-  padding: var(--space-5) 0;
-}
-
-.landing-facet + .landing-facet {
-  border-top: 1px solid var(--portal-line);
-}
-
-.landing-facet:first-child {
-  padding-top: var(--space-2);
-}
-
-@media (min-width: 40rem) {
-  .landing-facet {
-    grid-template-columns: 15rem minmax(0, 1fr);
-    align-items: baseline;
-  }
-}
-
-.landing-facet dt {
-  font-family: var(--display);
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.landing-facet dd {
-  margin: 0;
-  color: rgb(var(--portal-ink-rgb) / 0.78);
-  line-height: 1.55;
-  text-wrap: pretty;
-}
-
-/* -- Connect: a band between hairlines, a statement, and three things that follow from writing once. -- */
-
-.landing-connect {
-  margin-top: var(--landing-space);
-  padding: var(--landing-space) 0;
-  border-block: 1px solid var(--portal-line);
-}
-
-.landing-links {
-  display: grid;
-  gap: var(--space-7);
-  margin: clamp(2.5rem, 5vw, 4rem) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-@media (min-width: 56rem) {
-  .landing-links {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(2rem, 4vw, 3.5rem);
-  }
-}
-
-.landing-links li {
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--portal-line);
-}
-
-.landing-links__cause {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 1.3125rem;
-  line-height: 1.3;
-}
-
-.landing-links__effect {
-  margin: var(--space-2) 0 0;
-  color: rgb(var(--portal-ink-rgb) / 0.78);
-  line-height: 1.55;
-}
-
-/* -- Write: who it is for, in a sentence rather than a list of logos. -- */
-
-.landing-media {
-  padding-left: clamp(1.25rem, 2.5vw, 2rem);
-  border-left: 1px solid var(--portal-line);
-}
-
-.landing-media__list {
-  margin: 0;
-  font-family: var(--display);
-  font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.5rem);
-  line-height: 1.35;
-  text-wrap: pretty;
-}
-
-.landing-media__turn {
-  margin: var(--space-5) 0 0;
-  color: rgb(var(--portal-ink-rgb) / 0.78);
-  font-size: var(--text-item);
-}
-
-/* -- Explore: a line about published worlds, and the way to them. -- */
-
-.landing-explore__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-5) var(--space-8);
-}
-
-.landing-more {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--control-touch);
-  color: var(--portal-ink);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: var(--accent-rule);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.35em;
-  white-space: nowrap;
-  transition: text-decoration-color var(--duration-2) var(--ease);
-}
-
-.landing-more:hover {
-  text-decoration-color: currentColor;
-}
-
-/* -- Trust: three promises LorEvolve already keeps, said plainly. -- */
-
-.landing-prose {
-  display: grid;
-  gap: var(--space-4);
-  max-width: 36rem;
-  margin: clamp(1.5rem, 3vw, 2.5rem) 0 0;
-}
-
-.landing-prose p {
-  margin: 0;
-  color: rgb(var(--portal-ink-rgb) / 0.8);
-  font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
-  line-height: 1.6;
-  text-wrap: pretty;
-}
-
-/* -- The last word: one way on. -- */
-
-.landing-final {
-  margin-top: var(--landing-space);
-  padding-top: var(--landing-space);
-  border-top: 1px solid var(--portal-line);
-}
-
-/* -- The footer: where else there is to go, and nothing invented. The brand and the real ways on above a hairline;
-   the year and the running version below it, quieter than any link. No Community or Legal column until LorEvolve has one. -- */
-
-.portal__footer {
+.sitefooter {
+  width: 100%;
+  margin-top: auto;
   padding: var(--space-8) 0 var(--space-7);
-  border-top: 1px solid var(--portal-line);
-  color: var(--portal-muted);
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
   font-size: var(--text-ui);
 }
 
-.portal__footertop {
+.portal .sitefooter {
+  width: min(100% - 2 * var(--portal-gutter), var(--portal-width));
+  margin-inline: auto;
+}
+
+.home .sitefooter {
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.workspace__column .sitefooter {
+  padding-inline: max(var(--gutter), calc((100% - var(--canvas-max)) / 2));
+}
+
+.sitefooter__top {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -15761,38 +15475,38 @@ body:has(.portal) {
   gap: var(--space-7) var(--space-9);
 }
 
-.portal__footerbrand {
+.sitefooter__brand {
   display: grid;
   gap: var(--space-2);
 }
 
-.portal__footerbrand p {
+.sitefooter__brand p {
   margin: 0;
 }
 
-.portal__footerhome {
+.sitefooter__home {
   justify-self: start;
-  color: var(--portal-ink);
+  color: var(--ink);
   text-decoration: none;
 }
 
-.portal__footerhome .wordmark {
+.sitefooter__home .wordmark {
   font-size: 1.25rem;
 }
 
 /* A small gap: each link's tap height spaces it from the label; this keeps the focus ring clear of it. */
-.portal__footernav {
+.sitefooter__nav {
   display: grid;
   gap: var(--space-1);
 }
 
-.portal__footerheading {
+.sitefooter__heading {
   margin: 0;
-  color: var(--portal-muted);
+  color: var(--muted);
   font-size: var(--text-sm);
 }
 
-.portal__footernav ul {
+.sitefooter__nav ul {
   display: flex;
   flex-wrap: wrap;
   gap: 0 var(--space-6);
@@ -15801,49 +15515,32 @@ body:has(.portal) {
   list-style: none;
 }
 
-.portal__footernav a {
+.sitefooter__nav a {
   display: inline-flex;
   align-items: center;
   min-height: var(--control-md);
-  color: rgb(var(--portal-ink-rgb) / 0.82);
+  color: var(--ink);
   text-decoration: none;
 }
 
-.portal__footernav a:hover {
-  color: var(--portal-ink);
+.sitefooter__nav a:hover {
   text-decoration: underline;
   text-underline-offset: 0.3em;
 }
 
-.portal__footerbase {
+.sitefooter__base {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--space-1) var(--space-6);
   margin-top: var(--space-7);
   padding-top: var(--space-5);
-  border-top: 1px solid var(--portal-line);
+  border-top: 1px solid var(--rule);
   font-size: var(--text-sm);
 }
 
-.portal__footerbase p {
+.sitefooter__base p {
   margin: 0;
-}
-
-/* -- A phone: the buttons take the width, and the Explore line stacks. -- */
-
-@media (max-width: 40rem) {
-  .landing-actions .landing-button {
-    flex: 1 1 12rem;
-  }
-
-  .landing-explore__head {
-    display: block;
-  }
-
-  .landing-more {
-    margin-top: var(--space-3);
-  }
 }
 
 /* ---------- Review comments (043) ----------

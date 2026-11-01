@@ -144,7 +144,7 @@ Limitations.
 
 ## Which version DEV is running
 
-The home page footer and the account menu show `LorEvolve v0.1.N-dev`. `N` comes from the Deploy DEV
+The site footer and the account menu show `LorEvolve v0.1.N-dev`. `N` comes from the Deploy DEV
 run number (`src/LorEvolve.Web/devVersion.ts`): run 101 is `0.1.1-dev`, run 102 is `0.1.2-dev`, and
 so on. Nobody bumps it and no commit records it.
 
@@ -312,7 +312,7 @@ setting at the production origin. Check with `curl -s https://<host>/worlds/<slu
 Over HTTPS, which the site is (`httpsOnly` is set), from a Chromium browser:
 
 1. Open `https://<app-name>.azurewebsites.net/`. DevTools -> Application -> Manifest should
-   show `LorEvolve`, `standalone`, start URL `/explore`, id `/app`, and four icons that all load.
+   show `LorEvolve`, `standalone`, start URL `/`, id `/app`, and four icons that all load.
 2. Application -> Service workers should show `sw.js` **activated** with scope `/`.
 3. Application -> Cache storage should hold only `lorevolve-static-v4`, containing `/assets/...` and
    root icons - **never** `/manifest.webmanifest` and never anything under `/api`. An older

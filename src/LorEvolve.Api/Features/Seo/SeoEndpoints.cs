@@ -70,7 +70,6 @@ public static partial class SeoEndpoints
 
         var text = new StringBuilder()
             .Append("User-agent: *\n")
-            .Append("Allow: /explore\n")
             .Append("Allow: /worlds/\n")
             .Append("Allow: /authors/\n")
             .Append("Allow: /api/public/\n")
@@ -85,7 +84,7 @@ public static partial class SeoEndpoints
     }
 
     /// <summary>
-    /// Every address the portal would have indexed, from the public predicates only: the home page, Explore, each public
+    /// Every address the portal would have indexed, from the public predicates only: Explore (the front door), each public
     /// universe, each effective-public entry and story, and each author who has a public universe. No id, no workspace
     /// address, no API. Built fresh on every request, so an unpublished item is gone from the next one. 404 on a
     /// deployment not configured for indexing.
@@ -127,7 +126,6 @@ public static partial class SeoEndpoints
         IEnumerable<string> paths =
         [
             "/",
-            "/explore",
             .. worlds.Select(slug => $"/worlds/{slug}"),
             .. lore.Select(entry => $"/worlds/{entry.World}/lore/{entry.Slug}"),
             .. stories.Select(story => $"/worlds/{story.World}/stories/{story.Slug}"),

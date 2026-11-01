@@ -46,3 +46,5 @@ product's identity (ADR 0067) and are not what this decision is about.
 - The role marks read "Shared as Editor" on a card and in the shell's sidebar, and Explore's sort reads "A to Z": no
   middle dots or dashes in interface text, the owner's rule.
 - The sign-in plate is plain graphite: the mark, the wordmark, its rule and the pitch.
+
+Note (2026-10-31): the home page described here was retired the next day; Explore is the front door (ADR 0069).

@@ -5,6 +5,7 @@ import { AccountMenu } from '../components/AccountMenu'
 import { BRAND_LINK_LABEL } from '../components/BrandMark'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { UniverseAssistant } from '../components/UniverseAssistant'
+import { SiteFooter } from '../components/SiteFooter'
 import { UniverseSearch } from '../components/UniverseSearch'
 import { getChronology } from '../chronology/api'
 import type { Chronology } from '../chronology/types'
@@ -462,6 +463,7 @@ function Workspace() {
             />
           </UniverseAccessContext.Provider>
         </main>
+        <SiteFooter />
       </div>
     </div>
   )

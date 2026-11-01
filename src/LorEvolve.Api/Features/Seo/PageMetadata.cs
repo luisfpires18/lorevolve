@@ -25,7 +25,7 @@ public sealed record PageMetadata(
     int StatusCode);
 
 /// <summary>
-/// The document head for a request to the app shell (Task 012, ADR 0038): LorEvolve's home and each public portal page get
+/// The document head for a request to the app shell (Task 012, ADR 0038): Explore, the front door, and each public portal page get
 /// their own title, description, canonical address and Open Graph picture; everything else - the workspace, sign-in,
 /// the profile, any address LorEvolve does not know - is <c>noindex</c> with the product's own generic head.
 ///
@@ -48,11 +48,6 @@ public static class PageMetadataResolver
     public const string ExploreDescription =
         "Explore worlds their authors chose to share on LorEvolve: universes, their lore and their stories.";
 
-    public const string HomeTitle = "LorEvolve | Build connected fictional universes";
-
-    public const string HomeDescription =
-        "Build lore, relationships, timelines and stories in one connected workspace for fictional universes.";
-
     private const string GenericDescription =
         "A workroom for the worlds you keep: their people, places, history and the rules that hold them together.";
 
@@ -73,28 +68,16 @@ public static class PageMetadataResolver
 
         switch (segments)
         {
-            // LorEvolve's home (031): a page about LorEvolve, so its words are fixed ones LorEvolve writes, and its one address is "/".
+            // Explore is the front door (ADR 0069), with one canonical address, "/". A search or filter state is a view of
+            // it, not a page of its own: its links are worth following, the state itself is not worth indexing. Its old
+            // address, "/explore", is a 301 to here (FrontendHosting) and never resolves a head of its own.
             case [""]:
-                return new PageMetadata(
-                    HomeTitle,
-                    HomeDescription,
-                    Indexable: !query.HasValue,
-                    FollowLinks: true,
-                    "/",
-                    "website",
-                    null,
-                    false,
-                    200);
-
-            case ["explore"]:
-                // One canonical Explore. A search or filter state is a view of it, not a page of its own: its links are
-                // worth following, the state itself is not worth indexing.
                 return new PageMetadata(
                     $"Explore Worlds | {Brand}",
                     ExploreDescription,
                     Indexable: !query.HasValue,
                     FollowLinks: true,
-                    "/explore",
+                    "/",
                     "website",
                     null,
                     false,

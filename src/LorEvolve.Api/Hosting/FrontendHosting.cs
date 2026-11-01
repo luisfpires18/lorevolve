@@ -48,6 +48,11 @@ public static partial class FrontendHosting
     /// </summary>
     public static WebApplication MapLorEvolveFrontendFallback(this WebApplication app)
     {
+        // "/explore" was Explore's address until ADR 0069. It stays answered, as a permanent redirect to "/" with the
+        // search kept, so an old link, bookmark or indexed copy still lands on the worlds.
+        app.MapGet("/explore", (HttpContext context) =>
+            Results.Redirect("/" + context.Request.QueryString.ToUriComponent(), permanent: true)).AllowAnonymous();
+
         var shellPath = ShellPath(app);
         if (shellPath is null)
         {
@@ -62,8 +67,8 @@ public static partial class FrontendHosting
 
         app.Map("/api/{**path}", () => Results.NotFound());
 
-        // "/" is LorEvolve's home page (031), answered by the shell like every other page, with its own head. Paths that look
-        // like files ("nonfile" excludes them) stay 404s, as MapFallbackToFile left them.
+        // "/" is Explore, the front door (ADR 0069), answered by the shell like every other page, with its own head. Paths
+        // that look like files ("nonfile" excludes them) stay 404s, as MapFallbackToFile left them.
         app.MapFallback("{*path:nonfile}", context => SeoEndpoints.RenderShellAsync(context, template)).AllowAnonymous();
         return app;
     }

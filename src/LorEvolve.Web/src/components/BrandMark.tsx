@@ -1,8 +1,8 @@
 /**
  * The accessible name of every link LorEvolve's brand is drawn in - the bars' mark and wordmark, the auth plate's, the
- * workspace rail's `L`. The brand always leads to LorEvolve's home, `/`, from everywhere (031; it led to Explore while
- * Explore was the front door), and the name says so, so nobody has to recognise a logo, or hover for a tooltip, to know
- * where it goes. Explore is always a link of its own.
+ * workspace rail's `L`. The brand always leads to `/`, the front door - Explore (ADR 0069; a page about LorEvolve stood
+ * there from 031 to 0069) - and the name says so, so nobody has to recognise a logo, or hover for a tooltip, to know
+ * where it goes. Explore is always a link of its own as well.
  */
 export const BRAND_LINK_LABEL = 'LorEvolve – Home'
 

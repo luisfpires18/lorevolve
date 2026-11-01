@@ -143,7 +143,7 @@ test.describe('reading a public universe', () => {
     await story(page, w, 'Unwritten tale', null)
 
     const { context, page: reader } = await stranger(browser)
-    await reader.goto(`/explore?q=${encodeURIComponent(w.name)}`)
+    await reader.goto(`/?q=${encodeURIComponent(w.name)}`)
     await reader
       .locator('.worldcard')
       .filter({ hasText: w.name })
@@ -397,7 +397,7 @@ test.describe('reading a public universe', () => {
     await context.close()
   })
 
-  test('LorEvolve’s home is the front door, signed in or out, and the installed app opens it', async ({
+  test('Explore is the front door, signed in or out, and the installed app opens it', async ({
     page,
     browser,
     request,
@@ -409,16 +409,16 @@ test.describe('reading a public universe', () => {
 
     const { context, page: visitor } = await stranger(browser)
     await visitor.goto(manifest.start_url)
-    await expect(visitor.getByTestId('landing')).toBeVisible()
+    await expect(visitor.getByTestId('explore')).toBeVisible()
     await expect(visitor.getByTestId('portal-login')).toBeVisible()
     await context.close()
 
-    // Signed in, and last seen in the workspace: still the landing page first.
+    // Signed in, and last seen in the workspace: still Explore first.
     await signUp(page)
     await page.goto('/app')
     await page.goto(manifest.start_url)
     await expect(page).toHaveURL(/\/$/)
-    await expect(page.getByTestId('landing')).toBeVisible()
+    await expect(page.getByTestId('explore')).toBeVisible()
     await expect(page.getByTestId('portal-workspace')).toBeVisible()
 
     // A deep link is still a deep link.

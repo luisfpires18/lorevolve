@@ -86,7 +86,7 @@ test.describe('one theme', () => {
   }) => {
     for (const scheme of ['light', 'dark'] as const) {
       const { context, page } = await fresh(browser, scheme)
-      await page.goto('/explore')
+      await page.goto('/')
       expect(await themeOf(page)).toBe(scheme)
       await page.goto('/login')
       expect(await themeOf(page)).toBe(scheme)
@@ -102,7 +102,7 @@ test.describe('one theme', () => {
     browser,
   }) => {
     const { context, page } = await fresh(browser, 'light')
-    await page.goto('/explore')
+    await page.goto('/')
     expect(await themeOf(page)).toBe('light')
 
     // Signed out, the choice is Appearance beside Log in; keyboard all the way.
@@ -159,7 +159,7 @@ test.describe('one theme', () => {
     expect(luminance(workspaceGround)).toBeGreaterThan(0.6)
 
     // Workspace to portal.
-    await page.goto('/explore')
+    await page.goto('/')
     expect(await themeOf(page)).toBe('light')
     const portalGround = await ground(page, '.portal')
     expect(luminance(portalGround)).toBeGreaterThan(0.6)
@@ -184,7 +184,7 @@ test.describe('one theme', () => {
     await page.goto('/app/profile')
     await page.getByRole('region', { name: 'Appearance' }).getByTestId('theme-dark').click()
     expect(await themeOf(page)).toBe('dark')
-    await page.goto('/explore')
+    await page.goto('/')
     expect(luminance(await ground(page, '.portal'))).toBeLessThan(0.2)
     await context.close()
   })
@@ -294,7 +294,7 @@ test.describe('one theme', () => {
         await context.addInitScript((t) => localStorage.setItem('lorevolve-theme', t), theme)
         const page = await context.newPage()
         for (const path of [
-          '/explore',
+          '/',
           `/worlds/${w.slug}`,
           '/app',
           `/app/universes/${w.id}/lore`,

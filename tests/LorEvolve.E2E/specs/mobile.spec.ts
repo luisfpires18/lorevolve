@@ -59,7 +59,7 @@ test.describe('on a phone', () => {
   test('the portal and My workspace keep a solid bar pinned to the top, as a universe does', async ({
     page,
   }) => {
-    await page.goto('/explore')
+    await page.goto('/')
     const portalBar = page.locator('.portal__bar')
     await expect(portalBar).toHaveCSS('position', 'sticky')
     const barColour = await portalBar.evaluate((bar) => getComputedStyle(bar).backgroundColor)

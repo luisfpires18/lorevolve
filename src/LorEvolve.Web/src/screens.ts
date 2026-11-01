@@ -26,7 +26,6 @@ export const ForgotPasswordPage = lazyWithPreload(() => import('./pages/ForgotPa
 export const IdeaPage = lazyWithPreload(() => import('./pages/IdeaPage'))
 export const IdeasPage = lazyWithPreload(() => import('./pages/IdeasPage'))
 export const InvitationPage = lazyWithPreload(() => import('./pages/InvitationPage'))
-export const LandingPage = lazyWithPreload(() => import('./pages/LandingPage'))
 export const LoginPage = lazyWithPreload(() => import('./pages/LoginPage'))
 export const LorePage = lazyWithPreload(() => import('./pages/LorePage'))
 export const MapPage = lazyWithPreload(() => import('./pages/MapPage'))

@@ -72,8 +72,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0066 | An idea board is an account-owned canvas of notes, ideas and entries, and never lore (amends 0030) | [0066-idea-boards.md](0066-idea-boards.md) |
 | 0067 | The product is LorEvolve; what was stored as Lorex is still read | [0067-rename-to-lorevolve.md](0067-rename-to-lorevolve.md) |
 | 0068 | LorEvolve shows no stock artwork; only authors' pictures and the brand mark | [0068-no-stock-artwork.md](0068-no-stock-artwork.md) |
+| 0069 | Explore is the front door at `/`; the page about LorEvolve is retired, `/explore` redirects | [0069-explore-is-the-front-door.md](0069-explore-is-the-front-door.md) |
 
-All accepted. Next number: `0069`.
+All accepted. Next number: `0070`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

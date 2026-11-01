@@ -14,7 +14,7 @@ allow-listed API to build on.
 | | Workspace | Public portal |
 | --- | --- | --- |
 | Who | The signed-in owner | Anyone, signed in or not |
-| Routes | `/app/...` behind `RequireAuth` | `/explore`, `/worlds/{slug}`, `/worlds/{slug}/lore/{loreSlug}`, `/worlds/{slug}/stories/{storySlug}`, `/authors/{slug}`, outside every guard |
+| Routes | `/app/...` behind `RequireAuth` | `/` (Explore; `/explore` redirects to it), `/worlds/{slug}`, `/worlds/{slug}/lore/{loreSlug}`, `/worlds/{slug}/stories/{storySlug}`, `/authors/{slug}`, outside every guard |
 | Layout | Rail, universe sidebar, universe search | `PublicLayout`: its own bar, none of the workspace chrome |
 | API | Owner-scoped `/api/...` | `/api/public/universes...` and `/api/public/authors...`, anonymous, read-only |
 | Identity | Warm editorial workbench (Design refactor 001-007) | Dark, image-led discovery and reading (Tasks 009, 011) |
@@ -122,15 +122,14 @@ nothing is reinterpreted. The web client's `publishing/types.ts` carries the sam
 
 ## 13. Explore (009)
 
-`/explore` answers one question - what worlds can I explore? - with one card per public universe. The layout follows
+`/`, Explore, answers one question - what worlds can I explore? - with one card per public universe. The layout follows
 the owner's portal reference: a solid bar with the search in it, a plain head holding the title and the category row
 (the panoramic band left with ADR 0068), then a wide grid of dark card panels. Its metrics, ratings, avatars and extra nav items are not copied:
 no such data or destinations exist.
 
-- **Bar.** Brand (to LorEvolve's home since 031), Explore (marked by a rule along the bar's foot), the search, then Log in
+- **Bar.** Brand (to `/`), Explore (marked by a rule along the bar's foot), the search, then Log in
   and Create account - or My workspace and the account menu. Below 52rem the search takes its own row; below 40rem the
-  brand and the way in share the first row and Explore opens the second, beside the search. The home page has no
-  search (section 23).
+  brand and the way in share the first row and Explore opens the second, beside the search.
 - **Head.** "Explore Worlds", one line of support, the category pills and the genre and sort selects, on the page's
   own ground over a hairline. No picture since ADR 0068 (2026-10-30); the panorama that stood here left the repository.
 - **Categories.** Pills: All plus the eight, each a link to Explore filtered to it, outlined like the bar's pills,
@@ -141,7 +140,7 @@ no such data or destinations exist.
 - **Search.** In the bar, on every portal page. On Explore it is `q`: sent 300 ms after typing stops, at once on
   Enter or when emptied; earlier requests are aborted and a stale answer is never shown; starting or clearing a
   search adds a history entry, refining one replaces it. Elsewhere, Enter opens Explore with the search.
-- **Address.** `q`, `category`, `genre`, `sort=az`, each omitted at its default - `/explore?category=games&genre=fantasy`.
+- **Address.** `q`, `category`, `genre`, `sort=az`, each omitted at its default - `/?category=games&genre=fantasy`.
   Back, Forward and refresh restore it; an unknown value in a hand-edited address is ignored, not an error.
 - **Paging.** "Show more worlds", under "Showing 24 of 52 worlds", appends the next page, keeps the filters and drops
   any world already shown (a publish in between shifts pages by one). No infinite scroll. The loaded pages are not in
@@ -163,14 +162,12 @@ no such data or destinations exist.
 
 ## 14. Public and private navigation
 
-The portal is the front door: `/` is LorEvolve's home (031, section 23), and `/`, `/explore` and `/worlds/{slug}` answer
+The portal is the front door: `/` is Explore (ADR 0069, section 23), and `/`, `/worlds/{slug}` and the rest answer
 without a session - directly, after a refresh, in a new browser. Signing in is a choice made from it, and it comes back:
 
 - **Log in** and **Create account** in the portal bar pass the current page (path and query) as router state
   (`{ from }`) - the same mechanism `RequireAuth` uses. Signing in or registering returns there, not to the workspace;
   the Login and Register screens' links to each other carry it along. Signing out from the portal stays on the page.
-  The home page is the exception: its Log in and Create account carry nothing, so they land in the
-  workspace as any sign-in does (031).
 - **My workspace** is the one way into the workspace from the portal; My workspace's bar's **Explore** (and the account
   menu's Go to on every screen) is the way back. Both are plain same-tab links - no outward arrow (refinement 024). Visibility belongs to universes; the two sides are the portal and the workspace, never "public
   mode" and "private mode".
@@ -295,7 +292,7 @@ an owner or an id; nobody else sees either link.
 with nothing public, an address nobody held: "This page is not available. Its address may be wrong, or it is not
 public." A page that fails to load says so, with Try again, and is never mistaken for missing.
 
-**Front door.** `/` is LorEvolve's home (031); the installed app opens Explore: the manifest's `start_url` is `/explore` (its
+**Front door.** `/` is Explore (ADR 0069), and the installed app opens it too: the manifest's `start_url` is `/` (its
 `id` stays `/app`, the install's identity). Signed in or out, and whatever was used last, the portal comes first; My
 workspace is the way in. Deep links are unaffected.
 
@@ -320,9 +317,8 @@ worlds - no bio, followers, contact or counts of anything private.
 
 ## 19. Final polish and hardening (012)
 
-**Route set, final.** Public: `/explore`, `/worlds/{slug}`, `/worlds/{slug}/lore/{loreSlug}`,
-`/worlds/{slug}/stories/{storySlug}`, `/authors/{slug}`, and since 031 `/` (LorEvolve's home, no longer a redirect to
-`/explore`). Everything else is the workspace or sign-in and is never indexed.
+**Route set, final.** Public: `/` (Explore, since ADR 0069; `/explore` is a 301 to it), `/worlds/{slug}`,
+`/worlds/{slug}/lore/{loreSlug}`, `/worlds/{slug}/stories/{storySlug}`, `/authors/{slug}`. Everything else is the workspace or sign-in and is never indexed.
 
 **SEO (ADR 0038).** The API writes each public page's head into the shell on the server: `<title>` ("Explore Worlds |
 LorEvolve", "World | LorEvolve", "Entry — World | LorEvolve", "Story — World | LorEvolve", "Author | LorEvolve"), description from public text
@@ -334,7 +330,7 @@ meta. **The body is still rendered in the browser**: a crawler that runs no Java
 The app keeps the tab title in the same words on client navigation. No structured data.
 
 **Indexing.** Explore itself is indexable; any `q`/`category`/`genre`/`sort` state is `noindex,follow`, canonical
-`/explore`. `robots.txt` allows `/explore`, `/worlds/`, `/authors/`, `/api/public/`; disallows `/api/`, `/app`, `/login`,
+`/`. `robots.txt` allows `/worlds/`, `/authors/`, `/api/public/`; disallows `/api/`, `/app`, `/login`,
 `/register`; names the sitemap. `/sitemap.xml` lists Explore, public universes, effective-public entries and stories and
 authors with a public world, computed per request (`no-cache`), so unpublishing removes an address from the next read. API
 responses carry `X-Robots-Tag: noindex`. Robots and noindex are courtesy, never protection: authorization is.
@@ -354,13 +350,13 @@ Unset (DEV today): no canonical or absolute URL, `robots.txt` disallows everythi
   portal's own control), and an archived public universe's Settings says "Still public." Restoring from the archive
   never asks. Deleting (archived only) says a public page goes with it.
 
-**Performance.** Explore and the home page carry no stock picture since ADR 0068 (before it, a 250 kB WebP hero above
+**Performance.** Explore carries no stock picture since ADR 0068 (before it, a 250 kB WebP hero above
 the fold). Cards and thumbnails are lazy with explicit dimensions. Page screens are split chunks; the rich-text
 editor (393 kB) loads only on screens that render an article. `/assets/*` is `immutable` for a year; the shell,
 manifest, icons and `sw.js` are `no-cache`. A public hero stays the 960-wide card (blurred behind): privacy over
 sharpness; a larger public derivative is future image-pipeline work.
 
-**PWA and cache.** `start_url` `/explore`, `id` `/app` (unchanged identity). The service worker caches only same-origin
+**PWA and cache.** `start_url` `/`, `id` `/app` (unchanged identity). The service worker caches only same-origin
 `GET` build output and root static files; it never touches `/api`, navigations, non-`GET` or cross-origin requests, so no
 public or private API response, picture or page is persisted by it and an unpublish is never bypassed. The browser's own
 HTTP cache may hold a public picture it already fetched; `no-cache` makes it revalidate, and revalidation of something no
@@ -397,14 +393,14 @@ in both.
 
 ## 21. Front door and brand (UI refinement 014)
 
-- **LorEvolve's brand always leads to `/`, LorEvolve's home** (031; until then `/explore`): the portal bar, the workspace rail's
+- **LorEvolve's brand always leads to `/`, the front door** (Explore since ADR 0069; a page about LorEvolve from 031): the portal bar, the workspace rail's
   "L", My workspace's bar, and the sign-in plate. It is not context-sensitive, and its accessible name says where it
   goes: "LorEvolve – Home". Explore is always a link of its own. **My workspace** stays the deliberate way in. The universes are "All universes", at the head of the sidebar and of the
   phone's Sections sheet.
 - **The installed app opens Explore**, signed in or out, whatever was used last. The cause of it opening the workspace
   or Login on real installs was the service worker keeping the pre-011 manifest (`start_url: /app`) - fixed in 014 by
-  never caching the manifest and bumping the worker's cache (ADR 0017 amendment). An unknown address lands on LorEvolve's
-  home (Explore before 031) rather than on the workspace's guard. Deep links - `/worlds/...`, `/authors/...`, `/app/...` - go where they
+  never caching the manifest and bumping the worker's cache (ADR 0017 amendment). An unknown address lands on the
+  front door, `/`, rather than on the workspace's guard. Deep links - `/worlds/...`, `/authors/...`, `/app/...` - go where they
   say, `/app/...` by the sign-in rules. A device check is in the DEV runbook ("The installed app's front door").
 - **Publishing moved** from Settings to its own workspace page, Publish (`/app/universes/{id}/publish`), just above
   Settings. Same API, same rules, same confirmations (section 14's "Settings' Public portal section" is now this page).
@@ -414,7 +410,7 @@ in both.
 The hierarchy, made visible rather than implied:
 
 ```
-LorEvolve                              home, / (031)
+LorEvolve                              Explore, / (ADR 0069)
 ├── Explore                        public side (PublicLayout)
 └── My workspace                   signed-in side
     ├── Universes      /app        ┐ WorkspaceLayout: one bar, two tabs
@@ -494,32 +490,20 @@ is missing shows what and takes the focus there. The Status section and checklis
 **Not done:** chapter headings publicly, a per-scene reader address, and a Trash restore question for a selected scene or
 arc (ADR 0039).
 
-## 23. LorEvolve's home (Product refinement 031)
+## 23. The front door (ADR 0069; a page about LorEvolve from 031 to 0069)
 
-`/` is LorEvolve's own page, a route of `PublicLayout` (`pages/LandingPage.tsx`), no longer a redirect: what LorEvolve is, what it
-does, who it is for, that published worlds can be read, and how to start. `/explore` is unchanged and remains where
-published worlds are found.
+`/` is Explore, a route of `PublicLayout` (`pages/ExplorePage.tsx`). The page about LorEvolve that stood at `/` from
+Product refinement 031 (`LandingPage`) was retired on 2026-10-31: LorEvolve is in an invite-only alpha, the demo site
+carries the introduction, and the bar already holds every way in. `/explore` stays as an address and is a permanent
+redirect to `/`, search and all, on the server (301) and in the client.
 
-- **Bar.** Brand (to `/`), Explore, then Appearance, Log in and Create account - or My workspace and the account menu.
-  No world search on `/`: `PublicLayout` leaves `PortalSearch` out there and nowhere else. A quiet footer on `/` only
-  (033): the wordmark (to `/`) and its one line; a Product group of Explore, then Create account and Log in, or My
-  workspace; under a hairline `© <this year> LorEvolve` and `LorEvolve v<package version>` (`lib/buildInfo`), neither a link.
-  No Community, Legal or Support group: LorEvolve has no such destination yet, and an empty heading or a made-up link would
-  be worse than none.
-- **Actions.** Signed out: *Create account* (`/register`) and *Explore worlds*; at the foot *Create account* and *Log
-  in*. Signed in: *Go to my workspace* (`/app`) and *Explore worlds*; at the foot *Go to my workspace*. One name per
-  intent, the bar's own (ADR 0068). Nothing is drawn until the session is known, so neither set flashes before the other.
-- **Content, all of it true today.** A text head (two sentences, one line each, no picture; ADR 0068); Build (Lore,
-  Types, Family Tree, Timeline and Chronology, World Rules); Connect (three things writing once does now: relationships
-  read from both entries and drawn in the Family Tree, Canon's lifespan checks, a scene's lore at hand); Write (stories,
-  chapters, scenes, manuscripts, plot arcs and beats, and the media a universe can serve); Explore (a line about
-  published worlds and the way to them; no cards here); trust (private until published, collaborators by role,
-  downloadable backups, as three plain paragraphs); a last call. No prices, trials, metrics, testimonials or AI.
-- **No numbers and no picture of a workspace.** The four live counts that sat on the hero's foot (031: Creators,
-  Universes, Published worlds, Private worlds from anonymous `GET /api/public/stats`) left the page with ADR 0068
-  (2026-10-30); the endpoint stays, with no web consumer. The Lore screenshot and its capture script were already gone
-  (031 correction), and no world cards are fetched here: Explore has them. The page asks the API for nothing but the
-  session.
-- **Head.** "LorEvolve | Build connected fictional universes", a fixed description, canonical `/`, `index,follow` (any query
-  `noindex,follow`), Open Graph with the static icon; `/` is in the sitemap (ADR 0038 amendment).
-- **Unknown addresses** outside `/app` land on `/`; under `/app` on `/app`. The installed app still opens `/explore`.
+- **Bar.** Brand (to `/`), Explore (current on `/`), the search, then Appearance, Log in and Create account - or My
+  workspace and the account menu. Log in and Create account carry the page to come back to, here as everywhere.
+- **Footer** (`SiteFooter`): the wordmark (to `/`, named by its word) and its one line; a Product group of Explore, then
+  Create account and Log in, or My workspace (left out inside the workspace itself); under a hairline `© <this year> LorEvolve` and `LorEvolve v<package version>`
+  (`lib/buildInfo`), neither a link. Drawn on `/`, on My workspace and at the foot of a universe's column; not on the
+  reading pages nor in Admin. No Community, Legal or Support group: LorEvolve has no such destination yet.
+- **Head.** "Explore Worlds | LorEvolve", Explore's fixed description, canonical `/`, `index,follow` (any query
+  `noindex,follow`, same canonical), Open Graph with the static icon; `/` is the sitemap's first address and `/explore`
+  is no longer in it (ADR 0038 amendment).
+- **Unknown addresses** outside `/app` land on `/`; under `/app` on `/app`. The installed app opens `/` as well.
