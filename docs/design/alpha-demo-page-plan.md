@@ -1,6 +1,25 @@
 # Alpha demo page plan
 
-Status: **step 1 built** in `site/alpha/` (feature screenshots still to capture). Step 1 is the page. App email is step 2, a custom domain is parked.
+Status: **step 1 built** in `site/alpha/`, then reworked on 2026-11-01 (below). App email is step 2.
+
+## 0. Rework 2026-11-01: features only, anonymous survey (owner)
+
+Supersedes the hero painting, screenshots, clips, "Join the alpha" and the D1 tables described in sections 3 and 5,
+following the app's own move away from stock and generated artwork.
+
+- **No pictures.** The hero painting, every feature screenshot (they showed generated character art), the walkthrough
+  video and the MCP clip are gone. Type and the brand mark only. The "About" and "AI is optional" sections went with
+  them; the AI feature row carries that text.
+- **Layout (direction A of three mocked):** a type-only hero beside one button, then a book-style index: the feature
+  list on the left, one feature read at a time on the right. On a phone the list becomes a sticky row that scrolls
+  sideways above the feature. Without JavaScript every feature shows in turn. Questions follow as plain pairs, no cards.
+  No eyebrow labels, no identical stacked cards, no centred last call, no gradients.
+- **One call to action**, in the hero only: "Fill in the survey anonymously". The application page (email, name, use
+  case, contact consent) is removed; "what would you use it for" became an optional survey question. The
+  end-of-alpha survey and its personal links are removed too.
+- **Storage:** one table, `survey_answers (id, answers JSON, created_on)`, the day only, nothing about the sender.
+  `migrations/0004-anonymous-survey.sql` drops `applications`, `surveys` and `video_plays`; their rows were exported
+  outside the repository first. Turnstile still checks each send. Privacy note version 3.
 
 ## 1. Decisions so far (owner, 2026-10-28)
 

@@ -1,8 +1,8 @@
-// Shared by POST /api/survey and its check (survey.test.mjs). The two optional surveys tied to an application: 'signup',
-// offered right after it is sent, and 'end', opened from the personal link sent at the end of the alpha. Every answer is
-// optional; anything not listed here is refused rather than stored. The dialog (public/app.js) asks the same questions.
+// Shared by POST /api/survey and its check (survey.test.mjs). The anonymous survey: no name, no email, nothing that
+// says who sent it. Every answer is optional; anything not listed here is refused rather than stored. The dialog
+// (public/app.js) asks the same questions.
 
-// The features both surveys name, by key: the rows of the page's feature list, in the same order.
+// The features the survey names, by key: the page's feature list, in the same order.
 export const FEATURES = [
   'lore',
   'massCreate',
@@ -36,40 +36,25 @@ export const FEATURES = [
 const one = (...values) => ({ kind: 'one', values })
 const free = (max = 2000) => ({ kind: 'text', max })
 
-// How someone would prefer to pay and the two price questions: asked after applying and again at the end of the alpha.
-const PRICING = {
+export const QUESTIONS = {
+  useCase: free(1000),
+  interests: { kind: 'pick', values: FEATURES, max: FEATURES.length },
+  wished: free(),
+  publish: one('all', 'parts', 'no'),
+  browse: one('often', 'sometimes', 'no'),
+  votes: one('updown', 'up', 'none'),
+  brainstorm: one('text', 'board', 'both', 'none'),
+  ideasLive: one('universe', 'loose', 'both'),
+  invite: one('cowriters', 'reviewers', 'no'),
+  ai: one('never', 'search', 'propose'),
+  mcpKnew: one('yes', 'no'),
+  mcpConnect: one('yes', 'maybe', 'no'),
+  appKind: one('web', 'desktop', 'both'),
+  storage: one('cloud', 'local', 'both'),
   payPreference: one('subscription', 'usage', 'one-time', 'other'),
   payOther: free(200),
   priceTooCheap: { kind: 'price' },
   priceTooExpensive: { kind: 'price' },
-}
-
-export const QUESTIONS = {
-  signup: {
-    publish: one('all', 'parts', 'no'),
-    browse: one('often', 'sometimes', 'no'),
-    votes: one('updown', 'up', 'none'),
-    brainstorm: one('text', 'board', 'both', 'none'),
-    ideasLive: one('universe', 'loose', 'both'),
-    invite: one('cowriters', 'reviewers', 'no'),
-    ai: one('never', 'search', 'propose'),
-    mcpKnew: one('yes', 'no'),
-    mcpConnect: one('yes', 'maybe', 'no'),
-    interests: { kind: 'pick', values: FEATURES, max: FEATURES.length },
-    wished: free(),
-    ...PRICING,
-  },
-  end: {
-    usefulness: { kind: 'grid', rows: FEATURES, values: ['must', 'nice', 'no', 'untried'] },
-    typesEffort: one('freeing', 'right', 'toomuch'),
-    progressionMissing: free(),
-    timelineAuto: one('birthsDeaths', 'characterEvents', 'everyDate', 'none'),
-    mapsWish: free(),
-    missMost: free(),
-    confused: free(),
-    wished: free(),
-    ...PRICING,
-  },
 }
 
 function readAnswer(question, value) {
@@ -87,15 +72,6 @@ function readAnswer(question, value) {
       if (!value.every((key) => question.values.includes(key))) return { error: 'invalid' }
       return { value: [...new Set(value)] }
     }
-    case 'grid': {
-      if (!value || typeof value !== 'object' || Array.isArray(value)) return { error: 'invalid' }
-      const kept = {}
-      for (const [row, answer] of Object.entries(value)) {
-        if (!question.rows.includes(row) || !question.values.includes(answer)) return { error: 'invalid' }
-        kept[row] = answer
-      }
-      return { value: kept }
-    }
     case 'price': {
       const number = typeof value === 'number' ? value : Number(value)
       if (!Number.isFinite(number) || number < 0 || number > 10000) return { error: 'invalid' }
@@ -105,14 +81,12 @@ function readAnswer(question, value) {
 }
 
 /** `{ answers }` holding only what was answered, or `{ field, error }` for the first thing wrong. */
-export function readSurvey(part, body) {
-  const questions = QUESTIONS[part]
-  if (!questions) return { field: 'part', error: 'invalid' }
+export function readSurvey(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return { field: 'answers', error: 'invalid' }
 
   const answers = {}
   for (const [field, value] of Object.entries(body)) {
-    const question = questions[field]
+    const question = QUESTIONS[field]
     if (!question) return { field, error: 'invalid' }
     if (value == null || value === '') continue
     const result = readAnswer(question, value)
