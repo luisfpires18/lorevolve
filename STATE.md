@@ -43,12 +43,9 @@ As of 2026-10-29 `origin/master..origin/dev` is empty: everything on `dev` is in
 
 One line per branch. Delete the line when it merges.
 
-- `feat/publish-everything`: Publish page "Publish everything" (Canon lore, Complete stories with scenes and text; plot
-  arcs never). Committed locally, not merged.
-- `feat/no-stock-artwork`: the home page, Explore, My workspace, Admin, the sign-in plate and the universe shell lose
-  the stock paintings (ADR 0068); the landing's counts and icon trio go; "Shared as Role". Committed locally, not merged.
-- `feat/explore-front-door` (off `feat/no-stock-artwork`): Explore at `/`, `/explore` a 301, the landing page deleted,
-  the footer on Explore, My workspace and the universe shell (ADR 0069). Committed locally, not merged.
+- `feat/desktop-edition`: the desktop edition's backend and shell (ADR 0070): environment `Desktop`, launch-token sign-in
+  of one local author, pictures on disk, web-only routes unmapped, `LorEvolve.exe` (WinForms + WebView2, host in
+  process), `scripts/Build-Desktop.ps1`. The client's desktop bundle is a separate branch. Not merged.
 
 ## Committed, not on `dev`
 

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The desktop edition's shell (ADR 0070): one window around WebView2, the API host in the same process. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>LorEvolve.Desktop</RootNamespace>
+    <AssemblyName>LorEvolve</AssemblyName>
+    <ApplicationIcon>lorevolve.ico</ApplicationIcon>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <!-- The same version as the API it carries: package.json's. -->
+    <Version Condition="'$(Version)' == ''">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../LorEvolve.Web/package.json')), '"version"\s*:\s*"([^"]+)"').Groups[1].Value)</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.Web.WebView2" />
+    <ProjectReference Include="..\LorEvolve.Api\LorEvolve.Api.csproj" />
+    <EmbeddedResource Include="lorevolve.ico" />
+  </ItemGroup>
+
+  <!-- The WebView2 package references its WPF control on every .NET target. This window is Windows Forms, and the WPF
+       assembly only drags in a WindowsBase version conflict (MSB3277). -->
+  <Target Name="DropWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
+  </Target>
+
+</Project>

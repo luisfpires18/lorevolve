@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/LorEvolve.Api/LorEvolve.Api.csproj" />
+    <Project Path="src/LorEvolve.Desktop/LorEvolve.Desktop.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/LorEvolve.Api.Tests/LorEvolve.Api.Tests.csproj" />

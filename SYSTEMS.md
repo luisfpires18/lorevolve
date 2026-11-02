@@ -49,7 +49,10 @@ Repository index. Paths and one-line responsibilities only.
 | `Data/DatabaseFailures.cs` | Whether a `DbUpdateException` was the constraint an endpoint refuses on, or an unrelated database failure. |
 | `Data/EditVersion.cs` | 044, ADR 0043: the one 409 for a save written over a version that is no longer current - the resource's `code` and `currentVersion`, no content - and the comparison every protected save makes inside its own transaction. |
 | `Data/Migrations/` | EF Core migrations. `AddEntityReferenceTargetType` (036): a link field's nullable allowed type, keyed to `EntityTypes`. `AddEntityTypeGroups` (Issue #36): `EntityTypeGroups`, `EntityTypeGroupMembers`, `EntityFieldDefinitions.TargetGroupId` added by `ALTER ... REFERENCES` (no rebuild), four same-universe triggers; classifies nothing. `AddEntityTypeGroupFamilyTree` (Issue #37): `EntityTypeGroups.FamilyTreeEnabled`, false for every group, dropped by SQLite's own `DROP COLUMN` on the way down. `AddEntityFieldArchive` (Issue #39): nullable `EntityFieldDefinitions.ArchivedAt`, null (active) for every field, no backfill, dropped by `DROP COLUMN`. `AddEntityFieldVersion` (Issue #39 review): `EntityFieldDefinitions.Version` (existing fields at 1) and indexes on `EntityRevisionFieldValues` by field and by choice. `AddEntityProgression` (Issue #41): six new tables (`EntityProgressions`, `EntityEras`, `EntityEraStories`, `EntityEraScenes`, `EntityEraFieldValues`, `EntityProgressionRevisions`), no change to an existing table. `AddRelationshipPeriods` (Issue #18): `RelationshipPeriods`, no change to an existing table. `AddEntityFormsAndAbilities` (Issue #42): seven new tables (`EntityForms`, `EntityFormEras`, `EntityFormScenes`, `EntityAbilities`, `EntityAbilityEras`, `EntityAbilityScenes`, `EntityAbilityForms`), no change to an existing table. `AddEntityFieldSections` (Issue #26): `EntityFieldSections`, a key-less `EntityFieldDefinitions.SectionId` held by three triggers (own type; ungroup on delete), `EntityTypes.FieldLayoutVersion` at 1; every field ungrouped, nothing rebuilt. `AddEntityAppearances` (Issue #43): five new tables (`EntityAppearances`, `EntityAppearanceEras`, `EntityAppearanceForms`, `EntityAppearanceScenes`, `EntityAppearanceImages`), no change to an existing table. `AddEntityPrivateNotes` (Issue #23): `EntityPrivateNotes`, one additive table cascading from `Entities`, `DROP TABLE` rollback. `AddKnowledgeRecords` (Issue #15): `KnowledgeRecords`, one additive table with a check constraint and three indexes, `DROP TABLE` rollback. |
-| `Hosting/FrontendHosting.cs` | Serving the built client from `wwwroot`, its cache headers (`/assets` immutable, the rest `no-cache`) and its fallback: `/` is the shell like any page (Explore, the front door, ADR 0069), `/explore` a 301 to `/` with its query, file-like paths stay 404, every other path is the shell with its head written by `SeoEndpoints.RenderShellAsync` (template `Frontend:ShellPath`, else `wwwroot/index.html`). ADR 0038. |
+| `Hosting/LorEvolveHost.cs` | The whole host - services, pipeline, routes - in `Build(args)`, shared by `Program.cs` (which keeps only the `database-backup` CLI dispatch) and the desktop shell. In the `Desktop` environment the web-only surfaces are not mapped: admin, feedback, collaborators, invitations, publishing, artwork, public name/author/universes/stats, SEO; `MapDesktopLaunch` instead. ADR 0070. |
+| `Hosting/DesktopEdition.cs` | ADR 0070: `IsDesktop` (environment `Desktop`) and `ServesPlainHttp` (Development, Testing, Desktop), the one rule the session cookie and MCP read. |
+| `appsettings.Desktop.json` | The desktop edition's defaults: `AllowedHosts` the loopback names only (host filtering refuses DNS rebinding), `Media:Provider=FileSystem`. Paths and the launch token come from the shell. |
+| `Hosting/FrontendHosting.cs` | Serving the built client from `wwwroot`, its cache headers (`/assets` immutable, the rest `no-cache`) and its fallback: `/` is the shell like any page (Explore, the front door, ADR 0069), `/explore` a 301 to `/` with its query, file-like paths stay 404, every other path is the shell with its head written by `SeoEndpoints.RenderShellAsync` (template `Frontend:ShellPath`, else `wwwroot/index.html`). ADR 0038. In Desktop the plain `index.html` (ADR 0070). |
 | `Features/Seo/PublicSite.cs` | `PublicSite:Origin` (validated, the only source of absolute URLs - never `Host`) and `PublicSite:AllowIndexing` (default false). ADR 0038. |
 | `Features/Seo/PageMetadata.cs` | `PageMetadataResolver`: a path to its head - `/`, Explore (ADR 0069), a fixed indexable head with one canonical; public pages through `PublicationRules` with public text only, hidden/missing public addresses a 404 noindex head, everything else the private noindex head; Explore's query states `noindex,follow`. |
 | `Features/Seo/SeoEndpoints.cs` | `/robots.txt`, `/sitemap.xml` (effective-public addresses only, per request, `no-cache`), the shell renderer and `ShellTemplate` (the `lorevolve:head` markers), `X-Robots-Tag: noindex` on `/api`. |
@@ -58,6 +61,7 @@ Repository index. Paths and one-line responsibilities only.
 | `Hosting/SameOriginWrites.cs` | N-1 (#33 Part 3): an unsafe method on `/api` refused (403 `cross_origin_write`) when `Sec-Fetch-Site` or `Origin` says another origin; a sibling subdomain is same-site, so the Strict cookie alone does not cover it. |
 | `Hosting/ResponseCompression.cs` | Performance audit P01: Brotli then gzip for text responses over HTTPS, `/oauth` and `/mcp` left out by path (BREACH reasoning in the file). |
 | `Features/Health/HealthEndpoints.cs` | `/health` and `/api/health`. |
+| `Features/Auth/DesktopLaunch.cs` | ADR 0070: `GET /desktop/launch?token=` - the shell's per-launch `Desktop:LaunchToken`, compared in constant time (404 otherwise), signs in the one local account `author` (made on first launch, no password, 1 TiB allowance) and redirects to `/app`. Desktop only; `/api/auth` there is `me` alone. |
 | `Features/Auth/AuthSetup.cs` | Identity registration and cookie session configuration (deployed name `__Host-lorevolve.session`, N-1); the cookie's `OnValidatePrincipal` is `AccountSessions`. |
 | `Features/Auth/AccountSessions.cs` | ADR 0059: every signed-in request - account gone, blocked, or a stamp other than the cookie's ends the session; one keyed read tagged `lorevolve:session-check`, then Identity's own validator. |
 | `Features/Auth/DataProtectionSetup.cs` | Where the key ring lives, when a path is configured. |
@@ -140,6 +144,7 @@ Repository index. Paths and one-line responsibilities only.
 | `Features/Media/MediaObjectWrites.cs` | Writing a pair of objects at once and sweeping a set at once, and why that is safe. |
 | `Features/Media/MediaObjectStore.cs` | `IMediaObjectStore`, its two failure exceptions, and what is registered when nothing is configured. |
 | `Features/Media/R2MediaObjectStore.cs` | Cloudflare R2 over its S3-compatible API: the two upload flags R2 needs, and SDK failures kept inside. |
+| `Features/Media/FileSystemMediaObjectStore.cs` | ADR 0070: objects as files under `Media:FileSystem:Root` (`Media:Provider=FileSystem`, the desktop edition): written to a `.partial` name and renamed, content type from the key's extension, keys that leave the folder refused. |
 | `Features/Media/InMemoryMediaObjectStore.cs` | Objects in a dictionary, for local development and Playwright. |
 | `Features/Media/MediaSetup.cs` | Which store this host runs against, from `Media:Provider`. |
 | `Features/Lore/RevisionModel.cs` | `EntityRevision` and its alias, tag and value snapshot rows; the article copy only versions from before ADR 0028 hold; `ActorUserId`, who made it (042; also on article and manuscript versions). |
@@ -320,6 +325,16 @@ Repository index. Paths and one-line responsibilities only.
 | `appsettings.Development.json` | Dev connection string and CORS origins; the assistant on its Fake provider. |
 | `appsettings.AzureDev.json` | Azure DEV paths, forwarded headers and log levels. No secret. |
 | `appsettings.AzureProd.json` | Azure PROD, same shape as DEV's (`docs/deployment/azure-prod.md`). No secret. |
+
+## `src/LorEvolve.Desktop` - desktop shell (ADR 0070)
+
+| Path | Responsibility |
+| --- | --- |
+| `LorEvolve.Desktop.csproj` | `LorEvolve.exe`: WinExe, net10.0-windows, WinForms + WebView2, references the API project; version from `package.json`. |
+| `Program.cs` | One instance (a second launch focuses the first); starts `LorEvolveHost` in process on `127.0.0.1:0` in the `Desktop` environment against the data folder with a fresh launch token; opens the window; stops the host when it closes. MCP off (`Mcp:Origin` unset). |
+| `DataFolder.cs` | `%LOCALAPPDATA%\LorEvolve`: `lorevolve.db`, `keys`, `media`, `webview` (the window's browser profile). |
+| `MainWindow.cs` | The window: WebView2 opened on the launch URL; only the host's own origin navigates inside, other http(s) and mailto links open in the system browser; DevTools only under a debugger. |
+| `lorevolve.ico` | The exe and window icon, made from `src/LorEvolve.Web/public/icon-512.png`. |
 
 ## `src/LorEvolve.Web` - React client
 
@@ -685,6 +700,7 @@ Repository index. Paths and one-line responsibilities only.
 | `LorEvolve.Common.ps1` | Shared launcher helpers: ports, process tracking, readiness. |
 | `Start-LorEvolve.ps1` | Starts API + web, waits, opens the browser. |
 | `Stop-LorEvolve.ps1` | Stops launcher-owned processes. |
+| `Build-Desktop.ps1` | ADR 0070: the client built with `LOREVOLVE_EDITION=desktop`, `LorEvolve.Desktop` published self-contained for win-x64, `dist` copied into its `wwwroot`; default output `artifacts/desktop`. |
 | `dotnet-test-shard.py` | CI only: runs one shard of the backend suite (`N/M`), test classes dealt round-robin by name, and fails unless the shard's own results show exactly its classes ran. |
 | `render-icons.py` | Renders every icon and favicon from `assets/brand/lorevolve-icon.png`: trim, pad, area-average, write. Standard library only. Its header holds the one ffmpeg command that makes `launch-logo.webp`. |
 
