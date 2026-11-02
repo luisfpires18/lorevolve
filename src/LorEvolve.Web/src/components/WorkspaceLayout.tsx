@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { IS_DESKTOP } from '../lib/buildInfo'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { AccountMenu } from './AccountMenu'
 import { BRAND_LINK_LABEL, BrandMark } from './BrandMark'
@@ -74,9 +75,11 @@ export function WorkspaceLayout() {
           </ul>
         </nav>
 
-        <Link className="workspacebar__explore" to="/" data-testid="home-explore">
-          Explore
-        </Link>
+        {IS_DESKTOP ? null : (
+          <Link className="workspacebar__explore" to="/" data-testid="home-explore">
+            Explore
+          </Link>
+        )}
         <AccountMenu variant="bar" />
       </header>
 

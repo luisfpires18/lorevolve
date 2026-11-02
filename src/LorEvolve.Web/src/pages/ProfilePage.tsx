@@ -8,15 +8,19 @@ import { PublicNameForm } from '../components/PublicNameForm'
 import { QueryTabList, TabPanel } from '../components/QueryTabs'
 import { StorageUsage } from '../components/StorageUsage'
 import { ThemeSwitch } from '../components/ThemeSwitch'
+import { IS_DESKTOP } from '../lib/buildInfo'
 import { useQueryTab } from '../lib/queryTab'
 import { listUniverses } from '../universes/api'
 
 /** The profile's tabs, as Settings' are: kept in the address (`?tab=`), Account the page itself. */
-const TABS = [
+const ALL_TABS = [
   { id: 'account', label: 'Account' },
   { id: 'usage', label: 'Usage' },
   { id: 'connected-apps', label: 'Connected apps' },
 ] as const
+
+/** The desktop edition connects no AI apps yet (ADR 0070). */
+const TABS = IS_DESKTOP ? ALL_TABS.filter((one) => one.id !== 'connected-apps') : ALL_TABS
 
 /**
  * The signed-in account, and only what LorEvolve genuinely knows about it.
@@ -70,12 +74,15 @@ export default function ProfilePage() {
 
       <TabPanel idPrefix="profile" id="account" tab={tab}>
         <dl className="profile__facts">
-          <div className="profile__fact">
-            <dt className="profile__label">Email</dt>
-            <dd className="profile__value" data-testid="profile-email">
-              {user.email}
-            </dd>
-          </div>
+          {/* The desktop's one local account has no real address to show (ADR 0070). */}
+          {IS_DESKTOP ? null : (
+            <div className="profile__fact">
+              <dt className="profile__label">Email</dt>
+              <dd className="profile__value" data-testid="profile-email">
+                {user.email}
+              </dd>
+            </div>
+          )}
           {universeCount === null ? null : (
             <div className="profile__fact">
               <dt className="profile__label">Universes</dt>
@@ -86,32 +93,42 @@ export default function ProfilePage() {
           )}
         </dl>
 
-        <section className="profile__public" aria-labelledby="profile-public-heading">
-          <h2 className="profile__subtitle" id="profile-public-heading">
-            Publishing
-          </h2>
-          <PublicNameForm />
-          <PublicAuthorSection />
-        </section>
+        {IS_DESKTOP ? null : (
+          <section className="profile__public" aria-labelledby="profile-public-heading">
+            <h2 className="profile__subtitle" id="profile-public-heading">
+              Publishing
+            </h2>
+            <PublicNameForm />
+            <PublicAuthorSection />
+          </section>
+        )}
 
         <section className="profile__public" aria-labelledby="profile-appearance-heading">
           <h2 className="profile__subtitle" id="profile-appearance-heading">
             Appearance
           </h2>
           <p className="settings__note">
-            One theme for the whole of LorEvolve - the public portal and your workspace. It is kept
-            in this browser.
+            {IS_DESKTOP
+              ? 'One theme for the whole of LorEvolve.'
+              : 'One theme for the whole of LorEvolve - the public portal and your workspace. It is kept in this browser.'}
           </p>
           <ThemeSwitch />
         </section>
 
-        <p className="profile__note">
-          LorEvolve keeps only what it needs to sign you in: a username, an email address, and the
-          photo above if you add one - and the public name above, if you choose one, which is the
-          only thing the public portal shows about you, with your author page's address. Your photo
-          is private - served only to your own signed-in session - unless you choose to show it on
-          your author page, and it is never part of a universe backup.
-        </p>
+        {IS_DESKTOP ? (
+          <p className="profile__note">
+            Everything you write stays on this computer, in LorEvolve&rsquo;s folder. Your photo is
+            never part of a universe backup.
+          </p>
+        ) : (
+          <p className="profile__note">
+            LorEvolve keeps only what it needs to sign you in: a username, an email address, and the
+            photo above if you add one - and the public name above, if you choose one, which is the
+            only thing the public portal shows about you, with your author page's address. Your
+            photo is private - served only to your own signed-in session - unless you choose to show
+            it on your author page, and it is never part of a universe backup.
+          </p>
+        )}
       </TabPanel>
 
       <TabPanel idPrefix="profile" id="usage" tab={tab}>

@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { FeedbackButton } from '../components/FeedbackButton'
 import { NETWORK_FAILURE } from '../lib/api'
+import { IS_DESKTOP } from '../lib/buildInfo'
 import { returnPath } from './returnPath'
 import { useAuth } from './useAuth'
 
@@ -30,6 +31,7 @@ export function RequireAuth() {
 
   if (isLoading) return <SessionPending />
   if (!user && isUnreachable) return <SessionUnreachable onRetry={retry} />
+  if (!user && IS_DESKTOP) return <DesktopSignedOut />
   if (!user)
     return (
       <Navigate to="/login" state={{ from: `${location.pathname}${location.search}` }} replace />
@@ -37,9 +39,24 @@ export function RequireAuth() {
   return (
     <>
       <Outlet />
-      {/* Report a bug or ask for a feature, from every signed-in page. */}
-      <FeedbackButton />
+      {/* Report a bug or ask for a feature, from every signed-in page. On the desktop the report would land in the
+          author's own database, which nobody else reads, so the footer offers an email instead. */}
+      {IS_DESKTOP ? null : <FeedbackButton />}
     </>
+  )
+}
+
+/**
+ * The desktop edition has no sign-in screen: the app's window signs its author in when it opens (ADR 0070). Should
+ * that session be gone, opening the app again is the whole fix.
+ */
+function DesktopSignedOut() {
+  return (
+    <div className="session-pending session-pending--unreachable">
+      <div className="notice notice--error" role="alert">
+        <p>LorEvolve lost its session. Close LorEvolve and open it again.</p>
+      </div>
+    </div>
   )
 }
 

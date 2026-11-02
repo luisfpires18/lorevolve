@@ -45,7 +45,8 @@ One line per branch. Delete the line when it merges.
 
 - `feat/desktop-edition`: the desktop edition's backend and shell (ADR 0070): environment `Desktop`, launch-token sign-in
   of one local author, pictures on disk, web-only routes unmapped, `LorEvolve.exe` (WinForms + WebView2, host in
-  process), `scripts/Build-Desktop.ps1`. The client's desktop bundle is a separate branch. Not merged.
+  process), `scripts/Build-Desktop.ps1`; the client's desktop build (`IS_DESKTOP`) without portal, sign-in, publishing,
+  collaborators or connected apps. Not merged.
 
 ## Committed, not on `dev`
 

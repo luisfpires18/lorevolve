@@ -10,10 +10,12 @@
   The build id rides on the script URL. A new build is a new URL, so the browser installs a new
   worker, which names its cache after that build and deletes the last one's (see sw.js).
 */
-import { BUILD_ID } from './lib/buildInfo'
+import { BUILD_ID, IS_DESKTOP } from './lib/buildInfo'
 
 export function registerServiceWorker() {
   if (!import.meta.env.PROD) return
+  // The desktop app is its own window onto its own server; there is nothing to install (ADR 0070).
+  if (IS_DESKTOP) return
   if (!('serviceWorker' in navigator)) return
 
   window.addEventListener('load', () => {

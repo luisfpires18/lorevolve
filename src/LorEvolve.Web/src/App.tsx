@@ -15,6 +15,7 @@ import { PublicLayout } from './components/PublicLayout'
 import { RoleGate } from './components/RoleGate'
 import { RouteFocus, SkipLink } from './components/SkipLink'
 import { WorkspaceLayout } from './components/WorkspaceLayout'
+import { IS_DESKTOP } from './lib/buildInfo'
 import { HistoryLeaveGuard } from './lib/leaveGuard'
 import { ProfileImageProvider } from './profile/ProfileImageProvider'
 import UniverseOverview from './pages/UniverseOverview'
@@ -123,41 +124,55 @@ function Root() {
           {/* The public portal: outside both guards, so it answers signed in or out, and outside the
               workspace, so none of its chrome is mounted. It reads only the anonymous API (ADR 0036). Explore is the
               front door, at `/` (ADR 0069); `/explore`, its old address, goes there. */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={asScreen('explore', <ExplorePage />)} />
-            <Route path="/explore" element={<ExploreRedirect />} />
-            <Route path="/worlds/:slug" element={asScreen('world', <PublicWorldPage />)} />
-            <Route
-              path="/worlds/:slug/lore/:loreSlug"
-              element={asScreen('public-lore', <PublicLorePage />)}
-            />
-            <Route
-              path="/worlds/:slug/stories/:storySlug"
-              element={asScreen('public-story', <PublicStoryPage />)}
-            />
-            <Route path="/authors/:authorSlug" element={asScreen('author', <PublicAuthorPage />)} />
-          </Route>
+          {/* The desktop edition (ADR 0070) has none of the portal, the invitation link, the sign-in screens or the
+              AI app approval: one local author, signed in by the app's window. */}
+          {IS_DESKTOP ? null : (
+            <>
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={asScreen('explore', <ExplorePage />)} />
+                <Route path="/explore" element={<ExploreRedirect />} />
+                <Route path="/worlds/:slug" element={asScreen('world', <PublicWorldPage />)} />
+                <Route
+                  path="/worlds/:slug/lore/:loreSlug"
+                  element={asScreen('public-lore', <PublicLorePage />)}
+                />
+                <Route
+                  path="/worlds/:slug/stories/:storySlug"
+                  element={asScreen('public-story', <PublicStoryPage />)}
+                />
+                <Route
+                  path="/authors/:authorSlug"
+                  element={asScreen('author', <PublicAuthorPage />)}
+                />
+              </Route>
 
-          {/* An invitation link: outside both guards, because signed out it must still say what it is - and only that -
+              {/* An invitation link: outside both guards, because signed out it must still say what it is - and only that -
               and offer a way in that comes back here (ADR 0041 amendment). */}
-          <Route path="/invite/:token" element={asScreen('invite', <InvitationPage />)} />
+              <Route path="/invite/:token" element={asScreen('invite', <InvitationPage />)} />
 
-          <Route element={<RequireGuest />}>
-            <Route path="/login" element={asScreen('login', <LoginPage />)} />
-            <Route path="/register" element={asScreen('register', <RegisterPage />)} />
-            <Route path="/forgot-password" element={asScreen('forgot', <ForgotPasswordPage />)} />
-          </Route>
+              <Route element={<RequireGuest />}>
+                <Route path="/login" element={asScreen('login', <LoginPage />)} />
+                <Route path="/register" element={asScreen('register', <RegisterPage />)} />
+                <Route
+                  path="/forgot-password"
+                  element={asScreen('forgot', <ForgotPasswordPage />)}
+                />
+              </Route>
 
-          {/* A password reset link (#69): outside both guards, so it works from any browser, signed in or not. */}
-          <Route path="/reset-password" element={asScreen('reset', <ResetPasswordPage />)} />
+              {/* A password reset link (#69): outside both guards, so it works from any browser, signed in or not. */}
+              <Route path="/reset-password" element={asScreen('reset', <ResetPasswordPage />)} />
+            </>
+          )}
 
           <Route element={<RequireAuth />}>
             {/* An AI app's request to read a universe (ADR 0046), handed here by the authorization endpoint. Signed in,
                 because only a member can approve; outside the workspace, because it is a decision, not a place. */}
-            <Route
-              path="/connect/authorize"
-              element={asScreen('connect', <ConnectAuthorizePage />)}
-            />
+            {IS_DESKTOP ? null : (
+              <Route
+                path="/connect/authorize"
+                element={asScreen('connect', <ConnectAuthorizePage />)}
+              />
+            )}
             {/* My workspace's account-level screens share one frame (`WorkspaceLayout`). A universe, below, is a level
                 deeper and keeps its own rail and sidebar instead. */}
             <Route element={<WorkspaceLayout />}>
@@ -352,15 +367,17 @@ function Root() {
                   </RoleGate>,
                 )}
               />
-              <Route
-                path="publish"
-                element={asSection(
-                  'publish',
-                  <RoleGate need="publish">
-                    <UniversePublish />
-                  </RoleGate>,
-                )}
-              />
+              {IS_DESKTOP ? null : (
+                <Route
+                  path="publish"
+                  element={asSection(
+                    'publish',
+                    <RoleGate need="publish">
+                      <UniversePublish />
+                    </RoleGate>,
+                  )}
+                />
+              )}
               <Route
                 path="settings"
                 element={asSection(
@@ -375,13 +392,16 @@ function Root() {
 
           {/* LorEvolve Admin (#40): the service's own workspace, for an Admin only. The guard is the door, never the lock -
               every admin request is refused by the server for anyone else. */}
-          <Route element={<RequireAdmin />}>
-            <Route path="/admin/*" element={asScreen('admin', <AdminWorkspace />)} />
-          </Route>
+          {IS_DESKTOP ? null : (
+            <Route element={<RequireAdmin />}>
+              <Route path="/admin/*" element={asScreen('admin', <AdminWorkspace />)} />
+            </Route>
+          )}
 
-          {/* An address nobody holds: inside the workspace, the universes; anywhere else, the front door (ADR 0069). */}
+          {/* An address nobody holds: inside the workspace, the universes; anywhere else, the front door (ADR 0069) -
+              which on the desktop is the universes too. */}
           <Route path="/app/*" element={<Navigate to="/app" replace />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to={IS_DESKTOP ? '/app' : '/'} replace />} />
         </Routes>
       </ProfileImageProvider>
     </AuthProvider>

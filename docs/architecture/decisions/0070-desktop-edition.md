@@ -61,7 +61,8 @@ no orphaned process. The data folder is `%LOCALAPPDATA%\LorEvolve`. One instance
 
 ## Consequences
 
-- The client needs a desktop build that drops the portal, login and publish screens (`__LOREVOLVE_EDITION__`).
+- The client has a desktop build (`__LOREVOLVE_EDITION__`, `IS_DESKTOP`) without the portal, sign-in, publishing,
+  collaborator, admin and connected-app screens. The portal's lazy chunks are still emitted, never requested.
 - `Program.cs` becomes `LorEvolveHost.Build`, shared by the Api's `Program` and the desktop shell.
 - A token in a URL is visible to anything that can read the shell's own process; it signs in nothing once the process
   ends, and a new launch makes a new one.

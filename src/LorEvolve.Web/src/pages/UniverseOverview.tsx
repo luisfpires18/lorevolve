@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { ConnectToAi } from '../components/ConnectToAi'
 import { WipBadge } from '../components/WipBadge'
 import { PageHeader } from '../components/PageHeader'
+import { IS_DESKTOP } from '../lib/buildInfo'
 import { formatDate } from '../lib/dates'
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, useUniverseAccess } from '../universes/access'
 import { offered, REVIEW, RULES, WORLD, WRITING, type Section } from '../universes/sections'
@@ -45,7 +46,7 @@ export default function UniverseOverview() {
         // An outside AI app reading this universe over MCP (ADR 0046): any member may connect their own, so every
         // member's front page offers it.
         actions={
-          universe.aiHelp ? (
+          universe.aiHelp && !IS_DESKTOP ? (
             <ConnectToAi universeId={universe.id} universeName={universe.name} />
           ) : undefined
         }

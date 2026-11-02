@@ -10,10 +10,11 @@ import { Visibility } from '../publishing/types'
 import { deleteUniverse, setUniverseArchived, updateUniverse } from '../universes/api'
 import { PageHeader } from '../components/PageHeader'
 import { QueryTabList, TabPanel } from '../components/QueryTabs'
+import { IS_DESKTOP } from '../lib/buildInfo'
 import { useQueryTab } from '../lib/queryTab'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
-const TABS = [
+const ALL_TABS = [
   { id: 'general', label: 'General' },
   { id: 'appearance', label: 'Appearance' },
   { id: 'collaborators', label: 'Collaborators' },
@@ -21,7 +22,10 @@ const TABS = [
   { id: 'advanced', label: 'Advanced' },
 ] as const
 
-type TabId = (typeof TABS)[number]['id']
+type TabId = (typeof ALL_TABS)[number]['id']
+
+/** The desktop edition has no collaborators (ADR 0070). */
+const TABS = IS_DESKTOP ? ALL_TABS.filter((one) => one.id !== 'collaborators') : ALL_TABS
 
 /**
  * A universe's Settings (UI refinement 014; Collaborators since 030): five tabs rather than one long page, in the workspace's one page shell - the
@@ -55,8 +59,9 @@ export default function UniverseSettings() {
   const deleteButton = useRef<HTMLButtonElement>(null)
   const hadDeleteConfirm = useRef(false)
 
-  // Whether the universe is public, for the archive's words. Publication itself is on Publish.
+  // Whether the universe is public, for the archive's words. Publication itself is on Publish. Never, on the desktop.
   useEffect(() => {
+    if (IS_DESKTOP) return
     const controller = new AbortController()
     getPublication(universe.id, controller.signal)
       .then((state) => setIsPublic(state.visibility === Visibility.Public))
@@ -136,7 +141,8 @@ export default function UniverseSettings() {
     setError(null)
     let publicNow: boolean | null = null
     try {
-      publicNow = (await getPublication(universe.id)).visibility === Visibility.Public
+      publicNow =
+        !IS_DESKTOP && (await getPublication(universe.id)).visibility === Visibility.Public
       setIsPublic(publicNow)
     } catch {
       // Unknown: ask anyway rather than archive a possibly public universe without a word.
@@ -248,9 +254,11 @@ export default function UniverseSettings() {
           </section>
         </Panel>
 
-        <Panel id="collaborators" tab={tab}>
-          <CollaboratorsPanel universeId={universe.id} />
-        </Panel>
+        {IS_DESKTOP ? null : (
+          <Panel id="collaborators" tab={tab}>
+            <CollaboratorsPanel universeId={universe.id} />
+          </Panel>
+        )}
 
         <Panel id="data" tab={tab}>
           <section className="settings__section">

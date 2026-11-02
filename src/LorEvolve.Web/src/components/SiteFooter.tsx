@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { Wordmark } from './Wordmark'
-import { VERSION_LABEL } from '../lib/buildInfo'
+import { IS_DESKTOP, VERSION_LABEL } from '../lib/buildInfo'
 
 /**
  * The foot of LorEvolve's main screens (ADR 0069): where else there is to go, and nothing invented. The wordmark and its
@@ -32,9 +32,16 @@ export function SiteFooter() {
             Product
           </p>
           <ul data-testid="portal-footer-links">
-            <li>
-              <Link to="/">Explore</Link>
-            </li>
+            {/* The desktop has no portal; its one way to reach a person is support's address (ADR 0070). */}
+            {IS_DESKTOP ? (
+              <li>
+                <a href="mailto:support@lorevolve.com">Support</a>
+              </li>
+            ) : (
+              <li>
+                <Link to="/">Explore</Link>
+              </li>
+            )}
             {isLoading ? null : user ? (
               inWorkspace ? null : (
                 <li>

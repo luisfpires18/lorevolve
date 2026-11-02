@@ -8,7 +8,7 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { Avatar } from './Avatar'
 import { ThemeSwitch } from './ThemeSwitch'
-import { VERSION_LABEL } from '../lib/buildInfo'
+import { IS_DESKTOP, VERSION_LABEL } from '../lib/buildInfo'
 
 /**
  * The account, everywhere: a circular avatar that opens onto who you are, your profile and the way
@@ -94,9 +94,12 @@ export function AccountMenu({
           <p className="accountmenu__username" dir="auto">
             {user.username}
           </p>
-          <p className="accountmenu__email" dir="ltr">
-            {breakable(user.email)}
-          </p>
+          {/* The desktop's one local account has no real address to show (ADR 0070). */}
+          {IS_DESKTOP ? null : (
+            <p className="accountmenu__email" dir="ltr">
+              {breakable(user.email)}
+            </p>
+          )}
         </div>
 
         <div className="accountmenu__goto" role="group" aria-labelledby={goToId}>
@@ -111,10 +114,12 @@ export function AccountMenu({
             <ActionIcon icon={StickyNote} />
             Ideas
           </Link>
-          <Link className="actionmenu__item" to="/" data-testid="account-menu-explore">
-            <ActionIcon icon={Telescope} />
-            Explore
-          </Link>
+          {IS_DESKTOP ? null : (
+            <Link className="actionmenu__item" to="/" data-testid="account-menu-explore">
+              <ActionIcon icon={Telescope} />
+              Explore
+            </Link>
+          )}
           {/* Only for an Admin (#40). Hiding it is courtesy; the server refuses the Admin API to anyone else. */}
           {user.isAdmin ? (
             <Link className="actionmenu__item" to="/admin" data-testid="account-menu-admin">
@@ -134,18 +139,21 @@ export function AccountMenu({
           <ThemeSwitch inMenu />
         </div>
 
-        {/* Stays open while it works, so "Signing out" is seen where the press was. */}
-        <button
-          className="actionmenu__item"
-          type="button"
-          disabled={busy}
-          onClick={() => void signOut()}
-          data-keep-open
-          data-testid="account-menu-signout"
-        >
-          <ActionIcon icon={LogOut} />
-          {busy ? 'Signing out' : 'Sign out'}
-        </button>
+        {/* Stays open while it works, so "Signing out" is seen where the press was. The desktop's author is signed in by
+            the app's window and has nowhere to sign in again from (ADR 0070). */}
+        {IS_DESKTOP ? null : (
+          <button
+            className="actionmenu__item"
+            type="button"
+            disabled={busy}
+            onClick={() => void signOut()}
+            data-keep-open
+            data-testid="account-menu-signout"
+          >
+            <ActionIcon icon={LogOut} />
+            {busy ? 'Signing out' : 'Sign out'}
+          </button>
+        )}
 
         {/* Which LorEvolve is running, for anyone asked "what version are you on?". Read, never pressed. */}
         <p className="accountmenu__version" data-testid="account-menu-version">

@@ -14,6 +14,7 @@ import { useProfileImage } from '../profile/useProfileImage'
 import { ActionIcon } from './ActionIcon'
 import { Avatar } from './Avatar'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
+import { IS_DESKTOP } from '../lib/buildInfo'
 
 const CROP_HINT =
   'Drag the photo to place the square, or select it and use the arrow keys. The whole photo is kept; the square is what your avatar shows.'
@@ -179,7 +180,8 @@ export function ProfileAvatar({ name }: { name: string }) {
       </div>
 
       <p className="avatar__hint">
-        One photo. JPEG, PNG or WebP, up to 8 MB. Private unless you show it on your author page.
+        One photo. JPEG, PNG or WebP, up to 8 MB.
+        {IS_DESKTOP ? null : ' Private unless you show it on your author page.'}
       </p>
 
       {error ? (

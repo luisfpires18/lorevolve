@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import { IS_DESKTOP } from '../lib/buildInfo'
 import { UniverseRole, type UniverseRoleValue } from './types'
 
 /**
@@ -70,9 +71,10 @@ export function capabilitiesOf(role: UniverseRoleValue): UniverseCapabilities {
         manageHistory: true,
         permanentlyDelete: true,
         manageUniverse: true,
-        publish: true,
+        // The desktop edition has no portal to publish to and no server a collaborator could reach (ADR 0070).
+        publish: !IS_DESKTOP,
         backup: true,
-        manageCollaborators: true,
+        manageCollaborators: !IS_DESKTOP,
         comment: true,
         resolveComments: true,
         suggestChanges: true,

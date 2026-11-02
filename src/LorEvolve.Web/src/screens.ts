@@ -1,3 +1,4 @@
+import { IS_DESKTOP } from './lib/buildInfo'
 import { lazyWithPreload, type PreloadableScreen } from './lib/lazyWithPreload'
 
 /*
@@ -66,7 +67,7 @@ const SECTIONS: Record<string, Screen> = {
   'ai-changes': AiChangesPage,
   types: UniverseTypes,
   trash: UniverseTrash,
-  publish: UniversePublish,
+  ...(IS_DESKTOP ? {} : { publish: UniversePublish }),
   settings: UniverseSettings,
 }
 

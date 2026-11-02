@@ -32,6 +32,10 @@ export default defineConfig({
   define: {
     __LOREVOLVE_VERSION__: JSON.stringify(version),
     __LOREVOLVE_BUILD_ID__: JSON.stringify(buildId),
+    // The desktop edition (ADR 0070) when LOREVOLVE_EDITION=desktop (scripts/Build-Desktop.ps1), else the web app.
+    __LOREVOLVE_EDITION__: JSON.stringify(
+      process.env.LOREVOLVE_EDITION === 'desktop' ? 'desktop' : 'web',
+    ),
   },
   server: {
     port: 5173,
