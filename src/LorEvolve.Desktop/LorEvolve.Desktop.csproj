@@ -5,6 +5,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <!-- CI builds the whole solution on Linux: compile the Windows shell there too, never run it. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RootNamespace>LorEvolve.Desktop</RootNamespace>
     <AssemblyName>LorEvolve</AssemblyName>
     <ApplicationIcon>lorevolve.ico</ApplicationIcon>
