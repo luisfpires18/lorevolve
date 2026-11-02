@@ -16,8 +16,8 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 ## What is live
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
-  `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 40913655940 on `master` `9c755d1`, succeeded.
+  `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing on
+  since 2026-11-02 (`PublicSite__AllowIndexing=true`, `PublicSite__Origin` set). Last deploy: run 40913655940 on `master` `9c755d1`, succeeded.
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -92,7 +92,6 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 ## Settings off until the owner sets them
 
-- PROD `PublicSite__AllowIndexing`: unset, so search engines are told not to index. Set at public launch.
 - PROD `Assistant__*`: only if PROD offers the assistant (`docs/deployment/assistant-limits-and-cost.md`).
 - DEV then PROD `WEBSITE_RUN_FROM_PACKAGE=1`, `SCM_MAX_ZIP_PACKAGE_COUNT=2`: stops the deploy swapping assemblies under
   the running app (`docs/deployment/azure-dev.md`, How a deploy replaces the app). Until set, Deploy warns and restarts.
