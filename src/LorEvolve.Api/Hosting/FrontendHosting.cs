@@ -67,6 +67,13 @@ public static partial class FrontendHosting
 
         app.Map("/api/{**path}", () => Results.NotFound());
 
+        // The desktop edition has no public pages and no crawler to write heads for (ADR 0070): the built shell as it is.
+        if (app.Environment.IsDesktop())
+        {
+            app.MapFallbackToFile("{*path:nonfile}", "index.html").AllowAnonymous();
+            return app;
+        }
+
         // "/" is Explore, the front door (ADR 0069), answered by the shell like every other page, with its own head. Paths
         // that look like files ("nonfile" excludes them) stay 404s, as MapFallbackToFile left them.
         app.MapFallback("{*path:nonfile}", context => SeoEndpoints.RenderShellAsync(context, template)).AllowAnonymous();

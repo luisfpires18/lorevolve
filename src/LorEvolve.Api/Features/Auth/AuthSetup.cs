@@ -1,4 +1,5 @@
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Hosting;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 
@@ -25,11 +26,10 @@ public static class AuthSetup
             // The SPA is served same-origin - through the Vite proxy in development, out of the
             // API's own wwwroot once deployed - so the cookie can stay Strict.
             //
-            // Secure is the default and only the two hosts that deliberately run plain HTTP
-            // relax it: development, and the test host. Demanding Secure there would silently
-            // drop the cookie. Every deployed environment is served over HTTPS, so it is the
-            // deployment that has to opt out of plain HTTP, not the other way round.
-            var servesPlainHttp = environment.IsDevelopment() || environment.IsEnvironment("Testing");
+            // Secure is the default and only the hosts that deliberately run plain HTTP relax it
+            // (DesktopEdition.ServesPlainHttp): development, the test host and the desktop app's
+            // loopback server. Demanding Secure there would silently drop the cookie.
+            var servesPlainHttp = environment.ServesPlainHttp();
 
             // Deployed, the __Host- prefix makes the browser refuse this cookie unless it is Secure, host-only and on "/":
             // no other *.lorevolve.com host can set or overwrite the session (N-1). A browser needs Secure for the prefix,

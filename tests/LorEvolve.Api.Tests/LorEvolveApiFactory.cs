@@ -65,12 +65,15 @@ public sealed class LorEvolveApiFactory : WebApplicationFactory<Program>
     /// <summary>The MCP origin this host is given; null for a host where MCP is not set up.</summary>
     public string? McpOrigin { get; init; } = Origin;
 
+    /// <summary>The host environment: the test host, or the desktop edition (ADR 0070) when a test is about it.</summary>
+    public string EnvironmentName { get; init; } = "Testing";
+
     /// <summary>Extra configuration for one host, applied as settings (a database-backup store, say).</summary>
     public IReadOnlyDictionary<string, string?> Settings { get; init; } = new Dictionary<string, string?>();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Testing");
+        builder.UseEnvironment(EnvironmentName);
         builder.UseSetting("Mcp:Origin", McpOrigin ?? string.Empty);
         foreach (var (key, value) in Settings)
         {

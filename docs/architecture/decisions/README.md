@@ -73,8 +73,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0067 | The product is LorEvolve; what was stored as Lorex is still read | [0067-rename-to-lorevolve.md](0067-rename-to-lorevolve.md) |
 | 0068 | LorEvolve shows no stock artwork; only authors' pictures and the brand mark | [0068-no-stock-artwork.md](0068-no-stock-artwork.md) |
 | 0069 | Explore is the front door at `/`; the page about LorEvolve is retired, `/explore` redirects | [0069-explore-is-the-front-door.md](0069-explore-is-the-front-door.md) |
+| 0070 | A desktop edition: one-time purchase, local first, same repository; environment `Desktop`, one local account, pictures on disk | [0070-desktop-edition.md](0070-desktop-edition.md) |
 
-All accepted. Next number: `0070`.
+All accepted. Next number: `0071`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

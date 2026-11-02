@@ -1,4 +1,5 @@
 using LorEvolve.Api.Features.Seo;
+using LorEvolve.Api.Hosting;
 
 namespace LorEvolve.Api.Features.Mcp;
 
@@ -78,7 +79,7 @@ public sealed class McpSite
             return new McpSite(null);
         }
 
-        var plainHttpAllowed = environment.IsDevelopment() || environment.IsEnvironment("Testing");
+        var plainHttpAllowed = environment.ServesPlainHttp();
         if (origin.Scheme == Uri.UriSchemeHttp && !plainHttpAllowed)
         {
             throw new InvalidOperationException($"The MCP origin ({origin.GetLeftPart(UriPartial.Authority)}) must use https outside Development.");

@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Hosting;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -151,7 +152,7 @@ public static class McpSetup
             return services;
         }
 
-        var plainHttpAllowed = environment.IsDevelopment() || environment.IsEnvironment("Testing");
+        var plainHttpAllowed = environment.ServesPlainHttp();
 
         services.AddOpenIddict()
             .AddServer(server =>

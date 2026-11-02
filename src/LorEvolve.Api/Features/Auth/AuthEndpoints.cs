@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Universes;
+using LorEvolve.Api.Hosting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +39,14 @@ public static partial class AuthEndpoints
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/auth").WithTags("Auth");
+
+        // The desktop edition has one local account, signed in by the shell (DesktopLaunch, ADR 0070): no sign-up, no
+        // password, no way to sign out of the only account there is.
+        if (endpoints.ServiceProvider.GetRequiredService<IHostEnvironment>().IsDesktop())
+        {
+            group.MapGet("/me", GetCurrentUser).WithName("GetCurrentUser").RequireAuthorization();
+            return endpoints;
+        }
 
         group.MapGet("/registration", (IConfiguration configuration) => Results.Ok(new RegistrationResponse(InviteOnly(configuration))))
             .WithName("GetRegistration");

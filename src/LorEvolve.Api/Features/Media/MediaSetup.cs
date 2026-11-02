@@ -6,11 +6,13 @@ namespace LorEvolve.Api.Features.Media;
 /// <summary>
 /// Which object store this host runs against, and nothing else.
 ///
-/// Three providers, chosen by <c>Media:Provider</c>:
+/// Four providers, chosen by <c>Media:Provider</c>:
 ///
 ///   R2        - Cloudflare, the only one a deployment uses.
 ///   InMemory  - the local development server and the Playwright suite, so neither needs an
 ///               account, a bucket or a credential to run the whole image lifecycle.
+///   FileSystem - the desktop edition (ADR 0070): files under <c>Media:FileSystem:Root</c>, on the
+///               buyer's own disk.
 ///   (unset)   - <see cref="UnavailableMediaObjectStore"/>. Every image request answers 503.
 ///
 /// There is no silent fallback. A deployment that lost its R2 settings must not quietly start
@@ -33,6 +35,21 @@ public static class MediaSetup
         if (string.Equals(provider, "InMemory", StringComparison.OrdinalIgnoreCase))
         {
             services.AddSingleton<IMediaObjectStore, InMemoryMediaObjectStore>();
+            return services;
+        }
+
+        if (string.Equals(provider, "FileSystem", StringComparison.OrdinalIgnoreCase))
+        {
+            // Named FileSystem without a folder fails every call, as R2 without its settings does.
+            if (section["FileSystem:Root"] is { Length: > 0 } root)
+            {
+                services.AddSingleton<IMediaObjectStore>(new FileSystemMediaObjectStore(root));
+            }
+            else
+            {
+                services.AddSingleton<IMediaObjectStore, UnavailableMediaObjectStore>();
+            }
+
             return services;
         }
 
