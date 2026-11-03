@@ -234,10 +234,46 @@ public sealed class AdminWorkspaceTests : IDisposable
         Assert.Equal(["Unblock", "Block"], detail.History.Select(entry => entry.Action));
         Assert.All(detail.History, entry => Assert.Equal("user-owner", entry.ActorUsername));
 
-        // No email, password, stamp or token of the account is in what an Admin reads.
-        Assert.DoesNotContain("@example.test", raw, StringComparison.Ordinal);
+        // The email is shown; no password, stamp or token of the account is in what an Admin reads.
+        Assert.Equal("audited@example.test", detail.Email);
         Assert.DoesNotContain("stamp", raw, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("password", raw, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Details_show_when_the_account_was_made_and_how_it_last_signed_in()
+    {
+        var (admin, _) = await Admin();
+        var (_, memberId) = await Account("signins");
+        var registered = await admin.GetFromJsonAsync<AdminUserDetail>($"/api/admin/users/{memberId}");
+        Assert.NotNull(registered!.CreatedAt);
+        Assert.Equal(registered.CreatedAt, registered.LastSignInAt);
+        Assert.Equal(0, registered.FailedSignInAttempts);
+        Assert.Null(registered.AppLastUsedAt);
+
+        // A wrong password counts against the account; the next right one resets the count and moves the sign-in time.
+        using var browser = Browser(_api);
+        Task<HttpResponseMessage> Wrong(string username) =>
+            browser.PostAsJsonAsync("/api/auth/login", new LoginRequest(username, "Not-the-password-1"));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Wrong("user-signins")).StatusCode);
+        var once = await admin.GetFromJsonAsync<AdminUserDetail>($"/api/admin/users/{memberId}");
+        Assert.Equal((1, null), (once!.FailedSignInAttempts, once.LockedOutUntil));
+
+        // Five in a row lock an account, and its details say until when.
+        var (_, lockedId) = await Account("locked");
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            await Wrong("user-locked");
+        }
+
+        Assert.NotNull((await admin.GetFromJsonAsync<AdminUserDetail>($"/api/admin/users/{lockedId}"))!.LockedOutUntil);
+
+        _api.Clock.Offset = TimeSpan.FromHours(1);
+        await SignIn(_api, "user-signins");
+        var later = await admin.GetFromJsonAsync<AdminUserDetail>($"/api/admin/users/{memberId}");
+        Assert.Equal(registered.CreatedAt, later!.CreatedAt);
+        Assert.True(later.LastSignInAt > registered.LastSignInAt);
+        Assert.Equal(0, later.FailedSignInAttempts);
     }
 
     [Fact]

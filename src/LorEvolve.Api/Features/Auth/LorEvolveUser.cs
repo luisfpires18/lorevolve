@@ -41,4 +41,13 @@ public sealed class LorEvolveUser : IdentityUser
     /// makes and on every MCP request (#40). The reason lives in the audit record, not here.
     /// </summary>
     public DateTime? BlockedAt { get; set; }
+
+    /// <summary>UTC. When the account registered; null for accounts made before this was recorded.</summary>
+    public DateTime? CreatedAt { get; set; }
+
+    /// <summary>
+    /// UTC. The last time a password sign-in (or registration) gave this account a session; null until it has. A session
+    /// that stays alive does not move it.
+    /// </summary>
+    public DateTime? LastSignInAt { get; set; }
 }

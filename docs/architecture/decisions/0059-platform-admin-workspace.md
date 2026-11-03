@@ -74,8 +74,9 @@ estimated: new accounts over time, active users, last sign-in, account creation 
 cost, subscriptions. An account's details add its universe counts (owned, shared - never names), storage (ADR 0042's
 `UsageAsync`) and connected-app count.
 
-**Privacy of the list.** The Users grid and details carry id, username, chosen public name, role and block state. No
-email, and no profile photo - ADR 0021 keeps a photo out of anyone else's view, so cards show the monogram.
+**Privacy of the list.** The Users grid and details carry id, username, chosen public name, role and block state. The
+grid has no email (details show it since the 2026-11-03 amendment), and no profile photo - ADR 0021 keeps a photo out
+of anyone else's view, so cards show the monogram.
 
 ## Consequences
 
@@ -87,3 +88,19 @@ email, and no profile photo - ADR 0021 keeps a photo out of anyone else's view, 
   impossible.
 - Role assignment, other account actions, impersonation, deletion, billing and a tracing product are out of scope.
 - Metrics that are not recorded need instrumentation first (#40 follow-up); nothing here estimates them.
+
+## Amendment (2026-11-03): an account's email and sign-in record
+
+The owner asked for an account's details to carry its email and how it signs in. The details (not the Users grid)
+now add:
+
+- The email. The grid still has none.
+- `AspNetUsers.CreatedAt` and `LastSignInAt`, new nullable UTC columns (`AddAccountSignInTimes`). Registration sets
+  both; a password sign-in moves `LastSignInAt`. A live session does not. Accounts and sign-ins from before the
+  migration stay null and read "Before records began": nothing is backfilled or estimated.
+- Identity's own `AccessFailedCount` (wrong passwords since the last good sign-in) and `LockoutEnd`, sent only while a
+  lockout is running.
+- When the account's AI apps last called (`MAX(McpConnections.LastUsedAt)`).
+
+The Main dashboard's new-accounts and active-users figures stay not tracked: only accounts and sign-ins from now on
+carry a time, so a count would undercount.

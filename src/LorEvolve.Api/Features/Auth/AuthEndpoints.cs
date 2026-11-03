@@ -166,7 +166,8 @@ public static partial class AuthEndpoints
             });
         }
 
-        var user = new LorEvolveUser { UserName = username, Email = email };
+        var now = clock.GetUtcNow().UtcDateTime;
+        var user = new LorEvolveUser { UserName = username, Email = email, CreatedAt = now, LastSignInAt = now };
 
         IdentityResult result;
         try
@@ -197,6 +198,8 @@ public static partial class AuthEndpoints
         [FromBody] LoginRequest request,
         UserManager<LorEvolveUser> userManager,
         SignInManager<LorEvolveUser> signInManager,
+        LorEvolveDbContext db,
+        TimeProvider clock,
         ILoggerFactory loggers,
         CancellationToken cancellationToken)
     {
@@ -258,6 +261,10 @@ public static partial class AuthEndpoints
         }
 
         await signInManager.SignInAsync(user, isPersistent: true);
+        // Written straight to the row, so the user's concurrency stamp is left alone.
+        var signedInAt = clock.GetUtcNow().UtcDateTime;
+        await db.Users.Where(row => row.Id == user.Id)
+            .ExecuteUpdateAsync(set => set.SetProperty(row => row.LastSignInAt, signedInAt), cancellationToken);
         SignedIn(log, user.Id, user.UserName!);
         return Results.Ok(ToResponse(user));
     }

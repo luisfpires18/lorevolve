@@ -12,14 +12,16 @@ public sealed record AdminUserPage(IReadOnlyList<AdminUserSummary> Items, int Pa
 public sealed record AdminAuditEntry(Guid Id, string Action, string Reason, DateTime CreatedAt, string ActorUserId, string? ActorUsername);
 
 /// <summary>
-/// One account's metadata for an Admin (#40): counts of universes, never their names or anything in them; storage as the
-/// account's own Profile reads it (ADR 0042); how many AI apps it has connected (ADR 0046); and its audit history.
-/// What LorEvolve does not record - when the account was made, its last sign-in, any subscription - is absent here, and the
-/// client says so rather than guessing.
+/// One account's metadata for an Admin (#40): its email and sign-in record (ADR 0059 amendment); counts of universes,
+/// never their names or anything in them; storage as the account's own Profile reads it (ADR 0042); how many AI apps it
+/// has connected and when one last called (ADR 0046); and its audit history. <c>CreatedAt</c> and <c>LastSignInAt</c> are
+/// null for what happened before they were recorded; <c>LockedOutUntil</c> is null unless a lockout is running now. No
+/// subscription exists to show.
 /// </summary>
 public sealed record AdminUserDetail(
     string Id,
     string Username,
+    string Email,
     string? PublicDisplayName,
     string Role,
     bool IsBlocked,
@@ -29,6 +31,11 @@ public sealed record AdminUserDetail(
     long StorageUsedBytes,
     long StorageQuotaBytes,
     int ConnectedApps,
+    DateTime? AppLastUsedAt,
+    DateTime? CreatedAt,
+    DateTime? LastSignInAt,
+    int FailedSignInAttempts,
+    DateTime? LockedOutUntil,
     IReadOnlyList<AdminAuditEntry> History);
 
 /// <summary>Block or unblock: the reason is required and goes into the audit record.</summary>
