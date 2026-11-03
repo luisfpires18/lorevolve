@@ -129,8 +129,8 @@ public static class AdminEndpoints
             totalPages));
     }
 
-    private static async Task<IResult> GetUserAsync(string userId, LorEvolveDbContext db, CancellationToken cancellationToken) =>
-        await DetailAsync(db, userId, cancellationToken) is { } detail ? Results.Ok(detail) : Results.NotFound();
+    private static async Task<IResult> GetUserAsync(string userId, LorEvolveDbContext db, TimeProvider clock, CancellationToken cancellationToken) =>
+        await DetailAsync(db, clock, userId, cancellationToken) is { } detail ? Results.Ok(detail) : Results.NotFound();
 
     /// <summary>
     /// A sign-up link for one address, for someone who has no universe to be invited into: while registration is
@@ -249,7 +249,7 @@ public static class AdminEndpoints
         }
 
         await RecordAsync(db, principal.RequireUserId(), userId, AdminAction.PasswordResetSent, string.Empty, clock.GetUtcNow().UtcDateTime, cancellationToken);
-        return Results.Ok(await DetailAsync(db, userId, cancellationToken));
+        return Results.Ok(await DetailAsync(db, clock, userId, cancellationToken));
     }
 
     private static async Task<IResult> BlockAsync(
@@ -303,7 +303,7 @@ public static class AdminEndpoints
 
         await RecordAsync(db, principal.RequireUserId(), userId, AdminAction.Block, reason, now, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return Results.Ok(await DetailAsync(db, userId, cancellationToken));
+        return Results.Ok(await DetailAsync(db, clock, userId, cancellationToken));
     }
 
     private static async Task<IResult> UnblockAsync(
@@ -341,7 +341,7 @@ public static class AdminEndpoints
 
         await RecordAsync(db, principal.RequireUserId(), userId, AdminAction.Unblock, reason, now, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return Results.Ok(await DetailAsync(db, userId, cancellationToken));
+        return Results.Ok(await DetailAsync(db, clock, userId, cancellationToken));
     }
 
     private static Task<PlatformRole?> RoleAsync(LorEvolveDbContext db, string userId, CancellationToken cancellationToken) =>
@@ -368,7 +368,7 @@ public static class AdminEndpoints
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private static async Task<AdminUserDetail?> DetailAsync(LorEvolveDbContext db, string userId, CancellationToken cancellationToken)
+    private static async Task<AdminUserDetail?> DetailAsync(LorEvolveDbContext db, TimeProvider clock, string userId, CancellationToken cancellationToken)
     {
         var account = await db.Users.AsNoTracking()
             .Where(user => user.Id == userId)
@@ -376,12 +376,19 @@ public static class AdminEndpoints
             {
                 user.Id,
                 user.UserName,
+                user.Email,
                 user.PublicDisplayName,
                 user.PlatformRole,
                 user.BlockedAt,
+                user.CreatedAt,
+                user.LastSignInAt,
+                user.AccessFailedCount,
+                user.LockoutEnd,
                 Owned = db.Universes.Count(universe => universe.OwnerId == user.Id),
                 Shared = db.UniverseMemberships.Count(membership => membership.UserId == user.Id),
                 Apps = db.McpConnections.Count(connection => connection.UserId == user.Id),
+                AppLastUsedAt = db.McpConnections.Where(connection => connection.UserId == user.Id)
+                    .Max(connection => connection.LastUsedAt),
             })
             .FirstOrDefaultAsync(cancellationToken);
         if (account is null)
@@ -409,6 +416,7 @@ public static class AdminEndpoints
         return new AdminUserDetail(
             account.Id,
             account.UserName ?? string.Empty,
+            account.Email ?? string.Empty,
             account.PublicDisplayName,
             account.PlatformRole.ToString(),
             account.BlockedAt is not null,
@@ -418,6 +426,11 @@ public static class AdminEndpoints
             storage?.UsedBytes ?? 0,
             storage?.QuotaBytes ?? 0,
             account.Apps,
+            account.AppLastUsedAt,
+            account.CreatedAt,
+            account.LastSignInAt,
+            account.AccessFailedCount,
+            account.LockoutEnd > clock.GetUtcNow() ? account.LockoutEnd.Value.UtcDateTime : null,
             [.. history.Select(record => new AdminAuditEntry(
                 record.Id, record.Action.ToString(), record.Reason, record.CreatedAt, record.ActorUserId, record.ActorUsername))]);
     }

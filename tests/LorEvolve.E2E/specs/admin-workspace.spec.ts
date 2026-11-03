@@ -125,7 +125,12 @@ test.describe('LorEvolve Admin', () => {
     await openUser(admin, memberName)
     await expect(admin.getByTestId('admin-user-role')).toHaveText('Member')
     await expect(admin.getByTestId('admin-user-status')).toHaveText('Active')
-    await expect(admin.getByTestId('admin-user-last-login')).toHaveText('Not tracked yet')
+    await expect(admin.getByTestId('admin-user-email')).toHaveText(`${memberName}@example.test`)
+    // Registering is a sign-in: both times are recorded, and nothing is locked.
+    await expect(admin.getByTestId('admin-user-created')).not.toHaveText('Before records began')
+    await expect(admin.getByTestId('admin-user-last-login')).not.toHaveText('Before records began')
+    await expect(admin.getByTestId('admin-user-failed')).toHaveText('0')
+    await expect(admin.getByTestId('admin-user-lockout')).toHaveText('None')
     await expect(admin.getByTestId('admin-history-empty')).toBeVisible()
 
     // A reason is required before anything is asked.
