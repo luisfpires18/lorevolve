@@ -62,7 +62,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0056 | An entry may carry one private author note, and the owner alone may read it (#23) | [0056-private-author-notes.md](0056-private-author-notes.md) |
 | 0057 | A knowledge record is an author's statement that one actor knows one thing from one scene, and nothing is inferred (#15) | [0057-knowledge-records.md](0057-knowledge-records.md) |
 | 0058 | A manuscript mention is one plain-text token, resolved by id, shown as stored while writing and as a name everywhere else (#31) | [0058-manuscript-mentions.md](0058-manuscript-mentions.md) |
-| 0059 | An account has a platform role; an Admin may block a Member, and reads only what LorEvolve records (#40) | [0059-platform-admin-workspace.md](0059-platform-admin-workspace.md) |
+| 0059 | An account has a platform role; an Admin may block a Member, and reads only what LorEvolve records (#40; amended 2026-11-03: an account's email and sign-in record) | [0059-platform-admin-workspace.md](0059-platform-admin-workspace.md) |
 | 0060 | A universe's maps are uploaded pictures kept whole, with pins at fractions of them linked to Lore by id (#52) | [0060-lore-linked-maps.md](0060-lore-linked-maps.md) |
 | 0061 | Geography is read from the maps' pins through one shared reader, and a distance exists only on a calibrated map (#53) | [0061-map-geography-and-calibration.md](0061-map-geography-and-calibration.md) |
 | 0062 | An AI proposes schema - lore types, fields, groups - as its own reviewed proposal, through the Types screen's own write paths | [0062-ai-schema-proposals.md](0062-ai-schema-proposals.md) |

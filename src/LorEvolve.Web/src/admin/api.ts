@@ -28,12 +28,21 @@ export interface AdminAuditEntry {
 }
 
 export interface AdminUserDetail extends AdminUserSummary {
+  email: string
   blockedAt: string | null
   ownedUniverses: number
   sharedUniverses: number
   storageUsedBytes: number
   storageQuotaBytes: number
   connectedApps: number
+  appLastUsedAt: string | null
+  /** Null for accounts made before creation times were recorded. */
+  createdAt: string | null
+  /** Null until the account signs in after sign-in times began to be recorded. */
+  lastSignInAt: string | null
+  failedSignInAttempts: number
+  /** Set only while wrong passwords have the account locked out. */
+  lockedOutUntil: string | null
   history: AdminAuditEntry[]
 }
 

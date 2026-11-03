@@ -77,6 +77,7 @@ function Failure({ message, onRetry }: { message: string; onRetry: () => void })
 }
 
 const NOT_TRACKED = 'Not tracked yet'
+const NOT_RECORDED = 'Before records began'
 
 function screenName(pathname: string) {
   if (pathname.startsWith('/admin/users')) return 'Users'
@@ -435,13 +436,13 @@ function Overview({ overview }: { overview: AdminOverview }) {
           <Stat
             label="New accounts over time"
             value={NOT_TRACKED}
-            source="Accounts carry no creation date."
+            source="Each account's creation date is recorded from now on, not counted here yet."
             testId="stat-new-accounts"
           />
           <Stat
             label="Active users"
             value={NOT_TRACKED}
-            source="No sign-in or activity time is recorded."
+            source="Each account's last sign-in is recorded from now on, not counted here yet."
             testId="stat-active"
           />
           <Stat
@@ -613,7 +614,11 @@ function Fact({ label, value, testId }: { label: string; value: ReactNode; testI
     <div className="facts__row">
       <dt className="facts__key">{label}</dt>
       <dd
-        className={value === NOT_TRACKED ? 'facts__value adminfact--none' : 'facts__value'}
+        className={
+          value === NOT_TRACKED || value === NOT_RECORDED
+            ? 'facts__value adminfact--none'
+            : 'facts__value'
+        }
         data-testid={testId}
       >
         {value}
@@ -695,6 +700,7 @@ function UserDetail({
         </h2>
         <dl className="facts admindetail" data-testid="admin-user-facts">
           <Fact label="User ID" value={<code>{user.id}</code>} testId="admin-user-id" />
+          <Fact label="Email" value={user.email} testId="admin-user-email" />
           <Fact label="Platform role" value={user.role} testId="admin-user-role" />
           <Fact
             label="Status"
@@ -716,10 +722,43 @@ function UserDetail({
             value={`${formatBytes(user.storageUsedBytes)} used of ${formatBytes(user.storageQuotaBytes)}`}
             testId="admin-user-storage"
           />
-          <Fact label="Connected AI apps" value={user.connectedApps} testId="admin-user-apps" />
-          <Fact label="Account created" value={NOT_TRACKED} testId="admin-user-created" />
-          <Fact label="Last sign-in" value={NOT_TRACKED} testId="admin-user-last-login" />
+          <Fact
+            label="Account created"
+            value={user.createdAt ? formatDateTime(user.createdAt) : NOT_RECORDED}
+            testId="admin-user-created"
+          />
           <Fact label="Subscription" value={NOT_TRACKED} testId="admin-user-subscription" />
+        </dl>
+      </section>
+
+      <section className="adminsection" aria-labelledby="admin-sign-in">
+        <h2 className="settings__heading" id="admin-sign-in">
+          Sign-in and access
+        </h2>
+        <dl className="facts admindetail" data-testid="admin-user-sign-in">
+          <Fact
+            label="Last sign-in"
+            value={user.lastSignInAt ? formatDateTime(user.lastSignInAt) : NOT_RECORDED}
+            testId="admin-user-last-login"
+          />
+          <Fact
+            label="Wrong passwords since then"
+            value={user.failedSignInAttempts}
+            testId="admin-user-failed"
+          />
+          <Fact
+            label="Sign-in lockout"
+            value={
+              user.lockedOutUntil ? `Locked until ${formatDateTime(user.lockedOutUntil)}` : 'None'
+            }
+            testId="admin-user-lockout"
+          />
+          <Fact label="Connected AI apps" value={user.connectedApps} testId="admin-user-apps" />
+          <Fact
+            label="AI apps last used"
+            value={user.appLastUsedAt ? formatDateTime(user.appLastUsedAt) : 'Never'}
+            testId="admin-user-apps-used"
+          />
         </dl>
       </section>
 
