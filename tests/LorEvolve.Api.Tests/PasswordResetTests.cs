@@ -105,8 +105,8 @@ public sealed partial class PasswordResetTests
         var response = await admin.PostAsync($"/api/admin/users/{memberId}/password-reset-email", null);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var detail = await response.Content.ReadAsStringAsync();
+        // The link's token never comes back; the account's email is part of its details (ADR 0059 amendment).
         Assert.DoesNotContain("token", detail, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("reset-member@example.test", detail, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(nameof(AdminAction.PasswordResetSent), detail);
 
         var (userId, _, body) = await LinkAsync(resend, 1);
