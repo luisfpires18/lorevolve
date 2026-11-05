@@ -22,6 +22,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
   `master`. Plan: `docs/design/alpha-demo-page-plan.md`. AI in demos only records what the author dictates.
+  Indexable since 2026-11-02 (`robots.txt`, `sitemap.xml`, no `noindex`).
 - **Repo** `luisfpires18/lorevolve` (public). `dev` is the default branch; `master` is what PROD runs.
 - **Database backups**: daily PROD SQLite snapshot to R2 `lorevolve-db-backups-prod` (lock rule `keep-7-days`).
   Restore drill (`database-backup restore-drill --latest --check-media`) run by the owner against PROD on 2026-10-29:
@@ -83,6 +84,8 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 - **Password reset email live**: request a reset on DEV and on PROD, open the emailed link, set a password. Not tried
   with real Resend yet.
 - **Restore drill at realistic size** on PROD once real content exists (local drill: 63.6 MB in 57.6 s).
+- **Search Console**: verify `lorevolve.com` as a Domain property, submit both sitemaps, request indexing for
+  `https://lorevolve.com/` and `https://demo.lorevolve.com/` (`docs/design/custom-domain-plan.md` section 7).
 - **Tooling trial verdict** (keep, conditional or remove, per tool for RTK and Graphify):
   `docs/tooling/agent-tooling-trial.md`.
 
