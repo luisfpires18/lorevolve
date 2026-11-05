@@ -266,6 +266,20 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="mobile-web-app-capable" content="yes" />
 
+    <!-- Cloudflare Web Analytics, PROD only: counts human visits (no cookies, nothing
+         personal). DEV, local runs and E2E never load it, so their traffic stays out of the
+         numbers and tests never reach an outside host. The token is public by design. -->
+    <script>
+      ;(function () {
+        if (location.hostname !== 'lorevolve.com') return
+        var beacon = document.createElement('script')
+        beacon.defer = true
+        beacon.src = 'https://static.cloudflareinsights.com/beacon.min.js'
+        beacon.setAttribute('data-cf-beacon', '{"token": "04bdd66c2af4411dad5cde3c378d4478"}')
+        document.head.appendChild(beacon)
+      })()
+    </script>
+
     <!-- The server replaces everything between these two markers with each page's own head -
          title, description, robots, canonical, Open Graph (ADR 0038). What stays here is the head
          for anything served without that step: the dev server, and /index.html itself. -->
