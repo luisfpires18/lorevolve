@@ -20,9 +20,12 @@ import { categoryLabel, genreKey, genreLabel } from '../publishing/types'
 export function WorldCard({
   world,
   linkAuthor = true,
+  eager = false,
 }: {
   world: PublicUniverse
   linkAuthor?: boolean
+  /** A card in the first rows of Explore: its picture is fetched at once and first. */
+  eager?: boolean
 }) {
   const [broken, setBroken] = useState(false)
 
@@ -41,7 +44,8 @@ export function WorldCard({
               alt=""
               width={960}
               height={600}
-              loading="lazy"
+              loading={eager ? 'eager' : 'lazy'}
+              fetchPriority={eager ? 'high' : undefined}
               decoding="async"
               onError={() => setBroken(true)}
             />

@@ -1311,6 +1311,8 @@ function EntityScreen({ view }: { view: EntryView }) {
                 key={picture.src}
                 src={picture.src}
                 alt={detail?.name ?? ''}
+                // The page's largest paint: asked for first, ahead of the sections' code and the sidebar.
+                fetchPriority="high"
                 // The original's own dimensions, which give the browser the picture's shape before a byte
                 // of it has loaded: the space it will occupy is reserved from its own aspect ratio, so the
                 // article never jumps down the page as one arrives.

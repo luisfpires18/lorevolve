@@ -1,9 +1,14 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { Editor } from '@tiptap/react'
 import { Check, History, Pencil, X } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { EditConflict, LatestText } from './EditConflict'
-import { LoreArticle, LoreEditor } from './LoreEditor'
+import { LoreArticle } from './ArticleView'
+
+// The editor and its 125 KB of Tiptap and ProseMirror come only when an author presses Edit; reading needs neither.
+const LoreEditor = lazy(() =>
+  import('./LoreEditor').then((module) => ({ default: module.LoreEditor })),
+)
 import { RecoveredDraft } from './RecoveredDraft'
 import { VersionActor } from './VersionActor'
 import { useAuth } from '../auth/useAuth'
@@ -503,21 +508,23 @@ export function EntityArticleSection({
             </p>
           ) : null}
 
-          <LoreEditor
-            key={editorKey}
-            value={openingWith ?? (stored.content || null)}
-            autofocus
-            onChange={setDraft}
-            onReady={(created) => {
-              editor.current = created
-              const written = JSON.stringify(created.getJSON())
-              // A recovered copy is measured against what is saved, so it opens as the unsaved changes it is.
-              setBaseline(openingWith === null ? written : stored.content)
-              setDraft(written)
-            }}
-            describedBy={`${statusId} ${tooLongId}`}
-            keyShortcuts="Control+S Meta+S"
-          />
+          <Suspense fallback={null}>
+            <LoreEditor
+              key={editorKey}
+              value={openingWith ?? (stored.content || null)}
+              autofocus
+              onChange={setDraft}
+              onReady={(created) => {
+                editor.current = created
+                const written = JSON.stringify(created.getJSON())
+                // A recovered copy is measured against what is saved, so it opens as the unsaved changes it is.
+                setBaseline(openingWith === null ? written : stored.content)
+                setDraft(written)
+              }}
+              describedBy={`${statusId} ${tooLongId}`}
+              keyShortcuts="Control+S Meta+S"
+            />
+          </Suspense>
 
           <div className="article__bar">
             <p

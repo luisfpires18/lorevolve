@@ -178,29 +178,3 @@ export function LoreEditor({
     </div>
   )
 }
-
-/**
- * Read-only rendering of the same document. Uses the editor in non-editable mode rather
- * than generating HTML, so nothing is ever handed to dangerouslySetInnerHTML.
- */
-export function LoreArticle({ content }: { content: string | null }) {
-  const editor = useEditor(
-    {
-      extensions,
-      editable: false,
-      content: parseDocument(content),
-      editorProps: {
-        attributes: { class: 'article__body', 'data-testid': 'lore-article' },
-      },
-    },
-    [content],
-  )
-
-  useEffect(() => {
-    editor?.setEditable(false)
-  }, [editor])
-
-  if (!editor) return null
-
-  return <EditorContent editor={editor} />
-}

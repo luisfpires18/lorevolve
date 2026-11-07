@@ -70,6 +70,20 @@ export default defineConfig({
               name: 'vendor',
               test: /[\\/]node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom)[\\/]/,
             },
+            // Every icon the app uses in one small file rather than one request per icon: a section was fetching
+            // twenty of them, each a round trip.
+            {
+              name: 'icons',
+              test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
+            },
+            // The small API, type and helper modules that two or more screens share, in one file: without this each
+            // was its own request, and an entry page fetched about thirty of them. Components stay with their screens.
+            // Anchored to this project's src: a library's own src folder must not match.
+            {
+              name: 'shared',
+              test: /[\\/]LorEvolve\.Web[\\/]src[\\/](?!pages[\\/]|components[\\/]|screens\.ts)/,
+              minShareCount: 2,
+            },
           ],
         },
       },

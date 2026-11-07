@@ -177,12 +177,18 @@ function Workspace() {
   const isReady = state.kind === 'ready'
   useEffect(() => {
     if (!isReady) return
-    // Safari has no idle callback; a second's wait stands in for it there.
-    if (typeof window.requestIdleCallback === 'function') {
-      const handle = window.requestIdleCallback(preloadSections)
-      return () => window.cancelIdleCallback(handle)
-    }
-    const timer = window.setTimeout(preloadSections, 1000)
+    // Not on a metered or slow connection: a visitor who asked for less data is not handed every section's code.
+    const connection = (
+      navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }
+    ).connection
+    if (connection?.saveData || /(^|-)[23]g$/.test(connection?.effectiveType ?? '')) return
+    // A pause first, then idle: a dynamic import is a high-priority fetch, and on a real network it was competing with
+    // the page's own reads and its pictures, which the browser fetches at low priority.
+    const timer = window.setTimeout(() => {
+      if (typeof window.requestIdleCallback === 'function')
+        window.requestIdleCallback(preloadSections)
+      else preloadSections()
+    }, 2500)
     return () => window.clearTimeout(timer)
   }, [isReady])
 

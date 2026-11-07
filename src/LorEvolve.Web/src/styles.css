@@ -6563,13 +6563,17 @@ html:has(.viewer[open]) {
   outline: none;
 }
 
-/* Shared prose styling for the editor surface and the read-only article. */
+/* Shared prose styling for the editor surface and the read-only article. The white space and wrapping rules are the
+   ones ProseMirror sets on the editor: the read-only article is drawn without it (ArticleView), so an author's double
+   space, a run of newlines and an unbroken long word all read the same on both. */
 .editor__surface,
 .article__body {
   font-family: var(--display);
   font-size: 1.125rem;
   line-height: 1.72;
   max-width: 62ch;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .editor__surface > * + *,
