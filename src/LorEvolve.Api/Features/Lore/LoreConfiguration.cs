@@ -215,6 +215,9 @@ public sealed class LoreEntityConfiguration : IEntityTypeConfiguration<LoreEntit
         // listing reads: UniverseId, and a slug that is not null.
         builder.Property(entity => entity.PublicSlug).HasMaxLength(Publishing.PublicationLimits.SlugMaxLength);
         builder.HasIndex(entity => new { entity.UniverseId, entity.PublicSlug }).IsUnique();
+        // The sitemap and the public counts ask for every public entry across all universes: a partial index on the few rows
+// that are public, so that read is not a scan of the table (audit 2026-11-07, A10).
+        builder.HasIndex(entity => entity.Visibility).HasFilter("\"Visibility\" <> 0");
     }
 }
 
