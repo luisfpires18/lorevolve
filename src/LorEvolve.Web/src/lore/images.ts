@@ -25,11 +25,21 @@ export function entityImageUrl(
   universeId: string,
   entityId: string,
   image: EntityImageRef,
-  variant: 'original' | 'thumbnail',
+  variant: 'original' | 'thumbnail' | 'display',
 ) {
   return variant === 'original'
     ? `${base(universeId, entityId)}/${image.assetId}/original`
-    : `${base(universeId, entityId)}/${image.assetId}/thumbnail/${image.thumbnailId}`
+    : variant === 'display'
+      ? `${base(universeId, entityId)}/${image.assetId}/display`
+      : `${base(universeId, entityId)}/${image.assetId}/thumbnail/${image.thumbnailId}`
+}
+
+/**
+ * The picture a page draws at reading size: the fitted display copy (audit 2026-11-07, A3), or the original for a
+ * picture stored before display copies existed. The full-size viewer still asks for the original itself.
+ */
+export function entityDisplayUrl(universeId: string, entityId: string, image: EntityImageRef) {
+  return entityImageUrl(universeId, entityId, image, image.hasDisplay ? 'display' : 'original')
 }
 
 /**

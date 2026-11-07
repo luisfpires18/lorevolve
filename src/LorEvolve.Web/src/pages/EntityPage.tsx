@@ -27,7 +27,7 @@ import { ProgressionView } from '../components/ProgressionView'
 import { RelationshipSection } from '../components/RelationshipSection'
 import { getEntityArticle, saveEntityArticle, type EntityArticle } from '../lore/article'
 import { articleLinks, emptyValue, isEmptyDocument } from '../lore/document'
-import { entityImageUrl, setEntityImage } from '../lore/images'
+import { entityDisplayUrl, setEntityImage } from '../lore/images'
 import { TokenInput } from '../components/TokenInput'
 import { TypeIcon } from '../components/TypeIcon'
 import { blockingFindingsOf } from '../canon/blocked'
@@ -297,7 +297,7 @@ function EntityScreen({ view }: { view: EntryView }) {
   const mainPicture =
     detail?.image && entityId
       ? {
-          src: entityImageUrl(universe.id, entityId, detail.image, 'original'),
+          src: entityDisplayUrl(universe.id, entityId, detail.image),
           width: detail.image.width,
           height: detail.image.height,
         }

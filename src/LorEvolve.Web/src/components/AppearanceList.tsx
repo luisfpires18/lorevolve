@@ -9,6 +9,7 @@ import { confirmAction } from '../lib/confirm'
 import { IMAGE_ACCEPT, IMAGE_MAX_BYTES } from '../lib/imageCrop'
 import {
   addAppearanceImage,
+  appearanceDisplayUrl,
   appearanceImageUrl,
   orderAppearanceImages,
   removeAppearanceImage,
@@ -279,13 +280,7 @@ function AppearanceItem({
                 >
                   <img
                     className="gallery__thumb"
-                    src={appearanceImageUrl(
-                      universeId,
-                      entityId,
-                      appearance.id,
-                      image.id,
-                      'original',
-                    )}
+                    src={appearanceDisplayUrl(universeId, entityId, appearance.id, image)}
                     alt=""
                     // The picture's own shape: the square thumbnail cut wide and tall pictures down to their middle.
                     width={image.width}

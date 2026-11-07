@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { appearanceImageUrl, getProgression } from './api'
+import { appearanceDisplayUrl, getProgression } from './api'
 
 /** One stage's picture for the article: the first picture of the first appearance that belongs to the stage. */
 export interface StagePicture {
@@ -36,7 +36,7 @@ export function useStagePictures(universeId: string, entityId: string, enabled: 
           list.push({
             id: stage.id,
             name: stage.name,
-            src: appearanceImageUrl(universeId, entityId, look.id, image.id, 'original'),
+            src: appearanceDisplayUrl(universeId, entityId, look.id, image),
             width: image.width,
             height: image.height,
           })

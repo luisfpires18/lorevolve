@@ -141,7 +141,7 @@ test.describe('an entry with a picture', () => {
 
     const first = await plate.getAttribute('src')
     expect(first).toMatch(
-      new RegExp(`^/api/universes/${universeId}/entities/${entityId}/image/[0-9a-f-]+/original$`),
+      new RegExp(`^/api/universes/${universeId}/entities/${entityId}/image/[0-9a-f-]+/display$`),
     )
 
     // ---------- On the card ----------
@@ -189,7 +189,7 @@ test.describe('an entry with a picture', () => {
     await page.getByRole('button', { name: 'Cancel' }).click()
     await expect(plate).toBeVisible()
     await expect(plate).not.toHaveAttribute('src', firstAsset)
-    await expect(plate).toHaveAttribute('src', /\/image\/[0-9a-f-]+\/original$/)
+    await expect(plate).toHaveAttribute('src', /\/image\/[0-9a-f-]+\/display$/)
 
     // ---------- Removed ----------
 
@@ -268,7 +268,8 @@ test.describe('an entry with a picture', () => {
     await page.getByTestId('edit-entity').click()
 
     // Nothing is chosen from the disk this time: the cropper is handed the original the entry
-    // already has, and starts where the author left the square.
+    // already has (the page itself draws the fitted display copy of the same asset), and starts
+    // where the author left the square.
     const uploads: string[] = []
     page.on('request', (request) => {
       if (request.method() === 'PUT' && /\/image$/.test(new URL(request.url()).pathname)) {
@@ -279,7 +280,7 @@ test.describe('an entry with a picture', () => {
     await page.getByTestId('entity-image-reframe').click()
     await expect(dialog).toBeVisible()
     await expect(dialog.getByTestId('image-crop-confirm')).toBeEnabled()
-    await expect(previewImage).toHaveAttribute('src', original!)
+    await expect(previewImage).toHaveAttribute('src', original!.replace(/\/display$/, '/original'))
     await expect(previewImage).toHaveAttribute('style', /left: 0%/)
 
     // By keyboard this time: the square is focusable, and the arrow keys move the picture under
