@@ -1,6 +1,6 @@
 # STATE
 
-Current operational state only, as of 2026-10-29. Trim instead of appending: when work merges, delete its line here;
+Current operational state only, as of 2026-11-07. Trim instead of appending: when work merges, delete its line here;
 git history and ADRs keep the detail. History before this trim: `docs/history/state-archive-2026-10.md`.
 
 ## Pointers
@@ -17,7 +17,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
   `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 40913655940 on `master` `9c755d1`, succeeded.
+  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 42395173109 on `master` `0a0f79e`, succeeded (2026-11-07, the audit quick wins and display-size pictures).
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -33,20 +33,17 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 1. Work lands on `dev` (numbered branches off `dev`, `docs/architecture/branching.md`); DEV redeploys by itself.
 2. When the owner asks: merge `dev` into `master` and push `master`.
-3. `gh workflow run deploy-prod.yml --ref master` (or Actions > Deploy PROD). The `prod` environment has a required
-   reviewer. Never push, merge or deploy without the owner's explicit go-ahead.
+3. `gh workflow run deploy-prod.yml --ref master` (or Actions > Deploy PROD). The `prod` environment's required
+   reviewer was removed on 2026-11-07 at the owner's request, to be restored later (Settings > Environments > prod);
+   only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-10-29 `origin/master..origin/dev` is empty: everything on `dev` is in PROD.
+As of 2026-11-07 `origin/master..origin/dev` is empty: everything on `dev` is in PROD.
 
 ## In flight
 
 One line per branch. Delete the line when it merges.
 
-- `fix/audit-2026-11-quick-wins`: audit `docs/architecture/audits/2026-11-07-performance-security-audit.md` and its
-  quick wins (per-address rate limits with `X-Forwarded-For`, public picture `max-age`, `/health` database check, split
-  revision reads, My-universes index shape, 8 MB body limit, headers, source maps off, npm audit in CI, k6 smoke script).
-  Not merged. Owner steps after merge: run `tests/load/k6-smoke.js` against DEV once; decide the Cloudflare proxy (A8).
 
 - `feat/publish-everything`: Publish page "Publish everything" (Canon lore, Complete stories with scenes and text; plot
   arcs never). Committed locally, not merged.
@@ -88,6 +85,8 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 - **Password reset email live**: request a reset on DEV and on PROD, open the emailed link, set a password. Not tried
   with real Resend yet.
 - **Restore drill at realistic size** on PROD once real content exists (local drill: 63.6 MB in 57.6 s).
+- **k6 smoke run** against DEV (`tests/load/k6-smoke.js`, audit 2026-11-07 A18), and the Cloudflare proxy (A8) and
+  Application Insights (A4) decisions in that audit's report.
 - **Tooling trial verdict** (keep, conditional or remove, per tool for RTK and Graphify):
   `docs/tooling/agent-tooling-trial.md`.
 
@@ -103,7 +102,7 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 ## Known risks, not blocking
 
-- From the security assessment, still open (M-2 closes when `fix/audit-2026-11-quick-wins` merges): session
+- From the security assessment, still open (M-2 closed by the 2026-11-07 audit branch): session
   lifecycle (M-5), no `script-src` in the CSP. ImageSharp held at 3.1.12 (4.x needs a licence key), so its five
   advisories stay open; uploads decode JPEG, PNG and WebP only (#51).
 - SQLite on an SMB share with one writer, both environments; a redeploy is a short outage; a rollback cannot undo a
