@@ -139,7 +139,7 @@ test.describe('an entry page', () => {
     await expect(page.getByTestId('entry-summary')).toHaveText('Keeper of the tide ledger.')
   })
 
-  test('shows the original picture on the page, whole in its viewer, and the thumbnail on the card', async ({
+  test('shows the display copy on the page, the original whole in its viewer, and the thumbnail on the card', async ({
     page,
   }) => {
     await signUp(page)
@@ -149,7 +149,7 @@ test.describe('an entry page', () => {
 
     await page.goto(entryUrl(world.universeId, id))
     const plate = page.getByTestId('entry-image').locator('img')
-    await expect(plate).toHaveAttribute('src', /\/original$/)
+    await expect(plate).toHaveAttribute('src', /\/display$/)
 
     const expand = page.getByRole('button', { name: 'View full image' })
     await expect(expand).toBeVisible()

@@ -47,6 +47,13 @@ public sealed class EntityImage
     public required string ThumbnailKey { get; set; }
 
     /// <summary>
+    /// Object key of the display copy: the whole picture fitted within <see cref="Media.ImagePreparation.DisplaySide"/>,
+    /// WebP, cut once per asset at upload (audit 2026-11-07, A3). Null for a picture stored before display copies
+    /// existed, restored from a backup, or staged by the assistant; the client then draws the original as it always did.
+    /// </summary>
+    public string? DisplayKey { get; set; }
+
+    /// <summary>
     /// The square the thumbnail was cut from, as fractions of the displayed original - see
     /// <see cref="EntityImageCrop"/>. All four are set or none is. None only for a picture stored
     /// before framing was recorded, whose thumbnail is the centred square.

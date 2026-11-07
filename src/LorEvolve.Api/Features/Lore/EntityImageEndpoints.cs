@@ -92,6 +92,10 @@ public static partial class EntityImageEndpoints
 
         group.MapGet("/{assetId:guid}/original", ReadOriginalAsync).WithName("ReadEntityImageOriginal");
 
+        // The fitted copy an entry page draws (audit 2026-11-07, A3); 404 for a picture that has none, which the client
+        // knows from `hasDisplay` and never asks for.
+        group.MapGet("/{assetId:guid}/display", ReadDisplayAsync).WithName("ReadEntityImageDisplay");
+
         group.MapGet("/{assetId:guid}/thumbnail/{thumbnailId:guid}", ReadThumbnailAsync)
             .WithName("ReadEntityImageThumbnail");
 
@@ -180,7 +184,7 @@ public static partial class EntityImageEndpoints
         bytes.Position = 0;
 
         var (prepared, rejection) = await ImagePreparation.PrepareAsync(
-            bytes, bytes.Length, requestedCrop?.ToShared(), cancellationToken);
+            bytes, bytes.Length, requestedCrop?.ToShared(), ImagePreparation.DisplaySide, cancellationToken);
 
         if (prepared is null)
         {
@@ -216,20 +220,23 @@ public static partial class EntityImageEndpoints
             var thumbnailId = Guid.NewGuid();
             var originalKey = EntityImageKeys.Original(universeId, entityId, assetId, prepared.Extension);
             var thumbnailKey = EntityImageKeys.Thumbnail(universeId, entityId, assetId, thumbnailId);
+            var displayKey = EntityImageKeys.Display(universeId, entityId, assetId);
 
             try
             {
                 bytes.Position = 0;
                 using var thumbnail = new MemoryStream(prepared.Thumbnail, writable: false);
+                using var display = new MemoryStream(prepared.Display!, writable: false);
 
-                // Both at once. Neither depends on the other and nothing can read either until the
-                // association moves below, so waiting for the first before starting the second only
-                // ever bought a second round trip to the bucket - see MediaObjectWrites.
+                // All at once. None depends on another and nothing can read any until the
+                // association moves below, so waiting for the first before starting the next only
+                // ever bought another round trip to the bucket - see MediaObjectWrites.
                 await MediaObjectWrites.PutAllAsync(
                     store,
                     cancellationToken,
                     new PendingMediaObject(originalKey, bytes, prepared.ContentType),
-                    new PendingMediaObject(thumbnailKey, thumbnail, "image/webp"));
+                    new PendingMediaObject(thumbnailKey, thumbnail, "image/webp"),
+                    new PendingMediaObject(displayKey, display, "image/webp"));
             }
             catch (MediaStorageUnavailableException exception)
             {
@@ -242,14 +249,14 @@ public static partial class EntityImageEndpoints
                 // have landed before the thumbnail did not; nothing points at either yet, so both
                 // come back out, and the entry keeps the picture it had.
                 LogStorageFailure(logger, "upload", entityId, exception);
-                await SweepAsync(store, logger, originalKey, thumbnailKey);
+                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 return Unavailable(exception);
             }
             catch (Exception)
             {
                 // Nothing points at these yet, so removing them is safe and is the only thing that
                 // keeps a failed upload from leaving litter in the bucket.
-                await SweepAsync(store, logger, originalKey, thumbnailKey);
+                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 throw;
             }
 
@@ -259,11 +266,13 @@ public static partial class EntityImageEndpoints
                 EntityId = entityId,
                 OriginalKey = originalKey,
                 ThumbnailKey = thumbnailKey,
+                DisplayKey = displayKey,
                 ContentType = prepared.ContentType,
             };
 
             string? supersededOriginal = null;
             string? supersededThumbnail = null;
+            string? supersededDisplay = null;
 
             // Decided inside the transaction, acted on after it: the transaction does database work only, and
             // every object-store call - this upload's own cleanup included - waits until it has been disposed
@@ -290,7 +299,7 @@ public static partial class EntityImageEndpoints
                             cancellationToken)
                         ? await db.EntityImages.AsNoTracking()
                             .Where(image => image.EntityId == entityId)
-                            .Select(image => new CurrentImage(image.AssetId, image.OriginalKey, image.ThumbnailKey))
+                            .Select(image => new CurrentImage(image.AssetId, image.OriginalKey, image.ThumbnailKey, image.DisplayKey))
                             .FirstOrDefaultAsync(cancellationToken)
                             ?? CurrentImage.None
                         : null;
@@ -312,6 +321,7 @@ public static partial class EntityImageEndpoints
                         // sweep is whichever the row names now.
                         supersededOriginal = current.OriginalKey;
                         supersededThumbnail = current.ThumbnailKey;
+                        supersededDisplay = current.DisplayKey;
 
                         // Before the picture is written, so a hold that lapsed is checked against storage
                         // as it stands - see AccountStorage.ConsumeAsync.
@@ -321,6 +331,7 @@ public static partial class EntityImageEndpoints
                         stored.ThumbnailId = thumbnailId;
                         stored.OriginalKey = originalKey;
                         stored.ThumbnailKey = thumbnailKey;
+                        stored.DisplayKey = displayKey;
                         stored.ContentType = prepared.ContentType;
                         stored.FileName = TrimFileName(file.FileName);
                         stored.Width = prepared.Width;
@@ -361,14 +372,14 @@ public static partial class EntityImageEndpoints
             catch (StorageQuotaExceededException)
             {
                 // The hold lapsed and the room went meanwhile. Nothing moved.
-                await SweepAsync(store, logger, originalKey, thumbnailKey);
+                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 return StorageQuota.Exceeded(isOwner: ownerId == principal.RequireUserId());
             }
             catch (Exception)
             {
                 // The association never moved, so the old image is still the live one and the new
                 // objects are unreferenced. Take them back out.
-                await SweepAsync(store, logger, originalKey, thumbnailKey);
+                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 throw;
             }
 
@@ -376,7 +387,7 @@ public static partial class EntityImageEndpoints
             {
                 // Lost a race. Nothing was written and nothing names these objects; the hold is given back
                 // in the finally below.
-                await SweepAsync(store, logger, originalKey, thumbnailKey);
+                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 return outcome == UploadOutcome.EntryGone ? Results.NotFound() : ReplacedMeanwhile();
             }
 
@@ -384,7 +395,7 @@ public static partial class EntityImageEndpoints
             // failure here is litter to be reported, never a reason to undo the write.
             if (supersededOriginal is not null)
             {
-                await SweepAsync(store, logger, supersededOriginal, supersededThumbnail!);
+                await SweepAsync(store, logger, supersededOriginal, supersededThumbnail, supersededDisplay);
             }
 
             return Results.Ok(EntityImageRef.Of(stored));
@@ -451,9 +462,9 @@ public static partial class EntityImageEndpoints
     }
 
     /// <summary>The picture an entry has at the commit; <see cref="None"/> when it has none.</summary>
-    private sealed record CurrentImage(Guid? AssetId, string? OriginalKey, string? ThumbnailKey)
+    private sealed record CurrentImage(Guid? AssetId, string? OriginalKey, string? ThumbnailKey, string? DisplayKey)
     {
-        public static readonly CurrentImage None = new(null, null, null);
+        public static readonly CurrentImage None = new(null, null, null, null);
     }
 
     // ---------- Framing the thumbnail ----------
@@ -692,6 +703,7 @@ public static partial class EntityImageEndpoints
 
         var originalKey = image.OriginalKey;
         var thumbnailKey = image.ThumbnailKey;
+        var displayKey = image.DisplayKey;
 
         await using (var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken))
         {
@@ -716,7 +728,8 @@ public static partial class EntityImageEndpoints
             store,
             loggerFactory.CreateLogger("LorEvolve.EntityImages"),
             originalKey,
-            thumbnailKey);
+            thumbnailKey,
+            displayKey);
 
         return Results.NoContent();
     }
@@ -733,7 +746,7 @@ public static partial class EntityImageEndpoints
         ILoggerFactory loggerFactory,
         HttpContext context,
         CancellationToken cancellationToken) =>
-        ReadAsync(universeId, entityId, assetId, thumbnailId: null, principal, db, store, loggerFactory, context, cancellationToken);
+        ReadAsync(universeId, entityId, assetId, thumbnailId: null, display: false, principal, db, store, loggerFactory, context, cancellationToken);
 
     private static Task<IResult> ReadThumbnailAsync(
         Guid universeId,
@@ -746,7 +759,7 @@ public static partial class EntityImageEndpoints
         ILoggerFactory loggerFactory,
         HttpContext context,
         CancellationToken cancellationToken) =>
-        ReadAsync(universeId, entityId, assetId, thumbnailId, principal, db, store, loggerFactory, context, cancellationToken);
+        ReadAsync(universeId, entityId, assetId, thumbnailId, display: false, principal, db, store, loggerFactory, context, cancellationToken);
 
     /// <summary>
     /// Streams one object to its owner: the original when <paramref name="thumbnailId"/> is null,
@@ -760,11 +773,24 @@ public static partial class EntityImageEndpoints
     /// it does not withdraw the owner's access to what they have not thrown away irrecoverably,
     /// and a Trash that could not show what it holds would be worse at its job.
     /// </summary>
+    private static Task<IResult> ReadDisplayAsync(
+        Guid universeId,
+        Guid entityId,
+        Guid assetId,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
+        HttpContext context,
+        CancellationToken cancellationToken) =>
+        ReadAsync(universeId, entityId, assetId, null, display: true, principal, db, store, loggerFactory, context, cancellationToken);
+
     private static async Task<IResult> ReadAsync(
         Guid universeId,
         Guid entityId,
         Guid assetId,
         Guid? thumbnailId,
+        bool display,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         IMediaObjectStore store,
@@ -786,6 +812,7 @@ public static partial class EntityImageEndpoints
                 candidate.OriginalKey,
                 candidate.ThumbnailId,
                 candidate.ThumbnailKey,
+                candidate.DisplayKey,
                 candidate.ContentType,
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -795,7 +822,12 @@ public static partial class EntityImageEndpoints
             return Results.NotFound();
         }
 
-        var key = thumbnailId is null ? image.OriginalKey : image.ThumbnailKey;
+        var key = display ? image.DisplayKey : thumbnailId is null ? image.OriginalKey : image.ThumbnailKey;
+        if (key is null)
+        {
+            // A picture from before display copies: the client was told so and draws the original.
+            return Results.NotFound();
+        }
 
         StoredMediaObject? stored;
         try
@@ -828,7 +860,7 @@ public static partial class EntityImageEndpoints
         context.Response.Headers.CacheControl = "private, max-age=31536000, immutable";
         context.Response.Headers.XContentTypeOptions = "nosniff";
 
-        var contentType = thumbnailId is null ? image.ContentType : "image/webp";
+        var contentType = thumbnailId is null && !display ? image.ContentType : "image/webp";
 
         return Results.Stream(stored.Content, contentType, enableRangeProcessing: false);
     }
@@ -836,8 +868,8 @@ public static partial class EntityImageEndpoints
     // ---------- Shared ----------
 
     /// <summary>Deletes objects nothing points at any more, together. See MediaObjectWrites.</summary>
-    internal static Task SweepAsync(IMediaObjectStore store, ILogger logger, params string[] keys) =>
-        MediaObjectWrites.SweepAsync(store, logger, LogOrphanedObject, keys);
+    internal static Task SweepAsync(IMediaObjectStore store, ILogger logger, params string?[] keys) =>
+        MediaObjectWrites.SweepAsync(store, logger, LogOrphanedObject, [.. keys.OfType<string>()]);
 
     [LoggerMessage(
         Level = LogLevel.Warning,

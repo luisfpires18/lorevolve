@@ -52,9 +52,11 @@ public static partial class UniverseEndpoints
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
         // Owned or shared, as one filter on Universes rather than a join, so a universe appears once even if a malformed
-        // membership row also names its owner. The membership test is an EXISTS on the (UniverseId, UserId) key.
-        var query = db.Universes.AsNoTracking().Where(universe => universe.OwnerId == userId
-            || db.UniverseMemberships.Any(membership => membership.UniverseId == universe.Id && membership.UserId == userId));
+        // membership row also names its owner. Both sides of the OR must be indexable for SQLite to take them as two
+        // index lookups: the owner index for the first, the primary key against the caller's membership ids for the
+        // second. A correlated EXISTS here made the whole table a scan, twice a page.
+        var memberOf = db.UniverseMemberships.Where(membership => membership.UserId == userId).Select(membership => membership.UniverseId);
+        var query = db.Universes.AsNoTracking().Where(universe => universe.OwnerId == userId || memberOf.Contains(universe.Id));
 
         if (!includeArchived)
         {
@@ -363,14 +365,14 @@ public static partial class UniverseEndpoints
         // The stored keys, as written - never rebuilt from the naming convention - while the rows still exist.
         var pictureKeys = (await db.EntityImages
                 .Where(image => image.Entity!.UniverseId == universe.Id)
-                .Select(image => new { image.OriginalKey, image.ThumbnailKey })
+                .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
                 .ToListAsync(cancellationToken))
-            .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey })
+            .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>())
             .Concat((await db.EntityAppearanceImages
                     .Where(image => image.Appearance!.Entity!.UniverseId == universe.Id)
-                    .Select(image => new { image.OriginalKey, image.ThumbnailKey })
+                    .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
                     .ToListAsync(cancellationToken))
-                .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey }))
+                .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>()))
             .ToArray();
 
         var artworkKeys = (await db.UniverseArtworks

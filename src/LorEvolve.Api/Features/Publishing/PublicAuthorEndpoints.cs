@@ -1,3 +1,4 @@
+using LorEvolve.Api.Hosting;
 using System.Globalization;
 using System.Security.Claims;
 using LorEvolve.Api.Data;
@@ -29,6 +30,7 @@ public static class PublicAuthorEndpoints
         var anonymous = endpoints.MapGroup("/api/public/authors")
             .WithTags("Public portal")
             .AllowAnonymous()
+            .RequireRateLimiting(RateLimits.Public)
             .AddEndpointFilter(async (context, next) =>
             {
                 context.HttpContext.Response.Headers.CacheControl = "no-cache";

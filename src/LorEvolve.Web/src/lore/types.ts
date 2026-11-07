@@ -253,6 +253,8 @@ export interface EntityImageRef {
   byteSize: number
   uploadedAt: string
   crop: EntityImageCrop | null
+  /** Whether a fitted display copy exists; false for a picture stored before display copies, so the original is drawn. */
+  hasDisplay: boolean
 }
 
 /**

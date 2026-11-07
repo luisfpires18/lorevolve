@@ -148,9 +148,25 @@ export function appearanceImageUrl(
   entityId: string,
   appearanceId: string,
   imageId: string,
-  variant: 'original' | 'thumbnail',
+  variant: 'original' | 'thumbnail' | 'display',
 ) {
   return `${images(universeId, entityId, appearanceId)}/${imageId}/${variant}`
+}
+
+/** The picture a gallery or a stage draws: the fitted display copy, or the original for a picture without one (A3). */
+export function appearanceDisplayUrl(
+  universeId: string,
+  entityId: string,
+  appearanceId: string,
+  image: { id: string; hasDisplay: boolean },
+) {
+  return appearanceImageUrl(
+    universeId,
+    entityId,
+    appearanceId,
+    image.id,
+    image.hasDisplay ? 'display' : 'original',
+  )
 }
 
 /** Adds one picture at the end of the gallery. PUT, as the entry picture's upload, so a cross-site form cannot send it. */

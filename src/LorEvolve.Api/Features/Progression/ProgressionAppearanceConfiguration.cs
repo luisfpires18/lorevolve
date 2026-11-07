@@ -65,6 +65,7 @@ public sealed class EntityAppearanceImageConfiguration : IEntityTypeConfiguratio
 
         builder.Property(image => image.OriginalKey).IsRequired().HasMaxLength(StoredImageLimits.ObjectKeyMaxLength);
         builder.Property(image => image.ThumbnailKey).IsRequired().HasMaxLength(StoredImageLimits.ObjectKeyMaxLength);
+        builder.Property(image => image.DisplayKey).HasMaxLength(StoredImageLimits.ObjectKeyMaxLength);
         builder.Property(image => image.ContentType).IsRequired().HasMaxLength(StoredImageLimits.ContentTypeMaxLength);
         builder.Property(image => image.FileName).HasMaxLength(StoredImageLimits.FileNameMaxLength);
 

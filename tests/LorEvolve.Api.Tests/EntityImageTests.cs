@@ -123,11 +123,12 @@ public sealed class EntityImageTests(LorEvolveApiFactory factory) : IClassFixtur
             .Where(key => key.Contains(entry.Id.ToString("D"), StringComparison.Ordinal))
             .ToList();
 
-        Assert.Equal(2, keys.Count);
+        Assert.Equal(3, keys.Count);
 
         var prefix = $"universes/{universe.Id:D}/entities/{entry.Id:D}/primary/{stored.AssetId:D}";
         Assert.Contains($"{prefix}/original.png", keys);
         Assert.Contains($"{prefix}/thumbnail-{stored.ThumbnailId:D}.webp", keys);
+        Assert.Contains($"{prefix}/display.webp", keys);
 
         // Not the world's name, not the entry's, not the author's, and not the filename.
         foreach (var key in keys)
@@ -334,10 +335,20 @@ public sealed class EntityImageTests(LorEvolveApiFactory factory) : IClassFixtur
         Assert.Equal(HttpStatusCode.OK, thumbnail.StatusCode);
         Assert.Equal("image/webp", thumbnail.Content.Headers.ContentType!.MediaType);
 
+        // The display copy: the whole picture, WebP, no larger than the original (A3).
+        Assert.True(stored.HasDisplay);
+        var display = await client.GetAsync($"{ImageRoute(universe.Id, entry.Id)}/{stored.AssetId}/display");
+        Assert.Equal(HttpStatusCode.OK, display.StatusCode);
+        Assert.Equal("image/webp", display.Content.Headers.ContentType!.MediaType);
+        using (var fitted = Image.Load<Rgba32>(await display.Content.ReadAsByteArrayAsync()))
+        {
+            Assert.Equal((900, 600), (fitted.Width, fitted.Height));
+        }
+
         // Private, never shared, and never public: a proxy or a shared cache must not keep one
         // author's picture. The service worker refuses everything under /api by construction
         // (ADR 0017), and this route is under /api, so it is out of the app-shell cache too.
-        foreach (var response in new[] { original, thumbnail })
+        foreach (var response in new[] { original, thumbnail, display })
         {
             var cache = response.Headers.CacheControl!;
             Assert.True(cache.Private);
@@ -441,9 +452,11 @@ public sealed class EntityImageTests(LorEvolveApiFactory factory) : IClassFixtur
         Assert.Equal(Key(universe.Id, entry.Id, second.AssetId, "original.jpg"), row.OriginalKey);
         Assert.Equal(ThumbnailKey(universe.Id, entry.Id, second), row.ThumbnailKey);
 
-        // And the pair it replaced is gone from the bucket.
+        // And the objects it replaced are gone from the bucket, the display copy with them.
         Assert.False(_factory.Media.Contains(Key(universe.Id, entry.Id, first.AssetId, "original.png")));
         Assert.False(_factory.Media.Contains(ThumbnailKey(universe.Id, entry.Id, first)));
+        Assert.False(_factory.Media.Contains(Key(universe.Id, entry.Id, first.AssetId, "display.webp")));
+        Assert.True(_factory.Media.Contains(Key(universe.Id, entry.Id, second.AssetId, "display.webp")));
 
         // A URL for the replaced asset stops resolving, so nothing can serve the old picture.
         Assert.Equal(
@@ -495,7 +508,7 @@ public sealed class EntityImageTests(LorEvolveApiFactory factory) : IClassFixtur
             .Where(key => key.Contains(entry.Id.ToString("D"), StringComparison.Ordinal))
             .ToList();
 
-        Assert.Equal(2, mine.Count);
+        Assert.Equal(3, mine.Count);
         Assert.All(mine, key => Assert.Contains(first.AssetId.ToString("D"), key, StringComparison.Ordinal));
     }
 
@@ -594,7 +607,7 @@ public sealed class EntityImageTests(LorEvolveApiFactory factory) : IClassFixtur
             .Where(key => key.Contains(entry.Id.ToString("D"), StringComparison.Ordinal))
             .ToList();
 
-        Assert.Equal(2, mine.Count);
+        Assert.Equal(3, mine.Count);
         Assert.All(mine, key => Assert.Contains(first.AssetId.ToString("D"), key, StringComparison.Ordinal));
     }
 
@@ -1199,9 +1212,9 @@ public sealed class EntityImageTests(LorEvolveApiFactory factory) : IClassFixtur
         Assert.Equal(HttpStatusCode.OK, original.StatusCode);
         Assert.Equal(source, await original.Content.ReadAsByteArrayAsync());
 
-        // Two objects, as ever: the original and the one live thumbnail.
+        // Three objects, as ever: the original, its display copy and the one live thumbnail.
         Assert.Equal(
-            2,
+            3,
             _factory.Media.Keys.Count(key => key.Contains(entry.Id.ToString("D"), StringComparison.Ordinal)));
 
         var detail = await Detail(client, universe.Id, entry.Id);
@@ -1247,7 +1260,7 @@ public sealed class EntityImageTests(LorEvolveApiFactory factory) : IClassFixtur
             HttpStatusCode.OK,
             (await client.GetAsync(ThumbnailUrl(universe.Id, entry.Id, first))).StatusCode);
         Assert.Equal(
-            2,
+            3,
             _factory.Media.Keys.Count(key => key.Contains(entry.Id.ToString("D"), StringComparison.Ordinal)));
         Assert.Equal(history.Count, (await History(client, universe.Id, entry.Id)).Count);
     }
@@ -1271,7 +1284,7 @@ public sealed class EntityImageTests(LorEvolveApiFactory factory) : IClassFixtur
         var detail = await Detail(client, universe.Id, entry.Id);
         Assert.Equal(second.ThumbnailId, detail.Image!.ThumbnailId);
         Assert.Equal(
-            2,
+            3,
             _factory.Media.Keys.Count(key => key.Contains(entry.Id.ToString("D"), StringComparison.Ordinal)));
     }
 
@@ -1296,7 +1309,7 @@ public sealed class EntityImageTests(LorEvolveApiFactory factory) : IClassFixtur
 
         Assert.Equal(stored.ThumbnailId, (await Detail(client, universe.Id, entry.Id)).Image!.ThumbnailId);
         Assert.Equal(
-            2,
+            3,
             _factory.Media.Keys.Count(key => key.Contains(entry.Id.ToString("D"), StringComparison.Ordinal)));
     }
 

@@ -58,7 +58,14 @@ export default defineConfig({
       command: `dotnet run --project src/LorEvolve.Api --no-launch-profile --urls ${apiBaseUrl}`,
       cwd: repoRoot,
       url: `${apiBaseUrl}/health`,
-      env: { ASPNETCORE_ENVIRONMENT: 'Development', ...databaseEnv },
+      // Two browsers signing in and out all afternoon from one loopback address would trip the per-address sign-in
+      // ceiling (audit 2026-11-07, A2); the suite is not a test of it, RateLimitTests is.
+      env: {
+        ASPNETCORE_ENVIRONMENT: 'Development',
+        RateLimits__AuthPerMinute: '100000',
+        RateLimits__PublicPerMinute: '100000',
+        ...databaseEnv,
+      },
       reuseExistingServer: !isCi,
       timeout: 180_000,
     },

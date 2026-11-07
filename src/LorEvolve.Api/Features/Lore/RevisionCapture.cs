@@ -55,10 +55,12 @@ internal static class EntityRevisions
             return false;
         }
 
+        // Three collections on one row: split, or SQLite hands back aliases x tags x values rows on every save.
         var previous = await db.EntityRevisions.AsNoTracking()
             .Include(revision => revision.Aliases)
             .Include(revision => revision.Tags)
             .Include(revision => revision.FieldValues)
+            .AsSplitQuery()
             .Where(revision => revision.EntityId == entityId)
             .OrderByDescending(revision => revision.Number)
             .FirstOrDefaultAsync(cancellationToken);

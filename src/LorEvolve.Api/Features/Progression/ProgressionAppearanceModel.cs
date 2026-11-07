@@ -96,6 +96,9 @@ public sealed class EntityAppearanceImage
 
     public required string ThumbnailKey { get; set; }
 
+    /// <summary>The fitted display copy's key, or null for a picture stored before display copies existed or restored from a backup; see <see cref="Lore.EntityImage.DisplayKey"/>.</summary>
+    public string? DisplayKey { get; set; }
+
     public required string ContentType { get; set; }
 
     /// <summary>The author's own filename, a label only.</summary>

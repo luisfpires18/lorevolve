@@ -288,7 +288,7 @@ public sealed class ContentPublicationTests(LorEvolveApiFactory factory) : IClas
         var served = await anonymous.GetAsync(address);
         Assert.Equal(HttpStatusCode.OK, served.StatusCode);
         Assert.Equal("image/webp", served.Content.Headers.ContentType!.MediaType);
-        Assert.Equal("no-cache", served.Headers.CacheControl!.ToString());
+        Assert.Equal("public, max-age=60", served.Headers.CacheControl!.ToString());
         Assert.Equal("nosniff", served.Headers.GetValues("X-Content-Type-Options").Single());
         var tag = served.Headers.ETag!;
 

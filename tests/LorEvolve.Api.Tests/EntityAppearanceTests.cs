@@ -50,6 +50,10 @@ public sealed class EntityAppearanceTests(LorEvolveApiFactory factory) : IClassF
         Assert.Equal(HttpStatusCode.OK, original.StatusCode);
         Assert.Equal("image/png", original.Content.Headers.ContentType!.MediaType);
         Assert.Equal(HttpStatusCode.OK, (await w.Client.GetAsync($"{Images(w, armour.Id)}/{first.Id}/thumbnail")).StatusCode);
+        Assert.True(first.HasDisplay);
+        var display = await w.Client.GetAsync($"{Images(w, armour.Id)}/{first.Id}/display");
+        Assert.Equal(HttpStatusCode.OK, display.StatusCode);
+        Assert.Equal("image/webp", display.Content.Headers.ContentType!.MediaType);
 
         // The entry's own picture is untouched, and the storage counts the gallery.
         Assert.Null((await w.Client.GetFromJsonAsync<EntityDetail>($"/api/universes/{w.U}/entities/{w.Goku}"))!.Image);
@@ -57,6 +61,7 @@ public sealed class EntityAppearanceTests(LorEvolveApiFactory factory) : IClassF
 
         (await w.Client.DeleteAsync($"{Images(w, armour.Id)}/{first.Id}")).EnsureSuccessStatusCode();
         Assert.Equal(HttpStatusCode.NotFound, (await w.Client.GetAsync($"{Images(w, armour.Id)}/{first.Id}/original")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await w.Client.GetAsync($"{Images(w, armour.Id)}/{first.Id}/display")).StatusCode);
         Assert.Equal([second.Id], (await Read(w)).Appearances!.Single(look => look.Id == armour.Id).Images.Select(image => image.Id));
     }
 

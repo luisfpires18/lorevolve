@@ -12,13 +12,18 @@ namespace LorEvolve.Api.Features.Media;
 /// <param name="Height">Displayed height.</param>
 /// <param name="Crop">The frame actually cut, as fractions. Always set, even when none was asked for.</param>
 /// <param name="Thumbnail">The derivative the frame asked for: the square thumbnail, or a universe's card.</param>
+/// <param name="Display">
+/// The whole picture fitted within <see cref="ImagePreparation.DisplaySide"/>, as WebP with no metadata, when the caller
+/// asked for one: what an entry page or a gallery draws instead of the original (audit 2026-11-07, A3). Null when not asked.
+/// </param>
 internal sealed record PreparedImage(
     string ContentType,
     string Extension,
     int Width,
     int Height,
     ImageCrop Crop,
-    byte[] Thumbnail);
+    byte[] Thumbnail,
+    byte[]? Display = null);
 
 /// <summary>Why an image was not accepted, and which part of the request to blame.</summary>
 internal sealed record ImageRejection(string Field, string Message);
@@ -108,6 +113,12 @@ internal static class ImagePreparation
     public const int ThumbnailSize = 320;
 
     /// <summary>
+    /// The longer side of a display copy: the whole picture, never enlarged, drawn at up to this many pixels. 1280 covers
+    /// an entry page's hero at 2x on a phone and a laptop column; the original stays for the full-size viewer.
+    /// </summary>
+    public const int DisplaySide = 1280;
+
+    /// <summary>
     /// How far a fraction may overshoot the edge of the image and still count as the edge. It
     /// absorbs floating-point noise in a crop computed by a browser, and nothing larger: a crop
     /// that genuinely runs off the picture is refused.
@@ -193,12 +204,30 @@ internal static class ImagePreparation
         CancellationToken cancellationToken) =>
         PrepareAsync(upload, byteLength, crop, ImageFrame.Square, cancellationToken);
 
+    /// <summary>The square gate, and the whole picture fitted within <paramref name="displaySide"/> beside the thumbnail.</summary>
+    public static Task<(PreparedImage? Image, ImageRejection? Rejection)> PrepareAsync(
+        Stream upload,
+        long byteLength,
+        ImageCrop? crop,
+        int displaySide,
+        CancellationToken cancellationToken) =>
+        PrepareAsync(upload, byteLength, crop, ImageFrame.Square, displaySide, cancellationToken);
+
     /// <summary>The same gate, cutting <paramref name="frame"/>'s shape rather than the square.</summary>
-    public static async Task<(PreparedImage? Image, ImageRejection? Rejection)> PrepareAsync(
+    public static Task<(PreparedImage? Image, ImageRejection? Rejection)> PrepareAsync(
         Stream upload,
         long byteLength,
         ImageCrop? crop,
         ImageFrame frame,
+        CancellationToken cancellationToken) =>
+        PrepareAsync(upload, byteLength, crop, frame, displaySide: null, cancellationToken);
+
+    private static async Task<(PreparedImage? Image, ImageRejection? Rejection)> PrepareAsync(
+        Stream upload,
+        long byteLength,
+        ImageCrop? crop,
+        ImageFrame frame,
+        int? displaySide,
         CancellationToken cancellationToken)
     {
         if (byteLength <= 0)
@@ -289,6 +318,8 @@ internal static class ImagePreparation
                 return Refuse(CropField, rejection);
             }
 
+            // The display copy first: the thumbnail's render cuts this same image down in place.
+            var display = displaySide is { } side ? await FitWholeAsync(decoded, side, cancellationToken) : null;
             var thumbnail = await RenderAsync(decoded, rect, frame, cancellationToken);
 
             return (
@@ -298,7 +329,8 @@ internal static class ImagePreparation
                     width,
                     height,
                     Describe(rect, width, height),
-                    thumbnail),
+                    thumbnail,
+                    display),
                 null);
         }
     }
@@ -584,6 +616,32 @@ internal static class ImagePreparation
 
         using var buffer = new MemoryStream();
         await image.SaveAsync(buffer, ThumbnailEncoder, cancellationToken);
+        return buffer.ToArray();
+    }
+
+    /// <summary>
+    /// The whole of an already decoded, already oriented picture fitted within <paramref name="maxSide"/>, never enlarged,
+    /// stripped, as WebP: the same picture <see cref="PreviewAsync"/> makes from stored bytes, made here from the decode
+    /// the upload already paid for. A copy, because the caller cuts its thumbnail from the same image next.
+    /// ponytail: a 24 MP upload is copied once more here for a moment; the allocator cap (F07) is where that ceiling lives.
+    /// </summary>
+    private static async Task<byte[]> FitWholeAsync(Image image, int maxSide, CancellationToken cancellationToken)
+    {
+        using var copy = image.Width > maxSide || image.Height > maxSide
+            ? image.Clone(context => context.Resize(new ResizeOptions
+            {
+                Size = new Size(maxSide, maxSide),
+                Mode = ResizeMode.Max,
+                Sampler = KnownResamplers.Lanczos3,
+            }))
+            : image.Clone(_ => { });
+
+        copy.Metadata.ExifProfile = null;
+        copy.Metadata.IptcProfile = null;
+        copy.Metadata.XmpProfile = null;
+
+        using var buffer = new MemoryStream();
+        await copy.SaveAsync(buffer, ThumbnailEncoder, cancellationToken);
         return buffer.ToArray();
     }
 

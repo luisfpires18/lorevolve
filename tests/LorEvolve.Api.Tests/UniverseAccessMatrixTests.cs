@@ -111,6 +111,7 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
 
             new("image original", Get, $"{e}/image/{w.Image.AssetId}/original", May.Read),
             new("image thumbnail", Get, $"{e}/image/{w.Image.AssetId}/thumbnail/{w.Image.ThumbnailId}", May.Read),
+            new("image display", Get, $"{e}/image/{w.Image.AssetId}/display", May.Read),
             new("upload image", Put, $"{e}/image", May.Edit, PngForm),
             new("reframe image", Put, $"{e}/image/thumbnail", May.Edit, Json(new EntityThumbnailRequest(w.Image.AssetId, null))),
             new("remove image", Delete, $"{e}/image", May.Edit),
@@ -128,6 +129,7 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("restore progression version", Post, $"{e}/progression/revisions/{w.ProgressionRevision}/restore", May.Edit, Json(new ProgressionRestoreRequest(1))),
             new("appearance picture original", Get, $"{e}/appearances/{w.Appearance}/images/{w.AppearanceImage}/original", May.Read),
             new("appearance picture thumbnail", Get, $"{e}/appearances/{w.Appearance}/images/{w.AppearanceImage}/thumbnail", May.Read),
+            new("appearance picture display", Get, $"{e}/appearances/{w.Appearance}/images/{w.AppearanceImage}/display", May.Read),
             new("add appearance picture", Put, $"{e}/appearances/{w.Appearance}/images", May.Edit, PngForm),
             new("order appearance pictures", Put, $"{e}/appearances/{w.Appearance}/images/order", May.Edit, Json(new AppearanceImageOrderRequest([w.AppearanceImage]))),
             new("remove appearance picture", Delete, $"{e}/appearances/{w.Appearance}/images/{w.AppearanceImage}", May.Edit),

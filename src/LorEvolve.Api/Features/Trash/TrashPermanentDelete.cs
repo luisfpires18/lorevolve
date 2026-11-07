@@ -382,16 +382,16 @@ internal static class TrashPermanentDelete
         {
             objectKeys = [.. (await db.EntityImages
                     .Where(image => entries.Contains(image.EntityId))
-                    .Select(image => new { image.OriginalKey, image.ThumbnailKey })
+                    .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
                     .ToListAsync(cancellationToken))
-                .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey })];
+                .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>())];
 
             // An appearance's pictures (Issue #43) go with their entry the same way, swept after the commit.
             objectKeys = [.. objectKeys, .. (await db.EntityAppearanceImages
                     .Where(image => entries.Contains(image.Appearance!.EntityId))
-                    .Select(image => new { image.OriginalKey, image.ThumbnailKey })
+                    .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
                     .ToListAsync(cancellationToken))
-                .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey })];
+                .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>())];
 
             var relationshipIds = await db.Relationships
                 .Where(relationship => entries.Contains(relationship.SourceEntityId) || entries.Contains(relationship.TargetEntityId))

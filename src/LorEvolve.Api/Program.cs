@@ -43,11 +43,24 @@ if (args is [DatabaseBackupCli.Verb, ..])
 
 var builder = WebApplication.CreateBuilder(args);
 
+// JSON bodies: the largest legitimate one is a manuscript save (1,000,000 characters, a few MB as Tiptap JSON). Kestrel's
+// own default is 30 MB, buffered before any validation runs. Uploads and restore name their own ceiling per route.
+builder.WebHost.ConfigureKestrel(kestrel =>
+{
+    kestrel.Limits.MaxRequestBodySize = 8 * 1024 * 1024;
+    // Nothing needs to know the server's name.
+    kestrel.AddServerHeader = false;
+});
+
 builder.Services.AddOpenApi();
-builder.Services.AddHealthChecks();
+// `/health` is what App Service probes and the deploy gate polls; it now asks SQLite on `/home`, so a share that is
+// gone fails the probe instead of answering 200 beside a dead API (F46).
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
 builder.Services.AddLorEvolveResponseCompression();
 
 builder.Services.AddLorEvolveForwardedHeaders(builder.Configuration);
+builder.Services.AddLorEvolveRateLimits(builder.Configuration);
+builder.Services.AddLorEvolveSecurityHeaders();
 builder.Services.AddLorEvolveDataProtection(builder.Configuration, builder.Environment);
 builder.Services.AddLorEvolveDatabase(builder.Configuration, builder.Environment);
 builder.Services.AddLorEvolveAuth(builder.Environment);
@@ -106,8 +119,11 @@ app.UseLorEvolveFrontend();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// After authorization: the MCP endpoint's own gate (bearer tokens only, checked against the live connection), and the
-// rate limit on open client registration.
+// The per-address ceilings on sign-in, sign-up and the anonymous portal, and MCP's own on client registration: one
+// middleware, the routes name their policy.
+app.UseRateLimiter();
+
+// After authorization: the MCP endpoint's own gate (bearer tokens only, checked against the live connection).
 app.UseLorEvolveMcp();
 
 app.MapHealthEndpoints();

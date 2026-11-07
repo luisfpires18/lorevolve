@@ -1,3 +1,4 @@
+using LorEvolve.Api.Hosting;
 using System.Collections.Frozen;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -21,9 +22,11 @@ namespace LorEvolve.Api.Features.Publishing;
 /// <para><b>One query decides.</b> Every route starts from <see cref="PublicationRules.Public"/>, so a
 /// private universe - or one that does not exist, or one some future bug left public but incomplete -
 /// is the same 404 everywhere, and the body never says which. Nothing is cached in the process: the
-/// next read after an unpublish no longer finds the universe. Every response here says
+/// next read after an unpublish no longer finds the universe. Every JSON response here says
 /// <c>no-cache</c>, so a browser or a proxy may keep a copy but must ask again before reusing it -
-/// and asking again is what a private universe's picture answers with a 404.</para>
+/// and asking again is what a private universe's picture answers with a 404. Picture bytes alone are
+/// <c>public, max-age=60</c> (<see cref="PublicImageCacheControl"/>): a browser holding one may show it
+/// for up to a minute after it went private, and Explore's two dozen cards stop costing a query each.</para>
 ///
 /// <para><b>An allow-list, projected.</b> Each response is built member by member from the columns
 /// <see cref="PublicUniverse"/> names. No entity is serialised, and nothing inside the universe is read
@@ -56,6 +59,7 @@ public static partial class PublicUniverseEndpoints
         var group = endpoints.MapGroup("/api/public/universes")
             .WithTags("Public portal")
             .AllowAnonymous()
+            .RequireRateLimiting(RateLimits.Public)
             .AddEndpointFilter(async (context, next) =>
             {
                 context.HttpContext.Response.Headers.CacheControl = "no-cache";
@@ -257,6 +261,9 @@ public static partial class PublicUniverseEndpoints
     /// so a revalidation of a picture that stopped being public is a 404 rather than a 304. Always WebP: only cut
     /// derivatives are public, and every one is WebP.
     /// </summary>
+    /// <summary>The one cache rule for public picture bytes (card, thumbnail, avatar); the rest of the portal stays <c>no-cache</c>.</summary>
+    internal const string PublicImageCacheControl = "public, max-age=60";
+
     internal static async Task<IResult> ServeWebpAsync(
         string key,
         Guid version,
@@ -267,6 +274,10 @@ public static partial class PublicUniverseEndpoints
     {
         var tag = new EntityTagHeaderValue($"\"{version:N}\"");
         context.Response.Headers.ETag = tag.ToString();
+        // A minute without asking: Explore draws two dozen cards, and each revalidation of a `no-cache` picture ran the
+        // whole public query again. A picture that stops being public can be shown for at most that minute by a browser
+        // that already has it; the next fetch is the 404.
+        context.Response.Headers.CacheControl = PublicImageCacheControl;
 
         if (context.Request.GetTypedHeaders().IfNoneMatch is { Count: > 0 } asked
             && asked.Any(candidate => candidate.Equals(EntityTagHeaderValue.Any) || candidate.Compare(tag, useStrongComparison: false)))

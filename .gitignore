@@ -67,3 +67,9 @@ src/LorEvolve.Api/wwwroot/
 # ---------- LorEvolve launcher runtime ----------
 .lorevolve/
 logs/
+
+# ---------- Agent and CLI tooling output ----------
+.wrangler/
+.playwright-mcp/
+review-artifacts/
+/worktrees/
