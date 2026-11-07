@@ -79,6 +79,8 @@ public sealed class StoryConfiguration : IEntityTypeConfiguration<Story>
         builder.Property(story => story.PublicSlug).HasMaxLength(Publishing.PublicationLimits.SlugMaxLength);
         builder.Property(story => story.PublicSummary).HasMaxLength(Publishing.PublicationLimits.SummaryMaxLength);
         builder.HasIndex(story => new { story.UniverseId, story.PublicSlug }).IsUnique();
+        // As the entries' partial index: the sitemap's public stories across all universes (audit 2026-11-07, A10).
+        builder.HasIndex(story => story.Visibility).HasFilter("\"Visibility\" <> 0");
     }
 }
 

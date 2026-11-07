@@ -44,6 +44,8 @@ As of 2026-11-07 `origin/master..origin/dev` is empty: everything on `dev` is in
 
 One line per branch. Delete the line when it merges.
 
+- `fix/audit-followups`: CodeQL workflow, ReadyToRun publish, partial `Visibility` indexes (migration). Not merged.
+
 
 - `feat/publish-everything`: Publish page "Publish everything" (Canon lore, Complete stories with scenes and text; plot
   arcs never). Committed locally, not merged.

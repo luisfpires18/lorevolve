@@ -1595,6 +1595,9 @@ namespace LorEvolve.Api.Data.Migrations
 
                     b.HasIndex("EntityTypeId");
 
+                    b.HasIndex("Visibility")
+                        .HasFilter("\"Visibility\" <> 0");
+
                     b.HasIndex("UniverseId", "EntityTypeId");
 
                     b.HasIndex("UniverseId", "Name");
@@ -3146,6 +3149,9 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Visibility")
+                        .HasFilter("\"Visibility\" <> 0");
 
                     b.HasIndex("UniverseId", "PublicSlug")
                         .IsUnique();
