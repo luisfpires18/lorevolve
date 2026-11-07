@@ -44,8 +44,6 @@ As of 2026-11-07 `origin/master..origin/dev` is empty: everything on `dev` is in
 
 One line per branch. Delete the line when it merges.
 
-- `fix/workspace-warm-start` (PR 79): workspace pages start their reads at boot, read-only articles without the editor,
-  icon and shared chunks, eager first cards. Client only. Focused E2E green; CI running.
 - `fix/audit-followups`: CodeQL workflow, ReadyToRun publish, partial `Visibility` indexes (migration). Not merged.
 
 
