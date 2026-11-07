@@ -68,7 +68,8 @@ jobs:
           cp -r src/LorEvolve.Web/dist/. src/LorEvolve.Api/wwwroot/
 
       - name: Publish the API
-        run: dotnet publish src/LorEvolve.Api -c Release -o publish
+        # ReadyToRun, as Deploy DEV: assemblies arrive compiled, so a restart answers sooner (audit 2026-11-07, A23).
+        run: dotnet publish src/LorEvolve.Api -c Release -o publish -r linux-x64 --self-contained false -p:PublishReadyToRun=true
 
       - name: Upload the package
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
