@@ -1,3 +1,4 @@
+using LorEvolve.Api.Hosting;
 using System.Collections.Frozen;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -58,6 +59,7 @@ public static partial class PublicUniverseEndpoints
         var group = endpoints.MapGroup("/api/public/universes")
             .WithTags("Public portal")
             .AllowAnonymous()
+            .RequireRateLimiting(RateLimits.Public)
             .AddEndpointFilter(async (context, next) =>
             {
                 context.HttpContext.Response.Headers.CacheControl = "no-cache";

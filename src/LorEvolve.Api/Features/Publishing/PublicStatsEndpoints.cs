@@ -1,3 +1,4 @@
+using LorEvolve.Api.Hosting;
 using LorEvolve.Api.Data;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,7 @@ public static class PublicStatsEndpoints
             .WithTags("Public portal")
             .WithName("GetPublicStats")
             .AllowAnonymous()
+            .RequireRateLimiting(RateLimits.Public)
             .AddEndpointFilter(async (context, next) =>
             {
                 context.HttpContext.Response.Headers.CacheControl = "no-cache";
