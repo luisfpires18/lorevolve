@@ -53,11 +53,13 @@ Repository index. Paths and one-line responsibilities only.
 | `Features/Seo/PublicSite.cs` | `PublicSite:Origin` (validated, the only source of absolute URLs - never `Host`) and `PublicSite:AllowIndexing` (default false). ADR 0038. |
 | `Features/Seo/PageMetadata.cs` | `PageMetadataResolver`: a path to its head - `/`, Explore (ADR 0069), a fixed indexable head with one canonical; public pages through `PublicationRules` with public text only, hidden/missing public addresses a 404 noindex head, everything else the private noindex head; Explore's query states `noindex,follow`. |
 | `Features/Seo/SeoEndpoints.cs` | `/robots.txt`, `/sitemap.xml` (effective-public addresses only, per request, `no-cache`), the shell renderer and `ShellTemplate` (the `lorevolve:head` markers), `X-Robots-Tag: noindex` on `/api`. |
-| `Hosting/ProxyHeaders.cs` | Honouring `X-Forwarded-Proto` behind a TLS-terminating proxy. |
-| `Hosting/SecurityHeaders.cs` | Issue #33 M-4: every response (including the exception handler's 500) carries `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin` and CSP `frame-ancestors 'none'; object-src 'none'; base-uri 'self'` (no `script-src` yet); HSTS outside Development. A route's own header wins. |
+| `Hosting/ProxyHeaders.cs` | Honouring `X-Forwarded-Proto` and `X-Forwarded-For` (one hop, the rightmost value App Service appends) behind a TLS-terminating proxy. |
+| `Hosting/RateLimits.cs` | Audit 2026-11-07 A2 (#33 M-2): the `auth` (sign-in, sign-up, forgot and reset password) and `public` (anonymous portal, SEO, OAuth token) per-address ceilings, fixed one-minute windows, 429 with `Retry-After`; `RateLimits:AuthPerMinute` and `:PublicPerMinute`. A request with no address is not limited. |
+| `Hosting/SecurityHeaders.cs` | Issue #33 M-4: every response (including the exception handler's 500) carries `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin` CSP `frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'` (no `script-src` yet) and `Permissions-Policy` (no camera, microphone, location); HSTS one year outside Development. A route's own header wins. |
 | `Hosting/SameOriginWrites.cs` | N-1 (#33 Part 3): an unsafe method on `/api` refused (403 `cross_origin_write`) when `Sec-Fetch-Site` or `Origin` says another origin; a sibling subdomain is same-site, so the Strict cookie alone does not cover it. |
 | `Hosting/ResponseCompression.cs` | Performance audit P01: Brotli then gzip for text responses over HTTPS, `/oauth` and `/mcp` left out by path (BREACH reasoning in the file). |
-| `Features/Health/HealthEndpoints.cs` | `/health` and `/api/health`. |
+| `Features/Health/HealthEndpoints.cs` | `/health` (the App Service probe and deploy gate; runs `DatabaseHealthCheck`) and `/api/health` (static: version, start time). |
+| `Features/Health/DatabaseHealthCheck.cs` | Audit 2026-11-07 A7 (F46): can the database be opened. |
 | `Features/Auth/AuthSetup.cs` | Identity registration and cookie session configuration (deployed name `__Host-lorevolve.session`, N-1); the cookie's `OnValidatePrincipal` is `AccountSessions`. |
 | `Features/Auth/AccountSessions.cs` | ADR 0059: every signed-in request - account gone, blocked, or a stamp other than the cookie's ends the session; one keyed read tagged `lorevolve:session-check`, then Identity's own validator. |
 | `Features/Auth/DataProtectionSetup.cs` | Where the key ring lives, when a path is configured. |
@@ -425,6 +427,7 @@ Repository index. Paths and one-line responsibilities only.
 
 | Path | Responsibility |
 | --- | --- |
+| `load/k6-smoke.js` | Audit 2026-11-07 A18: the k6 smoke load test (20 virtual users, two minutes, anonymous routes and, with credentials, My universes and a lore list; p95 under 800 ms). Run by hand against DEV, never in CI. |
 | `LorEvolve.Api.Tests/LorEvolveApiFactory.cs` | Boots the real host over in-memory SQLite; a command fault hook, what it fails with, and a movable clock. |
 | `LorEvolve.Api.Tests/GroqAssistantProviderTests.cs` | The Groq provider over the same stub: Groq's endpoint and model, the same tool loop with its reasoning carried, no `store` or `include`, failures named as Groq's; and which provider each configuration chooses, never Fake unless named. |
 | `LorEvolve.Api.Tests/OpenAIAssistantProviderTests.cs` | The OpenAI provider over a stub transport, through the library's real serialization: `store: false`, encrypted reasoning asked for and carried to the next step in order, strict tools and answer, tool choice, and each failure's class (rate limit busy; quota, key, schema and server failed; incomplete failed). |
@@ -694,6 +697,7 @@ Repository index. Paths and one-line responsibilities only.
 | --- | --- |
 | `architecture/branching.md` | Branch naming and merge rules. |
 | `architecture/audits/2026-10-29-performance-audit.md` | Performance audit: measured baseline (bundle, page loads, interactions, wire, API reads), ranked findings P01..P19, the six quick wins and their before/after numbers. |
+| `architecture/audits/2026-11-07-performance-security-audit.md` | Performance and security audit against the five "vibe coder" slides and current practice: findings A1..A23 (code-read, not measured), what is done on its branch, what is listed, the owner decisions (Cloudflare proxy, launch opening kept), and what the earlier audits still leave open. |
 | `design/LOREVOLVE_VISUAL_REFACTOR.md` | The visual design contract for the refactor (Tasks 002-007): audit findings, principles, tokens, components, cards, actions, responsive and accessibility rules, and the task plan. |
 | `history/` | Archived, unmaintained records: `state-archive-2026-10.md` (STATE.md before the trim), `design/` (decided plans), `testing/` (one-time manual passes for merged phases). |
 | `deployment/azure-dev.md` | The DEV runbook: topology, setup, deploy, limitations, troubleshooting. |
