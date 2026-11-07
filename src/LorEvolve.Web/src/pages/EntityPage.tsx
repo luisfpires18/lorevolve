@@ -855,6 +855,69 @@ function EntityScreen({ view }: { view: EntryView }) {
     </div>
   )
 
+  // The entry's picture, beside every view of it, not only the article.
+  const pictureFigure = picture ? (
+    <figure className="entry__media" data-testid="entry-image">
+      {stagePictures.length > 0 ? (
+        // One choice per stage with a picture, the main picture first when there is one: the article shows
+        // the entry as it looks then.
+        <div
+          className="entry__stages"
+          role="group"
+          aria-label="Picture"
+          data-testid="entry-picture-stages"
+        >
+          {mainPicture ? (
+            <button
+              className="entry__stage"
+              type="button"
+              aria-pressed={picture === mainPicture}
+              onClick={() => setChosenPicture(null)}
+            >
+              Main
+            </button>
+          ) : null}
+          {stagePictures.map((one) => (
+            <button
+              key={one.id}
+              className="entry__stage"
+              type="button"
+              aria-pressed={picture === one}
+              onClick={() => setChosenPicture({ entityId, id: one.id })}
+              data-testid="entry-picture-stage"
+            >
+              <bdi>{one.name}</bdi>
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <img
+        key={picture.src}
+        src={picture.src}
+        alt={detail?.name ?? ''}
+        // The page's largest paint: asked for first, ahead of the sections' code and the sidebar.
+        fetchPriority="high"
+        // The original's own dimensions, which give the browser the picture's shape before a byte
+        // of it has loaded: the space it will occupy is reserved from its own aspect ratio, so the
+        // article never jumps down the page as one arrives.
+        width={picture.width}
+        height={picture.height}
+        decoding="async"
+      />
+      <button
+        ref={expandButton}
+        className="iconbutton entry__expand"
+        type="button"
+        onClick={() => setIsViewing(true)}
+        aria-label="View full image"
+        title="View full image"
+        data-testid="entry-image-expand"
+      >
+        <Maximize2 aria-hidden="true" focusable="false" strokeWidth={1.75} />
+      </button>
+    </figure>
+  ) : null
+
   return (
     <article
       className="entry"
@@ -1272,67 +1335,7 @@ function EntityScreen({ view }: { view: EntryView }) {
           data-picture={picture ? 'true' : 'false'}
           data-shape={picture ? pictureShape(picture) : undefined}
         >
-          {picture ? (
-            <figure className="entry__media" data-testid="entry-image">
-              {stagePictures.length > 0 ? (
-                // One choice per stage with a picture, the main picture first when there is one: the article shows
-                // the entry as it looks then.
-                <div
-                  className="entry__stages"
-                  role="group"
-                  aria-label="Picture"
-                  data-testid="entry-picture-stages"
-                >
-                  {mainPicture ? (
-                    <button
-                      className="entry__stage"
-                      type="button"
-                      aria-pressed={picture === mainPicture}
-                      onClick={() => setChosenPicture(null)}
-                    >
-                      Main
-                    </button>
-                  ) : null}
-                  {stagePictures.map((one) => (
-                    <button
-                      key={one.id}
-                      className="entry__stage"
-                      type="button"
-                      aria-pressed={picture === one}
-                      onClick={() => setChosenPicture({ entityId, id: one.id })}
-                      data-testid="entry-picture-stage"
-                    >
-                      <bdi>{one.name}</bdi>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <img
-                key={picture.src}
-                src={picture.src}
-                alt={detail?.name ?? ''}
-                // The page's largest paint: asked for first, ahead of the sections' code and the sidebar.
-                fetchPriority="high"
-                // The original's own dimensions, which give the browser the picture's shape before a byte
-                // of it has loaded: the space it will occupy is reserved from its own aspect ratio, so the
-                // article never jumps down the page as one arrives.
-                width={picture.width}
-                height={picture.height}
-                decoding="async"
-              />
-              <button
-                ref={expandButton}
-                className="iconbutton entry__expand"
-                type="button"
-                onClick={() => setIsViewing(true)}
-                aria-label="View full image"
-                title="View full image"
-                data-testid="entry-image-expand"
-              >
-                <Maximize2 aria-hidden="true" focusable="false" strokeWidth={1.75} />
-              </button>
-            </figure>
-          ) : null}
+          {pictureFigure}
 
           <div className="entry__main">
             {isNew ? null : (
@@ -1402,45 +1405,63 @@ function EntityScreen({ view }: { view: EntryView }) {
           </aside>
         </div>
       ) : view === 'progression' ? (
-        <div className="entry__view">
-          {detail ? (
-            <ProgressionView
-              key={detail.id}
-              universeId={universe.id}
-              entry={detail}
-              definitions={types.find((type) => type.id === detail.entityTypeId)?.fields ?? []}
-              chronology={chronology}
-              onChanged={() => void refreshDetail()}
-            />
-          ) : null}
+        <div
+          className="entry__layout entry__layout--view"
+          data-picture={picture ? 'true' : 'false'}
+        >
+          {pictureFigure}
+          <div className="entry__main entry__view">
+            {detail ? (
+              <ProgressionView
+                key={detail.id}
+                universeId={universe.id}
+                entry={detail}
+                definitions={types.find((type) => type.id === detail.entityTypeId)?.fields ?? []}
+                chronology={chronology}
+                onChanged={() => void refreshDetail()}
+              />
+            ) : null}
+          </div>
         </div>
       ) : view === 'relations' ? (
-        <div className="entry__view">
-          <RelationshipSection
-            universeId={universe.id}
-            entityId={entityId!}
-            entityName={detail?.name ?? ''}
-            chronology={chronology}
-          />
-          {/* What the entry knows, and who knows about it (issue 15): under its relations, read by every member. A
+        <div
+          className="entry__layout entry__layout--view"
+          data-picture={picture ? 'true' : 'false'}
+        >
+          {pictureFigure}
+          <div className="entry__main entry__view">
+            <RelationshipSection
+              universeId={universe.id}
+              entityId={entityId!}
+              entityName={detail?.name ?? ''}
+              chronology={chronology}
+            />
+            {/* What the entry knows, and who knows about it (issue 15): under its relations, read by every member. A
               fifth view would not fit the entry's bar on a phone, and knowledge is what this entry has with others. */}
-          <KnowledgeView
-            key={entityId}
-            universeId={universe.id}
-            entityId={entityId!}
-            entityName={detail?.name ?? ''}
-          />
+            <KnowledgeView
+              key={entityId}
+              universeId={universe.id}
+              entityId={entityId!}
+              entityName={detail?.name ?? ''}
+            />
+          </div>
         </div>
       ) : (
-        <div className="entry__view">
-          <EntityHistory
-            universeId={universe.id}
-            entityId={entityId!}
-            chronology={chronology}
-            reloadKey={historyKey}
-            currentVersion={detail?.version ?? 0}
-            onRestored={() => void reloadAfterRestore()}
-          />
+        <div
+          className="entry__layout entry__layout--view"
+          data-picture={picture ? 'true' : 'false'}
+        >
+          {pictureFigure}
+          <div className="entry__main entry__view">
+            <EntityHistory
+              universeId={universe.id}
+              entityId={entityId!}
+              chronology={chronology}
+              reloadKey={historyKey}
+              currentVersion={detail?.version ?? 0}
+              onRestored={() => void reloadAfterRestore()}
+            />
+          </div>
         </div>
       )}
 
