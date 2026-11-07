@@ -5805,23 +5805,17 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   margin-top: var(--space-6);
 }
 
-.entry__layout[data-picture='true'][data-shape='portrait'],
-.entry__layout[data-picture='true'][data-shape='square'] {
+.entry__layout[data-picture='true'] {
   grid-template-rows: auto 1fr;
   grid-template-areas:
     'main media'
     'main rail';
 }
 
-.entry__layout[data-picture='true'][data-shape='landscape'] {
-  grid-template-areas:
-    'media media'
-    'main rail';
-}
-
 /* Progression, Relations and History: the view on the left, the picture held on the right while it scrolls,
    whatever the picture's shape. No picture, the view takes the width. */
-.entry__layout--view {
+.entry__layout.entry__layout--view {
+  grid-template-rows: none;
   grid-template-areas: 'main media';
 }
 
