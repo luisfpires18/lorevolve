@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { LoreArticle } from './LoreEditor'
+import { LoreArticle } from './ArticleView'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { EmptyState } from './EmptyState'
 import { NameList } from './NameList'

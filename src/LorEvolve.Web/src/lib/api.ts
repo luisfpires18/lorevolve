@@ -83,7 +83,46 @@ export const NETWORK_FAILURE =
  * Calls the API on the same origin. The session cookie is HttpOnly, so the browser
  * attaches it and no token is ever held in JavaScript.
  */
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+/**
+ * Reads started before anything asked for them (`warmStart`), each held for the one caller that asks for the same
+ * address next. One use only, and only within a few seconds: a read taken from here is exactly the read the screen would
+ * have made, just started at boot instead of three round trips later, and nothing here outlives a write.
+ */
+const primed = new Map<string, { at: number; read: Promise<unknown> }>()
+const PRIMED_FOR_MS = 10_000
+let priming = 0
+
+/** Starts a GET now and keeps its answer for the first screen that asks for the same address. */
+export function prime(read: () => Promise<unknown>) {
+  priming++
+  try {
+    read().catch(() => undefined)
+  } finally {
+    priming--
+  }
+}
+
+export function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  if ((init?.method ?? 'GET').toUpperCase() === 'GET') {
+    if (priming > 0) {
+      const read = performFetch<T>(path, init, true)
+      primed.set(path, { at: Date.now(), read })
+      return read
+    }
+    const hit = primed.get(path)
+    if (hit) {
+      primed.delete(path)
+      if (Date.now() - hit.at < PRIMED_FOR_MS) return hit.read as Promise<T>
+    }
+  }
+  return performFetch<T>(path, init, false)
+}
+
+async function performFetch<T>(
+  path: string,
+  init: RequestInit | undefined,
+  isPrimed: boolean,
+): Promise<T> {
   // A FormData body carries its own multipart content type, complete with the boundary the
   // browser generated. Declaring JSON over it would make the request unparseable, so the
   // default only applies to the JSON bodies every other call sends.
@@ -115,7 +154,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   const payload: unknown = isJson ? await response.json() : null
 
   if (!response.ok) {
-    if (response.status === 401 && !path.startsWith('/api/auth/')) {
+    // A primed read that meets no session is not a session that ended: the session probe beside it says so itself.
+    if (response.status === 401 && !path.startsWith('/api/auth/') && !isPrimed) {
       window.dispatchEvent(new Event(SESSION_ENDED))
     }
     throw apiErrorFrom(response.status, payload)

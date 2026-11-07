@@ -234,8 +234,8 @@ export default function ExplorePage() {
 
         {ready && ready.items.length > 0 ? (
           <ul className="explore-grid" data-testid="explore-list">
-            {ready.items.map((world) => (
-              <WorldCard key={world.slug} world={world} />
+            {ready.items.map((world, index) => (
+              <WorldCard key={world.slug} world={world} eager={index < 6} />
             ))}
           </ul>
         ) : null}

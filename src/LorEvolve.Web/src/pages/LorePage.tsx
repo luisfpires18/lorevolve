@@ -853,9 +853,10 @@ export default function LorePage() {
 
       {chosenName && result && result.items.length > 0 ? (
         <ul className="cardgrid lore__grid" data-testid="entity-grid">
-          {result.items.map((entity) => (
+          {result.items.map((entity, index) => (
             <li key={entity.id}>
               <EntityCard
+                eager={index < 8}
                 universeId={universe.id}
                 entity={entity}
                 selection={

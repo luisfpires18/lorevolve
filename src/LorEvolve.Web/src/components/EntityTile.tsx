@@ -18,6 +18,7 @@ export function EntityTile({
   typeIcon,
   typeAccent,
   className,
+  eager = false,
 }: {
   universeId: string
   entityId: string
@@ -25,6 +26,8 @@ export function EntityTile({
   typeIcon: string | null
   typeAccent: string | null
   className?: string
+  /** Above the fold: fetched at once and ahead of the rest, instead of lazily once laid out. */
+  eager?: boolean
 }) {
   const classes = ['tile', className].filter(Boolean).join(' ')
   const accent = typeAccent ? { ['--type-accent' as string]: typeAccent } : undefined
@@ -47,7 +50,8 @@ export function EntityTile({
       className={classes}
       src={entityImageUrl(universeId, entityId, image, 'thumbnail')}
       alt=""
-      loading="lazy"
+      loading={eager ? 'eager' : 'lazy'}
+      fetchPriority={eager ? 'high' : undefined}
       decoding="async"
       width={320}
       height={320}

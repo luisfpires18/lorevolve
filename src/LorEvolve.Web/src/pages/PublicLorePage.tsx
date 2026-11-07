@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowUpRight } from 'lucide-react'
-import { LoreArticle } from '../components/LoreEditor'
+import { LoreArticle } from '../components/ArticleView'
 import { PortalError, PortalMissing } from '../components/PortalMissing'
 import {
   getPublicLore,
