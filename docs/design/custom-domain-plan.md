@@ -19,7 +19,7 @@ LorEvolve uses is configuration, so the domain itself needs no code change. PROD
   takes the apex (3.4).
 - **Privacy note and footer** do not name the domain: they are served from it. The contact address is
   `support@lorevolve.com` (section 6).
-- **`noindex` on the alpha page** stays while it is link-only.
+- **Search engines**: PROD and the alpha page are both indexable since 2026-11-02; Search Console in section 7.
 - **DEV keeps** `Mcp__Origin=https://dev-lorevolve.azurewebsites.net` and no `PublicSite__Origin` (ADR 0038). Nothing
   changes for DEV or its MCP connections.
 
@@ -93,3 +93,19 @@ PROD is a new origin with its own issuer, so PROD connections start fresh. DEV c
   sending-only key) and `Email__From` in App Service settings, off when unset. Sends the Admin sign-up link (Admin >
   Users > Email link). Collaborator invitations (#68) and forgot password (#69) are follow-ups.
 - **Limits**: Resend free plan, 100 emails a day and 3,000 a month. New domain: first emails may land in Promotions.
+
+## 7. Search Console (owner steps)
+
+Allowing indexing only lets Google in; it does not make Google come. What stays out of search is decided in code, not
+here: PROD's `robots.txt` disallows `/api/`, `/app`, `/login` and `/register`, every page is `noindex` unless the
+public predicates say otherwise, every `/api` response says `noindex`, and the sitemap names public items only
+(ADR 0038). DEV (`*.azurewebsites.net`) has no `PublicSite__AllowIndexing`, so it stays out.
+
+1. search.google.com/search-console > Add property > **Domain** > `lorevolve.com`. One Domain property covers the
+   apex, `www` and `demo`. Copy the TXT value.
+2. Cloudflare DNS: add `TXT` `@` with that value (or accept Cloudflare's one-click verify if offered). Search Console
+   > Verify.
+3. Sitemaps: submit `https://lorevolve.com/sitemap.xml` and `https://demo.lorevolve.com/sitemap.xml`.
+4. URL Inspection > Request indexing: `https://lorevolve.com/` and `https://demo.lorevolve.com/`.
+5. A week later, Pages report: `/app`, `/login` and the rest should be absent, or under "Blocked by robots.txt" or
+   "Excluded by noindex tag". A private address under "Indexed" is a bug.

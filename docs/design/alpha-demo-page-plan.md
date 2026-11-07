@@ -121,7 +121,8 @@ by hand: `wave`, `invited_at`.
 ### 3.7 Hosting
 
 - Cloudflare Pages, project `<insert a name>`, address `<insert a name>.pages.dev`.
-- **Hidden from search** while link-only: `noindex` in the page head and an `X-Robots-Tag: noindex` header.
+- **Open to search** since 2026-11-02 (`feat/demo-indexable` on `demo`): `index, follow`, a canonical, `robots.txt`
+  and `sitemap.xml`. Before that it was link-only with `noindex` in the head and an `X-Robots-Tag` header.
 - Security headers in `_headers`: a content security policy (self, plus `challenges.cloudflare.com` for Turnstile),
   no framing, no referrer leak.
 - **Source**: folder `site/alpha/` in this repo.
