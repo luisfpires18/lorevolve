@@ -43,8 +43,14 @@ if (args is [DatabaseBackupCli.Verb, ..])
 
 var builder = WebApplication.CreateBuilder(args);
 
+// JSON bodies: the largest legitimate one is a manuscript save (1,000,000 characters, a few MB as Tiptap JSON). Kestrel's
+// own default is 30 MB, buffered before any validation runs. Uploads and restore name their own ceiling per route.
+builder.WebHost.ConfigureKestrel(kestrel => kestrel.Limits.MaxRequestBodySize = 8 * 1024 * 1024);
+
 builder.Services.AddOpenApi();
-builder.Services.AddHealthChecks();
+// `/health` is what App Service probes and the deploy gate polls; it now asks SQLite on `/home`, so a share that is
+// gone fails the probe instead of answering 200 beside a dead API (F46).
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
 builder.Services.AddLorEvolveResponseCompression();
 
 builder.Services.AddLorEvolveForwardedHeaders(builder.Configuration);
