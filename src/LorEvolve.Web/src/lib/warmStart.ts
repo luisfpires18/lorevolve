@@ -30,7 +30,7 @@ export function warmStart(pathname: string, search: string) {
   const [, universeId, section, next] = match
   prime(() => getUniverse(universeId))
   prime(() => getChronology(universeId))
-  prime(() => listEntityTypes(universeId))
+  const types = prime(() => listEntityTypes(universeId))
   prime(() => listEntityTypeGroups(universeId))
 
   if (section !== 'lore') return
@@ -46,19 +46,27 @@ export function warmStart(pathname: string, search: string) {
   const params = new URLSearchParams(search)
   const type = params.get('type')
   if (!type || [...params.keys()].some((key) => key !== 'type')) return
-  prime(() =>
-    listEntities(universeId, {
-      search: '',
-      entityTypeId: type,
-      entityTypeGroupId: null,
-      includeDescendants: true,
-      canonStatus: null,
-      tag: null,
-      page: 1,
-      pageSize: readLorePageSize(),
-      fieldFilters: [],
-      exact: false,
-      sort: null,
-    }),
+  // Only a type this universe has: LorePage reads nothing for an address naming any other, and neither does this.
+  // The types are already on their way, and this runs before the workspace sees them.
+  void types.then(
+    (list) => {
+      if (!list.some((candidate) => candidate.id === type)) return
+      prime(() =>
+        listEntities(universeId, {
+          search: '',
+          entityTypeId: type,
+          entityTypeGroupId: null,
+          includeDescendants: true,
+          canonStatus: null,
+          tag: null,
+          page: 1,
+          pageSize: readLorePageSize(),
+          fieldFilters: [],
+          exact: false,
+          sort: null,
+        }),
+      )
+    },
+    () => undefined,
   )
 }

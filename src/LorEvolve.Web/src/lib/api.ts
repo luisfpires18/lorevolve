@@ -92,11 +92,13 @@ const primed = new Map<string, { at: number; read: Promise<unknown> }>()
 const PRIMED_FOR_MS = 10_000
 let priming = 0
 
-/** Starts a GET now and keeps its answer for the first screen that asks for the same address. */
-export function prime(read: () => Promise<unknown>) {
+/** Starts a GET now and keeps its answer for the first screen that asks for the same address; hands the read back too. */
+export function prime<T>(read: () => Promise<T>): Promise<T> {
   priming++
   try {
-    read().catch(() => undefined)
+    const started = read()
+    started.catch(() => undefined)
+    return started
   } finally {
     priming--
   }
