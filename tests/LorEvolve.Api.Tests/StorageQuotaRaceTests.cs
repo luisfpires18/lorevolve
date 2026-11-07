@@ -106,7 +106,7 @@ public sealed class StorageQuotaRaceTests : IDisposable
         await using var db = Context();
         Assert.Equal(Picture.Length, await db.EntityImages.SumAsync(image => image.ByteSize));
         Assert.Equal(0, await db.StorageReservations.CountAsync());
-        Assert.Equal(2, host.Media.Keys.Count);
+        Assert.Equal(3, host.Media.Keys.Count);
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public sealed class StorageQuotaRaceTests : IDisposable
         var response = await Upload(client, u, entry);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        AssertSweptWithTheDatabaseFree(writes, expected: 2);
+        AssertSweptWithTheDatabaseFree(writes, expected: 3);
         Assert.DoesNotContain(host.Media.Keys, key => key.Contains(entry.ToString("D"), StringComparison.Ordinal));
 
         SqliteConnection.ClearAllPools();
@@ -214,7 +214,7 @@ public sealed class StorageQuotaRaceTests : IDisposable
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Contains(EntityImageEndpoints.ImageChangedCode, await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
-        AssertSweptWithTheDatabaseFree(writes, expected: 2);
+        AssertSweptWithTheDatabaseFree(writes, expected: 3);
         Assert.DoesNotContain(host.Media.Keys, key => key.Contains(entry.ToString("D"), StringComparison.Ordinal));
 
         SqliteConnection.ClearAllPools();

@@ -27,7 +27,7 @@ import { ProgressionView } from '../components/ProgressionView'
 import { RelationshipSection } from '../components/RelationshipSection'
 import { getEntityArticle, saveEntityArticle, type EntityArticle } from '../lore/article'
 import { articleLinks, emptyValue, isEmptyDocument } from '../lore/document'
-import { entityDisplayUrl, setEntityImage } from '../lore/images'
+import { entityDisplayUrl, entityImageUrl, setEntityImage } from '../lore/images'
 import { TokenInput } from '../components/TokenInput'
 import { TypeIcon } from '../components/TypeIcon'
 import { blockingFindingsOf } from '../canon/blocked'
@@ -298,6 +298,8 @@ function EntityScreen({ view }: { view: EntryView }) {
     detail?.image && entityId
       ? {
           src: entityDisplayUrl(universe.id, entityId, detail.image),
+          // The viewer shows every pixel the author uploaded; the page draws the fitted copy.
+          fullSrc: entityImageUrl(universe.id, entityId, detail.image, 'original'),
           width: detail.image.width,
           height: detail.image.height,
         }
@@ -1509,7 +1511,7 @@ function EntityScreen({ view }: { view: EntryView }) {
 
       {isViewing && detail && picture ? (
         <ImageViewer
-          src={picture.src}
+          src={picture.fullSrc}
           name={detail.name}
           width={picture.width}
           height={picture.height}

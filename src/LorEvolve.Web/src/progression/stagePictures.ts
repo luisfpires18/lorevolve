@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
-import { appearanceDisplayUrl, getProgression } from './api'
+import { appearanceDisplayUrl, appearanceImageUrl, getProgression } from './api'
 
 /** One stage's picture for the article: the first picture of the first appearance that belongs to the stage. */
 export interface StagePicture {
   id: string
   name: string
+  /** What the page draws: the fitted display copy where one exists. */
   src: string
+  /** What the viewer draws: the original. */
+  fullSrc: string
   width: number
   height: number
 }
@@ -37,6 +40,7 @@ export function useStagePictures(universeId: string, entityId: string, enabled: 
             id: stage.id,
             name: stage.name,
             src: appearanceDisplayUrl(universeId, entityId, look.id, image),
+            fullSrc: appearanceImageUrl(universeId, entityId, look.id, image.id, 'original'),
             width: image.width,
             height: image.height,
           })

@@ -1052,10 +1052,10 @@ public sealed class UniverseExportTests(LorEvolveApiFactory factory) : IClassFix
         var archive = await RawArchive(client, universe.Id);
         var document = DocumentText(archive);
 
-        // It exists in the bucket - it is simply derived, so a reader regenerates it rather
-        // than being handed a second copy of every picture to keep in step.
+        // It exists in the bucket, as does the display copy - both are simply derived, so a reader regenerates
+        // them rather than being handed more copies of every picture to keep in step.
         Assert.Equal(
-            2,
+            3,
             _factory.Media.Keys.Count(key => key.Contains(warden.Id.ToString("D"), StringComparison.Ordinal)));
 
         Assert.DoesNotContain(
