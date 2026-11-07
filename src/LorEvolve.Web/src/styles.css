@@ -5798,9 +5798,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
 
 .entry__layout {
   display: grid;
-  /* The text takes what is left; the right column grows with the screen within bounds, so the picture
-     and the facts under it stay one width and flush right. */
-  grid-template-columns: minmax(0, 1fr) clamp(18rem, 30vw, 32rem);
+  grid-template-columns: minmax(0, 46rem) minmax(20rem, 1fr);
   grid-template-areas: 'main rail';
   align-items: start;
   gap: var(--space-6) var(--space-7);
