@@ -58,7 +58,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // Off: dist is copied whole into wwwroot, so a map file would be served to anyone (P15, L-11); the repo is public.
+    sourcemap: false,
     rolldownOptions: {
       output: {
         codeSplitting: {

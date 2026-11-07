@@ -192,7 +192,8 @@ public sealed class UniverseArtworkTests(LorEvolveApiFactory factory) : IClassFi
         var served = await anonymous.GetAsync(url);
         Assert.Equal(HttpStatusCode.OK, served.StatusCode);
         Assert.Equal("image/webp", served.Content.Headers.ContentType!.MediaType);
-        Assert.True(served.Headers.CacheControl!.NoCache);
+        Assert.Equal(TimeSpan.FromSeconds(60), served.Headers.CacheControl!.MaxAge);
+        Assert.True(served.Headers.CacheControl.Public);
         Assert.Equal("nosniff", served.Headers.GetValues("X-Content-Type-Options").Single());
         var tag = served.Headers.ETag!;
 

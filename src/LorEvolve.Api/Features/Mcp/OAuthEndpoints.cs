@@ -1,3 +1,4 @@
+using LorEvolve.Api.Hosting;
 using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Universes;
@@ -90,6 +91,7 @@ public static class OAuthEndpoints
             .WithTags("MCP")
             .WithName("IssueConnectionToken")
             .AllowAnonymous()
+            .RequireRateLimiting(RateLimits.Public)
             .DisableAntiforgery();
 
         endpoints.MapGet("/api/oauth/authorization-request", DescribeAsync)

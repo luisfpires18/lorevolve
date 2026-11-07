@@ -9,13 +9,16 @@ namespace LorEvolve.Api.Hosting;
 /// every request looks like <c>http</c> from inside: a Secure session cookie would be dropped
 /// and any absolute URL the app builds would be wrong.
 ///
-/// Only <c>X-Forwarded-Proto</c> is honoured, and only when configuration turns this on. The
-/// proxy's address is not known ahead of time on App Service, so the known-network and
-/// known-proxy lists have to be cleared - which means a client talking to the app directly
-/// could claim any scheme. That is acceptable for exactly one header whose only effect is to
-/// make the app stricter (an <c>https</c> claim adds Secure, it never removes it), and is why
-/// <c>X-Forwarded-For</c> is deliberately not forwarded: nothing here reads the client address,
-/// so accepting a spoofable one would buy nothing.
+/// <c>X-Forwarded-Proto</c> and <c>X-Forwarded-For</c> are honoured, and only when configuration
+/// turns this on. The proxy's address is not known ahead of time on App Service, so the
+/// known-network and known-proxy lists have to be cleared - which means a client talking to the
+/// app directly could claim any scheme or address. On App Service nothing reaches the app except
+/// through its front end, which appends the client's <c>ip:port</c> as the rightmost value; with
+/// <c>ForwardLimit</c> at one, that rightmost value is the only one read, so a client-supplied
+/// list is never believed past the hop the front end added. The address feeds
+/// <see cref="RateLimits"/> (issue #33, M-2) and nothing else. If the app is ever placed behind a
+/// second proxy (Cloudflare in front of App Service), the limit becomes two and the lists name
+/// that proxy's ranges.
 /// </summary>
 public static class ProxyHeaders
 {
@@ -32,7 +35,8 @@ public static class ProxyHeaders
 
         services.Configure<ForwardedHeadersOptions>(options =>
         {
-            options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor;
+            options.ForwardLimit = 1;
             options.KnownIPNetworks.Clear();
             options.KnownProxies.Clear();
         });

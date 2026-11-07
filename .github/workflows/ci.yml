@@ -91,6 +91,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Shipped dependencies only: a High or Critical advisory in what the browser runs fails the build, as NU1903/NU1904
+      # already do for NuGet. Dev-only tooling advisories are the weekly Dependabot update's business.
+      - name: Audit shipped dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Typecheck
         run: npm run typecheck
 

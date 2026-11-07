@@ -265,6 +265,7 @@ public static class RevisionEndpoints
             .Include(revision => revision.Aliases)
             .Include(revision => revision.Tags)
             .Include(revision => revision.FieldValues)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(
                 revision => revision.Id == revisionId
                     && revision.EntityId == entityId

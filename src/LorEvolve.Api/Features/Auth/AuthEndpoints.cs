@@ -1,3 +1,4 @@
+using LorEvolve.Api.Hosting;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using LorEvolve.Api.Data;
@@ -41,8 +42,8 @@ public static partial class AuthEndpoints
 
         group.MapGet("/registration", (IConfiguration configuration) => Results.Ok(new RegistrationResponse(InviteOnly(configuration))))
             .WithName("GetRegistration");
-        group.MapPost("/register", RegisterAsync).WithName("Register");
-        group.MapPost("/login", LoginAsync).WithName("Login");
+        group.MapPost("/register", RegisterAsync).WithName("Register").RequireRateLimiting(RateLimits.Auth);
+        group.MapPost("/login", LoginAsync).WithName("Login").RequireRateLimiting(RateLimits.Auth);
         group.MapPost("/logout", LogoutAsync).WithName("Logout").RequireAuthorization();
         group.MapGet("/me", GetCurrentUser).WithName("GetCurrentUser").RequireAuthorization();
         PasswordReset.Map(group);

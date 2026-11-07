@@ -139,7 +139,7 @@ public sealed class PublicAuthorTests(LorEvolveApiFactory factory) : IClassFixtu
         var served = await anonymous.GetAsync(author.AvatarUrl);
         Assert.Equal(HttpStatusCode.OK, served.StatusCode);
         Assert.Equal("image/webp", served.Content.Headers.ContentType!.MediaType);
-        Assert.Equal("no-cache", served.Headers.CacheControl!.ToString());
+        Assert.Equal("public, max-age=60", served.Headers.CacheControl!.ToString());
         var body = await anonymous.GetStringAsync("/api/public/authors/pell-aster");
         Assert.DoesNotContain(photo.AssetId.ToString(), body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("users/", body, StringComparison.Ordinal);

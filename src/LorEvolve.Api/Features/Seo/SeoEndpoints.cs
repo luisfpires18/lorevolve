@@ -1,3 +1,4 @@
+using LorEvolve.Api.Hosting;
 using System.Net;
 using System.Text;
 using System.Xml;
@@ -49,8 +50,8 @@ public static partial class SeoEndpoints
 
     public static IEndpointRouteBuilder MapSeoEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/robots.txt", Robots).AllowAnonymous().ExcludeFromDescription();
-        endpoints.MapGet("/sitemap.xml", SitemapAsync).AllowAnonymous().ExcludeFromDescription();
+        endpoints.MapGet("/robots.txt", Robots).AllowAnonymous().RequireRateLimiting(RateLimits.Public).ExcludeFromDescription();
+        endpoints.MapGet("/sitemap.xml", SitemapAsync).AllowAnonymous().RequireRateLimiting(RateLimits.Public).ExcludeFromDescription();
         return endpoints;
     }
 

@@ -5,6 +5,7 @@ namespace LorEvolve.Api.Features.Lore;
 ///
 ///   universes/{universeId}/entities/{entityId}/primary/{assetId}/original.{ext}
 ///   universes/{universeId}/entities/{entityId}/primary/{assetId}/thumbnail-{thumbnailId}.webp
+///   universes/{universeId}/entities/{entityId}/primary/{assetId}/display.webp
 ///
 /// R2 has no folders; a key is one flat string and the slashes are only a prefix the console
 /// happens to draw as a tree. So this layout buys exactly three things - a prefix that scopes an
@@ -34,4 +35,8 @@ public static class EntityImageKeys
 
     public static string Thumbnail(Guid universeId, Guid entityId, Guid assetId, Guid thumbnailId) =>
         $"{Prefix(universeId, entityId, assetId)}/thumbnail-{thumbnailId:D}.webp";
+
+    /// <summary>The whole picture fitted for display: one per asset, cut from the original and never reframed.</summary>
+    public static string Display(Guid universeId, Guid entityId, Guid assetId) =>
+        $"{Prefix(universeId, entityId, assetId)}/display.webp";
 }

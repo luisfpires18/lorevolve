@@ -293,8 +293,8 @@ public static class McpSetup
     }
 
     /// <summary>
-    /// After authorization: the consent screen's framing headers, the rate limiter the registration endpoint names, and the
-    /// gate in front of every MCP request.
+    /// After authorization: the consent screen's framing headers and the gate in front of every MCP request. The rate
+    /// limiter the registration endpoint names runs from Program.cs with the app's other ceilings (<see cref="Hosting.RateLimits"/>).
     /// </summary>
     public static WebApplication UseLorEvolveMcp(this WebApplication app)
     {
@@ -315,7 +315,6 @@ public static class McpSetup
             return next(http);
         });
 
-        app.UseRateLimiter();
         app.UseMcpGate();
         return app;
     }

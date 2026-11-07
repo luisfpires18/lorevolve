@@ -1,3 +1,4 @@
+using LorEvolve.Api.Hosting;
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using LorEvolve.Api.Features.Email;
@@ -33,8 +34,8 @@ public static class PasswordReset
 
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapPost("/forgot-password", ForgotAsync).WithName("ForgotPassword");
-        group.MapPost("/reset-password", ResetAsync).WithName("ResetPassword");
+        group.MapPost("/forgot-password", ForgotAsync).WithName("ForgotPassword").RequireRateLimiting(RateLimits.Auth);
+        group.MapPost("/reset-password", ResetAsync).WithName("ResetPassword").RequireRateLimiting(RateLimits.Auth);
     }
 
     /// <summary>

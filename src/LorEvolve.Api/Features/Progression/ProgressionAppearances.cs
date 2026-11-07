@@ -65,7 +65,7 @@ internal static class ProgressionAppearances
         var images = !withImages ? [] : (await db.EntityAppearanceImages.AsNoTracking()
                 .Where(image => ids.Contains(image.EntityAppearanceId))
                 .OrderBy(image => image.SortOrder)
-                .Select(image => new { image.EntityAppearanceId, Ref = new AppearanceImageRef(image.Id, image.ContentType, image.Width, image.Height, image.FileName) })
+                .Select(image => new { image.EntityAppearanceId, Ref = new AppearanceImageRef(image.Id, image.ContentType, image.Width, image.Height, image.FileName, image.DisplayKey != null) })
                 .ToListAsync(cancellationToken))
             .GroupBy(image => image.EntityAppearanceId)
             .ToDictionary(group => group.Key, group => group.Select(image => image.Ref).ToList());

@@ -106,6 +106,8 @@ export interface AppearanceImage {
   width: number
   height: number
   fileName: string | null
+  /** Whether a fitted display copy exists; false for a picture stored before display copies, so the original is drawn. */
+  hasDisplay: boolean
 }
 
 /**

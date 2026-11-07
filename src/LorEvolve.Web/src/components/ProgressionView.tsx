@@ -19,7 +19,7 @@ import { RevisionKind } from '../lore/revisions'
 import type { EntityDetail, FieldDefinition } from '../lore/types'
 import {
   abilityInputOf,
-  appearanceImageUrl,
+  appearanceDisplayUrl,
   appearanceInputOf,
   removeAppearanceImage,
   eraInputOf,
@@ -732,13 +732,7 @@ function EraPanel({
                 {look.images[0] ? (
                   <img
                     className="gallery__thumb"
-                    src={appearanceImageUrl(
-                      universeId,
-                      entry.id,
-                      look.id,
-                      look.images[0].id,
-                      'original',
-                    )}
+                    src={appearanceDisplayUrl(universeId, entry.id, look.id, look.images[0])}
                     alt=""
                     width={look.images[0].width}
                     height={look.images[0].height}
