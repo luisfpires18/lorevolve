@@ -42,7 +42,8 @@ internal static class StoryLoreReferences
                             entity.Image.CropX.Value,
                             entity.Image.CropY!.Value,
                             entity.Image.CropWidth!.Value,
-                            entity.Image.CropHeight!.Value)));
+                            entity.Image.CropHeight!.Value),
+                        entity.Image.DisplayKey != null));
 
     /// <summary>
     /// Every entry of this universe among <paramref name="ids"/>, read once - or nothing read at all when there

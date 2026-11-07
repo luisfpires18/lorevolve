@@ -28,7 +28,7 @@ public sealed record AppearanceInput(
     IReadOnlyList<Guid>? SceneIds);
 
 /// <summary>One picture of an appearance's gallery: its id names its address.</summary>
-public sealed record AppearanceImageRef(Guid Id, string ContentType, int Width, int Height, string? FileName);
+public sealed record AppearanceImageRef(Guid Id, string ContentType, int Width, int Height, string? FileName, bool HasDisplay);
 
 /// <summary>One appearance, read, with the pictures it holds now in their order.</summary>
 public sealed record AppearanceResponse(

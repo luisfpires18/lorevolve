@@ -343,7 +343,8 @@ public static class FamilyTreeEndpoints
                         entity.Image.CropX.Value,
                         entity.Image.CropY!.Value,
                         entity.Image.CropWidth!.Value,
-                        entity.Image.CropHeight!.Value)),
+                        entity.Image.CropHeight!.Value),
+                    entity.Image.DisplayKey != null),
         eligible.Contains(entity.EntityTypeId));
 
     private sealed record LinkRow(

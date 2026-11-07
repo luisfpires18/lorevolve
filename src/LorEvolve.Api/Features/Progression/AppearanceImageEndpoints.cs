@@ -26,6 +26,9 @@ public static class AppearanceImageKeys
 
     public static string Thumbnail(Guid universeId, Guid entityId, Guid appearanceId, Guid imageId) =>
         $"{Prefix(universeId, entityId, appearanceId, imageId)}/thumbnail.webp";
+
+    public static string Display(Guid universeId, Guid entityId, Guid appearanceId, Guid imageId) =>
+        $"{Prefix(universeId, entityId, appearanceId, imageId)}/display.webp";
 }
 
 /// <summary>
@@ -60,12 +63,17 @@ public static partial class AppearanceImageEndpoints
         group.MapDelete("/{imageId:guid}", RemoveAsync).WithName("RemoveAppearanceImage");
         group.MapGet("/{imageId:guid}/original", (Guid universeId, Guid entityId, Guid appearanceId, Guid imageId, ClaimsPrincipal principal,
                 LorEvolveDbContext db, IMediaObjectStore store, ILoggerFactory loggerFactory, HttpContext context, CancellationToken cancellationToken) =>
-            ReadAsync(universeId, entityId, appearanceId, imageId, thumbnail: false, principal, db, store, loggerFactory, context, cancellationToken))
+            ReadAsync(universeId, entityId, appearanceId, imageId, ImageVariant.Original, principal, db, store, loggerFactory, context, cancellationToken))
             .WithName("ReadAppearanceImageOriginal");
         group.MapGet("/{imageId:guid}/thumbnail", (Guid universeId, Guid entityId, Guid appearanceId, Guid imageId, ClaimsPrincipal principal,
                 LorEvolveDbContext db, IMediaObjectStore store, ILoggerFactory loggerFactory, HttpContext context, CancellationToken cancellationToken) =>
-            ReadAsync(universeId, entityId, appearanceId, imageId, thumbnail: true, principal, db, store, loggerFactory, context, cancellationToken))
+            ReadAsync(universeId, entityId, appearanceId, imageId, ImageVariant.Thumbnail, principal, db, store, loggerFactory, context, cancellationToken))
             .WithName("ReadAppearanceImageThumbnail");
+        // The fitted copy a gallery draws (audit 2026-11-07, A3); 404 for a picture without one, which `hasDisplay` says.
+        group.MapGet("/{imageId:guid}/display", (Guid universeId, Guid entityId, Guid appearanceId, Guid imageId, ClaimsPrincipal principal,
+                LorEvolveDbContext db, IMediaObjectStore store, ILoggerFactory loggerFactory, HttpContext context, CancellationToken cancellationToken) =>
+            ReadAsync(universeId, entityId, appearanceId, imageId, ImageVariant.Display, principal, db, store, loggerFactory, context, cancellationToken))
+            .WithName("ReadAppearanceImageDisplay");
 
         return endpoints;
     }
@@ -118,7 +126,7 @@ public static partial class AppearanceImageEndpoints
         await upload.CopyToAsync(bytes, cancellationToken);
         bytes.Position = 0;
 
-        var (prepared, rejection) = await ImagePreparation.PrepareAsync(bytes, bytes.Length, null, cancellationToken);
+        var (prepared, rejection) = await ImagePreparation.PrepareAsync(bytes, bytes.Length, null, ImagePreparation.DisplaySide, cancellationToken);
         if (prepared is null)
         {
             return Invalid(rejection!.Field, rejection.Message);
@@ -140,16 +148,19 @@ public static partial class AppearanceImageEndpoints
             var imageId = Guid.NewGuid();
             var originalKey = AppearanceImageKeys.Original(universeId, entityId, appearanceId, imageId, prepared.Extension);
             var thumbnailKey = AppearanceImageKeys.Thumbnail(universeId, entityId, appearanceId, imageId);
+            var displayKey = AppearanceImageKeys.Display(universeId, entityId, appearanceId, imageId);
 
             try
             {
                 bytes.Position = 0;
                 using var thumbnail = new MemoryStream(prepared.Thumbnail, writable: false);
+                using var display = new MemoryStream(prepared.Display!, writable: false);
                 await MediaObjectWrites.PutAllAsync(
                     store,
                     cancellationToken,
                     new PendingMediaObject(originalKey, bytes, prepared.ContentType),
-                    new PendingMediaObject(thumbnailKey, thumbnail, "image/webp"));
+                    new PendingMediaObject(thumbnailKey, thumbnail, "image/webp"),
+                    new PendingMediaObject(displayKey, display, "image/webp"));
             }
             catch (MediaStorageUnavailableException exception)
             {
@@ -158,12 +169,12 @@ public static partial class AppearanceImageEndpoints
             catch (MediaStorageFailedException exception)
             {
                 LogStorageFailure(logger, "upload", appearanceId, exception);
-                await SweepAsync(store, logger, originalKey, thumbnailKey);
+                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 return Unavailable(exception);
             }
             catch (Exception)
             {
-                await SweepAsync(store, logger, originalKey, thumbnailKey);
+                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 throw;
             }
 
@@ -173,6 +184,7 @@ public static partial class AppearanceImageEndpoints
                 EntityAppearanceId = appearanceId,
                 OriginalKey = originalKey,
                 ThumbnailKey = thumbnailKey,
+                DisplayKey = displayKey,
                 ContentType = prepared.ContentType,
                 FileName = FileNameLabel(file.FileName),
                 Width = prepared.Width,
@@ -189,18 +201,18 @@ public static partial class AppearanceImageEndpoints
             }
             catch (StorageQuotaExceededException)
             {
-                await SweepAsync(store, logger, originalKey, thumbnailKey);
+                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 return StorageQuota.Exceeded(isOwner: ownerId == principal.RequireUserId());
             }
             catch (Exception)
             {
-                await SweepAsync(store, logger, originalKey, thumbnailKey);
+                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 throw;
             }
 
             if (gone)
             {
-                await SweepAsync(store, logger, originalKey, thumbnailKey);
+                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 return Results.Problem(
                     title: "The appearance changed while this picture was uploading.",
                     detail: "It was removed, or its gallery filled up, somewhere else. This picture was not kept.",
@@ -208,7 +220,7 @@ public static partial class AppearanceImageEndpoints
                     extensions: new Dictionary<string, object?> { ["code"] = EntityImageEndpoints.ImageChangedCode });
             }
 
-            return Results.Ok(new AppearanceImageRef(row.Id, row.ContentType, row.Width, row.Height, row.FileName));
+            return Results.Ok(new AppearanceImageRef(row.Id, row.ContentType, row.Width, row.Height, row.FileName, row.DisplayKey != null));
         }
         finally
         {
@@ -353,7 +365,7 @@ public static partial class AppearanceImageEndpoints
                 statusCode: StatusCodes.Status409Conflict);
         }
 
-        var keys = new[] { image.OriginalKey, image.ThumbnailKey };
+        string[] keys = [.. new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>()];
         db.EntityAppearanceImages.Remove(image);
         await db.SaveChangesAsync(cancellationToken);
 
@@ -368,12 +380,14 @@ public static partial class AppearanceImageEndpoints
     /// Streams one picture to a member. Every id in the route is checked against the rows, so an address stops resolving the
     /// moment its picture is removed. A trashed entry's pictures stay readable, as its own picture does.
     /// </summary>
+    private enum ImageVariant { Original, Thumbnail, Display }
+
     private static async Task<IResult> ReadAsync(
         Guid universeId,
         Guid entityId,
         Guid appearanceId,
         Guid imageId,
-        bool thumbnail,
+        ImageVariant variant,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         IMediaObjectStore store,
@@ -391,10 +405,17 @@ public static partial class AppearanceImageEndpoints
                 && candidate.EntityAppearanceId == appearanceId
                 && candidate.Appearance!.EntityId == entityId
                 && candidate.Appearance.Entity!.UniverseId == universeId)
-            .Select(candidate => new { candidate.OriginalKey, candidate.ThumbnailKey, candidate.ContentType })
+            .Select(candidate => new { candidate.OriginalKey, candidate.ThumbnailKey, candidate.DisplayKey, candidate.ContentType })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (image is null)
+        var key = variant switch
+        {
+            ImageVariant.Thumbnail => image?.ThumbnailKey,
+            ImageVariant.Display => image?.DisplayKey,
+            _ => image?.OriginalKey,
+        };
+
+        if (image is null || key is null)
         {
             return Results.NotFound();
         }
@@ -402,7 +423,7 @@ public static partial class AppearanceImageEndpoints
         StoredMediaObject? stored;
         try
         {
-            stored = await store.GetAsync(thumbnail ? image.ThumbnailKey : image.OriginalKey, cancellationToken);
+            stored = await store.GetAsync(key, cancellationToken);
         }
         catch (MediaStorageException exception)
         {
@@ -423,7 +444,7 @@ public static partial class AppearanceImageEndpoints
         context.Response.Headers.CacheControl = "private, max-age=31536000, immutable";
         context.Response.Headers.XContentTypeOptions = "nosniff";
 
-        return Results.Stream(stored.Content, thumbnail ? "image/webp" : image.ContentType, enableRangeProcessing: false);
+        return Results.Stream(stored.Content, variant == ImageVariant.Original ? image.ContentType : "image/webp", enableRangeProcessing: false);
     }
 
     // ---------- Shared ----------

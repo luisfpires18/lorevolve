@@ -1171,6 +1171,10 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<double?>("CropY")
                         .HasColumnType("REAL");
 
+                    b.Property<string>("DisplayKey")
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("FileName")
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
@@ -2072,6 +2076,10 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<string>("ContentType")
                         .IsRequired()
                         .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayKey")
+                        .HasMaxLength(400)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("EntityAppearanceId")

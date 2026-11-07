@@ -365,14 +365,14 @@ public static partial class UniverseEndpoints
         // The stored keys, as written - never rebuilt from the naming convention - while the rows still exist.
         var pictureKeys = (await db.EntityImages
                 .Where(image => image.Entity!.UniverseId == universe.Id)
-                .Select(image => new { image.OriginalKey, image.ThumbnailKey })
+                .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
                 .ToListAsync(cancellationToken))
-            .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey })
+            .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>())
             .Concat((await db.EntityAppearanceImages
                     .Where(image => image.Appearance!.Entity!.UniverseId == universe.Id)
-                    .Select(image => new { image.OriginalKey, image.ThumbnailKey })
+                    .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
                     .ToListAsync(cancellationToken))
-                .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey }))
+                .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>()))
             .ToArray();
 
         var artworkKeys = (await db.UniverseArtworks

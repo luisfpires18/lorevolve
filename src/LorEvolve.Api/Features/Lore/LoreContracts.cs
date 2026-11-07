@@ -296,6 +296,9 @@ public sealed record FieldValueResponse(
 ///
 /// <paramref name="Crop"/> is the square the thumbnail was cut from. Null only for a picture
 /// stored before the author chose one, whose thumbnail is the centred square.
+///
+/// <paramref name="HasDisplay"/>: whether a fitted display copy exists at <c>/{assetId}/display</c>. False for a picture
+/// stored before display copies, restored from a backup or staged by the assistant: the client draws the original then.
 /// </summary>
 public sealed record EntityImageRef(
     Guid AssetId,
@@ -306,7 +309,8 @@ public sealed record EntityImageRef(
     string? FileName,
     long ByteSize,
     DateTime UploadedAt,
-    EntityImageCrop? Crop)
+    EntityImageCrop? Crop,
+    bool HasDisplay)
 {
     public static EntityImageRef Of(EntityImage image) => new(
         image.AssetId,
@@ -317,7 +321,8 @@ public sealed record EntityImageRef(
         image.FileName,
         image.ByteSize,
         image.UploadedAt,
-        EntityImageCrop.Of(image));
+        EntityImageCrop.Of(image),
+        image.DisplayKey != null);
 }
 
 /// <summary>

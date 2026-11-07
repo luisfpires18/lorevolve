@@ -88,7 +88,8 @@ public static class EntityEndpoints
                             entity.Image.CropX.Value,
                             entity.Image.CropY!.Value,
                             entity.Image.CropWidth!.Value,
-                            entity.Image.CropHeight!.Value)),
+                            entity.Image.CropHeight!.Value),
+                        entity.Image.DisplayKey != null),
             entity.UpdatedAt,
             null);
 
@@ -1608,7 +1609,8 @@ public static class EntityEndpoints
                                 candidate.Image.CropX.Value,
                                 candidate.Image.CropY!.Value,
                                 candidate.Image.CropWidth!.Value,
-                                candidate.Image.CropHeight!.Value)),
+                                candidate.Image.CropHeight!.Value),
+                            candidate.Image.DisplayKey != null),
                 candidate.CreatedAt,
                 candidate.UpdatedAt,
                 candidate.Version,
