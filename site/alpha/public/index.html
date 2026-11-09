@@ -14,8 +14,8 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png" />
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-    <link rel="stylesheet" href="/styles.css?v=20261101f" />
-    <script src="/app.js?v=20261101f" defer></script>
+    <link rel="stylesheet" href="/styles.css?v=20261109a" />
+    <script src="/app.js?v=20261109a" defer></script>
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "d6ae62bd19004d4cb642f10bc26d0616"}'></script>
   </head>
   <body class="portal">
@@ -31,7 +31,7 @@
     <main id="main" class="landing">
       <section class="landing-hero" aria-labelledby="hero-title">
         <h1 class="landing-hero__title" id="hero-title">
-          <span>Build the world.</span> <span>Evolve the story.</span> <span>Connect everything.</span>
+          Build a fictional world and write the stories that happen in it.
         </h1>
         <div class="landing-hero__side">
           <p class="landing-hero__lede">
@@ -39,12 +39,13 @@
             Each fact is written once, and the rest of the world reads it from there.
           </p>
           <div class="landing-hero__actions">
-            <button class="landing-button landing-button--primary" type="button" data-open-survey>
+            <a class="landing-button landing-button--primary" href="#example">See how it works</a>
+            <button class="landing-button" type="button" data-open-survey>
               Fill in the survey anonymously
             </button>
             <a class="landing-button" href="#" data-discord hidden>Join the Discord</a>
           </div>
-          <p class="landing-hero__note">About two minutes, every question optional. No name, no email.</p>
+          <p class="landing-hero__note">The survey takes about two minutes, every question optional. No name, no email.</p>
           <noscript>
             <p class="landing-hero__note">
               The survey needs JavaScript. You can also write to
@@ -52,6 +53,41 @@
             </p>
           </noscript>
         </div>
+      </section>
+
+      <section class="landing-section story" id="example" aria-labelledby="example-title">
+        <h2 class="landing-heading" id="example-title">One character, followed through the app</h2>
+        <p class="landing-lede">Frodo Baggins, in the demo universe.</p>
+        <ol class="story__steps">
+          <li class="story__step">
+            <div class="story__text">
+              <h3>Give him a page</h3>
+              <p>Frodo gets a lore entry: a portrait, an article, and the details his type asks for. This is the one place those details are written.</p>
+            </div>
+            <img class="index__shot" src="/assets/shots/story-1.webp?v=20261109a" alt="Frodo Baggins's lore page: his summary, his portrait and the Idea, Draft and Canon switch." width="1280" height="800" loading="lazy" decoding="async" />
+          </li>
+          <li class="story__step">
+            <div class="story__text">
+              <h3>Tie him to the rest of the world</h3>
+              <p>A relation makes him a bearer of the One Ring, with the dates it held. The Ring's page shows the same relation from its side.</p>
+            </div>
+            <img class="index__shot" src="/assets/shots/story-2.webp?v=20261109a" alt="Frodo's relations: student of Gandalf, served by Sam, and bearer of the One Ring with the dates it held." width="1280" height="800" loading="lazy" decoding="async" />
+          </li>
+          <li class="story__step">
+            <div class="story__text">
+              <h3>See him in the timeline</h3>
+              <p>Add the moment he leaves the Shire and name who took part. It sits on the timeline in the world's own calendar, beside every other moment and dated scene.</p>
+            </div>
+            <img class="index__shot" src="/assets/shots/story-3.webp?v=20261109a" alt="The timeline in Shire Reckoning dates, at the moment Frodo leaves the Shire." width="1280" height="800" loading="lazy" decoding="async" />
+          </li>
+          <li class="story__step">
+            <div class="story__text">
+              <h3>Write him into a scene</h3>
+              <p>The scene where he leaves the Shire has him as its point of view and lists the lore it involves. Type @ while writing and any entry becomes a link to its page.</p>
+            </div>
+            <img class="index__shot" src="/assets/shots/story-4.webp?v=20261109a" alt="The manuscript of The Fellowship of the Ring at the scene Frodo and Sam leave the Shire, with Frodo as its point of view and its lore listed." width="1280" height="800" loading="lazy" decoding="async" />
+          </li>
+        </ol>
       </section>
 
       <section class="landing-section walkthrough" id="walkthrough" aria-labelledby="walkthrough-title">
@@ -96,14 +132,14 @@
           </ul>
           <p class="index__group">What comes next</p>
           <ul>
-            <li><a href="#not-finished-yet">We're not finished yet</a></li>
+            <li><a href="#not-finished-yet">I'm not finished yet</a></li>
           </ul>
         </nav>
         <div class="index__pages">
         <p class="index__note">The screenshots use The Lord of the Rings purely as an example. LorEvolve does not own it and is not affiliated with its owners.</p>
         <article class="index__page" id="lore-entries" aria-labelledby="lore-entries-title">
           <h3 id="lore-entries-title">Lore entries</h3>
-          <p class="index__hook">A page for every character, place and item. Everything is generic and customizable.</p>
+          <p class="index__hook">A page for every character, place and item. You decide what each kind of entry records.</p>
           <img class="index__shot" src="/assets/shots/lore.webp?v=20261101d" alt="Aragorn's lore page: his other name, a summary, his portrait and the Idea, Draft and Canon switch." width="1280" height="800" loading="lazy" decoding="async" />
           <p>Every character, place, faction or object gets a page: a picture cropped the way you want, an article, the other names it goes by, tags, and the details its type asks for. You choose the fields you want to display on them.</p>
           <p>Make many entries at once with a Mass Create from a list of names, or create one on the spot while you link to it.</p>
@@ -222,7 +258,7 @@
             <source src="/assets/clips/mcp.mp4?v=20261101" type="video/mp4" />
           </video>
           <p>Switch on AI help for a universe and you get a chat assistant inside LorEvolve. As a Reader it searches and answers from your lore; as a Creator it can also propose changes, which wait for your approval.</p>
-          <p>It also provides a MCP, an open standard that lets an AI app use another app's data. Connect Claude or ChatGPT to one universe, so a writing assistant or a game engine works from the story you created instead of guessing, or bring a whole world in quickly, as proposals you review one by one.</p>
+          <p>You can also connect Claude or ChatGPT to one universe through MCP, an open standard that lets an AI app use another app's data. That way a writing assistant or a game engine works from the story you created instead of guessing. You can also bring a whole world in quickly, as proposals you review one by one.</p>
           <p class="index__why">Disconnect at any time. Leave AI help off and none of this exists in your world.</p>
         </article>
         <article class="index__page" id="backup-export-and-search" aria-labelledby="backup-export-and-search-title">
@@ -254,9 +290,9 @@
           <p class="index__why">Find readers, and find worlds worth reading.</p>
         </article>
         <article class="index__page" id="not-finished-yet" aria-labelledby="not-finished-yet-title">
-          <h3 id="not-finished-yet-title">We're not finished yet</h3>
-          <p class="index__hook">Tell us what your world needs.</p>
-          <p>Everything above is where LorEvolve is today, not where it stops. We're happy to hear what works, what doesn't and what's missing, and to build new things from what you tell us.</p>
+          <h3 id="not-finished-yet-title">I'm not finished yet</h3>
+          <p class="index__hook">Tell me what your world needs.</p>
+          <p>Everything above is where LorEvolve is today, not where it stops. I'm happy to hear what works, what doesn't and what's missing, and to build new things from what you tell me.</p>
           <p class="index__why">The anonymous survey is the quickest way to shape what comes next.</p>
         </article>
         </div>
