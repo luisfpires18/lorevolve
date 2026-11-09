@@ -270,7 +270,7 @@ export function MapForm(props: MapFormProps) {
               <legend className="field__label">The pins already on this map</legend>
               <p className="field__hint">
                 {pinCount === 0
-                  ? 'This map has no pins, so nothing is at risk - choose either way.'
+                  ? 'This map has no pins, so nothing is at risk. Choose either way.'
                   : `${pinCount} ${pinCount === 1 ? 'pin was' : 'pins were'} placed on the current picture. A new picture may put them somewhere else.`}
               </p>
               {map?.calibration ? (

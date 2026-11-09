@@ -839,7 +839,7 @@ export function IdeaEditor({
                       {context ? <span className="idearef__context">{context}</span> : null}
                       {reference.isInTrash ? (
                         <span className="idearef__trashed" data-testid="idea-reference-trashed">
-                          In the Trash - restore it to open it
+                          In the Trash: restore it to open it
                         </span>
                       ) : null}
                     </span>

@@ -1043,7 +1043,7 @@ function TypeDialog({
                 aria-describedby="type-parent-hint"
                 data-testid="type-parent"
               >
-                <option value="">None – a top-level type</option>
+                <option value="">None (a top-level type)</option>
                 {parents.map((node) => (
                   <option key={node.type.id} value={node.type.id}>
                     {typePathLabel(node)}
@@ -1052,7 +1052,7 @@ function TypeDialog({
               </select>
               <p className="field__hint" id="type-parent-hint">
                 Organises Lore: choosing a type there shows the entries of the types inside it too.
-                Nothing is inherited - each type keeps its own fields.
+                Nothing is inherited: each type keeps its own fields.
               </p>
               {fieldErrors.parent ? <p className="field__error">{fieldErrors.parent}</p> : null}
             </div>

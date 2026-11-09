@@ -321,7 +321,7 @@ export default function MapPage() {
 
       {calibrating ? (
         <p className="callout mapscreen__placing" role="status" data-testid="map-calibrating-hint">
-          Setting the scale: press the map to mark point A, then point B - or type where they are
+          Setting the scale: press the map to mark point A, then point B, or type where they are
           beside the map.
         </p>
       ) : null}

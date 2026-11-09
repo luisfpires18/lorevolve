@@ -99,7 +99,7 @@ export default function ProfilePage() {
             Appearance
           </h2>
           <p className="settings__note">
-            One theme for the whole of LorEvolve - the public portal and your workspace. It is kept
+            One theme for the whole of LorEvolve: the public portal and your workspace. It is kept
             in this browser.
           </p>
           <ThemeSwitch />
@@ -107,9 +107,9 @@ export default function ProfilePage() {
 
         <p className="profile__note">
           LorEvolve keeps only what it needs to sign you in: a username, an email address, and the
-          photo above if you add one - and the public name above, if you choose one, which is the
+          photo above if you add one, and the public name above if you choose one. That name is the
           only thing the public portal shows about you, with your author page's address. Your photo
-          is private - served only to your own signed-in session - unless you choose to show it on
+          is private, served only to your own signed-in session, unless you choose to show it on
           your author page, and it is never part of a universe backup.
         </p>
       </TabPanel>

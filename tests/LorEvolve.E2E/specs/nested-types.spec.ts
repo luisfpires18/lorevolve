@@ -277,7 +277,7 @@ test.describe('Types screen with nested types', () => {
     await page.getByTestId('new-type').click()
     const fresh = page.getByTestId('new-type-dialog')
     await expect(fresh.getByTestId('type-parent').locator('option').first()).toHaveText(
-      'None – a top-level type',
+      'None (a top-level type)',
     )
     await expect(fresh.getByTestId('type-family')).toBeVisible()
     await fresh.getByTestId('cancel-type').click()
