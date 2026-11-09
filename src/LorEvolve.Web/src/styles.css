@@ -13962,10 +13962,12 @@ body:has(.portal) {
   }
 
   /* LorEvolve is nine letters where LoreX was five: tracked as wide as the desktop bar's, it pushed a 360px page 20px
-     sideways in CI's wider fallback faces. This size and tracking win back about 25px (ADR 0067). */
+     sideways in CI's wider fallback faces. This size and tracking win back about 25px (ADR 0067). Literata sets the
+     word wider than the system serifs did, which put a 360px page 5px sideways; the smaller word and the pills'
+     tighter padding win back about 19px. */
   .portal__bar .wordmark {
-    font-size: 0.9rem;
-    letter-spacing: 0.02em;
+    font-size: 0.8125rem;
+    letter-spacing: 0.01em;
   }
 
   .portal__session {
@@ -13973,7 +13975,7 @@ body:has(.portal) {
   }
 
   .portal__pill {
-    padding: 0 0.625rem;
+    padding: 0 0.5rem;
     font-size: var(--text-sm);
   }
 }
