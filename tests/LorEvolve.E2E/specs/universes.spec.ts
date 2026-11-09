@@ -43,12 +43,18 @@ test.describe('universes', () => {
   test('create, open, edit, find, archive and filter', async ({ page }) => {
     await registerAndSignIn(page)
 
-    // A fresh account starts empty.
-    await expect(page.getByTestId('universe-empty')).toBeVisible()
+    // A fresh account starts on the form that names its first world, in place of an empty list.
+    await expect(page.getByTestId('universe-composer')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Name your first world' })).toBeVisible()
+    await expect(page.getByTestId('universe-empty')).toHaveCount(0)
 
     const name = unique('Ashen Reach ')
     await createUniverse(page, name, 'A drowned continent.')
     await expect(page.getByTestId('workspace-name')).toHaveText(name)
+    // A world with no lore says where to begin.
+    await expect(
+      page.getByTestId('overview-start').getByRole('link', { name: 'Begin in Lore' }),
+    ).toBeVisible()
     // The front page is the universe's contents: its name as the screen's heading, and a way into
     // each part of it - not a placeholder claiming the lore is somewhere else.
     await expect(page.getByRole('heading', { level: 1, name })).toBeVisible()

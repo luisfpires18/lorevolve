@@ -223,7 +223,7 @@ export default function ExplorePage() {
           <EmptyState
             testId="explore-no-match"
             title="No published worlds match."
-            hint="Try another word, category or genre - or see every world."
+            hint="Try another word, category or genre, or see every world."
             action={
               <button className="button button--secondary" type="button" onClick={clearAll}>
                 Clear search and filters

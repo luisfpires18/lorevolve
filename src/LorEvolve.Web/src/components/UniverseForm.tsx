@@ -49,6 +49,8 @@ interface UniverseFormProps {
    * colour on Appearance; the one it does not show is sent as it opened and replaced by the caller with what is stored.
    */
   fields?: 'all' | 'details' | 'colour'
+  /** A new universe's form starts in its name. False when the page showed the form unasked, so it does not pull focus. */
+  takesFocus?: boolean
   submitLabel: string
   busyLabel: string
   onSubmit: (input: UniverseInput) => Promise<unknown>
@@ -59,6 +61,7 @@ interface UniverseFormProps {
 export function UniverseForm({
   initial,
   fields = 'all',
+  takesFocus = true,
   submitLabel,
   busyLabel,
   onSubmit,
@@ -150,7 +153,7 @@ export function UniverseForm({
             label="Name"
             name="name"
             // Opening a new universe starts at its name; Settings opens on the page, not in a field.
-            autoFocus={!initial}
+            autoFocus={!initial && takesFocus}
             required
             maxLength={120}
             dir="auto"
