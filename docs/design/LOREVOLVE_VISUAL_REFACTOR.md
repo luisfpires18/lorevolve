@@ -306,6 +306,7 @@ one-off component per screen.
   as Impeccable's Operate mode also says.
 - **Taste's** em-dash ban is not applied to product copy. "Chapter 1 — Low Water" is a sentence of
   LorEvolve's own (`ContainerName`), and copy is out of scope.
+  (Later: copy has its own guidance in `PRODUCT_VOICE.md`. The scope decision above stands for this document.)
 - **The detector's "side-tab" rule** is applied to type stripes and callouts, not to the universe
   card's spine: that is a deliberate book spine carrying the universe accent, and it stays.
 - **Impeccable** expects `PRODUCT.md` and `DESIGN.md` at the root, `.impeccable/` critique
