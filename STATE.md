@@ -40,7 +40,9 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 As of 2026-11-09 `dev` is ahead of `master` with the Human-Crafted Experience work, on DEV and not in PROD: the
 product voice guide (`docs/design/PRODUCT_VOICE.md`), the first-visit create form and the empty-universe line, Literata
-as the self-hosted book face, the calmer launch opening and the AI Changes icon. The demo page (`demo` branch, live)
+as the self-hosted book face (with the phone header and the 600px article measure adjusted for it), the calmer launch
+opening, the AI Changes icon and the microcopy pass (no dashes as connectors, email footers). Last DEV deploy: run
+42678475363 on `dev` `6b6fa2e`, succeeded. The demo page (`demo` branch, live)
 has the plain hero, the four-step Frodo example and Literata. Still open there: the step 4 screenshot shows an empty
 scene, and an original showcase world is deferred.
 
