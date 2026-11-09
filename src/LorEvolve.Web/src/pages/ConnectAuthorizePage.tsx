@@ -348,8 +348,8 @@ function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
       <p className="consent__identity" id="consent-propose-what">
         A Creator can send lore entries, articles, relationships, stories, scenes, prose, plot,
         timeline moments, world rules
-        {details.canProposeSchema ? ', lore types, fields and groups' : ''} and - if you own this
-        universe - your ideas to Pending AI Changes in LorEvolve, as you. Removals only go to the
+        {details.canProposeSchema ? ', lore types, fields and groups' : ''} and, if you own this
+        universe, your ideas to Pending AI Changes in LorEvolve, as you. Removals only go to the
         Trash, and a field is only ever archived. Nothing changes until you, or the universe&rsquo;s
         owner or an Editor, approves it there. You can make it a Reader again in Connected apps.
       </p>

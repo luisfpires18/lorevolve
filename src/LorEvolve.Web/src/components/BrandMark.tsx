@@ -4,7 +4,7 @@
  * there from 031 to 0069) - and the name says so, so nobody has to recognise a logo, or hover for a tooltip, to know
  * where it goes. Explore is always a link of its own as well.
  */
-export const BRAND_LINK_LABEL = 'LorEvolve – Home'
+export const BRAND_LINK_LABEL = 'LorEvolve, home'
 
 /**
  * The LorEvolve symbol: three interlocking rings around a star, the owner's own artwork.

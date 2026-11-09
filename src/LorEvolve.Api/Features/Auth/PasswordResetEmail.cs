@@ -24,7 +24,7 @@ public static class PasswordResetEmail
 
             The link works once, for 1 hour. If you didn't ask for this, you can ignore it: your password stays as it is.
 
-            LorEvolve - https://lorevolve.com
+            LorEvolve: https://lorevolve.com
             Questions: support@lorevolve.com
             """;
 

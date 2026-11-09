@@ -10,7 +10,7 @@ import { VERSION_LABEL } from '../lib/buildInfo'
  * its colours are the frame's own tokens, so it is night on the portal and paper in the workspace. No Community, Legal
  * or Support group: LorEvolve has no such destination yet, and an empty heading would be worse than none.
  *
- * The wordmark is named by its own word, not "LorEvolve – Home": the bar's brand is the one link of that name on every
+ * The wordmark is named by its own word, not "LorEvolve, home": the bar's brand is the one link of that name on every
  * screen. Inside the workspace the Product group holds Explore alone - a link to the screen you are on says nothing.
  * Nothing is drawn for the session until it is known, so a signed-in visitor never sees Create account flash first.
  */

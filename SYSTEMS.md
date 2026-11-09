@@ -333,6 +333,7 @@ Repository index. Paths and one-line responsibilities only.
 | `public/icon-*.png` + `apple-touch-icon.png` + `favicon-*.png` | The install and tab icons: the LorEvolve mark, transparent everywhere, maskable and Apple included (owner, 2026-10-28; iOS still paints clear pixels black), at the padding each one needs. All rendered from `assets/brand/lorevolve-icon.png` by `scripts/render-icons.py`. |
 | `public/launch-logo.webp` | The launch layer's logo, 1200x600, encoded once from `assets/brand/lorevolve-logo.png` (command in `render-icons.py`). |
 | `public/brand-mark.png` | The same mark, transparent, for use inside the product. |
+| `public/fonts/` | Literata, the book face `--display` leads with: `literata-roman.woff2` and `literata-italic.woff2` (weights 400 to 700, Latin and Latin Extended, subset with fonttools from google/fonts) and its SIL Open Font License. The demo page carries its own copy of the upright file in `site/alpha/public/assets/fonts/`. |
 | `src/main.tsx` | React entry point; starts fetching the code of the screen at the address (`preloadPath`) before the first render. |
 | `src/pwa.ts` | Registers the service worker, in production builds only, as `/sw.js?build=<BUILD_ID>`. |
 | `src/lib/launch.ts` | 043.5: lifts the launch layer once the logo has arrived and the shell shows no pending plate (or after 8 s), restores the theme colour and removes the layer; in a browser tab it removes the unused layer at once. Knows no routes or session. |
@@ -699,6 +700,7 @@ Repository index. Paths and one-line responsibilities only.
 | `architecture/audits/2026-10-29-performance-audit.md` | Performance audit: measured baseline (bundle, page loads, interactions, wire, API reads), ranked findings P01..P19, the six quick wins and their before/after numbers. |
 | `architecture/audits/2026-11-07-performance-security-audit.md` | Performance and security audit against the five "vibe coder" slides and current practice: findings A1..A23 (code-read, not measured), what is done on its branch, what is listed, the owner decisions (Cloudflare proxy, launch opening kept), and what the earlier audits still leave open. |
 | `design/LOREVOLVE_VISUAL_REFACTOR.md` | The visual design contract for the refactor (Tasks 002-007): audit findings, principles, tokens, components, cards, actions, responsive and accessibility rules, and the task plan. |
+| `design/PRODUCT_VOICE.md` | How LorEvolve's own copy is written (demo page, labels, empty states, errors, emails): who speaks, the rules, examples to change and to leave alone. |
 | `history/` | Archived, unmaintained records: `state-archive-2026-10.md` (STATE.md before the trim), `design/` (decided plans), `testing/` (one-time manual passes for merged phases). |
 | `deployment/azure-dev.md` | The DEV runbook: topology, setup, deploy, limitations, troubleshooting. |
 | `deployment/azure-prod.md` | The PROD runbook (`lorevolve.com`): what differs from DEV, first setup, release, rollback. |
