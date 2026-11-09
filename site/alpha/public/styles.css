@@ -5,13 +5,24 @@
   landing changes. Dark by default, parchment when the system asks for light.
 */
 
+/* The app's book face, served from this host (assets/fonts, SIL Open Font License beside it). Upright only: the
+   page sets nothing in italic. Text shows in the next serif of --display until it arrives. */
+@font-face {
+  font-family: 'Literata';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/assets/fonts/literata-roman.woff2') format('woff2');
+}
+
 :root {
   --radius-xs: 3px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-full: 999px;
 
-  --display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --display:
+    'Literata', 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
   --ui:
     Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui,
     sans-serif;
