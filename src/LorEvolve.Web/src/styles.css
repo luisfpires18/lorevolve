@@ -13,6 +13,27 @@
   from before the refactor: Tasks 003-007 move each screen onto the scale as they touch it.
 */
 
+/*
+  The book face, served from this origin so every device reads the same serif (public/fonts, SIL Open Font
+  License beside the files). Latin and Latin Extended, weights 400 to 700; text shows in the next serif of
+  --display until it arrives, and any other script stays on that fallback.
+*/
+@font-face {
+  font-family: 'Literata';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/literata-roman.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Literata';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/literata-italic.woff2') format('woff2');
+}
+
 :root {
   /* Surfaces: sunken, canvas, raised. Rising is lighter. */
   --paper: #f2ede3;
@@ -62,7 +83,8 @@
   --radius-full: 999px;
 
   /* Type. The two large steps scale with the window between a phone's size and a laptop's. */
-  --display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --display:
+    'Literata', 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
   --ui:
     -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
   --text-xs: 0.75rem;
