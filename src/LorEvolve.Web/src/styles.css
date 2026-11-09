@@ -6604,7 +6604,9 @@ html:has(.viewer[open]) {
   font-family: var(--display);
   font-size: 1.125rem;
   line-height: 1.72;
-  max-width: 62ch;
+  /* 62 characters, and never past the 600px the entry's columns are built around: Literata's wider figures put 62ch
+     at 620px. */
+  max-width: min(62ch, 37.5rem);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
