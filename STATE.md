@@ -1,6 +1,6 @@
 # STATE
 
-Current operational state only, as of 2026-11-07. Trim instead of appending: when work merges, delete its line here;
+Current operational state only, as of 2026-11-09. Trim instead of appending: when work merges, delete its line here;
 git history and ADRs keep the detail. History before this trim: `docs/history/state-archive-2026-10.md`.
 
 ## Pointers
@@ -38,7 +38,13 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-07 `origin/master..origin/dev` is empty: everything on `dev` is in PROD.
+As of 2026-11-09 `dev` is ahead of `master` with the Human-Crafted Experience work, on DEV and not in PROD: the
+product voice guide (`docs/design/PRODUCT_VOICE.md`), the first-visit create form and the empty-universe line, Literata
+as the self-hosted book face (with the phone header and the 600px article measure adjusted for it), the calmer launch
+opening, the AI Changes icon and the microcopy pass (no dashes as connectors, email footers). Last DEV deploy: run
+42678475363 on `dev` `6b6fa2e`, succeeded. The demo page (`demo` branch, live)
+has the plain hero, the four-step Frodo example and Literata. Still open there: the step 4 screenshot shows an empty
+scene, and an original showcase world is deferred.
 
 ## In flight
 

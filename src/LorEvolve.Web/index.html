@@ -128,7 +128,7 @@
           opacity: 0;
         }
       }
-      /* The opening. Four forms of story - a book, a world, a game, a screen - in the wordmark's ivory, each with a spark
+      /* The opening. Four forms of story - a book, a world, a game, a screen - in the wordmark's ivory, each with a dot
          of its red, draw themselves around the logo and drift on their orbit; then a red edge stands at the right and the
          layer wipes left onto the app. Transform, opacity and stroke only; nothing loops, so launch.ts can wait on it. */
       .launch__form {
@@ -193,7 +193,6 @@
         align-self: stretch;
         width: 5px;
         background: #e5483c;
-        box-shadow: 0 0 34px 5px rgba(229, 72, 60, 0.65);
         transform: scaleY(0);
         transform-origin: bottom;
       }
@@ -222,17 +221,11 @@
         }
       }
       @keyframes launch-spark {
-        0% {
+        from {
           opacity: 0;
-          transform: scale(0.2);
         }
-        45% {
+        to {
           opacity: 1;
-          transform: scale(1.5);
-        }
-        100% {
-          opacity: 1;
-          transform: scale(1);
         }
       }
       @keyframes launch-edge {

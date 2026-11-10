@@ -223,7 +223,7 @@ export default function ExplorePage() {
           <EmptyState
             testId="explore-no-match"
             title="No published worlds match."
-            hint="Try another word, category or genre - or see every world."
+            hint="Try another word, category or genre, or see every world."
             action={
               <button className="button button--secondary" type="button" onClick={clearAll}>
                 Clear search and filters
@@ -234,8 +234,8 @@ export default function ExplorePage() {
 
         {ready && ready.items.length > 0 ? (
           <ul className="explore-grid" data-testid="explore-list">
-            {ready.items.map((world) => (
-              <WorldCard key={world.slug} world={world} />
+            {ready.items.map((world, index) => (
+              <WorldCard key={world.slug} world={world} eager={index < 6} />
             ))}
           </ul>
         ) : null}

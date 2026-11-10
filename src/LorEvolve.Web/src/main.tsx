@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import { preloadPath } from './screens'
+import { warmStart } from './lib/warmStart'
 import { watchTheme } from './lib/theme'
 import { revealWhenReady } from './lib/launch'
 import { registerServiceWorker } from './pwa'
@@ -23,6 +24,8 @@ window.addEventListener('vite:preloadError', (event) => {
 // The screen this address opens on, fetched now, beside the session check, rather than once the session and the
 // universe have answered.
 preloadPath(window.location.pathname)
+// And the data that screen will ask for, started now rather than once the session and the universe have answered.
+warmStart(window.location.pathname, window.location.search)
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {

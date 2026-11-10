@@ -259,7 +259,7 @@ export default function UniverseSettings() {
               One archive of this universe that LorEvolve can restore: its lore, types and fields,
               articles, relationships, timeline, stories and scenes, maps, world rules, ideas, your
               private notes, the Trash, saved versions and every picture as you uploaded it. No
-              account data, collaborators or comments, and not whether it is public - a restored
+              account data, collaborators or comments, and not whether it is public: a restored
               universe is always private.
             </p>
             <button
@@ -272,8 +272,8 @@ export default function UniverseSettings() {
               {exporting === 'backup' ? 'Preparing backup' : 'Download backup'}
             </button>
             <p className="settings__note">
-              A readable export is the same universe as Markdown pages - one per entry, story, scene
-              and map, with the pictures beside them - to read in any editor or keep. It leaves out
+              A readable export is the same universe as Markdown pages, one per entry, story, scene
+              and map, with the pictures beside them, to read in any editor or keep. It leaves out
               the Trash and saved versions, and LorEvolve cannot restore from it.
             </p>
             <button
@@ -300,7 +300,7 @@ export default function UniverseSettings() {
           <section className="settings__section">
             <h2 className="settings__heading">Restore</h2>
             <p className="settings__note">
-              A backup is restored as a new universe beside this one - never over it.
+              A backup is restored as a new universe beside this one, never over it.
             </p>
             <Link
               className="button button--secondary"

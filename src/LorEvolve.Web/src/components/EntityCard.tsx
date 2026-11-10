@@ -17,16 +17,19 @@ export function EntityCard({
   universeId,
   entity,
   selection,
+  eager = false,
 }: {
   universeId: string
   entity: EntitySummary
+  /** A card in the first rows: its picture is fetched at once and first; the rest wait to be scrolled near. */
+  eager?: boolean
   /**
    * While Lore is selecting, the card is not a link: it is the label of its own checkbox, so pressing anywhere on it -
    * or Space on the box - selects it, and the box says whether it is.
    */
   selection?: { checked: boolean; onToggle: () => void }
 }) {
-  const body = <CardBody universeId={universeId} entity={entity} />
+  const body = <CardBody universeId={universeId} entity={entity} eager={eager} />
 
   if (selection) {
     return (
@@ -61,7 +64,15 @@ export function EntityCard({
   )
 }
 
-function CardBody({ universeId, entity }: { universeId: string; entity: EntitySummary }) {
+function CardBody({
+  universeId,
+  entity,
+  eager,
+}: {
+  universeId: string
+  entity: EntitySummary
+  eager: boolean
+}) {
   return (
     <>
       <EntityTile
@@ -71,6 +82,7 @@ function CardBody({ universeId, entity }: { universeId: string; entity: EntitySu
         image={entity.image}
         typeIcon={entity.entityTypeIcon}
         typeAccent={entity.entityTypeAccentColor}
+        eager={eager}
       />
 
       <span className="entitycard__body">

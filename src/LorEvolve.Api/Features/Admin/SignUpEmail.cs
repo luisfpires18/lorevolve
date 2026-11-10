@@ -30,7 +30,7 @@ public static class SignUpEmail
 
             If you weren't expecting this, you can ignore it: nothing happens unless the link is used.
 
-            LorEvolve - https://lorevolve.com
+            LorEvolve: https://lorevolve.com
             Questions: support@lorevolve.com
             """;
 

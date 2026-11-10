@@ -23,6 +23,9 @@ export default function UniversesPage() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [isCreating, setIsCreating] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  // No universe at all, archived ones included: the page opens on the form that names the first one.
+  const [isFirstRun, setIsFirstRun] = useState(false)
+  const [isDismissed, setIsDismissed] = useState(false)
 
   // A universe's Settings links here with `?restore`, because restoring makes a universe rather than changing one.
   const isRestoring = searchParams.has('restore')
@@ -50,7 +53,23 @@ export default function UniversesPage() {
   useEffect(() => {
     const controller = new AbortController()
     listUniverses({ search: searched, includeArchived, page }, controller.signal)
-      .then((result) => setState({ kind: 'ready', page: result }))
+      .then(async (result) => {
+        // An empty Active list may only mean everything is archived, so that case asks once more.
+        let nothing = false
+        if (result.items.length === 0 && !searched.trim() && page === 1) {
+          nothing =
+            includeArchived ||
+            (
+              await listUniverses(
+                { search: '', includeArchived: true, page: 1 },
+                controller.signal,
+                1,
+              )
+            ).totalCount === 0
+        }
+        setIsFirstRun(nothing)
+        setState({ kind: 'ready', page: result })
+      })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setState({
@@ -71,6 +90,7 @@ export default function UniversesPage() {
 
   const result = state.kind === 'ready' ? state.page : null
   const isFiltered = search.trim().length > 0
+  const isStarting = isFirstRun && !isDismissed && !isRestoring
 
   return (
     <>
@@ -112,13 +132,25 @@ export default function UniversesPage() {
         />
       ) : null}
 
-      {isCreating ? (
-        <section className="composer" aria-label="Create a universe">
-          <h2 className="composer__title">Name a new world</h2>
+      {isCreating || isStarting ? (
+        <section
+          className="composer"
+          aria-label="Create a universe"
+          data-testid="universe-composer"
+        >
+          <h2 className="composer__title">
+            {isFirstRun ? 'Name your first world' : 'Name a new world'}
+          </h2>
           <UniverseForm
+            // Asked for, the form starts in its name; offered on a first visit, it leaves focus where it was.
+            key={isCreating ? 'asked' : 'offered'}
+            takesFocus={isCreating}
             submitLabel="Create universe"
             busyLabel="Creating"
-            onCancel={() => setIsCreating(false)}
+            onCancel={() => {
+              setIsCreating(false)
+              setIsDismissed(true)
+            }}
             onSubmit={async (input) => {
               const created = await createUniverse(input)
               await navigate(`/app/universes/${created.id}`)
@@ -200,7 +232,7 @@ export default function UniversesPage() {
         </ul>
       ) : null}
 
-      {result && result.items.length === 0 ? (
+      {result && result.items.length === 0 && !isStarting ? (
         <EmptyState
           testId="universe-empty"
           title={<>{isFiltered ? 'Nothing here by that name.' : 'No universes yet.'}</>}

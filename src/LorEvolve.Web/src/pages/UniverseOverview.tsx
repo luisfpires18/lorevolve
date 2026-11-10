@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { ConnectToAi } from '../components/ConnectToAi'
 import { WipBadge } from '../components/WipBadge'
 import { PageHeader } from '../components/PageHeader'
 import { formatDate } from '../lib/dates'
+import { listEntities } from '../lore/api'
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, useUniverseAccess } from '../universes/access'
 import { offered, REVIEW, RULES, WORLD, WRITING, type Section } from '../universes/sections'
 import { UniverseRole } from '../universes/types'
@@ -23,12 +25,34 @@ const CONTENTS = [
  * count would mean reading every list just to print a number, and a contents page does not need
  * one to say where things are.
  *
+ * One question is asked, of someone who can write here: is there any lore at all? A world with none
+ * gets a line saying where to begin, above the contents.
+ *
  * The world's parts take the full width; the shorter groups sit side by side once there is room.
  */
 export default function UniverseOverview() {
   const { universe } = useOutletContext<WorkspaceContext>()
   const access = useUniverseAccess()
   const shared = universe.accessRole !== UniverseRole.Owner
+  const canWrite = access.editContent
+
+  // Which universe was found to have no lore; another universe's answer never shows on this one.
+  const [emptyId, setEmptyId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!canWrite) return
+    const controller = new AbortController()
+    listEntities(
+      universe.id,
+      { search: '', entityTypeId: null, canonStatus: null, tag: null, page: 1, pageSize: 1 },
+      controller.signal,
+    )
+      .then((entries) => setEmptyId(entries.totalCount === 0 ? universe.id : null))
+      // The line is a hint; without an answer the contents stand by themselves.
+      .catch(() => undefined)
+    return () => {
+      controller.abort()
+    }
+  }, [universe.id, canWrite])
 
   const groups = CONTENTS.map((group) => ({
     ...group,
@@ -74,6 +98,13 @@ export default function UniverseOverview() {
           </>
         }
       />
+
+      {canWrite && emptyId === universe.id ? (
+        <p className="notice" data-testid="overview-start">
+          Nothing is written here yet. <Link to="lore">Begin in Lore</Link>, where each character,
+          place and thing gets a page.
+        </p>
+      ) : null}
 
       {world ? <Contents {...world} /> : null}
       {rest.length > 0 ? (

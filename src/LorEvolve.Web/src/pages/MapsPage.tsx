@@ -156,7 +156,7 @@ export default function MapsPage() {
             title="No maps yet."
             hint={
               access.editContent
-                ? 'Upload a picture of this world - a continent, a city, a ship - and pin the Lore that lives on it.'
+                ? 'Upload a picture of this world, such as a continent, a city or a ship, and pin the Lore that lives on it.'
                 : 'Nobody has uploaded a map of this world yet.'
             }
             action={

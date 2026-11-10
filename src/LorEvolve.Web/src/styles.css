@@ -13,6 +13,27 @@
   from before the refactor: Tasks 003-007 move each screen onto the scale as they touch it.
 */
 
+/*
+  The book face, served from this origin so every device reads the same serif (public/fonts, SIL Open Font
+  License beside the files). Latin and Latin Extended, weights 400 to 700; text shows in the next serif of
+  --display until it arrives, and any other script stays on that fallback.
+*/
+@font-face {
+  font-family: 'Literata';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/literata-roman.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Literata';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/literata-italic.woff2') format('woff2');
+}
+
 :root {
   /* Surfaces: sunken, canvas, raised. Rising is lighter. */
   --paper: #f2ede3;
@@ -62,7 +83,8 @@
   --radius-full: 999px;
 
   /* Type. The two large steps scale with the window between a phone's size and a laptop's. */
-  --display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --display:
+    'Literata', 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
   --ui:
     -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
   --text-xs: 0.75rem;
@@ -5805,22 +5827,33 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   margin-top: var(--space-6);
 }
 
-.entry__layout[data-picture='true'][data-shape='portrait'],
-.entry__layout[data-picture='true'][data-shape='square'] {
+.entry__layout[data-picture='true'] {
   grid-template-rows: auto 1fr;
   grid-template-areas:
     'main media'
     'main rail';
 }
 
-.entry__layout[data-picture='true'][data-shape='landscape'] {
-  grid-template-areas:
-    'media media'
-    'main rail';
+/* Progression, Relations and History: the view on the left, the picture held on the right while it scrolls,
+   whatever the picture's shape. No picture, the view takes the width. */
+.entry__layout.entry__layout--view {
+  grid-template-rows: none;
+  grid-template-areas: 'main media';
+}
+
+.entry__layout--view[data-picture='false'] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'main';
+}
+
+.entry__layout--view .entry__media {
+  position: sticky;
+  top: var(--space-6);
 }
 
 .entry__media {
   grid-area: media;
+  justify-self: end;
   position: relative;
   width: fit-content;
   max-width: 100%;
@@ -6563,13 +6596,19 @@ html:has(.viewer[open]) {
   outline: none;
 }
 
-/* Shared prose styling for the editor surface and the read-only article. */
+/* Shared prose styling for the editor surface and the read-only article. The white space and wrapping rules are the
+   ones ProseMirror sets on the editor: the read-only article is drawn without it (ArticleView), so an author's double
+   space, a run of newlines and an unbroken long word all read the same on both. */
 .editor__surface,
 .article__body {
   font-family: var(--display);
   font-size: 1.125rem;
   line-height: 1.72;
-  max-width: 62ch;
+  /* 62 characters, and never past the 600px the entry's columns are built around: Literata's wider figures put 62ch
+     at 620px. */
+  max-width: min(62ch, 37.5rem);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .editor__surface > * + *,
@@ -8389,7 +8428,19 @@ html:has(.viewer[open]) {
       'rail';
   }
 
+  .entry__layout--view[data-picture='true'] {
+    grid-template-areas:
+      'media'
+      'main';
+  }
+
+  .entry__layout--view .entry__media {
+    position: relative;
+    top: auto;
+  }
+
   .entry__media {
+    justify-self: center;
     margin-inline: auto;
   }
 
@@ -13913,10 +13964,12 @@ body:has(.portal) {
   }
 
   /* LorEvolve is nine letters where LoreX was five: tracked as wide as the desktop bar's, it pushed a 360px page 20px
-     sideways in CI's wider fallback faces. This size and tracking win back about 25px (ADR 0067). */
+     sideways in CI's wider fallback faces. This size and tracking win back about 25px (ADR 0067). Literata sets the
+     word wider than the system serifs did, which put a 360px page 5px sideways; the smaller word and the pills'
+     tighter padding win back about 19px. */
   .portal__bar .wordmark {
-    font-size: 0.9rem;
-    letter-spacing: 0.02em;
+    font-size: 0.8125rem;
+    letter-spacing: 0.01em;
   }
 
   .portal__session {
@@ -13924,7 +13977,7 @@ body:has(.portal) {
   }
 
   .portal__pill {
-    padding: 0 0.625rem;
+    padding: 0 0.5rem;
     font-size: var(--text-sm);
   }
 }
