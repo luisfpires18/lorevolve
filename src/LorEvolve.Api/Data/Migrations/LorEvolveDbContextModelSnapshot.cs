@@ -806,21 +806,6 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("IdeaPlotArcReferences", (string)null);
                 });
 
-            modelBuilder.Entity("LorEvolve.Api.Features.Ideas.IdeaPlotBeatReference", b =>
-                {
-                    b.Property<Guid>("IdeaId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("PlotBeatId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("IdeaId", "PlotBeatId");
-
-                    b.HasIndex("PlotBeatId");
-
-                    b.ToTable("IdeaPlotBeatReferences", (string)null);
-                });
-
             modelBuilder.Entity("LorEvolve.Api.Features.Ideas.IdeaSceneReference", b =>
                 {
                     b.Property<Guid>("IdeaId")
@@ -2817,6 +2802,21 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("Chapters", (string)null);
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Stories.ChapterArc", b =>
+                {
+                    b.Property<Guid>("ChapterId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PlotArcId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ChapterId");
+
+                    b.HasIndex("PlotArcId");
+
+                    b.ToTable("ChapterArcs", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Stories.PlotArc", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2863,81 +2863,6 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasFilter("\"DeletedAt\" IS NULL");
 
                     b.ToTable("PlotArcs", (string)null);
-                });
-
-            modelBuilder.Entity("LorEvolve.Api.Features.Stories.PlotBeat", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(10000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("PlotArcId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlotArcId");
-
-                    b.HasIndex("PlotArcId", "SortOrder")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
-
-                    b.ToTable("PlotBeats", (string)null);
-                });
-
-            modelBuilder.Entity("LorEvolve.Api.Features.Stories.PlotBeatEntity", b =>
-                {
-                    b.Property<Guid>("PlotBeatId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("PlotBeatId", "EntityId");
-
-                    b.HasIndex("EntityId");
-
-                    b.ToTable("PlotBeatEntities", (string)null);
-                });
-
-            modelBuilder.Entity("LorEvolve.Api.Features.Stories.PlotBeatScene", b =>
-                {
-                    b.Property<Guid>("PlotBeatId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("SceneId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("PlotBeatId", "SceneId");
-
-                    b.HasIndex("SceneId");
-
-                    b.ToTable("PlotBeatScenes", (string)null);
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Stories.Scene", b =>
@@ -3025,6 +2950,41 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasFilter("\"ChapterId\" IS NULL AND \"DeletedAt\" IS NULL");
 
                     b.ToTable("Scenes", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Stories.SceneBeat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SceneId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SceneId", "SortOrder")
+                        .IsUnique();
+
+                    b.ToTable("SceneBeats", (string)null);
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Stories.SceneEntityLink", b =>
@@ -4080,25 +4040,6 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("PlotArc");
                 });
 
-            modelBuilder.Entity("LorEvolve.Api.Features.Ideas.IdeaPlotBeatReference", b =>
-                {
-                    b.HasOne("LorEvolve.Api.Features.Ideas.Idea", "Idea")
-                        .WithMany("PlotBeatReferences")
-                        .HasForeignKey("IdeaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LorEvolve.Api.Features.Stories.PlotBeat", "PlotBeat")
-                        .WithMany()
-                        .HasForeignKey("PlotBeatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Idea");
-
-                    b.Navigation("PlotBeat");
-                });
-
             modelBuilder.Entity("LorEvolve.Api.Features.Ideas.IdeaSceneReference", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Ideas.Idea", "Idea")
@@ -5097,6 +5038,25 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Story");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Stories.ChapterArc", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Stories.Chapter", "Chapter")
+                        .WithOne("ArcLink")
+                        .HasForeignKey("LorEvolve.Api.Features.Stories.ChapterArc", "ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LorEvolve.Api.Features.Stories.PlotArc", "PlotArc")
+                        .WithMany("ChapterLinks")
+                        .HasForeignKey("PlotArcId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chapter");
+
+                    b.Navigation("PlotArc");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Stories.PlotArc", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Stories.Story", "Story")
@@ -5106,55 +5066,6 @@ namespace LorEvolve.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Story");
-                });
-
-            modelBuilder.Entity("LorEvolve.Api.Features.Stories.PlotBeat", b =>
-                {
-                    b.HasOne("LorEvolve.Api.Features.Stories.PlotArc", "PlotArc")
-                        .WithMany("Beats")
-                        .HasForeignKey("PlotArcId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PlotArc");
-                });
-
-            modelBuilder.Entity("LorEvolve.Api.Features.Stories.PlotBeatEntity", b =>
-                {
-                    b.HasOne("LorEvolve.Api.Features.Lore.LoreEntity", "Entity")
-                        .WithMany()
-                        .HasForeignKey("EntityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LorEvolve.Api.Features.Stories.PlotBeat", "PlotBeat")
-                        .WithMany("EntityLinks")
-                        .HasForeignKey("PlotBeatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Entity");
-
-                    b.Navigation("PlotBeat");
-                });
-
-            modelBuilder.Entity("LorEvolve.Api.Features.Stories.PlotBeatScene", b =>
-                {
-                    b.HasOne("LorEvolve.Api.Features.Stories.PlotBeat", "PlotBeat")
-                        .WithMany("SceneLinks")
-                        .HasForeignKey("PlotBeatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LorEvolve.Api.Features.Stories.Scene", "Scene")
-                        .WithMany()
-                        .HasForeignKey("SceneId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PlotBeat");
-
-                    b.Navigation("Scene");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Stories.Scene", b =>
@@ -5194,6 +5105,17 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("PovEntity");
 
                     b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Stories.SceneBeat", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Stories.Scene", "Scene")
+                        .WithMany("Beats")
+                        .HasForeignKey("SceneId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Scene");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Stories.SceneEntityLink", b =>
@@ -5513,8 +5435,6 @@ namespace LorEvolve.Api.Data.Migrations
 
                     b.Navigation("PlotArcReferences");
 
-                    b.Navigation("PlotBeatReferences");
-
                     b.Navigation("SceneReferences");
 
                     b.Navigation("StoryReferences");
@@ -5617,23 +5537,20 @@ namespace LorEvolve.Api.Data.Migrations
 
             modelBuilder.Entity("LorEvolve.Api.Features.Stories.Chapter", b =>
                 {
+                    b.Navigation("ArcLink");
+
                     b.Navigation("Scenes");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Stories.PlotArc", b =>
                 {
-                    b.Navigation("Beats");
-                });
-
-            modelBuilder.Entity("LorEvolve.Api.Features.Stories.PlotBeat", b =>
-                {
-                    b.Navigation("EntityLinks");
-
-                    b.Navigation("SceneLinks");
+                    b.Navigation("ChapterLinks");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Stories.Scene", b =>
                 {
+                    b.Navigation("Beats");
+
                     b.Navigation("EntityLinks");
                 });
 

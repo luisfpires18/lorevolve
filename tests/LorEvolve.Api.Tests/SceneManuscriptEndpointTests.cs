@@ -423,7 +423,8 @@ public sealed class SceneManuscriptEndpointTests(LorEvolveApiFactory factory) : 
         var council = await CreateScene(client, universe.Id, story, "The Council", chapter);
         var gate = await CreateScene(client, universe.Id, story, "The Gates", chapter);
         var arc = await CreateArc(client, universe.Id, story, "Fall of the King");
-        await CreateBeat(client, universe.Id, story, arc.Id, "Capital is breached", [council]);
+        await MoveChapterToArc(client, universe.Id, story, chapter, arc.Id);
+        await SetBeats(client, universe.Id, story, council, "Capital is breached");
 
         string[] reads =
         [

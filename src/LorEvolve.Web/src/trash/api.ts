@@ -10,7 +10,7 @@ import {
 /** The same page size the lore browser uses, so the two screens read at the same rhythm. */
 export const TRASH_PAGE_SIZE = 12
 
-/** The code on the 409 a restore gets when what the row belongs to - its story, or a beat's arc - is in the Trash too. */
+/** The code on the 409 a restore gets when what the row belongs to - its story - is in the Trash too. */
 export const TRASH_PARENT_IN_TRASH = 'trash_parent_in_trash'
 
 /** The code on the 409 a bulk delete gets when a selected row is no longer in the Trash as it was: nothing was deleted. */
@@ -31,7 +31,6 @@ const ROUTES: Record<Exclude<TrashItem['kind'], typeof TrashKind.Entry>, string>
   [TrashKind.Chapter]: 'chapters',
   [TrashKind.Scene]: 'scenes',
   [TrashKind.PlotArc]: 'plot-arcs',
-  [TrashKind.PlotBeat]: 'plot-beats',
   [TrashKind.WorldRule]: 'world-rules',
   [TrashKind.Relationship]: 'relationships',
   [TrashKind.TimelineEvent]: 'timeline',
@@ -106,9 +105,7 @@ export function restoredPath(universeId: string, item: TrashItem) {
     case TrashKind.Scene:
       return `${story}#scene-${item.id}`
     case TrashKind.PlotArc:
-      return `${story}/plot#arc-${item.id}`
-    case TrashKind.PlotBeat:
-      return `${story}/plot#beat-${item.id}`
+      return `${story}#arc-${item.id}`
     case TrashKind.WorldRule:
       return `${universe}/world-rules/${item.id}`
     case TrashKind.Relationship:

@@ -1,7 +1,7 @@
 # ADR 0026 - Plot is planning: arcs of beats that point at scenes and lore and own neither
 
 Status: accepted (2026-09-13), amended 2026-09-14 (arcs and beats go to the Trash - ADR 0029), amended 2026-09-14 (universe
-search - ADR 0031)
+search - ADR 0031). Superseded by ADR 0070 (2026-11-11): arcs are story structure and beats belong to scenes.
 
 ## Context
 

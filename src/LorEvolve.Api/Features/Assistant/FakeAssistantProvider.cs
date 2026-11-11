@@ -26,7 +26,7 @@ namespace LorEvolve.Api.Features.Assistant;
 ///
 /// Words in the question add issue 45's resources (ADR 0048), each only when the options allow it: "article" writes each new
 /// entry a one-paragraph article; "rule" proposes a world rule named after the first name; "arc" a plot arc of that name in
-/// the first story, with one beat about the first entry; "idea" an idea of that name about the first entry.
+/// the first story; "idea" an idea of that name about the first entry.
 ///
 /// Issue 59 (ADR 0062): "type" instead stages a schema proposal - a lore type named by the first name, with a short text
 /// field for each further name, the last one a link to the first existing type when the question says "link"; "picture"
@@ -164,13 +164,6 @@ public sealed partial class FakeAssistantProvider : IAssistantProvider
                 if (Asked("arc") && allowed.Contains("create plot_arc") && story.ValueKind == JsonValueKind.Object)
                 {
                     operations.Add(new { id = "arc-1", action = "create", resource = "plot_arc", plotArc = new { story = new { id = story.GetProperty("id").GetString() }, title = names[0] } });
-                    operations.Add(new
-                    {
-                        id = "beat-1",
-                        action = "create",
-                        resource = "plot_beat",
-                        plotBeat = new { arc = new { @ref = "arc-1" }, title = $"{names[0]} begins", lore = new object[] { new { @ref = "entry-1" } } },
-                    });
                 }
 
                 if (Asked("idea") && allowed.Contains("create idea"))

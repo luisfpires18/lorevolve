@@ -24,8 +24,11 @@ public static class StoryLimits
     /// <summary>The same bound a timeline moment has: enough for a crowded scene, one request stays small.</summary>
     public const int MaxLinkedEntities = 100;
 
-    /// <summary>The same bound for the scenes one beat plays out in.</summary>
-    public const int MaxLinkedScenes = 100;
+    /// <summary>A beat is one line of a scene's outline, with an optional note under it (ADR 0070).</summary>
+    public const int BeatNoteMaxLength = 2000;
+
+    /// <summary>Enough steps for any one scene, so one scene save stays a bounded request.</summary>
+    public const int MaxBeatsPerScene = 50;
 }
 
 public sealed class ChapterConfiguration : IEntityTypeConfiguration<Chapter>

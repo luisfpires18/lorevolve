@@ -1,8 +1,8 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
 /**
- * The Story workspace's secondary verbs live in each row's ⋯ menu: a scene's moves and Delete, a chapter's, an
- * arc's and a beat's, the story's own Edit and Delete, and the open manuscript's Edit scene and Show in Scenes. These
+ * The Story workspace's secondary verbs live in each row's ⋯ menu: a scene's moves and Delete, a chapter's
+ * (its arc moves too), an arc's, the story's own Edit and Delete, and the open manuscript's Edit scene and Show in Scenes. These
  * helpers open the right menu for the item a spec names, so a spec says what it does rather than where it lives.
  *
  * Not a spec.
@@ -10,8 +10,7 @@ import { expect, type Locator, type Page } from '@playwright/test'
 const MENUS: [RegExp, string][] = [
   [/^scene-/, 'scene-actions'],
   [/^chapter-/, 'chapter-actions'],
-  [/^plot-arc-/, 'plot-arc-actions'],
-  [/^plot-beat-/, 'plot-beat-actions'],
+  [/^arc-/, 'arc-actions'],
   [/^(edit|delete)-story$/, 'story-actions'],
   [/^manuscript-(edit|show)-scene$/, 'manuscript-scene-actions'],
 ]

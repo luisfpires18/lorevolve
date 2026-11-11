@@ -298,6 +298,74 @@ public static class StoryEndpoints
     /// references - four for a story of ten chapters and a hundred scenes, as for an empty one. Nothing in the
     /// Trash is read.
     /// </summary>
+    /// <summary>
+    /// Each chapter's number as an author reads it (ADR 0070): from 1 inside its arc, or among the chapters in no arc, in
+    /// the story's chapter order. <paramref name="chapters"/> are every live chapter of one story, in that order.
+    /// </summary>
+    internal static Dictionary<Guid, int> ChapterNumbers(IEnumerable<ChapterResponse> chapters) =>
+        Number(chapters.Select(chapter => (chapter.Id, chapter.PlotArcId)));
+
+    /// <summary>
+    /// The same numbers for every live chapter of <paramref name="storyIds"/>, read in one query: what a result that names a
+    /// chapter by number shows, wherever it is listed.
+    /// </summary>
+    internal static async Task<Dictionary<Guid, int>> ChapterNumbersAsync(
+        LorEvolveDbContext db,
+        IReadOnlyCollection<Guid> storyIds,
+        CancellationToken cancellationToken)
+    {
+        if (storyIds.Count == 0)
+        {
+            return [];
+        }
+
+        var rows = await db.Chapters.AsNoTracking()
+            .Where(chapter => storyIds.Contains(chapter.StoryId) && chapter.DeletedAt == null)
+            .OrderBy(chapter => chapter.SortOrder)
+            .ThenBy(chapter => chapter.Id)
+            .Select(chapter => new
+            {
+                chapter.Id,
+                chapter.StoryId,
+                ArcId = chapter.ArcLink != null && chapter.ArcLink.PlotArc!.DeletedAt == null
+                    ? chapter.ArcLink.PlotArcId
+                    : (Guid?)null,
+            })
+            .ToListAsync(cancellationToken);
+
+        var numbers = new Dictionary<Guid, int>();
+        foreach (var story in rows.GroupBy(row => row.StoryId))
+        {
+            foreach (var (id, number) in Number(story.Select(row => (row.Id, row.ArcId))))
+            {
+                numbers[id] = number;
+            }
+        }
+
+        return numbers;
+    }
+
+    private static Dictionary<Guid, int> Number(IEnumerable<(Guid Id, Guid? ArcId)> chapters)
+    {
+        var counts = new Dictionary<Guid, int>();
+        var unarced = 0;
+        var numbers = new Dictionary<Guid, int>();
+
+        foreach (var (id, arcId) in chapters)
+        {
+            if (arcId is { } arc)
+            {
+                numbers[id] = counts[arc] = counts.GetValueOrDefault(arc) + 1;
+            }
+            else
+            {
+                numbers[id] = ++unarced;
+            }
+        }
+
+        return numbers;
+    }
+
     internal static async Task<StoryDetail?> LoadDetailAsync(
         LorEvolveDbContext db,
         Guid universeId,
@@ -323,6 +391,7 @@ public static class StoryEndpoints
             return null;
         }
 
+        var arcs = await PlotArcEndpoints.LoadArcsAsync(db, storyId, null, cancellationToken);
         var chapters = await ChapterEndpoints.LoadChaptersAsync(db, storyId, cancellationToken);
 
         var scenes = await SceneEndpoints.LoadScenesAsync(
@@ -336,6 +405,7 @@ public static class StoryEndpoints
             story.Title,
             story.Premise,
             story.Status,
+            arcs,
             chapters,
             scenes,
             story.CreatedAt,

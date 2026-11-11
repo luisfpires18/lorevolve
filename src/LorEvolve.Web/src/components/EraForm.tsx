@@ -622,7 +622,7 @@ function EraStories({
         .then((detail) =>
           setStoryScenes((current) => ({
             ...current,
-            [story.id]: readingOrder(detail.chapters, detail.scenes).map((scene) => ({
+            [story.id]: readingOrder(detail.arcs, detail.chapters, detail.scenes).map((scene) => ({
               id: scene.id,
               storyId: detail.id,
               title: scene.title,

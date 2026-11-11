@@ -224,17 +224,14 @@ public sealed class BackupRestoreTests(LorEvolveApiFactory factory) : IClassFixt
                 await db.SceneEntityLinks.Where(link => link.Scene!.Story!.UniverseId == r).ToListAsync(),
                 link => Assert.Contains(link.EntityId, entities));
             Assert.Equal(
-                await db.PlotBeatScenes.CountAsync(link => link.PlotBeat!.PlotArc!.Story!.UniverseId == r),
-                await db.PlotBeatScenes.CountAsync(link => link.PlotBeat!.PlotArc!.Story!.UniverseId == r && link.Scene!.Story!.UniverseId == r));
-            Assert.All(
-                await db.PlotBeatEntities.Where(link => link.PlotBeat!.PlotArc!.Story!.UniverseId == r).ToListAsync(),
-                link => Assert.Contains(link.EntityId, entities));
-            // Five references on the live idea and one on the deleted one, every target inside the restored universe.
-            Assert.Equal(6, await db.IdeaEntityReferences.CountAsync(reference => reference.Idea!.UniverseId == r && reference.Entity!.UniverseId == r)
+                await db.ChapterArcs.CountAsync(link => link.Chapter!.Story!.UniverseId == r),
+                await db.ChapterArcs.CountAsync(link => link.Chapter!.Story!.UniverseId == r && link.PlotArc!.StoryId == link.Chapter.StoryId));
+            Assert.Equal(3, await db.SceneBeats.CountAsync(beat => beat.Scene!.Story!.UniverseId == r));
+            // Four references on the live idea and one on the deleted one, every target inside the restored universe.
+            Assert.Equal(5, await db.IdeaEntityReferences.CountAsync(reference => reference.Idea!.UniverseId == r && reference.Entity!.UniverseId == r)
                 + await db.IdeaStoryReferences.CountAsync(reference => reference.Idea!.UniverseId == r && reference.Story!.UniverseId == r)
                 + await db.IdeaSceneReferences.CountAsync(reference => reference.Idea!.UniverseId == r && reference.Scene!.Story!.UniverseId == r)
-                + await db.IdeaPlotArcReferences.CountAsync(reference => reference.Idea!.UniverseId == r && reference.PlotArc!.Story!.UniverseId == r)
-                + await db.IdeaPlotBeatReferences.CountAsync(reference => reference.Idea!.UniverseId == r && reference.PlotBeat!.PlotArc!.Story!.UniverseId == r));
+                + await db.IdeaPlotArcReferences.CountAsync(reference => reference.Idea!.UniverseId == r && reference.PlotArc!.Story!.UniverseId == r));
 
             // Stored history names new ids too - even for the fields it only recorded.
             var historyIds = await db.EntityRevisionFieldValues
@@ -264,7 +261,7 @@ public sealed class BackupRestoreTests(LorEvolveApiFactory factory) : IClassFixt
 
         var trash = (await client.GetFromJsonAsync<TrashPage>($"/api/universes/{r}/trash?pageSize=100"))!;
         Assert.Equal(
-            ["A binned rule", "Abandoned Draft", "Cut Scene", "Departure", "Hides", "Lost Heir"],
+            ["A binned rule", "Abandoned Draft", "Cut Scene", "Departure", "Lost Heir"],
             [.. trash.Items.Select(item => item.Name).Order(StringComparer.Ordinal)]);
 
         var stories = (await client.GetFromJsonAsync<List<StorySummary>>($"/api/universes/{r}/stories"))!;
@@ -326,7 +323,6 @@ public sealed class BackupRestoreTests(LorEvolveApiFactory factory) : IClassFixt
                 (IdeaReferenceKind.Story, "The Long Winter"),
                 (IdeaReferenceKind.Scene, "The Council"),
                 (IdeaReferenceKind.PlotArc, "Fall of the King"),
-                (IdeaReferenceKind.PlotBeat, "Learns"),
             ],
             floating.References.Select(reference => (reference.Kind, reference.Name)).OrderBy(reference => reference.Kind));
 
@@ -397,7 +393,6 @@ public sealed class BackupRestoreTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Contains((UniverseSearchKind.Chapter, "Arrival"), await Find("Arrival"));
         Assert.Contains((UniverseSearchKind.Scene, "Cold Open"), await Find("seawall snow"));
         Assert.Contains((UniverseSearchKind.PlotArc, "Fall of the King"), await Find("crown breaks"));
-        Assert.Contains((UniverseSearchKind.PlotBeat, "Learns"), await Find("Learns"));
         Assert.Contains(UniverseSearchKind.Manuscript, (await Find("colder")).Select(result => result.Kind));
         Assert.Contains((UniverseSearchKind.Idea, "Maybe the city floats"), await Find("floats"));
 
@@ -675,9 +670,9 @@ public sealed class BackupRestoreTests(LorEvolveApiFactory factory) : IClassFixt
                 await db.CanonConflicts.CountAsync(), await db.CanonConflictSubjects.CountAsync(), await db.Stories.CountAsync(),
                 await db.Chapters.CountAsync(), await db.Scenes.CountAsync(), await db.SceneEntityLinks.CountAsync(),
                 await db.SceneManuscripts.CountAsync(), await db.SceneManuscriptRevisions.CountAsync(), await db.PlotArcs.CountAsync(),
-                await db.PlotBeats.CountAsync(), await db.PlotBeatScenes.CountAsync(), await db.PlotBeatEntities.CountAsync(),
+                await db.ChapterArcs.CountAsync(), await db.SceneBeats.CountAsync(),
                 await db.Ideas.CountAsync(), await db.IdeaEntityReferences.CountAsync(), await db.IdeaStoryReferences.CountAsync(),
-                await db.IdeaSceneReferences.CountAsync(), await db.IdeaPlotArcReferences.CountAsync(), await db.IdeaPlotBeatReferences.CountAsync(),
+                await db.IdeaSceneReferences.CountAsync(), await db.IdeaPlotArcReferences.CountAsync(),
                 await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM EntitySearchIndex").SingleAsync(),
                 await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM StorySearchIndex").SingleAsync(),
                 await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM SceneManuscriptSearchIndex").SingleAsync(),

@@ -222,11 +222,7 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("order arcs", Put, $"{s}/plot-arcs/order", May.Edit, Json(new PlotArcOrderRequest([w.Arc]))),
             new("edit arc", Put, $"{s}/plot-arcs/{w.Arc}", May.Edit, Json(new PlotArcRequest("Inheritance", "Edited", null))),
             new("trash arc", Delete, $"{s}/plot-arcs/{w.Arc}", May.Edit),
-            new("beat", Get, $"{s}/plot-beats/{w.Beat}", May.Read),
-            new("create beat", Post, $"{s}/plot-arcs/{w.Arc}/beats", May.Edit, Json(new PlotBeatRequest("The heir returns", null, null, null, null))),
-            new("order beats", Put, $"{s}/plot-arcs/{w.Arc}/beats/order", May.Edit, Json(new PlotBeatOrderRequest([w.Beat]))),
-            new("edit beat", Put, $"{s}/plot-beats/{w.Beat}", May.Edit, Json(new PlotBeatRequest("The will is read", "Edited", null, null, null))),
-            new("trash beat", Delete, $"{s}/plot-beats/{w.Beat}", May.Edit),
+            new("move chapter to arc", Put, $"{s}/chapters/{w.Chapter}/arc", May.Edit, Json(new ChapterArcRequest(null))),
 
             // ---------- Trash ----------
             new("trash", Get, t, May.Edit),
@@ -235,7 +231,6 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("restore chapter", Post, $"{t}/chapters/{w.Trash.Chapter}/restore", May.Edit),
             new("restore scene", Post, $"{t}/scenes/{w.Trash.Scene}/restore", May.Edit),
             new("restore arc", Post, $"{t}/plot-arcs/{w.Trash.Arc}/restore", May.Edit),
-            new("restore beat", Post, $"{t}/plot-beats/{w.Trash.Beat}/restore", May.Edit),
             new("restore rule", Post, $"{t}/world-rules/{w.Trash.Rule}/restore", May.Edit),
             new("restore relationship", Post, $"{t}/relationships/{w.Trash.Relationship}/restore", May.Edit),
             new("restore moment", Post, $"{t}/timeline/{w.Trash.Moment}/restore", May.Edit),
@@ -244,7 +239,6 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("erase chapter", Delete, $"{t}/chapters/{w.Trash.Chapter}", May.Own),
             new("erase scene", Delete, $"{t}/scenes/{w.Trash.Scene}", May.Own),
             new("erase arc", Delete, $"{t}/plot-arcs/{w.Trash.Arc}", May.Own),
-            new("erase beat", Delete, $"{t}/plot-beats/{w.Trash.Beat}", May.Own),
             new("erase rule", Delete, $"{t}/world-rules/{w.Trash.Rule}", May.Own),
             new("erase relationship", Delete, $"{t}/relationships/{w.Trash.Relationship}", May.Own),
             new("erase moment", Delete, $"{t}/timeline/{w.Trash.Moment}", May.Own),
@@ -501,7 +495,8 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             parts.Add(await db.Scenes.CountAsync(row => row.Story!.UniverseId == u && row.DeletedAt == null));
             parts.Add(await db.SceneManuscriptRevisions.CountAsync(row => row.Scene!.Story!.UniverseId == u));
             parts.Add(await db.PlotArcs.CountAsync(row => row.Story!.UniverseId == u && row.DeletedAt == null));
-            parts.Add(await db.PlotBeats.CountAsync(row => row.PlotArc!.Story!.UniverseId == u && row.DeletedAt == null));
+            parts.Add(await db.ChapterArcs.CountAsync(row => row.Chapter!.Story!.UniverseId == u));
+            parts.Add(await db.SceneBeats.CountAsync(row => row.Scene!.Story!.UniverseId == u));
             parts.Add(await db.UniverseArtworks.CountAsync(row => row.UniverseId == u));
             parts.Add(await db.UniverseMemberships.CountAsync(row => row.UniverseId == u));
             var threads = db.CommentThreads.Where(row => row.Entity!.UniverseId == u || row.Story!.UniverseId == u || row.Scene!.Story!.UniverseId == u);

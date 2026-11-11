@@ -4,7 +4,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
-import { ContainerName } from '../components/ContainerName'
+import { UNCHAPTERED } from '../stories/format'
 import { EmptyState } from '../components/EmptyState'
 import { EntityPicker, type EntityChoice } from '../components/EntityPicker'
 import { TimelineEntryForm } from '../components/TimelineEntryForm'
@@ -443,13 +443,8 @@ export default function TimelinePage() {
         </h3>
         <p className="moment__context">
           In <bdi>{scene.storyTitle}</bdi> ·{' '}
-          <ContainerName
-            chapter={
-              scene.chapterNumber !== null && scene.chapterTitle !== null
-                ? { index: scene.chapterNumber - 1, title: scene.chapterTitle }
-                : null
-            }
-          />
+          {/* A chapter by its title: its number restarts in each arc, so alone it would not say which one (ADR 0070). */}
+          {scene.chapterTitle !== null ? <bdi>{scene.chapterTitle}</bdi> : UNCHAPTERED}
         </p>
         <p className="moment__links">
           <Link
@@ -466,15 +461,6 @@ export default function TimelinePage() {
           >
             Manuscript
           </Link>
-          {scene.plotBeatId ? (
-            <Link
-              to={`${base}/plot#beat-${scene.plotBeatId}`}
-              aria-label={`Plot of “${scene.storyTitle}”, at this scene's beat`}
-              data-testid="timeline-open-plot"
-            >
-              Plot
-            </Link>
-          ) : null}
         </p>
       </>
     )

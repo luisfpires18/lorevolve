@@ -30,7 +30,8 @@ export interface BackupPreviewCounts {
   chapters: number
   scenes: number
   plotArcs: number
-  plotBeats: number
+  /** Every scene's beats, counted together (ADR 0070). */
+  beats: number
   manuscripts: number
   manuscriptVersions: number
   storyItemsInTrash: number

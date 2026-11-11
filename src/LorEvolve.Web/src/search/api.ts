@@ -45,15 +45,13 @@ export function resultPath(universeId: string, result: SearchResult) {
     case SearchKind.Scene:
       return `${story}#scene-${result.id}`
     case SearchKind.PlotArc:
-      return `${story}/plot#arc-${result.id}`
-    case SearchKind.PlotBeat:
-      return `${story}/plot#beat-${result.id}`
+      return `${story}#arc-${result.id}`
     case SearchKind.Manuscript:
       return `${story}/manuscript/${result.id}`
   }
 }
 
-/** Where a result sits, in the words an author knows it by: an entry's type, a scene's story and chapter, a beat's arc. */
+/** Where a result sits, in the words an author knows it by: an entry's type, a scene's story and chapter. */
 export function resultContext(result: SearchResult) {
   const chapter =
     result.chapterNumber !== null && result.chapterTitle !== null
@@ -70,8 +68,6 @@ export function resultContext(result: SearchResult) {
       return `In “${result.storyTitle ?? ''}”${chapter}`
     case SearchKind.PlotArc:
       return `In “${result.storyTitle ?? ''}”`
-    case SearchKind.PlotBeat:
-      return `In the arc “${result.plotArcTitle ?? ''}” of “${result.storyTitle ?? ''}”`
     default:
       return null
   }

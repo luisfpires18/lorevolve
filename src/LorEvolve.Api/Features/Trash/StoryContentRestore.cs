@@ -10,20 +10,20 @@ using LorEvolve.Api.Features.Publishing;
 namespace LorEvolve.Api.Features.Trash;
 
 /// <summary>
-/// Putting a story's content back from the Trash: a story, a chapter, a scene, an arc or a beat, each on a route of its own,
+/// Putting a story's content back from the Trash: a story, a chapter, a scene or an arc, each on a route of its own,
 /// so what is restored is never a guess at what an id is (ADR 0029).
 ///
 /// <b>A marker, not a rebuild.</b> Nothing a trashed row owns or is pointed at by was moved or deleted - a scene's prose,
-/// saved versions and lore links, a beat's links, an arc's beats, a story's everything - so clearing the marker is what
+/// saved versions, lore links and beats, an arc's chapter links, a story's everything - so clearing the marker is what
 /// brings them back, whole.
 ///
 /// <b>Appended, never inserted.</b> A row in the Trash holds no place in its order, and the author may have rearranged
-/// everything since. So a chapter, arc or beat comes back last among its live siblings, and a scene last in its own chapter
+/// everything since. So a chapter or arc comes back last among its live siblings, and a scene last in its own chapter
 /// - or in Unchaptered, where deleting a chapter puts its scenes, when that chapter is not there. No other row moves, and a
 /// restored chapter holds no scene: the scenes it had went to Unchaptered and stay wherever the author has put them.
 ///
-/// <b>Never into something that is not there.</b> A chapter, scene or arc whose story is in the Trash, or a beat whose arc
-/// or story is, is refused with a 409 naming what must come back first - never attached somewhere else, and never pulling
+/// <b>Never into something that is not there.</b> A chapter, scene or arc whose story is in the Trash is refused with a
+/// 409 naming what must come back first - never attached somewhere else, and never pulling
 /// its container back on its own. A story holds nothing that can refuse it.
 ///
 /// <b>No Canon.</b> Story content contributes no facts (ADR 0024), so no restore passes the promotion gate. Each is one
@@ -259,67 +259,6 @@ internal static class StoryContentRestore
 
         await transaction.CommitAsync(cancellationToken);
         return Results.Ok(new TrashRestored(TrashItemKind.PlotArc, arc.Id, story.Id));
-    }
-
-    public static async Task<IResult> RestorePlotBeatAsync(
-        Guid universeId,
-        Guid plotBeatId,
-        ClaimsPrincipal principal,
-        LorEvolveDbContext db,
-        CancellationToken cancellationToken)
-    {
-        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.ManageTrash, cancellationToken) is { } denied)
-        {
-            return denied;
-        }
-
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-
-        var beat = await db.PlotBeats
-            .Include(candidate => candidate.PlotArc)
-            .ThenInclude(arc => arc!.Story)
-            .FirstOrDefaultAsync(
-                candidate => candidate.Id == plotBeatId
-                    && candidate.PlotArc!.Story!.UniverseId == universeId
-                    && candidate.DeletedAt != null,
-                cancellationToken);
-
-        if (beat is null)
-        {
-            return Results.NotFound();
-        }
-
-        var arc = beat.PlotArc!;
-        var story = arc.Story!;
-
-        if (story.DeletedAt is not null)
-        {
-            return StoryInTrash(story, "beat");
-        }
-
-        if (arc.DeletedAt is not null)
-        {
-            return Refused(
-                $"The arc “{arc.Title}” is in the Trash too. Restore the arc first, then this beat.",
-                "arc",
-                arc.Id);
-        }
-
-        var last = await db.PlotBeats
-            .Where(candidate => candidate.PlotArcId == arc.Id && candidate.DeletedAt == null)
-            .MaxAsync(candidate => (int?)candidate.SortOrder, cancellationToken);
-
-        beat.SortOrder = (last ?? -1) + 1;
-        beat.DeletedAt = null;
-        story.UpdatedAt = DateTime.UtcNow;
-
-        if (!await SavedAsync(db, cancellationToken))
-        {
-            return OrderChanged(PlotArcEndpoints.OrderChangedCode);
-        }
-
-        await transaction.CommitAsync(cancellationToken);
-        return Results.Ok(new TrashRestored(TrashItemKind.PlotBeat, beat.Id, story.Id));
     }
 
     /// <summary>

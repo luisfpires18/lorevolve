@@ -131,18 +131,14 @@ public enum TimelineSourceKind
 }
 
 /// <summary>
-/// A scene's place in its story, read live: its story, its chapter by position (null when Unchaptered), and the first live
-/// beat that names it with how many do, so the Plot can be opened at it. Never its prose, and never its narrative order as a
-/// date.
+/// A scene's place in its story, read live: its story and its chapter (null when Unchaptered). Never its prose, and never
+/// its narrative order as a date.
 /// </summary>
 public sealed record TimelineSceneSource(
     Guid StoryId,
     string StoryTitle,
     Guid? ChapterId,
-    int? ChapterNumber,
-    string? ChapterTitle,
-    Guid? PlotBeatId,
-    int PlotBeatCount);
+    string? ChapterTitle);
 
 /// <summary>
 /// An entry's birth or death year, read live from the entry. <paramref name="CanonStatus"/> is the entry's own; a fact has no

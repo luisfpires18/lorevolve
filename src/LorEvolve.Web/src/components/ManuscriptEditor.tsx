@@ -17,7 +17,7 @@ import { ManuscriptHistory } from './ManuscriptHistory'
 import { ReviewComments } from './ReviewComments'
 import { describeSceneSuggestion } from '../stories/sceneDraft'
 import { RecoveredDraft } from './RecoveredDraft'
-import { SceneBeats, SceneLore, SceneStamp } from './SceneContext'
+import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
 import { useAuth } from '../auth/useAuth'
 import type { Chronology } from '../chronology/types'
 import { ApiError } from '../lib/api'
@@ -26,7 +26,6 @@ import { useLeaveGuard } from '../lib/leaveGuard'
 import { useLocalDraft } from '../lib/useLocalDraft'
 import { getSceneManuscript, MANUSCRIPT_CHANGED, saveSceneManuscript } from '../stories/api'
 import { sceneWhen } from '../stories/format'
-import type { SceneBeatReference } from '../stories/structure'
 import {
   MANUSCRIPT_MAX_LENGTH,
   type Chapter,
@@ -62,10 +61,6 @@ interface ManuscriptEditorProps {
   chronology: Chronology
   /** Where the scene is told: its container ("Chapter 2: Arrival", none in a story without chapters) and "Scene 1 of 3". */
   where: { container: ReactNode; position: string }
-  /** The plot beats that point at this scene. Shown only: the plot owns those links. */
-  beats: SceneBeatReference[]
-  /** Whether the story plans any beat, linked here or not: a scene no beat links then says so. */
-  storyHasBeats: boolean
   /** Opens the scene's own form. Its planning is edited there, never here. */
   onEditScene: (scene: Scene) => void
   /** Opens the scene's form to send a suggestion instead (task 045). */
@@ -88,8 +83,8 @@ interface ManuscriptEditorProps {
  * Above it, where the scene is told, its title, and the manuscript's own history - the one tool beside the title, because
  * recovering a version is part of writing - and Lore, the scene's lore in a drawer over the prose (task 048). Edit scene, which opens the scene's own drawer in place, and Show in Scenes,
  * which leads back to the scene's place in the story's structure, are in the scene's ⋯ menu. Under the title, read-only,
- * the scene's planning as the Scenes view draws it - when and through whose eyes, its lore and its beats, each a link to
- * where it is edited - folded behind Details on a phone, where every line above the prose is a line of prose gone.
+ * the scene's planning as the Scenes view draws it - when and through whose eyes, its lore and its beats, edited in the
+ * scene's own drawer - folded behind Details on a phone, where every line above the prose is a line of prose gone.
  *
  * Mounted once per scene - the panel keys it by the scene's id - so opening another scene starts from nothing and never
  * shows the last scene's prose under the new title while the new one loads.
@@ -109,8 +104,6 @@ export function ManuscriptEditor({
   scene,
   chronology,
   where,
-  beats,
-  storyHasBeats,
   onEditScene,
   onSuggestScene,
   chapters,
@@ -330,8 +323,7 @@ export function ManuscriptEditor({
     sceneWhen(chronology, scene.chronology) !== null ||
     scene.pov !== null ||
     scene.entities.length > 0 ||
-    beats.length > 0 ||
-    storyHasBeats
+    scene.beats.length > 0
 
   const describedBy = [statusId, isTooLong ? tooLongId : null, offer ? recoveryId : null]
     .filter(Boolean)
@@ -469,13 +461,7 @@ export function ManuscriptEditor({
               testId="manuscript"
             />
             <SceneLore universeId={universeId} scene={scene} testId="manuscript" />
-            <SceneBeats
-              universeId={universeId}
-              storyId={storyId}
-              beats={beats}
-              storyHasBeats={storyHasBeats}
-              testId="manuscript"
-            />
+            <SceneBeatList beats={scene.beats} testId="manuscript" />
           </div>
         ) : null}
       </header>

@@ -3,7 +3,6 @@ import { useUniverseAccess } from '../universes/access'
 import {
   ArchiveRestore,
   BookOpen,
-  CircleDot,
   Feather,
   FileText,
   Hourglass,
@@ -74,13 +73,6 @@ function whereItWas(item: TrashItem) {
       )
     case TrashKind.Story:
       return 'A whole story, with everything in it'
-    case TrashKind.PlotBeat:
-      return (
-        <>
-          In the arc <Quoted text={item.plotArcTitle ?? ''} /> of{' '}
-          <Quoted text={item.storyTitle ?? ''} />
-        </>
-      )
     case TrashKind.WorldRule:
       return 'In World Rules'
     case TrashKind.Relationship:
@@ -113,14 +105,6 @@ function blockedText(item: TrashItem) {
   if (item.blockedBy === TrashBlock.EntryInTrash) {
     return <>One of the entries it connects is in the Trash too. Restore that entry first.</>
   }
-  if (item.blockedBy === TrashBlock.ArcInTrash) {
-    return (
-      <>
-        Its arc, <Quoted text={item.plotArcTitle ?? ''} />, is in the Trash too. Restore the arc
-        first.
-      </>
-    )
-  }
   return null
 }
 
@@ -150,12 +134,6 @@ function backText(item: TrashItem) {
           The arc {name} is back in <Quoted text={item.storyTitle ?? ''} />.
         </>
       )
-    case TrashKind.PlotBeat:
-      return (
-        <>
-          The beat {name} is back in <Quoted text={item.plotArcTitle ?? ''} />.
-        </>
-      )
     case TrashKind.WorldRule:
       return <>The world rule {name} is back in World Rules.</>
     case TrashKind.Relationship:
@@ -174,15 +152,13 @@ function eraseText(kind: TrashKindValue) {
     case TrashKind.Entry:
       return 'Its article, fields, picture and saved versions go with it, and links and references to it in your lore, timeline, stories and ideas are removed.'
     case TrashKind.Story:
-      return 'Everything in it goes with it: its chapters, its scenes with their writing and saved versions, and its plot arcs and beats, including any of them that are in the Trash on their own.'
+      return 'Everything in it goes with it: its chapters, its scenes with their writing, saved versions and beats, and its arcs, including any of them that are in the Trash on their own.'
     case TrashKind.Chapter:
       return 'Only the chapter goes: its title, summary and notes. The scenes it held moved to Unchaptered when it was put in the Trash, and they stay there.'
     case TrashKind.Scene:
-      return 'Its writing and every saved version of it go with it, and its links to lore, beats and ideas are removed.'
+      return 'Its writing, every saved version of it and its beats go with it, and its links to lore and ideas are removed.'
     case TrashKind.PlotArc:
-      return 'Every beat in it goes with it, including any of its beats that are in the Trash on their own.'
-    case TrashKind.PlotBeat:
-      return 'Its links to scenes, lore and ideas are removed.'
+      return 'Only the arc goes. The chapters that were in it stay where they are, in no arc.'
     case TrashKind.WorldRule:
       return 'Its check goes with it, if it has one.'
     case TrashKind.Relationship:
@@ -1165,7 +1141,6 @@ const KIND_ICONS: Record<TrashKindValue, LucideIcon> = {
   [TrashKind.Chapter]: BookOpen,
   [TrashKind.Scene]: FileText,
   [TrashKind.PlotArc]: Spline,
-  [TrashKind.PlotBeat]: CircleDot,
   [TrashKind.WorldRule]: Scale,
   [TrashKind.Relationship]: Network,
   [TrashKind.TimelineEvent]: Hourglass,

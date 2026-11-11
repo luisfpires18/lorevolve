@@ -24,14 +24,14 @@ namespace LorEvolve.Api.Features.Trash;
 ///
 /// <b>The schema is the ownership graph.</b> Every dependant is a foreign key that already says what it is (see the
 /// ADRs): what a row owns cascades with it - an entry's aliases, tags, values, article, both histories, image row,
-/// relationships, timeline participation, scene and beat links and idea references; a story's chapters, scenes, arcs and
-/// beats with everything they own in turn; a scene's manuscript and its versions; an arc's beats; a rule's check - and a
-/// scene's point of view is cleared. So a delete is one statement on the rows themselves, and the database removes the rest
-/// in that statement, including owned rows that sit in the Trash on their own (a beat binned before its arc goes with the
-/// arc). The search indexes follow through their own delete triggers. Nothing a chapter in the Trash could own remains:
+/// relationships, timeline participation, scene links and idea references; a story's chapters, scenes and arcs with
+/// everything they own in turn; a scene's manuscript, its versions and its beats; an arc's chapter links, so its chapters
+/// fall back to no arc; a rule's check - and a scene's point of view is cleared. So a delete is one statement on the rows
+/// themselves, and the database removes the rest in that statement, including owned rows that sit in the Trash on their
+/// own (a scene binned before its story goes with the story). The search indexes follow through their own delete triggers. Nothing a chapter in the Trash could own remains:
 /// its scenes went to Unchaptered when it was binned, so none goes with it.
 ///
-/// <b>Overlap is not a conflict.</b> A selection may hold a story and its own scene, or an arc and its beat: both were
+/// <b>Overlap is not a conflict.</b> A selection may hold a story and its own scene, or a story and its arc: both were
 /// resolved before anything was written, so the parent's cascade satisfies the child and the child's own statement then
 /// matches nothing. The order of the request never matters - kinds are erased parents first, by set.
 ///
@@ -124,18 +124,6 @@ internal static class TrashPermanentDelete
         CancellationToken cancellationToken) =>
         EraseOneAsync(
             new(TrashItemKind.PlotArc, plotArcId), universeId, principal, db, canon, store, loggerFactory, _ => Results.NoContent(), cancellationToken);
-
-    public static Task<IResult> DeletePlotBeatAsync(
-        Guid universeId,
-        Guid plotBeatId,
-        ClaimsPrincipal principal,
-        LorEvolveDbContext db,
-        CanonPromotionGate canon,
-        IMediaObjectStore store,
-        ILoggerFactory loggerFactory,
-        CancellationToken cancellationToken) =>
-        EraseOneAsync(
-            new(TrashItemKind.PlotBeat, plotBeatId), universeId, principal, db, canon, store, loggerFactory, _ => Results.NoContent(), cancellationToken);
 
     public static Task<IResult> DeleteWorldRuleAsync(
         Guid universeId,
@@ -345,7 +333,6 @@ internal static class TrashPermanentDelete
         var chapters = Of(TrashItemKind.Chapter);
         var scenes = Of(TrashItemKind.Scene);
         var arcs = Of(TrashItemKind.PlotArc);
-        var beats = Of(TrashItemKind.PlotBeat);
         var rules = Of(TrashItemKind.WorldRule);
         var links = Of(TrashItemKind.Relationship);
         var moments = Of(TrashItemKind.TimelineEvent);
@@ -358,7 +345,6 @@ internal static class TrashPermanentDelete
             && await Resolve(db.Chapters.Where(row => row.Story!.UniverseId == universeId && row.DeletedAt != null && chapters.Contains(row.Id)), chapters)
             && await Resolve(db.Scenes.Where(row => row.Story!.UniverseId == universeId && row.DeletedAt != null && scenes.Contains(row.Id)), scenes)
             && await Resolve(db.PlotArcs.Where(row => row.Story!.UniverseId == universeId && row.DeletedAt != null && arcs.Contains(row.Id)), arcs)
-            && await Resolve(db.PlotBeats.Where(row => row.PlotArc!.Story!.UniverseId == universeId && row.DeletedAt != null && beats.Contains(row.Id)), beats)
             && await Resolve(db.WorldRules.Where(row => row.UniverseId == universeId && row.DeletedAt != null && rules.Contains(row.Id)), rules)
             && await Resolve(db.Relationships.Where(row => row.UniverseId == universeId && row.DeletedAt != null && links.Contains(row.Id)), links)
             && await Resolve(db.TimelineEntries.Where(row => row.UniverseId == universeId && row.DeletedAt != null && moments.Contains(row.Id)), moments);
@@ -426,7 +412,6 @@ internal static class TrashPermanentDelete
         await Erase(db.PlotArcs.Where(row => arcs.Contains(row.Id)), arcs);
         await Erase(db.Chapters.Where(row => chapters.Contains(row.Id)), chapters);
         await Erase(db.Scenes.Where(row => scenes.Contains(row.Id)), scenes);
-        await Erase(db.PlotBeats.Where(row => beats.Contains(row.Id)), beats);
 
         // 5. Rules, and what was found about them.
         if (rules.Count > 0)

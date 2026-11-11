@@ -112,7 +112,7 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
   const sections = [
     story.manuscript.length > 0 ? { id: 'manuscript', label: 'Manuscript' } : null,
     story.scenes.length > 0 ? { id: 'scenes', label: 'Scenes' } : null,
-    story.plot.length > 0 ? { id: 'plot', label: 'Plot' } : null,
+    story.plot.length > 0 ? { id: 'plot', label: 'Arcs' } : null,
   ].filter((section) => section !== null)
 
   return (
@@ -256,7 +256,7 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
           data-testid="public-story-plot"
         >
           <h2 className="pstory__heading" id="pstory-plot">
-            Plot
+            Arcs
           </h2>
           {story.plot.map((arc, index) => (
             <section
@@ -272,22 +272,6 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
                 <p className="pstory__arcdescription" dir="auto">
                   {arc.description}
                 </p>
-              ) : null}
-              {arc.beats.length > 0 ? (
-                <ol className="pstory__beats">
-                  {arc.beats.map((beat, at) => (
-                    <li key={at}>
-                      <span className="pstory__beattitle" dir="auto">
-                        <bdi>{beat.title}</bdi>
-                      </span>
-                      {beat.description ? (
-                        <span className="pstory__beatdescription" dir="auto">
-                          {beat.description}
-                        </span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ol>
               ) : null}
             </section>
           ))}

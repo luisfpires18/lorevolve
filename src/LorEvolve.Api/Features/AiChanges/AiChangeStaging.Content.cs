@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LorEvolve.Api.Features.AiChanges;
 
 /// <summary>
-/// The values of the resources issue 45 added (ADR 0048) - an entry's article, plot arcs and beats, world rules, the owner's
+/// The values of the resources issue 45 added (ADR 0048) - an entry's article, plot arcs, world rules, the owner's
 /// ideas, and a container's whole order - built from an AI's input exactly as issue 32's are: a create from the input alone,
 /// an update as the stored form with only what the input sets changed, a removal as where the item lives.
 /// </summary>
@@ -118,81 +118,6 @@ internal static partial class AiChangeStaging
             return new PlotArcValues(story, (arc.Title ?? before?.Title ?? string.Empty).Trim(), Cleared(arc.Description, before?.Description), Cleared(arc.Notes, before?.Notes));
         }
 
-        private async Task<AiChangeWork?> PlotBeatAsync(CancellationToken cancellationToken)
-        {
-            var beat = input.PlotBeat;
-            PlotBeatValues? before = null;
-
-            if (action != AiChangeAction.Create)
-            {
-                before = await AiChangeSnapshots.PlotBeatAsync(db, universeId, input.TargetId!.Value, cancellationToken);
-                if (before is null)
-                {
-                    Fail(AiChangeCodes.NotFound, "Nothing with that id is in this universe. It may be in the Trash.", "targetId");
-                    return null;
-                }
-
-                if (action == AiChangeAction.Remove)
-                {
-                    return Work(before, null, new RemoveValues(before.Story!.Id));
-                }
-            }
-
-            if (beat is null)
-            {
-                Fail(AiChangeCodes.Invalid, "Put the beat's values in plotBeat.", "plotBeat");
-                return null;
-            }
-
-            var arc = beat.Arc is null ? before?.Arc : Ref(beat.Arc, "plotBeat.arc");
-            if (arc is null)
-            {
-                Fail(AiChangeCodes.Invalid, "Say which arc the beat is in.", "plotBeat.arc");
-                return null;
-            }
-
-            // The arc's story: an existing arc's own, or the story an arc this proposal creates names - so the beat's scenes
-            // are held to it.
-            AiRef? story;
-            if (arc.Id is { } arcId)
-            {
-                story = arcId == before?.Arc.Id
-                    ? before.Story
-                    : await db.PlotArcs.AsNoTracking()
-                        .Where(row => row.Id == arcId && row.DeletedAt == null && row.Story!.UniverseId == universeId && row.Story.DeletedAt == null)
-                        .Select(row => (Guid?)row.StoryId)
-                        .FirstOrDefaultAsync(cancellationToken) is { } storyId ? AiRef.To(storyId) : null;
-                if (story is null)
-                {
-                    Fail(AiChangeCodes.NotFound, "That arc isn't in this universe, or it is in the Trash.", "plotBeat.arc");
-                    return null;
-                }
-            }
-            else
-            {
-                story = null;
-            }
-
-            var scenes = beat.Scenes is null
-                ? before?.Scenes ?? []
-                : Sorted(beat.Scenes.Select(reference => Ref(reference, "plotBeat.scenes")).OfType<AiRef>().Distinct());
-            var lore = beat.Lore is null
-                ? before?.Lore ?? []
-                : Sorted(beat.Lore.Select(reference => Ref(reference, "plotBeat.lore")).OfType<AiRef>().Distinct());
-
-            return Work(
-                before,
-                null,
-                new PlotBeatValues(
-                    arc,
-                    story,
-                    (beat.Title ?? before?.Title ?? string.Empty).Trim(),
-                    Cleared(beat.Description, before?.Description),
-                    Cleared(beat.Notes, before?.Notes),
-                    scenes,
-                    lore));
-        }
-
         private async Task<AiChangeWork?> WorldRuleAsync(CancellationToken cancellationToken)
         {
             if (action == AiChangeAction.Create)
@@ -268,13 +193,12 @@ internal static partial class AiChangeStaging
                         "story" => IdeaReferenceKind.Story,
                         "scene" => IdeaReferenceKind.Scene,
                         "plot_arc" or "arc" => IdeaReferenceKind.PlotArc,
-                        "plot_beat" or "beat" => IdeaReferenceKind.PlotBeat,
                         _ => null,
                     };
 
                     if (kind is null || Ref(new AiRefInput(reference!.Id, reference.Ref), "idea.references") is not { } target)
                     {
-                        Fail(AiChangeCodes.Invalid, "Each reference is a kind (lore_entry, story, scene, plot_arc or plot_beat) and exactly one of id and ref.", "idea.references");
+                        Fail(AiChangeCodes.Invalid, "Each reference is a kind (lore_entry, story, scene or plot_arc) and exactly one of id and ref.", "idea.references");
                         continue;
                     }
 
@@ -321,36 +245,29 @@ internal static partial class AiChangeStaging
                 return resolved;
             }
 
-            AiRef? story = null, chapter = null, arc = null;
-            if (resource == AiChangeResource.PlotBeat)
+            AiRef? chapter = null;
+            var story = Existing(order.Story, "order.story");
+            if (resource == AiChangeResource.Scene)
             {
-                arc = Existing(order.Arc, "order.arc");
-            }
-            else
-            {
-                story = Existing(order.Story, "order.story");
-                if (resource == AiChangeResource.Scene)
+                chapter = Existing(order.Chapter, "order.chapter");
+                if ((chapter is null) != (order.Unchaptered == true))
                 {
-                    chapter = Existing(order.Chapter, "order.chapter");
-                    if ((chapter is null) != (order.Unchaptered == true))
-                    {
-                        Fail(AiChangeCodes.Invalid, "For scenes, name the chapter, or set unchaptered for the story's unchaptered scenes.", "order.chapter");
-                        return null;
-                    }
+                    Fail(AiChangeCodes.Invalid, "For scenes, name the chapter, or set unchaptered for the story's unchaptered scenes.", "order.chapter");
+                    return null;
                 }
             }
 
-            if (_failed || (resource == AiChangeResource.PlotBeat ? arc is null : story is null))
+            if (_failed || story is null)
             {
                 if (!_failed)
                 {
-                    Fail(AiChangeCodes.Invalid, resource == AiChangeResource.PlotBeat ? "Say which arc's beats these are." : "Say which story's order this is.", "order");
+                    Fail(AiChangeCodes.Invalid, "Say which story's order this is.", "order");
                 }
 
                 return null;
             }
 
-            if (await AiChangeSnapshots.OrderAsync(db, universeId, resource, story?.Id, chapter?.Id, arc?.Id, cancellationToken) is not { } stored)
+            if (await AiChangeSnapshots.OrderAsync(db, universeId, resource, story.Id, chapter?.Id, cancellationToken) is not { } stored)
             {
                 Fail(AiChangeCodes.NotFound, "That container isn't in this universe, or it is in the Trash.", "order");
                 return null;

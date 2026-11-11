@@ -17,12 +17,11 @@ namespace LorEvolve.Api.Features.Stories;
 /// <c>PUT .../plot-arcs/order</c>. No arc number is stored, and nothing about a scene - its order, its
 /// chapter or its chronology - decides where an arc sits.
 ///
-/// Deleting an arc moves it to the Trash with its beats and their links, and never touches a scene, a chapter
-/// or an entry. An arc in the Trash answers every route here, and its beats every beat route, as missing ones
-/// do; restoring it is the Trash's work (ADR 0029).
+/// An arc groups chapters (ADR 0070). Deleting an arc moves it alone to the Trash and never touches a chapter, a
+/// scene or an entry: its chapters read as in no arc until it is restored. An arc in the Trash answers every route
+/// here as a missing one does; restoring it is the Trash's work (ADR 0029).
 ///
-/// <b>No Canon.</b> Plot is planning. Nothing here passes the promotion gate or reconciles findings, and a beat
-/// called "The King dies" gives no entry a death year (ADR 0026).
+/// <b>No Canon.</b> Nothing here passes the promotion gate or reconciles findings.
 /// </summary>
 public static class PlotArcEndpoints
 {
@@ -45,7 +44,7 @@ public static class PlotArcEndpoints
         return endpoints;
     }
 
-    /// <summary>The story's whole plot: every arc, first first, each with its beats in order and every link resolved.</summary>
+    /// <summary>The story's arcs, first first.</summary>
     private static async Task<IResult> ListAsync(
         Guid universeId,
         Guid storyId,
@@ -58,7 +57,7 @@ public static class PlotArcEndpoints
             return denied;
         }
 
-        return Results.Ok(await LoadArcsAsync(db, universeId, storyId, null, cancellationToken));
+        return Results.Ok(await LoadArcsAsync(db, storyId, null, cancellationToken));
     }
 
     private static async Task<IResult> GetAsync(
@@ -74,11 +73,11 @@ public static class PlotArcEndpoints
             return denied;
         }
 
-        var arc = (await LoadArcsAsync(db, universeId, storyId, plotArcId, cancellationToken)).FirstOrDefault();
+        var arc = (await LoadArcsAsync(db, storyId, plotArcId, cancellationToken)).FirstOrDefault();
         return arc is null ? Results.NotFound() : Results.Ok(arc);
     }
 
-    /// <summary>Appended: a new arc comes after every arc already in the story, and holds no beat yet.</summary>
+    /// <summary>Appended: a new arc comes after every arc already in the story, and holds no chapter yet.</summary>
     private static async Task<IResult> CreateAsync(
         Guid universeId,
         Guid storyId,
@@ -148,10 +147,10 @@ public static class PlotArcEndpoints
         return Results.Created(
             $"/api/universes/{universeId}/stories/{storyId}/plot-arcs/{arc.Id}",
             new PlotArcResponse(
-                arc.Id, arc.StoryId, arc.SortOrder, arc.Title, arc.Description, arc.Notes, [], arc.CreatedAt, arc.UpdatedAt));
+                arc.Id, arc.StoryId, arc.SortOrder, arc.Title, arc.Description, arc.Notes, arc.CreatedAt, arc.UpdatedAt));
     }
 
-    /// <summary>The title, description and notes. Never the order, and never the beats an arc holds.</summary>
+    /// <summary>The title, description and notes. Never the order, and never the chapters an arc holds.</summary>
     private static async Task<IResult> UpdateAsync(
         Guid universeId,
         Guid storyId,
@@ -207,13 +206,13 @@ public static class PlotArcEndpoints
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return Results.Ok((await LoadArcsAsync(db, universeId, storyId, plotArcId, cancellationToken)).First());
+        return Results.Ok((await LoadArcsAsync(db, storyId, plotArcId, cancellationToken)).First());
     }
 
     /// <summary>
-    /// Moves the arc to the Trash. Only the arc is marked: its beats keep their order and every link they hold, out of
-    /// reach while it is there and back with it on restore; the scenes, chapters and entries those links point at are
-    /// untouched. The arcs after it each move up one place. One transaction.
+    /// Moves the arc to the Trash. Only the arc is marked: its chapters keep their link to it and read as in no arc while
+    /// it is there, back in it on restore; no chapter, scene or entry is touched. The arcs after it each move up one
+    /// place. One transaction.
     /// </summary>
     private static async Task<IResult> DeleteAsync(
         Guid universeId,
@@ -287,7 +286,7 @@ public static class PlotArcEndpoints
     /// <summary>
     /// Replaces the story's whole arc order in one transaction. The request must name every arc in this story
     /// exactly once; a partial list, a repeated id or an id from anywhere else is refused, and the refusal says the
-    /// same thing for a foreign id as for a missing one. Beats stay in their arcs, in their order.
+    /// same thing for a foreign id as for a missing one. Chapters stay in their arcs, in their order.
     /// </summary>
     private static async Task<IResult> ReorderAsync(
         Guid universeId,
@@ -359,7 +358,7 @@ public static class PlotArcEndpoints
 
         await transaction.CommitAsync(cancellationToken);
 
-        return Results.Ok(await LoadArcsAsync(db, universeId, storyId, null, cancellationToken));
+        return Results.Ok(await LoadArcsAsync(db, storyId, null, cancellationToken));
 
         static IResult Refused(string message) =>
             Results.ValidationProblem(new Dictionary<string, string[]> { ["plotArcIds"] = [message] });
@@ -388,37 +387,28 @@ public static class PlotArcEndpoints
     internal static IResult OrderChanged() =>
         Results.Problem(
             title: "Story changed",
-            detail: "This story's plot changed while this was being saved. Reload the story and try again.",
+            detail: "This story's arcs changed while this was being saved. Reload the story and try again.",
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?> { ["code"] = OrderChangedCode });
 
-    /// <summary>
-    /// One story's arcs - or the one <paramref name="plotArcId"/> names - first first, each with its beats. A fixed
-    /// number of queries however many arcs, beats and links there are: the arcs, then the beats and their links
-    /// and lore (<see cref="PlotBeatEndpoints.LoadBeatsAsync"/>). Nothing is read per arc or per beat.
-    /// </summary>
+    /// <summary>One story's live arcs - or the one <paramref name="plotArcId"/> names - first first, in one query.</summary>
     internal static async Task<List<PlotArcResponse>> LoadArcsAsync(
         LorEvolveDbContext db,
-        Guid universeId,
         Guid storyId,
         Guid? plotArcId,
         CancellationToken cancellationToken)
     {
         var arcs = db.PlotArcs.AsNoTracking().Where(arc => arc.StoryId == storyId && arc.DeletedAt == null);
-        var beats = db.PlotBeats.Where(beat =>
-            beat.PlotArc!.StoryId == storyId && beat.PlotArc.DeletedAt == null && beat.DeletedAt == null);
 
         if (plotArcId is { } id)
         {
             arcs = arcs.Where(arc => arc.Id == id);
-            beats = beats.Where(beat => beat.PlotArcId == id);
         }
 
-        var rows = await arcs
+        return await arcs
             .OrderBy(arc => arc.SortOrder)
             .ThenBy(arc => arc.Id)
-            .Select(arc => new
-            {
+            .Select(arc => new PlotArcResponse(
                 arc.Id,
                 arc.StoryId,
                 arc.SortOrder,
@@ -427,31 +417,7 @@ public static class PlotArcEndpoints
                 arc.Notes,
                 arc.CreatedAt,
                 arc.UpdatedAt,
-                arc.Visibility,
-            })
+                arc.Visibility))
             .ToListAsync(cancellationToken);
-
-        if (rows.Count == 0)
-        {
-            return [];
-        }
-
-        var beatsByArc = (await PlotBeatEndpoints.LoadBeatsAsync(db, universeId, beats, cancellationToken))
-            .ToLookup(beat => beat.PlotArcId);
-
-        return
-        [
-            .. rows.Select(arc => new PlotArcResponse(
-                arc.Id,
-                arc.StoryId,
-                arc.SortOrder,
-                arc.Title,
-                arc.Description,
-                arc.Notes,
-                [.. beatsByArc[arc.Id]],
-                arc.CreatedAt,
-                arc.UpdatedAt,
-                arc.Visibility)),
-        ];
     }
 }

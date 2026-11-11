@@ -437,7 +437,7 @@ function summaryRows(counts: BackupPreviewCounts): [string, string][] {
         counts.chapters > 0 ? plural(counts.chapters, 'chapter', 'chapters') : null,
         plural(counts.scenes, 'scene', 'scenes'),
         counts.plotArcs > 0 ? plural(counts.plotArcs, 'arc', 'arcs') : null,
-        counts.plotBeats > 0 ? plural(counts.plotBeats, 'beat', 'beats') : null,
+        counts.beats > 0 ? plural(counts.beats, 'beat', 'beats') : null,
         counts.manuscripts > 0
           ? plural(counts.manuscripts, 'scene with prose', 'scenes with prose')
           : null,

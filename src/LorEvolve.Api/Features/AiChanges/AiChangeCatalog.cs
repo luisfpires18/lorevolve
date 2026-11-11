@@ -212,7 +212,7 @@ internal static class AiChangeCatalog
             foreach (var action in Enum.GetValues<AiChangeAction>())
             {
                 var prose = resource is AiChangeResource.Manuscript or AiChangeResource.Article;
-                var ordered = resource is AiChangeResource.Chapter or AiChangeResource.Scene or AiChangeResource.PlotArc or AiChangeResource.PlotBeat;
+                var ordered = resource is AiChangeResource.Chapter or AiChangeResource.Scene or AiChangeResource.PlotArc;
                 var offered = action switch
                 {
                     AiChangeAction.Create or AiChangeAction.Remove => !prose && resource != AiChangeResource.Progression,
@@ -412,7 +412,6 @@ internal static class AiChangeCatalog
         AiChangeResource.LoreEntry => "lore_entry",
         AiChangeResource.TimelineEvent => "timeline_event",
         AiChangeResource.PlotArc => "plot_arc",
-        AiChangeResource.PlotBeat => "plot_beat",
         AiChangeResource.WorldRule => "world_rule",
         AiChangeResource.LoreType => "lore_type",
         AiChangeResource.LoreField => "lore_field",

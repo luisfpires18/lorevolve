@@ -3,7 +3,7 @@ import { chooseFromMenu } from './support/rowMenu'
 import { answerConfirms } from './support/confirm'
 
 /**
- * The five story drawers - story, chapter, scene, arc and beat - never let unsaved changes go without asking, and never
+ * The four story drawers - story, chapter, scene and arc - never let unsaved changes go without asking, and never
  * ask about a form that holds nothing to lose. Dirty is the form against what it opened on, as the save would send it:
  * a change put back is no change, and the order references were picked in is not one either.
  *
@@ -61,7 +61,7 @@ async function seedEntity(page: Page, universeId: string, name: string) {
   })
 }
 
-/** A story with two chapters, two scenes in the first, one arc of one beat pointing at the first scene. */
+/** A story with two chapters, two scenes in the first, and one arc. */
 async function seedStory(page: Page, universeId: string) {
   const stories = `/api/universes/${universeId}/stories`
   const storyId = await post(page, stories, { title: 'The Long Winter', premise: null, status: 0 })
@@ -81,19 +81,12 @@ async function seedStory(page: Page, universeId: string) {
       entityIds,
       chapterId: one,
     })
-  const gates = await scene('The Gates', [arlen])
+  await scene('The Gates', [arlen])
   await scene('The Council', [])
-  const arc = await post(page, `${base}/plot-arcs`, {
+  await post(page, `${base}/plot-arcs`, {
     title: 'The siege',
     description: null,
     notes: null,
-  })
-  await post(page, `${base}/plot-arcs/${arc}/beats`, {
-    title: 'The wall holds',
-    description: null,
-    notes: null,
-    sceneIds: [gates],
-    entityIds: [],
   })
   return `/app/universes/${universeId}/stories/${storyId}`
 }
@@ -381,62 +374,46 @@ test.describe('story drawers', () => {
     await expect.poll(() => asked).toHaveLength(4)
   })
 
-  test("an arc and a beat ask before their drafts go, a beat's scenes count, and a saved one asks nothing", async ({
+  test("an arc and a scene's beats ask before their drafts go, and a saved one asks nothing", async ({
     page,
   }) => {
     await signUp(page)
-    const universeId = await newUniverse(page, unique('Plot Drafts '))
+    const universeId = await newUniverse(page, unique('Arc Drafts '))
     const storyUrl = await seedStory(page, universeId)
     const { asked, answer } = await dialogs(page)
-    await page.goto(`${storyUrl}/plot`)
-    const arc = page.locator('[data-testid="plot-arc"][data-title="The siege"]')
-    const beat = page.locator('[data-testid="plot-beat"][data-title="The wall holds"]')
+    await page.goto(storyUrl)
+    const arc = page.locator('[data-testid="arc"][data-title="The siege"]')
 
     // A new arc: untouched it closes; with a title it asks, and discarding creates nothing.
-    await page.getByTestId('new-plot-arc').click()
+    await page.getByTestId('new-arc').click()
     await page.getByTestId('cancel-plot-arc').click()
     await expect(page.getByTestId('plot-arc-form')).toHaveCount(0)
-    await page.getByTestId('new-plot-arc').click()
+    await page.getByTestId('new-arc').click()
     await page.getByTestId('plot-arc-title-input').fill('Loose threads')
     answer(true)
     await page.getByTestId('cancel-plot-arc').click()
     await expect(page.getByTestId('plot-arc-form')).toHaveCount(0)
     await expect.poll(() => asked).toEqual([DISCARD])
-    await expect(page.getByTestId('plot-arc')).toHaveCount(1)
+    await expect(page.getByTestId('arc')).toHaveCount(1)
 
-    // An edited arc, saved, asks nothing - neither on closing nor on leaving for another view.
-    await chooseFromMenu(arc, 'plot-arc-edit')
+    // An edited arc, saved, asks nothing.
+    await chooseFromMenu(arc, 'arc-edit')
     await page.getByTestId('plot-arc-description-input').fill('Who holds the wall.')
     await page.getByTestId('save-plot-arc').click()
     await expect(page.getByTestId('plot-arc-form')).toHaveCount(0)
-    await expect(arc.getByTestId('plot-arc-description')).toHaveText('Who holds the wall.')
+    await expect(arc.getByTestId('arc-description')).toHaveText('Who holds the wall.')
 
-    // A beat's scenes are part of it: ticking one is a change, unticking it again is none.
-    await beat.getByTestId('plot-beat-edit').click()
-    const beatForm = page.getByTestId('plot-beat-form')
-    const council = beatForm.locator(
-      '[data-testid="scene-picker-option"][data-title="The Council"]',
-    )
-    await council.check()
-    await page.getByTestId('cancel-plot-beat').click()
+    // A scene's beats are part of its draft: a beat typed is a change, the row removed again is none.
+    await scene(page, 'The Gates').getByTestId('scene-edit').click()
+    const form = page.getByTestId('scene-form')
+    await form.getByTestId('scene-beat-add').click()
+    await form.getByTestId('scene-beat-title').fill('The wall holds')
+    await page.getByTestId('cancel-scene').click()
     await expect.poll(() => asked).toEqual([DISCARD, DISCARD])
-    await expect(beatForm).toBeVisible()
-    await council.uncheck()
-    await page.getByTestId('cancel-plot-beat').click()
-    await expect(beatForm).toHaveCount(0)
+    await expect(form).toBeVisible()
+    await form.getByTestId('scene-beat-remove').click()
+    await page.getByTestId('cancel-scene').click()
+    await expect(form).toHaveCount(0)
     await expect.poll(() => asked).toHaveLength(2)
-
-    // A new beat asks too; saved, it is simply there.
-    await arc.getByTestId('plot-arc-new-beat').click()
-    await page.getByTestId('plot-beat-title-input').fill('The gate falls')
-    await page.keyboard.press('Escape')
-    await expect.poll(() => asked).toEqual([DISCARD, DISCARD, DISCARD])
-    await page.getByTestId('save-plot-beat').click()
-    await expect(beatForm).toHaveCount(0)
-    await expect(page.getByTestId('plot-beat')).toHaveCount(2)
-
-    await page.getByTestId('story-view-scenes').click()
-    await page.waitForURL(storyUrl)
-    await expect.poll(() => asked).toHaveLength(3)
   })
 })

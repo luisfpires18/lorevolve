@@ -212,19 +212,8 @@ public static class PublicContentEndpoints
             .Where(arc => arc.StoryId == story.Id)
             .OrderBy(arc => arc.SortOrder)
             .ThenBy(arc => arc.Id)
-            .Select(arc => new { arc.Id, arc.Title, arc.Description })
+            .Select(arc => new PublicPlotArc(arc.Title, arc.Description))
             .ToListAsync(cancellationToken);
-
-        var arcIds = arcs.Select(arc => arc.Id).ToList();
-        var beats = arcIds.Count == 0
-            ? []
-            : (await db.PlotBeats.AsNoTracking()
-                .Where(beat => arcIds.Contains(beat.PlotArcId) && beat.DeletedAt == null)
-                .OrderBy(beat => beat.SortOrder)
-                .ThenBy(beat => beat.Id)
-                .Select(beat => new { beat.PlotArcId, beat.Title, beat.Description })
-                .ToListAsync(cancellationToken));
-        var beatsByArc = beats.ToLookup(beat => beat.PlotArcId);
 
         var listing = story.Listing;
         return Results.Ok(new PublicStoryDetail(
@@ -241,16 +230,21 @@ public static class PublicContentEndpoints
                     .Where(mention => publicLore.ContainsKey(mention.EntityId))
                     .Select(mention => new PublicMentionLink(mention.Start, mention.Length, publicLore[mention.EntityId]))]))],
             scenes,
-            [.. arcs.Select(arc => new PublicPlotArc(
-                arc.Title,
-                arc.Description,
-                [.. beatsByArc[arc.Id].Select(beat => new PublicPlotBeat(beat.Title, beat.Description))]))]));
+            arcs));
     }
 
-    /// <summary>The workspace's reading order (<see cref="Stories.SceneEndpoints.LoadScenesAsync"/>): Unchaptered, then each chapter in order.</summary>
+    /// <summary>
+    /// The workspace's reading order (<see cref="Stories.SceneEndpoints.LoadScenesAsync"/>): Unchaptered, the chapters in no
+    /// arc, then each arc's chapters in order.
+    /// </summary>
     private static IOrderedQueryable<Stories.Scene> InReadingOrder(IQueryable<Stories.Scene> scenes) =>
         scenes
-            .OrderBy(scene => scene.ChapterId == null ? -1 : scene.Chapter!.SortOrder)
+            .OrderBy(scene => scene.ChapterId == null
+                ? -1
+                : scene.Chapter!.ArcLink == null || scene.Chapter.ArcLink.PlotArc!.DeletedAt != null
+                    ? 0
+                    : scene.Chapter.ArcLink.PlotArc.SortOrder + 1)
+            .ThenBy(scene => scene.ChapterId == null ? -1 : scene.Chapter!.SortOrder)
             .ThenBy(scene => scene.SortOrder)
             .ThenBy(scene => scene.Id);
 

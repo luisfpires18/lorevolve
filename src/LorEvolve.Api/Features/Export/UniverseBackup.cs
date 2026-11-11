@@ -107,8 +107,8 @@ public sealed record UniverseBackup(
     /// null, and each revision's <c>content</c> is the article as it read then.
     ///
     /// 10 - A story's content may sit in the Trash, and a scene's manuscript keeps its saved versions (ADR 0029).
-    /// <see cref="BackupStory.DeletedAt"/>, <see cref="BackupChapter.DeletedAt"/>, <see cref="BackupScene.DeletedAt"/>,
-    /// <see cref="BackupPlotArc.DeletedAt"/> and <see cref="BackupPlotBeat.DeletedAt"/> say what is in it, and
+    /// <see cref="BackupStory.DeletedAt"/>, <see cref="BackupChapter.DeletedAt"/>, <see cref="BackupScene.DeletedAt"/>
+    /// and <see cref="BackupPlotArc.DeletedAt"/> say what is in it, and
     /// <see cref="BackupSceneManuscript.Revisions"/> carries every saved version of the prose. It fails the "ignorable" test
     /// twice, as versions 2 and 9 did. The markers re-mean <c>stories</c> and every collection inside a story: membership no
     /// longer implies something is live, and the <c>sortOrder</c> of a row in the Trash holds no place - so a version 9 reader
@@ -294,8 +294,14 @@ public sealed record UniverseBackup(
     /// keeps the words as a note. Not ignorable: notes and lines are authored, and a version 35 reader would restore the
     /// universe with every board about it silently gone. A file at version 35 or earlier has none, even when it carries the
     /// member. Boards that belong to no universe are never here.
+    ///
+    /// 37 - Arcs are story structure (ADR 0070): <see cref="BackupChapter.PlotArcId"/> names the arc a chapter is told in,
+    /// and <see cref="BackupScene.Beats"/> carries a scene's beats in order. Plot beats are retired: <see cref="BackupPlotArc"/>
+    /// carries no beats, and an idea names no beat. Not ignorable: a version 36 reader would restore every chapter out of its
+    /// arc and every scene without its beats. A file at version 36 or earlier restores with no arc and no beat at all - its
+    /// plot arcs and beats, and an idea's references to them, are left out, as the owner chose when plot was retired.
     /// </summary>
-    public const int CurrentVersion = 36;
+    public const int CurrentVersion = 37;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -990,8 +996,9 @@ public sealed record BackupTimelineValidation(Guid? EventKindTermId, Guid? Metho
 /// <paramref name="Scenes"/> is every scene of the story in reading order: Unchaptered first, then chapter
 /// by chapter, each in its own narrative order.
 ///
-/// <paramref name="PlotArcs"/> is the story's plot, arcs in order (since version 7). Empty means a story with no
-/// arcs; absent - null, in any earlier file - means the same thing.
+/// <paramref name="PlotArcs"/> are the story's arcs in order (since version 7; structure since version 37, ADR 0070). Empty
+/// means a story with no arcs; absent - null, in any earlier file - means the same thing. A file before version 37 carries
+/// plot arcs that are not restored.
 ///
 /// <paramref name="PublicSummary"/> is what its author wrote for readers of the public portal (since version 16); never
 /// its publication, address or date.
@@ -1022,6 +1029,7 @@ public sealed record BackupStory(
 /// notes. The number a reader sees - "Chapter 3" - is <paramref name="SortOrder"/> plus one and is not
 /// carried; neither is anything the chapter holds, because each scene names its chapter itself.
 /// <paramref name="DeletedAt"/> is when it went to the Trash (since version 10); a chapter there holds no scene.
+/// <paramref name="PlotArcId"/> is the arc of this same story it is told in, or null for none (since version 37).
 /// </summary>
 public sealed record BackupChapter(
     Guid Id,
@@ -1031,7 +1039,8 @@ public sealed record BackupChapter(
     string? Notes,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    DateTime? DeletedAt);
+    DateTime? DeletedAt,
+    Guid? PlotArcId = null);
 
 /// <summary>
 /// One scene, carried with its container and its place in it.
@@ -1053,6 +1062,8 @@ public sealed record BackupChapter(
 /// <paramref name="DeletedAt"/> is when the scene was moved to the Trash, or null while it is live (since version 10). A
 /// scene in the Trash carries its prose, versions and links like any other, and its <paramref name="SortOrder"/> holds no
 /// place in its container.
+///
+/// <paramref name="Beats"/> are its beats in order (since version 37, ADR 0070); null or empty means none.
 /// </summary>
 public sealed record BackupScene(
     Guid Id,
@@ -1067,7 +1078,17 @@ public sealed record BackupScene(
     BackupSceneManuscript? Manuscript,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    DateTime? DeletedAt);
+    DateTime? DeletedAt,
+    IReadOnlyList<BackupSceneBeat>? Beats = null);
+
+/// <summary>One beat of a scene (since version 37): its place in the scene, from 0, its title and its optional note.</summary>
+public sealed record BackupSceneBeat(
+    Guid Id,
+    int SortOrder,
+    string Title,
+    string? Note,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
 /// <summary>
 /// One scene's prose (since version 8), exactly as stored: the text with every line break, blank line and character the
@@ -1098,10 +1119,9 @@ public sealed record BackupManuscriptRevision(
     string Content);
 
 /// <summary>
-/// One plot arc (since version 7): its place in the story's plot, from 0, the author's title, description and
-/// notes, and its beats in order. The number a reader sees - "Arc 2" - is <paramref name="SortOrder"/> plus one and
-/// is not carried. <paramref name="DeletedAt"/> is when it went to the Trash (since version 10); its beats are
-/// carried as they stood, and come back with it.
+/// One arc (since version 7; structure since version 37, ADR 0070): its place in the story, from 0, and the author's title,
+/// description and notes. The number a reader sees - "Arc 2" - is <paramref name="SortOrder"/> plus one and is not carried;
+/// its chapters name it themselves. <paramref name="DeletedAt"/> is when it went to the Trash (since version 10).
 /// </summary>
 public sealed record BackupPlotArc(
     Guid Id,
@@ -1109,28 +1129,6 @@ public sealed record BackupPlotArc(
     string Title,
     string? Description,
     string? Notes,
-    DateTime CreatedAt,
-    DateTime UpdatedAt,
-    DateTime? DeletedAt,
-    IReadOnlyList<BackupPlotBeat> Beats);
-
-/// <summary>
-/// One beat (since version 7): its place in its arc, from 0, its text, and what it points at.
-///
-/// <paramref name="LinkedSceneIds"/> are scenes of this same story and <paramref name="LinkedEntityIds"/> entries
-/// in this same file, each list sorted by id so an unchanged plot writes the same bytes. Ids only: no scene title,
-/// chapter, entry name or number is carried, so a scene that moved chapter is still the scene the beat names. A
-/// trashed entry may be among them, and is in the file too, and so may a scene in the Trash. The beat's order has no
-/// bearing on any scene's. <paramref name="DeletedAt"/> is when the beat went to the Trash (since version 10).
-/// </summary>
-public sealed record BackupPlotBeat(
-    Guid Id,
-    int SortOrder,
-    string Title,
-    string? Description,
-    string? Notes,
-    IReadOnlyList<Guid> LinkedSceneIds,
-    IReadOnlyList<Guid> LinkedEntityIds,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     DateTime? DeletedAt);

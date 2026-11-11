@@ -70,8 +70,7 @@ public sealed class SceneManuscriptMigrationTests : IDisposable
             inside = await CreateScene(client, universeId, storyId, "Inside", arrival);
             loose = await CreateScene(client, universeId, storyId, "Loose thread");
 
-            var fall = await CreateArc(client, universeId, storyId, "Fall of the King");
-            await CreateBeat(client, universeId, storyId, fall.Id, "Learns", [gate, loose], [arlen]);
+            await CreateArc(client, universeId, storyId, "Fall of the King");
 
             await WriteManuscript(client, universeId, storyId, gate, "Written before a rollback.");
         }
@@ -80,14 +79,12 @@ public sealed class SceneManuscriptMigrationTests : IDisposable
 
         List<string> scenes;
         List<string> chapters;
-        int beatScenes;
 
         // Down to the schema before manuscripts: the prose goes, and not one story row changes.
         await using (var db = Context())
         {
             scenes = await SceneRows(db);
             chapters = await ChapterRows(db);
-            beatScenes = await db.PlotBeatScenes.CountAsync();
             Assert.Equal(3, scenes.Count);
             Assert.Single(chapters);
             Assert.Equal(1, await db.SceneManuscripts.CountAsync());
@@ -97,7 +94,6 @@ public sealed class SceneManuscriptMigrationTests : IDisposable
             Assert.DoesNotContain(Table, await Tables(db));
             Assert.Equal(scenes, await SceneRows(db));
             Assert.Equal(chapters, await ChapterRows(db));
-            Assert.Equal(beatScenes, await db.PlotBeatScenes.CountAsync());
             Assert.Empty(await ForeignKeyViolations(db));
         }
 
@@ -115,7 +111,6 @@ public sealed class SceneManuscriptMigrationTests : IDisposable
 
             Assert.Equal(scenes, await SceneRows(db));
             Assert.Equal(chapters, await ChapterRows(db));
-            Assert.Equal(beatScenes, await db.PlotBeatScenes.CountAsync());
 
             // Keyed by the scene, deleted with the scene, and long text with no length of its own.
             Assert.Equal(["Scenes.SceneId:CASCADE"], await ForeignKeys(db, Table));
@@ -129,8 +124,8 @@ public sealed class SceneManuscriptMigrationTests : IDisposable
                 ["Chapters.ChapterId:NO ACTION", "ChronologyCalendarMonths.MonthId:NO ACTION", "ChronologyEras.EraId:NO ACTION", "Entities.PovEntityId:SET NULL", "Stories.StoryId:CASCADE"],
                 (await ForeignKeys(db, "Scenes")).Order(StringComparer.Ordinal));
             Assert.Equal(
-                ["PlotBeats.PlotBeatId:CASCADE", "Scenes.SceneId:CASCADE"],
-                (await ForeignKeys(db, "PlotBeatScenes")).Order(StringComparer.Ordinal));
+                ["Scenes.SceneId:CASCADE"],
+                (await ForeignKeys(db, "SceneBeats")).Order(StringComparer.Ordinal));
         }
 
         SqliteConnection.ClearAllPools();

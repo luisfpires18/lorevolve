@@ -66,7 +66,8 @@ public enum AiChangeResource
     Article = 7,
 
     PlotArc = 8,
-    PlotBeat = 9,
+
+    // 9 was a plot beat, retired with plot beats (ADR 0070). Never reused.
     WorldRule = 10,
 
     /// <summary>One of the universe owner's own ideas linked to this universe - never another account's (ADR 0030).</summary>
@@ -105,7 +106,7 @@ public enum AiChangeAction
     /// <summary>To the Trash, through the resource's own lifecycle. Never a permanent delete.</summary>
     Remove = 2,
 
-    /// <summary>A container's whole order - a story's chapters or arcs, a chapter's scenes, an arc's beats - through its own order route.</summary>
+    /// <summary>A container's whole order - a story's chapters or arcs, a chapter's scenes - through its own order route.</summary>
     Reorder = 3,
 }
 

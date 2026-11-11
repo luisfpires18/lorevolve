@@ -545,7 +545,10 @@ test.describe('stories', () => {
     await chooseFromMenu(chapter(page, 'Arrival'), 'chapter-delete')
     await expect(confirmDialog(page)).toContainText('The chapter will be removed.')
     await expect(confirmDialog(page)).not.toContainText(/scenes will be deleted/i)
-    await acceptConfirm(page, 'Its 2 scenes will be moved to Unchaptered.')
+    await acceptConfirm(
+      page,
+      'Its 2 scenes will be moved to Unchaptered, with their manuscripts and beats.',
+    )
     await expect
       .poll(() => structure(page))
       .toEqual([

@@ -16,7 +16,7 @@ import { entryText } from './support/zip'
  */
 
 /** The backup format the API writes today (`UniverseBackup.CurrentVersion`); a file one past it is from a newer LorEvolve. */
-const CURRENT_FORMAT_VERSION = 36
+const CURRENT_FORMAT_VERSION = 37
 
 function unique(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`
@@ -59,7 +59,7 @@ interface Seeded {
 
 /**
  * One of each thing the restore screen should bring back into view: an entry with an article and a picture, a story with a
- * chapter, a scene with prose and a scene in the Trash, an arc and a beat, an idea about the universe, and a world rule.
+ * chapter in an arc, a scene with prose and a beat and a scene in the Trash, an idea about the universe, and a world rule.
  */
 async function seedWorld(page: Page, name: string): Promise<Seeded> {
   const universe = await api<{ id: string }>(page, 'POST', '/api/universes', {
@@ -101,10 +101,16 @@ async function seedWorld(page: Page, name: string): Promise<Seeded> {
     status: 1,
   })
   const s = `${u}/stories/${story.id}`
+  const arc = await api<{ id: string }>(page, 'POST', `${s}/plot-arcs`, {
+    title: 'The Lamp Goes Dark',
+    description: null,
+    notes: null,
+  })
   const chapter = await api<{ id: string }>(page, 'POST', `${s}/chapters`, {
     title: 'Landfall',
     summary: null,
     notes: null,
+    plotArcId: arc.id,
   })
   const scene = await api<{ id: string }>(page, 'POST', `${s}/scenes`, {
     title: 'The Harbour Council',
@@ -114,6 +120,17 @@ async function seedWorld(page: Page, name: string): Promise<Seeded> {
     chronology: null,
     entityIds: [entity.id],
     chapterId: chapter.id,
+  })
+  await api(page, 'PUT', `${s}/scenes/${scene.id}`, {
+    title: 'The Harbour Council',
+    summary: null,
+    notes: null,
+    povEntityId: entity.id,
+    chronology: null,
+    entityIds: [entity.id],
+    chapterId: chapter.id,
+    expectedVersion: 1,
+    beats: [{ title: 'Isolde hides the oil', note: null }],
   })
   await api(page, 'PUT', `${s}/scenes/${scene.id}/manuscript`, {
     content: 'Snow fell on the Vellmarch quay while the council argued.',
@@ -128,18 +145,6 @@ async function seedWorld(page: Page, name: string): Promise<Seeded> {
     entityIds: [],
   })
   await api(page, 'DELETE', `${s}/scenes/${cut.id}`)
-  const arc = await api<{ id: string }>(page, 'POST', `${s}/plot-arcs`, {
-    title: 'The Lamp Goes Dark',
-    description: null,
-    notes: null,
-  })
-  await api(page, 'POST', `${s}/plot-arcs/${arc.id}/beats`, {
-    title: 'Isolde hides the oil',
-    description: null,
-    notes: null,
-    sceneIds: [scene.id],
-    entityIds: [entity.id],
-  })
   await api(page, 'POST', '/api/ideas', {
     title: 'What if the lamp is alive?',
     body: 'Only the keeper knows.',
@@ -247,7 +252,7 @@ test.describe('restore a backup', () => {
       'The Orlamund lamp was never allowed to go out.',
     )
 
-    // The manuscript, the plot and the idea.
+    // The manuscript, the arc, the beat and the idea.
     const stories = await api<{ id: string; title: string }[]>(page, 'GET', `${r}/stories`)
     const story = stories.find((candidate) => candidate.title === 'The Brennquay Winter')!
     const detail = await api<{ scenes: { id: string; title: string }[] }>(
@@ -261,8 +266,9 @@ test.describe('restore a backup', () => {
       page.getByTestId('manuscript-editor'),
       'Snow fell on the Vellmarch quay while the council argued.',
     )
-    await page.goto(`/app/universes/${restoredId}/stories/${story.id}/plot`)
-    await expect(page.getByText('Isolde hides the oil')).toBeVisible()
+    await page.goto(`/app/universes/${restoredId}/stories/${story.id}`)
+    await expect(page.getByTestId('arc-heading')).toHaveText('Arc 1: The Lamp Goes Dark')
+    await expect(page.getByTestId('scene-beat')).toHaveText(['Isolde hides the oil'])
     await page.goto(`/app/universes/${restoredId}/ideas`)
     await expect(page.getByText('What if the lamp is alive?')).toBeVisible()
 

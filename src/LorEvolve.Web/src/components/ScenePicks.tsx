@@ -51,7 +51,7 @@ export function ScenePicks({
     getStory(universeId, story, controller.signal)
       .then((detail) =>
         setScenes(
-          readingOrder(detail.chapters, detail.scenes).map((scene) => ({
+          readingOrder(detail.arcs, detail.chapters, detail.scenes).map((scene) => ({
             id: scene.id,
             storyId: detail.id,
             title: scene.title,

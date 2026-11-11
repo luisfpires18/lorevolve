@@ -147,9 +147,9 @@ public sealed class StoryEndpointTests(LorEvolveApiFactory factory) : IClassFixt
         });
 
         // One scene or a hundred in ten chapters, the same queries: nothing is read per chapter, per scene
-        // or per reference - ownership, the story, its chapters, its scenes and the lore they name.
+        // or per reference - ownership, the story, its arcs, its chapters, its scenes and the lore they name.
         Assert.Equal(smallQueries, largeQueries);
-        Assert.InRange(largeQueries, 1, 5);
+        Assert.InRange(largeQueries, 1, 6);
     }
 
     // ---------- What deleting takes with it ----------

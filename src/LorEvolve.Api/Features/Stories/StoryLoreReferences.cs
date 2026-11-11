@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LorEvolve.Api.Features.Stories;
 
 /// <summary>
-/// Lore as a story shows it, on a scene or on a plot beat. One implementation for both, so a reference reads
+/// Lore as a story shows it, on a scene. One implementation, so a reference reads
 /// the same wherever a story points at an entry.
 ///
 /// The name, type, icon and picture are read from the entry on every request and never stored beside the

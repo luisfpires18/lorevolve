@@ -63,7 +63,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
     };
 
     [McpServerTool(Name = "search_universe", Title = "Search the universe", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
-    [Description("Search this universe's lore entries, stories, chapters, scenes, plot arcs and beats, and scene prose by keywords. "
+    [Description("Search this universe's lore entries, stories, arcs, chapters and scenes, and scene prose by keywords. "
         + "Every word must appear, so search for one or two distinctive words such as a name, not a whole question. "
         + "Returns up to five matches of each kind, best first, each with its id and a short excerpt.")]
     public async Task<CallToolResult> SearchUniverseAsync(
@@ -127,8 +127,8 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
             : NotFound());
 
     [McpServerTool(Name = "get_story", Title = "Read a story's structure", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
-    [Description("Read one story's structure: its premise and status, its chapters, its scenes in reading order with short summaries, "
-        + "and its plot arcs and beats. No manuscript prose.")]
+    [Description("Read one story's structure: its premise and status, its arcs, its chapters - each naming its arc - and its scenes "
+        + "in reading order with short summaries and their beats. No manuscript prose.")]
     public async Task<CallToolResult> GetStoryAsync(
         [Description("The story's id, exactly as a result gave it.")] string storyId,
         CancellationToken cancellationToken) =>
@@ -373,7 +373,6 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         UniverseSearchKind.Chapter => "chapter",
         UniverseSearchKind.Scene => "scene",
         UniverseSearchKind.PlotArc => "plot_arc",
-        UniverseSearchKind.PlotBeat => "plot_beat",
         _ => "scene_prose",
     };
 }

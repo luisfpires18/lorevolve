@@ -168,7 +168,6 @@ app.MapSceneEndpoints();
 app.MapSceneManuscriptEndpoints();
 app.MapLoreReferenceEndpoints();
 app.MapPlotArcEndpoints();
-app.MapPlotBeatEndpoints();
 app.MapCanonIntegrityEndpoints();
 app.MapTrashEndpoints();
 app.MapCommentEndpoints();

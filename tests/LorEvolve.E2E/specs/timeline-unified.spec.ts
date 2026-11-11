@@ -38,7 +38,6 @@ interface World {
   ashes: string
   coronation: string
   aftermath: string
-  beat: string
   akron: string
 }
 
@@ -90,23 +89,6 @@ async function buildWorld(page: Page): Promise<World> {
   const aftermath = (await scene(kingdom, 'Aftermath', 100)).id
   await scene(kingdom, 'Undated scene', null)
   await scene(ashes, 'Embers', 120)
-
-  const arc = (
-    await post(page, `${stories}/${kingdom}/plot-arcs`, {
-      title: 'The crown',
-      description: null,
-      notes: null,
-    })
-  ).id
-  const beat = (
-    await post(page, `${stories}/${kingdom}/plot-arcs/${arc}/beats`, {
-      title: 'The crown changes hands',
-      description: null,
-      notes: null,
-      sceneIds: [coronation],
-      entityIds: [],
-    })
-  ).id
 
   const types = (await (await page.request.get(`/api/universes/${u}/entity-types`)).json()) as {
     id: string
@@ -173,7 +155,7 @@ async function buildWorld(page: Page): Promise<World> {
   await moment('Fall of Armath', 115, [])
   await moment('The Accord', 116, [kingdom])
 
-  return { u, kingdom, ashes, coronation, aftermath, beat, akron }
+  return { u, kingdom, ashes, coronation, aftermath, akron }
 }
 
 function items(page: Page) {
@@ -227,7 +209,7 @@ test.describe('unified timeline', () => {
     await expect(item(page, 'Old Mira')).toContainText('Old Mira dies.')
     await expect(item(page, 'Undated scene')).toHaveCount(0)
     await expect(items(page)).toHaveCount(7)
-    await expect(item(page, 'Coronation')).toContainText('In The Last Kingdom · Chapter 1: Crowns')
+    await expect(item(page, 'Coronation')).toContainText('In The Last Kingdom · Crowns')
     await expect(item(page, 'The Accord').getByTestId('moment-stories-The Accord')).toContainText(
       'Story: The Last Kingdom',
     )
@@ -243,7 +225,7 @@ test.describe('unified timeline', () => {
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('moment-form')).toHaveCount(0)
 
-    // The ways out: the scene, its manuscript, its plot beat, and the entry.
+    // The ways out: the scene, its manuscript, and the entry.
     await coronation.getByTestId('timeline-open-scene').click()
     await page.waitForURL(`**/stories/${w.kingdom}#scene-${w.coronation}`)
     await expect(page.locator(`#scene-${w.coronation}`)).toBeVisible()
@@ -254,12 +236,6 @@ test.describe('unified timeline', () => {
     await expect(page.getByTestId('manuscript-editor')).toBeVisible()
     await page.goBack()
 
-    await item(page, 'Coronation').getByTestId('timeline-open-plot').click()
-    await page.waitForURL(`**/stories/${w.kingdom}/plot#beat-${w.beat}`)
-    await expect(page.locator(`#beat-${w.beat}`)).toBeVisible()
-    await page.goBack()
-
-    await expect(item(page, 'Aftermath').getByTestId('timeline-open-plot')).toHaveCount(0)
     await item(page, 'Akron Wright').getByTestId('timeline-open-lore').click()
     await page.waitForURL(`**/lore/${w.akron}`)
   })
@@ -271,7 +247,7 @@ test.describe('unified timeline', () => {
     const w = await buildWorld(page)
     const storyPath = `/app/universes/${w.u}/stories/${w.kingdom}`
 
-    await page.goto(`${storyPath}/plot`)
+    await page.goto(storyPath)
     await page.getByTestId('story-actions').click()
     await page.getByTestId('menu-story-timeline').click()
     await page.waitForURL(`**/timeline?story=${w.kingdom}`)
@@ -284,7 +260,7 @@ test.describe('unified timeline', () => {
     await expectTitles(page, ['Aftermath', 'Coronation', 'The Accord'])
 
     await page.goBack()
-    await page.waitForURL(`**${storyPath}/plot`)
+    await page.waitForURL(`**${storyPath}`)
 
     await page.goForward()
     await page.waitForURL(`**/timeline?story=${w.kingdom}`)

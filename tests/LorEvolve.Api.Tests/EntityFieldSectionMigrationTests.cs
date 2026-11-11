@@ -68,7 +68,7 @@ public sealed class EntityFieldSectionMigrationTests : IDisposable
             Assert.Empty(await TriggersOf(db));
 
             // Rolling back took nothing that was there before it.
-            Assert.Equal(earlier, await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
+            Assert.Equal(LaterSchema.WithDroppedTriggers(earlier), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
         }
 
         SqliteConnection.ClearAllPools();
@@ -115,7 +115,7 @@ public sealed class EntityFieldSectionMigrationTests : IDisposable
     /// <summary>Everything that was there before: every table with its row count, and every field's and type's id and name.</summary>
     private static async Task<string> Fingerprint(LorEvolveDbContext db)
     {
-        var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name <> 'EntityFieldSections' AND name <> 'EntityPrivateNotes' AND name <> 'KnowledgeRecords' AND name <> 'AdminAuditRecords' AND name <> 'UniverseMaps' AND name <> 'MapPins' AND name <> 'MapCalibrations' AND name <> 'AiChangeMedia' AND name <> 'McpUniverseAliases' AND name <> 'FeedbackReports' AND name <> 'UniverseAiHelpOff' AND name NOT LIKE 'IdeaBoard%' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%SearchIndex%' AND name <> '__EFMigrationsHistory' ORDER BY name");
+        var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table' AND name <> 'EntityFieldSections' AND name <> 'EntityPrivateNotes' AND name <> 'KnowledgeRecords' AND name <> 'AdminAuditRecords' AND name <> 'UniverseMaps' AND name <> 'MapPins' AND name <> 'MapCalibrations' AND name <> 'AiChangeMedia' AND name <> 'McpUniverseAliases' AND name <> 'FeedbackReports' AND name <> 'UniverseAiHelpOff' AND name NOT LIKE 'IdeaBoard%' AND name <> 'ChapterArcs' AND name <> 'SceneBeats' AND name NOT LIKE 'PlotBeat%' AND name <> 'IdeaPlotBeatReferences' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%SearchIndex%' AND name <> '__EFMigrationsHistory' ORDER BY name");
         var parts = new List<string>();
         foreach (var table in tables)
         {

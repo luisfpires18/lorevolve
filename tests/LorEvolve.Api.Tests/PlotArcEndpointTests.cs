@@ -10,9 +10,9 @@ using static LorEvolve.Api.Tests.PlotTestClient;
 namespace LorEvolve.Api.Tests;
 
 /// <summary>
-/// Plot arcs inside a story: what one holds, the order only its author sets, what deleting one takes with it and
-/// what it must never take, who may reach one, the plot read's fixed query count, and that planning a plot changes
-/// nothing about the lore.
+/// Arcs inside a story (ADR 0070): what one holds, the order only its author sets, the chapters told in one and the beats a
+/// scene holds, what deleting one takes with it and what it must never take, who may reach one, the story read's fixed query
+/// count, and that planning changes nothing about the lore.
 /// </summary>
 public sealed class PlotArcEndpointTests(LorEvolveApiFactory factory) : IClassFixture<LorEvolveApiFactory>
 {
@@ -35,7 +35,6 @@ public sealed class PlotArcEndpointTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Equal("The throne is lost.", fall.Description);
         Assert.Equal("Keep it slow.", fall.Notes);
         Assert.Equal(story, fall.StoryId);
-        Assert.Empty(fall.Beats);
         Assert.Equal([0, 1], new[] { fall.SortOrder, mira.SortOrder });
 
         var read = (await client.GetFromJsonAsync<PlotArcResponse>(Arc(universe.Id, story, mira.Id)))!;
@@ -114,127 +113,191 @@ public sealed class PlotArcEndpointTests(LorEvolveApiFactory factory) : IClassFi
         var raw = await client.GetStringAsync(Arc(universe.Id, story, a.Id));
         using var document = JsonDocument.Parse(raw);
         Assert.Equal(
-            ["beats", "createdAt", "description", "id", "notes", "sortOrder", "storyId", "title", "updatedAt", "visibility"],
+            ["createdAt", "description", "id", "notes", "sortOrder", "storyId", "title", "updatedAt", "visibility"],
             document.RootElement.EnumerateObject().Select(property => property.Name).Order(StringComparer.Ordinal));
     }
 
-    // ---------- What deleting takes, and never takes ----------
+    // ---------- Arcs hold chapters (ADR 0070) ----------
 
     [Fact]
-    public async Task Deleting_an_arc_closes_the_gap_and_puts_its_beats_and_links_in_the_trash_with_it_but_no_scene_chapter_or_entry()
+    public async Task A_chapter_moves_into_an_arc_last_there_and_out_again_and_only_into_an_arc_of_its_own_story()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "arcchapters");
+        var u = universe.Id;
+        var story = await CreateStory(client, u, "The Great Forging");
+        var other = await CreateStory(client, u, "Another telling");
+        var pestilence = await CreateArc(client, u, story, "Pestilence Weapon");
+        var foreign = await CreateArc(client, u, other, "Elsewhere");
+
+        var tragic = await CreateChapter(client, u, story, "Tragic Expedition");
+        var jungle = await CreateChapter(client, u, story, "The Jungle Conflict");
+        var loose = await CreateChapter(client, u, story, "Loose");
+        var siege = await CreateScene(client, u, story, "The Siege", tragic);
+
+        var moved = await MoveChapterToArc(client, u, story, jungle, pestilence.Id);
+        Assert.Equal(pestilence.Id, moved.PlotArcId);
+        await MoveChapterToArc(client, u, story, tragic, pestilence.Id);
+
+        // Last in its arc is last in the story's one chapter order; its scenes go with it.
+        var read = await ReadStory(client, u, story);
+        Assert.Equal([pestilence.Id], read.Arcs.Select(arc => arc.Id));
+        Assert.Equal([loose, jungle, tragic], read.Chapters.Select(chapter => chapter.Id));
+        Assert.Equal(
+            new Guid?[] { null, pestilence.Id, pestilence.Id },
+            read.Chapters.Select(chapter => chapter.PlotArcId));
+        Assert.Equal(tragic, read.Scenes.Single(scene => scene.Id == siege).ChapterId);
+
+        // An arc of another story is refused in the same words as an arc that is nothing at all.
+        var chapterArc = ChapterArc(u, story, loose);
+        var foreignRefusal = await Errors(await client.PutAsJsonAsync(chapterArc, new ChapterArcRequest(foreign.Id)));
+        var unknownRefusal = await Errors(await client.PutAsJsonAsync(chapterArc, new ChapterArcRequest(Guid.NewGuid())));
+        Assert.Equal(unknownRefusal, foreignRefusal);
+        Assert.Contains("\"plotArcId\"", foreignRefusal, StringComparison.Ordinal);
+
+        // A new chapter may start in an arc; out again is null.
+        var made = await PostJson<ChapterResponse>(client, $"{Story(u, story)}/chapters", new ChapterRequest("Late", null, null, pestilence.Id));
+        Assert.Equal(pestilence.Id, made.PlotArcId);
+        Assert.Null((await MoveChapterToArc(client, u, story, tragic, null)).PlotArcId);
+
+        // An edit of a chapter's words never moves it out of its arc.
+        var edited = await PutJson<ChapterResponse>(client, $"{Story(u, story)}/chapters/{jungle}", new ChapterRequest("Jungle", null, null));
+        Assert.Equal(pestilence.Id, edited.PlotArcId);
+    }
+
+    [Fact]
+    public async Task Deleting_an_arc_closes_the_gap_and_leaves_its_chapters_in_no_arc_until_it_is_restored()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "arcdelete");
-        var arlen = await CreateEntity(client, universe.Id, "Arlen");
-        var story = await CreateStory(client, universe.Id, "Doomed thread");
-        var ashes = await CreateChapter(client, universe.Id, story, "Ashes");
-        var siege = await CreateScene(client, universe.Id, story, "The Siege", ashes);
-        var escape = await CreateScene(client, universe.Id, story, "Escape");
+        var u = universe.Id;
+        var arlen = await CreateEntity(client, u, "Arlen");
+        var story = await CreateStory(client, u, "Doomed thread");
+        var first = await CreateArc(client, u, story, "First");
+        var doomed = await CreateArc(client, u, story, "Fall of the King");
+        var last = await CreateArc(client, u, story, "Last");
+        var ashes = await CreateChapter(client, u, story, "Ashes");
+        await MoveChapterToArc(client, u, story, ashes, doomed.Id);
+        var siege = await CreateScene(client, u, story, "The Siege", ashes);
+        await SetBeats(client, u, story, siege, "The wall falls");
 
-        var first = await CreateArc(client, universe.Id, story, "First");
-        var doomed = await CreateArc(client, universe.Id, story, "Fall of the King");
-        var last = await CreateArc(client, universe.Id, story, "Last");
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync(Arc(u, story, doomed.Id))).StatusCode);
 
-        var breach = await CreateBeat(client, universe.Id, story, doomed.Id, "Capital is breached", [siege, escape], [arlen]);
-        var exile = await CreateBeat(client, universe.Id, story, doomed.Id, "Accepts exile");
-        var kept = await CreateBeat(client, universe.Id, story, last.Id, "Kept", [siege], [arlen]);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Arc(u, story, doomed.Id))).StatusCode);
+        var read = await ReadStory(client, u, story);
+        Assert.Equal(new (Guid, int)[] { (first.Id, 0), (last.Id, 1) }, read.Arcs.Select(arc => (arc.Id, arc.SortOrder)));
+        Assert.Null(Assert.Single(read.Chapters).PlotArcId);
+        Assert.Equal(["The wall falls"], read.Scenes.Single().Beats!.Select(beat => beat.Title));
+        (await client.GetAsync($"/api/universes/{u}/entities/{arlen}")).EnsureSuccessStatusCode();
 
-        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync(Arc(universe.Id, story, doomed.Id))).StatusCode);
+        // Only the arc is marked: the chapter keeps its link, and comes back into the arc with it (ADR 0029).
+        await WithDb(_factory, async db =>
+            Assert.True(await db.ChapterArcs.AnyAsync(link => link.ChapterId == ashes && link.PlotArcId == doomed.Id)));
+        (await client.PostAsync($"/api/universes/{u}/trash/plot-arcs/{doomed.Id}/restore", content: null)).EnsureSuccessStatusCode();
+        Assert.Equal(doomed.Id, Assert.Single((await ReadStory(client, u, story)).Chapters).PlotArcId);
 
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Arc(universe.Id, story, doomed.Id))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Beat(universe.Id, story, breach.Id))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Beat(universe.Id, story, exile.Id))).StatusCode);
-
-        var plot = await Plot(client, universe.Id, story);
-        Assert.Equal(
-            new (Guid, int)[] { (first.Id, 0), (last.Id, 1) },
-            plot.Select(arc => (arc.Id, arc.SortOrder)));
-        Assert.Equal([siege], Assert.Single(plot[1].Beats).SceneIds);
-
-        // Only the arc is marked: its beats keep their order and every link, out of every read, for a restore (ADR 0029).
+        // Deleted for good, the arc takes only the link: the chapter, its scene and its beat stay.
+        (await client.DeleteAsync(Arc(u, story, doomed.Id))).EnsureSuccessStatusCode();
+        (await client.DeleteAsync($"/api/universes/{u}/trash/plot-arcs/{doomed.Id}")).EnsureSuccessStatusCode();
         await WithDb(_factory, async db =>
         {
-            Assert.True(await db.PlotArcs.AnyAsync(arc => arc.Id == doomed.Id && arc.DeletedAt != null));
-            Assert.Equal(2, await db.PlotBeats.CountAsync(beat => beat.PlotArcId == doomed.Id && beat.DeletedAt == null));
-            Assert.True(await db.PlotBeatScenes.AnyAsync(link => link.PlotBeatId == breach.Id));
-            Assert.True(await db.PlotBeatEntities.AnyAsync(link => link.PlotBeatId == breach.Id));
-            Assert.True(await db.PlotBeatScenes.AnyAsync(link => link.PlotBeatId == kept.Id && link.SceneId == siege));
-            Assert.True(await db.PlotBeatEntities.AnyAsync(link => link.PlotBeatId == kept.Id && link.EntityId == arlen));
+            Assert.False(await db.ChapterArcs.AnyAsync(link => link.ChapterId == ashes));
+            Assert.True(await db.Chapters.AnyAsync(chapter => chapter.Id == ashes && chapter.DeletedAt == null));
+            Assert.Equal(1, await db.SceneBeats.CountAsync(beat => beat.SceneId == siege));
         });
-
-        // Every scene, the chapter and the entry are exactly where they were.
-        var read = await ReadStory(client, universe.Id, story);
-        Assert.Equal([escape, siege], read.Scenes.Select(scene => scene.Id));
-        Assert.Equal([ashes], read.Chapters.Select(chapter => chapter.Id));
-        (await client.GetAsync($"/api/universes/{universe.Id}/entities/{arlen}")).EnsureSuccessStatusCode();
 
         // The next arc still lands last.
-        Assert.Equal(2, (await CreateArc(client, universe.Id, story, "After")).SortOrder);
+        Assert.Equal(2, (await CreateArc(client, u, story, "After")).SortOrder);
     }
 
     [Fact]
-    public async Task A_story_in_the_trash_keeps_its_plot_out_of_reach_and_deleting_its_universe_takes_it_for_good()
+    public async Task Deleting_a_universe_takes_its_arcs_chapter_links_and_beats_for_good()
     {
-        var (client, universe) = await SignedInWithUniverse(_factory, "arcstorydelete");
-        var arlen = await CreateEntity(client, universe.Id, "Arlen");
+        var (client, universe) = await SignedInWithUniverse(_factory, "arcuniverse");
+        var u = universe.Id;
+        var story = await CreateStory(client, u, "Gone");
+        var arc = await CreateArc(client, u, story, "Thread");
+        var chapter = await CreateChapter(client, u, story, "Only");
+        await MoveChapterToArc(client, u, story, chapter, arc.Id);
+        var scene = await CreateScene(client, u, story, "The Council", chapter);
+        await SetBeats(client, u, story, scene, "One", "Two");
 
-        var doomed = await CreateStory(client, universe.Id, "Doomed");
-        var scene = await CreateScene(client, universe.Id, doomed, "The Council");
-        var arc = await CreateArc(client, universe.Id, doomed, "Thread");
-        var beat = await CreateBeat(client, universe.Id, doomed, arc.Id, "Step", [scene], [arlen]);
-
-        var survivor = await CreateStory(client, universe.Id, "Survivor");
-        var survivorArc = await CreateArc(client, universe.Id, survivor, "Thread");
-        await CreateBeat(client, universe.Id, survivor, survivorArc.Id, "Step", null, [arlen]);
-
-        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync(Story(universe.Id, doomed))).StatusCode);
-
-        // Out of reach through the story, and kept whole beneath it (ADR 0029).
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Arcs(universe.Id, doomed))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Beat(universe.Id, doomed, beat.Id))).StatusCode);
+        (await client.PostAsync($"/api/universes/{u}/archive", content: null)).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/universes/{u}")).StatusCode);
 
         await WithDb(_factory, async db =>
         {
-            Assert.True(await db.PlotArcs.AnyAsync(candidate => candidate.StoryId == doomed && candidate.DeletedAt == null));
-            Assert.True(await db.PlotBeats.AnyAsync(candidate => candidate.Id == beat.Id && candidate.DeletedAt == null));
-            Assert.True(await db.PlotBeatScenes.AnyAsync(link => link.PlotBeatId == beat.Id));
-            Assert.True(await db.PlotBeatEntities.AnyAsync(link => link.PlotBeatId == beat.Id));
-            Assert.True(await db.Entities.AnyAsync(entity => entity.Id == arlen && entity.DeletedAt == null));
-        });
-
-        Assert.Single(await Plot(client, universe.Id, survivor));
-
-        // The universe's own cascade meets the plot from both sides - through its stories and through its entries - and
-        // takes the Trash with it.
-        (await client.PostAsync($"/api/universes/{universe.Id}/archive", content: null)).EnsureSuccessStatusCode();
-        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/universes/{universe.Id}")).StatusCode);
-
-        await WithDb(_factory, async db =>
-        {
-            Assert.False(await db.PlotArcs.AnyAsync(candidate => candidate.StoryId == survivor || candidate.StoryId == doomed));
-            Assert.False(await db.PlotBeats.AnyAsync(candidate => candidate.Id == beat.Id));
-            Assert.False(await db.PlotBeatEntities.AnyAsync(link => link.EntityId == arlen));
+            Assert.False(await db.PlotArcs.AnyAsync(candidate => candidate.StoryId == story));
+            Assert.False(await db.ChapterArcs.AnyAsync(link => link.ChapterId == chapter));
+            Assert.False(await db.SceneBeats.AnyAsync(beat => beat.SceneId == scene));
         });
     }
 
-    // ---------- A plot is not lore ----------
+    // ---------- Beats belong to a scene (ADR 0070) ----------
 
     [Fact]
-    public async Task Planning_a_plot_creates_no_canon_finding_no_timeline_entry_and_changes_no_entry()
+    public async Task A_scene_saves_its_beats_in_order_keeps_them_when_a_save_leaves_them_out_and_clears_them_when_asked()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "scenebeats");
+        var u = universe.Id;
+        var story = await CreateStory(client, u, "Orders");
+        var scene = await CreateScene(client, u, story, "The King's Orders");
+        var path = $"{Story(u, story)}/scenes/{scene}";
+
+        var saved = await SetBeats(client, u, story, scene, "  Marcus reads orders  ", "Marcus instructs Theo");
+        Assert.Equal(
+            new (string, int)[] { ("Marcus reads orders", 0), ("Marcus instructs Theo", 1) },
+            saved.Beats!.Select(beat => (beat.Title, beat.SortOrder)));
+        Assert.Equal(2, saved.Version);
+
+        // A save that does not name beats - an older client, a suggestion, an AI change - keeps them.
+        var kept = await PutJson<SceneResponse>(client, path, new SceneRequest("The King's Orders", "Read aloud.", null, null, null, [], null, saved.Version));
+        Assert.Equal(["Marcus reads orders", "Marcus instructs Theo"], kept.Beats!.Select(beat => beat.Title));
+
+        // The same beats again change nothing, so the version stays; a new order is a change.
+        var same = await SetBeats(client, u, story, scene, "Marcus reads orders", "Marcus instructs Theo");
+        Assert.Equal(kept.Version, same.Version);
+        var swapped = await SetBeats(client, u, story, scene, "Marcus instructs Theo", "Marcus reads orders");
+        Assert.Equal(same.Version + 1, swapped.Version);
+        Assert.Equal(["Marcus instructs Theo", "Marcus reads orders"], swapped.Beats!.Select(beat => beat.Title));
+
+        Assert.Empty((await SetBeats(client, u, story, scene)).Beats!);
+        await WithDb(_factory, async db => Assert.False(await db.SceneBeats.AnyAsync(beat => beat.SceneId == scene)));
+    }
+
+    [Fact]
+    public async Task A_beat_needs_a_title_and_a_scene_holds_a_bounded_number_of_them()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "beatbounds");
+        var u = universe.Id;
+        var story = await CreateStory(client, u, "Bounds");
+        var scene = await CreateScene(client, u, story, "Busy");
+        var path = $"{Story(u, story)}/scenes/{scene}";
+
+        SceneRequest With(params SceneBeatInput[] beats) => new("Busy", null, null, null, null, [], null, 1, beats);
+
+        Assert.Contains("\"beats[1].title\"", await Errors(await client.PutAsJsonAsync(path, With(new("Kept", null), new("  ", null)))), StringComparison.Ordinal);
+        Assert.Contains("\"beats[0].note\"", await Errors(await client.PutAsJsonAsync(
+            path, With(new SceneBeatInput("Long", new string('n', StoryLimits.BeatNoteMaxLength + 1))))), StringComparison.Ordinal);
+        Assert.Contains("\"beats\"", await Errors(await client.PutAsJsonAsync(
+            path, With([.. Enumerable.Range(0, StoryLimits.MaxBeatsPerScene + 1).Select(index => new SceneBeatInput($"Beat {index}", null))]))), StringComparison.Ordinal);
+
+        await WithDb(_factory, async db => Assert.False(await db.SceneBeats.AnyAsync(beat => beat.SceneId == scene)));
+    }
+
+    // ---------- Planning is not lore ----------
+
+    [Fact]
+    public async Task Arcs_and_beats_create_no_canon_finding_no_timeline_entry_and_change_no_entry()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "arcnotlore");
         var king = await CreateEntity(client, universe.Id, "King Arlen");
         var before = await client.GetStringAsync($"/api/universes/{universe.Id}/entities/{king}");
 
         var story = await CreateStory(client, universe.Id, "What if");
-        var scene = await CreateScene(client, universe.Id, story, "The Gate");
         var arc = await CreateArc(client, universe.Id, story, "Fall of the King", "The King dies.");
-        var beat = await CreateBeat(
-            client, universe.Id, story, arc.Id, "The King dies", [scene], [king], "Killed at the gate in year 40.");
-
-        await PutJson<PlotBeatResponse>(
-            client,
-            Beat(universe.Id, story, beat.Id),
-            new PlotBeatRequest("The King lives", "He does not die after all.", "Undecided.", [scene], [king]));
+        var chapter = await CreateChapter(client, universe.Id, story, "The Gate");
+        await MoveChapterToArc(client, universe.Id, story, chapter, arc.Id);
+        var scene = await CreateScene(client, universe.Id, story, "The Gate", chapter);
+        await SetBeats(client, universe.Id, story, scene, "The King dies in year 40", "The King lives after all");
 
         var conflicts = (await client.GetFromJsonAsync<CanonConflictPage>(
             $"/api/universes/{universe.Id}/canon-conflicts?pageSize=100"))!;
@@ -246,75 +309,51 @@ public sealed class PlotArcEndpointTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Equal(before, await client.GetStringAsync($"/api/universes/{universe.Id}/entities/{king}"));
     }
 
-    // ---------- Reading the whole plot ----------
+    // ---------- Reading the whole story ----------
 
     [Fact]
-    public async Task The_plot_is_read_in_the_same_few_queries_however_many_arcs_beats_and_links_it_holds()
+    public async Task The_story_is_read_in_the_same_few_queries_however_many_arcs_chapters_and_beats_it_holds()
     {
-        var (client, universe) = await SignedInWithUniverse(_factory, "plotqueries");
-
-        var lore = new List<Guid>();
-        for (var index = 0; index < 5; index++)
-        {
-            lore.Add(await CreateEntity(client, universe.Id, $"Entry {index}"));
-        }
+        var (client, universe) = await SignedInWithUniverse(_factory, "arcqueries");
 
         var small = await CreateStory(client, universe.Id, "Small");
         var alone = await CreateScene(client, universe.Id, small, "Alone");
-        var thread = await CreateArc(client, universe.Id, small, "Thread");
-        await CreateBeat(client, universe.Id, small, thread.Id, "Step", [alone], [lore[0]]);
+        await CreateArc(client, universe.Id, small, "Thread");
+        await SetBeats(client, universe.Id, small, alone, "Step");
 
         var large = await CreateStory(client, universe.Id, "Large");
-        var chapter = await CreateChapter(client, universe.Id, large, "Ashes");
-        var scenes = new List<Guid>();
-        for (var index = 0; index < 10; index++)
-        {
-            scenes.Add(await CreateScene(client, universe.Id, large, $"Scene {index}", index % 2 == 0 ? chapter : null));
-        }
-
-        for (var arcIndex = 0; arcIndex < 5; arcIndex++)
+        for (var arcIndex = 0; arcIndex < 3; arcIndex++)
         {
             var arc = await CreateArc(client, universe.Id, large, $"Arc {arcIndex}");
-            for (var beatIndex = 0; beatIndex < 10; beatIndex++)
+            for (var chapterIndex = 0; chapterIndex < 2; chapterIndex++)
             {
-                await CreateBeat(
-                    client, universe.Id, large, arc.Id, $"Beat {arcIndex}.{beatIndex}",
-                    [scenes[beatIndex], scenes[(beatIndex + 3) % 10], scenes[(beatIndex + 7) % 10]],
-                    [lore[beatIndex % 5], lore[(beatIndex + 1) % 5]]);
+                var chapter = await CreateChapter(client, universe.Id, large, $"Chapter {arcIndex}.{chapterIndex}");
+                await MoveChapterToArc(client, universe.Id, large, chapter, arc.Id);
+                var scene = await CreateScene(client, universe.Id, large, $"Scene {arcIndex}.{chapterIndex}", chapter);
+                await SetBeats(client, universe.Id, large, scene, "One", "Two", "Three");
             }
         }
 
-        var (smallQueries, _) = await CommandCounter.CountAsync(
-            [universe.Id, small], () => Plot(client, universe.Id, small));
-        var (largeQueries, plot) = await CommandCounter.CountAsync(
-            [universe.Id, large], () => Plot(client, universe.Id, large));
+        var (smallQueries, _) = await CommandCounter.CountAsync([universe.Id, small], () => ReadStory(client, universe.Id, small));
+        var (largeQueries, story) = await CommandCounter.CountAsync([universe.Id, large], () => ReadStory(client, universe.Id, large));
 
-        Assert.Equal(5, plot.Count);
-        Assert.All(plot, arc =>
-        {
-            Assert.Equal(10, arc.Beats.Count);
-            Assert.All(arc.Beats, beat =>
-            {
-                Assert.Equal(3, beat.SceneIds.Count);
-                Assert.Equal(2, beat.Entities.Count);
-            });
-        });
+        Assert.Equal(3, story.Arcs.Count);
+        Assert.All(story.Chapters, chapter => Assert.NotNull(chapter.PlotArcId));
+        Assert.All(story.Scenes, scene => Assert.Equal(3, scene.Beats!.Count));
 
-        // One beat or fifty, one link or two hundred and fifty, the same queries: ownership, the arcs, the beats,
-        // their scene links, their lore links and the entries named - nothing per arc, per beat or per link.
+        // One arc or three, one beat or eighteen: the same queries, nothing per arc, chapter, scene or beat.
         Assert.Equal(smallQueries, largeQueries);
-        Assert.InRange(largeQueries, 1, 8);
     }
 
     // ---------- Who may reach one ----------
 
     [Fact]
-    public async Task Someone_else_cannot_list_read_change_reorder_or_delete_a_plot()
+    public async Task Someone_else_cannot_list_read_change_reorder_or_delete_an_arc_or_move_a_chapter_into_one()
     {
         var (owner, universe) = await SignedInWithUniverse(_factory, "arcmine");
         var story = await CreateStory(owner, universe.Id, "Private");
         var arc = await CreateArc(owner, universe.Id, story, "Mine");
-        var beat = await CreateBeat(owner, universe.Id, story, arc.Id, "Also mine");
+        var chapter = await CreateChapter(owner, universe.Id, story, "Also mine");
 
         var stranger = await SignedIn(_factory, "user-arcyours");
 
@@ -327,19 +366,11 @@ public sealed class PlotArcEndpointTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.PutAsJsonAsync(
             $"{Arcs(universe.Id, story)}/order", new PlotArcOrderRequest([arc.Id]))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.DeleteAsync(Arc(universe.Id, story, arc.Id))).StatusCode);
-
-        Assert.Equal(HttpStatusCode.NotFound, (await stranger.PostAsJsonAsync(
-            ArcBeats(universe.Id, story, arc.Id), new PlotBeatRequest("Intruder", null, null, null, null))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.PutAsJsonAsync(
-            $"{ArcBeats(universe.Id, story, arc.Id)}/order", new PlotBeatOrderRequest([beat.Id]))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync(Beat(universe.Id, story, beat.Id))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await stranger.PutAsJsonAsync(
-            Beat(universe.Id, story, beat.Id), new PlotBeatRequest("Taken", null, null, null, null))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await stranger.DeleteAsync(Beat(universe.Id, story, beat.Id))).StatusCode);
+            ChapterArc(universe.Id, story, chapter), new ChapterArcRequest(arc.Id))).StatusCode);
 
-        var plot = Assert.Single(await Plot(owner, universe.Id, story));
-        Assert.Equal("Mine", plot.Title);
-        Assert.Equal("Also mine", Assert.Single(plot.Beats).Title);
+        Assert.Equal("Mine", Assert.Single(await Plot(owner, universe.Id, story)).Title);
+        Assert.Null(Assert.Single((await ReadStory(owner, universe.Id, story)).Chapters).PlotArcId);
     }
 
     [Fact]
@@ -351,24 +382,17 @@ public sealed class PlotArcEndpointTests(LorEvolveApiFactory factory) : IClassFi
         var home = await CreateStory(client, first.Id, "Home");
         var neighbour = await CreateStory(client, first.Id, "Neighbour");
         var arc = await CreateArc(client, first.Id, home, "Belongs home");
-        var beat = await CreateBeat(client, first.Id, home, arc.Id, "Also home");
 
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Arc(first.Id, neighbour, arc.Id))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.PutAsJsonAsync(
             Arc(first.Id, neighbour, arc.Id), new PlotArcRequest("Moved", null, null))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync(Arc(first.Id, neighbour, arc.Id))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsJsonAsync(
-            ArcBeats(first.Id, neighbour, arc.Id), new PlotBeatRequest("Smuggled", null, null, null, null))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.PutAsJsonAsync(
-            $"{ArcBeats(first.Id, neighbour, arc.Id)}/order", new PlotBeatOrderRequest([beat.Id]))).StatusCode);
 
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Arcs(second.Id, home))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Arc(second.Id, home, arc.Id))).StatusCode);
 
         Assert.Empty(await Plot(client, first.Id, neighbour));
-        var intact = Assert.Single(await Plot(client, first.Id, home));
-        Assert.Equal("Belongs home", intact.Title);
-        Assert.Equal([beat.Id], intact.Beats.Select(candidate => candidate.Id));
+        Assert.Equal("Belongs home", Assert.Single(await Plot(client, first.Id, home)).Title);
     }
 
     [Fact]

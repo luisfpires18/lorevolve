@@ -30,7 +30,7 @@ public sealed class IdeaBoardBackupTests(LorEvolveApiFactory factory) : IClassFi
 
         var backup = JsonSerializer.Deserialize<UniverseBackup>(
             DocumentText(await RawArchive(world.Client, world.Universe)), UniverseBackupJson.Options)!;
-        Assert.Equal(36, backup.FormatVersion);
+        Assert.Equal(37, backup.FormatVersion);
 
         var boards = backup.Payload.IdeaBoards!;
         Assert.Equal([("Plot board", false), ("Binned board", true)], boards.Select(board => (board.Title, board.DeletedAt is not null)));

@@ -77,7 +77,7 @@ public sealed class RuleValidationMigrationTests : IDisposable
             await db.GetService<IMigrator>().MigrateAsync(BeforeRuleValidation);
 
             Assert.Empty((await Names(db, "table")).Intersect(Tables));
-            Assert.Equal(triggers.Where(LaterSchema.BeforeNestedTypes).Order(StringComparer.Ordinal), (await Names(db, "trigger")).Order(StringComparer.Ordinal));
+            Assert.Equal(LaterSchema.WithDroppedTriggers(triggers).Where(LaterSchema.BeforeNestedTypes).Order(StringComparer.Ordinal), (await Names(db, "trigger")).Order(StringComparer.Ordinal));
             Assert.Equal(authored, await AuthoredRows(db));
             Assert.Empty(await ForeignKeyViolations(db));
         }

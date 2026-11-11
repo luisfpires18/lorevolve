@@ -90,21 +90,17 @@ export function referencePath(universeId: string, reference: IdeaReference) {
     case IdeaReferenceKind.Scene:
       return `${story}#scene-${reference.id}`
     case IdeaReferenceKind.PlotArc:
-      return `${story}/plot#arc-${reference.id}`
-    case IdeaReferenceKind.PlotBeat:
-      return `${story}/plot#beat-${reference.id}`
+      return `${story}#arc-${reference.id}`
   }
 }
 
-/** Where a reference sits, in the words an author knows it by: an entry's type, a scene's story, a beat's arc. */
+/** Where a reference sits, in the words an author knows it by: an entry's type, a scene's or an arc's story. */
 export function referenceContext(reference: IdeaReference) {
   switch (reference.kind) {
     case IdeaReferenceKind.Entity:
       return reference.entityTypeName
     case IdeaReferenceKind.Story:
       return null
-    case IdeaReferenceKind.PlotBeat:
-      return `In “${reference.plotArcTitle ?? ''}” of “${reference.storyTitle ?? ''}”`
     default:
       return `In “${reference.storyTitle ?? ''}”`
   }

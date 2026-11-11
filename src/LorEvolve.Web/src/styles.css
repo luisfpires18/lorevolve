@@ -9470,15 +9470,14 @@ html:has(.viewer[open]) {
  * eye can tell which row the link meant. The mark fades rather than vanishing, unless motion is reduced. The row holds
  * the focus by then, and the mark is what shows it.
  */
-.scene,
-.beat {
+.scene {
   transition:
     background-color 700ms ease,
     box-shadow 700ms ease;
 }
 
 .scene[data-arrived],
-.beat[data-arrived] {
+.plotarc[data-arrived] {
   background: var(--surface);
   box-shadow:
     inset 2px 0 0 var(--accent),
@@ -9486,13 +9485,12 @@ html:has(.viewer[open]) {
 }
 
 .scene:focus,
-.beat:focus {
+.plotarc:focus {
   outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scene,
-  .beat {
+  .scene {
     transition: none;
   }
 }
@@ -9546,8 +9544,7 @@ html:has(.viewer[open]) {
   min-width: 0;
 }
 
-.scene__tools,
-.beat__tools {
+.scene__tools {
   align-self: start;
 }
 
@@ -9963,60 +9960,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
   color: var(--muted);
 }
 
-.beats {
-  list-style: none;
-  margin: 0.9rem 0 0;
-  padding: 0;
-}
-
-.beat {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) auto;
-  column-gap: 0.9rem;
-  padding: 0.85rem 0;
-  border-top: 1px solid var(--rule);
-}
-
-.beat:last-child {
-  border-bottom: 1px solid var(--rule);
-}
-
-.beat__number {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--muted);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.beat__number::after {
-  content: '.';
-}
-
-.beat__body {
-  min-width: 0;
-}
-
-.beat__title {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: var(--text-item);
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-
-.beat__description {
-  margin: 0.2rem 0 0;
-  max-width: 62ch;
-  font-size: 0.92rem;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-
-/* "Scenes", "Lore" or "Plot", then its chips, wrapping under the label on a narrow screen - on a beat, and on a scene
-   wherever one is drawn. */
-.beat__refs,
+/* "Lore" or "Beats", then its chips or lines, wrapping under the label on a narrow screen, wherever a scene is drawn. */
 .scene__refs {
   display: flex;
   flex-wrap: wrap;
@@ -10027,61 +9971,13 @@ a.lorechip--pov:focus-visible .lorechip__name {
   color: var(--muted);
 }
 
-.beat__label {
-  flex: none;
-  min-width: 3.2rem;
-  font-size: var(--text-xs);
-}
-
 .scene__refs .scene__label {
   flex: none;
-}
-
-.beat__chips {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.5rem;
-  flex: 1 1 12rem;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-}
-
-.beat__chips li {
-  max-width: 100%;
 }
 
 .scene__refs .scene__lore {
   flex: 1 1 12rem;
   min-width: 0;
-}
-
-.beat__where {
-  font-size: var(--text-xs);
-}
-
-/* A linked scene's manuscript, beside its chip on a beat (Issue #48): an icon link, the chip's height. */
-.beat__chips li:has(.beat__write) {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-}
-
-.beat__write {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.75rem;
-  min-height: 1.75rem;
-  border-radius: var(--radius-sm);
-  color: var(--muted);
-}
-
-.beat__write:hover,
-.beat__write:focus-visible {
-  color: var(--ink);
-  background: var(--press-wash);
 }
 
 /* A scene's world date, leading to its story's timeline: the date as written, underlined only when pointed at. */
@@ -10095,107 +9991,97 @@ a.lorechip--pov:focus-visible .lorechip__name {
   text-decoration: underline;
 }
 
-.scene__noplot {
-  margin-bottom: 0;
+/* A scene's beats (ADR 0070): its steps as a numbered list beside the label, each note in a quieter line beneath. */
+.scene__beats {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--ink);
   font-size: var(--text-sm);
 }
 
-.plotchip__arrow {
-  color: var(--rule-strong);
+.scene__beat + .scene__beat {
+  margin-top: 0.15rem;
 }
 
-/* The scene picker: chosen scenes, a filter, and the story's scenes by chapter in a scrolling list. */
-.scenepick {
-  min-width: 0;
+.scene__beat::marker {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.scene__beattitle {
+  overflow-wrap: anywhere;
+}
+
+.scene__beatnote {
+  display: block;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* The beats in the scene drawer: one row per beat - its number, its title and note, and its tools at the end. */
+.scenebeats {
   margin: 0;
   padding: 0;
   border: 0;
+  min-width: 0;
 }
 
-.scenepick > legend {
-  padding: 0;
-}
-
-/* The chosen scenes are a list, not a field: no underline, so the filter below is the only thing that reads as one. */
-.scenepick__chosen {
+.scenebeats__list {
   list-style: none;
-  margin: 0 0 0.6rem;
-  padding: 0;
-  border-bottom: 0;
-}
-
-.token__text {
-  overflow-wrap: anywhere;
-}
-
-.token__note {
-  font-size: 0.7rem;
-  color: var(--muted);
-}
-
-.scenepick__filter {
-  margin-bottom: 0.5rem;
-}
-
-.scenepick__list {
-  max-height: min(18rem, 45dvh);
-  overflow-y: auto;
-  padding: 0.2rem 0.65rem 0.4rem;
-  border: 1px solid var(--rule);
-}
-
-.scenepick__heading {
-  margin: 0.55rem 0 0.1rem;
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-
-.scenepick__options {
-  list-style: none;
-  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
   padding: 0;
 }
 
-.scenepick__option {
+.scenebeats__item {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(0, 1fr) auto;
+  column-gap: var(--space-2);
+  align-items: start;
+}
+
+.scenebeats__number {
+  padding-top: 0.55rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.scenebeats__fields {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.scenebeats__note {
+  font-size: var(--text-sm);
+}
+
+.scenebeats__tools {
   display: flex;
-  align-items: flex-start;
-  gap: 0.55rem;
-  padding: 0.3rem 0;
-  font-size: 0.9rem;
-  overflow-wrap: anywhere;
-  cursor: pointer;
+  gap: 0.1rem;
+  padding-top: 0.2rem;
 }
 
-.scenepick__option input {
-  flex: none;
-  margin: 0.2rem 0 0;
-  accent-color: var(--accent);
-}
-
-.scenepick__none {
-  margin: 0.4rem 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-@media (pointer: coarse) {
-  .scenepick__option {
-    align-items: center;
-    min-height: 2.75rem;
-  }
-
-  .scenepick__option input {
-    margin-top: 0;
-  }
+.scenebeats__add {
+  justify-self: start;
 }
 
 @media (max-width: 640px) {
-  .beat {
+  /* On a phone a beat's tools sit under its fields, so the title keeps the width. */
+  .scenebeats__item {
     grid-template-columns: 1.4rem minmax(0, 1fr);
-    column-gap: 0.55rem;
+  }
+
+  .scenebeats__tools {
+    grid-column: 2;
+    padding-top: 0;
   }
 }
 
@@ -10762,8 +10648,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
   }
 
   /* A phone keeps the column for the scene: its two controls sit under it, at the end. */
-  .scene__tools,
-  .beat__tools {
+  .scene__tools {
     grid-column: 2;
   }
 
@@ -10795,8 +10680,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
     box-shadow: var(--shadow-3);
   }
 
-  .story__scenes,
-  .plot {
+  .story__scenes {
     padding-bottom: 5rem;
   }
 
@@ -15319,8 +15203,7 @@ body:has(.portal) {
   margin-top: 1.1em;
 }
 
-.pstory__scenes,
-.pstory__beats {
+.pstory__scenes {
   display: grid;
   gap: var(--space-5);
   max-width: 44rem;
@@ -15328,8 +15211,7 @@ body:has(.portal) {
   padding-left: 1.5rem;
 }
 
-.pstory__scenes li::marker,
-.pstory__beats li::marker {
+.pstory__scenes li::marker {
   color: var(--portal-muted);
   font-size: var(--text-ui);
 }
@@ -15344,8 +15226,7 @@ body:has(.portal) {
 }
 
 .pstory__scenesummary,
-.pstory__arcdescription,
-.pstory__beatdescription {
+.pstory__arcdescription {
   margin: var(--space-2) 0 0;
   color: rgb(var(--portal-ink-rgb) / 0.86);
   line-height: 1.6;
@@ -15361,21 +15242,6 @@ body:has(.portal) {
 .pstory__arcdescription {
   max-width: 44rem;
   margin: 0 0 var(--space-5);
-}
-
-.pstory__beats {
-  gap: var(--space-4);
-}
-
-.pstory__beattitle {
-  display: block;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.pstory__beatdescription {
-  display: block;
-  margin-top: var(--space-1);
 }
 
 /* Who a world is by. A world based on someone else's work credits that creator first, its LorEvolve author as curator,

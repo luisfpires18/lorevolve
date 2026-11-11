@@ -16,7 +16,6 @@ const PLACEHOLDERS: Record<IdeaReferenceKindValue, string> = {
   [IdeaReferenceKind.Story]: 'Title of a story',
   [IdeaReferenceKind.Scene]: 'Title of a scene',
   [IdeaReferenceKind.PlotArc]: 'Title of an arc',
-  [IdeaReferenceKind.PlotBeat]: 'Title of a beat',
 }
 
 /** What one request answered, and which request it was - so a list is never shown for words no longer typed. */
@@ -40,7 +39,7 @@ interface IdeaReferencePickerProps {
 /**
  * Choosing something for an idea to reference, in the drawer every LorEvolve form uses.
  *
- * One kind at a time - Lore, Story, Scene, Arc, Beat - named in words, then a filter over names. Only live content of the
+ * One kind at a time - Lore, Story, Scene, Arc - named in words, then a filter over names. Only live content of the
  * idea's own universe is offered: the API never lists another universe's, and nothing in the Trash. Every control is an
  * ordinary button or field, so Tab walks it in order, Escape closes it and the focus goes back to Add reference.
  */

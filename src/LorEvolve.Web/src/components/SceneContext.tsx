@@ -3,13 +3,12 @@ import { Link } from 'react-router-dom'
 import { LoreReference } from './LoreReference'
 import type { Chronology } from '../chronology/types'
 import { sceneWhen } from '../stories/format'
-import type { SceneBeatReference } from '../stories/structure'
-import type { Scene } from '../stories/types'
+import type { Scene, SceneBeat } from '../stories/types'
 
 /*
  * What a scene refers to, drawn the same way wherever a scene is shown - its card on the Scenes view and its page on the
  * Manuscript view - so the two cannot drift apart. All of it is read-only here: the scene form edits the date, the point
- * of view and the lore, and the beats own their links to the scene. `testId` names the surface, so each keeps its own
+ * of view, the lore and the beats. `testId` names the surface, so each keeps its own
  * test ids.
  */
 
@@ -88,61 +87,27 @@ export function SceneLore({
   )
 }
 
-/** The plot beats that point at the scene, arc by arc, each a way to that beat on the story's Plot view. */
-export function SceneBeats({
-  universeId,
-  storyId,
-  beats,
-  storyHasBeats = false,
-  testId,
-}: {
-  universeId: string
-  storyId: string
-  beats: SceneBeatReference[]
-  /**
-   * The story plans beats, none of them this scene's: say so, and where they are linked, rather than show nothing. Only
-   * where one scene is shown at a time (the manuscript), and never a demand - a scene needs no beat.
-   */
-  storyHasBeats?: boolean
-  testId: Surface
-}) {
+/**
+ * The scene's beats, in order (ADR 0070): each step a line, its note under it. Nothing when it has none - a scene needs no
+ * beat. Edited in the scene's own drawer.
+ */
+export function SceneBeatList({ beats, testId }: { beats: SceneBeat[]; testId: Surface }) {
   const labelId = useId()
-  const plotPath = `/app/universes/${universeId}/stories/${storyId}/plot`
-
-  if (beats.length === 0) {
-    return storyHasBeats ? (
-      <p className="scene__refs scene__noplot" data-testid={`${testId}-plot-none`}>
-        <span className="scene__label">Plot</span>
-        <span>
-          No beat links this scene. <Link to={plotPath}>Open Plot</Link>
-        </span>
-      </p>
-    ) : null
-  }
+  if (beats.length === 0) return null
 
   return (
-    <div className="scene__refs">
+    <div className="scene__refs scene__refs--beats">
       <span className="scene__label" id={labelId}>
-        Plot
+        Beats
       </span>
-      <ul className="scene__lore" aria-labelledby={labelId} data-testid={`${testId}-plot`}>
+      <ol className="scene__beats" aria-labelledby={labelId} data-testid={`${testId}-beats`}>
         {beats.map((beat) => (
-          <li key={beat.beatId}>
-            <Link
-              className="lorechip plotchip"
-              to={`${plotPath}#beat-${beat.beatId}`}
-              aria-label={`${beat.arcTitle}: ${beat.beatTitle}`}
-              data-testid={`${testId}-plot-beat`}
-            >
-              <span className="lorechip__name">
-                <bdi>{beat.arcTitle}</bdi>
-                <span className="plotchip__arrow"> → </span>
-                <bdi>{beat.beatTitle}</bdi>
-              </span>
-            </Link>
+          <li key={beat.id} className="scene__beat" data-testid={`${testId}-beat`}>
+            <bdi className="scene__beattitle">{beat.title}</bdi>
+            {beat.note ? <span className="scene__beatnote">{beat.note}</span> : null}
           </li>
         ))}
-      </ul>
+      </ol>
     </div>
   )
 }

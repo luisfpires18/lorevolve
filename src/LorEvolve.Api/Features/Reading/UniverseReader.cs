@@ -157,7 +157,7 @@ public static class UniverseReader
             stored?.Version ?? 0);
     }
 
-    /// <summary>One live story of this universe, or null: its chapters, its scenes in reading order and its plot.</summary>
+    /// <summary>One live story of this universe, or null: its arcs, its chapters and its scenes in reading order.</summary>
     public static async Task<StoryReading?> GetStoryAsync(
         LorEvolveDbContext db,
         Guid universeId,
@@ -170,8 +170,7 @@ public static class UniverseReader
             return null;
         }
 
-        var chapterNumbers = story.Chapters.ToDictionary(chapter => chapter.Id, chapter => chapter.SortOrder + 1);
-        var arcs = await PlotArcEndpoints.LoadArcsAsync(db, universeId, storyId, null, cancellationToken);
+        var numbers = StoryEndpoints.ChapterNumbers(story.Chapters);
 
         return new StoryReading(
             story.Id,
@@ -181,24 +180,26 @@ public static class UniverseReader
             [
                 .. story.Chapters.Take(ChapterLimit).Select(chapter => new ChapterReading(
                     chapter.Id,
-                    chapter.SortOrder + 1,
+                    numbers[chapter.Id],
                     chapter.Title,
-                    ReadingText.Cut(chapter.Summary, OutlineLength))),
+                    ReadingText.Cut(chapter.Summary, OutlineLength),
+                    chapter.PlotArcId)),
             ],
             [
                 .. story.Scenes.Take(SceneLimit).Select(scene => new SceneOutline(
                     scene.Id,
                     scene.Title,
-                    scene.ChapterId is { } chapter ? chapterNumbers.GetValueOrDefault(chapter) : null,
-                    ReadingText.Cut(scene.Summary, OutlineLength))),
+                    scene.ChapterId,
+                    ReadingText.Cut(scene.Summary, OutlineLength),
+                    [.. (scene.Beats ?? []).Take(BeatLimit).Select(beat => beat.Title)])),
             ],
             story.Scenes.Count > SceneLimit,
             [
-                .. arcs.Take(ArcLimit).Select(arc => new ArcReading(
+                .. story.Arcs.Take(ArcLimit).Select(arc => new ArcReading(
                     arc.Id,
+                    arc.SortOrder + 1,
                     arc.Title,
-                    ReadingText.Cut(arc.Description, OutlineLength),
-                    [.. arc.Beats.Take(BeatLimit).Select(beat => new BeatReading(beat.Id, beat.Title, ReadingText.Cut(beat.Description, OutlineLength)))])),
+                    ReadingText.Cut(arc.Description, OutlineLength))),
             ]);
     }
 

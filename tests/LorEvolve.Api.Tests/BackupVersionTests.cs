@@ -90,7 +90,7 @@ public sealed class BackupVersionTests(LorEvolveApiFactory factory) : IClassFixt
             Assert.Equal(sourceWarden.UpdatedAt, warden.ArticleUpdatedAt);
         }
 
-        // Stories from 5, plot from 7, prose from 8, its versions from 10.
+        // Stories from 5, prose from 8, its versions from 10; no older arc comes back.
         if (version < 5)
         {
             Assert.Empty(copy.Stories!);
@@ -101,7 +101,8 @@ public sealed class BackupVersionTests(LorEvolveApiFactory factory) : IClassFixt
             Assert.Equal(["Cold Open", "The Council"], story.Scenes.Select(scene => scene.Title));
             Assert.Equal([0, 1], story.Scenes.Select(scene => scene.SortOrder));
             Assert.All(story.Scenes, scene => Assert.Null(scene.ChapterId));
-            Assert.Equal(version >= 7 ? 1 : 0, story.PlotArcs!.Count);
+            // Plot arcs were carried from 7, but before 37 they were plot, and plot is not restored (ADR 0070).
+            Assert.Empty(story.PlotArcs!);
 
             var prose = story.Scenes[0].Manuscript;
             if (version < 8)

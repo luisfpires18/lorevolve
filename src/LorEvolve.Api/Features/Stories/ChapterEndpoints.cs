@@ -18,6 +18,10 @@ namespace LorEvolve.Api.Features.Stories;
 /// closed on delete, moved only by <c>PUT .../chapters/order</c>. No chapter number is stored - the one a
 /// reader sees is its position - and no scene's chronology decides where a chapter sits.
 ///
+/// A chapter is in at most one arc of its story, or none (ADR 0070). Its order stays one order across the whole story;
+/// an arc reads its own chapters in that order, and the number shown restarts in each arc. Moving a chapter into an arc
+/// puts it last there, which is last in the story.
+///
 /// Deleting a chapter never deletes a scene. Its scenes move, in their order, to the end of Unchaptered,
 /// and only then does the chapter go to the Trash - holding no scene - all in one transaction. A chapter in
 /// the Trash answers every route here as a missing one does; restoring it is the Trash's work (ADR 0029).
@@ -41,6 +45,7 @@ public static class ChapterEndpoints
         group.MapPut("/order", ReorderAsync).WithName("ReorderChapters");
         group.MapGet("/{chapterId:guid}", GetAsync).WithName("GetChapter");
         group.MapPut("/{chapterId:guid}", UpdateAsync).WithName("UpdateChapter");
+        group.MapPut("/{chapterId:guid}/arc", MoveToArcAsync).WithName("MoveChapterToArc");
         group.MapDelete("/{chapterId:guid}", DeleteAsync).WithName("DeleteChapter");
 
         return endpoints;
@@ -119,6 +124,11 @@ public static class ChapterEndpoints
             return Results.ValidationProblem(errors);
         }
 
+        if (request.PlotArcId is { } arcId && !await PlotArcEndpoints.BelongsToStoryAsync(db, storyId, arcId, cancellationToken))
+        {
+            return Results.ValidationProblem(PlotArcEndpoints.ForeignArc());
+        }
+
         var last = await db.Chapters
             .Where(chapter => chapter.StoryId == storyId && chapter.DeletedAt == null)
             .MaxAsync(chapter => (int?)chapter.SortOrder, cancellationToken);
@@ -137,6 +147,11 @@ public static class ChapterEndpoints
         };
 
         db.Chapters.Add(chapter);
+        if (request.PlotArcId is { } inArc)
+        {
+            db.ChapterArcs.Add(new ChapterArc { ChapterId = chapter.Id, PlotArcId = inArc });
+        }
+
         story.UpdatedAt = now;
 
         try
@@ -152,7 +167,7 @@ public static class ChapterEndpoints
 
         return Results.Created(
             $"/api/universes/{universeId}/stories/{storyId}/chapters/{chapter.Id}",
-            Respond(chapter));
+            await LoadChapterAsync(db, chapter.Id, cancellationToken));
     }
 
     /// <summary>The title, summary and notes. Never the order, and never the scenes a chapter holds.</summary>
@@ -211,7 +226,106 @@ public static class ChapterEndpoints
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return Results.Ok(Respond(chapter));
+        return Results.Ok(await LoadChapterAsync(db, chapter.Id, cancellationToken));
+    }
+
+    /// <summary>
+    /// Moves a chapter into one of its story's live arcs, last there, or out of every arc when the request names none
+    /// (ADR 0070). Its scenes go with it, untouched. Moving it where it already is changes nothing.
+    /// </summary>
+    private static async Task<IResult> MoveToArcAsync(
+        Guid universeId,
+        Guid storyId,
+        Guid chapterId,
+        [FromBody] ChapterArcRequest request,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        return await MoveToArcCoreAsync(db, universeId, storyId, chapterId, request.PlotArcId, cancellationToken);
+    }
+
+    /// <summary>The move itself. In the caller's transaction when it has one, else its own. Access is the caller's.</summary>
+    internal static async Task<IResult> MoveToArcCoreAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid storyId,
+        Guid chapterId,
+        Guid? plotArcId,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+
+        var story = await StoryEndpoints.FindAsync(db, universeId, storyId, cancellationToken);
+        if (story is null)
+        {
+            return Results.NotFound();
+        }
+
+        var chapter = await db.Chapters
+            .Include(candidate => candidate.ArcLink)
+            .ThenInclude(link => link!.PlotArc)
+            .FirstOrDefaultAsync(
+                candidate => candidate.Id == chapterId && candidate.StoryId == storyId && candidate.DeletedAt == null,
+                cancellationToken);
+
+        if (chapter is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (plotArcId is { } arcId && !await PlotArcEndpoints.BelongsToStoryAsync(db, storyId, arcId, cancellationToken))
+        {
+            return Results.ValidationProblem(PlotArcEndpoints.ForeignArc());
+        }
+
+        // Where the chapter reads now: a link to an arc in the Trash is no arc.
+        var current = chapter.ArcLink is { PlotArc.DeletedAt: null } live ? live.PlotArcId : (Guid?)null;
+        if (current == plotArcId)
+        {
+            return Results.Ok(await LoadChapterAsync(db, chapterId, cancellationToken));
+        }
+
+        if (chapter.ArcLink is { } link)
+        {
+            db.ChapterArcs.Remove(link);
+        }
+
+        if (plotArcId is { } target)
+        {
+            db.ChapterArcs.Add(new ChapterArc { ChapterId = chapterId, PlotArcId = target });
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+
+            // Last in its new arc: last in the story's one chapter order.
+            var others = await db.Chapters
+                .Where(candidate => candidate.StoryId == storyId && candidate.DeletedAt == null && candidate.Id != chapterId)
+                .OrderBy(candidate => candidate.SortOrder)
+                .ThenBy(candidate => candidate.Id)
+                .ToListAsync(cancellationToken);
+
+            await StoryOrder.PlaceChaptersAsync(db, [.. others, chapter], cancellationToken);
+
+            var now = DateTime.UtcNow;
+            chapter.UpdatedAt = now;
+            story.UpdatedAt = now;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException failure) when (DatabaseFailures.IsConstraintViolation(failure))
+        {
+            return OrderChanged();
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return Results.Ok(await LoadChapterAsync(db, chapterId, cancellationToken));
     }
 
     /// <summary>
@@ -409,6 +523,13 @@ public static class ChapterEndpoints
     internal static Dictionary<string, string[]> ForeignChapter() =>
         new() { ["chapterId"] = ["Choose a chapter from this story."] };
 
+    /// <summary>One chapter as the routes answer it, read back after a write so its arc is the stored one.</summary>
+    private static Task<ChapterResponse> LoadChapterAsync(
+        LorEvolveDbContext db,
+        Guid chapterId,
+        CancellationToken cancellationToken) =>
+        db.Chapters.AsNoTracking().Where(chapter => chapter.Id == chapterId).Select(ToResponse).FirstAsync(cancellationToken);
+
     /// <summary>Every live chapter of one story, first first. One query.</summary>
     internal static async Task<List<ChapterResponse>> LoadChaptersAsync(
         LorEvolveDbContext db,
@@ -430,10 +551,9 @@ public static class ChapterEndpoints
             chapter.Summary,
             chapter.Notes,
             chapter.CreatedAt,
-            chapter.UpdatedAt);
-
-    /// <summary>The same shape for a chapter already in memory, compiled once.</summary>
-    private static readonly Func<Chapter, ChapterResponse> Respond = ToResponse.Compile();
+            chapter.UpdatedAt,
+            // An arc in the Trash holds no chapter while it is there: its chapters read as in no arc (ADR 0070).
+            chapter.ArcLink != null && chapter.ArcLink.PlotArc!.DeletedAt == null ? chapter.ArcLink.PlotArcId : null);
 
     private static IResult OrderChanged() =>
         Results.Problem(
