@@ -59,6 +59,8 @@ function useEntitySearch(
         universeId,
         {
           search: query,
+          // A picker chooses an entry by its name or alias, never one that only mentions the words.
+          namesOnly: true,
           entityTypeId,
           // A link field limited to a type takes that type's nested types too (Issue #61).
           includeDescendants: true,

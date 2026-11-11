@@ -132,6 +132,7 @@ public static class EntityEndpoints
         [FromQuery] int pageSize = DefaultPageSize,
         [FromQuery(Name = "field")] string[]? field = null,
         [FromQuery] bool exact = false,
+        [FromQuery] bool namesOnly = false,
         [FromQuery] string? sort = null)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.Read, cancellationToken) is { } denied)
@@ -230,7 +231,8 @@ public static class EntityEndpoints
         }
         else if (!string.IsNullOrWhiteSpace(search))
         {
-            expression = EntitySearchIndex.BuildMatchExpression(search);
+            // Names only: a picker chooses an entry by what it is called, so one that merely mentions the words is not offered.
+            expression = EntitySearchIndex.BuildMatchExpression(search, namesOnly);
 
             // Something was typed, but not a single letter or digit in it. Nothing can match a
             // search for "%" and nothing did before either, so this is an empty page rather
