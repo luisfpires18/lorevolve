@@ -35,10 +35,13 @@ public sealed class UniverseSearchMigrationTests : IDisposable
 
     private static readonly string[] IndexTables = ["StorySearchIndex", "SceneManuscriptSearchIndex", "IdeaSearchIndex"];
 
-    /// <summary>Every trigger the migration creates. Read back by name from <c>sqlite_master</c>.</summary>
+    /// <summary>
+    /// Every trigger the migration creates that still stands: the plot beat triggers went with plot beats (ADR 0070). Read back
+    /// by name from <c>sqlite_master</c>.
+    /// </summary>
     public static readonly string[] Triggers =
     [
-        .. new[] { "Story", "Chapter", "Scene", "PlotArc", "PlotBeat" }.SelectMany(name => new[]
+        .. new[] { "Story", "Chapter", "Scene", "PlotArc" }.SelectMany(name => new[]
         {
             $"StorySearchIndex_{name}Inserted", $"StorySearchIndex_{name}Updated", $"StorySearchIndex_{name}Deleted",
         }),
@@ -83,8 +86,7 @@ public sealed class UniverseSearchMigrationTests : IDisposable
             var chapterId = await CreateChapter(client, universeId, storyId, "Arrival");
             sceneId = await CreateScene(client, universeId, storyId, "The Council", chapterId);
             await WriteManuscript(client, universeId, storyId, sceneId, "The hall had emptied.");
-            var arc = await CreateArc(client, universeId, storyId, "Fall of the King");
-            await CreateBeat(client, universeId, storyId, arc.Id, "The crown is refused");
+            await CreateArc(client, universeId, storyId, "Fall of the King");
 
             trashedSceneId = await CreateScene(client, universeId, storyId, "Obsidian in the Trash");
             (await client.DeleteAsync($"{Story(universeId, storyId)}/scenes/{trashedSceneId}")).EnsureSuccessStatusCode();
@@ -131,7 +133,8 @@ public sealed class UniverseSearchMigrationTests : IDisposable
 
             Assert.False(db.Database.HasPendingModelChanges());
             Assert.Empty(await ForeignKeyViolations(db));
-            Assert.Equal(authored, await AuthoredRows(db));
+            // Every arc goes on the way up: the story structure migration drops the old plot (ADR 0070).
+            Assert.Equal(authored.Where(row => !row.StartsWith("arc|", StringComparison.Ordinal)), await AuthoredRows(db));
 
             var tables = await Names(db, "table");
             Assert.All(IndexTables, table => Assert.Contains(table, tables));
@@ -139,7 +142,7 @@ public sealed class UniverseSearchMigrationTests : IDisposable
 
             // Everything written is copied, the Trash and the unassigned idea included: whether a row is found is the
             // search's question, not the index's.
-            Assert.Equal(await Scalar(db, "SELECT (SELECT COUNT(*) FROM Stories) + (SELECT COUNT(*) FROM Chapters) + (SELECT COUNT(*) FROM Scenes) + (SELECT COUNT(*) FROM PlotArcs) + (SELECT COUNT(*) FROM PlotBeats) AS Value"),
+            Assert.Equal(await Scalar(db, "SELECT (SELECT COUNT(*) FROM Stories) + (SELECT COUNT(*) FROM Chapters) + (SELECT COUNT(*) FROM Scenes) + (SELECT COUNT(*) FROM PlotArcs) AS Value"),
                 await Scalar(db, "SELECT COUNT(*) AS Value FROM StorySearchIndex"));
             Assert.Equal(await Scalar(db, "SELECT COUNT(*) AS Value FROM SceneManuscripts"), await Scalar(db, "SELECT COUNT(*) AS Value FROM SceneManuscriptSearchIndex"));
             Assert.Equal(await Scalar(db, "SELECT COUNT(*) AS Value FROM Ideas"), await Scalar(db, "SELECT COUNT(*) AS Value FROM IdeaSearchIndex"));
@@ -193,7 +196,6 @@ public sealed class UniverseSearchMigrationTests : IDisposable
         UNION ALL SELECT 'scene|' || "Title" || '|' || coalesce("Summary", '') || '|' || coalesce("DeletedAt", '') || '|' || "Id" AS Value FROM "Scenes"
         UNION ALL SELECT 'prose|' || "SceneId" || '|' || "Content" AS Value FROM "SceneManuscripts"
         UNION ALL SELECT 'arc|' || "Title" || '|' || "Id" AS Value FROM "PlotArcs"
-        UNION ALL SELECT 'beat|' || "Title" || '|' || "Id" AS Value FROM "PlotBeats"
         UNION ALL SELECT 'idea|' || "Title" || '|' || "Body" || '|' || coalesce("UniverseId", '') || '|' || "Id" AS Value FROM "Ideas"
         ORDER BY Value
         """;

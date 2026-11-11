@@ -54,9 +54,9 @@ public sealed class BackupRoundTripTests(LorEvolveApiFactory factory) : IClassFi
         Assert.True(counts.Entries >= 4 && counts.EntriesInTrash == 1 && counts.EntryVersions >= 5);
         Assert.Equal((1, 3, 1), (counts.Images, counts.ArticleVersions, counts.Articles));
         Assert.Equal((2, 3, 2), (counts.Eras, counts.RelationshipTypes, counts.Relationships));
-        Assert.Equal((1, 1, 4, 1, 2), (counts.Stories, counts.Chapters, counts.Scenes, counts.PlotArcs, counts.PlotBeats));
+        Assert.Equal((1, 1, 4, 1, 3), (counts.Stories, counts.Chapters, counts.Scenes, counts.PlotArcs, counts.Beats));
         Assert.Equal((2, 3), (counts.Manuscripts, counts.ManuscriptVersions));
-        Assert.Equal(4, counts.StoryItemsInTrash);
+        Assert.Equal(3, counts.StoryItemsInTrash);
         Assert.Equal((1, 1, 2), (counts.Ideas, counts.IdeasDeleted, counts.DismissedConflicts));
         Assert.Equal((2, 1), (counts.WorldRules, counts.WorldRulesInTrash));
         Assert.Contains(before, line => line.StartsWith("world rule Teleportation cannot cross the Veil", StringComparison.Ordinal));

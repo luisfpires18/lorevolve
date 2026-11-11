@@ -9,8 +9,8 @@ import { expectWritten, writtenText } from './support/manuscript'
  * from one another, with every link landing somewhere a person can see and a keyboard can find. Each test registers its
  * own account and builds its own universe, so nothing depends on data another test left behind.
  *
- * The invariants under test: a new story leads to a scene first; the three views share one header, one read and an
- * address each; a scene, its prose, its plot and its lore are a link apart; no in-app way out drops unsaved prose
+ * The invariants under test: a new story leads to a scene first; the views share one header, one read and an
+ * address each; a scene, its prose and its lore are a link apart; no in-app way out drops unsaved prose
  * without asking; and on a phone the work starts on the first screen.
  */
 const PASSWORD = 'Test-password-123!'
@@ -115,23 +115,6 @@ async function seedArc(page: Page, universeId: string, storyId: string, title: s
   return (await created.json()).id as string
 }
 
-async function seedBeat(
-  page: Page,
-  universeId: string,
-  storyId: string,
-  arcId: string,
-  title: string,
-  sceneIds: string[],
-  entityIds: string[],
-) {
-  const created = await page.request.post(
-    `/api/universes/${universeId}/stories/${storyId}/plot-arcs/${arcId}/beats`,
-    { data: { title, description: null, notes: null, sceneIds, entityIds } },
-  )
-  expect(created.status()).toBe(201)
-  return (await created.json()).id as string
-}
-
 async function writeManuscript(
   page: Page,
   universeId: string,
@@ -150,10 +133,6 @@ function scene(page: Page, title: string) {
   return page.locator(`[data-testid="scene"][data-title="${title}"]`)
 }
 
-function beat(page: Page, title: string) {
-  return page.locator(`[data-testid="plot-beat"][data-title="${title}"]`)
-}
-
 /** Whether the page can be scrolled sideways, which no screen in LorEvolve may allow. */
 function scrollsSideways(page: Page) {
   return page.evaluate(
@@ -162,7 +141,7 @@ function scrollsSideways(page: Page) {
 }
 
 test.describe('story workspace', () => {
-  test('a new story leads to its first scene, and its three views share one header, one read and an address each', async ({
+  test('a new story leads to its first scene, and its views share one header, one read and an address each', async ({
     page,
   }) => {
     await signUp(page)
@@ -182,6 +161,8 @@ test.describe('story workspace', () => {
     await expect(page.getByTestId('new-scene')).toHaveCount(1)
     await expect(page.getByTestId('scenes-empty').getByTestId('new-scene')).toBeVisible()
     await expect(page.getByTestId('new-chapter')).toHaveCount(1)
+    await expect(page.getByTestId('new-arc')).toHaveCount(1)
+    await expect(views.getByRole('link', { name: 'Plot' })).toHaveCount(0)
     await expect(page.getByTestId('story-premise')).toHaveText(
       'A siege, told from its last day back to its first.',
     )
@@ -190,17 +171,6 @@ test.describe('story workspace', () => {
       'page',
     )
 
-    // Plot: the same header without the premise, its own empty state, and a way back to the scene that comes first.
-    await views.getByRole('link', { name: 'Plot' }).click()
-    await page.waitForURL(new RegExp(`/stories/${storyId}/plot$`))
-    await expect(views.getByRole('link', { name: 'Plot' })).toHaveAttribute('aria-current', 'page')
-    await expect(views.getByRole('link', { name: 'Scenes' })).not.toHaveAttribute('aria-current')
-    await expect(page.getByTestId('story-title')).toHaveText('The Long Winter')
-    await expect(page.getByTestId('story-premise')).toHaveCount(0)
-    await expect(page.getByTestId('plot-empty')).toContainText('No arcs yet.')
-    await expect(page.getByTestId('new-plot-arc')).toHaveCount(1)
-    await expect(page.getByTestId('plot-empty-scenes')).toBeVisible()
-
     await views.getByRole('link', { name: 'Manuscript' }).click()
     await page.waitForURL(new RegExp(`/stories/${storyId}/manuscript$`))
     await expect(views.getByRole('link', { name: 'Manuscript' })).toHaveAttribute(
@@ -208,40 +178,34 @@ test.describe('story workspace', () => {
       'page',
     )
     await expect(page.getByTestId('manuscript-empty')).toContainText('No scenes yet.')
+    await expect(page.getByTestId('story-premise')).toHaveCount(0)
 
     // The browser's own history walks the views back and forth, and a reload keeps each where it is.
-    await page.goBack()
-    await page.waitForURL(new RegExp(`/stories/${storyId}/plot$`))
-    await expect(page.getByTestId('plot-empty')).toBeVisible()
     await page.goBack()
     await page.waitForURL(new RegExp(`/stories/${storyId}$`))
     await expect(page.getByTestId('scenes-empty')).toBeVisible()
     await page.goForward()
-    await page.waitForURL(new RegExp(`/stories/${storyId}/plot$`))
+    await page.waitForURL(new RegExp(`/stories/${storyId}/manuscript$`))
     await page.reload()
-    await expect(page.getByTestId('plot-empty')).toBeVisible()
-    await expect(views.getByRole('link', { name: 'Plot' })).toHaveAttribute('aria-current', 'page')
+    await expect(page.getByTestId('manuscript-empty')).toBeVisible()
 
-    // One read of the story and its plot serves every view: moving between them reads neither again.
+    // One read of the story serves every view: moving between them reads it no more.
     const reads: string[] = []
     page.on('request', (request) => {
       const path = new URL(request.url()).pathname
-      if (
-        path === `/api/universes/${universeId}/stories/${storyId}` ||
-        path.endsWith('/plot-arcs')
-      ) {
-        reads.push(path)
-      }
+      if (path === `/api/universes/${universeId}/stories/${storyId}`) reads.push(path)
     })
     await views.getByRole('link', { name: 'Scenes' }).click()
     await expect(page.getByTestId('scenes-empty')).toBeVisible()
-    await views.getByRole('link', { name: 'Plot' }).click()
-    await expect(page.getByTestId('plot-empty')).toBeVisible()
+    await views.getByRole('link', { name: 'Manuscript' }).click()
+    await expect(page.getByTestId('manuscript-empty')).toBeVisible()
     expect(reads).toEqual([])
 
-    // The first useful thing is a scene, straight from the empty state.
-    await page.getByTestId('plot-empty-scenes').click()
+    // An old link to the retired Plot view lands on the story (ADR 0070).
+    await page.goto(`${storyUrl}/plot`)
     await page.waitForURL(new RegExp(`/stories/${storyId}$`))
+
+    // The first useful thing is a scene, straight from the empty state.
     await page.getByTestId('new-scene').click()
     await page.getByTestId('scene-title-input').fill('The Gates')
     await page.getByTestId('save-scene').click()
@@ -260,7 +224,7 @@ test.describe('story workspace', () => {
     await expect(storyMenu).toBeFocused()
   })
 
-  test('a writer moves between a scene, its prose, its plot and its lore, and no unsaved word is dropped on the way', async ({
+  test('a writer moves between a scene, its prose and its lore, and no unsaved word is dropped on the way', async ({
     page,
   }) => {
     await signUp(page)
@@ -274,16 +238,6 @@ test.describe('story workspace', () => {
     const council = await seedScene(page, universeId, storyId, 'The Council', arrival, arlen, [
       arlen,
     ])
-    const arc = await seedArc(page, universeId, storyId, 'Fall of the King')
-    const beatId = await seedBeat(
-      page,
-      universeId,
-      storyId,
-      arc,
-      'The crown is refused',
-      [council],
-      [arlen],
-    )
 
     const storyUrl = `/app/universes/${universeId}/stories/${storyId}`
     const atCouncil = new RegExp(`/stories/${storyId}#scene-${council}$`)
@@ -334,16 +288,6 @@ test.describe('story workspace', () => {
     await expect(councilCard).toBeFocused()
     await expect(councilCard).toBeInViewport()
     await expect(councilCard).not.toHaveAttribute('data-arrived', /.*/, { timeout: 6_000 })
-
-    // From the scene to the beat that points at it, marked the same way, and back again.
-    await councilCard.getByTestId('scene-plot-beat').click()
-    await page.waitForURL(new RegExp(`/plot#beat-${beatId}$`))
-    await expect(beat(page, 'The crown is refused')).toHaveAttribute('data-arrived', 'true')
-    await expect(beat(page, 'The crown is refused')).toBeFocused()
-
-    await beat(page, 'The crown is refused').getByTestId('plot-beat-scene').click()
-    await page.waitForURL(atCouncil)
-    await expect(scene(page, 'The Council')).toBeFocused()
 
     // A deep link survives a reload, and still lands where it points.
     await page.reload()
@@ -412,8 +356,7 @@ test.describe('story workspace', () => {
       [arlen],
     )
     await seedScene(page, universeId, storyId, 'The Gates', chapter)
-    const arc = await seedArc(page, universeId, storyId, 'Fall of the King')
-    await seedBeat(page, universeId, storyId, arc, 'The crown is refused', [council], [arlen])
+    await seedArc(page, universeId, storyId, 'Fall of the King')
     await writeManuscript(
       page,
       universeId,
@@ -463,12 +406,10 @@ test.describe('story workspace', () => {
         )
       }
 
-      // Plot: the first arc is on the first screen.
-      await page.getByTestId('story-view-plot').click()
-      await expect(page.getByTestId('plot-arc')).toHaveCount(1)
-      expect(await scrollsSideways(page), `plot at ${width}px`).toBe(false)
-      const firstArc = (await page.getByTestId('plot-arc').first().boundingBox())!
-      expect(firstArc.y, `first arc at ${width}px`).toBeLessThan(height * 0.75)
+      // An arc sits under the chapters in none, and its tools stay on the screen.
+      await expect(page.getByTestId('arc')).toHaveCount(1)
+      const arcMenu = (await page.getByTestId('arc-actions').boundingBox())!
+      expect(arcMenu.x + arcMenu.width, `arc menu at ${width}px`).toBeLessThanOrEqual(edge)
 
       // Manuscript: a real stretch of the prose is on the first screen, beneath its planning and its tools.
       await page.goto(`${storyUrl}/manuscript/${council}`)

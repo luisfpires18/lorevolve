@@ -452,7 +452,7 @@ internal static partial class BackupValidation
             count += 1 + story.Chapters!.Count;
             count += story.Scenes.Sum(scene => 1L + scene.LinkedEntityIds.Count
                 + (scene.Manuscript is null ? 0 : 1 + scene.Manuscript.Revisions!.Count));
-            count += story.PlotArcs!.Sum(arc => 1L + arc.Beats.Sum(beat => 1L + beat.LinkedSceneIds.Count + beat.LinkedEntityIds.Count));
+            count += story.PlotArcs!.Count + story.Scenes.Sum(scene => (long)(scene.Beats?.Count ?? 0));
         }
 
         count += payload.Ideas!.Sum(idea => 1L + idea.References.Count);
@@ -497,7 +497,6 @@ internal static partial class BackupValidation
         private readonly HashSet<Guid> _stories = [];
         private readonly Dictionary<Guid, Guid> _sceneStory = [];
         private readonly HashSet<Guid> _arcs = [];
-        private readonly HashSet<Guid> _beats = [];
         private readonly HashSet<Guid> _ideas = [];
         private readonly Dictionary<Guid, ValidationTermKind> _terms = [];
         private readonly HashSet<string> _referencedMedia = new(StringComparer.Ordinal);
@@ -1817,15 +1816,6 @@ internal static partial class BackupValidation
                     {
                         Register(arc.Id, $"The arc {Quote(arc.Title)}");
                         _arcs.Add(arc.Id);
-
-                        foreach (var beat in arc.Beats ?? [])
-                        {
-                            if (beat is not null)
-                            {
-                                Register(beat.Id, $"The beat {Quote(beat.Title)}");
-                                _beats.Add(beat.Id);
-                            }
-                        }
                     }
                 }
             }
@@ -1841,6 +1831,9 @@ internal static partial class BackupValidation
 
             var chapters = new HashSet<Guid>();
             var chapterPlaces = new HashSet<int>();
+
+            // A chapter is told in an arc of its own story, never another's (ADR 0070).
+            var storyArcs = (story.PlotArcs ?? []).OfType<BackupPlotArc>().Select(arc => arc.Id).ToHashSet();
 
             foreach (var chapter in Required(story.Chapters, $"{what}'s chapters", since: 6))
             {
@@ -1860,6 +1853,11 @@ internal static partial class BackupValidation
                 if (chapter.DeletedAt is null && !chapterPlaces.Add(chapter.SortOrder))
                 {
                     Add(BackupIssueCodes.InvalidOrder, $"Two chapters of {Quote(story.Title)} claim the same place.");
+                }
+
+                if (chapter.PlotArcId is { } arcId)
+                {
+                    Reference(storyArcs.Contains(arcId), $"{chapterWhat} is in an arc its story does not hold.");
                 }
             }
 
@@ -1913,11 +1911,13 @@ internal static partial class BackupValidation
                 {
                     CheckManuscript(manuscript, sceneWhat);
                 }
+
+                CheckBeats(scene.Beats ?? [], sceneWhat);
             }
 
             var arcPlaces = new HashSet<int>();
 
-            foreach (var arc in Required(story.PlotArcs, $"{what}'s plot", since: 7))
+            foreach (var arc in Required(story.PlotArcs, $"{what}'s arcs", since: 7))
             {
                 if (arc is null)
                 {
@@ -1934,51 +1934,34 @@ internal static partial class BackupValidation
                 {
                     Add(BackupIssueCodes.InvalidOrder, $"Two arcs of {Quote(story.Title)} claim the same place.");
                 }
+            }
+        }
 
-                var beatPlaces = new HashSet<int>();
+        /// <summary>A scene's beats (ADR 0070): each registered, titled, within its bounds, and in a place of its own.</summary>
+        private void CheckBeats(IReadOnlyList<BackupSceneBeat> beats, string sceneWhat)
+        {
+            if (beats.Count > StoryLimits.MaxBeatsPerScene)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{sceneWhat} has more than {StoryLimits.MaxBeatsPerScene} beats.");
+            }
 
-                foreach (var beat in Required(arc.Beats, $"{arcWhat}'s beats"))
+            var places = new HashSet<int>();
+            foreach (var beat in beats)
+            {
+                if (beat is null)
                 {
-                    if (beat is null)
-                    {
-                        Missing($"a beat of {arcWhat.ToLowerInvariant()}");
-                        continue;
-                    }
+                    Missing($"a beat of {sceneWhat.ToLowerInvariant()}");
+                    continue;
+                }
 
-                    var beatWhat = $"The beat {Quote(beat.Title)}";
-                    Text(beat.Title, StoryLimits.TitleMaxLength, $"{beatWhat}'s title", required: true);
-                    Text(beat.Description, StoryLimits.PlotDescriptionMaxLength, $"{beatWhat}'s description");
-                    Text(beat.Notes, StoryLimits.PlotNotesMaxLength, $"{beatWhat}'s notes");
+                var beatWhat = $"The beat {Quote(beat.Title)}";
+                Register(beat.Id, beatWhat);
+                Text(beat.Title, StoryLimits.TitleMaxLength, $"{beatWhat}'s title", required: true);
+                Text(beat.Note, StoryLimits.BeatNoteMaxLength, $"{beatWhat}'s note");
 
-                    if (beat.DeletedAt is null && !beatPlaces.Add(beat.SortOrder))
-                    {
-                        Add(BackupIssueCodes.InvalidOrder, $"Two beats of {Quote(arc.Title)} claim the same place.");
-                    }
-
-                    var scenes = new HashSet<Guid>();
-                    foreach (var sceneId in Required(beat.LinkedSceneIds, $"{beatWhat}'s scenes"))
-                    {
-                        // A beat plays out in scenes of its own story, never another's (ADR 0026).
-                        Reference(
-                            _sceneStory.TryGetValue(sceneId, out var sceneStory) && sceneStory == story.Id,
-                            $"{beatWhat} links a scene its story does not hold.");
-
-                        if (!scenes.Add(sceneId))
-                        {
-                            Add(BackupIssueCodes.Duplicate, $"{beatWhat} links the same scene twice.");
-                        }
-                    }
-
-                    var entities = new HashSet<Guid>();
-                    foreach (var entityId in Required(beat.LinkedEntityIds, $"{beatWhat}'s lore"))
-                    {
-                        Reference(_entities.ContainsKey(entityId), $"{beatWhat} links an entry the backup does not hold.");
-
-                        if (!entities.Add(entityId))
-                        {
-                            Add(BackupIssueCodes.Duplicate, $"{beatWhat} links the same entry twice.");
-                        }
-                    }
+                if (!places.Add(beat.SortOrder))
+                {
+                    Add(BackupIssueCodes.InvalidOrder, $"Two beats of {sceneWhat.ToLowerInvariant()} claim the same place.");
                 }
             }
         }
@@ -2065,7 +2048,6 @@ internal static partial class BackupValidation
                     IdeaReferenceKind.Story => _stories.Contains(reference.Id),
                     IdeaReferenceKind.Scene => _sceneStory.ContainsKey(reference.Id),
                     IdeaReferenceKind.PlotArc => _arcs.Contains(reference.Id),
-                    IdeaReferenceKind.PlotBeat => _beats.Contains(reference.Id),
                     _ => false,
                 };
 

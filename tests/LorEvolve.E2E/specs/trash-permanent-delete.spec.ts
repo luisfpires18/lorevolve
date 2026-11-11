@@ -28,7 +28,7 @@ test.describe('deleting from the Trash permanently', () => {
     const names = await everyKind(page, universeId)
 
     await page.goto(`/app/universes/${universeId}/trash`)
-    await expect(page.getByTestId('trash-list').locator('li')).toHaveCount(7)
+    await expect(page.getByTestId('trash-list').locator('li')).toHaveCount(6)
 
     // The lede still says the Trash is recoverable, and says the one way it stops being.
     await expect(page.getByText('until you choose to delete it permanently')).toBeVisible()
@@ -40,7 +40,6 @@ test.describe('deleting from the Trash permanently', () => {
       chapter: 'chapter',
       scene: 'scene',
       arc: 'arc',
-      beat: 'beat',
       rule: 'world rule',
     }
     for (const kind of Object.keys(names) as Kind[]) {
@@ -79,15 +78,14 @@ test.describe('deleting from the Trash permanently', () => {
     await confirm.getByTestId('trash-erase-cancel').click()
     await expect(confirm).toHaveCount(0)
     await expect(eldric.getByTestId(`erase-${names.entry}`)).toBeFocused()
-    expect(await trashCount(page, universeId)).toBe(7)
+    expect(await trashCount(page, universeId)).toBe(6)
 
     // Kind by kind, the copy says what goes - and a chapter never says its scenes do.
     const says: Array<[Kind, string]> = [
       ['story', 'its chapters, its scenes'],
       ['chapter', 'moved to Unchaptered'],
-      ['scene', 'Its writing and every saved version'],
-      ['arc', 'Every beat in it goes with it'],
-      ['beat', 'Its links to scenes'],
+      ['scene', 'Its writing, every saved version of it and its beats'],
+      ['arc', 'Only the arc goes'],
       ['rule', 'Its check goes with it'],
     ]
     for (const [kind, text] of says) {
@@ -107,14 +105,14 @@ test.describe('deleting from the Trash permanently', () => {
       '“King Eldric” was permanently deleted.',
     )
     await expect(page.locator('.trash__outcome')).toBeFocused()
-    await expect(page.getByTestId('trash-list').locator('li')).toHaveCount(6)
+    await expect(page.getByTestId('trash-list').locator('li')).toHaveCount(5)
     expect(requests.filter((url) => url.includes('/trash/'))).toHaveLength(1)
 
     // It does not come back.
     await page.reload()
-    await expect(page.getByTestId('trash-list').locator('li')).toHaveCount(6)
+    await expect(page.getByTestId('trash-list').locator('li')).toHaveCount(5)
     await expect(row(page, names.entry)).toHaveCount(0)
-    expect(await trashCount(page, universeId)).toBe(6)
+    expect(await trashCount(page, universeId)).toBe(5)
   })
 
   test('Restore is unchanged, and a row that must wait to be restored can still be deleted', async ({
@@ -124,31 +122,32 @@ test.describe('deleting from the Trash permanently', () => {
     const universeId = await world(page)
     const seed = seeder(page, universeId)
     const saga = await seed.story('Waiting Saga')
-    const arc = await saga.arc('Waiting Arc')
-    const beat = await arc.beat('Waiting Beat')
-    await beat.bin()
-    await arc.bin()
+    const scene = await saga.scene('Waiting Scene')
+    await scene.bin()
+    await saga.bin()
 
     await page.goto(`/app/universes/${universeId}/trash`)
-    const waiting = row(page, 'Waiting Beat')
-    await expect(waiting.getByTestId('restore-Waiting Beat')).toBeDisabled()
-    await expect(waiting.getByTestId('erase-Waiting Beat')).toBeEnabled()
+    const waiting = row(page, 'Waiting Scene')
+    await expect(waiting.getByTestId('restore-Waiting Scene')).toBeDisabled()
+    await expect(waiting.getByTestId('erase-Waiting Scene')).toBeEnabled()
 
-    await waiting.getByTestId('erase-Waiting Beat').click()
+    await waiting.getByTestId('erase-Waiting Scene').click()
     await waiting.getByTestId('trash-erase-delete').click()
     await expect(page.getByTestId('trash-message')).toHaveText(
-      '“Waiting Beat” was permanently deleted.',
+      '“Waiting Scene” was permanently deleted.',
     )
-    await expect(row(page, 'Waiting Beat')).toHaveCount(0)
+    await expect(row(page, 'Waiting Scene')).toHaveCount(0)
 
-    // The arc is still in the Trash and restores exactly as before.
-    await row(page, 'Waiting Arc').getByTestId('restore-Waiting Arc').click()
+    // The story is still in the Trash and restores exactly as before.
+    await row(page, 'Waiting Saga').getByTestId('restore-Waiting Saga').click()
     await expect(page.getByTestId('trash-message')).toContainText('is back in')
     await expect(page.getByTestId('trash-open')).toBeVisible()
     await expect(page.getByTestId('trash-empty')).toBeVisible()
   })
 
-  test('deleting a story or an arc takes its own rows in the Trash with it', async ({ page }) => {
+  test('deleting a story takes its own rows in the Trash with it, and an arc goes alone', async ({
+    page,
+  }) => {
     await signUp(page)
     const universeId = await world(page)
     const seed = seeder(page, universeId)
@@ -160,12 +159,10 @@ test.describe('deleting from the Trash permanently', () => {
 
     const saga = await seed.story('Standing Saga')
     const arc = await saga.arc('Doomed Arc')
-    const beat = await arc.beat('Beat of the Doomed Arc')
-    await beat.bin()
     await arc.bin()
 
     await page.goto(`/app/universes/${universeId}/trash`)
-    await expect(page.getByTestId('trash-list').locator('li')).toHaveCount(4)
+    await expect(page.getByTestId('trash-list').locator('li')).toHaveCount(3)
 
     const story = row(page, 'Doomed Saga')
     await story.getByTestId('erase-Doomed Saga').click()
@@ -180,7 +177,6 @@ test.describe('deleting from the Trash permanently', () => {
     await arcRow.getByTestId('erase-Doomed Arc').click()
     await arcRow.getByTestId('trash-erase-delete').click()
     await expect(row(page, 'Doomed Arc')).toHaveCount(0)
-    await expect(row(page, 'Beat of the Doomed Arc')).toHaveCount(0)
     await expect(page.getByTestId('trash-empty')).toBeVisible()
 
     // The story it was in stands.

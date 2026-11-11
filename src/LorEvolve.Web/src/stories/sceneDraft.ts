@@ -1,11 +1,13 @@
 import type { ChronologyPointDraft } from '../components/ChronologyPointFields'
 import type { EntityChoice } from '../components/EntityPicker'
+import { beatKey, type BeatDraft } from './beats'
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology, ChronologyValue } from '../chronology/types'
 import { differing, type Change } from '../lib/editConflict'
 import type { SceneSuggestion } from '../suggestions/api'
-import { chapterLabel, sceneWhen, UNCHAPTERED } from './format'
-import type { Chapter, Scene } from './types'
+import { sceneWhen, UNCHAPTERED } from './format'
+import { chapterChoices } from './structure'
+import type { Chapter, PlotArc, Scene, SceneBeat } from './types'
 
 /*
  * A scene's form as the scene drawer holds it, sends it and compares it: shared by the drawer itself and the review
@@ -23,6 +25,8 @@ export interface SceneDraft {
   entities: EntityChoice[]
   /** The chapter's id, or '' for Unchaptered - the select's own empty value. */
   chapterId: string
+  /** The scene's beats in order (ADR 0070). */
+  beats: BeatDraft[]
 }
 
 /**
@@ -47,6 +51,8 @@ function numberText(value: number | null) {
 type SceneFields = Pick<Scene, 'title' | 'chapterId' | 'summary' | 'notes' | 'chronology'> & {
   pov: LoreRef | null
   entities: LoreRef[]
+  /** A suggestion carries none: it never changes a scene's beats. */
+  beats?: SceneBeat[]
 }
 
 export function draftFrom(scene: SceneFields | null, chapterId: string | null): SceneDraft {
@@ -59,6 +65,7 @@ export function draftFrom(scene: SceneFields | null, chapterId: string | null): 
       point: EMPTY_POINT,
       entities: [],
       chapterId: chapterId ?? '',
+      beats: [],
     }
   }
 
@@ -77,6 +84,11 @@ export function draftFrom(scene: SceneFields | null, chapterId: string | null): 
         }
       : EMPTY_POINT,
     entities: scene.entities.map(choiceOf),
+    beats: (scene.beats ?? []).map((beat) => ({
+      key: beatKey(),
+      title: beat.title,
+      note: beat.note ?? '',
+    })),
   }
 }
 
@@ -123,7 +135,18 @@ export function inputOf(draft: SceneDraft, reckonsInEras: boolean, custom: boole
     chronology: chronologyOf(draft.point, reckonsInEras, custom),
     entityIds: draft.entities.map((choice) => choice.id),
     chapterId: draft.chapterId === '' ? null : draft.chapterId,
+    // A row left wholly empty is no beat; anything typed is sent for the API to accept or refuse.
+    beats: draft.beats
+      .filter((beat) => beat.title.trim() !== '' || beat.note.trim() !== '')
+      .map((beat) => ({ title: beat.title.trim(), note: trimmed(beat.note) })),
   }
+}
+
+function beatsText(beats: BeatDraft[]) {
+  return beats
+    .map((beat) => beat.title.trim())
+    .filter((title) => title !== '')
+    .join(' / ')
 }
 
 /** What differs between two drafts of a scene, in the form's own words: its fields, as the form shows them. */
@@ -147,26 +170,24 @@ function changesOf(
     { label: 'Point of view', latest: latest.pov?.name ?? '', mine: mine.pov?.name ?? '' },
     { label: 'When', latest: when(latest), mine: when(mine) },
     { label: 'Lore', latest: names(latest.entities), mine: names(mine.entities) },
+    { label: 'Beats', latest: beatsText(latest.beats), mine: beatsText(mine.beats) },
   ])
 }
 
 /**
- * A comparison of two of a scene's forms in the form's own words, for a story of these chapters: a chapter by its label,
- * a date as the universe writes it.
+ * A comparison of two of a scene's forms in the form's own words, for a story of these arcs and chapters: a chapter by its
+ * label, a date as the universe writes it.
  */
-export function sceneChangesIn(chapters: Chapter[], chronology: Chronology) {
+export function sceneChangesIn(chapters: Chapter[], chronology: Chronology, arcs: PlotArc[] = []) {
   const reckonsInEras = namesEras(chronology)
   const custom = hasCalendar(chronology)
+  const labels = new Map(chapterChoices(arcs, chapters).map((choice) => [choice.id, choice.label]))
 
   return (latest: SceneDraft, mine: SceneDraft) =>
     changesOf(
       latest,
       mine,
-      (id) => {
-        if (id === '') return UNCHAPTERED
-        const index = chapters.findIndex((chapter) => chapter.id === id)
-        return index < 0 ? 'Another chapter' : chapterLabel(index, chapters[index].title)
-      },
+      (id) => (id === '' ? UNCHAPTERED : (labels.get(id) ?? 'Another chapter')),
       (draft) =>
         sceneWhen(chronology, chronologyOf(draft.point, reckonsInEras, custom))?.text ?? '',
     )

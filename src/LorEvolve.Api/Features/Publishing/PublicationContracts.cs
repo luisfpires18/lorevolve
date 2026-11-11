@@ -191,8 +191,8 @@ public sealed record PublicStory(
 /// holds only what is effectively public and says nothing of what is not - no count, no gap, no placeholder.
 /// <see cref="Manuscript"/> is the prose of the scenes whose manuscript was published, in reading order, empty prose left
 /// out; <see cref="Scenes"/> the outlines of the scenes published as such, in reading order; <see cref="Plot"/> the arcs
-/// published on purpose, in arc order, each with its live beats. No ids, notes, chapters, points of view, dates, lore links,
-/// scene or beat links, premise or status.
+/// published on purpose, in arc order. No ids, notes, chapters, points of view, dates, lore links, beats, premise or
+/// status.
 /// </summary>
 public sealed record PublicStoryDetail(
     string Slug,
@@ -215,10 +215,8 @@ public sealed record PublicMentionLink(int Start, int Length, string LoreSlug);
 /// <summary>One scene's published outline: its title and summary (null when it has none).</summary>
 public sealed record PublicStoryScene(string Title, string? Summary);
 
-/// <summary>One published plot arc: its title, description, and its live beats in order. Never notes or links.</summary>
-public sealed record PublicPlotArc(string Title, string? Description, IReadOnlyList<PublicPlotBeat> Beats);
-
-public sealed record PublicPlotBeat(string Title, string? Description);
+/// <summary>One published arc: its title and description. Never its notes, chapters or beats.</summary>
+public sealed record PublicPlotArc(string Title, string? Description);
 
 /// <summary>
 /// A published lore entry's own page (Task 011): what <see cref="PublicLoreEntry"/> lists, plus its article.

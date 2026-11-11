@@ -37,7 +37,7 @@ public sealed record UniverseSearchExcerpts(
 /// and triggers are written down:</b>
 ///
 /// - <c>StorySearchIndex</c> (<c>Kind</c>, <c>ItemId</c>, <c>Title</c>, <c>Summary</c>, <c>Notes</c>): stories (their premise
-///   in <c>Summary</c>), chapters, scenes, plot arcs and beats (their description in <c>Summary</c>).
+///   in <c>Summary</c>), chapters, scenes and arcs (their description in <c>Summary</c>).
 /// - <c>SceneManuscriptSearchIndex</c> (<c>SceneId</c>, <c>Content</c>): each scene's saved prose.
 /// - <c>IdeaSearchIndex</c> (<c>IdeaId</c>, <c>Title</c>, <c>Body</c>): every idea, whichever universe it names or none.
 /// - <c>WorldRuleSearchIndex</c> (<c>WorldRuleId</c>, <c>Title</c>, <c>Description</c>): every world rule, created by the
@@ -71,8 +71,6 @@ public static class UniverseSearchIndex
 
     public const string PlotArcKind = "arc";
 
-    public const string PlotBeatKind = "beat";
-
     // ---------- Field codes ----------
 
     /// <summary>Every word is in the title.</summary>
@@ -80,7 +78,7 @@ public static class UniverseSearchIndex
 
     /// <summary>
     /// Story content: every word is in the title and the summary column - a chapter's or scene's summary, a story's premise,
-    /// an arc's or beat's description. Ideas: the words reach into the body.
+    /// an arc's description. Ideas: the words reach into the body.
     /// </summary>
     public const int SecondField = 1;
 

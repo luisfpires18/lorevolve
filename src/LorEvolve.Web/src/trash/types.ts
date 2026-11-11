@@ -7,7 +7,7 @@ export const TrashKind = {
   Chapter: 2,
   Scene: 3,
   PlotArc: 4,
-  PlotBeat: 5,
+  // 5 was a plot beat, retired with plot beats (ADR 0070).
   WorldRule: 6,
   Relationship: 7,
   TimelineEvent: 8,
@@ -22,7 +22,6 @@ export const TRASH_KIND_LABELS: Record<TrashKindValue, string> = {
   [TrashKind.Chapter]: 'Chapter',
   [TrashKind.Scene]: 'Scene',
   [TrashKind.PlotArc]: 'Arc',
-  [TrashKind.PlotBeat]: 'Beat',
   [TrashKind.WorldRule]: 'World rule',
   [TrashKind.Relationship]: 'Relationship',
   [TrashKind.TimelineEvent]: 'Timeline moment',
@@ -32,7 +31,7 @@ export const TRASH_KIND_LABELS: Record<TrashKindValue, string> = {
 export const TrashBlock = {
   None: 0,
   StoryInTrash: 1,
-  ArcInTrash: 2,
+  // 2 was "its arc is in the Trash", which only a plot beat could be (ADR 0070).
   /** An entry a relationship connects is in the Trash: that entry comes back first. */
   EntryInTrash: 3,
 } as const

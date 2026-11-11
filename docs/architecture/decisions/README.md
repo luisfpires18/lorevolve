@@ -29,7 +29,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0023 | A relationship type may carry explicit Canon constraints, checked on the stored direction | [0023-relationship-canon-constraints.md](0023-relationship-canon-constraints.md) |
 | 0024 | A story is authored narrative that references lore, told in its own order | [0024-story-scene-foundation.md](0024-story-scene-foundation.md) |
 | 0025 | A chapter is optional structure; a scene's order is its place inside its chapter | [0025-story-chapters.md](0025-story-chapters.md) |
-| 0026 | Plot is planning: arcs of beats that point at scenes and lore and own neither (amended #48: plan, writing and timeline cross-links) | [0026-story-plot-arcs-beats.md](0026-story-plot-arcs-beats.md) |
+| 0026 | Plot is planning: arcs of beats that point at scenes and lore and own neither (amended #48: plan, writing and timeline cross-links). Superseded by 0070 | [0026-story-plot-arcs-beats.md](0026-story-plot-arcs-beats.md) |
 | 0027 | A scene's manuscript is plain prose in a row of its own, read and written on its own route | [0027-scene-manuscript.md](0027-scene-manuscript.md) |
 | 0028 | An entry's article lives in a row of its own, with its own history, saved on its own route | [0028-entity-article.md](0028-entity-article.md) |
 | 0029 | Content recovery: saved versions, a Trash for story content, and recovery copies of unsaved writing | [0029-content-recovery.md](0029-content-recovery.md) |
@@ -73,6 +73,7 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0067 | The product is LorEvolve; what was stored as Lorex is still read | [0067-rename-to-lorevolve.md](0067-rename-to-lorevolve.md) |
 | 0068 | LorEvolve shows no stock artwork; only authors' pictures and the brand mark | [0068-no-stock-artwork.md](0068-no-stock-artwork.md) |
 | 0069 | Explore is the front door at `/`; the page about LorEvolve is retired, `/explore` redirects | [0069-explore-is-the-front-door.md](0069-explore-is-the-front-door.md) |
+| 0070 | Arcs are story structure (Story, arcs, chapters, scenes) and beats belong to scenes; plot beats retired, supersedes 0026 | [0070-story-arcs-as-structure.md](0070-story-arcs-as-structure.md) |
 
 All accepted. Next number: `0070`.
 

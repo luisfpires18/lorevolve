@@ -1007,9 +1007,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     /// <summary>
     /// Every story by title, each with its chapters in story order, its scenes in reading order -
     /// Unchaptered first, then chapter by chapter, each by its own narrative order - and each scene's
-    /// links sorted by id and its prose and saved versions beside it. Then its plot: arcs in order, beats in order
-    /// inside each, and each beat's scene and entry links sorted by id. Only ids and authored text: a linked entry's
-    /// name is in the entry, and a linked scene's title is in the scene, not here.
+    /// links sorted by id, its beats in order, and its prose and saved versions beside it. Then its arcs in order; each
+    /// chapter names its own (ADR 0070). Only ids and authored text: a linked entry's name is in the entry, not here.
     ///
     /// The Trash is carried too, marked (ADR 0029). Inside each ordered collection the live rows come first in their
     /// order and the rows in the Trash after them, so the order a reader sees is still the order the story is told in.
@@ -1025,6 +1024,10 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         var chapters = await db.Chapters.AsNoTracking()
             .Where(chapter => chapter.Story!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
+
+        var arcOfChapter = await db.ChapterArcs.AsNoTracking()
+            .Where(link => link.Chapter!.Story!.UniverseId == universeId)
+            .ToDictionaryAsync(link => link.ChapterId, link => link.PlotArcId, cancellationToken);
 
         // Unchaptered reads before the first chapter. Chapter positions are unique per story, so this
         // rank alone separates every container of one story.
@@ -1048,7 +1051,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                             chapter.Notes,
                             Utc(chapter.CreatedAt),
                             Utc(chapter.UpdatedAt),
-                            Utc(chapter.DeletedAt))),
+                            Utc(chapter.DeletedAt),
+                            arcOfChapter.TryGetValue(chapter.Id, out var arcId) ? arcId : null)),
                 ]);
 
         var scenes = await db.Scenes.AsNoTracking()
@@ -1074,6 +1078,20 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .ToDictionaryAsync(manuscript => manuscript.SceneId, cancellationToken);
 
         var manuscriptRevisions = await ManuscriptRevisionsAsync(universeId, cancellationToken);
+
+        var beatsByScene = (await db.SceneBeats.AsNoTracking()
+                .Where(beat => beat.Scene!.Story!.UniverseId == universeId)
+                .ToListAsync(cancellationToken))
+            .GroupBy(beat => beat.SceneId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<BackupSceneBeat>)
+                [
+                    .. group
+                        .OrderBy(beat => beat.SortOrder)
+                        .Select(beat => new BackupSceneBeat(
+                            beat.Id, beat.SortOrder, beat.Title, beat.Note, Utc(beat.CreatedAt), Utc(beat.UpdatedAt))),
+                ]);
 
         var scenesByStory = scenes
             .GroupBy(scene => scene.StoryId)
@@ -1106,7 +1124,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                                 : null,
                             Utc(scene.CreatedAt),
                             Utc(scene.UpdatedAt),
-                            Utc(scene.DeletedAt))),
+                            Utc(scene.DeletedAt),
+                            beatsByScene.GetValueOrDefault(scene.Id, []))),
                 ]);
 
         var arcsByStory = await PlotArcsAsync(universeId, cancellationToken);
@@ -1161,10 +1180,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 ]);
     }
 
-    /// <summary>
-    /// Every plot arc in the universe, by story: arcs by their order, beats by theirs inside each arc, and each
-    /// beat's links sorted by id. Four queries for the whole universe, whatever its stories hold.
-    /// </summary>
+    /// <summary>Every arc in the universe, by story, in order, the Trash after the live ones. One query.</summary>
     private async Task<Dictionary<Guid, IReadOnlyList<BackupPlotArc>>> PlotArcsAsync(
         Guid universeId,
         CancellationToken cancellationToken)
@@ -1172,53 +1188,6 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         var arcs = await db.PlotArcs.AsNoTracking()
             .Where(arc => arc.Story!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
-
-        var beats = await db.PlotBeats.AsNoTracking()
-            .Where(beat => beat.PlotArc!.Story!.UniverseId == universeId)
-            .ToListAsync(cancellationToken);
-
-        var sceneLinks = await db.PlotBeatScenes.AsNoTracking()
-            .Where(link => link.PlotBeat!.PlotArc!.Story!.UniverseId == universeId)
-            .ToListAsync(cancellationToken);
-
-        var entityLinks = await db.PlotBeatEntities.AsNoTracking()
-            .Where(link => link.PlotBeat!.PlotArc!.Story!.UniverseId == universeId)
-            .ToListAsync(cancellationToken);
-
-        var scenesByBeat = sceneLinks
-            .GroupBy(link => link.PlotBeatId)
-            .ToDictionary(
-                group => group.Key,
-                group => (IReadOnlyList<Guid>)[.. group.Select(link => link.SceneId).OrderBy(Key, StringComparer.Ordinal)]);
-
-        var entitiesByBeat = entityLinks
-            .GroupBy(link => link.PlotBeatId)
-            .ToDictionary(
-                group => group.Key,
-                group => (IReadOnlyList<Guid>)[.. group.Select(link => link.EntityId).OrderBy(Key, StringComparer.Ordinal)]);
-
-        var beatsByArc = beats
-            .GroupBy(beat => beat.PlotArcId)
-            .ToDictionary(
-                group => group.Key,
-                group => (IReadOnlyList<BackupPlotBeat>)
-                [
-                    .. group
-                        .OrderBy(beat => beat.DeletedAt is not null)
-                        .ThenBy(beat => beat.SortOrder)
-                        .ThenBy(beat => Key(beat.Id), StringComparer.Ordinal)
-                        .Select(beat => new BackupPlotBeat(
-                            beat.Id,
-                            beat.SortOrder,
-                            beat.Title,
-                            beat.Description,
-                            beat.Notes,
-                            scenesByBeat.GetValueOrDefault(beat.Id, []),
-                            entitiesByBeat.GetValueOrDefault(beat.Id, []),
-                            Utc(beat.CreatedAt),
-                            Utc(beat.UpdatedAt),
-                            Utc(beat.DeletedAt))),
-                ]);
 
         return arcs
             .GroupBy(arc => arc.StoryId)
@@ -1238,8 +1207,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                             arc.Notes,
                             Utc(arc.CreatedAt),
                             Utc(arc.UpdatedAt),
-                            Utc(arc.DeletedAt),
-                            beatsByArc.GetValueOrDefault(arc.Id, []))),
+                            Utc(arc.DeletedAt))),
                 ]);
     }
 
@@ -1289,11 +1257,6 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 .Select(reference => new { reference.IdeaId, reference.PlotArcId })
                 .ToListAsync(cancellationToken))
             .Select(row => (row.IdeaId, new BackupIdeaReference(IdeaReferenceKind.PlotArc, row.PlotArcId))));
-        references.AddRange((await db.IdeaPlotBeatReferences.AsNoTracking()
-                .Where(reference => reference.Idea!.UniverseId == universeId && reference.Idea.OwnerId == ownerId)
-                .Select(reference => new { reference.IdeaId, reference.PlotBeatId })
-                .ToListAsync(cancellationToken))
-            .Select(row => (row.IdeaId, new BackupIdeaReference(IdeaReferenceKind.PlotBeat, row.PlotBeatId))));
 
         var referencesByIdea = references
             .GroupBy(row => row.IdeaId)

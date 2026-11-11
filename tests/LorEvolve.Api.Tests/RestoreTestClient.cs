@@ -206,8 +206,6 @@ internal static partial class RestoreTestClient
         Guid Vote,
         Guid CutScene,
         Guid Arc,
-        Guid Learns,
-        Guid Hides,
         Guid FloatingIdea,
         Guid BinnedIdea,
         Guid AfterTheFall,
@@ -219,7 +217,7 @@ internal static partial class RestoreTestClient
     /// history, an article with a restored version and a framed picture; an entry in the Trash; a relation kind with
     /// constraints and a Canon link that is flagged and dismissed beside a finding left pending; a moment across eras; a
     /// story with chapters, Unchaptered, reordered scenes, a point of view, a date, lore links, prose with saved versions;
-    /// a chapter, a scene, a beat and a whole story in the Trash; an arc with beats linked to scenes and lore; an idea
+    /// a chapter, a scene and a whole story in the Trash; an arc holding a chapter and scenes with beats; an idea
     /// referring to every kind and a deleted one; a world rule saved twice and one in the Trash. Plus an unassigned idea and
     /// another universe's idea and rule, which no backup of this universe may hold.
     /// </summary>
@@ -378,13 +376,12 @@ internal static partial class RestoreTestClient
         await ManuscriptTestClient.WriteManuscript(client, u, story, cutScene, "Words that did not make the cut.");
 
         var arc = await CreateArc(client, u, story, "Fall of the King", "How the crown breaks.", "Slow.");
-        var learns = await CreateBeat(client, u, story, arc.Id, "Learns", [council, cutScene], [warden.Id, coast.Id], "She learns.");
-        var hides = await CreateBeat(client, u, story, arc.Id, "Hides", [vote], [mentor.Id]);
-        await CreateBeat(client, u, story, arc.Id, "Returns");
+        await PlotTestClient.MoveChapterToArc(client, u, story, arrival, arc.Id);
+        await PlotTestClient.SetBeats(client, u, story, council, "Learns", "Hides");
+        await PlotTestClient.SetBeats(client, u, story, cutScene, "Cut beat");
 
         (await client.DeleteAsync($"{PlotTestClient.Story(u, story)}/scenes/{cutScene}")).EnsureSuccessStatusCode();
         (await client.DeleteAsync($"{PlotTestClient.Story(u, story)}/chapters/{departure}")).EnsureSuccessStatusCode();
-        (await client.DeleteAsync(PlotTestClient.Beat(u, story, hides.Id))).EnsureSuccessStatusCode();
 
         var abandoned = await CreateStory(client, u, "Abandoned Draft");
         await CreateScene(client, u, abandoned, "A scene nobody kept");
@@ -400,7 +397,6 @@ internal static partial class RestoreTestClient
                 IdeaTestClient.Ref(IdeaReferenceKind.Story, story),
                 IdeaTestClient.Ref(IdeaReferenceKind.Scene, council),
                 IdeaTestClient.Ref(IdeaReferenceKind.PlotArc, arc.Id),
-                IdeaTestClient.Ref(IdeaReferenceKind.PlotBeat, learns.Id),
             ]);
         var binned = await IdeaTestClient.CreateIdea(client, "A binned idea", "Still recoverable.", u, [IdeaTestClient.Ref(IdeaReferenceKind.Entity, coast.Id)]);
         (await client.DeleteAsync(IdeaTestClient.Idea(binned.Id))).EnsureSuccessStatusCode();
@@ -435,7 +431,7 @@ internal static partial class RestoreTestClient
 
         return new RichWorld(
             universe, warden.Id, mentor.Id, coast.Id, lostHeir.Id, story, abandoned, arrival, departure, coldOpen, council, vote,
-            cutScene, arc.Id, learns.Id, hides.Id, floating.Id, binned.Id, afterTheFall, picture);
+            cutScene, arc.Id, floating.Id, binned.Id, afterTheFall, picture);
     }
 
     private static Guid OptionId(FieldDefinitionResponse field, string value) =>
@@ -476,6 +472,29 @@ internal static partial class RestoreTestClient
             foreach (var member in members)
             {
                 node?.AsObject().Remove(member);
+            }
+        }
+
+        if (version < 37)
+        {
+            // Arcs became structure and beats moved into scenes in version 37 (ADR 0070). Before it, an arc carried a list of
+            // its own plot beats - empty here, as nothing this world holds was one.
+            foreach (var story in payload["stories"]?.AsArray() ?? [])
+            {
+                foreach (var chapter in story?["chapters"]?.AsArray() ?? [])
+                {
+                    Drop(chapter, "plotArcId");
+                }
+
+                foreach (var scene in story?["scenes"]?.AsArray() ?? [])
+                {
+                    Drop(scene, "beats");
+                }
+
+                foreach (var arc in story?["plotArcs"]?.AsArray() ?? [])
+                {
+                    arc!.AsObject()["beats"] = new JsonArray();
+                }
             }
         }
 
@@ -886,8 +905,8 @@ internal static partial class RestoreTestClient
         await CreateScene(client, u, story, "The Council");
         await ManuscriptTestClient.WriteManuscript(client, u, story, first, "Snow.");
         await ManuscriptTestClient.WriteManuscript(client, u, story, first, "Snow on the seawall.");
-        var arc = await CreateArc(client, u, story, "Fall of the King");
-        await CreateBeat(client, u, story, arc.Id, "Learns", [first], [warden.Id]);
+        await CreateArc(client, u, story, "Fall of the King");
+        await PlotTestClient.SetBeats(client, u, story, first, "Learns");
         await IdeaTestClient.CreateIdea(client, "Maybe the city floats", "Nobody below.", u, [IdeaTestClient.Ref(IdeaReferenceKind.Scene, first)]);
 
         await WorldRuleTestClient.CreateRule(client, u, "The Veil holds", "Plain.");
@@ -927,8 +946,6 @@ internal static partial class RestoreTestClient
         var scenes = stories.SelectMany(story => story.Scenes.Select(scene => (scene.Id, Name: $"{story.Title}/{scene.Title}")))
             .ToDictionary(item => item.Id, item => item.Name);
         var arcs = stories.SelectMany(story => (story.PlotArcs ?? []).Select(arc => (arc.Id, Name: $"{story.Title}/{arc.Title}")))
-            .ToDictionary(item => item.Id, item => item.Name);
-        var beats = stories.SelectMany(story => (story.PlotArcs ?? []).SelectMany(arc => arc.Beats.Select(beat => (beat.Id, Name: $"{story.Title}/{arc.Title}/{beat.Title}"))))
             .ToDictionary(item => item.Id, item => item.Name);
         var terms = (payload.ValidationTerms ?? []).ToDictionary(term => term.Id, term => $"{term.Kind}:{term.Name}");
 
@@ -1035,7 +1052,7 @@ internal static partial class RestoreTestClient
 
             foreach (var chapter in (story.Chapters ?? []).OrderBy(chapter => chapter.DeletedAt is not null).ThenBy(chapter => chapter.SortOrder).ThenBy(chapter => chapter.Title, StringComparer.Ordinal))
             {
-                lines.Add($"  chapter {(chapter.DeletedAt is null ? chapter.SortOrder.ToString(CultureInfo.InvariantCulture) : "trashed")} {chapter.Title} summary={chapter.Summary} notes={chapter.Notes} deleted={T(chapter.DeletedAt)} {T(chapter.CreatedAt)} {T(chapter.UpdatedAt)}");
+                lines.Add($"  chapter {(chapter.DeletedAt is null ? chapter.SortOrder.ToString(CultureInfo.InvariantCulture) : "trashed")} {chapter.Title} arc={N(arcs, chapter.PlotArcId)} summary={chapter.Summary} notes={chapter.Notes} deleted={T(chapter.DeletedAt)} {T(chapter.CreatedAt)} {T(chapter.UpdatedAt)}");
             }
 
             foreach (var scene in story.Scenes.OrderBy(scene => N(chapters, scene.ChapterId), StringComparer.Ordinal).ThenBy(scene => scene.DeletedAt is not null).ThenBy(scene => scene.SortOrder).ThenBy(scene => scene.Title, StringComparer.Ordinal))
@@ -1043,6 +1060,11 @@ internal static partial class RestoreTestClient
                 var place = scene.DeletedAt is null ? scene.SortOrder.ToString(CultureInfo.InvariantCulture) : "trashed";
                 var chronology = scene.Chronology is { } date ? $"{N(eras, date.EraId)} {date.Year}/{date.Month}/{date.Day}" : "-";
                 lines.Add($"  scene {N(chapters, scene.ChapterId)} {place} {scene.Title} summary={scene.Summary} notes={scene.Notes} pov={N(entities, scene.PovEntityId)} when={chronology} lore={L(scene.LinkedEntityIds.Select(id => N(entities, id)))} deleted={T(scene.DeletedAt)} {T(scene.CreatedAt)} {T(scene.UpdatedAt)}");
+
+                foreach (var beat in (scene.Beats ?? []).OrderBy(beat => beat.SortOrder))
+                {
+                    lines.Add($"    beat {beat.SortOrder} {beat.Title} note={beat.Note} {T(beat.CreatedAt)} {T(beat.UpdatedAt)}");
+                }
 
                 if (scene.Manuscript is { } manuscript)
                 {
@@ -1058,11 +1080,6 @@ internal static partial class RestoreTestClient
             foreach (var arc in (story.PlotArcs ?? []).OrderBy(arc => arc.DeletedAt is not null).ThenBy(arc => arc.SortOrder).ThenBy(arc => arc.Title, StringComparer.Ordinal))
             {
                 lines.Add($"  arc {(arc.DeletedAt is null ? arc.SortOrder.ToString(CultureInfo.InvariantCulture) : "trashed")} {arc.Title} description={arc.Description} notes={arc.Notes} deleted={T(arc.DeletedAt)} {T(arc.CreatedAt)} {T(arc.UpdatedAt)}");
-
-                foreach (var beat in arc.Beats.OrderBy(beat => beat.DeletedAt is not null).ThenBy(beat => beat.SortOrder).ThenBy(beat => beat.Title, StringComparer.Ordinal))
-                {
-                    lines.Add($"    beat {(beat.DeletedAt is null ? beat.SortOrder.ToString(CultureInfo.InvariantCulture) : "trashed")} {beat.Title} description={beat.Description} notes={beat.Notes} scenes={L(beat.LinkedSceneIds.Select(id => N(scenes, id)))} lore={L(beat.LinkedEntityIds.Select(id => N(entities, id)))} deleted={T(beat.DeletedAt)} {T(beat.CreatedAt)} {T(beat.UpdatedAt)}");
-                }
             }
         }
 
@@ -1074,7 +1091,7 @@ internal static partial class RestoreTestClient
                 IdeaReferenceKind.Story => N(storyTitles, reference.Id),
                 IdeaReferenceKind.Scene => N(scenes, reference.Id),
                 IdeaReferenceKind.PlotArc => N(arcs, reference.Id),
-                _ => N(beats, reference.Id),
+                _ => "(retired kind)",
             });
 
             lines.Add($"idea {idea.Title} body={idea.Body} deleted={T(idea.DeletedAt)} {T(idea.CreatedAt)} {T(idea.UpdatedAt)} refs={L(references)}");

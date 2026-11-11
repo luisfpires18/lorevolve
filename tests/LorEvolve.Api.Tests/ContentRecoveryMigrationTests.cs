@@ -31,7 +31,7 @@ public sealed class ContentRecoveryMigrationTests : IDisposable
     /// <summary>The migration immediately before content recovery.</summary>
     private const string BeforeRecovery = "20260913210631_AddEntityArticles";
 
-    private static readonly string[] MarkedTables = ["Stories", "Chapters", "Scenes", "PlotArcs", "PlotBeats"];
+    private static readonly string[] MarkedTables = ["Stories", "Chapters", "Scenes", "PlotArcs"];
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(), "lorevolve-recovery-migration", Guid.NewGuid().ToString("n"));
@@ -48,7 +48,6 @@ public sealed class ContentRecoveryMigrationTests : IDisposable
         Guid gate;
         Guid inside;
         Guid cut;
-        Guid keptBeat;
         Guid goneStory;
 
         // Written by the current host: live work, a scene, a beat and a chapter in the Trash, and a whole story there too.
@@ -73,9 +72,7 @@ public sealed class ContentRecoveryMigrationTests : IDisposable
             cut = (await PostJson<SceneResponse>(
                 client, $"{story}/scenes", new SceneRequest("Cut", null, null, null, null, [arlen], arrival))).Id;
 
-            var arc = await CreateArc(client, universeId, storyId, "Fall of the King");
-            keptBeat = (await CreateBeat(client, universeId, storyId, arc.Id, "Learns", [gate, cut], [arlen])).Id;
-            var droppedBeat = (await CreateBeat(client, universeId, storyId, arc.Id, "Dropped", [inside], [arlen])).Id;
+            await CreateArc(client, universeId, storyId, "Fall of the King");
 
             await WriteManuscript(client, universeId, storyId, gate, "A first draft.");
             await WriteManuscript(client, universeId, storyId, gate, Prose);
@@ -84,7 +81,6 @@ public sealed class ContentRecoveryMigrationTests : IDisposable
             await WriteManuscript(client, universeId, storyId, cut, "Cut prose.");
 
             (await client.DeleteAsync($"{story}/scenes/{cut}")).EnsureSuccessStatusCode();
-            (await client.DeleteAsync(Beat(universeId, storyId, droppedBeat))).EnsureSuccessStatusCode();
             (await client.DeleteAsync($"{story}/chapters/{discarded}")).EnsureSuccessStatusCode();
 
             goneStory = await CreateStory(client, universeId, "Abandoned");
@@ -118,12 +114,9 @@ public sealed class ContentRecoveryMigrationTests : IDisposable
             Assert.Equal(liveScenes, await SceneRows(db, liveOnly: false));
             Assert.Equal(liveChapters, await ChapterRows(db, liveOnly: false));
             Assert.Equal(0, await Count(db, $"SELECT COUNT(*) AS Value FROM \"Stories\" WHERE \"Id\" = '{Key(goneStory)}'"));
-            Assert.Equal(["Learns"], await Strings(db, "SELECT \"Title\" AS Value FROM \"PlotBeats\""));
-
-            // The link to the discarded scene went with it; the live one stayed.
-            Assert.Equal(
-                [Key(gate)],
-                await Strings(db, $"SELECT \"SceneId\" AS Value FROM \"PlotBeatScenes\" WHERE \"PlotBeatId\" = '{Key(keptBeat)}'"));
+            // Plot beats were retired later (ADR 0070): their table comes back empty on the way down.
+            Assert.Empty(await Strings(db, "SELECT \"Title\" AS Value FROM \"PlotBeats\""));
+            Assert.DoesNotContain("DeletedAt", await Columns(db, "PlotBeats"));
             Assert.Equal(
                 ["Warm, at last.", Prose],
                 await Strings(db, "SELECT \"Content\" AS Value FROM \"SceneManuscripts\" ORDER BY \"Content\" DESC"));
@@ -177,7 +170,7 @@ public sealed class ContentRecoveryMigrationTests : IDisposable
             Assert.Contains("IX_Chapters_StoryId_SortOrder:1:1", await Indexes(db, "Chapters"));
             Assert.Contains("IX_Chapters_StoryId:0:0", await Indexes(db, "Chapters"));
             Assert.Contains("IX_PlotArcs_StoryId_SortOrder:1:1", await Indexes(db, "PlotArcs"));
-            Assert.Contains("IX_PlotBeats_PlotArcId_SortOrder:1:1", await Indexes(db, "PlotBeats"));
+            Assert.DoesNotContain("PlotBeats", await Tables(db));
             Assert.Contains("IX_Scenes_ChapterId:0:0", await Indexes(db, "Scenes"));
             Assert.Contains("IX_SceneManuscriptRevisions_SceneId_Number:1:0", await Indexes(db, "SceneManuscriptRevisions"));
             Assert.Equal(["Scenes.SceneId:CASCADE"], await ForeignKeys(db, "SceneManuscriptRevisions"));

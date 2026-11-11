@@ -12,12 +12,12 @@ using static LorEvolve.Api.Tests.PlotTestClient;
 namespace LorEvolve.Api.Tests;
 
 /// <summary>
-/// The Trash for a story's content (ADR 0029): a story, a chapter, a scene, an arc and a beat.
+/// The Trash for a story's content (ADR 0029): a story, a chapter, a scene and an arc.
 ///
 /// The invariants under test: deleting any of them takes it out of every read and erases nothing it held; the Trash lists
 /// it with what it is and where it was; one restore brings it back whole, appended rather than inserted, and never into a
-/// container that is itself in the Trash; a chapter still never takes a scene with it; a link from a beat to a scene in the
-/// Trash is kept through edits nobody could see it in; and a Trash belongs to one universe and one owner.
+/// container that is itself in the Trash; a chapter still never takes a scene with it, and an arc never a chapter; a scene's
+/// beats go and come back with it (ADR 0070); and a Trash belongs to one universe and one owner.
 /// </summary>
 public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture<LorEvolveApiFactory>
 {
@@ -36,7 +36,8 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         await WriteManuscript(client, u, story, gate, "A first draft.");
         await WriteManuscript(client, u, story, gate, Prose);
         var arc = await CreateArc(client, u, story, "Fall of the King");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Learns", [gate, loose], [arlen]);
+        await MoveChapterToArc(client, u, story, arrival, arc.Id);
+        await SetBeats(client, u, story, gate, "Learns");
 
         var storyRead = await client.GetStringAsync(Story(u, story));
         var plotRead = await client.GetStringAsync(Arcs(u, story));
@@ -57,7 +58,6 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
             Manuscript(u, story, gate),
             $"{Manuscript(u, story, gate)}/revisions",
             Arcs(u, story),
-            Beat(u, story, beat.Id),
         })
         {
             Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(path)).StatusCode);
@@ -102,15 +102,13 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         var b = await SceneWith(client, u, story, "B", chapter, arlen);
         var c = await CreateScene(client, u, story, "C", chapter);
         await WriteManuscript(client, u, story, b, Prose);
-        var arc = await CreateArc(client, u, story, "Thread");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Step", [a, b], [arlen]);
+        await SetBeats(client, u, story, b, "Step", "Another step");
 
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"{Story(u, story)}/scenes/{b}")).StatusCode);
 
-        // The gap closes, the scene leaves the story and its beat, and its prose is out of reach.
+        // The gap closes, the scene leaves the story with its beats, and its prose is out of reach.
         var read = await ReadStory(client, u, story);
         Assert.Equal(new (Guid, int)[] { (a, 0), (c, 1) }, read.Scenes.Select(scene => (scene.Id, scene.SortOrder)));
-        Assert.Equal([a], (await ReadBeat(client, u, story, beat.Id)).SceneIds);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Manuscript(u, story, b))).StatusCode);
 
         // The live order is whole without it: a new scene lands after C, and a reorder names only the live scenes.
@@ -139,48 +137,12 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         Assert.Equal(arlen, scene.Pov!.EntityId);
         Assert.Equal([arlen], scene.Entities.Select(entity => entity.EntityId));
         Assert.Equal(Prose, (await ReadManuscript(client, u, story, b)).Content, StringComparer.Ordinal);
-        Assert.Equal([a, b], (await ReadBeat(client, u, story, beat.Id)).SceneIds);
+        Assert.Equal(["Step", "Another step"], scene.Beats!.Select(beat => beat.Title));
 
         // Twice is refused rather than repeated, in both directions.
         Assert.Equal(HttpStatusCode.NotFound, (await RestoreRoute(client, u, "scenes", b)).StatusCode);
         (await client.DeleteAsync($"{Story(u, story)}/scenes/{b}")).EnsureSuccessStatusCode();
         Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync($"{Story(u, story)}/scenes/{b}")).StatusCode);
-    }
-
-    [Fact]
-    public async Task A_beat_edited_while_its_scene_is_in_the_trash_keeps_the_link_nobody_could_see()
-    {
-        var (client, universe) = await SignedInWithUniverse(_factory, "trbeatlink");
-        var u = universe.Id;
-        var story = await CreateStory(client, u, "Links");
-        var council = await CreateScene(client, u, story, "The Council");
-        var siege = await CreateScene(client, u, story, "The Siege");
-        var cut = await CreateScene(client, u, story, "Never linked");
-        var arc = await CreateArc(client, u, story, "Thread");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Step", [council, siege]);
-
-        (await client.DeleteAsync($"{Story(u, story)}/scenes/{council}")).EnsureSuccessStatusCode();
-        (await client.DeleteAsync($"{Story(u, story)}/scenes/{cut}")).EnsureSuccessStatusCode();
-
-        // The form sends back what it was shown: the live scene only. The hidden link survives the save.
-        var shown = await ReadBeat(client, u, story, beat.Id);
-        Assert.Equal([siege], shown.SceneIds);
-        var edited = await PutJson<PlotBeatResponse>(
-            client, Beat(u, story, beat.Id), new PlotBeatRequest("Step, renamed", null, null, shown.SceneIds, []));
-        Assert.Equal([siege], edited.SceneIds);
-
-        // A scene in the Trash cannot be newly linked, in the same words as one that is not there at all.
-        var trashed = await Errors(await client.PutAsJsonAsync(
-            Beat(u, story, beat.Id), new PlotBeatRequest("Step", null, null, [siege, cut], [])));
-        var unknown = await Errors(await client.PutAsJsonAsync(
-            Beat(u, story, beat.Id), new PlotBeatRequest("Step", null, null, [siege, Guid.NewGuid()], [])));
-        Assert.Equal(unknown, trashed);
-
-        (await RestoreRoute(client, u, "scenes", council)).EnsureSuccessStatusCode();
-
-        var back = await ReadBeat(client, u, story, beat.Id);
-        Assert.Equal("Step, renamed", back.Title);
-        Assert.Equal([siege, council], back.SceneIds);
     }
 
     [Fact]
@@ -238,7 +200,7 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
     }
 
     [Fact]
-    public async Task Content_whose_story_or_arc_is_in_the_trash_waits_for_it_and_is_never_attached_elsewhere()
+    public async Task Content_whose_story_is_in_the_trash_waits_for_it_and_is_never_attached_elsewhere()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "trparent");
         var u = universe.Id;
@@ -247,19 +209,13 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         var chapter = await CreateChapter(client, u, story, "Arrival");
         var scene = await CreateScene(client, u, story, "The Council", chapter);
         var arc = await CreateArc(client, u, story, "Fall of the King");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Learns", [scene]);
+        await MoveChapterToArc(client, u, story, chapter, arc.Id);
         var otherRead = await client.GetStringAsync(Story(u, other));
 
-        // A beat, then its arc.
-        (await client.DeleteAsync(Beat(u, story, beat.Id))).EnsureSuccessStatusCode();
+        // The arc first: its chapter stays, in no arc while the arc is away.
         (await client.DeleteAsync(Arc(u, story, arc.Id))).EnsureSuccessStatusCode();
-
-        Assert.Equal(TrashRestoreBlock.ArcInTrash, (await Item(client, u, beat.Id)).BlockedBy);
-        Assert.Equal("Fall of the King", (await Item(client, u, beat.Id)).PlotArcTitle);
-
-        var beatRefused = await RestoreRoute(client, u, "plot-beats", beat.Id);
-        Assert.Equal(("arc", "Fall of the King"), await ParentRefusal(beatRefused));
         Assert.Empty(await Plot(client, u, story));
+        Assert.Null(Assert.Single((await ReadStory(client, u, story)).Chapters).PlotArcId);
 
         // Then a scene, its chapter and the story itself.
         (await client.DeleteAsync($"{Story(u, story)}/scenes/{scene}")).EnsureSuccessStatusCode();
@@ -269,17 +225,17 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         var trash = (await Trash(client, u)).Items.ToDictionary(item => item.Id);
         Assert.Equal(TrashRestoreBlock.None, trash[story].BlockedBy);
         Assert.All(
-            new[] { chapter, scene, arc.Id, beat.Id },
+            new[] { chapter, scene, arc.Id },
             id => Assert.Equal(TrashRestoreBlock.StoryInTrash, trash[id].BlockedBy));
 
-        foreach (var (route, id) in new[] { ("chapters", chapter), ("scenes", scene), ("plot-arcs", arc.Id), ("plot-beats", beat.Id) })
+        foreach (var (route, id) in new[] { ("chapters", chapter), ("scenes", scene), ("plot-arcs", arc.Id) })
         {
             Assert.Equal(("story", "Held back"), await ParentRefusal(await RestoreRoute(client, u, route, id)));
         }
 
         // Nothing was attached to the other story, or anywhere else.
         Assert.Equal(otherRead, await client.GetStringAsync(Story(u, other)));
-        Assert.Equal(5, (await Trash(client, u)).TotalCount);
+        Assert.Equal(4, (await Trash(client, u)).TotalCount);
 
         // The story comes back holding what it held when it went - none of these, which went before it.
         (await RestoreRoute(client, u, "stories", story)).EnsureSuccessStatusCode();
@@ -288,17 +244,15 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         Assert.Empty(read.Scenes);
         Assert.Empty(await Plot(client, u, story));
 
-        // Each comes back once what it belongs to is there: the beat only after its arc.
-        Assert.Equal(("arc", "Fall of the King"), await ParentRefusal(await RestoreRoute(client, u, "plot-beats", beat.Id)));
+        // Each comes back once what it belongs to is there, and the chapter back into its arc.
         (await RestoreRoute(client, u, "plot-arcs", arc.Id)).EnsureSuccessStatusCode();
-        (await RestoreRoute(client, u, "plot-beats", beat.Id)).EnsureSuccessStatusCode();
         (await RestoreRoute(client, u, "chapters", chapter)).EnsureSuccessStatusCode();
         (await RestoreRoute(client, u, "scenes", scene)).EnsureSuccessStatusCode();
 
         read = await ReadStory(client, u, story);
         Assert.Equal([chapter], read.Chapters.Select(candidate => candidate.Id));
         Assert.Equal(new (Guid, Guid?)[] { (scene, null) }, read.Scenes.Select(candidate => (candidate.Id, candidate.ChapterId)));
-        Assert.Equal([scene], Assert.Single(Assert.Single(await Plot(client, u, story)).Beats).SceneIds);
+        Assert.Equal(arc.Id, Assert.Single(read.Chapters).PlotArcId);
         Assert.Empty((await Trash(client, u)).Items);
     }
 
@@ -313,9 +267,7 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         var chapter = await CreateChapter(client, u, story, "Arrival");
         var scene = await CreateScene(client, u, story, "The Council");
         var arc = await CreateArc(client, u, story, "Fall of the King");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Learns");
 
-        (await client.DeleteAsync(Beat(u, story, beat.Id))).EnsureSuccessStatusCode();
         (await client.DeleteAsync($"{Story(u, story)}/scenes/{scene}")).EnsureSuccessStatusCode();
         (await client.DeleteAsync($"{Story(u, story)}/chapters/{chapter}")).EnsureSuccessStatusCode();
         (await client.DeleteAsync($"/api/universes/{u}/entities/{entry}")).EnsureSuccessStatusCode();
@@ -325,9 +277,9 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         var first = await Trash(client, u, page: 1, pageSize: 4);
         var second = await Trash(client, u, page: 2, pageSize: 4);
 
-        Assert.Equal((6, 2), (first.TotalCount, first.TotalPages));
+        Assert.Equal((5, 2), (first.TotalCount, first.TotalPages));
         Assert.Equal([arc.Id, gone, entry, chapter], first.Items.Select(item => item.Id));
-        Assert.Equal([scene, beat.Id], second.Items.Select(item => item.Id));
+        Assert.Equal([scene], second.Items.Select(item => item.Id));
         Assert.All(first.Items.Concat(second.Items), item => Assert.Equal(DateTimeKind.Utc, item.TrashedAt.Kind));
 
         var items = first.Items.Concat(second.Items).ToDictionary(item => item.Id);
@@ -336,9 +288,6 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         Assert.Equal((TrashItemKind.PlotArc, "Planned"), (items[arc.Id].Kind, items[arc.Id].StoryTitle));
         Assert.Equal((TrashItemKind.Chapter, "Planned"), (items[chapter].Kind, items[chapter].StoryTitle));
         Assert.Equal((TrashItemKind.Scene, "Planned", TrashRestoreBlock.None), (items[scene].Kind, items[scene].StoryTitle, items[scene].BlockedBy));
-        Assert.Equal(
-            (TrashItemKind.PlotBeat, (Guid?)arc.Id, "Fall of the King", TrashRestoreBlock.ArcInTrash),
-            (items[beat.Id].Kind, items[beat.Id].PlotArcId, items[beat.Id].PlotArcTitle, items[beat.Id].BlockedBy));
 
         // Names and places only: the Trash is not a second reader.
         var raw = await client.GetStringAsync($"/api/universes/{u}/trash");
@@ -357,9 +306,7 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         var chapter = await CreateChapter(owner, u, story, "Private chapter");
         var scene = await CreateScene(owner, u, story, "Private scene");
         var arc = await CreateArc(owner, u, story, "Private arc");
-        var beat = await CreateBeat(owner, u, story, arc.Id, "Private beat");
 
-        (await owner.DeleteAsync(Beat(u, story, beat.Id))).EnsureSuccessStatusCode();
         (await owner.DeleteAsync($"{Story(u, story)}/scenes/{scene}")).EnsureSuccessStatusCode();
         (await owner.DeleteAsync($"{Story(u, story)}/chapters/{chapter}")).EnsureSuccessStatusCode();
         (await owner.DeleteAsync(Arc(u, story, arc.Id))).EnsureSuccessStatusCode();
@@ -368,7 +315,7 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
         var (stranger, strangerUniverse) = await SignedInWithUniverse(_factory, "trstranger");
         var routes = new[]
         {
-            ("stories", trashedStory), ("chapters", chapter), ("scenes", scene), ("plot-arcs", arc.Id), ("plot-beats", beat.Id),
+            ("stories", trashedStory), ("chapters", chapter), ("scenes", scene), ("plot-arcs", arc.Id),
         };
 
         var listed = await stranger.GetAsync($"/api/universes/{u}/trash");
@@ -385,7 +332,7 @@ public sealed class StoryTrashTests(LorEvolveApiFactory factory) : IClassFixture
 
         Assert.Empty((await Trash(stranger, strangerUniverse.Id)).Items);
         Assert.Empty((await Trash(owner, elsewhere.Id)).Items);
-        Assert.Equal(5, (await Trash(owner, u)).TotalCount);
+        Assert.Equal(4, (await Trash(owner, u)).TotalCount);
     }
 
     [Fact]

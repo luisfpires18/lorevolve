@@ -12,13 +12,13 @@ using static LorEvolve.Api.Tests.PlotTestClient;
 namespace LorEvolve.Api.Tests;
 
 /// <summary>
-/// The Story phase as one product: a story with chapters, Unchaptered scenes, lore references, a plot and prose, taken
+/// The Story phase as one product: a story with arcs, chapters, Unchaptered scenes, lore references, beats and prose, taken
 /// apart piece by piece. Each feature's own tests prove its corner of the ownership graph; these walk the whole graph in
 /// one universe, beside a second story holding the same lore, so a change to one feature that reaches into another
 /// shows up here.
 ///
-/// The invariants: a story owns its chapters, scenes, plot and prose, and nothing it points at; a chapter owns no scene;
-/// a scene owns its prose and its links and no beat; an arc owns its beats; and nothing a story does - telling, planning,
+/// The invariants: a story owns its arcs, chapters, scenes and prose, and nothing it points at; an arc owns no chapter and a
+/// chapter no scene; a scene owns its prose, its links and its beats; and nothing a story does - telling, planning,
 /// writing or deleting - changes the lore, its relationships, its timeline, its history, Canon Integrity or search.
 /// </summary>
 public sealed class StoryPhaseIntegrityTests(LorEvolveApiFactory factory) : IClassFixture<LorEvolveApiFactory>
@@ -26,7 +26,7 @@ public sealed class StoryPhaseIntegrityTests(LorEvolveApiFactory factory) : ICla
     private readonly LorEvolveApiFactory _factory = factory;
 
     [Fact]
-    public async Task A_story_owns_its_chapters_scenes_plot_and_prose_and_nothing_it_points_at()
+    public async Task A_story_owns_its_arcs_chapters_scenes_and_prose_and_nothing_it_points_at()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "phaseowns");
         var u = universe.Id;
@@ -52,63 +52,62 @@ public sealed class StoryPhaseIntegrityTests(LorEvolveApiFactory factory) : ICla
 
         var fall = (await CreateArc(client, u, story, "Fall of the King")).Id;
         var betrayal = (await CreateArc(client, u, story, "Mira's Betrayal")).Id;
-        var refused = (await CreateBeat(client, u, story, fall, "The crown is refused", [gate, council], [arlen])).Id;
-        var letter = (await CreateBeat(client, u, story, betrayal, "The letter", [prologue, council, breach], [mira])).Id;
-        var unplaced = (await CreateBeat(client, u, story, betrayal, "Someone finally sits")).Id;
-        Guid[] beats = [refused, letter, unplaced];
+        await MoveChapterToArc(client, u, story, arrival, fall);
+        await MoveChapterToArc(client, u, story, ashes, betrayal);
+        await SetBeats(client, u, story, gate, "The crown is refused", "Arlen turns away");
+        await SetBeats(client, u, story, council, "The letter");
 
         // A second telling in the same universe, holding the same lore, which nothing below may touch.
         var other = await CreateStory(client, u, "Another telling");
         var elsewhere = await AddScene(client, u, other, "Elsewhere", null, arlen, [mira]);
         await WriteManuscript(client, u, other, elsewhere, "Prose from another telling.");
-        var otherArc = (await CreateArc(client, u, other, "Another thread")).Id;
-        var otherBeat = (await CreateBeat(client, u, other, otherArc, "Another step", [elsewhere], [arlen, mira])).Id;
-        var otherHoldings = new Holdings(Chapters: 0, Scenes: 1, SceneLinks: 1, Manuscripts: 1, Arcs: 1, Beats: 1, BeatScenes: 1, BeatEntities: 2);
-        Assert.Equal(otherHoldings, await HoldingsOf(other, [elsewhere], [otherBeat]));
+        await CreateArc(client, u, other, "Another thread");
+        await SetBeats(client, u, other, elsewhere, "Another step");
+        var otherHoldings = new Holdings(Chapters: 0, Scenes: 1, SceneLinks: 1, Manuscripts: 1, Arcs: 1, ChapterArcs: 0, Beats: 1);
+        Assert.Equal(otherHoldings, await HoldingsOf(other, [elsewhere]));
 
-        var whole = new Holdings(Chapters: 2, Scenes: 4, SceneLinks: 4, Manuscripts: 4, Arcs: 2, Beats: 3, BeatScenes: 5, BeatEntities: 2);
-        Assert.Equal(whole, await HoldingsOf(story, scenes, beats));
+        var whole = new Holdings(Chapters: 2, Scenes: 4, SceneLinks: 4, Manuscripts: 4, Arcs: 2, ChapterArcs: 2, Beats: 3);
+        Assert.Equal(whole, await HoldingsOf(story, scenes));
 
         // Mira goes to the Trash: every reference to her stays, marked, and nothing the story holds goes with her.
         (await client.DeleteAsync($"/api/universes/{u}/entities/{mira}")).EnsureSuccessStatusCode();
 
-        Assert.Equal(whole, await HoldingsOf(story, scenes, beats));
+        Assert.Equal(whole, await HoldingsOf(story, scenes));
         var read = await ReadStory(client, u, story);
         Assert.True(read.Scenes.Single(scene => scene.Id == prologue).Pov!.IsTrashed);
         Assert.True(read.Scenes.Single(scene => scene.Id == gate).Entities.Single().IsTrashed);
-        Assert.True(BeatIn(await Plot(client, u, story), letter).Entities.Single().IsTrashed);
         await AssertProse(client, u, story, prose);
 
         // Since content recovery every delete below is a move to the Trash (ADR 0029): each piece leaves every read, and not
         // one row the story held is erased - so the database holds exactly what it held before the first one.
 
-        // Arrival is deleted: its scenes are told last in Unchaptered, with their prose and every beat pointing at them.
+        // Arrival is deleted: its scenes are told last in Unchaptered, with their prose and their beats.
         (await client.DeleteAsync($"{Story(u, story)}/chapters/{arrival}")).EnsureSuccessStatusCode();
 
         read = await ReadStory(client, u, story);
         Assert.Equal([prologue, gate, council], read.Scenes.Where(scene => scene.ChapterId is null).Select(scene => scene.Id));
         Assert.Equal([ashes], read.Chapters.Select(chapter => chapter.Id));
-        Assert.Equal(whole, await HoldingsOf(story, scenes, beats));
-        Assert.Equal([gate, council], BeatIn(await Plot(client, u, story), refused).SceneIds);
+        Assert.Equal(whole, await HoldingsOf(story, scenes));
+        Assert.Equal(["The crown is refused", "Arlen turns away"], read.Scenes.Single(scene => scene.Id == gate).Beats!.Select(beat => beat.Title));
         await AssertProse(client, u, story, prose);
 
-        // The Council is deleted: its prose, its lore links and its place in two beats leave every read. Both beats stay.
+        // The Council is deleted: its prose, its lore links and its beat leave every read, and are kept with it.
         (await client.DeleteAsync($"{Story(u, story)}/scenes/{council}")).EnsureSuccessStatusCode();
         prose.Remove(council);
 
-        Assert.Equal(whole, await HoldingsOf(story, scenes, beats));
-        var plot = await Plot(client, u, story);
-        Assert.Equal([gate], BeatIn(plot, refused).SceneIds);
-        Assert.Equal([prologue, breach], BeatIn(plot, letter).SceneIds);
+        Assert.Equal(whole, await HoldingsOf(story, scenes));
+        Assert.DoesNotContain(council, (await ReadStory(client, u, story)).Scenes.Select(scene => scene.Id));
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Manuscript(u, story, council))).StatusCode);
         await AssertProse(client, u, story, prose);
         await AssertLore(live: arlen, trashed: mira);
 
-        // The Fall of the King is deleted: it and its beat leave the plot. No scene, prose or entry moves.
+        // The Fall of the King is deleted: it leaves the story's arcs. No chapter, scene, prose or entry moves.
         (await client.DeleteAsync(Arc(u, story, fall))).EnsureSuccessStatusCode();
 
-        Assert.Equal(whole, await HoldingsOf(story, scenes, beats));
-        Assert.Equal([betrayal], (await Plot(client, u, story)).Select(arc => arc.Id));
+        Assert.Equal(whole, await HoldingsOf(story, scenes));
+        read = await ReadStory(client, u, story);
+        Assert.Equal([betrayal], read.Arcs.Select(arc => arc.Id));
+        Assert.Equal(betrayal, read.Chapters.Single(chapter => chapter.Id == ashes).PlotArcId);
         await AssertProse(client, u, story, prose);
         await AssertLore(live: arlen, trashed: mira);
 
@@ -118,8 +117,8 @@ public sealed class StoryPhaseIntegrityTests(LorEvolveApiFactory factory) : ICla
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Story(u, story))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Manuscript(u, story, gate))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Arcs(u, story))).StatusCode);
-        Assert.Equal(whole, await HoldingsOf(story, scenes, beats));
-        Assert.Equal(otherHoldings, await HoldingsOf(other, [elsewhere], [otherBeat]));
+        Assert.Equal(whole, await HoldingsOf(story, scenes));
+        Assert.Equal(otherHoldings, await HoldingsOf(other, [elsewhere]));
         Assert.Equal("Prose from another telling.", (await ReadManuscript(client, u, other, elsewhere)).Content);
         await AssertLore(live: arlen, trashed: mira);
 
@@ -130,15 +129,15 @@ public sealed class StoryPhaseIntegrityTests(LorEvolveApiFactory factory) : ICla
         read = await ReadStory(client, u, story);
         Assert.Equal([prologue, gate, breach], read.Scenes.Select(scene => scene.Id));
         Assert.Equal([ashes], read.Chapters.Select(chapter => chapter.Id));
-        Assert.Equal([betrayal], (await Plot(client, u, story)).Select(arc => arc.Id));
+        Assert.Equal([betrayal], read.Arcs.Select(arc => arc.Id));
         await AssertProse(client, u, story, prose);
 
         // Only deleting the universe removes any of it for good, and then it removes all of it.
         (await client.PostAsync($"/api/universes/{u}/archive", content: null)).EnsureSuccessStatusCode();
         (await client.DeleteAsync($"/api/universes/{u}")).EnsureSuccessStatusCode();
 
-        Assert.Equal(new Holdings(0, 0, 0, 0, 0, 0, 0, 0), await HoldingsOf(story, scenes, beats));
-        Assert.Equal(new Holdings(0, 0, 0, 0, 0, 0, 0, 0), await HoldingsOf(other, [elsewhere], [otherBeat]));
+        Assert.Equal(new Holdings(0, 0, 0, 0, 0, 0, 0), await HoldingsOf(story, scenes));
+        Assert.Equal(new Holdings(0, 0, 0, 0, 0, 0, 0), await HoldingsOf(other, [elsewhere]));
     }
 
     [Fact]
@@ -171,7 +170,8 @@ public sealed class StoryPhaseIntegrityTests(LorEvolveApiFactory factory) : ICla
         await WriteManuscript(
             client, u, story, death, "The king died before sunrise.\nArlen was born in 312 and died in 340, the year he married Mira.\n");
         var arc = (await CreateArc(client, u, story, "The king dies", "Arlen dies, and Mira marries again.")).Id;
-        await CreateBeat(client, u, story, arc, "Mira marries Arlen", [death, birth], lore, "They are married in 339.");
+        await MoveChapterToArc(client, u, story, chapter, arc);
+        await SetBeats(client, u, story, death, "Mira marries Arlen", "They are married in 339");
         await PutJson<StoryDetail>(client, Story(u, story), new StoryRequest("What happened", "Arlen dies.", StoryStatus.Complete));
 
         Assert.Equal(detected, (await Evaluate(client, u)).Detected);
@@ -210,9 +210,6 @@ public sealed class StoryPhaseIntegrityTests(LorEvolveApiFactory factory) : ICla
             $"{Story(universeId, storyId)}/scenes",
             new SceneRequest(title, null, null, pov, year is null ? null : new ChronologyValue(null, year, null, null), lore, chapterId))).Id;
 
-    private static PlotBeatResponse BeatIn(List<PlotArcResponse> plot, Guid beatId) =>
-        plot.SelectMany(arc => arc.Beats).Single(beat => beat.Id == beatId);
-
     private static Task<CanonEvaluationResponse> Evaluate(HttpClient client, Guid universeId) =>
         PostJson<CanonEvaluationResponse>(client, $"/api/universes/{universeId}/canon-conflicts/evaluate", new { });
 
@@ -238,11 +235,10 @@ public sealed class StoryPhaseIntegrityTests(LorEvolveApiFactory factory) : ICla
         int SceneLinks,
         int Manuscripts,
         int Arcs,
-        int Beats,
-        int BeatScenes,
-        int BeatEntities);
+        int ChapterArcs,
+        int Beats);
 
-    private async Task<Holdings> HoldingsOf(Guid storyId, Guid[] sceneIds, Guid[] beatIds)
+    private async Task<Holdings> HoldingsOf(Guid storyId, Guid[] sceneIds)
     {
         Holdings? holdings = null;
         await WithDb(_factory, async db =>
@@ -253,9 +249,8 @@ public sealed class StoryPhaseIntegrityTests(LorEvolveApiFactory factory) : ICla
                 await db.SceneEntityLinks.CountAsync(link => sceneIds.Contains(link.SceneId)),
                 await db.SceneManuscripts.CountAsync(manuscript => sceneIds.Contains(manuscript.SceneId)),
                 await db.PlotArcs.CountAsync(arc => arc.StoryId == storyId),
-                await db.PlotBeats.CountAsync(beat => beatIds.Contains(beat.Id)),
-                await db.PlotBeatScenes.CountAsync(link => beatIds.Contains(link.PlotBeatId)),
-                await db.PlotBeatEntities.CountAsync(link => beatIds.Contains(link.PlotBeatId)));
+                await db.ChapterArcs.CountAsync(link => link.Chapter!.StoryId == storyId),
+                await db.SceneBeats.CountAsync(beat => sceneIds.Contains(beat.SceneId)));
         });
         return holdings!;
     }

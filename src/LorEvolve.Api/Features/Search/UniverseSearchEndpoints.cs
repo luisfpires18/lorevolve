@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Stories;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,7 @@ namespace LorEvolve.Api.Features.Search;
 
 /// <summary>
 /// The universe search behind the persistent search bar (ADR 0031): what an author typed, looked for across the recorded
-/// content of one universe - lore and articles, stories, chapters, scenes, plot arcs and beats, saved manuscripts, the ideas
+/// content of one universe - lore and articles, stories, chapters, scenes, arcs, saved manuscripts, the ideas
 /// that belong to the universe, and its world rules.
 ///
 /// <b>Recorded words, nothing more.</b> Keyword search over saved text, with the lore search's own rules: words ANDed, the
@@ -20,7 +21,7 @@ namespace LorEvolve.Api.Features.Search;
 /// account, and an idea that belongs to no universe is never a result here.
 ///
 /// <b>Live content only, as the workspace sees it.</b> Nothing in the Trash, and nothing inside something that is: a scene
-/// or arc of a trashed story, a beat of a trashed arc, the prose of a trashed scene. Archived entries stay out, as the lore
+/// or arc of a trashed story, the prose of a trashed scene. Archived entries stay out, as the lore
 /// listing keeps them out. Local recovery copies never reach the server and are never searched.
 ///
 /// <b>Best first, and every kind represented.</b> Each kind is its own query - its own index's scores are compared only with
@@ -186,7 +187,7 @@ public static class UniverseSearchEndpoints
     // ---------- Stories ----------
 
     /// <summary>
-    /// Stories, chapters, scenes, arcs and beats, each kind its own query over the one planning-text index, each limited to
+    /// Stories, chapters, scenes and arcs, each kind its own query over the one planning-text index, each limited to
     /// what is live in this universe: the row itself and everything it sits inside.
     /// </summary>
     private static async Task AddStoryContentAsync(
@@ -221,7 +222,6 @@ public static class UniverseSearchEndpoints
                 {
                     chapter.Id,
                     chapter.Title,
-                    chapter.SortOrder,
                     chapter.StoryId,
                     StoryTitle = chapter.Story!.Title,
                     match.Field,
@@ -250,9 +250,7 @@ public static class UniverseSearchEndpoints
                     scene.StoryId,
                     StoryTitle = scene.Story!.Title,
                     ChapterTitle = scene.Chapter != null && scene.Chapter.DeletedAt == null ? scene.Chapter.Title : null,
-                    ChapterOrder = scene.Chapter != null && scene.Chapter.DeletedAt == null
-                        ? (int?)scene.Chapter.SortOrder
-                        : null,
+                    ChapterId = scene.Chapter != null && scene.Chapter.DeletedAt == null ? scene.ChapterId : null,
                     match.Field,
                     match.Rank,
                 })
@@ -285,31 +283,11 @@ public static class UniverseSearchEndpoints
             .Take(ResultsPerKind + 1)
             .ToListAsync(cancellationToken);
 
-        var beats = await db.PlotBeats.AsNoTracking()
-            .Where(beat => beat.DeletedAt == null
-                && beat.PlotArc!.DeletedAt == null
-                && beat.PlotArc.Story!.UniverseId == universeId
-                && beat.PlotArc.Story.DeletedAt == null)
-            .Join(
-                UniverseSearchIndex.StoryContent(db, UniverseSearchIndex.PlotBeatKind, expression),
-                beat => beat.Id,
-                match => match.ItemId,
-                (beat, match) => new
-                {
-                    beat.Id,
-                    beat.Title,
-                    beat.PlotArcId,
-                    ArcTitle = beat.PlotArc!.Title,
-                    beat.PlotArc.StoryId,
-                    StoryTitle = beat.PlotArc.Story!.Title,
-                    match.Field,
-                    match.Rank,
-                })
-            .OrderBy(row => row.Field)
-            .ThenBy(row => row.Rank)
-            .ThenBy(row => row.Id)
-            .Take(ResultsPerKind + 1)
-            .ToListAsync(cancellationToken);
+        // A chapter's number restarts in each arc (ADR 0070), so it is worked out per story rather than read off the row.
+        var numbers = await StoryEndpoints.ChapterNumbersAsync(
+            db,
+            [.. chapters.Select(row => row.StoryId).Concat(scenes.Select(row => row.StoryId)).Distinct()],
+            cancellationToken);
 
         // One excerpt query for every kind above, and only for results whose words reached past their title.
         IEnumerable<(Guid Id, int Field)> shown =
@@ -318,7 +296,6 @@ public static class UniverseSearchEndpoints
             .. chapters.Take(ResultsPerKind).Select(row => (row.Id, row.Field)),
             .. scenes.Take(ResultsPerKind).Select(row => (row.Id, row.Field)),
             .. arcs.Take(ResultsPerKind).Select(row => (row.Id, row.Field)),
-            .. beats.Take(ResultsPerKind).Select(row => (row.Id, row.Field)),
         ];
 
         var excerpts = await UniverseSearchIndex.StoryContentExcerptsAsync(
@@ -350,7 +327,7 @@ public static class UniverseSearchEndpoints
                 {
                     StoryId = row.StoryId,
                     StoryTitle = row.StoryTitle,
-                    ChapterNumber = row.SortOrder + 1,
+                    ChapterNumber = numbers.GetValueOrDefault(row.Id),
                 }));
         }
 
@@ -367,7 +344,7 @@ public static class UniverseSearchEndpoints
                     StoryId = row.StoryId,
                     StoryTitle = row.StoryTitle,
                     ChapterTitle = row.ChapterTitle,
-                    ChapterNumber = row.ChapterOrder + 1,
+                    ChapterNumber = row.ChapterId is { } chapter ? numbers.GetValueOrDefault(chapter) : null,
                 }));
         }
 
@@ -383,23 +360,6 @@ public static class UniverseSearchEndpoints
                 {
                     StoryId = row.StoryId,
                     StoryTitle = row.StoryTitle,
-                }));
-        }
-
-        for (var position = 0; position < beats.Count; position++)
-        {
-            var row = beats[position];
-            var (field, parts, tier) = StoryField(row.Field, UniverseSearchField.Description, excerpts.GetValueOrDefault(row.Id));
-
-            found.Add(new Found(
-                tier,
-                position,
-                Result(UniverseSearchKind.PlotBeat, row.Id, row.Title, field, parts) with
-                {
-                    StoryId = row.StoryId,
-                    StoryTitle = row.StoryTitle,
-                    PlotArcId = row.PlotArcId,
-                    PlotArcTitle = row.ArcTitle,
                 }));
         }
     }
@@ -432,8 +392,8 @@ public static class UniverseSearchEndpoints
                     ChapterTitle = manuscript.Scene.Chapter != null && manuscript.Scene.Chapter.DeletedAt == null
                         ? manuscript.Scene.Chapter.Title
                         : null,
-                    ChapterOrder = manuscript.Scene.Chapter != null && manuscript.Scene.Chapter.DeletedAt == null
-                        ? (int?)manuscript.Scene.Chapter.SortOrder
+                    ChapterId = manuscript.Scene.Chapter != null && manuscript.Scene.Chapter.DeletedAt == null
+                        ? manuscript.Scene.ChapterId
                         : null,
                     match.Rank,
                 })
@@ -441,6 +401,9 @@ public static class UniverseSearchEndpoints
             .ThenBy(row => row.SceneId)
             .Take(ResultsPerKind + 1)
             .ToListAsync(cancellationToken);
+
+        var numbers = await StoryEndpoints.ChapterNumbersAsync(
+            db, [.. rows.Select(row => row.StoryId).Distinct()], cancellationToken);
 
         var excerpts = await UniverseSearchIndex.ManuscriptExcerptsAsync(
             db,
@@ -465,7 +428,7 @@ public static class UniverseSearchEndpoints
                     StoryId = row.StoryId,
                     StoryTitle = row.StoryTitle,
                     ChapterTitle = row.ChapterTitle,
-                    ChapterNumber = row.ChapterOrder + 1,
+                    ChapterNumber = row.ChapterId is { } chapter ? numbers.GetValueOrDefault(chapter) : null,
                 }));
         }
     }
@@ -592,7 +555,7 @@ public static class UniverseSearchEndpoints
         string title,
         UniverseSearchField field,
         IReadOnlyList<SearchExcerptPart>? excerpt) =>
-        new(kind, id, title, field, excerpt, null, null, null, null, null, null, null);
+        new(kind, id, title, field, excerpt, null, null, null, null, null);
 
     /// <summary>
     /// One result before the merge: where its words were found, and its place among its own kind. A place at or beyond

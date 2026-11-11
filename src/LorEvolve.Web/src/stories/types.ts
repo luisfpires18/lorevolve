@@ -55,7 +55,9 @@ export interface SceneLoreReference {
 
 /**
  * An optional grouping of a story's scenes: structure, not content. Its number - "Chapter 3" - is its
- * position, worked out on screen and never stored, so `title` is only what the author wrote.
+ * position inside its arc (or among the chapters in no arc), worked out on screen and never stored, so `title` is
+ * only what the author wrote. `sortOrder` is one order across the whole story; `plotArcId` is the live arc it is told
+ * in, or null for none (ADR 0070).
  */
 export interface Chapter {
   id: string
@@ -66,6 +68,21 @@ export interface Chapter {
   notes: string | null
   createdAt: string
   updatedAt: string
+  plotArcId: string | null
+}
+
+/** One step of a scene, in its order (ADR 0070): a title, and an optional note under it. */
+export interface SceneBeat {
+  id: string
+  sortOrder: number
+  title: string
+  note: string | null
+}
+
+/** A beat as a scene save sends it. */
+export interface SceneBeatInput {
+  title: string
+  note: string | null
 }
 
 /**
@@ -92,10 +109,12 @@ export interface Scene {
   manuscriptVisibility: VisibilityValue
   /** What the scene form's save names as the version it was written over (ADR 0043). */
   version: number
+  /** The scene's beats, in order (ADR 0070). */
+  beats: SceneBeat[]
 }
 
 /**
- * One story with its whole structure, resolved in one request: chapters in order, and every scene -
+ * One story with its whole structure, resolved in one request: its arcs in order, chapters in order, and every scene -
  * Unchaptered first, then chapter by chapter, each container in its own narrative order.
  */
 export interface StoryDetail {
@@ -103,6 +122,7 @@ export interface StoryDetail {
   title: string
   premise: string | null
   status: StoryStatusValue
+  arcs: PlotArc[]
   chapters: Chapter[]
   scenes: Scene[]
   createdAt: string
@@ -134,6 +154,8 @@ export interface SceneInput {
   chapterId: string | null
   /** The scene's version an edit was written over; left out on create. */
   expectedVersion?: number
+  /** The scene's whole list of beats, in order. Left out, the scene keeps the beats it has. */
+  beats?: SceneBeatInput[]
 }
 
 /**
@@ -197,37 +219,20 @@ export interface ManuscriptRevisionDetail {
   content: string
 }
 
-/** Everything a client may set on a chapter. No number and no order: both are its position. */
+/**
+ * Everything a client may set on a chapter. No number and no order: both are its position. `plotArcId` is read by a create
+ * only - the arc a new chapter starts in; moving one between arcs is its own route.
+ */
 export interface ChapterInput {
   title: string
   summary: string | null
   notes: string | null
+  plotArcId?: string | null
 }
 
 /**
- * One step inside a plot arc. `sortOrder` is its place in the arc's intended progression - never the order its
- * scenes are told in, their chapters, or when they happen in the world.
- *
- * `sceneIds` are scenes of this story, in reading order, as ids only: the story read already carries each scene,
- * and a scene that moves chapter is still the same id. `entities` are its lore, read from the entries, a trashed
- * one marked rather than dropped.
- */
-export interface PlotBeat {
-  id: string
-  plotArcId: string
-  sortOrder: number
-  title: string
-  description: string | null
-  notes: string | null
-  sceneIds: string[]
-  entities: SceneLoreReference[]
-  createdAt: string
-  updatedAt: string
-}
-
-/**
- * A named narrative thread the author follows across a story, with its beats in order. Plot is planning: it owns no
- * scene and asserts nothing about the world. Its number - "Arc 2" - is its position, drawn and never stored.
+ * An arc of a story (ADR 0070): story structure, holding chapters. Its number - "Arc 2" - is its position, drawn and never
+ * stored; its chapters name it themselves.
  */
 export interface PlotArc {
   id: string
@@ -236,10 +241,9 @@ export interface PlotArc {
   title: string
   description: string | null
   notes: string | null
-  beats: PlotBeat[]
   createdAt: string
   updatedAt: string
-  /** Whether the author published the arc - its title, description and beats - on the story's public page (ADR 0039). */
+  /** Whether the author published the arc - its title and description - on the story's public page (ADR 0039). */
   visibility: VisibilityValue
 }
 
@@ -248,17 +252,4 @@ export interface PlotArcInput {
   title: string
   description: string | null
   notes: string | null
-}
-
-/**
- * Everything a client may set on a beat. Both link lists are whole sets, replaced on every save. `plotArcId` is read
- * by an update only: another arc of the story moves the beat there, last.
- */
-export interface PlotBeatInput {
-  title: string
-  description: string | null
-  notes: string | null
-  sceneIds: string[]
-  entityIds: string[]
-  plotArcId: string | null
 }

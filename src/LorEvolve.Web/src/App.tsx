@@ -267,9 +267,10 @@ function Root() {
                 path="stories/:storyId"
                 element={asSection('story', <StoryPage view="scenes" />)}
               />
+              {/* The Plot view was retired with plot beats (ADR 0070): an old link lands on the story. */}
               <Route
                 path="stories/:storyId/plot"
-                element={asSection('story', <StoryPage view="plot" />)}
+                element={<Navigate to=".." relative="path" replace />}
               />
               <Route
                 path="stories/:storyId/manuscript/:sceneId?"

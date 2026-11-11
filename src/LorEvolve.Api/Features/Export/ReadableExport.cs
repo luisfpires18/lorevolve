@@ -794,36 +794,55 @@ internal sealed class ReadableBook
             SceneList(unchaptered);
         }
 
-        foreach (var chapter in chapters)
-        {
-            text.Append("### Chapter ").Append(chapter.SortOrder + 1).Append(": ").AppendLine(Inline(chapter.Title)).AppendLine();
-            Paragraph(text, chapter.Summary);
-            Field(text, "Notes", chapter.Notes);
-            SceneList(scenes.Where(scene => scene.ChapterId == chapter.Id));
-        }
+        // Chapters in no arc first, then each arc with its own (ADR 0070); a chapter's number restarts in each.
+        var arcs = LiveArcs(story);
+        var numbers = ChapterNumbers(story);
 
-        var arcs = (story.PlotArcs ?? []).Where(arc => arc.DeletedAt is null).OrderBy(arc => arc.SortOrder).ToList();
-        if (arcs.Count > 0)
+        void ChapterList(IEnumerable<BackupChapter> list, string heading)
         {
-            text.AppendLine("## Plot").AppendLine();
-            foreach (var arc in arcs)
+            foreach (var chapter in list)
             {
-                text.Append("### Arc ").Append(arc.SortOrder + 1).Append(": ").AppendLine(Inline(arc.Title)).AppendLine();
-                Paragraph(text, arc.Description);
-                Field(text, "Notes", arc.Notes);
-                foreach (var beat in arc.Beats.Where(beat => beat.DeletedAt is null).OrderBy(beat => beat.SortOrder))
-                {
-                    text.Append(beat.SortOrder + 1).Append(". **").Append(Inline(beat.Title)).Append("**")
-                        .Append(beat.Description is { Length: > 0 } description ? $" - {Inline(description)}" : string.Empty)
-                        .Append(beat.LinkedSceneIds.Count > 0 ? $" Scenes: {Links(beat.LinkedSceneIds.Select(id => SceneLink(page, id)))}." : string.Empty)
-                        .AppendLine(beat.LinkedEntityIds.Count > 0 ? $" Lore: {Links(beat.LinkedEntityIds.Select(id => EntityLink(page, id)))}." : string.Empty);
-                }
-
-                text.AppendLine();
+                text.Append(heading).Append(" Chapter ").Append(numbers[chapter.Id]).Append(": ").AppendLine(Inline(chapter.Title)).AppendLine();
+                Paragraph(text, chapter.Summary);
+                Field(text, "Notes", chapter.Notes);
+                SceneList(scenes.Where(scene => scene.ChapterId == chapter.Id));
             }
         }
 
+        ChapterList(chapters.Where(chapter => ArcOf(story, chapter) is null), "###");
+
+        foreach (var arc in arcs)
+        {
+            text.Append("### Arc ").Append(arc.SortOrder + 1).Append(": ").AppendLine(Inline(arc.Title)).AppendLine();
+            Paragraph(text, arc.Description);
+            Field(text, "Notes", arc.Notes);
+            ChapterList(chapters.Where(chapter => ArcOf(story, chapter) == arc.Id), "####");
+        }
+
         return text.ToString();
+    }
+
+    private static List<BackupPlotArc> LiveArcs(BackupStory story) =>
+        [.. (story.PlotArcs ?? []).Where(arc => arc.DeletedAt is null).OrderBy(arc => arc.SortOrder)];
+
+    /// <summary>The live arc a chapter is told in, or null: a chapter whose arc is in the Trash reads as in none.</summary>
+    private static Guid? ArcOf(BackupStory story, BackupChapter chapter) =>
+        chapter.PlotArcId is { } arcId && LiveArcs(story).Any(arc => arc.Id == arcId) ? arcId : null;
+
+    /// <summary>Each live chapter's number as the workspace shows it: from 1 inside its arc, or among those in none.</summary>
+    private static Dictionary<Guid, int> ChapterNumbers(BackupStory story)
+    {
+        var numbers = new Dictionary<Guid, int>();
+        foreach (var group in (story.Chapters ?? []).Where(chapter => chapter.DeletedAt is null).OrderBy(chapter => chapter.SortOrder).GroupBy(chapter => ArcOf(story, chapter)))
+        {
+            var number = 0;
+            foreach (var chapter in group)
+            {
+                numbers[chapter.Id] = ++number;
+            }
+        }
+
+        return numbers;
     }
 
     private string ScenePage(BackupStory story, BackupScene scene)
@@ -833,13 +852,26 @@ internal sealed class ReadableBook
         text.Append("# ").AppendLine(Inline(scene.Title)).AppendLine();
         var chapter = (story.Chapters ?? []).FirstOrDefault(candidate => candidate.Id == scene.ChapterId && candidate.DeletedAt is null);
         text.Append("In ").Append(Link(story.Title, Relative(page, _storyPaths[story.Id])))
-            .AppendLine(chapter is null ? "." : $", chapter {chapter.SortOrder + 1}: {Inline(chapter.Title)}.").AppendLine();
+            .AppendLine(chapter is null ? "." : $", chapter {ChapterNumbers(story)[chapter.Id]}: {Inline(chapter.Title)}.").AppendLine();
 
         Field(text, "Point of view", scene.PovEntityId is { } pov ? EntityLink(page, pov) : null, escape: false);
         Field(text, "When", scene.Chronology is { } when ? Point(when) : null, escape: false);
         Field(text, "Lore", scene.LinkedEntityIds.Count > 0 ? Links(scene.LinkedEntityIds.Select(id => EntityLink(page, id))) : null, escape: false);
         Paragraph(text, scene.Summary);
         Field(text, "Notes", scene.Notes);
+
+        var beats = (scene.Beats ?? []).OrderBy(beat => beat.SortOrder).ToList();
+        if (beats.Count > 0)
+        {
+            text.AppendLine("## Beats").AppendLine();
+            foreach (var beat in beats)
+            {
+                text.Append("1. ").Append(Inline(beat.Title))
+                    .AppendLine(beat.Note is { Length: > 0 } note ? $" - {Inline(note)}" : string.Empty);
+            }
+
+            text.AppendLine();
+        }
 
         if (scene.Manuscript is { Content.Length: > 0 } manuscript)
         {
@@ -921,15 +953,15 @@ internal sealed class ReadableBook
                 IdeaReferenceKind.Entity => EntityLink(IdeasPage, reference.Id),
                 IdeaReferenceKind.Story => StoryLink(IdeasPage, reference.Id),
                 IdeaReferenceKind.Scene => SceneLink(IdeasPage, reference.Id),
-                _ => StoryOfPlot(reference.Id) is { } story ? StoryLink(IdeasPage, story) : "(plot in the Trash)",
+                _ => StoryOfArc(reference.Id) is { } story ? StoryLink(IdeasPage, story) : "(arc in the Trash)",
             }).Distinct(StringComparer.Ordinal)) : null, escape: false);
         }
 
         return text.ToString();
     }
 
-    private Guid? StoryOfPlot(Guid id) => LiveStories()
-        .FirstOrDefault(story => (story.PlotArcs ?? []).Any(arc => arc.Id == id || arc.Beats.Any(beat => beat.Id == id)))?.Id;
+    private Guid? StoryOfArc(Guid id) => LiveStories()
+        .FirstOrDefault(story => (story.PlotArcs ?? []).Any(arc => arc.Id == id))?.Id;
 
     private IEnumerable<BackupRelationship> LiveRelationships() => _payload.Relationships.Where(relationship =>
         relationship.DeletedAt is null && _entities.ContainsKey(relationship.SourceEntityId) && _entities.ContainsKey(relationship.TargetEntityId));

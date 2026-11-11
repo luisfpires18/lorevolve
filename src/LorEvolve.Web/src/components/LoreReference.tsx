@@ -5,7 +5,7 @@ import { TypeIcon } from './TypeIcon'
 import type { SceneLoreReference } from '../stories/types'
 
 /**
- * A lore reference as a story draws it, on a scene or on a plot beat: its picture, small, or with none its type's icon -
+ * A lore reference as a story draws it, on a scene: its picture, small, or with none its type's icon -
  * or, for a point of view, its square tile - and its name, a real link to the entry's own page. An entry in the Trash is named but not linked,
  * because it has no page to open while it is there.
  */

@@ -6,7 +6,7 @@ import { makeTestPassword } from './support/account'
  * one story's - over the one account-owned idea (ADR 0030 amendment).
  *
  * A one-line capture keeps a thought without leaving the list, placed by where it was typed. A story's Ideas view lists
- * the ideas with an explicit reference to the story or to a scene, arc or beat in it, once each, and only for the owner.
+ * the ideas with an explicit reference to the story or to a scene or arc in it, once each, and only for the owner.
  * An idea from any of the three opens in the one editor, and Back returns to the list as it was left.
  *
  * Each test registers its own account with a throwaway password.
@@ -36,9 +36,9 @@ async function post(page: Page, path: string, data: unknown) {
   return ((await response.json()) as { id: string }).id
 }
 
-const Kind = { Story: 1, Scene: 2, PlotArc: 3, PlotBeat: 4 } as const
+const Kind = { Story: 1, Scene: 2, PlotArc: 3 } as const
 
-/** A universe with a story holding a scene, an arc and a beat. */
+/** A universe with a story holding a scene and an arc. */
 async function seedWorld(page: Page, storyTitle = 'The Long Winter') {
   const universeId = await post(page, '/api/universes', {
     name: unique('Hollowmere '),
@@ -66,14 +66,7 @@ async function seedStory(page: Page, universeId: string, title: string) {
     description: null,
     notes: null,
   })
-  const beatId = await post(page, `${stories}/${storyId}/plot-arcs/${arcId}/beats`, {
-    title: `${title}: the will is read`,
-    description: null,
-    notes: null,
-    sceneIds: [],
-    entityIds: [],
-  })
-  return { storyId, sceneId, arcId, beatId }
+  return { storyId, sceneId, arcId }
 }
 
 async function seedIdea(
@@ -249,7 +242,7 @@ test.describe('ideas workspace', () => {
 
     await page.goto(storyPath)
     const views = page.getByRole('navigation', { name: 'Story views' })
-    await expect(views.getByRole('link')).toHaveText(['Scenes', 'Plot', 'Manuscript', 'Ideas'])
+    await expect(views.getByRole('link')).toHaveText(['Scenes', 'Manuscript', 'Ideas'])
     await views.getByRole('link', { name: 'Ideas' }).click()
     await page.waitForURL(`${storyPath}/ideas`)
     await expect(views.getByRole('link', { name: 'Ideas' })).toHaveAttribute('aria-current', 'page')
@@ -286,7 +279,6 @@ test.describe('ideas workspace', () => {
     const b = await seedStory(page, a.universeId, 'Story B')
 
     await seedIdea(page, 'Via the scene', a.universeId, [{ kind: Kind.Scene, id: a.sceneId }])
-    await seedIdea(page, 'Via the beat', a.universeId, [{ kind: Kind.PlotBeat, id: a.beatId }])
     await seedIdea(page, 'Via the arc', a.universeId, [{ kind: Kind.PlotArc, id: a.arcId }])
     await seedIdea(page, 'Story and scene', a.universeId, [
       { kind: Kind.Story, id: a.storyId },
@@ -297,8 +289,8 @@ test.describe('ideas workspace', () => {
     await seedIdea(page, 'Story A', null)
 
     await page.goto(`/app/universes/${a.universeId}/stories/${a.storyId}/ideas`)
-    await expect(rows(page)).toHaveCount(4)
-    for (const title of ['Via the scene', 'Via the beat', 'Via the arc', 'Story and scene']) {
+    await expect(rows(page)).toHaveCount(3)
+    for (const title of ['Via the scene', 'Via the arc', 'Story and scene']) {
       await expect(row(page, title)).toHaveCount(1)
     }
     await expect(row(page, 'Story and scene')).toContainText('2 references')
@@ -402,7 +394,7 @@ test.describe('ideas workspace', () => {
     const storyPath = `/app/universes/${universeId}/stories/${storyId}`
     await editor.page.goto(storyPath)
     const views = editor.page.getByRole('navigation', { name: 'Story views' })
-    await expect(views.getByRole('link')).toHaveText(['Scenes', 'Plot', 'Manuscript'])
+    await expect(views.getByRole('link')).toHaveText(['Scenes', 'Manuscript'])
 
     // By address, the view says it is not theirs, and asks for nothing.
     let asked = false
@@ -424,7 +416,7 @@ test.describe('ideas workspace', () => {
   })
 
   for (const width of [390, 360]) {
-    test(`a story’s four views and its capture fit a ${width}px phone`, async ({ page }) => {
+    test(`a story’s three views and its capture fit a ${width}px phone`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 })
       await signUp(page)
       const { universeId, storyId } = await seedWorld(
@@ -434,8 +426,8 @@ test.describe('ideas workspace', () => {
       await page.goto(`/app/universes/${universeId}/stories/${storyId}/ideas`)
 
       const views = page.getByTestId('story-views')
-      await expect(views.getByRole('link')).toHaveCount(4)
-      expect((await views.boundingBox())!.height, 'the four views wrapped').toBeLessThan(60)
+      await expect(views.getByRole('link')).toHaveCount(3)
+      expect((await views.boundingBox())!.height, 'the three views wrapped').toBeLessThan(60)
       const last = (await views.getByRole('link', { name: 'Ideas' }).boundingBox())!
       expect(last.x + last.width).toBeLessThanOrEqual(width)
 

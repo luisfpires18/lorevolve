@@ -364,19 +364,7 @@ internal static class TimelineFeed
                         scene.StoryId,
                         scene.Story!.Title,
                         scene.ChapterId,
-                        scene.ChapterId == null ? null : scene.Chapter!.SortOrder + 1,
-                        scene.ChapterId == null ? null : scene.Chapter!.Title,
-                        db.PlotBeatScenes
-                            .Where(link => link.SceneId == scene.Id
-                                && link.PlotBeat!.DeletedAt == null
-                                && link.PlotBeat.PlotArc!.DeletedAt == null)
-                            .OrderBy(link => link.PlotBeat!.PlotArc!.SortOrder)
-                            .ThenBy(link => link.PlotBeat!.SortOrder)
-                            .Select(link => (Guid?)link.PlotBeatId)
-                            .FirstOrDefault(),
-                        db.PlotBeatScenes.Count(link => link.SceneId == scene.Id
-                            && link.PlotBeat!.DeletedAt == null
-                            && link.PlotBeat.PlotArc!.DeletedAt == null)),
+                        scene.ChapterId == null ? null : scene.Chapter!.Title),
                 })
                 .ToDictionaryAsync(scene => scene.Id, scene => scene.Source, cancellationToken);
 

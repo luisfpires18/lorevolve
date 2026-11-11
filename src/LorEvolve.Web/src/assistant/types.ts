@@ -27,7 +27,7 @@ export const SourceKind = {
   Chapter: 2,
   Scene: 3,
   PlotArc: 4,
-  PlotBeat: 5,
+  // 5 was a plot beat, retired with plot beats (ADR 0070).
   TimelineMoment: 6,
   /** A pin on a map (issue #53); `storyId` carries its map's id. */
   MapPin: 7,

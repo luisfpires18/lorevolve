@@ -149,12 +149,7 @@ export interface TimelineSceneSource {
   storyId: string
   storyTitle: string
   chapterId: string | null
-  /** The chapter's position, from 1; null when the scene is Unchaptered. */
-  chapterNumber: number | null
   chapterTitle: string | null
-  /** The first live beat that names the scene, for opening the Plot at it; null when none does. */
-  plotBeatId: string | null
-  plotBeatCount: number
 }
 
 /** A birth or death year, read from the entry every time. The status is the entry's own. */

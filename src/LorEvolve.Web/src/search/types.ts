@@ -7,7 +7,7 @@ export const SearchKind = {
   Chapter: 2,
   Scene: 3,
   PlotArc: 4,
-  PlotBeat: 5,
+  // 5 was a plot beat, retired with plot beats (ADR 0070).
   Manuscript: 6,
   Idea: 7,
   WorldRule: 8,
@@ -15,14 +15,13 @@ export const SearchKind = {
 
 export type SearchKindValue = (typeof SearchKind)[keyof typeof SearchKind]
 
-/** How each kind is named on a result. Words, never a colour or an icon alone; "Arc" and "Beat", as everywhere else. */
+/** How each kind is named on a result. Words, never a colour or an icon alone; "Arc", as everywhere else. */
 export const SEARCH_KIND_LABELS: Record<SearchKindValue, string> = {
   [SearchKind.Entity]: 'Lore',
   [SearchKind.Story]: 'Story',
   [SearchKind.Chapter]: 'Chapter',
   [SearchKind.Scene]: 'Scene',
   [SearchKind.PlotArc]: 'Arc',
-  [SearchKind.PlotBeat]: 'Beat',
   [SearchKind.Manuscript]: 'Manuscript',
   [SearchKind.Idea]: 'Idea',
   [SearchKind.WorldRule]: 'World rule',
@@ -62,7 +61,7 @@ export const SEARCH_FIELD_LABELS: Record<SearchFieldValue, string | null> = {
  * `id` is the thing's own id - a manuscript's is its scene's. `excerpt` is a few words around the match, as runs of
  * plain text, only when the match was not the title. The context members are set where they mean something: the entry's
  * type; `storyId` for everything from a story (a story's own id for a story) and `storyTitle` for what sits inside one;
- * the chapter a scene or manuscript is told in, and a chapter's own number; a beat's arc.
+ * the chapter a scene or manuscript is told in, and a chapter's own number - inside its arc, where it restarts.
  */
 export interface SearchResult {
   kind: SearchKindValue

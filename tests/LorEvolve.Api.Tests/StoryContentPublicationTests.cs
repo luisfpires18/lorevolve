@@ -76,10 +76,7 @@ public sealed partial class StoryContentPublicationTests(LorEvolveApiFactory fac
 
         var zeta = await CreateArc(o, world.U, world.Story, "Zeta arc", "What drives it.", "Arc notes secret");
         await CreateArc(o, world.U, world.Story, "Private arc");
-        await CreateBeat(o, world.U, world.Story, zeta.Id, "Omega beat", scenes: [yak], description: "First.", notes: "Beat notes secret");
-        var trashed = await CreateBeat(o, world.U, world.Story, zeta.Id, "Trashed beat");
-        await CreateBeat(o, world.U, world.Story, zeta.Id, "Alpha beat");
-        (await o.DeleteAsync(Beat(world.U, world.Story, trashed.Id))).EnsureSuccessStatusCode();
+        await SetBeats(o, world.U, world.Story, yak, "Beat secret");
         await Part(o, $"{Arc(world.U, world.Story, zeta.Id)}/publish");
 
         var body = await Anonymous(_factory).GetStringAsync(world.Page);
@@ -93,15 +90,13 @@ public sealed partial class StoryContentPublicationTests(LorEvolveApiFactory fac
             page.Manuscript.Select(part => (part.Title, part.Text)));
         var arc = Assert.Single(page.Plot);
         Assert.Equal(("Zeta arc", "What drives it."), (arc.Title, arc.Description));
-        Assert.Equal([("Omega beat", "First."), ("Alpha beat", null)], arc.Beats.Select(beat => (beat.Title, beat.Description)));
 
         using var document = JsonDocument.Parse(body);
         Assert.Equal(["summary", "title"], Keys(document.RootElement.GetProperty("scenes")[0]));
         Assert.Equal(["links", "text", "title"], Keys(document.RootElement.GetProperty("manuscript")[0]));
-        Assert.Equal(["beats", "description", "title"], Keys(document.RootElement.GetProperty("plot")[0]));
-        Assert.Equal(["description", "title"], Keys(document.RootElement.GetProperty("plot")[0].GetProperty("beats")[0]));
+        Assert.Equal(["description", "title"], Keys(document.RootElement.GetProperty("plot")[0]));
 
-        foreach (var secret in new[] { "Private outline", "Unpublished prose", "Private arc", "Trashed beat", "notes secret", "Chapter title secret", "Premise secret" })
+        foreach (var secret in new[] { "Private outline", "Unpublished prose", "Private arc", "Beat secret", "notes secret", "Chapter title secret", "Premise secret" })
         {
             Assert.DoesNotContain(secret, body, StringComparison.OrdinalIgnoreCase);
         }

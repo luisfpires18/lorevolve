@@ -112,7 +112,7 @@ internal static partial class AiChangeStaging
 
             if (Action(input.Action) is not { } action || Resource(input.Resource) is not { } resource)
             {
-                Problem(AiChangeCodes.Invalid, "Say what the change does (create, update, remove or reorder) and to what (lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule, idea, lore_type, lore_field or lore_group).");
+                Problem(AiChangeCodes.Invalid, "Say what the change does (create, update, remove or reorder) and to what (lore_entry, article, relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule, idea, lore_type, lore_field or lore_group).");
                 continue;
             }
 
@@ -130,9 +130,9 @@ internal static partial class AiChangeStaging
             }
 
             if (action == AiChangeAction.Reorder
-                && resource is not (AiChangeResource.Chapter or AiChangeResource.Scene or AiChangeResource.PlotArc or AiChangeResource.PlotBeat))
+                && resource is not (AiChangeResource.Chapter or AiChangeResource.Scene or AiChangeResource.PlotArc))
             {
-                Problem(AiChangeCodes.Unsupported, "Only a story's chapters or plot arcs, a chapter's scenes and an arc's beats have an order to set.");
+                Problem(AiChangeCodes.Unsupported, "Only a story's chapters or plot arcs and a chapter's scenes have an order to set.");
                 continue;
             }
 
@@ -253,7 +253,6 @@ internal static partial class AiChangeStaging
         "timeline_event" or "timeline_moment" or "moment" => AiChangeResource.TimelineEvent,
         "article" => AiChangeResource.Article,
         "plot_arc" or "arc" => AiChangeResource.PlotArc,
-        "plot_beat" or "beat" => AiChangeResource.PlotBeat,
         "world_rule" or "rule" => AiChangeResource.WorldRule,
         "idea" => AiChangeResource.Idea,
         "lore_type" or "type" => AiChangeResource.LoreType,
@@ -304,7 +303,6 @@ internal static partial class AiChangeStaging
                 (_, AiChangeAction.Reorder) => await OrderAsync(cancellationToken),
                 (AiChangeResource.Article, _) => await ArticleAsync(cancellationToken),
                 (AiChangeResource.PlotArc, _) => await PlotArcAsync(cancellationToken),
-                (AiChangeResource.PlotBeat, _) => await PlotBeatAsync(cancellationToken),
                 (AiChangeResource.WorldRule, _) => await WorldRuleAsync(cancellationToken),
                 (AiChangeResource.Idea, _) => await IdeaAsync(cancellationToken),
                 (AiChangeResource.LoreType, _) => await LoreTypeAsync(cancellationToken),

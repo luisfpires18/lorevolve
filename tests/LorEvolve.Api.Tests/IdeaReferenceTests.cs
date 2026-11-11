@@ -8,7 +8,7 @@ using static LorEvolve.Api.Tests.PlotTestClient;
 namespace LorEvolve.Api.Tests;
 
 /// <summary>
-/// What an idea may point at (ADR 0030): an entry, story, scene, arc or beat of its own universe, named by an explicit kind,
+/// What an idea may point at (ADR 0030): an entry, story, scene or arc of its own universe, named by an explicit kind,
 /// resolved by name on every read, never across a universe or an account, never held by an idea with no universe, and kept
 /// - marked, and never newly chosen - while its target is in the Trash. And that none of it, nor anything else an idea does,
 /// changes the lore.
@@ -17,7 +17,7 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
 {
     private readonly LorEvolveApiFactory _factory = factory;
 
-    private sealed record World(Guid Universe, Guid Entity, Guid Story, Guid Scene, Guid Arc, Guid Beat)
+    private sealed record World(Guid Universe, Guid Entity, Guid Story, Guid Scene, Guid Arc)
     {
         public IReadOnlyList<IdeaReferenceInput> All =>
         [
@@ -25,7 +25,6 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
             Ref(IdeaReferenceKind.Story, Story),
             Ref(IdeaReferenceKind.Scene, Scene),
             Ref(IdeaReferenceKind.PlotArc, Arc),
-            Ref(IdeaReferenceKind.PlotBeat, Beat),
         ];
     }
 
@@ -35,8 +34,7 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
         var story = await CreateStory(client, universeId, $"The Long Winter {tag}");
         var scene = await CreateScene(client, universeId, story, $"The Council {tag}");
         var arc = await CreateArc(client, universeId, story, $"Fall of the King {tag}");
-        var beat = await CreateBeat(client, universeId, story, arc.Id, $"Learns {tag}");
-        return new World(universeId, entity, story, scene, arc.Id, beat.Id);
+        return new World(universeId, entity, story, scene, arc.Id);
     }
 
     [Fact]
@@ -53,15 +51,13 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
                 (IdeaReferenceKind.Story, world.Story, "The Long Winter a", world.Story),
                 (IdeaReferenceKind.Scene, world.Scene, "The Council a", world.Story),
                 (IdeaReferenceKind.PlotArc, world.Arc, "Fall of the King a", world.Story),
-                (IdeaReferenceKind.PlotBeat, world.Beat, "Learns a", world.Story),
             ],
             idea.References.Select(reference => (reference.Kind, reference.Id, reference.Name, reference.StoryId)));
         Assert.All(idea.References, reference => Assert.False(reference.IsInTrash));
         Assert.Equal("Character", idea.References[0].EntityTypeName);
         Assert.Equal("The Long Winter a", idea.References[2].StoryTitle);
-        Assert.Equal("Fall of the King a", idea.References[4].PlotArcTitle);
 
-        Assert.Equal(5, (await ListIdeas(client)).Items.Single().ReferenceCount);
+        Assert.Equal(4, (await ListIdeas(client)).Items.Single().ReferenceCount);
 
         // Names are read from the targets, never copied: a renamed story is renamed on the idea.
         (await client.PutVersionedAsync(Story(universe.Id, world.Story), new LorEvolve.Api.Features.Stories.StoryRequest(
@@ -72,7 +68,7 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
 
         // Removing one reference keeps the others.
         var fewer = await Save(client, idea, references: [.. world.All.Where(reference => reference.Kind != IdeaReferenceKind.Scene)]);
-        Assert.Equal(4, fewer.References.Count);
+        Assert.Equal(3, fewer.References.Count);
         Assert.DoesNotContain(fewer.References, reference => reference.Kind == IdeaReferenceKind.Scene);
     }
 
@@ -116,7 +112,7 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
         var moved = await TrySave(client, idea, universeId: other.Id);
         Assert.Contains("references", await Errors(moved), StringComparison.Ordinal);
         var unchanged = await ReadIdea(client, idea.Id);
-        Assert.Equal((universe.Id, 5), (unchanged.Universe!.Id, unchanged.References.Count));
+        Assert.Equal((universe.Id, 4), (unchanged.Universe!.Id, unchanged.References.Count));
 
         // Moving with the references changed in the same save is accepted, whole.
         var relocated = await Save(client, idea, universeId: other.Id, references: [Ref(IdeaReferenceKind.Entity, there.Entity)]);
@@ -137,7 +133,7 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
         // Unassigning while it still references content is refused - the references are not silently dropped.
         var unassigned = await TrySave(client, idea, universeId: null);
         Assert.Contains("references", await Errors(unassigned), StringComparison.Ordinal);
-        Assert.Equal(5, (await ReadIdea(client, idea.Id)).References.Count);
+        Assert.Equal(4, (await ReadIdea(client, idea.Id)).References.Count);
 
         var cleared = await Save(client, idea, universeId: null, references: []);
         Assert.Null(cleared.Universe);
@@ -151,14 +147,14 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
         var u = universe.Id;
         var world = await BuildWorld(client, u, "t");
         var spare = await CreateEntity(client, u, "Spare entry");
-        var idea = await CreateIdea(client, "Marked", universeId: u, references: [Ref(IdeaReferenceKind.Entity, world.Entity), Ref(IdeaReferenceKind.Scene, world.Scene), Ref(IdeaReferenceKind.PlotBeat, world.Beat)]);
+        var idea = await CreateIdea(client, "Marked", universeId: u, references: [Ref(IdeaReferenceKind.Entity, world.Entity), Ref(IdeaReferenceKind.Scene, world.Scene), Ref(IdeaReferenceKind.PlotArc, world.Arc)]);
 
         (await client.DeleteAsync($"/api/universes/{u}/entities/{world.Entity}")).EnsureSuccessStatusCode();
         (await client.DeleteAsync($"/api/universes/{u}/entities/{spare}")).EnsureSuccessStatusCode();
         (await client.DeleteAsync(Arc(u, world.Story, world.Arc))).EnsureSuccessStatusCode();
         (await client.DeleteAsync(Story(u, world.Story))).EnsureSuccessStatusCode();
 
-        // Kept and marked: the entry itself is in the Trash, the scene and beat sit in something that is.
+        // Kept and marked: the entry and the arc are in the Trash themselves, the scene sits in something that is.
         var marked = await ReadIdea(client, idea.Id);
         Assert.Equal(3, marked.References.Count);
         Assert.All(marked.References, reference => Assert.True(reference.IsInTrash));
@@ -216,8 +212,6 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
         var scene = Assert.Single(await Offered(IdeaReferenceKind.Scene));
         Assert.Equal((world.Scene, world.Story, "The Long Winter p"), (scene.Id, scene.StoryId, scene.StoryTitle));
         Assert.Equal([world.Arc], (await Offered(IdeaReferenceKind.PlotArc)).Select(target => target.Id));
-        var beat = Assert.Single(await Offered(IdeaReferenceKind.PlotBeat));
-        Assert.Equal((world.Beat, "Fall of the King p"), (beat.Id, beat.PlotArcTitle));
     }
 
     [Fact]
@@ -275,7 +269,7 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
 
         // Nothing moved.
         Assert.Equal(("Only mine.", (Guid?)null), ((await ReadIdea(owner, loose.Id)).Body, (await ReadIdea(owner, loose.Id)).Universe?.Id));
-        Assert.Equal(5, (await ReadIdea(owner, assigned.Id)).References.Count);
+        Assert.Equal(4, (await ReadIdea(owner, assigned.Id)).References.Count);
         Assert.Empty((await ListIdeas(intruder)).Items);
         Assert.Single((await ListIdeas(owner, "?deleted=true")).Items);
     }
@@ -300,7 +294,7 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
                     .Select(s => s.Id + s.Title + s.UpdatedAt.Ticks).ToListAsync();
                 var arcs = await db.PlotArcs.AsNoTracking().Where(a => a.Story!.UniverseId == u)
                     .Select(a => a.Id + a.Title + a.UpdatedAt.Ticks).ToListAsync();
-                var beats = await db.PlotBeats.AsNoTracking().Where(b => b.PlotArc!.Story!.UniverseId == u)
+                var beats = await db.SceneBeats.AsNoTracking().Where(b => b.Scene!.Story!.UniverseId == u)
                     .Select(b => b.Id + b.Title + b.UpdatedAt.Ticks).ToListAsync();
                 var counts = new[]
                 {
@@ -311,7 +305,7 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
                     await db.CanonConflicts.CountAsync(),
                     await db.Stories.CountAsync(),
                     await db.Scenes.CountAsync(),
-                    await db.PlotBeats.CountAsync(),
+                    await db.SceneBeats.CountAsync(),
                     await db.SceneManuscripts.CountAsync(),
                     await db.EntityArticles.CountAsync(),
                 };

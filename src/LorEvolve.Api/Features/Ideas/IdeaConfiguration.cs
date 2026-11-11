@@ -141,24 +141,3 @@ public sealed class IdeaPlotArcReferenceConfiguration : IEntityTypeConfiguration
         builder.HasIndex(reference => reference.PlotArcId);
     }
 }
-
-public sealed class IdeaPlotBeatReferenceConfiguration : IEntityTypeConfiguration<IdeaPlotBeatReference>
-{
-    public void Configure(EntityTypeBuilder<IdeaPlotBeatReference> builder)
-    {
-        builder.ToTable("IdeaPlotBeatReferences");
-        builder.HasKey(reference => new { reference.IdeaId, reference.PlotBeatId });
-
-        builder.HasOne(reference => reference.Idea)
-            .WithMany(idea => idea.PlotBeatReferences)
-            .HasForeignKey(reference => reference.IdeaId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasOne(reference => reference.PlotBeat)
-            .WithMany()
-            .HasForeignKey(reference => reference.PlotBeatId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasIndex(reference => reference.PlotBeatId);
-    }
-}

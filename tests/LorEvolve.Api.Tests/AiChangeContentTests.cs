@@ -127,67 +127,38 @@ public sealed class AiChangeContentTests(LorEvolveApiFactory factory) : IClassFi
     // ---------- Plot ----------
 
     [Fact]
-    public async Task Arcs_and_beats_link_scenes_and_lore_keep_their_order_and_go_only_to_the_Trash()
+    public async Task Arcs_keep_their_order_and_go_only_to_the_Trash_leaving_their_chapters()
     {
-        var (owner, ownerId, u, character) = await World("aiplot");
+        var (owner, ownerId, u, _) = await World("aiplot");
         var story = await CreateStory(owner, u, "The Forging");
-        var hero = (await PostJson<EntityDetail>(owner, $"/api/universes/{u}/entities", new EntityRequest(character, "Hero", null, CanonStatus.Idea, null, null, null))).Id;
 
-        var id = await Staged(
+        var made = (await ApproveAll(owner, u, await Staged(
             _factory,
             u,
             ownerId,
-            new AiChangeOperationInput("s1", "create", "scene", Scene: new AiSceneInput(Id(story), Title: "The forge")),
-            new AiChangeOperationInput("arc", "create", "plot_arc", PlotArc: new AiPlotArcInput(Id(story), "Rise", "From nothing.")),
-            new AiChangeOperationInput("b1", "create", "plot_beat", PlotBeat: new AiPlotBeatInput(Ref("arc"), "First spark", Scenes: [Ref("s1")], Lore: [Id(hero)])),
-            new AiChangeOperationInput("b2", "create", "plot_beat", PlotBeat: new AiPlotBeatInput(Ref("arc"), "The blade")));
+            new AiChangeOperationInput("a1", "create", "plot_arc", PlotArc: new AiPlotArcInput(Id(story), "Rise", "From nothing.")),
+            new AiChangeOperationInput("a2", "create", "plot_arc", PlotArc: new AiPlotArcInput(Id(story), "Fall")))))
+            .Applied.ToDictionary(line => line.Key, line => line.ResultId!.Value);
+        Assert.Equal(["Rise", "Fall"], (await Plot(owner, u, story)).Select(arc => arc.Title));
 
-        // A beat needs its arc in the same approval.
-        var proposal = await Read(owner, u, id);
-        Assert.Equal(["arc", "s1"], proposal.Operations.Single(operation => operation.Key == "b1").DependsOn.Order());
-        Assert.Equal(AiChangeCodes.MissingDependency, await Code(await Approve(owner, u, proposal, ["b1"])));
-
-        var receipt = await ApproveAll(owner, u, id);
-        var made = receipt.Applied.ToDictionary(line => line.Key, line => line.ResultId!.Value);
-        var arc = Assert.Single(await Plot(owner, u, story));
-        Assert.Equal(["First spark", "The blade"], arc.Beats.Select(beat => beat.Title));
-        Assert.Equal([made["s1"]], arc.Beats[0].SceneIds);
-        Assert.Equal([hero], arc.Beats[0].Entities.Select(entity => entity.EntityId));
-
-        // A whole order, through the arc's own order route.
+        // A whole order, through the story's own arc order route.
         await ApproveAll(owner, u, await Staged(_factory, u, ownerId, new AiChangeOperationInput(
-            "o", "reorder", "plot_beat", Order: new AiOrderInput(Arc: Id(made["arc"]), Items: [Id(made["b2"]), Id(made["b1"])]))));
-        Assert.Equal(["The blade", "First spark"], (await Plot(owner, u, story)).Single().Beats.Select(beat => beat.Title));
+            "o", "reorder", "plot_arc", Order: new AiOrderInput(Id(story), Items: [Id(made["a2"]), Id(made["a1"])]))));
+        Assert.Equal(["Fall", "Rise"], (await Plot(owner, u, story)).Select(arc => arc.Title));
 
         // An order missing an item is refused before anything is staged.
         var partial = await Stage(_factory, u, ownerId, new AiChangeOperationInput(
-            "o", "reorder", "plot_beat", Order: new AiOrderInput(Arc: Id(made["arc"]), Items: [Id(made["b1"])])));
+            "o", "reorder", "plot_arc", Order: new AiOrderInput(Id(story), Items: [Id(made["a1"])])));
         Assert.Contains(partial.Issues, problem => problem.Code == AiChangeCodes.Invalid && problem.Field == "items");
 
-        // Removing an arc moves it, with its beats, to the Trash - restorable.
-        await ApproveAll(owner, u, await Staged(_factory, u, ownerId, Remove("r", "plot_arc", made["arc"])));
-        Assert.Empty(await Plot(owner, u, story));
-        (await owner.PostAsync($"/api/universes/{u}/trash/plot-arcs/{made["arc"]}/restore", null)).EnsureSuccessStatusCode();
-        Assert.Equal(2, (await Plot(owner, u, story)).Single().Beats.Count);
-    }
-
-    [Fact]
-    public async Task A_beat_links_only_scenes_of_its_own_story()
-    {
-        var (owner, ownerId, u, _) = await World("aiplotforeign");
-        var story = await CreateStory(owner, u, "One");
-        var other = await CreateStory(owner, u, "Two");
-        var elsewhere = await CreateScene(owner, u, other, "Elsewhere");
-
-        var staged = await Stage(
-            _factory,
-            u,
-            ownerId,
-            new AiChangeOperationInput("arc", "create", "plot_arc", PlotArc: new AiPlotArcInput(Id(story), "Arc")),
-            new AiChangeOperationInput("b", "create", "plot_beat", PlotBeat: new AiPlotBeatInput(Ref("arc"), "Beat", Scenes: [Id(elsewhere)])));
-
-        Assert.Null(staged.Proposal);
-        Assert.Contains(staged.Issues, problem => problem.Id == "b" && problem.Field == "scenes");
+        // Removing an arc moves it alone to the Trash - restorable - and its chapter stays, in no arc meanwhile.
+        var chapter = await CreateChapter(owner, u, story, "Kept");
+        await MoveChapterToArc(owner, u, story, chapter, made["a1"]);
+        await ApproveAll(owner, u, await Staged(_factory, u, ownerId, Remove("r", "plot_arc", made["a1"])));
+        Assert.Equal(["Fall"], (await Plot(owner, u, story)).Select(arc => arc.Title));
+        Assert.Null(Assert.Single((await ReadStory(owner, u, story)).Chapters).PlotArcId);
+        (await owner.PostAsync($"/api/universes/{u}/trash/plot-arcs/{made["a1"]}/restore", null)).EnsureSuccessStatusCode();
+        Assert.Equal(made["a1"], Assert.Single((await ReadStory(owner, u, story)).Chapters).PlotArcId);
     }
 
     // ---------- Orders ----------
@@ -438,7 +409,6 @@ public sealed class AiChangeContentTests(LorEvolveApiFactory factory) : IClassFi
         foreach (var operation in new[]
         {
             new AiChangeOperationInput("x", "update", "plot_arc", arc.Id, PlotArc: new AiPlotArcInput(Title: "Taken")),
-            new AiChangeOperationInput("x", "create", "plot_beat", PlotBeat: new AiPlotBeatInput(Id(arc.Id), "Taken")),
             new AiChangeOperationInput("x", "update", "world_rule", rule.Id, WorldRule: new AiWorldRuleInput(Title: "Taken")),
             Remove("x", "timeline_event", moment.Id),
             Remove("x", "relationship", link.Id),
@@ -455,7 +425,7 @@ public sealed class AiChangeContentTests(LorEvolveApiFactory factory) : IClassFi
     }
 
     [Fact]
-    public async Task A_proposers_lost_role_blocks_their_changes_and_a_rejected_arc_takes_its_beats()
+    public async Task A_proposers_lost_role_blocks_their_changes_and_a_rejected_arc_takes_the_order_that_names_it()
     {
         var (owner, _, u, _) = await World("airoles");
         var (_, editorId) = await PublishingTestClient.Account(_factory, "airoles-editor");
@@ -467,15 +437,15 @@ public sealed class AiChangeContentTests(LorEvolveApiFactory factory) : IClassFi
             u,
             editorId,
             new AiChangeOperationInput("arc", "create", "plot_arc", PlotArc: new AiPlotArcInput(Id(story), "Rise")),
-            new AiChangeOperationInput("beat", "create", "plot_beat", PlotBeat: new AiPlotBeatInput(Ref("arc"), "Spark")),
+            new AiChangeOperationInput("order", "reorder", "plot_arc", Order: new AiOrderInput(Id(story), Items: [Ref("arc")])),
             new AiChangeOperationInput("rule", "create", "world_rule", WorldRule: new AiWorldRuleInput("Steel remembers")));
 
-        // Rejecting the arc rejects the beat that needs it; the rule waits on.
+        // Rejecting the arc rejects the order that names it; the rule waits on.
         var proposal = await Read(owner, u, id);
         (await Reject(owner, u, id, [Op(proposal, "arc")])).EnsureSuccessStatusCode();
         proposal = await Read(owner, u, id);
         Assert.Equal(
-            [("arc", AiChangeOperationStatus.Rejected), ("beat", AiChangeOperationStatus.Rejected), ("rule", AiChangeOperationStatus.Pending)],
+            [("arc", AiChangeOperationStatus.Rejected), ("order", AiChangeOperationStatus.Rejected), ("rule", AiChangeOperationStatus.Pending)],
             proposal.Operations.Select(operation => (operation.Key, operation.Status)));
 
         // The editor becomes a Viewer: nothing they asked for can be applied any more.

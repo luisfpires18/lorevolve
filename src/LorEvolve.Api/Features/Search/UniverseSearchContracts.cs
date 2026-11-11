@@ -13,7 +13,7 @@ public enum UniverseSearchKind
     Chapter = 2,
     Scene = 3,
     PlotArc = 4,
-    PlotBeat = 5,
+    // 5 was a plot beat, retired with plot beats (ADR 0070). Never reused.
     Manuscript = 6,
     Idea = 7,
     WorldRule = 8,
@@ -45,7 +45,7 @@ public enum UniverseSearchField
 /// when the match was not in the title. The context members are set where they mean something: the entry's type for an
 /// entry; <paramref name="StoryId"/> for everything from a story (a story's own id for a story) and
 /// <paramref name="StoryTitle"/> for what sits inside one; the chapter a scene or a manuscript is told in, and a chapter's own
-/// number; a beat's arc.
+/// number - inside its arc, where the number restarts (ADR 0070).
 /// </summary>
 public sealed record UniverseSearchResult(
     UniverseSearchKind Kind,
@@ -57,9 +57,7 @@ public sealed record UniverseSearchResult(
     Guid? StoryId,
     string? StoryTitle,
     string? ChapterTitle,
-    int? ChapterNumber,
-    Guid? PlotArcId,
-    string? PlotArcTitle);
+    int? ChapterNumber);
 
 /// <summary>
 /// The results of one search, best first. Bounded per kind; <paramref name="HasMore"/> says at least one kind held more than

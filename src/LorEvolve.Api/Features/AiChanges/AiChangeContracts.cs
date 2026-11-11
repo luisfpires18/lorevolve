@@ -24,9 +24,9 @@ public sealed record AiChangeSubmission(
 public sealed record AiChangeOperationInput(
     [property: Description("Your own short id for this change, unique in this proposal, such as \"arin\" or \"rel-1\". Other changes refer to what it creates with {\"ref\": id}.")]
     string? Id,
-    [property: Description("create, update, remove or reorder. remove moves the item to LorEvolve's Trash (an idea to the owner's deleted ideas), from where it can be restored; nothing is deleted for good. reorder sets the whole order of a story's chapters or plot arcs, a chapter's scenes or an arc's beats.")]
+    [property: Description("create, update, remove or reorder. remove moves the item to LorEvolve's Trash (an idea to the owner's deleted ideas), from where it can be restored; nothing is deleted for good. reorder sets the whole order of a story's chapters or plot arcs, or a chapter's scenes.")]
     string? Action,
-    [property: Description("lore_entry, article, progression (an entry's eras, forms, abilities and appearances), image (a picture the person uploads in LorEvolve), relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea - or, for a connection allowed to propose schema, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method. Schema changes go in a proposal of their own.")]
+    [property: Description("lore_entry, article, progression (an entry's eras, forms, abilities and appearances), image (a picture the person uploads in LorEvolve), relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule or idea - or, for a connection allowed to propose schema, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method. Schema changes go in a proposal of their own.")]
     string? Resource,
     [property: Description("For update and remove: the existing item's id, exactly as a read tool gave it. For a manuscript or an article, the scene or entry goes in manuscript.scene or article.entry instead; for reorder, the container goes in order.")]
     Guid? TargetId = null,
@@ -41,7 +41,6 @@ public sealed record AiChangeOperationInput(
     AiTimelineInput? Timeline = null,
     AiArticleInput? Article = null,
     AiPlotArcInput? PlotArc = null,
-    AiPlotBeatInput? PlotBeat = null,
     AiWorldRuleInput? WorldRule = null,
     AiIdeaInput? Idea = null,
     AiOrderInput? Order = null,
@@ -160,15 +159,6 @@ public sealed record AiPlotArcInput(
     [property: Description("On update, \"\" clears it.")] string? Description = null,
     [property: Description("On update, \"\" clears them.")] string? Notes = null);
 
-[Description("A plot beat: one step inside an arc.")]
-public sealed record AiPlotBeatInput(
-    [property: Description("The arc it is in. On create, required; on update, another arc of the same story moves the beat there, last.")] AiRefInput? Arc = null,
-    string? Title = null,
-    [property: Description("On update, \"\" clears it.")] string? Description = null,
-    [property: Description("On update, \"\" clears them.")] string? Notes = null,
-    [property: Description("The whole set of scenes, of the same story, it plays out in. On update, leave it out to keep them.")] IReadOnlyList<AiRefInput>? Scenes = null,
-    [property: Description("The whole set of lore entries it concerns. On update, leave it out to keep them.")] IReadOnlyList<AiRefInput>? Lore = null);
-
 [Description("A world rule: a statement of how this universe works, optionally with a check.")]
 public sealed record AiWorldRuleInput(
     string? Title = null,
@@ -188,7 +178,7 @@ public sealed record AiIdeaInput(
     [property: Description("The whole set of what it refers to. On update, leave it out to keep them.")] IReadOnlyList<AiIdeaReferenceInput>? References = null);
 
 public sealed record AiIdeaReferenceInput(
-    [property: Description("lore_entry, story, scene, plot_arc or plot_beat.")] string? Kind = null,
+    [property: Description("lore_entry, story, scene or plot_arc.")] string? Kind = null,
     [property: Description("An existing item's id.")] Guid? Id = null,
     [property: Description("The id of a create change in this proposal.")] string? Ref = null);
 
@@ -197,7 +187,6 @@ public sealed record AiOrderInput(
     [property: Description("The story whose chapters, arcs or scenes these are.")] AiRefInput? Story = null,
     [property: Description("For scenes: the chapter they are told in. Leave it out, with unchaptered true, for the story's unchaptered scenes.")] AiRefInput? Chapter = null,
     [property: Description("For scenes: true for the story's unchaptered scenes.")] bool? Unchaptered = null,
-    [property: Description("For beats: the arc they are in.")] AiRefInput? Arc = null,
     IReadOnlyList<AiRefInput>? Items = null);
 
 public sealed record AiTimelineDateInput(
@@ -293,7 +282,7 @@ public sealed record TimelineValues(
     List<AiRef>? Stories = null,
     MomentDetailsValues? Details = null);
 
-/// <summary>What a removal needs besides its target: the story a chapter, scene, arc or beat lives in.</summary>
+/// <summary>What a removal needs besides its target: the story a chapter, scene or arc lives in.</summary>
 public sealed record RemoveValues(Guid? StoryId);
 
 /// <summary>A moment's details for world rule checks, as the moment would hold them.</summary>
@@ -309,19 +298,6 @@ public sealed record ArticleBlock(string Kind, string? Text, int? Level, List<st
 
 public sealed record PlotArcValues(AiRef Story, string Title, string? Description, string? Notes);
 
-/// <summary>
-/// A beat. <paramref name="Story"/> is the story of its arc when the arc exists, so its scenes are checked against it; null
-/// when the arc is one this proposal creates, whose own story stands for it.
-/// </summary>
-public sealed record PlotBeatValues(
-    AiRef Arc,
-    AiRef? Story,
-    string Title,
-    string? Description,
-    string? Notes,
-    List<AiRef> Scenes,
-    List<AiRef> Lore);
-
 public sealed record RuleCheckValues(Guid EventKindId, Guid MethodId, int MaxOccurrences);
 
 public sealed record WorldRuleValues(string Title, string Description, RuleCheckValues? Check);
@@ -333,10 +309,10 @@ public sealed record IdeaValues(string Title, string Body, List<IdeaReferenceVal
 
 /// <summary>
 /// A container's whole order. <paramref name="Story"/> for chapters, arcs and scenes; <paramref name="Chapter"/> for scenes
-/// told in a chapter (null with <paramref name="Story"/> for the unchaptered ones); <paramref name="Arc"/> for beats, with
-/// <paramref name="Story"/> its story. Stored over the order as it was (its <c>Before</c>, the same record with existing ids).
+/// told in a chapter (null with <paramref name="Story"/> for the unchaptered ones). Stored over the order as it was (its
+/// <c>Before</c>, the same record with existing ids).
 /// </summary>
-public sealed record OrderValues(AiRef Story, AiRef? Chapter, AiRef? Arc, List<AiRef> Items);
+public sealed record OrderValues(AiRef Story, AiRef? Chapter, List<AiRef> Items);
 
 // ---------- What the review reads ----------
 

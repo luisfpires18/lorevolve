@@ -3,7 +3,7 @@ import { makeTestPassword } from './support/account'
 import { acceptConfirm } from './support/confirm'
 
 /**
- * Issue 45 (ADR 0048), on the local Fake provider: the Assistant stages an entry's article, a world rule, a plot arc and beat,
+ * Issue 45 (ADR 0048), on the local Fake provider: the Assistant stages an entry's article, a world rule, an arc
  * and the owner's idea through the same Pending AI Changes; nothing exists before approval; an article reads as prose; a
  * collaborator is never shown a proposal holding the owner's idea; and a relationship or a timeline moment removed by hand
  * waits in the Trash and comes back from it.
@@ -78,7 +78,7 @@ async function newPerson(browser: Browser) {
 }
 
 test.describe('AI changes to every authored resource', () => {
-  test('an article, a rule, an arc with a beat and an idea wait for review and apply together', async ({
+  test('an article, a rule, an arc and an idea wait for review and apply together', async ({
     page,
   }) => {
     await signUp(page)
@@ -86,11 +86,11 @@ test.describe('AI changes to every authored resource', () => {
     const name = unique('Smith ')
     await propose(page, universeId, `Create "${name}" with an article, a rule, an arc and an idea.`)
 
-    await expect(page.getByTestId('ai-change-item')).toHaveCount(6)
+    await expect(page.getByTestId('ai-change-item')).toHaveCount(5)
     await expect(item(page, 'article-1')).toContainText('Prose')
     await expect(item(page, 'article-1')).toContainText(`${name}, as the assistant wrote it.`)
     await expect(item(page, 'rule-1')).toContainText(`New world rule: The rule of ${name}`)
-    await expect(item(page, 'beat-1')).toContainText('Needs:')
+    await expect(item(page, 'arc-1')).toBeVisible()
     await expect(item(page, 'idea-1')).toContainText(`New idea: What if ${name}?`)
 
     // Nothing exists before approval.
@@ -103,7 +103,7 @@ test.describe('AI changes to every authored resource', () => {
 
     await page.getByTestId('ai-change-select-all').click()
     await page.getByTestId('ai-change-approve').click()
-    await expect(page.getByTestId('ai-change-feedback')).toHaveText('6 changes were applied.')
+    await expect(page.getByTestId('ai-change-feedback')).toHaveText('5 changes were applied.')
 
     await item(page, 'article-1').getByTestId('ai-change-open-item').click()
     await expect(page.getByTestId('article')).toContainText(`${name}, as the assistant wrote it.`)

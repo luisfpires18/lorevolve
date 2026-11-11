@@ -105,15 +105,11 @@ public sealed class IdeaMigrationTests : IDisposable
             Assert.Equal(
                 ["Ideas.IdeaId:CASCADE", "PlotArcs.PlotArcId:CASCADE"],
                 (await ForeignKeys(db, "IdeaPlotArcReferences")).Order(StringComparer.Ordinal));
-            Assert.Equal(
-                ["Ideas.IdeaId:CASCADE", "PlotBeats.PlotBeatId:CASCADE"],
-                (await ForeignKeys(db, "IdeaPlotBeatReferences")).Order(StringComparer.Ordinal));
 
             var ideaIndexes = await Indexes(db, "Ideas");
             Assert.Contains("IX_Ideas_OwnerId_DeletedAt_UpdatedAt:0:0", ideaIndexes);
             Assert.Contains("IX_Ideas_UniverseId_DeletedAt_UpdatedAt:0:0", ideaIndexes);
             Assert.Contains("IX_IdeaEntityReferences_EntityId:0:0", await Indexes(db, "IdeaEntityReferences"));
-            Assert.Contains("IX_IdeaPlotBeatReferences_PlotBeatId:0:0", await Indexes(db, "IdeaPlotBeatReferences"));
         }
 
         SqliteConnection.ClearAllPools();

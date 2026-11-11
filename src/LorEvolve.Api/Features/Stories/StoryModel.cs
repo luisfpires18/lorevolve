@@ -140,6 +140,9 @@ public sealed class Chapter
     public DateTime? DeletedAt { get; set; }
 
     public ICollection<Scene> Scenes { get; } = [];
+
+    /// <summary>The arc the chapter is told in, when it is in one (ADR 0070).</summary>
+    public ChapterArc? ArcLink { get; set; }
 }
 
 /// <summary>
@@ -232,7 +235,7 @@ public sealed class Scene
 
     /// <summary>
     /// When the scene was moved to the Trash, or null while it is live. Its prose, saved versions, lore
-    /// links and the beats pointing at it are all kept, unreachable, and come back with it.
+    /// links and beats are all kept, unreachable, and come back with it.
     /// </summary>
     public DateTime? DeletedAt { get; set; }
 
@@ -250,6 +253,9 @@ public sealed class Scene
     public Publishing.ContentVisibility ManuscriptVisibility { get; set; }
 
     public ICollection<SceneEntityLink> EntityLinks { get; } = [];
+
+    /// <summary>The scene's beats, in their order (ADR 0070).</summary>
+    public ICollection<SceneBeat> Beats { get; } = [];
 }
 
 /// <summary>

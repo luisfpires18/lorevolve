@@ -85,7 +85,7 @@ public sealed class ContentPublicationMigrationTests : IDisposable
             Assert.All(PublicationColumns, column => Assert.DoesNotContain(column, entryColumns));
             Assert.All(PublicationColumns, column => Assert.DoesNotContain(column, storyColumns));
             Assert.Empty(await ForeignKeyViolations(db));
-            Assert.Equal(triggers.Where(LaterSchema.BeforeNestedTypes), await Triggers(db));
+            Assert.Equal(LaterSchema.WithDroppedTriggers(triggers).Where(LaterSchema.BeforeNestedTypes), await Triggers(db));
             Assert.Equal(
                 LaterSchema.WithDropped(indexes).Where(LaterSchema.BeforeNestedTypes).Where(index => !index.StartsWith("IX_Entities_UniverseId_PublicSlug", StringComparison.Ordinal)
                     && !index.StartsWith("IX_Stories_UniverseId_PublicSlug", StringComparison.Ordinal)

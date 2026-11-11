@@ -136,7 +136,6 @@ internal static class AiChangeJson
                 AiChangeResource.Manuscript => Read<ManuscriptValues>(json),
                 AiChangeResource.Article => Read<ArticleValues>(json),
                 AiChangeResource.PlotArc => Read<PlotArcValues>(json),
-                AiChangeResource.PlotBeat => Read<PlotBeatValues>(json),
                 AiChangeResource.WorldRule => Read<WorldRuleValues>(json),
                 AiChangeResource.Idea => Read<IdeaValues>(json),
                 AiChangeResource.LoreType => Read<TypeValues>(json),
@@ -161,7 +160,6 @@ internal static class AiChangeJson
         (AiChangeResource.Scene, _) => Read<SceneValues>(json),
         (AiChangeResource.TimelineEvent, _) => Read<TimelineValues>(json),
         (AiChangeResource.PlotArc, _) => Read<PlotArcValues>(json),
-        (AiChangeResource.PlotBeat, _) => Read<PlotBeatValues>(json),
         (AiChangeResource.WorldRule, _) => Read<WorldRuleValues>(json),
         (AiChangeResource.Idea, _) => Read<IdeaValues>(json),
         (AiChangeResource.LoreType, _) => Read<TypeValues>(json),
@@ -444,8 +442,6 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
 
     private Dictionary<Guid, (Guid StoryId, bool Trashed)> _arcs = [];
 
-    private Dictionary<Guid, (Guid ArcId, Guid StoryId, bool Trashed)> _beats = [];
-
     public async Task CheckAsync(IReadOnlyList<AiChangeWork> works, CancellationToken cancellationToken)
     {
         _byKey.Clear();
@@ -478,9 +474,6 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
                     break;
                 case (AiChangeResource.PlotArc, _):
                     await CheckPlotArcAsync(work, cancellationToken);
-                    break;
-                case (AiChangeResource.PlotBeat, _):
-                    await CheckPlotBeatAsync(work, cancellationToken);
                     break;
                 case (AiChangeResource.WorldRule, _):
                     await CheckWorldRuleAsync(work, cancellationToken);
@@ -585,12 +578,6 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
         ],
         ArticleValues article => [(article.Entry, AiChangeResource.LoreEntry, "entry")],
         PlotArcValues arc => [(arc.Story, AiChangeResource.Story, "story")],
-        PlotBeatValues beat =>
-        [
-            (beat.Arc, AiChangeResource.PlotArc, "arc"),
-            .. beat.Scenes.Select(scene => (scene, AiChangeResource.Scene, "scenes")),
-            .. beat.Lore.Select(lore => (lore, AiChangeResource.LoreEntry, "lore")),
-        ],
         IdeaValues idea => idea.References.Select(reference => (reference.Target, IdeaKind(reference.Kind), "references")),
         MediaValues media => [(AiRef.To(media.EntityId), AiChangeResource.LoreEntry, "entry")],
         TypeValues type =>
@@ -608,7 +595,6 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
         [
             (order.Story, AiChangeResource.Story, "story"),
             .. order.Chapter is { } chapter ? [(chapter, AiChangeResource.Chapter, "chapter")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
-            .. order.Arc is { } arc ? [(arc, AiChangeResource.PlotArc, "arc")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
             .. order.Items.Select(item => (item, work.Resource, "items")),
         ],
         _ => [],
@@ -620,7 +606,6 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
         Ideas.IdeaReferenceKind.Story => AiChangeResource.Story,
         Ideas.IdeaReferenceKind.Scene => AiChangeResource.Scene,
         Ideas.IdeaReferenceKind.PlotArc => AiChangeResource.PlotArc,
-        Ideas.IdeaReferenceKind.PlotBeat => AiChangeResource.PlotBeat,
         _ => AiChangeResource.LoreEntry,
     };
 
@@ -1171,9 +1156,6 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
             AiChangeResource.PlotArc => await AiChangeSnapshots.PlotArcAsync(db, universeId, target, cancellationToken) is { } arc
                 ? (true, null, AiChangeSnapshots.Same(arc, work.Before))
                 : (false, null, true),
-            AiChangeResource.PlotBeat => await AiChangeSnapshots.PlotBeatAsync(db, universeId, target, cancellationToken) is { } beat
-                ? (true, null, AiChangeSnapshots.Same(beat, work.Before))
-                : (false, null, true),
             AiChangeResource.WorldRule => await AiChangeSnapshots.WorldRuleAsync(db, universeId, target, cancellationToken) is { } rule
                 ? (true, null, AiChangeSnapshots.Same(rule, work.Before))
                 : (false, null, true),
@@ -1329,18 +1311,6 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
                 .Select(arc => new { arc.Id, arc.StoryId, Trashed = arc.DeletedAt != null || arc.Story!.DeletedAt != null })
                 .ToListAsync(cancellationToken))
             .ToDictionary(arc => arc.Id, arc => (arc.StoryId, arc.Trashed));
-
-        _beats = (await db.PlotBeats.AsNoTracking()
-                .Where(beat => beat.PlotArc!.Story!.UniverseId == universeId && all.Contains(beat.Id))
-                .Select(beat => new
-                {
-                    beat.Id,
-                    beat.PlotArcId,
-                    beat.PlotArc!.StoryId,
-                    Trashed = beat.DeletedAt != null || beat.PlotArc.DeletedAt != null || beat.PlotArc.Story!.DeletedAt != null,
-                })
-                .ToListAsync(cancellationToken))
-            .ToDictionary(beat => beat.Id, beat => (beat.PlotArcId, beat.StoryId, beat.Trashed));
     }
 
     private static string Article(AiChangeResource kind) => kind switch
@@ -1350,7 +1320,6 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
         AiChangeResource.Chapter => "a chapter",
         AiChangeResource.Scene => "a scene",
         AiChangeResource.PlotArc => "a plot arc",
-        AiChangeResource.PlotBeat => "a plot beat",
         AiChangeResource.LoreType => "a lore type",
         AiChangeResource.LoreGroup => "a group",
         _ => "that",

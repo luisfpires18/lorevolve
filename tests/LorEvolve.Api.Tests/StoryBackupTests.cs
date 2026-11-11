@@ -131,9 +131,10 @@ public sealed class StoryBackupTests(LorEvolveApiFactory factory) : IClassFixtur
         var chapter = document.RootElement
             .GetProperty("payload").GetProperty("stories")[0].GetProperty("chapters")[0];
 
-        // No number, no count, no copy of the scenes: each scene names its chapter itself. Only whether it is in the Trash.
+        // No number, no count, no copy of the scenes: each scene names its chapter itself. Only whether it is in the Trash,
+        // and the arc it is in (ADR 0070).
         Assert.Equal(
-            ["createdAt", "deletedAt", "id", "notes", "sortOrder", "summary", "title", "updatedAt"],
+            ["createdAt", "deletedAt", "id", "notes", "plotArcId", "sortOrder", "summary", "title", "updatedAt"],
             chapter.EnumerateObject().Select(property => property.Name).Order(StringComparer.Ordinal));
     }
 

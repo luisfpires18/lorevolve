@@ -64,17 +64,6 @@ internal static class IdeaReferences
             arc.Story!.Title,
             null);
 
-    private static readonly Expression<Func<PlotBeat, IdeaReferenceView>> PlotBeatView =
-        beat => new IdeaReferenceView(
-            IdeaReferenceKind.PlotBeat,
-            beat.Id,
-            beat.Title,
-            beat.DeletedAt != null || beat.PlotArc!.DeletedAt != null || beat.PlotArc.Story!.DeletedAt != null,
-            null,
-            beat.PlotArc!.StoryId,
-            beat.PlotArc.Story!.Title,
-            beat.PlotArc.Title);
-
     /// <summary>
     /// The references that exist in <paramref name="universeId"/>, resolved, in a fixed order: kind, then name and id with an
     /// ordinal comparer. One that does not - gone, or never in this universe - is simply not in the result.
@@ -117,14 +106,6 @@ internal static class IdeaReferences
             resolved.AddRange(await db.PlotArcs.AsNoTracking()
                 .Where(arc => arc.Story!.UniverseId == universeId && arcs.Contains(arc.Id))
                 .Select(PlotArcView)
-                .ToListAsync(cancellationToken));
-        }
-
-        if (Ids(byKind, IdeaReferenceKind.PlotBeat) is { Count: > 0 } beats)
-        {
-            resolved.AddRange(await db.PlotBeats.AsNoTracking()
-                .Where(beat => beat.PlotArc!.Story!.UniverseId == universeId && beats.Contains(beat.Id))
-                .Select(PlotBeatView)
                 .ToListAsync(cancellationToken));
         }
 
@@ -186,17 +167,6 @@ internal static class IdeaReferences
                 .Select(PlotArcView)
                 .ToListAsync(cancellationToken),
 
-            IdeaReferenceKind.PlotBeat => await db.PlotBeats.AsNoTracking()
-                .Where(beat => beat.PlotArc!.Story!.UniverseId == universeId
-                    && beat.DeletedAt == null
-                    && beat.PlotArc.DeletedAt == null
-                    && beat.PlotArc.Story.DeletedAt == null)
-                .Where(beat => pattern == null || EF.Functions.Like(beat.Title, pattern, "\\"))
-                .OrderBy(beat => beat.Title).ThenBy(beat => beat.Id)
-                .Take(PickerLimit)
-                .Select(PlotBeatView)
-                .ToListAsync(cancellationToken),
-
             _ => [],
         };
     }
@@ -224,10 +194,6 @@ internal static class IdeaReferences
         stored.AddRange(await db.Set<IdeaPlotArcReference>().AsNoTracking()
             .Where(reference => reference.IdeaId == ideaId)
             .Select(reference => new IdeaReferenceInput(IdeaReferenceKind.PlotArc, reference.PlotArcId))
-            .ToListAsync(cancellationToken));
-        stored.AddRange(await db.Set<IdeaPlotBeatReference>().AsNoTracking()
-            .Where(reference => reference.IdeaId == ideaId)
-            .Select(reference => new IdeaReferenceInput(IdeaReferenceKind.PlotBeat, reference.PlotBeatId))
             .ToListAsync(cancellationToken));
 
         return stored;
@@ -259,9 +225,6 @@ internal static class IdeaReferences
                 case IdeaReferenceKind.PlotArc:
                     db.Remove(new IdeaPlotArcReference { IdeaId = ideaId, PlotArcId = gone.Id });
                     break;
-                case IdeaReferenceKind.PlotBeat:
-                    db.Remove(new IdeaPlotBeatReference { IdeaId = ideaId, PlotBeatId = gone.Id });
-                    break;
             }
         }
 
@@ -280,9 +243,6 @@ internal static class IdeaReferences
                     break;
                 case IdeaReferenceKind.PlotArc:
                     db.Add(new IdeaPlotArcReference { IdeaId = ideaId, PlotArcId = added.Id });
-                    break;
-                case IdeaReferenceKind.PlotBeat:
-                    db.Add(new IdeaPlotBeatReference { IdeaId = ideaId, PlotBeatId = added.Id });
                     break;
             }
         }
@@ -311,9 +271,6 @@ internal static class IdeaReferences
             .Where(reference => reference.Idea!.UniverseId == universeId)
             .ExecuteDeleteAsync(cancellationToken);
         await db.Set<IdeaPlotArcReference>()
-            .Where(reference => reference.Idea!.UniverseId == universeId)
-            .ExecuteDeleteAsync(cancellationToken);
-        await db.Set<IdeaPlotBeatReference>()
             .Where(reference => reference.Idea!.UniverseId == universeId)
             .ExecuteDeleteAsync(cancellationToken);
 

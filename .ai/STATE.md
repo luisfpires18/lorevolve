@@ -18,7 +18,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
   `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 42817185086 on `master` `6b8c0c2`, succeeded (2026-11-10, the Human-Crafted Experience work and the warm start).
+  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 43057795390 on `master` `b6eb363`, succeeded (2026-11-11, Edit scene beside Write, exact pickers, lore chip pictures).
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -39,14 +39,13 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-10 `master` and `dev` match. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
+As of 2026-11-11 `dev` is ahead of `master` by PR #88 (story structure). The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
 
 ## In flight
 
 One line per branch. Delete the line when it merges.
-
 
 
 ## Committed, not on `dev`
@@ -76,6 +75,9 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 ## Owner steps and unverified items
 
+- **Story structure on PROD** (ADR 0070, PR #88, on `dev` since 2026-11-11): the next PROD release runs
+  `RestructureStoryArcs`, which deletes every existing arc and plot beat there. Follow-up not started: AI write
+  proposals for a chapter's arc and a scene's beats.
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
   `/mcp/u/{name}` URL, and ChatGPT image rendering or its fallback link. Never tried in a real client
   (`docs/testing/mcp-images-checklist.md`). The assistant's 10,000-character tool-result cap can cut a large catalog.

@@ -171,8 +171,8 @@ public sealed class SceneManuscriptBackupTests(LorEvolveApiFactory factory) : IC
         await WriteManuscript(client, universeId, story, cleared, "Crossed out.");
         await WriteManuscript(client, universeId, story, cleared, string.Empty);
 
-        var arc = await CreateArc(client, universeId, story, "Fall of the King");
-        await CreateBeat(client, universeId, story, arc.Id, "Learns the truth", [council]);
+        await CreateArc(client, universeId, story, "Fall of the King");
+        await SetBeats(client, universeId, story, council, "Learns the truth");
 
         await PutJson<StoryDetail>(
             client, $"{Story(universeId, story)}/scenes/{council}/position", new ScenePositionRequest(null, null));

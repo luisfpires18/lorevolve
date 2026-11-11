@@ -51,7 +51,6 @@ internal sealed record SharedWorld(
     Guid Scene,
     Guid ManuscriptRevision,
     Guid Arc,
-    Guid Beat,
     Trashed Trash,
     Guid ProgressionRevision = default,
     Guid Appearance = default,
@@ -68,7 +67,7 @@ internal sealed record SharedWorld(
 }
 
 /// <summary>One thing of every kind the Trash holds, put there by the owner.</summary>
-internal sealed record Trashed(Guid Entry, Guid Story, Guid Chapter, Guid Scene, Guid Arc, Guid Beat, Guid Rule, Guid Relationship, Guid Moment);
+internal sealed record Trashed(Guid Entry, Guid Story, Guid Chapter, Guid Scene, Guid Arc, Guid Rule, Guid Relationship, Guid Moment);
 
 internal enum Who
 {
@@ -147,14 +146,15 @@ internal static class CollaborationTestClient
         var manuscriptRevision = (await owner.GetFromJsonAsync<List<SceneManuscriptRevisionSummary>>(
             $"{Manuscript(u, story, scene)}/revisions"))!.Last().Id;
         var arc = await CreateArc(owner, u, story, "Inheritance");
-        var beat = await CreateBeat(owner, u, story, arc.Id, "The will is read");
+        await MoveChapterToArc(owner, u, story, chapter, arc.Id);
+        await SetBeats(owner, u, story, scene, "The will is read");
 
         var trash = await FillTrash(owner, u);
 
         return new SharedWorld(
             factory, u, owner, editor, reviewer, viewer, outsider, ownerId, editorId, reviewerId, viewerId, outsiderId,
             character, entry, other, image, entryRevision, articleRevision, kind.Id, relationship.Id, moment.Id, rule.Id,
-            term.Id, story, chapter, scene, manuscriptRevision, arc.Id, beat.Id, trash, progressionRevision, appearance, appearanceImage);
+            term.Id, story, chapter, scene, manuscriptRevision, arc.Id, trash, progressionRevision, appearance, appearanceImage);
     }
 
     /// <summary>A membership written straight to the database: the only way one is made until invitations exist.</summary>
@@ -190,9 +190,6 @@ internal static class CollaborationTestClient
         await Ok(client.DeleteAsync($"{Story(u, holder)}/scenes/{scene}"));
         var arc = await CreateArc(client, u, holder, "Cut arc");
         await Ok(client.DeleteAsync(Arc(u, holder, arc.Id)));
-        var keptArc = await CreateArc(client, u, holder, "Kept arc");
-        var beat = await CreateBeat(client, u, holder, keptArc.Id, "Cut beat");
-        await Ok(client.DeleteAsync(Beat(u, holder, beat.Id)));
 
         var rule = await WorldRuleTestClient.CreateRule(client, u, $"Forgotten rule {Guid.NewGuid():n}");
         await Ok(client.DeleteAsync(WorldRuleTestClient.Rule(u, rule.Id)));
@@ -208,7 +205,7 @@ internal static class CollaborationTestClient
         var moment = await RuleValidationTestClient.CreateMoment(client, u, RuleValidationTestClient.Moment("A forgotten flood", null));
         await Ok(client.DeleteAsync($"/api/universes/{u}/timeline/{moment.Id}"));
 
-        return new Trashed(entry, story, chapter, scene, arc.Id, beat.Id, rule.Id, link.Id, moment.Id);
+        return new Trashed(entry, story, chapter, scene, arc.Id, rule.Id, link.Id, moment.Id);
     }
 
     public static async Task<EntityImageRef> UploadImage(HttpClient client, Guid u, Guid entityId)

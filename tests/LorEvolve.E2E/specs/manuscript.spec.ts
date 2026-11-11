@@ -104,30 +104,6 @@ async function seedScene(
   return (await created.json()).id as string
 }
 
-async function seedArc(page: Page, universeId: string, storyId: string, title: string) {
-  const created = await page.request.post(
-    `/api/universes/${universeId}/stories/${storyId}/plot-arcs`,
-    { data: { title, description: null, notes: null } },
-  )
-  expect(created.status()).toBe(201)
-  return (await created.json()).id as string
-}
-
-async function seedBeat(
-  page: Page,
-  universeId: string,
-  storyId: string,
-  arcId: string,
-  title: string,
-  sceneIds: string[],
-) {
-  const created = await page.request.post(
-    `/api/universes/${universeId}/stories/${storyId}/plot-arcs/${arcId}/beats`,
-    { data: { title, description: null, notes: null, sceneIds, entityIds: [] } },
-  )
-  expect(created.status()).toBe(201)
-}
-
 function manuscriptPath(universeId: string, storyId: string, sceneId: string) {
   return `/api/universes/${universeId}/stories/${storyId}/scenes/${sceneId}/manuscript`
 }
@@ -390,7 +366,7 @@ test.describe('manuscript', () => {
     await expectWritten(editor, 'Saved words. And more.')
 
     // So does leaving for another view of the story, or another section of the universe.
-    for (const control of ['story-view-plot', 'story-view-scenes', 'workspace-lore']) {
+    for (const control of ['story-view-scenes', 'workspace-lore']) {
       await page.getByTestId(control).click()
       await expect(confirmDialog(page), control).toBeVisible()
       await dismissConfirm(page)
@@ -517,8 +493,6 @@ test.describe('manuscript', () => {
 
     const arlen = await seedEntity(page, universeId, 'Arlen')
     const council = await seedScene(page, universeId, storyId, 'The Council', null, arlen)
-    const arc = await seedArc(page, universeId, storyId, 'Fall of the King')
-    await seedBeat(page, universeId, storyId, arc, 'Capital is breached', [council])
 
     const other = await seedStory(page, universeId, 'Another story')
     const elsewhere = await seedScene(page, universeId, other, 'Elsewhere')
@@ -542,14 +516,12 @@ test.describe('manuscript', () => {
     }
     expect(reads).toEqual([])
 
-    // The open scene's planning is read-only context beside the prose, from the story and plot already read.
+    // The open scene's planning is read-only context beside the prose, from the story already read.
     await page.goto(`${storyUrl}/manuscript/${council}`)
     await expect(page.getByTestId('manuscript-where')).toHaveText('Scene 1 of 1')
     await expect(page.getByTestId('manuscript-pov')).toContainText('Arlen')
-    const beatChip = page
-      .getByTestId('manuscript-plot')
-      .getByRole('link', { name: 'Fall of the King: Capital is breached' })
-    await expect(beatChip).toBeVisible()
+    const povChip = page.getByTestId('manuscript-pov').getByRole('link')
+    await expect(povChip).toBeVisible()
     await expectWritten(page.getByTestId('manuscript-editor'), '')
     expect(reads.length).toBeGreaterThan(0)
     expect(reads.every((url) => url.includes(`/scenes/${council}/`))).toBe(true)
@@ -570,14 +542,14 @@ test.describe('manuscript', () => {
     await expect(page.getByTestId('manuscript-status')).toHaveText('Unsaved changes')
     expect((await readManuscript(page, universeId, storyId, council)).content).toBe('')
 
-    // A plot chip leads out of the page, so it asks first; once saved, it simply goes.
-    await beatChip.click()
+    // A lore chip leads out of the page, so it asks first; once saved, it simply goes.
+    await povChip.click()
     await dismissConfirm(page)
     await expect(page).toHaveURL(new RegExp(`/manuscript/${council}$`))
 
     await saveWith(page, () => page.getByTestId('manuscript-save').click())
-    await beatChip.click()
-    await page.waitForURL(/\/plot#beat-[0-9a-f-]+$/)
+    await povChip.click()
+    await page.waitForURL(new RegExp(`/lore/${arlen}$`))
   })
 
   test('a writer reaches the prose, saves, opens its history and writes on from the keyboard alone', async ({

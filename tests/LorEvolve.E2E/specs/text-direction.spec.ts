@@ -339,7 +339,7 @@ test.describe('text direction', () => {
     expect(await scrollsSideways(page)).toBe(false)
   })
 
-  test("a story's title, chapters, scenes, arcs, beats and lore chips keep their own direction", async ({
+  test("a story's title, arcs, chapters, scenes, beats and lore chips keep their own direction", async ({
     page,
   }) => {
     await signUp(page)
@@ -347,10 +347,16 @@ test.describe('text direction', () => {
     const pov = await seedEntity(page, universeId, Text.arabic)
     const storyId = await seedStory(page, universeId, Text.numbers)
     const base = `/app/universes/${universeId}/stories/${storyId}`
+    const arc = await post(page, `/api/universes/${universeId}/stories/${storyId}/plot-arcs`, {
+      title: 'سقوط الملك 2',
+      description: null,
+      notes: null,
+    })
     const chapter = await post(page, `/api/universes/${universeId}/stories/${storyId}/chapters`, {
       title: Text.brackets,
       summary: null,
       notes: null,
+      plotArcId: arc.id,
     })
     const scene = await post(page, `/api/universes/${universeId}/stories/${storyId}/scenes`, {
       title: Text.rtlThenLatin,
@@ -361,18 +367,23 @@ test.describe('text direction', () => {
       entityIds: [pov],
       chapterId: chapter.id,
     })
-    const arc = await post(page, `/api/universes/${universeId}/stories/${storyId}/plot-arcs`, {
-      title: 'سقوط الملك 2',
-      description: null,
-      notes: null,
-    })
-    await post(page, `/api/universes/${universeId}/stories/${storyId}/plot-arcs/${arc.id}/beats`, {
-      title: 'آكرون!',
-      description: null,
-      notes: null,
-      sceneIds: [scene.id],
-      entityIds: [],
-    })
+    const saved = await page.request.put(
+      `/api/universes/${universeId}/stories/${storyId}/scenes/${scene.id}`,
+      {
+        data: {
+          title: Text.rtlThenLatin,
+          summary: null,
+          notes: null,
+          povEntityId: null,
+          chronology: null,
+          entityIds: [pov],
+          chapterId: chapter.id,
+          expectedVersion: 1,
+          beats: [{ title: 'آكرون!', note: null }],
+        },
+      },
+    )
+    expect(saved.ok()).toBe(true)
 
     // ---- The list of stories ----
 
@@ -390,6 +401,10 @@ test.describe('text direction', () => {
       '12',
       'آكرون',
     ])
+
+    // An arc heading is LorEvolve's words and the author's, as a chapter's is.
+    await expect(page.getByTestId('arc-heading')).toHaveAccessibleName('Arc 1: سقوط الملك 2')
+    await expectIsolated(page.getByTestId('arc-heading'), 'سقوط الملك 2')
 
     // A chapter heading is LorEvolve's words and the author's: "Chapter 1: " stays first, the title isolated after it.
     const chapterHeading = page.getByTestId('chapter-heading')
@@ -413,15 +428,14 @@ test.describe('text direction', () => {
       'آكرون',
     ])
     await expectIsolated(sceneCard.getByTestId('lore-reference'), Text.arabic)
-    // The plot chip names an arc and a beat, each in its own direction, in LorEvolve's order: arc, then beat.
-    const plotChip = sceneCard.getByTestId('scene-plot-beat')
-    await expectIsolated(plotChip, 'سقوط الملك 2')
-    await expectIsolated(plotChip, 'آكرون!')
-    const [arcLeft, beatLeft] = await lefts(
-      plotChip.locator('bdi').first(),
-      plotChip.locator('bdi').last(),
-    )
-    expect(beatLeft).toBeGreaterThan(arcLeft)
+    // A beat keeps its own direction: written "آكرون!", the mark ends the word - on its left - rather than dangling off
+    // the right of it.
+    const beat = sceneCard.getByTestId('scene-beat')
+    await expectIsolated(beat, 'آكرون!')
+    expect(await drawnOrder(beat.locator('.scene__beattitle'), ['آكرون', '!'])).toEqual([
+      '!',
+      'آكرون',
+    ])
 
     await expectLorEvolveStaysLeftToRight(page, [
       page.getByTestId('story-views'),
@@ -429,17 +443,7 @@ test.describe('text direction', () => {
       sceneCard.locator('.scene__tools'),
     ])
 
-    // ---- Plot, and Manuscript ----
-
-    await page.getByTestId('story-view-plot').click()
-    await page.waitForURL(`${base}/plot`)
-    await expect(page.getByTestId('plot-arc-heading')).toHaveAccessibleName('Arc 1: سقوط الملك 2')
-    await expectIsolated(page.getByTestId('plot-arc-heading'), 'سقوط الملك 2')
-    const beat = page.locator('[data-testid="plot-beat"][data-title="آكرون!"]')
-    await expectIsolated(beat.locator('.beat__title'), 'آكرون!')
-    // Written "آكرون!", the mark ends the word - on its left - rather than dangling off the right of it.
-    expect(await drawnOrder(beat.locator('.beat__title'), ['آكرون', '!'])).toEqual(['!', 'آكرون'])
-    await expectIsolated(beat.getByTestId('plot-beat-scene'), Text.rtlThenLatin)
+    // ---- Manuscript ----
 
     await page.goto(`${base}/manuscript/${scene.id}`)
     await expectIsolated(page.getByTestId('manuscript-scene-title'), Text.rtlThenLatin)
@@ -655,12 +659,11 @@ test.describe('text direction', () => {
       expect(
         await title.locator('bdi').evaluate((node) => node.getClientRects().length),
       ).toBeGreaterThan(1)
-      const [scenes, plot, manuscript] = await lefts(
+      const [scenes, manuscript] = await lefts(
         page.getByTestId('story-view-scenes'),
-        page.getByTestId('story-view-plot'),
         page.getByTestId('story-view-manuscript'),
       )
-      expect(isIncreasing([scenes, plot, manuscript])).toBe(true)
+      expect(isIncreasing([scenes, manuscript])).toBe(true)
       // The story's menu ends the bar, after the views, however the title runs.
       const [lastView, storyMenu] = await lefts(
         page.getByTestId('story-view-manuscript'),
@@ -1166,12 +1169,11 @@ test.describe('authored prose direction', () => {
       expect(await scrollsSideways(page)).toBe(false)
 
       // The story's own controls are where they always are.
-      const [scenes, plot, manuscript] = await lefts(
+      const [scenes, manuscript] = await lefts(
         page.getByTestId('story-view-scenes'),
-        page.getByTestId('story-view-plot'),
         page.getByTestId('story-view-manuscript'),
       )
-      expect(isIncreasing([scenes, plot, manuscript])).toBe(true)
+      expect(isIncreasing([scenes, manuscript])).toBe(true)
     })
   })
 })

@@ -84,7 +84,7 @@ public sealed class PublicReadingMigrationTests : IDisposable
             Assert.DoesNotContain("IsPublic", await Columns(db, "ProfileImages"));
             Assert.DoesNotContain("PublicAuthorSlug", await Columns(db, "AspNetUsers"));
             Assert.Empty(await ForeignKeyViolations(db));
-            Assert.Equal(triggers.Where(LaterSchema.BeforeNestedTypes), await Triggers(db));
+            Assert.Equal(LaterSchema.WithDroppedTriggers(triggers).Where(LaterSchema.BeforeNestedTypes), await Triggers(db));
             Assert.Equal(LaterSchema.WithDropped(indexes).Where(LaterSchema.BeforeNestedTypes).Where(index => !index.StartsWith("IX_AspNetUsers_PublicAuthorSlug", StringComparison.Ordinal)), await Indexes(db));
         }
 

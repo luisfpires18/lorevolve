@@ -31,7 +31,7 @@ export const ChangeResource = {
   TimelineEvent: 6,
   Article: 7,
   PlotArc: 8,
-  PlotBeat: 9,
+  // 9 was a plot beat, retired with plot beats (ADR 0070).
   WorldRule: 10,
   /** One of the universe owner's own ideas (ADR 0048). Only its proposer ever sees such a change. */
   Idea: 11,
@@ -309,9 +309,7 @@ export function itemPath(universeId: string, change: Change) {
   }
   if (change.action === ChangeAction.Reorder) {
     if (!story) return null
-    return change.resource === ChangeResource.PlotArc || change.resource === ChangeResource.PlotBeat
-      ? `${story}/plot`
-      : story
+    return story
   }
   if (!id) return null
   switch (change.resource) {
@@ -333,9 +331,7 @@ export function itemPath(universeId: string, change: Change) {
     case ChangeResource.TimelineEvent:
       return `${universe}/timeline?moment=${id}`
     case ChangeResource.PlotArc:
-      return story ? `${story}/plot#arc-${id}` : null
-    case ChangeResource.PlotBeat:
-      return story ? `${story}/plot#beat-${id}` : null
+      return story ? `${story}#arc-${id}` : null
     case ChangeResource.WorldRule:
       return `${universe}/world-rules/${id}`
     case ChangeResource.Idea:

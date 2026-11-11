@@ -26,7 +26,7 @@ const WORDS: Record<
   arc: {
     what: 'plot arc',
     verb: 'Publish arc',
-    listed: 'Readers see the arc’s title and description, and its beats’ titles and descriptions.',
+    listed: 'Readers see the arc’s title and description.',
     kept: 'Notes and links to scenes and lore are not published. Plot often gives a story away: publish it only on purpose.',
     isPublic: 'This arc is on the story’s public page.',
   },

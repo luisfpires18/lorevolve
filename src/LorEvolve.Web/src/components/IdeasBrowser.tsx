@@ -261,8 +261,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
             Ideas
           </h2>
           <p className="ideas__lede">
-            Ideas linked to this story or to one of its scenes, arcs or beats. Only you can see
-            them.
+            Ideas linked to this story or to one of its scenes or arcs. Only you can see them.
           </p>
           {allLink}
         </div>
@@ -515,7 +514,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
           <EmptyState
             testId="ideas-empty"
             title="No ideas for this story yet."
-            hint="Capture one above. Ideas linked to any scene, arc or beat in it show up here too."
+            hint="Capture one above. Ideas linked to any scene or arc in it show up here too."
           />
         ) : (
           <EmptyState
