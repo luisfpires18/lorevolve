@@ -6,6 +6,7 @@ import {
   ArrowUp,
   BookOpen,
   FilePenLine,
+  ListPlus,
   PenLine,
   Pencil,
   Trash,
@@ -43,6 +44,8 @@ interface SceneCardProps {
   onMove: (scene: Scene, by: -1 | 1) => void
   onMoveTo: (scene: Scene, chapterId: string | null) => void
   onEdit: (scene: Scene) => void
+  /** Opens the scene's drawer on a new beat row (ADR 0070). */
+  onAddBeat: (scene: Scene) => void
   /** Opens the scene's form to send a suggestion instead of saving (task 045). */
   onSuggest: (scene: Scene) => void
   onDelete: (scene: Scene) => void
@@ -60,7 +63,7 @@ interface SceneCardProps {
  * scene on the Manuscript view - the one editor, at the scene's own address - so a writer never has to find the
  * scene again in the outline. Everything else is in the
  * scene's ⋯ menu: Move up and Move down inside its chapter, one "Move to" item per other chapter
- * (or Unchaptered, last there), and Delete scene last, after a divider. Reordering stays plain buttons rather
+ * (or Unchaptered, last there), Add beat (the drawer, open on a new beat), and Delete scene last, after a divider. Reordering stays plain buttons rather
  * than a drag gesture, so it works from a keyboard, a screen reader and a phone alike; a move that cannot be
  * made at this end of the list is not offered. The menu's name carries the scene's title.
  *
@@ -78,6 +81,7 @@ export function SceneCard({
   onMove,
   onMoveTo,
   onEdit,
+  onAddBeat,
   onSuggest,
   onDelete,
   publication,
@@ -195,6 +199,17 @@ export function SceneCard({
                 </span>
               </button>
             ))}
+            {access.editContent ? (
+              <button
+                className="actionmenu__item"
+                type="button"
+                onClick={() => onAddBeat(scene)}
+                data-testid="scene-add-beat"
+              >
+                <ActionIcon icon={ListPlus} />
+                Add beat
+              </button>
+            ) : null}
             {access.editContent ? (
               <>
                 <hr className="actionmenu__divider" />

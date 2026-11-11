@@ -183,6 +183,7 @@ test.describe('arcs', () => {
     await expect(form.getByTestId('scene-beat-title').first()).toBeFocused()
     await page.keyboard.type('Marcus instructs Theo')
     await form.getByTestId('scene-beat-add').click()
+    await expect(form.getByTestId('scene-beat-title').nth(1)).toBeFocused()
     await page.keyboard.type('Marcus reads orders')
     await form.getByTestId('scene-beat-note').nth(1).fill('Sealed by the king.')
     await form.getByTestId('scene-beat-up').nth(1).click()
@@ -215,6 +216,58 @@ test.describe('arcs', () => {
 
     await page.reload()
     await expect(page.getByTestId('manuscript-beat')).toHaveText(['Marcus instructs Theo'])
+  })
+
+  test('an existing chapter joins an arc from its drawer, its scenes with it, and a beat is added from the scene menu', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const s = await seedStory(page, unique('Joining '))
+    await arc(page, s, 'The Pestilence War')
+    const tragic = await chapter(page, s, 'The Tragic Expedition')
+    const orders = await scene(page, s, "The King's Orders", tragic)
+
+    await page.goto(`/app/universes/${s.universeId}/stories/${s.storyId}`)
+    // The empty arc says how a chapter gets into it.
+    await expect(page.getByTestId('arc-empty')).toContainText('Edit chapter, then choose')
+
+    // Edit chapter: the Arc field, on no arc, moves the chapter and its scene into the arc.
+    await chooseFromMenu(page.locator(`#chapter-${tragic}`), 'chapter-edit')
+    const select = page.getByTestId('chapter-arc-select')
+    await expect(select).toHaveValue('')
+    await select.selectOption({ label: 'Arc 1: The Pestilence War' })
+    await page.getByTestId('save-chapter').click()
+    await expect(page.getByTestId('chapter-form')).toHaveCount(0)
+    await expect
+      .poll(() => structure(page))
+      .toEqual([
+        'Arc 1: The Pestilence War',
+        'Chapter 1: The Tragic Expedition',
+        "  The King's Orders",
+      ])
+
+    // Reopened, the drawer names the arc it is in; nothing changed asks nothing.
+    await chooseFromMenu(page.locator(`#chapter-${tragic}`), 'chapter-edit')
+    await expect(page.getByTestId('chapter-arc-select')).not.toHaveValue('')
+    await page.getByTestId('cancel-chapter').click()
+    await expect(page.getByTestId('chapter-form')).toHaveCount(0)
+
+    // Add beat from the scene's menu: the drawer opens on a new beat row, focused.
+    const card = page.locator(`#scene-${orders}`)
+    await chooseFromMenu(card, 'scene-add-beat')
+    const form = page.getByTestId('scene-form')
+    await expect(form.getByTestId('scene-beat-title').last()).toBeFocused()
+    await page.keyboard.type('Marcus reads orders')
+    await page.getByTestId('save-scene').click()
+    await expect(form).toHaveCount(0)
+    await expect(card.getByTestId('scene-beat')).toHaveText(['Marcus reads orders'])
+
+    // Opened that way and left empty, the drawer has nothing to save and closes without asking.
+    await chooseFromMenu(card, 'scene-add-beat')
+    await expect(form.getByTestId('scene-beat-title')).toHaveCount(2)
+    await page.getByTestId('cancel-scene').click()
+    await expect(form).toHaveCount(0)
+    await expect(card.getByTestId('scene-beat')).toHaveText(['Marcus reads orders'])
   })
 
   test('arcs, chapters and beats stay usable from a phone to a wide desktop', async ({ page }) => {

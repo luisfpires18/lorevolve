@@ -78,7 +78,7 @@ type LoadState =
 type SceneFormState =
   | { mode: 'closed' }
   | { mode: 'new'; chapterId: string | null }
-  | { mode: 'edit'; scene: Scene }
+  | { mode: 'edit'; scene: Scene; addBeat?: boolean }
   | { mode: 'suggest'; scene: Scene }
 
 type ChapterFormState =
@@ -689,6 +689,7 @@ function StoryView({ view }: { view: StoryViewName }) {
         onMove={(target, by) => void moveWithin(target, by)}
         onMoveTo={(target, chapterId) => void moveTo(target, chapterId)}
         onEdit={(target) => setSceneForm({ mode: 'edit', scene: target })}
+        onAddBeat={(target) => setSceneForm({ mode: 'edit', scene: target, addBeat: true })}
         onSuggest={(target) => setSceneForm({ mode: 'suggest', scene: target })}
         onDelete={(target) => void removeScene(target)}
         publication={
@@ -1089,6 +1090,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           arcs={arcs}
           chapterId={sceneForm.mode === 'new' ? sceneForm.chapterId : sceneForm.scene.chapterId}
           chronology={chronology}
+          startWithBeat={sceneForm.mode === 'edit' && sceneForm.addBeat === true}
           onClose={() => setSceneForm({ mode: 'closed' })}
           onSaved={(saved) => {
             setSceneForm({ mode: 'closed' })
@@ -1113,6 +1115,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           chapter={chapterForm.mode === 'edit' ? chapterForm.chapter : null}
           number={chapterForm.mode === 'edit' ? chapterNumber(chapterForm.index) : null}
           plotArcId={chapterForm.mode === 'new' ? chapterForm.arcId : null}
+          arcs={groups.arcs.map((entry) => entry.arc)}
           onClose={() => setChapterForm({ mode: 'closed' })}
           onSaved={(saved) => {
             setChapterForm({ mode: 'closed' })
