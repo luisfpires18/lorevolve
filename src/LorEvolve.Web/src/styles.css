@@ -9356,6 +9356,12 @@ html:has(.viewer[open]) {
   color: var(--muted);
 }
 
+/* Above the title's stretched link, so the row's menu is its own target. */
+.storyrow__menu {
+  position: relative;
+  z-index: 1;
+}
+
 .storyrow__premise {
   grid-column: 1 / -1;
   margin: 0;

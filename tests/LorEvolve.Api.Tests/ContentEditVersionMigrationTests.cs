@@ -132,7 +132,8 @@ public sealed class ContentEditVersionMigrationTests : IDisposable
         var rows = new List<string>();
         foreach (var table in Tables)
         {
-            var columns = (await Columns(db, table)).Where(column => column != "Version");
+            // A story's place in its universe's list (KeepAuthorOrders) arrives later, so a rollback past it takes it.
+            var columns = (await Columns(db, table)).Where(column => column != "Version" && !(table == "Stories" && column == "SortOrder"));
             var select = string.Join(" || '|' || ", columns.Select(column => $"COALESCE(CAST(\"{column}\" AS TEXT), '~')"));
             rows.AddRange(await Strings(db, $"SELECT '{table}:' || {select} AS Value FROM \"{table}\" ORDER BY 1"));
         }

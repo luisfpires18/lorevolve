@@ -300,8 +300,13 @@ public sealed record UniverseBackup(
     /// carries no beats, and an idea names no beat. Not ignorable: a version 36 reader would restore every chapter out of its
     /// arc and every scene without its beats. A file at version 36 or earlier restores with no arc and no beat at all - its
     /// plot arcs and beats, and an idea's references to them, are left out, as the owner chose when plot was retired.
+    ///
+    /// 38 - The author's orders: <see cref="BackupStory.SortOrder"/> is a story's place in its universe's list, and
+    /// <see cref="BackupScene.LinkedEntityIds"/> is in the order the author picked the lore, no longer sorted by id. Not
+    /// ignorable: a version 37 reader would list stories by title and a scene's lore by name. A file at version 37 or earlier
+    /// restores its stories in title order and each scene's lore by the entry's name, as it read then.
     /// </summary>
-    public const int CurrentVersion = 37;
+    public const int CurrentVersion = 38;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -1003,6 +1008,9 @@ public sealed record BackupTimelineValidation(Guid? EventKindTermId, Guid? Metho
 /// <paramref name="PublicSummary"/> is what its author wrote for readers of the public portal (since version 16); never
 /// its publication, address or date.
 ///
+/// <paramref name="SortOrder"/> is the story's place in its universe's list of stories, from 0 (since version 38); null in an
+/// earlier file, which restores its stories in title order.
+///
 /// <paramref name="DeletedAt"/> is when the story was moved to the Trash, or null while it is live (since version 10).
 /// A story in the Trash travels whole - it is authored work its owner can still restore - and what it holds is exactly
 /// what it held: nothing inside it is marked on its account.
@@ -1022,7 +1030,8 @@ public sealed record BackupStory(
     IReadOnlyList<BackupChapter>? Chapters,
     IReadOnlyList<BackupScene> Scenes,
     IReadOnlyList<BackupPlotArc>? PlotArcs,
-    string? PublicSummary = null);
+    string? PublicSummary = null,
+    int? SortOrder = null);
 
 /// <summary>
 /// One chapter (since version 6): its place in the story, from 0, and the author's title, summary and
@@ -1052,7 +1061,8 @@ public sealed record BackupChapter(
 /// position.
 ///
 /// <paramref name="PovEntityId"/> and <paramref name="LinkedEntityIds"/> are references to entries in
-/// this same file, never copies of them: no name, type or picture is carried here. An entry in the
+/// this same file, never copies of them: no name, type or picture is carried here. <paramref name="LinkedEntityIds"/> is in
+/// the order the author picked the lore (since version 38; sorted by id before). An entry in the
 /// Trash may be among them, and is in the file too. <paramref name="Chronology"/> is where the scene
 /// happens in the world, or null; it has no bearing on the order.
 ///

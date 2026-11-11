@@ -280,8 +280,8 @@ public sealed class SceneEndpointTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Equal("Character", scene.Pov.EntityTypeName);
         Assert.False(scene.Pov.IsTrashed);
 
-        // Listed by name, and the point of view may be linked as well without being required to be.
-        Assert.Equal(["Arlen", "Council of Nine", "White Tower"], scene.Entities.Select(entity => entity.Name));
+        // In the order picked, and the point of view may be linked as well without being required to be.
+        Assert.Equal(["White Tower", "Arlen", "Council of Nine"], scene.Entities.Select(entity => entity.Name));
 
         // Renaming the entry renames it in the scene: nothing was copied.
         var renamed = await client.PutVersionedAsync(
@@ -320,7 +320,7 @@ public sealed class SceneEndpointTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Equal(["Arlen", "White Tower"], scene.Entities.Select(entity => entity.Name));
 
         var updated = await Update(client, universe.Id, story.Id, scene.Id, Scene("Watch", entities: [tower.Id, gate.Id]));
-        Assert.Equal(["East Gate", "White Tower"], updated.Entities.Select(entity => entity.Name));
+        Assert.Equal(["White Tower", "East Gate"], updated.Entities.Select(entity => entity.Name));
 
         var emptied = await Update(client, universe.Id, story.Id, scene.Id, Scene("Watch", entities: []));
         Assert.Empty(emptied.Entities);

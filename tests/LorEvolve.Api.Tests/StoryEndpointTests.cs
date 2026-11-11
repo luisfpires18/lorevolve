@@ -85,7 +85,7 @@ public sealed class StoryEndpointTests(LorEvolveApiFactory factory) : IClassFixt
     }
 
     [Fact]
-    public async Task Stories_are_listed_by_title_with_how_many_scenes_each_has()
+    public async Task Stories_are_listed_in_the_authors_order_with_how_many_scenes_each_has()
     {
         var (client, universe) = await SignedInWithUniverse("storylist");
 
@@ -96,8 +96,9 @@ public sealed class StoryEndpointTests(LorEvolveApiFactory factory) : IClassFixt
         await AddScene(client, universe.Id, winter.Id, "Thaw");
 
         var listed = await List(client, universe.Id);
-        Assert.Equal(["Autumn", "Winter"], listed.Select(story => story.Title));
-        Assert.Equal([0, 2], listed.Select(story => story.SceneCount));
+        // Not by title: a new story goes last, until the author moves it.
+        Assert.Equal(["Winter", "Autumn"], listed.Select(story => story.Title));
+        Assert.Equal([2, 0], listed.Select(story => story.SceneCount));
         _ = autumn;
     }
 

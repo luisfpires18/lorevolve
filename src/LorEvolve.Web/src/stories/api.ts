@@ -51,6 +51,14 @@ export function updateStory(universeId: string, storyId: string, input: StoryInp
   })
 }
 
+/** The universe's stories in a new order: every live story, each once. Answers with the list as it now reads. */
+export function reorderStories(universeId: string, storyIds: string[]) {
+  return apiFetch<StorySummary[]>(`${base(universeId)}/order`, {
+    method: 'PUT',
+    body: JSON.stringify({ storyIds }),
+  })
+}
+
 /** To the Trash: the story's chapters, scenes, prose and plot go with it, and come back with it. The lore stays. */
 export function deleteStory(universeId: string, storyId: string) {
   return apiFetch<void>(`${base(universeId)}/${storyId}`, { method: 'DELETE' })

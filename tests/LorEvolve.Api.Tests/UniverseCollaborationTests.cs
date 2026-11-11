@@ -322,7 +322,7 @@ public sealed class UniverseCollaborationTests(LorEvolveApiFactory factory) : IC
 
         var archive = await RawArchive(w.Owner, w.U);
         var document = DocumentText(archive);
-        Assert.Equal(37, UniverseBackup.CurrentVersion);
+        Assert.Equal(38, UniverseBackup.CurrentVersion);
         Assert.Equal(LorEvolve.Api.Features.Export.UniverseBackup.CurrentVersion, (await Backup(w.Owner, w.U)).FormatVersion);
         foreach (var id in new[] { w.OwnerId, w.EditorId, w.ReviewerId, w.ViewerId })
         {
