@@ -648,6 +648,21 @@ public sealed class EntitySearchTests(LorEvolveApiFactory factory) : IClassFixtu
     }
 
     [Fact]
+    public async Task Names_only_matches_a_name_or_alias_and_never_a_mention()
+    {
+        var (client, universe) = await SignedInWithUniverse("names-only");
+        var type = await FirstDefaultType(client, universe.Id);
+
+        await CreateEntity(client, universe.Id, type.Id, "Akron Wright", aliases: ["The Smith"]);
+        await CreateEntity(client, universe.Id, type.Id, "Raditz", summary: "Sworn to Akron Wright.");
+
+        Assert.Equal(2, (await SearchNames(client, universe.Id, "Akron Wright")).Count);
+        Assert.Equal(["Akron Wright"], await SearchNames(client, universe.Id, "akron wri", "&namesOnly=true"));
+        Assert.Equal(["Akron Wright"], await SearchNames(client, universe.Id, "smith", "&namesOnly=true"));
+        Assert.Empty(await SearchNames(client, universe.Id, "sworn", "&namesOnly=true"));
+    }
+
+    [Fact]
     public async Task The_list_reads_by_name_ignoring_case_or_newest_created_first()
     {
         var (client, universe) = await SignedInWithUniverse("sort");

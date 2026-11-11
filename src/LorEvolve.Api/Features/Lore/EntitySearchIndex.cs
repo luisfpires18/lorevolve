@@ -486,8 +486,11 @@ public static class EntitySearchIndex
     ///
     /// Returns null when the input holds no letter or digit at all - a search for "%" or "???"
     /// finds nothing, exactly as it found nothing before.
+    ///
+    /// <paramref name="namesOnly"/> holds every word to the name and the aliases, so an entry that only mentions them in its
+    /// summary or article is not a match.
     /// </summary>
-    public static string? BuildMatchExpression(string? search)
+    public static string? BuildMatchExpression(string? search, bool namesOnly = false)
     {
         if (string.IsNullOrWhiteSpace(search))
         {
@@ -535,6 +538,11 @@ public static class EntitySearchIndex
             if (index > 0)
             {
                 builder.Append(" AND ");
+            }
+
+            if (namesOnly)
+            {
+                builder.Append("{Name Aliases} : ");
             }
 
             builder.Append('"').Append(tokens[index]).Append('"');

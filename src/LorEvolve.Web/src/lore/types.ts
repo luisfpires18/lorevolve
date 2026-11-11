@@ -380,6 +380,8 @@ export interface EntityQuery {
   fieldFilters?: FieldFilter[]
   /** With `search`: only entries named it, by name or alias, whole and ignoring case - not ones that mention it. */
   exact?: boolean
+  /** With `search`: every word in the name or an alias, never only in the summary or article. What a picker asks. */
+  namesOnly?: boolean
   /** The order. Absent is the best match while searching, else the most recently edited first. */
   sort?: EntitySort | null
 }

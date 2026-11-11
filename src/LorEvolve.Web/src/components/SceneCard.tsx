@@ -53,14 +53,15 @@ interface SceneCardProps {
 
 /**
  * One scene in its container's list: number, where it happens, whose eyes, what happens, what lore it
- * draws on, which plot beats point at it - and then two controls, so the scene outweighs its tools.
+ * draws on, which plot beats point at it - and then a few controls, so the scene outweighs its tools.
  *
  * The lore and plot rows are read-only. The beats own those links, so each one is a way to the beat on the
  * story's Plot view rather than something edited here.
  *
- * Write is the one direct action: it opens this scene on the Manuscript view - the one editor, at the scene's
- * own address - so a writer never has to find the scene again in the outline. Everything else is in the
- * scene's ⋯ menu: Edit scene, Move up and Move down inside its chapter, one "Move to" item per other chapter
+ * Edit scene and Write are the direct actions: Edit scene opens the scene's drawer in place, and Write opens this
+ * scene on the Manuscript view - the one editor, at the scene's own address - so a writer never has to find the
+ * scene again in the outline. Everything else is in the
+ * scene's ⋯ menu: Move up and Move down inside its chapter, one "Move to" item per other chapter
  * (or Unchaptered, last there), and Delete scene last, after a divider. Reordering stays plain buttons rather
  * than a drag gesture, so it works from a keyboard, a screen reader and a phone alike; a move that cannot be
  * made at this end of the list is not offered. The menu's name carries the scene's title.
@@ -116,6 +117,18 @@ export function SceneCard({
 
       <div className="scene__tools rowtools">
         {publication}
+        {access.editContent ? (
+          <button
+            className="button button--text"
+            type="button"
+            onClick={() => onEdit(scene)}
+            aria-describedby={titleId}
+            data-testid="scene-edit"
+          >
+            <ActionIcon icon={Pencil} />
+            Edit scene
+          </button>
+        ) : null}
         <Link
           className="button button--text"
           to={`/app/universes/${universeId}/stories/${scene.storyId}/manuscript/${scene.id}`}
@@ -131,17 +144,6 @@ export function SceneCard({
             triggerTestId="scene-actions"
             panelClassName="actionmenu__panel--wide"
           >
-            {access.editContent ? (
-              <button
-                className="actionmenu__item"
-                type="button"
-                onClick={() => onEdit(scene)}
-                data-testid="scene-edit"
-              >
-                <ActionIcon icon={Pencil} />
-                Edit scene
-              </button>
-            ) : null}
             {access.suggestChanges && !access.editContent ? (
               <button
                 className="actionmenu__item"
