@@ -5,7 +5,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 ## Pointers
 
-- Workflow: shared luisfpires18/ai-workflow since 2026-11-11 (Codex reviews; Claude merges into `dev` on ACCEPTED; PROD stays the owner's). Project mapping: `.ai/PROJECT.md`.
+- Workflow: shared luisfpires18/ai-workflow since 2026-11-11 (Codex reviews; Claude merges into `dev` on ACCEPTED; PROD stays the owner's). Project mapping: `.ai/PROJECT.md`. This file moved here from the repository root on 2026-11-11.
 - Architecture decisions: `docs/architecture/decisions/README.md`. Files and responsibilities: `SYSTEMS.md`.
 - Branches, naming, sequence log: `docs/architecture/branching.md`. Tooling rules: `.claude/CLAUDE.md`.
 - Runbooks: `docs/deployment/azure-prod.md`, `docs/deployment/azure-dev.md`, `docs/deployment/cloudflare-r2.md`,

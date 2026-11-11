@@ -4,7 +4,7 @@ Name: LorEvolve
 Repository: https://github.com/luisfpires18/lorevolve (public)
 Stack: ASP.NET Core modular monolith (`src/LorEvolve.Api`, EF Core) with a web frontend; Azure hosting; Cloudflare R2 for media.
 Integration branch: `dev` (default). Every merge into `dev` deploys DEV. `master` is production and `demo` is the demo page; both follow `docs/architecture/branching.md`.
-State: the root `STATE.md` (not `.ai/STATE.md`). Files and responsibilities: `SYSTEMS.md`. Decisions: `docs/architecture/decisions/README.md`.
+State: `.ai/STATE.md` (moved from the repository root on 2026-11-11). Files and responsibilities: `SYSTEMS.md`. Decisions: `docs/architecture/decisions/README.md`.
 
 ## How the shared workflow maps here
 - Task procedure: `.claude/skills/phase-workflow/SKILL.md` (investigate, constrain, plan, challenge, implement, validate, wrap up). It runs inside the shared workflow; the shared Codex review comes after its validation and wrap-up.
