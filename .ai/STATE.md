@@ -39,7 +39,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-11 `master` and `dev` match. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
+As of 2026-11-11 `dev` is ahead of `master` by PR #88 (story structure). The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
 
@@ -47,9 +47,6 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
-- `feat/story-arcs-chapters-beats` (ADR 0070): Story > Arc > Chapter > Scene > Beats replaces the Plot view. Local,
-  not pushed. Its migration deletes every existing arc and plot beat on DEV and PROD when it deploys (owner chose
-  this). Full Playwright runs in CI. Follow-up: AI write proposals for a chapter's arc and a scene's beats.
 
 ## Committed, not on `dev`
 
@@ -78,6 +75,9 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 ## Owner steps and unverified items
 
+- **Story structure on PROD** (ADR 0070, PR #88, on `dev` since 2026-11-11): the next PROD release runs
+  `RestructureStoryArcs`, which deletes every existing arc and plot beat there. Follow-up not started: AI write
+  proposals for a chapter's arc and a scene's beats.
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
   `/mcp/u/{name}` URL, and ChatGPT image rendering or its fallback link. Never tried in a real client
   (`docs/testing/mcp-images-checklist.md`). The assistant's 10,000-character tool-result cap can cut a large catalog.
