@@ -14,8 +14,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace LorEvolve.Api.Tests;
 
 /// <summary>
-/// The steps the plot tests share: an account with a universe, lore, a story with chapters and scenes, arcs and
-/// beats, and reading a backup back. Every write goes through the real host over HTTP.
+/// The steps the arc tests share: an account with a universe, lore, a story with arcs, chapters and scenes, and reading a
+/// backup back. Every write goes through the real host over HTTP.
 ///
 /// Credentials are obviously synthetic.
 /// </summary>
@@ -33,9 +33,8 @@ internal static class PlotTestClient
 
     public static string Arc(Guid universeId, Guid storyId, Guid arcId) => $"{Arcs(universeId, storyId)}/{arcId}";
 
-    public static string ArcBeats(Guid universeId, Guid storyId, Guid arcId) => $"{Arc(universeId, storyId, arcId)}/beats";
-
-    public static string Beat(Guid universeId, Guid storyId, Guid beatId) => $"{Story(universeId, storyId)}/plot-beats/{beatId}";
+    public static string ChapterArc(Guid universeId, Guid storyId, Guid chapterId) =>
+        $"{Story(universeId, storyId)}/chapters/{chapterId}/arc";
 
     // ---------- Accounts, lore and stories ----------
 
@@ -93,26 +92,28 @@ internal static class PlotTestClient
         string? notes = null) =>
         PostJson<PlotArcResponse>(client, Arcs(universeId, storyId), new PlotArcRequest(title, description, notes));
 
-    public static Task<PlotBeatResponse> CreateBeat(
-        HttpClient client,
-        Guid universeId,
-        Guid storyId,
-        Guid arcId,
-        string title,
-        IReadOnlyList<Guid>? scenes = null,
-        IReadOnlyList<Guid>? entities = null,
-        string? description = null,
-        string? notes = null) =>
-        PostJson<PlotBeatResponse>(
-            client,
-            ArcBeats(universeId, storyId, arcId),
-            new PlotBeatRequest(title, description, notes, scenes, entities));
+    public static Task<ChapterResponse> MoveChapterToArc(HttpClient client, Guid universeId, Guid storyId, Guid chapterId, Guid? arcId) =>
+        PutJson<ChapterResponse>(client, ChapterArc(universeId, storyId, chapterId), new ChapterArcRequest(arcId));
+
+    /// <summary>Saves a scene's beats, in order, with everything else about it as it is.</summary>
+    public static async Task<SceneResponse> SetBeats(HttpClient client, Guid universeId, Guid storyId, Guid sceneId, params string[] titles)
+    {
+        var path = $"{Story(universeId, storyId)}/scenes/{sceneId}";
+        var scene = (await client.GetFromJsonAsync<SceneResponse>(path))!;
+        return await PutJson<SceneResponse>(client, path, new SceneRequest(
+            scene.Title,
+            scene.Summary,
+            scene.Notes,
+            scene.Pov?.EntityId,
+            scene.Chronology,
+            [.. scene.Entities.Select(entity => entity.EntityId)],
+            scene.ChapterId,
+            scene.Version,
+            [.. titles.Select(title => new SceneBeatInput(title, null))]));
+    }
 
     public static async Task<List<PlotArcResponse>> Plot(HttpClient client, Guid universeId, Guid storyId) =>
         (await client.GetFromJsonAsync<List<PlotArcResponse>>(Arcs(universeId, storyId)))!;
-
-    public static async Task<PlotBeatResponse> ReadBeat(HttpClient client, Guid universeId, Guid storyId, Guid beatId) =>
-        (await client.GetFromJsonAsync<PlotBeatResponse>(Beat(universeId, storyId, beatId)))!;
 
     // ---------- HTTP ----------
 

@@ -240,7 +240,6 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
         var story = await CreateStory(client, u, "The Long Winter");
         var scene = await CreateScene(client, u, story, "The Council");
         var arc = await CreateArc(client, u, story, "Fall of the King");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Learns");
 
         var idea = await CreateIdea(
             client,
@@ -252,7 +251,6 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
                 Ref(IdeaReferenceKind.Story, story),
                 Ref(IdeaReferenceKind.Scene, scene),
                 Ref(IdeaReferenceKind.PlotArc, arc.Id),
-                Ref(IdeaReferenceKind.PlotBeat, beat.Id),
             ]);
         var binned = await CreateIdea(client, "Deleted before the universe", "Still words.", u, [Ref(IdeaReferenceKind.Entity, arlen)]);
         (await client.DeleteAsync(Idea(binned.Id))).EnsureSuccessStatusCode();
@@ -289,7 +287,6 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
             Assert.Equal(0, await db.IdeaStoryReferences.CountAsync(reference => reference.IdeaId == idea.Id));
             Assert.Equal(0, await db.IdeaSceneReferences.CountAsync(reference => reference.IdeaId == idea.Id));
             Assert.Equal(0, await db.IdeaPlotArcReferences.CountAsync(reference => reference.IdeaId == idea.Id));
-            Assert.Equal(0, await db.IdeaPlotBeatReferences.CountAsync(reference => reference.IdeaId == idea.Id));
         });
     }
 

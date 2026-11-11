@@ -135,16 +135,10 @@ public sealed class BackupValidationTests(LorEvolveApiFactory factory) : IClassF
         await AssertIssue(client, Rewrite(archive, root => Payload(root)["timelineEntries"]![0]!["startEraId"] = nowhere), BackupIssueCodes.MissingReference, "date period");
         await AssertIssue(
             client,
-            Rewrite(archive, root => StoryTitled(root, "The Long Winter")["plotArcs"]![0]!["beats"]!.AsArray()
-                .First(beat => (string?)beat!["title"] == "Learns")!["linkedSceneIds"] = new JsonArray(nowhere)),
+            Rewrite(archive, root => StoryTitled(root, "The Long Winter")["chapters"]!.AsArray()
+                .First(chapter => (string?)chapter!["title"] == "Arrival")!["plotArcId"] = nowhere),
             BackupIssueCodes.MissingReference,
-            "scene");
-        await AssertIssue(
-            client,
-            Rewrite(archive, root => StoryTitled(root, "The Long Winter")["plotArcs"]![0]!["beats"]!.AsArray()
-                .First(beat => (string?)beat!["title"] == "Learns")!["linkedEntityIds"] = new JsonArray(nowhere)),
-            BackupIssueCodes.MissingReference,
-            "entry");
+            "arc");
 
         // A reference's kind is taken as written: an entry's id named as a scene resolves to nothing.
         await AssertIssue(

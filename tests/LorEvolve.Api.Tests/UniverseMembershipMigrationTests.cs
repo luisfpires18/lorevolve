@@ -77,7 +77,7 @@ public sealed class UniverseMembershipMigrationTests : IDisposable
                     && !index.EndsWith(" on UniverseInvitations", StringComparison.Ordinal)
                     && LaterSchema.BeforeReferenceTargets(index)),
                 await Indexes(db));
-            Assert.Equal(triggers.Where(LaterSchema.BeforeTypeGroups), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
+            Assert.Equal(LaterSchema.WithDroppedTriggers(triggers).Where(LaterSchema.BeforeTypeGroups), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
             content = await Content(db);
         }
 
@@ -129,7 +129,7 @@ public sealed class UniverseMembershipMigrationTests : IDisposable
             var detail = (await owner.GetFromJsonAsync<UniverseDetail>($"/api/universes/{universeId}"))!;
             Assert.Equal(UniverseRole.Owner, detail.AccessRole);
             Assert.Equal(LorEvolve.Api.Features.Export.UniverseBackup.CurrentVersion, (await PlotTestClient.Backup(owner, universeId)).FormatVersion);
-            Assert.Equal(36, UniverseBackup.CurrentVersion);
+            Assert.Equal(37, UniverseBackup.CurrentVersion);
 
             var member = host.CreateHttpsClient();
             (await member.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-membermigrate2", Password))).EnsureSuccessStatusCode();

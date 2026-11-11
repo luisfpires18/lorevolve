@@ -42,7 +42,7 @@ public sealed partial class EntityArticleMigrationTests : IDisposable
     private static readonly string[] Dependants =
     [
         "EntityAliases", "EntityFieldValues", "EntityTags", "EntityImages", "EntityRevisions", "Relationships",
-        "TimelineEntryLinks", "Scenes", "SceneEntityLinks", "PlotBeatEntities",
+        "TimelineEntryLinks", "Scenes", "SceneEntityLinks",
     ];
 
     private readonly string _directory = Path.Combine(

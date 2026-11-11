@@ -72,7 +72,7 @@ public sealed class UniversePublicationMigrationTests : IDisposable
             Assert.DoesNotContain("PublicDisplayName", await Columns(db, "AspNetUsers"));
             Assert.DoesNotContain("UniverseArtworks", await Tables(db));
             Assert.Empty(await ForeignKeyViolations(db));
-            Assert.Equal(triggers.Where(LaterSchema.BeforeNestedTypes), await Triggers(db));
+            Assert.Equal(LaterSchema.WithDroppedTriggers(triggers).Where(LaterSchema.BeforeNestedTypes), await Triggers(db));
             Assert.Equal(
                 LaterSchema.WithDropped(indexes).Where(LaterSchema.BeforeNestedTypes).Where(index => !index.StartsWith("IX_Universes_PublicSlug", StringComparison.Ordinal)
                     && !index.StartsWith("IX_Universes_Visibility", StringComparison.Ordinal)

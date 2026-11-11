@@ -230,7 +230,7 @@ test.describe('deleting a selection from the Trash permanently', () => {
     await page.getByTestId('trash-select-page').click()
     await bulkDelete(page).click()
     await expect(panel).toBeFocused()
-    await expect(panel).toHaveAccessibleName('Permanently delete 7 selected items?')
+    await expect(panel).toHaveAccessibleName('Permanently delete 6 selected items?')
     await expect(panel).toHaveAccessibleDescription('This cannot be undone.')
     await expect(bar(page)).toHaveCount(0)
     const listed = panel.getByTestId('trash-bulk-list')
@@ -240,7 +240,6 @@ test.describe('deleting a selection from the Trash permanently', () => {
       ['chapter', 'Chapter'],
       ['scene', 'Scene'],
       ['arc', 'Arc'],
-      ['beat', 'Beat'],
       ['rule', 'World rule'],
     ] as const) {
       await expect(listed.getByText(`${label} ${names[kind]}`, { exact: true })).toBeVisible()
@@ -250,7 +249,7 @@ test.describe('deleting a selection from the Trash permanently', () => {
     )
     await expect(text).toContainText('Each entry: Its article, fields, picture and saved versions')
     await expect(text).toContainText('links and references to it')
-    await expect(text).toContainText('Each arc: Every beat in it goes with it')
+    await expect(text).toContainText('Each arc: Only the arc goes')
     await expect(text).toContainText('Each chapter: Only the chapter goes')
     await expect(panel).toContainText('This cannot be undone.')
     const final = panel.getByTestId('trash-bulk-delete-confirm')
@@ -267,9 +266,9 @@ test.describe('deleting a selection from the Trash permanently', () => {
     await panel.getByTestId('trash-bulk-cancel').click()
     await expect(panel).toHaveCount(0)
     await expect(bulkDelete(page)).toBeFocused()
-    await expect(selectedCount(page)).toHaveText('7 selected')
+    await expect(selectedCount(page)).toHaveText('6 selected')
     expect(sent).toEqual([])
-    expect(await trashCount(page, universeId)).toBe(7)
+    expect(await trashCount(page, universeId)).toBe(6)
   })
 
   test('a mixed selection goes in one request, says how many, and leaves selecting', async ({
@@ -329,27 +328,19 @@ test.describe('deleting a selection from the Trash permanently', () => {
     await standing.scene('Unchaptered Survivor', chapter.id)
     await chapter.bin()
     const arc = await standing.arc('Binned Arc')
-    const beat = await arc.beat('Binned Beat')
-    await beat.bin()
     await arc.bin()
 
     await page.goto(`/app/universes/${universeId}/trash`)
-    await expect(page.getByTestId('trash-list').locator('li')).toHaveCount(6)
+    await expect(page.getByTestId('trash-list').locator('li')).toHaveCount(5)
     await page.getByTestId('trash-select').click()
-    for (const name of [
-      'Doomed Saga',
-      'Selected Scene',
-      'Binned Chapter',
-      'Binned Arc',
-      'Binned Beat',
-    ]) {
+    for (const name of ['Doomed Saga', 'Selected Scene', 'Binned Chapter', 'Binned Arc']) {
       await page.getByTestId(`select-${name}`).check()
     }
     await bulkDelete(page).click()
     await page.getByTestId('trash-bulk-delete-confirm').click()
 
-    // Five selected, five said; the story's unselected row went with it.
-    await expect(page.getByTestId('trash-message')).toHaveText('5 items were permanently deleted.')
+    // Four selected, four said; the story's unselected row went with it.
+    await expect(page.getByTestId('trash-message')).toHaveText('4 items were permanently deleted.')
     await expect(page.getByTestId('trash-empty')).toBeVisible()
     expect(await trashCount(page, universeId)).toBe(0)
 
@@ -475,8 +466,7 @@ test.describe('deleting a selection from the Trash permanently', () => {
     await long.bin()
     const saga = await seed.story('Sizing Saga')
     for (const name of ['One', 'Two', 'Three']) await (await saga.scene(`Scene ${name}`)).bin()
-    const arc = await saga.arc('Sizing Arc')
-    for (const name of ['One', 'Two']) await (await arc.beat(`Beat ${name}`)).bin()
+    for (const name of ['One', 'Two']) await (await saga.arc(`Arc ${name}`)).bin()
     await (await seed.rule('Sizing Rule')).bin()
     for (const name of ['Alpha', 'Beta', 'Gamma', 'Delta'])
       await (await seed.entry(`Relic ${name}`)).bin()

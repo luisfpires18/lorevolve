@@ -80,7 +80,7 @@ public sealed class StoryContentPublicationMigrationTests : IDisposable
             Assert.DoesNotContain("OriginalCreator", await Columns(db, "Universes"));
             Assert.DoesNotContain("OriginalWork", await Columns(db, "Universes"));
             Assert.Empty(await ForeignKeyViolations(db));
-            Assert.Equal(triggers.Where(LaterSchema.BeforeNestedTypes), await Triggers(db));
+            Assert.Equal(LaterSchema.WithDroppedTriggers(triggers).Where(LaterSchema.BeforeNestedTypes), await Triggers(db));
             Assert.Equal(LaterSchema.WithDropped(indexes).Where(LaterSchema.BeforeNestedTypes), await Indexes(db));
         }
 
@@ -97,7 +97,8 @@ public sealed class StoryContentPublicationMigrationTests : IDisposable
 
             var scene = await db.Scenes.AsNoTracking().SingleAsync();
             Assert.Equal((ContentVisibility.Private, ContentVisibility.Private), (scene.Visibility, scene.ManuscriptVisibility));
-            Assert.Equal(ContentVisibility.Private, (await db.PlotArcs.AsNoTracking().SingleAsync()).Visibility);
+            // The arc came out private on the way up, and then went: the story structure migration drops the old plot (ADR 0070).
+            Assert.Equal(0, await db.PlotArcs.CountAsync());
             var universe = await db.Universes.AsNoTracking().SingleAsync();
             Assert.Equal((null, null), (universe.OriginalCreator, universe.OriginalWork));
             Assert.Equal("Prose before.", (await db.SceneManuscripts.AsNoTracking().SingleAsync()).Content);

@@ -4,7 +4,7 @@ import { expectWritten } from './support/manuscript'
 
 /**
  * The universe's persistent search bar (ADR 0031): on every screen of a universe and on none outside one; lore and
- * articles, stories, chapters, scenes, arcs, beats, manuscripts and the universe's ideas found as they are typed, and each
+ * articles, stories, chapters, scenes, arcs, manuscripts and the universe's ideas found as they are typed, and each
  * opened where it already lives; the keyboard; only ever the answer to what is in the box; the leave question before
  * unsaved writing is left for a result; the Trash; and a phone to a wide desktop, light and dark.
  *
@@ -56,7 +56,6 @@ interface World {
   sceneId: string
   proseSceneId: string
   arcId: string
-  beatId: string
   ideaId: string
   unassignedIdeaId: string
   elsewhereIdeaId: string
@@ -64,7 +63,7 @@ interface World {
 
 /**
  * A universe holding one of everything the search reads, each found by a word of its own: an entry by its name, another
- * by its article, a story, a chapter, a scene by its summary, a scene's prose, an arc, a beat by its description, and an
+ * by its article, a story, a chapter, a scene by its summary, a scene's prose, an arc by its description, and an
  * idea - beside an unassigned idea and another universe that hold the same words and must never be offered.
  */
 async function seedWorld(page: Page): Promise<World> {
@@ -130,15 +129,8 @@ async function seedWorld(page: Page): Promise<World> {
   })
   const arc = await api<{ id: string }>(page, 'POST', `${s}/plot-arcs`, {
     title: 'Fall of Cindervane',
-    description: null,
+    description: 'Mira burns the Pellucid scroll.',
     notes: null,
-  })
-  const beat = await api<{ id: string }>(page, 'POST', `${s}/plot-arcs/${arc.id}/beats`, {
-    title: 'The crown is refused',
-    description: 'Mira burns the Pellucid letter.',
-    notes: null,
-    sceneIds: [],
-    entityIds: [],
   })
   const idea = await api<{ id: string }>(page, 'POST', '/api/ideas', {
     title: 'What if Vesperine floats?',
@@ -178,7 +170,6 @@ async function seedWorld(page: Page): Promise<World> {
     sceneId: scene.id,
     proseSceneId: proseScene.id,
     arcId: arc.id,
-    beatId: beat.id,
     ideaId: idea.id,
     unassignedIdeaId: unassignedIdea.id,
     elsewhereIdeaId: elsewhereIdea.id,
@@ -234,7 +225,6 @@ test.describe('universe search', () => {
       '/timeline',
       '/stories',
       `/stories/${world.storyId}`,
-      `/stories/${world.storyId}/plot`,
       `/stories/${world.storyId}/manuscript/${world.proseSceneId}`,
       '/ideas',
       `/ideas/${world.ideaId}`,
@@ -278,7 +268,7 @@ test.describe('universe search', () => {
     await expect(searchBox(page)).toBeVisible()
   })
 
-  test('finds lore, an article, a story, a chapter, a scene, an arc, a beat, a manuscript and an idea, and opens each where it lives', async ({
+  test('finds lore, an article, a story, a chapter, a scene, an arc, a manuscript and an idea, and opens each where it lives', async ({
     page,
   }) => {
     await signUp(page)
@@ -335,19 +325,14 @@ test.describe('universe search', () => {
     await expect(page.locator(`#scene-${world.sceneId}`)).toBeFocused()
     await expect(page.locator(`#scene-${world.sceneId}`)).toHaveAttribute('data-arrived', 'true')
 
-    // An arc and a beat: the Plot view, landing on each.
+    // An arc, by its title or its description: the Scenes view, landing on the arc.
     await search(page, 'Cindervane')
     await result(page, 'Arc', 'Fall of Cindervane').click()
-    await page.waitForURL(`${story}/plot#arc-${world.arcId}`)
+    await page.waitForURL(`${story}#arc-${world.arcId}`)
     await expect(page.locator(`#arc-${world.arcId}`)).toBeFocused()
 
     await search(page, 'Pellucid')
-    const beat = result(page, 'Beat', 'The crown is refused')
-    await expect(beat).toContainText('In the arc “Fall of Cindervane” of “The Ondrelle Siege”')
-    await expect(beat).toContainText('In the description')
-    await beat.click()
-    await page.waitForURL(`${story}/plot#beat-${world.beatId}`)
-    await expect(page.locator(`#beat-${world.beatId}`)).toBeFocused()
+    await expect(result(page, 'Arc', 'Fall of Cindervane')).toContainText('In the description')
 
     // Saved prose: the scene's writing, open.
     await search(page, 'Hollowmere')
@@ -371,7 +356,7 @@ test.describe('universe search', () => {
     await page.goBack()
     await page.waitForURL(`${story}/manuscript/${world.proseSceneId}`)
     await page.goBack()
-    await page.waitForURL(`${story}/plot#beat-${world.beatId}`)
+    await page.waitForURL(`${story}#arc-${world.arcId}`)
   })
 
   test('an idea result opens that very idea in the universe’s Ideas, at an address that reloads, by pointer and keyboard, on a phone', async ({
@@ -525,7 +510,7 @@ test.describe('universe search', () => {
     await page.keyboard.press('Tab')
     await expect(box).toBeFocused()
 
-    // "the" is in the story, the arc, the beat, the scene and the prose, and so lists several results.
+    // "the" is in the story, the arc, the scene and the prose, and so lists several results.
     await search(page, 'the')
     await expect(box).toHaveAttribute('aria-expanded', 'true')
     const count = await results(page).count()
@@ -561,7 +546,7 @@ test.describe('universe search', () => {
     await search(page, 'Cindervane')
     await page.keyboard.press('ArrowDown')
     await page.keyboard.press('Enter')
-    await page.waitForURL(`${base}/stories/${world.storyId}/plot#arc-${world.arcId}`)
+    await page.waitForURL(`${base}/stories/${world.storyId}#arc-${world.arcId}`)
 
     // With nothing highlighted, Enter opens the first result.
     await page.goto(`${base}/lore`)

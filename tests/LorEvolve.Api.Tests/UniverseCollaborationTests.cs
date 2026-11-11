@@ -84,7 +84,7 @@ public sealed class UniverseCollaborationTests(LorEvolveApiFactory factory) : IC
         await Ok(RuleValidationTestClient.RenameTerm(c, w.U, term.Id, "Crowning"));
         await RuleValidationTestClient.Evaluate(c, w.U);
 
-        // Stories, chapters, scenes, manuscripts, plot.
+        // Stories, arcs, chapters, scenes, beats, manuscripts.
         var story = await CreateStory(c, w.U, "The editor's book");
         await PutJson<StoryDetail>(c, Story(w.U, story), new StoryRequest("The editor's book", "A premise.", StoryStatus.Drafting));
         var chapter = await CreateChapter(c, w.U, story, "One");
@@ -92,13 +92,15 @@ public sealed class UniverseCollaborationTests(LorEvolveApiFactory factory) : IC
         await Ok(c.PutAsJsonAsync($"{Story(w.U, story)}/scenes/{scene}/position", new ScenePositionRequest(null, 0)));
         await ManuscriptTestClient.WriteManuscript(c, w.U, story, scene, "Prose by an editor.");
         var arc = await CreateArc(c, w.U, story, "Rise");
-        var beat = await CreateBeat(c, w.U, story, arc.Id, "First step", scenes: [scene], entities: [created.Id]);
-        await PutJson<PlotBeatResponse>(c, Beat(w.U, story, beat.Id), new PlotBeatRequest("First steps", null, null, [scene], [created.Id]));
+        await MoveChapterToArc(c, w.U, story, chapter, arc.Id);
+        await SetBeats(c, w.U, story, scene, "First steps");
 
         // The owner sees every word of it.
         Assert.Equal("Now canon.", (await w.Owner.GetFromJsonAsync<EntityDetail>($"{u}/entities/{created.Id}"))!.Summary);
         Assert.Equal("Prose by an editor.", (await ManuscriptTestClient.ReadManuscript(w.Owner, w.U, story, scene)).Content);
-        Assert.Equal("First steps", (await ReadBeat(w.Owner, w.U, story, beat.Id)).Title);
+        var read = await ReadStory(w.Owner, w.U, story);
+        Assert.Equal(arc.Id, Assert.Single(read.Chapters).PlotArcId);
+        Assert.Equal("First steps", Assert.Single(read.Scenes.Single(candidate => candidate.Id == scene).Beats!).Title);
     }
 
     [Fact]
@@ -132,7 +134,6 @@ public sealed class UniverseCollaborationTests(LorEvolveApiFactory factory) : IC
         var bulkB = await CreateEntity(w.Owner, w.U, "Bulk B");
         await Ok(w.Editor.DeleteAsync($"{u}/entities/{w.Other}"));
         await Ok(w.Editor.PostAsJsonAsync($"{u}/entities/bulk-trash", new BulkTrashRequest([bulkA, bulkB])));
-        await Ok(w.Editor.DeleteAsync(Beat(w.U, w.Story, w.Beat)));
         await Ok(w.Editor.DeleteAsync(Arc(w.U, w.Story, w.Arc)));
         await Ok(w.Editor.DeleteAsync($"{Story(w.U, w.Story)}/scenes/{w.Scene}"));
         await Ok(w.Editor.DeleteAsync($"{Story(w.U, w.Story)}/chapters/{w.Chapter}"));
@@ -151,7 +152,6 @@ public sealed class UniverseCollaborationTests(LorEvolveApiFactory factory) : IC
         await Ok(w.Editor.PostAsync($"{t}/chapters/{w.Trash.Chapter}/restore", null));
         await Ok(w.Editor.PostAsync($"{t}/scenes/{w.Trash.Scene}/restore", null));
         await Ok(w.Editor.PostAsync($"{t}/plot-arcs/{w.Trash.Arc}/restore", null));
-        await Ok(w.Editor.PostAsync($"{t}/plot-beats/{w.Trash.Beat}/restore", null));
         await Ok(w.Editor.PostAsync($"{t}/world-rules/{w.Trash.Rule}/restore", null));
         await Ok(w.Editor.PostAsync($"{t}/stories/{w.Story}/restore", null));
 
@@ -186,7 +186,6 @@ public sealed class UniverseCollaborationTests(LorEvolveApiFactory factory) : IC
             $"{t}/chapters/{w.Trash.Chapter}",
             $"{t}/scenes/{w.Trash.Scene}",
             $"{t}/plot-arcs/{w.Trash.Arc}",
-            $"{t}/plot-beats/{w.Trash.Beat}",
             $"{t}/world-rules/{w.Trash.Rule}",
             $"{t}/relationships/{w.Trash.Relationship}",
             $"{t}/timeline/{w.Trash.Moment}",
@@ -200,7 +199,6 @@ public sealed class UniverseCollaborationTests(LorEvolveApiFactory factory) : IC
             new TrashSelection(TrashItemKind.Chapter, w.Trash.Chapter),
             new TrashSelection(TrashItemKind.Scene, w.Trash.Scene),
             new TrashSelection(TrashItemKind.PlotArc, w.Trash.Arc),
-            new TrashSelection(TrashItemKind.PlotBeat, w.Trash.Beat),
             new TrashSelection(TrashItemKind.WorldRule, w.Trash.Rule),
             new TrashSelection(TrashItemKind.Relationship, w.Trash.Relationship),
             new TrashSelection(TrashItemKind.TimelineEvent, w.Trash.Moment),
@@ -216,7 +214,7 @@ public sealed class UniverseCollaborationTests(LorEvolveApiFactory factory) : IC
             await AssertDenied(await who.PostAsJsonAsync($"{t}/bulk-delete", mixed), "bulk erase");
         }
 
-        Assert.Equal(10, (await w.Owner.GetFromJsonAsync<TrashPage>($"{t}?pageSize=50"))!.TotalCount);
+        Assert.Equal(9, (await w.Owner.GetFromJsonAsync<TrashPage>($"{t}?pageSize=50"))!.TotalCount);
 
         // The owner erases one alone and the rest in one mixed bulk.
         await Ok(w.Owner.DeleteAsync(routes[0]));
@@ -324,7 +322,7 @@ public sealed class UniverseCollaborationTests(LorEvolveApiFactory factory) : IC
 
         var archive = await RawArchive(w.Owner, w.U);
         var document = DocumentText(archive);
-        Assert.Equal(36, UniverseBackup.CurrentVersion);
+        Assert.Equal(37, UniverseBackup.CurrentVersion);
         Assert.Equal(LorEvolve.Api.Features.Export.UniverseBackup.CurrentVersion, (await Backup(w.Owner, w.U)).FormatVersion);
         foreach (var id in new[] { w.OwnerId, w.EditorId, w.ReviewerId, w.ViewerId })
         {

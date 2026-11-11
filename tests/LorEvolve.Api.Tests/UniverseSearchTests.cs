@@ -194,7 +194,6 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
             $"{Story(universe.Id, story)}/scenes",
             new SceneRequest("The Council", "The nine argue.", "Mira hides the Tessaly letter.", null, null, null, second))).Id;
         var arc = (await CreateArc(client, universe.Id, story, "Fall of the King", description: "Tessaly is the price.")).Id;
-        var beat = (await CreateBeat(client, universe.Id, story, arc, "The crown is refused", notes: "Echo Tessaly here.")).Id;
 
         var results = (await Search(client, universe.Id, "Tessaly")).Results;
 
@@ -206,7 +205,6 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
                 (UniverseSearchKind.Chapter, chapter, UniverseSearchField.Summary),
                 (UniverseSearchKind.Scene, scene, UniverseSearchField.Notes),
                 (UniverseSearchKind.PlotArc, arc, UniverseSearchField.Description),
-                (UniverseSearchKind.PlotBeat, beat, UniverseSearchField.Notes),
             ],
             results.Select(result => (result.Kind, result.Id, result.MatchedIn)));
 
@@ -221,9 +219,6 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
         var sceneResult = results[3];
         Assert.Equal(("The Council", "The Long Winter", "Tessaly Burns", 2), (sceneResult.Title, sceneResult.StoryTitle, sceneResult.ChapterTitle, sceneResult.ChapterNumber));
         Assert.Contains("hides the", Text(sceneResult.Excerpt), StringComparison.Ordinal);
-
-        var beatResult = results[5];
-        Assert.Equal((arc, "Fall of the King", story), (beatResult.PlotArcId!.Value, beatResult.PlotArcTitle, beatResult.StoryId!.Value));
 
         // A status is a label, not text anyone wrote: it is not searched.
         Assert.Empty((await Search(client, universe.Id, "Drafting")).Results);
@@ -310,36 +305,35 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
         var scene = await CreateScene(client, universe.Id, story, "Varrow falls", chapter);
         await WriteManuscript(client, universe.Id, story, scene, "Varrow burned all night.");
         var arc = await CreateArc(client, universe.Id, story, "Varrow thread");
-        await CreateBeat(client, universe.Id, story, arc.Id, "Varrow beat");
 
         Assert.Equal(
-            [UniverseSearchKind.Story, UniverseSearchKind.Chapter, UniverseSearchKind.Scene, UniverseSearchKind.PlotArc, UniverseSearchKind.PlotBeat, UniverseSearchKind.Manuscript],
+            [UniverseSearchKind.Story, UniverseSearchKind.Chapter, UniverseSearchKind.Scene, UniverseSearchKind.PlotArc, UniverseSearchKind.Manuscript],
             await Kinds(client, universe.Id, "Varrow"));
 
         // The scene: its planning and its prose go, nothing else.
         (await client.DeleteAsync($"{Story(universe.Id, story)}/scenes/{scene}")).EnsureSuccessStatusCode();
         Assert.Equal(
-            [UniverseSearchKind.Story, UniverseSearchKind.Chapter, UniverseSearchKind.PlotArc, UniverseSearchKind.PlotBeat],
+            [UniverseSearchKind.Story, UniverseSearchKind.Chapter, UniverseSearchKind.PlotArc],
             await Kinds(client, universe.Id, "Varrow"));
 
         (await client.PostAsync($"/api/universes/{universe.Id}/trash/scenes/{scene}/restore", null)).EnsureSuccessStatusCode();
-        Assert.Equal(6, (await Search(client, universe.Id, "Varrow")).Results.Count);
+        Assert.Equal(5, (await Search(client, universe.Id, "Varrow")).Results.Count);
 
-        // The arc: its beats go with it, though their own rows are not marked.
+        // The arc: only it goes; the chapter it held stays findable.
         (await client.DeleteAsync(Arc(universe.Id, story, arc.Id))).EnsureSuccessStatusCode();
         Assert.Equal(
             [UniverseSearchKind.Story, UniverseSearchKind.Chapter, UniverseSearchKind.Scene, UniverseSearchKind.Manuscript],
             await Kinds(client, universe.Id, "Varrow"));
 
         (await client.PostAsync($"/api/universes/{universe.Id}/trash/plot-arcs/{arc.Id}/restore", null)).EnsureSuccessStatusCode();
-        Assert.Equal(6, (await Search(client, universe.Id, "Varrow")).Results.Count);
+        Assert.Equal(5, (await Search(client, universe.Id, "Varrow")).Results.Count);
 
         // The story: nothing it holds is findable, though nothing inside it is marked.
         (await client.DeleteAsync(Story(universe.Id, story))).EnsureSuccessStatusCode();
         Assert.Empty((await Search(client, universe.Id, "Varrow")).Results);
 
         (await client.PostAsync($"/api/universes/{universe.Id}/trash/stories/{story}/restore", null)).EnsureSuccessStatusCode();
-        Assert.Equal(6, (await Search(client, universe.Id, "Varrow")).Results.Count);
+        Assert.Equal(5, (await Search(client, universe.Id, "Varrow")).Results.Count);
 
         // A chapter in the Trash is out; its scenes moved to Unchaptered are not, and no longer name it.
         (await client.DeleteAsync($"{Story(universe.Id, story)}/chapters/{chapter}")).EnsureSuccessStatusCode();
@@ -473,8 +467,7 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
         var scene = await CreateScene(client, universe.Id, story, "The hall");
         await WriteManuscript(client, universe.Id, story, scene, string.Concat(Enumerable.Repeat("Aldric. ", 400)));
         var idea = await CreateIdea(client, "Something about the king", "Aldric could be the heir.", universe.Id);
-        var beatArc = await CreateArc(client, universe.Id, story, "Thread");
-        var beat = await CreateBeat(client, universe.Id, story, beatArc.Id, "Aldric's refusal");
+        var titled = await CreateArc(client, universe.Id, story, "Aldric's refusal");
         var named = await CreateEntity(client, universe.Id, "Aldric Vane");
 
         var results = (await Search(client, universe.Id, "Aldric")).Results;
@@ -482,7 +475,7 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
         Assert.Equal(
             [
                 (UniverseSearchKind.Entity, named),
-                (UniverseSearchKind.PlotBeat, beat.Id),
+                (UniverseSearchKind.PlotArc, titled.Id),
                 (UniverseSearchKind.Idea, idea.Id),
                 (UniverseSearchKind.Entity, entity),
                 (UniverseSearchKind.Manuscript, scene),
@@ -505,12 +498,13 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
         var (smallQueries, smallBody) = await CommandCounter.CountAsync([small.Id, .. smallIds], () => Search(client, small.Id, "Gravemark"));
         var (largeQueries, largeBody) = await CommandCounter.CountAsync([large.Id, .. largeIds], () => Search(client, large.Id, "Gravemark"));
 
-        Assert.Equal(9, smallBody.Results.Select(result => result.Kind).Distinct().Count());
-        Assert.Equal(9 * UniverseSearchEndpoints.ResultsPerKind, largeBody.Results.Count);
+        Assert.Equal(8, smallBody.Results.Select(result => result.Kind).Distinct().Count());
+        Assert.Equal(8 * UniverseSearchEndpoints.ResultsPerKind, largeBody.Results.Count);
 
-        // Ownership, one query per kind, and one excerpt query per index - nothing per result.
+        // Ownership, one query per kind, one excerpt query per index and one for chapters' numbers in their arcs - nothing
+        // per result.
         Assert.Equal(smallQueries, largeQueries);
-        Assert.InRange(largeQueries, 1, 15);
+        Assert.InRange(largeQueries, 1, 16);
 
         async Task<List<Guid>> Seed(Guid universeId, int count)
         {
@@ -525,10 +519,9 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
                     client, $"{Story(universeId, story)}/scenes", new SceneRequest($"Scene {index}", "Gravemark summary", null, null, null, null, chapter))).Id;
                 await WriteManuscript(client, universeId, story, scene, $"Gravemark prose {index}.");
                 var arc = await CreateArc(client, universeId, story, $"Arc {index}", description: "Gravemark description");
-                var beat = await CreateBeat(client, universeId, story, arc.Id, $"Beat {index}", description: "Gravemark description");
                 var idea = await CreateIdea(client, $"Idea {index}", "Gravemark body", universeId);
                 var rule = await WorldRuleTestClient.CreateRule(client, universeId, $"Rule {index}", "Gravemark description");
-                ids.AddRange([entity, story, chapter, scene, arc.Id, beat.Id, idea.Id, rule.Id]);
+                ids.AddRange([entity, story, chapter, scene, arc.Id, idea.Id, rule.Id]);
             }
 
             return ids;
@@ -546,15 +539,14 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
         var scene = await CreateScene(client, universe.Id, story, "Scene", chapter);
         await WriteManuscript(client, universe.Id, story, scene, "Some prose.");
         var arc = await CreateArc(client, universe.Id, story, "Arc");
-        var beat = await CreateBeat(client, universe.Id, story, arc.Id, "Beat");
         var idea = await CreateIdea(client, "Kept idea", "Its words stay its own.", universe.Id);
 
-        Assert.Equal(5, await StoryIndexRows(story, chapter, scene, arc.Id, beat.Id));
+        Assert.Equal(4, await StoryIndexRows(story, chapter, scene, arc.Id));
         Assert.Equal(1, await ManuscriptIndexRows(scene));
 
         await DeleteUniverse(client, universe.Id);
 
-        Assert.Equal(0, await StoryIndexRows(story, chapter, scene, arc.Id, beat.Id));
+        Assert.Equal(0, await StoryIndexRows(story, chapter, scene, arc.Id));
         Assert.Equal(0, await ManuscriptIndexRows(scene));
 
         // The idea survives, unassigned, with its words indexed - and no universe search can reach it.

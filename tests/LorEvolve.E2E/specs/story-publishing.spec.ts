@@ -104,7 +104,6 @@ async function story(page: Page, w: World, title: string, publish: boolean): Pro
     title: 'The Keeper Lies',
     description: 'Spoiler: the keeper drowned the town.',
   }))!.id
-  await api(page, 'POST', `${base}/${id}/plot-arcs/${arc}/beats`, { title: 'The ledger surfaces' })
   await api(page, 'PUT', `${base}/${id}/publication`, { publicSummary: 'Seven nights and a tide.' })
   if (publish) await api(page, 'POST', `${base}/${id}/publish`)
   const slug = title
@@ -185,7 +184,7 @@ test.describe('publishing inside a story', () => {
     const address = `/worlds/${slug}/stories/${s.slug}`
     const { context, page: anon } = await reader(browser)
 
-    // Plot is never published by anything around it.
+    // An arc is never published by anything around it.
     await anon.goto(address)
     const told = anon.getByTestId('public-story')
     await expect(told.getByRole('heading', { level: 1 })).toBeVisible()
@@ -211,22 +210,24 @@ test.describe('publishing inside a story', () => {
       await expect(anon.locator('main')).not.toContainText(secret)
     }
 
-    // An arc, published on purpose from the Plot view, appears with its beats.
-    await page.goto(`${storyPage}/plot`)
+    // An arc, published on purpose from the Scenes view, appears with its description.
+    await page.goto(storyPage)
     await page.getByTestId('arc-publication').click()
     await expect(page.getByTestId('arc-publication-panel')).toContainText('only on purpose')
     await page.getByTestId('publish-arc').click()
     await expect(page.getByTestId('arc-publication')).toContainText('Public')
     await anon.reload()
     await expect(told.getByTestId('public-story-arc').locator('h3')).toHaveText('The Keeper Lies')
-    await expect(told.getByTestId('public-story-arc')).toContainText('The ledger surfaces')
+    await expect(told.getByTestId('public-story-arc')).toContainText(
+      'Spoiler: the keeper drowned the town.',
+    )
 
     // One heading per level, and sections in the reading order with a way to each.
     await expect(anon.locator('h1')).toHaveCount(1)
-    await expect(told.locator('h2')).toHaveText(['Manuscript', 'Scenes', 'Plot'])
+    await expect(told.locator('h2')).toHaveText(['Manuscript', 'Scenes', 'Arcs'])
     await expect(
       told.getByRole('navigation', { name: 'In this story' }).getByRole('link'),
-    ).toHaveText(['Manuscript', 'Scenes', 'Plot'])
+    ).toHaveText(['Manuscript', 'Scenes', 'Arcs'])
 
     // Making the story private hides every part and clears none; publishing it again brings back exactly those.
     await api(page, 'POST', `/api/universes/${w.id}/stories/${s.id}/unpublish`)
@@ -259,7 +260,7 @@ test.describe('publishing inside a story', () => {
     await expect(told.getByTestId('public-story-summary')).toHaveText('Seven nights and a tide.')
     await expect(told.locator('h2')).toHaveCount(0)
     await expect(told.getByRole('navigation', { name: 'In this story' })).toHaveCount(0)
-    for (const hint of ['Manuscript', 'Scenes', 'Plot', 'private', 'Harbour']) {
+    for (const hint of ['Manuscript', 'Scenes', 'Arcs', 'private', 'Harbour']) {
       await expect(told).not.toContainText(hint)
     }
     await context.close()

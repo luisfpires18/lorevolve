@@ -3,7 +3,7 @@ import { expect, type Page } from '@playwright/test'
 /** Trash fixtures shared by the permanent-delete specs: an account, a world, every kind of thing binned, recovery copies. */
 export const PASSWORD = 'Test-password-123!'
 
-export type Kind = 'entry' | 'story' | 'chapter' | 'scene' | 'arc' | 'beat' | 'rule'
+export type Kind = 'entry' | 'story' | 'chapter' | 'scene' | 'arc' | 'rule'
 
 export function unique(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`
@@ -109,23 +109,7 @@ export function seeder(page: Page, universeId: string) {
             description: null,
             notes: null,
           })
-          return {
-            id: arc,
-            bin: () => trash(page, `${s}/plot-arcs/${arc}`),
-            async beat(beatTitle: string) {
-              const beat = await post(page, `${s}/plot-arcs/${arc}/beats`, {
-                title: beatTitle,
-                description: null,
-                notes: null,
-                sceneIds: [],
-                entityIds: [],
-              })
-              return {
-                id: beat,
-                bin: () => trash(page, `${s}/plot-beats/${beat}`),
-              }
-            },
-          }
+          return { id: arc, bin: () => trash(page, `${s}/plot-arcs/${arc}`) }
         },
       }
     },
@@ -149,7 +133,6 @@ export async function everyKind(page: Page, universeId: string): Promise<Record<
     chapter: 'Chapter of Ash',
     scene: 'The Last Watch',
     arc: 'The Long Fall',
-    beat: 'The Gate Breaks',
     rule: 'No Iron Crosses Water',
   }
 
@@ -159,11 +142,9 @@ export async function everyKind(page: Page, universeId: string): Promise<Record<
   const chapter = await saga.chapter(names.chapter)
   const scene = await saga.scene(names.scene)
   const arc = await saga.arc(names.arc)
-  const kept = await saga.arc('Arc that stays')
-  const beat = await kept.beat(names.beat)
   const rule = await seed.rule(names.rule)
 
-  for (const thing of [entry, lonely, chapter, scene, arc, beat, rule]) await thing.bin()
+  for (const thing of [entry, lonely, chapter, scene, arc, rule]) await thing.bin()
   return names
 }
 

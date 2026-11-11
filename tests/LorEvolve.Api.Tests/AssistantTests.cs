@@ -240,7 +240,7 @@ public sealed class AssistantTests(AssistantFixture fixture) : IClassFixture<Ass
     }
 
     [Fact]
-    public async Task A_story_is_read_with_its_chapters_scenes_and_plot_and_a_scene_only_shows_prose_when_asked()
+    public async Task A_story_is_read_with_its_arcs_chapters_scenes_and_beats_and_a_scene_only_shows_prose_when_asked()
     {
         var (client, universe) = await SignedInWithUniverse(_api, "asstory");
         var u = universe.Id;
@@ -253,7 +253,8 @@ public sealed class AssistantTests(AssistantFixture fixture) : IClassFixture<Ass
             new SceneRequest("Mira at the gate", "Mira bars the gate.", "Keep her quiet.", mira, new ChronologyValue(null, 3018, 9, null), [mira], chapter));
         await WriteManuscript(client, u, story.Id, scene.Id, "The gate groaned under her hands.");
         var arc = await CreateArc(client, u, story.Id, "The second act", "Everything burns.");
-        var beat = await CreateBeat(client, u, story.Id, arc.Id, "The gate falls");
+        await MoveChapterToArc(client, u, story.Id, chapter, arc.Id);
+        await SetBeats(client, u, story.Id, scene.Id, "The gate falls");
 
         var read = await Read(
             client,
@@ -267,9 +268,10 @@ public sealed class AssistantTests(AssistantFixture fixture) : IClassFixture<Ass
         Assert.Equal("Drafting", storyRead.GetProperty("status").GetString());
         Assert.Equal(1, storyRead.GetProperty("chapters")[0].GetProperty("number").GetInt32());
         Assert.Equal(scene.Id, storyRead.GetProperty("scenes")[0].GetProperty("id").GetGuid());
-        Assert.Equal(1, storyRead.GetProperty("scenes")[0].GetProperty("chapterNumber").GetInt32());
+        Assert.Equal(arc.Id, storyRead.GetProperty("chapters")[0].GetProperty("arcId").GetGuid());
+        Assert.Equal(chapter, storyRead.GetProperty("scenes")[0].GetProperty("chapterId").GetGuid());
+        Assert.Equal("The gate falls", storyRead.GetProperty("scenes")[0].GetProperty("beats")[0].GetString());
         Assert.Equal("The second act", storyRead.GetProperty("arcs")[0].GetProperty("title").GetString());
-        Assert.Equal(beat.Id, storyRead.GetProperty("arcs")[0].GetProperty("beats")[0].GetProperty("id").GetGuid());
         Assert.DoesNotContain("groaned", storyRead.GetRawText(), StringComparison.Ordinal);
 
         var sceneRead = read[1];
@@ -451,12 +453,11 @@ public sealed class AssistantTests(AssistantFixture fixture) : IClassFixture<Ass
         var chapter = await CreateChapter(client, u, story, "Low water");
         var scene = await CreateScene(client, u, story, "The causeway", chapter);
         var arc = await CreateArc(client, u, story, "Inheritance");
-        var beat = await CreateBeat(client, u, story, arc.Id, "The will is read");
         var moment = await RuleValidationTestClient.CreateMoment(client, u, RuleValidationTestClient.Moment("The flood", null));
 
         _model.Use(step => step.Number == 1
             ? Calls((AssistantTools.GetStory, new { id = story }), (AssistantTools.GetTimelineItem, new { id = moment.Id }))
-            : Answer(("recorded", "It is all recorded.", [.. new[] { story, chapter, scene, arc.Id, beat.Id, moment.Id }.Select(id => id.ToString())])));
+            : Answer(("recorded", "It is all recorded.", [.. new[] { story, chapter, scene, arc.Id, moment.Id }.Select(id => id.ToString())])));
 
         var answer = await AnswerOf(await Ask(client, u, "What is in Tidebreak?"));
 
@@ -466,7 +467,6 @@ public sealed class AssistantTests(AssistantFixture fixture) : IClassFixture<Ass
                 new AssistantSource(AssistantSourceKind.Chapter, chapter, "Low water", story),
                 new AssistantSource(AssistantSourceKind.Scene, scene, "The causeway", story),
                 new AssistantSource(AssistantSourceKind.PlotArc, arc.Id, "Inheritance", story),
-                new AssistantSource(AssistantSourceKind.PlotBeat, beat.Id, "The will is read", story),
                 new AssistantSource(AssistantSourceKind.TimelineMoment, moment.Id, "The flood", null),
             ],
             answer.Sources);

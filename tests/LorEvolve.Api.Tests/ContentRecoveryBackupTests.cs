@@ -36,11 +36,10 @@ public sealed class ContentRecoveryBackupTests(LorEvolveApiFactory factory) : IC
         await WriteManuscript(client, u, story, cut, "Cut prose.");
         var fall = await CreateArc(client, u, story, "Fall of the King");
         var dropped = await CreateArc(client, u, story, "Dropped thread");
-        var kept = await CreateBeat(client, u, story, fall.Id, "Kept", [gate, cut], [arlen]);
-        var binned = await CreateBeat(client, u, story, fall.Id, "Binned", [gate]);
+        await MoveChapterToArc(client, u, story, arrival, fall.Id);
+        await SetBeats(client, u, story, cut, "Kept with the cut scene");
 
         (await client.DeleteAsync($"{Story(u, story)}/scenes/{cut}")).EnsureSuccessStatusCode();
-        (await client.DeleteAsync(Beat(u, story, binned.Id))).EnsureSuccessStatusCode();
         (await client.DeleteAsync(Arc(u, story, dropped.Id))).EnsureSuccessStatusCode();
         (await client.DeleteAsync($"{Story(u, story)}/chapters/{discarded}")).EnsureSuccessStatusCode();
 
@@ -81,14 +80,12 @@ public sealed class ContentRecoveryBackupTests(LorEvolveApiFactory factory) : IC
         Assert.Equal("Cut prose.", Assert.Single(cutBackup.Manuscript.Revisions!).Content);
         Assert.All(live.Scenes.Where(scene => scene.Id != cut), scene => Assert.Null(scene.DeletedAt));
 
-        // Arcs and beats the same way, and a link to a scene in the Trash travels and resolves inside the file.
+        // Arcs the same way; a chapter keeps its arc, and a scene in the Trash carries its beats.
         Assert.Equal(
             new (Guid, bool)[] { (fall.Id, false), (dropped.Id, true) },
             live.PlotArcs!.Select(arc => (arc.Id, arc.DeletedAt is not null)));
-        var beats = live.PlotArcs![0].Beats;
-        Assert.Equal(new (Guid, bool)[] { (kept.Id, false), (binned.Id, true) }, beats.Select(beat => (beat.Id, beat.DeletedAt is not null)));
-        Assert.Contains(cut, beats[0].LinkedSceneIds);
-        Assert.Contains(cut, live.Scenes.Select(scene => scene.Id));
+        Assert.Equal(fall.Id, live.Chapters!.Single(chapter => chapter.Id == arrival).PlotArcId);
+        Assert.Equal(["Kept with the cut scene"], cutBackup.Beats!.Select(beat => beat.Title));
 
         // Unchanged content, unchanged bytes.
         Assert.Equal(
@@ -205,9 +202,9 @@ public sealed class ContentRecoveryBackupTests(LorEvolveApiFactory factory) : IC
         Assert.Equal("The hall had emptied.", scene.Manuscript!.Content);
         Assert.Null(scene.Manuscript.Revisions);
 
+        // An old plot arc still reads; its beats are no member of the record any more and are passed over (ADR 0070).
         var arc = Assert.Single(story.PlotArcs!);
         Assert.Null(arc.DeletedAt);
-        Assert.Null(Assert.Single(arc.Beats).DeletedAt);
     }
 
     [Fact]

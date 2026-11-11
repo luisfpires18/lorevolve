@@ -78,20 +78,18 @@ public sealed class BackupInventoryTests
         // Stories.
         "Stories",
         "Chapters",
+        "ChapterArcs",
         "Scenes",
+        "SceneBeats",
         "SceneEntityLinks",
         "SceneManuscripts",
         "SceneManuscriptRevisions",
         "PlotArcs",
-        "PlotBeats",
-        "PlotBeatEntities",
-        "PlotBeatScenes",
 
         // The ideas that belong to this universe (unassigned ideas have no backup: ADR 0030).
         "Ideas",
         "IdeaEntityReferences",
         "IdeaPlotArcReferences",
-        "IdeaPlotBeatReferences",
         "IdeaSceneReferences",
         "IdeaStoryReferences",
 

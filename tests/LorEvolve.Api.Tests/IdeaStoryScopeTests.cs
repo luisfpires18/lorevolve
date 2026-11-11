@@ -9,22 +9,21 @@ namespace LorEvolve.Api.Tests;
 
 /// <summary>
 /// A story's ideas (ADR 0030 amendment): the account's own ideas in that universe with an explicit reference to the story,
-/// or to one of its scenes, arcs or beats. A view of the one idea list, never a second kind of idea: filtered in the
+/// or to one of its scenes or arcs. A view of the one idea list, never a second kind of idea: filtered in the
 /// database before the count and the page, one row per idea, and never reachable by anyone but the ideas' owner.
 /// </summary>
 public sealed class IdeaStoryScopeTests(LorEvolveApiFactory factory) : IClassFixture<LorEvolveApiFactory>
 {
     private readonly LorEvolveApiFactory _factory = factory;
 
-    private sealed record Parts(Guid Id, Guid Scene, Guid Arc, Guid Beat);
+    private sealed record Parts(Guid Id, Guid Scene, Guid Arc);
 
     private static async Task<Parts> BuildStory(HttpClient client, Guid universeId, string title)
     {
         var story = await CreateStory(client, universeId, title);
         var scene = await CreateScene(client, universeId, story, $"{title} scene");
         var arc = await CreateArc(client, universeId, story, $"{title} arc");
-        var beat = await CreateBeat(client, universeId, story, arc.Id, $"{title} beat");
-        return new Parts(story, scene, arc.Id, beat.Id);
+        return new Parts(story, scene, arc.Id);
     }
 
     private static string StoryQuery(Guid universeId, Guid storyId, string extra = "") =>
@@ -40,7 +39,6 @@ public sealed class IdeaStoryScopeTests(LorEvolveApiFactory factory) : IClassFix
         await CreateIdea(client, "Direct", universeId: universe.Id, references: [Ref(IdeaReferenceKind.Story, a.Id)]);
         await CreateIdea(client, "Via scene", universeId: universe.Id, references: [Ref(IdeaReferenceKind.Scene, a.Scene)]);
         await CreateIdea(client, "Via arc", universeId: universe.Id, references: [Ref(IdeaReferenceKind.PlotArc, a.Arc)]);
-        await CreateIdea(client, "Via beat", universeId: universe.Id, references: [Ref(IdeaReferenceKind.PlotBeat, a.Beat)]);
         await CreateIdea(
             client,
             "Many parts",
@@ -50,14 +48,13 @@ public sealed class IdeaStoryScopeTests(LorEvolveApiFactory factory) : IClassFix
                 Ref(IdeaReferenceKind.Story, a.Id),
                 Ref(IdeaReferenceKind.Scene, a.Scene),
                 Ref(IdeaReferenceKind.PlotArc, a.Arc),
-                Ref(IdeaReferenceKind.PlotBeat, a.Beat),
             ]);
         await CreateIdea(
             client,
             "Both stories",
             universeId: universe.Id,
             references: [Ref(IdeaReferenceKind.Scene, a.Scene), Ref(IdeaReferenceKind.Story, b.Id)]);
-        await CreateIdea(client, "Story B only", universeId: universe.Id, references: [Ref(IdeaReferenceKind.PlotBeat, b.Beat)]);
+        await CreateIdea(client, "Story B only", universeId: universe.Id, references: [Ref(IdeaReferenceKind.PlotArc, b.Arc)]);
         await CreateIdea(client, "Universe only", universeId: universe.Id);
         await CreateIdea(client, "Unassigned");
 
@@ -66,18 +63,18 @@ public sealed class IdeaStoryScopeTests(LorEvolveApiFactory factory) : IClassFix
 
         var storyA = await ListIdeas(client, StoryQuery(universe.Id, a.Id));
         Assert.Equal(
-            ["Both stories", "Direct", "Many parts", "Via arc", "Via beat", "Via scene"],
+            ["Both stories", "Direct", "Many parts", "Via arc", "Via scene"],
             storyA.Items.Select(item => item.Title).Order(StringComparer.Ordinal));
-        Assert.Equal(6, storyA.TotalCount);
-        Assert.Equal(4, storyA.Items.Single(item => item.Title == "Many parts").ReferenceCount);
+        Assert.Equal(5, storyA.TotalCount);
+        Assert.Equal(3, storyA.Items.Single(item => item.Title == "Many parts").ReferenceCount);
 
         Assert.Equal(
             ["Both stories", "Story B only"],
             (await ListedTitles(client, StoryQuery(universe.Id, b.Id))).Order(StringComparer.Ordinal));
 
         // The universe and account views are untouched: every idea is still there, once.
-        Assert.Equal(9, (await ListIdeas(client, $"?universeId={universe.Id}")).TotalCount);
-        Assert.Equal(10, (await ListIdeas(client)).TotalCount);
+        Assert.Equal(8, (await ListIdeas(client, $"?universeId={universe.Id}")).TotalCount);
+        Assert.Equal(9, (await ListIdeas(client)).TotalCount);
     }
 
     [Fact]
@@ -94,7 +91,7 @@ public sealed class IdeaStoryScopeTests(LorEvolveApiFactory factory) : IClassFix
                 $"Council {i}",
                 i % 2 == 0 ? "The tide turns." : null,
                 universe.Id,
-                [Ref(IdeaReferenceKind.Scene, a.Scene), Ref(IdeaReferenceKind.PlotBeat, a.Beat)]);
+                [Ref(IdeaReferenceKind.Scene, a.Scene), Ref(IdeaReferenceKind.PlotArc, a.Arc)]);
         }
 
         for (var i = 1; i <= 4; i++)
@@ -233,7 +230,7 @@ public sealed class IdeaStoryScopeTests(LorEvolveApiFactory factory) : IClassFix
                     [
                         Ref(IdeaReferenceKind.Story, a.Id),
                         Ref(IdeaReferenceKind.Scene, a.Scene),
-                        Ref(IdeaReferenceKind.PlotBeat, a.Beat),
+                        Ref(IdeaReferenceKind.PlotArc, a.Arc),
                     ]);
             }
 

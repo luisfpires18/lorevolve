@@ -216,26 +216,26 @@ public sealed partial class TrashPermanentDeleteTests
         var binnedScene = await CreateScene(client, u, story, "Binned scene");
         var unbinnedScene = await CreateScene(client, u, story, "Scene inside");
         var arc = await CreateArc(client, u, story, "Binned arc");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Binned beat");
+        await MoveChapterToArc(client, u, story, chapter, arc.Id);
+        await SetBeats(client, u, story, unbinnedScene, "Inside beat");
         var standing = await CreateStory(client, u, "Standing saga");
         var standingScene = await CreateScene(client, u, standing, "Standing scene");
 
-        await Deleted(client, Beat(u, story, beat.Id));
         await Deleted(client, Arc(u, story, arc.Id));
         await Deleted(client, $"{Story(u, story)}/scenes/{binnedScene}");
         await Deleted(client, $"{Story(u, story)}/chapters/{chapter}");
         await Deleted(client, Story(u, story));
-        Assert.Equal(5, (await Trash(client, u)).TotalCount);
+        Assert.Equal(4, (await Trash(client, u)).TotalCount);
 
         // Children first in the request: the plan, not the order, decides.
         var response = await Bulk(
             client, u,
-            new(TrashItemKind.PlotBeat, beat.Id), new(TrashItemKind.Scene, binnedScene), new(TrashItemKind.Chapter, chapter),
+            new(TrashItemKind.Scene, binnedScene), new(TrashItemKind.Chapter, chapter),
             new(TrashItemKind.PlotArc, arc.Id), new(TrashItemKind.Story, story));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var erased = await Erased(response);
-        Assert.Equal(5, erased.Deleted);
+        Assert.Equal(4, erased.Deleted);
         Assert.Empty(erased.ErasedEntryIds);
 
         // Every scene the story held, selected or not; none of another story's.
@@ -249,39 +249,41 @@ public sealed partial class TrashPermanentDeleteTests
             Assert.False(await db.Chapters.AnyAsync(row => row.StoryId == story));
             Assert.False(await db.Scenes.AnyAsync(row => row.StoryId == story));
             Assert.False(await db.PlotArcs.AnyAsync(row => row.StoryId == story));
-            Assert.False(await db.PlotBeats.AnyAsync(row => row.Id == beat.Id));
+            Assert.False(await db.ChapterArcs.AnyAsync(row => row.ChapterId == chapter));
+            Assert.False(await db.SceneBeats.AnyAsync(row => row.SceneId == unbinnedScene));
             Assert.True(await db.Scenes.AnyAsync(row => row.Id == standingScene));
         });
     }
 
     [Fact]
-    public async Task Bulk_with_an_arc_and_its_beat_succeeds_and_takes_its_other_beats()
+    public async Task Bulk_with_an_arc_and_its_chapter_takes_both_and_leaves_the_chapters_scenes()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "pdbarc");
         var u = universe.Id;
         var story = await CreateStory(client, u, "Arc saga");
         var arc = await CreateArc(client, u, story, "Binned arc");
-        var selectedBeat = await CreateBeat(client, u, story, arc.Id, "Selected beat");
-        var unselectedBinned = await CreateBeat(client, u, story, arc.Id, "Unselected binned beat");
-        var liveBeat = await CreateBeat(client, u, story, arc.Id, "Live beat");
+        var chapter = await CreateChapter(client, u, story, "Binned chapter");
+        var kept = await CreateChapter(client, u, story, "Kept chapter");
+        await MoveChapterToArc(client, u, story, chapter, arc.Id);
+        await MoveChapterToArc(client, u, story, kept, arc.Id);
+        var scene = await CreateScene(client, u, story, "Released scene", chapter);
 
-        await Deleted(client, Beat(u, story, selectedBeat.Id));
-        await Deleted(client, Beat(u, story, unselectedBinned.Id));
+        await Deleted(client, $"{Story(u, story)}/chapters/{chapter}");
         await Deleted(client, Arc(u, story, arc.Id));
 
-        var response = await Bulk(client, u, new(TrashItemKind.PlotBeat, selectedBeat.Id), new(TrashItemKind.PlotArc, arc.Id));
+        var response = await Bulk(client, u, new(TrashItemKind.Chapter, chapter), new(TrashItemKind.PlotArc, arc.Id));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var erased = await Erased(response);
         Assert.Equal(2, erased.Deleted);
         Assert.Empty(erased.ErasedSceneIds);
         Assert.Empty((await Trash(client, u)).Items);
-        var beats = new[] { selectedBeat.Id, unselectedBinned.Id, liveBeat.Id };
         await WithDb(_factory, async db =>
         {
             Assert.False(await db.PlotArcs.AnyAsync(row => row.Id == arc.Id));
-            Assert.False(await db.PlotBeats.AnyAsync(row => beats.Contains(row.Id)));
-            Assert.True(await db.Stories.AnyAsync(row => row.Id == story && row.DeletedAt == null));
+            Assert.False(await db.ChapterArcs.AnyAsync(row => row.PlotArcId == arc.Id));
+            Assert.True(await db.Chapters.AnyAsync(row => row.Id == kept && row.DeletedAt == null));
+            Assert.True(await db.Scenes.AnyAsync(row => row.Id == scene && row.DeletedAt == null));
         });
     }
 

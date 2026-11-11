@@ -26,7 +26,7 @@ namespace LorEvolve.Api.Tests;
 ///
 /// Four claims. Only something already in the Trash can be erased, on its own typed route, inside its own universe. Erasing
 /// removes what the thing owns - including owned rows that sit in the Trash on their own - and nothing it does not own: a
-/// chapter's scenes, the lore a scene or beat points at, the idea that mentioned it. What pointed at an erased entry stops
+/// chapter's scenes, an arc's chapters, the lore a scene points at, the idea that mentioned it. What pointed at an erased entry stops
 /// pointing, so the live lore left behind saves, reads and backs up cleanly and frees the type and fields it held. And an
 /// entry's picture is swept only after the database has let go of it.
 ///
@@ -48,10 +48,9 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
         var chapter = await CreateChapter(client, u, story, "Alive chapter");
         var scene = await CreateScene(client, u, story, "Alive scene");
         var arc = await CreateArc(client, u, story, "Alive arc");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Alive beat");
         var rule = await WorldRuleTestClient.CreateRule(client, u, "Alive rule");
 
-        foreach (var route in Routes(u, entity, story, chapter, scene, arc.Id, beat.Id, rule.Id))
+        foreach (var route in Routes(u, entity, story, chapter, scene, arc.Id, rule.Id))
         {
             Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync(route)).StatusCode);
         }
@@ -63,7 +62,6 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
             Assert.True(await db.Chapters.AnyAsync(row => row.Id == chapter && row.DeletedAt == null));
             Assert.True(await db.Scenes.AnyAsync(row => row.Id == scene && row.DeletedAt == null));
             Assert.True(await db.PlotArcs.AnyAsync(row => row.Id == arc.Id && row.DeletedAt == null));
-            Assert.True(await db.PlotBeats.AnyAsync(row => row.Id == beat.Id && row.DeletedAt == null));
             Assert.True(await db.WorldRules.AnyAsync(row => row.Id == rule.Id && row.DeletedAt == null));
         });
     }
@@ -73,7 +71,7 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "pdmissing");
 
-        foreach (var route in Routes(universe.Id, [.. Enumerable.Range(0, 7).Select(_ => Guid.NewGuid())]))
+        foreach (var route in Routes(universe.Id, [.. Enumerable.Range(0, 6).Select(_ => Guid.NewGuid())]))
         {
             Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync(route)).StatusCode);
         }
@@ -88,7 +86,7 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
         await Deleted(client, Story(u, story));
 
         // A trashed story's id on every other kind's route.
-        foreach (var route in Routes(u, story, Guid.NewGuid(), story, story, story, story, story).Where((_, index) => index != 1))
+        foreach (var route in Routes(u, story, Guid.NewGuid(), story, story, story, story).Where((_, index) => index != 1))
         {
             Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync(route)).StatusCode);
         }
@@ -148,7 +146,7 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
             character, "King Eldric", "The last king.", CanonStatus.Idea, ["The Old King"], ["royalty"],
             [new FieldValueInput(motto, "Hold the gate", null, null, null, null, null)]))).EnsureSuccessStatusCode();
 
-        // Live lore pointing at it: a Canon entry's reference (a Canon finding), a relationship, two moments, a scene, a beat, an idea.
+        // Live lore pointing at it: a Canon entry's reference (a Canon finding), a relationship, two moments, a scene, an idea.
         var aria = await CreateEntry(
             client, u, character, "Aria", CanonStatus.Canon,
             fields: [new FieldValueInput(mentor, null, null, null, null, null, eldric.Id)]);
@@ -163,8 +161,6 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
             client,
             $"{Story(u, story)}/scenes",
             new LorEvolve.Api.Features.Stories.SceneRequest("At the gate", null, null, eldric.Id, null, [eldric.Id, aria.Id]))).Id;
-        var arc = await CreateArc(client, u, story, "Fall");
-        var beat = await CreateBeat(client, u, story, arc.Id, "The gate falls", entities: [eldric.Id, aria.Id]);
         var idea = await CreateIdea(client, "About the king", universeId: u, references: [Ref(IdeaReferenceKind.Entity, eldric.Id)]);
 
         Assert.Contains(await Conflicts(client, u, null), finding => finding.Subjects.Any(subject => subject.SubjectId == eldric.Id));
@@ -196,7 +192,6 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
             Assert.False(await db.Relationships.AnyAsync(row => row.SourceEntityId == id || row.TargetEntityId == id));
             Assert.False(await db.TimelineEntryLinks.AnyAsync(row => row.EntityId == id));
             Assert.False(await db.SceneEntityLinks.AnyAsync(row => row.EntityId == id));
-            Assert.False(await db.PlotBeatEntities.AnyAsync(row => row.EntityId == id));
             Assert.False(await db.IdeaEntityReferences.AnyAsync(row => row.EntityId == id));
             Assert.False(await db.CanonConflictSubjects.AnyAsync(row => row.SubjectId == id));
             Assert.Equal(0, await IndexRows(db, "EntitySearchIndex", "EntityId", id));
@@ -214,7 +209,6 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
         var sceneRead = await client.GetFromJsonAsync<LorEvolve.Api.Features.Stories.SceneResponse>($"{Story(u, story)}/scenes/{scene}");
         Assert.Null(sceneRead!.Pov);
         Assert.Equal([aria.Id], sceneRead.Entities.Select(link => link.EntityId));
-        Assert.Equal([aria.Id], (await ReadBeat(client, u, story, beat.Id)).Entities.Select(link => link.EntityId));
         var ideaRead = await ReadIdea(client, idea.Id);
         Assert.Empty(ideaRead.References);
 
@@ -413,14 +407,16 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
         await WriteManuscript(client, u, story, inChapter, "Quillhaven burned.");
         await WriteManuscript(client, u, story, inChapter, "Quillhaven burned twice.");
         var arc = await CreateArc(client, u, story, "Doomed arc");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Doomed beat", scenes: [inChapter], entities: [lore]);
-        var binnedBeat = await CreateBeat(client, u, story, arc.Id, "Binned beat");
+        var binnedArc = await CreateArc(client, u, story, "Binned arc");
+        await MoveChapterToArc(client, u, story, chapter, arc.Id);
+        await SetBeats(client, u, story, inChapter, "Doomed beat");
+        await SetBeats(client, u, story, binnedScene, "Binned beat");
         var idea = await CreateIdea(
             client, "Notes", universeId: u,
-            references: [Ref(IdeaReferenceKind.Story, story), Ref(IdeaReferenceKind.Scene, inChapter), Ref(IdeaReferenceKind.PlotArc, arc.Id), Ref(IdeaReferenceKind.PlotBeat, beat.Id), Ref(IdeaReferenceKind.Entity, lore)]);
+            references: [Ref(IdeaReferenceKind.Story, story), Ref(IdeaReferenceKind.Scene, inChapter), Ref(IdeaReferenceKind.PlotArc, arc.Id), Ref(IdeaReferenceKind.Entity, lore)]);
 
         await Deleted(client, $"{Story(u, story)}/scenes/{binnedScene}");
-        await Deleted(client, Beat(u, story, binnedBeat.Id));
+        await Deleted(client, Arc(u, story, binnedArc.Id));
         await Deleted(client, Story(u, story));
         Assert.Equal(3, (await Trash(client, u)).TotalCount);
 
@@ -437,7 +433,6 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
 
         Assert.Empty((await Trash(client, u)).Items);
         var scenes = new[] { inChapter, binnedScene };
-        var beats = new[] { beat.Id, binnedBeat.Id };
         await WithDb(_factory, async db =>
         {
             Assert.False(await db.Stories.AnyAsync(row => row.Id == story));
@@ -447,14 +442,12 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
             Assert.False(await db.SceneManuscriptRevisions.AnyAsync(row => scenes.Contains(row.SceneId)));
             Assert.False(await db.SceneEntityLinks.AnyAsync(row => scenes.Contains(row.SceneId)));
             Assert.False(await db.PlotArcs.AnyAsync(row => row.StoryId == story));
-            Assert.False(await db.PlotBeats.AnyAsync(row => beats.Contains(row.Id)));
-            Assert.False(await db.PlotBeatScenes.AnyAsync(row => beats.Contains(row.PlotBeatId)));
-            Assert.False(await db.PlotBeatEntities.AnyAsync(row => beats.Contains(row.PlotBeatId)));
+            Assert.False(await db.ChapterArcs.AnyAsync(row => row.ChapterId == chapter));
+            Assert.False(await db.SceneBeats.AnyAsync(row => scenes.Contains(row.SceneId)));
             Assert.False(await db.IdeaStoryReferences.AnyAsync(row => row.StoryId == story));
             Assert.False(await db.IdeaSceneReferences.AnyAsync(row => scenes.Contains(row.SceneId)));
             Assert.False(await db.IdeaPlotArcReferences.AnyAsync(row => row.PlotArcId == arc.Id));
-            Assert.False(await db.IdeaPlotBeatReferences.AnyAsync(row => beats.Contains(row.PlotBeatId)));
-            Assert.Equal(0, await IndexRows(db, "StorySearchIndex", "ItemId", story, chapter, inChapter, binnedScene, arc.Id, beat.Id, binnedBeat.Id));
+            Assert.Equal(0, await IndexRows(db, "StorySearchIndex", "ItemId", story, chapter, inChapter, binnedScene, arc.Id, binnedArc.Id));
             Assert.Equal(0, await IndexRows(db, "SceneManuscriptSearchIndex", "SceneId", inChapter));
             Assert.True(await db.Entities.AnyAsync(row => row.Id == lore && row.DeletedAt == null));
         });
@@ -503,8 +496,7 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
             new LorEvolve.Api.Features.Stories.SceneRequest("Doomed scene", null, null, lore, null, [lore]))).Id;
         await WriteManuscript(client, u, story, scene, "Firstdraft words.");
         await WriteManuscript(client, u, story, scene, "Seconddraft words.");
-        var arc = await CreateArc(client, u, story, "Kept arc");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Kept beat", scenes: [scene], entities: [lore]);
+        await SetBeats(client, u, story, scene, "Its beat");
         var idea = await CreateIdea(client, "Scene idea", universeId: u, references: [Ref(IdeaReferenceKind.Scene, scene)]);
 
         await Deleted(client, $"{Story(u, story)}/scenes/{scene}");
@@ -516,76 +508,43 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
             Assert.False(await db.SceneManuscripts.AnyAsync(row => row.SceneId == scene));
             Assert.False(await db.SceneManuscriptRevisions.AnyAsync(row => row.SceneId == scene));
             Assert.False(await db.SceneEntityLinks.AnyAsync(row => row.SceneId == scene));
-            Assert.False(await db.PlotBeatScenes.AnyAsync(row => row.SceneId == scene));
+            Assert.False(await db.SceneBeats.AnyAsync(row => row.SceneId == scene));
             Assert.False(await db.IdeaSceneReferences.AnyAsync(row => row.SceneId == scene));
             Assert.Equal(0, await IndexRows(db, "SceneManuscriptSearchIndex", "SceneId", scene));
             Assert.Equal(0, await IndexRows(db, "StorySearchIndex", "ItemId", scene));
         });
 
-        var beatRead = await ReadBeat(client, u, story, beat.Id);
-        Assert.Empty(beatRead.SceneIds);
-        Assert.Equal([lore], beatRead.Entities.Select(link => link.EntityId));
+        Assert.True(await client.GetAsync($"/api/universes/{u}/entities/{lore}") is { IsSuccessStatusCode: true });
         Assert.Empty((await ReadIdea(client, idea.Id)).References);
         Assert.Empty((await Trash(client, u)).Items);
     }
 
     [Fact]
-    public async Task An_arc_is_erased_with_its_beats_including_one_already_in_the_Trash()
+    public async Task An_arc_is_erased_alone_and_its_chapters_stay_in_no_arc()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "pdarc");
         var u = universe.Id;
-        var lore = await CreateEntity(client, u, "Linked");
         var story = await CreateStory(client, u, "Arc saga");
-        var scene = await CreateScene(client, u, story, "Kept scene");
         var arc = await CreateArc(client, u, story, "Doomed arc");
-        var live = await CreateBeat(client, u, story, arc.Id, "Live beat", scenes: [scene], entities: [lore]);
-        var binned = await CreateBeat(client, u, story, arc.Id, "Binned beat", entities: [lore]);
+        var chapter = await CreateChapter(client, u, story, "Kept chapter");
+        await MoveChapterToArc(client, u, story, chapter, arc.Id);
+        var scene = await CreateScene(client, u, story, "Kept scene", chapter);
+        await SetBeats(client, u, story, scene, "Kept beat");
 
-        await Deleted(client, Beat(u, story, binned.Id));
         await Deleted(client, Arc(u, story, arc.Id));
-        Assert.Equal(2, (await Trash(client, u)).TotalCount);
-
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"{TrashRoute(u)}/plot-arcs/{arc.Id}")).StatusCode);
 
         Assert.Empty((await Trash(client, u)).Items);
-        var beats = new[] { live.Id, binned.Id };
         await WithDb(_factory, async db =>
         {
             Assert.False(await db.PlotArcs.AnyAsync(row => row.Id == arc.Id));
-            Assert.False(await db.PlotBeats.AnyAsync(row => beats.Contains(row.Id)));
-            Assert.False(await db.PlotBeatScenes.AnyAsync(row => beats.Contains(row.PlotBeatId)));
-            Assert.False(await db.PlotBeatEntities.AnyAsync(row => beats.Contains(row.PlotBeatId)));
-            Assert.Equal(0, await IndexRows(db, "StorySearchIndex", "ItemId", arc.Id, live.Id, binned.Id));
+            Assert.False(await db.ChapterArcs.AnyAsync(row => row.PlotArcId == arc.Id));
+            Assert.Equal(0, await IndexRows(db, "StorySearchIndex", "ItemId", arc.Id));
+            Assert.True(await db.Chapters.AnyAsync(row => row.Id == chapter && row.DeletedAt == null));
             Assert.True(await db.Scenes.AnyAsync(row => row.Id == scene && row.DeletedAt == null));
+            Assert.Equal(1, await db.SceneBeats.CountAsync(row => row.SceneId == scene));
         });
-    }
-
-    [Fact]
-    public async Task A_beat_that_cannot_be_restored_can_still_be_erased_alone()
-    {
-        var (client, universe) = await SignedInWithUniverse(_factory, "pdbeat");
-        var u = universe.Id;
-        var lore = await CreateEntity(client, u, "Beat lore");
-        var story = await CreateStory(client, u, "Beat saga");
-        var scene = await CreateScene(client, u, story, "Beat scene");
-        var arc = await CreateArc(client, u, story, "Waiting arc");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Blocked beat", scenes: [scene], entities: [lore]);
-
-        await Deleted(client, Beat(u, story, beat.Id));
-        await Deleted(client, Arc(u, story, arc.Id));
-        Assert.Equal(TrashRestoreBlock.ArcInTrash, (await Trash(client, u)).Items.Single(item => item.Id == beat.Id).BlockedBy);
-
-        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"{TrashRoute(u)}/plot-beats/{beat.Id}")).StatusCode);
-
-        Assert.Equal(arc.Id, Assert.Single((await Trash(client, u)).Items).Id);
-        await WithDb(_factory, async db =>
-        {
-            Assert.False(await db.PlotBeats.AnyAsync(row => row.Id == beat.Id));
-            Assert.False(await db.PlotBeatScenes.AnyAsync(row => row.PlotBeatId == beat.Id));
-            Assert.False(await db.PlotBeatEntities.AnyAsync(row => row.PlotBeatId == beat.Id));
-            Assert.True(await db.Scenes.AnyAsync(row => row.Id == scene));
-            Assert.True(await db.Entities.AnyAsync(row => row.Id == lore));
-        });
+        Assert.Null(Assert.Single((await ReadStory(client, u, story)).Chapters).PlotArcId);
     }
 
     // ---------- A world rule ----------
@@ -637,8 +596,7 @@ public sealed partial class TrashPermanentDeleteTests(LorEvolveApiFactory factor
         $"{TrashRoute(u)}/chapters/{ids[2]}",
         $"{TrashRoute(u)}/scenes/{ids[3]}",
         $"{TrashRoute(u)}/plot-arcs/{ids[4]}",
-        $"{TrashRoute(u)}/plot-beats/{ids[5]}",
-        $"{TrashRoute(u)}/world-rules/{ids[6]}",
+        $"{TrashRoute(u)}/world-rules/{ids[5]}",
     ];
 
     private static async Task Deleted(HttpClient client, string path) =>

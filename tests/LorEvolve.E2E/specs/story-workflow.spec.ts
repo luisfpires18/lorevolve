@@ -1,12 +1,13 @@
 import { expect, test, type Page } from '@playwright/test'
 
 /**
- * Issue #48: moving between a story's plan (Plot: arc -> beat), its writing (Scenes: chapter -> scene -> manuscript) and the
- * world's chronology (Timeline), over the links the story already keeps - a beat's scenes, a scene's world date, a moment's
- * stories. Nothing here adds a link: each test seeds through the API and only follows what is drawn.
+ * Issue #48: moving between a story's writing (Scenes: chapter -> scene -> manuscript) and the world's chronology
+ * (Timeline), over the links the story already keeps - a scene's world date, a moment's stories. Nothing here adds a
+ * link: each test seeds through the API and only follows what is drawn. The Plot view is gone (ADR 0070); a scene's beats
+ * are its own.
  *
- * The journey is the issue's own: The Burden of the Ring -> The Ring passes to Frodo, realised in two scenes of chapter
- * one; a third scene, a flashback, advances no beat.
+ * The journey is the issue's own: two scenes of chapter one, the first with the beat "The Ring passes to Frodo"; a third
+ * scene, a flashback, has no beat.
  */
 const PASSWORD = 'Test-password-123!'
 
@@ -85,18 +86,23 @@ async function seedJourney(page: Page) {
     chapter,
     null,
   )
-  const arc = await post(page, `/api/universes/${u}/stories/${story}/plot-arcs`, {
-    title: 'The Burden of the Ring',
-    description: null,
-    notes: null,
+  // The scene's own beats (ADR 0070), saved with the scene.
+  const scenePath = `/api/universes/${u}/stories/${story}/scenes/${birthday}`
+  const read = (await (await page.request.get(scenePath)).json()) as Record<string, unknown>
+  const saved = await page.request.put(scenePath, {
+    data: {
+      title: read.title,
+      summary: null,
+      notes: null,
+      povEntityId: null,
+      chronology: read.chronology,
+      entityIds: [],
+      chapterId: chapter,
+      expectedVersion: read.version,
+      beats: [{ title: 'The Ring passes to Frodo', note: null }],
+    },
   })
-  const beat = await post(page, `/api/universes/${u}/stories/${story}/plot-arcs/${arc}/beats`, {
-    title: 'The Ring passes to Frodo',
-    description: null,
-    notes: null,
-    sceneIds: [birthday, reveal],
-    entityIds: [],
-  })
+  expect(saved.ok()).toBe(true)
   await post(page, `/api/universes/${u}/timeline`, {
     title: 'Gandalf hunts for Gollum',
     description: null,
@@ -119,78 +125,11 @@ async function seedJourney(page: Page) {
   })
   const lone = await seedScene(page, u, unplanned, 'A lone scene', null, null)
 
-  return { u, story, birthday, reveal, alliance, beat, unplanned, lone }
+  return { u, story, birthday, reveal, alliance, unplanned, lone }
 }
 
-function beat(page: Page, title: string) {
-  return page.locator(`[data-testid="plot-beat"][data-title="${title}"]`)
-}
-
-test.describe('story workflow across Plot, Scenes, Manuscript and Timeline', () => {
-  test('from a beat, each linked scene shows its chapter and opens on Scenes or straight in its manuscript, which leads back to the beat', async ({
-    page,
-  }) => {
-    const w = await seedJourney(page)
-    const base = `/app/universes/${w.u}/stories/${w.story}`
-
-    await page.goto(`${base}/plot`)
-    const passes = beat(page, 'The Ring passes to Frodo')
-    const chips = passes.getByTestId('plot-beat-scene')
-    await expect(chips).toHaveText([
-      /Bilbo's birthday and farewell.*Chapter 1/,
-      /Gandalf reveals the Ring's identity.*Chapter 1/,
-    ])
-    // The flashback advances no beat, so the beat does not name it.
-    await expect(passes).not.toContainText('The Last Alliance')
-
-    // The scene chip still opens the scene in its chapter on Scenes.
-    await expect(chips.first()).toHaveAttribute('href', `${base}#scene-${w.birthday}`)
-
-    // Its manuscript is one step from the beat, named for the scene it opens.
-    const write = passes.getByRole('link', {
-      name: "Manuscript of “Gandalf reveals the Ring's identity”",
-    })
-    await expect(write).toHaveAttribute('title', 'Manuscript')
-    await write.click()
-    await page.waitForURL(`${base}/manuscript/${w.reveal}`)
-    await expect(page.getByTestId('manuscript-scene-title')).toHaveText(
-      "Gandalf reveals the Ring's identity",
-    )
-
-    // Writing it, the beat it realises is in sight, and leads back to it on Plot.
-    const plot = page.getByTestId('manuscript-plot-beat')
-    await expect(plot).toHaveText('The Burden of the Ring → The Ring passes to Frodo')
-    await expect(page.getByTestId('manuscript-plot-none')).toHaveCount(0)
-    await plot.click()
-    await page.waitForURL(`${base}/plot#beat-${w.beat}`)
-    await expect(passes).toBeFocused()
-  })
-
-  test('a scene no beat links says so on its manuscript, and where to link one; a story with no plot says nothing', async ({
-    page,
-  }) => {
-    const w = await seedJourney(page)
-    const base = `/app/universes/${w.u}/stories/${w.story}`
-
-    await page.goto(`${base}/manuscript/${w.alliance}`)
-    await expect(page.getByTestId('manuscript-scene-title')).toHaveText(
-      "The Last Alliance and Sauron's fall",
-    )
-    const none = page.getByTestId('manuscript-plot-none')
-    await expect(none).toHaveText('PlotNo beat links this scene. Open Plot')
-    await expect(page.getByTestId('manuscript-plot-beat')).toHaveCount(0)
-    await none.getByRole('link', { name: 'Open Plot' }).click()
-    await page.waitForURL(`${base}/plot`)
-    await expect(beat(page, 'The Ring passes to Frodo')).toBeVisible()
-
-    // A scene need not have a beat: where the story plans none, the manuscript asks for nothing.
-    await page.goto(`/app/universes/${w.u}/stories/${w.unplanned}/manuscript/${w.lone}`)
-    await expect(page.getByTestId('manuscript-scene-title')).toHaveText('A lone scene')
-    await expect(page.getByTestId('manuscript-plot-none')).toHaveCount(0)
-    await expect(page.getByTestId('manuscript-details-toggle')).toHaveCount(0)
-  })
-
-  test("a dated scene's date opens its story's timeline, in world order, and the timeline leads back to the scene's manuscript and beat", async ({
+test.describe('story workflow across Scenes, Manuscript and Timeline', () => {
+  test("a dated scene's date opens its story's timeline, in world order, and the timeline leads back to the scene's manuscript", async ({
     page,
   }) => {
     const w = await seedJourney(page)
@@ -216,14 +155,11 @@ test.describe('story workflow across Plot, Scenes, Manuscript and Timeline', () 
         "Gandalf reveals the Ring's identity",
       ])
 
-    // The timeline's scene row leads to the manuscript and to the plot, as it already did.
+    // The timeline's scene row leads to the manuscript, as it already did.
     const reveal = page.locator(
       `[data-testid="timeline-item"][data-title="Gandalf reveals the Ring's identity"]`,
     )
-    await expect(reveal.getByTestId('timeline-open-plot')).toHaveAttribute(
-      'href',
-      `${base}/plot#beat-${w.beat}`,
-    )
+    await expect(reveal.getByTestId('timeline-open-plot')).toHaveCount(0)
     await reveal.getByTestId('timeline-open-manuscript').click()
     await page.waitForURL(`${base}/manuscript/${w.reveal}`)
 
@@ -240,22 +176,17 @@ test.describe('story workflow across Plot, Scenes, Manuscript and Timeline', () 
     await expect(page.getByTestId('manuscript-timeline')).toHaveCount(0)
   })
 
-  test('on a phone the plot context is behind Scene details, and the beat and the timeline are still reached', async ({
+  test("on a phone a scene's beats are behind Scene details, and the timeline is still reached", async ({
     page,
   }) => {
     const w = await seedJourney(page)
     const base = `/app/universes/${w.u}/stories/${w.story}`
     await page.setViewportSize({ width: 390, height: 844 })
 
-    await page.goto(`${base}/plot`)
-    await beat(page, 'The Ring passes to Frodo')
-      .getByRole('link', { name: "Manuscript of “Bilbo's birthday and farewell”" })
-      .click()
-    await page.waitForURL(`${base}/manuscript/${w.birthday}`)
-
-    await expect(page.getByTestId('manuscript-plot-beat')).toBeHidden()
+    await page.goto(`${base}/manuscript/${w.birthday}`)
+    await expect(page.getByTestId('manuscript-beat')).toBeHidden()
     await page.getByTestId('manuscript-details-toggle').click()
-    await expect(page.getByTestId('manuscript-plot-beat')).toBeVisible()
+    await expect(page.getByTestId('manuscript-beat')).toHaveText(['The Ring passes to Frodo'])
     await expect(page.getByTestId('manuscript-timeline')).toBeVisible()
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

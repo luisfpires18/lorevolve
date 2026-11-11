@@ -29,7 +29,6 @@ public sealed class IdeaBackupTests(LorEvolveApiFactory factory) : IClassFixture
         var story = await CreateStory(client, u, "The Long Winter");
         var scene = await CreateScene(client, u, story, "The Council");
         var arc = await CreateArc(client, u, story, "Fall of the King");
-        var beat = await CreateBeat(client, u, story, arc.Id, "Learns");
         const string body = "  Maybe the city floats.\n\n\tNobody below has seen it. 北の門 👩‍👩‍👧 & <b>not html</b>  ";
 
         var floating = await CreateIdea(
@@ -38,11 +37,10 @@ public sealed class IdeaBackupTests(LorEvolveApiFactory factory) : IClassFixture
             body,
             u,
             [
-                Ref(IdeaReferenceKind.PlotBeat, beat.Id),
+                Ref(IdeaReferenceKind.PlotArc, arc.Id),
                 Ref(IdeaReferenceKind.Entity, arlen),
                 Ref(IdeaReferenceKind.Scene, scene),
                 Ref(IdeaReferenceKind.Story, story),
-                Ref(IdeaReferenceKind.PlotArc, arc.Id),
             ]);
         var betrayal = await CreateIdea(client, "Betrayal", universeId: u);
         var binned = await CreateIdea(client, "A binned idea", "Still recoverable.", u, [Ref(IdeaReferenceKind.Entity, arlen)]);
@@ -78,14 +76,13 @@ public sealed class IdeaBackupTests(LorEvolveApiFactory factory) : IClassFixture
                 new BackupIdeaReference(IdeaReferenceKind.Story, story),
                 new BackupIdeaReference(IdeaReferenceKind.Scene, scene),
                 new BackupIdeaReference(IdeaReferenceKind.PlotArc, arc.Id),
-                new BackupIdeaReference(IdeaReferenceKind.PlotBeat, beat.Id),
             ],
             floatingBackup.References);
         Assert.Contains(backup.Payload.Entities, entity => entity.Id == arlen);
         var storyBackup = Assert.Single(backup.Payload.Stories!);
         Assert.Equal(story, storyBackup.Id);
         Assert.Contains(storyBackup.Scenes, candidate => candidate.Id == scene);
-        Assert.Contains(storyBackup.PlotArcs!.SelectMany(candidate => candidate.Beats), candidate => candidate.Id == beat.Id);
+        Assert.Contains(storyBackup.PlotArcs!, candidate => candidate.Id == arc.Id);
 
         Assert.Empty(ideas[0].References);
         Assert.Equal(string.Empty, ideas[0].Body);
@@ -99,7 +96,7 @@ public sealed class IdeaBackupTests(LorEvolveApiFactory factory) : IClassFixture
             Assert.Equal(
                 ["id", "title", "body", "createdAt", "updatedAt", "deletedAt", "references"],
                 written.EnumerateObject().Select(property => property.Name));
-            Assert.Equal("PlotBeat", written.GetProperty("references")[4].GetProperty("kind").GetString());
+            Assert.Equal("PlotArc", written.GetProperty("references")[3].GetProperty("kind").GetString());
         }
 
         Assert.DoesNotContain("Unassigned idea", raw, StringComparison.Ordinal);

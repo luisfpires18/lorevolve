@@ -161,7 +161,7 @@ public sealed class TimelineFeedTests(LorEvolveApiFactory factory) : IClassFixtu
         Assert.Equal(
             (TimelineDateKind.Exact, 114, 3, 12, TimelineDatePrecision.Day),
             (coronation.Date.Kind, coronation.Date.StartYear, coronation.Date.StartMonth, coronation.Date.StartDay, coronation.Date.StartPrecision));
-        Assert.Equal(("The Last Kingdom", (int?)null), (coronation.Scene!.StoryTitle, coronation.Scene.ChapterNumber));
+        Assert.Equal(("The Last Kingdom", (Guid?)null), (coronation.Scene!.StoryTitle, coronation.Scene.ChapterId));
         Assert.Null(coronation.Event);
         Assert.Null(coronation.LoreFact);
 
@@ -292,7 +292,7 @@ public sealed class TimelineFeedTests(LorEvolveApiFactory factory) : IClassFixtu
     }
 
     [Fact]
-    public async Task A_scene_carries_its_chapter_by_position_and_its_first_beat()
+    public async Task A_scene_carries_its_story_and_chapter()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "feedcontext");
         var u = universe.Id;
@@ -301,12 +301,10 @@ public sealed class TimelineFeedTests(LorEvolveApiFactory factory) : IClassFixtu
         var chapter = await CreateChapter(client, u, story, "Ashes");
         var scene = (await PostJson<SceneResponse>(
             client, $"{Story(u, story)}/scenes", SceneAt("Ember", 5) with { ChapterId = chapter })).Id;
-        var arc = await CreateArc(client, u, story, "Fall");
-        var beat = await CreateBeat(client, u, story, arc.Id, "The spark", scenes: [scene]);
-        await CreateBeat(client, u, story, arc.Id, "The blaze", scenes: [scene]);
+        await SetBeats(client, u, story, scene, "The spark", "The blaze");
 
         var item = (await Feed(client, u)).Items.Single();
-        Assert.Equal((chapter, 2, "Ashes", beat.Id, 2), (item.Scene!.ChapterId, item.Scene.ChapterNumber, item.Scene.ChapterTitle, item.Scene.PlotBeatId, item.Scene.PlotBeatCount));
+        Assert.Equal((story, "Plotted", chapter, "Ashes"), (item.Scene!.StoryId, item.Scene.StoryTitle, item.Scene.ChapterId, item.Scene.ChapterTitle));
     }
 
     // ---------- Lore facts: the entry is the source ----------
@@ -478,7 +476,6 @@ public sealed class TimelineFeedTests(LorEvolveApiFactory factory) : IClassFixtu
         var u = universe.Id;
         var story = await CreateStory(client, u, "Counted");
         var fields = await Fields(client, u);
-        var arc = await CreateArc(client, u, story, "Arc");
 
         var counts = new List<(int Items, int Queries)>();
         var made = 0;
@@ -493,7 +490,7 @@ public sealed class TimelineFeedTests(LorEvolveApiFactory factory) : IClassFixtu
                         break;
                     case 1:
                         var scene = await DatedScene(client, u, story, $"Scene {made}", made);
-                        await CreateBeat(client, u, story, arc.Id, $"Beat {made}", scenes: [scene]);
+                        await SetBeats(client, u, story, scene, $"Beat {made}");
                         break;
                     default:
                         await CreatePerson(client, u, Person(fields, $"Person {made}", CanonStatus.Draft, Number(fields.Born, made)));
