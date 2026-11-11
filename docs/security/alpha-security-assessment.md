@@ -57,7 +57,7 @@ maps, uploads, auth, publication, assistant limits, storage quota, headers).
 #### M-1 - ImageSharp 3.1.12 advisories
 
 - **Evidence.** `dotnet list package --vulnerable`: GHSA-j3p4, -j9gm, -jjfr (High), -gwg2, -wmxv (Moderate); fixed only in
-  4.1.2+, whose Release build needs a Six Labors licence key, so `dev` reverted to 3.1.12 by owner decision (STATE.md).
+  4.1.2+, whose Release build needs a Six Labors licence key, so `dev` reverted to 3.1.12 by owner decision (.ai/STATE.md).
 - **Reachability now.** `ImagePreparation.Decoding` registers only the JPEG, PNG and WebP decoders, so the BigTIFF loop
   (-wmxv) cannot be reached, nor can GHSA-v76p (High, tiled fax TIFF heap overflow; listed 2026-10-07, found by the
   2026-10-26 audit; fixed in 3.2.0 / 4.1.1). The three Highs are a histogram-equalization filter and TIFF encoders

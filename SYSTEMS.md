@@ -12,7 +12,7 @@ Repository index. Paths and one-line responsibilities only.
 | `dotnet-tools.json` | Local .NET tool manifest (`dotnet-ef`). |
 | `Start-LorEvolve.cmd` / `Stop-LorEvolve.cmd` | Windows entry points for the local launcher. |
 | `CLAUDE.md` | Traffic controller for Claude sessions. |
-| `STATE.md` | Current state only: what is live, releases, in-flight and unmerged work, open issues, owner steps, risks. History: `docs/history/`. |
+| `.ai/STATE.md` | Current state only: what is live, releases, in-flight and unmerged work, open issues, owner steps, risks. History: `docs/history/`. |
 | `graphify-out/` | Generated knowledge graph. Gitignored, manual-only; rebuild with `python -m graphify update .`. |
 | `.mcp.json` | Issue #29: the project's Claude Code MCP servers (Microsoft Learn, Context7, OpenAI docs, Chrome DevTools isolated). No secrets. GitHub is the `gh` CLI, not a server. |
 | `docs/tooling/` | Agent tooling trial notes (RTK and Graphify evaluation); `claude-code-mcp.md`, the MCP setup, owner steps and verification (#29). |

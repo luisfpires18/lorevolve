@@ -8,7 +8,7 @@ Router only. No architecture detail and no operational state here.
 | --- | --- |
 | Shared workflow: authorization, Codex review, merging | luisfpires18/ai-workflow `WORKFLOW.md`, `REVIEW.md`, `OWNER.md` (fetch below) |
 | Project facts, skills, tests, releases | `.ai/PROJECT.md` |
-| Current state, roadmap position, blockers | `STATE.md` - read first, always |
+| Current state, roadmap position, blockers | `.ai/STATE.md` - read first, always |
 | A file or a responsibility | `SYSTEMS.md` |
 | An architecture decision | `docs/architecture/decisions/README.md` |
 | Git workflow and branch naming | `docs/architecture/branching.md` |
@@ -26,7 +26,7 @@ Router only. No architecture detail and no operational state here.
    gh api repos/luisfpires18/ai-workflow/contents/OWNER.md -H "Accept: application/vnd.github.raw"
    ```
 
-1. Read `STATE.md` first. Always. Then `.ai/PROJECT.md`. Use only the skills it lists.
+1. Read `.ai/STATE.md` first. Always. Then `.ai/PROJECT.md`. Use only the skills it lists.
 2. Load only context relevant to the current task. Nothing else.
 3. Prefer targeted reads over repository-wide scanning.
 4. Keep context and state files concise. Trim instead of appending.
