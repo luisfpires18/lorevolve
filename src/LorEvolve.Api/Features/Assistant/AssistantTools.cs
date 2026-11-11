@@ -43,7 +43,7 @@ internal sealed class AssistantTools(LorEvolveDbContext db, Guid universeId, Ass
     [
         new(
             SearchUniverse,
-            "Search this universe's lore entries, stories, chapters, scenes, plot arcs and beats, and scene prose by keywords. "
+            "Search this universe's lore entries, stories, arcs, chapters and scenes, and scene prose by keywords. "
             + "Every word must appear, so search for one or two distinctive words such as a name, never a whole question. "
             + "Returns up to five matches of each kind, best first.",
             """{"type":"object","properties":{"query":{"type":"string","description":"One or two distinctive words."}},"required":["query"],"additionalProperties":false}"""),
@@ -59,7 +59,7 @@ internal sealed class AssistantTools(LorEvolveDbContext db, Guid universeId, Ass
             IdSchema),
         new(
             GetStory,
-            "Read one story: its premise and status, its chapters, its scenes in reading order with short summaries, and its plot arcs and beats.",
+            "Read one story: its premise and status, its arcs, its chapters - each naming its arc - and its scenes in reading order with short summaries and their beats.",
             IdSchema),
         new(
             GetScene,
@@ -338,10 +338,6 @@ internal sealed class AssistantTools(LorEvolveDbContext db, Guid universeId, Ass
         foreach (var arc in story.Arcs)
         {
             Remember(new AssistantSource(AssistantSourceKind.PlotArc, arc.Id, arc.Title, story.Id));
-            foreach (var beat in arc.Beats)
-            {
-                Remember(new AssistantSource(AssistantSourceKind.PlotBeat, beat.Id, beat.Title, story.Id));
-            }
         }
 
         return story;
@@ -436,7 +432,6 @@ internal sealed class AssistantTools(LorEvolveDbContext db, Guid universeId, Ass
         UniverseSearchKind.Story => new(AssistantSourceKind.Story, result.Id, result.Title, result.Id),
         UniverseSearchKind.Chapter => new(AssistantSourceKind.Chapter, result.Id, result.Title, result.StoryId),
         UniverseSearchKind.PlotArc => new(AssistantSourceKind.PlotArc, result.Id, result.Title, result.StoryId),
-        UniverseSearchKind.PlotBeat => new(AssistantSourceKind.PlotBeat, result.Id, result.Title, result.StoryId),
 
         // A manuscript's id is its scene's: the prose is cited as the scene it tells.
         _ => new(AssistantSourceKind.Scene, result.Id, result.Title, result.StoryId),
@@ -449,7 +444,6 @@ internal sealed class AssistantTools(LorEvolveDbContext db, Guid universeId, Ass
         UniverseSearchKind.Chapter => "chapter",
         UniverseSearchKind.Scene => "scene",
         UniverseSearchKind.PlotArc => "plot_arc",
-        UniverseSearchKind.PlotBeat => "plot_beat",
         _ => "scene_prose",
     };
 

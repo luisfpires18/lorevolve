@@ -39,7 +39,8 @@ public enum AssistantSourceKind
     Chapter = 2,
     Scene = 3,
     PlotArc = 4,
-    PlotBeat = 5,
+
+    // 5 was a plot beat, retired with plot beats (ADR 0070). Never reused.
     TimelineMoment = 6,
 
     /// <summary>A pin on a map (issue #53); its map's id travels as the container id.</summary>

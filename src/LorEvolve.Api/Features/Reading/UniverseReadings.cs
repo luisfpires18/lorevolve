@@ -63,20 +63,23 @@ public sealed record LoreReading(
     int? Version = null,
     int? ArticleVersion = null);
 
-/// <summary>A chapter of a story, numbered from 1 in the story's order.</summary>
-public sealed record ChapterReading(Guid Id, int Number, string Title, string? Summary);
-
-/// <summary>A scene in a story's outline: its chapter by number (null when unchaptered) and its summary, cut short.</summary>
-public sealed record SceneOutline(Guid Id, string Title, int? ChapterNumber, string? Summary);
-
-/// <summary>A plot beat, by title and a short description.</summary>
-public sealed record BeatReading(Guid Id, string Title, string? Description);
-
-/// <summary>A plot arc with its first beats.</summary>
-public sealed record ArcReading(Guid Id, string Title, string? Description, IReadOnlyList<BeatReading> Beats);
+/// <summary>
+/// A chapter of a story, numbered from 1 inside its arc - or among the chapters in no arc - in the story's order, and
+/// the arc it is in, if any (ADR 0070).
+/// </summary>
+public sealed record ChapterReading(Guid Id, int Number, string Title, string? Summary, Guid? ArcId);
 
 /// <summary>
-/// One live story: its premise, its chapters, its scenes in reading order and its plot, each bounded. Never a word of
+/// A scene in a story's outline: its chapter (null when unchaptered), its summary cut short, and its beats' titles in
+/// order, the first few.
+/// </summary>
+public sealed record SceneOutline(Guid Id, string Title, Guid? ChapterId, string? Summary, IReadOnlyList<string> Beats);
+
+/// <summary>An arc of a story, numbered from 1, by title and a short description. Its chapters name it.</summary>
+public sealed record ArcReading(Guid Id, int Number, string Title, string? Description);
+
+/// <summary>
+/// One live story: its premise, its arcs, its chapters and its scenes in reading order, each bounded. Never a word of
 /// manuscript prose: that is a scene's, and only when asked for.
 /// </summary>
 public sealed record StoryReading(

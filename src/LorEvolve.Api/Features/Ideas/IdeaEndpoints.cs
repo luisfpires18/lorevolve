@@ -122,8 +122,7 @@ public static class IdeaEndpoints
                 query = query.Where(idea =>
                     idea.StoryReferences.Any(reference => reference.StoryId == onlyStory)
                     || idea.SceneReferences.Any(reference => reference.Scene!.StoryId == onlyStory)
-                    || idea.PlotArcReferences.Any(reference => reference.PlotArc!.StoryId == onlyStory)
-                    || idea.PlotBeatReferences.Any(reference => reference.PlotBeat!.PlotArc!.StoryId == onlyStory));
+                    || idea.PlotArcReferences.Any(reference => reference.PlotArc!.StoryId == onlyStory));
             }
         }
         else if (unassigned)
@@ -165,8 +164,7 @@ public static class IdeaEndpoints
                 ReferenceCount = idea.EntityReferences.Count
                     + idea.StoryReferences.Count
                     + idea.SceneReferences.Count
-                    + idea.PlotArcReferences.Count
-                    + idea.PlotBeatReferences.Count,
+                    + idea.PlotArcReferences.Count,
                 idea.CreatedAt,
                 idea.UpdatedAt,
                 idea.DeletedAt,

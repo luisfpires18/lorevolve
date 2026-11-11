@@ -1,4 +1,5 @@
 using LorEvolve.Api.Features.Export;
+using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
@@ -106,7 +107,14 @@ internal static class BackupNormalization
         Stories = version >= 5 && payload.Stories is not null
             ? [.. payload.Stories.Select(story => story is null ? null! : ProjectStory(story, version))]
             : null,
-        Ideas = version >= 11 ? payload.Ideas : null,
+        Ideas = version >= 37 || payload.Ideas is null
+            ? payload.Ideas
+            : version >= 11
+                // Before version 37 an idea could name a plot arc or beat; plot was retired and its arcs are not restored (ADR 0070).
+                ? [.. payload.Ideas.Select(idea => idea?.References is null
+                    ? idea!
+                    : idea with { References = [.. idea.References.Where(reference => reference is null || reference.Kind is not (IdeaReferenceKind.PlotArc or (IdeaReferenceKind)4))] })]
+                : null,
         WorldRules = version < 12 || payload.WorldRules is null
             ? null
             : version >= 13
@@ -187,7 +195,9 @@ internal static class BackupNormalization
         DeletedAt = version >= 10 ? story.DeletedAt : null,
         PublicSummary = version >= 16 ? story.PublicSummary : null,
         Chapters = version >= 6 && story.Chapters is not null
-            ? [.. story.Chapters.Select(chapter => chapter is null ? null! : chapter with { DeletedAt = version >= 10 ? chapter.DeletedAt : null })]
+            ? [.. story.Chapters.Select(chapter => chapter is null
+                ? null!
+                : chapter with { DeletedAt = version >= 10 ? chapter.DeletedAt : null, PlotArcId = version >= 37 ? chapter.PlotArcId : null })]
             : version >= 6 ? null : [],
         Scenes = story.Scenes is null
             ? null!
@@ -200,18 +210,10 @@ internal static class BackupNormalization
                     Manuscript = version < 8 || scene.Manuscript is null
                         ? null
                         : scene.Manuscript with { Revisions = version >= 10 ? scene.Manuscript.Revisions : null },
+                    Beats = version >= 37 ? scene.Beats : null,
                 })],
-        PlotArcs = version >= 7 && story.PlotArcs is not null
-            ? [.. story.PlotArcs.Select(arc => arc is null
-                ? null!
-                : arc with
-                {
-                    DeletedAt = version >= 10 ? arc.DeletedAt : null,
-                    Beats = arc.Beats is null
-                        ? null!
-                        : [.. arc.Beats.Select(beat => beat is null ? null! : beat with { DeletedAt = version >= 10 ? beat.DeletedAt : null })],
-                })]
-            : version >= 7 ? null : [],
+        // Before version 37 an arc was plot, with beats of its own; plot was retired and none of it is restored (ADR 0070).
+        PlotArcs = version >= 37 ? story.PlotArcs : [],
     };
 
     // ---------- Filling in what an older version left implicit ----------
@@ -309,6 +311,12 @@ internal static class BackupNormalization
                 (scene, order) => scene with { SortOrder = order })];
         }
 
+        // A scene's beats are numbered inside the scene, in the order their numbers put them.
+        scenes = [.. scenes.Select(scene => scene with
+        {
+            Beats = Renumber(scene.Beats ?? [], _ => true, beat => beat.SortOrder, (beat, order) => beat with { SortOrder = order }),
+        })];
+
         var arcs = Renumber(
             story.PlotArcs ?? [],
             arc => arc.DeletedAt is null,
@@ -319,17 +327,7 @@ internal static class BackupNormalization
         {
             Chapters = chapters,
             Scenes = scenes,
-            PlotArcs =
-            [
-                .. arcs.Select(arc => arc with
-                {
-                    Beats = Renumber(
-                        arc.Beats,
-                        beat => beat.DeletedAt is null,
-                        beat => beat.SortOrder,
-                        (beat, order) => beat with { SortOrder = order }),
-                }),
-            ],
+            PlotArcs = arcs,
         };
     }
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { BookPlus, FilePenLine, Hourglass, Pencil, Plus, Trash } from 'lucide-react'
+import { BookPlus, FilePenLine, Hourglass, Layers, Pencil, Plus, Trash } from 'lucide-react'
 import {
   Link,
   NavLink,
@@ -11,15 +11,16 @@ import {
 } from 'react-router-dom'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
+import { ArcSection } from '../components/ArcSection'
 import { ContentPublication } from '../components/ContentPublication'
 import { ChapterForm } from '../components/ChapterForm'
-import { ChapterSection } from '../components/ChapterSection'
+import { ChapterSection, type ArcTarget } from '../components/ChapterSection'
 import { EmptyState } from '../components/EmptyState'
 import { IdeasBrowser } from '../components/IdeasBrowser'
 import { ManuscriptPanel } from '../components/ManuscriptPanel'
 import { PageHeader } from '../components/PageHeader'
 import { ReviewComments } from '../components/ReviewComments'
-import { PlotPanel } from '../components/PlotPanel'
+import { PlotArcForm } from '../components/PlotArcForm'
 import { SceneCard, type MoveTarget } from '../components/SceneCard'
 import { SceneForm } from '../components/SceneForm'
 import { StoryForm } from '../components/StoryForm'
@@ -29,25 +30,34 @@ import { getContentPublication } from '../publishing/api'
 import { Visibility, type ContentPublicationState, type VisibilityValue } from '../publishing/types'
 import {
   deleteChapter,
+  deletePlotArc,
   deleteScene,
   deleteStory,
   getStory,
-  listPlotArcs,
+  moveChapterToArc,
   moveScene,
   reorderChapters,
+  reorderPlotArcs,
   reorderScenes,
 } from '../stories/api'
 import {
   arcCountLabel,
+  arcLabel,
+  arcNumber,
   chapterCountLabel,
   chapterLabel,
   chapterNumber,
-  containerLabel,
   sceneCountLabel,
   UNCHAPTERED,
 } from '../stories/format'
 import { storyChanges } from '../stories/changes'
-import { beatsByScene, readingOrder, scenesIn } from '../stories/structure'
+import {
+  chapterChoices,
+  chapterGroups,
+  chapterNumbers,
+  readingOrder,
+  scenesIn,
+} from '../stories/structure'
 import {
   STORY_STATUS_LABELS,
   type Chapter,
@@ -61,7 +71,7 @@ import { confirmAction } from '../lib/confirm'
 
 type LoadState =
   | { kind: 'loading' }
-  | { kind: 'ready'; story: StoryDetail; arcs: PlotArc[] }
+  | { kind: 'ready'; story: StoryDetail }
   | { kind: 'missing' }
   | { kind: 'error' }
 
@@ -72,21 +82,26 @@ type SceneFormState =
   | { mode: 'suggest'; scene: Scene }
 
 type ChapterFormState =
-  { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; chapter: Chapter; index: number }
+  | { mode: 'closed' }
+  | { mode: 'new'; arcId: string | null }
+  | { mode: 'edit'; chapter: Chapter; index: number }
+
+type ArcFormState =
+  { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; arc: PlotArc; index: number }
 
 /** Where the focus goes back to once a scene has moved: its ⋯ menu, wherever the scene now is. */
 const sceneMenu = (sceneId: string) => `#scene-${sceneId} [data-testid="scene-actions"]`
 
-/** How long a scene or beat reached by a link stays marked, so the eye can pick it out from its neighbours. */
+/** How long a scene reached by a link stays marked, so the eye can pick it out from its neighbours. */
 const ARRIVAL_MS = 2400
 
-type StoryViewName = 'scenes' | 'plot' | 'manuscript' | 'ideas'
+type StoryViewName = 'scenes' | 'manuscript' | 'ideas'
 
 /**
  * A story's page, one per story. Moving between its views keeps the page and everything read for it; moving to
  * another story - a search result in another story, say - starts a new page, so nothing on screen for one story (the
  * story itself while the next is read, a message, a pending focus) is ever shown under the other's address, and a link
- * that lands on a scene or a beat lands once the story it is in is on screen.
+ * that lands on a scene lands once the story it is in is on screen.
  */
 export default function StoryPage({ view = 'scenes' }: { view?: StoryViewName }) {
   const { storyId } = useParams<{ storyId: string }>()
@@ -94,11 +109,11 @@ export default function StoryPage({ view = 'scenes' }: { view?: StoryViewName })
 }
 
 /**
- * One story, told in the order its author sets, and planned in the plot its author follows.
+ * One story, told in the order its author sets: arcs, the chapters in each, and the scenes in each chapter (ADR 0070).
  *
- * The page has four views under one header: Scenes, at the story's own address, Plot, at `/plot`, Manuscript, at
- * `/manuscript/:sceneId`, and Ideas, at `/ideas`. All four read the same story and the same plot, once, so moving between
- * them costs nothing and the header never changes. Neither read carries prose: the Manuscript view reads one scene's text
+ * The page has three views under one header: Scenes, at the story's own address, Manuscript, at `/manuscript/:sceneId`,
+ * and Ideas, at `/ideas`. All three read the same story, once, so moving between them costs nothing and the header never
+ * changes. Neither read carries prose: the Manuscript view reads one scene's text
  * when that scene is opened, and the Ideas view reads one page of the author's own ideas for the story. Ideas are the
  * account's, never the universe's (ADR 0030), so the view is offered only to a member who keeps ideas here - the owner.
  *
@@ -107,15 +122,15 @@ export default function StoryPage({ view = 'scenes' }: { view?: StoryViewName })
  * story's own Edit and Delete. Each view then opens with its own tools, or with one empty state holding the one way to
  * begin.
  *
- * Chapters are optional. A story without any is one list of scenes, exactly as before chapters existed.
- * Once it has some, the page reads Unchaptered first - a holding area, shown only while it holds a scene -
- * and then each chapter in order with its own scenes. Move up and Move down stay inside a scene's chapter;
- * Move to… takes it elsewhere. A chapter's number is its position, drawn here and never stored.
+ * Arcs and chapters are optional. A story without any is one list of scenes, exactly as before chapters existed.
+ * Once it has some, the page reads Unchaptered first - a holding area, shown only while it holds a scene - then the
+ * chapters in no arc, then each arc in order with its own chapters. Move up and Move down stay inside a scene's chapter,
+ * and inside a chapter's arc; Move to… takes either elsewhere. A chapter's number is its position in its arc, drawn here
+ * and never stored. A scene's beats are its own, edited in its drawer.
  *
- * Neither order is chronology. Each scene may say where it happens in the world, and that is shown on the
- * scene, but nothing on this page sorts, groups or warns by it: a story that opens on the aftermath and
- * flashes back to a childhood is exactly as valid as one told straight through. The plot is a third order of
- * its own - arcs, and the beats in each - which follows neither.
+ * No order is chronology. Each scene may say where it happens in the world, and that is shown on the scene, but nothing
+ * on this page sorts, groups or warns by it: a story that opens on the aftermath and flashes back to a childhood is
+ * exactly as valid as one told straight through.
  */
 function StoryView({ view }: { view: StoryViewName }) {
   const access = useUniverseAccess()
@@ -128,6 +143,7 @@ function StoryView({ view }: { view: StoryViewName }) {
   const [stale, setStale] = useState(false)
   const [sceneForm, setSceneForm] = useState<SceneFormState>({ mode: 'closed' })
   const [chapterForm, setChapterForm] = useState<ChapterFormState>({ mode: 'closed' })
+  const [arcForm, setArcForm] = useState<ArcFormState>({ mode: 'closed' })
   const [storyForm, setStoryForm] = useState<'closed' | 'edit' | 'suggest'>('closed')
   // A suggestion just sent from this page, said where it can be seen (task 045).
   const [sent, setSent] = useState(false)
@@ -135,7 +151,7 @@ function StoryView({ view }: { view: StoryViewName }) {
   const [reloads, setReloads] = useState(0)
 
   // A refusal is held with the address it was raised on, like the manuscript outline's open state, so one raised on
-  // the Scenes view is not still standing when the author comes back to it from the Plot view.
+  // the Scenes view is not still standing when the author comes back to it from the Manuscript view.
   const [raised, setRaised] = useState<{ at: string; text: string } | null>(null)
   const message = raised?.at === location.pathname ? raised.text : null
 
@@ -168,12 +184,9 @@ function StoryView({ view }: { view: StoryViewName }) {
     if (!storyId) return
     const controller = new AbortController()
 
-    Promise.all([
-      getStory(universe.id, storyId, controller.signal),
-      listPlotArcs(universe.id, storyId, controller.signal),
-    ])
-      .then(([story, arcs]) => {
-        setState({ kind: 'ready', story, arcs })
+    getStory(universe.id, storyId, controller.signal)
+      .then((story) => {
+        setState({ kind: 'ready', story })
         setStale(false)
       })
       .catch((error: unknown) => {
@@ -203,8 +216,8 @@ function StoryView({ view }: { view: StoryViewName }) {
     document.querySelector<HTMLElement>(selector)?.focus()
   }, [state])
 
-  // A link to one scene or one beat - a beat's scene, a scene's beat, or the manuscript's way back to its scene - lands
-  // on it, whichever view it opens: scrolled to, given the focus so a keyboard and a screen reader arrive there too, and
+  // A link to one scene - a search result, or the manuscript's way back to its scene - lands on it, whichever view it
+  // opens: scrolled to, given the focus so a keyboard and a screen reader arrive there too, and
   // marked for a moment so the eye can tell which of twenty rows it meant. The location's key runs it again when the
   // same link is followed twice.
   const isReady = state.kind === 'ready'
@@ -269,23 +282,39 @@ function StoryView({ view }: { view: StoryViewName }) {
     )
   }
 
-  const { story, arcs } = state
-  const { chapters, scenes } = story
+  const { story } = state
+  const { arcs, chapters, scenes } = story
   const hasChapters = chapters.length > 0
-  const isEmpty = !hasChapters && scenes.length === 0
+  const hasStructure = hasChapters || arcs.length > 0
+  const isEmpty = !hasStructure && scenes.length === 0
   const unchaptered = scenesIn(scenes, null)
-  const sceneBeats = beatsByScene(arcs)
+  const groups = chapterGroups(arcs, chapters)
+  const numbers = chapterNumbers(arcs, chapters)
+  const labels = new Map(chapterChoices(arcs, chapters).map((choice) => [choice.id, choice.label]))
   const storyPath = `/app/universes/${universe.id}/stories/${story.id}`
   // The universe's one timeline, narrowed to this story: its dated scenes and the moments linked to it.
   const timelinePath = `/app/universes/${universe.id}/timeline?story=${story.id}`
 
+  /** A chapter as a reader finds it: "Chapter 2: Ashes", or "Arc 1, Chapter 2: Ashes" inside an arc. */
+  const containerName = (chapterId: string | null) =>
+    chapterId === null ? UNCHAPTERED : (labels.get(chapterId) ?? UNCHAPTERED)
+
+  const arcIndex = (arcId: string | null) =>
+    groups.arcs.findIndex((entry) => entry.arc.id === arcId)
+
   const targets: MoveTarget[] = hasChapters
     ? [
         { chapterId: null, chapter: null },
-        ...chapters.map((chapter, index) => ({
-          chapterId: chapter.id,
-          chapter: { index, title: chapter.title },
-        })),
+        ...[...groups.unarced, ...groups.arcs.flatMap((entry) => entry.chapters)].map(
+          (chapter) => ({
+            chapterId: chapter.id,
+            chapter: { index: (numbers.get(chapter.id) ?? 1) - 1, title: chapter.title },
+            arc:
+              chapter.plotArcId && arcIndex(chapter.plotArcId) >= 0
+                ? arcNumber(arcIndex(chapter.plotArcId))
+                : null,
+          }),
+        ),
       ]
     : []
 
@@ -322,14 +351,28 @@ function StoryView({ view }: { view: StoryViewName }) {
       current.kind === 'ready'
         ? {
             ...current,
-            arcs: current.arcs.map((arc) => (arc.id === id ? { ...arc, visibility } : arc)),
+            story: {
+              ...current.story,
+              arcs: current.story.arcs.map((arc) => (arc.id === id ? { ...arc, visibility } : arc)),
+            },
           }
         : current,
     )
   }
 
   function showArcs(next: PlotArc[]) {
-    setState((current) => (current.kind === 'ready' ? { ...current, arcs: next } : current))
+    setState((current) =>
+      current.kind === 'ready'
+        ? {
+            ...current,
+            story: {
+              ...current.story,
+              arcs: next,
+              scenes: readingOrder(next, current.story.chapters, current.story.scenes),
+            },
+          }
+        : current,
+    )
   }
 
   /** One container's scenes replaced, the rest of the story left as it is. */
@@ -340,7 +383,7 @@ function StoryView({ view }: { view: StoryViewName }) {
             ...current,
             story: {
               ...current.story,
-              scenes: readingOrder(current.story.chapters, [
+              scenes: readingOrder(current.story.arcs, current.story.chapters, [
                 ...current.story.scenes.filter((scene) => scene.chapterId !== chapterId),
                 ...replacement,
               ]),
@@ -358,7 +401,7 @@ function StoryView({ view }: { view: StoryViewName }) {
             story: {
               ...current.story,
               chapters: nextChapters,
-              scenes: readingOrder(nextChapters, current.story.scenes),
+              scenes: readingOrder(current.story.arcs, nextChapters, current.story.scenes),
             },
           }
         : current,
@@ -396,7 +439,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           next.map((candidate) => candidate.id),
         ),
       )
-      const where = hasChapters ? ` in ${containerLabel(chapters, scene.chapterId)}` : ''
+      const where = hasChapters ? ` in ${containerName(scene.chapterId)}` : ''
       setAnnouncement(`“${scene.title}” is now scene ${to + 1} of ${next.length}${where}.`)
     } catch (error: unknown) {
       showStory(story)
@@ -420,7 +463,7 @@ function StoryView({ view }: { view: StoryViewName }) {
 
       const count = scenesIn(saved.scenes, chapterId).length
       setAnnouncement(
-        `“${scene.title}” moved to ${containerLabel(saved.chapters, chapterId)}, scene ${count} of ${count}.`,
+        `“${scene.title}” moved to ${containerName(chapterId)}, scene ${count} of ${count}.`,
       )
     } catch (error: unknown) {
       setMessage(error instanceof ApiError ? error.message : 'That scene could not be moved.')
@@ -430,17 +473,26 @@ function StoryView({ view }: { view: StoryViewName }) {
     }
   }
 
-  /** Moves one chapter one place, at once on screen, and puts it back if refused. */
+  /**
+   * Moves one chapter one place inside its arc - or among the chapters in no arc - at once on screen, and puts it back if
+   * refused. The story keeps one chapter order, so the move swaps it with its neighbour there.
+   */
   async function moveChapter(chapter: Chapter, by: -1 | 1) {
     if (isMoving.current) return
 
-    const from = chapters.findIndex((candidate) => candidate.id === chapter.id)
-    const to = from + by
-    if (from < 0 || to < 0 || to >= chapters.length) return
+    const arcId =
+      chapter.plotArcId !== null && arcIndex(chapter.plotArcId) >= 0 ? chapter.plotArcId : null
+    const group = arcId === null ? groups.unarced : groups.arcs[arcIndex(arcId)].chapters
+    const inGroup = group.findIndex((candidate) => candidate.id === chapter.id)
+    const neighbour = group[inGroup + by]
+    if (inGroup < 0 || !neighbour) return
 
-    const next = [...chapters]
-    const [moved] = next.splice(from, 1)
-    next.splice(to, 0, moved)
+    const ordered = [...chapters].sort((a, b) => a.sortOrder - b.sortOrder)
+    const from = ordered.findIndex((candidate) => candidate.id === chapter.id)
+    const to = ordered.findIndex((candidate) => candidate.id === neighbour.id)
+    const next = [...ordered]
+    next[from] = neighbour
+    next[to] = chapter
 
     isMoving.current = true
     setMessage(null)
@@ -455,7 +507,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           next.map((candidate) => candidate.id),
         ),
       )
-      setAnnouncement(`“${chapter.title}” is now chapter ${to + 1} of ${next.length}.`)
+      setAnnouncement(`“${chapter.title}” is now chapter ${inGroup + by + 1} of ${group.length}.`)
     } catch (error: unknown) {
       showStory(story)
       setMessage(error instanceof ApiError ? error.message : 'The new order could not be saved.')
@@ -464,14 +516,90 @@ function StoryView({ view }: { view: StoryViewName }) {
     }
   }
 
+  /** Moves a chapter into another arc, last there, or out of every arc (ADR 0070). Its scenes go with it. */
+  async function moveChapterArc(chapter: Chapter, arcId: string | null) {
+    if (isMoving.current) return
+
+    isMoving.current = true
+    setMessage(null)
+    try {
+      await moveChapterToArc(universe.id, story.id, chapter.id, arcId)
+      pendingFocus.current = `#chapter-${chapter.id} [data-testid="chapter-actions"]`
+      const index = arcIndex(arcId)
+      setAnnouncement(
+        arcId === null || index < 0
+          ? `“${chapter.title}” is now in no arc.`
+          : `“${chapter.title}” moved to ${arcLabel(index, groups.arcs[index].arc.title)}, last.`,
+      )
+      reload()
+    } catch (error: unknown) {
+      setMessage(error instanceof ApiError ? error.message : 'That chapter could not be moved.')
+    } finally {
+      isMoving.current = false
+    }
+  }
+
+  /** Moves one arc one place, at once on screen, and puts it back if refused. */
+  async function moveArc(arc: PlotArc, by: -1 | 1) {
+    if (isMoving.current) return
+
+    const ordered = groups.arcs.map((entry) => entry.arc)
+    const from = ordered.findIndex((candidate) => candidate.id === arc.id)
+    const to = from + by
+    if (from < 0 || to < 0 || to >= ordered.length) return
+
+    const next = [...ordered]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+
+    isMoving.current = true
+    setMessage(null)
+    pendingFocus.current = `#arc-${arc.id} [data-testid="arc-actions"]`
+    showArcs(next.map((candidate, index) => ({ ...candidate, sortOrder: index })))
+
+    try {
+      showArcs(
+        await reorderPlotArcs(
+          universe.id,
+          story.id,
+          next.map((candidate) => candidate.id),
+        ),
+      )
+      setAnnouncement(`“${arc.title}” is now arc ${to + 1} of ${next.length}.`)
+    } catch (error: unknown) {
+      showStory(story)
+      setMessage(error instanceof ApiError ? error.message : 'The new order could not be saved.')
+    } finally {
+      isMoving.current = false
+    }
+  }
+
+  /** The arc alone goes to the Trash. Its chapters stay, in no arc until it is restored. */
+  async function removeArc(arc: PlotArc, index: number) {
+    const count = groups.arcs[index]?.chapters.length ?? 0
+    setMessage(null)
+    const removed = await confirmAction({
+      title: `Delete ${arcLabel(index, arc.title)}?`,
+      message:
+        count === 0
+          ? 'It holds no chapters. The arc goes to the Trash, and you can restore it from there.'
+          : `Its ${chapterCountLabel(count)} stay where they are, in no arc, with every scene in them. The arc goes to the Trash, and restoring it puts them back in it.`,
+      confirmLabel: 'Move arc to Trash',
+      busyLabel: 'Moving…',
+      variant: 'warning',
+      failure: 'That arc could not be deleted.',
+      action: () => deletePlotArc(universe.id, story.id, arc.id),
+    })
+    if (!removed) return
+    setAnnouncement(`Moved the arc “${arc.title}” to the Trash.`)
+    reload()
+  }
+
   async function removeScene(scene: Scene) {
-    const beats = sceneBeats.get(scene.id)?.length ?? 0
     const stays =
-      beats === 0
+      scene.beats.length === 0
         ? 'Its manuscript and saved versions go with it. The lore it links stays.'
-        : `Its manuscript and saved versions go with it. The lore it links stays, and so ${
-            beats === 1 ? 'does the plot beat' : `do the ${beats} plot beats`
-          } that point at it.`
+        : 'Its manuscript, saved versions and beats go with it. The lore it links stays.'
 
     setMessage(null)
     const removed = await confirmAction({
@@ -498,7 +626,7 @@ function StoryView({ view }: { view: StoryViewName }) {
     const consequence =
       count === 0
         ? 'It holds no scenes.'
-        : `Its ${sceneCountLabel(count)} will be moved to Unchaptered. Their manuscripts and plot links go with them. No scene is deleted.`
+        : `Its ${sceneCountLabel(count)} will be moved to Unchaptered, with their manuscripts and beats. No scene is deleted.`
 
     setMessage(null)
     const removed = await confirmAction({
@@ -547,7 +675,7 @@ function StoryView({ view }: { view: StoryViewName }) {
     if (removed) navigate(`/app/universes/${universe.id}/stories`)
   }
 
-  function sceneCards(container: Scene[], titleLevel: 3 | 4) {
+  function sceneCards(container: Scene[], titleLevel: 3 | 4 | 5) {
     return container.map((scene, index) => (
       <SceneCard
         key={scene.id}
@@ -558,7 +686,6 @@ function StoryView({ view }: { view: StoryViewName }) {
         count={container.length}
         titleLevel={titleLevel}
         moveTargets={targets.filter((target) => target.chapterId !== scene.chapterId)}
-        beats={sceneBeats.get(scene.id) ?? []}
         onMove={(target, by) => void moveWithin(target, by)}
         onMoveTo={(target, chapterId) => void moveTo(target, chapterId)}
         onEdit={(target) => setSceneForm({ mode: 'edit', scene: target })}
@@ -598,13 +725,63 @@ function StoryView({ view }: { view: StoryViewName }) {
     <button
       className="button button--secondary"
       type="button"
-      onClick={() => setChapterForm({ mode: 'new' })}
+      onClick={() => setChapterForm({ mode: 'new', arcId: null })}
       data-testid="new-chapter"
     >
       <ActionIcon icon={BookPlus} />
       New chapter
     </button>
   )
+
+  const newArc = (
+    <button
+      className="button button--secondary"
+      type="button"
+      onClick={() => setArcForm({ mode: 'new' })}
+      data-testid="new-arc"
+    >
+      <ActionIcon icon={Layers} />
+      New arc
+    </button>
+  )
+
+  /** Every place a chapter may move to but the one it is in: each other arc, and no arc. */
+  function arcTargets(chapter: Chapter): ArcTarget[] {
+    const current =
+      chapter.plotArcId !== null && arcIndex(chapter.plotArcId) >= 0 ? chapter.plotArcId : null
+    return [
+      ...groups.arcs
+        .map((entry, index) => ({ id: entry.arc.id, label: arcLabel(index, entry.arc.title) }))
+        .filter((target) => target.id !== current),
+      ...(current === null ? [] : [{ id: null, label: '' }]),
+    ]
+  }
+
+  function chapterSections(group: Chapter[], titleLevel: 3 | 4) {
+    return group.map((chapter, index) => {
+      const inside = scenesIn(scenes, chapter.id)
+      return (
+        <ChapterSection
+          key={chapter.id}
+          chapter={chapter}
+          index={index}
+          count={group.length}
+          sceneCount={inside.length}
+          titleLevel={titleLevel}
+          arcTargets={arcTargets(chapter)}
+          onMoveToArc={(target, arcId) => void moveChapterArc(target, arcId)}
+          onMove={(target, by) => void moveChapter(target, by)}
+          onAddScene={(target) => setSceneForm({ mode: 'new', chapterId: target.id })}
+          onEdit={(target, at) => setChapterForm({ mode: 'edit', chapter: target, index: at })}
+          onDelete={(target, at) => void removeChapter(target, at)}
+        >
+          <ol className="scenes" data-testid="chapter-scenes">
+            {sceneCards(inside, titleLevel === 4 ? 5 : 4)}
+          </ol>
+        </ChapterSection>
+      )
+    })
+  }
 
   return (
     <article className={`story story--${view}`} data-testid="story-page">
@@ -663,9 +840,6 @@ function StoryView({ view }: { view: StoryViewName }) {
           <nav className="views story__views" aria-label="Story views" data-testid="story-views">
             <NavLink to={storyPath} end className="views__link" data-testid="story-view-scenes">
               Scenes
-            </NavLink>
-            <NavLink to={`${storyPath}/plot`} className="views__link" data-testid="story-view-plot">
-              Plot
             </NavLink>
             <NavLink
               to={`${storyPath}/manuscript`}
@@ -765,34 +939,10 @@ function StoryView({ view }: { view: StoryViewName }) {
             hint="Ideas are private to each account. The ideas in this universe belong to its owner."
           />
         )
-      ) : view === 'plot' ? (
-        <PlotPanel
-          universeId={universe.id}
-          story={story}
-          arcs={arcs}
-          onArcsChange={showArcs}
-          onReload={reload}
-          announce={setAnnouncement}
-          arcPublication={(arc) =>
-            access.publish ? (
-              <StoryPartPublication
-                universeId={universe.id}
-                storyId={story.id}
-                kind="arc"
-                id={arc.id}
-                name={arc.title}
-                visibility={arc.visibility}
-                storyIsPublic={storyIsPublic}
-                onChange={(visibility) => patchArc(arc.id, visibility)}
-              />
-            ) : null
-          }
-        />
       ) : view === 'manuscript' ? (
         <ManuscriptPanel
           universeId={universe.id}
           story={story}
-          arcs={arcs}
           chronology={chronology}
           sceneId={sceneId}
           onEditScene={(scene) => setSceneForm({ mode: 'edit', scene })}
@@ -829,12 +979,13 @@ function StoryView({ view }: { view: StoryViewName }) {
           {isEmpty ? null : (
             <div className="story__toolbar">
               <p className="chron__aside story__aside">
-                {hasChapters
-                  ? 'Chapters in order, and the scenes in each in the order they are told. When each happens in the world never moves it.'
+                {hasStructure
+                  ? 'Arcs and chapters in order, and the scenes in each in the order they are told. When each happens in the world never moves it.'
                   : 'In the order they are told. When each happens in the world never moves it.'}
               </p>
               {access.editContent ? (
                 <div className="story__toolbaractions">
+                  {newArc}
                   {newChapter}
                   <span className="story__create">{newScene}</span>
                 </div>
@@ -852,25 +1003,26 @@ function StoryView({ view }: { view: StoryViewName }) {
             <EmptyState
               testId="scenes-empty"
               title="No scenes yet."
-              hint="Start with a scene: plot beats point at scenes, and the manuscript is written one scene at a time. Scenes are told in the order you set, whenever in the world each happens, and can be grouped into chapters whenever you like, or never."
+              hint="Start with a scene: the manuscript is written one scene at a time. Scenes are told in the order you set, whenever in the world each happens, and can be grouped into chapters and arcs whenever you like, or never."
               action={
                 access.editContent ? (
                   <>
                     {newScene}
                     {newChapter}
+                    {newArc}
                   </>
                 ) : undefined
               }
             />
           ) : null}
 
-          {!hasChapters && scenes.length > 0 ? (
+          {!hasStructure && scenes.length > 0 ? (
             <ol className="scenes" data-testid="scene-list">
               {sceneCards(scenes, 3)}
             </ol>
           ) : null}
 
-          {hasChapters && unchaptered.length > 0 ? (
+          {hasStructure && unchaptered.length > 0 ? (
             <section
               className="storygroup"
               aria-labelledby="unchaptered-heading"
@@ -890,28 +1042,37 @@ function StoryView({ view }: { view: StoryViewName }) {
             </section>
           ) : null}
 
-          {chapters.map((chapter, index) => {
-            const inside = scenesIn(scenes, chapter.id)
-            return (
-              <ChapterSection
-                key={chapter.id}
-                chapter={chapter}
-                index={index}
-                count={chapters.length}
-                sceneCount={inside.length}
-                onMove={(target, by) => void moveChapter(target, by)}
-                onAddScene={(target) => setSceneForm({ mode: 'new', chapterId: target.id })}
-                onEdit={(target, at) =>
-                  setChapterForm({ mode: 'edit', chapter: target, index: at })
-                }
-                onDelete={(target, at) => void removeChapter(target, at)}
-              >
-                <ol className="scenes" data-testid="chapter-scenes">
-                  {sceneCards(inside, 4)}
-                </ol>
-              </ChapterSection>
-            )
-          })}
+          {chapterSections(groups.unarced, 3)}
+
+          {groups.arcs.map(({ arc, chapters: inArc }, index) => (
+            <ArcSection
+              key={arc.id}
+              arc={arc}
+              index={index}
+              count={groups.arcs.length}
+              chapterCount={inArc.length}
+              onMove={(target, by) => void moveArc(target, by)}
+              onAddChapter={(target) => setChapterForm({ mode: 'new', arcId: target.id })}
+              onEdit={(target, at) => setArcForm({ mode: 'edit', arc: target, index: at })}
+              onDelete={(target, at) => void removeArc(target, at)}
+              publication={
+                access.publish ? (
+                  <StoryPartPublication
+                    universeId={universe.id}
+                    storyId={story.id}
+                    kind="arc"
+                    id={arc.id}
+                    name={arc.title}
+                    visibility={arc.visibility}
+                    storyIsPublic={storyIsPublic}
+                    onChange={(visibility) => patchArc(arc.id, visibility)}
+                  />
+                ) : null
+              }
+            >
+              {chapterSections(inArc, 4)}
+            </ArcSection>
+          ))}
         </section>
       )}
 
@@ -925,6 +1086,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           storyId={story.id}
           scene={sceneForm.mode === 'new' ? null : sceneForm.scene}
           chapters={chapters}
+          arcs={arcs}
           chapterId={sceneForm.mode === 'new' ? sceneForm.chapterId : sceneForm.scene.chapterId}
           chronology={chronology}
           onClose={() => setSceneForm({ mode: 'closed' })}
@@ -950,10 +1112,26 @@ function StoryView({ view }: { view: StoryViewName }) {
           storyId={story.id}
           chapter={chapterForm.mode === 'edit' ? chapterForm.chapter : null}
           number={chapterForm.mode === 'edit' ? chapterNumber(chapterForm.index) : null}
+          plotArcId={chapterForm.mode === 'new' ? chapterForm.arcId : null}
           onClose={() => setChapterForm({ mode: 'closed' })}
           onSaved={(saved) => {
             setChapterForm({ mode: 'closed' })
             setAnnouncement(`Saved the chapter “${saved.title}”.`)
+            reload()
+          }}
+        />
+      ) : null}
+
+      {arcForm.mode !== 'closed' ? (
+        <PlotArcForm
+          universeId={universe.id}
+          storyId={story.id}
+          arc={arcForm.mode === 'edit' ? arcForm.arc : null}
+          number={arcForm.mode === 'edit' ? arcNumber(arcForm.index) : null}
+          onClose={() => setArcForm({ mode: 'closed' })}
+          onSaved={(saved) => {
+            setArcForm({ mode: 'closed' })
+            setAnnouncement(`Saved the arc “${saved.title}”.`)
             reload()
           }}
         />

@@ -1,17 +1,28 @@
 import { useId, type ReactNode } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowUp, Pencil, Plus, Trash } from 'lucide-react'
+import { ArrowDown, ArrowRightLeft, ArrowUp, Pencil, Plus, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { chapterLabel, chapterNumber, sceneCountLabel } from '../stories/format'
 import type { Chapter } from '../stories/types'
 
+/** An arc a chapter may move into, or no arc at all when `id` is null, named as the menu reads it. */
+export interface ArcTarget {
+  id: string | null
+  label: string
+}
+
 interface ChapterSectionProps {
   chapter: Chapter
-  /** The chapter's place in the story, from 0 - which is also its number, plus one. */
+  /** The chapter's place inside its arc - or among the chapters in no arc - from 0: its number, plus one. */
   index: number
   count: number
   sceneCount: number
+  /** The heading's level: 3 on its own, 4 inside an arc. */
+  titleLevel?: 3 | 4
+  /** Every other place the chapter may move to: each other arc, and no arc (ADR 0070). */
+  arcTargets?: ArcTarget[]
+  onMoveToArc?: (chapter: Chapter, arcId: string | null) => void
   onMove: (chapter: Chapter, by: -1 | 1) => void
   onAddScene: (chapter: Chapter) => void
   onEdit: (chapter: Chapter, index: number) => void
@@ -21,8 +32,9 @@ interface ChapterSectionProps {
 }
 
 /**
- * One chapter on its story's page: a modest heading - "Chapter 2: Ashes", the number from its position
- * and the name as written - its summary, and its scenes beneath it. Notes stay in the form.
+ * One chapter on its story's page: a modest heading - "Chapter 2: Ashes", the number from its position in its arc
+ * and the name as written - its summary, and its scenes beneath it. Notes stay in the form. Its ⋯ menu also moves it
+ * into another arc, or out of every arc (ADR 0070).
  *
  * A heading and a rule rather than a box, so a chapter groups its scenes without putting a card around
  * cards. Its one direct action is Add scene, which starts a scene in this chapter; Edit chapter, the moves
@@ -33,6 +45,9 @@ export function ChapterSection({
   index,
   count,
   sceneCount,
+  titleLevel = 3,
+  arcTargets = [],
+  onMoveToArc,
   onMove,
   onAddScene,
   onEdit,
@@ -41,6 +56,7 @@ export function ChapterSection({
 }: ChapterSectionProps) {
   const access = useUniverseAccess()
   const headingId = useId()
+  const Title = titleLevel === 4 ? 'h4' : 'h3'
 
   return (
     <section
@@ -53,13 +69,13 @@ export function ChapterSection({
     >
       <header className="chapter__head">
         <div className="chapter__heading">
-          <h3 className="chapter__title" id={headingId} data-testid="chapter-heading">
+          <Title className="chapter__title" id={headingId} data-testid="chapter-heading">
             <span className="chapter__number">{chapterNumber(index)}</span>
             <span className="chapter__dash">: </span>
             <span className="chapter__name">
               <bdi>{chapter.title}</bdi>
             </span>
-          </h3>
+          </Title>
           {sceneCount > 0 ? (
             <p className="chapter__meta" data-testid="chapter-scene-count">
               {sceneCountLabel(sceneCount)}
@@ -114,6 +130,20 @@ export function ChapterSection({
                   Move down
                 </button>
               ) : null}
+              {onMoveToArc
+                ? arcTargets.map((target) => (
+                    <button
+                      key={target.id ?? 'no-arc'}
+                      className="actionmenu__item"
+                      type="button"
+                      onClick={() => onMoveToArc(chapter, target.id)}
+                      data-testid="chapter-move-to-arc"
+                    >
+                      <ActionIcon icon={ArrowRightLeft} />
+                      {target.id === null ? 'Move out of its arc' : `Move to ${target.label}`}
+                    </button>
+                  ))
+                : null}
               <hr className="actionmenu__divider" />
               <button
                 className="actionmenu__item actionmenu__item--danger"

@@ -459,7 +459,7 @@ function RecordForm({
 
   // The story read is only the chosen story's: a read that arrives for a story no longer chosen is not shown.
   const story = storyRead && storyRead.id === draft.storyId ? storyRead : null
-  const scenes = story ? readingOrder(story.chapters, story.scenes) : []
+  const scenes = story ? readingOrder(story.arcs, story.chapters, story.scenes) : []
   const chapterLabel = (chapterId: string | null) => {
     if (chapterId === null || !story) return UNCHAPTERED
     const index = story.chapters.findIndex((chapter) => chapter.id === chapterId)

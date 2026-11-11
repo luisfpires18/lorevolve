@@ -10,7 +10,9 @@ import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { createScene, getScene, SCENE_CHANGED, updateScene } from '../stories/api'
 import { suggestSceneChanges } from '../suggestions/api'
-import { chapterLabel, UNCHAPTERED } from '../stories/format'
+import { UNCHAPTERED } from '../stories/format'
+import { chapterChoices } from '../stories/structure'
+import { SceneBeatsField } from './SceneBeatsField'
 import {
   draftFrom,
   EMPTY_POINT,
@@ -18,7 +20,7 @@ import {
   sceneChangesIn,
   type SceneDraft,
 } from '../stories/sceneDraft'
-import type { Chapter, Scene } from '../stories/types'
+import type { Chapter, PlotArc, Scene } from '../stories/types'
 
 interface SceneFormProps {
   universeId: string
@@ -27,6 +29,8 @@ interface SceneFormProps {
   scene: Scene | null
   /** The story's chapters, in order. None means the form asks nothing about chapters. */
   chapters: Chapter[]
+  /** The story's arcs, so a chapter is named the way the Scenes view numbers it (ADR 0070). */
+  arcs?: PlotArc[]
   /** Where a new scene starts out: the chapter it was added from, or null for Unchaptered. */
   chapterId: string | null
   chronology: Chronology
@@ -50,6 +54,7 @@ export function SceneForm({
   storyId,
   scene,
   chapters,
+  arcs = [],
   chapterId,
   chronology,
   onClose,
@@ -102,7 +107,7 @@ export function SceneForm({
   }, [])
 
   /** The latest saved scene against the form, in the form's own words. */
-  const sceneChanges = sceneChangesIn(chapters, chronology)
+  const sceneChanges = sceneChangesIn(chapters, chronology, arcs)
 
   function edit(change: Partial<SceneDraft>) {
     setDraft((current) => ({ ...current, ...change }))
@@ -260,9 +265,9 @@ export function SceneForm({
                 data-testid="scene-chapter-select"
               >
                 <option value="">{UNCHAPTERED}</option>
-                {chapters.map((chapter, index) => (
-                  <option key={chapter.id} value={chapter.id}>
-                    {chapterLabel(index, chapter.title)}
+                {chapterChoices(arcs, chapters).map((choice) => (
+                  <option key={choice.id} value={choice.id}>
+                    {choice.label}
                   </option>
                 ))}
               </select>
@@ -288,6 +293,15 @@ export function SceneForm({
             />
             {fieldErrors.summary ? <p className="field__error">{fieldErrors.summary}</p> : null}
           </div>
+
+          {/* A suggestion never changes a scene's beats: the API takes none from one. */}
+          {suggesting ? null : (
+            <SceneBeatsField
+              beats={draft.beats}
+              onChange={(beats) => edit({ beats })}
+              errors={fieldErrors}
+            />
+          )}
 
           <div className="field">
             <label className="field__label" htmlFor="scene-notes">

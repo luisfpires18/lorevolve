@@ -205,16 +205,16 @@ internal sealed class RestoreIdentity
                 {
                     yield return revision.Id;
                 }
+
+                foreach (var beat in scene.Beats ?? [])
+                {
+                    yield return beat.Id;
+                }
             }
 
             foreach (var arc in story.PlotArcs!)
             {
                 yield return arc.Id;
-
-                foreach (var beat in arc.Beats)
-                {
-                    yield return beat.Id;
-                }
             }
         }
 
@@ -1480,6 +1480,11 @@ internal sealed partial class UniverseRestore(
                     UpdatedAt = chapter.UpdatedAt,
                     DeletedAt = chapter.DeletedAt,
                 });
+
+                if (chapter.PlotArcId is { } arcOfChapter)
+                {
+                    db.ChapterArcs.Add(new ChapterArc { ChapterId = ids.Map(chapter.Id), PlotArcId = ids.Map(arcOfChapter) });
+                }
             }
 
             foreach (var scene in story.Scenes)
@@ -1509,6 +1514,20 @@ internal sealed partial class UniverseRestore(
                 foreach (var entityId in scene.LinkedEntityIds)
                 {
                     db.SceneEntityLinks.Add(new SceneEntityLink { SceneId = sceneId, EntityId = ids.Map(entityId) });
+                }
+
+                foreach (var beat in scene.Beats ?? [])
+                {
+                    db.SceneBeats.Add(new SceneBeat
+                    {
+                        Id = ids.Map(beat.Id),
+                        SceneId = sceneId,
+                        Title = beat.Title,
+                        Note = beat.Note,
+                        SortOrder = beat.SortOrder,
+                        CreatedAt = beat.CreatedAt,
+                        UpdatedAt = beat.UpdatedAt,
+                    });
                 }
 
                 if (scene.Manuscript is { } manuscript)
@@ -1553,34 +1572,6 @@ internal sealed partial class UniverseRestore(
                     UpdatedAt = arc.UpdatedAt,
                     DeletedAt = arc.DeletedAt,
                 });
-
-                foreach (var beat in arc.Beats)
-                {
-                    var beatId = ids.Map(beat.Id);
-
-                    db.PlotBeats.Add(new PlotBeat
-                    {
-                        Id = beatId,
-                        PlotArcId = arcId,
-                        Title = beat.Title,
-                        Description = beat.Description,
-                        Notes = beat.Notes,
-                        SortOrder = beat.SortOrder,
-                        CreatedAt = beat.CreatedAt,
-                        UpdatedAt = beat.UpdatedAt,
-                        DeletedAt = beat.DeletedAt,
-                    });
-
-                    foreach (var sceneId in beat.LinkedSceneIds)
-                    {
-                        db.PlotBeatScenes.Add(new PlotBeatScene { PlotBeatId = beatId, SceneId = ids.Map(sceneId) });
-                    }
-
-                    foreach (var entityId in beat.LinkedEntityIds)
-                    {
-                        db.PlotBeatEntities.Add(new PlotBeatEntity { PlotBeatId = beatId, EntityId = ids.Map(entityId) });
-                    }
-                }
             }
         }
     }
@@ -1624,9 +1615,6 @@ internal sealed partial class UniverseRestore(
                         break;
                     case IdeaReferenceKind.PlotArc:
                         db.IdeaPlotArcReferences.Add(new IdeaPlotArcReference { IdeaId = ideaId, PlotArcId = targetId });
-                        break;
-                    case IdeaReferenceKind.PlotBeat:
-                        db.IdeaPlotBeatReferences.Add(new IdeaPlotBeatReference { IdeaId = ideaId, PlotBeatId = targetId });
                         break;
                 }
             }

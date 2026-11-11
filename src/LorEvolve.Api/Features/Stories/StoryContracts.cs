@@ -24,6 +24,7 @@ public sealed record StorySummary(
 /// One story with its whole structure and every lore reference already resolved, so the story page is
 /// one request however many chapters and scenes it holds.
 ///
+/// <paramref name="Arcs"/> are the story's live arcs in order (ADR 0070); each chapter names its own.
 /// <paramref name="Chapters"/> are in story order. <paramref name="Scenes"/> is every scene, each naming
 /// its container by <c>chapterId</c> (null for Unchaptered), listed Unchaptered first and then chapter
 /// by chapter, each container in its own narrative order.
@@ -33,6 +34,7 @@ public sealed record StoryDetail(
     string Title,
     string? Premise,
     StoryStatus Status,
+    IReadOnlyList<PlotArcResponse> Arcs,
     IReadOnlyList<ChapterResponse> Chapters,
     IReadOnlyList<SceneResponse> Scenes,
     DateTime CreatedAt,
@@ -43,10 +45,17 @@ public sealed record StoryDetail(
 /// Everything a client may set on a chapter. The order is absent - a new chapter is appended and only
 /// the chapter order route moves one - and so is any number: "Chapter 3" is the chapter's position,
 /// shown, never stored.
+///
+/// <paramref name="PlotArcId"/> is read only by a create: the arc of the same story the new chapter starts in, or none.
+/// An update never changes a chapter's arc; the arc route does (ADR 0070).
 /// </summary>
-public sealed record ChapterRequest(string? Title, string? Summary, string? Notes);
+public sealed record ChapterRequest(string? Title, string? Summary, string? Notes, Guid? PlotArcId = null);
 
-/// <summary>One chapter. <paramref name="SortOrder"/> is its place in the story, from 0.</summary>
+/// <summary>
+/// One chapter. <paramref name="SortOrder"/> is its place in the story, from 0: chapters are read in that order inside
+/// each arc, and the number shown restarts in every arc. <paramref name="PlotArcId"/> is its live arc, or null when it is
+/// in none - or its arc is in the Trash (ADR 0070).
+/// </summary>
 public sealed record ChapterResponse(
     Guid Id,
     Guid StoryId,
@@ -55,7 +64,11 @@ public sealed record ChapterResponse(
     string? Summary,
     string? Notes,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    Guid? PlotArcId = null);
+
+/// <summary>Moves a chapter into an arc of the same story, last in it, or out of every arc when null (ADR 0070).</summary>
+public sealed record ChapterArcRequest(Guid? PlotArcId);
 
 /// <summary>The story's whole chapter order: every chapter id in the story, each exactly once, first first.</summary>
 public sealed record ChapterOrderRequest(IReadOnlyList<Guid>? ChapterIds);
@@ -71,6 +84,9 @@ public sealed record ChapterOrderRequest(IReadOnlyList<Guid>? ChapterIds);
 /// meaning it has everywhere a scene is described. Like the point of view, it is part of the whole scene
 /// sent on every save: changing it moves the scene to the end of that chapter, and a request that leaves
 /// it out means Unchaptered.
+///
+/// <paramref name="Beats"/> is the scene's whole list of beats, in order, replacing what it held (ADR 0070). Null keeps
+/// the beats it has, so a caller that does not know about beats never clears them.
 /// </summary>
 public sealed record SceneRequest(
     string? Title,
@@ -80,7 +96,14 @@ public sealed record SceneRequest(
     ChronologyValue? Chronology,
     IReadOnlyList<Guid>? EntityIds,
     Guid? ChapterId = null,
-    int? ExpectedVersion = null);
+    int? ExpectedVersion = null,
+    IReadOnlyList<SceneBeatInput>? Beats = null);
+
+/// <summary>One beat as a scene save sends it: a title, and an optional note under it.</summary>
+public sealed record SceneBeatInput(string? Title, string? Note);
+
+/// <summary>One beat of a scene. <paramref name="SortOrder"/> is its place in the scene, from 0.</summary>
+public sealed record SceneBeatResponse(Guid Id, int SortOrder, string Title, string? Note);
 
 /// <summary>
 /// A lore entry as a scene shows it, read from the entry itself on every request - never stored on
@@ -105,7 +128,7 @@ public sealed record SceneLoreReference(
 /// One scene. <paramref name="ChapterId"/> is its container - null for Unchaptered - and
 /// <paramref name="SortOrder"/> its place in that container's telling, from 0.
 /// <paramref name="Chronology"/> is where it happens in the world, or null. Order and chronology are
-/// independent.
+/// independent. <paramref name="Beats"/> are its beats in order.
 /// </summary>
 public sealed record SceneResponse(
     Guid Id,
@@ -122,7 +145,8 @@ public sealed record SceneResponse(
     DateTime UpdatedAt,
     Publishing.ContentVisibility Visibility = Publishing.ContentVisibility.Private,
     Publishing.ContentVisibility ManuscriptVisibility = Publishing.ContentVisibility.Private,
-    int Version = 1);
+    int Version = 1,
+    IReadOnlyList<SceneBeatResponse>? Beats = null);
 
 /// <summary>
 /// One container's whole narrative order: every scene id in the chapter named by

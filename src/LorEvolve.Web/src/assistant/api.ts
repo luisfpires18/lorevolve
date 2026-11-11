@@ -58,7 +58,6 @@ export const SOURCE_KIND_LABELS: Record<SourceKindValue, string> = {
   [SourceKind.Chapter]: 'Chapter',
   [SourceKind.Scene]: 'Scene',
   [SourceKind.PlotArc]: 'Arc',
-  [SourceKind.PlotBeat]: 'Beat',
   [SourceKind.TimelineMoment]: 'Moment',
   [SourceKind.MapPin]: 'Pin',
   [SourceKind.Map]: 'Map',
@@ -82,9 +81,7 @@ export function sourcePath(universeId: string, source: AssistantSource) {
     case SourceKind.Scene:
       return `${story}#scene-${source.id}`
     case SourceKind.PlotArc:
-      return `${story}/plot#arc-${source.id}`
-    case SourceKind.PlotBeat:
-      return `${story}/plot#beat-${source.id}`
+      return `${story}#arc-${source.id}`
     case SourceKind.TimelineMoment:
       return `${universe}/timeline?moment=${source.id}`
     case SourceKind.MapPin:

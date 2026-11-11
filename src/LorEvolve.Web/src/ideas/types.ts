@@ -4,7 +4,7 @@ export const IdeaReferenceKind = {
   Story: 1,
   Scene: 2,
   PlotArc: 3,
-  PlotBeat: 4,
+  // 4 was a plot beat, retired with plot beats (ADR 0070).
 } as const
 
 export type IdeaReferenceKindValue = (typeof IdeaReferenceKind)[keyof typeof IdeaReferenceKind]
@@ -15,7 +15,6 @@ export const IDEA_REFERENCE_KINDS: IdeaReferenceKindValue[] = [
   IdeaReferenceKind.Story,
   IdeaReferenceKind.Scene,
   IdeaReferenceKind.PlotArc,
-  IdeaReferenceKind.PlotBeat,
 ]
 
 /** How each kind is named on screen. Words, never a colour alone. */
@@ -24,7 +23,6 @@ export const IDEA_REFERENCE_KIND_LABELS: Record<IdeaReferenceKindValue, string> 
   [IdeaReferenceKind.Story]: 'Story',
   [IdeaReferenceKind.Scene]: 'Scene',
   [IdeaReferenceKind.PlotArc]: 'Arc',
-  [IdeaReferenceKind.PlotBeat]: 'Beat',
 }
 
 /** Mirrors `IdeaLimits`, so a bound is said before a save rather than after. */
@@ -95,7 +93,7 @@ export interface IdeaInput {
 /**
  * Where a list of ideas is opened: every idea the account has, one universe's, or one story's. The same ideas seen from
  * three places, never three kinds of idea. A story's ideas are the universe's ideas with an explicit reference to the
- * story or to a scene, arc or beat in it.
+ * story or to a scene or arc in it.
  */
 export type IdeasScope =
   | { kind: 'all' }

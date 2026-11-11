@@ -64,30 +64,6 @@ public static class StoryValidation
         return errors.Count == 0 ? null : errors;
     }
 
-    /// <summary>
-    /// A beat's text and how many links it carries. Structural only: nothing compares a beat's order with its
-    /// scenes' order, their chapters or their chronology, and nothing reads its title for meaning.
-    /// </summary>
-    public static Dictionary<string, string[]>? ValidatePlotBeat(PlotBeatRequest request)
-    {
-        var errors = new Dictionary<string, string[]>();
-
-        ValidateTitle(request.Title, "Give the beat a title, like \"The capital is breached\".", errors);
-        ValidatePlotText(request.Description, request.Notes, errors);
-
-        if (request.SceneIds is { Count: > StoryLimits.MaxLinkedScenes })
-        {
-            errors["sceneIds"] = [$"Link at most {StoryLimits.MaxLinkedScenes} scenes to one beat."];
-        }
-
-        if (request.EntityIds is { Count: > StoryLimits.MaxLinkedEntities })
-        {
-            errors["entityIds"] = [$"Link at most {StoryLimits.MaxLinkedEntities} entries to one beat."];
-        }
-
-        return errors.Count == 0 ? null : errors;
-    }
-
     public static Dictionary<string, string[]>? ValidateScene(
         SceneRequest request,
         UniverseChronology chronology)
@@ -116,7 +92,40 @@ public static class StoryValidation
             ChronologyPointValidation.ValidatePoint(point, ChronologyKeys, chronology, errors);
         }
 
+        if (request.Beats is { } beats)
+        {
+            ValidateBeats(beats, errors);
+        }
+
         return errors.Count == 0 ? null : errors;
+    }
+
+    /// <summary>A scene's beats: a bounded list, each with a title, each note within its bound (ADR 0070).</summary>
+    private static void ValidateBeats(IReadOnlyList<SceneBeatInput> beats, Dictionary<string, string[]> errors)
+    {
+        if (beats.Count > StoryLimits.MaxBeatsPerScene)
+        {
+            errors["beats"] = [$"Keep a scene to {StoryLimits.MaxBeatsPerScene} beats."];
+            return;
+        }
+
+        for (var index = 0; index < beats.Count; index++)
+        {
+            var beat = beats[index];
+            if (beat is null || string.IsNullOrWhiteSpace(beat.Title))
+            {
+                errors[$"beats[{index}].title"] = ["Give the beat a title, like \"Marcus reads the orders\"."];
+            }
+            else if (beat.Title.Trim().Length > StoryLimits.TitleMaxLength)
+            {
+                errors[$"beats[{index}].title"] = [$"Keep the title under {StoryLimits.TitleMaxLength} characters."];
+            }
+
+            if (beat?.Note?.Trim() is { Length: > StoryLimits.BeatNoteMaxLength })
+            {
+                errors[$"beats[{index}].note"] = [$"Keep the note under {StoryLimits.BeatNoteMaxLength} characters."];
+            }
+        }
     }
 
     /// <summary>

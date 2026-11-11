@@ -18,6 +18,8 @@ interface ChapterFormProps {
   chapter: Chapter | null
   /** "Chapter 3", for a chapter being edited: its position, shown, never stored. */
   number: string | null
+  /** The arc a new chapter starts in, or null for none (ADR 0070). Never read for a chapter being edited. */
+  plotArcId?: string | null
   onClose: () => void
   onSaved: (chapter: Chapter) => void
 }
@@ -48,6 +50,7 @@ export function ChapterForm({
   storyId,
   chapter,
   number,
+  plotArcId = null,
   onClose,
   onSaved,
 }: ChapterFormProps) {
@@ -94,7 +97,7 @@ export function ChapterForm({
     try {
       const saved = chapter
         ? await updateChapter(universeId, storyId, chapter.id, input)
-        : await createChapter(universeId, storyId, input)
+        : await createChapter(universeId, storyId, { ...input, plotArcId })
       onSaved(saved)
     } catch (error: unknown) {
       if (error instanceof ApiError) {

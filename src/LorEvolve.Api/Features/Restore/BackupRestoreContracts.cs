@@ -22,7 +22,7 @@ public sealed record BackupPreviewCounts(
     int Chapters,
     int Scenes,
     int PlotArcs,
-    int PlotBeats,
+    int Beats,
     int Manuscripts,
     int ManuscriptVersions,
     int StoryItemsInTrash,
@@ -41,7 +41,6 @@ public sealed record BackupPreviewCounts(
         var scenes = stories.SelectMany(story => story.Scenes).ToList();
         var chapters = stories.SelectMany(story => story.Chapters!).ToList();
         var arcs = stories.SelectMany(story => story.PlotArcs!).ToList();
-        var beats = arcs.SelectMany(arc => arc.Beats).ToList();
 
         return new BackupPreviewCounts(
             payload.EntityTypes.Count,
@@ -59,14 +58,13 @@ public sealed record BackupPreviewCounts(
             chapters.Count(chapter => chapter.DeletedAt is null),
             scenes.Count(scene => scene.DeletedAt is null),
             arcs.Count(arc => arc.DeletedAt is null),
-            beats.Count(beat => beat.DeletedAt is null),
+            scenes.Sum(scene => scene.Beats?.Count ?? 0),
             scenes.Count(scene => scene.Manuscript is not null),
             scenes.Sum(scene => scene.Manuscript?.Revisions!.Count ?? 0),
             stories.Count(story => story.DeletedAt is not null)
                 + chapters.Count(chapter => chapter.DeletedAt is not null)
                 + scenes.Count(scene => scene.DeletedAt is not null)
-                + arcs.Count(arc => arc.DeletedAt is not null)
-                + beats.Count(beat => beat.DeletedAt is not null),
+                + arcs.Count(arc => arc.DeletedAt is not null),
             payload.Ideas!.Count(idea => idea.DeletedAt is null),
             payload.Ideas!.Count(idea => idea.DeletedAt is not null),
             payload.DismissedConflicts.Count,

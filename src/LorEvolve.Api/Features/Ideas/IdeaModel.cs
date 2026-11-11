@@ -55,8 +55,6 @@ public sealed class Idea
     public ICollection<IdeaSceneReference> SceneReferences { get; } = [];
 
     public ICollection<IdeaPlotArcReference> PlotArcReferences { get; } = [];
-
-    public ICollection<IdeaPlotBeatReference> PlotBeatReferences { get; } = [];
 }
 
 /// <summary>
@@ -69,10 +67,11 @@ public enum IdeaReferenceKind
     Story = 1,
     Scene = 2,
     PlotArc = 3,
-    PlotBeat = 4,
+
+    // 4 was a plot beat, retired with plot beats themselves (ADR 0070). Never reused.
 }
 
-// One relational row per pair, as a scene's or a beat's links are: the foreign keys are real, a pair exists once, and a
+// One relational row per pair, as a scene's lore links are: the foreign keys are real, a pair exists once, and a
 // target deleted for good takes only the reference with it. A reference copies nothing from its target, means nothing
 // about it and changes nothing in it.
 
@@ -118,15 +117,4 @@ public sealed class IdeaPlotArcReference
     public Guid PlotArcId { get; set; }
 
     public PlotArc? PlotArc { get; set; }
-}
-
-public sealed class IdeaPlotBeatReference
-{
-    public Guid IdeaId { get; set; }
-
-    public Idea? Idea { get; set; }
-
-    public Guid PlotBeatId { get; set; }
-
-    public PlotBeat? PlotBeat { get; set; }
 }

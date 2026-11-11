@@ -14,10 +14,9 @@ import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { ContainerName } from './ContainerName'
-import { SceneBeats, SceneLore, SceneStamp } from './SceneContext'
+import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
 import type { Chronology } from '../chronology/types'
 import { chapterLabel, UNCHAPTERED } from '../stories/format'
-import type { SceneBeatReference } from '../stories/structure'
 import type { Scene } from '../stories/types'
 
 /** A container a scene can be moved into: a chapter, or Unchaptered when `chapterId` is null. */
@@ -25,6 +24,8 @@ export interface MoveTarget {
   chapterId: string | null
   /** The chapter's place and title; null for Unchaptered. */
   chapter: { index: number; title: string } | null
+  /** The arc the chapter is told in, as its number reads ("Arc 2"), when it is in one (ADR 0070). */
+  arc?: string | null
 }
 
 interface SceneCardProps {
@@ -35,12 +36,10 @@ interface SceneCardProps {
   index: number
   /** How many scenes its container holds. */
   count: number
-  /** 4 under a chapter or Unchaptered heading, 3 in a story with no chapters. */
-  titleLevel: 3 | 4
+  /** 4 under a chapter or Unchaptered heading, 5 under a chapter inside an arc, 3 in a story with no chapters. */
+  titleLevel: 3 | 4 | 5
   /** Every other container the scene could move to. Empty in a story with no chapters. */
   moveTargets: MoveTarget[]
-  /** The plot beats that point at this scene, arc by arc. Shown only: a scene holds no beat. */
-  beats: SceneBeatReference[]
   onMove: (scene: Scene, by: -1 | 1) => void
   onMoveTo: (scene: Scene, chapterId: string | null) => void
   onEdit: (scene: Scene) => void
@@ -53,10 +52,9 @@ interface SceneCardProps {
 
 /**
  * One scene in its container's list: number, where it happens, whose eyes, what happens, what lore it
- * draws on, which plot beats point at it - and then a few controls, so the scene outweighs its tools.
+ * draws on, its beats in order - and then a few controls, so the scene outweighs its tools.
  *
- * The lore and plot rows are read-only. The beats own those links, so each one is a way to the beat on the
- * story's Plot view rather than something edited here.
+ * The lore and beat rows are read-only here: both are edited in the scene's own drawer, Edit scene (ADR 0070).
  *
  * Edit scene and Write are the direct actions: Edit scene opens the scene's drawer in place, and Write opens this
  * scene on the Manuscript view - the one editor, at the scene's own address - so a writer never has to find the
@@ -77,7 +75,6 @@ export function SceneCard({
   count,
   titleLevel,
   moveTargets,
-  beats,
   onMove,
   onMoveTo,
   onEdit,
@@ -87,7 +84,7 @@ export function SceneCard({
 }: SceneCardProps) {
   const access = useUniverseAccess()
   const titleId = useId()
-  const Title = titleLevel === 4 ? 'h4' : 'h3'
+  const Title = titleLevel === 5 ? 'h5' : titleLevel === 4 ? 'h4' : 'h3'
 
   return (
     <li
@@ -112,7 +109,7 @@ export function SceneCard({
         {scene.summary ? <p className="scene__summary prose">{scene.summary}</p> : null}
 
         <SceneLore universeId={universeId} scene={scene} testId="scene" />
-        <SceneBeats universeId={universeId} storyId={scene.storyId} beats={beats} testId="scene" />
+        <SceneBeatList beats={scene.beats} testId="scene" />
       </div>
 
       <div className="scene__tools rowtools">
@@ -185,14 +182,16 @@ export function SceneCard({
                 onClick={() => onMoveTo(scene, target.chapterId)}
                 data-testid="scene-move-to-option"
                 data-target={
-                  target.chapter
+                  (target.arc ? `${target.arc}, ` : '') +
+                  (target.chapter
                     ? chapterLabel(target.chapter.index, target.chapter.title)
-                    : UNCHAPTERED
+                    : UNCHAPTERED)
                 }
               >
                 <ActionIcon icon={ArrowRightLeft} />
                 <span className="actionmenu__text">
-                  Move to <ContainerName chapter={target.chapter} />
+                  Move to {target.arc ? `${target.arc}, ` : null}
+                  <ContainerName chapter={target.chapter} />
                 </span>
               </button>
             ))}

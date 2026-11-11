@@ -130,7 +130,6 @@ export interface PublicStoryDetail extends PublicStory {
   plot: {
     title: string
     description: string | null
-    beats: { title: string; description: string | null }[]
   }[]
 }
 

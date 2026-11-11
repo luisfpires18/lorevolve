@@ -202,7 +202,6 @@ internal static class AiChangeViews
                     RelationshipValues relationship => $"{names.Entry(relationship.Source)} {names.RelationshipType(relationship.TypeId)} {names.Entry(relationship.Target)}",
                     TimelineValues moment => moment.Title,
                     PlotArcValues arc => arc.Title,
-                    PlotBeatValues beat => beat.Title,
                     WorldRuleValues rule => rule.Title,
                     IdeaValues idea => idea.Title,
                     FieldValues field => $"{field.Name} on {names.TypeRef(field.Type)}",
@@ -222,7 +221,6 @@ internal static class AiChangeViews
                 {
                     AiChangeResource.Chapter => $"the chapters of {names.Story(order.Story)}",
                     AiChangeResource.PlotArc => $"the plot arcs of {names.Story(order.Story)}",
-                    AiChangeResource.PlotBeat => $"the beats of {names.Arc(order.Arc!)}",
                     _ => order.Chapter is { } chapter
                         ? $"the scenes of {names.Chapter(chapter)} in {names.Story(order.Story)}"
                         : $"the unchaptered scenes of {names.Story(order.Story)}",
@@ -231,7 +229,6 @@ internal static class AiChangeViews
                 {
                     AiChangeResource.Chapter => names.Chapter(item)!,
                     AiChangeResource.PlotArc => names.Arc(item),
-                    AiChangeResource.PlotBeat => names.Beat(item),
                     _ => names.Scene(item),
                 };
                 lines.Add(new AiChangeLine(
@@ -257,18 +254,6 @@ internal static class AiChangeViews
                 Line("Description", old?.Description, arc.Description);
                 Line("Notes", old?.Notes, arc.Notes);
                 return (work.Action == AiChangeAction.Create ? $"New plot arc: {arc.Title}" : $"Edit plot arc: {old?.Title ?? arc.Title}", lines);
-            }
-
-            case (PlotBeatValues beat, var before):
-            {
-                var old = before as PlotBeatValues;
-                Line("Arc", old is null ? null : names.Arc(old.Arc), names.Arc(beat.Arc));
-                Line("Title", old?.Title, beat.Title);
-                Line("Description", old?.Description, beat.Description);
-                Line("Notes", old?.Notes, beat.Notes);
-                Line("Scenes", Join(old?.Scenes.Select(names.Scene)), Join(beat.Scenes.Select(names.Scene)));
-                Line("Lore", Join(old?.Lore.Select(names.Entry)), Join(beat.Lore.Select(names.Entry)));
-                return (work.Action == AiChangeAction.Create ? $"New plot beat: {beat.Title}" : $"Edit plot beat: {old?.Title ?? beat.Title}", lines);
             }
 
             case (WorldRuleValues rule, var before):
@@ -510,7 +495,6 @@ internal static class AiChangeViews
         SceneValues scene => scene.Story.Id,
         ManuscriptValues manuscript => manuscript.StoryId ?? names.StoryOfScene(manuscript.Scene),
         PlotArcValues arc => arc.Story.Id,
-        PlotBeatValues beat => beat.Story?.Id,
         OrderValues order => order.Story.Id,
         _ => null,
     };
@@ -525,7 +509,6 @@ internal static class AiChangeViews
         TimelineValues moment => new AiChangeEditable(Title: moment.Title, Description: moment.Description ?? string.Empty, CanonStatus: moment.CanonStatus),
         ManuscriptValues manuscript => new AiChangeEditable(Text: manuscript.Text),
         PlotArcValues arc => new AiChangeEditable(Title: arc.Title, Description: arc.Description ?? string.Empty, Notes: arc.Notes ?? string.Empty),
-        PlotBeatValues beat => new AiChangeEditable(Title: beat.Title, Description: beat.Description ?? string.Empty, Notes: beat.Notes ?? string.Empty),
         WorldRuleValues rule => new AiChangeEditable(Title: rule.Title, Description: rule.Description),
         IdeaValues idea => new AiChangeEditable(Title: idea.Title, Text: idea.Body),
         _ => null,
@@ -622,12 +605,8 @@ internal static class AiChangeViews
                 break;
 
             case AiChangeResource.PlotArc:
-                var beats = await db.PlotBeats.CountAsync(beat => beat.PlotArcId == id && beat.DeletedAt == null, cancellationToken);
-                notes.Add($"Its {Count(beats, "beat")} and their links go with it and come back with it. No scene, chapter or entry is touched.");
-                break;
-
-            case AiChangeResource.PlotBeat:
-                notes.Add("Its links to scenes and lore are kept with it. The beats after it in its arc move up one place.");
+                var arcChapters = await db.ChapterArcs.CountAsync(link => link.PlotArcId == id && link.Chapter!.DeletedAt == null, cancellationToken);
+                notes.Add($"Its {Count(arcChapters, "chapter")} stay where they are, in no arc while it is in the Trash, and go back into it when it comes back. No chapter, scene or entry is touched.");
                 break;
 
             case AiChangeResource.WorldRule:
@@ -676,7 +655,6 @@ internal static class AiChangeViews
         AiChangeResource.Relationship => "relationship",
         AiChangeResource.TimelineEvent => "timeline moment",
         AiChangeResource.PlotArc => "plot arc",
-        AiChangeResource.PlotBeat => "plot beat",
         AiChangeResource.WorldRule => "world rule",
         _ => "item",
     };
@@ -710,7 +688,6 @@ internal static class AiChangeViews
         private Dictionary<Guid, string> _chapters = [];
         private Dictionary<Guid, (string Title, Guid StoryId)> _scenes = [];
         private Dictionary<Guid, string> _arcs = [];
-        private Dictionary<Guid, string> _beats = [];
         private Dictionary<Guid, string> _terms = [];
         private Dictionary<Guid, string> _groups = [];
         private Dictionary<Guid, string> _appearances = [];
@@ -742,7 +719,6 @@ internal static class AiChangeViews
                 _chapters = await db.Chapters.AsNoTracking().Where(chapter => chapter.Story!.UniverseId == universeId && ids.Contains(chapter.Id)).ToDictionaryAsync(chapter => chapter.Id, chapter => chapter.Title, cancellationToken),
                 _scenes = await db.Scenes.AsNoTracking().Where(scene => scene.Story!.UniverseId == universeId && ids.Contains(scene.Id)).ToDictionaryAsync(scene => scene.Id, scene => (scene.Title, scene.StoryId), cancellationToken),
                 _arcs = await db.PlotArcs.AsNoTracking().Where(arc => arc.Story!.UniverseId == universeId && ids.Contains(arc.Id)).ToDictionaryAsync(arc => arc.Id, arc => arc.Title, cancellationToken),
-                _beats = await db.PlotBeats.AsNoTracking().Where(beat => beat.PlotArc!.Story!.UniverseId == universeId && ids.Contains(beat.Id)).ToDictionaryAsync(beat => beat.Id, beat => beat.Title, cancellationToken),
                 _terms = await db.ValidationTerms.AsNoTracking().Where(term => term.UniverseId == universeId).ToDictionaryAsync(term => term.Id, term => term.Name, cancellationToken),
                 _groups = await db.EntityTypeGroups.AsNoTracking().Where(group => group.UniverseId == universeId).ToDictionaryAsync(group => group.Id, group => group.Name, cancellationToken),
                 _appearances = await db.EntityAppearances.AsNoTracking()
@@ -791,7 +767,6 @@ internal static class AiChangeViews
 
         public string Arc(AiRef reference) => Named(reference, _arcs, work => (work.Proposed as PlotArcValues)?.Title);
 
-        public string Beat(AiRef reference) => Named(reference, _beats, work => (work.Proposed as PlotBeatValues)?.Title);
 
         private string Term(Guid id) => _terms.GetValueOrDefault(id) ?? "(unknown term)";
 
@@ -816,7 +791,6 @@ internal static class AiChangeViews
             Ideas.IdeaReferenceKind.Story => Story(reference.Target),
             Ideas.IdeaReferenceKind.Scene => Scene(reference.Target),
             Ideas.IdeaReferenceKind.PlotArc => Arc(reference.Target),
-            Ideas.IdeaReferenceKind.PlotBeat => Beat(reference.Target),
             _ => Entry(reference.Target),
         };
 

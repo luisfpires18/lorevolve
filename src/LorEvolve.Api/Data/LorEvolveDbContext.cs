@@ -159,11 +159,9 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
 
     public DbSet<PlotArc> PlotArcs => Set<PlotArc>();
 
-    public DbSet<PlotBeat> PlotBeats => Set<PlotBeat>();
+    public DbSet<ChapterArc> ChapterArcs => Set<ChapterArc>();
 
-    public DbSet<PlotBeatScene> PlotBeatScenes => Set<PlotBeatScene>();
-
-    public DbSet<PlotBeatEntity> PlotBeatEntities => Set<PlotBeatEntity>();
+    public DbSet<SceneBeat> SceneBeats => Set<SceneBeat>();
 
     public DbSet<Idea> Ideas => Set<Idea>();
 
@@ -174,8 +172,6 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     public DbSet<IdeaSceneReference> IdeaSceneReferences => Set<IdeaSceneReference>();
 
     public DbSet<IdeaPlotArcReference> IdeaPlotArcReferences => Set<IdeaPlotArcReference>();
-
-    public DbSet<IdeaPlotBeatReference> IdeaPlotBeatReferences => Set<IdeaPlotBeatReference>();
 
     public DbSet<IdeaBoard> IdeaBoards => Set<IdeaBoard>();
 

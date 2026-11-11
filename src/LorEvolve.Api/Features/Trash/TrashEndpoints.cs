@@ -18,7 +18,7 @@ namespace LorEvolve.Api.Features.Trash;
 ///
 /// Two kinds of authored work are trashable, each where its removal used to destroy a large amount of writing at once. A
 /// lore entry, whose deletion took its article, values, aliases, history and every relationship and timeline appearance
-/// that rested on it (ADR 0015). And a story's content - a story, a chapter, a scene, an arc or a beat - whose deletion took
+/// that rested on it (ADR 0015). And a story's content - a story, a chapter, a scene or an arc - whose deletion took
 /// prose, planning and every link inside it (ADR 0029). A world rule is the third: authored text about how the world works,
 /// whose deletion would otherwise lose it outright (ADR 0033). A relationship and a timeline moment are the fourth and fifth:
 /// small rows, but authored ones, and an AI change may remove them, so removing one must be reversible too (ADR 0048).
@@ -52,8 +52,6 @@ public static class TrashEndpoints
             .WithName("RestoreTrashedScene");
         group.MapPost("/plot-arcs/{plotArcId:guid}/restore", StoryContentRestore.RestorePlotArcAsync)
             .WithName("RestoreTrashedPlotArc");
-        group.MapPost("/plot-beats/{plotBeatId:guid}/restore", StoryContentRestore.RestorePlotBeatAsync)
-            .WithName("RestoreTrashedPlotBeat");
         group.MapPost("/world-rules/{worldRuleId:guid}/restore", WorldRuleEndpoints.RestoreAsync)
             .WithName("RestoreTrashedWorldRule");
         group.MapPost("/relationships/{relationshipId:guid}/restore", RelationshipEndpoints.RestoreAsync)
@@ -68,8 +66,6 @@ public static class TrashEndpoints
         group.MapDelete("/scenes/{sceneId:guid}", TrashPermanentDelete.DeleteSceneAsync).WithName("DeleteTrashedScene");
         group.MapDelete("/plot-arcs/{plotArcId:guid}", TrashPermanentDelete.DeletePlotArcAsync)
             .WithName("DeleteTrashedPlotArc");
-        group.MapDelete("/plot-beats/{plotBeatId:guid}", TrashPermanentDelete.DeletePlotBeatAsync)
-            .WithName("DeleteTrashedPlotBeat");
         group.MapDelete("/world-rules/{worldRuleId:guid}", TrashPermanentDelete.DeleteWorldRuleAsync)
             .WithName("DeleteTrashedWorldRule");
         group.MapDelete("/relationships/{relationshipId:guid}", TrashPermanentDelete.DeleteRelationshipAsync)
@@ -216,30 +212,6 @@ public static class TrashEndpoints
                 null,
                 null,
                 arc.Story.DeletedAt != null ? TrashRestoreBlock.StoryInTrash : TrashRestoreBlock.None,
-                TrashRestorePublication.None))
-            .ToListAsync(cancellationToken));
-
-        rows.AddRange(await db.PlotBeats.AsNoTracking()
-            .Where(beat => beat.PlotArc!.Story!.UniverseId == universeId && beat.DeletedAt != null)
-            .Select(beat => new TrashItem(
-                TrashItemKind.PlotBeat,
-                beat.Id,
-                beat.Title,
-                beat.DeletedAt!.Value,
-                null,
-                null,
-                null,
-                null,
-                null,
-                beat.PlotArc!.StoryId,
-                beat.PlotArc.Story!.Title,
-                beat.PlotArcId,
-                beat.PlotArc.Title,
-                beat.PlotArc.Story.DeletedAt != null
-                    ? TrashRestoreBlock.StoryInTrash
-                    : beat.PlotArc.DeletedAt != null
-                        ? TrashRestoreBlock.ArcInTrash
-                        : TrashRestoreBlock.None,
                 TrashRestorePublication.None))
             .ToListAsync(cancellationToken));
 

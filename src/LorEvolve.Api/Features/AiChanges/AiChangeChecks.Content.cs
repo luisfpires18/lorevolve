@@ -76,83 +76,6 @@ internal sealed partial class AiChangeChecker
         work.Problems(StoryValidation.ValidatePlotArc(new PlotArcRequest(arc.Title, arc.Description, arc.Notes)));
     }
 
-    private async Task CheckPlotBeatAsync(AiChangeWork work, CancellationToken cancellationToken)
-    {
-        var beat = (PlotBeatValues)work.Proposed;
-        var keptLore = new HashSet<Guid>();
-
-        if (work.Action == AiChangeAction.Update)
-        {
-            if (await AiChangeSnapshots.PlotBeatAsync(db, universeId, work.TargetId!.Value, cancellationToken) is not { } stored)
-            {
-                work.Problem(AiChangeCodes.NotFound, "This plot beat isn't in this universe any more. It may be in the Trash.");
-                return;
-            }
-
-            if (!AiChangeSnapshots.Same(stored, work.Before))
-            {
-                work.Conflict("Someone changed this beat after the AI suggested this change, so it can't be applied. Reject it, or ask for the change again.");
-            }
-
-            keptLore = [.. stored.Lore.Select(lore => lore.Id).OfType<Guid>()];
-        }
-
-        // The story the beat is in: its existing arc's, or the story an arc this proposal creates is in. A beat moves only
-        // between arcs of one story.
-        var story = StoryOfArc(work, beat.Arc);
-        if (work.Before is PlotBeatValues before && story is not null && before.Story != story)
-        {
-            work.Problem(AiChangeCodes.WrongRef, "A beat moves only to another arc of the same story.", "arc");
-        }
-
-        foreach (var scene in beat.Scenes)
-        {
-            var (sceneId, pendingScene) = Resolve(scene);
-            if (pendingScene?.Proposed is SceneValues proposedScene)
-            {
-                if (story is not null && proposedScene.Story != story)
-                {
-                    work.Problem(AiChangeCodes.WrongRef, "That scene is in another story.", "scenes");
-                }
-            }
-            else if (sceneId is { } existing
-                && (!_scenes.TryGetValue(existing, out var found) || found.Trashed || (story?.Id is { } storyId && found.StoryId != storyId)))
-            {
-                work.Problem(AiChangeCodes.NotFound, "Link scenes from the beat's own story, and none in the Trash.", "scenes");
-            }
-        }
-
-        foreach (var lore in beat.Lore)
-        {
-            CheckEntry(work, lore, "lore", keptLore);
-        }
-
-        work.Problems(StoryValidation.ValidatePlotBeat(new PlotBeatRequest(beat.Title, beat.Description, beat.Notes, null, null)));
-    }
-
-    /// <summary>The story an arc reference is in: an existing live arc's, or a created arc's own story reference.</summary>
-    private AiRef? StoryOfArc(AiChangeWork work, AiRef arc)
-    {
-        var (arcId, pending) = Resolve(arc);
-        if (pending?.Proposed is PlotArcValues created)
-        {
-            return created.Story;
-        }
-
-        if (arcId is { } existing)
-        {
-            if (!_arcs.TryGetValue(existing, out var found) || found.Trashed)
-            {
-                work.Problem(AiChangeCodes.NotFound, "That plot arc isn't in this universe, or it is in the Trash.", "arc");
-                return null;
-            }
-
-            return AiRef.To(found.StoryId);
-        }
-
-        return null;
-    }
-
     private async Task CheckWorldRuleAsync(AiChangeWork work, CancellationToken cancellationToken)
     {
         var rule = (WorldRuleValues)work.Proposed;
@@ -283,7 +206,7 @@ internal sealed partial class AiChangeChecker
         var order = (OrderValues)work.Proposed;
         var before = (OrderValues)work.Before!;
 
-        if (await AiChangeSnapshots.OrderAsync(db, universeId, work.Resource, order.Story.Id, order.Chapter?.Id, order.Arc?.Id, cancellationToken) is not { } current)
+        if (await AiChangeSnapshots.OrderAsync(db, universeId, work.Resource, order.Story.Id, order.Chapter?.Id, cancellationToken) is not { } current)
         {
             work.Problem(AiChangeCodes.NotFound, "That container isn't in this universe any more, or it is in the Trash.");
             return;
@@ -294,7 +217,6 @@ internal sealed partial class AiChangeChecker
             (ChapterValues chapter, AiChangeResource.Chapter) => chapter.Story == order.Story,
             (PlotArcValues arc, AiChangeResource.PlotArc) => arc.Story == order.Story,
             (SceneValues scene, AiChangeResource.Scene) => scene.Story == order.Story && scene.Chapter == order.Chapter,
-            (PlotBeatValues beat, AiChangeResource.PlotBeat) => beat.Arc == order.Arc,
             _ => false,
         };
 
@@ -328,7 +250,7 @@ internal sealed partial class AiChangeChecker
         }
 
         if (works.Any(other => other != work && other.IsPending && other.Action == AiChangeAction.Reorder && other.Resource == work.Resource
-            && other.Proposed is OrderValues same && same.Story == order.Story && same.Chapter == order.Chapter && same.Arc == order.Arc
+            && other.Proposed is OrderValues same && same.Story == order.Story && same.Chapter == order.Chapter
             && other.Sequence < work.Sequence))
         {
             work.Problem(AiChangeCodes.Duplicate, "Another change in this proposal already sets this order. Put both in one change.");

@@ -10,7 +10,7 @@ public enum TrashItemKind
     Chapter = 2,
     Scene = 3,
     PlotArc = 4,
-    PlotBeat = 5,
+    // 5 was a plot beat, retired with plot beats (ADR 0070). Never reused.
     WorldRule = 6,
 
     /// <summary>A relationship between two entries (ADR 0048).</summary>
@@ -29,8 +29,7 @@ public enum TrashRestoreBlock
     /// <summary>The story it belongs to is in the Trash as well: the story comes back first.</summary>
     StoryInTrash = 1,
 
-    /// <summary>The arc a beat belongs to is in the Trash as well: the arc comes back first.</summary>
-    ArcInTrash = 2,
+    // 2 was "its arc is in the Trash", which only a plot beat could be; retired with them (ADR 0070). Never reused.
 
     /// <summary>An entry a relationship connects is in the Trash: that entry comes back first (ADR 0048).</summary>
     EntryInTrash = 3,
@@ -64,9 +63,10 @@ public enum TrashRestorePublication
 /// status for a moment); a world rule, a relationship and a moment carry none of the context members, because each sits in
 /// nothing but its universe. A relationship's <paramref name="Name"/> reads it whole - "Arin rules Varn" - and a moment's is
 /// its title; <paramref name="EntryId"/> is the entry a relationship starts from, where a client opens it once it is back.
-/// <paramref name="StoryId"/> is set for everything from a story: the story itself, and the chapter, scene, arc or beat's
+/// <paramref name="StoryId"/> is set for everything from a story: the story itself, and the chapter, scene or arc's
 /// own story, whose <paramref name="StoryTitle"/> says where it was. <paramref name="PlotArcId"/> and
-/// <paramref name="PlotArcTitle"/> are a beat's arc. <paramref name="BlockedBy"/> says the row cannot come back until what
+/// <paramref name="PlotArcTitle"/> named a plot beat's arc and are always null since beats were retired (ADR 0070); kept
+/// so the shape a client reads does not change. <paramref name="BlockedBy"/> says the row cannot come back until what
 /// it belongs to does. <paramref name="Publication"/> says whether restoring an entry or story would publish it again.
 /// </summary>
 public sealed record TrashItem(

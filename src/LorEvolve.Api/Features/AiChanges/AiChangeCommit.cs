@@ -354,7 +354,6 @@ internal static class AiChangeCommit
                     AiChangeResource.Relationship => await RelationshipEndpoints.TrashCoreAsync(universeId, target!.Value, db, cancellationToken),
                     AiChangeResource.TimelineEvent => await TimelineEndpoints.TrashCoreAsync(universeId, target!.Value, db, cancellationToken),
                     AiChangeResource.PlotArc => await PlotArcEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
-                    AiChangeResource.PlotBeat => await PlotBeatEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
                     AiChangeResource.WorldRule => await WorldRuleEndpoints.TrashCoreAsync(db, null, universeId, target!.Value, cancellationToken),
                     AiChangeResource.Idea => await IdeaEndpoints.DeleteCoreAsync(db, approverId, target!.Value, cancellationToken),
 
@@ -366,7 +365,7 @@ internal static class AiChangeCommit
                 return Done(trashed, target);
 
             case OrderValues order:
-                return Done(await ReorderAsync(db, universeId, work.Resource, order, Id, cancellationToken), work.Resource == AiChangeResource.PlotBeat ? Id(order.Arc!) : order.Story.Id);
+                return Done(await ReorderAsync(db, universeId, work.Resource, order, Id, cancellationToken), order.Story.Id);
 
             case ArticleValues article:
                 var entityId = Id(article.Entry);
@@ -386,14 +385,6 @@ internal static class AiChangeCommit
                 return work.Action == AiChangeAction.Create
                     ? Made<PlotArcResponse>(await PlotArcEndpoints.CreateCoreAsync(db, universeId, Id(arc.Story), plotArc, cancellationToken), detail => detail.Id)
                     : Done(await PlotArcEndpoints.UpdateCoreAsync(db, universeId, Id(arc.Story), target!.Value, plotArc, cancellationToken), target);
-
-            case PlotBeatValues beat:
-                var arcId = Id(beat.Arc);
-                var beatStory = beat.Story?.Id ?? await db.PlotArcs.Where(row => row.Id == arcId).Select(row => row.StoryId).SingleAsync(cancellationToken);
-                var plotBeat = new PlotBeatRequest(beat.Title, beat.Description, beat.Notes, [.. beat.Scenes.Select(Id)], [.. beat.Lore.Select(Id)], arcId);
-                return work.Action == AiChangeAction.Create
-                    ? Made<PlotBeatResponse>(await PlotBeatEndpoints.CreateCoreAsync(db, universeId, beatStory, arcId, plotBeat, cancellationToken), detail => detail.Id)
-                    : Done(await PlotBeatEndpoints.UpdateCoreAsync(db, universeId, beatStory, target!.Value, plotBeat, cancellationToken), target);
 
             case WorldRuleValues rule:
                 var stated = new WorldRuleRequest(
@@ -705,8 +696,7 @@ internal static class AiChangeCommit
             AiChangeResource.Chapter => await ChapterEndpoints.ReorderCoreAsync(db, universeId, id(order.Story), new ChapterOrderRequest(items), cancellationToken),
             AiChangeResource.Scene => await SceneEndpoints.ReorderCoreAsync(
                 db, universeId, id(order.Story), new SceneOrderRequest(items, order.Chapter is { } chapter ? id(chapter) : null), cancellationToken),
-            AiChangeResource.PlotArc => await PlotArcEndpoints.ReorderCoreAsync(db, universeId, id(order.Story), new PlotArcOrderRequest(items), cancellationToken),
-            _ => await PlotBeatEndpoints.ReorderCoreAsync(db, universeId, id(order.Story), id(order.Arc!), new PlotBeatOrderRequest(items), cancellationToken),
+            _ => await PlotArcEndpoints.ReorderCoreAsync(db, universeId, id(order.Story), new PlotArcOrderRequest(items), cancellationToken),
         };
     }
 
@@ -931,12 +921,6 @@ internal static class AiChangeCommit
                 Title = Required(values.Title, arc.Title),
                 Description = Optional(values.Description, arc.Description),
                 Notes = Optional(values.Notes, arc.Notes),
-            },
-            PlotBeatValues beat => beat with
-            {
-                Title = Required(values.Title, beat.Title),
-                Description = Optional(values.Description, beat.Description),
-                Notes = Optional(values.Notes, beat.Notes),
             },
             WorldRuleValues rule => rule with
             {

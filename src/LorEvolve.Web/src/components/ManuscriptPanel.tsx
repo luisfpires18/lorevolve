@@ -1,19 +1,16 @@
 import { useId, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink } from 'react-router-dom'
-import { ContainerName } from './ContainerName'
 import { ManuscriptEditor } from './ManuscriptEditor'
 import type { Chronology } from '../chronology/types'
 import { UNCHAPTERED } from '../stories/format'
-import { beatsByScene, readingOrder, scenesIn } from '../stories/structure'
-import type { Chapter, PlotArc, Scene, StoryDetail } from '../stories/types'
+import { chapterChoices, readingOrder, scenesIn } from '../stories/structure'
+import type { Scene, StoryDetail } from '../stories/types'
 import { EmptyState } from './EmptyState'
 
 interface ManuscriptPanelProps {
   universeId: string
   /** The story being written. Its chapters and scenes are the outline; none of them carries prose. */
   story: StoryDetail
-  /** The story's plot, already read by the story page, for the beats that point at the open scene. */
-  arcs: PlotArc[]
   chronology: Chronology
   /** The scene the address names, if it names one. */
   sceneId: string | undefined
@@ -29,14 +26,27 @@ interface ManuscriptPanelProps {
   manuscriptPublication?: (scene: Scene) => ReactNode
 }
 
-/** Where a scene is told: its chapter or Unchaptered - none in a story without chapters - and "Scene 1 of 3" inside it. */
-function whereOf(chapters: Chapter[], scenes: Scene[], scene: Scene) {
+/**
+ * Where a scene is told: its chapter as the Scenes view names it ("Arc 1, Chapter 2: Ashes" inside an arc) or Unchaptered -
+ * none in a story without chapters - and "Scene 1 of 3" inside it.
+ */
+function whereOf(
+  labels: Map<string, { prefix: string; title: string }>,
+  scenes: Scene[],
+  scene: Scene,
+) {
   const container = scenesIn(scenes, scene.chapterId)
-  const index = chapters.findIndex((chapter) => chapter.id === scene.chapterId)
+  const chapter = scene.chapterId === null ? undefined : labels.get(scene.chapterId)
   return {
     container:
-      chapters.length > 0 ? (
-        <ContainerName chapter={index < 0 ? null : { index, title: chapters[index].title }} />
+      labels.size > 0 ? (
+        chapter ? (
+          <>
+            {chapter.prefix}: <bdi>{chapter.title}</bdi>
+          </>
+        ) : (
+          UNCHAPTERED
+        )
       ) : null,
     position: `Scene ${container.findIndex((candidate) => candidate.id === scene.id) + 1} of ${container.length}`,
   }
@@ -57,7 +67,6 @@ function whereOf(chapters: Chapter[], scenes: Scene[], scene: Scene) {
 export function ManuscriptPanel({
   universeId,
   story,
-  arcs,
   chronology,
   sceneId,
   onEditScene,
@@ -73,8 +82,10 @@ export function ManuscriptPanel({
   // the list without an effect chasing the address.
   const [openAt, setOpenAt] = useState<string | null>(null)
 
-  const { chapters } = story
-  const scenes = readingOrder(chapters, story.scenes)
+  const { arcs, chapters } = story
+  const scenes = readingOrder(arcs, chapters, story.scenes)
+  const choices = chapterChoices(arcs, chapters)
+  const labels = new Map(choices.map((choice) => [choice.id, choice]))
   const storyPath = `/app/universes/${universeId}/stories/${story.id}`
   const hasChapters = chapters.length > 0
 
@@ -109,10 +120,14 @@ export function ManuscriptPanel({
         ...(unchaptered.length > 0
           ? [{ key: 'unchaptered', label: UNCHAPTERED, scenes: unchaptered }]
           : []),
-        ...chapters.map((chapter, index) => ({
-          key: chapter.id,
-          label: <ContainerName chapter={{ index, title: chapter.title }} />,
-          scenes: scenesIn(scenes, chapter.id),
+        ...choices.map((choice) => ({
+          key: choice.id,
+          label: (
+            <>
+              {choice.prefix}: <bdi>{choice.title}</bdi>
+            </>
+          ),
+          scenes: scenesIn(scenes, choice.id),
         })),
       ]
     : [{ key: 'story', label: null, scenes }]
@@ -212,9 +227,7 @@ export function ManuscriptPanel({
               storyId={story.id}
               scene={selected}
               chronology={chronology}
-              where={whereOf(chapters, scenes, selected)}
-              beats={beatsByScene(arcs).get(selected.id) ?? []}
-              storyHasBeats={arcs.some((arc) => arc.beats.length > 0)}
+              where={whereOf(labels, scenes, selected)}
               onEditScene={onEditScene}
               onSuggestScene={onSuggestScene}
               chapters={chapters}

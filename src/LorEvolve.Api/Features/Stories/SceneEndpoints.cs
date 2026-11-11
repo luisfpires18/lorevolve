@@ -166,6 +166,8 @@ public static class SceneEndpoints
             scene.EntityLinks.Add(new SceneEntityLink { EntityId = id });
         }
 
+        ApplyBeats(scene, request.Beats, now);
+
         db.Scenes.Add(scene);
         story.UpdatedAt = now;
 
@@ -230,6 +232,7 @@ public static class SceneEndpoints
 
         var scene = await db.Scenes
             .Include(candidate => candidate.EntityLinks)
+            .Include(candidate => candidate.Beats)
             .FirstOrDefaultAsync(
                 candidate => candidate.Id == sceneId && candidate.StoryId == storyId && candidate.DeletedAt == null,
                 cancellationToken);
@@ -268,7 +271,11 @@ public static class SceneEndpoints
 
         // Only a save that changes what the form edits moves the version on, and only once - a move between chapters
         // included, which the placement below would otherwise count again.
-        var changed = before != Edited(scene) || !wanted.SetEquals(stored) || request.ChapterId != scene.ChapterId;
+        var beatsChanged = ApplyBeats(scene, request.Beats, now);
+        var changed = before != Edited(scene)
+            || !wanted.SetEquals(stored)
+            || request.ChapterId != scene.ChapterId
+            || beatsChanged;
 
         foreach (var link in scene.EntityLinks.Where(link => !wanted.Contains(link.EntityId)).ToList())
         {
@@ -568,6 +575,60 @@ public static class SceneEndpoints
     private static (string, string?, string?, Guid?, Guid?, int?, int?, Guid?, int?) Edited(Scene scene) =>
         (scene.Title, scene.Summary, scene.Notes, scene.PovEntityId, scene.EraId, scene.Year, scene.Month, scene.MonthId, scene.Day);
 
+    /// <summary>
+    /// Makes the scene's beats exactly <paramref name="wanted"/>, in that order, and says whether anything changed (ADR 0070).
+    /// Null leaves them as they are. Beats are matched by place: the first keeps its row and takes the first title, and so
+    /// on, extras are added at the end or removed from it - so no two rows ever reach for the same place in one save.
+    /// </summary>
+    private static bool ApplyBeats(Scene scene, IReadOnlyList<SceneBeatInput>? wanted, DateTime now)
+    {
+        if (wanted is null)
+        {
+            return false;
+        }
+
+        var current = scene.Beats.OrderBy(beat => beat.SortOrder).ToList();
+        var changed = current.Count != wanted.Count;
+
+        for (var index = 0; index < wanted.Count; index++)
+        {
+            var title = StoryValidation.Normalize(wanted[index].Title)!;
+            var note = StoryValidation.Normalize(wanted[index].Note);
+
+            if (index < current.Count)
+            {
+                var beat = current[index];
+                if (beat.Title != title || beat.Note != note)
+                {
+                    beat.Title = title;
+                    beat.Note = note;
+                    beat.UpdatedAt = now;
+                    changed = true;
+                }
+            }
+            else
+            {
+                // No id here: a new row added through a tracked scene is only inserted when its key is left to EF.
+                scene.Beats.Add(new SceneBeat
+                {
+                    SceneId = scene.Id,
+                    Title = title,
+                    Note = note,
+                    SortOrder = index,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                });
+            }
+        }
+
+        foreach (var extra in current.Skip(wanted.Count))
+        {
+            scene.Beats.Remove(extra);
+        }
+
+        return changed;
+    }
+
     private static void Apply(Scene scene, SceneRequest request)
     {
         scene.Summary = StoryValidation.Normalize(request.Summary);
@@ -713,7 +774,8 @@ public static class SceneEndpoints
         DateTime UpdatedAt,
         Publishing.ContentVisibility Visibility,
         Publishing.ContentVisibility ManuscriptVisibility,
-        int Version);
+        int Version,
+        List<SceneBeatResponse> Beats);
 
     internal static async Task<SceneResponse?> LoadSceneAsync(
         LorEvolveDbContext db,
@@ -731,8 +793,8 @@ public static class SceneEndpoints
     /// <summary>
     /// The scenes <paramref name="query"/> selects, in reading order, with every reference resolved.
     ///
-    /// Reading order is Unchaptered first, then each chapter in the story's chapter order, and inside
-    /// each of those the scenes' own narrative order. The chapter's position comes from a join in the
+    /// Reading order is Unchaptered first, then the chapters in no arc, then each arc in its order (ADR 0070) - chapters in
+    /// the story's chapter order inside each - and inside each chapter the scenes' own narrative order. The chapter's position comes from a join in the
     /// same query, so no chapter is read per scene.
     ///
     /// Two queries however many scenes there are: the scenes with their link ids, then every entry
@@ -747,7 +809,12 @@ public static class SceneEndpoints
         CancellationToken cancellationToken)
     {
         var rows = await query.AsNoTracking()
-            .OrderBy(scene => scene.ChapterId == null ? -1 : scene.Chapter!.SortOrder)
+            .OrderBy(scene => scene.ChapterId == null
+                ? -1
+                : scene.Chapter!.ArcLink == null || scene.Chapter.ArcLink.PlotArc!.DeletedAt != null
+                    ? 0
+                    : scene.Chapter.ArcLink.PlotArc.SortOrder + 1)
+            .ThenBy(scene => scene.ChapterId == null ? -1 : scene.Chapter!.SortOrder)
             .ThenBy(scene => scene.SortOrder)
             .ThenBy(scene => scene.Id)
             .Select(scene => new SceneRow(
@@ -769,7 +836,11 @@ public static class SceneEndpoints
                 scene.UpdatedAt,
                 scene.Visibility,
                 scene.ManuscriptVisibility,
-                scene.Version))
+                scene.Version,
+                scene.Beats
+                    .OrderBy(beat => beat.SortOrder)
+                    .Select(beat => new SceneBeatResponse(beat.Id, beat.SortOrder, beat.Title, beat.Note))
+                    .ToList()))
             .ToListAsync(cancellationToken);
 
         var referenced = rows
@@ -796,7 +867,8 @@ public static class SceneEndpoints
                 row.UpdatedAt,
                 row.Visibility,
                 row.ManuscriptVisibility,
-                row.Version)),
+                row.Version,
+                row.Beats)),
         ];
     }
 }

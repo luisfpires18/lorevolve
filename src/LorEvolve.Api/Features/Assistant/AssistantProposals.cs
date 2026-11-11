@@ -137,7 +137,7 @@ internal sealed class AssistantProposing(LorEvolveDbContext db, TimeProvider clo
         var details = Object(("eventKindId", Nullable("string")), ("methodId", Nullable("string")), ("participant", Or(reference)));
         var block = Object(("kind", Text("paragraph, heading, bullet_list, numbered_list or quote")), ("text", Nullable("string")), ("level", Nullable("integer")), ("items", NullableArray(Text())));
         var check = Object(("eventKindId", Nullable("string")), ("methodId", Nullable("string")), ("maxOccurrences", Nullable("integer")));
-        var ideaReference = Object(("kind", Text("lore_entry, story, scene, plot_arc or plot_beat")), ("id", Nullable("string")), ("ref", Nullable("string")));
+        var ideaReference = Object(("kind", Text("lore_entry, story, scene or plot_arc")), ("id", Nullable("string")), ("ref", Nullable("string")));
         var date = Object(
             ("kind", Nullable("string")),
             ("startYear", Nullable("integer")),
@@ -168,7 +168,7 @@ internal sealed class AssistantProposing(LorEvolveDbContext db, TimeProvider clo
         var operation = Object(
             ("id", Text()),
             ("action", Text("create, update, remove or reorder")),
-            ("resource", Text("lore_entry, article, progression, image, relationship, story, chapter, scene, manuscript, plot_arc, plot_beat, timeline_event, world_rule or idea; or, in a proposal of their own, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method")),
+            ("resource", Text("lore_entry, article, progression, image, relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule or idea; or, in a proposal of their own, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method")),
             ("targetId", Nullable("string")),
             ("expectedVersion", Nullable("integer")),
             ("lore", Or(Object(
@@ -212,20 +212,12 @@ internal sealed class AssistantProposing(LorEvolveDbContext db, TimeProvider clo
                 ("clearDetails", Nullable("boolean"))))),
             ("article", Or(Object(("entry", Or(reference)), ("mode", Nullable("string")), ("blocks", NullableArray(block))))),
             ("plotArc", Or(Object(("story", Or(reference)), ("title", Nullable("string")), ("description", Nullable("string")), ("notes", Nullable("string"))))),
-            ("plotBeat", Or(Object(
-                ("arc", Or(reference)),
-                ("title", Nullable("string")),
-                ("description", Nullable("string")),
-                ("notes", Nullable("string")),
-                ("scenes", NullableArray(reference)),
-                ("lore", NullableArray(reference))))),
             ("worldRule", Or(Object(("title", Nullable("string")), ("description", Nullable("string")), ("check", Or(check)), ("removeCheck", Nullable("boolean"))))),
             ("idea", Or(Object(("title", Nullable("string")), ("body", Nullable("string")), ("references", NullableArray(ideaReference))))),
             ("order", Or(Object(
                 ("story", Or(reference)),
                 ("chapter", Or(reference)),
                 ("unchaptered", Nullable("boolean")),
-                ("arc", Or(reference)),
                 ("items", NullableArray(reference))))),
             ("loreType", Or(Object(
                 ("name", Nullable("string")),

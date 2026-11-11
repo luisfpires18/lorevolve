@@ -20,7 +20,7 @@ type Settled =
 
 /**
  * The persistent search bar of a universe (ADR 0031): a combobox whose popup lists what the universe's recorded content
- * holds of what was typed - lore and articles, stories, chapters, scenes, arcs, beats, manuscripts and the universe's
+ * holds of what was typed - lore and articles, stories, chapters, scenes, arcs, manuscripts and the universe's
  * ideas - and opens the one chosen where it already lives.
  *
  * The APG "combobox with listbox popup", list autocomplete with manual selection. The focus stays in the box; the arrows
@@ -244,8 +244,8 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
         data-testid="universe-search-input"
       />
       <p className="visually-hidden" id={hintId}>
-        Finds words in the lore and articles, stories, chapters, scenes, arcs, beats, manuscripts
-        and ideas of this universe. Results are listed as you type.
+        Finds words in the lore and articles, stories, chapters, scenes, arcs, manuscripts and ideas
+        of this universe. Results are listed as you type.
       </p>
       <p className="visually-hidden" role="status" data-testid="universe-search-announcer">
         {announcement}
@@ -260,8 +260,8 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
       >
         {status === 'idle' ? (
           <p className="unisearch__note">
-            Search the lore and articles, stories, chapters, scenes, arcs, beats, manuscripts and
-            ideas of this universe.
+            Search the lore and articles, stories, chapters, scenes, arcs, manuscripts and ideas of
+            this universe.
           </p>
         ) : null}
 
