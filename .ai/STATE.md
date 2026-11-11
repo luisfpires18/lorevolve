@@ -39,7 +39,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-11 `dev` is ahead of `master` by PR #90 (arc field on Edit chapter, Add beat in the scene menu). The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
+As of 2026-11-11 `master` and `dev` match (PROD deploy of `d70d30f`). The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
 
@@ -96,8 +96,9 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 - PROD `PublicSite__AllowIndexing`: unset, so search engines are told not to index. Set at public launch.
 - PROD `Assistant__*`: only if PROD offers the assistant (`docs/deployment/assistant-limits-and-cost.md`).
-- DEV then PROD `WEBSITE_RUN_FROM_PACKAGE=1`, `SCM_MAX_ZIP_PACKAGE_COUNT=2`: stops the deploy swapping assemblies under
-  the running app (`docs/deployment/azure-dev.md`, How a deploy replaces the app). Until set, Deploy warns and restarts.
+- PROD `WEBSITE_RUN_FROM_PACKAGE=1`, `SCM_MAX_ZIP_PACKAGE_COUNT=2` (set on DEV 2026-11-11): stops the deploy swapping
+  assemblies under the running app (`docs/deployment/azure-dev.md`, How a deploy replaces the app). Until set, Deploy PROD
+  warns and restarts.
 - Backup retention deletion is proposed and off (ADR 0064, `docs/recovery/database-backups.md`).
 - DEV `Mcp__Origin` and `PlatformAdmin__OwnerUserId` were owner steps; not rechecked here. Unset means MCP is off and
   nobody is Admin on DEV.
