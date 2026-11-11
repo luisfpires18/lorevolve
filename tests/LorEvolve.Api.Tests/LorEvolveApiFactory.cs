@@ -4,6 +4,7 @@ using LorEvolve.Api.Features.Assistant;
 using LorEvolve.Api.Features.Mcp;
 using LorEvolve.Api.Features.Media;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -95,6 +96,9 @@ public sealed class LorEvolveApiFactory : WebApplicationFactory<Program>
 
             _connection.Open();
             services.AddDbContext<LorEvolveDbContext>(options => options.UseSqlite(_connection).AddInterceptors(Commands));
+
+            // Slow hashing defends real passwords; no test checks it, and 100k PBKDF2 rounds per sign-up slowed the suite.
+            services.Configure<PasswordHasherOptions>(options => options.IterationCount = 1);
 
             services.RemoveAll<IMediaObjectStore>();
             services.AddSingleton<IMediaObjectStore>(Media);

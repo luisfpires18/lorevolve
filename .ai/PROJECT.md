@@ -8,7 +8,7 @@ State: `.ai/STATE.md` (moved from the repository root on 2026-11-11). Files and 
 
 ## How the shared workflow maps here
 - Task procedure: `.claude/skills/phase-workflow/SKILL.md` (investigate, constrain, plan, challenge, implement, validate, wrap up). It runs inside the shared workflow; the shared Codex review comes after its validation and wrap-up.
-- Merging into `dev` on Codex ACCEPTED is allowed (it deploys DEV). Releasing `dev` to `master` (PROD) and anything on `demo` need the owner's explicit request.
+- Merging into `dev` on Codex ACCEPTED is allowed (it deploys DEV), once `gh pr checks <PR>` is all green: CI runs the full suites, so a merge never goes ahead of it. Releasing `dev` to `master` (PROD) and anything on `demo` need the owner's explicit request.
 - Branch names and commit subjects: `CLAUDE.md` and `docs/architecture/branching.md`.
 
 ## Shared workflow modules
@@ -25,7 +25,10 @@ Only these:
 `.claude/settings.json` (web preset merged in) turns off the game-engine plugins here.
 
 ## Tests for a task
-As `phase-workflow` "Validation": narrowest relevant tests during the work, the full suite for every touched area near the end, a Release build where the change compiles, and a pending-migration check when the schema may be affected. CI (`ci.yml`) runs on PRs.
+As `phase-workflow` "Validation", read this way here:
+- Locally: narrowest relevant tests during the work; near the end, the API test classes of every touched area (`dotnet test --filter`) and focused plus neighbouring Playwright specs. A change to shared code (the DbContext, auth, startup, migrations) widens the filter to the classes that use it.
+- Never the whole API test project or the whole Playwright suite locally. CI (`ci.yml`) runs both, sharded, on every PR; a merge waits for it (see above).
+- A Release build where the change compiles, and a pending-migration check when the schema may be affected.
 
 ## Review overrides
 Codex effort `medium` for changes to authentication, authorization, the database schema or migrations, and deployment workflows.
