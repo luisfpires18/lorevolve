@@ -62,8 +62,8 @@ internal static class StoryLoreReferences
                 .ToDictionaryAsync(reference => reference.EntityId, cancellationToken);
 
     /// <summary>
-    /// The references <paramref name="ids"/> name, by name and then id with an ordinal comparer, so the same links
-    /// always read the same way. An id <paramref name="references"/> does not hold is left out.
+    /// The references <paramref name="ids"/> name, in the order given: a scene's lore in the order the author picked it.
+    /// An id <paramref name="references"/> does not hold is left out.
     /// </summary>
     public static List<SceneLoreReference> Listed(
         IEnumerable<Guid> ids,
@@ -71,8 +71,6 @@ internal static class StoryLoreReferences
     [
         .. ids
             .Select(id => references.GetValueOrDefault(id))
-            .OfType<SceneLoreReference>()
-            .OrderBy(reference => reference.Name, StringComparer.Ordinal)
-            .ThenBy(reference => reference.EntityId),
+            .OfType<SceneLoreReference>(),
     ];
 }

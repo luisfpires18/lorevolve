@@ -73,6 +73,9 @@ public sealed record ChapterArcRequest(Guid? PlotArcId);
 /// <summary>The story's whole chapter order: every chapter id in the story, each exactly once, first first.</summary>
 public sealed record ChapterOrderRequest(IReadOnlyList<Guid>? ChapterIds);
 
+/// <summary>Every live story of the universe, each once, in the order the author wants them listed.</summary>
+public sealed record StoryOrderRequest(IReadOnlyList<Guid>? StoryIds);
+
 /// <summary>
 /// Everything a client may set on a scene. <c>SortOrder</c> is deliberately absent: a new scene is
 /// appended to its container, and only the order and position routes move one inside it.

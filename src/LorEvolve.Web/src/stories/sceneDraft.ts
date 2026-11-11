@@ -156,11 +156,8 @@ function changesOf(
   chapterName: (id: string) => string,
   when: (draft: SceneDraft) => string,
 ): Change[] {
-  const names = (choices: EntityChoice[]) =>
-    choices
-      .map((choice) => choice.name)
-      .sort()
-      .join(', ')
+  // In the order picked: the order is kept and shown, so it is part of what differs.
+  const names = (choices: EntityChoice[]) => choices.map((choice) => choice.name).join(', ')
 
   return differing([
     { label: 'Title', latest: latest.title, mine: mine.title.trim() },

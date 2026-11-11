@@ -34,6 +34,7 @@ public static class StoryEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListStories");
         group.MapPost("/", CreateAsync).WithName("CreateStory");
+        group.MapPut("/order", ReorderAsync).WithName("ReorderStories");
         group.MapGet("/{storyId:guid}", GetAsync).WithName("GetStory");
         group.MapPut("/{storyId:guid}", UpdateAsync).WithName("UpdateStory");
         group.MapDelete("/{storyId:guid}", DeleteAsync).WithName("DeleteStory");
@@ -42,7 +43,7 @@ public static class StoryEndpoints
     }
 
     /// <summary>
-    /// Every story in the universe, by title. Unpaged: a universe holds a handful of stories, not
+    /// Every story in the universe, in the author's order (ties by title). Unpaged: a universe holds a handful of stories, not
     /// thousands, and paging is the obvious first change if that ever stops being true.
     /// </summary>
     private static async Task<IResult> ListAsync(
@@ -58,7 +59,8 @@ public static class StoryEndpoints
 
         var stories = await db.Stories.AsNoTracking()
             .Where(story => story.UniverseId == universeId && story.DeletedAt == null)
-            .OrderBy(story => story.Title)
+            .OrderBy(story => story.SortOrder)
+            .ThenBy(story => story.Title)
             .ThenBy(story => story.Id)
             .Select(story => new StorySummary(
                 story.Id,
@@ -119,6 +121,11 @@ public static class StoryEndpoints
             return Results.ValidationProblem(errors);
         }
 
+        // Last in the list: after every story the universe holds, the Trash included, so a restored one keeps its place.
+        var last = await db.Stories
+            .Where(candidate => candidate.UniverseId == universeId)
+            .MaxAsync(candidate => (int?)candidate.SortOrder, cancellationToken);
+
         var now = DateTime.UtcNow;
         var story = new Story
         {
@@ -127,6 +134,7 @@ public static class StoryEndpoints
             Title = StoryValidation.Normalize(request.Title)!,
             Premise = StoryValidation.Normalize(request.Premise),
             Status = request.Status,
+            SortOrder = (last ?? -1) + 1,
             CreatedAt = now,
             UpdatedAt = now,
         };
@@ -136,6 +144,61 @@ public static class StoryEndpoints
 
         var created = await LoadDetailAsync(db, universeId, story.Id, cancellationToken);
         return Results.Created($"/api/universes/{universeId}/stories/{story.Id}", created);
+    }
+
+    /// <summary>
+    /// The universe's stories in a new order: the whole list of live stories, each once. A story in the Trash goes after them,
+    /// so it comes back last. Changes no story's edit version or dates: the order is the list's, not a story's.
+    /// </summary>
+    private static async Task<IResult> ReorderAsync(
+        Guid universeId,
+        [FromBody] StoryOrderRequest request,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        if (request.StoryIds is not { } ids)
+        {
+            return Refused("List the universe's stories in order.");
+        }
+
+        if (ids.Distinct().Count() != ids.Count)
+        {
+            return Refused("List each story once.");
+        }
+
+        var stories = await db.Stories
+            .Where(story => story.UniverseId == universeId && story.DeletedAt == null)
+            .ToListAsync(cancellationToken);
+
+        var byId = stories.ToDictionary(story => story.Id);
+        if (ids.Count != stories.Count || ids.Any(id => !byId.ContainsKey(id)))
+        {
+            return Refused("List every story in this universe exactly once.");
+        }
+
+        // Live stories take the first places; one in the Trash moves after them, so it comes back last.
+        var trashed = await db.Stories
+            .Where(story => story.UniverseId == universeId && story.DeletedAt != null)
+            .OrderBy(story => story.SortOrder)
+            .ToListAsync(cancellationToken);
+
+        foreach (var (story, place) in ids.Select(id => byId[id]).Concat(trashed).Select((story, place) => (story, place)))
+        {
+            story.SortOrder = place;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return await ListAsync(universeId, principal, db, cancellationToken);
+
+        static IResult Refused(string message) =>
+            Results.ValidationProblem(new Dictionary<string, string[]> { ["storyIds"] = [message] });
     }
 
     private static async Task<IResult> UpdateAsync(

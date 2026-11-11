@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { Plus } from 'lucide-react'
+import { ArrowDown, ArrowUp, Plus } from 'lucide-react'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
 import { ActionIcon } from '../components/ActionIcon'
+import { ActionMenu } from '../components/ActionMenu'
+import { ApiError } from '../lib/api'
 import { StoryForm } from '../components/StoryForm'
-import { listStories } from '../stories/api'
+import { listStories, reorderStories } from '../stories/api'
 import { sceneCountLabel } from '../stories/format'
 import { STORY_STATUS_LABELS, type StorySummary } from '../stories/types'
 import { EmptyState } from '../components/EmptyState'
@@ -22,6 +24,9 @@ type LoadState =
  *
  * A list that cannot be read says so in the same words and with the same Try again as a story, a
  * manuscript and the workspace itself, rather than passing on whatever the request failed with.
+ *
+ * The stories are in the author's order, not by title: each row's ⋯ menu moves it one place up or down, at once on
+ * screen, and puts it back if the move is refused. A new story goes last.
  */
 export default function StoriesPage() {
   const access = useUniverseAccess()
@@ -30,6 +35,44 @@ export default function StoriesPage() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [isCreating, setIsCreating] = useState(false)
+  const [announcement, setAnnouncement] = useState('')
+  const [moveError, setMoveError] = useState<string | null>(null)
+  const isMoving = useRef(false)
+
+  /** Moves one story one place, on screen first; the API's answer is the order kept, and a refusal puts it back. */
+  async function move(story: StorySummary, by: -1 | 1) {
+    if (state.kind !== 'ready' || isMoving.current) return
+    const before = state.stories
+    const from = before.findIndex((candidate) => candidate.id === story.id)
+    const to = from + by
+    if (from < 0 || to < 0 || to >= before.length) return
+
+    const after = [...before]
+    after.splice(to, 0, ...after.splice(from, 1))
+    isMoving.current = true
+    setMoveError(null)
+    setState({ kind: 'ready', stories: after })
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLElement>(`[data-story-id="${story.id}"] [data-testid="story-actions"]`)
+        ?.focus(),
+    )
+    try {
+      const saved = await reorderStories(
+        universe.id,
+        after.map((candidate) => candidate.id),
+      )
+      setState({ kind: 'ready', stories: saved })
+      setAnnouncement(`“${story.title}” is now story ${to + 1} of ${after.length}.`)
+    } catch (error: unknown) {
+      setState({ kind: 'ready', stories: before })
+      setMoveError(
+        error instanceof ApiError ? error.message : 'That story could not be moved. Try again.',
+      )
+    } finally {
+      isMoving.current = false
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -88,14 +131,24 @@ export default function StoriesPage() {
         </div>
       ) : null}
 
+      <p className="visually-hidden" role="status" data-testid="stories-announcement">
+        {announcement}
+      </p>
+      {moveError ? (
+        <p className="form__message" role="alert" data-testid="stories-move-error">
+          {moveError}
+        </p>
+      ) : null}
+
       {state.kind === 'ready' && state.stories.length > 0 ? (
         <ul className="storylist" data-testid="story-list">
-          {state.stories.map((story) => (
+          {state.stories.map((story, index) => (
             <li
               className="storyrow"
               key={story.id}
               data-testid="story-row"
               data-title={story.title}
+              data-story-id={story.id}
             >
               <Link className="storyrow__title" to={story.id}>
                 <bdi>{story.title}</bdi>
@@ -103,6 +156,36 @@ export default function StoriesPage() {
               <p className="storyrow__meta">
                 <StatusBadge step={story.status} label={STORY_STATUS_LABELS[story.status]} />
                 <span data-testid="story-scene-count">{sceneCountLabel(story.sceneCount)}</span>
+                {access.editContent && state.stories.length > 1 ? (
+                  <ActionMenu
+                    className="storyrow__menu"
+                    label={`More actions for ${story.title}`}
+                    triggerTestId="story-actions"
+                  >
+                    {index > 0 ? (
+                      <button
+                        className="actionmenu__item"
+                        type="button"
+                        onClick={() => void move(story, -1)}
+                        data-testid="story-move-up"
+                      >
+                        <ActionIcon icon={ArrowUp} />
+                        Move up
+                      </button>
+                    ) : null}
+                    {index < state.stories.length - 1 ? (
+                      <button
+                        className="actionmenu__item"
+                        type="button"
+                        onClick={() => void move(story, 1)}
+                        data-testid="story-move-down"
+                      >
+                        <ActionIcon icon={ArrowDown} />
+                        Move down
+                      </button>
+                    ) : null}
+                  </ActionMenu>
+                ) : null}
               </p>
               {story.premise ? <p className="storyrow__premise prose">{story.premise}</p> : null}
             </li>

@@ -269,7 +269,7 @@ internal static partial class AiChangeSnapshots
                 scene.Month,
                 scene.MonthId,
                 scene.Day,
-                Lore = scene.EntityLinks.Select(link => link.EntityId).ToList(),
+                Lore = scene.EntityLinks.OrderBy(link => link.SortOrder).Select(link => link.EntityId).ToList(),
                 scene.Version,
             })
             .FirstOrDefaultAsync(cancellationToken);

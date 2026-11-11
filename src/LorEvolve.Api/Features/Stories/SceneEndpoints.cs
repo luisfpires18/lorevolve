@@ -161,9 +161,10 @@ public static class SceneEndpoints
 
         Apply(scene, request);
 
-        foreach (var id in entityIds)
+        // In the order the author picked them (Distinct keeps the first of each).
+        foreach (var (id, place) in entityIds.Select((id, place) => (id, place)))
         {
-            scene.EntityLinks.Add(new SceneEntityLink { EntityId = id });
+            scene.EntityLinks.Add(new SceneEntityLink { EntityId = id, SortOrder = place });
         }
 
         ApplyBeats(scene, request.Beats, now);
@@ -268,12 +269,16 @@ public static class SceneEndpoints
         // The request carries the whole set, so the stored links are made to match it: anything
         // absent is dropped, anything new is added, and a link already there keeps its row.
         var wanted = entityIds.ToHashSet();
+        var storedOrder = scene.EntityLinks
+            .OrderBy(link => link.SortOrder)
+            .Select(link => link.EntityId)
+            .ToList();
 
         // Only a save that changes what the form edits moves the version on, and only once - a move between chapters
         // included, which the placement below would otherwise count again.
         var beatsChanged = ApplyBeats(scene, request.Beats, now);
         var changed = before != Edited(scene)
-            || !wanted.SetEquals(stored)
+            || !entityIds.SequenceEqual(storedOrder)
             || request.ChapterId != scene.ChapterId
             || beatsChanged;
 
@@ -285,6 +290,13 @@ public static class SceneEndpoints
         foreach (var id in entityIds.Where(id => !stored.Contains(id)))
         {
             scene.EntityLinks.Add(new SceneEntityLink { SceneId = scene.Id, EntityId = id });
+        }
+
+        // The order sent is the order kept: a link already there keeps its row and takes its new place.
+        var places = entityIds.Select((id, place) => (id, place)).ToDictionary(pair => pair.id, pair => pair.place);
+        foreach (var link in scene.EntityLinks)
+        {
+            link.SortOrder = places[link.EntityId];
         }
 
         try
@@ -831,7 +843,7 @@ public static class SceneEndpoints
                 scene.Month,
                 scene.MonthId,
                 scene.Day,
-                scene.EntityLinks.Select(link => link.EntityId).ToList(),
+                scene.EntityLinks.OrderBy(link => link.SortOrder).Select(link => link.EntityId).ToList(),
                 scene.CreatedAt,
                 scene.UpdatedAt,
                 scene.Visibility,
