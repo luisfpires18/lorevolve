@@ -475,6 +475,15 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 38)
+        {
+            // A story's place in the list came in version 38; before it the list read by title.
+            foreach (var story in payload["stories"]?.AsArray() ?? [])
+            {
+                Drop(story, "sortOrder");
+            }
+        }
+
         if (version < 37)
         {
             // Arcs became structure and beats moved into scenes in version 37 (ADR 0070). Before it, an arc carried a list of

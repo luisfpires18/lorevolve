@@ -194,6 +194,7 @@ internal static class BackupNormalization
     {
         DeletedAt = version >= 10 ? story.DeletedAt : null,
         PublicSummary = version >= 16 ? story.PublicSummary : null,
+        SortOrder = version >= 38 ? story.SortOrder : null,
         Chapters = version >= 6 && story.Chapters is not null
             ? [.. story.Chapters.Select(chapter => chapter is null
                 ? null!
@@ -228,7 +229,11 @@ internal static class BackupNormalization
             ? payload.EntityTypes
             : [.. payload.EntityTypes.Select(type => type with { Icon = LegacyIcon(type.Icon) })],
         Entities = [.. payload.Entities.Select(entity => NormalizeEntity(entity, version))],
-        Stories = [.. (payload.Stories ?? []).Select(story => NormalizeStory(story, version))],
+        Stories = Placed(
+            [.. (payload.Stories ?? []).Select(story => NormalizeStory(story, version))],
+            version < 38
+                ? payload.Entities.OfType<BackupEntity>().GroupBy(entity => entity.Id).ToDictionary(group => group.Key, group => group.First().Name ?? string.Empty)
+                : null),
         Ideas = payload.Ideas ?? [],
         WorldRules = [.. (payload.WorldRules ?? []).Select(rule => rule.Validation is { Kind: WorldRuleValidationKind.None } ? rule with { Validation = null } : rule)],
         ValidationTerms = payload.ValidationTerms ?? [],
@@ -243,6 +248,34 @@ internal static class BackupNormalization
         ],
         DismissedConflicts = [.. payload.DismissedConflicts.DistinctBy(conflict => conflict.Fingerprint, StringComparer.Ordinal)],
     };
+
+    /// <summary>
+    /// Every story with its place in the universe's list: as written from version 38, by title before (how the list read
+    /// then), and numbered from 0. Before version 38 a scene's lore was sorted by id, so it takes the order it was shown in:
+    /// by the entry's name (<paramref name="names"/>), then id.
+    /// </summary>
+    private static List<BackupStory> Placed(List<BackupStory> stories, Dictionary<Guid, string>? names) =>
+    [
+        .. stories
+            .OrderBy(story => story?.SortOrder ?? int.MaxValue)
+            .ThenBy(story => story?.Title, StringComparer.Ordinal)
+            .ThenBy(story => story?.Id)
+            .Select((story, place) => story is null ? null! : story with
+            {
+                SortOrder = place,
+                Scenes = names is null || story.Scenes is null
+                    ? story.Scenes!
+                    : [.. story.Scenes.Select(scene => scene?.LinkedEntityIds is null ? scene! : scene with
+                    {
+                        LinkedEntityIds =
+                        [
+                            .. scene.LinkedEntityIds
+                                .OrderBy(id => names.GetValueOrDefault(id, string.Empty), StringComparer.Ordinal)
+                                .ThenBy(id => id),
+                        ],
+                    })],
+            }),
+    ];
 
     /// <summary>A version 1-3 icon, brought inside the closed set the way the migration brought a stored one.</summary>
     internal static string? LegacyIcon(string? icon) =>

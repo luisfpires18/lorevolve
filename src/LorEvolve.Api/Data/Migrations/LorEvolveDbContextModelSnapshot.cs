@@ -2995,6 +2995,9 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<Guid>("EntityId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("SceneId", "EntityId");
 
                     b.HasIndex("EntityId");
@@ -3084,6 +3087,9 @@ namespace LorEvolve.Api.Data.Migrations
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");

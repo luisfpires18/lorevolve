@@ -69,8 +69,8 @@ export function SceneForm({
   const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the scene as stored, or the blank form in its chapter - which the draft is measured
-  // against, and the version its save names. Its chapter, point of view, date and lore all count; the order the lore was
-  // picked in does not. After a refused save the author may adopt the latest they reviewed instead (ADR 0043).
+  // against, and the version its save names. Its chapter, point of view, date and lore all count, and so does the order
+  // the lore was picked in: it is kept and shown that way. After a refused save the author may adopt the latest they reviewed instead (ADR 0043).
   const [base, setBase] = useState(() => ({
     draft: draftFrom(scene, chapterId),
     version: scene?.version,
@@ -94,9 +94,10 @@ export function SceneForm({
   // A plain year written before the universe had date periods has no period to show in the picker.
   const unreckoned = reckonsInEras && scene?.chronology != null && scene.chronology.eraId === null
 
+  const loreOrder = (of: SceneDraft) => of.entities.map((choice) => choice.id).join(' ')
   const isDirty =
     payloadKey(inputOf(draft, reckonsInEras, custom)) !==
-    payloadKey(inputOf(initial, reckonsInEras, custom))
+      payloadKey(inputOf(initial, reckonsInEras, custom)) || loreOrder(draft) !== loreOrder(initial)
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     suggesting && scene

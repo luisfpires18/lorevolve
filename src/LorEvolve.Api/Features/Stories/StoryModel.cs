@@ -58,6 +58,12 @@ public sealed class Story : Publishing.IPublishable
     public int Version { get; set; } = 1;
 
     /// <summary>
+    /// The story's place in its universe's list of stories, from 0: the author's order, set by the stories order route
+    /// and nothing else. A new story goes last. Ties read by title.
+    /// </summary>
+    public int SortOrder { get; set; }
+
+    /// <summary>
     /// When the story was moved to the Trash, or null while it is live. Only the story is marked: its chapters, scenes,
     /// prose and plot are left exactly as they were, unreachable while it is there and back with it on restore.
     /// </summary>
@@ -271,4 +277,10 @@ public sealed class SceneEntityLink
     public Guid EntityId { get; set; }
 
     public LoreEntity? Entity { get; set; }
+
+    /// <summary>
+    /// The link's place in the scene's lore, from 0: the order the author picked the entries in, kept as written and shown
+    /// that way everywhere the scene's lore is listed. Ties (rows from before the order was kept) read by the entry's name.
+    /// </summary>
+    public int SortOrder { get; set; }
 }

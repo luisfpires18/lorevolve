@@ -62,8 +62,8 @@ public sealed class StoryBackupTests(LorEvolveApiFactory factory) : IClassFixtur
         Assert.Equal("Check the vote count.", council.Notes);
         Assert.Equal(new BackupChronologyValue(world.After, 12, 3, null), council.Chronology);
         Assert.Equal(
-            new[] { world.Arlen, world.Tower }.Select(id => id.ToString()).Order(StringComparer.Ordinal),
-            council.LinkedEntityIds.Select(id => id.ToString()));
+            new[] { world.Tower, world.Arlen },
+            council.LinkedEntityIds);
 
         var childhood = winter.Scenes[0];
         Assert.Equal(new BackupChronologyValue(world.Before, 40, null, null), childhood.Chronology);

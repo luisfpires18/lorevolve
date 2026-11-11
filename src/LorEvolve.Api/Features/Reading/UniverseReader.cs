@@ -389,7 +389,8 @@ public static class UniverseReader
 
         var stories = await db.Stories.AsNoTracking()
             .Where(story => story.UniverseId == universeId && story.DeletedAt == null)
-            .OrderBy(story => story.Title)
+            .OrderBy(story => story.SortOrder)
+            .ThenBy(story => story.Title)
             .ThenBy(story => story.Id)
             .Take(OverviewStoryLimit)
             .Select(story => new { story.Id, story.Title, story.Status, story.Premise })

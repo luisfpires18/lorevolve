@@ -1461,6 +1461,7 @@ internal sealed partial class UniverseRestore(
                 Premise = story.Premise,
                 PublicSummary = string.IsNullOrWhiteSpace(story.PublicSummary) ? null : story.PublicSummary,
                 Status = story.Status,
+                SortOrder = story.SortOrder ?? 0,
                 CreatedAt = story.CreatedAt,
                 UpdatedAt = story.UpdatedAt,
                 DeletedAt = story.DeletedAt,
@@ -1511,9 +1512,9 @@ internal sealed partial class UniverseRestore(
                     DeletedAt = scene.DeletedAt,
                 });
 
-                foreach (var entityId in scene.LinkedEntityIds)
+                foreach (var (entityId, place) in scene.LinkedEntityIds.Select((entityId, place) => (entityId, place)))
                 {
-                    db.SceneEntityLinks.Add(new SceneEntityLink { SceneId = sceneId, EntityId = ids.Map(entityId) });
+                    db.SceneEntityLinks.Add(new SceneEntityLink { SceneId = sceneId, EntityId = ids.Map(entityId), SortOrder = place });
                 }
 
                 foreach (var beat in scene.Beats ?? [])

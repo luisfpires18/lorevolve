@@ -1063,13 +1063,15 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .Where(link => link.Scene!.Story!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
+        // In the order the author picked them (since version 38).
         var linkedByScene = links
             .GroupBy(link => link.SceneId)
             .ToDictionary(
                 group => group.Key,
                 group => (IReadOnlyList<Guid>)
                 [
-                    .. group.Select(link => link.EntityId).OrderBy(Key, StringComparer.Ordinal),
+                    .. group.OrderBy(link => link.SortOrder).ThenBy(link => Key(link.EntityId), StringComparer.Ordinal)
+                        .Select(link => link.EntityId),
                 ]);
 
         // The prose, verbatim: the exact string the column holds, with nothing trimmed or normalised.
@@ -1146,7 +1148,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                     chaptersByStory.GetValueOrDefault(story.Id, []),
                     scenesByStory.GetValueOrDefault(story.Id, []),
                     arcsByStory.GetValueOrDefault(story.Id, []),
-                    story.PublicSummary)),
+                    story.PublicSummary,
+                    story.SortOrder)),
         ];
     }
 

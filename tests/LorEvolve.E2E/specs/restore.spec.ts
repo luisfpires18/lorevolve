@@ -16,7 +16,7 @@ import { entryText } from './support/zip'
  */
 
 /** The backup format the API writes today (`UniverseBackup.CurrentVersion`); a file one past it is from a newer LorEvolve. */
-const CURRENT_FORMAT_VERSION = 37
+const CURRENT_FORMAT_VERSION = 38
 
 function unique(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`

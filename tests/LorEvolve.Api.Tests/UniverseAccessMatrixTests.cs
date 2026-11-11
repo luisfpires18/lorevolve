@@ -196,6 +196,7 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("stories", Get, $"{u}/stories", May.Read),
             new("story", Get, s, May.Read),
             new("create story", Post, $"{u}/stories", May.Edit, Json(new StoryRequest("Second book", null, StoryStatus.Planning))),
+            new("order stories", Put, $"{u}/stories/order", May.Edit, Json(new StoryOrderRequest([w.Story]))),
             new("edit story", Put, s, May.Edit, Json(new StoryRequest("The drowned heir", "Edited", StoryStatus.Drafting))),
             new("trash story", Delete, s, May.Edit),
             new("chapters", Get, $"{s}/chapters", May.Read),
