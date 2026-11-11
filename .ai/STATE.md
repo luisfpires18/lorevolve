@@ -39,7 +39,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-11 `dev` is ahead of `master` by PR #88 (story structure). The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
+As of 2026-11-11 `dev` is ahead of `master` by PR #90 (arc field on Edit chapter, Add beat in the scene menu). The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
 
@@ -75,9 +75,8 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 ## Owner steps and unverified items
 
-- **Story structure on PROD** (ADR 0070, PR #88, on `dev` since 2026-11-11): the next PROD release runs
-  `RestructureStoryArcs`, which deletes every existing arc and plot beat there. Follow-up not started: AI write
-  proposals for a chapter's arc and a scene's beats.
+- **AI proposals for story structure** (ADR 0070 follow-up, not started): AI write proposals for a chapter's arc and
+  a scene's beats.
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
   `/mcp/u/{name}` URL, and ChatGPT image rendering or its fallback link. Never tried in a real client
   (`docs/testing/mcp-images-checklist.md`). The assistant's 10,000-character tool-result cap can cut a large catalog.
@@ -116,6 +115,10 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 - A universe backup over 512 MB downloads but will not restore. A very large restore holds the one writer (~15 s at
   ~145k rows). Ideas with no universe have no file backup (ADR 0030, 0032).
 - Orphaned media is swept best-effort, never retried (ADR 0019).
+- A deploy that kills the app mid-migration leaves a row in `__EFMigrationsLock`, and every later start then waits on it
+  until App Service gives up (230 s). Happened on DEV 2026-11-11 (files swapped under the running app). Recovery: stop
+  the site, download `/home/data/lorevolve.db` via Kudu, check integrity and history, delete the lock row, upload,
+  start. `WEBSITE_RUN_FROM_PACKAGE=1` (below) removes the usual cause.
 
 Deferred features and their ADRs: "Deferred / owner decisions" in the archive.
 

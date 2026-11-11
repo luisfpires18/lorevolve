@@ -2,13 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
-import { createChapter, updateChapter } from '../stories/api'
-import type { Chapter } from '../stories/types'
+import { createChapter, moveChapterToArc, updateChapter } from '../stories/api'
+import { arcLabel } from '../stories/format'
+import type { Chapter, PlotArc } from '../stories/types'
 
 interface ChapterDraft {
   title: string
   summary: string
   notes: string
+  /** The arc it is in, or '' for none (ADR 0070). */
+  arcId: string
 }
 
 interface ChapterFormProps {
@@ -20,6 +23,8 @@ interface ChapterFormProps {
   number: string | null
   /** The arc a new chapter starts in, or null for none (ADR 0070). Never read for a chapter being edited. */
   plotArcId?: string | null
+  /** The story's arcs, in order: with any, the form offers the arc the chapter is in. */
+  arcs?: PlotArc[]
   onClose: () => void
   onSaved: (chapter: Chapter) => void
 }
@@ -51,6 +56,7 @@ export function ChapterForm({
   chapter,
   number,
   plotArcId = null,
+  arcs = [],
   onClose,
   onSaved,
 }: ChapterFormProps) {
@@ -61,13 +67,15 @@ export function ChapterForm({
     title: chapter?.title ?? '',
     summary: chapter?.summary ?? '',
     notes: chapter?.notes ?? '',
+    arcId: (chapter ? chapter.plotArcId : plotArcId) ?? '',
   }))
   const [draft, setDraft] = useState<ChapterDraft>(initial)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
-  const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
+  const isDirty =
+    payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial)) || draft.arcId !== initial.arcId
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     chapter
@@ -95,9 +103,14 @@ export function ChapterForm({
     const input = inputOf(draft)
 
     try {
-      const saved = chapter
+      const arcId = draft.arcId === '' ? null : draft.arcId
+      let saved = chapter
         ? await updateChapter(universeId, storyId, chapter.id, input)
-        : await createChapter(universeId, storyId, { ...input, plotArcId })
+        : await createChapter(universeId, storyId, { ...input, plotArcId: arcId })
+      // Another arc moves the chapter there, last, with its scenes: the route that does it everywhere else.
+      if (chapter && arcId !== (chapter.plotArcId ?? null)) {
+        saved = await moveChapterToArc(universeId, storyId, chapter.id, arcId)
+      }
       onSaved(saved)
     } catch (error: unknown) {
       if (error instanceof ApiError) {
@@ -165,6 +178,37 @@ export function ChapterForm({
             />
             {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
           </div>
+
+          {arcs.length > 0 ? (
+            <div className="field">
+              <label className="field__label" htmlFor="chapter-arc">
+                Arc
+              </label>
+              <p className="field__hint">
+                {chapter
+                  ? 'Choosing another arc moves the chapter there, last, with its scenes.'
+                  : 'The chapter goes last in it.'}
+              </p>
+              <select
+                id="chapter-arc"
+                className="field__input field__input--select"
+                value={draft.arcId}
+                onChange={(event) => edit({ arcId: event.target.value })}
+                aria-invalid={fieldErrors.plotarcid ? true : undefined}
+                data-testid="chapter-arc-select"
+              >
+                <option value="">No arc</option>
+                {arcs.map((arc, index) => (
+                  <option key={arc.id} value={arc.id}>
+                    {arcLabel(index, arc.title)}
+                  </option>
+                ))}
+              </select>
+              {fieldErrors.plotarcid ? (
+                <p className="field__error">{fieldErrors.plotarcid}</p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="field">
             <label className="field__label" htmlFor="chapter-summary">
