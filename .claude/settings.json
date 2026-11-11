@@ -44,7 +44,10 @@
     "web-engines@awesome-gamedev-agent-skills": false,
     "unity-perf@anthropic-plugin-directory": false,
     "unity@anthropic-plugin-directory": false,
-    "unreal-engine-skills@anthropic-plugin-directory": false
+    "unreal-engine-skills@anthropic-plugin-directory": false,
+    "taste-skill@taste-skill": true,
+    "impeccable@impeccable": true,
+    "unreal-engine-skills-for-claude-code@claude-plugins-official": false
   },
   "hooks": {
     "PreToolUse": [
