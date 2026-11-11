@@ -350,19 +350,23 @@ test.describe('story workspace', () => {
     await expect(scene(page, 'The Council')).toBeInViewport()
     await expect(scene(page, 'The Council')).toBeFocused()
 
-    // Every menu says whose it is, Delete comes last in it, and a drawer hands the focus back to the menu that opened it.
+    // Every menu says whose it is and Delete comes last in it. Edit scene sits beside Write, says whose scene it
+    // edits, and its drawer hands the focus back to it.
     const sceneMenu = scene(page, 'The Council').getByTestId('scene-actions')
     await expect(sceneMenu).toHaveAccessibleName('More actions for The Council')
-    await openMenuFor(scene(page, 'The Council'), 'scene-edit')
+    await openMenuFor(scene(page, 'The Council'), 'scene-delete')
     const items = scene(page, 'The Council').locator('.actionmenu__item')
-    await expect(items.first()).toHaveAccessibleName('Edit scene')
     await expect(items.last()).toHaveAccessibleName('Delete scene')
     await expect(items.last()).toHaveAttribute('data-testid', 'scene-delete')
-    await scene(page, 'The Council').getByTestId('scene-edit').click()
+    await page.keyboard.press('Escape')
+    const edit = scene(page, 'The Council').getByTestId('scene-edit')
+    await expect(edit).toHaveAccessibleName('Edit scene')
+    await expect(edit).toHaveAccessibleDescription(/The Council/)
+    await edit.click()
     await expect(page.getByTestId('scene-form')).toBeVisible()
     await page.getByTestId('cancel-scene').click()
     await expect(page.getByTestId('scene-form')).toHaveCount(0)
-    await expect(sceneMenu).toBeFocused()
+    await expect(edit).toBeFocused()
 
     // The lore the prose is about is a link from the manuscript; with the words saved it simply goes there.
     await scene(page, 'The Council').getByTestId('scene-write').click()

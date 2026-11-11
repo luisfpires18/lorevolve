@@ -353,7 +353,7 @@ test.describe('stories', () => {
 
     // A story with no chapters is one plain list: no Unchaptered heading, no chapter to move to.
     await expect(page.getByTestId('unchaptered')).toHaveCount(0)
-    await openMenuFor(scene(page, 'Aftermath'), 'scene-edit')
+    await openMenuFor(scene(page, 'Aftermath'), 'scene-delete')
     await expect(scene(page, 'Aftermath').getByTestId('scene-move-to-option')).toHaveCount(0)
     await page.keyboard.press('Escape')
 
@@ -401,7 +401,7 @@ test.describe('stories', () => {
 
     // Edited in place: still the second scene told.
     await page.goto(storyUrl)
-    await chooseFromMenu(scene(page, 'Aftermath'), 'scene-edit')
+    await scene(page, 'Aftermath').getByTestId('scene-edit').click()
     await page.getByTestId('scene-title-input').fill('Aftermath at the Gate')
     await page.getByTestId('scene-notes-input').fill('Open on the silence.')
     await page.getByTestId('save-scene').click()
@@ -526,7 +526,7 @@ test.describe('stories', () => {
     )
 
     // And from the scene's own form: another chapter puts it last there.
-    await chooseFromMenu(scene(page, 'Loose thread'), 'scene-edit')
+    await scene(page, 'Loose thread').getByTestId('scene-edit').click()
     await page.getByTestId('scene-chapter-select').selectOption({ label: 'Chapter 2: Arrival' })
     await page.getByTestId('save-scene').click()
     await expect(page.getByTestId('scene-form')).toHaveCount(0)
@@ -626,9 +626,7 @@ test.describe('stories', () => {
     const menu = scene(page, 'C').getByRole('button', { name: 'More actions for C' })
     await menu.focus()
     await page.keyboard.press('Enter')
-    await expect.poll(() => focused(page)).toMatchObject({ control: 'scene-edit', scene: 'C' })
     await expect(scene(page, 'C').getByTestId('scene-move-down')).toHaveCount(0)
-    await page.keyboard.press('ArrowDown')
     await expect.poll(() => focused(page)).toMatchObject({ control: 'scene-move-up', scene: 'C' })
 
     await moveAndSave(page, () => page.keyboard.press('Enter'), '“C” is now scene 2 of 3.')
@@ -637,15 +635,13 @@ test.describe('stories', () => {
     await expect.poll(() => focused(page)).toMatchObject({ control: 'scene-actions', scene: 'C' })
 
     await page.keyboard.press('Enter')
-    await page.keyboard.press('ArrowDown')
     await moveAndSave(page, () => page.keyboard.press('Enter'), '“C” is now scene 1 of 3.')
     await expect.poll(() => sceneOrder(page)).toEqual(['C', 'A', 'B'])
     await expect.poll(() => focused(page)).toMatchObject({ control: 'scene-actions', scene: 'C' })
 
-    // At the top, "Move up" is not offered: the move after Edit scene is "Move down".
+    // At the top, "Move up" is not offered: the first move is "Move down".
     await page.keyboard.press('Enter')
     await expect(scene(page, 'C').getByTestId('scene-move-up')).toHaveCount(0)
-    await page.keyboard.press('ArrowDown')
     await expect.poll(() => focused(page)).toMatchObject({ control: 'scene-move-down', scene: 'C' })
     await moveAndSave(page, () => page.keyboard.press('Space'), '“C” is now scene 2 of 3.')
     await expect.poll(() => sceneOrder(page)).toEqual(['A', 'C', 'B'])
@@ -712,7 +708,6 @@ test.describe('stories', () => {
     // Inside a chapter, a scene's move stays inside it.
     await scene(page, 'b').getByTestId('scene-actions').focus()
     await page.keyboard.press('Enter')
-    await page.keyboard.press('ArrowDown')
     await expect.poll(() => focused(page)).toMatchObject({ control: 'scene-move-up', scene: 'b' })
     await moveAndSave(
       page,
@@ -783,7 +778,7 @@ test.describe('stories', () => {
     ).toBeVisible()
 
     // Saving the scene keeps what it holds.
-    await chooseFromMenu(council, 'scene-edit')
+    await council.getByTestId('scene-edit').click()
     await page.getByTestId('scene-title-input').fill('The Council, again')
     await page.getByTestId('save-scene').click()
     await expect(page.getByTestId('scene-form')).toHaveCount(0)
@@ -865,12 +860,11 @@ test.describe('stories', () => {
         expect(ground, `dark ground at ${width}px`).toBe('rgb(21, 22, 23)')
       }
 
-      // A scene shows Write and its menu, not a row of tools: the rest waits in the menu. Both, and every linked
-      // entry, are on screen rather than pushed off its edge.
+      // A scene shows Edit scene, Write and its menu, not a row of tools: the rest waits in the menu. Each, and every
+      // linked entry, is on screen rather than pushed off its edge.
       const first = page.getByTestId('scene').first()
       await expect(first.getByTestId('scene-delete')).toHaveCount(0)
-      await expect(first.getByTestId('scene-edit')).toHaveCount(0)
-      for (const control of ['scene-write', 'scene-actions']) {
+      for (const control of ['scene-edit', 'scene-write', 'scene-actions']) {
         const box = await first.getByTestId(control).boundingBox()
         expect(box, `${control} at ${width}px`).not.toBeNull()
         expect(box!.x + box!.width, `${control} at ${width}px`).toBeLessThanOrEqual(edge)
@@ -901,7 +895,7 @@ test.describe('stories', () => {
       await expect(panel).toHaveCount(0)
 
       // The drawers keep a form's measure on a wide screen and fold their rows on a narrow one.
-      await chooseFromMenu(first, 'scene-edit')
+      await first.getByTestId('scene-edit').click()
       const form = page.getByTestId('scene-form')
       await expect(form).toBeVisible()
       const formBox = await form.boundingBox()

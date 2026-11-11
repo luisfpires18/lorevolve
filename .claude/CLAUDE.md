@@ -66,6 +66,7 @@ compresses command output. Neither replaces the other.
 
 - Reach for a docs server before guessing an API that may have moved (EF Core, ASP.NET Core, Vite, React, Playwright,
   the Responses API). Never put universe content, keys or personal data in a docs query.
-- No GitHub server: the `gh` CLI covers GitHub, signed in as the owner with their full access. Use it only for what
-  the owner asks; never close issues, merge, push or touch Actions on its own initiative.
+- No GitHub server: the `gh` CLI covers GitHub, signed in as the owner with their full access. Use it for what the
+  owner asks and for the shared workflow's task steps (push the task branch, open its PR, merge into `dev` on
+  Codex ACCEPTED, close its Issue); never merge to `master`, deploy PROD or touch Actions on its own initiative.
 - No secret in `.mcp.json`.

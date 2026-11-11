@@ -1,10 +1,11 @@
 # STATE
 
-Current operational state only, as of 2026-11-09. Trim instead of appending: when work merges, delete its line here;
+Current operational state only, as of 2026-11-10. Trim instead of appending: when work merges, delete its line here;
 git history and ADRs keep the detail. History before this trim: `docs/history/state-archive-2026-10.md`.
 
 ## Pointers
 
+- Workflow: shared luisfpires18/ai-workflow since 2026-11-11 (Codex reviews; Claude merges into `dev` on ACCEPTED; PROD stays the owner's). Project mapping: `.ai/PROJECT.md`. This file moved here from the repository root on 2026-11-11.
 - Architecture decisions: `docs/architecture/decisions/README.md`. Files and responsibilities: `SYSTEMS.md`.
 - Branches, naming, sequence log: `docs/architecture/branching.md`. Tooling rules: `.claude/CLAUDE.md`.
 - Runbooks: `docs/deployment/azure-prod.md`, `docs/deployment/azure-dev.md`, `docs/deployment/cloudflare-r2.md`,
@@ -17,7 +18,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
   `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 42395173109 on `master` `0a0f79e`, succeeded (2026-11-07, the audit quick wins and display-size pictures).
+  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 42817185086 on `master` `6b8c0c2`, succeeded (2026-11-10, the Human-Crafted Experience work and the warm start).
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -38,21 +39,15 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-09 `dev` is ahead of `master` with the Human-Crafted Experience work, on DEV and not in PROD: the
-product voice guide (`docs/design/PRODUCT_VOICE.md`), the first-visit create form and the empty-universe line, Literata
-as the self-hosted book face (with the phone header and the 600px article measure adjusted for it), the calmer launch
-opening, the AI Changes icon and the microcopy pass (no dashes as connectors, email footers). Last DEV deploy: run
-42678475363 on `dev` `6b6fa2e`, succeeded. The demo page (`demo` branch, live)
-has the plain hero, the four-step Frodo example and Literata. Still open there: the step 4 screenshot shows an empty
-scene, and an original showcase world is deferred.
+As of 2026-11-10 `master` and `dev` match. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
+example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
+deferred.
 
 ## In flight
 
 One line per branch. Delete the line when it merges.
 
 
-- `feat/publish-everything`: Publish page "Publish everything" (Canon lore, Complete stories with scenes and text; plot
-  arcs never). Committed locally, not merged.
 
 ## Committed, not on `dev`
 

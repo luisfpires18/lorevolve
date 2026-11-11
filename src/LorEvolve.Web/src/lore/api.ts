@@ -306,6 +306,7 @@ export function listEntities(universeId: string, query: EntityQuery, signal?: Ab
   if (query.tag) params.set('tag', query.tag)
   if (query.familyTreeEligible) params.set('familyTreeEligible', 'true')
   if (query.exact && query.search.trim()) params.set('exact', 'true')
+  if (query.namesOnly && query.search.trim()) params.set('namesOnly', 'true')
   if (query.sort) params.set('sort', query.sort)
   if (query.entityTypeId) {
     for (const filter of query.fieldFilters ?? []) {

@@ -70,7 +70,7 @@ Proved before the change, on 349 tests, with the API logging every request's sta
 
 The full run's one loss was `profile.spec.ts`'s photo test meeting a wholly blank `/register`
 before any request reached the API - the dev server failing to deliver the page's modules under
-load, the same flake recorded in `STATE.md` since 013 - and it was green three times out of three
+load, the same flake recorded in `.ai/STATE.md` since 013 - and it was green three times out of three
 alone. Nothing in either run was SQLite contention or a server error.
 
 ### CI: six shards, two browsers each, a fresh database per shard

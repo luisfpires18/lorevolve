@@ -5,8 +5,8 @@ import { TypeIcon } from './TypeIcon'
 import type { SceneLoreReference } from '../stories/types'
 
 /**
- * A lore reference as a story draws it, on a scene or on a plot beat: its type's icon - or, for a point of view,
- * its square tile - and its name, a real link to the entry's own page. An entry in the Trash is named but not linked,
+ * A lore reference as a story draws it, on a scene or on a plot beat: its picture, small, or with none its type's icon -
+ * or, for a point of view, its square tile - and its name, a real link to the entry's own page. An entry in the Trash is named but not linked,
  * because it has no page to open while it is there.
  */
 export function LoreReference({
@@ -18,20 +18,23 @@ export function LoreReference({
   reference: SceneLoreReference
   portrait?: boolean
 }) {
-  const className = `lorechip${portrait ? ' lorechip--pov' : ''}`
+  // A trashed entry's picture is not served, so it is drawn as its type's tile or icon instead.
+  const image = reference.isTrashed ? null : reference.image
+  // An entry with a picture shows it on its chip too, small, in place of its type's icon.
+  const pictured = !portrait && image !== null
+  const className = `lorechip${portrait ? ' lorechip--pov' : ''}${pictured ? ' lorechip--pictured' : ''}`
   const accent = reference.entityTypeAccentColor
     ? ({ '--type-accent': reference.entityTypeAccentColor } as CSSProperties)
     : undefined
 
   const content = (
     <>
-      {portrait ? (
+      {portrait || pictured ? (
         <EntityTile
-          className="lorechip__tile"
+          className={portrait ? 'lorechip__tile' : 'lorechip__thumb'}
           universeId={universeId}
           entityId={reference.entityId}
-          // A trashed entry's picture is not served, so it is drawn as its type's tile instead.
-          image={reference.isTrashed ? null : reference.image}
+          image={image}
           typeIcon={reference.entityTypeIcon}
           typeAccent={reference.entityTypeAccentColor}
         />
