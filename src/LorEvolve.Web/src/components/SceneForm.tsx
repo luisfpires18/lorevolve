@@ -13,6 +13,7 @@ import { suggestSceneChanges } from '../suggestions/api'
 import { UNCHAPTERED } from '../stories/format'
 import { chapterChoices } from '../stories/structure'
 import { SceneBeatsField } from './SceneBeatsField'
+import { beatKey } from '../stories/beats'
 import {
   draftFrom,
   EMPTY_POINT,
@@ -38,6 +39,8 @@ interface SceneFormProps {
   onSaved: (scene: Scene) => void
   /** Sends the form as a suggestion instead of saving it (task 045); the scene itself is not changed. */
   onSuggested?: () => void
+  /** Opens on a new, empty beat row with the focus in it: the scene menu's Add beat. An empty row is no change. */
+  startWithBeat?: boolean
 }
 
 /**
@@ -60,6 +63,7 @@ export function SceneForm({
   onClose,
   onSaved,
   onSuggested,
+  startWithBeat = false,
 }: SceneFormProps) {
   const suggesting = onSuggested !== undefined && scene !== null
   const dialog = useRef<HTMLDialogElement>(null)
@@ -72,7 +76,11 @@ export function SceneForm({
     version: scene?.version,
   }))
   const initial = base.draft
-  const [draft, setDraft] = useState<SceneDraft>(initial)
+  const [draft, setDraft] = useState<SceneDraft>(() =>
+    startWithBeat && !suggesting
+      ? { ...initial, beats: [...initial.beats, { key: beatKey(), title: '', note: '' }] }
+      : initial,
+  )
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -103,7 +111,21 @@ export function SceneForm({
 
   useEffect(() => {
     dialog.current?.showModal()
-    title.current?.focus()
+    const beat = startWithBeat
+      ? [
+          ...(dialog.current?.querySelectorAll<HTMLInputElement>(
+            '[data-testid="scene-beat-title"]',
+          ) ?? []),
+        ].at(-1)
+      : undefined
+    if (beat) {
+      beat.focus()
+      beat.scrollIntoView({ block: 'center' })
+    } else {
+      title.current?.focus()
+    }
+    // Once, as the drawer opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /** The latest saved scene against the form, in the form's own words. */

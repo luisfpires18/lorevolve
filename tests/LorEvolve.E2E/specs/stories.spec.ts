@@ -734,8 +734,10 @@ test.describe('stories', () => {
     await expect(options).toHaveCount(0)
     await expect.poll(() => focused(page)).toMatchObject({ control: 'scene-actions', scene: 'c' })
 
+    // End is Delete scene; above it Add beat, then the last Move to.
     await page.keyboard.press('Enter')
     await page.keyboard.press('End')
+    await page.keyboard.press('ArrowUp')
     await page.keyboard.press('ArrowUp')
     await expect
       .poll(() => page.evaluate(() => document.activeElement?.textContent))

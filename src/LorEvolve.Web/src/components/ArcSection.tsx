@@ -145,7 +145,8 @@ export function ArcSection({
         children
       ) : (
         <p className="plotarc__empty" data-testid="arc-empty">
-          No chapters in this arc yet.
+          No chapters in this arc yet. Add one with New chapter, or move one here: Edit chapter,
+          then choose this arc, or Move to from the chapter&rsquo;s ⋯ menu.
         </p>
       )}
     </section>
