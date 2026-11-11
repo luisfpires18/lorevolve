@@ -322,7 +322,7 @@ test.describe('story drawers', () => {
     const title = page.getByTestId('scene-title-input')
 
     // Put back as it was, a title is clean again: Cancel closes without asking.
-    await chooseFromMenu(scene(page, 'The Gates'), 'scene-edit')
+    await scene(page, 'The Gates').getByTestId('scene-edit').click()
     await title.fill('The Gates, again')
     await title.fill('The Gates')
     await page.getByTestId('cancel-scene').click()
@@ -330,7 +330,7 @@ test.describe('story drawers', () => {
     await expect.poll(() => asked).toEqual([])
 
     // Moving it to another chapter is a change.
-    await chooseFromMenu(scene(page, 'The Gates'), 'scene-edit')
+    await scene(page, 'The Gates').getByTestId('scene-edit').click()
     await page.getByTestId('scene-chapter-select').selectOption({ label: 'Chapter 2: Ashes' })
     await page.getByTestId('cancel-scene').click()
     await expect.poll(() => asked).toEqual([DISCARD])
@@ -348,13 +348,13 @@ test.describe('story drawers', () => {
     answer(true)
     await page.getByTestId('cancel-scene').click()
     await expect(form).toHaveCount(0)
-    await chooseFromMenu(scene(page, 'The Council'), 'scene-edit')
+    await scene(page, 'The Council').getByTestId('scene-edit').click()
     await expect(title).toHaveValue('The Council')
     await expect(page.getByTestId('scene-chapter-select')).toHaveValue(/.+/)
     await expect(form.getByTestId('participant-remove-Arlen')).toHaveCount(0)
     await page.getByTestId('cancel-scene').click()
     await expect(form).toHaveCount(0)
-    await chooseFromMenu(scene(page, 'The Gates'), 'scene-edit')
+    await scene(page, 'The Gates').getByTestId('scene-edit').click()
     await expect(title).toHaveValue('The Gates')
     await expect(form.getByTestId('participant-remove-Arlen')).toBeVisible()
     await page.getByTestId('cancel-scene').click()
