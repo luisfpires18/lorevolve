@@ -227,12 +227,15 @@ export function LoreCatalog({
                     onClick={() => toggle(node.type.id)}
                     data-testid="lore-type-expand"
                     data-type-name={node.type.name}
+                    aria-label={`${isOpen ? 'Hide' : 'Show'} ${
+                      node.children.length === 1
+                        ? '1 nested type'
+                        : `${node.children.length} nested types`
+                    }`}
+                    title={isOpen ? 'Hide nested types' : 'Show nested types'}
                   >
                     <Chevron aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                    {isOpen ? 'Hide' : 'Show'}{' '}
-                    {node.children.length === 1
-                      ? '1 nested type'
-                      : `${node.children.length} nested types`}
+                    <span aria-hidden="true">{node.children.length}</span>
                   </button>
                 ) : null}
               </li>

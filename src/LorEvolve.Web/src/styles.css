@@ -5206,19 +5206,21 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
     color-mix(in srgb, var(--type-accent, var(--accent)) 45%, var(--rule));
 }
 
-/* A card that folds nested types keeps the grid's size: its toggle sits inside its lower corner, under the details. */
+/* A card that folds nested types keeps the grid's size: its toggle sits in the lower left corner, under the icon, in
+   space the card's minimum height already leaves there, so it never makes the card taller. */
 .lorecatalog__expandable {
   position: relative;
 }
 
-.lorecatalog__expandable > .typecard {
-  padding-block-end: calc(var(--space-4) + 2rem);
-}
-
 .lorecatalog__expand {
   position: absolute;
-  inset-block-end: var(--space-2);
-  inset-inline-start: calc(var(--space-5) - var(--space-2));
+  inset-block-end: 0.375rem;
+  inset-inline-start: var(--space-5);
+  width: 3rem;
+  min-height: 1.5rem;
+  justify-content: center;
+  gap: 0.125rem;
+  padding-inline: 0;
 }
 
 .lorecatalog__expand svg {
