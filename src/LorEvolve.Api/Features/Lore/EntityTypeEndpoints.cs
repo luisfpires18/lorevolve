@@ -95,6 +95,9 @@ public static class EntityTypeEndpoints
     /// <summary>The 409 for moving a type out from under a type that link fields are limited to, while links rely on it (Issue #61).</summary>
     public const string BranchInUseCode = "entity_type_branch_in_use";
 
+    /// <summary>The marker on the 409 for a move that would lose inherited fields with values, or bring in a field already there.</summary>
+    public const string InheritedFieldsCode = "entity_type_inherited_fields";
+
     public static IEndpointRouteBuilder MapEntityTypeEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/universes/{universeId:guid}/entity-types")
@@ -352,6 +355,11 @@ public static class EntityTypeEndpoints
             return stranded;
         }
 
+        if (await InheritedFieldsRefusalAsync(db, parentOf, entityType.Id, entityType.Name, parentId, cancellationToken) is { } inherited)
+        {
+            return inherited;
+        }
+
         var now = DateTime.UtcNow;
         var oldParentId = entityType.ParentId;
         var order = await NextPlaceAsync(db, universeId, parentId, cancellationToken);
@@ -429,6 +437,85 @@ public static class EntityTypeEndpoints
                 + ". Change those links first, then try again.",
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?> { ["code"] = BranchInUseCode });
+    }
+
+    /// <summary>
+    /// The refusal for moving the type <paramref name="typeId"/> beneath <paramref name="newParentId"/> (null for the root) when
+    /// fields would come or go wrongly with the inheritance (ADR 0007 amendment, 2026-11-12), or null. A nested type inherits the
+    /// fields of every type above it, so a move takes away the fields of the types it leaves and brings those of the types it
+    /// joins. Refused while an entry of the moving branch - live, in the Trash, or in one of its eras - holds a value in a field
+    /// it would lose: nothing is hidden or cleared to make the move; the author clears those values, or keeps the parent. Refused
+    /// too when a field it would gain has the name or the meaning of one the branch already has. Read-only; <paramref
+    /// name="parentOf"/> is the graph before the move. Shared with an AI change's checks.
+    /// </summary>
+    internal static async Task<IResult?> InheritedFieldsRefusalAsync(
+        LorEvolveDbContext db,
+        IReadOnlyDictionary<Guid, Guid?> parentOf,
+        Guid typeId,
+        string typeName,
+        Guid? newParentId,
+        CancellationToken cancellationToken)
+    {
+        var before = parentOf.GetValueOrDefault(typeId) is { } oldParent ? EntityTypeHierarchy.Lineage(parentOf, oldParent) : [];
+        var after = newParentId is { } newParent ? EntityTypeHierarchy.Lineage(parentOf, newParent) : [];
+        var lost = before.Except(after).ToList();
+        var gained = after.Except(before).ToList();
+        var moving = EntityTypeHierarchy.Branch(parentOf, typeId).ToList();
+
+        if (lost.Count > 0)
+        {
+            var held = await db.EntityFieldDefinitions.AsNoTracking()
+                .Where(field => lost.Contains(field.EntityTypeId)
+                    && (field.Values.Any(value => moving.Contains(value.Entity!.EntityTypeId))
+                        || db.EntityEraFieldValues.Any(value => value.FieldDefinitionId == field.Id && moving.Contains(value.EntityEra!.Entity!.EntityTypeId))))
+                .Select(field => new { field.Name, TypeName = field.EntityType!.Name })
+                .ToListAsync(cancellationToken);
+
+            if (held.Count > 0)
+            {
+                var ordered = held.OrderBy(field => field.TypeName, StringComparer.Ordinal).ThenBy(field => field.Name, StringComparer.Ordinal).ToList();
+                var others = ordered.Count - 1;
+                return Results.Problem(
+                    title: "Entries hold inherited values",
+                    detail: $"{typeName} can't move there because its entries, or entries of a type nested in it, hold values in "
+                        + $"\"{ordered[0].Name}\", a field it inherits from {ordered[0].TypeName}"
+                        + (others == 0 ? string.Empty : others == 1 ? ", and in 1 other inherited field" : $", and in {others} other inherited fields")
+                        + ". It would no longer have those fields. Clear those values first, or keep it where it is.",
+                    statusCode: StatusCodes.Status409Conflict,
+                    extensions: new Dictionary<string, object?> { ["code"] = InheritedFieldsCode });
+            }
+        }
+
+        if (gained.Count == 0)
+        {
+            return null;
+        }
+
+        var incoming = await db.EntityFieldDefinitions.AsNoTracking()
+            .Where(field => gained.Contains(field.EntityTypeId))
+            .Select(field => new { field.Name, field.Semantic, TypeName = field.EntityType!.Name })
+            .ToListAsync(cancellationToken);
+        var names = incoming.Select(field => field.Name).ToList();
+        var meanings = incoming.Select(field => field.Semantic).OfType<EntityFieldSemantic>().ToList();
+        var twin = await db.EntityFieldDefinitions.AsNoTracking()
+            .Where(field => moving.Contains(field.EntityTypeId)
+                && (names.Contains(field.Name) || (field.Semantic != null && meanings.Contains(field.Semantic.Value))))
+            .Select(field => new { field.Name, field.Semantic, TypeName = field.EntityType!.Name })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (twin is null)
+        {
+            return null;
+        }
+
+        var match = incoming.First(field => field.Name == twin.Name || (twin.Semantic is not null && field.Semantic == twin.Semantic));
+        return Results.Problem(
+            title: "A field would be there twice",
+            detail: match.Name == twin.Name
+                ? $"{typeName} can't move there because {twin.TypeName} has a field \"{twin.Name}\" and {match.TypeName}, which it would sit inside, has one with the same name. Rename one of them first."
+                : $"{typeName} can't move there because \"{twin.Name}\" on {twin.TypeName} and \"{match.Name}\" on {match.TypeName}, which it would sit inside, mean the same thing. Only one field may mean it.",
+            statusCode: StatusCodes.Status409Conflict,
+            extensions: new Dictionary<string, object?> { ["code"] = InheritedFieldsCode });
     }
 
     /// <summary>
@@ -1892,22 +1979,39 @@ public static class EntityTypeEndpoints
         Guid typeId,
         Guid? excludingFieldId,
         EntityFieldSemantic? semantic,
-        CancellationToken cancellationToken) =>
-        semantic is { } value
-            ? await db.EntityFieldDefinitions
-                .Where(field => field.EntityTypeId == typeId && field.Semantic == value && field.Id != excludingFieldId)
-                .Select(field => (bool?)(field.ArchivedAt != null))
-                .FirstOrDefaultAsync(cancellationToken)
-            : null;
+        CancellationToken cancellationToken)
+    {
+        if (semantic is not { } value)
+        {
+            return null;
+        }
+
+        var chain = await InheritanceChainAsync(db, typeId, cancellationToken);
+        return await db.EntityFieldDefinitions
+            .Where(field => chain.Contains(field.EntityTypeId) && field.Semantic == value && field.Id != excludingFieldId)
+            .Select(field => (bool?)(field.ArchivedAt != null))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// <paramref name="typeId"/>, every type above it and every type nested in it: the types whose fields an entry may show
+    /// beside this type's (ADR 0007 amendment, 2026-11-12), so a field name or meaning must be unique across all of them.
+    /// </summary>
+    internal static async Task<List<Guid>> InheritanceChainAsync(LorEvolveDbContext db, Guid typeId, CancellationToken cancellationToken)
+    {
+        var universeId = await db.EntityTypes.Where(type => type.Id == typeId).Select(type => type.UniverseId).FirstAsync(cancellationToken);
+        var parents = await ParentsAsync(db, universeId, cancellationToken);
+        return [.. EntityTypeHierarchy.Lineage(parents, typeId).Union(EntityTypeHierarchy.Branch(parents, typeId))];
+    }
 
     private static IResult SemanticTaken(EntityFieldSemantic semantic, bool archived) =>
         Results.ValidationProblem(new Dictionary<string, string[]>
         {
             ["semantic"] = [
                 archived
-                    ? $"An archived field on this type is already {LoreValidation.SemanticWord(semantic)}. "
+                    ? $"An archived field on this type, or a type above or inside it, is already {LoreValidation.SemanticWord(semantic)}. "
                         + "Only one field may mean it. Restore that field, or choose no meaning here."
-                    : $"Another field on this type is already {LoreValidation.SemanticWord(semantic)}. "
+                    : $"Another field on this type, or a type above or inside it, is already {LoreValidation.SemanticWord(semantic)}. "
                         + "Only one field may mean it."],
         });
 
@@ -1915,24 +2019,27 @@ public static class EntityTypeEndpoints
     /// Whether another field on this type already has the name - null when none does, else whether that field is archived. An
     /// archived field keeps its name, so a restore can never meet a twin.
     /// </summary>
-    private static Task<bool?> NameClashAsync(
+    private static async Task<bool?> NameClashAsync(
         LorEvolveDbContext db,
         Guid typeId,
         Guid? excludingFieldId,
         string name,
-        CancellationToken cancellationToken) =>
-        db.EntityFieldDefinitions
-            .Where(field => field.EntityTypeId == typeId && field.Name == name && field.Id != excludingFieldId)
+        CancellationToken cancellationToken)
+    {
+        var chain = await InheritanceChainAsync(db, typeId, cancellationToken);
+        return await db.EntityFieldDefinitions
+            .Where(field => chain.Contains(field.EntityTypeId) && field.Name == name && field.Id != excludingFieldId)
             .Select(field => (bool?)(field.ArchivedAt != null))
             .FirstOrDefaultAsync(cancellationToken);
+    }
 
     private static IResult FieldNameTaken(bool archived) =>
         Results.ValidationProblem(new Dictionary<string, string[]>
         {
             ["name"] = [
                 archived
-                    ? "An archived field on this type already has that name. Restore it, or choose another name."
-                    : "This type already has a field with that name."],
+                    ? "An archived field on this type, or a type above or inside it, already has that name. Restore it, or choose another name."
+                    : "This type, or a type above or inside it, already has a field with that name."],
         });
 
     /// <summary>

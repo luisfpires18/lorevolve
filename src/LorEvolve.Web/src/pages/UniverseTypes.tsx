@@ -845,7 +845,7 @@ function inUseDetail(name: string, live: number, trashed: number, children = 0) 
  *
  * Both choose where the type sits: at the top, or inside another type - structure, so it belongs with the name. Moving a
  * type moves everything inside it, and it goes last among its new siblings. The type itself and anything already inside
- * it are not offered, since a type cannot sit inside itself. Nothing is inherited from a parent, and a parent's Family
+ * it are not offered, since a type cannot sit inside itself. A nested type inherits every field of the types above it, and a parent's Family
  * Tree choice says nothing about its children.
  */
 function TypeDialog({
@@ -1059,7 +1059,8 @@ function TypeDialog({
               </select>
               <p className="field__hint" id="type-parent-hint">
                 Organises Lore: choosing a type there shows the entries of the types inside it too.
-                Nothing is inherited: each type keeps its own fields.
+                A nested type inherits the fields of every type above it; each field is edited on
+                its own type.
               </p>
               {fieldErrors.parent ? <p className="field__error">{fieldErrors.parent}</p> : null}
             </div>

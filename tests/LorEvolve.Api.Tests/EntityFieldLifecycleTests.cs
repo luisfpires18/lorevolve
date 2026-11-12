@@ -137,7 +137,7 @@ public sealed class EntityFieldLifecycleTests(LorEvolveApiFactory factory) : ICl
 
         var twin = await w.Client.PutFieldAsync(w.U, w.Character, title, Definition("Born", EntityFieldKind.ShortText));
         Assert.Equal(HttpStatusCode.BadRequest, twin.StatusCode);
-        Assert.Equal("This type already has a field with that name.", await ErrorOf(twin, "name"));
+        Assert.Equal("This type, or a type above or inside it, already has a field with that name.", await ErrorOf(twin, "name"));
 
         // An archived field keeps its name, so the clash says where it is.
         await Archive(w, w.Character, born);

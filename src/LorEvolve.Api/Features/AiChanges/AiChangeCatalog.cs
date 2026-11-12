@@ -113,7 +113,7 @@ internal static class AiChangeCatalog
     public const string Notes =
         "Every change is staged for a person to review in LorEvolve; nothing changes until they approve it there. "
         + "Use ids exactly as given. To refer to something another change in the same proposal creates, use {\"ref\": \"<that change's id>\"} "
-        + "instead of an id. Only the fields listed for a type exist: a type nested beneath another never inherits its parent's fields. Types, fields, choices, groups, relationship kinds, date periods, "
+        + "instead of an id. Only the fields listed for a type exist: a type nested beneath another inherits the fields of every type above it, listed first, and an inherited field is changed only on the type that owns it. Types, fields, choices, groups, relationship kinds, date periods, "
         + "the calendar, event kinds and methods change only through a schema proposal (see schema), never in the same proposal as "
         + "content. An image change sends no file: it says which entry, or which of its appearances, a picture is for, and the person "
         + "uploads the picture on the proposal's review page in LorEvolve, then approves it; an AI never replaces a profile picture. "
@@ -127,9 +127,9 @@ internal static class AiChangeCatalog
         "A schema proposal holds only definitions - lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind and "
         + "method - never entries, relationships or moments that use them. Inspect the "
         + "types, fields and groups here first and reuse what exists instead of making a near-duplicate. A group collects types "
-        + "(Locations: Kingdom, City); it is not a type, a parent or a field choice. A field belongs to the one type that defines it: "
-        + "a type nested beneath another has only its own fields, never its parent's, so give each type that needs a field its own "
-        + "(Climate on Region and on City), and put a field on a parent only for entries of that parent type itself. When more than one model fits - Orc as its own "
+        + "(Locations: Kingdom, City); it is not a type, a parent or a field choice. A field belongs to the one type that defines it, "
+        + "and every type nested beneath it inherits it: put a field every kind shares on the parent once (Climate on Location, for "
+        + "Region and City), never again on a nested type, and a field only some need on those types. When more than one model fits - Orc as its own "
         + "type, or as a choice of a Race field on Character - ask the person which they want before proposing. Use only the field "
         + "kinds listed; a field's meaning for LorEvolve's rules is set by the author in LorEvolve, never here. A change can refer to a type or "
         + "group another change of the same proposal creates with {\"ref\": id}. remove on a lore_field archives it: it keeps every "
@@ -314,13 +314,21 @@ internal static class AiChangeCatalog
             SchemaNotes,
             chronology);
 
+        // A nested type's fields are those of every type above it, root first, then its own (ADR 0007 amendment, 2026-11-12).
+        var byId = types.ToDictionary(type => type.Id);
+        var parentOf = types.ToDictionary(type => type.Id, type => type.ParentId);
+        IEnumerable<Guid> Above(Guid typeId) => EntityTypeHierarchy.Lineage(parentOf, typeId).Where(owner => owner != typeId && byId.ContainsKey(owner)).Reverse();
+
         return new AiChangeOptions(
             role.ToString(),
             allowed,
             [.. types.Select(type => new AiChangeOptionType(
                 type.Id,
                 type.Name,
-                [.. type.Fields.Where(field => !field.Archived).Select(field => Field(field))],
+                [
+                    .. Above(type.Id).SelectMany(owner => byId[owner].Fields).Where(field => !field.Archived).Select(field => Field(field)),
+                    .. type.Fields.Where(field => !field.Archived).Select(field => Field(field)),
+                ],
                 type.Description,
                 type.Icon,
                 type.ParentId,

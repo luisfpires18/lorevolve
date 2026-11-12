@@ -273,6 +273,13 @@ export function TypeFields({
 
   const archived = type.archivedFields ?? []
   const sections = type.fieldSections ?? []
+  // What it inherits: each type above it, root first, with its active fields (ADR 0007 amendment, 2026-11-12). Read-only here.
+  const inherited = (tree.byId.get(type.id)?.path.slice(0, -1) ?? [])
+    .map((owner) => ({
+      owner,
+      fields: [...owner.fields].sort((a, b) => a.displayOrder - b.displayOrder),
+    }))
+    .filter((each) => each.fields.length > 0)
 
   /** "In Combat", for an archived field that keeps a section to return to. */
   function sectionName(sectionId: string | null) {
@@ -351,8 +358,39 @@ export function TypeFields({
         </p>
       ) : null}
 
+      {inherited.map(({ owner, fields }) => (
+        <div
+          className="fieldlist__inherited"
+          key={owner.id}
+          data-testid={`inherited-fields-${owner.name}`}
+        >
+          <p className="settings__note">
+            From <bdi>{owner.name}</bdi>. Every entry of {type.name} has these; edit them on{' '}
+            <bdi>{owner.name}</bdi>.
+          </p>
+          <ul className="fieldlist" aria-label={`Fields ${type.name} inherits from ${owner.name}`}>
+            {fields.map((field) => (
+              <li
+                className="fieldlist__row"
+                key={field.id}
+                data-testid={`inherited-field-${field.name}`}
+              >
+                <div className="fieldlist__text">
+                  <span className="fieldlist__name">
+                    <bdi>{field.name}</bdi>
+                  </span>
+                  <span className="fieldlist__meta">{summary(field)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
       {type.fields.length === 0 ? (
-        <p className="settings__note">No custom fields yet.</p>
+        <p className="settings__note">
+          {inherited.length > 0 ? 'No fields of its own yet.' : 'No custom fields yet.'}
+        </p>
       ) : sections.length === 0 ? (
         <ul className="fieldlist" aria-label={`Fields of ${type.name}`}>
           {type.fields.map(fieldRow)}

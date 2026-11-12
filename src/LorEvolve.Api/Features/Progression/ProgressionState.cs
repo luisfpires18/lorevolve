@@ -247,9 +247,11 @@ internal static class ProgressionState
         var known = current.Eras.ToDictionary(era => era.Id!.Value);
         var chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken);
 
+        // The entry's fields: its type's own and those inherited from every type above it.
+        var lineage = await EntityEndpoints.FieldLineageAsync(db, universeId, entityTypeId, cancellationToken);
         var definitions = await db.EntityFieldDefinitions.AsNoTracking()
             .Include(field => field.Options)
-            .Where(field => field.EntityTypeId == entityTypeId && field.EntityType!.UniverseId == universeId && field.ArchivedAt == null)
+            .Where(field => lineage.Contains(field.EntityTypeId) && field.EntityType!.UniverseId == universeId && field.ArchivedAt == null)
             .ToListAsync(cancellationToken);
         var byId = definitions.ToDictionary(field => field.Id);
 

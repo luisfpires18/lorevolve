@@ -514,12 +514,25 @@ internal sealed class ReadableBook
     private void Details(StringBuilder text, string page, BackupEntityType type, IReadOnlyList<BackupFieldValue> values)
     {
         var byField = values.ToLookup(value => value.FieldDefinitionId);
-        var sections = (type.FieldSections ?? []).ToDictionary(section => section.Id);
-        var shown = type.Fields
-            .Where(field => byField.Contains(field.Id))
-            .OrderBy(field => field.ArchivedAt is not null)
-            .ThenBy(field => field.SectionId is { } id && sections.TryGetValue(id, out var section) ? section.DisplayOrder : -1)
-            .ThenBy(field => field.DisplayOrder)
+
+        // The fields inherited from every type above this one come first, root first, then the type's own (ADR 0007
+        // amendment, 2026-11-12); each type's fields in its own layout.
+        var chain = new List<BackupEntityType> { type };
+        while (chain[^1].ParentId is { } parentId && _types.TryGetValue(parentId, out var parent) && !chain.Contains(parent))
+        {
+            chain.Add(parent);
+        }
+
+        chain.Reverse();
+        var sections = chain.SelectMany(owner => owner.FieldSections ?? []).ToDictionary(section => section.Id);
+        var shown = chain
+            .SelectMany((owner, depth) => owner.Fields.Select(field => (field, depth)))
+            .Where(pair => byField.Contains(pair.field.Id))
+            .OrderBy(pair => pair.field.ArchivedAt is not null)
+            .ThenBy(pair => pair.depth)
+            .ThenBy(pair => pair.field.SectionId is { } id && sections.TryGetValue(id, out var section) ? section.DisplayOrder : -1)
+            .ThenBy(pair => pair.field.DisplayOrder)
+            .Select(pair => pair.field)
             .ToList();
         if (shown.Count == 0)
         {

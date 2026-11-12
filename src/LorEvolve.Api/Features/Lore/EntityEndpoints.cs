@@ -479,7 +479,7 @@ public static class EntityEndpoints
         // A type from elsewhere is simply absent here, so it is refused exactly like an unknown one and discloses nothing.
         var types = await db.EntityTypes.AsNoTracking()
             .Where(type => type.UniverseId == universeId)
-            .Select(type => new { type.Id, type.Name, HasRequiredFields = type.Fields.Any(field => field.IsRequired && field.ArchivedAt == null) })
+            .Select(type => new { type.Id, type.Name, type.ParentId, HasRequiredFields = type.Fields.Any(field => field.IsRequired && field.ArchivedAt == null) })
             .ToDictionaryAsync(type => type.Id, cancellationToken);
 
         var errors = new Dictionary<string, string[]>();
@@ -505,7 +505,8 @@ public static class EntityEndpoints
             {
                 errors[$"{at}.entityTypeId"] = ["Choose a type from this universe."];
             }
-            else if (type.HasRequiredFields)
+            else if (EntityTypeHierarchy.Lineage(types.ToDictionary(each => each.Key, each => each.Value.ParentId), type.Id)
+                .Any(owner => types[owner].HasRequiredFields))
             {
                 errors[$"{at}.entityTypeId"] =
                     [$"{type.Name} has required fields, so its entries are created one at a time."];
@@ -702,7 +703,7 @@ public static class EntityEndpoints
         }
 
         if (entity.EntityTypeId != request.EntityTypeId
-            && await ArchivedValuesRefusalAsync(db, entity, cancellationToken) is { } archivedValues)
+            && await ArchivedValuesRefusalAsync(db, entity, request.EntityTypeId, cancellationToken) is { } archivedValues)
         {
             return archivedValues;
         }
@@ -845,21 +846,26 @@ public static class EntityEndpoints
     }
 
     /// <summary>
-    /// The refusal for moving <paramref name="entity"/> to another type while it holds values in archived fields of its current
-    /// type, or null (Issue #39). A move keeps only the new type's fields, and an archived field's values are in no form, so
-    /// the author could not see what the move would discard. Restoring the field shows them; the move is then the ordinary,
-    /// visible one. Only this one entry's values are read.
+    /// The refusal for moving <paramref name="entity"/> to another type while it holds values in archived fields its current
+    /// type has - its own or inherited - and <paramref name="newTypeId"/> would not, or null (Issue #39). A move keeps only
+    /// the new type's fields, and an archived field's values are in no form, so the author could not see what the move would
+    /// discard. Restoring the field shows them; the move is then the ordinary, visible one. Only this one entry's values are
+    /// read.
     /// </summary>
     private static async Task<IResult?> ArchivedValuesRefusalAsync(
         LorEvolveDbContext db,
         LoreEntity entity,
+        Guid newTypeId,
         CancellationToken cancellationToken)
     {
         var entityId = entity.Id;
-        var typeId = entity.EntityTypeId;
+        var parents = await EntityTypeEndpoints.ParentsAsync(db, entity.UniverseId, cancellationToken);
+        var had = EntityTypeHierarchy.Lineage(parents, entity.EntityTypeId).ToList();
+        var keeps = EntityTypeHierarchy.Lineage(parents, newTypeId).ToList();
         var fields = await db.EntityFieldValues.AsNoTracking()
             .Where(value => value.EntityId == entityId
-                && value.FieldDefinition!.EntityTypeId == typeId
+                && had.Contains(value.FieldDefinition!.EntityTypeId)
+                && !keeps.Contains(value.FieldDefinition.EntityTypeId)
                 && value.FieldDefinition.ArchivedAt != null)
             .Select(value => value.FieldDefinition!.Name)
             .Distinct()
@@ -1214,6 +1220,13 @@ public static class EntityEndpoints
     /// as rows not yet added to anything - with what is wrong, keyed by field. Reads only. Shared by the save and by a
     /// suggestion (ADR 0044), which writes nothing at all.
     /// </summary>
+    /// <summary>
+    /// The types whose fields an entry of <paramref name="typeId"/> has: the type and every type above it, since a nested type
+    /// inherits its ancestors' fields (ADR 0007 amendment, 2026-11-12).
+    /// </summary>
+    internal static async Task<List<Guid>> FieldLineageAsync(LorEvolveDbContext db, Guid universeId, Guid typeId, CancellationToken cancellationToken) =>
+        [.. EntityTypeHierarchy.Lineage(await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken), typeId)];
+
     internal static async Task<(List<EntityFieldDefinition> Definitions, List<EntityFieldValue> Rows, Dictionary<string, string[]> Errors)>
         PrepareFieldValuesAsync(
             LorEvolveDbContext db,
@@ -1222,12 +1235,14 @@ public static class EntityEndpoints
             EntityRequest request,
             CancellationToken cancellationToken)
     {
-        // Only active fields belonging to the chosen type, in this universe, are addressable. A value sent for an archived
-        // one - a form opened before it was archived, a version restored, a suggestion - is ignored like any unknown field,
-        // and the value it holds is left alone by the save (Issue #39).
+        // Only active fields of the chosen type and of every type above it (a nested type inherits its ancestors' fields), in
+        // this universe, are addressable. A value sent for an archived one - a form opened before it was archived, a version
+        // restored, a suggestion - is ignored like any unknown field, and the value it holds is left alone by the save
+        // (Issue #39).
+        var lineage = await FieldLineageAsync(db, universeId, request.EntityTypeId, cancellationToken);
         var definitions = await db.EntityFieldDefinitions.AsNoTracking()
             .Include(field => field.Options)
-            .Where(field => field.EntityTypeId == request.EntityTypeId
+            .Where(field => lineage.Contains(field.EntityTypeId)
                 && field.EntityType!.UniverseId == universeId
                 && field.ArchivedAt == null)
             .ToListAsync(cancellationToken);

@@ -193,7 +193,7 @@ export interface EntityType {
    */
   familyTreeOffered: boolean
   /**
-   * The type this one sits beneath, or null for a root. Organisation only - nothing is inherited. A list of types arrives
+   * The type this one sits beneath, or null for a root. The parent's fields pass down: a nested type has every field of the types above it. A list of types arrives
    * parent before descendants, but the tree is always built from these ids (`lore/typeTree.ts`), never from positions.
    */
   parentId: string | null

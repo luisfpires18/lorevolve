@@ -7707,6 +7707,15 @@ html:has(.viewer[open]) {
 
 /* A type's fields (Issue #39): one row each, the name over a quiet line of what it is, Edit and a menu at the end. On a
    phone the actions drop under the text rather than squeezing it. Archived fields fold away beneath, in the same rows. */
+/* A nested type's inherited fields, read-only above its own, each block named for the type that owns them. */
+.fieldlist__inherited {
+  margin-block-end: var(--space-4);
+}
+
+.fieldlist__inherited .fieldlist__row {
+  opacity: 0.85;
+}
+
 .fieldlist {
   list-style: none;
   margin: 0;

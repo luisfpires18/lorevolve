@@ -2,7 +2,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
 
 /**
- * Refinement 034: Lore narrowed by the chosen type's own fields. A filter starts from a field's name, is applied whole or
+ * Refinement 034: Lore narrowed by the chosen type's fields, its own and inherited. A filter starts from a field's name, is applied whole or
  * not at all, lives in the address (so refresh, Back and Forward and a shared link all keep it), and leaves with the type.
  * The API's own rules - every kind's comparisons, missing values, refusals - are the API tests'; this proves what a person
  * does and sees. Every test builds its own world through the API, so nothing depends on shared data.
@@ -369,10 +369,10 @@ test.describe('Lore field filters', () => {
     await expect(page.getByTestId('lore-field-filter')).toHaveText(['Age is more than 30'])
     await expectNames(page, ['Aria', 'Cato'])
 
-    // No fields of its own (Squire), or only a date (Chronicle): no Add field filter at all.
+    // No fields of its own, but Hero's inherited (Squire): it filters by them. Only a date (Chronicle): nothing to add.
     await openLore(page, w, w.squire)
     await expectNames(page, ['Eli'])
-    await expect(page.getByTestId('lore-add-field-filter')).toHaveCount(0)
+    await expect(page.getByTestId('lore-add-field-filter')).toBeVisible()
     await openLore(page, w, w.dated)
     await expect(page.getByTestId('lore-controls')).toBeVisible()
     await expect(page.getByTestId('lore-add-field-filter')).toHaveCount(0)
@@ -384,16 +384,13 @@ test.describe('Lore field filters', () => {
     await signUp(page)
     const w = await world(page)
 
-    // Hero holds Squire: once a field filter is on, it says it matches Hero's own entries only (Issue #49).
+    // Hero holds Squire, which inherits Hero's fields, so a field filter on the branch needs no caveat.
     await openLore(page, w)
-    await expect(page.getByTestId('lore-branch-field-hint')).toHaveCount(0)
     await expect(page.getByTestId('lore-reset-filters')).toHaveCount(0)
     await addFilter(page, 'Age', 'is more than', '30')
     await page.getByRole('group', { name: 'Status' }).getByRole('button', { name: 'Idea' }).click()
     await expectNames(page, ['Aria', 'Cato'])
-    await expect(page.getByTestId('lore-branch-field-hint')).toHaveText(
-      'Field filters match Hero entries only. Types filed inside it have their own fields.',
-    )
+    await expect(page.getByTestId('lore-branch-field-hint')).toHaveCount(0)
 
     // Clear filters: status and fields gone at once, the type kept, the focus on the search - and Back brings them back.
     await page.getByTestId('lore-reset-filters').click()

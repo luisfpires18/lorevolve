@@ -104,7 +104,7 @@ function readPage(value: string | null) {
  * matches that type's own entries only.
  */
 export default function LorePage() {
-  const { universe, types: typesRead, groups: groupsRead, refreshTypes } = useWorkspaceTypes()
+  const { universe, entryTypes: typesRead, groups: groupsRead, refreshTypes } = useWorkspaceTypes()
   const access = useUniverseAccess()
   const [params, setParams] = useSearchParams()
   const filtersId = useId()
@@ -696,13 +696,6 @@ export default function LorePage() {
                 </Fragment>
               ))}
               .
-            </p>
-          ) : null}
-
-          {selectedNode && selectedNode.children.length > 0 && fieldFilters.length > 0 ? (
-            <p className="lore__fieldhint" data-testid="lore-branch-field-hint">
-              Field filters match <bdi>{selectedNode.type.name}</bdi> entries only. Types filed
-              inside it have their own fields.
             </p>
           ) : null}
         </div>
