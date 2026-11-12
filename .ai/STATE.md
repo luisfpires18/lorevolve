@@ -76,6 +76,8 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 ## Owner steps and unverified items
 
+- **Types: group priority (#94) and inherited fields (PR 3)**, on DEV once merged. Owner to check: reorder groups on the
+  Groups tab and look at a scene's Lore chips; give a parent type a field and write an entry of a nested type.
 - **AI proposals for story structure** (PR #92, on DEV): a scene's beats as its whole list, a chapter's `arc`/`noArc`,
   MCP `get_arc`. Not yet tried in a real client: add, reorder, remove beats and move a chapter between arcs, approve.
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
