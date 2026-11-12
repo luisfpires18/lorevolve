@@ -699,12 +699,6 @@ export default function LorePage() {
             </p>
           ) : null}
 
-          {selectedNode && selectedNode.children.length > 0 && fieldFilters.length > 0 ? (
-            <p className="lore__fieldhint" data-testid="lore-branch-field-hint">
-              Field filters match <bdi>{selectedNode.type.name}</bdi> entries only. Types filed
-              inside it have their own fields.
-            </p>
-          ) : null}
         </div>
 
         {chosenName ? (
