@@ -206,17 +206,20 @@ export function LoreCatalog({
           {shown.map((node) => {
             const isOpen = expanded.has(node.type.id)
             const Chevron = isOpen ? ChevronDown : ChevronRight
+            const expandable = !members && node.children.length > 0
+            const classes = [
+              node.path.length > 1 ? 'lorecatalog__nestedcard' : null,
+              expandable ? 'lorecatalog__expandable' : null,
+            ].filter(Boolean)
             return (
-              <li
-                key={node.type.id}
-                className={node.path.length > 1 ? 'lorecatalog__nestedcard' : undefined}
-              >
+              <li key={node.type.id} className={classes.length > 0 ? classes.join(' ') : undefined}>
                 <TypeCard
                   node={node}
                   count={listedEntries(node, tree.byId)}
                   href={typeHref(node.type.id)}
                 />
-                {!members && node.children.length > 0 ? (
+                {/* Inside the card's lower corner, beside the link rather than in it: a button can't sit in a link. */}
+                {expandable ? (
                   <button
                     className="button button--text button--sm lorecatalog__expand"
                     type="button"
