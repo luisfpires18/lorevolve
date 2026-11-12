@@ -136,8 +136,18 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
             ? Found(await UniverseReader.GetStoryAsync(db, caller.UniverseId, id, cancellationToken))
             : NotFound());
 
+    [McpServerTool(Name = "get_arc", Title = "Read an arc's contents", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Read one plot arc and what it holds: its story, its chapters in reading order, numbered inside the arc, and their "
+        + "scenes in order with short summaries and their beats. No manuscript prose.")]
+    public async Task<CallToolResult> GetArcAsync(
+        [Description("The arc's id, exactly as a result gave it.")] string arcId,
+        CancellationToken cancellationToken) =>
+        Guard() ?? (Guid.TryParse(arcId, out var id)
+            ? Found(await UniverseReader.GetArcAsync(db, caller.UniverseId, id, cancellationToken))
+            : NotFound());
+
     [McpServerTool(Name = "get_scene", Title = "Read a scene's details", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
-    [Description("Read one scene without its prose: story and chapter, summary, notes, point of view, world date and linked lore, "
+    [Description("Read one scene without its prose: story and chapter, summary, notes, point of view, world date, linked lore and its beats, "
         + "plus the manuscript's size (characters, approximate words and tokens). Use search_scene_manuscript or "
         + "read_scene_manuscript only when the task needs the written text.")]
     public async Task<CallToolResult> GetSceneAsync(

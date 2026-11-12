@@ -546,10 +546,20 @@ internal static class AiChangeCommit
                     : Done(await StoryEndpoints.UpdateCoreAsync(db, universeId, target!.Value, told, cancellationToken), target);
 
             case ChapterValues chapter:
-                var section = new ChapterRequest(chapter.Title, chapter.Summary, chapter.Notes);
-                return work.Action == AiChangeAction.Create
-                    ? Made<ChapterResponse>(await ChapterEndpoints.CreateCoreAsync(db, universeId, Id(chapter.Story), section, cancellationToken), detail => detail.Id)
-                    : Done(await ChapterEndpoints.UpdateCoreAsync(db, universeId, Id(chapter.Story), target!.Value, section, cancellationToken), target);
+                var arcId = chapter.Arc is { } inArc ? Id(inArc) : (Guid?)null;
+                var section = new ChapterRequest(chapter.Title, chapter.Summary, chapter.Notes, arcId);
+                if (work.Action == AiChangeAction.Create)
+                {
+                    return Made<ChapterResponse>(await ChapterEndpoints.CreateCoreAsync(db, universeId, Id(chapter.Story), section, cancellationToken), detail => detail.Id);
+                }
+
+                var edited = Done(await ChapterEndpoints.UpdateCoreAsync(db, universeId, Id(chapter.Story), target!.Value, section, cancellationToken), target);
+
+                // Moved only when the AI changed the arc: a move places the chapter last in its arc. A change stored before
+                // arcs could be proposed holds none on either side, so it never moves one.
+                return edited.Problem is null && chapter.Arc != (work.Before as ChapterValues)?.Arc
+                    ? Done(await ChapterEndpoints.MoveToArcCoreAsync(db, universeId, Id(chapter.Story), target.Value, arcId, cancellationToken), target)
+                    : edited;
 
             case SceneValues scene:
                 var shown = new SceneRequest(
@@ -560,7 +570,8 @@ internal static class AiChangeCommit
                     scene.Date,
                     [.. scene.Lore.Select(Id)],
                     scene.Chapter is { } inChapter ? Id(inChapter) : null,
-                    work.BaseVersion);
+                    work.BaseVersion,
+                    scene.Beats?.Select(beat => new SceneBeatInput(beat.Title, beat.Note)).ToList());
                 return work.Action == AiChangeAction.Create
                     ? Made<SceneResponse>(await SceneEndpoints.CreateCoreAsync(db, universeId, Id(scene.Story), shown, cancellationToken), detail => detail.Id)
                     : Done(await SceneEndpoints.UpdateCoreAsync(db, universeId, Id(scene.Story), target!.Value, shown, cancellationToken), target);
