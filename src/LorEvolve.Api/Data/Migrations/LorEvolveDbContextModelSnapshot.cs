@@ -1498,6 +1498,9 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasMaxLength(160)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid>("UniverseId")
                         .HasColumnType("TEXT");
 

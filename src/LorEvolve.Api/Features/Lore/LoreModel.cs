@@ -165,6 +165,12 @@ public sealed class EntityTypeGroup
     /// </summary>
     public bool FamilyTreeEnabled { get; set; }
 
+    /// <summary>
+    /// The group's place among its universe's groups, from 0, set on the Groups tab: its priority. A scene's lore reads in
+    /// this order, by the first-ranked group of each entry's type. A new group goes last.
+    /// </summary>
+    public int SortOrder { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

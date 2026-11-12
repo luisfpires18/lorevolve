@@ -1,7 +1,9 @@
 import { useId } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { LoreReference } from './LoreReference'
 import type { Chronology } from '../chronology/types'
+import { byGroupPriority } from '../lore/groupOrder'
+import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import { sceneWhen } from '../stories/format'
 import type { Scene, SceneBeat } from '../stories/types'
 
@@ -58,7 +60,11 @@ export function SceneStamp({
   )
 }
 
-/** The lore the scene links, each a way to the entry's own page - or named and unlinked while it is in the Trash. */
+/**
+ * The lore the scene links, each a way to the entry's own page - or named and unlinked while it is in the Trash. Read in
+ * the universe's group priority (the Groups tab of Types), picked order inside a group; until the groups are read, or
+ * outside the workspace, in picked order.
+ */
 export function SceneLore({
   universeId,
   scene,
@@ -69,7 +75,9 @@ export function SceneLore({
   testId: Surface
 }) {
   const labelId = useId()
+  const groups = useOutletContext<WorkspaceContext | undefined>()?.groups
   if (scene.entities.length === 0) return null
+  const entities = Array.isArray(groups) ? byGroupPriority(scene.entities, groups) : scene.entities
 
   return (
     <div className="scene__refs">
@@ -77,7 +85,7 @@ export function SceneLore({
         Lore
       </span>
       <ul className="scene__lore" aria-labelledby={labelId} data-testid={`${testId}-lore`}>
-        {scene.entities.map((reference) => (
+        {entities.map((reference) => (
           <li key={reference.entityId}>
             <LoreReference universeId={universeId} reference={reference} />
           </li>

@@ -94,8 +94,10 @@ public static class EntityTypeDefaults
             });
         }
 
-        // Only types written just now join a starter group, and only a group with a member is created.
-        foreach (var (groupName, typeNames) in StarterGroups)
+        // Only types written just now join a starter group, and only a group with a member is created - after any the
+        // universe has, by name, as groups were listed before they had a priority.
+        var nextGroup = await EntityTypeGroupEndpoints.NextOrderAsync(db, universeId, cancellationToken);
+        foreach (var (groupName, typeNames) in StarterGroups.OrderBy(group => group.Name, StringComparer.OrdinalIgnoreCase))
         {
             var memberIds = typeNames.Where(created.ContainsKey).Select(typeName => created[typeName]).ToList();
             if (memberIds.Count == 0
@@ -104,7 +106,7 @@ public static class EntityTypeDefaults
                 continue;
             }
 
-            var group = new EntityTypeGroup { Id = Guid.NewGuid(), UniverseId = universeId, Name = groupName, CreatedAt = now, UpdatedAt = now };
+            var group = new EntityTypeGroup { Id = Guid.NewGuid(), UniverseId = universeId, Name = groupName, SortOrder = nextGroup++, CreatedAt = now, UpdatedAt = now };
             db.EntityTypeGroups.Add(group);
             foreach (var memberId in memberIds)
             {

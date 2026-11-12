@@ -116,6 +116,22 @@ export function deleteEntityTypeGroup(universeId: string, groupId: string) {
   return apiFetch<void>(`${base(universeId)}/entity-type-groups/${groupId}`, { method: 'DELETE' })
 }
 
+/** A new group with no type in it yet, last in the priority. */
+export function createEntityTypeGroup(universeId: string, name: string) {
+  return apiFetch<EntityTypeGroup>(`${base(universeId)}/entity-type-groups`, {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  })
+}
+
+/** The universe's whole group priority, first first: every group exactly once. Answers the groups in their new order. */
+export function reorderEntityTypeGroups(universeId: string, groupIds: string[]) {
+  return apiFetch<EntityTypeGroup[]>(`${base(universeId)}/entity-type-groups/order`, {
+    method: 'PUT',
+    body: JSON.stringify({ groupIds }),
+  })
+}
+
 export function createEntityType(universeId: string, input: EntityTypeInput) {
   return apiFetch<EntityType>(`${base(universeId)}/entity-types`, {
     method: 'POST',

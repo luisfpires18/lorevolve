@@ -105,6 +105,8 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("restore field", Post, $"{u}/entity-types/{w.CharacterType}/fields/{any}/restore", May.Edit, Json(new FieldRestoreRequest())),
             new("save field layout", Put, $"{u}/entity-types/{w.CharacterType}/field-layout", May.Edit, Json(new FieldLayoutRequest([], 1))),
             new("type groups", Get, $"{u}/entity-type-groups", May.Read),
+            new("create type group", Post, $"{u}/entity-type-groups", May.Edit, Json(new EntityTypeGroupCreateRequest("Matrix group"))),
+            new("order type groups", Put, $"{u}/entity-type-groups/order", May.Edit, Json(new EntityTypeGroupOrderRequest([]))),
             new("rename type group", Put, $"{u}/entity-type-groups/{any}", May.Edit, Json(new EntityTypeGroupRenameRequest("Renamed group"))),
             new("delete type group", Delete, $"{u}/entity-type-groups/{any}", May.Edit),
             new("type group family tree", Put, $"{u}/entity-type-groups/{any}/family-tree", May.Edit, Json(new EntityTypeGroupFamilyTreeRequest(true))),

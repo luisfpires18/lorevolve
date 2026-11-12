@@ -21,6 +21,7 @@ import { TypeIconPicker } from '../components/TypeIconPicker'
 import { TypeReorderHandle } from '../components/TypeReorderHandle'
 import { TypeFields } from '../components/TypeFields'
 import { TypeGroupsField, type GroupChoice } from '../components/TypeGroupsField'
+import { TypeGroupsPanel } from '../components/TypeGroupsPanel'
 import { ValidationTermManager } from '../components/ValidationTermManager'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
@@ -48,12 +49,14 @@ import { confirmAction } from '../lib/confirm'
 /** Three vocabularies, one screen: kept apart as tabs so none of them is a long scroll below another. */
 const TABS = [
   { id: 'lore', label: 'Lore Types' },
+  { id: 'groups', label: 'Groups' },
   { id: 'relations', label: 'Relation Kinds' },
   { id: 'events', label: 'Event Kinds & Methods' },
 ] as const
 
 const LEDES: Record<(typeof TABS)[number]['id'], string> = {
   lore: 'Every entry is one of these. Add your own, nest one inside another to organise Lore, and give each the fields this world actually needs.',
+  groups: 'Types gathered by what they are, in your priority: the order a scene lists its lore in.',
   relations:
     'How entries connect: each kind’s two readings, its Canon constraints and its family meaning.',
   events: 'The event kinds and methods a moment and a world rule’s check can name.',
@@ -400,8 +403,6 @@ export default function UniverseTypes() {
           type={editing === 'new' ? null : editing}
           initialParent={editing === 'new' ? childOf : null}
           groups={groups}
-          types={types ?? []}
-          onGroupsChanged={refreshGroups}
           onClose={() => setEditing(null)}
           onSaved={async (savedName, parentId) => {
             const wasNew = editing === 'new'
@@ -756,6 +757,16 @@ export default function UniverseTypes() {
         )}
       </TabPanel>
 
+      <TabPanel idPrefix="types" id="groups" tab={tab}>
+        <TypeGroupsPanel
+          universeId={universe.id}
+          groups={groups}
+          types={types ?? []}
+          canEdit={access.editContent}
+          onGroupsChanged={refreshGroups}
+        />
+      </TabPanel>
+
       <TabPanel idPrefix="types" id="relations" tab={tab}>
         <RelationshipTypeManager universeId={universe.id} />
       </TabPanel>
@@ -843,8 +854,6 @@ function TypeDialog({
   type,
   initialParent = null,
   groups,
-  types,
-  onGroupsChanged,
   onClose,
   onSaved,
 }: {
@@ -854,10 +863,8 @@ function TypeDialog({
   type: EntityType | null
   /** For a new type: the type it starts inside (a row's Add child). Still only a starting choice - the select decides. */
   initialParent?: EntityType | null
-  /** Every group of the universe, and every type, for the Groups control. */
+  /** Every group of the universe, for the Groups control. */
   groups: EntityTypeGroup[]
-  types: EntityType[]
-  onGroupsChanged: () => Promise<void>
   onClose: () => void
   /** With the parent it was saved under, null at the top. */
   onSaved: (name: string, parentId: string | null) => Promise<void>
@@ -1058,14 +1065,7 @@ function TypeDialog({
             </div>
           </section>
 
-          <TypeGroupsField
-            universeId={universeId}
-            groups={groups}
-            types={types}
-            value={groupChoices}
-            onChange={setGroupChoices}
-            onGroupsChanged={onGroupsChanged}
-          />
+          <TypeGroupsField groups={groups} value={groupChoices} onChange={setGroupChoices} />
           {fieldErrors.groups ? <p className="field__error">{fieldErrors.groups}</p> : null}
 
           {type ? null : (

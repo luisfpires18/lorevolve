@@ -35,6 +35,8 @@ public static class EntityTypeGroupEndpoints
             .RequireAuthorization();
 
         group.MapGet("/", ListAsync).WithName("ListEntityTypeGroups");
+        group.MapPost("/", CreateAsync).WithName("CreateEntityTypeGroup");
+        group.MapPut("/order", ReorderAsync).WithName("ReorderEntityTypeGroups");
         group.MapPut("/{groupId:guid}", RenameAsync).WithName("RenameEntityTypeGroup");
         group.MapDelete("/{groupId:guid}", DeleteAsync).WithName("DeleteEntityTypeGroup");
         group.MapPut("/{groupId:guid}/family-tree", SetFamilyTreeAsync).WithName("SetEntityTypeGroupFamilyTree");
@@ -52,6 +54,61 @@ public static class EntityTypeGroupEndpoints
         {
             return denied;
         }
+
+        return Results.Ok(await LoadGroupsAsync(db, universeId, cancellationToken));
+    }
+
+    private static async Task<IResult> CreateAsync(
+        Guid universeId,
+        [FromBody] EntityTypeGroupCreateRequest request,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        return await CreateCoreAsync(db, universeId, request.Name, false, cancellationToken);
+    }
+
+    private static async Task<IResult> ReorderAsync(
+        Guid universeId,
+        [FromBody] EntityTypeGroupOrderRequest request,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+
+        var groups = await db.EntityTypeGroups.Where(group => group.UniverseId == universeId).ToDictionaryAsync(group => group.Id, cancellationToken);
+        if (request.GroupIds is not { } ids || ids.Distinct().Count() != ids.Count || ids.Count != groups.Count || ids.Any(id => !groups.ContainsKey(id)))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["groupIds"] = ["List every group of this universe exactly once."],
+            });
+        }
+
+        var now = DateTime.UtcNow;
+        for (var index = 0; index < ids.Count; index++)
+        {
+            var group = groups[ids[index]];
+            if (group.SortOrder != index)
+            {
+                group.SortOrder = index;
+                group.UpdatedAt = now;
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return Results.Ok(await LoadGroupsAsync(db, universeId, cancellationToken));
     }
@@ -107,7 +164,16 @@ public static class EntityTypeGroupEndpoints
         }
 
         var now = DateTime.UtcNow;
-        var group = new EntityTypeGroup { Id = Guid.NewGuid(), UniverseId = universeId, Name = name!, FamilyTreeEnabled = familyTreeEnabled, CreatedAt = now, UpdatedAt = now };
+        var group = new EntityTypeGroup
+        {
+            Id = Guid.NewGuid(),
+            UniverseId = universeId,
+            Name = name!,
+            FamilyTreeEnabled = familyTreeEnabled,
+            SortOrder = await NextOrderAsync(db, universeId, cancellationToken),
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
         db.EntityTypeGroups.Add(group);
 
         try
@@ -360,9 +426,10 @@ public static class EntityTypeGroupEndpoints
             db.EntityTypeGroupMembers.Add(new EntityTypeGroupMember { EntityTypeGroupId = id, EntityTypeId = entityType.Id });
         }
 
+        var next = newNames.Count == 0 ? 0 : await NextOrderAsync(db, universeId, cancellationToken);
         foreach (var name in newNames)
         {
-            var group = new EntityTypeGroup { Id = Guid.NewGuid(), UniverseId = universeId, Name = name, CreatedAt = now, UpdatedAt = now };
+            var group = new EntityTypeGroup { Id = Guid.NewGuid(), UniverseId = universeId, Name = name, SortOrder = next++, CreatedAt = now, UpdatedAt = now };
             db.EntityTypeGroups.Add(group);
             db.EntityTypeGroupMembers.Add(new EntityTypeGroupMember { EntityTypeGroupId = group.Id, EntityTypeId = entityType.Id });
         }
@@ -434,15 +501,31 @@ public static class EntityTypeGroupEndpoints
     {
         var groups = await db.EntityTypeGroups.AsNoTracking()
             .Where(group => group.UniverseId == universeId)
-            .Select(group => new EntityTypeGroupResponse(
-                group.Id,
-                group.Name,
-                group.Members.Select(member => member.EntityTypeId).ToList(),
-                group.FamilyTreeEnabled))
+            .Select(group => new
+            {
+                group.SortOrder,
+                Response = new EntityTypeGroupResponse(
+                    group.Id,
+                    group.Name,
+                    group.Members.Select(member => member.EntityTypeId).ToList(),
+                    group.FamilyTreeEnabled),
+            })
             .ToListAsync(cancellationToken);
 
-        return [.. groups.OrderBy(group => group.Name, StringComparer.OrdinalIgnoreCase).ThenBy(group => group.Name, StringComparer.Ordinal)];
+        // In the author's priority; a tie (never written by the app) falls back to the name, as groups read before.
+        return
+        [
+            .. groups
+                .OrderBy(group => group.SortOrder)
+                .ThenBy(group => group.Response.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(group => group.Response.Name, StringComparer.Ordinal)
+                .Select(group => group.Response),
+        ];
     }
+
+    /// <summary>The place after every group of the universe: where a new group goes.</summary>
+    internal static async Task<int> NextOrderAsync(LorEvolveDbContext db, Guid universeId, CancellationToken cancellationToken) =>
+        (await db.EntityTypeGroups.Where(group => group.UniverseId == universeId).MaxAsync(group => (int?)group.SortOrder, cancellationToken) ?? -1) + 1;
 
     private static IResult NameTaken(string key, string name) =>
         Results.ValidationProblem(new Dictionary<string, string[]>
