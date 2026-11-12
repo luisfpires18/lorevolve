@@ -161,6 +161,77 @@ public sealed class AiChangeContentTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Equal(made["a1"], Assert.Single((await ReadStory(owner, u, story)).Chapters).PlotArcId);
     }
 
+    [Fact]
+    public async Task Chapters_are_assigned_moved_and_taken_out_of_arcs_only_within_their_story()
+    {
+        var (owner, ownerId, u, _) = await World("aiarcmove");
+        var story = await CreateStory(owner, u, "The Forging");
+        var rise = (await CreateArc(owner, u, story, "Rise")).Id;
+        var chapter = await CreateChapter(owner, u, story, "Kept");
+
+        // A new chapter straight into a new arc of the same proposal, and an existing one into an existing arc.
+        var proposal = await Staged(
+            _factory,
+            u,
+            ownerId,
+            new AiChangeOperationInput("fall", "create", "plot_arc", PlotArc: new AiPlotArcInput(Id(story), "Fall")),
+            new AiChangeOperationInput("c", "create", "chapter", Chapter: new AiChapterInput(Id(story), "Ash", Arc: Ref("fall"))),
+            new AiChangeOperationInput("m", "update", "chapter", chapter, Chapter: new AiChapterInput(Arc: Id(rise))));
+        var review = await Read(owner, u, proposal);
+        Assert.Contains(review.Operations.Single(operation => operation.Key == "m").Lines, line => line.Label == "Arc" && line.Before == "No arc" && line.After == "Rise");
+        var made = (await ApproveAll(owner, u, proposal)).Applied.ToDictionary(line => line.Key, line => line.ResultId!.Value);
+        var chapters = (await ReadStory(owner, u, story)).Chapters.ToDictionary(row => row.Title, row => row.PlotArcId);
+        Assert.Equal(made["fall"], chapters["Ash"]);
+        Assert.Equal(rise, chapters["Kept"]);
+
+        // Moved between arcs, then out of every arc; an edit that leaves the arc out keeps it.
+        await ApproveAll(owner, u, await Staged(_factory, u, ownerId, new AiChangeOperationInput("m", "update", "chapter", chapter, Chapter: new AiChapterInput(Arc: Id(made["fall"])))));
+        Assert.Equal(made["fall"], (await ReadStory(owner, u, story)).Chapters.Single(row => row.Id == chapter).PlotArcId);
+        await ApproveAll(owner, u, await Staged(_factory, u, ownerId, new AiChangeOperationInput("t", "update", "chapter", chapter, Chapter: new AiChapterInput(Title: "Kept still"))));
+        Assert.Equal(made["fall"], (await ReadStory(owner, u, story)).Chapters.Single(row => row.Id == chapter).PlotArcId);
+        await ApproveAll(owner, u, await Staged(_factory, u, ownerId, new AiChangeOperationInput("m", "update", "chapter", chapter, Chapter: new AiChapterInput(NoArc: true))));
+        Assert.Null((await ReadStory(owner, u, story)).Chapters.Single(row => row.Id == chapter).PlotArcId);
+
+        // An arc of another story is refused, and so is noArc with an arc.
+        var other = await CreateStory(owner, u, "Elsewhere");
+        var theirs = (await CreateArc(owner, u, other, "Theirs")).Id;
+        var foreign = await Stage(_factory, u, ownerId, new AiChangeOperationInput("m", "update", "chapter", chapter, Chapter: new AiChapterInput(Arc: Id(theirs))));
+        Assert.Contains(foreign.Issues, problem => problem.Code == AiChangeCodes.NotFound && problem.Field == "arc");
+        var both = await Stage(_factory, u, ownerId, new AiChangeOperationInput("m", "update", "chapter", chapter, Chapter: new AiChapterInput(Arc: Id(rise), NoArc: true)));
+        Assert.Contains(both.Issues, problem => problem.Code == AiChangeCodes.Invalid);
+    }
+
+    [Fact]
+    public async Task A_scenes_beats_are_created_edited_reordered_and_removed_as_its_whole_list()
+    {
+        var (owner, ownerId, u, _) = await World("aibeats");
+        var story = await CreateStory(owner, u, "The Forging");
+
+        var made = (await ApproveAll(owner, u, await Staged(_factory, u, ownerId, new AiChangeOperationInput(
+            "s", "create", "scene", Scene: new AiSceneInput(Id(story), Title: "The pass", Beats: [new("Snow falls"), new("The gate holds", "Barely.")])))))
+            .Applied.Single().ResultId!.Value;
+        async Task<List<(string, string?)>> Beats() =>
+            [.. (await ReadStory(owner, u, story)).Scenes.Single(scene => scene.Id == made).Beats!.Select(beat => (beat.Title, beat.Note))];
+        Assert.Equal([("Snow falls", null), ("The gate holds", "Barely.")], await Beats());
+
+        // Edited, reordered, one added and one removed in a single update; the review shows the list before and after.
+        var proposal = await Staged(_factory, u, ownerId, new AiChangeOperationInput(
+            "b", "update", "scene", made, Scene: new AiSceneInput(Beats: [new("The gate breaks", "At dawn."), new("Snow falls"), new("They run")])));
+        var line = Assert.Single((await Read(owner, u, proposal)).Operations.Single().Lines, row => row.Label == "Beats");
+        Assert.Equal("1. Snow falls; 2. The gate holds (Barely.)", line.Before);
+        Assert.Equal("1. The gate breaks (At dawn.); 2. Snow falls; 3. They run", line.After);
+        await ApproveAll(owner, u, proposal);
+        Assert.Equal([("The gate breaks", "At dawn."), ("Snow falls", null), ("They run", null)], await Beats());
+
+        // Leaving beats out keeps them; an empty list removes them all; a beat without a title is refused.
+        await ApproveAll(owner, u, await Staged(_factory, u, ownerId, new AiChangeOperationInput("t", "update", "scene", made, Scene: new AiSceneInput(Title: "The high pass"))));
+        Assert.Equal(3, (await Beats()).Count);
+        var untitled = await Stage(_factory, u, ownerId, new AiChangeOperationInput("b", "update", "scene", made, Scene: new AiSceneInput(Beats: [new(" ")])));
+        Assert.Contains(untitled.Issues, problem => problem.Field == "beats[0].title");
+        await ApproveAll(owner, u, await Staged(_factory, u, ownerId, new AiChangeOperationInput("b", "update", "scene", made, Scene: new AiSceneInput(Beats: []))));
+        Assert.Empty(await Beats());
+    }
+
     // ---------- Orders ----------
 
     [Fact]

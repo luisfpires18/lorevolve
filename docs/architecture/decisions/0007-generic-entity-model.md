@@ -367,3 +367,44 @@ nested beneath it, at any depth. Groups are unchanged (explicit membership, neve
   hierarchy's order (one type is still taken without asking). The AI catalog says "or a type nested beneath it" where the
   target has nested types. The Types screen says so beside the choice.
 - No schema, backup format or migration change: every link that fit the exact rule still fits.
+
+## Amendment - group priority and the Groups tab (2026-11-12, owner request)
+
+Supersedes "There is no group-creation route of its own and no separate management page" from the semantic groups
+amendment.
+
+- **A group has a priority.** `EntityTypeGroups.SortOrder`, from 0 per universe. Groups read in it; a new group, from any
+  path (the Groups tab, a type's save, an AI change, a starter template), goes last. The migration `OrderTypeGroups` starts
+  every universe in the name order groups were listed in before, ignoring case, and rolls back with SQLite's own
+  `DROP COLUMN`, so no table is rebuilt.
+- **What the priority does.** A scene's lore chips read by it: each entry under the first-ranked group its type is in,
+  picked order inside a group, entries of types in no group last. Only the order shown changes; the stored pick order is
+  untouched.
+- **The Groups tab of Types** creates a group (`POST /entity-type-groups`, no type yet), sets the whole priority
+  (`PUT /entity-type-groups/order`, every group of the universe exactly once), renames and deletes. Choosing which groups a
+  type joins stays in the type editor, saved with the type.
+- **Backups.** The file lists groups in their priority, so a restore reads it from the list's order; an older file, by
+  name, restores in name order. The format version is unchanged.
+
+## Amendment - a nested type inherits its ancestors' fields (2026-11-12, owner request)
+
+Supersedes "Organisation, not inheritance" for fields, and "The type's own fields only" for field filters. Icon, accent,
+description, Canon semantics, groups and Family Tree eligibility still pass nothing down.
+
+- **Every field of every type above.** An entry of a nested type has its type's fields and those of each ancestor, root
+  first. Required fields are required below too (a form, Quick Create, Mass create). Values are stored as they always
+  were, against the field of the type that owns it.
+- **Read-only below.** An inherited field is edited, archived, restored or deleted only on the type that owns it. The Types
+  screen lists a nested type's inherited fields above its own, each block named for its owner.
+- **One name, one meaning.** A field's name, and its meaning when it has one, is unique across the type, every type above
+  it and every type nested in it.
+- **Filters.** A Lore filter names a field the chosen type has, its own or inherited; branch browsing from a parent
+  matches nested entries by the parent's fields.
+- **Moving a type.** A move changes what the branch inherits, so it is refused (`entity_type_inherited_fields`) while an
+  entry of the moving branch - live, in the Trash, or in one of its eras - holds a value in a field it would lose, and when
+  a field it would gain has the name or meaning of one already in the branch. Nothing is hidden or cleared to make a move.
+- **An entry changing type** keeps only the fields the new type has, own or inherited; archived inherited values block it as
+  archived own values do.
+- **Everything else follows.** Revisions, eras, AI change checks and the AI's options (inherited fields listed first),
+  backup validation and the readable export all read a type's fields with its ancestors'. No schema change.
+

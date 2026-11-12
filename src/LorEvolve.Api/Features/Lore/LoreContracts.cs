@@ -44,6 +44,12 @@ public sealed record EntityTypeGroupChoice(Guid? Id, string? Name = null);
 /// <summary>A new name for a group. The group keeps its id, its members and every field that targets it.</summary>
 public sealed record EntityTypeGroupRenameRequest(string? Name);
 
+/// <summary>A new group with no type in it yet, from the Groups tab: a name unique in the universe. It goes last.</summary>
+public sealed record EntityTypeGroupCreateRequest(string? Name);
+
+/// <summary>The universe's whole group order, highest priority first: every group exactly once.</summary>
+public sealed record EntityTypeGroupOrderRequest(IReadOnlyList<Guid>? GroupIds);
+
 /// <summary>Whether a group is enabled for the Family Tree (Issue #37). Required: nothing is assumed from a missing value.</summary>
 public sealed record EntityTypeGroupFamilyTreeRequest(bool? Enabled);
 

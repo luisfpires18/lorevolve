@@ -598,7 +598,14 @@ internal static partial class AiChangeStaging
                 return null;
             }
 
-            return new ChapterValues(story, (chapter.Title ?? before?.Title ?? string.Empty).Trim(), Cleared(chapter.Summary, before?.Summary), Cleared(chapter.Notes, before?.Notes));
+            if (chapter.NoArc == true && (chapter.Arc is not null || before is null))
+            {
+                Fail(AiChangeCodes.Invalid, "noArc takes an existing chapter out of its arc: leave out arc with it, and leave both out on create for no arc.", "chapter.noArc");
+                return null;
+            }
+
+            var arc = chapter.NoArc == true ? null : chapter.Arc is null ? before?.Arc : Ref(chapter.Arc, "chapter.arc");
+            return new ChapterValues(story, (chapter.Title ?? before?.Title ?? string.Empty).Trim(), Cleared(chapter.Summary, before?.Summary), Cleared(chapter.Notes, before?.Notes), arc);
         }
 
         private SceneValues? Scene(AiSceneInput? scene, SceneValues? before)
@@ -628,7 +635,10 @@ internal static partial class AiChangeStaging
                 Cleared(scene.Notes, before?.Notes),
                 scene.PointOfView is null ? before?.PointOfView : Ref(scene.PointOfView, "scene.pointOfView"),
                 scene.Date is null ? before?.Date : new ChronologyValue(scene.Date.EraId, scene.Date.Year, scene.Date.Month, scene.Date.Day, scene.Date.MonthId),
-                [.. lore.OrderBy(reference => reference.Id).ThenBy(reference => reference.Key, StringComparer.Ordinal)]);
+                [.. lore.OrderBy(reference => reference.Id).ThenBy(reference => reference.Key, StringComparer.Ordinal)],
+                scene.Beats is null
+                    ? before?.Beats
+                    : [.. scene.Beats.Select(beat => new BeatValues((beat?.Title ?? string.Empty).Trim(), string.IsNullOrWhiteSpace(beat?.Note) ? null : beat.Note.Trim()))]);
         }
 
         private async Task<AiChangeWork?> ManuscriptAsync(CancellationToken cancellationToken)

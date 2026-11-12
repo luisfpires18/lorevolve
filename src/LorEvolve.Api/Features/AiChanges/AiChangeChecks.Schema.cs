@@ -87,6 +87,13 @@ internal sealed partial class AiChangeChecker
             Refusal(work, stranded, "parent");
         }
 
+        // A move that would lose inherited fields with values, or bring a field in twice, is refused by the save; said here.
+        if (parentFits && stored is not null && work.TargetId is { } inheriting
+            && await EntityTypeEndpoints.InheritedFieldsRefusalAsync(db, _typeParents, inheriting, stored.Name, StoredParent(newParentId, pendingNewParent), cancellationToken) is { } inheritance)
+        {
+            Refusal(work, inheritance, "parent");
+        }
+
         foreach (var group in type.Groups)
         {
             if (Resolve(group).Id is { } groupId && !_groups.ContainsKey(groupId))

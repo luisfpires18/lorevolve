@@ -177,31 +177,57 @@ public static class UniverseReader
             story.Title,
             story.Status,
             ReadingText.Cut(story.Premise, TextLength),
-            [
-                .. story.Chapters.Take(ChapterLimit).Select(chapter => new ChapterReading(
-                    chapter.Id,
-                    numbers[chapter.Id],
-                    chapter.Title,
-                    ReadingText.Cut(chapter.Summary, OutlineLength),
-                    chapter.PlotArcId)),
-            ],
-            [
-                .. story.Scenes.Take(SceneLimit).Select(scene => new SceneOutline(
-                    scene.Id,
-                    scene.Title,
-                    scene.ChapterId,
-                    ReadingText.Cut(scene.Summary, OutlineLength),
-                    [.. (scene.Beats ?? []).Take(BeatLimit).Select(beat => beat.Title)])),
-            ],
+            [.. story.Chapters.Take(ChapterLimit).Select(chapter => Chapter(chapter, numbers))],
+            [.. story.Scenes.Take(SceneLimit).Select(Outline)],
             story.Scenes.Count > SceneLimit,
-            [
-                .. story.Arcs.Take(ArcLimit).Select(arc => new ArcReading(
-                    arc.Id,
-                    arc.SortOrder + 1,
-                    arc.Title,
-                    ReadingText.Cut(arc.Description, OutlineLength))),
-            ]);
+            [.. story.Arcs.Take(ArcLimit).Select(arc => new ArcReading(arc.Id, arc.SortOrder + 1, arc.Title, ReadingText.Cut(arc.Description, OutlineLength)))]);
     }
+
+    /// <summary>One live arc of this universe, or null: its chapters in the story's order and their scenes in order.</summary>
+    public static async Task<ArcContentsReading?> GetArcAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid arcId,
+        CancellationToken cancellationToken)
+    {
+        var storyId = await db.PlotArcs.AsNoTracking()
+            .Where(arc => arc.Id == arcId && arc.DeletedAt == null && arc.Story!.UniverseId == universeId)
+            .Select(arc => (Guid?)arc.StoryId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (storyId is not { } inStory
+            || await StoryEndpoints.LoadDetailAsync(db, universeId, inStory, cancellationToken) is not { } story
+            || story.Arcs.FirstOrDefault(arc => arc.Id == arcId) is not { } found)
+        {
+            return null;
+        }
+
+        var numbers = StoryEndpoints.ChapterNumbers(story.Chapters);
+        var chapters = story.Chapters.Where(chapter => chapter.PlotArcId == arcId).ToList();
+        var inArc = chapters.Select(chapter => chapter.Id).ToHashSet();
+        var scenes = story.Scenes.Where(scene => scene.ChapterId is { } chapter && inArc.Contains(chapter)).ToList();
+
+        return new ArcContentsReading(
+            found.Id,
+            found.SortOrder + 1,
+            found.Title,
+            ReadingText.Cut(found.Description, TextLength),
+            story.Id,
+            story.Title,
+            [.. chapters.Take(ChapterLimit).Select(chapter => Chapter(chapter, numbers))],
+            [.. scenes.Take(SceneLimit).Select(Outline)],
+            scenes.Count > SceneLimit);
+    }
+
+    private static ChapterReading Chapter(ChapterResponse chapter, Dictionary<Guid, int> numbers) =>
+        new(chapter.Id, numbers[chapter.Id], chapter.Title, ReadingText.Cut(chapter.Summary, OutlineLength), chapter.PlotArcId);
+
+    private static SceneOutline Outline(SceneResponse scene) => new(
+        scene.Id,
+        scene.Title,
+        scene.ChapterId,
+        ReadingText.Cut(scene.Summary, OutlineLength),
+        [.. (scene.Beats ?? []).Take(BeatLimit).Select(beat => beat.Title)]);
 
     /// <summary>
     /// One live scene of this universe, or null. Its manuscript is read only when <paramref name="includeProse"/> asks, and
@@ -261,7 +287,8 @@ public static class UniverseReader
             ReadingText.Cut(prose is null ? null : ManuscriptMentions.Plain(prose), ProseLength),
             await UniverseSearchIndex.ManuscriptPassageAsync(db, sceneId, find, cancellationToken) is { } passage
                 ? ManuscriptMentions.PlainExcerpt(passage)
-                : null);
+                : null,
+            [.. (scene.Beats ?? []).Select(beat => new BeatReading(beat.Title, beat.Note))]);
     }
 
     /// <summary>One timeline moment of this universe, or null.</summary>

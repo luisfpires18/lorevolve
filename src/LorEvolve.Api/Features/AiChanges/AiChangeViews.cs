@@ -443,6 +443,10 @@ internal static class AiChangeViews
                 Line("Title", old?.Title, chapter.Title);
                 Line("Summary", old?.Summary, chapter.Summary);
                 Line("Notes", old?.Notes, chapter.Notes);
+                Line(
+                    "Arc",
+                    old is null ? null : old.Arc is { } wasArc ? names.Arc(wasArc) : "No arc",
+                    chapter.Arc is { } arc ? names.Arc(arc) : old is null ? null : "No arc");
                 return (work.Action == AiChangeAction.Create ? $"New chapter: {chapter.Title}" : $"Edit chapter: {old?.Title ?? chapter.Title}", lines);
             }
 
@@ -457,6 +461,13 @@ internal static class AiChangeViews
                 Line("Point of view", old?.PointOfView is { } wasPov ? names.Entry(wasPov) : null, scene.PointOfView is { } pov ? names.Entry(pov) : null);
                 Line("When", names.Point(old?.Date), names.Point(scene.Date));
                 Line("Lore", Join(old?.Lore.Select(names.Entry)), Join(scene.Lore.Select(names.Entry)));
+
+                // A change stored before beats could be proposed holds none, and keeps the scene's: nothing to show.
+                if (scene.Beats is not null)
+                {
+                    Line("Beats", Beats(old?.Beats), Beats(scene.Beats));
+                }
+
                 return (work.Action == AiChangeAction.Create ? $"New scene: {scene.Title}" : $"Edit scene: {old?.Title ?? scene.Title}", lines);
             }
 
@@ -676,6 +687,13 @@ internal static class AiChangeViews
     };
 
     private static string? Join(IEnumerable<string>? values) => values?.ToList() is { Count: > 0 } list ? string.Join(", ", list) : null;
+
+    /// <summary>A scene's beats in order, each with its note, as one line: "1. Title (note); 2. Title".</summary>
+    private static string? Beats(List<BeatValues>? beats) => beats is null
+        ? null
+        : beats.Count == 0
+            ? "None"
+            : string.Join("; ", beats.Select((beat, index) => $"{index + 1}. {beat.Title}{(beat.Note is { } note ? $" ({note})" : string.Empty)}"));
 
     /// <summary>The names a review shows, read once for a proposal and only from its universe.</summary>
     private sealed class Names

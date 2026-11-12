@@ -76,7 +76,7 @@ function Problem({ problem }: { problem: RowProblem }) {
  * request go, and the API checks it all again; either way a problem is shown on the row it belongs to.
  */
 export default function MassCreatePage() {
-  const { universe, types: typesRead, refreshTypes } = useWorkspaceTypes()
+  const { universe, entryTypes: typesRead, refreshTypes } = useWorkspaceTypes()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const id = useId()

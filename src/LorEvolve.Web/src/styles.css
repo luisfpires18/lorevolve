@@ -5206,8 +5206,21 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
     color-mix(in srgb, var(--type-accent, var(--accent)) 45%, var(--rule));
 }
 
+/* A card that folds nested types keeps the grid's size: its toggle sits in the lower left corner, under the icon, in
+   space the card's minimum height already leaves there, so it never makes the card taller. */
+.lorecatalog__expandable {
+  position: relative;
+}
+
 .lorecatalog__expand {
-  align-self: flex-start;
+  position: absolute;
+  inset-block-end: 0.375rem;
+  inset-inline-start: var(--space-5);
+  width: 3rem;
+  min-height: 1.5rem;
+  justify-content: center;
+  gap: 0.125rem;
+  padding-inline: 0;
 }
 
 .lorecatalog__expand svg {
@@ -7416,10 +7429,62 @@ html:has(.viewer[open]) {
   min-width: 0;
 }
 
-.typegroups__manage > summary {
+/* The Groups tab of Types: a new group's name, then every group in its priority, numbered, each a row like a type's. */
+.typegroups--panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 48rem;
+}
+
+.typegroups__intro,
+.typegroups__empty {
+  margin: 0;
   color: var(--muted);
-  font-size: var(--text-ui);
-  cursor: pointer;
+}
+
+.typegroups--panel .typegroups__list {
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  counter-reset: group-rank;
+}
+
+.typegroups--panel .typegroups__list:empty {
+  display: none;
+}
+
+.typegroups--panel .typegroups__item {
+  padding: var(--space-3) var(--space-4);
+  counter-increment: group-rank;
+}
+
+.typegroups--panel .typegroups__item + .typegroups__item {
+  border-top: 1px solid var(--rule);
+}
+
+.typegroups--panel .typegroups__name {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.typegroups--panel .typegroups__name::before {
+  content: counter(group-rank);
+  grid-row: span 2;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.typegroups--panel .typegroups__usage {
+  grid-column: 2;
+}
+
+.typegroups__move svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .typegroups__list {
@@ -7642,6 +7707,15 @@ html:has(.viewer[open]) {
 
 /* A type's fields (Issue #39): one row each, the name over a quiet line of what it is, Edit and a menu at the end. On a
    phone the actions drop under the text rather than squeezing it. Archived fields fold away beneath, in the same rows. */
+/* A nested type's inherited fields, read-only above its own, each block named for the type that owns them. */
+.fieldlist__inherited {
+  margin-block-end: var(--space-4);
+}
+
+.fieldlist__inherited .fieldlist__row {
+  opacity: 0.85;
+}
+
 .fieldlist {
   list-style: none;
   margin: 0;

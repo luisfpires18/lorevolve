@@ -206,17 +206,20 @@ export function LoreCatalog({
           {shown.map((node) => {
             const isOpen = expanded.has(node.type.id)
             const Chevron = isOpen ? ChevronDown : ChevronRight
+            const expandable = !members && node.children.length > 0
+            const classes = [
+              node.path.length > 1 ? 'lorecatalog__nestedcard' : null,
+              expandable ? 'lorecatalog__expandable' : null,
+            ].filter(Boolean)
             return (
-              <li
-                key={node.type.id}
-                className={node.path.length > 1 ? 'lorecatalog__nestedcard' : undefined}
-              >
+              <li key={node.type.id} className={classes.length > 0 ? classes.join(' ') : undefined}>
                 <TypeCard
                   node={node}
                   count={listedEntries(node, tree.byId)}
                   href={typeHref(node.type.id)}
                 />
-                {!members && node.children.length > 0 ? (
+                {/* Inside the card's lower corner, beside the link rather than in it: a button can't sit in a link. */}
+                {expandable ? (
                   <button
                     className="button button--text button--sm lorecatalog__expand"
                     type="button"
@@ -224,12 +227,15 @@ export function LoreCatalog({
                     onClick={() => toggle(node.type.id)}
                     data-testid="lore-type-expand"
                     data-type-name={node.type.name}
+                    aria-label={`${isOpen ? 'Hide' : 'Show'} ${
+                      node.children.length === 1
+                        ? '1 nested type'
+                        : `${node.children.length} nested types`
+                    }`}
+                    title={isOpen ? 'Hide nested types' : 'Show nested types'}
                   >
                     <Chevron aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                    {isOpen ? 'Hide' : 'Show'}{' '}
-                    {node.children.length === 1
-                      ? '1 nested type'
-                      : `${node.children.length} nested types`}
+                    <span aria-hidden="true">{node.children.length}</span>
                   </button>
                 ) : null}
               </li>
