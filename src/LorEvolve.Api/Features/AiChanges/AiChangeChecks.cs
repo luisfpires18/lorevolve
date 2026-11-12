@@ -751,7 +751,11 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
             return;
         }
 
-        var active = type.Fields.ToDictionary(definition => definition.Id);
+        // The type's own fields and those it inherits from every type above it (ADR 0007 amendment, 2026-11-12).
+        var active = EntityTypeHierarchy.Lineage(_typeParents, lore.TypeId)
+            .Where(_types.ContainsKey)
+            .SelectMany(owner => _types[owner].Fields)
+            .ToDictionary(definition => definition.Id);
         var pendingLinks = new HashSet<Guid>();
         var keptLinks = work.Before is LoreValues before
             ? before.Fields.Select(value => value.Entry?.Id).OfType<Guid>().ToHashSet()
@@ -762,15 +766,15 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
         {
             if (!active.TryGetValue(value.FieldId, out var definition))
             {
-                // Fields are never inherited (EntityFieldFilters), so name the type that owns it: an AI that nested types
-                // otherwise reads "not one of this type's fields" and cannot tell why.
+                // Name the type that owns it: a field of a type nested beneath this one, or of an unrelated type, is not this
+                // type's, and an AI otherwise reads "not one of this type's fields" and cannot tell why.
                 var owner = _types.Values.FirstOrDefault(other => other.Fields.Any(field => field.Id == value.FieldId)).Name;
                 work.Problem(
                     AiChangeCodes.NotFound,
                     owner is null
                         ? "That field isn't one of this type's fields. Choose fields from get_change_options."
-                        : $"That field belongs to {owner}, not {type.Name}: a type has only its own fields, never its parent's. "
-                          + $"Choose from {type.Name}'s fields in get_change_options, or propose the field on {type.Name} first.",
+                        : $"That field belongs to {owner}, not {type.Name}: a type has its own fields and those of the types above it, "
+                          + $"never a nested or unrelated type's. Choose from {type.Name}'s fields in get_change_options, or propose the field on {type.Name} first.",
                     $"fields.{value.FieldId}");
                 continue;
             }

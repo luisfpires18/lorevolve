@@ -104,7 +104,7 @@ function readPage(value: string | null) {
  * matches that type's own entries only.
  */
 export default function LorePage() {
-  const { universe, types: typesRead, groups: groupsRead, refreshTypes } = useWorkspaceTypes()
+  const { universe, entryTypes: typesRead, groups: groupsRead, refreshTypes } = useWorkspaceTypes()
   const access = useUniverseAccess()
   const [params, setParams] = useSearchParams()
   const filtersId = useId()

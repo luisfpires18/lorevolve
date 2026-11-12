@@ -31,8 +31,8 @@ public sealed record EntityFieldFilter(
 /// <c>&lt;fieldId&gt;:&lt;op&gt;:&lt;value&gt;</c>, split at the first two colons only - the id is a GUID and the operator
 /// a fixed token, so neither holds a colon and the value may hold anything.
 ///
-/// A field belongs to exactly the type that defines it (nothing is inherited), so a filter names a field of the type
-/// asked for and of nothing else. Every filter is resolved before any is applied, and one that does not resolve is a 400
+/// A filter names a field the type asked for has: its own, or one inherited from a type above it (ADR 0007 amendment,
+/// 2026-11-12) - and since a nested type's entries hold their inherited fields, a filter on a parent's field matches them too. Every filter is resolved before any is applied, and one that does not resolve is a 400
 /// rather than ignored: dropping a filter would quietly widen the answer. Each becomes one correlated EXISTS over the
 /// entry's values, all ANDed, so the database filters before the count, the order and the page - and an entry with no
 /// value for the field never matches, whichever way the comparison points.
@@ -93,10 +93,12 @@ public static class EntityFieldFilters
             return (filters, new() { ["field"] = ["Field filters need a type: a field belongs to one type."] });
         }
 
+        // The type's fields and those it inherits from every type above it (ADR 0007 amendment, 2026-11-12).
+        var lineage = await EntityEndpoints.FieldLineageAsync(db, universeId, typeId, cancellationToken);
         var fields = await db.EntityFieldDefinitions.AsNoTracking()
             // Active fields only: an archived one is out of Lore's filters as it is out of every form (Issue #39), so a filter
             // naming it is refused like any field this type does not have.
-            .Where(field => field.EntityTypeId == typeId && field.EntityType!.UniverseId == universeId && field.ArchivedAt == null)
+            .Where(field => lineage.Contains(field.EntityTypeId) && field.EntityType!.UniverseId == universeId && field.ArchivedAt == null)
             .Select(field => new
             {
                 field.Id,

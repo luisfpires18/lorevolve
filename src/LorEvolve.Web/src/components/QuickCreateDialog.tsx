@@ -12,6 +12,7 @@ import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { emptyValue } from '../lore/document'
 import { createEntity, listEntities, listEntityTypeGroups, listEntityTypes } from '../lore/api'
+import { withInheritedFields } from '../lore/fieldInheritance'
 import { branchIds, buildTypeTree } from '../lore/typeTree'
 import {
   CanonStatus,
@@ -155,7 +156,8 @@ export function QuickCreateDialog({
         const eligible = (entityTypeId ? tree.ordered.map((node) => node.type) : all).filter(
           (type) => !members || members.has(type.id),
         )
-        setTypes({ kind: 'ready', eligible })
+        // Each with the fields it inherits, so a required one above it is asked for too.
+        setTypes({ kind: 'ready', eligible: eligible.map((type) => withInheritedFields(type, all)) })
         // One type to choose from is no choice: it is taken, never asked again.
         if (eligible.length === 1) setChosenTypeId(eligible[0].id)
       })

@@ -342,9 +342,11 @@ public static class RevisionEndpoints
 
         var fieldIds = revision.FieldValues.Select(value => value.FieldDefinitionId).Distinct().ToList();
 
+        // A field the type has now, its own or inherited from a type above it.
+        var lineage = await EntityEndpoints.FieldLineageAsync(db, universeId, revision.EntityTypeId, cancellationToken);
         var liveFieldIds = await db.EntityFieldDefinitions.AsNoTracking()
             .Where(field => fieldIds.Contains(field.Id)
-                && field.EntityTypeId == revision.EntityTypeId
+                && lineage.Contains(field.EntityTypeId)
                 && field.EntityType!.UniverseId == universeId)
             .Select(field => field.Id)
             .ToListAsync(cancellationToken);

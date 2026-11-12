@@ -1052,7 +1052,7 @@ function TypeDialog({
               </select>
               <p className="field__hint" id="type-parent-hint">
                 Organises Lore: choosing a type there shows the entries of the types inside it too.
-                Nothing is inherited: each type keeps its own fields.
+                A nested type inherits the fields of every type above it; each field is edited on its own type.
               </p>
               {fieldErrors.parent ? <p className="field__error">{fieldErrors.parent}</p> : null}
             </div>

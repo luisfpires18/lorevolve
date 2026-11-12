@@ -1377,8 +1377,10 @@ internal static partial class BackupValidation
                         continue;
                     }
 
+                    // Its type's own field, or one inherited from a type above it.
+                    _typeParents ??= _types.ToDictionary(type => type.Key, type => type.Value.ParentId);
                     Reference(
-                        _fieldOwner.TryGetValue(value.FieldDefinitionId, out var owner) && owner == entity.EntityTypeId,
+                        _fieldOwner.TryGetValue(value.FieldDefinitionId, out var owner) && EntityTypeHierarchy.IsWithin(_typeParents, entity.EntityTypeId, owner),
                         $"{label} sets a field its entry's type does not have.");
                     Text(value.TextValue, LoreLimits.TextValueMaxLength, $"A value of {label.ToLowerInvariant()}");
 

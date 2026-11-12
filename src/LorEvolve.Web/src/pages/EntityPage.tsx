@@ -195,7 +195,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
 }
 
 function EntityScreen({ view }: { view: EntryView }) {
-  const { universe, chronology, types: typesFound } = useWorkspaceTypes()
+  const { universe, chronology, entryTypes: typesFound } = useWorkspaceTypes()
   const access = useUniverseAccess()
   const { entityId } = useParams<{ entityId: string }>()
   const navigate = useNavigate()
