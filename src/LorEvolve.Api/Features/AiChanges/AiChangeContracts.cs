@@ -101,7 +101,9 @@ public sealed record AiChapterInput(
     [property: Description("Create only: the story it belongs to.")] AiRefInput? Story = null,
     string? Title = null,
     string? Summary = null,
-    string? Notes = null);
+    string? Notes = null,
+    [property: Description("The plot arc it is in, of the same story: assigns it, or moves it from another arc (last in that arc). Left out: on create in no arc, on update unchanged.")] AiRefInput? Arc = null,
+    [property: Description("Update only: true takes the chapter out of its arc. Never with arc.")] bool? NoArc = null);
 
 public sealed record AiSceneInput(
     [property: Description("Create only: the story it belongs to.")] AiRefInput? Story = null,
@@ -111,7 +113,13 @@ public sealed record AiSceneInput(
     string? Notes = null,
     [property: Description("The lore entry the scene is told from.")] AiRefInput? PointOfView = null,
     [property: Description("The whole set of lore entries in the scene. On update, leave it out to keep them.")] IReadOnlyList<AiRefInput>? Lore = null,
-    [property: Description("Where the scene happens in the world. On update, leave it out to keep it.")] AiPointInput? Date = null);
+    [property: Description("Where the scene happens in the world. On update, leave it out to keep it.")] AiPointInput? Date = null,
+    [property: Description("The scene's whole list of beats, first first, as it should end: add, edit, reorder or remove beats by sending the full list (read the current beats with get_scene). On update, leave it out to keep them; [] removes every beat.")] IReadOnlyList<AiBeatInput>? Beats = null);
+
+[Description("One beat of a scene: a step in what happens.")]
+public sealed record AiBeatInput(
+    string? Title = null,
+    [property: Description("An optional note under the beat.")] string? Note = null);
 
 public sealed record AiPointInput(Guid? EraId = null, int? Year = null, int? Month = null, int? Day = null, Guid? MonthId = null);
 
@@ -248,8 +256,13 @@ public sealed record RelationshipValues(
 
 public sealed record StoryValues(string Title, string? Premise, StoryStatus Status);
 
-public sealed record ChapterValues(AiRef Story, string Title, string? Summary, string? Notes);
+/// <summary>A chapter's form. <paramref name="Arc"/> is its live arc, or null for none (ADR 0070).</summary>
+public sealed record ChapterValues(AiRef Story, string Title, string? Summary, string? Notes, AiRef? Arc = null);
 
+/// <summary>
+/// A scene's form. <paramref name="Beats"/> is its whole list of beats in order; null, as in a change stored before beats
+/// could be proposed, keeps what the scene has.
+/// </summary>
 public sealed record SceneValues(
     AiRef Story,
     AiRef? Chapter,
@@ -258,7 +271,10 @@ public sealed record SceneValues(
     string? Notes,
     AiRef? PointOfView,
     ChronologyValue? Date,
-    List<AiRef> Lore);
+    List<AiRef> Lore,
+    List<BeatValues>? Beats = null);
+
+public sealed record BeatValues(string Title, string? Note);
 
 public sealed record ManuscriptValues(AiRef Scene, Guid? StoryId, bool Append, string Text);
 

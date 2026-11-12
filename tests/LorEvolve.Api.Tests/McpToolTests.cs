@@ -49,7 +49,7 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
 {
     private static readonly string[] ToolNames =
     [
-        "browse_timeline", "get_lore_entry", "get_lore_image", "get_lore_relationships", "get_map_location", "get_scene", "get_story",
+        "browse_timeline", "get_arc", "get_lore_entry", "get_lore_image", "get_lore_relationships", "get_map_location", "get_scene", "get_story",
         "get_timeline_moment", "get_universe_overview", "list_lore_images", "list_maps", "measure_map_distance", "read_scene_manuscript",
         "search_map_locations", "search_scene_manuscript", "search_universe",
     ];
@@ -150,6 +150,16 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
         Assert.False(scene.GetProperty("scene").TryGetProperty("prose", out _));
         Assert.Equal("She ran.".Length, scene.GetProperty("manuscript").GetProperty("characters").GetInt32());
         Assert.Equal(2, scene.GetProperty("manuscript").GetProperty("version").GetInt32());
+        Assert.Equal("The will is read", Assert.Single(scene.GetProperty("scene").GetProperty("beats").EnumerateArray()).GetProperty("title").GetString());
+
+        // From an arc to what it holds: its chapter, and that chapter's scene with its beats.
+        var arc = await Call(client, "get_arc", new() { ["arcId"] = W.Arc.ToString() });
+        Assert.Equal("Inheritance", arc.GetProperty("title").GetString());
+        Assert.Equal(W.Story, arc.GetProperty("storyId").GetGuid());
+        Assert.Equal(W.Chapter, Assert.Single(arc.GetProperty("chapters").EnumerateArray()).GetProperty("id").GetGuid());
+        var held = Assert.Single(arc.GetProperty("scenes").EnumerateArray());
+        Assert.Equal(W.Scene, held.GetProperty("id").GetGuid());
+        Assert.Equal("The will is read", Assert.Single(held.GetProperty("beats").EnumerateArray()).GetString());
 
         var moment = await Call(client, "get_timeline_moment", new() { ["momentId"] = W.Moment.ToString() });
         Assert.Equal("The flood", moment.GetProperty("title").GetString());
@@ -171,6 +181,7 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
                      ("get_lore_relationships", "loreId", fixture.OtherEntry.ToString()),
                      ("get_story", "storyId", W.Trash.Story.ToString()),
                      ("get_scene", "sceneId", W.Trash.Scene.ToString()),
+                     ("get_arc", "arcId", W.Story.ToString()),
                      ("read_scene_manuscript", "sceneId", W.Trash.Scene.ToString()),
                      ("search_scene_manuscript", "sceneId", Guid.NewGuid().ToString()),
                      ("get_timeline_moment", "momentId", W.Entry.ToString()),

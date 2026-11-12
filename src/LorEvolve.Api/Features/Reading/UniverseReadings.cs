@@ -110,7 +110,26 @@ public sealed record SceneReading(
     string? Date,
     IReadOnlyList<LoreMention> Lore,
     string? Prose,
-    string? ProsePassage = null);
+    string? ProsePassage = null,
+    IReadOnlyList<BeatReading>? Beats = null);
+
+/// <summary>One beat of a scene, in its place: a title and its note.</summary>
+public sealed record BeatReading(string Title, string? Note);
+
+/// <summary>
+/// One arc of a story and what it holds: its chapters in reading order, numbered inside the arc, and their scenes in
+/// order with short summaries and beats (ADR 0070). Bounded like a story's outline.
+/// </summary>
+public sealed record ArcContentsReading(
+    Guid Id,
+    int Number,
+    string Title,
+    string? Description,
+    Guid StoryId,
+    string StoryTitle,
+    IReadOnlyList<ChapterReading> Chapters,
+    IReadOnlyList<SceneOutline> Scenes,
+    bool MoreScenes);
 
 /// <summary>One timeline moment: what happened, when, who took part and which stories it matters to. Only live ones are named.</summary>
 public sealed record TimelineItemReading(

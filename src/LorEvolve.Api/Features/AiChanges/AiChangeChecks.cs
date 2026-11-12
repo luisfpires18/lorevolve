@@ -240,14 +240,29 @@ internal static partial class AiChangeSnapshots
         return story is null ? null : (story.Form, story.Version);
     }
 
-    public static Task<ChapterValues?> ChapterAsync(LorEvolveDbContext db, Guid universeId, Guid chapterId, CancellationToken cancellationToken) =>
-        db.Chapters.AsNoTracking()
+    public static async Task<ChapterValues?> ChapterAsync(LorEvolveDbContext db, Guid universeId, Guid chapterId, CancellationToken cancellationToken)
+    {
+        var row = await db.Chapters.AsNoTracking()
             .Where(row => row.Id == chapterId
                 && row.DeletedAt == null
                 && row.Story!.UniverseId == universeId
                 && row.Story.DeletedAt == null)
-            .Select(row => new ChapterValues(new AiRef(row.StoryId, null), row.Title, row.Summary, row.Notes))
+            .Select(row => new
+            {
+                row.StoryId,
+                row.Title,
+                row.Summary,
+                row.Notes,
+
+                // An arc in the Trash holds no chapter while it is there (ADR 0070).
+                Arc = row.ArcLink != null && row.ArcLink.PlotArc!.DeletedAt == null ? (Guid?)row.ArcLink.PlotArcId : null,
+            })
             .FirstOrDefaultAsync(cancellationToken);
+
+        return row is null
+            ? null
+            : new ChapterValues(AiRef.To(row.StoryId), row.Title, row.Summary, row.Notes, row.Arc is { } arc ? AiRef.To(arc) : null);
+    }
 
     public static async Task<(SceneValues Form, int Version)?> SceneAsync(LorEvolveDbContext db, Guid universeId, Guid sceneId, CancellationToken cancellationToken)
     {
@@ -270,6 +285,7 @@ internal static partial class AiChangeSnapshots
                 scene.MonthId,
                 scene.Day,
                 Lore = scene.EntityLinks.OrderBy(link => link.SortOrder).Select(link => link.EntityId).ToList(),
+                Beats = scene.Beats.OrderBy(beat => beat.SortOrder).Select(beat => new BeatValues(beat.Title, beat.Note)).ToList(),
                 scene.Version,
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -287,7 +303,8 @@ internal static partial class AiChangeSnapshots
             row.Notes,
             row.PovEntityId is { } pov ? AiRef.To(pov) : null,
             row.Year is null ? null : new ChronologyValue(row.EraId, row.Year, row.Month, row.Day, row.MonthId),
-            [.. row.Lore.Order().Select(AiRef.To)]), row.Version);
+            [.. row.Lore.Order().Select(AiRef.To)],
+            row.Beats), row.Version);
     }
 
     public static async Task<TimelineValues?> MomentAsync(LorEvolveDbContext db, Guid universeId, Guid entryId, CancellationToken cancellationToken)
@@ -561,7 +578,11 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
             (relationship.Source, AiChangeResource.LoreEntry, "source"),
             (relationship.Target, AiChangeResource.LoreEntry, "target"),
         ],
-        ChapterValues chapter => [(chapter.Story, AiChangeResource.Story, "story")],
+        ChapterValues chapter =>
+        [
+            (chapter.Story, AiChangeResource.Story, "story"),
+            .. chapter.Arc is { } arc ? [(arc, AiChangeResource.PlotArc, "arc")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
+        ],
         SceneValues scene =>
         [
             (scene.Story, AiChangeResource.Story, "story"),
@@ -975,6 +996,21 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
             CheckStory(work, chapter.Story, "story");
         }
 
+        // An arc of the same story: an existing live one of the chapter's own story, or one this proposal creates in it.
+        if (chapter.Arc is { } arcRef)
+        {
+            var (arcId, pendingArc) = Resolve(arcRef);
+            if (pendingArc?.Proposed is PlotArcValues proposedArc && proposedArc.Story != chapter.Story)
+            {
+                work.Problem(AiChangeCodes.WrongRef, "That arc is in another story.", "arc");
+            }
+            else if (arcId is { } existingArc
+                && (!_arcs.TryGetValue(existingArc, out var found) || found.Trashed || Resolve(chapter.Story).Id != found.StoryId))
+            {
+                work.Problem(AiChangeCodes.NotFound, "Choose an arc from this chapter's story.", "arc");
+            }
+        }
+
         work.Problems(StoryValidation.ValidateChapter(new ChapterRequest(chapter.Title, chapter.Summary, chapter.Notes)));
     }
 
@@ -1032,7 +1068,14 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
 
         _chronology ??= await UniverseChronology.LoadAsync(db, universeId, cancellationToken);
         work.Problems(StoryValidation.ValidateScene(
-            new SceneRequest(scene.Title, scene.Summary, scene.Notes, null, scene.Date, [.. scene.Lore.Select(_ => Guid.NewGuid())]),
+            new SceneRequest(
+                scene.Title,
+                scene.Summary,
+                scene.Notes,
+                null,
+                scene.Date,
+                [.. scene.Lore.Select(_ => Guid.NewGuid())],
+                Beats: scene.Beats?.Select(beat => new SceneBeatInput(beat.Title, beat.Note)).ToList()),
             _chronology));
     }
 
