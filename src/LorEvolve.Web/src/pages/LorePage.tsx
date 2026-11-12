@@ -698,7 +698,6 @@ export default function LorePage() {
               .
             </p>
           ) : null}
-
         </div>
 
         {chosenName ? (
