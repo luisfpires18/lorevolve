@@ -7429,10 +7429,62 @@ html:has(.viewer[open]) {
   min-width: 0;
 }
 
-.typegroups__manage > summary {
+/* The Groups tab of Types: a new group's name, then every group in its priority, numbered, each a row like a type's. */
+.typegroups--panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 48rem;
+}
+
+.typegroups__intro,
+.typegroups__empty {
+  margin: 0;
   color: var(--muted);
-  font-size: var(--text-ui);
-  cursor: pointer;
+}
+
+.typegroups--panel .typegroups__list {
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  counter-reset: group-rank;
+}
+
+.typegroups--panel .typegroups__list:empty {
+  display: none;
+}
+
+.typegroups--panel .typegroups__item {
+  padding: var(--space-3) var(--space-4);
+  counter-increment: group-rank;
+}
+
+.typegroups--panel .typegroups__item + .typegroups__item {
+  border-top: 1px solid var(--rule);
+}
+
+.typegroups--panel .typegroups__name {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.typegroups--panel .typegroups__name::before {
+  content: counter(group-rank);
+  grid-row: span 2;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.typegroups--panel .typegroups__usage {
+  grid-column: 2;
+}
+
+.typegroups__move svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .typegroups__list {

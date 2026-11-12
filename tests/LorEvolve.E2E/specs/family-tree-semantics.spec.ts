@@ -226,6 +226,7 @@ test.describe('family tree semantics', () => {
     const tabs = page.getByTestId('types-tabs')
     await expect(tabs.getByRole('tab')).toHaveText([
       'Lore Types',
+      'Groups',
       'Relation Kinds',
       'Event Kinds & Methods',
     ])

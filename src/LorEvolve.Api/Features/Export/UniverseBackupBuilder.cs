@@ -268,8 +268,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     // ---------- Types and fields ----------
 
     /// <summary>
-    /// The universe's semantic groups, by name then id, each with its member type ids sorted - so two exports of unchanged lore
-    /// are identical.
+    /// The universe's semantic groups in their priority (then name, then id), each with its member type ids sorted - so two
+    /// exports of unchanged lore are identical, and a restore reads the priority back from the list's order.
     /// </summary>
     /// <summary>Every knowledge record of the universe (ADR 0057), by knower name, then creation, then id. One read.</summary>
     private async Task<IReadOnlyList<BackupKnowledgeRecord>> KnowledgeAsync(Guid universeId, CancellationToken cancellationToken)
@@ -314,13 +314,14 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     {
         var groups = await db.EntityTypeGroups.AsNoTracking()
             .Where(group => group.UniverseId == universeId)
-            .Select(group => new { group.Id, group.Name, group.CreatedAt, group.UpdatedAt, group.FamilyTreeEnabled, TypeIds = group.Members.Select(member => member.EntityTypeId).ToList() })
+            .Select(group => new { group.Id, group.Name, group.SortOrder, group.CreatedAt, group.UpdatedAt, group.FamilyTreeEnabled, TypeIds = group.Members.Select(member => member.EntityTypeId).ToList() })
             .ToListAsync(cancellationToken);
 
         return
         [
             .. groups
-                .OrderBy(group => group.Name, StringComparer.Ordinal)
+                .OrderBy(group => group.SortOrder)
+                .ThenBy(group => group.Name, StringComparer.Ordinal)
                 .ThenBy(group => Key(group.Id), StringComparer.Ordinal)
                 .Select(group => new BackupEntityTypeGroup(
                     group.Id,

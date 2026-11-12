@@ -847,7 +847,9 @@ internal sealed partial class UniverseRestore(
             }
         }
 
-        // Groups and their memberships under new ids; EF writes each after the rows it points at.
+        // Groups and their memberships under new ids; EF writes each after the rows it points at. The file lists groups in
+        // their priority (by name before groups had one), so a group's place is its place in the list.
+        var groupOrder = 0;
         foreach (var group in payload.EntityTypeGroups ?? [])
         {
             db.EntityTypeGroups.Add(new EntityTypeGroup
@@ -855,6 +857,7 @@ internal sealed partial class UniverseRestore(
                 Id = ids.Map(group.Id),
                 UniverseId = universeId,
                 Name = group.Name,
+                SortOrder = groupOrder++,
                 FamilyTreeEnabled = group.FamilyTreeEnabled,
                 CreatedAt = group.CreatedAt,
                 UpdatedAt = group.UpdatedAt,
