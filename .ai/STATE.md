@@ -76,8 +76,8 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 ## Owner steps and unverified items
 
-- **AI proposals for story structure** (ADR 0070 follow-up, not started): AI write proposals for a chapter's arc and
-  a scene's beats.
+- **AI proposals for story structure** (PR #92, on DEV): a scene's beats as its whole list, a chapter's `arc`/`noArc`,
+  MCP `get_arc`. Not yet tried in a real client: add, reorder, remove beats and move a chapter between arcs, approve.
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
   `/mcp/u/{name}` URL, and ChatGPT image rendering or its fallback link. Never tried in a real client
   (`docs/testing/mcp-images-checklist.md`). The assistant's 10,000-character tool-result cap can cut a large catalog.
