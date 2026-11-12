@@ -279,18 +279,22 @@ test.describe('semantic groups', () => {
       w.elemental,
     )
 
-    // Deleting the group: asked, refused, and the field named.
-    await editor.getByTestId('type-groups-manage').locator('summary').click()
-    await editor.getByTestId('type-group-delete-Runes').click()
+    // Deleting the group, on the Groups tab: asked, refused, and the field named.
+    await editor.getByTestId('cancel-type').click()
+    await acceptConfirm(page, 'Close without saving')
+    await expect(editor).toBeHidden()
+    await page.getByRole('tab', { name: 'Groups' }).click()
+    const panel = page.getByTestId('type-groups-panel')
+    await panel.getByTestId('type-group-delete-Runes').click()
     await acceptConfirm(page, 'Corrupted Runes')
-    await expect(editor.getByTestId('type-group-problem')).toContainText('Required Rune')
+    await expect(panel.getByTestId('type-group-problem')).toContainText('Required Rune')
     expect((await groups(page, w)).map((group) => group.name)).toContain('Runes')
 
     // Renaming it changes the name everywhere and nothing else.
-    await editor.getByTestId('type-group-rename-Runes').click()
-    await editor.getByTestId('type-group-rename-input').fill('Runestones')
-    await editor.getByTestId('type-group-rename-save').click()
-    await expect(editor.getByTestId('type-group-rename-Runestones')).toBeVisible()
+    await panel.getByTestId('type-group-rename-Runes').click()
+    await panel.getByTestId('type-group-rename-input').fill('Runestones')
+    await panel.getByTestId('type-group-rename-save').click()
+    await expect(panel.getByTestId('type-group-rename-Runestones')).toBeVisible()
     const renamed = (await groups(page, w)).find((group) => group.id === runes.id)!
     expect(renamed.name).toBe('Runestones')
     expect(renamed.typeIds.sort()).toEqual([w.elemental, w.corrupted].sort())
@@ -328,5 +332,55 @@ test.describe('semantic groups', () => {
       page.getByTestId('lore-type-menu-panel').getByRole('link', { name: 'Realms (group)' }),
     ).toHaveAttribute('aria-current', 'page')
     expect(await noSideways(page)).toBeLessThanOrEqual(0)
+  })
+})
+
+test.describe('group priority', () => {
+  test('the Groups tab creates and reorders groups, and a scene reads its lore in that priority', async ({
+    page,
+  }) => {
+    await account(page)
+    const w = await world(page)
+    // A world's starter groups by name; a new group goes last.
+    await page.goto(`/app/universes/${w.u}/types?tab=groups`)
+    const panel = page.getByTestId('type-groups-panel')
+    await panel.getByTestId('type-group-create-name').fill('Realms')
+    await panel.getByTestId('type-group-create').click()
+    const rows = panel.getByTestId('type-group-row')
+    await expect(rows).toHaveText([/Characters/, /Factions/, /Objects/, /Places/, /Realms/])
+
+    // Kingdoms joins Realms; Realms then goes to the top.
+    await page.getByRole('tab', { name: 'Lore Types' }).click()
+    const editor = await openEditor(page, 'Kingdoms')
+    await editor.getByTestId('type-group-add').selectOption({ label: 'Realms' })
+    await editor.getByTestId('save-type').click()
+    await expect(editor).toBeHidden()
+    await page.getByRole('tab', { name: 'Groups' }).click()
+    for (let step = 0; step < 4; step++) {
+      await panel.getByTestId('type-group-up-Realms').click()
+      await expect(rows.nth(3 - step)).toContainText('Realms')
+    }
+    await expect(panel.getByTestId('type-group-up-Realms')).toBeDisabled()
+
+    // A scene picked Mara, Lava Rune, Arkazia: Realms (Arkazia) first, then Characters (Mara), ungrouped runes last.
+    const story = await post(page, `/api/universes/${w.u}/stories`, {
+      title: 'Orders',
+      premise: null,
+      status: 0,
+    })
+    await post(page, `/api/universes/${w.u}/stories/${story.id}/scenes`, {
+      title: 'The causeway',
+      summary: null,
+      notes: null,
+      povEntityId: null,
+      chronology: null,
+      entityIds: [w.mara, w.lava, w.arkazia],
+    })
+    await page.goto(`/app/universes/${w.u}/stories/${story.id}`)
+    await expect(page.getByTestId('scene-lore').getByRole('listitem')).toHaveText([
+      /Arkazia/,
+      /Mara/,
+      /Lava Rune/,
+    ])
   })
 })

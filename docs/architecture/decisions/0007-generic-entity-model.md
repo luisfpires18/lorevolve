@@ -367,3 +367,22 @@ nested beneath it, at any depth. Groups are unchanged (explicit membership, neve
   hierarchy's order (one type is still taken without asking). The AI catalog says "or a type nested beneath it" where the
   target has nested types. The Types screen says so beside the choice.
 - No schema, backup format or migration change: every link that fit the exact rule still fits.
+
+## Amendment - group priority and the Groups tab (2026-11-12, owner request)
+
+Supersedes "There is no group-creation route of its own and no separate management page" from the semantic groups
+amendment.
+
+- **A group has a priority.** `EntityTypeGroups.SortOrder`, from 0 per universe. Groups read in it; a new group, from any
+  path (the Groups tab, a type's save, an AI change, a starter template), goes last. The migration `OrderTypeGroups` starts
+  every universe in the name order groups were listed in before, ignoring case, and rolls back with SQLite's own
+  `DROP COLUMN`, so no table is rebuilt.
+- **What the priority does.** A scene's lore chips read by it: each entry under the first-ranked group its type is in,
+  picked order inside a group, entries of types in no group last. Only the order shown changes; the stored pick order is
+  untouched.
+- **The Groups tab of Types** creates a group (`POST /entity-type-groups`, no type yet), sets the whole priority
+  (`PUT /entity-type-groups/order`, every group of the universe exactly once), renames and deletes. Choosing which groups a
+  type joins stays in the type editor, saved with the type.
+- **Backups.** The file lists groups in their priority, so a restore reads it from the list's order; an older file, by
+  name, restores in name order. The format version is unchanged.
+

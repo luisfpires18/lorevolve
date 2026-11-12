@@ -504,6 +504,8 @@ public sealed class EntityTypeGroupTests(LorEvolveApiFactory factory) : IClassFi
             Assert.Equal(HttpStatusCode.OK, (await w.Client(who).GetAsync(groups)).StatusCode);
             Assert.Equal(HttpStatusCode.Forbidden, (await w.Client(who).PutAsJsonAsync($"{groups}/{runes.Id}", new EntityTypeGroupRenameRequest("Mine"))).StatusCode);
             Assert.Equal(HttpStatusCode.Forbidden, (await w.Client(who).DeleteAsync($"{groups}/{runes.Id}")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await w.Client(who).PostAsJsonAsync(groups, new EntityTypeGroupCreateRequest("Mine"))).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await w.Client(who).PutAsJsonAsync($"{groups}/order", new EntityTypeGroupOrderRequest([runes.Id]))).StatusCode);
             Assert.Equal(HttpStatusCode.Forbidden, (await w.Client(who).PutAsJsonAsync(
                 $"/api/universes/{w.U}/entity-types/{w.CharacterType}",
                 new EntityTypeRequest("Character", null, "character", null, null, Groups: [new(null, "Sneaky")]))).StatusCode);
@@ -512,6 +514,53 @@ public sealed class EntityTypeGroupTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Equal(HttpStatusCode.NotFound, (await w.Outsider.GetAsync(groups)).StatusCode);
         Assert.True((await w.Editor.PutAsJsonAsync($"{groups}/{runes.Id}", new EntityTypeGroupRenameRequest("People"))).IsSuccessStatusCode);
         Assert.DoesNotContain((await w.Owner.GetFromJsonAsync<List<EntityTypeGroupResponse>>(groups))!, group => group.Name == "Sneaky");
+    }
+
+    // ---------- Priority ----------
+
+    [Fact]
+    public async Task Groups_read_in_the_authors_priority_new_ones_go_last_and_an_order_must_name_every_group_once()
+    {
+        var w = await NewWorld("etg-order");
+        var created = await PostJson<EntityTypeGroupResponse>(w.Client, GroupsRoute(w), new EntityTypeGroupCreateRequest("  Arms  "));
+        Assert.Equal("Arms", created.Name);
+        Assert.Empty(created.TypeIds);
+
+        // A starter universe's groups by name, then each new group last - from the Groups tab or a type's own save.
+        Assert.Equal(["Characters", "Factions", "Objects", "Places", "Runes", "Arms"], (await GroupsOf(w)).Select(group => group.Name));
+        await PutType(w, w.Kingdoms, new EntityTypeRequest("Kingdoms", null, null, null, null, Groups: [new(null, "Realms")]));
+        Assert.Equal("Realms", (await GroupsOf(w)).Last().Name);
+
+        var reversed = (await GroupsOf(w)).Select(group => group.Id).Reverse().ToList();
+        var answered = await PutJson<List<EntityTypeGroupResponse>>(w.Client, $"{GroupsRoute(w)}/order", new EntityTypeGroupOrderRequest(reversed));
+        Assert.Equal(reversed, answered.Select(group => group.Id));
+        Assert.Equal(reversed, (await GroupsOf(w)).Select(group => group.Id));
+
+        // Every group exactly once, of this universe only; a refused order changes nothing.
+        var other = await NewWorld("etg-order-other");
+        foreach (var refused in new List<Guid>?[]
+                 {
+                     null,
+                     reversed.Skip(1).ToList(),
+                     [.. reversed, reversed[0]],
+                     [.. reversed.Skip(1), (await GroupsOf(other)).First().Id],
+                 })
+        {
+            var response = await w.Client.PutAsJsonAsync($"{GroupsRoute(w)}/order", new EntityTypeGroupOrderRequest(refused));
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        Assert.Equal(reversed, (await GroupsOf(w)).Select(group => group.Id));
+
+        // A name already used, or none, is refused.
+        Assert.Equal(HttpStatusCode.BadRequest, (await w.Client.PostAsJsonAsync(GroupsRoute(w), new EntityTypeGroupCreateRequest("Arms"))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await w.Client.PostAsJsonAsync(GroupsRoute(w), new EntityTypeGroupCreateRequest(" "))).StatusCode);
+
+        // The priority survives a backup and restore.
+        var restored = await RestoreArchive(w.Client, await RawArchive(w.Client, w.U), "etg-order restored");
+        Assert.Equal(
+            (await GroupsOf(w)).Select(group => group.Name),
+            (await GroupsOf(w.Client, restored.Id)).Select(group => group.Name));
     }
 
     // ---------- Backup ----------
