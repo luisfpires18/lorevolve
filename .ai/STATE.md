@@ -18,7 +18,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
   `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 43057795390 on `master` `b6eb363`, succeeded (2026-11-11, Edit scene beside Write, exact pickers, lore chip pictures).
+  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 43274734058 on `master` `286d158`, succeeded (2026-11-12, author orders, AI beats and chapter arcs, Lore card toggle, group priority and Groups tab, inherited fields; migrations `KeepAuthorOrders`, `OrderTypeGroups`).
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -39,7 +39,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-11 `master` and `dev` match after PR #91 (author orders) is released. `WEBSITE_RUN_FROM_PACKAGE=1` and
+As of 2026-11-12 `master` and `dev` match (PRs #91 to #95 released). `WEBSITE_RUN_FROM_PACKAGE=1` and
 `SCM_MAX_ZIP_PACKAGE_COUNT=2` are set on DEV and PROD (2026-11-11), so a deploy no longer swaps files under the running app. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
@@ -76,9 +76,9 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 ## Owner steps and unverified items
 
-- **Types: group priority (#94) and inherited fields (PR 3)**, on DEV once merged. Owner to check: reorder groups on the
+- **Types: group priority (#94) and inherited fields (#95)**, on PROD. Owner to check: reorder groups on the
   Groups tab and look at a scene's Lore chips; give a parent type a field and write an entry of a nested type.
-- **AI proposals for story structure** (PR #92, on DEV): a scene's beats as its whole list, a chapter's `arc`/`noArc`,
+- **AI proposals for story structure** (PR #92, on PROD): a scene's beats as its whole list, a chapter's `arc`/`noArc`,
   MCP `get_arc`. Not yet tried in a real client: add, reorder, remove beats and move a chapter between arcs, approve.
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
   `/mcp/u/{name}` URL, and ChatGPT image rendering or its fallback link. Never tried in a real client
