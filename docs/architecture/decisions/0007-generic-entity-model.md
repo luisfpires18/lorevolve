@@ -367,3 +367,26 @@ nested beneath it, at any depth. Groups are unchanged (explicit membership, neve
   hierarchy's order (one type is still taken without asking). The AI catalog says "or a type nested beneath it" where the
   target has nested types. The Types screen says so beside the choice.
 - No schema, backup format or migration change: every link that fit the exact rule still fits.
+
+## Amendment - a nested type inherits its ancestors' fields (2026-11-12, owner request)
+
+Supersedes "Organisation, not inheritance" for fields, and "The type's own fields only" for field filters. Icon, accent,
+description, Canon semantics, groups and Family Tree eligibility still pass nothing down.
+
+- **Every field of every type above.** An entry of a nested type has its type's fields and those of each ancestor, root
+  first. Required fields are required below too (a form, Quick Create, Mass create). Values are stored as they always
+  were, against the field of the type that owns it.
+- **Read-only below.** An inherited field is edited, archived, restored or deleted only on the type that owns it. The Types
+  screen lists a nested type's inherited fields above its own, each block named for its owner.
+- **One name, one meaning.** A field's name, and its meaning when it has one, is unique across the type, every type above
+  it and every type nested in it.
+- **Filters.** A Lore filter names a field the chosen type has, its own or inherited; branch browsing from a parent
+  matches nested entries by the parent's fields.
+- **Moving a type.** A move changes what the branch inherits, so it is refused (`entity_type_inherited_fields`) while an
+  entry of the moving branch - live, in the Trash, or in one of its eras - holds a value in a field it would lose, and when
+  a field it would gain has the name or meaning of one already in the branch. Nothing is hidden or cleared to make a move.
+- **An entry changing type** keeps only the fields the new type has, own or inherited; archived inherited values block it as
+  archived own values do.
+- **Everything else follows.** Revisions, eras, AI change checks and the AI's options (inherited fields listed first),
+  backup validation and the readable export all read a type's fields with its ancestors'. No schema change.
+

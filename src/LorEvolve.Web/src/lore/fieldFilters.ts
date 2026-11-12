@@ -9,7 +9,7 @@ import { FieldKind, type EntityType, type FieldDefinition, type FieldKindValue }
  * hold anything; `URLSearchParams` does the escaping. Several filters are several `field` values, in the order added,
  * and all of them must hold (AND). Options and linked entries are named by id, never by what they are called.
  *
- * Fields are the selected type's own - nothing is inherited - so a filter means nothing once the type changes. The API
+ * Fields are the selected type's own and those it inherits from the types above it, so a filter means nothing once the type changes. The API
  * checks every one again and refuses what it cannot resolve.
  */
 

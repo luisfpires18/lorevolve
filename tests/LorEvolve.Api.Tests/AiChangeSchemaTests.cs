@@ -215,24 +215,28 @@ public sealed class AiChangeSchemaTests(LorEvolveApiFactory factory) : IClassFix
     }
 
     [Fact]
-    public async Task A_nested_type_never_inherits_its_parents_fields_and_the_refusal_says_so()
+    public async Task A_nested_type_inherits_its_parents_fields_and_a_nested_types_field_is_refused_on_the_parent()
     {
         var (owner, ownerId, u, character) = await World("schemanested");
         var title = await Field(owner, u, character, new FieldDefinitionRequest("Title", EntityFieldKind.ShortText, false, null, null, null));
         var squire = (await ApproveAll(owner, u, await StagedSchema(_factory, u, ownerId, NewType("squire", new AiLoreTypeInput("Squire", Parent: Id(character))))))
             .Applied.Single().ResultId!.Value;
+        var oath = await Field(owner, u, squire, new FieldDefinitionRequest("Oath", EntityFieldKind.ShortText, false, null, null, null));
 
-        // The catalog tells the AI before it tries.
+        // The catalog tells the AI, and lists the inherited field first on the nested type.
         var catalog = await CatalogAsync(u, ownerId);
-        Assert.Contains("never inherits its parent's fields", catalog.Notes, StringComparison.Ordinal);
-        Assert.Contains("never its parent's", catalog.Schema!.Notes, StringComparison.Ordinal);
+        Assert.Contains("inherits the fields of every type above it", catalog.Notes, StringComparison.Ordinal);
+        Assert.Contains("every type nested beneath it inherits it", catalog.Schema!.Notes, StringComparison.Ordinal);
+        Assert.Equal(["Title", "Oath"], catalog.LoreTypes.Single(type => type.Id == squire).Fields.Select(field => field.Name));
 
-        // A Squire using Character's field is refused with the owning type named.
-        var staged = await Stage(_factory, u, ownerId, NewLore("pip", squire, "Pip", new AiFieldInput(title.Id, Text: "Sir")));
+        // A Squire using Character's field is staged; a Character using Squire's field is refused with the owner named.
+        var inherits = await Stage(_factory, u, ownerId, NewLore("pip", squire, "Pip", new AiFieldInput(title.Id, Text: "Sir")));
+        Assert.NotNull(inherits.Proposal);
+        var staged = await Stage(_factory, u, ownerId, NewLore("ivo", character, "Ivo", new AiFieldInput(oath.Id, Text: "Never")));
         Assert.Null(staged.Proposal);
         var issue = Assert.Single(staged.Issues);
         Assert.Equal(AiChangeCodes.NotFound, issue.Code);
-        Assert.Contains("belongs to Character, not Squire", issue.Message, StringComparison.Ordinal);
+        Assert.Contains("belongs to Squire, not Character", issue.Message, StringComparison.Ordinal);
     }
 
     [Fact]

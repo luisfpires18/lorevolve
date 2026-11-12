@@ -157,7 +157,10 @@ export function QuickCreateDialog({
           (type) => !members || members.has(type.id),
         )
         // Each with the fields it inherits, so a required one above it is asked for too.
-        setTypes({ kind: 'ready', eligible: eligible.map((type) => withInheritedFields(type, all)) })
+        setTypes({
+          kind: 'ready',
+          eligible: eligible.map((type) => withInheritedFields(type, all)),
+        })
         // One type to choose from is no choice: it is taken, never asked again.
         if (eligible.length === 1) setChosenTypeId(eligible[0].id)
       })
