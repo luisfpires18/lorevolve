@@ -4,6 +4,8 @@ import auth from './en/auth'
 import ideas from './en/ideas'
 import review from './en/review'
 import canon from './en/canon'
+import data from './en/data'
+import admin from './en/admin'
 import assistant from './en/assistant'
 import entity from './en/entity'
 import entityTypes from './en/entityTypes'
@@ -18,6 +20,7 @@ import portal from './en/portal'
 import publishing from './en/publishing'
 import roles from './en/roles'
 import shell from './en/shell'
+import universe from './en/universe'
 import stories from './en/stories'
 
 /**
@@ -35,6 +38,8 @@ const en = {
   ideas,
   review,
   canon,
+  data,
+  admin,
   assistant,
   entity,
   entityTypes,
@@ -49,6 +54,7 @@ const en = {
   publishing,
   roles,
   shell,
+  universe,
   stories,
   language: {
     label: 'Language',

@@ -96,15 +96,19 @@ export const ORIGINAL_WORK_MAX = 200
 
 /**
  * What publishing needs, in the order Settings lists it, keyed as the API reports a missing one. The words
- * are the checklist's; the API's own sentence is what a refusal shows.
+ * are the checklist's, read with `requirementLabel`; the API's own sentence is what a refusal shows.
  */
 export const REQUIREMENTS = [
-  { key: 'publicSummary', label: 'Public summary' },
-  { key: 'category', label: 'Category' },
-  { key: 'genres', label: 'At least one genre' },
-  { key: 'artwork', label: 'Artwork' },
-  { key: 'publicDisplayName', label: 'Your public name' },
+  { key: 'publicSummary' },
+  { key: 'category' },
+  { key: 'genres' },
+  { key: 'artwork' },
+  { key: 'publicDisplayName' },
 ] as const
+
+export function requirementLabel(key: (typeof REQUIREMENTS)[number]['key']) {
+  return t(`universe.requirements.${key}`)
+}
 
 export interface UniverseArtworkRef {
   assetId: string

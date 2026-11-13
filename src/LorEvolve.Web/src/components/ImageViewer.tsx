@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 import { X } from 'lucide-react'
+import { useI18n } from '../i18n'
 import { useReturnFocus } from '../lib/returnFocus'
 
 /**
@@ -29,6 +30,7 @@ export function ImageViewer({
   height: number
   onClose: () => void
 }) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   useReturnFocus()
@@ -83,8 +85,8 @@ export function ImageViewer({
           className="iconbutton viewer__close"
           type="button"
           onClick={onClose}
-          aria-label="Close"
-          title="Close"
+          aria-label={t('universe.imageViewer.close')}
+          title={t('universe.imageViewer.close')}
           autoFocus
           data-testid="image-viewer-close"
         >

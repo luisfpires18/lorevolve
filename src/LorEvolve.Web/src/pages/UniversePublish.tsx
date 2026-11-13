@@ -5,6 +5,7 @@ import { ActionIcon } from '../components/ActionIcon'
 import { PageHeader } from '../components/PageHeader'
 import { PublicDetailsForm } from '../components/PublicDetailsForm'
 import { UniverseArtworkField } from '../components/UniverseArtworkField'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { listPublicLore, listPublicStories, worldPath } from '../portal/api'
 import {
@@ -20,16 +21,13 @@ import {
   Visibility,
   categoryLabel,
   genreLabel,
+  requirementLabel,
   type PublicationState,
   type PublishEverythingPreview,
   type PublishEverythingResult,
   type SelectedLore,
 } from '../publishing/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
-
-/** What the everything-else list names, so an author knows exactly what publishing leaves private. */
-const STAYS_PRIVATE =
-  'Any lore entry, story, scene, scene prose or plot arc you have not published where it is written, notes, ideas, the timeline, world rules, relationships, Canon, the Trash, and everything else you edit in the workspace.'
 
 type Confirming =
   { kind: 'publish'; state: PublicationState; selected: SelectedLore } | { kind: 'unpublish' }
@@ -50,6 +48,7 @@ type Published = { slug: string; lore: number; stories: number } | null
  */
 export default function UniversePublish() {
   const { universe, setArtwork } = useOutletContext<WorkspaceContext>()
+  const { t, tx } = useI18n()
   const universeId = universe.id
   const base = `/app/universes/${universeId}`
 
@@ -75,11 +74,9 @@ export default function UniversePublish() {
         })
         .catch((error: unknown) => {
           if (signal?.aborted) return
-          setLoadError(
-            error instanceof Error ? error.message : 'The public details could not be loaded.',
-          )
+          setLoadError(error instanceof Error ? error.message : t('universe.publish.loadFailed'))
         }),
-    [universeId],
+    [universeId, t],
   )
 
   useEffect(() => {
@@ -127,8 +124,8 @@ export default function UniversePublish() {
   // public. Both open the confirmation in Status below rather than acting at once.
   const pageHeader = (actions: ReactNode) => (
     <PageHeader
-      title="Publish"
-      lede={<p>Control how this universe appears on the public LorEvolve portal.</p>}
+      title={t('universe.publish.title')}
+      lede={<p>{t('universe.publish.lede')}</p>}
       actions={actions}
     />
   )
@@ -141,7 +138,7 @@ export default function UniversePublish() {
         <div className="notice notice--error" role="alert">
           <p>{loadError}</p>
           <button className="button button--secondary" type="button" onClick={() => void load()}>
-            Try again
+            {t('universe.publish.retry')}
           </button>
         </div>
       </article>
@@ -153,7 +150,7 @@ export default function UniversePublish() {
       <article className="publish" data-testid="public-portal">
         {header}
         <p className="notice" role="status">
-          Loading the public details…
+          {t('universe.publish.loading')}
         </p>
       </article>
     )
@@ -166,7 +163,7 @@ export default function UniversePublish() {
     setAnnouncement(null)
 
     if (detailsDirty) {
-      setProblem(['Save the public details first: a universe is published with what is saved.'])
+      setProblem([t('universe.publish.saveFirst')])
       return
     }
 
@@ -188,7 +185,7 @@ export default function UniversePublish() {
 
       setConfirming({ kind: 'publish', state: fresh, selected })
     } catch (error: unknown) {
-      setProblem([error instanceof Error ? error.message : 'That could not be checked. Try again.'])
+      setProblem([error instanceof Error ? error.message : t('universe.publish.checkFailed')])
     } finally {
       setBusy(false)
     }
@@ -201,13 +198,13 @@ export default function UniversePublish() {
       const next = await publishUniverse(universeId)
       setState(next)
       setConfirming(null)
-      setAnnouncement('Published. This universe can now appear in the public portal.')
+      setAnnouncement(t('universe.publish.published'))
     } catch (error: unknown) {
       setConfirming(null)
       setProblem(
         error instanceof ApiError && Object.keys(error.fieldErrors).length > 0
           ? Object.values(error.fieldErrors)
-          : [error instanceof Error ? error.message : 'It could not be published. Try again.'],
+          : [error instanceof Error ? error.message : t('universe.publish.publishFailed')],
       )
       void load()
     } finally {
@@ -221,11 +218,9 @@ export default function UniversePublish() {
     try {
       setState(await unpublishUniverse(universeId))
       setConfirming(null)
-      setAnnouncement('Made private. Its public page is no longer available.')
+      setAnnouncement(t('universe.publish.madePrivate'))
     } catch (error: unknown) {
-      setProblem([
-        error instanceof Error ? error.message : 'It could not be made private. Try again.',
-      ])
+      setProblem([error instanceof Error ? error.message : t('universe.publish.privateFailed')])
     } finally {
       setBusy(false)
     }
@@ -242,7 +237,7 @@ export default function UniversePublish() {
                 to={worldPath(slug)}
                 data-testid="view-public-page"
               >
-                View public world
+                {t('universe.publish.viewPublic')}
                 <ActionIcon icon={ArrowUpRight} />
               </Link>
             ) : null}
@@ -258,7 +253,7 @@ export default function UniversePublish() {
               data-testid="unpublish"
             >
               <ActionIcon icon={Lock} />
-              Make private
+              {t('universe.publish.makePrivate')}
             </button>
           </>
         ) : (
@@ -270,7 +265,7 @@ export default function UniversePublish() {
             data-testid="publish"
           >
             <ActionIcon icon={Globe} />
-            Publish world
+            {t('universe.publish.publishWorld')}
           </button>
         ),
       )}
@@ -282,20 +277,18 @@ export default function UniversePublish() {
           aria-labelledby="publish-status-heading"
         >
           <h2 className="publish__heading" id="publish-status-heading">
-            Status
+            {t('universe.publish.status')}
           </h2>
           <p className="publication__state" data-testid="publication-status">
             <span className="publication__badge" data-state={isPublic ? 'public' : 'private'}>
-              {isPublic ? 'Public' : 'Private'}
+              {isPublic ? t('universe.publish.badgePublic') : t('universe.publish.badgePrivate')}
             </span>{' '}
-            {isPublic
-              ? 'This universe is visible on the LorEvolve portal.'
-              : 'This universe is visible only in your workspace.'}
+            {isPublic ? t('universe.publish.visiblePublic') : t('universe.publish.visiblePrivate')}
           </p>
 
           {isPublic && slug ? (
             <p className="publication__address" data-testid="publication-address">
-              <span className="publication__label">Public address</span>{' '}
+              <span className="publication__label">{t('universe.publish.address')}</span>{' '}
               <span className="publication__path">{worldPath(slug)}</span>
             </p>
           ) : null}
@@ -303,7 +296,7 @@ export default function UniversePublish() {
           {!isPublic ? (
             <ul
               className="publication__checklist"
-              aria-label="What publishing needs"
+              aria-label={t('universe.publish.checklist')}
               data-testid="publication-checklist"
             >
               {REQUIREMENTS.map((requirement) => {
@@ -313,8 +306,10 @@ export default function UniversePublish() {
                     <span className="publication__mark" aria-hidden="true">
                       {needed ? '○' : '✓'}
                     </span>
-                    {requirement.label}
-                    <span className="publication__word">{needed ? ' - needed' : ' - done'}</span>
+                    {requirementLabel(requirement.key)}
+                    <span className="publication__word">
+                      {needed ? t('universe.publish.needed') : t('universe.publish.done')}
+                    </span>
                   </li>
                 )
               })}
@@ -329,7 +324,7 @@ export default function UniversePublish() {
               ref={problemRef}
               data-testid="publication-problem"
             >
-              <p className="callout__title">Not published yet</p>
+              <p className="callout__title">{t('universe.publish.notYet')}</p>
               <ul className="publication__missing">
                 {problem.map((line) => (
                   <li key={line}>{line}</li>
@@ -354,50 +349,51 @@ export default function UniversePublish() {
               data-testid="publish-confirm"
             >
               <h3 className="publication__confirmtitle" id="publish-confirm-title">
-                Publish <bdi>{confirming.state.name}</bdi>?
+                {tx('universe.publish.confirm.title', { name: <bdi>{confirming.state.name}</bdi> })}
               </h3>
-              <p className="settings__note">Anyone will be able to see:</p>
+              <p className="settings__note">{t('universe.publish.confirm.anyone')}</p>
               <dl className="publication__facts">
                 <div>
-                  <dt>Title</dt>
+                  <dt>{t('universe.publish.confirm.titleLabel')}</dt>
                   <dd>
                     <bdi>{confirming.state.name}</bdi>
                   </dd>
                 </div>
                 <div>
-                  <dt>Public summary</dt>
+                  <dt>{t('universe.publish.confirm.summary')}</dt>
                   <dd className="prose">{confirming.state.publicSummary}</dd>
                 </div>
                 <div>
-                  <dt>Artwork</dt>
-                  <dd>Its card, as shown below</dd>
+                  <dt>{t('universe.publish.confirm.artwork')}</dt>
+                  <dd>{t('universe.publish.confirm.artworkValue')}</dd>
                 </div>
                 <div>
-                  <dt>Category</dt>
+                  <dt>{t('universe.publish.confirm.category')}</dt>
                   <dd>
                     {confirming.state.category ? categoryLabel(confirming.state.category) : ''}
                   </dd>
                 </div>
                 <div>
-                  <dt>Genres</dt>
+                  <dt>{t('universe.publish.confirm.genres')}</dt>
                   <dd>{confirming.state.genres.map(genreLabel).join(', ')}</dd>
                 </div>
                 {confirming.state.originalCreator ? (
                   <>
                     <div>
-                      <dt>Based on works by</dt>
+                      <dt>{t('universe.publish.confirm.basedOn')}</dt>
                       <dd>
-                        <bdi>{confirming.state.originalCreator}</bdi>
                         {confirming.state.originalWork ? (
-                          <>
-                            {' '}
-                            (<bdi>{confirming.state.originalWork}</bdi>)
-                          </>
-                        ) : null}
+                          tx('universe.publish.confirm.basedOnValue', {
+                            creator: <bdi>{confirming.state.originalCreator}</bdi>,
+                            work: <bdi>{confirming.state.originalWork}</bdi>,
+                          })
+                        ) : (
+                          <bdi>{confirming.state.originalCreator}</bdi>
+                        )}
                       </dd>
                     </div>
                     <div>
-                      <dt>Curated on LorEvolve by</dt>
+                      <dt>{t('universe.publish.confirm.curator')}</dt>
                       <dd>
                         <bdi>{confirming.state.authorDisplayName}</bdi>
                       </dd>
@@ -405,7 +401,7 @@ export default function UniversePublish() {
                   </>
                 ) : (
                   <div>
-                    <dt>Author</dt>
+                    <dt>{t('universe.publish.confirm.author')}</dt>
                     <dd>
                       <bdi>{confirming.state.authorDisplayName}</bdi>
                     </dd>
@@ -414,7 +410,8 @@ export default function UniversePublish() {
               </dl>
               <SelectedLoreReview selected={confirming.selected} />
               <p className="settings__note">
-                <strong>Not published:</strong> {STAYS_PRIVATE}
+                <strong>{t('universe.publish.confirm.notPublished')}</strong>{' '}
+                {t('universe.publish.confirm.staysPrivate')}
               </p>
               <div className="form__actions">
                 <button
@@ -424,7 +421,9 @@ export default function UniversePublish() {
                   onClick={() => void publish()}
                   data-testid="confirm-publish"
                 >
-                  {busy ? 'Publishing' : 'Publish world'}
+                  {busy
+                    ? t('universe.publish.confirm.publishing')
+                    : t('universe.publish.confirm.publish')}
                 </button>
                 <button
                   className="button button--secondary"
@@ -432,7 +431,7 @@ export default function UniversePublish() {
                   disabled={busy}
                   onClick={() => setConfirming(null)}
                 >
-                  Keep private
+                  {t('universe.publish.confirm.keepPrivate')}
                 </button>
               </div>
             </div>
@@ -448,12 +447,9 @@ export default function UniversePublish() {
               data-testid="unpublish-confirm"
             >
               <h3 className="publication__confirmtitle" id="unpublish-confirm-title">
-                Make <bdi>{state.name}</bdi> private?
+                {tx('universe.publish.unpublish.title', { name: <bdi>{state.name}</bdi> })}
               </h3>
-              <p className="settings__note">
-                Its public page and its place in Explore stop being available straight away. Its
-                public details stay here, and its address is kept for when you publish it again.
-              </p>
+              <p className="settings__note">{t('universe.publish.unpublish.note')}</p>
               <div className="form__actions">
                 <button
                   className="button"
@@ -462,7 +458,9 @@ export default function UniversePublish() {
                   onClick={() => void unpublish()}
                   data-testid="confirm-unpublish"
                 >
-                  {busy ? 'Making private' : 'Make private'}
+                  {busy
+                    ? t('universe.publish.unpublish.working')
+                    : t('universe.publish.unpublish.confirm')}
                 </button>
                 <button
                   className="button button--secondary"
@@ -470,7 +468,7 @@ export default function UniversePublish() {
                   disabled={busy}
                   onClick={() => setConfirming(null)}
                 >
-                  Keep public
+                  {t('universe.publish.unpublish.keep')}
                 </button>
               </div>
             </div>
@@ -478,13 +476,12 @@ export default function UniversePublish() {
 
           {!isPublic && missing.length === 0 && !detailsDirty && !confirming ? (
             <p className="field__hint" data-testid="publication-ready">
-              Everything a public card needs is here. Publish world, at the top of the page, makes
-              it public.
+              {t('universe.publish.ready')}
             </p>
           ) : null}
         </section>
 
-        <Section id="publish-details" title="Public details">
+        <Section id="publish-details" title={t('universe.publish.detailsSection')}>
           <PublicDetailsForm
             universeId={universeId}
             state={state}
@@ -493,7 +490,7 @@ export default function UniversePublish() {
           />
         </Section>
 
-        <Section id="publish-artwork" title="Artwork">
+        <Section id="publish-artwork" title={t('universe.publish.artworkSection')}>
           <UniverseArtworkField
             universeId={universeId}
             artwork={state.artwork}
@@ -505,53 +502,55 @@ export default function UniversePublish() {
           />
         </Section>
 
-        <Section id="publish-author" title="Author">
+        <Section id="publish-author" title={t('universe.publish.authorSection')}>
           {state.authorDisplayName ? (
             <p className="settings__note" data-testid="publication-author">
               {state.originalCreator ? (
                 <>
-                  Curated on LorEvolve by <bdi>{state.authorDisplayName}</bdi>, based on works by{' '}
-                  <bdi>{state.originalCreator}</bdi>.{' '}
+                  {tx('universe.publish.author.curated', {
+                    name: <bdi>{state.authorDisplayName}</bdi>,
+                    creator: <bdi>{state.originalCreator}</bdi>,
+                  })}{' '}
                 </>
               ) : (
                 <>
-                  Published as <bdi>{state.authorDisplayName}</bdi>.{' '}
+                  {tx('universe.publish.author.publishedAs', {
+                    name: <bdi>{state.authorDisplayName}</bdi>,
+                  })}{' '}
                 </>
               )}
-              <Link to="/app/profile">Change your public name</Link>
+              <Link to="/app/profile">{t('universe.publish.author.change')}</Link>
             </p>
           ) : (
             <p className="settings__note" data-testid="publication-author">
-              You have no public name yet. <Link to="/app/profile">Choose one on your profile</Link>{' '}
-              - it is shown as the author of what you publish; your username and email never are.
+              {tx('universe.publish.author.none', {
+                link: <Link to="/app/profile">{t('universe.publish.author.noneLink')}</Link>,
+              })}
             </p>
           )}
         </Section>
 
-        <Section id="publish-content" title="Published content">
-          <p className="settings__note">
-            Publishing this universe does not publish its lore entries or stories: each is published
-            from its own page, and is seen only while this universe is public.
-          </p>
+        <Section id="publish-content" title={t('universe.publish.contentSection')}>
+          <p className="settings__note">{t('universe.publish.contentNote')}</p>
           <ul className="publish__content" data-testid="published-content">
             <li>
               <ActionIcon icon={Library} />
-              <span className="publish__contentname">Lore</span>
+              <span className="publish__contentname">{t('universe.publish.lore')}</span>
               <span className="publish__contentcount" data-testid="published-lore">
-                {published ? `${published.lore} public` : null}
+                {published ? t('universe.publish.loreCount', { n: published.lore }) : null}
               </span>
               <Link className="button button--secondary button--sm" to={`${base}/lore`}>
-                View lore
+                {t('universe.publish.viewLore')}
               </Link>
             </li>
             <li>
               <ActionIcon icon={Feather} />
-              <span className="publish__contentname">Stories</span>
+              <span className="publish__contentname">{t('universe.publish.stories')}</span>
               <span className="publish__contentcount" data-testid="published-stories">
-                {published ? `${published.stories} public` : null}
+                {published ? t('universe.publish.storiesCount', { n: published.stories }) : null}
               </span>
               <Link className="button button--secondary button--sm" to={`${base}/stories`}>
-                View stories
+                {t('universe.publish.viewStories')}
               </Link>
             </li>
           </ul>
@@ -572,12 +571,13 @@ export default function UniversePublish() {
  * not show which were selected, so the owner reviews them here before saying yes. Nothing here changes a selection.
  */
 function SelectedLoreReview({ selected }: { selected: SelectedLore }) {
+  const { t, tn } = useI18n()
   const { totalCount, items } = selected
   if (totalCount === 0) {
     return (
       <p className="settings__note" data-testid="publish-confirm-no-selected-lore">
-        <strong>Lore:</strong> no entry is selected for publication, so none becomes public with the
-        world.
+        <strong>{t('universe.publish.selected.loreLabel')}</strong>{' '}
+        {t('universe.publish.selected.none')}
       </p>
     )
   }
@@ -585,10 +585,8 @@ function SelectedLoreReview({ selected }: { selected: SelectedLore }) {
   return (
     <div className="publication__selected" data-testid="publish-confirm-selected-lore">
       <p className="settings__note" id="publish-confirm-lore">
-        <strong>Also public:</strong>{' '}
-        {totalCount === 1
-          ? 'the lore entry you selected for publication earlier.'
-          : `the ${totalCount} lore entries you selected for publication earlier.`}
+        <strong>{t('universe.publish.selected.alsoPublic')}</strong>{' '}
+        {tn('universe.publish.selected.some', totalCount, { n: totalCount })}
       </p>
       {/* Focusable so a long list scrolls from the keyboard as well. */}
       <ul className="publication__selectedlist" aria-labelledby="publish-confirm-lore" tabIndex={0}>
@@ -603,21 +601,12 @@ function SelectedLoreReview({ selected }: { selected: SelectedLore }) {
       </ul>
       {totalCount > items.length ? (
         <p className="settings__note" data-testid="publish-confirm-selected-more">
-          And {totalCount - items.length} more.
+          {t('universe.publish.selected.more', { n: totalCount - items.length })}
         </p>
       ) : null}
-      <p className="settings__note">
-        Once the world is public, each entry's page lets you make it private again.
-      </p>
+      <p className="settings__note">{t('universe.publish.selected.again')}</p>
     </div>
   )
-}
-
-const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
-
-function publishedSentence({ lore, stories, scenes }: PublishEverythingResult) {
-  if (lore + stories + scenes === 0) return 'Nothing new was published: it was all public already.'
-  return `Published ${count(lore, 'lore entry', 'lore entries')}, ${count(stories, 'story', 'stories')} and ${count(scenes, 'scene', 'scenes')}.`
 }
 
 /**
@@ -632,6 +621,17 @@ function PublishEverything({
   universeId: string
   onPublished: () => void
 }) {
+  const { t, tn } = useI18n()
+
+  function publishedSentence({ lore, stories, scenes }: PublishEverythingResult) {
+    if (lore + stories + scenes === 0) return t('universe.publish.everything.nothingPublished')
+    return t('universe.publish.everything.publishedSentence', {
+      lore: tn('universe.publish.everything.publishedLore', lore, { n: lore }),
+      stories: tn('universe.publish.everything.publishedStories', stories, { n: stories }),
+      scenes: tn('universe.publish.everything.publishedScenes', scenes, { n: scenes }),
+    })
+  }
+
   const [preview, setPreview] = useState<PublishEverythingPreview | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -649,7 +649,9 @@ function PublishEverything({
     try {
       setPreview(await getPublishEverything(universeId))
     } catch (failure: unknown) {
-      setError(failure instanceof Error ? failure.message : 'That could not be checked. Try again.')
+      setError(
+        failure instanceof Error ? failure.message : t('universe.publish.everything.checkFailed'),
+      )
     } finally {
       setBusy(false)
     }
@@ -664,7 +666,9 @@ function PublishEverything({
       setDone(publishedSentence(result))
       onPublished()
     } catch (failure: unknown) {
-      setError(failure instanceof Error ? failure.message : 'It could not be published. Try again.')
+      setError(
+        failure instanceof Error ? failure.message : t('universe.publish.everything.publishFailed'),
+      )
     } finally {
       setBusy(false)
     }
@@ -674,11 +678,7 @@ function PublishEverything({
 
   return (
     <div className="publish__everything" data-testid="publish-everything">
-      <p className="settings__note">
-        Or publish everything finished at once: every Canon lore entry and every Complete story,
-        with its scenes and their text. Idea and Draft lore, unfinished stories and plot arcs stay
-        private.
-      </p>
+      <p className="settings__note">{t('universe.publish.everything.note')}</p>
       {!preview ? (
         <button
           className="button button--secondary"
@@ -689,7 +689,7 @@ function PublishEverything({
           data-testid="publish-everything-open"
         >
           <ActionIcon icon={Globe} />
-          Publish everything
+          {t('universe.publish.everything.open')}
         </button>
       ) : null}
 
@@ -714,19 +714,23 @@ function PublishEverything({
           data-testid="publish-everything-confirm"
         >
           <h3 className="publication__confirmtitle" id="publish-everything-title">
-            {nothing ? 'Nothing new to publish' : 'Publish everything finished?'}
+            {nothing
+              ? t('universe.publish.everything.nothingTitle')
+              : t('universe.publish.everything.title')}
           </h3>
           {nothing ? (
-            <p className="settings__note">
-              Every Canon lore entry and Complete story is already public.
-            </p>
+            <p className="settings__note">{t('universe.publish.everything.allPublic')}</p>
           ) : (
             <>
-              <p className="settings__note">Anyone will be able to read:</p>
+              <p className="settings__note">{t('universe.publish.everything.anyone')}</p>
               {preview.lore.length > 0 ? (
                 <div className="publication__selected">
                   <p className="settings__note" id="publish-everything-lore">
-                    <strong>{count(preview.lore.length, 'lore entry', 'lore entries')}</strong>
+                    <strong>
+                      {tn('universe.publish.everything.loreHeading', preview.lore.length, {
+                        n: preview.lore.length,
+                      })}
+                    </strong>
                   </p>
                   <ul
                     className="publication__selectedlist"
@@ -747,7 +751,11 @@ function PublishEverything({
               {preview.stories.length > 0 ? (
                 <div className="publication__selected">
                   <p className="settings__note" id="publish-everything-stories">
-                    <strong>{count(preview.stories.length, 'story', 'stories')}</strong>
+                    <strong>
+                      {tn('universe.publish.everything.storiesHeading', preview.stories.length, {
+                        n: preview.stories.length,
+                      })}
+                    </strong>
                   </p>
                   <ul
                     className="publication__selectedlist"
@@ -758,7 +766,10 @@ function PublishEverything({
                       <li key={story.id} data-testid="publish-everything-story">
                         <bdi>{story.title}</bdi>{' '}
                         <span className="publication__selectedtype">
-                          · {count(story.scenes, 'scene', 'scenes')} and their text
+                          ·{' '}
+                          {tn('universe.publish.everything.storyScenes', story.scenes, {
+                            n: story.scenes,
+                          })}
                         </span>
                       </li>
                     ))}
@@ -770,8 +781,8 @@ function PublishEverything({
           {preview.skippedStories.length > 0 ? (
             <div className="publication__selected" data-testid="publish-everything-skipped">
               <p className="settings__note" id="publish-everything-skipped">
-                <strong>Skipped:</strong> these Complete stories need a public summary first, on
-                each story's page.
+                <strong>{t('universe.publish.everything.skipped')}</strong>{' '}
+                {t('universe.publish.everything.skippedNote')}
               </p>
               <ul
                 className="publication__selectedlist"
@@ -796,7 +807,9 @@ function PublishEverything({
                 onClick={() => void confirm()}
                 data-testid="publish-everything-confirm-button"
               >
-                {busy ? 'Publishing' : 'Publish everything'}
+                {busy
+                  ? t('universe.publish.everything.publishing')
+                  : t('universe.publish.everything.confirm')}
               </button>
             )}
             <button
@@ -805,13 +818,13 @@ function PublishEverything({
               disabled={busy}
               onClick={() => setPreview(null)}
             >
-              {nothing ? 'Close' : 'Keep private'}
+              {nothing
+                ? t('universe.publish.everything.close')
+                : t('universe.publish.everything.keepPrivate')}
             </button>
           </div>
           {nothing ? null : (
-            <p className="settings__note">
-              Each entry's and story's page lets you make it private again.
-            </p>
+            <p className="settings__note">{t('universe.publish.everything.again')}</p>
           )}
         </div>
       ) : null}

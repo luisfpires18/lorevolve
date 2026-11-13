@@ -79,10 +79,6 @@ export function networkFailure() {
   return t('shell.api.networkFailure')
 }
 
-/** @deprecated English only; read `networkFailure()` when the error is built so it follows the language. */
-export const NETWORK_FAILURE =
-  'LorEvolve could not be reached. Check your connection and try again.'
-
 /**
  * Calls the API on the same origin. The session cookie is HttpOnly, so the browser
  * attaches it and no token is ever held in JavaScript.

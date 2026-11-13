@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { CanonStatusValue } from '../lore/types'
 
 /** Mirrors the backend enum. What a row in the Trash is. */
@@ -17,14 +18,42 @@ export type TrashKindValue = (typeof TrashKind)[keyof typeof TrashKind]
 
 /** How each kind is named on screen. Words, never a colour alone. */
 export const TRASH_KIND_LABELS: Record<TrashKindValue, string> = {
-  [TrashKind.Entry]: 'Entry',
-  [TrashKind.Story]: 'Story',
-  [TrashKind.Chapter]: 'Chapter',
-  [TrashKind.Scene]: 'Scene',
-  [TrashKind.PlotArc]: 'Arc',
-  [TrashKind.WorldRule]: 'World rule',
-  [TrashKind.Relationship]: 'Relationship',
-  [TrashKind.TimelineEvent]: 'Timeline moment',
+  get [TrashKind.Entry]() {
+    return t('data.trash.kind.entry')
+  },
+  get [TrashKind.Story]() {
+    return t('data.trash.kind.story')
+  },
+  get [TrashKind.Chapter]() {
+    return t('data.trash.kind.chapter')
+  },
+  get [TrashKind.Scene]() {
+    return t('data.trash.kind.scene')
+  },
+  get [TrashKind.PlotArc]() {
+    return t('data.trash.kind.arc')
+  },
+  get [TrashKind.WorldRule]() {
+    return t('data.trash.kind.worldRule')
+  },
+  get [TrashKind.Relationship]() {
+    return t('data.trash.kind.relationship')
+  },
+  get [TrashKind.TimelineEvent]() {
+    return t('data.trash.kind.timelineEvent')
+  },
+}
+
+/** A kind's stable key: what a data attribute is built from, never the translated word. */
+export const TRASH_KIND_KEYS: Record<TrashKindValue, string> = {
+  [TrashKind.Entry]: 'entry',
+  [TrashKind.Story]: 'story',
+  [TrashKind.Chapter]: 'chapter',
+  [TrashKind.Scene]: 'scene',
+  [TrashKind.PlotArc]: 'arc',
+  [TrashKind.WorldRule]: 'worldRule',
+  [TrashKind.Relationship]: 'relationship',
+  [TrashKind.TimelineEvent]: 'timelineEvent',
 }
 
 /** Mirrors the backend enum. Why a row cannot be restored yet, if it cannot. */

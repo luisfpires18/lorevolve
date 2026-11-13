@@ -1,4 +1,5 @@
 import { ApiError } from '../lib/api'
+import { t } from '../i18n'
 
 /**
  * Downloading a backup, which is the one place the client asks for a file rather than JSON.
@@ -44,10 +45,7 @@ function save(blob: Blob, fileName: string) {
  * can say which file to look for.
  */
 export function downloadUniverseBackup(universeId: string): Promise<string> {
-  return download(
-    `/api/universes/${universeId}/export`,
-    'That backup could not be prepared. Try again.',
-  )
+  return download(`/api/universes/${universeId}/export`, t('data.export.backupFailed'))
 }
 
 /**
@@ -55,10 +53,7 @@ export function downloadUniverseBackup(universeId: string): Promise<string> {
  * pictures, for reading and keeping. LorEvolve never reads it back - a backup is what restores.
  */
 export function downloadReadableExport(universeId: string): Promise<string> {
-  return download(
-    `/api/universes/${universeId}/export/readable`,
-    'That export could not be prepared. Try again.',
-  )
+  return download(`/api/universes/${universeId}/export/readable`, t('data.export.exportFailed'))
 }
 
 async function download(path: string, fallbackMessage: string): Promise<string> {

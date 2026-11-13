@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Crop, ImageMinus, ImagePlus, ImageUp } from 'lucide-react'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { IMAGE_ACCEPT, IMAGE_MAX_BYTES, type ImageCrop } from '../lib/imageCrop'
 import { artworkUrl, removeArtwork, setArtwork, setArtworkCard } from '../publishing/api'
 import { CARD_ASPECT, type UniverseArtworkRef } from '../publishing/types'
 import { ActionIcon } from './ActionIcon'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
-
-const CROP_HINT =
-  'Drag the picture to place the frame, or select it and use the arrow keys. The whole picture is kept; the frame is what the card shows.'
 
 type Framing =
   { kind: 'file'; file: File } | { kind: 'stored'; artwork: UniverseArtworkRef; source: string }
@@ -32,6 +30,7 @@ export function UniverseArtworkField({
   isPublic: boolean
   onChanged: (next: UniverseArtworkRef | null) => void
 }) {
+  const { t } = useI18n()
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,7 +55,7 @@ export function UniverseArtworkField({
     setError(null)
 
     if (file.size > IMAGE_MAX_BYTES) {
-      setError(`Pictures must be ${IMAGE_MAX_BYTES / (1024 * 1024)} MB or smaller.`)
+      setError(t('universe.artwork.tooBig', { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
       return
     }
 
@@ -88,7 +87,7 @@ export function UniverseArtworkField({
       await removeArtwork(universeId)
       onChanged(null)
     } catch (problem: unknown) {
-      setError(problem instanceof ApiError ? problem.message : 'The artwork could not be removed.')
+      setError(problem instanceof ApiError ? problem.message : t('universe.artwork.removeFailed'))
     } finally {
       setBusy(false)
     }
@@ -104,14 +103,14 @@ export function UniverseArtworkField({
           <img
             className="artwork__card"
             src={artworkUrl(universeId, artwork, 'card')}
-            alt="The artwork as its card shows it"
+            alt={t('universe.artwork.cardAlt')}
             width={960}
             height={600}
             data-testid="artwork-card"
           />
         ) : (
           <p className="artwork__empty" data-testid="artwork-empty">
-            No artwork yet
+            {t('universe.artwork.empty')}
           </p>
         )}
       </div>
@@ -133,7 +132,7 @@ export function UniverseArtworkField({
           data-testid="artwork-pick"
         >
           <ActionIcon icon={artwork ? ImageUp : ImagePlus} />
-          {artwork ? 'Replace artwork' : 'Upload artwork'}
+          {artwork ? t('universe.artwork.replace') : t('universe.artwork.upload')}
         </label>
 
         {artwork ? (
@@ -152,7 +151,7 @@ export function UniverseArtworkField({
             data-testid="artwork-reframe"
           >
             <ActionIcon icon={Crop} />
-            Edit framing
+            {t('universe.artwork.editFraming')}
           </button>
         ) : null}
 
@@ -165,17 +164,13 @@ export function UniverseArtworkField({
             data-testid="artwork-remove"
           >
             <ActionIcon icon={ImageMinus} />
-            {busy ? 'Removing' : 'Remove artwork'}
+            {busy ? t('universe.artwork.removing') : t('universe.artwork.remove')}
           </button>
         ) : null}
       </div>
 
       <p className="field__hint">
-        One wide picture, framed 16:10 for the world&rsquo;s card. JPEG, PNG or WebP, up to 8 MB.
-        Only the card is ever shown publicly, and only while the universe is public.
-        {artwork && isPublic
-          ? ' A public universe keeps its artwork: replace it, or make the universe private to remove it.'
-          : ''}
+        {artwork && isPublic ? t('universe.artwork.hintPublic') : t('universe.artwork.hint')}
       </p>
 
       {error ? (
@@ -190,10 +185,22 @@ export function UniverseArtworkField({
           source={source}
           aspect={CARD_ASPECT}
           initialCrop={framing.kind === 'stored' ? framing.artwork.crop : null}
-          title={framing.kind === 'stored' ? 'Edit framing' : 'Frame the artwork'}
-          confirmLabel={framing.kind === 'stored' ? 'Save framing' : 'Upload'}
-          workingLabel={framing.kind === 'stored' ? 'Updating card' : 'Processing picture'}
-          hint={CROP_HINT}
+          title={
+            framing.kind === 'stored'
+              ? t('universe.artwork.editFramingTitle')
+              : t('universe.artwork.frameTitle')
+          }
+          confirmLabel={
+            framing.kind === 'stored'
+              ? t('universe.artwork.saveFraming')
+              : t('universe.artwork.confirmUpload')
+          }
+          workingLabel={
+            framing.kind === 'stored'
+              ? t('universe.artwork.updatingCard')
+              : t('universe.artwork.processing')
+          }
+          hint={t('universe.artwork.cropHint')}
           onConfirm={keep}
           onCancel={() => setFraming(null)}
         />

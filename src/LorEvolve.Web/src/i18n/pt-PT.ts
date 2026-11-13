@@ -4,6 +4,8 @@ import auth from './pt-PT/auth'
 import ideas from './pt-PT/ideas'
 import review from './pt-PT/review'
 import canon from './pt-PT/canon'
+import data from './pt-PT/data'
+import admin from './pt-PT/admin'
 import assistant from './pt-PT/assistant'
 import entity from './pt-PT/entity'
 import entityTypes from './pt-PT/entityTypes'
@@ -18,6 +20,7 @@ import portal from './pt-PT/portal'
 import publishing from './pt-PT/publishing'
 import roles from './pt-PT/roles'
 import shell from './pt-PT/shell'
+import universe from './pt-PT/universe'
 import stories from './pt-PT/stories'
 
 /**
@@ -30,6 +33,8 @@ const ptPT = {
   ideas,
   review,
   canon,
+  data,
+  admin,
   assistant,
   entity,
   entityTypes,
@@ -44,6 +49,7 @@ const ptPT = {
   publishing,
   roles,
   shell,
+  universe,
   stories,
   language: {
     label: 'Idioma',

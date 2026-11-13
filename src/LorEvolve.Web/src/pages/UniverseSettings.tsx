@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { useI18n } from '../i18n'
 import { CollaboratorsPanel } from '../components/CollaboratorsPanel'
 import { UniverseForm } from '../components/UniverseForm'
 import { downloadReadableExport, downloadUniverseBackup } from '../export/api'
@@ -13,15 +14,9 @@ import { QueryTabList, TabPanel } from '../components/QueryTabs'
 import { useQueryTab } from '../lib/queryTab'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
-const TABS = [
-  { id: 'general', label: 'General' },
-  { id: 'appearance', label: 'Appearance' },
-  { id: 'collaborators', label: 'Collaborators' },
-  { id: 'data', label: 'Data' },
-  { id: 'advanced', label: 'Advanced' },
-] as const
+const TAB_IDS = ['general', 'appearance', 'collaborators', 'data', 'advanced'] as const
 
-type TabId = (typeof TABS)[number]['id']
+type TabId = (typeof TAB_IDS)[number]
 
 /**
  * A universe's Settings (UI refinement 014; Collaborators since 030): five tabs rather than one long page, in the workspace's one page shell - the
@@ -39,7 +34,9 @@ type TabId = (typeof TABS)[number]['id']
 export default function UniverseSettings() {
   const { universe, refresh } = useOutletContext<WorkspaceContext>()
   const { user } = useAuth()
+  const { t, tx } = useI18n()
   const navigate = useNavigate()
+  const TABS = TAB_IDS.map((id) => ({ id, label: t(`universe.settings.tabs.${id}`) }))
   const [tab, choose] = useQueryTab(TABS)
 
   const [savedDetails, setSavedDetails] = useState(false)
@@ -102,7 +99,7 @@ export default function UniverseSettings() {
       )
     } catch (problem: unknown) {
       setExportError(
-        problem instanceof Error ? problem.message : 'That file could not be prepared.',
+        problem instanceof Error ? problem.message : t('universe.settings.exportFailed'),
       )
     } finally {
       setExporting(null)
@@ -116,7 +113,7 @@ export default function UniverseSettings() {
       refresh(await setUniverseArchived(universe.id, !universe.isArchived))
       setConfirmingArchive(false)
     } catch (problem: unknown) {
-      setError(problem instanceof Error ? problem.message : 'That could not be changed.')
+      setError(problem instanceof Error ? problem.message : t('universe.settings.changeFailed'))
     } finally {
       setBusy(false)
     }
@@ -158,7 +155,7 @@ export default function UniverseSettings() {
       if (user) void discardUniverseDrafts(user.id, universe.id).catch(() => undefined)
       await navigate('/app', { replace: true })
     } catch (problem: unknown) {
-      setError(problem instanceof Error ? problem.message : 'That could not be deleted.')
+      setError(problem instanceof Error ? problem.message : t('universe.settings.deleteFailed'))
       setBusy(false)
     }
   }
@@ -167,12 +164,9 @@ export default function UniverseSettings() {
 
   return (
     <article className="settings settings--tabbed">
-      <PageHeader
-        title="Settings"
-        lede={<p>This universe’s name, colour, collaborators, backups and archive.</p>}
-      >
+      <PageHeader title={t('universe.settings.title')} lede={<p>{t('universe.settings.lede')}</p>}>
         <QueryTabList
-          label="Settings"
+          label={t('universe.settings.tabsLabel')}
           idPrefix="settings"
           tabs={TABS}
           tab={tab}
@@ -184,10 +178,10 @@ export default function UniverseSettings() {
       <div className="settings__body">
         <Panel id="general" tab={tab}>
           <section className="settings__section">
-            <h2 className="settings__heading">Details</h2>
+            <h2 className="settings__heading">{t('universe.settings.details')}</h2>
             {savedDetails ? (
               <p className="settings__saved" role="status" data-testid="settings-saved">
-                Saved.
+                {t('universe.settings.detailsSaved')}
               </p>
             ) : null}
             <UniverseForm
@@ -199,8 +193,8 @@ export default function UniverseSettings() {
                 accentColor: universe.accentColor,
                 aiHelp: universe.aiHelp,
               }}
-              submitLabel="Save changes"
-              busyLabel="Saving"
+              submitLabel={t('universe.settings.detailsSave')}
+              busyLabel={t('universe.settings.detailsSaving')}
               onSubmit={async (input) => {
                 // The colour is Appearance's: what is stored now, never what this form opened on.
                 const updated = await updateUniverse(universe.id, {
@@ -216,13 +210,11 @@ export default function UniverseSettings() {
 
         <Panel id="appearance" tab={tab}>
           <section className="settings__section">
-            <h2 className="settings__heading">Colour</h2>
-            <p className="settings__note">
-              Light or dark is chosen for all of LorEvolve from your account menu, not per universe.
-            </p>
+            <h2 className="settings__heading">{t('universe.settings.colour')}</h2>
+            <p className="settings__note">{t('universe.settings.colourNote')}</p>
             {savedColour ? (
               <p className="settings__saved" role="status" data-testid="settings-colour-saved">
-                Saved.
+                {t('universe.settings.colourSaved')}
               </p>
             ) : null}
             <UniverseForm
@@ -233,8 +225,8 @@ export default function UniverseSettings() {
                 description: universe.description,
                 accentColor: universe.accentColor,
               }}
-              submitLabel="Save colour"
-              busyLabel="Saving"
+              submitLabel={t('universe.settings.colourSave')}
+              busyLabel={t('universe.settings.colourSaving')}
               onSubmit={async (input) => {
                 const updated = await updateUniverse(universe.id, {
                   name: universe.name,
@@ -254,14 +246,8 @@ export default function UniverseSettings() {
 
         <Panel id="data" tab={tab}>
           <section className="settings__section">
-            <h2 className="settings__heading">Backup</h2>
-            <p className="settings__note">
-              One archive of this universe that LorEvolve can restore: its lore, types and fields,
-              articles, relationships, timeline, stories and scenes, maps, world rules, ideas, your
-              private notes, the Trash, saved versions and every picture as you uploaded it. No
-              account data, collaborators or comments, and not whether it is public: a restored
-              universe is always private.
-            </p>
+            <h2 className="settings__heading">{t('universe.settings.backup')}</h2>
+            <p className="settings__note">{t('universe.settings.backupNote')}</p>
             <button
               className="button button--secondary"
               type="button"
@@ -269,13 +255,11 @@ export default function UniverseSettings() {
               disabled={exporting !== null}
               data-testid="export-universe"
             >
-              {exporting === 'backup' ? 'Preparing backup' : 'Download backup'}
+              {exporting === 'backup'
+                ? t('universe.settings.backupPreparing')
+                : t('universe.settings.backupDownload')}
             </button>
-            <p className="settings__note">
-              A readable export is the same universe as Markdown pages, one per entry, story, scene
-              and map, with the pictures beside them, to read in any editor or keep. It leaves out
-              the Trash and saved versions, and LorEvolve cannot restore from it.
-            </p>
+            <p className="settings__note">{t('universe.settings.readableNote')}</p>
             <button
               className="button button--secondary"
               type="button"
@@ -283,11 +267,13 @@ export default function UniverseSettings() {
               disabled={exporting !== null}
               data-testid="export-readable"
             >
-              {exporting === 'readable' ? 'Preparing export' : 'Download readable export'}
+              {exporting === 'readable'
+                ? t('universe.settings.readablePreparing')
+                : t('universe.settings.readableDownload')}
             </button>
             {exportedAs ? (
               <p className="settings__saved" role="status" data-testid="export-done">
-                Saved as {exportedAs}.
+                {t('universe.settings.exportSaved', { name: exportedAs })}
               </p>
             ) : null}
             {exportError ? (
@@ -298,33 +284,36 @@ export default function UniverseSettings() {
           </section>
 
           <section className="settings__section">
-            <h2 className="settings__heading">Restore</h2>
-            <p className="settings__note">
-              A backup is restored as a new universe beside this one, never over it.
-            </p>
+            <h2 className="settings__heading">{t('universe.settings.restore')}</h2>
+            <p className="settings__note">{t('universe.settings.restoreNote')}</p>
             <Link
               className="button button--secondary"
               to="/app?restore"
               data-testid="settings-restore-link"
             >
-              Restore a backup
+              {t('universe.settings.restoreLink')}
             </Link>
           </section>
         </Panel>
 
         <Panel id="advanced" tab={tab}>
           <section className="settings__section" data-testid="archive-section">
-            <h2 className="settings__heading">{universe.isArchived ? 'Restore' : 'Archive'}</h2>
+            <h2 className="settings__heading">
+              {universe.isArchived
+                ? t('universe.settings.restoreHeading')
+                : t('universe.settings.archiveHeading')}
+            </h2>
             <p className="settings__note">
               {universe.isArchived
-                ? 'This universe is archived. Restoring puts it back in your active list.'
-                : 'Archiving keeps everything and takes the universe out of your active list. It does not change whether the universe is public.'}
+                ? t('universe.settings.archivedNote')
+                : t('universe.settings.archiveNote')}
             </p>
             {universe.isArchived && isPublic ? (
               <p className="settings__note" data-testid="archived-still-public">
-                <strong>Still public.</strong> Archiving does not take a universe off the public
-                portal. <Link to={publishPath}>Make it private on Publish</Link> to remove its
-                public page.
+                {tx('universe.settings.stillPublic', {
+                  still: <strong>{t('universe.settings.stillPublicLead')}</strong>,
+                  link: <Link to={publishPath}>{t('universe.settings.stillPublicLink')}</Link>,
+                })}
               </p>
             ) : null}
             {confirmingArchive ? (
@@ -337,20 +326,17 @@ export default function UniverseSettings() {
                 data-testid="archive-public-confirm"
               >
                 <p className="settings__confirmtitle" id="archive-confirm-title">
-                  {isPublic ? (
-                    <>
-                      Archive <bdi>{universe.name}</bdi>? It stays public.
-                    </>
-                  ) : (
-                    <>
-                      Archive <bdi>{universe.name}</bdi>?
-                    </>
+                  {tx(
+                    isPublic
+                      ? 'universe.settings.archiveConfirmPublic'
+                      : 'universe.settings.archiveConfirm',
+                    { name: <bdi>{universe.name}</bdi> },
                   )}
                 </p>
                 <p className="settings__note">
                   {isPublic
-                    ? 'Archiving only takes it out of your active list. Its public page, its place in Explore and everything you published in it stay available to anyone until you make it private on Publish.'
-                    : 'LorEvolve could not check whether this universe is public. Archiving never changes that: if it is public, it stays public until you make it private on Publish.'}
+                    ? t('universe.settings.archiveConfirmPublicNote')
+                    : t('universe.settings.archiveConfirmUnknownNote')}
                 </p>
                 <div className="form__actions">
                   <button
@@ -360,14 +346,18 @@ export default function UniverseSettings() {
                     disabled={busy}
                     data-testid="confirm-archive"
                   >
-                    {busy ? 'Archiving' : isPublic ? 'Archive, keep public' : 'Archive universe'}
+                    {busy
+                      ? t('universe.settings.archiving')
+                      : isPublic
+                        ? t('universe.settings.archiveKeepPublic')
+                        : t('universe.settings.archiveConfirmButton')}
                   </button>
                   <Link
                     className="button button--secondary"
                     to={publishPath}
                     data-testid="archive-go-private"
                   >
-                    Make it private first
+                    {t('universe.settings.makePrivateFirst')}
                   </Link>
                   <button
                     className="button button--secondary"
@@ -378,7 +368,7 @@ export default function UniverseSettings() {
                     }}
                     data-testid="cancel-archive"
                   >
-                    Cancel
+                    {t('universe.settings.archiveCancel')}
                   </button>
                 </div>
               </div>
@@ -391,7 +381,9 @@ export default function UniverseSettings() {
                 disabled={busy}
                 data-testid="toggle-archive"
               >
-                {universe.isArchived ? 'Restore universe' : 'Archive universe'}
+                {universe.isArchived
+                  ? t('universe.settings.restoreUniverse')
+                  : t('universe.settings.archiveUniverse')}
               </button>
             )}
           </section>
@@ -403,15 +395,15 @@ export default function UniverseSettings() {
               data-testid="danger-section"
             >
               <h2 className="settings__heading" id="danger-heading">
-                Delete universe
+                {t('universe.settings.deleteHeading')}
               </h2>
               <p className="settings__note">
-                Deleting removes this universe and everything in it, for good. There is no undo and
-                no Trash for it.{isPublic ? ' Its public page goes with it.' : null}
+                {isPublic
+                  ? t('universe.settings.deleteNotePublic')
+                  : t('universe.settings.deleteNote')}
               </p>
               <p className="settings__note" data-testid="delete-ideas-note">
-                Your ideas about it are kept: they belong to your account, so they stay in Ideas
-                with no universe, and only their references to this universe&rsquo;s content go.
+                {t('universe.settings.deleteIdeasNote')}
               </p>
               {confirmingDelete ? (
                 <div
@@ -422,7 +414,7 @@ export default function UniverseSettings() {
                   ref={deleteConfirm}
                 >
                   <p className="settings__confirmtitle" id="delete-confirm-title">
-                    Delete <bdi>{universe.name}</bdi> permanently?
+                    {tx('universe.settings.deleteConfirm', { name: <bdi>{universe.name}</bdi> })}
                   </p>
                   <div className="form__actions">
                     <button
@@ -432,14 +424,14 @@ export default function UniverseSettings() {
                       disabled={busy}
                       data-testid="confirm-delete"
                     >
-                      Delete permanently
+                      {t('universe.settings.deleteConfirmButton')}
                     </button>
                     <button
                       className="button button--secondary"
                       type="button"
                       onClick={() => setConfirmingDelete(false)}
                     >
-                      Keep it
+                      {t('universe.settings.deleteKeep')}
                     </button>
                   </div>
                 </div>
@@ -451,13 +443,13 @@ export default function UniverseSettings() {
                   onClick={() => setConfirmingDelete(true)}
                   data-testid="delete-universe"
                 >
-                  Delete universe…
+                  {t('universe.settings.deleteButton')}
                 </button>
               )}
             </section>
           ) : (
             <p className="settings__note" data-testid="delete-needs-archive">
-              To delete this universe, archive it first.
+              {t('universe.settings.deleteNeedsArchive')}
             </p>
           )}
 

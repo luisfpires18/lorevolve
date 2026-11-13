@@ -147,20 +147,3 @@ export function roleLabel(role: UniverseRoleValue) {
 export function roleDescription(role: UniverseRoleValue) {
   return t(`roles.${ROLE_KEYS[role]}.description`)
 }
-
-/** @deprecated English only; use `roleLabel` (kept for the screens #102 to #105 move). */
-export const ROLE_LABELS: Record<UniverseRoleValue, string> = {
-  [UniverseRole.Owner]: 'Owner',
-  [UniverseRole.Editor]: 'Editor',
-  [UniverseRole.Reviewer]: 'Reviewer',
-  [UniverseRole.Viewer]: 'Viewer',
-}
-
-/** @deprecated English only; use `roleDescription` (kept for the screens #102 to #105 move). */
-export const ROLE_DESCRIPTIONS: Record<UniverseRoleValue, string> = {
-  [UniverseRole.Owner]: 'Owns this universe.',
-  [UniverseRole.Editor]:
-    'Can create and edit content, use Trash and restore items. Cannot permanently delete, publish, or manage the universe.',
-  [UniverseRole.Reviewer]: 'Can read, comment and suggest changes. Cannot edit content directly.',
-  [UniverseRole.Viewer]: 'Can read the shared universe.',
-}

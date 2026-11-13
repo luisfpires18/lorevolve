@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { t, tx, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import {
   ArchiveRestore,
@@ -33,6 +34,7 @@ import {
   TRASH_SELECTION_CHANGED,
 } from '../trash/api'
 import {
+  TRASH_KIND_KEYS,
   TRASH_KIND_LABELS,
   TrashBlock,
   TrashKind,
@@ -72,74 +74,51 @@ function whereItWas(item: TrashItem) {
         </>
       )
     case TrashKind.Story:
-      return 'A whole story, with everything in it'
+      return t('data.trash.where.story')
     case TrashKind.WorldRule:
-      return 'In World Rules'
+      return t('data.trash.where.worldRule')
     case TrashKind.Relationship:
-      return 'A relationship between two entries'
+      return t('data.trash.where.relationship')
     case TrashKind.TimelineEvent:
-      return item.canonStatus === null ? (
-        'On the timeline'
-      ) : (
-        <>On the timeline · {CANON_LABELS[item.canonStatus]}</>
-      )
+      return item.canonStatus === null
+        ? t('data.trash.where.timeline')
+        : t('data.trash.where.timelineStatus', { status: CANON_LABELS[item.canonStatus] })
     default:
-      return (
-        <>
-          In <Quoted text={item.storyTitle ?? ''} />
-        </>
-      )
+      return tx('data.trash.where.inStory', { story: <Quoted text={item.storyTitle ?? ''} /> })
   }
 }
 
 /** Why a row cannot come back yet, if it cannot. */
 function blockedText(item: TrashItem) {
   if (item.blockedBy === TrashBlock.StoryInTrash) {
-    return (
-      <>
-        Its story, <Quoted text={item.storyTitle ?? ''} />, is in the Trash too. Restore the story
-        first.
-      </>
-    )
+    return tx('data.trash.blocked.story', { story: <Quoted text={item.storyTitle ?? ''} /> })
   }
   if (item.blockedBy === TrashBlock.EntryInTrash) {
-    return <>One of the entries it connects is in the Trash too. Restore that entry first.</>
+    return t('data.trash.blocked.entry')
   }
   return null
 }
 
 function backText(item: TrashItem) {
   const name = <Quoted text={item.name} />
+  const story = <Quoted text={item.storyTitle ?? ''} />
   switch (item.kind) {
     case TrashKind.Entry:
-      return <>{name} is back in your lore.</>
+      return tx('data.trash.back.entry', { name })
     case TrashKind.Story:
-      return <>{name} is back in your stories.</>
+      return tx('data.trash.back.story', { name })
     case TrashKind.Chapter:
-      return (
-        <>
-          The chapter {name} is back in <Quoted text={item.storyTitle ?? ''} />, after its other
-          chapters. No scene was moved into it.
-        </>
-      )
+      return tx('data.trash.back.chapter', { name, story })
     case TrashKind.Scene:
-      return (
-        <>
-          The scene {name} is back in <Quoted text={item.storyTitle ?? ''} />.
-        </>
-      )
+      return tx('data.trash.back.scene', { name, story })
     case TrashKind.PlotArc:
-      return (
-        <>
-          The arc {name} is back in <Quoted text={item.storyTitle ?? ''} />.
-        </>
-      )
+      return tx('data.trash.back.arc', { name, story })
     case TrashKind.WorldRule:
-      return <>The world rule {name} is back in World Rules.</>
+      return tx('data.trash.back.worldRule', { name })
     case TrashKind.Relationship:
-      return <>The relationship {name} is back on both of its entries.</>
+      return tx('data.trash.back.relationship', { name })
     case TrashKind.TimelineEvent:
-      return <>The moment {name} is back on the timeline.</>
+      return tx('data.trash.back.timelineEvent', { name })
   }
 }
 
@@ -150,21 +129,21 @@ function backText(item: TrashItem) {
 function eraseText(kind: TrashKindValue) {
   switch (kind) {
     case TrashKind.Entry:
-      return 'Its article, fields, picture and saved versions go with it, and links and references to it in your lore, timeline, stories and ideas are removed.'
+      return t('data.trash.erasing.entry')
     case TrashKind.Story:
-      return 'Everything in it goes with it: its chapters, its scenes with their writing, saved versions and beats, and its arcs, including any of them that are in the Trash on their own.'
+      return t('data.trash.erasing.story')
     case TrashKind.Chapter:
-      return 'Only the chapter goes: its title, summary and notes. The scenes it held moved to Unchaptered when it was put in the Trash, and they stay there.'
+      return t('data.trash.erasing.chapter')
     case TrashKind.Scene:
-      return 'Its writing, every saved version of it and its beats go with it, and its links to lore and ideas are removed.'
+      return t('data.trash.erasing.scene')
     case TrashKind.PlotArc:
-      return 'Only the arc goes. The chapters that were in it stay where they are, in no arc.'
+      return t('data.trash.erasing.arc')
     case TrashKind.WorldRule:
-      return 'Its check goes with it, if it has one.'
+      return t('data.trash.erasing.worldRule')
     case TrashKind.Relationship:
-      return 'Only the relationship goes. The two entries it connects stay as they are.'
+      return t('data.trash.erasing.relationship')
     case TrashKind.TimelineEvent:
-      return 'Its participants, story links and details go with it. The entries and stories it named stay as they are.'
+      return t('data.trash.erasing.timelineEvent')
   }
 }
 
@@ -182,6 +161,7 @@ function eraseText(kind: TrashKindValue) {
  * deleted.
  */
 export default function UniverseTrash() {
+  const { tn } = useI18n()
   const access = useUniverseAccess()
   const { universe } = useOutletContext<WorkspaceContext>()
   const { user } = useAuth()
@@ -282,7 +262,7 @@ export default function UniverseTrash() {
           if (signal?.aborted) return
           setState({
             kind: 'error',
-            message: error instanceof Error ? error.message : 'Could not open the Trash.',
+            message: error instanceof Error ? error.message : t('data.trash.loadFailed'),
           })
         })
     },
@@ -327,7 +307,7 @@ export default function UniverseTrash() {
       await restoreFromTrash(universe.id, item)
       let privateNote: ReactNode = null
       if (!access.publish && item.publication !== TrashPublication.None) {
-        privateNote = ' It was restored privately: only the owner can publish it again.'
+        privateNote = ` ${t('data.trash.outcome.restoredPrivately')}`
       } else if (keepPrivate) {
         try {
           await unpublishContent(
@@ -335,9 +315,9 @@ export default function UniverseTrash() {
             item.kind === TrashKind.Entry ? 'entry' : 'story',
             item.id,
           )
-          privateNote = ' It is private now.'
+          privateNote = ` ${t('data.trash.outcome.nowPrivate')}`
         } catch {
-          privateNote = ' It could not be made private: open it and choose Make private.'
+          privateNote = ` ${t('data.trash.outcome.privateFailed')}`
         }
       }
       setOutcome({
@@ -349,11 +329,7 @@ export default function UniverseTrash() {
         ),
         link: {
           to: restoredPath(universe.id, item),
-          label: (
-            <>
-              Open <Quoted text={item.name} />
-            </>
-          ),
+          label: tx('data.trash.outcome.open', { name: <Quoted text={item.name} /> }),
         },
       })
 
@@ -367,13 +343,9 @@ export default function UniverseTrash() {
       } else {
         setOutcome({
           text:
-            error instanceof Error ? (
-              error.message
-            ) : (
-              <>
-                <Quoted text={item.name} /> could not be restored.
-              </>
-            ),
+            error instanceof Error
+              ? error.message
+              : tx('data.trash.outcome.restoreFailed', { name: <Quoted text={item.name} /> }),
           link: null,
         })
       }
@@ -397,20 +369,12 @@ export default function UniverseTrash() {
         // Restored or deleted somewhere else meanwhile: there is nothing left here to delete.
         setErasing(null)
         setOutcome({
-          text: (
-            <>
-              <Quoted text={item.name} /> is no longer in the Trash, so nothing was deleted.
-            </>
-          ),
+          text: tx('data.trash.outcome.gone', { name: <Quoted text={item.name} /> }),
           link: null,
         })
         load()
       } else {
-        setEraseError(
-          <>
-            <Quoted text={item.name} /> could not be deleted just now. Try again.
-          </>,
-        )
+        setEraseError(tx('data.trash.outcome.deleteFailed', { name: <Quoted text={item.name} /> }))
       }
       setEraseBusy(false)
       return
@@ -437,11 +401,7 @@ export default function UniverseTrash() {
     setEraseBusy(false)
     setErasing(null)
     setOutcome({
-      text: (
-        <>
-          <Quoted text={item.name} /> was permanently deleted.
-        </>
-      ),
+      text: tx('data.trash.outcome.deleted', { name: <Quoted text={item.name} /> }),
       link: null,
     })
     load()
@@ -536,10 +496,7 @@ export default function UniverseTrash() {
 
       stopSelecting()
       setOutcome({
-        text:
-          erased.deleted === 1
-            ? '1 item was permanently deleted.'
-            : `${erased.deleted} items were permanently deleted.`,
+        text: tn('data.trash.outcome.bulkDeleted', erased.deleted, { n: erased.deleted }),
         link: null,
       })
       load()
@@ -547,14 +504,12 @@ export default function UniverseTrash() {
       if (error instanceof ApiError && error.code === TRASH_SELECTION_CHANGED) {
         stopSelecting()
         setOutcome({
-          text: 'The Trash changed before these items could be deleted, so nothing was deleted. Select them again.',
+          text: t('data.trash.outcome.bulkChanged'),
           link: null,
         })
         load()
       } else {
-        setBulkError(
-          'Nothing was deleted. The selected items could not be deleted just now. Try again.',
-        )
+        setBulkError(t('data.trash.outcome.bulkFailed'))
       }
     } finally {
       bulkWorking.current = false
@@ -567,28 +522,23 @@ export default function UniverseTrash() {
   return (
     <article className="trash">
       <PageHeader
-        title="Trash"
+        title={t('data.trash.title')}
         lede={
           <>
             {access.permanentlyDelete ? (
-              <p>
-                What you removed from your lore, your stories and your world rules. Everything here
-                can be restored with everything it held, until you choose to delete it permanently.
-              </p>
+              <p>{t('data.trash.ledeOwner')}</p>
             ) : (
-              <p>
-                What was removed from this universe&rsquo;s lore, stories and world rules.
-                Everything here can be restored with everything it held. Restored items that were
-                public will be restored privately. Only the owner can delete anything permanently.
-              </p>
+              <p>{t('data.trash.ledeMember')}</p>
             )}
             {access.keepIdeas ? (
               <p data-testid="trash-ideas-pointer">
-                Deleted ideas are not here: they belong to your account, and wait in{' '}
-                <Link to={`/app/universes/${universe.id}/ideas?view=deleted`}>
-                  Ideas, under Recently deleted
-                </Link>
-                .
+                {tx('data.trash.ideasPointer', {
+                  link: (
+                    <Link to={`/app/universes/${universe.id}/ideas?view=deleted`}>
+                      {t('data.trash.ideasLink')}
+                    </Link>
+                  ),
+                })}
               </p>
             ) : null}
           </>
@@ -606,7 +556,7 @@ export default function UniverseTrash() {
               data-testid="trash-select"
             >
               <ActionIcon icon={ListChecks} />
-              Select
+              {t('data.trash.select')}
             </button>
           ) : null
         }
@@ -631,7 +581,7 @@ export default function UniverseTrash() {
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Looking through the Trash…
+          {t('data.trash.loading')}
         </p>
       ) : null}
 
@@ -639,7 +589,7 @@ export default function UniverseTrash() {
         <div className="notice notice--error" role="alert">
           <p>{state.message}</p>
           <button className="button button--secondary" type="button" onClick={() => load()}>
-            Try again
+            {t('data.trash.retry')}
           </button>
         </div>
       ) : null}
@@ -648,6 +598,7 @@ export default function UniverseTrash() {
         <ul className="trash__list" data-testid="trash-list">
           {result.items.map((item) => {
             const kind = TRASH_KIND_LABELS[item.kind]
+            const kindKey = TRASH_KIND_KEYS[item.kind]
             const waiting = blockedText(item)
             const waitingId = `trash-waiting-${item.id}`
             const isChecked = isSelecting && selectedKeys.has(keyOf(item))
@@ -676,7 +627,10 @@ export default function UniverseTrash() {
                     <span className="trash__kind" data-testid="trash-kind">
                       {kind}
                     </span>{' '}
-                    · {whereItWas(item)} · removed {formatDateTime(item.trashedAt)}
+                    {tx('data.trash.row.meta', {
+                      where: whereItWas(item),
+                      date: formatDateTime(item.trashedAt),
+                    })}
                   </p>
                   {waiting ? (
                     <p className="trash__waiting" id={waitingId} data-testid="trash-waiting">
@@ -695,7 +649,7 @@ export default function UniverseTrash() {
                   className="trash__row"
                   key={keyOf(item)}
                   data-testid={`trash-row-${item.name}`}
-                  data-kind={kind}
+                  data-kind={kindKey}
                   data-selected={isChecked ? 'true' : undefined}
                 >
                   <label className="trash__pick">
@@ -705,7 +659,10 @@ export default function UniverseTrash() {
                       checked={isChecked}
                       disabled={selectionLocked}
                       onChange={() => toggle(item)}
-                      aria-label={`Select ${kind.toLowerCase()} “${item.name}”`}
+                      aria-label={t('data.trash.row.selectLabel', {
+                        kind: kind.toLowerCase(),
+                        name: item.name,
+                      })}
                       data-testid={`select-${item.name}`}
                     />
                     {what}
@@ -719,7 +676,7 @@ export default function UniverseTrash() {
                 className="trash__row"
                 key={keyOf(item)}
                 data-testid={`trash-row-${item.name}`}
-                data-kind={kind}
+                data-kind={kindKey}
               >
                 {what}
                 <div className="trash__actions">
@@ -731,13 +688,18 @@ export default function UniverseTrash() {
                     className="button button--secondary"
                     type="button"
                     disabled={busy || waiting !== null}
-                    aria-label={`Restore ${kind.toLowerCase()} “${item.name}”`}
+                    aria-label={t('data.trash.row.restoreLabel', {
+                      kind: kind.toLowerCase(),
+                      name: item.name,
+                    })}
                     aria-describedby={waiting ? waitingId : undefined}
                     onClick={() => askToRestore(item)}
                     data-testid={`restore-${item.name}`}
                   >
                     <ActionIcon icon={ArchiveRestore} />
-                    {restoring === item.id ? 'Restoring…' : 'Restore'}
+                    {restoring === item.id
+                      ? t('data.trash.row.restoring')
+                      : t('data.trash.row.restore')}
                   </button>
                   {access.permanentlyDelete ? (
                     <button
@@ -748,11 +710,14 @@ export default function UniverseTrash() {
                       className="button button--text trash__erase"
                       type="button"
                       disabled={busy}
-                      aria-label={`Delete permanently: ${kind.toLowerCase()} “${item.name}”`}
+                      aria-label={t('data.trash.row.eraseLabel', {
+                        kind: kind.toLowerCase(),
+                        name: item.name,
+                      })}
                       onClick={() => askToErase(item)}
                       data-testid={`erase-${item.name}`}
                     >
-                      Delete permanently…
+                      {t('data.trash.row.erase')}
                     </button>
                   ) : null}
                 </div>
@@ -784,23 +749,23 @@ export default function UniverseTrash() {
       {result && result.items.length === 0 ? (
         <EmptyState
           testId="trash-empty"
-          title="The Trash is empty."
-          hint="Anything you remove from your lore, your stories or your world rules waits here."
+          title={t('data.trash.empty.title')}
+          hint={t('data.trash.empty.hint')}
         />
       ) : null}
 
       {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label="Pagination">
+        <nav className="pager" aria-label={t('data.trash.pager.label')}>
           <button
             className="button button--secondary"
             type="button"
             disabled={result.page <= 1 || selectionLocked}
             onClick={() => setPage((current) => current - 1)}
           >
-            Previous
+            {t('data.trash.pager.previous')}
           </button>
           <span className="pager__position">
-            Page {result.page} of {result.totalPages}
+            {t('data.trash.pager.position', { page: result.page, total: result.totalPages })}
           </span>
           <button
             className="button button--secondary"
@@ -808,7 +773,7 @@ export default function UniverseTrash() {
             disabled={result.page >= result.totalPages || selectionLocked}
             onClick={() => setPage((current) => current + 1)}
           >
-            Next
+            {t('data.trash.pager.next')}
           </button>
         </nav>
       ) : null}
@@ -828,8 +793,8 @@ export default function UniverseTrash() {
         <footer className="actionbar trash__selectbar" data-testid="trash-selectbar">
           <p className="actionbar__status" role="status" data-testid="trash-selected-count">
             {selected.length === 0
-              ? 'Select rows on this page to delete them permanently.'
-              : `${selected.length} selected`}
+              ? t('data.trash.bar.hint')
+              : t('data.trash.bar.selected', { n: selected.length })}
           </p>
           <div className="actionbar__actions">
             {/* The one red control on the screen while selecting; the selection's own tools stay neutral. */}
@@ -842,8 +807,8 @@ export default function UniverseTrash() {
               data-testid="trash-bulk-delete"
             >
               {selected.length > 0
-                ? `Delete permanently (${selected.length})`
-                : 'Delete permanently'}
+                ? t('data.trash.bar.delete', { n: selected.length })
+                : t('data.trash.bar.deleteNone')}
             </button>
             <button
               ref={selectPageRef}
@@ -853,7 +818,7 @@ export default function UniverseTrash() {
               disabled={pageItems.length === 0 || selected.length === pageItems.length}
               data-testid="trash-select-page"
             >
-              Select page
+              {t('data.trash.bar.selectPage')}
             </button>
             <button
               className="button button--text"
@@ -862,7 +827,7 @@ export default function UniverseTrash() {
               disabled={selected.length === 0}
               data-testid="trash-clear-selection"
             >
-              Clear selection
+              {t('data.trash.bar.clear')}
             </button>
             <button
               className="button button--secondary"
@@ -873,7 +838,7 @@ export default function UniverseTrash() {
               }}
               data-testid="trash-select-done"
             >
-              Done
+              {t('data.trash.bar.done')}
             </button>
           </div>
         </footer>
@@ -900,7 +865,7 @@ function RestorePublicConfirm({
   onRestorePrivate: () => void
   onCancel: () => void
 }) {
-  const noun = item.kind === TrashKind.Entry ? 'entry' : 'story'
+  useI18n()
   const visible = item.publication === TrashPublication.Visible
   const titleId = `trash-confirm-${item.id}`
 
@@ -921,24 +886,18 @@ function RestorePublicConfirm({
       }}
     >
       <p className="trash__confirmtitle" id={titleId}>
-        {visible ? (
-          <>
-            Restoring <Quoted text={item.name} /> makes it public again.
-          </>
-        ) : (
-          <>
-            <Quoted text={item.name} /> is still selected for publication.
-          </>
-        )}
+        {visible
+          ? tx('data.trash.publish.titleVisible', { name: <Quoted text={item.name} /> })
+          : tx('data.trash.publish.titleHidden', { name: <Quoted text={item.name} /> })}
       </p>
       <p className="trash__confirmtext" data-testid="trash-publication-text">
         {visible
-          ? `This ${noun} was public before it was moved to the Trash. Restoring it will make it visible again in your public universe, to anyone, straight away.`
-          : `It was selected for publication before it was moved to the Trash. Readers cannot see it now, and restoring it does not change that: it would appear once ${
-              item.kind === TrashKind.Story
-                ? 'this universe is public and the story has a public summary'
-                : 'this universe is public'
-            }.`}
+          ? item.kind === TrashKind.Entry
+            ? t('data.trash.publish.textVisibleEntry')
+            : t('data.trash.publish.textVisibleStory')
+          : item.kind === TrashKind.Story
+            ? t('data.trash.publish.textHiddenStory')
+            : t('data.trash.publish.textHidden')}
       </p>
       <div className="form__actions">
         <button
@@ -947,7 +906,7 @@ function RestorePublicConfirm({
           onClick={onRestore}
           data-testid="trash-confirm-restore"
         >
-          {visible ? 'Restore and publish' : 'Restore, keep selected'}
+          {visible ? t('data.trash.publish.restoreVisible') : t('data.trash.publish.restoreHidden')}
         </button>
         <button
           className="button button--secondary"
@@ -955,7 +914,7 @@ function RestorePublicConfirm({
           onClick={onRestorePrivate}
           data-testid="trash-confirm-private"
         >
-          Restore as private
+          {t('data.trash.publish.restorePrivate')}
         </button>
         <button
           className="button button--secondary"
@@ -963,7 +922,7 @@ function RestorePublicConfirm({
           onClick={onCancel}
           data-testid="trash-confirm-cancel"
         >
-          Cancel
+          {t('data.trash.publish.cancel')}
         </button>
       </div>
     </div>
@@ -989,6 +948,7 @@ function EraseConfirm({
   onErase: () => void
   onCancel: () => void
 }) {
+  useI18n()
   const titleId = `trash-erase-title-${item.id}`
   const textId = `trash-erase-text-${item.id}`
 
@@ -1009,11 +969,14 @@ function EraseConfirm({
       }}
     >
       <p className="trash__confirmtitle" id={titleId}>
-        Permanently delete the {TRASH_KIND_LABELS[item.kind].toLowerCase()}{' '}
-        <Quoted text={item.name} />?
+        {tx('data.trash.erase.title', {
+          kind: TRASH_KIND_LABELS[item.kind].toLowerCase(),
+          name: <Quoted text={item.name} />,
+        })}
       </p>
       <p className="trash__confirmtext" id={textId} data-testid="trash-erase-text">
-        {eraseText(item.kind)} <strong className="trash__final">This cannot be undone.</strong>
+        {eraseText(item.kind)}{' '}
+        <strong className="trash__final">{t('data.trash.erase.cannotUndo')}</strong>
       </p>
       {error ? (
         <p className="trash__confirmerror" role="alert" data-testid="trash-erase-error">
@@ -1028,7 +991,7 @@ function EraseConfirm({
           onClick={onErase}
           data-testid="trash-erase-delete"
         >
-          {busy ? 'Deleting…' : 'Delete permanently'}
+          {busy ? t('data.trash.erase.deleting') : t('data.trash.erase.delete')}
         </button>
         <button
           className="button button--secondary"
@@ -1037,7 +1000,7 @@ function EraseConfirm({
           onClick={onCancel}
           data-testid="trash-erase-cancel"
         >
-          Cancel
+          {t('data.trash.erase.cancel')}
         </button>
       </div>
     </div>
@@ -1065,6 +1028,7 @@ function BulkEraseConfirm({
   onErase: () => void
   onCancel: () => void
 }) {
+  const { tn } = useI18n()
   const kinds = [...new Set(items.map((item) => item.kind))].sort((a, b) => a - b)
   const count = items.length
 
@@ -1085,9 +1049,13 @@ function BulkEraseConfirm({
       }}
     >
       <h2 className="trash__confirmtitle" id="trash-bulk-title">
-        Permanently delete {count} selected {count === 1 ? 'item' : 'items'}?
+        {tn('data.trash.bulk.title', count, { n: count })}
       </h2>
-      <ul className="trash__bulklist" aria-label="Selected" data-testid="trash-bulk-list">
+      <ul
+        className="trash__bulklist"
+        aria-label={t('data.trash.bulk.listLabel')}
+        data-testid="trash-bulk-list"
+      >
         {items.map((item) => (
           <li key={keyOf(item)}>
             <span className="trash__kind">{TRASH_KIND_LABELS[item.kind]}</span>{' '}
@@ -1097,14 +1065,16 @@ function BulkEraseConfirm({
       </ul>
       <ul className="trash__confirmtext trash__bulkconsequences" data-testid="trash-bulk-text">
         {kinds.map((kind) => (
-          <li key={kind} data-kind={TRASH_KIND_LABELS[kind]}>
-            <span className="trash__kind">Each {TRASH_KIND_LABELS[kind].toLowerCase()}:</span>{' '}
+          <li key={kind} data-kind={TRASH_KIND_KEYS[kind]}>
+            <span className="trash__kind">
+              {t('data.trash.bulk.each', { kind: TRASH_KIND_LABELS[kind].toLowerCase() })}
+            </span>{' '}
             {eraseText(kind)}
           </li>
         ))}
       </ul>
       <p className="trash__confirmtext" id="trash-bulk-final">
-        <strong className="trash__final">This cannot be undone.</strong>
+        <strong className="trash__final">{t('data.trash.bulk.cannotUndo')}</strong>
       </p>
       {error ? (
         <p className="trash__confirmerror" role="alert" data-testid="trash-bulk-error">
@@ -1119,7 +1089,7 @@ function BulkEraseConfirm({
           onClick={onErase}
           data-testid="trash-bulk-delete-confirm"
         >
-          {busy ? 'Deleting…' : 'Delete permanently'}
+          {busy ? t('data.trash.bulk.deleting') : t('data.trash.bulk.delete')}
         </button>
         <button
           className="button button--secondary"
@@ -1128,7 +1098,7 @@ function BulkEraseConfirm({
           onClick={onCancel}
           data-testid="trash-bulk-cancel"
         >
-          Cancel
+          {t('data.trash.bulk.cancel')}
         </button>
       </div>
     </div>
