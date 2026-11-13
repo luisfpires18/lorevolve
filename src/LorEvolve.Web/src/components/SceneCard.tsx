@@ -51,6 +51,8 @@ interface SceneCardProps {
   /** Opens the scene's form to send a suggestion instead of saving (task 045). */
   onSuggest: (scene: Scene) => void
   onDelete: (scene: Scene) => void
+  /** The scene's lore in a new order, dragged on the card. Left out, the chips are read-only. */
+  onReorderLore?: (scene: Scene, entityIds: string[]) => void
   /** The scene outline's publication control (ADR 0039), drawn first among the scene's tools. */
   publication?: ReactNode
 }
@@ -86,6 +88,7 @@ export function SceneCard({
   onAddBeat,
   onSuggest,
   onDelete,
+  onReorderLore,
   publication,
 }: SceneCardProps) {
   const access = useUniverseAccess()
@@ -135,7 +138,16 @@ export function SceneCard({
         <div id={foldBodyId} hidden={foldable && !foldOpen} data-fold={foldBodyId}>
           {scene.summary ? <p className="scene__summary prose">{scene.summary}</p> : null}
 
-          <SceneLore universeId={universeId} scene={scene} testId="scene" />
+          <SceneLore
+            universeId={universeId}
+            scene={scene}
+            testId="scene"
+            onReorder={
+              onReorderLore && access.editContent
+                ? (entityIds) => onReorderLore(scene, entityIds)
+                : undefined
+            }
+          />
           <SceneBeatList beats={scene.beats} testId="scene" />
         </div>
       </div>
