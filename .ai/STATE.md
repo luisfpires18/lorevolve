@@ -64,7 +64,7 @@ Checked 2026-10-29 with `git log origin/dev..<branch>`.
 
 ## Open issues
 
-- **Languages** (umbrella #99, ADR 0071): foundation #100, shell #101 and lore workspace #102 on `dev`. Next: string extraction #103 to
+- **Languages** (umbrella #99, ADR 0071): foundation #100, shell #101, lore workspace #102 and story and time #103 (PRs #122, #124) on `dev`. Next: string extraction #104 and
   #105 (`BRAND_LINK_LABEL`, `NETWORK_FAILURE`, `ROLE_LABELS`, `ROLE_DESCRIPTIONS` stay as deprecated English exports until their screens move), then pt-PT #106 and #107 (switch goes live). Preview pt-PT locally: `localStorage['lorevolve-locale'] = 'pt-PT'`.
 `gh issue list --repo luisfpires18/lorevolve --state open`. As of 2026-10-29:
 
