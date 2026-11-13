@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CanonSubjectKind, SUBJECT_KIND_LABELS } from '../canon/types'
 import type { CanonBlockingFinding, CanonBlockingSubject } from '../canon/types'
+import { useI18n } from '../i18n'
 
 interface Props {
   universeId: string
@@ -26,18 +27,15 @@ interface Props {
  * wrong.
  */
 export function CanonBlockNotice({ universeId, findings, linkSubjects }: Props) {
+  const { t, tn, tx } = useI18n()
+
   return (
     <section className="refusal" role="alert" data-testid="canon-blocked">
-      <p className="refusal__eyebrow">Not saved</p>
+      <p className="refusal__eyebrow">{t('canon.blockNotice.eyebrow')}</p>
       <h3 className="refusal__title">
-        {findings.length === 1
-          ? 'This change would contradict settled canon.'
-          : `This change would contradict settled canon in ${findings.length} ways.`}
+        {tn('canon.blockNotice.title', findings.length, { n: findings.length })}
       </h3>
-      <p className="refusal__lede">
-        Your edits are still here and nothing was written. Correct what disagrees, or step a Canon
-        status back, then save again.
-      </p>
+      <p className="refusal__lede">{t('canon.blockNotice.lede')}</p>
 
       <ol className="refusal__findings">
         {findings.map((finding) => (
@@ -59,9 +57,13 @@ export function CanonBlockNotice({ universeId, findings, linkSubjects }: Props) 
       </ol>
 
       <p className="refusal__aside">
-        Only a High finding refuses a save, and only the save that would create one.{' '}
-        <Link to={`/app/universes/${universeId}/canon`}>Canon integrity</Link> lists everything else
-        this world is already carrying.
+        {tx('canon.blockNotice.aside', {
+          link: (
+            <Link to={`/app/universes/${universeId}/canon`}>
+              {t('canon.blockNotice.asideLink')}
+            </Link>
+          ),
+        })}
       </p>
     </section>
   )

@@ -3,6 +3,7 @@ import { Quoted } from './NameList'
 import { listIdeas, listReferenceTargets } from '../ideas/api'
 import { IdeaReferenceKind } from '../ideas/types'
 import { useReturnFocus } from '../lib/returnFocus'
+import { useI18n } from '../i18n'
 
 /** What a picked idea or entry puts on a card: its id and what the card shows of it. */
 export interface PickedTarget {
@@ -41,6 +42,7 @@ export function IdeaBoardPicker({
   onChoose,
   onClose,
 }: IdeaBoardPickerProps) {
+  const { t, tx } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const search = useRef<HTMLInputElement>(null)
   const headingId = useId()
@@ -113,7 +115,6 @@ export function IdeaBoardPicker({
   }, [what, universeId, query])
 
   const results = answer?.request === query ? answer.targets : undefined
-  const noun = what === 'idea' ? 'idea' : 'lore entry'
 
   return (
     <dialog
@@ -132,23 +133,19 @@ export function IdeaBoardPicker({
       <div className="drawer__panel">
         <header className="drawer__head">
           <p className="drawer__eyebrow">
-            {universe ? (
-              <>
-                For a board in <Quoted text={universe.name} />
-              </>
-            ) : (
-              'For a board in no universe'
-            )}
+            {universe
+              ? tx('ideas.boardPicker.inUniverse', { universe: <Quoted text={universe.name} /> })
+              : t('ideas.boardPicker.inNoUniverse')}
           </p>
           <h2 className="drawer__title" id={headingId}>
-            Add {what === 'idea' ? 'an idea' : 'a lore entry'}
+            {what === 'idea' ? t('ideas.boardPicker.addIdea') : t('ideas.boardPicker.addEntry')}
           </h2>
         </header>
 
         <div className="drawer__body">
           <div className="field">
             <label className="field__label" htmlFor={searchId}>
-              Find by name
+              {t('ideas.boardPicker.findByName')}
             </label>
             <input
               id={searchId}
@@ -156,7 +153,11 @@ export function IdeaBoardPicker({
               className="field__input"
               type="search"
               value={query}
-              placeholder={what === 'idea' ? 'Words in an idea' : 'Name of a lore entry'}
+              placeholder={
+                what === 'idea'
+                  ? t('ideas.boardPicker.placeholderIdea')
+                  : t('ideas.boardPicker.placeholderEntry')
+              }
               onChange={(event) => setQuery(event.target.value)}
               aria-controls={resultsId}
               data-testid="board-picker-search"
@@ -166,19 +167,21 @@ export function IdeaBoardPicker({
           <div id={resultsId} aria-live="polite">
             {results === undefined ? (
               <p className="notice ideapicker__notice" role="status">
-                Looking…
+                {t('ideas.boardPicker.looking')}
               </p>
             ) : results === null ? (
               <p className="form__message" role="alert">
-                That list could not be read. Try again.
+                {t('ideas.boardPicker.loadFailed')}
               </p>
             ) : results.length === 0 ? (
               <p className="notice ideapicker__notice" data-testid="board-picker-empty">
                 {query.trim()
-                  ? `No ${noun} by that name. Deleted ideas and lore in the Trash are not offered.`
+                  ? what === 'idea'
+                    ? t('ideas.boardPicker.emptyNamedIdea')
+                    : t('ideas.boardPicker.emptyNamedEntry')
                   : what === 'idea'
-                    ? 'No ideas this board can hold yet.'
-                    : 'No lore in this universe yet.'}
+                    ? t('ideas.boardPicker.emptyIdeas')
+                    : t('ideas.boardPicker.emptyEntries')}
               </p>
             ) : (
               <ul className="ideapicker__results" data-testid="board-picker-results">
@@ -201,7 +204,7 @@ export function IdeaBoardPicker({
                           <span className="ideapicker__context">{target.entityTypeName}</span>
                         ) : null}
                         <span className="ideapicker__state">
-                          {isPlaced ? 'On the board' : 'Add'}
+                          {isPlaced ? t('ideas.boardPicker.placed') : t('ideas.boardPicker.add')}
                         </span>
                       </button>
                     </li>
@@ -219,7 +222,7 @@ export function IdeaBoardPicker({
             onClick={onClose}
             data-testid="board-picker-close"
           >
-            Close
+            {t('ideas.boardPicker.close')}
           </button>
         </footer>
       </div>

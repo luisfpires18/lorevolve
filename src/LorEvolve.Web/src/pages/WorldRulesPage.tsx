@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { Link, useLocation, useOutletContext, useSearchParams } from 'react-router-dom'
 import { ActionIcon } from '../components/ActionIcon'
 import { Quoted } from '../components/NameList'
+import { t, useI18n } from '../i18n'
 import { formatDate } from '../lib/dates'
 import { listWorldRules } from '../worldRules/api'
 import type { WorldRulePage } from '../worldRules/types'
@@ -28,6 +29,7 @@ export interface WorldRulesListNotice {
  * reload keep it.
  */
 export default function WorldRulesPage() {
+  const { tx } = useI18n()
   const access = useUniverseAccess()
   const { universe } = useOutletContext<WorkspaceContext>()
   const [params, setParams] = useSearchParams()
@@ -51,7 +53,7 @@ export default function WorldRulesPage() {
       .then((result) => setState({ kind: 'ready', page: result }))
       .catch(() => {
         if (controller.signal.aborted) return
-        setState({ kind: 'error', message: 'The rules could not be read.' })
+        setState({ kind: 'error', message: t('canon.rules.readFailed') })
       })
 
     return () => {
@@ -73,14 +75,14 @@ export default function WorldRulesPage() {
   return (
     <section className="rules" aria-labelledby={headingId} data-testid="world-rules">
       <PageHeader
-        title="World Rules"
+        title={t('canon.rules.title')}
         titleId={headingId}
-        lede="Explicit statements about how this universe works, kept exactly as you write them. LorEvolve never reads their words; only a timeline check you give a rule is counted."
+        lede={t('canon.rules.lede')}
         actions={
           access.editContent ? (
             <Link className="button" to={`${basePath}/new`} data-testid="new-world-rule">
               <ActionIcon icon={Plus} />
-              New rule
+              {t('canon.rules.newRule')}
             </Link>
           ) : undefined
         }
@@ -89,15 +91,17 @@ export default function WorldRulesPage() {
       {notice ? (
         <div className="notice rules__notice" data-testid="world-rules-deleted-notice">
           <p role="status">
-            <Quoted text={notice.title} /> was moved to the Trash.{' '}
-            <Link to={trashPath}>Restore it from the Trash</Link> if you need it back.
+            {tx('canon.rules.deleted', {
+              title: <Quoted text={notice.title} />,
+              restore: <Link to={trashPath}>{t('canon.rules.restoreLink')}</Link>,
+            })}
           </p>
         </div>
       ) : null}
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Gathering rules…
+          {t('canon.rules.loading')}
         </p>
       ) : null}
 
@@ -112,7 +116,7 @@ export default function WorldRulesPage() {
               setReads((current) => current + 1)
             }}
           >
-            Try again
+            {t('canon.rules.retry')}
           </button>
         </div>
       ) : null}
@@ -142,10 +146,12 @@ export default function WorldRulesPage() {
               <p className="rulerow__meta">
                 {rule.hasCheck ? (
                   <span className="rulerow__check" data-testid="world-rule-has-check">
-                    Checked against the timeline ·{' '}
+                    {t('canon.rules.checked')}
                   </span>
                 ) : null}
-                Updated <time dateTime={rule.updatedAt}>{formatDate(rule.updatedAt)}</time>
+                {tx('canon.rules.updated', {
+                  time: <time dateTime={rule.updatedAt}>{formatDate(rule.updatedAt)}</time>,
+                })}
               </p>
             </li>
           ))}
@@ -155,13 +161,13 @@ export default function WorldRulesPage() {
       {result && result.items.length === 0 && result.totalCount === 0 ? (
         <EmptyState
           testId="world-rules-empty"
-          title="No world rules yet."
-          hint="World Rules define explicit constraints for how this universe works. Each states one thing that is always true in it."
+          title={t('canon.rules.empty.title')}
+          hint={t('canon.rules.empty.hint')}
           action={
             access.editContent ? (
               <Link className="button" to={`${basePath}/new`} data-testid="empty-new-world-rule">
                 <ActionIcon icon={Plus} />
-                New rule
+                {t('canon.rules.emptyNewRule')}
               </Link>
             ) : undefined
           }
@@ -171,27 +177,27 @@ export default function WorldRulesPage() {
       {result && result.items.length === 0 && result.totalCount > 0 ? (
         <EmptyState
           testId="world-rules-page-empty"
-          title="Nothing on this page."
+          title={t('canon.rules.pageEmpty.title')}
           action={
             <button className="button button--secondary" type="button" onClick={() => goToPage(1)}>
-              Go to the first page
+              {t('canon.rules.pageEmpty.first')}
             </button>
           }
         />
       ) : null}
 
       {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label="Pagination">
+        <nav className="pager" aria-label={t('canon.rules.pagination')}>
           <button
             className="button button--secondary"
             type="button"
             disabled={result.page <= 1}
             onClick={() => goToPage(result.page - 1)}
           >
-            Previous
+            {t('canon.rules.previous')}
           </button>
           <span className="pager__position">
-            Page {result.page} of {result.totalPages}
+            {t('canon.rules.position', { page: result.page, totalPages: result.totalPages })}
           </span>
           <button
             className="button button--secondary"
@@ -199,7 +205,7 @@ export default function WorldRulesPage() {
             disabled={result.page >= result.totalPages}
             onClick={() => goToPage(result.page + 1)}
           >
-            Next
+            {t('canon.rules.next')}
           </button>
         </nav>
       ) : null}

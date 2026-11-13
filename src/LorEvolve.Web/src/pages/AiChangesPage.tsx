@@ -10,6 +10,7 @@ import {
 import { countWords, sourceWords, STATUS_WORDS } from '../aiChanges/words'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
+import { useI18n } from '../i18n'
 import { formatDateTime } from '../lib/dates'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
@@ -20,6 +21,7 @@ type Load = { kind: 'loading' } | { kind: 'ready'; page: ProposalPage } | { kind
  * assistant alike, newest first. Account-wide in My workspace; one universe's inside it. Each opens its review.
  */
 export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boolean }) {
+  const { t, tn, tx } = useI18n()
   const location = useLocation()
   const context = useOutletContext<WorkspaceContext | undefined>()
   const universeId = inUniverse ? (context?.universe.id ?? null) : null
@@ -62,15 +64,11 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
   return (
     <section className="aichanges" aria-labelledby="aichanges-title" data-testid="ai-changes">
       <PageHeader
-        title="Pending AI Changes"
+        title={t('review.aiChanges.title')}
         titleId="aichanges-title"
-        lede={
-          inUniverse
-            ? 'Changes an AI proposed for this universe. Nothing in them is applied until you approve it here.'
-            : 'Changes an AI proposed for your universes, from a connected app or the Assistant. Nothing in them is applied until someone approves it.'
-        }
+        lede={inUniverse ? t('review.aiChanges.ledeUniverse') : t('review.aiChanges.ledeAccount')}
       >
-        <div className="segmented" role="group" aria-label="Which proposals">
+        <div className="segmented" role="group" aria-label={t('review.aiChanges.which')}>
           <button
             className="segmented__option"
             type="button"
@@ -78,7 +76,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
             onClick={() => show('open')}
             data-testid="ai-changes-open"
           >
-            Waiting
+            {t('review.aiChanges.waiting')}
           </button>
           <button
             className="segmented__option"
@@ -87,33 +85,33 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
             onClick={() => show('decided')}
             data-testid="ai-changes-decided"
           >
-            Decided
+            {t('review.aiChanges.decided')}
           </button>
         </div>
       </PageHeader>
 
       {load.kind === 'loading' ? (
         <p className="notice" role="status">
-          Loading&hellip;
+          {t('review.aiChanges.loading')}
         </p>
       ) : load.kind === 'error' ? (
         <div className="notice notice--error" role="alert">
-          <p>The proposals couldn&rsquo;t be loaded.</p>
+          <p>{t('review.aiChanges.loadFailed')}</p>
           <button
             className="button button--secondary"
             type="button"
             onClick={() => setReads((count) => count + 1)}
           >
-            Try again
+            {t('review.aiChanges.retry')}
           </button>
         </div>
       ) : load.page.items.length === 0 ? (
         <EmptyState
           testId="ai-changes-empty"
           title={
-            state === 'open' ? 'Nothing is waiting for review.' : 'Nothing has been decided yet.'
+            state === 'open' ? t('review.aiChanges.emptyOpen') : t('review.aiChanges.emptyDecided')
           }
-          hint="Ask the Assistant with Propose changes turned on, or connect an AI app and let it propose changes."
+          hint={t('review.aiChanges.emptyHint')}
         />
       ) : (
         <>
@@ -128,7 +126,9 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
                 >
                   <span className="aichanges__summary" dir="auto">
                     {proposal.summary ??
-                      `${proposal.operationCount} proposed ${proposal.operationCount === 1 ? 'change' : 'changes'}`}
+                      tn('review.aiChanges.proposedChanges', proposal.operationCount, {
+                        n: proposal.operationCount,
+                      })}
                   </span>
                 </Link>
                 <p className="aichanges__meta">
@@ -140,13 +140,13 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
                   )}
                   <span data-testid="ai-change-source">{sourceWords(proposal)}</span>
                   {' · '}
-                  {proposal.proposedByMe ? (
-                    'asked by you'
-                  ) : (
-                    <>
-                      asked by <bdi>{proposal.proposedByName ?? 'someone no longer here'}</bdi>
-                    </>
-                  )}
+                  {proposal.proposedByMe
+                    ? t('review.aiChanges.askedByYou')
+                    : tx('review.aiChanges.askedBy', {
+                        name: (
+                          <bdi>{proposal.proposedByName ?? t('review.aiChanges.askedByGone')}</bdi>
+                        ),
+                      })}
                   {' · '}
                   <time dateTime={proposal.createdAt}>{formatDateTime(proposal.createdAt)}</time>
                 </p>
@@ -157,7 +157,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
                   {' · '}
                   {countWords(proposal)}
                   {proposal.status === ProposalStatus.Open && proposal.committedCount > 0
-                    ? ` · ${proposal.committedCount} already applied`
+                    ? ` · ${tn('review.aiChanges.alreadyApplied', proposal.committedCount, { n: proposal.committedCount })}`
                     : null}
                 </p>
               </li>
@@ -170,7 +170,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
               disabled={more}
               onClick={() => void readMore()}
             >
-              Show more
+              {t('review.aiChanges.showMore')}
             </button>
           ) : null}
         </>

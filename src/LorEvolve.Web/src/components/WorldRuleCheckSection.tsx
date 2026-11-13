@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { Link } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { ValidationTermSelect } from './ValidationTermSelect'
 import { useValidationTerms } from '../ruleValidation/useValidationTerms'
 import { CHECK_ERROR_KEYS, type CheckDraft } from '../ruleValidation/checkDraft'
@@ -39,6 +40,7 @@ export function WorldRuleCheckSection({
   isDirty,
   errors,
 }: WorldRuleCheckSectionProps) {
+  const { t } = useI18n()
   const radioName = useId()
   const hintId = useId()
   const maxId = useId()
@@ -55,10 +57,9 @@ export function WorldRuleCheckSection({
       aria-describedby={hintId}
       data-testid="world-rule-check-section"
     >
-      <legend className="rule__legend">Check against the timeline</legend>
+      <legend className="rule__legend">{t('canon.check.legend')}</legend>
       <p className="field__hint" id={hintId}>
-        Optional. LorEvolve never reads the words above. A check counts only what you set here and
-        what moments record in their validation details.
+        {t('canon.check.hint')}
       </p>
 
       <div className="rule__choices">
@@ -70,7 +71,7 @@ export function WorldRuleCheckSection({
             onChange={() => onChange({ kind: WorldRuleValidationKind.None })}
             data-testid="world-rule-check-none"
           />
-          <span>No check: this rule is words only</span>
+          <span>{t('canon.check.none')}</span>
         </label>
         <label className="check">
           <input
@@ -82,7 +83,7 @@ export function WorldRuleCheckSection({
             }
             data-testid="world-rule-check-limit"
           />
-          <span>Limit how many times one participant has an event by a method</span>
+          <span>{t('canon.check.limit')}</span>
         </label>
       </div>
 
@@ -94,13 +95,13 @@ export function WorldRuleCheckSection({
         <div className="rule__checkfields" data-testid="world-rule-check-fields">
           {failed ? (
             <p className="form__message rule__checkwide" role="alert">
-              The event kinds and methods could not be read.{' '}
+              {t('canon.check.termsFailed')}{' '}
               <button
                 className="button button--secondary button--sm"
                 type="button"
                 onClick={reload}
               >
-                Try again
+                {t('canon.check.retry')}
               </button>
             </p>
           ) : null}
@@ -108,12 +109,12 @@ export function WorldRuleCheckSection({
           <ValidationTermSelect
             universeId={universeId}
             kind={ValidationTermKind.EventKind}
-            label="Event kind"
-            hint="What sort of moment this rule limits."
+            label={t('canon.check.eventKind.label')}
+            hint={t('canon.check.eventKind.hint')}
             terms={terms}
             value={value.eventKindId}
             selectedName={stored?.eventKind.id === value.eventKindId ? stored.eventKind.name : null}
-            emptyLabel="Choose an event kind"
+            emptyLabel={t('canon.check.eventKind.empty')}
             onChange={(eventKindId) => onChange({ eventKindId })}
             onCreated={add}
             error={errors[CHECK_ERROR_KEYS.eventKind]}
@@ -123,12 +124,12 @@ export function WorldRuleCheckSection({
           <ValidationTermSelect
             universeId={universeId}
             kind={ValidationTermKind.Method}
-            label="Method"
-            hint="How it happens. Another method is another event."
+            label={t('canon.check.method.label')}
+            hint={t('canon.check.method.hint')}
             terms={terms}
             value={value.methodId}
             selectedName={stored?.method.id === value.methodId ? stored.method.name : null}
-            emptyLabel="Choose a method"
+            emptyLabel={t('canon.check.method.empty')}
             onChange={(methodId) => onChange({ methodId })}
             onCreated={add}
             error={errors[CHECK_ERROR_KEYS.method]}
@@ -137,10 +138,10 @@ export function WorldRuleCheckSection({
 
           <div className="field rule__max">
             <label className="field__label" htmlFor={maxId}>
-              At most
+              {t('canon.check.max.label')}
             </label>
             <p className="field__hint" id={maxHintId}>
-              Canon moments for each participant.
+              {t('canon.check.max.hint')}
             </p>
             <input
               id={maxId}
@@ -172,10 +173,6 @@ export function WorldRuleCheckSection({
   )
 }
 
-function plural(count: number, noun: string) {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`
-}
-
 /**
  * What the saved check finds, in words. It never says a rule holds while any moment that may match could not be counted, and a
  * check that cannot run says so rather than reading as fine. A conflict itself lives in Canon, and is linked there.
@@ -191,18 +188,23 @@ function CheckState({
   found: WorldRuleCheck
   isDirty: boolean
 }) {
+  const { t, tn, tx } = useI18n()
   const canonPath = `/app/universes/${universeId}/canon`
   const over = found.participantsOverLimit
-  const counted = plural(found.countedMoments, 'Canon moment')
+  const counted = tn('canon.check.canonMoments', found.countedMoments, { n: found.countedMoments })
 
   const conflict =
     over > 0 ? (
       <>
-        {plural(over, 'participant')} over the limit of {stored.maxOccurrences}.{' '}
-        <Link to={canonPath} data-testid="world-rule-check-canon">
-          See the conflict in Canon
-        </Link>
-        .
+        {tx('canon.check.conflict', {
+          participants: tn('canon.check.participants', over, { n: over }),
+          max: stored.maxOccurrences,
+          link: (
+            <Link to={canonPath} data-testid="world-rule-check-canon">
+              {t('canon.check.conflictLink')}
+            </Link>
+          ),
+        })}
       </>
     ) : null
 
@@ -212,29 +214,28 @@ function CheckState({
 
   if (found.outcome === WorldRuleCheckOutcome.CannotCheck) {
     state = 'cannot'
-    label = 'Cannot check.'
+    label = t('canon.check.cannot')
     summary = found.problem
   } else if (found.outcome === WorldRuleCheckOutcome.Incomplete) {
     state = 'incomplete'
-    label = 'Cannot fully check.'
+    label = t('canon.check.incomplete')
     summary = (
       <>
-        {counted} counted. {conflict} {plural(found.uncountedMoments, 'moment')} that may match
-        could not be counted, so LorEvolve does not say this rule holds.
+        {tx('canon.check.incompleteSummary', {
+          counted,
+          conflict,
+          moments: tn('canon.check.moments', found.uncountedMoments, { n: found.uncountedMoments }),
+        })}
       </>
     )
   } else if (over > 0) {
     state = 'broken'
-    label = 'Conflict found.'
-    summary = (
-      <>
-        {counted} counted. {conflict}
-      </>
-    )
+    label = t('canon.check.broken')
+    summary = <>{tx('canon.check.brokenSummary', { counted, conflict })}</>
   } else {
     state = 'holds'
-    label = 'Checked.'
-    summary = `${counted} counted. No participant has more than ${stored.maxOccurrences}.`
+    label = t('canon.check.holds')
+    summary = t('canon.check.holdsSummary', { counted, max: stored.maxOccurrences })
   }
 
   return (
@@ -253,23 +254,22 @@ function CheckState({
               <Link to={`/app/universes/${universeId}/timeline?moment=${moment.timelineEntryId}`}>
                 <bdi>{moment.title}</bdi>
               </Link>{' '}
-              ({UNCOUNTED_REASON_LABELS[moment.reason]})
+              {t('canon.check.reason', { reason: UNCOUNTED_REASON_LABELS[moment.reason] })}
             </li>
           ))}
           {found.uncountedMoments > found.uncounted.length ? (
-            <li>and {found.uncountedMoments - found.uncounted.length} more</li>
+            <li>{t('canon.check.more', { n: found.uncountedMoments - found.uncounted.length })}</li>
           ) : null}
         </ul>
       ) : null}
 
       {found.notCanonMoments > 0 ? (
         <p className="rulecheck__note">
-          {plural(found.notCanonMoments, 'matching moment')}{' '}
-          {found.notCanonMoments === 1 ? 'is' : 'are'} not Canon, and not counted.
+          {tn('canon.check.notCanon', found.notCanonMoments, { n: found.notCanonMoments })}
         </p>
       ) : null}
 
-      {isDirty ? <p className="rulecheck__note">This is the rule as last saved.</p> : null}
+      {isDirty ? <p className="rulecheck__note">{t('canon.check.lastSaved')}</p> : null}
     </div>
   )
 }

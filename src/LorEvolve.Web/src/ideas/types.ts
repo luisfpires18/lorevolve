@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+
 /** Mirrors the backend enum. What an idea points at - stated on every reference, never inferred from an id. */
 export const IdeaReferenceKind = {
   Entity: 0,
@@ -17,12 +19,28 @@ export const IDEA_REFERENCE_KINDS: IdeaReferenceKindValue[] = [
   IdeaReferenceKind.PlotArc,
 ]
 
-/** How each kind is named on screen. Words, never a colour alone. */
+/** How each kind is named on screen. Words, never a colour alone. Getters, so each is looked up when read. */
 export const IDEA_REFERENCE_KIND_LABELS: Record<IdeaReferenceKindValue, string> = {
-  [IdeaReferenceKind.Entity]: 'Lore',
-  [IdeaReferenceKind.Story]: 'Story',
-  [IdeaReferenceKind.Scene]: 'Scene',
-  [IdeaReferenceKind.PlotArc]: 'Arc',
+  get [IdeaReferenceKind.Entity]() {
+    return t('ideas.referenceKind.lore')
+  },
+  get [IdeaReferenceKind.Story]() {
+    return t('ideas.referenceKind.story')
+  },
+  get [IdeaReferenceKind.Scene]() {
+    return t('ideas.referenceKind.scene')
+  },
+  get [IdeaReferenceKind.PlotArc]() {
+    return t('ideas.referenceKind.arc')
+  },
+}
+
+/** A kind's stable key: what a test id is built from, never the translated word. */
+export const IDEA_REFERENCE_KIND_KEYS: Record<IdeaReferenceKindValue, string> = {
+  [IdeaReferenceKind.Entity]: 'lore',
+  [IdeaReferenceKind.Story]: 'story',
+  [IdeaReferenceKind.Scene]: 'scene',
+  [IdeaReferenceKind.PlotArc]: 'arc',
 }
 
 /** Mirrors `IdeaLimits`, so a bound is said before a save rather than after. */

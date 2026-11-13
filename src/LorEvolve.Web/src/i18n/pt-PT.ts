@@ -1,6 +1,10 @@
 import type { Dictionary } from './en'
 import account from './pt-PT/account'
 import auth from './pt-PT/auth'
+import ideas from './pt-PT/ideas'
+import review from './pt-PT/review'
+import canon from './pt-PT/canon'
+import assistant from './pt-PT/assistant'
 import entity from './pt-PT/entity'
 import entityTypes from './pt-PT/entityTypes'
 import lore from './pt-PT/lore'
@@ -23,6 +27,10 @@ import stories from './pt-PT/stories'
 const ptPT = {
   account,
   auth,
+  ideas,
+  review,
+  canon,
+  assistant,
   entity,
   entityTypes,
   lore,

@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type KeyboardEvent } from 'react'
 import { useUniverseAccess } from '../universes/access'
 import { Quoted } from './NameList'
+import { t, tn, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import {
   createValidationTerm,
@@ -21,14 +22,12 @@ import {
 import { confirmAction } from '../lib/confirm'
 
 function usage(term: ValidationTerm) {
-  if (term.ruleCount === 0 && term.momentCount === 0) return 'Not used'
-  const parts = [
-    term.ruleCount > 0 ? `${term.ruleCount} ${term.ruleCount === 1 ? 'rule' : 'rules'}` : null,
-    term.momentCount > 0
-      ? `${term.momentCount} ${term.momentCount === 1 ? 'moment' : 'moments'}`
-      : null,
-  ].filter(Boolean)
-  return `Used by ${parts.join(' and ')}`
+  if (term.ruleCount === 0 && term.momentCount === 0) return t('canon.terms.notUsed')
+  const rules = tn('canon.terms.rules', term.ruleCount, { n: term.ruleCount })
+  const moments = tn('canon.terms.moments', term.momentCount, { n: term.momentCount })
+  if (term.momentCount === 0) return t('canon.terms.usedByRules', { rules })
+  if (term.ruleCount === 0) return t('canon.terms.usedByMoments', { moments })
+  return t('canon.terms.usedByBoth', { rules, moments })
 }
 
 /**
@@ -36,6 +35,7 @@ function usage(term: ValidationTerm) {
  * added here or straight from a rule or a moment. Not a workspace of its own - a vocabulary for checks, next to the others.
  */
 export function ValidationTermManager({ universeId }: { universeId: string }) {
+  const { tx } = useI18n()
   const access = useUniverseAccess()
   const headingId = useId()
   const newNameErrorId = useId()
@@ -57,7 +57,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
     listValidationTerms(universeId, controller.signal)
       .then(setTerms)
       .catch(() => {
-        if (!controller.signal.aborted) setMessage('The event kinds and methods could not be read.')
+        if (!controller.signal.aborted) setMessage(t('canon.terms.readFailed'))
       })
     return () => {
       controller.abort()
@@ -84,7 +84,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
             error:
               error instanceof ApiError
                 ? (error.fieldErrors.name ?? error.message)
-                : 'That name could not be saved.',
+                : t('canon.terms.renameFailed'),
           },
       )
     } finally {
@@ -95,16 +95,15 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
   async function remove(term: ValidationTerm) {
     setMessage(null)
     const deleted = await confirmAction({
-      title: (
-        <>
-          Delete the {TERM_KIND_WORDS[term.kind]} “<bdi>{term.name}</bdi>”?
-        </>
-      ),
-      message: 'Nothing names it.',
-      confirmLabel: 'Delete',
-      busyLabel: 'Deleting…',
+      title: tx('canon.terms.delete.title', {
+        word: TERM_KIND_WORDS[term.kind],
+        name: <bdi>{term.name}</bdi>,
+      }),
+      message: t('canon.terms.delete.message'),
+      confirmLabel: t('canon.terms.delete.confirm'),
+      busyLabel: t('canon.terms.delete.busy'),
       variant: 'destructive',
-      failure: 'That could not be deleted.',
+      failure: t('canon.terms.delete.failed'),
       action: async () => {
         try {
           await deleteValidationTerm(universeId, term.id)
@@ -120,7 +119,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
   async function add() {
     const name = newName.trim()
     if (name === '') {
-      setNewError(`Give the ${TERM_KIND_WORDS[newKind]} a name.`)
+      setNewError(t('canon.terms.nameRequired', { word: TERM_KIND_WORDS[newKind] }))
       return
     }
     setNewError(null)
@@ -132,7 +131,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
       setNewError(
         error instanceof ApiError
           ? (error.fieldErrors.name ?? error.message)
-          : 'That could not be added.',
+          : t('canon.terms.addFailed'),
       )
     }
   }
@@ -151,14 +150,11 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
     <section className="reltypes terms" aria-labelledby={headingId} data-testid="validation-terms">
       <div className="relations__head">
         <h2 className="settings__heading" id={headingId}>
-          Event kinds and methods
+          {t('canon.terms.heading')}
         </h2>
       </div>
 
-      <p className="settings__note">
-        What World Rule checks and moments point at. Two moments share a method only when they name
-        the same one here, never because their words match. Renaming one changes no match.
-      </p>
+      <p className="settings__note">{t('canon.terms.note')}</p>
 
       {message ? (
         <p className="form__message" role="alert" data-testid="terms-error">
@@ -168,7 +164,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
 
       {terms === null && !message ? (
         <p className="notice" role="status">
-          Reading the event kinds and methods…
+          {t('canon.terms.reading')}
         </p>
       ) : null}
 
@@ -183,7 +179,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
                   {TERM_KIND_PLURALS[kind]}
                 </h3>
                 {group.length === 0 ? (
-                  <p className="relations__quiet">None yet.</p>
+                  <p className="relations__quiet">{t('canon.terms.none')}</p>
                 ) : (
                   <ul className="types__list" aria-labelledby={groupId}>
                     {group.map((term) =>
@@ -191,7 +187,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
                         <li className="types__row" key={term.id}>
                           <div className="terms__rename">
                             <label className="field__label" htmlFor={`${groupId}-rename`}>
-                              Rename <Quoted text={term.name} />
+                              {tx('canon.terms.renameLabel', { name: <Quoted text={term.name} /> })}
                             </label>
                             <div className="termselect__row">
                               <input
@@ -223,14 +219,14 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
                                 onClick={() => void saveRename()}
                                 data-testid={`save-term-${term.name}`}
                               >
-                                Save name
+                                {t('canon.terms.saveName')}
                               </button>
                               <button
                                 className="button button--secondary button--sm"
                                 type="button"
                                 onClick={() => setRenaming(null)}
                               >
-                                Cancel
+                                {t('canon.terms.cancel')}
                               </button>
                             </div>
                             {renaming.error ? (
@@ -255,13 +251,13 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
                               <button
                                 className="button button--secondary button--sm"
                                 type="button"
-                                aria-label={`Rename ${term.name}`}
+                                aria-label={t('canon.terms.renameAria', { name: term.name })}
                                 onClick={() =>
                                   setRenaming({ id: term.id, text: term.name, error: null })
                                 }
                                 data-testid={`rename-term-${term.name}`}
                               >
-                                Rename
+                                {t('canon.terms.rename')}
                               </button>
                             ) : null}
                             {access.editContent &&
@@ -270,12 +266,12 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
                               <button
                                 className="button button--secondary button--sm"
                                 type="button"
-                                aria-label={`Delete ${term.name}`}
+                                aria-label={t('canon.terms.deleteAria', { name: term.name })}
                                 disabled={busyId === term.id}
                                 onClick={() => void remove(term)}
                                 data-testid={`delete-term-${term.name}`}
                               >
-                                Delete
+                                {t('canon.terms.deleteButton')}
                               </button>
                             ) : null}
                           </div>
@@ -293,7 +289,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
         <div className="types__new terms__new">
           <div className="field">
             <label className="field__label" htmlFor={`${headingId}-new-kind`}>
-              Event kind or method
+              {t('canon.terms.newKind')}
             </label>
             <select
               id={`${headingId}-new-kind`}
@@ -313,7 +309,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
           </div>
           <div className="field">
             <label className="field__label" htmlFor={`${headingId}-new-name`}>
-              Name
+              {t('canon.terms.newName')}
             </label>
             <input
               id={`${headingId}-new-name`}
@@ -323,8 +319,8 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
               maxLength={TERM_NAME_MAX_LENGTH}
               placeholder={
                 newKind === ValidationTermKind.EventKind
-                  ? 'Coronation, Resurrection…'
-                  : 'By the Salt Crown…'
+                  ? t('canon.terms.placeholderEventKind')
+                  : t('canon.terms.placeholderMethod')
               }
               value={newName}
               onChange={(event) => {
@@ -353,7 +349,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
             onClick={() => void add()}
             data-testid="add-term"
           >
-            Add {TERM_KIND_WORDS[newKind]}
+            {t('canon.terms.add', { word: TERM_KIND_WORDS[newKind] })}
           </button>
         </div>
       ) : null}

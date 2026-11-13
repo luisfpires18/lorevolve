@@ -9,6 +9,7 @@ import {
 } from '../canon/types'
 import type { CanonConflict, CanonConflictSubject } from '../canon/types'
 import { formatDate } from '../lib/dates'
+import { t, useI18n } from '../i18n'
 
 interface Props {
   universeId: string
@@ -27,6 +28,7 @@ interface Props {
  * backend's, and rephrasing it here would put two voices on the same finding.
  */
 export function ConflictEntry({ universeId, conflict, isBusy, onDismiss, onReopen }: Props) {
+  useI18n() // Re-renders on a language change; `t` is read at call time.
   const access = useUniverseAccess()
   const isResolved = conflict.status === CanonConflictStatus.Resolved
   const isDismissed = conflict.status === CanonConflictStatus.Dismissed
@@ -49,8 +51,8 @@ export function ConflictEntry({ universeId, conflict, isBusy, onDismiss, onReope
           <span className="finding__status">{CONFLICT_STATUS_LABELS[conflict.status]}</span>
           <span className="finding__when">
             {isResolved && conflict.resolvedAt
-              ? `Resolved ${formatDate(conflict.resolvedAt)}`
-              : `Found ${formatDate(conflict.createdAt)}`}
+              ? t('review.conflict.resolvedOn', { date: formatDate(conflict.resolvedAt) })
+              : t('review.conflict.foundOn', { date: formatDate(conflict.createdAt) })}
           </span>
         </p>
 
@@ -70,9 +72,7 @@ export function ConflictEntry({ universeId, conflict, isBusy, onDismiss, onReope
 
         <div className="finding__tools">
           {isResolved ? (
-            <p className="finding__note">
-              Evaluation closed this. It comes back on its own if the problem does.
-            </p>
+            <p className="finding__note">{t('review.conflict.closedNote')}</p>
           ) : !access.editContent ? null : (
             <button
               className="button button--secondary button--sm"
@@ -81,13 +81,11 @@ export function ConflictEntry({ universeId, conflict, isBusy, onDismiss, onReope
               onClick={isDismissed ? onReopen : onDismiss}
               data-testid={`${isDismissed ? 'reopen' : 'dismiss'}-${conflict.id}`}
             >
-              {isDismissed ? 'Reopen' : 'Dismiss'}
+              {isDismissed ? t('review.conflict.reopen') : t('review.conflict.dismiss')}
             </button>
           )}
           {isDismissed ? (
-            <p className="finding__note">
-              Set aside while it lasts. Fixing it closes it; reintroducing it opens it again.
-            </p>
+            <p className="finding__note">{t('review.conflict.dismissedNote')}</p>
           ) : null}
         </div>
       </div>
@@ -103,7 +101,7 @@ export function ConflictEntry({ universeId, conflict, isBusy, onDismiss, onReope
  */
 function subjectName(universeId: string, subject: CanonConflictSubject) {
   if (subject.name === null) {
-    return <span className="finding__gone">no longer here</span>
+    return <span className="finding__gone">{t('review.conflict.gone')}</span>
   }
 
   const base = `/app/universes/${universeId}`
