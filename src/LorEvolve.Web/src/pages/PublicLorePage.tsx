@@ -12,6 +12,7 @@ import {
 } from '../portal/api'
 import { useWorkspaceLink } from '../portal/useWorkspaceLink'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useI18n } from '../i18n'
 
 type LoadState =
   | { key: string; kind: 'ready'; world: PublicUniverse; entry: PublicLoreDetail }
@@ -29,6 +30,7 @@ type LoadState =
  * says nothing about which. The owner, signed in, gets a quiet "Edit in workspace".
  */
 export default function PublicLorePage() {
+  const { t } = useI18n()
   const { slug = '', loreSlug = '' } = useParams<{ slug: string; loreSlug: string }>()
   const key = `${slug}/${loreSlug}`
   const [attempt, setAttempt] = useState(0)
@@ -53,7 +55,7 @@ export default function PublicLorePage() {
   const current = state?.key === key ? state : null
 
   if (current?.kind === 'missing') {
-    return <PortalMissing title="This page is not available." testId="lore-missing" />
+    return <PortalMissing title={t('portal.lore.missing')} testId="lore-missing" />
   }
 
   if (current?.kind === 'error') {
@@ -62,7 +64,7 @@ export default function PublicLorePage() {
 
   if (!current) {
     return (
-      <div className="pread" role="status" aria-label="Opening this entry">
+      <div className="pread" role="status" aria-label={t('portal.lore.opening')}>
         <div className="pread__skeleton" />
       </div>
     )
@@ -72,12 +74,13 @@ export default function PublicLorePage() {
 }
 
 function Entry({ world, entry }: { world: PublicUniverse; entry: PublicLoreDetail }) {
+  const { t, tx } = useI18n()
   useDocumentTitle(entry.name, world.name)
   const owner = useWorkspaceLink(world.slug, { lore: entry.slug })
 
   return (
     <article className="pread plore" data-testid="public-lore">
-      <nav className="pcrumbs" aria-label="Breadcrumb">
+      <nav className="pcrumbs" aria-label={t('portal.lore.breadcrumb')}>
         <ol>
           <li>
             <Link
@@ -89,7 +92,7 @@ function Entry({ world, entry }: { world: PublicUniverse; entry: PublicLoreDetai
               <bdi>{world.name}</bdi>
             </Link>
           </li>
-          <li aria-current="page">Lore</li>
+          <li aria-current="page">{t('portal.lore.crumb')}</li>
         </ol>
       </nav>
 
@@ -111,7 +114,7 @@ function Entry({ world, entry }: { world: PublicUniverse; entry: PublicLoreDetai
             to={`/app/universes/${owner.universeId}/lore/${owner.entityId}`}
             data-testid="edit-in-workspace"
           >
-            Edit in workspace
+            {t('portal.lore.edit')}
             <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.75} />
           </Link>
         ) : null}
@@ -136,7 +139,7 @@ function Entry({ world, entry }: { world: PublicUniverse; entry: PublicLoreDetai
 
       <footer className="pread__foot">
         <Link className="plink" to={worldPath(world.slug)}>
-          More from <bdi>{world.name}</bdi>
+          {tx('portal.lore.moreFrom', { world: <bdi>{world.name}</bdi> })}
         </Link>
       </footer>
     </article>

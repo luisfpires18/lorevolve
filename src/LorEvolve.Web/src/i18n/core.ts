@@ -13,23 +13,28 @@ export type Plural = {
   other: string
 }
 
+type PluralForm = 'zero' | 'one' | 'two' | 'few' | 'many' | 'other'
+
+/** True when `V` is a plural: it has `other` and no key that is not a plural form, so a group may hold an `other`. */
+type IsPlural<V> = V extends { other: string }
+  ? [Exclude<keyof V, PluralForm>] extends [never]
+    ? true
+    : false
+  : false
+
 /** A dictionary's shape: nested groups of messages, each a string or a plural. */
 export type Messages = { [key: string]: string | Plural | Messages }
 
 /** Every dictionary has the English one's keys, with any wording in each. */
 export type Shape<T> = {
-  [K in keyof T]: T[K] extends string
-    ? string
-    : T[K] extends { other: string }
-      ? Plural
-      : Shape<T[K]>
+  [K in keyof T]: T[K] extends string ? string : IsPlural<T[K]> extends true ? Plural : Shape<T[K]>
 }
 
 /** The dotted keys whose value is a plain message, e.g. `language.label`. */
 export type TextKey<T> = {
   [K in keyof T & string]: T[K] extends string
     ? K
-    : T[K] extends { other: string }
+    : IsPlural<T[K]> extends true
       ? never
       : `${K}.${TextKey<T[K]>}`
 }[keyof T & string]
@@ -38,7 +43,7 @@ export type TextKey<T> = {
 export type PluralKey<T> = {
   [K in keyof T & string]: T[K] extends string
     ? never
-    : T[K] extends { other: string }
+    : IsPlural<T[K]> extends true
       ? K
       : `${K}.${PluralKey<T[K]>}`
 }[keyof T & string]

@@ -1,22 +1,27 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { FeedbackButton } from '../components/FeedbackButton'
-import { NETWORK_FAILURE } from '../lib/api'
+import { useI18n } from '../i18n'
+import { networkFailure } from '../lib/api'
 import { returnPath } from './returnPath'
 import { useAuth } from './useAuth'
 
 /** Held while the session probe is in flight, so no screen paints before it settles. */
 function SessionPending() {
-  return <div className="session-pending" role="status" aria-label="Checking your session" />
+  const { t } = useI18n()
+  return (
+    <div className="session-pending" role="status" aria-label={t('auth.routes.checkingSession')} />
+  )
 }
 
 /** The session probe could not reach LorEvolve, so whether the author is signed in is unknown: offer a retry. */
 function SessionUnreachable({ onRetry }: { onRetry: () => void }) {
+  const { t } = useI18n()
   return (
     <div className="session-pending session-pending--unreachable">
       <div className="notice notice--error" role="alert">
-        <p>{NETWORK_FAILURE}</p>
+        <p>{networkFailure()}</p>
         <button className="button button--secondary" type="button" onClick={onRetry}>
-          Try again
+          {t('auth.routes.retry')}
         </button>
       </div>
     </div>

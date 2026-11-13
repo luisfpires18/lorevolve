@@ -8,6 +8,7 @@ import {
   type MouseEvent,
   type SyntheticEvent,
 } from 'react'
+import { useI18n } from '../i18n'
 import {
   currentConfirm,
   failureText,
@@ -23,6 +24,7 @@ export function ConfirmHost() {
 }
 
 function ConfirmDialog({ request }: { request: ConfirmRequest }) {
+  const { t } = useI18n()
   const { options } = request
   const variant = options.variant ?? 'neutral'
   const dialog = useRef<HTMLDialogElement>(null)
@@ -148,7 +150,7 @@ function ConfirmDialog({ request }: { request: ConfirmRequest }) {
             onClick={cancel}
             data-testid="confirm-dialog-cancel"
           >
-            {options.cancelLabel ?? 'Cancel'}
+            {options.cancelLabel ?? t('shell.confirm.cancel')}
           </button>
         </div>
       </div>

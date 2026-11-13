@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { Field } from '../components/Field'
 import { ApiError, apiFetch } from '../lib/api'
+import { useI18n } from '../i18n'
 
 /**
  * Forgot password (#69). The answer is the same whether or not the address has an account, so the page never says
  * which; the email, if any, carries a link to `/reset-password` that works once, for an hour.
  */
 export default function ForgotPasswordPage() {
+  const { t, tx } = useI18n()
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [sentTo, setSentTo] = useState<string | null>(null)
@@ -28,7 +30,7 @@ export default function ForgotPasswordPage() {
       setError(
         failure instanceof ApiError
           ? (failure.fieldErrors.email ?? failure.message)
-          : 'The link cannot be sent right now.',
+          : t('auth.forgot.failed'),
       )
     } finally {
       setIsSubmitting(false)
@@ -37,19 +39,18 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthLayout
-      heading="Forgot your password?"
-      intro="Enter your account's email address and we'll send you a link to choose a new one."
-      footer={<Link to="/login">Back to sign in</Link>}
+      heading={t('auth.forgot.heading')}
+      intro={t('auth.forgot.intro')}
+      footer={<Link to="/login">{t('auth.forgot.back')}</Link>}
     >
       {sentTo ? (
         <p className="callout" role="status" data-testid="forgot-sent">
-          If <bdi>{sentTo}</bdi> has a LorEvolve account, a link is on its way. It works once, for 1
-          hour. Nothing arrived? Check your spam folder, or write to support@lorevolve.com.
+          {tx('auth.forgot.sent', { email: <bdi>{sentTo}</bdi> })}
         </p>
       ) : (
         <form className="form" onSubmit={handleSubmit} noValidate>
           <Field
-            label="Email"
+            label={t('auth.forgot.email')}
             name="email"
             type="email"
             autoComplete="email"
@@ -61,7 +62,7 @@ export default function ForgotPasswordPage() {
           />
 
           <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-            {isSubmitting ? 'Sending' : 'Send the link'}
+            {isSubmitting ? t('auth.forgot.submitting') : t('auth.forgot.submit')}
           </button>
         </form>
       )}

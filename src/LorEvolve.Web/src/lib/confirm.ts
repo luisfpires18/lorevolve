@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { t } from '../i18n'
 import { ApiError } from './api'
 
 /**
@@ -33,7 +34,7 @@ export interface ConfirmOptions {
 export function failureText(error: unknown, failure: ConfirmOptions['failure']) {
   if (typeof failure === 'function') return failure(error)
   if (error instanceof ApiError) return error.message
-  return failure ?? 'That could not be done. Try again.'
+  return failure ?? t('shell.confirm.failed')
 }
 
 export interface ConfirmRequest {
@@ -86,12 +87,12 @@ export function confirmAction(options: ConfirmOptions): Promise<boolean> {
  * The one question before unsaved work is let go: Keep editing has the focus, and Discard changes is the danger button.
  * `title` names what is open - "Close the article without saving your changes?" - when that says more than the default.
  */
-export function confirmDiscard(title: ReactNode = 'Close without saving your changes?') {
+export function confirmDiscard(title: ReactNode = t('shell.confirm.discard.title')) {
   return confirmAction({
     title,
-    message: 'They will be lost.',
-    confirmLabel: 'Discard changes',
-    cancelLabel: 'Keep editing',
+    message: t('shell.confirm.discard.message'),
+    confirmLabel: t('shell.confirm.discard.confirm'),
+    cancelLabel: t('shell.confirm.discard.cancel'),
     variant: 'destructive',
   })
 }

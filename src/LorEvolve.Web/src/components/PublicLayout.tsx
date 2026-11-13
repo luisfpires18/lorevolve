@@ -3,13 +3,14 @@ import { SunMoon } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
 import { AccountMenu } from './AccountMenu'
 import { ActionMenu } from './ActionMenu'
-import { BRAND_LINK_LABEL, BrandMark } from './BrandMark'
+import { BrandMark } from './BrandMark'
 import { PortalSearch } from './PortalSearch'
 import { SiteFooter } from './SiteFooter'
 import { ThemeSwitch } from './ThemeSwitch'
 import { LanguageSwitch } from './LanguageSwitch'
 import { MAIN_CONTENT_ID } from './SkipLink'
 import { Wordmark } from './Wordmark'
+import { useI18n } from '../i18n'
 
 /**
  * The public portal's frame: its own bar and its own `main`, and none of the workspace's chrome - no rail, no
@@ -36,6 +37,7 @@ import { Wordmark } from './Wordmark'
  */
 export function PublicLayout() {
   const { user, isLoading } = useAuth()
+  const { t } = useI18n()
   const location = useLocation()
   const front = location.pathname === '/'
   const here = `${location.pathname}${location.search}`
@@ -44,13 +46,13 @@ export function PublicLayout() {
   return (
     <div className="portal">
       <header className="portal__bar">
-        <Link className="portal__brand" to="/" aria-label={BRAND_LINK_LABEL}>
+        <Link className="portal__brand" to="/" aria-label={t('shell.brand.homeLabel')}>
           <BrandMark />
           <Wordmark />
         </Link>
-        <nav className="portal__nav" aria-label="Explore">
+        <nav className="portal__nav" aria-label={t('portal.layout.exploreNav')}>
           <NavLink className="portal__link" to="/" end data-testid="portal-explore">
-            Explore
+            {t('portal.layout.explore')}
           </NavLink>
         </nav>
         <PortalSearch />
@@ -62,14 +64,14 @@ export function PublicLayout() {
                 to="/app"
                 data-testid="portal-workspace"
               >
-                My workspace
+                {t('portal.layout.workspace')}
               </Link>
               <AccountMenu variant="bar" signedOutTo={here} />
             </>
           ) : (
             <>
               <ActionMenu
-                label="Appearance"
+                label={t('portal.layout.appearance')}
                 trigger={<SunMoon aria-hidden="true" size={18} strokeWidth={1.75} />}
                 triggerClassName="portal__appearance"
                 panelClassName="portal__appearancepanel"
@@ -84,7 +86,7 @@ export function PublicLayout() {
                 state={comeBack}
                 data-testid="portal-login"
               >
-                Log in
+                {t('portal.layout.login')}
               </Link>
               <Link
                 className="portal__pill portal__pill--primary"
@@ -92,7 +94,7 @@ export function PublicLayout() {
                 state={comeBack}
                 data-testid="portal-join"
               >
-                Create account
+                {t('portal.layout.join')}
               </Link>
             </>
           )}

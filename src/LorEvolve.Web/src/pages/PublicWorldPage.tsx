@@ -18,6 +18,7 @@ import { usePublicPages } from '../portal/usePublicPages'
 import { useWorkspaceLink } from '../portal/useWorkspaceLink'
 import { categoryLabel, genreKey, genreLabel } from '../publishing/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useI18n } from '../i18n'
 
 type LoadState =
   | { slug: string; kind: 'ready'; world: PublicUniverse }
@@ -36,6 +37,7 @@ type LoadState =
  * page. The owner, signed in, gets one quiet way back to the workspace; nobody else learns who the owner is.
  */
 export default function PublicWorldPage() {
+  const { t } = useI18n()
   const { slug = '' } = useParams<{ slug: string }>()
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<LoadState | null>(null)
@@ -59,7 +61,7 @@ export default function PublicWorldPage() {
   const current = state?.slug === slug ? state : null
 
   if (current?.kind === 'missing') {
-    return <PortalMissing title="This world is not available." testId="world-missing" />
+    return <PortalMissing title={t('portal.world.missing')} testId="world-missing" />
   }
 
   if (current?.kind === 'error') {
@@ -68,7 +70,7 @@ export default function PublicWorldPage() {
 
   if (!current) {
     return (
-      <div className="pworld pworld--loading" role="status" aria-label="Opening this world">
+      <div className="pworld pworld--loading" role="status" aria-label={t('portal.world.opening')}>
         <div className="pworld-hero pworld-hero--skeleton" />
       </div>
     )
@@ -78,6 +80,7 @@ export default function PublicWorldPage() {
 }
 
 function World({ world }: { world: PublicUniverse }) {
+  const { t } = useI18n()
   useDocumentTitle(world.name)
   const owner = useWorkspaceLink(world.slug)
   const fetchLore = useCallback(
@@ -114,7 +117,10 @@ function World({ world }: { world: PublicUniverse }) {
               <bdi>{world.name}</bdi>
             </h1>
             <WorldAttribution world={world} className="pworld-hero__byline" testId="public-world" />
-            <ul className="worldcard__genres pworld-hero__genres" aria-label="Genres">
+            <ul
+              className="worldcard__genres pworld-hero__genres"
+              aria-label={t('portal.world.genres')}
+            >
               {world.genres.map((genre) => (
                 <li className="genrechip" data-genre={genreKey(genre)} key={genre}>
                   {genreLabel(genre)}
@@ -130,7 +136,7 @@ function World({ world }: { world: PublicUniverse }) {
                 to={`/app/universes/${owner.universeId}`}
                 data-testid="edit-this-world"
               >
-                Edit this world
+                {t('portal.world.edit')}
                 <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.75} />
               </Link>
             ) : null}
@@ -151,19 +157,19 @@ function World({ world }: { world: PublicUniverse }) {
 
       <div className="pworld__body">
         {settled && hasLore && hasStories ? (
-          <nav className="pworld__nav" aria-label="In this world">
+          <nav className="pworld__nav" aria-label={t('portal.world.nav')}>
             <a className="pworld__navlink" href="#lore">
-              Lore
+              {t('portal.world.navLore')}
             </a>
             <a className="pworld__navlink" href="#stories">
-              Stories
+              {t('portal.world.navStories')}
             </a>
           </nav>
         ) : null}
 
         {lore.status === 'loading' || stories.status === 'loading' ? (
           <p className="pworld__status" role="status">
-            Opening what is published here…
+            {t('portal.world.loading')}
           </p>
         ) : null}
 
@@ -171,14 +177,14 @@ function World({ world }: { world: PublicUniverse }) {
           <section className="pworld__section" id="lore" aria-labelledby="lore-heading">
             <h2 className="pworld__heading" id="lore-heading">
               <ScrollText aria-hidden="true" size={20} strokeWidth={1.75} />
-              Lore
+              {t('portal.world.loreHeading')}
             </h2>
             <ul className="plore-grid" data-testid="public-lore-list">
               {lore.items.map((entry) => (
                 <LoreCard key={entry.slug} world={world.slug} entry={entry} />
               ))}
             </ul>
-            <More pages={lore} noun="lore" testId="public-lore-more" />
+            <More pages={lore} kind="lore" testId="public-lore-more" />
           </section>
         ) : null}
 
@@ -186,20 +192,20 @@ function World({ world }: { world: PublicUniverse }) {
           <section className="pworld__section" id="stories" aria-labelledby="stories-heading">
             <h2 className="pworld__heading" id="stories-heading">
               <BookOpen aria-hidden="true" size={20} strokeWidth={1.75} />
-              Stories
+              {t('portal.world.storiesHeading')}
             </h2>
             <ul className="pstory-grid" data-testid="public-story-list">
               {stories.items.map((story) => (
                 <StoryCard key={story.slug} world={world.slug} story={story} />
               ))}
             </ul>
-            <More pages={stories} noun="stories" testId="public-story-more" />
+            <More pages={stories} kind="stories" testId="public-story-more" />
           </section>
         ) : null}
 
         {lore.status === 'error' || stories.status === 'error' ? (
           <div className="pworld__empty" role="alert">
-            <p>What is published here could not be loaded.</p>
+            <p>{t('portal.world.loadFailed')}</p>
             <button
               className="portal__pill"
               type="button"
@@ -208,13 +214,13 @@ function World({ world }: { world: PublicUniverse }) {
                 if (stories.status === 'error') stories.retry()
               }}
             >
-              Try again
+              {t('portal.world.retry')}
             </button>
           </div>
         ) : settled && !hasLore && !hasStories ? (
           <div className="pworld__empty" data-testid="public-world-empty">
             <BrandMark className="pworld__emptymark" />
-            <p>No lore or stories have been published here yet.</p>
+            <p>{t('portal.world.empty')}</p>
           </div>
         ) : null}
       </div>
@@ -257,6 +263,7 @@ function LoreCard({ world, entry }: { world: string; entry: PublicLoreEntry }) {
 }
 
 function StoryCard({ world, story }: { world: string; story: PublicStory }) {
+  const { t } = useI18n()
   return (
     <li className="pstorycard">
       <Link className="pstorycard__link" to={storyPath(world, story.slug)}>
@@ -267,28 +274,46 @@ function StoryCard({ world, story }: { world: string; story: PublicStory }) {
           {story.publicSummary}
         </span>
         <span className="pstorycard__cta" aria-hidden="true">
-          Read about this story →
+          {t('portal.world.storyCta')}
         </span>
       </Link>
     </li>
   )
 }
 
+/** Message keys, not text: the labels are looked up in render. */
+const MORE_KEYS = {
+  lore: {
+    error: 'portal.world.loreMore.error',
+    loading: 'portal.world.loreMore.loading',
+    retry: 'portal.world.loreMore.retry',
+    show: 'portal.world.loreMore.show',
+  },
+  stories: {
+    error: 'portal.world.storiesMore.error',
+    loading: 'portal.world.storiesMore.loading',
+    retry: 'portal.world.storiesMore.retry',
+    show: 'portal.world.storiesMore.show',
+  },
+} as const
+
 function More({
   pages,
-  noun,
+  kind,
   testId,
 }: {
   pages: ReturnType<typeof usePublicPages<{ slug: string }>>
-  noun: string
+  kind: 'lore' | 'stories'
   testId: string
 }) {
+  const { t } = useI18n()
+  const labels = MORE_KEYS[kind]
   if (!pages.hasMore) return null
   return (
     <div className="pworld__more">
       {pages.more === 'error' ? (
         <p className="explore__more-error" role="alert">
-          More {noun} could not be loaded.
+          {t(labels.error)}
         </p>
       ) : null}
       <button
@@ -300,13 +325,13 @@ function More({
         data-testid={testId}
       >
         {pages.more === 'loading'
-          ? 'Loading…'
+          ? t(labels.loading)
           : pages.more === 'error'
-            ? 'Try again'
-            : `Show more ${noun}`}
+            ? t(labels.retry)
+            : t(labels.show)}
       </button>
       <p className="pworld__shown" role="status">
-        Showing {pages.items.length} of {pages.totalCount}
+        {t('portal.world.shown', { shown: pages.items.length, total: pages.totalCount })}
       </p>
     </div>
   )

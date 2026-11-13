@@ -4,6 +4,7 @@ import { AuthLayout } from '../components/AuthLayout'
 import { useAuth } from '../auth/useAuth'
 import { ApiError } from '../lib/api'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { t, useI18n } from '../i18n'
 import { ROLE_DESCRIPTIONS, ROLE_LABELS } from '../universes/access'
 import {
   acceptClaimedInvitation,
@@ -33,6 +34,7 @@ type State =
  * invitation names; anyone else is told it is for a different account, and not which.
  */
 export default function InvitationPage() {
+  const { tx } = useI18n()
   const { token = '' } = useParams<{ token: string }>()
   const { user, isLoading } = useAuth()
   const location = useLocation()
@@ -42,7 +44,7 @@ export default function InvitationPage() {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  useDocumentTitle('Invitation')
+  useDocumentTitle(t('auth.invitation.title'))
 
   useEffect(() => {
     if (!user) return
@@ -92,37 +94,39 @@ export default function InvitationPage() {
     if (problem instanceof ApiError && [403, 404, 410].includes(problem.status)) {
       setState(stateFor(problem))
     } else {
-      setActionError(
-        problem instanceof Error ? problem.message : 'That could not be done. Try again.',
-      )
+      setActionError(problem instanceof Error ? problem.message : t('auth.invitation.actionFailed'))
     }
   }
 
   const back = (
     <Link to="/app" data-testid="invitation-workspace-link">
-      Go to My workspace
+      {t('auth.invitation.workspace')}
     </Link>
   )
 
   if (isLoading) {
-    return <div className="session-pending" role="status" aria-label="Checking your session" />
+    return (
+      <div
+        className="session-pending"
+        role="status"
+        aria-label={t('auth.invitation.checkingSession')}
+      />
+    )
   }
 
   if (!user) {
     const from = { from: location.pathname }
     return (
       <AuthLayout
-        heading="You've been invited to collaborate in LorEvolve."
-        intro="Sign in or create an account to continue."
-        footer={
-          <>
-            Use the email address the invitation was sent to. <Link to="/">Explore LorEvolve</Link>
-          </>
-        }
+        heading={t('auth.invitation.signedOut.heading')}
+        intro={t('auth.invitation.signedOut.intro')}
+        footer={tx('auth.invitation.signedOut.footer', {
+          link: <Link to="/">{t('auth.invitation.signedOut.explore')}</Link>,
+        })}
       >
         <div className="invite__actions" data-testid="invitation-signed-out">
           <Link className="button" to="/login" state={from} data-testid="invitation-sign-in">
-            Sign in
+            {t('auth.invitation.signedOut.signIn')}
           </Link>
           <Link
             className="button button--secondary"
@@ -130,7 +134,7 @@ export default function InvitationPage() {
             state={from}
             data-testid="invitation-register"
           >
-            Create account
+            {t('auth.invitation.signedOut.createAccount')}
           </Link>
         </div>
       </AuthLayout>
@@ -140,9 +144,13 @@ export default function InvitationPage() {
   switch (state.kind) {
     case 'loading':
       return (
-        <AuthLayout heading="Invitation" intro="Opening the invitation…" footer={back}>
+        <AuthLayout
+          heading={t('auth.invitation.loading.heading')}
+          intro={t('auth.invitation.loading.intro')}
+          footer={back}
+        >
           <p className="visually-hidden" role="status">
-            Opening the invitation
+            {t('auth.invitation.loading.status')}
           </p>
         </AuthLayout>
       )
@@ -152,7 +160,7 @@ export default function InvitationPage() {
         <AuthLayout
           headingRef={heading}
           heading={invitation.universeName}
-          intro={`You've been invited as ${ROLE_LABELS[invitation.role]}.`}
+          intro={t('auth.invitation.ready.intro', { role: ROLE_LABELS[invitation.role] })}
           footer={back}
         >
           <div data-testid="invitation-ready">
@@ -173,7 +181,7 @@ export default function InvitationPage() {
                 aria-busy={busy}
                 data-testid="invitation-accept"
               >
-                {busy ? 'Working' : 'Accept invitation'}
+                {busy ? t('auth.invitation.ready.working') : t('auth.invitation.ready.accept')}
               </button>
               <button
                 className="button button--secondary"
@@ -183,7 +191,7 @@ export default function InvitationPage() {
                 aria-busy={busy}
                 data-testid="invitation-decline"
               >
-                Decline
+                {t('auth.invitation.ready.decline')}
               </button>
             </div>
           </div>
@@ -194,8 +202,8 @@ export default function InvitationPage() {
       return (
         <Settled
           headingRef={heading}
-          heading="Invitation declined."
-          intro="Nothing was shared with you, and the invitation is gone."
+          heading={t('auth.invitation.declined.heading')}
+          intro={t('auth.invitation.declined.intro')}
           footer={back}
           testId="invitation-declined"
         />
@@ -204,8 +212,8 @@ export default function InvitationPage() {
       return (
         <Settled
           headingRef={heading}
-          heading="This invitation is for a different account."
-          intro="Sign in with the account it was sent to, or ask the person who invited you."
+          heading={t('auth.invitation.otherAccount.heading')}
+          intro={t('auth.invitation.otherAccount.intro')}
           footer={back}
           testId="invitation-other-account"
         />
@@ -214,8 +222,8 @@ export default function InvitationPage() {
       return (
         <Settled
           headingRef={heading}
-          heading="This invitation has expired."
-          intro="Ask the person who invited you for a new one."
+          heading={t('auth.invitation.expired.heading')}
+          intro={t('auth.invitation.expired.intro')}
           footer={back}
           testId="invitation-expired"
         />
@@ -224,8 +232,8 @@ export default function InvitationPage() {
       return (
         <Settled
           headingRef={heading}
-          heading="This invitation is no longer available."
-          intro="It may have been withdrawn, or already answered."
+          heading={t('auth.invitation.gone.heading')}
+          intro={t('auth.invitation.gone.intro')}
           footer={back}
           testId="invitation-gone"
         />
@@ -234,7 +242,7 @@ export default function InvitationPage() {
       return (
         <Settled
           headingRef={heading}
-          heading="This invitation could not be opened."
+          heading={t('auth.invitation.error.heading')}
           intro={state.message}
           footer={back}
           testId="invitation-load-error"
@@ -272,6 +280,6 @@ function stateFor(problem: unknown): State {
   }
   return {
     kind: 'error',
-    message: problem instanceof Error ? problem.message : 'Try again in a moment.',
+    message: problem instanceof Error ? problem.message : t('auth.invitation.retryLater'),
   }
 }
