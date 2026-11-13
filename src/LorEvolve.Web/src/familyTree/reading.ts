@@ -1,5 +1,6 @@
 import { CanonStatus, type CanonStatusValue } from '../lore/types'
 import { FAMILY_SEMANTIC_WORDS } from '../relationships/types'
+import { t } from '../i18n'
 import {
   FAMILY_POSITIONS,
   ROW_OF,
@@ -122,7 +123,7 @@ function reading(
     CanonStatus.Canon,
   )
 
-  const name = (entityId: string) => nodes.get(entityId)?.name ?? 'a hidden entry'
+  const name = (entityId: string) => nodes.get(entityId)?.name ?? t('places.reading.hidden')
   const word = (link: FamilyTreeLink | undefined) =>
     link ? FAMILY_SEMANTIC_WORDS[link.semantic] : ''
 
@@ -131,21 +132,32 @@ function reading(
   function text() {
     const [first, second] = steps
 
-    if (position === 'parents') return capitalised(`${word(first)} parent`)
-    if (position === 'children') return capitalised(`${word(first)} child`)
+    if (position === 'parents')
+      return capitalised(t('places.reading.parent', { word: word(first) }))
+    if (position === 'children')
+      return capitalised(t('places.reading.child', { word: word(first) }))
 
     // The side of the family, named by the relative it comes through.
-    if (position === 'auntsUncles') return `${name(first?.parentEntityId ?? focalId)}'s sibling`
-    if (position === 'cousins') return `${name(steps[2]?.childEntityId ?? focalId)}'s child`
-    if (position === 'niecesNephews') return `${name(second?.childEntityId ?? focalId)}'s child`
+    if (position === 'auntsUncles')
+      return t('places.reading.auntUncle', { name: name(first?.parentEntityId ?? focalId) })
+    if (position === 'cousins')
+      return t('places.reading.cousin', { name: name(steps[2]?.childEntityId ?? focalId) })
+    if (position === 'niecesNephews')
+      return t('places.reading.nieceNephew', { name: name(second?.childEntityId ?? focalId) })
 
     // A sibling is a shared parent and nothing more. Which links each of them holds is worth saying; how much
     // of a family they share is not something the recorded links prove.
     if (position === 'siblings') {
       const shared = name(first?.parentEntityId ?? focalId)
       return word(first) === word(second)
-        ? `Shares ${shared} (${word(first)} for both)`
-        : `Shares ${shared} (${word(first)} for ${name(focalId)}, ${word(second)} for ${name(relativeId)})`
+        ? t('places.reading.sharesBoth', { shared, word: word(first) })
+        : t('places.reading.sharesEach', {
+            shared,
+            first: word(first),
+            focal: name(focalId),
+            second: word(second),
+            relative: name(relativeId),
+          })
     }
 
     // The middle entry is on the tree too, so naming it says which line this one comes down: the parent the
@@ -154,8 +166,8 @@ function reading(
     const through = name(middle ?? focalId)
 
     return position === 'grandparents'
-      ? `${through}'s ${word(second)} parent`
-      : `${through}'s ${word(second)} child`
+      ? t('places.reading.grandparent', { through, word: word(second) })
+      : t('places.reading.grandchild', { through, word: word(second) })
   }
 }
 
@@ -165,7 +177,7 @@ function capitalised(text: string) {
 
 /** One link as a sentence: "Mara bore Lia". */
 export function linkSentence(link: FamilyTreeLink, nodes: Map<string, FamilyTreeNode>) {
-  const parent = nodes.get(link.parentEntityId)?.name ?? 'a hidden entry'
-  const child = nodes.get(link.childEntityId)?.name ?? 'a hidden entry'
-  return `${parent} ${link.relationshipTypeName} ${child}`
+  const parent = nodes.get(link.parentEntityId)?.name ?? t('places.reading.hidden')
+  const child = nodes.get(link.childEntityId)?.name ?? t('places.reading.hidden')
+  return t('places.reading.linkSentence', { parent, kind: link.relationshipTypeName, child })
 }

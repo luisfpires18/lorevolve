@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { listEntityRelationships } from '../relationships/api'
 import { Validity, type RelationshipView } from '../relationships/types'
 
@@ -18,6 +19,7 @@ export function EraRelations({
   entityId: string
   eraId: string
 }) {
+  const { t, tn } = useI18n()
   const [read, setRead] = useState<{ eraId: string; views: RelationshipView[] | 'failed' } | null>(
     null,
   )
@@ -37,7 +39,7 @@ export function EraRelations({
   if (views === null) {
     return (
       <p className="muted" role="status">
-        Reading the relations in this stage…
+        {t('time.eraRelations.reading')}
       </p>
     )
   }
@@ -45,7 +47,7 @@ export function EraRelations({
   if (views === 'failed') {
     return (
       <p className="form__message" role="alert">
-        The relations in this stage could not be read.
+        {t('time.eraRelations.failed')}
       </p>
     )
   }
@@ -57,7 +59,7 @@ export function EraRelations({
 
   return (
     <div className="rail__block" data-testid="era-relations">
-      <h4 className="rail__heading">Relations in this stage</h4>
+      <h4 className="rail__heading">{t('time.eraRelations.heading')}</h4>
       {holding.length > 0 ? (
         <RelationRows universeId={universeId} views={holding} testId="era-relations-holding" />
       ) : null}
@@ -65,9 +67,7 @@ export function EraRelations({
         // Kept apart and folded: these are not said to hold now, only that their dates can't be set against this era's.
         <details className="erarelations__unplaced" data-testid="era-relations-unplaced-group">
           <summary className="field__hint">
-            {unplaced.length === 1
-              ? '1 relation can’t be placed in this stage'
-              : `${unplaced.length} relations can’t be placed in this stage`}
+            {tn('time.eraRelations.unplaced', unplaced.length, { n: unplaced.length })}
           </summary>
           <RelationRows universeId={universeId} views={unplaced} testId="era-relations-unplaced" />
         </details>
@@ -85,6 +85,8 @@ function RelationRows({
   views: RelationshipView[]
   testId: string
 }) {
+  const { t } = useI18n()
+
   return (
     <ul className="eracovers" data-testid={testId}>
       {views.map((view) => (
@@ -95,7 +97,9 @@ function RelationRows({
           <Link to={`/app/universes/${universeId}/lore/${view.relatedEntityId}`}>
             <bdi>{view.relatedEntityName}</bdi>
           </Link>
-          {view.validity === Validity.Timeless ? <span className="erasource"> Always</span> : null}
+          {view.validity === Validity.Timeless ? (
+            <span className="erasource"> {t('time.eraRelations.always')}</span>
+          ) : null}
         </li>
       ))}
     </ul>

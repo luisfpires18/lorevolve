@@ -1,6 +1,7 @@
 import { closeHistory } from '@tiptap/pm/history'
 import type { Editor } from '@tiptap/react'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { t, tn, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { SaveAction } from './SaveAction'
 import { AtSign, FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
@@ -112,6 +113,7 @@ export function ManuscriptEditor({
   onSceneSaved,
   publication,
 }: ManuscriptEditorProps) {
+  useI18n() // Re-renders on a language change; the words are read through the module's t.
   const access = useUniverseAccess()
   const sceneId = scene.id
   const titleId = useId()
@@ -161,7 +163,7 @@ export function ManuscriptEditor({
         setLoad(
           error instanceof ApiError && error.status === 404
             ? { kind: 'missing' }
-            : { kind: 'error', message: 'This manuscript could not be opened.' },
+            : { kind: 'error', message: t('manuscript.editor.openFailed') },
         )
       })
 
@@ -195,10 +197,7 @@ export function ManuscriptEditor({
     }
   }, [isReady, isHeld, isDirty, draft, stored.updatedAt, keep, forget])
 
-  useLeaveGuard(
-    isDirty ? `“${scene.title}” has unsaved changes. Leave without saving them?` : null,
-    discard,
-  )
+  useLeaveGuard(isDirty ? t('manuscript.editor.unsaved', { title: scene.title }) : null, discard)
 
   /** Saves the text as it stands, naming the stored manuscript's version it was written over. */
   async function save(expectedVersion: number) {
@@ -223,13 +222,11 @@ export function ManuscriptEditor({
       if (isChangedElsewhere(error, MANUSCRIPT_CHANGED)) {
         setConflict(true)
       } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(
-          'This scene is no longer in the story, so its manuscript could not be saved. It may have been moved to the Trash in another window. Your text is still here: copy it before you leave.',
-        )
+        setFailure(t('manuscript.editor.saveGone'))
       } else if (error instanceof ApiError && error.status === 400) {
         setFailure(error.message)
       } else {
-        setFailure('The manuscript could not be saved. Your text is still here. Try again.')
+        setFailure(t('manuscript.editor.saveFailed'))
       }
     } finally {
       inFlight.current = false
@@ -277,7 +274,7 @@ export function ManuscriptEditor({
       .setContent(manuscriptDoc(next))
       .run()
     focusEditor()
-    setAnnouncement(count === 1 ? 'Linked 1 name.' : `Linked ${count} names.`)
+    setAnnouncement(tn('manuscript.editor.linked', count, { n: count }))
   }
 
   function reread() {
@@ -295,7 +292,7 @@ export function ManuscriptEditor({
     setStored(storedOf(latest))
     setConflict(false)
     setHistoryKey((key) => key + 1)
-    setAnnouncement('Your changes are still unsaved. Save when you’re ready.')
+    setAnnouncement(t('manuscript.editor.keptMine'))
     requestAnimationFrame(() => editor.current?.commands.focus())
   }
 
@@ -310,13 +307,13 @@ export function ManuscriptEditor({
     if (!offer) return
     settle()
     setDraft(offer.content)
-    setAnnouncement('The recovered draft is in the editor. It is not saved yet.')
+    setAnnouncement(t('manuscript.editor.recovered'))
     requestAnimationFrame(() => editor.current?.commands.focus())
   }
 
   function discardDraft() {
     discard()
-    setAnnouncement('The recovered draft was discarded. The saved manuscript is unchanged.')
+    setAnnouncement(t('manuscript.editor.discarded'))
     requestAnimationFrame(() => editor.current?.commands.focus())
   }
 
@@ -356,11 +353,11 @@ export function ManuscriptEditor({
                 aria-expanded={isContextOpen}
                 aria-controls={contextId}
                 onClick={() => setIsContextOpen((open) => !open)}
-                title="Scene details"
+                title={t('manuscript.editor.detailsTitle')}
                 data-testid="manuscript-details-toggle"
               >
                 <ActionIcon icon={Info} />
-                <span className="visually-hidden">Scene details</span>
+                <span className="visually-hidden">{t('manuscript.editor.detailsName')}</span>
               </button>
             ) : null}
             {access.manageHistory && (stored.updatedAt !== null || isHistoryOpen) ? (
@@ -374,9 +371,9 @@ export function ManuscriptEditor({
                 data-testid="manuscript-history-toggle"
               >
                 <ActionIcon icon={History} />
-                <span className="manuscript__toolname">Manuscript history</span>
+                <span className="manuscript__toolname">{t('manuscript.editor.historyName')}</span>
                 <span className="manuscript__toolshort" aria-hidden="true">
-                  History
+                  {t('manuscript.editor.historyShort')}
                 </span>
               </button>
             ) : null}
@@ -398,7 +395,7 @@ export function ManuscriptEditor({
               onSuggest={() => onSuggestScene(scene)}
             />
             <ActionMenu
-              label={`More actions for ${scene.title}`}
+              label={t('manuscript.editor.moreActions', { title: scene.title })}
               triggerTestId="manuscript-scene-actions"
             >
               {access.editContent ? (
@@ -409,7 +406,7 @@ export function ManuscriptEditor({
                   data-testid="manuscript-edit-scene"
                 >
                   <ActionIcon icon={Pencil} />
-                  Edit scene
+                  {t('manuscript.editor.editScene')}
                 </button>
               ) : null}
               {access.suggestChanges && !access.editContent ? (
@@ -420,7 +417,7 @@ export function ManuscriptEditor({
                   data-testid="manuscript-suggest-scene"
                 >
                   <ActionIcon icon={FilePenLine} />
-                  Suggest changes
+                  {t('manuscript.editor.suggest')}
                 </button>
               ) : null}
               {access.editContent && scene.entities.some((entity) => !entity.isTrashed) ? (
@@ -434,7 +431,7 @@ export function ManuscriptEditor({
                   data-testid="manuscript-link-names"
                 >
                   <ActionIcon icon={AtSign} />
-                  Link names from this scene’s Lore
+                  {t('manuscript.editor.linkNames')}
                 </button>
               ) : null}
               <Link
@@ -443,7 +440,7 @@ export function ManuscriptEditor({
                 data-testid="manuscript-show-scene"
               >
                 <ActionIcon icon={LocateFixed} />
-                Show in Scenes
+                {t('manuscript.editor.showInScenes')}
               </Link>
             </ActionMenu>
           </div>
@@ -477,11 +474,11 @@ export function ManuscriptEditor({
           current={stored}
           blocked={
             !isReady
-              ? 'Opening the manuscript…'
+              ? t('manuscript.editor.blocked.opening')
               : offer
-                ? 'Recover or discard the recovered draft first.'
+                ? t('manuscript.editor.blocked.recovered')
                 : isDirty
-                  ? 'Save your changes first: putting back a saved version would replace text that is not saved.'
+                  ? t('manuscript.editor.blocked.unsaved')
                   : null
           }
           onRestored={(restored) => {
@@ -495,15 +492,15 @@ export function ManuscriptEditor({
 
       {load.kind === 'loading' ? (
         <p className="notice" role="status" data-testid="manuscript-loading">
-          Opening the manuscript…
+          {t('manuscript.editor.opening')}
         </p>
       ) : null}
 
       {load.kind === 'missing' ? (
         <EmptyState
           testId="manuscript-missing"
-          title="This scene is not here."
-          hint="It may have been moved to the Trash."
+          title={t('manuscript.editor.missing.title')}
+          hint={t('manuscript.editor.missing.hint')}
         />
       ) : null}
 
@@ -516,7 +513,7 @@ export function ManuscriptEditor({
             onClick={reread}
             data-testid="manuscript-retry"
           >
-            Try again
+            {t('manuscript.editor.retry')}
           </button>
         </div>
       ) : null}
@@ -526,17 +523,17 @@ export function ManuscriptEditor({
           {offer && access.editContent ? (
             <div id={recoveryId} className="manuscript__recovery">
               <RecoveredDraft
-                what="this scene's manuscript"
+                what={t('manuscript.editor.recoveredWhat')}
                 draft={offer}
                 savedUpdatedAt={stored.updatedAt}
                 preview={
                   offer.content === '' ? (
-                    <p className="entry__blank">No text in this draft.</p>
+                    <p className="entry__blank">{t('manuscript.editor.draftEmpty')}</p>
                   ) : (
                     <div
                       className="recovery__prose prose"
                       role="region"
-                      aria-label="Text of the recovered draft"
+                      aria-label={t('manuscript.editor.draftText')}
                       tabIndex={0}
                     >
                       {plainMentions(offer.content)}
@@ -553,12 +550,12 @@ export function ManuscriptEditor({
           {conflict ? (
             <div className="manuscript__conflict">
               <EditConflict
-                what="manuscript"
+                what={t('manuscript.editor.conflictWhat')}
                 read={() => getSceneManuscript(universeId, storyId, sceneId)}
                 renderLatest={(latest) => (
-                  <LatestText label="Latest saved manuscript">
+                  <LatestText label={t('manuscript.editor.latestLabel')}>
                     {latest.content === '' ? (
-                      <p className="entry__blank">No text in the latest version.</p>
+                      <p className="entry__blank">{t('manuscript.editor.latestEmpty')}</p>
                     ) : (
                       <div className="recovery__prose prose" dir="auto">
                         {plainMentions(latest.content)}
@@ -587,7 +584,7 @@ export function ManuscriptEditor({
             <div
               className="segmented manuscript__mode"
               role="group"
-              aria-label="Show the manuscript"
+              aria-label={t('manuscript.editor.mode')}
             >
               <button
                 className="segmented__option"
@@ -596,7 +593,7 @@ export function ManuscriptEditor({
                 onClick={() => setIsReading(false)}
                 data-testid="manuscript-mode-write"
               >
-                Write
+                {t('manuscript.editor.modeWrite')}
               </button>
               <button
                 className="segmented__option"
@@ -605,7 +602,7 @@ export function ManuscriptEditor({
                 onClick={() => setIsReading(true)}
                 data-testid="manuscript-mode-read"
               >
-                Read
+                {t('manuscript.editor.modeRead')}
               </button>
             </div>
           ) : null}
@@ -625,8 +622,8 @@ export function ManuscriptEditor({
               value={draft}
               onChange={setDraft}
               readOnly={isHeld}
-              label={`Manuscript of “${scene.title}”`}
-              placeholder="Write the scene. Type @ to mention Lore."
+              label={t('manuscript.editor.writeLabel', { title: scene.title })}
+              placeholder={t('manuscript.editor.placeholder')}
               describedBy={describedBy}
               invalid={isTooLong}
               onAnnounce={setAnnouncement}
@@ -640,12 +637,12 @@ export function ManuscriptEditor({
             <div
               className="manuscript__text manuscript__read prose"
               role="region"
-              aria-label={`Manuscript of “${scene.title}”`}
+              aria-label={t('manuscript.editor.readLabel', { title: scene.title })}
               tabIndex={0}
               data-testid="manuscript-read"
             >
               {draft === '' ? (
-                <p className="entry__blank">Nothing written yet.</p>
+                <p className="entry__blank">{t('manuscript.editor.nothingYet')}</p>
               ) : (
                 <MentionProse universeId={universeId} text={draft} />
               )}
@@ -660,8 +657,10 @@ export function ManuscriptEditor({
                   id={tooLongId}
                   data-testid="manuscript-too-long"
                 >
-                  Too long to save: {count(draft.length)} of {count(MANUSCRIPT_MAX_LENGTH)}{' '}
-                  characters. Split it into more scenes.
+                  {t('manuscript.editor.tooLong', {
+                    used: count(draft.length),
+                    max: count(MANUSCRIPT_MAX_LENGTH),
+                  })}
                 </p>
               ) : null}
               {failed && isDirty ? (
@@ -670,17 +669,21 @@ export function ManuscriptEditor({
                   role="status"
                   data-testid="manuscript-recovery-warning"
                 >
-                  This device could not keep a recovery copy of these changes. Save to keep them.
+                  {t('manuscript.editor.noRecoveryCopy')}
                 </p>
               ) : null}
               {publication ? <div className="manuscript__publication">{publication}</div> : null}
               <SaveAction
-                label="Save changes"
+                label={t('manuscript.editor.save')}
                 isDirty={isDirty}
                 isSaving={isSaving}
                 isBlocked={isTooLong}
                 saves={saves}
-                restingStatus={stored.updatedAt === null ? 'Nothing saved yet' : 'Saved'}
+                restingStatus={
+                  stored.updatedAt === null
+                    ? t('manuscript.editor.nothingSaved')
+                    : t('manuscript.editor.savedStatus')
+                }
                 statusId={statusId}
                 statusTestId="manuscript-status"
                 testId="manuscript-save"

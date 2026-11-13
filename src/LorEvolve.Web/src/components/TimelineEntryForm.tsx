@@ -7,6 +7,7 @@ import { blockingFindingsOf } from '../canon/blocked'
 import type { CanonBlockingFinding } from '../canon/types'
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
+import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { CANON_LABELS, CANON_ORDER, CanonStatus, type CanonStatusValue } from '../lore/types'
@@ -113,7 +114,7 @@ function draftFrom(entry: TimelineEntry): MomentDraft {
     // instead, so the author can see why it is not clickable anywhere else.
     entities: entry.entities.map((link) => ({
       id: link.entityId,
-      name: link.isTrashed ? `${link.name} (in Trash)` : link.name,
+      name: link.isTrashed ? t('time.momentForm.entityInTrash', { name: link.name }) : link.name,
     })),
     eventKindId: details?.eventKind?.id ?? '',
     methodId: details?.method?.id ?? '',
@@ -121,7 +122,7 @@ function draftFrom(entry: TimelineEntry): MomentDraft {
       ? {
           id: details.participant.entityId,
           name: details.participant.isTrashed
-            ? `${details.participant.name} (in Trash)`
+            ? t('time.momentForm.participantInTrash', { name: details.participant.name })
             : details.participant.name,
         }
       : null,
@@ -213,6 +214,7 @@ export function TimelineEntryForm({
   onClose,
   onSaved,
 }: TimelineEntryFormProps) {
+  const { tx } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the moment as stored, or the blank form - which the draft is measured against.
@@ -241,8 +243,8 @@ export function TimelineEntryForm({
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     entry
-      ? `“${entry.title}” has unsaved changes. Leave without saving them?`
-      : 'This new moment has not been added. Leave without saving it?',
+      ? t('time.momentForm.leaveGuardEdit', { title: entry.title })
+      : t('time.momentForm.leaveGuardNew'),
     onClose,
   )
 
@@ -314,10 +316,10 @@ export function TimelineEntryForm({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be saved.',
+            : t('time.momentForm.needChange'),
         )
       } else {
-        setMessage('That moment could not be saved.')
+        setMessage(t('time.momentForm.saveFailed'))
       }
     } finally {
       setIsSaving(false)
@@ -353,7 +355,11 @@ export function TimelineEntryForm({
           day: `moment-${keys.day}`,
         }}
         eraLabel={
-          prefix === 'start' ? (isRange ? 'Starts in period' : 'Date period') : 'Ends in period'
+          prefix === 'start'
+            ? isRange
+              ? t('time.momentForm.startsInPeriod')
+              : t('time.momentForm.datePeriod')
+            : t('time.momentForm.endsInPeriod')
         }
         yearLabel={yearLabel}
         value={{
@@ -385,9 +391,9 @@ export function TimelineEntryForm({
       >
         <header className="drawer__head">
           {/* A new moment's title already says so; the eyebrow names only what is being edited. */}
-          {entry ? <p className="drawer__eyebrow">Editing a moment</p> : null}
+          {entry ? <p className="drawer__eyebrow">{t('time.momentForm.eyebrow')}</p> : null}
           <h2 className="drawer__title" id="moment-heading">
-            {entry ? entry.title || 'Untitled moment' : 'New moment'}
+            {entry ? entry.title || t('time.momentForm.untitled') : t('time.momentForm.newMoment')}
           </h2>
         </header>
 
@@ -404,7 +410,7 @@ export function TimelineEntryForm({
 
           <div className="field">
             <label className="field__label" htmlFor="moment-title">
-              Title
+              {t('time.momentForm.title')}
             </label>
             <input
               id="moment-title"
@@ -412,7 +418,7 @@ export function TimelineEntryForm({
               ref={title}
               type="text"
               dir="auto"
-              placeholder="Insert a title"
+              placeholder={t('time.momentForm.titlePlaceholder')}
               value={draft.title}
               onChange={(event) => edit({ title: event.target.value })}
               aria-invalid={fieldErrors.title ? true : undefined}
@@ -423,13 +429,13 @@ export function TimelineEntryForm({
 
           <div className="field">
             <label className="field__label" htmlFor="moment-description">
-              What happened
+              {t('time.momentForm.description')}
             </label>
             <textarea
               id="moment-description"
               className="field__input field__input--area"
               rows={3}
-              placeholder="A sentence or two, for the reader who has forgotten."
+              placeholder={t('time.momentForm.descriptionPlaceholder')}
               value={draft.description}
               onChange={(event) => edit({ description: event.target.value })}
               data-testid="moment-description"
@@ -440,8 +446,8 @@ export function TimelineEntryForm({
           </div>
 
           <div className="field">
-            <span className="field__label">Status</span>
-            <div className="canon" role="group" aria-label="Moment status">
+            <span className="field__label">{t('time.momentForm.status')}</span>
+            <div className="canon" role="group" aria-label={t('time.momentForm.statusGroup')}>
               {CANON_ORDER.map((option) => (
                 <button
                   key={option}
@@ -458,8 +464,8 @@ export function TimelineEntryForm({
           </div>
 
           <div className="field">
-            <span className="field__label">When</span>
-            <div className="segmented" role="group" aria-label="How the date is known">
+            <span className="field__label">{t('time.momentForm.when')}</span>
+            <div className="segmented" role="group" aria-label={t('time.momentForm.kindGroup')}>
               {DATE_KIND_ORDER.map((option) => (
                 <button
                   key={option}
@@ -479,15 +485,19 @@ export function TimelineEntryForm({
 
           {isDated ? (
             <>
-              {point('start', isRange ? 'Starts in year' : 'Year', {
-                era: fieldErrors.starteraid,
-                year: fieldErrors.startyear,
-                month: fieldErrors.startmonth,
-                day: fieldErrors.startday,
-              })}
+              {point(
+                'start',
+                isRange ? t('time.momentForm.startsInYear') : t('time.momentForm.year'),
+                {
+                  era: fieldErrors.starteraid,
+                  year: fieldErrors.startyear,
+                  month: fieldErrors.startmonth,
+                  day: fieldErrors.startday,
+                },
+              )}
 
               {isRange
-                ? point('end', 'Ends in year', {
+                ? point('end', t('time.momentForm.endsInYear'), {
                     era: fieldErrors.enderaid,
                     year: fieldErrors.endyear,
                     month: fieldErrors.endmonth,
@@ -500,24 +510,20 @@ export function TimelineEntryForm({
           {reckonsInEras ? (
             draft.eraLabel ? (
               <p className="field__hint" data-testid="moment-old-label">
-                Labelled &ldquo;<bdi>{draft.eraLabel}</bdi>&rdquo; before this universe had date
-                periods. Choose its period above; the old label is dropped when you save.
+                {tx('time.momentForm.oldLabel', { label: <bdi>{draft.eraLabel}</bdi> })}
               </p>
             ) : null
           ) : (
             <div className="field">
               <label className="field__label" htmlFor="moment-era">
-                Year label
+                {t('time.momentForm.yearLabel')}
               </label>
-              <p className="field__hint">
-                Optional text shown beside the year: AC, Before the Flood. LorEvolve does not order
-                by it. To order dates by named periods, add date periods in Chronology.
-              </p>
+              <p className="field__hint">{t('time.momentForm.yearLabelHint')}</p>
               <input
                 id="moment-era"
                 className="field__input"
                 type="text"
-                placeholder="Optional"
+                placeholder={t('time.momentForm.optional')}
                 value={draft.eraLabel}
                 onChange={(event) => edit({ eraLabel: event.target.value })}
                 aria-invalid={fieldErrors.eralabel ? true : undefined}
@@ -528,8 +534,8 @@ export function TimelineEntryForm({
           )}
 
           <EntityMultiPicker
-            label="Who and what took part"
-            hint="Anything in this universe: a character, a place, an object."
+            label={t('time.momentForm.entities')}
+            hint={t('time.momentForm.entitiesHint')}
             universeId={universeId}
             value={draft.entities}
             onChange={(entities) => edit({ entities })}
@@ -550,29 +556,32 @@ export function TimelineEntryForm({
             data-testid="moment-validation"
           >
             <summary data-testid="moment-validation-toggle">
-              Validation details
+              {t('time.momentForm.details')}
               {detailCount > 0 ? (
-                <span className="moment__detailscount"> · {detailCount} set</span>
+                <span className="moment__detailscount">
+                  {' '}
+                  {t('time.momentForm.detailsSet', { n: detailCount })}
+                </span>
               ) : (
-                <span className="moment__detailscount"> · optional</span>
+                <span className="moment__detailscount">
+                  {' '}
+                  {t('time.momentForm.detailsOptional')}
+                </span>
               )}
             </summary>
 
             <div className="moment__detailsbody">
-              <p className="field__hint">
-                Only World Rules with a timeline check read these, and only these: nothing is taken
-                from the title, the description or who took part. Most moments need none.
-              </p>
+              <p className="field__hint">{t('time.momentForm.detailsHint')}</p>
 
               {termsFailed ? (
                 <p className="form__message" role="alert">
-                  The event kinds and methods could not be read.{' '}
+                  {t('time.momentForm.termsFailed')}{' '}
                   <button
                     className="button button--secondary button--sm"
                     type="button"
                     onClick={reloadTerms}
                   >
-                    Try again
+                    {t('time.momentForm.tryAgain')}
                   </button>
                 </p>
               ) : null}
@@ -580,7 +589,7 @@ export function TimelineEntryForm({
               <ValidationTermSelect
                 universeId={universeId}
                 kind={ValidationTermKind.EventKind}
-                label="Event kind"
+                label={t('time.momentForm.eventKind')}
                 terms={terms}
                 value={draft.eventKindId}
                 selectedName={
@@ -588,7 +597,7 @@ export function TimelineEntryForm({
                     ? entry.validation.eventKind.name
                     : null
                 }
-                emptyLabel="None"
+                emptyLabel={t('time.momentForm.eventKindNone')}
                 onChange={(eventKindId) => edit({ eventKindId })}
                 onCreated={addTerm}
                 error={fieldErrors[DETAIL_ERROR_KEYS.eventKind]}
@@ -598,7 +607,7 @@ export function TimelineEntryForm({
               <ValidationTermSelect
                 universeId={universeId}
                 kind={ValidationTermKind.Method}
-                label="Method"
+                label={t('time.momentForm.method')}
                 terms={terms}
                 value={draft.methodId}
                 selectedName={
@@ -606,7 +615,7 @@ export function TimelineEntryForm({
                     ? entry.validation.method.name
                     : null
                 }
-                emptyLabel="None"
+                emptyLabel={t('time.momentForm.methodNone')}
                 onChange={(methodId) => edit({ methodId })}
                 onCreated={addTerm}
                 error={fieldErrors[DETAIL_ERROR_KEYS.method]}
@@ -614,11 +623,11 @@ export function TimelineEntryForm({
               />
 
               <EntityPicker
-                label="Participant"
+                label={t('time.momentForm.participant')}
                 universeId={universeId}
                 value={draft.participant}
                 onChange={(participant) => edit({ participant })}
-                placeholder="Whose event this is"
+                placeholder={t('time.momentForm.participantPlaceholder')}
                 error={fieldErrors[DETAIL_ERROR_KEYS.participant]}
               />
             </div>
@@ -627,7 +636,11 @@ export function TimelineEntryForm({
 
         <footer className="drawer__actions">
           <button className="button" type="submit" disabled={isSaving} data-testid="save-moment">
-            {isSaving ? 'Saving' : entry ? 'Save moment' : 'Create moment'}
+            {isSaving
+              ? t('time.momentForm.saving')
+              : entry
+                ? t('time.momentForm.save')
+                : t('time.momentForm.create')}
           </button>
           <button
             className="button button--secondary"
@@ -635,7 +648,7 @@ export function TimelineEntryForm({
             onClick={close}
             data-testid="cancel-moment"
           >
-            Cancel
+            {t('time.momentForm.cancel')}
           </button>
         </footer>
       </form>
@@ -660,6 +673,7 @@ function StoryLinks({
   onChange: (stories: TimelineStoryLink[]) => void
   error?: string
 }) {
+  useI18n()
   const selectId = useId()
   const hintId = useId()
   const errorId = useId()
@@ -684,10 +698,10 @@ function StoryLinks({
   return (
     <div className="field storylinks" data-testid="moment-stories">
       <label className="field__label" htmlFor={selectId}>
-        Stories
+        {t('time.momentForm.stories')}
       </label>
       <p className="field__hint" id={hintId}>
-        Link this moment to the stories it matters to. It shows up on their timelines too.
+        {t('time.momentForm.storiesHint')}
       </p>
 
       {value.length > 0 ? (
@@ -695,11 +709,13 @@ function StoryLinks({
           {value.map((story) => (
             <li className="token" key={story.storyId} data-testid="moment-story">
               <bdi>{story.title}</bdi>
-              {story.isTrashed ? <span className="token__note"> (in Trash)</span> : null}
+              {story.isTrashed ? (
+                <span className="token__note"> {t('time.momentForm.storyInTrash')}</span>
+              ) : null}
               <button
                 type="button"
                 className="token__remove"
-                aria-label={`Unlink ${story.title}`}
+                aria-label={t('time.momentForm.unlink', { title: story.title })}
                 onClick={() => onChange(value.filter((one) => one.storyId !== story.storyId))}
                 data-testid={`moment-story-remove-${story.title}`}
               >
@@ -726,14 +742,14 @@ function StoryLinks({
       >
         <option value="">
           {failed
-            ? 'Stories could not be read'
+            ? t('time.momentForm.storiesFailed')
             : stories === null
-              ? 'Reading stories…'
+              ? t('time.momentForm.readingStories')
               : offered.length === 0
                 ? stories.length === 0
-                  ? 'No stories yet'
-                  : 'Every story is linked'
-                : 'Link a story…'}
+                  ? t('time.momentForm.noStories')
+                  : t('time.momentForm.allLinked')
+                : t('time.momentForm.linkStory')}
         </option>
         {offered.map((story) => (
           <option key={story.id} value={story.id}>

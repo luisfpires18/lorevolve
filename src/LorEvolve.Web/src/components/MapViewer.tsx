@@ -10,6 +10,7 @@ import {
 import { Maximize, ZoomIn, ZoomOut } from 'lucide-react'
 import type { MapPin } from '../maps/types'
 import { clamp, usePanZoom, ZOOM_STEP, type StageSize, type View } from '../lib/usePanZoom'
+import { useI18n } from '../i18n'
 
 /** A marker that is not a pin - a calibration point (#53) - drawn the same way, at a fraction of the picture. */
 export interface MapMarker {
@@ -76,6 +77,7 @@ export function MapViewer({
   markers = [],
   overlay,
 }: MapViewerProps) {
+  const { t } = useI18n()
   const stage = useRef<HTMLDivElement>(null)
   const hintId = useId()
   const [dragging, setDragging] = useState<{ id: string; x: number; y: number } | null>(null)
@@ -232,7 +234,7 @@ export function MapViewer({
         className="mapviewer__stage"
         ref={stage}
         role="group"
-        aria-label={`Map: ${name}`}
+        aria-label={t('places.viewer.stage', { name })}
         aria-describedby={hintId}
         tabIndex={0}
         data-testid="map-stage"
@@ -271,7 +273,9 @@ export function MapViewer({
                 type="button"
                 style={{ left: `${at.x * 100}%`, top: `${at.y * 100}%` }}
                 aria-label={
-                  pin.placedOnCurrentImage ? pin.title : `${pin.title} (position awaiting review)`
+                  pin.placedOnCurrentImage
+                    ? pin.title
+                    : t('places.viewer.pinReview', { title: pin.title })
                 }
                 aria-pressed={selected}
                 data-testid="map-pin"
@@ -296,12 +300,12 @@ export function MapViewer({
         </div>
       </div>
 
-      <div className="mapviewer__controls" role="group" aria-label="Zoom">
+      <div className="mapviewer__controls" role="group" aria-label={t('places.viewer.zoom')}>
         <button
           className="iconbutton"
           type="button"
-          aria-label="Zoom in"
-          title="Zoom in"
+          aria-label={t('places.viewer.zoomIn')}
+          title={t('places.viewer.zoomIn')}
           onClick={() => zoomAbout(ZOOM_STEP, size.width / 2, size.height / 2)}
           data-testid="map-zoom-in"
         >
@@ -310,8 +314,8 @@ export function MapViewer({
         <button
           className="iconbutton"
           type="button"
-          aria-label="Zoom out"
-          title="Zoom out"
+          aria-label={t('places.viewer.zoomOut')}
+          title={t('places.viewer.zoomOut')}
           onClick={() => zoomAbout(1 / ZOOM_STEP, size.width / 2, size.height / 2)}
           data-testid="map-zoom-out"
         >
@@ -320,8 +324,8 @@ export function MapViewer({
         <button
           className="iconbutton"
           type="button"
-          aria-label="Fit the whole map"
-          title="Fit the whole map"
+          aria-label={t('places.viewer.fit')}
+          title={t('places.viewer.fit')}
           onClick={() => setView(fit(size.width, size.height))}
           data-testid="map-fit"
         >
@@ -330,11 +334,7 @@ export function MapViewer({
       </div>
 
       <p className="visually-hidden" id={hintId}>
-        Drag to pan and scroll to zoom. With the map focused, the arrow keys pan, plus and minus
-        zoom, and 0 fits the whole map. Tab reaches each pin; Enter selects it.
-        {placing
-          ? ' Placing a pin: press the map where it goes, or press Enter to place it at the centre.'
-          : ''}
+        {placing ? t('places.viewer.hintPlacing') : t('places.viewer.hint')}
       </p>
     </div>
   )

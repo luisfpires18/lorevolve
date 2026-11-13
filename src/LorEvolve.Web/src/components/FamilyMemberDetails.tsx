@@ -7,6 +7,7 @@ import { useDrawerGuard } from '../lib/drawerGuard'
 import { linkSentence, type FamilyReading } from '../familyTree/reading'
 import { POSITION_LABELS, type FamilyTree } from '../familyTree/types'
 import { CANON_LABELS, CanonStatus } from '../lore/types'
+import { useI18n } from '../i18n'
 
 /** Where the tree stops drawing lines and the details become a sheet: the tree's own phone width. */
 const SHEET_QUERY = '(max-width: 640px)'
@@ -48,6 +49,7 @@ export function FamilyMemberDetails({
   onClose,
   onFocus,
 }: Props) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
   const headingId = useId()
@@ -154,8 +156,8 @@ export function FamilyMemberDetails({
             className="iconbutton familydetails__close"
             type="button"
             onClick={close}
-            aria-label="Close"
-            title="Close"
+            aria-label={t('places.memberDetails.close')}
+            title={t('places.memberDetails.close')}
             data-testid="family-details-close"
           >
             <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -165,21 +167,25 @@ export function FamilyMemberDetails({
         <div className="familydetails__body">
           <section aria-labelledby={`${headingId}-place`}>
             <h3 className="familydetails__heading" id={`${headingId}-place`}>
-              In this family
+              {t('places.memberDetails.inFamily')}
             </h3>
             <ul className="familydetails__list" data-testid="family-details-place">
-              {isFocal ? <li>This page shows this entry&rsquo;s family.</li> : null}
+              {isFocal ? <li>{t('places.memberDetails.focal')}</li> : null}
               {member?.relations.flatMap((relation) =>
                 relation.paths.map((path) => (
                   <li key={`${relation.position}-${path.linkIds.join('-')}`}>
                     <span className="familydetails__position">
-                      {POSITION_LABELS[relation.position].one}:
+                      {t('places.memberDetails.position', {
+                        position: POSITION_LABELS[relation.position].one,
+                      })}
                     </span>{' '}
                     <span dir="auto">{path.text}</span>
                     {path.canonStatus === CanonStatus.Canon ? null : (
                       <span className="familydetails__draft">
                         {' '}
-                        ({CANON_LABELS[path.canonStatus]} connection)
+                        {t('places.memberDetails.pathDraft', {
+                          status: CANON_LABELS[path.canonStatus],
+                        })}
                       </span>
                     )}
                   </li>
@@ -191,7 +197,9 @@ export function FamilyMemberDetails({
                   {link.canonStatus === CanonStatus.Canon ? null : (
                     <span className="familydetails__draft">
                       {' '}
-                      ({CANON_LABELS[link.canonStatus]} connection)
+                      {t('places.memberDetails.linkDraft', {
+                        status: CANON_LABELS[link.canonStatus],
+                      })}
                     </span>
                   )}
                 </li>
@@ -201,10 +209,10 @@ export function FamilyMemberDetails({
 
           <section aria-labelledby={`${headingId}-other`}>
             <h3 className="familydetails__heading" id={`${headingId}-other`}>
-              Other family
+              {t('places.memberDetails.other')}
             </h3>
             {authored.length === 0 ? (
-              <p className="familydetails__note">None recorded.</p>
+              <p className="familydetails__note">{t('places.memberDetails.noneRecorded')}</p>
             ) : (
               <>
                 <ul className="familydetails__list" data-testid="family-details-other">
@@ -221,17 +229,16 @@ export function FamilyMemberDetails({
                         {connection.canonStatus === CanonStatus.Canon ? null : (
                           <span className="familydetails__draft">
                             {' '}
-                            ({CANON_LABELS[connection.canonStatus]} connection)
+                            {t('places.memberDetails.connectionDraft', {
+                              status: CANON_LABELS[connection.canonStatus],
+                            })}
                           </span>
                         )}
                       </li>
                     )
                   })}
                 </ul>
-                <p className="familydetails__note">
-                  Recorded as you wrote them. These links are drawn dotted while this person is
-                  pointed at, place nobody in a generation and imply no other relative.
-                </p>
+                <p className="familydetails__note">{t('places.memberDetails.otherNote')}</p>
               </>
             )}
           </section>
@@ -239,7 +246,7 @@ export function FamilyMemberDetails({
 
         <footer className="familydetails__actions">
           <Link className="button button--secondary" to={entryPath(node.entityId)}>
-            Open entry
+            {t('places.memberDetails.openEntry')}
           </Link>
           {isFocal ? null : (
             <button
@@ -250,7 +257,7 @@ export function FamilyMemberDetails({
                 onFocus(node.entityId)
               }}
             >
-              Show this family
+              {t('places.memberDetails.showFamily')}
             </button>
           )}
         </footer>

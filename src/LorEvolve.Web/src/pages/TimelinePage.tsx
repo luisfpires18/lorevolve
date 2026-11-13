@@ -9,6 +9,7 @@ import { EmptyState } from '../components/EmptyState'
 import { EntityPicker, type EntityChoice } from '../components/EntityPicker'
 import { TimelineEntryForm } from '../components/TimelineEntryForm'
 import { findEra, formatChronologyYear, formatSignedYear } from '../chronology/format'
+import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { CANON_LABELS, CANON_ORDER, FieldSemantic, type CanonStatusValue } from '../lore/types'
 import { listStories } from '../stories/api'
@@ -37,17 +38,27 @@ type LoadState =
 type FormState = { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; entry: TimelineEntry }
 
 /** The Source filter's values in the address: words, never the API's numbers. */
-const SOURCES: { value: string; source: TimelineSourceValue; label: string }[] = [
-  { value: 'moments', source: TimelineSource.Event, label: 'Moments' },
-  { value: 'scenes', source: TimelineSource.Scene, label: 'Story scenes' },
-  { value: 'lore', source: TimelineSource.LoreFact, label: 'Births and deaths' },
+const SOURCES: { value: string; source: TimelineSourceValue; label: () => string }[] = [
+  {
+    value: 'moments',
+    source: TimelineSource.Event,
+    label: () => t('time.timeline.sources.moments'),
+  },
+  { value: 'scenes', source: TimelineSource.Scene, label: () => t('time.timeline.sources.scenes') },
+  { value: 'lore', source: TimelineSource.LoreFact, label: () => t('time.timeline.sources.lore') },
 ]
 
 /** What a row says it is, in words, so its kind never rests on a colour or a shape. */
 const SOURCE_LABELS: Record<TimelineSourceValue, string> = {
-  [TimelineSource.Event]: 'Moment',
-  [TimelineSource.Scene]: 'Scene',
-  [TimelineSource.LoreFact]: 'Lore',
+  get [TimelineSource.Event]() {
+    return t('time.timeline.sourceLabels.moment')
+  },
+  get [TimelineSource.Scene]() {
+    return t('time.timeline.sourceLabels.scene')
+  },
+  get [TimelineSource.LoreFact]() {
+    return t('time.timeline.sourceLabels.lore')
+  },
 }
 
 /**
@@ -60,6 +71,7 @@ const SOURCE_LABELS: Record<TimelineSourceValue, string> = {
  * entry ("Taking part") is the one choice kept on the page, as it always was.
  */
 export default function TimelinePage() {
+  const { tx } = useI18n()
   const access = useUniverseAccess()
   const { universe, chronology } = useOutletContext<WorkspaceContext>()
 
@@ -160,8 +172,8 @@ export default function TimelinePage() {
         if (controller.signal.aborted) return
         setMessage(
           error instanceof ApiError && error.status === 404
-            ? 'That moment is no longer on this timeline.'
-            : 'That moment could not be opened.',
+            ? t('time.timeline.momentGone')
+            : t('time.timeline.momentUnopened'),
         )
         forgetMoment()
       })
@@ -196,7 +208,7 @@ export default function TimelinePage() {
         if (controller.signal.aborted) return
         setState({
           kind: 'error',
-          message: error instanceof Error ? error.message : 'Could not read this chronology.',
+          message: error instanceof Error ? error.message : t('time.timeline.readFailed'),
         })
       })
 
@@ -220,16 +232,12 @@ export default function TimelinePage() {
   async function remove(entry: TimelineEntry) {
     setMessage(null)
     const removed = await confirmAction({
-      title: (
-        <>
-          Move “<bdi>{entry.title}</bdi>” to the Trash?
-        </>
-      ),
-      message: 'The entries it names stay, and you can restore it from the Trash.',
-      confirmLabel: 'Move to Trash',
-      busyLabel: 'Moving…',
+      title: tx('time.timeline.remove.title', { title: <bdi>{entry.title}</bdi> }),
+      message: t('time.timeline.remove.message'),
+      confirmLabel: t('time.timeline.remove.confirm'),
+      busyLabel: t('time.timeline.remove.busy'),
       variant: 'warning',
-      failure: 'That moment could not be moved to the Trash.',
+      failure: t('time.timeline.remove.failure'),
       action: () => deleteTimelineEntry(universe.id, entry.id),
     })
     if (!removed) return
@@ -301,7 +309,7 @@ export default function TimelinePage() {
   function momentMenu(entry: TimelineEntry) {
     return (
       <ActionMenu
-        label={`More actions for ${entry.title}`}
+        label={t('time.timeline.moreActions', { title: entry.title })}
         triggerTestId={`moment-actions-${entry.title}`}
       >
         <button
@@ -311,7 +319,7 @@ export default function TimelinePage() {
           data-testid={`menu-edit-moment-${entry.title}`}
         >
           <ActionIcon icon={Pencil} />
-          Edit moment
+          {t('time.timeline.editMoment')}
         </button>
         <hr className="actionmenu__divider" />
         <button
@@ -321,7 +329,7 @@ export default function TimelinePage() {
           data-testid={`delete-moment-${entry.title}`}
         >
           <ActionIcon icon={Trash2} />
-          Delete moment
+          {t('time.timeline.deleteMoment')}
         </button>
       </ActionMenu>
     )
@@ -367,7 +375,9 @@ export default function TimelinePage() {
                       <span className="lorechip__name">
                         <bdi>{link.name}</bdi>
                       </span>{' '}
-                      <span className="lorechip__note">(in Trash)</span>
+                      <span className="lorechip__note">
+                        {t('time.timeline.participantInTrash')}
+                      </span>
                     </span>
                   ) : (
                     <Link
@@ -390,13 +400,13 @@ export default function TimelinePage() {
 
         {entry.stories.length > 0 ? (
           <p className="moment__context" data-testid={`moment-stories-${entry.title}`}>
-            {entry.stories.length === 1 ? 'Story: ' : 'Stories: '}
+            {entry.stories.length === 1 ? t('time.timeline.story') : t('time.timeline.stories')}
             {entry.stories.map((linked, index) => (
               <span key={linked.storyId}>
                 {index > 0 ? ', ' : null}
                 {linked.isTrashed ? (
                   <>
-                    <bdi>{linked.title}</bdi> (in Trash)
+                    <bdi>{linked.title}</bdi> {t('time.timeline.storyInTrash')}
                   </>
                 ) : (
                   <Link to={storyPath(linked.storyId)}>
@@ -410,20 +420,24 @@ export default function TimelinePage() {
 
         {entry.validation ? (
           <p className="moment__validation" data-testid={`moment-validation-${entry.title}`}>
-            <span className="moment__validationlabel">Validation details</span>
+            <span className="moment__validationlabel">{t('time.timeline.validation')}</span>
             <span>
               {entry.validation.eventKind ? <bdi>{entry.validation.eventKind.name}</bdi> : null}
               {entry.validation.method ? (
                 <>
-                  {entry.validation.eventKind ? ' · ' : null}by{' '}
-                  <bdi>{entry.validation.method.name}</bdi>
+                  {entry.validation.eventKind ? ' · ' : null}
+                  {tx('time.timeline.by', { name: <bdi>{entry.validation.method.name}</bdi> })}
                 </>
               ) : null}
               {entry.validation.participant ? (
                 <>
-                  {entry.validation.eventKind || entry.validation.method ? ' · ' : null}for{' '}
-                  <bdi>{entry.validation.participant.name}</bdi>
-                  {entry.validation.participant.isTrashed ? ' (in Trash)' : null}
+                  {entry.validation.eventKind || entry.validation.method ? ' · ' : null}
+                  {tx('time.timeline.for', {
+                    name: <bdi>{entry.validation.participant.name}</bdi>,
+                  })}
+                  {entry.validation.participant.isTrashed ? (
+                    <> {t('time.timeline.participantTrashed')}</>
+                  ) : null}
                 </>
               ) : null}
             </span>
@@ -442,24 +456,26 @@ export default function TimelinePage() {
           <bdi>{item.title}</bdi>
         </h3>
         <p className="moment__context">
-          In <bdi>{scene.storyTitle}</bdi> ·{' '}
-          {/* A chapter by its title: its number restarts in each arc, so alone it would not say which one (ADR 0070). */}
-          {scene.chapterTitle !== null ? <bdi>{scene.chapterTitle}</bdi> : UNCHAPTERED}
+          {tx('time.timeline.sceneIn', {
+            story: <bdi>{scene.storyTitle}</bdi>,
+            // A chapter by its title: its number restarts in each arc, so alone it would not say which one (ADR 0070).
+            chapter: scene.chapterTitle !== null ? <bdi>{scene.chapterTitle}</bdi> : UNCHAPTERED,
+          })}
         </p>
         <p className="moment__links">
           <Link
             to={`${base}#scene-${item.sourceId}`}
-            aria-label={`Open scene “${item.title}”`}
+            aria-label={t('time.timeline.openSceneLabel', { title: item.title })}
             data-testid="timeline-open-scene"
           >
-            Open scene
+            {t('time.timeline.openScene')}
           </Link>
           <Link
             to={`${base}/manuscript/${item.sourceId}`}
-            aria-label={`Manuscript of “${item.title}”`}
+            aria-label={t('time.timeline.manuscriptLabel', { title: item.title })}
             data-testid="timeline-open-manuscript"
           >
-            Manuscript
+            {t('time.timeline.manuscript')}
           </Link>
         </p>
       </>
@@ -474,7 +490,9 @@ export default function TimelinePage() {
     return (
       <>
         <h3 className="moment__title">
-          <bdi>{item.title}</bdi> {fact.fact === FieldSemantic.DeathYear ? 'dies.' : 'is born.'}
+          {tx(fact.fact === FieldSemantic.DeathYear ? 'time.timeline.dies' : 'time.timeline.born', {
+            title: <bdi>{item.title}</bdi>,
+          })}
         </h3>
         <p className="moment__context" style={accent}>
           <TypeIcon iconKey={fact.entityTypeIcon} className="lorechip__icon" />{' '}
@@ -483,10 +501,10 @@ export default function TimelinePage() {
         <p className="moment__links">
           <Link
             to={`/app/universes/${universe.id}/lore/${fact.entityId}`}
-            aria-label={`Open ${item.title}`}
+            aria-label={t('time.timeline.openEntryLabel', { title: item.title })}
             data-testid="timeline-open-lore"
           >
-            Open entry
+            {t('time.timeline.openEntry')}
           </Link>
         </p>
       </>
@@ -494,21 +512,21 @@ export default function TimelinePage() {
   }
 
   const emptyTitle = storyId
-    ? 'Nothing in this story has a date yet.'
+    ? t('time.timeline.empty.storyTitle')
     : isFiltered
-      ? 'Nothing matches that.'
-      : 'Nothing has happened here yet.'
+      ? t('time.timeline.empty.filteredTitle')
+      : t('time.timeline.empty.title')
   const emptyHint = storyId
-    ? 'Give its scenes a date, or link a moment to this story, and they show up here.'
+    ? t('time.timeline.empty.storyHint')
     : isFiltered
-      ? 'Clear a filter or the search.'
-      : 'Dated scenes and birth and death years show up here on their own. Add a moment for anything else.'
+      ? t('time.timeline.empty.filteredHint')
+      : t('time.timeline.empty.hint')
 
   return (
     <article className="chron">
       <PageHeader
-        title="Timeline"
-        lede="Everything that happens in this world, in the order it happens."
+        title={t('time.timeline.title')}
+        lede={t('time.timeline.lede')}
         actions={
           access.editContent ? (
             <button
@@ -518,7 +536,7 @@ export default function TimelinePage() {
               data-testid="new-moment"
             >
               <ActionIcon icon={Plus} />
-              New moment
+              {t('time.timeline.newMoment')}
             </button>
           ) : undefined
         }
@@ -527,7 +545,7 @@ export default function TimelinePage() {
       <div className="controls chron__controls">
         <div className="controls__search">
           <label className="field__label" htmlFor="chron-search">
-            Search
+            {t('time.timeline.search')}
           </label>
           <input
             id="chron-search"
@@ -535,7 +553,7 @@ export default function TimelinePage() {
             type="search"
             name="q"
             autoComplete="off"
-            placeholder="Search titles, scenes and names"
+            placeholder={t('time.timeline.searchPlaceholder')}
             value={typed}
             onChange={(event) => setTyped(event.target.value)}
             data-testid="chron-search"
@@ -545,7 +563,7 @@ export default function TimelinePage() {
         <div className="controls__filters">
           <div className="field">
             <label className="field__label" htmlFor="chron-story">
-              Story
+              {t('time.timeline.storyFilter')}
             </label>
             <select
               id="chron-story"
@@ -554,9 +572,9 @@ export default function TimelinePage() {
               onChange={(event) => update({ story: event.target.value })}
               data-testid="chron-story"
             >
-              <option value="">All stories</option>
+              <option value="">{t('time.timeline.allStories')}</option>
               {storyId && stories && !story ? (
-                <option value={storyId}>A story that is not available</option>
+                <option value={storyId}>{t('time.timeline.storyUnavailableOption')}</option>
               ) : null}
               {(stories ?? []).map((one) => (
                 <option key={one.id} value={one.id}>
@@ -568,7 +586,7 @@ export default function TimelinePage() {
 
           <div className="field">
             <label className="field__label" htmlFor="chron-source">
-              Show
+              {t('time.timeline.show')}
             </label>
             <select
               id="chron-source"
@@ -577,10 +595,10 @@ export default function TimelinePage() {
               onChange={(event) => update({ source: event.target.value })}
               data-testid="chron-source"
             >
-              <option value="">Everything</option>
+              <option value="">{t('time.timeline.everything')}</option>
               {SOURCES.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {option.label()}
                 </option>
               ))}
             </select>
@@ -588,7 +606,7 @@ export default function TimelinePage() {
 
           <div className="field">
             <label className="field__label" htmlFor="chron-canon">
-              Status
+              {t('time.timeline.status')}
             </label>
             <select
               id="chron-canon"
@@ -597,7 +615,7 @@ export default function TimelinePage() {
               onChange={(event) => update({ status: event.target.value })}
               data-testid="chron-canon"
             >
-              <option value="">Any status</option>
+              <option value="">{t('time.timeline.anyStatus')}</option>
               {CANON_ORDER.map((status) => (
                 <option key={status} value={status}>
                   {CANON_LABELS[status]}
@@ -607,38 +625,38 @@ export default function TimelinePage() {
           </div>
 
           <EntityPicker
-            label="Taking part"
+            label={t('time.timeline.takingPart')}
             universeId={universe.id}
             value={participant}
             onChange={(choice) => {
               setParticipant(choice)
               if (page !== 1) update({ page: null })
             }}
-            placeholder="Anyone or anything"
+            placeholder={t('time.timeline.takingPartPlaceholder')}
           />
         </div>
       </div>
 
       {storyId ? (
         <p className="chron__scope" data-testid="chron-story-scope">
-          {story ? (
-            <>
-              Showing{' '}
-              <Link to={storyPath(story.id)}>
-                <bdi>{story.title}</bdi>
-              </Link>
-              : its dated scenes and the moments linked to it.
-            </>
-          ) : stories ? (
-            'That story is not available. It may be in the Trash.'
-          ) : null}{' '}
+          {story
+            ? tx('time.timeline.showing', {
+                story: (
+                  <Link to={storyPath(story.id)}>
+                    <bdi>{story.title}</bdi>
+                  </Link>
+                ),
+              })
+            : stories
+              ? t('time.timeline.storyNotAvailable')
+              : null}{' '}
           <button
             className="button button--text"
             type="button"
             onClick={() => update({ story: null })}
             data-testid="chron-story-clear"
           >
-            Show every story
+            {t('time.timeline.showEvery')}
           </button>
         </p>
       ) : null}
@@ -646,15 +664,13 @@ export default function TimelinePage() {
       {canonStatus !== null &&
       (sourceParam === null || sourceParam.source === TimelineSource.Scene) ? (
         <p className="chron__aside" data-testid="chron-status-scenes">
-          Scenes have no status, so a status filter leaves them out.
+          {t('time.timeline.scenesNoStatus')}
         </p>
       ) : null}
 
       {mixedEras ? (
         <p className="chron__caution" data-testid="chron-eras">
-          More than one year label is on this page. LorEvolve orders by the year number alone, so a
-          moment with a different label may not sit where its story puts it. Date periods in
-          Chronology order them properly.
+          {t('time.timeline.mixedLabels')}
         </p>
       ) : null}
 
@@ -666,7 +682,7 @@ export default function TimelinePage() {
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Reading the chronology…
+          {t('time.timeline.reading')}
         </p>
       ) : null}
 
@@ -681,7 +697,7 @@ export default function TimelinePage() {
               reload()
             }}
           >
-            Try again
+            {t('time.timeline.tryAgain')}
           </button>
         </div>
       ) : null}
@@ -727,14 +743,10 @@ export default function TimelinePage() {
             <section className="chron__group chron__group--unplaced" data-testid="chron-unreckoned">
               <h2 className="chron__year">
                 <span className="chron__yearnum chron__yearnum--none">?</span>
-                <span className="chron__era">No date period yet</span>
+                <span className="chron__era">{t('time.timeline.noPeriod')}</span>
               </h2>
               <div>
-                <p className="chron__aside">
-                  Dated before this universe had date periods. Still saved; LorEvolve doesn’t guess.
-                  Edit each one to choose the period its year is counted in; until then it is not
-                  placed among them.
-                </p>
+                <p className="chron__aside">{t('time.timeline.noPeriodHint')}</p>
                 <ul className="chron__moments chron__moments--unplaced">
                   {unreckoned.map((item) => row(item))}
                 </ul>
@@ -746,12 +758,10 @@ export default function TimelinePage() {
             <section className="chron__group chron__group--unplaced">
               <h2 className="chron__year">
                 <span className="chron__yearnum chron__yearnum--none">?</span>
-                <span className="chron__era">Unplaced</span>
+                <span className="chron__era">{t('time.timeline.unplaced')}</span>
               </h2>
               <div>
-                <p className="chron__aside">
-                  In the story, not yet in time. These sit apart rather than pretending to a year.
-                </p>
+                <p className="chron__aside">{t('time.timeline.unplacedHint')}</p>
                 <ul className="chron__moments chron__moments--unplaced">
                   {unplaced.map((item) => row(item))}
                 </ul>
@@ -775,7 +785,7 @@ export default function TimelinePage() {
                 data-testid="empty-new-moment"
               >
                 <ActionIcon icon={Plus} />
-                New moment
+                {t('time.timeline.emptyNewMoment')}
               </button>
             )
           }
@@ -783,17 +793,17 @@ export default function TimelinePage() {
       ) : null}
 
       {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label="Pagination">
+        <nav className="pager" aria-label={t('time.timeline.pagination')}>
           <button
             className="button button--secondary"
             type="button"
             disabled={result.page <= 1}
             onClick={() => update({ page: String(result.page - 1) })}
           >
-            Previous
+            {t('time.timeline.previous')}
           </button>
           <span className="pager__position">
-            Page {result.page} of {result.totalPages}
+            {t('time.timeline.page', { page: result.page, total: result.totalPages })}
           </span>
           <button
             className="button button--secondary"
@@ -801,7 +811,7 @@ export default function TimelinePage() {
             disabled={result.page >= result.totalPages}
             onClick={() => update({ page: String(result.page + 1) })}
           >
-            Next
+            {t('time.timeline.next')}
           </button>
         </nav>
       ) : null}

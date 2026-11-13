@@ -6,6 +6,7 @@ import { confirmAction } from '../lib/confirm'
 import { removeMapCalibration, setMapCalibration } from '../maps/api'
 import { approximate } from '../maps/format'
 import { MAP_UNIT_MAX_LENGTH, type MapCalibration, type MapDetail } from '../maps/types'
+import { useI18n } from '../i18n'
 
 /** A point of the picture, as fractions. */
 export interface Fraction {
@@ -39,14 +40,14 @@ export function MapScaleSummary({
   onStartCalibrating: () => void
   onRemoved: () => void
 }) {
+  const { t, tx } = useI18n()
   const scale = map.calibration
 
   async function remove() {
     const confirmed = await confirmAction({
-      title: 'Remove the scale?',
-      message:
-        'Distances can no longer be measured on this map until it is calibrated again. Pins are not touched.',
-      confirmLabel: 'Remove scale',
+      title: t('places.calibration.removeTitle'),
+      message: t('places.calibration.removeMessage'),
+      confirmLabel: t('places.calibration.removeConfirm'),
       variant: 'warning',
       action: () => removeMapCalibration(universeId, map.id),
     })
@@ -55,22 +56,22 @@ export function MapScaleSummary({
 
   return (
     <div className="mapscale" data-testid="map-scale">
-      <h2 className="mapscreen__pinsheading">Scale</h2>
+      <h2 className="mapscreen__pinsheading">{t('places.calibration.scale')}</h2>
       {scale ? (
         <p className="mapscale__text" data-testid="map-scale-text">
-          Two points are{' '}
-          <strong>
-            {approximate(scale.distance)} {scale.unit}
-          </strong>{' '}
-          apart, so a pixel of the picture is about {approximate(scale.unitsPerPixel)} {scale.unit}.
-          Distances asked of the assistant are straight lines on this picture, by this scale.
+          {tx('places.calibration.summary', {
+            distance: (
+              <strong>
+                {approximate(scale.distance)} {scale.unit}
+              </strong>
+            ),
+            perPixel: approximate(scale.unitsPerPixel),
+            unit: scale.unit,
+          })}
         </p>
       ) : (
         <p className="mapscale__text mapscale__text--none" data-testid="map-scale-none">
-          No scale yet.{' '}
-          {canEdit
-            ? 'Mark two points and say how far apart they are, and the assistant can measure straight-line distances between pins.'
-            : 'Distances cannot be measured on this map.'}
+          {canEdit ? t('places.calibration.noneEditor') : t('places.calibration.none')}
         </p>
       )}
       {canEdit ? (
@@ -82,7 +83,7 @@ export function MapScaleSummary({
             data-testid="map-calibrate"
           >
             <ActionIcon icon={Ruler} />
-            {scale ? 'Set the scale again' : 'Set the scale'}
+            {scale ? t('places.calibration.setAgain') : t('places.calibration.set')}
           </button>
           {scale ? (
             <button
@@ -91,7 +92,7 @@ export function MapScaleSummary({
               onClick={() => void remove()}
               data-testid="map-scale-remove"
             >
-              Remove scale
+              {t('places.calibration.remove')}
             </button>
           ) : null}
         </div>
@@ -119,6 +120,7 @@ export function MapCalibrationForm({
   onSaved: (calibration: MapCalibration) => void
   onCancel: () => void
 }) {
+  const { t } = useI18n()
   const [distance, setDistance] = useState(map.calibration ? String(map.calibration.distance) : '')
   const [unit, setUnit] = useState(map.calibration?.unit ?? '')
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -139,11 +141,12 @@ export function MapCalibrationForm({
   async function save() {
     setMessage(null)
     const problems: Record<string, string> = {}
-    if (!a) problems.a = 'Mark the first point.'
-    if (!b) problems.b = 'Mark the second point.'
+    if (!a) problems.a = t('places.calibration.firstMissing')
+    if (!b) problems.b = t('places.calibration.secondMissing')
     const value = Number.parseFloat(distance.replace(',', '.'))
-    if (!Number.isFinite(value) || value <= 0) problems.distance = 'A number above zero.'
-    if (unit.trim() === '') problems.unit = 'Name the unit: km, miles, leagues, days of travel.'
+    if (!Number.isFinite(value) || value <= 0)
+      problems.distance = t('places.calibration.distanceInvalid')
+    if (unit.trim() === '') problems.unit = t('places.calibration.unitMissing')
     if (Object.keys(problems).length > 0) {
       setErrors(problems)
       return
@@ -168,10 +171,10 @@ export function MapCalibrationForm({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Check the points and the distance.',
+            : t('places.calibration.fieldErrors'),
         )
       } else {
-        setMessage('The scale could not be saved.')
+        setMessage(t('places.calibration.failed'))
       }
     } finally {
       setIsSaving(false)
@@ -212,11 +215,8 @@ export function MapCalibrationForm({
         void save()
       }}
     >
-      <h2 className="mapscreen__pinsheading">Set the scale</h2>
-      <p className="mapscale__text">
-        Press the map twice to mark two points whose distance apart you know, or type where they
-        are. Then say how far apart they are, in your world's own unit.
-      </p>
+      <h2 className="mapscreen__pinsheading">{t('places.calibration.formTitle')}</h2>
+      <p className="mapscale__text">{t('places.calibration.formIntro')}</p>
       {message ? (
         <p className="form__message" role="alert" data-testid="map-calibration-error">
           {message}
@@ -224,26 +224,30 @@ export function MapCalibrationForm({
       ) : null}
 
       <fieldset className="field mappinform__position">
-        <legend className="field__label">Point A {a ? '' : '(not marked)'}</legend>
+        <legend className="field__label">
+          {a ? t('places.calibration.pointA') : t('places.calibration.pointANot')}
+        </legend>
         <div className="mappinform__coords">
-          {coordinate('Across', 0, 'x', a)}
-          {coordinate('Down', 0, 'y', a)}
+          {coordinate(t('places.calibration.across'), 0, 'x', a)}
+          {coordinate(t('places.calibration.down'), 0, 'y', a)}
         </div>
         {errors.a ? <p className="field__error">{errors.a}</p> : null}
       </fieldset>
 
       <fieldset className="field mappinform__position">
-        <legend className="field__label">Point B {b ? '' : '(not marked)'}</legend>
+        <legend className="field__label">
+          {b ? t('places.calibration.pointB') : t('places.calibration.pointBNot')}
+        </legend>
         <div className="mappinform__coords">
-          {coordinate('Across', 1, 'x', b)}
-          {coordinate('Down', 1, 'y', b)}
+          {coordinate(t('places.calibration.across'), 1, 'x', b)}
+          {coordinate(t('places.calibration.down'), 1, 'y', b)}
         </div>
         {errors.b || errors.x2 ? <p className="field__error">{errors.b ?? errors.x2}</p> : null}
       </fieldset>
 
       <div className="mappinform__coords">
         <label className="mappinform__coord mapcalibration__distance">
-          <span>Distance</span>
+          <span>{t('places.calibration.distance')}</span>
           <input
             className="field__input"
             type="number"
@@ -257,13 +261,13 @@ export function MapCalibrationForm({
           />
         </label>
         <label className="mappinform__coord mapcalibration__unit">
-          <span>Unit</span>
+          <span>{t('places.calibration.unit')}</span>
           <input
             className="field__input"
             type="text"
             dir="auto"
             maxLength={MAP_UNIT_MAX_LENGTH}
-            placeholder="Insert a unit"
+            placeholder={t('places.calibration.unitPlaceholder')}
             value={unit}
             onChange={(event) => setUnit(event.target.value)}
             aria-invalid={errors.unit ? true : undefined}
@@ -282,7 +286,7 @@ export function MapCalibrationForm({
           aria-busy={isSaving || undefined}
           data-testid="map-calibration-save"
         >
-          {isSaving ? 'Saving…' : 'Save scale'}
+          {isSaving ? t('places.calibration.saving') : t('places.calibration.save')}
         </button>
         <button
           className="button button--secondary button--sm"
@@ -290,7 +294,7 @@ export function MapCalibrationForm({
           onClick={onCancel}
           disabled={isSaving}
         >
-          Cancel
+          {t('places.calibration.cancel')}
         </button>
       </div>
     </form>

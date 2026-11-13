@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { plainMentions } from '../lore/mentions'
 import { VersionActor } from './VersionActor'
+import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
 import {
@@ -46,10 +47,14 @@ function describeVersion(
 ) {
   if (revision.kind === ManuscriptRevisionKind.Restored) {
     const from = revisions.find((candidate) => candidate.id === revision.restoredFromRevisionId)
-    return from ? `Restored version ${from.number}` : 'Restored an earlier version'
+    return from
+      ? t('manuscript.history.restoredFrom', { number: from.number })
+      : t('manuscript.history.restoredEarlier')
   }
-  if (revision.isEmpty) return 'Emptied the manuscript'
-  return revision.kind === ManuscriptRevisionKind.Created ? 'First version' : 'Saved'
+  if (revision.isEmpty) return t('manuscript.history.emptied')
+  return revision.kind === ManuscriptRevisionKind.Created
+    ? t('manuscript.history.first')
+    : t('manuscript.history.saved')
 }
 
 /**
@@ -71,6 +76,7 @@ export function ManuscriptHistory({
   onRestored,
   onStale,
 }: ManuscriptHistoryProps) {
+  const { t } = useI18n()
   const titleId = useId()
   const blockedId = useId()
   const [revisions, setRevisions] = useState<ManuscriptRevisionSummary[] | null>(null)
@@ -113,7 +119,7 @@ export function ManuscriptHistory({
       setViewing((open) => (open?.id === revisionId ? { id: revisionId, detail } : open))
     } catch {
       setViewing(null)
-      setMessage({ tone: 'alert', text: 'That version could not be opened.' })
+      setMessage({ tone: 'alert', text: t('manuscript.history.openFailed') })
     }
   }
 
@@ -121,9 +127,9 @@ export function ManuscriptHistory({
     if (inFlight.current || blocked !== null) return
     if (
       !(await confirmAction({
-        title: `Put version ${revision.number} of the manuscript back?`,
-        message: 'It becomes the newest saved version, and nothing in the history is lost.',
-        confirmLabel: 'Put this version back',
+        title: t('manuscript.history.restore.title', { number: revision.number }),
+        message: t('manuscript.history.restore.message'),
+        confirmLabel: t('manuscript.history.restore.confirm'),
       }))
     ) {
       return
@@ -145,22 +151,22 @@ export function ManuscriptHistory({
       onRestored(restored)
       setMessage({
         tone: 'status',
-        text: `Version ${revision.number} is back as the newest saved version.`,
+        text: t('manuscript.history.restore.done', { number: revision.number }),
       })
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === 409 && error.code === MANUSCRIPT_CHANGED) {
         setMessage({
           tone: 'alert',
-          text: 'The manuscript was saved somewhere else after this page opened, so nothing was put back. The newest saved text is now in the editor.',
+          text: t('manuscript.history.restore.stale'),
         })
         onStale()
       } else if (error instanceof ApiError && error.status === 404) {
         setMessage({
           tone: 'alert',
-          text: 'This scene is no longer in the story, so nothing was put back.',
+          text: t('manuscript.history.restore.gone'),
         })
       } else {
-        setMessage({ tone: 'alert', text: 'That version could not be put back.' })
+        setMessage({ tone: 'alert', text: t('manuscript.history.restore.failed') })
       }
     } finally {
       inFlight.current = false
@@ -176,12 +182,9 @@ export function ManuscriptHistory({
       data-testid="manuscript-history"
     >
       <p className="mshistory__title" id={titleId}>
-        Manuscript history
+        {t('manuscript.history.title')}
       </p>
-      <p className="mshistory__lede">
-        Every save that changed the prose is kept as a saved version. Putting one back saves it
-        again as the newest, and nothing in the history is lost.
-      </p>
+      <p className="mshistory__lede">{t('manuscript.history.lede')}</p>
 
       {blocked ? (
         <p className="mshistory__blocked" id={blockedId} data-testid="manuscript-history-blocked">
@@ -201,14 +204,14 @@ export function ManuscriptHistory({
 
       {failed ? (
         <p className="history__quiet" role="status">
-          The manuscript&rsquo;s history could not be read.
+          {t('manuscript.history.readFailed')}
         </p>
       ) : revisions === null ? (
         <p className="history__quiet" role="status">
-          Opening&hellip;
+          {t('manuscript.history.opening')}
         </p>
       ) : revisions.length === 0 ? (
-        <p className="history__quiet">No saved versions yet.</p>
+        <p className="history__quiet">{t('manuscript.history.none')}</p>
       ) : (
         <ol className="history__list" data-testid="manuscript-history-list">
           {revisions.map((revision, index) => {
@@ -223,10 +226,12 @@ export function ManuscriptHistory({
                 <div className="version__body">
                   <p className="version__what" data-testid="manuscript-version-what">
                     {describeVersion(revision, revisions)}
-                    {index === 0 ? <span className="version__now">saved now</span> : null}
+                    {index === 0 ? (
+                      <span className="version__now">{t('manuscript.history.savedNow')}</span>
+                    ) : null}
                   </p>
                   <p className="version__meta">
-                    <span>Version {revision.number}</span>
+                    <span>{t('manuscript.history.version', { number: revision.number })}</span>
                     <VersionActor name={revision.actorName} />
                   </p>
                 </div>
@@ -237,11 +242,16 @@ export function ManuscriptHistory({
                     type="button"
                     aria-expanded={isViewing}
                     aria-controls={snapshotId}
-                    aria-label={`${isViewing ? 'Hide' : 'View'} version ${revision.number}`}
+                    aria-label={t(
+                      isViewing
+                        ? 'manuscript.history.hideVersion'
+                        : 'manuscript.history.viewVersion',
+                      { number: revision.number },
+                    )}
                     onClick={() => void view(revision.id)}
                     data-testid="manuscript-version-view"
                   >
-                    {isViewing ? 'Hide' : 'View'}
+                    {isViewing ? t('manuscript.history.hide') : t('manuscript.history.view')}
                   </button>
                   {index > 0 ? (
                     <button
@@ -249,11 +259,15 @@ export function ManuscriptHistory({
                       type="button"
                       disabled={blocked !== null}
                       aria-describedby={blocked ? blockedId : undefined}
-                      aria-label={`Restore version ${revision.number}`}
+                      aria-label={t('manuscript.history.restoreVersion', {
+                        number: revision.number,
+                      })}
                       onClick={() => void restore(revision)}
                       data-testid="manuscript-version-restore"
                     >
-                      {busyId === revision.id ? 'Restoring…' : 'Restore'}
+                      {busyId === revision.id
+                        ? t('manuscript.history.restoring')
+                        : t('manuscript.history.restoreButton')}
                     </button>
                   ) : null}
                 </div>
@@ -266,15 +280,15 @@ export function ManuscriptHistory({
                   >
                     {viewing.detail === null ? (
                       <p className="history__quiet" role="status">
-                        Opening&hellip;
+                        {t('manuscript.history.opening')}
                       </p>
                     ) : viewing.detail.content === '' ? (
-                      <p className="entry__blank">No text in this version.</p>
+                      <p className="entry__blank">{t('manuscript.history.noText')}</p>
                     ) : (
                       <div
                         className="mshistory__text prose"
                         role="region"
-                        aria-label={`Text of version ${revision.number}`}
+                        aria-label={t('manuscript.history.textOf', { number: revision.number })}
                         tabIndex={0}
                       >
                         {plainMentions(viewing.detail.content)}
