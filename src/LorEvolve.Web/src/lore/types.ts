@@ -24,6 +24,13 @@ export const CANON_LABELS: Record<CanonStatusValue, string> = {
   },
 }
 
+/** A status's stable key: what a test id or an address is built from, never the translated word. */
+export const CANON_KEYS: Record<CanonStatusValue, string> = {
+  [CanonStatus.Idea]: 'idea',
+  [CanonStatus.Draft]: 'draft',
+  [CanonStatus.Canon]: 'canon',
+}
+
 export const CANON_ORDER: CanonStatusValue[] = [
   CanonStatus.Idea,
   CanonStatus.Draft,

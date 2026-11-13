@@ -14,6 +14,7 @@ import portal from './pt-PT/portal'
 import publishing from './pt-PT/publishing'
 import roles from './pt-PT/roles'
 import shell from './pt-PT/shell'
+import stories from './pt-PT/stories'
 
 /**
  * European Portuguese (ADR 0071). Same keys as `en.ts`; `satisfies` fails the typecheck on a missing or unknown key.
@@ -35,6 +36,7 @@ const ptPT = {
   publishing,
   roles,
   shell,
+  stories,
   language: {
     label: 'Idioma',
   },

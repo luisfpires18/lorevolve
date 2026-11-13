@@ -14,6 +14,7 @@ import portal from './en/portal'
 import publishing from './en/publishing'
 import roles from './en/roles'
 import shell from './en/shell'
+import stories from './en/stories'
 
 /**
  * The source dictionary (ADR 0071): every message LorEvolve shows, in English, grouped by feature. Its keys are the
@@ -40,6 +41,7 @@ const en = {
   publishing,
   roles,
   shell,
+  stories,
   language: {
     label: 'Language',
   },

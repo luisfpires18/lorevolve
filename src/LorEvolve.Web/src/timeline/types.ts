@@ -12,6 +12,14 @@ export const DateKind = {
 
 export type DateKindValue = (typeof DateKind)[keyof typeof DateKind]
 
+/** A kind's stable key: what a test id or an address is built from, never the translated word. */
+export const DATE_KIND_KEYS: Record<DateKindValue, string> = {
+  [DateKind.Exact]: 'exact',
+  [DateKind.Approximate]: 'approximate',
+  [DateKind.Range]: 'range',
+  [DateKind.Unknown]: 'unknown',
+}
+
 /** Getters, so each word is looked up in the current language when read, never frozen at import. */
 export const DATE_KIND_LABELS: Record<DateKindValue, string> = {
   get [DateKind.Exact]() {

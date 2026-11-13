@@ -5,7 +5,8 @@ import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology, ChronologyValue } from '../chronology/types'
 import { differing, type Change } from '../lib/editConflict'
 import type { SceneSuggestion } from '../suggestions/api'
-import { sceneWhen, UNCHAPTERED } from './format'
+import { t } from '../i18n'
+import { sceneWhen, unchaptered } from './format'
 import { chapterChoices } from './structure'
 import type { Chapter, PlotArc, Scene, SceneBeat } from './types'
 
@@ -39,7 +40,9 @@ type LoreRef = { entityId: string; name: string; isTrashed: boolean }
 function choiceOf(reference: LoreRef): EntityChoice {
   return {
     id: reference.entityId,
-    name: reference.isTrashed ? `${reference.name} (in Trash)` : reference.name,
+    name: reference.isTrashed
+      ? t('stories.sceneForm.inTrash', { name: reference.name })
+      : reference.name,
   }
 }
 
@@ -160,14 +163,34 @@ function changesOf(
   const names = (choices: EntityChoice[]) => choices.map((choice) => choice.name).join(', ')
 
   return differing([
-    { label: 'Title', latest: latest.title, mine: mine.title.trim() },
-    { label: 'Chapter', latest: chapterName(latest.chapterId), mine: chapterName(mine.chapterId) },
-    { label: 'Summary', latest: latest.summary, mine: mine.summary.trim() },
-    { label: 'Notes', latest: latest.notes, mine: mine.notes.trim() },
-    { label: 'Point of view', latest: latest.pov?.name ?? '', mine: mine.pov?.name ?? '' },
-    { label: 'When', latest: when(latest), mine: when(mine) },
-    { label: 'Lore', latest: names(latest.entities), mine: names(mine.entities) },
-    { label: 'Beats', latest: beatsText(latest.beats), mine: beatsText(mine.beats) },
+    { label: t('stories.changes.scene.title'), latest: latest.title, mine: mine.title.trim() },
+    {
+      label: t('stories.changes.scene.chapter'),
+      latest: chapterName(latest.chapterId),
+      mine: chapterName(mine.chapterId),
+    },
+    {
+      label: t('stories.changes.scene.summary'),
+      latest: latest.summary,
+      mine: mine.summary.trim(),
+    },
+    { label: t('stories.changes.scene.notes'), latest: latest.notes, mine: mine.notes.trim() },
+    {
+      label: t('stories.changes.scene.pov'),
+      latest: latest.pov?.name ?? '',
+      mine: mine.pov?.name ?? '',
+    },
+    { label: t('stories.changes.scene.when'), latest: when(latest), mine: when(mine) },
+    {
+      label: t('stories.changes.scene.lore'),
+      latest: names(latest.entities),
+      mine: names(mine.entities),
+    },
+    {
+      label: t('stories.changes.scene.beats'),
+      latest: beatsText(latest.beats),
+      mine: beatsText(mine.beats),
+    },
   ])
 }
 
@@ -184,7 +207,8 @@ export function sceneChangesIn(chapters: Chapter[], chronology: Chronology, arcs
     changesOf(
       latest,
       mine,
-      (id) => (id === '' ? UNCHAPTERED : (labels.get(id) ?? 'Another chapter')),
+      (id) =>
+        id === '' ? unchaptered() : (labels.get(id) ?? t('stories.sceneForm.anotherChapter')),
       (draft) =>
         sceneWhen(chronology, chronologyOf(draft.point, reckonsInEras, custom))?.text ?? '',
     )

@@ -7,6 +7,7 @@ import {
   IdeaReferenceKind,
   type IdeaReference,
   type IdeaReferenceKindValue,
+  IDEA_REFERENCE_KIND_KEYS,
 } from '../ideas/types'
 import { useReturnFocus } from '../lib/returnFocus'
 
@@ -140,7 +141,7 @@ export function IdeaReferencePicker({
                   className="segmented__option"
                   aria-pressed={kind === option}
                   onClick={() => setKind(option)}
-                  data-testid={`idea-picker-kind-${IDEA_REFERENCE_KIND_LABELS[option].toLowerCase()}`}
+                  data-testid={`idea-picker-kind-${IDEA_REFERENCE_KIND_KEYS[option]}`}
                 >
                   {IDEA_REFERENCE_KIND_LABELS[option]}
                 </button>

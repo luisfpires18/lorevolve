@@ -21,7 +21,7 @@ import {
   type KnowledgeRecordInput,
 } from '../knowledge/api'
 import { getStory, listStories } from '../stories/api'
-import { UNCHAPTERED } from '../stories/format'
+import { unchaptered } from '../stories/format'
 import { readingOrder } from '../stories/structure'
 import type { StoryDetail, StorySummary } from '../stories/types'
 
@@ -461,9 +461,9 @@ function RecordForm({
   const story = storyRead && storyRead.id === draft.storyId ? storyRead : null
   const scenes = story ? readingOrder(story.arcs, story.chapters, story.scenes) : []
   const chapterLabel = (chapterId: string | null) => {
-    if (chapterId === null || !story) return UNCHAPTERED
+    if (chapterId === null || !story) return unchaptered()
     const index = story.chapters.findIndex((chapter) => chapter.id === chapterId)
-    return index < 0 ? UNCHAPTERED : `Chapter ${index + 1}: ${story.chapters[index].title}`
+    return index < 0 ? unchaptered() : `Chapter ${index + 1}: ${story.chapters[index].title}`
   }
   const groupedScenes = scenes.reduce<{ label: string; scenes: typeof scenes }[]>(
     (groups, scene) => {

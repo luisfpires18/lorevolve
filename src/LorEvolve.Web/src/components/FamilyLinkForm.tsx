@@ -12,7 +12,13 @@ import {
   isParentSemantic,
   type RelationshipType,
 } from '../relationships/types'
-import { CANON_LABELS, CANON_ORDER, CanonStatus, type CanonStatusValue } from '../lore/types'
+import {
+  CANON_LABELS,
+  CANON_ORDER,
+  CanonStatus,
+  type CanonStatusValue,
+  CANON_KEYS,
+} from '../lore/types'
 import { confirmDiscard } from '../lib/confirm'
 import { useI18n } from '../i18n'
 
@@ -259,7 +265,7 @@ export function FamilyLinkForm({
                 className="canon__step"
                 aria-pressed={canonStatus === option}
                 onClick={() => setCanonStatus(option)}
-                data-testid={`family-link-canon-${CANON_LABELS[option].toLowerCase()}`}
+                data-testid={`family-link-canon-${CANON_KEYS[option]}`}
               >
                 {CANON_LABELS[option]}
               </button>

@@ -4,32 +4,29 @@ import { ActionMenu } from './ActionMenu'
 import { StoryPublicSummaryForm } from './StoryPublicSummaryForm'
 import { getContentPublication, publishContent, unpublishContent } from '../publishing/api'
 import { Visibility, type ContentKind, type ContentPublicationState } from '../publishing/types'
+import { t, useI18n } from '../i18n'
 
 /** What each kind lists publicly and what it keeps private - said before publishing, never discovered after. */
-const WORDS = {
-  entry: {
-    noun: 'entry',
-    listed: 'Readers see its name, type, summary, picture and article.',
-    kept: 'Its fields, aliases, tags, relationships and history are not published.',
-    isPublic: 'This lore entry is available in your public universe.',
-    willPublish: 'Publishing this lore entry makes it available in your public universe.',
-  },
-  story: {
-    noun: 'story',
-    listed:
-      'Readers see its title, its public summary, and the scenes, prose and plot arcs you publish from them.',
-    kept: 'Its premise, chapters and notes are not published, nor any scene, prose or arc you have not published.',
-    needsSummary:
-      'This story is selected for publication but needs a public summary before readers can see it.',
-    noSummary: 'A story needs a public summary, written for readers, before it can be published.',
-    isPublic: 'This story is selected for your public universe.',
-    willPublish: 'Publishing this story selects it for your public universe.',
-    selectedHidden:
-      'This story is selected for publication, but remains hidden while the universe is private.',
-    willSelect:
-      'Your universe is private. Publishing selects this story: it remains hidden while the universe is private.',
-  },
-} as const
+function wordsOf(kind: ContentKind) {
+  if (kind === 'entry') {
+    return {
+      listed: t('stories.publication.content.entry.listed'),
+      kept: t('stories.publication.content.entry.kept'),
+      isPublic: t('stories.publication.content.entry.isPublic'),
+      willPublish: t('stories.publication.content.entry.willPublish'),
+      onlyYou: t('stories.publication.content.entry.onlyYou'),
+      publish: t('stories.publication.content.entry.publish'),
+    }
+  }
+  return {
+    listed: t('stories.publication.content.story.listed'),
+    kept: t('stories.publication.content.story.kept'),
+    isPublic: t('stories.publication.content.story.isPublic'),
+    willPublish: t('stories.publication.content.story.willPublish'),
+    onlyYou: t('stories.publication.content.story.onlyYou'),
+    publish: t('stories.publication.content.story.publish'),
+  }
+}
 
 type Shown = 'private' | 'public' | 'selected'
 
@@ -41,12 +38,6 @@ function lacksSummary(kind: ContentKind, state: ContentPublicationState) {
 function shownOf(kind: ContentKind, state: ContentPublicationState): Shown {
   if (state.visibility !== Visibility.Public) return 'private'
   return state.universeIsPublic && !lacksSummary(kind, state) ? 'public' : 'selected'
-}
-
-const LABELS: Record<Shown, string> = {
-  private: 'Private',
-  public: 'Public',
-  selected: 'Selected',
 }
 
 /**
@@ -82,13 +73,19 @@ export function ContentPublication({
   /** Every state this control arrives at, so a page can follow it - a story's parts follow the story's (ADR 0039). */
   onChange?: (state: ContentPublicationState) => void
 }) {
+  useI18n()
   const noteId = useId()
   const [state, setStateOnly] = useState<ContentPublicationState | null>(initialState ?? null)
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const [editingSummary, setEditingSummary] = useState(false)
-  const words = WORDS[kind]
+  const words = wordsOf(kind)
+  const LABELS: Record<Shown, string> = {
+    private: t('stories.publication.content.shown.private'),
+    public: t('stories.publication.content.shown.public'),
+    selected: t('stories.publication.content.shown.selected'),
+  }
 
   function setState(next: ContentPublicationState) {
     setStateOnly(next)
@@ -105,7 +102,7 @@ export function ContentPublication({
         setFailed(null)
       })
       .catch(() => {
-        if (!controller.signal.aborted) setFailed('Publication status unavailable.')
+        if (!controller.signal.aborted) setFailed(t('stories.publication.content.unavailable'))
       })
     return () => {
       controller.abort()
@@ -139,34 +136,47 @@ export function ContentPublication({
       setState(next)
       setAnnouncement(
         !publish
-          ? `Made private. It is no longer listed in your public universe.`
+          ? t('stories.publication.content.madePrivate')
           : next.universeIsPublic && !lacksSummary(kind, next)
-            ? `Published. It is listed in your public universe.`
-            : `Selected for publication. It stays hidden while the universe is private.`,
+            ? t('stories.publication.content.published')
+            : t('stories.publication.content.selected'),
       )
     } catch {
       // Nothing changed: the state shown is still the stored one.
-      setFailed(`It could not be ${publish ? 'published' : 'made private'}. Try again.`)
+      setFailed(
+        publish
+          ? t('stories.publication.content.failedPublish')
+          : t('stories.publication.content.failedPrivate'),
+      )
     } finally {
       setBusy(false)
     }
   }
 
   const heading =
-    shown === 'public' ? 'Public' : shown === 'selected' ? 'Selected for publication' : 'Private'
+    shown === 'public'
+      ? t('stories.publication.content.headingPublic')
+      : shown === 'selected'
+        ? t('stories.publication.content.headingSelected')
+        : t('stories.publication.content.headingPrivate')
 
   const explanation =
     shown === 'public'
       ? [words.isPublic, words.listed, words.kept]
       : shown === 'selected'
-        ? [missingSummary ? WORDS.story.needsSummary : WORDS.story.selectedHidden, words.kept]
-        : [
-            `Only you can see this ${words.noun}.`,
+        ? [
             missingSummary
-              ? WORDS.story.noSummary
+              ? t('stories.publication.content.story.needsSummary')
+              : t('stories.publication.content.story.selectedHidden'),
+            words.kept,
+          ]
+        : [
+            words.onlyYou,
+            missingSummary
+              ? t('stories.publication.content.story.noSummary')
               : state.universeIsPublic
                 ? words.willPublish
-                : WORDS.story.willSelect,
+                : t('stories.publication.content.story.willSelect'),
             words.listed,
             words.kept,
           ]
@@ -175,7 +185,7 @@ export function ContentPublication({
     <div className={`contentpub contentpub--${placement}`}>
       <ActionMenu
         className="contentpub__menu"
-        label={`Publication: ${LABELS[shown]}`}
+        label={t('stories.publication.content.label', { state: LABELS[shown] })}
         triggerClassName={`contentpub__trigger contentpub__trigger--${shown}`}
         trigger={
           <>
@@ -216,7 +226,9 @@ export function ContentPublication({
           ))}
           {kind === 'story' && state.publicSummary ? (
             <p className="contentpub__summary" data-testid="story-public-summary">
-              <span className="contentpub__summarylabel">Public summary</span>{' '}
+              <span className="contentpub__summarylabel">
+                {t('stories.publication.content.summaryLabel')}
+              </span>{' '}
               <span dir="auto">{state.publicSummary}</span>
             </p>
           ) : null}
@@ -235,7 +247,9 @@ export function ContentPublication({
               focusable="false"
               strokeWidth={1.75}
             />
-            {state.publicSummary ? 'Edit public summary…' : 'Write public summary…'}
+            {state.publicSummary
+              ? t('stories.publication.content.editSummary')
+              : t('stories.publication.content.writeSummary')}
           </button>
         ) : null}
         {isSelected ? (
@@ -253,7 +267,7 @@ export function ContentPublication({
               focusable="false"
               strokeWidth={1.75}
             />
-            Make private
+            {t('stories.publication.content.makePrivate')}
           </button>
         ) : (
           <button
@@ -270,7 +284,7 @@ export function ContentPublication({
               focusable="false"
               strokeWidth={1.75}
             />
-            Publish {words.noun}
+            {words.publish}
           </button>
         )}
       </ActionMenu>
@@ -290,7 +304,9 @@ export function ContentPublication({
             setEditingSummary(false)
             setState(next)
             setAnnouncement(
-              next.publicSummary ? 'Public summary saved.' : 'Public summary removed.',
+              next.publicSummary
+                ? t('stories.publication.content.summarySaved')
+                : t('stories.publication.content.summaryRemoved'),
             )
           }}
         />

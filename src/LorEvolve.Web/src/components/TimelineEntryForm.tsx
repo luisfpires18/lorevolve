@@ -10,7 +10,13 @@ import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
-import { CANON_LABELS, CANON_ORDER, CanonStatus, type CanonStatusValue } from '../lore/types'
+import {
+  CANON_LABELS,
+  CANON_ORDER,
+  CanonStatus,
+  type CanonStatusValue,
+  CANON_KEYS,
+} from '../lore/types'
 import { ValidationTermKind } from '../ruleValidation/types'
 import { useValidationTerms } from '../ruleValidation/useValidationTerms'
 import { listStories } from '../stories/api'
@@ -24,6 +30,7 @@ import {
   type DateKindValue,
   type TimelineEntry,
   type TimelineStoryLink,
+  DATE_KIND_KEYS,
 } from '../timeline/types'
 
 /**
@@ -455,7 +462,7 @@ export function TimelineEntryForm({
                   className="canon__step"
                   aria-pressed={draft.canonStatus === option}
                   onClick={() => edit({ canonStatus: option })}
-                  data-testid={`moment-canon-${CANON_LABELS[option].toLowerCase()}`}
+                  data-testid={`moment-canon-${CANON_KEYS[option]}`}
                 >
                   {CANON_LABELS[option]}
                 </button>
@@ -473,7 +480,7 @@ export function TimelineEntryForm({
                   className="segmented__option"
                   aria-pressed={draft.dateKind === option}
                   onClick={() => chooseKind(option)}
-                  data-testid={`moment-kind-${DATE_KIND_LABELS[option].toLowerCase()}`}
+                  data-testid={`moment-kind-${DATE_KIND_KEYS[option]}`}
                 >
                   {DATE_KIND_LABELS[option]}
                 </button>
