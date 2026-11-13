@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react'
+import { useI18n } from '../i18n'
 
 /** The fold's switch: a chevron button before the heading, named with what it folds. */
 export function FoldToggle({
@@ -14,14 +15,20 @@ export function FoldToggle({
   label: string
   testId: string
 }) {
+  const { t } = useI18n()
+
   return (
     <button
       className="foldtoggle"
       type="button"
       aria-expanded={open}
       aria-controls={controls}
-      aria-label={`${open ? 'Collapse' : 'Expand'} ${label}`}
-      title={open ? 'Collapse' : 'Expand'}
+      aria-label={
+        open
+          ? t('stories.page.fold.collapseLabel', { label })
+          : t('stories.page.fold.expandLabel', { label })
+      }
+      title={open ? t('stories.page.fold.collapse') : t('stories.page.fold.expand')}
       onClick={() => onToggle(!open)}
       data-testid={testId}
     >

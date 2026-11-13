@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
+import { useI18n } from '../i18n'
 import { createPlotArc, updatePlotArc } from '../stories/api'
 import type { PlotArc } from '../stories/types'
 
@@ -51,6 +52,7 @@ export function PlotArcForm({
   onClose,
   onSaved,
 }: PlotArcFormProps) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the arc as stored, or the blank form - which the draft is measured against.
@@ -67,9 +69,7 @@ export function PlotArcForm({
   const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
-    arc
-      ? `“${arc.title}” has unsaved changes. Leave without saving them?`
-      : 'This new arc has not been created. Leave without saving it?',
+    arc ? t('stories.arcForm.leaveUnsaved', { title: arc.title }) : t('stories.arcForm.leaveNew'),
     onClose,
   )
 
@@ -102,10 +102,10 @@ export function PlotArcForm({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be saved.',
+            : t('stories.arcForm.detailsToSave'),
         )
       } else {
-        setMessage('That arc could not be saved.')
+        setMessage(t('stories.arcForm.failedSave'))
       }
     } finally {
       setIsSaving(false)
@@ -128,9 +128,13 @@ export function PlotArcForm({
         }}
       >
         <header className="drawer__head">
-          {arc ? <p className="drawer__eyebrow">{`Editing ${number ?? 'an arc'}`}</p> : null}
+          {arc ? (
+            <p className="drawer__eyebrow">
+              {t('stories.arcForm.eyebrow', { what: number ?? t('stories.arcForm.anArc') })}
+            </p>
+          ) : null}
           <h2 className="drawer__title" id="plot-arc-heading">
-            {arc ? arc.title : 'New arc'}
+            {arc ? arc.title : t('stories.arcForm.newTitle')}
           </h2>
         </header>
 
@@ -143,18 +147,16 @@ export function PlotArcForm({
 
           <div className="field">
             <label className="field__label" htmlFor="plot-arc-title">
-              Title
+              {t('stories.arcForm.titleLabel')}
             </label>
-            <p className="field__hint">
-              The thread you want to follow. Its number comes from its place in the plot.
-            </p>
+            <p className="field__hint">{t('stories.arcForm.titleHint')}</p>
             <input
               id="plot-arc-title"
               className="field__input"
               ref={title}
               type="text"
               dir="auto"
-              placeholder="Insert a title"
+              placeholder={t('stories.arcForm.titlePlaceholder')}
               value={draft.title}
               onChange={(event) => edit({ title: event.target.value })}
               aria-invalid={fieldErrors.title ? true : undefined}
@@ -165,9 +167,9 @@ export function PlotArcForm({
 
           <div className="field">
             <label className="field__label" htmlFor="plot-arc-description">
-              Description
+              {t('stories.arcForm.descriptionLabel')}
             </label>
-            <p className="field__hint">What the thread is, briefly. Optional.</p>
+            <p className="field__hint">{t('stories.arcForm.descriptionHint')}</p>
             <textarea
               id="plot-arc-description"
               className="field__input field__input--area"
@@ -184,9 +186,9 @@ export function PlotArcForm({
 
           <div className="field">
             <label className="field__label" htmlFor="plot-arc-notes">
-              Notes
+              {t('stories.arcForm.notesLabel')}
             </label>
-            <p className="field__hint">Your own planning notes. Only shown here.</p>
+            <p className="field__hint">{t('stories.arcForm.notesHint')}</p>
             <textarea
               id="plot-arc-notes"
               className="field__input field__input--area"
@@ -202,7 +204,11 @@ export function PlotArcForm({
 
         <footer className="drawer__actions">
           <button className="button" type="submit" disabled={isSaving} data-testid="save-plot-arc">
-            {isSaving ? 'Saving' : arc ? 'Save arc' : 'Add arc'}
+            {isSaving
+              ? t('stories.arcForm.saving')
+              : arc
+                ? t('stories.arcForm.save')
+                : t('stories.arcForm.add')}
           </button>
           <button
             className="button button--secondary"
@@ -210,7 +216,7 @@ export function PlotArcForm({
             onClick={close}
             data-testid="cancel-plot-arc"
           >
-            Cancel
+            {t('stories.arcForm.cancel')}
           </button>
         </footer>
       </form>

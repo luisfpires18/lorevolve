@@ -9,6 +9,7 @@ import {
   useOutletContext,
   useParams,
 } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ArcSection } from '../components/ArcSection'
@@ -50,7 +51,7 @@ import {
   chapterLabel,
   chapterNumber,
   sceneCountLabel,
-  UNCHAPTERED,
+  unchaptered as unchapteredLabel,
 } from '../stories/format'
 import { storyChanges } from '../stories/changes'
 import {
@@ -135,6 +136,7 @@ export default function StoryPage({ view = 'scenes' }: { view?: StoryViewName })
  * exactly as valid as one told straight through.
  */
 function StoryView({ view }: { view: StoryViewName }) {
+  const { t, tx } = useI18n()
   const access = useUniverseAccess()
   const { universe, chronology } = useOutletContext<WorkspaceContext>()
   const { storyId, sceneId } = useParams<{ storyId: string; sceneId?: string }>()
@@ -257,7 +259,7 @@ function StoryView({ view }: { view: StoryViewName }) {
   if (state.kind === 'loading') {
     return (
       <p className="notice" role="status">
-        Opening the story…
+        {t('stories.page.opening')}
       </p>
     )
   }
@@ -266,13 +268,14 @@ function StoryView({ view }: { view: StoryViewName }) {
     return (
       <EmptyState
         testId="story-missing"
-        title="That story is not here."
-        hint={
-          <>
-            It may have been deleted.{' '}
-            <Link to={`/app/universes/${universe.id}/stories`}>Back to the stories</Link>
-          </>
-        }
+        title={t('stories.page.missing.title')}
+        hint={tx('stories.page.missing.hint', {
+          link: (
+            <Link to={`/app/universes/${universe.id}/stories`}>
+              {t('stories.page.missing.back')}
+            </Link>
+          ),
+        })}
       />
     )
   }
@@ -280,9 +283,9 @@ function StoryView({ view }: { view: StoryViewName }) {
   if (state.kind === 'error') {
     return (
       <div className="notice notice--error" role="alert" data-testid="story-load-error">
-        <p>This story could not be opened.</p>
+        <p>{t('stories.page.loadError')}</p>
         <button className="button button--secondary" type="button" onClick={retry}>
-          Try again
+          {t('stories.page.retry')}
         </button>
       </div>
     )
@@ -305,7 +308,7 @@ function StoryView({ view }: { view: StoryViewName }) {
 
   /** A chapter as a reader finds it: "Chapter 2: Ashes", or "Arc 1, Chapter 2: Ashes" inside an arc. */
   const containerName = (chapterId: string | null) =>
-    chapterId === null ? UNCHAPTERED : (labels.get(chapterId) ?? UNCHAPTERED)
+    chapterId === null ? unchapteredLabel() : (labels.get(chapterId) ?? unchapteredLabel())
 
   const arcIndex = (arcId: string | null) =>
     groups.arcs.findIndex((entry) => entry.arc.id === arcId)
@@ -362,10 +365,10 @@ function StoryView({ view }: { view: StoryViewName }) {
         expectedVersion: scene.version,
       })
       patchScene(scene.id, saved)
-      setAnnouncement(`The lore of “${scene.title}” is in a new order.`)
+      setAnnouncement(t('stories.page.loreReordered', { title: scene.title }))
     } catch (error: unknown) {
       patchScene(scene.id, { entities: scene.entities })
-      setMessage(error instanceof ApiError ? error.message : 'The new order could not be saved.')
+      setMessage(error instanceof ApiError ? error.message : t('stories.page.orderFailed'))
       reload()
     }
   }
@@ -479,11 +482,19 @@ function StoryView({ view }: { view: StoryViewName }) {
           next.map((candidate) => candidate.id),
         ),
       )
-      const where = hasChapters ? ` in ${containerName(scene.chapterId)}` : ''
-      setAnnouncement(`“${scene.title}” is now scene ${to + 1} of ${next.length}${where}.`)
+      setAnnouncement(
+        hasChapters
+          ? t('stories.page.sceneMovedIn', {
+              title: scene.title,
+              n: to + 1,
+              total: next.length,
+              container: containerName(scene.chapterId),
+            })
+          : t('stories.page.sceneMoved', { title: scene.title, n: to + 1, total: next.length }),
+      )
     } catch (error: unknown) {
       showStory(story)
-      setMessage(error instanceof ApiError ? error.message : 'The new order could not be saved.')
+      setMessage(error instanceof ApiError ? error.message : t('stories.page.orderFailed'))
     } finally {
       isMoving.current = false
     }
@@ -503,10 +514,15 @@ function StoryView({ view }: { view: StoryViewName }) {
 
       const count = scenesIn(saved.scenes, chapterId).length
       setAnnouncement(
-        `“${scene.title}” moved to ${containerName(chapterId)}, scene ${count} of ${count}.`,
+        t('stories.page.sceneMovedTo', {
+          title: scene.title,
+          container: containerName(chapterId),
+          n: count,
+          total: count,
+        }),
       )
     } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That scene could not be moved.')
+      setMessage(error instanceof ApiError ? error.message : t('stories.page.sceneMoveFailed'))
       document.querySelector<HTMLElement>(sceneMenu(scene.id))?.focus()
     } finally {
       isMoving.current = false
@@ -547,10 +563,16 @@ function StoryView({ view }: { view: StoryViewName }) {
           next.map((candidate) => candidate.id),
         ),
       )
-      setAnnouncement(`“${chapter.title}” is now chapter ${inGroup + by + 1} of ${group.length}.`)
+      setAnnouncement(
+        t('stories.page.chapterMoved', {
+          title: chapter.title,
+          n: inGroup + by + 1,
+          total: group.length,
+        }),
+      )
     } catch (error: unknown) {
       showStory(story)
-      setMessage(error instanceof ApiError ? error.message : 'The new order could not be saved.')
+      setMessage(error instanceof ApiError ? error.message : t('stories.page.orderFailed'))
     } finally {
       isMoving.current = false
     }
@@ -568,12 +590,15 @@ function StoryView({ view }: { view: StoryViewName }) {
       const index = arcIndex(arcId)
       setAnnouncement(
         arcId === null || index < 0
-          ? `“${chapter.title}” is now in no arc.`
-          : `“${chapter.title}” moved to ${arcLabel(index, groups.arcs[index].arc.title)}, last.`,
+          ? t('stories.page.chapterNoArc', { title: chapter.title })
+          : t('stories.page.chapterMovedToArc', {
+              title: chapter.title,
+              label: arcLabel(index, groups.arcs[index].arc.title),
+            }),
       )
       reload()
     } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That chapter could not be moved.')
+      setMessage(error instanceof ApiError ? error.message : t('stories.page.chapterMoveFailed'))
     } finally {
       isMoving.current = false
     }
@@ -605,10 +630,12 @@ function StoryView({ view }: { view: StoryViewName }) {
           next.map((candidate) => candidate.id),
         ),
       )
-      setAnnouncement(`“${arc.title}” is now arc ${to + 1} of ${next.length}.`)
+      setAnnouncement(
+        t('stories.page.arcMoved', { title: arc.title, n: to + 1, total: next.length }),
+      )
     } catch (error: unknown) {
       showStory(story)
-      setMessage(error instanceof ApiError ? error.message : 'The new order could not be saved.')
+      setMessage(error instanceof ApiError ? error.message : t('stories.page.orderFailed'))
     } finally {
       isMoving.current = false
     }
@@ -619,72 +646,67 @@ function StoryView({ view }: { view: StoryViewName }) {
     const count = groups.arcs[index]?.chapters.length ?? 0
     setMessage(null)
     const removed = await confirmAction({
-      title: `Delete ${arcLabel(index, arc.title)}?`,
+      title: t('stories.page.removeArc.title', { label: arcLabel(index, arc.title) }),
       message:
         count === 0
-          ? 'It holds no chapters. The arc goes to the Trash, and you can restore it from there.'
-          : `Its ${chapterCountLabel(count)} stay where they are, in no arc, with every scene in them. The arc goes to the Trash, and restoring it puts them back in it.`,
-      confirmLabel: 'Move arc to Trash',
-      busyLabel: 'Moving…',
+          ? t('stories.page.removeArc.empty')
+          : t('stories.page.removeArc.message', { chapters: chapterCountLabel(count) }),
+      confirmLabel: t('stories.page.removeArc.confirm'),
+      busyLabel: t('stories.page.removeArc.busy'),
       variant: 'warning',
-      failure: 'That arc could not be deleted.',
+      failure: t('stories.page.removeArc.failure'),
       action: () => deletePlotArc(universe.id, story.id, arc.id),
     })
     if (!removed) return
-    setAnnouncement(`Moved the arc “${arc.title}” to the Trash.`)
+    setAnnouncement(t('stories.page.removeArc.done', { title: arc.title }))
     reload()
   }
 
   async function removeScene(scene: Scene) {
-    const stays =
-      scene.beats.length === 0
-        ? 'Its manuscript and saved versions go with it. The lore it links stays.'
-        : 'Its manuscript, saved versions and beats go with it. The lore it links stays.'
-
     setMessage(null)
     const removed = await confirmAction({
-      title: (
-        <>
-          Move the scene “<bdi>{scene.title}</bdi>” to the Trash?
-        </>
-      ),
-      message: `${stays} You can restore it from the Trash.`,
-      confirmLabel: 'Move scene to Trash',
-      busyLabel: 'Moving…',
+      title: tx('stories.page.removeScene.title', { title: <bdi>{scene.title}</bdi> }),
+      message:
+        scene.beats.length === 0
+          ? t('stories.page.removeScene.message')
+          : t('stories.page.removeScene.messageWithBeats'),
+      confirmLabel: t('stories.page.removeScene.confirm'),
+      busyLabel: t('stories.page.removeScene.busy'),
       variant: 'warning',
-      failure: 'That scene could not be deleted.',
+      failure: t('stories.page.removeScene.failure'),
       action: () => deleteScene(universe.id, story.id, scene.id),
     })
     if (!removed) return
-    setAnnouncement(`Moved “${scene.title}” to the Trash.`)
+    setAnnouncement(t('stories.page.removeScene.done', { title: scene.title }))
     reload()
   }
 
   /** Removes the chapter only. Its scenes move, in order, to the end of Unchaptered. */
   async function removeChapter(chapter: Chapter, index: number) {
     const count = scenesIn(scenes, chapter.id).length
-    const consequence =
-      count === 0
-        ? 'It holds no scenes.'
-        : `Its ${sceneCountLabel(count)} will be moved to Unchaptered, with their manuscripts and beats. No scene is deleted.`
-
     setMessage(null)
     const removed = await confirmAction({
-      title: `Delete ${chapterLabel(index, chapter.title)}?`,
-      message: `The chapter will be removed. ${consequence} The chapter goes to the Trash, and restoring it brings it back without moving any scene.`,
-      confirmLabel: 'Move chapter to Trash',
-      busyLabel: 'Moving…',
+      title: t('stories.page.removeChapter.title', { label: chapterLabel(index, chapter.title) }),
+      message:
+        count === 0
+          ? t('stories.page.removeChapter.messageEmpty')
+          : t('stories.page.removeChapter.message', { scenes: sceneCountLabel(count) }),
+      confirmLabel: t('stories.page.removeChapter.confirm'),
+      busyLabel: t('stories.page.removeChapter.busy'),
       variant: 'warning',
-      failure: 'That chapter could not be deleted.',
+      failure: t('stories.page.removeChapter.failure'),
       action: () => deleteChapter(universe.id, story.id, chapter.id),
     })
     if (!removed) return
     setAnnouncement(
       count === 0
-        ? `Moved the chapter “${chapter.title}” to the Trash.`
-        : `Moved the chapter “${chapter.title}” to the Trash. Its ${sceneCountLabel(count)} ${
-            count === 1 ? 'is' : 'are'
-          } now in Unchaptered.`,
+        ? t('stories.page.removeChapter.done', { title: chapter.title })
+        : t(
+            count === 1
+              ? 'stories.page.removeChapter.doneOne'
+              : 'stories.page.removeChapter.doneMany',
+            { title: chapter.title, scenes: sceneCountLabel(count) },
+          ),
     )
     reload()
   }
@@ -693,23 +715,18 @@ function StoryView({ view }: { view: StoryViewName }) {
     // What goes with the story, one line each, so its size is read before it is moved (Issue #50).
     const details = [
       ...(hasChapters ? [chapterCountLabel(chapters.length)] : []),
-      `${sceneCountLabel(scenes.length)}, with every manuscript`,
+      t('stories.page.removeStory.scenes', { scenes: sceneCountLabel(scenes.length) }),
       ...(arcs.length > 0 ? [arcCountLabel(arcs.length)] : []),
     ]
     setMessage(null)
     const removed = await confirmAction({
-      title: (
-        <>
-          Move “<bdi>{story.title}</bdi>” to the Trash?
-        </>
-      ),
-      message:
-        'Everything below goes with it. You can restore the whole story from the Trash. The lore it draws on stays.',
+      title: tx('stories.page.removeStory.title', { title: <bdi>{story.title}</bdi> }),
+      message: t('stories.page.removeStory.message'),
       details,
-      confirmLabel: 'Move story to Trash',
-      busyLabel: 'Moving…',
+      confirmLabel: t('stories.page.removeStory.confirm'),
+      busyLabel: t('stories.page.removeStory.busy'),
       variant: 'warning',
-      failure: 'That story could not be deleted.',
+      failure: t('stories.page.removeStory.failure'),
       action: () => deleteStory(universe.id, story.id),
     })
     if (removed) navigate(`/app/universes/${universe.id}/stories`)
@@ -759,7 +776,7 @@ function StoryView({ view }: { view: StoryViewName }) {
       data-testid="new-scene"
     >
       <ActionIcon icon={Plus} />
-      New scene
+      {t('stories.page.newScene')}
     </button>
   )
 
@@ -771,7 +788,7 @@ function StoryView({ view }: { view: StoryViewName }) {
       data-testid="new-chapter"
     >
       <ActionIcon icon={BookPlus} />
-      New chapter
+      {t('stories.page.newChapter')}
     </button>
   )
 
@@ -783,7 +800,7 @@ function StoryView({ view }: { view: StoryViewName }) {
       data-testid="new-arc"
     >
       <ActionIcon icon={Layers} />
-      New arc
+      {t('stories.page.newArc')}
     </button>
   )
 
@@ -830,8 +847,8 @@ function StoryView({ view }: { view: StoryViewName }) {
     <article className={`story story--${view}`} data-testid="story-page">
       <PageHeader
         crumb={
-          <nav className="story__crumbs" aria-label="Breadcrumb">
-            <Link to={`/app/universes/${universe.id}/stories`}>Stories</Link>
+          <nav className="story__crumbs" aria-label={t('stories.page.breadcrumb')}>
+            <Link to={`/app/universes/${universe.id}/stories`}>{t('stories.page.crumb')}</Link>
           </nav>
         }
         title={<bdi>{story.title}</bdi>}
@@ -864,7 +881,7 @@ function StoryView({ view }: { view: StoryViewName }) {
                 />
               ) : null}
               <Link className="story__timeline" to={timelinePath} data-testid="story-timeline">
-                View on timeline
+                {t('stories.page.timeline')}
               </Link>
               {/* Comments on the story as a whole. Not on the Manuscript view, where each scene has its own. */}
               <ReviewComments
@@ -880,16 +897,20 @@ function StoryView({ view }: { view: StoryViewName }) {
         }
       >
         <div className="story__bar">
-          <nav className="views story__views" aria-label="Story views" data-testid="story-views">
+          <nav
+            className="views story__views"
+            aria-label={t('stories.page.views')}
+            data-testid="story-views"
+          >
             <NavLink to={storyPath} end className="views__link" data-testid="story-view-scenes">
-              Scenes
+              {t('stories.page.viewScenes')}
             </NavLink>
             <NavLink
               to={`${storyPath}/manuscript`}
               className="views__link"
               data-testid="story-view-manuscript"
             >
-              Manuscript
+              {t('stories.page.viewManuscript')}
             </NavLink>
             {access.keepIdeas ? (
               <NavLink
@@ -897,7 +918,7 @@ function StoryView({ view }: { view: StoryViewName }) {
                 className="views__link"
                 data-testid="story-view-ideas"
               >
-                Ideas
+                {t('stories.page.viewIdeas')}
               </NavLink>
             ) : null}
           </nav>
@@ -906,12 +927,12 @@ function StoryView({ view }: { view: StoryViewName }) {
               no line of facts to hold it. */}
           <ActionMenu
             className="story__menu"
-            label={`Story actions for ${story.title}`}
+            label={t('stories.page.storyActions', { title: story.title })}
             triggerTestId="story-actions"
           >
             <Link className="actionmenu__item" to={timelinePath} data-testid="menu-story-timeline">
               <ActionIcon icon={Hourglass} />
-              View on timeline
+              {t('stories.page.menuTimeline')}
             </Link>
             {access.suggestChanges && !access.editContent ? (
               <button
@@ -921,7 +942,7 @@ function StoryView({ view }: { view: StoryViewName }) {
                 data-testid="suggest-story"
               >
                 <ActionIcon icon={FilePenLine} />
-                Suggest changes
+                {t('stories.page.suggest')}
               </button>
             ) : null}
             {access.editContent ? (
@@ -933,7 +954,7 @@ function StoryView({ view }: { view: StoryViewName }) {
                   data-testid="edit-story"
                 >
                   <ActionIcon icon={Pencil} />
-                  Edit story
+                  {t('stories.page.editStory')}
                 </button>
                 <hr className="actionmenu__divider" />
                 <button
@@ -943,7 +964,7 @@ function StoryView({ view }: { view: StoryViewName }) {
                   data-testid="delete-story"
                 >
                   <ActionIcon icon={Trash} />
-                  Delete story
+                  {t('stories.page.deleteStory')}
                 </button>
               </>
             ) : null}
@@ -953,15 +974,15 @@ function StoryView({ view }: { view: StoryViewName }) {
 
       {sent ? (
         <p className="callout story__sent" role="status" data-testid="suggestion-sent">
-          Suggestion sent. It&rsquo;s waiting under Review.
+          {t('stories.page.sent')}
         </p>
       ) : null}
 
       {stale ? (
         <div className="notice notice--error story__stale" role="alert" data-testid="story-stale">
-          <p>The story could not be read again, so what is shown may be out of date.</p>
+          <p>{t('stories.page.stale')}</p>
           <button className="button button--secondary" type="button" onClick={reload}>
-            Try again
+            {t('stories.page.staleRetry')}
           </button>
         </div>
       ) : null}
@@ -978,8 +999,8 @@ function StoryView({ view }: { view: StoryViewName }) {
         ) : (
           <EmptyState
             testId="role-unavailable"
-            title="This part of the universe is not available to you."
-            hint="Ideas are private to each account. The ideas in this universe belong to its owner."
+            title={t('stories.page.unavailable.title')}
+            hint={t('stories.page.unavailable.hint')}
           />
         )
       ) : view === 'manuscript' ? (
@@ -1010,7 +1031,7 @@ function StoryView({ view }: { view: StoryViewName }) {
       ) : (
         <section className="story__scenes" aria-labelledby="story-scenes-heading">
           <h2 className="visually-hidden" id="story-scenes-heading">
-            Scenes
+            {t('stories.page.scenesHeading')}
           </h2>
 
           {story.premise ? (
@@ -1022,9 +1043,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           {isEmpty ? null : (
             <div className="story__toolbar">
               <p className="chron__aside story__aside">
-                {hasStructure
-                  ? 'Arcs and chapters in order, and the scenes in each in the order they are told. When each happens in the world never moves it.'
-                  : 'In the order they are told. When each happens in the world never moves it.'}
+                {hasStructure ? t('stories.page.asideStructured') : t('stories.page.aside')}
               </p>
               {access.editContent ? (
                 <div className="story__toolbaractions">
@@ -1045,8 +1064,8 @@ function StoryView({ view }: { view: StoryViewName }) {
           {isEmpty ? (
             <EmptyState
               testId="scenes-empty"
-              title="No scenes yet."
-              hint="Start with a scene: the manuscript is written one scene at a time. Scenes are told in the order you set, whenever in the world each happens, and can be grouped into chapters and arcs whenever you like, or never."
+              title={t('stories.page.empty.title')}
+              hint={t('stories.page.empty.hint')}
               action={
                 access.editContent ? (
                   <>
@@ -1073,10 +1092,12 @@ function StoryView({ view }: { view: StoryViewName }) {
             >
               <header className="storygroup__head">
                 <h3 className="storygroup__title" id="unchaptered-heading">
-                  {UNCHAPTERED}
+                  {unchapteredLabel()}
                 </h3>
                 <p className="storygroup__hint">
-                  {sceneCountLabel(unchaptered.length)} not in a chapter yet.
+                  {t('stories.page.unchapteredHint', {
+                    scenes: sceneCountLabel(unchaptered.length),
+                  })}
                 </p>
               </header>
               <ol className="scenes" data-testid="unchaptered-scenes">
@@ -1137,7 +1158,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           onClose={() => setSceneForm({ mode: 'closed' })}
           onSaved={(saved) => {
             setSceneForm({ mode: 'closed' })
-            setAnnouncement(`Saved “${saved.title}”.`)
+            setAnnouncement(t('stories.page.savedScene', { title: saved.title }))
             reload()
           }}
           onSuggested={
@@ -1162,7 +1183,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           onClose={() => setChapterForm({ mode: 'closed' })}
           onSaved={(saved) => {
             setChapterForm({ mode: 'closed' })
-            setAnnouncement(`Saved the chapter “${saved.title}”.`)
+            setAnnouncement(t('stories.page.savedChapter', { title: saved.title }))
             reload()
           }}
         />
@@ -1177,7 +1198,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           onClose={() => setArcForm({ mode: 'closed' })}
           onSaved={(saved) => {
             setArcForm({ mode: 'closed' })
-            setAnnouncement(`Saved the arc “${saved.title}”.`)
+            setAnnouncement(t('stories.page.savedArc', { title: saved.title }))
             reload()
           }}
         />

@@ -3,7 +3,7 @@ import { Link, Navigate, NavLink } from 'react-router-dom'
 import { ManuscriptEditor } from './ManuscriptEditor'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
-import { UNCHAPTERED } from '../stories/format'
+import { unchaptered as unchapteredLabel } from '../stories/format'
 import { chapterChoices, readingOrder, scenesIn } from '../stories/structure'
 import type { Scene, StoryDetail } from '../stories/types'
 import { EmptyState } from './EmptyState'
@@ -46,7 +46,7 @@ function whereOf(
             {chapter.prefix}: <bdi>{chapter.title}</bdi>
           </>
         ) : (
-          UNCHAPTERED
+          unchapteredLabel()
         )
       ) : null,
     position: t('manuscript.panel.position', {
@@ -121,7 +121,7 @@ export function ManuscriptPanel({
   const groups = hasChapters
     ? [
         ...(unchaptered.length > 0
-          ? [{ key: 'unchaptered', label: UNCHAPTERED, scenes: unchaptered }]
+          ? [{ key: 'unchaptered', label: unchapteredLabel(), scenes: unchaptered }]
           : []),
         ...choices.map((choice) => ({
           key: choice.id,

@@ -1,6 +1,7 @@
 import { useId, type KeyboardEvent } from 'react'
 import { DndContext, MouseSensor, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { Link } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { FoldToggle } from './FoldToggle'
 import { LoreReference } from './LoreReference'
 import { LoreReorderHandle } from './LoreReorderHandle'
@@ -33,6 +34,7 @@ export function SceneStamp({
   scene: Scene
   testId: Surface
 }) {
+  const { t } = useI18n()
   const when = sceneWhen(chronology, scene.chronology)
   if (!when && !scene.pov) return null
 
@@ -44,17 +46,19 @@ export function SceneStamp({
           <Link
             className="scene__whenlink"
             to={`/app/universes/${universeId}/timeline?story=${scene.storyId}`}
-            aria-label={`${when.text}, on the story's timeline`}
+            aria-label={t('stories.scene.timelineLink', { when: when.text })}
             data-testid={`${testId}-timeline`}
           >
             {when.text}
           </Link>
-          {when.placed ? null : <span className="scene__unplaced"> · no date period yet</span>}
+          {when.placed ? null : (
+            <span className="scene__unplaced">{t('stories.scene.noPeriod')}</span>
+          )}
         </span>
       ) : null}
       {scene.pov ? (
         <span className="scene__pov" data-testid={`${testId}-pov`}>
-          <span className="scene__label">Point of view</span>
+          <span className="scene__label">{t('stories.scene.pov')}</span>
           <LoreReference universeId={universeId} reference={scene.pov} portrait />
         </span>
       ) : null}
@@ -80,6 +84,7 @@ export function SceneLore({
   /** The scene's lore in its new order, to save. Left out, the list is read-only. */
   onReorder?: (entityIds: string[]) => void
 }) {
+  const { t } = useI18n()
   const labelId = useId()
   const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 4 } }))
   const entities = scene.entities
@@ -116,7 +121,7 @@ export function SceneLore({
   return (
     <div className="scene__refs scene__refs--lore">
       <span className="scene__label" id={labelId}>
-        Lore <span className="scene__count">{entities.length}</span>
+        {t('stories.scene.lore')} <span className="scene__count">{entities.length}</span>
       </span>
       {onReorder ? (
         <DndContext
@@ -129,7 +134,7 @@ export function SceneLore({
           }}
           accessibility={{
             screenReaderInstructions: {
-              draggable: 'Drag a lore entry to move it, or move it with the arrow keys.',
+              draggable: t('stories.scene.dragInstructions'),
             },
           }}
         >
@@ -172,6 +177,7 @@ function LoreChip({
  * scene's own drawer.
  */
 export function SceneBeatList({ beats, testId }: { beats: SceneBeat[]; testId: Surface }) {
+  const { t } = useI18n()
   const labelId = useId()
   const {
     open: foldOpen,
@@ -188,10 +194,10 @@ export function SceneBeatList({ beats, testId }: { beats: SceneBeat[]; testId: S
           open={foldOpen}
           onToggle={setFoldOpen}
           controls={foldBodyId}
-          label="the beats"
+          label={t('stories.scene.beatsFoldLabel')}
           testId={`${testId}-beats-toggle`}
         />
-        Beats <span className="scene__count">{beats.length}</span>
+        {t('stories.scene.beats')} <span className="scene__count">{beats.length}</span>
       </span>
       <ol
         id={foldBodyId}

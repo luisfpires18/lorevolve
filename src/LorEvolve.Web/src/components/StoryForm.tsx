@@ -7,7 +7,9 @@ import { suggestStoryChanges } from '../suggestions/api'
 import { useReturnFocus } from '../lib/returnFocus'
 import { createStory, getStory, STORY_CHANGED, updateStory } from '../stories/api'
 import { storyChanges } from '../stories/changes'
+import { useI18n } from '../i18n'
 import {
+  STORY_STATUS_KEYS,
   STORY_STATUS_LABELS,
   STORY_STATUS_ORDER,
   StoryStatus,
@@ -53,6 +55,7 @@ interface StoryFormProps {
  * a story is a title and what it is about, and its scenes are written on its own page.
  */
 export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: StoryFormProps) {
+  const { t } = useI18n()
   const suggesting = onSuggested !== undefined && story !== null
   const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
@@ -71,10 +74,10 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     suggesting && story
-      ? `Your suggestion for “${story.title}” hasn’t been sent. Leave without sending it?`
+      ? t('stories.storyForm.leaveSuggestion', { title: story.title })
       : story
-        ? `“${story.title}” has unsaved changes. Leave without saving them?`
-        : 'This new story has not been created. Leave without saving it?',
+        ? t('stories.storyForm.leaveUnsaved', { title: story.title })
+        : t('stories.storyForm.leaveNew'),
     onClose,
   )
 
@@ -117,12 +120,12 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
           Object.keys(error.fieldErrors).length === 0
             ? error.message
             : suggesting
-              ? 'Some details need a change before this can be sent.'
-              : 'Some details need a change before this can be saved.',
+              ? t('stories.storyForm.detailsToSend')
+              : t('stories.storyForm.detailsToSave'),
         )
       } else {
         setMessage(
-          suggesting ? 'That suggestion couldn’t be sent.' : 'That story could not be saved.',
+          suggesting ? t('stories.storyForm.failedSend') : t('stories.storyForm.failedSave'),
         )
       }
     } finally {
@@ -148,19 +151,20 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
         <header className="drawer__head">
           {story ? (
             <p className="drawer__eyebrow">
-              {suggesting ? 'Suggesting changes to a story' : 'Editing a story'}
+              {suggesting
+                ? t('stories.storyForm.eyebrowSuggesting')
+                : t('stories.storyForm.eyebrowEditing')}
             </p>
           ) : null}
           <h2 className="drawer__title" id="story-heading">
-            {story ? story.title : 'New story'}
+            {story ? story.title : t('stories.storyForm.newTitle')}
           </h2>
         </header>
 
         <div className="drawer__body">
           {suggesting ? (
             <p className="callout" data-testid="story-suggesting">
-              You&rsquo;re suggesting changes. The story stays as it is until the owner or an Editor
-              accepts them.
+              {t('stories.storyForm.suggestingNote')}
             </p>
           ) : null}
 
@@ -172,7 +176,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
 
           {conflict && story ? (
             <EditConflict
-              what="story"
+              what={t('stories.storyForm.conflictNoun')}
               read={() => getStory(universeId, story.id)}
               renderLatest={(latest) => <ChangeList changes={storyChanges(latest, draft)} />}
               suggesting={suggesting}
@@ -194,7 +198,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
 
           <div className="field">
             <label className="field__label" htmlFor="story-title">
-              Title
+              {t('stories.storyForm.titleLabel')}
             </label>
             <input
               id="story-title"
@@ -202,7 +206,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
               ref={title}
               type="text"
               dir="auto"
-              placeholder="Insert a title"
+              placeholder={t('stories.storyForm.titlePlaceholder')}
               value={draft.title}
               onChange={(event) => edit({ title: event.target.value })}
               aria-invalid={fieldErrors.title ? true : undefined}
@@ -213,14 +217,14 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
 
           <div className="field">
             <label className="field__label" htmlFor="story-premise">
-              Premise
+              {t('stories.storyForm.premiseLabel')}
             </label>
-            <p className="field__hint">What the story is about. Optional.</p>
+            <p className="field__hint">{t('stories.storyForm.premiseHint')}</p>
             <textarea
               id="story-premise"
               className="field__input field__input--area"
               rows={4}
-              placeholder="Insert a premise"
+              placeholder={t('stories.storyForm.premisePlaceholder')}
               value={draft.premise}
               onChange={(event) => edit({ premise: event.target.value })}
               aria-invalid={fieldErrors.premise ? true : undefined}
@@ -231,7 +235,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
 
           <div className="field">
             <span className="field__label" id="story-status-label">
-              Status
+              {t('stories.storyForm.statusLabel')}
             </span>
             <div className="segmented" role="group" aria-labelledby="story-status-label">
               {STORY_STATUS_ORDER.map((option) => (
@@ -241,15 +245,13 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
                   className="segmented__option"
                   aria-pressed={draft.status === option}
                   onClick={() => edit({ status: option })}
-                  data-testid={`story-status-${STORY_STATUS_LABELS[option].toLowerCase()}`}
+                  data-testid={`story-status-${STORY_STATUS_KEYS[option]}`}
                 >
                   {STORY_STATUS_LABELS[option]}
                 </button>
               ))}
             </div>
-            <p className="field__hint">
-              Where you are with the telling. It says nothing about canon.
-            </p>
+            <p className="field__hint">{t('stories.storyForm.statusHint')}</p>
             {fieldErrors.status ? <p className="field__error">{fieldErrors.status}</p> : null}
           </div>
         </div>
@@ -264,13 +266,13 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
           >
             {suggesting
               ? isSaving
-                ? 'Sending'
-                : 'Send suggestion'
+                ? t('stories.storyForm.sending')
+                : t('stories.storyForm.sendSuggestion')
               : isSaving
-                ? 'Saving'
+                ? t('stories.storyForm.saving')
                 : story
-                  ? 'Save story'
-                  : 'Create story'}
+                  ? t('stories.storyForm.save')
+                  : t('stories.storyForm.create')}
           </button>
           <button
             className="button button--secondary"
@@ -278,7 +280,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
             onClick={close}
             data-testid="cancel-story"
           >
-            Cancel
+            {t('stories.storyForm.cancel')}
           </button>
         </footer>
       </form>

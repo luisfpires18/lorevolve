@@ -51,6 +51,7 @@ import {
   type FieldSection,
   type FieldValue,
   type FieldValueInput,
+  CANON_KEYS,
 } from '../lore/types'
 import { renderFact } from '../lore/facts'
 import { groupBySection } from '../lore/fieldSections'
@@ -986,7 +987,7 @@ function EntityScreen({ view }: { view: EntryView }) {
                   data-canon={option}
                   disabled={isSaving}
                   onClick={() => changeCanon(option)}
-                  data-testid={`canon-${CANON_LABELS[option].toLowerCase()}`}
+                  data-testid={`canon-${CANON_KEYS[option]}`}
                 >
                   {CANON_LABELS[option]}
                 </button>

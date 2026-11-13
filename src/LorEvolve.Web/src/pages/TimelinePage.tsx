@@ -4,7 +4,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
-import { UNCHAPTERED } from '../stories/format'
+import { unchaptered } from '../stories/format'
 import { EmptyState } from '../components/EmptyState'
 import { EntityPicker, type EntityChoice } from '../components/EntityPicker'
 import { TimelineEntryForm } from '../components/TimelineEntryForm'
@@ -459,7 +459,7 @@ export default function TimelinePage() {
           {tx('time.timeline.sceneIn', {
             story: <bdi>{scene.storyTitle}</bdi>,
             // A chapter by its title: its number restarts in each arc, so alone it would not say which one (ADR 0070).
-            chapter: scene.chapterTitle !== null ? <bdi>{scene.chapterTitle}</bdi> : UNCHAPTERED,
+            chapter: scene.chapterTitle !== null ? <bdi>{scene.chapterTitle}</bdi> : unchaptered(),
           })}
         </p>
         <p className="moment__links">

@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from 'react'
+import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import {
   ArrowDown,
@@ -19,7 +20,7 @@ import { FoldToggle } from './FoldToggle'
 import { ContainerName } from './ContainerName'
 import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
 import type { Chronology } from '../chronology/types'
-import { chapterLabel, UNCHAPTERED } from '../stories/format'
+import { chapterLabel, unchaptered } from '../stories/format'
 import type { Scene } from '../stories/types'
 
 /** A container a scene can be moved into: a chapter, or Unchaptered when `chapterId` is null. */
@@ -91,6 +92,7 @@ export function SceneCard({
   onReorderLore,
   publication,
 }: SceneCardProps) {
+  const { t, tx } = useI18n()
   const access = useUniverseAccess()
   const titleId = useId()
   const Title = titleLevel === 5 ? 'h5' : titleLevel === 4 ? 'h4' : 'h3'
@@ -125,12 +127,18 @@ export function SceneCard({
               open={foldOpen}
               onToggle={setFoldOpen}
               controls={foldBodyId}
-              label={`scene ${index + 1}: ${scene.title}`}
+              label={t('stories.scene.foldLabel', { n: index + 1, title: scene.title })}
               testId="scene-toggle"
             />
           ) : null}
-          <Title className="scene__title" id={titleId}>
-            <span className="visually-hidden">Scene {index + 1}: </span>
+          {/* The number is read, not drawn. It is the heading's accessible name, as one message rather than a
+              prefix glued to the title, so a translation may put the two in its own order; the title itself is
+              drawn once and keeps its own direction. */}
+          <Title
+            className="scene__title"
+            id={titleId}
+            aria-label={t('stories.scene.heading', { n: index + 1, title: scene.title })}
+          >
             <bdi>{scene.title}</bdi>
           </Title>
         </div>
@@ -163,7 +171,7 @@ export function SceneCard({
             data-testid="scene-edit"
           >
             <ActionIcon icon={Pencil} />
-            Edit scene
+            {t('stories.scene.edit')}
           </button>
         ) : null}
         <Link
@@ -173,11 +181,11 @@ export function SceneCard({
           data-testid="scene-write"
         >
           <ActionIcon icon={access.editContent ? PenLine : BookOpen} />
-          {access.editContent ? 'Write' : 'Read'}
+          {access.editContent ? t('stories.scene.write') : t('stories.scene.read')}
         </Link>
         {access.editContent || access.suggestChanges ? (
           <ActionMenu
-            label={`More actions for ${scene.title}`}
+            label={t('stories.scene.moreActions', { title: scene.title })}
             triggerTestId="scene-actions"
             panelClassName="actionmenu__panel--wide"
           >
@@ -189,7 +197,7 @@ export function SceneCard({
                 data-testid="scene-suggest"
               >
                 <ActionIcon icon={FilePenLine} />
-                Suggest changes
+                {t('stories.scene.suggest')}
               </button>
             ) : null}
             {access.editContent && index > 0 ? (
@@ -200,7 +208,7 @@ export function SceneCard({
                 data-testid="scene-move-up"
               >
                 <ActionIcon icon={ArrowUp} />
-                Move up
+                {t('stories.scene.moveUp')}
               </button>
             ) : null}
             {access.editContent && index < count - 1 ? (
@@ -211,7 +219,7 @@ export function SceneCard({
                 data-testid="scene-move-down"
               >
                 <ActionIcon icon={ArrowDown} />
-                Move down
+                {t('stories.scene.moveDown')}
               </button>
             ) : null}
             {(access.editContent ? moveTargets : []).map((target) => (
@@ -225,13 +233,19 @@ export function SceneCard({
                   (target.arc ? `${target.arc}, ` : '') +
                   (target.chapter
                     ? chapterLabel(target.chapter.index, target.chapter.title)
-                    : UNCHAPTERED)
+                    : unchaptered())
                 }
               >
                 <ActionIcon icon={ArrowRightLeft} />
                 <span className="actionmenu__text">
-                  Move to {target.arc ? `${target.arc}, ` : null}
-                  <ContainerName chapter={target.chapter} />
+                  {tx('stories.scene.moveTo', {
+                    target: (
+                      <>
+                        {target.arc ? `${target.arc}, ` : null}
+                        <ContainerName chapter={target.chapter} />
+                      </>
+                    ),
+                  })}
                 </span>
               </button>
             ))}
@@ -243,7 +257,7 @@ export function SceneCard({
                 data-testid="scene-add-beat"
               >
                 <ActionIcon icon={ListPlus} />
-                Add beat
+                {t('stories.scene.addBeat')}
               </button>
             ) : null}
             {access.editContent ? (
@@ -256,7 +270,7 @@ export function SceneCard({
                   data-testid="scene-delete"
                 >
                   <ActionIcon icon={Trash} />
-                  Delete scene
+                  {t('stories.scene.delete')}
                 </button>
               </>
             ) : null}

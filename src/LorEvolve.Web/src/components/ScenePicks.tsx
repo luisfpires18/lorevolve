@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import { useI18n } from '../i18n'
 import { getStory, listStories } from '../stories/api'
 import { readingOrder } from '../stories/structure'
 import type { StorySummary } from '../stories/types'
@@ -27,6 +28,7 @@ export function ScenePicks({
   error?: string
   testId: string
 }) {
+  const { t } = useI18n()
   const storyId = useId()
   const sceneId = useId()
   const hintId = useId()
@@ -87,13 +89,14 @@ export function ScenePicks({
               <bdi>{scene.title}</bdi>
               <span className="token__note">
                 {' '}
-                · {scene.storyTitle}
-                {scene.isTrashed ? ' (in Trash)' : ''}
+                {scene.isTrashed
+                  ? t('stories.picks.noteTrashed', { story: scene.storyTitle })
+                  : t('stories.picks.note', { story: scene.storyTitle })}
               </span>
               <button
                 type="button"
                 className="token__remove"
-                aria-label={`Remove ${scene.title}`}
+                aria-label={t('stories.picks.remove', { title: scene.title })}
                 onClick={() => onChange(value.filter((one) => one.id !== scene.id))}
               >
                 &times;
@@ -105,7 +108,7 @@ export function ScenePicks({
 
       <div className="scenepicks">
         <label className="visually-hidden" htmlFor={storyId}>
-          {label}: story
+          {t('stories.picks.storyLabel', { label })}
         </label>
         <select
           id={storyId}
@@ -120,10 +123,10 @@ export function ScenePicks({
         >
           <option value="">
             {stories === null
-              ? 'Reading stories…'
+              ? t('stories.picks.readingStories')
               : stories.length === 0
-                ? 'No stories yet'
-                : 'Choose a story…'}
+                ? t('stories.picks.noStories')
+                : t('stories.picks.chooseStory')}
           </option>
           {(stories ?? []).map((one) => (
             <option key={one.id} value={one.id}>
@@ -132,7 +135,7 @@ export function ScenePicks({
           ))}
         </select>
         <label className="visually-hidden" htmlFor={sceneId}>
-          {label}: scene
+          {t('stories.picks.sceneLabel', { label })}
         </label>
         <select
           id={sceneId}
@@ -149,12 +152,12 @@ export function ScenePicks({
         >
           <option value="">
             {!story
-              ? 'Then a scene'
+              ? t('stories.picks.thenScene')
               : scenes === null
-                ? 'Reading scenes…'
+                ? t('stories.picks.readingScenes')
                 : offered.length === 0
-                  ? 'No more scenes'
-                  : 'Choose a scene…'}
+                  ? t('stories.picks.noMoreScenes')
+                  : t('stories.picks.chooseScene')}
           </option>
           {offered.map((scene) => (
             <option key={scene.id} value={scene.id}>

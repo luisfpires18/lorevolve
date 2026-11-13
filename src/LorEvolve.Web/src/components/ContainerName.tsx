@@ -1,4 +1,4 @@
-import { chapterNumber, UNCHAPTERED } from '../stories/format'
+import { chapterNumber, unchaptered } from '../stories/format'
 
 /**
  * Where a scene sits, drawn: "Chapter 3: The Fall", or "Unchaptered". The number is LorEvolve's and the title the
@@ -6,7 +6,7 @@ import { chapterNumber, UNCHAPTERED } from '../stories/format'
  * follows the label into its own direction. `chapterLabel` is the same words as plain text, for where no markup can go.
  */
 export function ContainerName({ chapter }: { chapter: { index: number; title: string } | null }) {
-  if (chapter === null) return UNCHAPTERED
+  if (chapter === null) return unchaptered()
   return (
     <>
       {chapterNumber(chapter.index)}: <bdi>{chapter.title}</bdi>

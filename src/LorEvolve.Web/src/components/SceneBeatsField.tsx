@@ -1,6 +1,7 @@
 import { useId, useRef } from 'react'
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { useI18n } from '../i18n'
 import { beatKey, type BeatDraft } from '../stories/beats'
 
 interface SceneBeatsFieldProps {
@@ -15,6 +16,7 @@ interface SceneBeatsFieldProps {
  * the end, moved one place at a time and removed, all from the keyboard as well as the pointer. Saved with the scene, whole.
  */
 export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProps) {
+  const { t } = useI18n()
   const hintId = useId()
   const list = useRef<HTMLOListElement>(null)
 
@@ -56,9 +58,9 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
       aria-describedby={hintId}
       data-testid="scene-beats-field"
     >
-      <legend className="field__label">Beats</legend>
+      <legend className="field__label">{t('stories.beats.legend')}</legend>
       <p className="field__hint" id={hintId}>
-        The steps of this scene, in order. Optional.
+        {t('stories.beats.hint')}
       </p>
 
       {beats.length > 0 ? (
@@ -76,8 +78,8 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
                     className="field__input"
                     type="text"
                     dir="auto"
-                    placeholder="Insert a beat"
-                    aria-label={`Beat ${index + 1}`}
+                    placeholder={t('stories.beats.titlePlaceholder')}
+                    aria-label={t('stories.beats.titleLabel', { n: index + 1 })}
                     value={beat.title}
                     onChange={(event) => update(index, { title: event.target.value })}
                     aria-invalid={titleError ? true : undefined}
@@ -87,8 +89,8 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
                     className="field__input scenebeats__note"
                     type="text"
                     dir="auto"
-                    placeholder="Insert a note"
-                    aria-label={`Note for beat ${index + 1}`}
+                    placeholder={t('stories.beats.notePlaceholder')}
+                    aria-label={t('stories.beats.noteLabel', { n: index + 1 })}
                     value={beat.note}
                     onChange={(event) => update(index, { note: event.target.value })}
                     aria-invalid={noteError ? true : undefined}
@@ -103,8 +105,8 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
                     type="button"
                     onClick={() => move(index, -1)}
                     aria-disabled={index === 0 ? true : undefined}
-                    title="Earlier"
-                    aria-label={`Move beat ${index + 1} up`}
+                    title={t('stories.beats.earlier')}
+                    aria-label={t('stories.beats.moveUp', { n: index + 1 })}
                     data-testid="scene-beat-up"
                   >
                     <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -114,8 +116,8 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
                     type="button"
                     onClick={() => move(index, 1)}
                     aria-disabled={index === beats.length - 1 ? true : undefined}
-                    title="Later"
-                    aria-label={`Move beat ${index + 1} down`}
+                    title={t('stories.beats.later')}
+                    aria-label={t('stories.beats.moveDown', { n: index + 1 })}
                     data-testid="scene-beat-down"
                   >
                     <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -124,8 +126,8 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
                     className="iconbutton"
                     type="button"
                     onClick={() => remove(index)}
-                    aria-label={`Remove beat ${index + 1}`}
-                    title="Remove"
+                    aria-label={t('stories.beats.removeLabel', { n: index + 1 })}
+                    title={t('stories.beats.remove')}
                     data-testid="scene-beat-remove"
                   >
                     <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -144,7 +146,7 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
         data-testid="scene-beat-add"
       >
         <ActionIcon icon={Plus} />
-        Add beat
+        {t('stories.beats.add')}
       </button>
       {errors.beats ? <p className="field__error">{errors.beats}</p> : null}
     </fieldset>
