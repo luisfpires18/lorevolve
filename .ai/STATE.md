@@ -64,8 +64,8 @@ Checked 2026-10-29 with `git log origin/dev..<branch>`.
 
 ## Open issues
 
-- **Languages** (umbrella #99, ADR 0071): foundation #100 and shell strings #101 on `dev`. Next: string extraction #102 to
-  #105 (`BRAND_LINK_LABEL`, `NETWORK_FAILURE` stay as deprecated English exports until their screens move), then pt-PT #106 and #107 (switch goes live). Preview pt-PT locally: `localStorage['lorevolve-locale'] = 'pt-PT'`.
+- **Languages** (umbrella #99, ADR 0071): foundation #100, shell #101 and lore workspace #102 on `dev`. Next: string extraction #103 to
+  #105 (`BRAND_LINK_LABEL`, `NETWORK_FAILURE`, `ROLE_LABELS`, `ROLE_DESCRIPTIONS` stay as deprecated English exports until their screens move), then pt-PT #106 and #107 (switch goes live). Preview pt-PT locally: `localStorage['lorevolve-locale'] = 'pt-PT'`.
 `gh issue list --repo luisfpires18/lorevolve --state open`. As of 2026-10-29:
 
 - Alpha: #34 launch readiness / final review (high), #35 alpha plan and issue index, #54 daily backups (high; the
