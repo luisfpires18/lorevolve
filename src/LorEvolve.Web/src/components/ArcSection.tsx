@@ -158,7 +158,6 @@ export function ArcSection({
           <p
             className="plotarc__description prose"
             hidden={!foldOpen}
-            data-fold={foldBodyId}
             data-testid="arc-description"
           >
             {arc.description}
@@ -166,7 +165,7 @@ export function ArcSection({
         ) : null}
       </header>
 
-      <div id={foldBodyId} hidden={!foldOpen} data-fold={foldBodyId}>
+      <div id={foldBodyId} hidden={!foldOpen}>
         {chapterCount > 0 ? (
           children
         ) : (
