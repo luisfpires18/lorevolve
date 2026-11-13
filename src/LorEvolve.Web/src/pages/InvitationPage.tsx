@@ -5,7 +5,7 @@ import { useAuth } from '../auth/useAuth'
 import { ApiError } from '../lib/api'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
-import { ROLE_DESCRIPTIONS, ROLE_LABELS } from '../universes/access'
+import { roleDescription, roleLabel } from '../universes/access'
 import {
   acceptClaimedInvitation,
   declineClaimedInvitation,
@@ -160,12 +160,12 @@ export default function InvitationPage() {
         <AuthLayout
           headingRef={heading}
           heading={invitation.universeName}
-          intro={t('auth.invitation.ready.intro', { role: ROLE_LABELS[invitation.role] })}
+          intro={t('auth.invitation.ready.intro', { role: roleLabel(invitation.role) })}
           footer={back}
         >
           <div data-testid="invitation-ready">
             <p className="invite__role" data-testid="invitation-role">
-              {ROLE_DESCRIPTIONS[invitation.role]}
+              {roleDescription(invitation.role)}
             </p>
             {actionError ? (
               <p className="form__message" role="alert" data-testid="invitation-error">

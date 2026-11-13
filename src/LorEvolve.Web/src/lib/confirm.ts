@@ -86,10 +86,11 @@ export function confirmAction(options: ConfirmOptions): Promise<boolean> {
 /**
  * The one question before unsaved work is let go: Keep editing has the focus, and Discard changes is the danger button.
  * `title` names what is open - "Close the article without saving your changes?" - when that says more than the default.
+ * Every default is read here, when the question is asked, so it is in the language the reader has at that moment.
  */
-export function confirmDiscard(title: ReactNode = t('shell.confirm.discard.title')) {
+export function confirmDiscard(title?: ReactNode) {
   return confirmAction({
-    title,
+    title: title ?? t('shell.confirm.discard.title'),
     message: t('shell.confirm.discard.message'),
     confirmLabel: t('shell.confirm.discard.confirm'),
     cancelLabel: t('shell.confirm.discard.cancel'),

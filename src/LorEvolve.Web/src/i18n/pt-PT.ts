@@ -3,6 +3,7 @@ import account from './pt-PT/account'
 import auth from './pt-PT/auth'
 import portal from './pt-PT/portal'
 import publishing from './pt-PT/publishing'
+import roles from './pt-PT/roles'
 import shell from './pt-PT/shell'
 
 /**
@@ -14,6 +15,7 @@ const ptPT = {
   auth,
   portal,
   publishing,
+  roles,
   shell,
   language: {
     label: 'Idioma',

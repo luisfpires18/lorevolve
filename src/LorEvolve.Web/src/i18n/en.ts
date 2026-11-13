@@ -3,6 +3,7 @@ import account from './en/account'
 import auth from './en/auth'
 import portal from './en/portal'
 import publishing from './en/publishing'
+import roles from './en/roles'
 import shell from './en/shell'
 
 /**
@@ -19,6 +20,7 @@ const en = {
   auth,
   portal,
   publishing,
+  roles,
   shell,
   language: {
     label: 'Language',
