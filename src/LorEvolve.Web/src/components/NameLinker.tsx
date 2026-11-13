@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import { useI18n } from '../i18n'
 import { getEntity } from '../lore/api'
 import { findNames, linkNames, type NameSource } from '../lore/mentions'
 import type { SceneLoreReference } from '../stories/types'
@@ -22,6 +23,7 @@ export function NameLinker({
   onLink: (next: string, count: number) => void
   onClose: () => void
 }) {
+  const { t, tn } = useI18n()
   const titleId = useId()
   const [sources, setSources] = useState<NameSource[] | 'loading' | 'failed'>('loading')
   const [skipped, setSkipped] = useState<Set<string>>(() => new Set())
@@ -66,25 +68,23 @@ export function NameLinker({
   return (
     <section className="recovery namelinker" aria-labelledby={titleId} data-testid="name-linker">
       <p className="recovery__title" id={titleId}>
-        Link names from this scene’s Lore
+        {t('lore.nameLinker.title')}
       </p>
       {sources === 'loading' ? (
         <p className="recovery__text" role="status">
-          Looking for names…
+          {t('lore.nameLinker.looking')}
         </p>
       ) : sources === 'failed' ? (
         <p className="recovery__text" role="alert">
-          This scene’s Lore could not be read. Try again.
+          {t('lore.nameLinker.failed')}
         </p>
       ) : rows.length === 0 ? (
         <p className="recovery__text" data-testid="name-linker-none">
-          The prose names no entry of this scene’s Lore that is not a mention already.
+          {t('lore.nameLinker.none')}
         </p>
       ) : (
         <>
-          <p className="recovery__hint">
-            Each ticked name becomes a mention everywhere it appears. Nothing is saved until Save.
-          </p>
+          <p className="recovery__hint">{t('lore.nameLinker.hint')}</p>
           <ul className="namelinker__list">
             {rows.map((row) => (
               <li key={key(row)}>
@@ -104,9 +104,16 @@ export function NameLinker({
                     data-term={row.term}
                   />
                   <span>
-                    “{row.term}”
-                    {row.term === nameOf(row.entityId) ? '' : ` as ${nameOf(row.entityId)}`},{' '}
-                    {row.count === 1 ? 'once' : `${row.count} times`}
+                    {row.term === nameOf(row.entityId)
+                      ? t('lore.nameLinker.row', {
+                          term: row.term,
+                          times: tn('lore.nameLinker.times', row.count, { n: row.count }),
+                        })
+                      : t('lore.nameLinker.rowAs', {
+                          term: row.term,
+                          name: nameOf(row.entityId) ?? '',
+                          times: tn('lore.nameLinker.times', row.count, { n: row.count }),
+                        })}
                   </span>
                 </label>
               </li>
@@ -123,7 +130,7 @@ export function NameLinker({
             onClick={() => onLink(linkNames(text, chosen), chosen.length)}
             data-testid="name-linker-apply"
           >
-            {chosen.length === 1 ? 'Link 1 name' : `Link ${chosen.length} names`}
+            {tn('lore.nameLinker.apply', chosen.length, { n: chosen.length })}
           </button>
         ) : null}
         <button
@@ -132,7 +139,7 @@ export function NameLinker({
           onClick={onClose}
           data-testid="name-linker-close"
         >
-          {rows.length > 0 ? 'Cancel' : 'Close'}
+          {rows.length > 0 ? t('lore.nameLinker.cancel') : t('lore.nameLinker.close')}
         </button>
       </div>
     </section>

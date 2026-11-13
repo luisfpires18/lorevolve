@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { ApiError } from '../lib/api'
 import type { Change } from '../lib/editConflict'
 import { confirmAction } from '../lib/confirm'
+import { useI18n } from '../i18n'
 
 type ReviewState<T> =
   | { kind: 'notice' }
@@ -43,6 +44,7 @@ export function EditConflict<T>({
   testId,
   suggesting = false,
 }: EditConflictProps<T>) {
+  const { t } = useI18n()
   const reviewId = useId()
   const hintId = useId()
   const [state, setState] = useState<ReviewState<T>>({ kind: 'notice' })
@@ -69,10 +71,10 @@ export function EditConflict<T>({
   async function chooseLatest(latest: T) {
     if (
       !(await confirmAction({
-        title: 'Replace your unsaved changes with the latest version?',
-        message: 'Your changes will be lost.',
-        confirmLabel: 'Use the latest version',
-        cancelLabel: 'Keep my changes',
+        title: t('entity.conflict.replaceConfirm.title'),
+        message: t('entity.conflict.replaceConfirm.message'),
+        confirmLabel: t('entity.conflict.replaceConfirm.confirm'),
+        cancelLabel: t('entity.conflict.replaceConfirm.cancel'),
         variant: 'destructive',
       }))
     ) {
@@ -86,21 +88,13 @@ export function EditConflict<T>({
       <div role="alert">
         {suggesting ? (
           <>
-            <p className="editconflict__title">
-              This {what} changed while you were writing your suggestion.
-            </p>
-            <p className="editconflict__text">
-              Your suggestion is still here and hasn&rsquo;t been sent. Look at the latest version
-              first, then decide what to keep.
-            </p>
+            <p className="editconflict__title">{t('entity.conflict.suggestion.title', { what })}</p>
+            <p className="editconflict__text">{t('entity.conflict.suggestion.text')}</p>
           </>
         ) : (
           <>
-            <p className="editconflict__title">This {what} changed while you were editing.</p>
-            <p className="editconflict__text">
-              Your changes are still here and haven&rsquo;t been saved. LorEvolve won&rsquo;t save
-              over the newer version. Look at it first, then decide what to keep.
-            </p>
+            <p className="editconflict__title">{t('entity.conflict.edit.title', { what })}</p>
+            <p className="editconflict__text">{t('entity.conflict.edit.text')}</p>
           </>
         )}
       </div>
@@ -113,27 +107,26 @@ export function EditConflict<T>({
             onClick={() => void review()}
             data-testid={`${testId}-review`}
           >
-            Review the latest version
+            {t('entity.conflict.review')}
           </button>
         </div>
       ) : null}
 
       {state.kind === 'failed' ? (
         <p className="editconflict__text" role="status">
-          LorEvolve couldn&rsquo;t open the latest version. Try again.
+          {t('entity.conflict.failed')}
         </p>
       ) : null}
 
       {state.kind === 'loading' ? (
         <p className="editconflict__text" role="status">
-          Opening the latest version&hellip;
+          {t('entity.conflict.loading')}
         </p>
       ) : null}
 
       {state.kind === 'missing' ? (
         <p className="editconflict__text" role="alert" data-testid={`${testId}-missing`}>
-          This {what} isn&rsquo;t here anymore. Someone may have moved it to the Trash. Your changes
-          are still on screen, so copy them before you leave.
+          {t('entity.conflict.missing', { what })}
         </p>
       ) : null}
 
@@ -144,7 +137,7 @@ export function EditConflict<T>({
           data-testid={`${testId}-latest`}
         >
           <h3 className="editconflict__heading" id={reviewId} ref={heading} tabIndex={-1}>
-            Latest saved version
+            {t('entity.conflict.latestHeading')}
           </h3>
           {renderLatest(state.latest)}
           <div className="editconflict__actions">
@@ -155,7 +148,7 @@ export function EditConflict<T>({
               aria-describedby={hintId}
               data-testid={`${testId}-keep`}
             >
-              Keep my changes
+              {t('entity.conflict.keepMine')}
             </button>
             <button
               className="button button--secondary"
@@ -163,13 +156,11 @@ export function EditConflict<T>({
               onClick={() => chooseLatest(state.latest)}
               data-testid={`${testId}-use-latest`}
             >
-              Use the latest version
+              {t('entity.conflict.useLatest')}
             </button>
           </div>
           <p className="editconflict__hint" id={hintId}>
-            {suggesting
-              ? 'Your suggestion stays here, unsent. Send it again when you’re ready.'
-              : 'Your changes stay where they are, unsaved. Save again when you’re ready.'}
+            {suggesting ? t('entity.conflict.hint.suggestion') : t('entity.conflict.hint.edit')}
           </p>
         </section>
       ) : null}
@@ -184,8 +175,8 @@ export function EditConflict<T>({
  */
 export function ChangeList({
   changes,
-  sides = { latest: 'Saved now', mine: 'Yours' },
-  empty = 'The latest version matches your changes.',
+  sides: customSides,
+  empty: customEmpty,
   testId = 'conflict',
 }: {
   changes: Change[]
@@ -193,6 +184,13 @@ export function ChangeList({
   empty?: string
   testId?: string
 }) {
+  const { t } = useI18n()
+  const sides = customSides ?? {
+    latest: t('entity.conflict.sides.latest'),
+    mine: t('entity.conflict.sides.mine'),
+  }
+  const empty = customEmpty ?? t('entity.conflict.matches')
+
   if (changes.length === 0) {
     return <p className="editconflict__text">{empty}</p>
   }
@@ -222,6 +220,7 @@ export function ChangeList({
 
 /** A long text's latest saved version, whole, scrolling inside its own region. */
 export function LatestText({ children, label }: { children: ReactNode; label: string }) {
+  const { t } = useI18n()
   return (
     <>
       <div
@@ -233,7 +232,7 @@ export function LatestText({ children, label }: { children: ReactNode; label: st
       >
         {children}
       </div>
-      <p className="editconflict__hint">Your version is still in the editor.</p>
+      <p className="editconflict__hint">{t('entity.conflict.latestTextHint')}</p>
     </>
   )
 }

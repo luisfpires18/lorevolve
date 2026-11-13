@@ -18684,3 +18684,52 @@ details.reviewsection > .reviewsection__list {
 .scene__titlerow > .foldtoggle {
   margin-inline-start: -0.4rem;
 }
+
+/* The grip a scene's lore chip is dragged by: quiet until the row is pointed at or the grip itself is reached. */
+.lorechip__grip {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.25rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  opacity: 0.45;
+  cursor: grab;
+}
+
+.lorechip__grip svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.scene__lore li:hover .lorechip__grip,
+.lorechip__grip:focus-visible {
+  opacity: 1;
+  color: var(--ink);
+}
+
+.lorechip__grip[aria-pressed='true'] {
+  cursor: grabbing;
+  opacity: 1;
+}
+
+.scene__lore li {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+/* Where a dragged chip would land. */
+.scene__lore li[data-over='true'] .lorechip {
+  border-color: var(--type-ink);
+  background: var(--surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lorechip__grip {
+    transition: none;
+  }
+}

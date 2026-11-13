@@ -3,6 +3,7 @@ import { formatDateTime } from '../lib/dates'
 import type { LocalDraft } from '../lib/localDrafts'
 import { sameSave } from '../lib/useLocalDraft'
 import { confirmAction } from '../lib/confirm'
+import { useI18n } from '../i18n'
 
 interface RecoveredDraftProps {
   /** What the copy is of, as it reads in a sentence: "this article", "this scene's manuscript". */
@@ -37,6 +38,7 @@ export function RecoveredDraft({
   onDiscard,
   testId,
 }: RecoveredDraftProps) {
+  const { t, tx } = useI18n()
   const titleId = useId()
   const bodyId = useId()
   const previewId = useId()
@@ -47,9 +49,9 @@ export function RecoveredDraft({
   async function discard() {
     if (
       await confirmAction({
-        title: `Discard the recovered draft of ${what}?`,
-        message: 'The changes in it were never saved, and cannot be brought back.',
-        confirmLabel: 'Discard draft',
+        title: t('entity.recovered.confirm.title', { what }),
+        message: t('entity.recovered.confirm.message'),
+        confirmLabel: t('entity.recovered.confirm.confirm'),
         variant: 'destructive',
       })
     ) {
@@ -65,32 +67,29 @@ export function RecoveredDraft({
       data-saved-since={savedSince ? 'true' : 'false'}
     >
       <p className="recovery__title" id={titleId}>
-        Recovered draft
+        {t('entity.recovered.title')}
       </p>
       <div id={bodyId}>
         <p className="recovery__text">
-          This device kept a copy of changes to {what} that were never saved, from{' '}
-          <time dateTime={draft.savedAt}>{formatDateTime(draft.savedAt)}</time>.
+          {tx('entity.recovered.kept', {
+            what,
+            time: <time dateTime={draft.savedAt}>{formatDateTime(draft.savedAt)}</time>,
+          })}
         </p>
         {savedSince ? (
           <p className="recovery__text recovery__since" data-testid={`${testId}-saved-since`}>
             {savedUpdatedAt ? (
               <>
-                It has been saved again since that copy was made, most recently{' '}
-                <time dateTime={savedUpdatedAt}>{formatDateTime(savedUpdatedAt)}</time>, so the copy
-                may be older than the saved text.
+                {tx('entity.recovered.savedAgain', {
+                  time: <time dateTime={savedUpdatedAt}>{formatDateTime(savedUpdatedAt)}</time>,
+                })}
               </>
             ) : (
-              <>
-                The saved text has changed since that copy was made, so the copy may be out of date.
-              </>
+              <>{t('entity.recovered.savedChanged')}</>
             )}
           </p>
         ) : null}
-        <p className="recovery__hint">
-          Recovering puts the copy in the editor as unsaved changes. Nothing is saved until you
-          save.
-        </p>
+        <p className="recovery__hint">{t('entity.recovered.hint')}</p>
       </div>
 
       <div className="recovery__actions">
@@ -101,7 +100,7 @@ export function RecoveredDraft({
           aria-describedby={bodyId}
           data-testid={`${testId}-recover`}
         >
-          Recover draft
+          {t('entity.recovered.recover')}
         </button>
         <button
           className="button button--secondary"
@@ -110,7 +109,7 @@ export function RecoveredDraft({
           aria-describedby={bodyId}
           data-testid={`${testId}-discard`}
         >
-          Discard draft
+          {t('entity.recovered.discard')}
         </button>
         <button
           className="button button--secondary"
@@ -120,7 +119,7 @@ export function RecoveredDraft({
           onClick={() => setIsShowing((showing) => !showing)}
           data-testid={`${testId}-preview-toggle`}
         >
-          {isShowing ? 'Hide the draft' : 'Show the draft'}
+          {isShowing ? t('entity.recovered.hide') : t('entity.recovered.show')}
         </button>
       </div>
 

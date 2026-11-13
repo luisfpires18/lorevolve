@@ -5,12 +5,13 @@ import { ActionIcon } from './ActionIcon'
 import { EntityTile } from './EntityTile'
 import { StatusBadge } from './StatusBadge'
 import type { Chronology } from '../chronology/types'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { useDrawerGuard } from '../lib/drawerGuard'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import { getEntity, listEntities } from '../lore/api'
-import { renderFact } from '../lore/facts'
+import { EMPTY_FACT, renderFact } from '../lore/facts'
 import { CANON_LABELS, type EntityDetail, type EntityImageRef } from '../lore/types'
 import { listEntityRelationships } from '../relationships/api'
 import type { RelationshipView } from '../relationships/types'
@@ -57,6 +58,7 @@ interface LoreRow {
  * optional "Add to this scene's Lore": a mention never links anything by itself, and one already linked offers nothing.
  */
 export function LoreContext(props: LoreContextProps) {
+  const { t } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -65,12 +67,12 @@ export function LoreContext(props: LoreContextProps) {
         className="button button--text loretrigger"
         type="button"
         aria-haspopup="dialog"
-        title="Lore"
+        title={t('lore.context.triggerTitle')}
         onClick={() => setIsOpen(true)}
         data-testid="lore-context-trigger"
       >
         <ActionIcon icon={Library} />
-        <span className="loretrigger__label">Lore</span>
+        <span className="loretrigger__label">{t('lore.context.triggerLabel')}</span>
       </button>
 
       {isOpen ? <LoreContextDrawer {...props} onClose={() => setIsOpen(false)} /> : null}
@@ -94,6 +96,7 @@ function LoreContextDrawer({
   onSceneChanged,
   onClose,
 }: LoreContextProps & { onClose: () => void }) {
+  const { t, tn, tx } = useI18n()
   const access = useUniverseAccess()
   const dialog = useRef<HTMLDialogElement>(null)
   const search = useRef<HTMLInputElement>(null)
@@ -249,19 +252,21 @@ function LoreContextDrawer({
         expectedVersion: scene.version,
       })
       onSceneSaved(saved)
-      setAnnouncement(link ? `Linked ${row.name} to this scene.` : `Unlinked ${row.name}.`)
+      setAnnouncement(
+        link
+          ? t('lore.context.linked', { name: row.name })
+          : t('lore.context.unlinked', { name: row.name }),
+      )
     } catch (error: unknown) {
       if (isChangedElsewhere(error, SCENE_CHANGED)) {
-        setMessage(
-          'This scene was changed somewhere else, so nothing was saved. The list now shows the latest. Try again.',
-        )
+        setMessage(t('lore.context.changedElsewhere'))
         onSceneChanged()
       } else if (error instanceof ApiError && error.status === 404) {
-        setMessage('This scene isn’t in the story anymore. It may have been moved to the Trash.')
+        setMessage(t('lore.context.sceneGone'))
       } else if (error instanceof ApiError && error.status === 400) {
         setMessage(error.fieldErrors.entityIds ?? error.message)
       } else {
-        setMessage('That didn’t save. Try again.')
+        setMessage(t('lore.context.notSaved'))
       }
     } finally {
       inFlight.current = false
@@ -321,7 +326,8 @@ function LoreContextDrawer({
         <div className="relation__body">
           {row.isTrashed ? (
             <span className="relation__name lorecontext__name--trashed">
-              <bdi>{row.name}</bdi> <span className="lorechip__note">(in Trash)</span>
+              <bdi>{row.name}</bdi>{' '}
+              <span className="lorechip__note">{t('lore.context.inTrash')}</span>
             </span>
           ) : (
             <button
@@ -331,7 +337,7 @@ function LoreContextDrawer({
               onKeyDown={from === 'result' ? moveThrough : undefined}
               data-preview-from={key}
               data-result-name={from === 'result' ? '' : undefined}
-              aria-label={`Preview ${row.name}`}
+              aria-label={t('lore.context.previewRow', { name: row.name })}
               data-testid="lore-context-preview"
             >
               <bdi>{row.name}</bdi>
@@ -340,7 +346,7 @@ function LoreContextDrawer({
           <p className="relation__meta">
             <bdi>{row.typeName}</bdi>
             {from === 'result' && isLinked && !access.editContent ? (
-              <span>In this scene</span>
+              <span>{t('lore.context.inSceneRow')}</span>
             ) : null}
           </p>
         </div>
@@ -350,18 +356,20 @@ function LoreContextDrawer({
             type="button"
             aria-disabled={busy !== null}
             aria-label={
-              isLinked ? `Unlink ${row.name} from this scene` : `Link ${row.name} to this scene`
+              isLinked
+                ? t('lore.context.unlinkLabel', { name: row.name })
+                : t('lore.context.linkLabel', { name: row.name })
             }
             onClick={() => void setLink(row, !isLinked)}
             data-testid={isLinked ? 'lore-context-unlink' : 'lore-context-link'}
           >
             {busy === row.id
               ? isLinked
-                ? 'Unlinking…'
-                : 'Linking…'
+                ? t('lore.context.unlinking')
+                : t('lore.context.linking')
               : isLinked
-                ? 'Unlink'
-                : 'Link'}
+                ? t('lore.context.unlink')
+                : t('lore.context.link')}
           </button>
         ) : null}
       </li>
@@ -378,7 +386,7 @@ function LoreContextDrawer({
     >
       <div className="drawer__panel">
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Lore</p>
+          <p className="drawer__eyebrow">{t('lore.context.drawerEyebrow')}</p>
           <h2 className="drawer__title" id={headingId}>
             <bdi>{scene.title}</bdi>
           </h2>
@@ -411,13 +419,11 @@ function LoreContextDrawer({
                   ref={linkedHeading}
                   tabIndex={-1}
                 >
-                  In this scene
+                  {t('lore.context.inScenePick')}
                 </h3>
                 {linked.length === 0 ? (
                   <p className="entry__blank" data-testid="lore-context-none">
-                    {access.editContent
-                      ? 'No lore linked yet. Search below to add some.'
-                      : 'No lore linked to this scene.'}
+                    {access.editContent ? t('lore.context.noneEditable') : t('lore.context.none')}
                   </p>
                 ) : (
                   <ul className="relations__rows" data-testid="lore-context-linked-list">
@@ -433,11 +439,11 @@ function LoreContextDrawer({
                   data-testid="lore-context-mentions"
                 >
                   <h3 className="sectionrule sectionrule--accent" id={`${headingId}-mentioned`}>
-                    Mentioned in the text
+                    {t('lore.context.mentioned')}
                   </h3>
                   {references === 'failed' ? (
                     <p className="form__message" data-testid="lore-context-mentions-error">
-                      The mentioned lore could not be read.
+                      {t('lore.context.mentionedFailed')}
                     </p>
                   ) : (
                     <ul className="relations__rows">
@@ -471,7 +477,7 @@ function LoreContextDrawer({
                                   type="button"
                                   onClick={() => openPreview(mention.entityId, key)}
                                   data-preview-from={key}
-                                  aria-label={`Preview ${name}`}
+                                  aria-label={t('lore.context.previewPick', { name })}
                                   data-testid="lore-context-mention-preview"
                                 >
                                   <bdi>{name}</bdi>
@@ -486,20 +492,22 @@ function LoreContextDrawer({
                                 data-testid="lore-context-mention-state"
                               >
                                 {!known ? (
-                                  'Reading…'
+                                  t('lore.context.reading')
                                 ) : reference === undefined ? (
-                                  'Not in this universe’s Lore'
+                                  t('lore.context.notInLore')
                                 ) : reference.isTrashed ? (
-                                  'In the Trash'
+                                  t('lore.context.inTheTrash')
                                 ) : (
                                   <>
                                     <bdi>{reference.entityTypeName}</bdi>
                                     {reference.name !== mention.name ? (
                                       <span>
-                                        Written as <bdi>{mention.name}</bdi>
+                                        {tx('lore.context.writtenAs', {
+                                          name: <bdi>{mention.name}</bdi>,
+                                        })}
                                       </span>
                                     ) : null}
-                                    {isLinked ? <span>In this scene’s Lore</span> : null}
+                                    {isLinked ? <span>{t('lore.context.inSceneLore')}</span> : null}
                                   </>
                                 )}
                               </p>
@@ -509,11 +517,11 @@ function LoreContextDrawer({
                                 className="button button--text lorecontext__action"
                                 type="button"
                                 aria-disabled={busy !== null}
-                                aria-label={`Add ${name} to this scene’s Lore`}
+                                aria-label={t('lore.context.addLabel', { name })}
                                 onClick={() => void setLink({ id: mention.entityId, name }, true)}
                                 data-testid="lore-context-mention-link"
                               >
-                                Add to this scene’s Lore
+                                {t('lore.context.add')}
                               </button>
                             ) : null}
                           </li>
@@ -526,10 +534,10 @@ function LoreContextDrawer({
 
               <section className="lorecontext__group" aria-labelledby={`${headingId}-find`}>
                 <h3 className="sectionrule sectionrule--accent" id={`${headingId}-find`}>
-                  Find lore
+                  {t('lore.context.find')}
                 </h3>
                 <label className="visually-hidden" htmlFor={searchId}>
-                  Search this universe’s lore
+                  {t('lore.context.searchLabel')}
                 </label>
                 <input
                   id={searchId}
@@ -537,7 +545,7 @@ function LoreContextDrawer({
                   className="field__input"
                   type="search"
                   dir="auto"
-                  placeholder="Search by name, alias or summary"
+                  placeholder={t('lore.context.searchPlaceholder')}
                   autoComplete="off"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -548,22 +556,22 @@ function LoreContextDrawer({
                 <div id={resultsId}>
                   <p className="visually-hidden" role="status">
                     {isSearching
-                      ? 'Searching…'
+                      ? t('lore.context.searching')
                       : results
                         ? results.length === 0
-                          ? 'No matches.'
-                          : `${results.length} ${results.length === 1 ? 'match' : 'matches'}.`
+                          ? t('lore.context.noMatches')
+                          : tn('lore.context.matches', results.length, { n: results.length })
                         : ''}
                   </p>
                   {searchFailed ? (
                     <p className="form__message" data-testid="lore-context-search-error">
-                      Search isn’t working right now. Try again in a moment.
+                      {t('lore.context.searchFailed')}
                     </p>
                   ) : term !== '' && !results ? (
-                    <p className="entry__blank">Searching…</p>
+                    <p className="entry__blank">{t('lore.context.searchingNote')}</p>
                   ) : results && results.length === 0 ? (
                     <p className="entry__blank" data-testid="lore-context-no-results">
-                      Nothing matches “<bdi>{term}</bdi>”.
+                      {tx('lore.context.nothingMatches', { term: <bdi>{term}</bdi> })}
                     </p>
                   ) : results ? (
                     <ul className="relations__rows" data-testid="lore-context-results">
@@ -583,7 +591,7 @@ function LoreContextDrawer({
             onClick={close}
             data-testid="lore-context-close"
           >
-            Close
+            {t('lore.context.close')}
           </button>
         </footer>
       </div>
@@ -621,6 +629,7 @@ function LorePreview({
   onLink: (row: { id: string; name: string }, link: boolean) => void
   onBack: () => void
 }) {
+  const { t } = useI18n()
   const [state, setState] = useState<PreviewState>({ kind: 'loading' })
   const nameId = useId()
   const back = useRef<HTMLButtonElement>(null)
@@ -656,7 +665,7 @@ function LorePreview({
     state.kind === 'ready'
       ? state.entity.fields
           .map((value) => ({ name: value.name, text: String(renderFact(value, chronology)) }))
-          .filter((fact) => fact.text !== '—')
+          .filter((fact) => fact.text !== EMPTY_FACT)
       : []
 
   return (
@@ -669,22 +678,22 @@ function LorePreview({
         data-testid="lore-preview-back"
       >
         <ActionIcon icon={ArrowLeft} />
-        Back to lore
+        {t('lore.preview.back')}
       </button>
 
       {state.kind === 'loading' ? (
         <p className="entry__blank" role="status" id={nameId}>
-          Opening the entry…
+          {t('lore.preview.opening')}
         </p>
       ) : null}
       {state.kind === 'missing' ? (
         <p className="entry__blank" id={nameId} data-testid="lore-preview-missing">
-          This entry isn’t available. It may be in the Trash.
+          {t('lore.preview.missing')}
         </p>
       ) : null}
       {state.kind === 'error' ? (
         <p className="form__message" role="alert" id={nameId} data-testid="lore-preview-error">
-          This entry couldn’t be opened. Go back and try again.
+          {t('lore.preview.error')}
         </p>
       ) : null}
 
@@ -723,7 +732,7 @@ function LorePreview({
             <dl className="facts" data-testid="lore-preview-facts">
               {state.entity.aliases.length > 0 ? (
                 <div className="facts__row">
-                  <dt className="facts__key">Also known as</dt>
+                  <dt className="facts__key">{t('lore.preview.aliases')}</dt>
                   <dd className="facts__value prose">{state.entity.aliases.join(', ')}</dd>
                 </div>
               ) : null}
@@ -738,7 +747,7 @@ function LorePreview({
 
           {state.relations && state.relations.length > 0 ? (
             <div className="lorepreview__relations">
-              <p className="facts__key">Connections</p>
+              <p className="facts__key">{t('lore.preview.connections')}</p>
               <ul className="lorepreview__list" data-testid="lore-preview-relations">
                 {state.relations.slice(0, MAX_RELATIONS).map((relation) => (
                   <li key={relation.id}>
@@ -748,7 +757,7 @@ function LorePreview({
               </ul>
               {state.relations.length > MAX_RELATIONS ? (
                 <p className="relation__meta">
-                  And {state.relations.length - MAX_RELATIONS} more on the entry’s page.
+                  {t('lore.preview.more', { n: state.relations.length - MAX_RELATIONS })}
                 </p>
               ) : null}
             </div>
@@ -763,7 +772,7 @@ function LorePreview({
                 onClick={() => onLink({ id: state.entity.id, name: state.entity.name }, !isLinked)}
                 data-testid={isLinked ? 'lore-preview-unlink' : 'lore-preview-link'}
               >
-                {isLinked ? 'Unlink from scene' : 'Link to scene'}
+                {isLinked ? t('lore.preview.unlinkScene') : t('lore.preview.linkScene')}
               </button>
             ) : null}
             <Link
@@ -771,7 +780,7 @@ function LorePreview({
               to={`/app/universes/${universeId}/lore/${state.entity.id}`}
               data-testid="lore-preview-open"
             >
-              Open entry
+              {t('lore.preview.open')}
             </Link>
           </div>
         </>

@@ -16,6 +16,7 @@ import {
   type PrivateNote,
 } from '../lore/privateNote'
 import { numberFormat } from '../i18n/format'
+import { useI18n } from '../i18n'
 
 interface PrivateNotesProps {
   universeId: string
@@ -37,6 +38,7 @@ const count = (value: number) => numberFormat({}, 'en').format(value)
  * newer note is refused, and the owner reviews the latest before keeping or taking it.
  */
 export function PrivateNotes({ universeId, entityId, entryName }: PrivateNotesProps) {
+  const { t } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -45,12 +47,12 @@ export function PrivateNotes({ universeId, entityId, entryName }: PrivateNotesPr
         className="button button--text"
         type="button"
         aria-haspopup="dialog"
-        title="Private note"
+        title={t('entity.privateNote.triggerTitle')}
         onClick={() => setIsOpen(true)}
         data-testid="private-note-trigger"
       >
         <ActionIcon icon={NotebookPen} />
-        <span className="entry__toollabel">Private note</span>
+        <span className="entry__toollabel">{t('entity.privateNote.triggerLabel')}</span>
       </button>
 
       {isOpen ? (
@@ -73,6 +75,7 @@ interface DrawerProps extends PrivateNotesProps {
 type LoadState = 'loading' | 'ready' | 'error'
 
 function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerProps) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const editor = useRef<HTMLTextAreaElement>(null)
   const headingId = useId()
@@ -102,7 +105,7 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
 
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
-    'This note has unsaved changes. Close without saving them?',
+    t('entity.privateNote.discardGuard'),
     onClose,
   )
 
@@ -156,13 +159,11 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
       if (isChangedElsewhere(error, PRIVATE_NOTE_CHANGED)) {
         setConflict(true)
       } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(
-          'This entry is no longer here, so its note could not be saved. It may have been moved to the Trash in another window. Your text is still here: copy it before you close this.',
-        )
+        setFailure(t('entity.privateNote.gone'))
       } else if (error instanceof ApiError && error.status === 400) {
         setFailure(error.message)
       } else {
-        setFailure('The note could not be saved. Your text is still here. Try again.')
+        setFailure(t('entity.privateNote.saveFailed'))
       }
     } finally {
       inFlight.current = false
@@ -197,20 +198,19 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
     >
       <div className="drawer__panel">
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Private note</p>
+          <p className="drawer__eyebrow">{t('entity.privateNote.eyebrow')}</p>
           <h2 className="drawer__title" id={headingId}>
             <bdi>{entryName}</bdi>
           </h2>
           <p className="drawer__context" id={hintId}>
-            Only you, the owner of this universe, can read this. It is never published, searched,
-            shown to collaborators, or read by the Assistant or a connected app.
+            {t('entity.privateNote.privacy')}
           </p>
         </header>
 
         <div className="drawer__body">
           {load === 'loading' ? (
             <p className="notice" role="status" data-testid="private-note-loading">
-              Opening the note…
+              {t('entity.privateNote.opening')}
             </p>
           ) : null}
 
@@ -220,9 +220,9 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
               role="alert"
               data-testid="private-note-load-error"
             >
-              <p>This note could not be opened.</p>
+              <p>{t('entity.privateNote.openFailed')}</p>
               <button className="button button--secondary" type="button" onClick={reread}>
-                Try again
+                {t('entity.privateNote.retry')}
               </button>
             </div>
           ) : null}
@@ -238,12 +238,12 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
             >
               {conflict ? (
                 <EditConflict
-                  what="note"
+                  what={t('entity.privateNote.what')}
                   read={() => getPrivateNote(universeId, entityId)}
                   renderLatest={(latest) => (
-                    <LatestText label="Latest saved note">
+                    <LatestText label={t('entity.privateNote.latestLabel')}>
                       {latest.content === '' ? (
-                        <p className="entry__blank">No text in the latest version.</p>
+                        <p className="entry__blank">{t('entity.privateNote.latestBlank')}</p>
                       ) : (
                         <div className="recovery__prose prose" dir="auto">
                           {latest.content}
@@ -264,7 +264,7 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
               ) : null}
 
               <label className="field__label" htmlFor={textId}>
-                Note
+                {t('entity.privateNote.field')}
               </label>
               <textarea
                 ref={editor}
@@ -274,7 +274,7 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
                 dir="auto"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder="Notes for yourself: reveals to come, what this entry is really for, loose ends."
+                placeholder={t('entity.privateNote.placeholder')}
                 spellCheck
                 aria-describedby={describedBy}
                 aria-invalid={isTooLong ? true : undefined}
@@ -284,22 +284,24 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
 
               {isTooLong ? (
                 <p className="field__error" id={tooLongId} data-testid="private-note-too-long">
-                  Too long to save: {count(draft.length)} of {count(PRIVATE_NOTE_MAX_LENGTH)}{' '}
-                  characters.
+                  {t('entity.privateNote.tooLong', {
+                    used: count(draft.length),
+                    max: count(PRIVATE_NOTE_MAX_LENGTH),
+                  })}
                 </p>
               ) : null}
 
               <div className="privatenote__bar">
                 <SaveAction
-                  label="Save note"
+                  label={t('entity.privateNote.save')}
                   isDirty={isDirty}
                   isSaving={isSaving}
                   isBlocked={isTooLong}
                   saves={saves}
                   restingStatus={
                     stored.updatedAt === null
-                      ? 'Nothing saved yet'
-                      : `Saved ${formatDateTime(stored.updatedAt)}`
+                      ? t('entity.privateNote.nothingSaved')
+                      : t('entity.privateNote.savedAt', { when: formatDateTime(stored.updatedAt) })
                   }
                   statusId={statusId}
                   statusTestId="private-note-status"
@@ -318,7 +320,7 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
             onClick={() => void close()}
             data-testid="private-note-close"
           >
-            Close
+            {t('entity.privateNote.close')}
           </button>
         </footer>
       </div>

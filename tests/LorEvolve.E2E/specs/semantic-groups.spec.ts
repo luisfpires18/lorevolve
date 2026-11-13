@@ -188,7 +188,10 @@ test.describe('semantic groups', () => {
     await showFields(page, 'Character')
     await page.getByTestId('new-field-Character').click()
     const dialog = fieldDialog(page)
-    await fillField(dialog, { name: 'Required Rune', kind: 'Link to an entity' })
+    await fillField(dialog, {
+      name: 'Required Rune',
+      kind: 'Link to an entity',
+    })
     const target = dialog.getByTestId('field-target')
     await expect(target.locator('optgroup[label="Groups"] option')).toContainText(['Runes (group)'])
     await target.selectOption({ label: 'Runes (group)' })
@@ -377,7 +380,8 @@ test.describe('group priority', () => {
     await expect(panel.getByTestId('type-group-problem')).toBeVisible()
     await page.unroute('**/entity-type-groups/order')
 
-    // A scene picked Mara, Lava Rune, Arkazia: Realms (Arkazia) first, then Characters (Mara), ungrouped runes last.
+    // A scene reads its lore in the order the author picked, which the card's own drag is what changes: group
+    // priority orders the Lore screen, never a scene's chips.
     const story = await post(page, `/api/universes/${w.u}/stories`, {
       title: 'Orders',
       premise: null,
@@ -394,9 +398,9 @@ test.describe('group priority', () => {
     await page.goto(`/app/universes/${w.u}/stories/${story.id}`)
     await expandStory(page)
     await expect(page.getByTestId('scene-lore').getByRole('listitem')).toHaveText([
-      /Arkazia/,
       /Mara/,
       /Lava Rune/,
+      /Arkazia/,
     ])
   })
 })

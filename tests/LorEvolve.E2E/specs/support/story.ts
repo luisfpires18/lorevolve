@@ -1,10 +1,18 @@
 import { expect, type Page } from '@playwright/test'
 
-const folded =
-  '[data-testid="arc-toggle"][aria-expanded="false"], [data-testid="chapter-toggle"][aria-expanded="false"], [data-testid="scene-toggle"][aria-expanded="false"]'
+const folded = [
+  'arc-toggle',
+  'chapter-toggle',
+  'scene-toggle',
+  'scene-beats-toggle',
+  'manuscript-beats-toggle',
+]
+  .map((id) => `[data-testid="${id}"][aria-expanded="false"]`)
+  .join(', ')
 
 /**
- * Arcs, chapters and scenes start folded; this opens every one on the story page. It repeats until a fold is not
+ * Arcs, chapters, scenes and their beats start folded, bar the first arc and the first chapter; this opens every one
+ * still folded on the story page. It repeats until a fold is not
  * found twice in a row: the page stands while another view is up and fetches the story again as Scenes arrives, which
  * folds everything anew, so one clean pass is not proof.
  */

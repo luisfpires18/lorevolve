@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { listEntityMapPins, mapPath } from '../maps/api'
 import type { EntityMapPin } from '../maps/types'
 
@@ -13,6 +14,7 @@ type LoadState = { kind: 'loading' } | { kind: 'ready'; pins: EntityMapPin[] } |
  * per entry; while reading, after a failed read and with no pin, nothing is drawn.
  */
 export function LoreOnMaps({ universeId, entityId }: { universeId: string; entityId: string }) {
+  const { t, tx } = useI18n()
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export function LoreOnMaps({ universeId, entityId }: { universeId: string; entit
 
   return (
     <div className="rail__block" data-testid="entry-maps">
-      <h2 className="rail__heading">Maps</h2>
+      <h2 className="rail__heading">{t('lore.onMaps.heading')}</h2>
       <ul className="entrymaps" data-testid="entry-maps-list">
         {state.pins.map((pin) => (
           <li key={pin.pinId}>
@@ -46,9 +48,12 @@ export function LoreOnMaps({ universeId, entityId }: { universeId: string; entit
                 strokeWidth={1.75}
               />
               <span>
-                On <bdi>{pin.mapName}</bdi>
+                {tx('lore.onMaps.on', { map: <bdi>{pin.mapName}</bdi> })}
                 {pin.title !== '' ? (
-                  <span className="entrymaps__pin"> as “{pin.title}”</span>
+                  <span className="entrymaps__pin">
+                    {' '}
+                    {t('lore.onMaps.asPin', { title: pin.title })}
+                  </span>
                 ) : null}
               </span>
             </Link>

@@ -3,6 +3,7 @@ import type { Chronology } from '../chronology/types'
 import { listEntities } from '../lore/api'
 import type { EntitySummary } from '../lore/types'
 import { QuickCreateDialog } from './QuickCreateDialog'
+import { useI18n } from '../i18n'
 
 const MAX_RESULTS = 8
 
@@ -205,10 +206,12 @@ export function EntityPicker({
   familyTreeOnly = false,
   entityTypeId = null,
   entityTypeGroupId = null,
-  placeholder = 'Search this universe',
+  placeholder: customPlaceholder,
   error,
   quickCreate = null,
 }: EntityPickerProps) {
+  const { t, tx } = useI18n()
+  const placeholder = customPlaceholder ?? t('entity.picker.placeholder')
   const inputId = useId()
   const listId = useId()
   const noteId = useId()
@@ -303,7 +306,7 @@ export function EntityPicker({
             }}
             data-testid="picker-clear"
           >
-            Change
+            {t('entity.picker.change')}
           </button>
         </p>
       ) : (
@@ -374,7 +377,7 @@ export function EntityPicker({
 
               {results.length === 0 ? (
                 <li className="picker__none">
-                  {isSearching ? 'Looking…' : 'Nothing here by that name.'}
+                  {isSearching ? t('entity.picker.looking') : t('entity.picker.none')}
                 </li>
               ) : null}
 
@@ -391,9 +394,9 @@ export function EntityPicker({
                     data-testid="picker-create"
                   >
                     <span className="picker__name">
-                      Create “<bdi>{createName}</bdi>”
+                      {tx('entity.picker.create', { name: <bdi>{createName}</bdi> })}
                     </span>
-                    <span className="picker__kind">New entry</span>
+                    <span className="picker__kind">{t('entity.picker.newEntry')}</span>
                   </button>
                 </li>
               ) : null}
@@ -407,15 +410,20 @@ export function EntityPicker({
         <p className="picker__created" id={noteId} role="status" data-testid="picker-created">
           {note ? (
             <>
-              <bdi>{note.name}</bdi> was created. {quickCreate.keepHint}{' '}
-              <a
-                href={`/app/universes/${universeId}/lore/${note.id}`}
-                target="_blank"
-                rel="noopener"
-                data-testid="picker-created-open"
-              >
-                Open full entry
-              </a>
+              {tx('entity.picker.created', {
+                name: <bdi>{note.name}</bdi>,
+                hint: quickCreate.keepHint,
+                link: (
+                  <a
+                    href={`/app/universes/${universeId}/lore/${note.id}`}
+                    target="_blank"
+                    rel="noopener"
+                    data-testid="picker-created-open"
+                  >
+                    {t('entity.picker.openFull')}
+                  </a>
+                ),
+              })}
             </>
           ) : null}
         </p>
@@ -460,9 +468,11 @@ export function EntityMultiPicker({
   universeId,
   value,
   onChange,
-  placeholder = 'Search this universe',
+  placeholder: customPlaceholder,
   error,
 }: EntityMultiPickerProps) {
+  const { t } = useI18n()
+  const placeholder = customPlaceholder ?? t('entity.multiPicker.placeholder')
   const inputId = useId()
   const listId = useId()
   const hintId = useId()
@@ -523,7 +533,7 @@ export function EntityMultiPicker({
             <button
               type="button"
               className="token__remove"
-              aria-label={`Remove ${choice.name}`}
+              aria-label={t('entity.multiPicker.remove', { name: choice.name })}
               onClick={() => onChange(value.filter((candidate) => candidate.id !== choice.id))}
               data-testid={`participant-remove-${choice.name}`}
             >
@@ -583,7 +593,7 @@ export function EntityMultiPicker({
 
           {results.length === 0 ? (
             <li className="picker__none">
-              {isSearching ? 'Looking…' : 'Nothing here by that name.'}
+              {isSearching ? t('entity.multiPicker.looking') : t('entity.multiPicker.none')}
             </li>
           ) : null}
         </ul>

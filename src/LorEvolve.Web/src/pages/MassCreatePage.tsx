@@ -6,6 +6,7 @@ import { CanonBlockNotice } from '../components/CanonBlockNotice'
 import { PageHeader } from '../components/PageHeader'
 import { blockingFindingsOf } from '../canon/blocked'
 import type { CanonBlockingFinding } from '../canon/types'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { bulkCreateEntities } from '../lore/api'
@@ -47,20 +48,22 @@ export interface MassCreatedState {
   massCreated: number
 }
 
-const entries = (count: number) => `${count} ${count === 1 ? 'entry' : 'entries'}`
-const rowsWord = (count: number) => `${count} ${count === 1 ? 'row' : 'rows'}`
-
 /** A row's problem as a sentence, with the words the author pasted isolated in their own direction. */
 function Problem({ problem }: { problem: RowProblem }) {
+  const { tx } = useI18n()
   return (
     <>
-      {problem.before}
-      {problem.subject !== undefined ? (
-        <>
-          “<bdi>{problem.subject}</bdi>”
-        </>
-      ) : null}
-      {problem.after}
+      {tx(problem.key, {
+        subject:
+          problem.subject !== undefined ? (
+            <>
+              “<bdi>{problem.subject}</bdi>”
+            </>
+          ) : (
+            ''
+          ),
+        max: problem.max ?? '',
+      })}
     </>
   )
 }
@@ -76,6 +79,7 @@ function Problem({ problem }: { problem: RowProblem }) {
  * request go, and the API checks it all again; either way a problem is shown on the row it belongs to.
  */
 export default function MassCreatePage() {
+  const { t, tn, tx } = useI18n()
   const { universe, entryTypes: typesRead, refreshTypes } = useWorkspaceTypes()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -144,10 +148,8 @@ export default function MassCreatePage() {
     !hasWork
       ? null
       : rows.length > 0
-        ? rows.length === 1
-          ? '1 entry has not been created. Leave without creating it?'
-          : `${rows.length} entries have not been created. Leave without creating them?`
-        : 'The pasted text has not been added. Leave without it?',
+        ? tn('lore.massCreate.leaveRows', rows.length, { n: rows.length })
+        : t('lore.massCreate.leavePaste'),
   )
 
   const controlId = (field: RowField | 'remove', key: number) => `${id}-${field}-${key}`
@@ -180,16 +182,18 @@ export default function MassCreatePage() {
 
     const count = result.rows.length
     if (count === 0) {
-      setPasteMessage('Every line was blank, so nothing was added.')
+      setPasteMessage(t('lore.massCreate.allBlank'))
       return
     }
 
     const room = MASS_CREATE_MAX - rows.length
     if (count > room) {
       setDraft(text)
+      const held = tn('lore.massCreate.entries', count, { n: count })
       setPasteMessage(
-        `That paste holds ${entries(count)}${rows.length > 0 ? `, and the list has room for ${room} more` : ''}. ` +
-          `Mass create takes up to ${MASS_CREATE_MAX} at a time, so split the list and add it in parts.`,
+        rows.length > 0
+          ? t('lore.massCreate.tooManyRoom', { entries: held, room, max: MASS_CREATE_MAX })
+          : t('lore.massCreate.tooMany', { entries: held, max: MASS_CREATE_MAX }),
       )
       return
     }
@@ -197,7 +201,7 @@ export default function MassCreatePage() {
     append(result.rows.map((row) => ({ ...row, typeId: row.typeId || null })))
     setDraft('')
     setPasteMessage(null)
-    setAnnouncement(`Added ${rowsWord(count)}.`)
+    setAnnouncement(tn('lore.massCreate.added', count, { n: count }))
   }
 
   /**
@@ -253,7 +257,7 @@ export default function MassCreatePage() {
     })
     clearOutcome()
     pendingFocus.current = neighbour ? controlId('remove', neighbour.key) : `${id}-add`
-    setAnnouncement(`Removed row ${at + 1}.`)
+    setAnnouncement(t('lore.massCreate.removed', { number: at + 1 }))
   }
 
   function applyDefaults() {
@@ -268,7 +272,7 @@ export default function MassCreatePage() {
     )
     setServerProblems(new Map())
     clearOutcome()
-    setAnnouncement(`Applied the defaults to ${rowsWord(rows.length)}.`)
+    setAnnouncement(tn('lore.massCreate.applied', rows.length, { n: rows.length }))
   }
 
   async function create() {
@@ -325,11 +329,15 @@ export default function MassCreatePage() {
         }
         setServerProblems(byRow)
         setFailure(
-          `Nothing was created. ${general ?? (byRow.size > 0 ? 'Fix the rows marked below, then create them again.' : error.message)}`,
+          t('lore.massCreate.nothingCreated', {
+            reason: general ?? (byRow.size > 0 ? t('lore.massCreate.fixRows') : error.message),
+          }),
         )
       } else {
         setFailure(
-          `Nothing was created. ${error instanceof ApiError ? error.message : 'Try again.'} Your rows are still here.`,
+          t('lore.massCreate.nothingCreatedKept', {
+            reason: error instanceof ApiError ? error.message : t('lore.massCreate.tryAgain'),
+          }),
         )
       }
     } finally {
@@ -341,33 +349,33 @@ export default function MassCreatePage() {
   const unavailable = rows.length === 0 || needFixing > 0 || isCreating
   const status =
     rows.length === 0
-      ? 'Nothing to create yet.'
+      ? t('lore.massCreate.statusNone')
       : needFixing > 0
-        ? `${rowsWord(needFixing)} ${needFixing === 1 ? 'needs' : 'need'} a fix. Nothing is created until every row is ready.`
-        : `${entries(rows.length)} ready to create.`
+        ? tn('lore.massCreate.statusFix', needFixing, { n: needFixing })
+        : tn('lore.massCreate.statusReady', rows.length, { n: rows.length })
 
   return (
     <article className="masscreate">
       <PageHeader
         crumb={
           <Link to={backTo} data-testid="mass-create-back">
-            Lore
+            {t('lore.massCreate.crumb')}
           </Link>
         }
-        title="Mass create"
+        title={t('lore.massCreate.title')}
         titleTestId="mass-create-title"
-        lede="Create the basic entries now. Add articles, images, fields and relationships later."
+        lede={t('lore.massCreate.lede')}
       />
 
       {load.kind === 'loading' ? (
         <p className="notice" role="status">
-          Reading this world&rsquo;s types&hellip;
+          {t('lore.massCreate.readingTypes')}
         </p>
       ) : null}
 
       {load.kind === 'error' ? (
         <div className="notice notice--error" role="alert">
-          <p>This world&rsquo;s types could not be read.</p>
+          <p>{t('lore.massCreate.typesFailed')}</p>
           <button
             className="button button--secondary"
             type="button"
@@ -375,25 +383,23 @@ export default function MassCreatePage() {
               refreshTypes().catch(() => undefined)
             }}
           >
-            Try again
+            {t('lore.massCreate.retry')}
           </button>
         </div>
       ) : null}
 
       {load.kind === 'ready' && eligible.length === 0 ? (
         <p className="callout callout--warning" data-testid="mass-create-no-types">
-          {types.length === 0
-            ? 'This world has no types yet. Add one in Types, then come back.'
-            : 'Every type in this world has required fields, so its entries are created one at a time.'}
+          {types.length === 0 ? t('lore.massCreate.noTypes') : t('lore.massCreate.allRequired')}
         </p>
       ) : null}
 
       {load.kind === 'ready' ? (
         <>
-          <section className="masscreate__defaults" aria-label="Defaults">
+          <section className="masscreate__defaults" aria-label={t('lore.massCreate.defaults')}>
             <div className="masscreate__default">
               <label className="field__label" htmlFor={`${id}-default-type`}>
-                Default type
+                {t('lore.massCreate.defaultType')}
               </label>
               <select
                 id={`${id}-default-type`}
@@ -405,8 +411,7 @@ export default function MassCreatePage() {
               >
                 {choices.map(({ type, label }) => (
                   <option key={type.id} value={type.id} disabled={hasRequiredFields(type)}>
-                    {label}
-                    {hasRequiredFields(type) ? ' (has required fields)' : ''}
+                    {hasRequiredFields(type) ? t('lore.massCreate.hasRequired', { label }) : label}
                   </option>
                 ))}
               </select>
@@ -414,7 +419,7 @@ export default function MassCreatePage() {
 
             <div className="masscreate__default">
               <span className="field__label" id={`${id}-default-status`}>
-                Default status
+                {t('lore.massCreate.defaultStatus')}
               </span>
               <div
                 className="segmented"
@@ -443,21 +448,20 @@ export default function MassCreatePage() {
                 onClick={applyDefaults}
                 data-testid="mass-apply-defaults"
               >
-                Apply to all rows
+                {t('lore.massCreate.applyAll')}
               </button>
             ) : null}
 
             {startingBlocked && startingType ? (
               <p className="field__hint masscreate__note" data-testid="mass-starting-blocked">
-                <bdi>{startingType.name}</bdi> has required fields, so its entries are created one
-                at a time.
+                {tx('lore.massCreate.startingBlocked', { name: <bdi>{startingType.name}</bdi> })}
               </p>
             ) : null}
           </section>
 
           <section className="masscreate__paste">
             <label className="field__label" htmlFor={`${id}-paste`}>
-              Paste names, one per line
+              {t('lore.massCreate.pasteLabel')}
             </label>
             <textarea
               id={`${id}-paste`}
@@ -479,8 +483,7 @@ export default function MassCreatePage() {
               data-testid="mass-paste"
             />
             <p className="field__hint masscreate__hint" id={`${id}-paste-hint`}>
-              Blank lines are skipped. From a spreadsheet, copy three columns in the order Type,
-              Name, Status.
+              {t('lore.massCreate.pasteHint')}
             </p>
             {pasteMessage ? (
               <p
@@ -500,7 +503,7 @@ export default function MassCreatePage() {
                 disabled={draft.trim() === ''}
                 data-testid="mass-add-text"
               >
-                Add to list
+                {t('lore.massCreate.addToList')}
               </button>
             </div>
           </section>
@@ -508,24 +511,22 @@ export default function MassCreatePage() {
           <section className="masscreate__review" aria-labelledby={`${id}-review`}>
             <div className="masscreate__reviewhead">
               <h2 className="masscreate__heading" id={`${id}-review`}>
-                Entries
+                {t('lore.massCreate.entriesHeading')}
               </h2>
               <span className="masscreate__count" data-testid="mass-count">
-                {rows.length} of {MASS_CREATE_MAX}
+                {t('lore.massCreate.count', { rows: rows.length, max: MASS_CREATE_MAX })}
               </span>
             </div>
 
             {rows.length === 0 ? (
-              <p className="masscreate__empty">
-                Pasted names appear here to review before anything is created.
-              </p>
+              <p className="masscreate__empty">{t('lore.massCreate.empty')}</p>
             ) : (
               <>
                 <div className="masscreate__columns" aria-hidden="true">
                   <span />
-                  <span>Name</span>
-                  <span>Type</span>
-                  <span>Status</span>
+                  <span>{t('lore.massCreate.columnName')}</span>
+                  <span>{t('lore.massCreate.columnType')}</span>
+                  <span>{t('lore.massCreate.columnStatus')}</span>
                   <span />
                 </div>
                 <ol className="masscreate__rows" data-testid="mass-rows">
@@ -568,7 +569,7 @@ export default function MassCreatePage() {
                             className="masscreate__label visually-hidden"
                             htmlFor={controlId('name', row.key)}
                           >
-                            Row {number} name
+                            {t('lore.massCreate.rowName', { number })}
                           </label>
                           <input
                             id={controlId('name', row.key)}
@@ -592,7 +593,7 @@ export default function MassCreatePage() {
                             className="masscreate__label visually-hidden"
                             htmlFor={controlId('type', row.key)}
                           >
-                            <span className="visually-hidden">Row {number} </span>Type
+                            {t('lore.massCreate.rowType', { number })}
                           </label>
                           <select
                             id={controlId('type', row.key)}
@@ -607,7 +608,9 @@ export default function MassCreatePage() {
                           >
                             {row.typeId === null ? (
                               <option value="" disabled>
-                                {row.typeText ? `Unknown: ${row.typeText}` : 'Choose a type'}
+                                {row.typeText
+                                  ? t('lore.massCreate.unknown', { text: row.typeText })
+                                  : t('lore.massCreate.chooseType')}
                               </option>
                             ) : null}
                             {choices.map(({ type, label }) => (
@@ -616,8 +619,9 @@ export default function MassCreatePage() {
                                 value={type.id}
                                 disabled={hasRequiredFields(type) && type.id !== row.typeId}
                               >
-                                {label}
-                                {hasRequiredFields(type) ? ' (has required fields)' : ''}
+                                {hasRequiredFields(type)
+                                  ? t('lore.massCreate.hasRequired', { label })
+                                  : label}
                               </option>
                             ))}
                           </select>
@@ -628,7 +632,7 @@ export default function MassCreatePage() {
                             className="masscreate__label visually-hidden"
                             htmlFor={controlId('status', row.key)}
                           >
-                            <span className="visually-hidden">Row {number} </span>Status
+                            {t('lore.massCreate.rowStatus', { number })}
                           </label>
                           <select
                             id={controlId('status', row.key)}
@@ -646,7 +650,9 @@ export default function MassCreatePage() {
                           >
                             {row.status === null ? (
                               <option value="" disabled>
-                                {row.statusText ? `Unknown: ${row.statusText}` : 'Choose a status'}
+                                {row.statusText
+                                  ? t('lore.massCreate.unknown', { text: row.statusText })
+                                  : t('lore.massCreate.chooseStatus')}
                               </option>
                             ) : null}
                             {CANON_ORDER.map((option) => (
@@ -661,8 +667,15 @@ export default function MassCreatePage() {
                           id={controlId('remove', row.key)}
                           className="iconbutton masscreate__remove"
                           type="button"
-                          aria-label={`Remove row ${number}${row.name.trim() ? `: ${row.name.trim()}` : ''}`}
-                          title="Remove row"
+                          aria-label={
+                            row.name.trim()
+                              ? t('lore.massCreate.removeRowNamed', {
+                                  number,
+                                  name: row.name.trim(),
+                                })
+                              : t('lore.massCreate.removeRow', { number })
+                          }
+                          title={t('lore.massCreate.removeRowTitle')}
                           onClick={() => removeRow(row.key)}
                           data-testid="mass-row-remove"
                         >
@@ -687,7 +700,7 @@ export default function MassCreatePage() {
                             ))}
                             {repeatOf !== undefined ? (
                               <li className="masscreate__warning">
-                                Same type and name as row {repeatOf}. It will be created twice.
+                                {t('lore.massCreate.repeat', { row: repeatOf })}
                               </li>
                             ) : null}
                           </ul>
@@ -707,13 +720,13 @@ export default function MassCreatePage() {
               disabled={rows.length >= MASS_CREATE_MAX}
               title={
                 rows.length >= MASS_CREATE_MAX
-                  ? `Mass create takes up to ${MASS_CREATE_MAX} at a time.`
+                  ? t('lore.massCreate.limit', { max: MASS_CREATE_MAX })
                   : undefined
               }
               data-testid="mass-add-row"
             >
               <ActionIcon icon={Plus} />
-              Add row
+              {t('lore.massCreate.addRow')}
             </button>
           </section>
 
@@ -742,13 +755,13 @@ export default function MassCreatePage() {
               >
                 <ActionIcon icon={Check} />
                 {isCreating
-                  ? `Creating ${entries(rows.length)}…`
+                  ? tn('lore.massCreate.creating', rows.length, { n: rows.length })
                   : readyCount > 0
-                    ? `Create ${entries(readyCount)}`
-                    : 'Create entries'}
+                    ? tn('lore.massCreate.create', readyCount, { n: readyCount })
+                    : t('lore.massCreate.createNone')}
               </button>
               <Link className="button button--secondary" to={backTo}>
-                Cancel
+                {t('lore.massCreate.cancel')}
               </Link>
             </div>
           </footer>

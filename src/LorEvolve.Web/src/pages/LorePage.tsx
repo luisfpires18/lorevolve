@@ -18,6 +18,7 @@ import { LoreCatalog, LoreCatalogSkeleton } from '../components/LoreCatalog'
 import { LoreFieldFilters } from '../components/LoreFieldFilters'
 import { PageHeader } from '../components/PageHeader'
 import { GroupSwitcher, TypeSwitcher } from '../components/TypeSwitcher'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import {
   LORE_PAGE_SIZES,
@@ -104,6 +105,7 @@ function readPage(value: string | null) {
  * matches that type's own entries only.
  */
 export default function LorePage() {
+  const { t, tn, tx } = useI18n()
   const { universe, entryTypes: typesRead, groups: groupsRead, refreshTypes } = useWorkspaceTypes()
   const access = useUniverseAccess()
   const [params, setParams] = useSearchParams()
@@ -417,21 +419,20 @@ export default function LorePage() {
     const count = selected.length
     if (trashing.current || count === 0) return
 
-    const noun = count === 1 ? 'entry' : 'entries'
     trashing.current = true
     try {
       const moved = await confirmAction({
-        title: `Move ${count} ${noun} to the Trash?`,
-        message:
-          `${count === 1 ? 'It leaves' : 'They leave'} Lore, search and pickers, but nothing is erased: ` +
-          'articles, fields, history and connections are kept, and each one can be restored from the Trash.',
+        title: tn('lore.page.trash.title', count, { n: count }),
+        message: tn('lore.page.trash.message', count),
         details:
           count <= 5 ? selected.map((item) => <bdi key={item.id}>{item.name}</bdi>) : undefined,
-        confirmLabel: `Move ${count} to Trash`,
-        busyLabel: 'Moving…',
+        confirmLabel: t('lore.page.trash.confirm', { n: count }),
+        busyLabel: t('lore.page.trash.busy'),
         variant: 'warning',
         failure: (error) =>
-          `Nothing was moved. ${error instanceof ApiError ? error.message : 'Try again.'}`,
+          t('lore.page.trash.failure', {
+            reason: error instanceof ApiError ? error.message : t('lore.page.trash.tryAgain'),
+          }),
         action: async () => {
           setIsTrashing(true)
           try {
@@ -445,7 +446,7 @@ export default function LorePage() {
         },
       })
       if (!moved) return
-      setTrashed({ text: `${count} ${noun} moved to the Trash.`, list: listKey })
+      setTrashed({ text: tn('lore.page.trash.moved', count, { n: count }), list: listKey })
       stopSelecting()
       setReads((reads) => reads + 1)
     } finally {
@@ -504,7 +505,7 @@ export default function LorePage() {
             <span className="lore__path" data-testid="lore-path">
               {/* Lore itself: the catalog, which reads no entry - not every entry. A group's list has it too. */}
               <Link to={hrefFor(null)} data-testid="lore-path-root">
-                Lore
+                {t('lore.page.pathRoot')}
               </Link>
               {(selectedNode?.path ?? []).slice(0, -1).map((ancestor) => (
                 <Fragment key={ancestor.id}>
@@ -519,13 +520,11 @@ export default function LorePage() {
             </span>
           ) : null
         }
-        title={chosenName ? <bdi>{chosenName}</bdi> : 'Lore'}
+        title={chosenName ? <bdi>{chosenName}</bdi> : t('lore.page.title')}
         lede={
-          atCatalog && types !== null && types.length > 0 ? (
-            <>
-              Every category in <bdi>{universe.name}</bdi>. Open one to browse its entries.
-            </>
-          ) : undefined
+          atCatalog && types !== null && types.length > 0
+            ? tx('lore.page.lede', { universe: <bdi>{universe.name}</bdi> })
+            : undefined
         }
         actions={
           access.editContent ? (
@@ -534,21 +533,27 @@ export default function LorePage() {
               <Link
                 className="button button--secondary lore__masscreate"
                 to={massCreateTo}
-                title="Mass create"
+                title={t('lore.page.massCreateTitle')}
                 data-testid="mass-create"
               >
                 <ActionIcon icon={ListPlus} />
-                <span className="lore__masscreatelabel">Mass create</span>
+                <span className="lore__masscreatelabel">{t('lore.page.massCreateLabel')}</span>
               </Link>
               <Link
                 className="button lore__create"
                 to={createTo}
-                aria-label={selectedType ? `New ${selectedType.name}` : 'New entry'}
+                aria-label={
+                  selectedType
+                    ? t('lore.page.newTypeLabel', { name: selectedType.name })
+                    : t('lore.page.newEntry')
+                }
                 data-testid="new-entity"
               >
                 <ActionIcon icon={Plus} />
                 <span className="lore__createlabel">
-                  New {selectedType ? <bdi>{selectedType.name}</bdi> : 'entry'}
+                  {selectedType
+                    ? tx('lore.page.newType', { type: <bdi>{selectedType.name}</bdi> })
+                    : t('lore.page.newEntry')}
                 </span>
               </Link>
             </>
@@ -580,7 +585,7 @@ export default function LorePage() {
                   data-testid="lore-filters-toggle"
                 >
                   <ActionIcon icon={ListFilter} />
-                  Filters
+                  {t('lore.page.filters')}
                   {activeFilters > 0 ? (
                     <span className="lore__filtercount">{activeFilters}</span>
                   ) : null}
@@ -604,13 +609,13 @@ export default function LorePage() {
           className="lore__filters"
           id={filtersId}
           role="group"
-          aria-label="Filters"
+          aria-label={t('lore.page.filtersGroup')}
           data-open={filtersOpen ? 'true' : 'false'}
           data-testid="lore-filters"
         >
           <div className="lore__search">
             <label className="visually-hidden" htmlFor="lore-search">
-              Filter entries
+              {t('lore.page.filterEntries')}
             </label>
             <ListFilter
               className="lore__searchicon"
@@ -623,8 +628,12 @@ export default function LorePage() {
               ref={searchRef}
               className="field__input lore__searchinput"
               type="search"
-              placeholder={chosenName ? `Search ${chosenName}` : 'Search'}
-              title="Searches names, aliases, summaries and articles"
+              placeholder={
+                chosenName
+                  ? t('lore.page.searchNamed', { name: chosenName })
+                  : t('lore.page.search')
+              }
+              title={t('lore.page.searchHelp')}
               value={search}
               onChange={(event) => update({ q: event.target.value }, true)}
             />
@@ -632,22 +641,22 @@ export default function LorePage() {
               className="lore__exact"
               type="button"
               aria-pressed={exact}
-              title="Only entries named exactly this, or with it as an alias"
+              title={t('lore.page.exactHelp')}
               onClick={() => update({ exact: exact ? null : '1', page: null }, true)}
               data-testid="lore-exact"
             >
-              Exact name
+              {t('lore.page.exact')}
             </button>
           </div>
 
-          <div className="segmented" role="group" aria-label="Status">
+          <div className="segmented" role="group" aria-label={t('lore.page.status')}>
             <button
               className="segmented__option"
               type="button"
               aria-pressed={canonStatus === null}
               onClick={() => update({ status: null }, true)}
             >
-              Any status
+              {t('lore.page.anyStatus')}
             </button>
             {CANON_ORDER.map((status) => (
               <button
@@ -680,22 +689,22 @@ export default function LorePage() {
               data-testid="lore-reset-filters"
             >
               <ActionIcon icon={X} />
-              Clear filters
+              {t('lore.page.clearFilters')}
             </Link>
           ) : null}
 
           {selectedGroup && fieldTypes.length > 0 ? (
             <p className="lore__fieldhint" data-testid="lore-group-field-hint">
-              To filter by fields, choose one type:{' '}
-              {fieldTypes.map((type, index) => (
-                <Fragment key={type.id}>
-                  {index > 0 ? ', ' : null}
-                  <Link to={hrefFor(type.id)} data-testid="lore-group-field-type">
-                    <bdi>{type.name}</bdi>
-                  </Link>
-                </Fragment>
-              ))}
-              .
+              {tx('lore.page.groupFieldHint', {
+                types: fieldTypes.map((type, index) => (
+                  <Fragment key={type.id}>
+                    {index > 0 ? ', ' : null}
+                    <Link to={hrefFor(type.id)} data-testid="lore-group-field-type">
+                      <bdi>{type.name}</bdi>
+                    </Link>
+                  </Fragment>
+                )),
+              })}
             </p>
           ) : null}
         </div>
@@ -704,7 +713,7 @@ export default function LorePage() {
           <div className="lore__resultactions" data-testid="lore-result-actions">
             <div className="lore__pagesize">
               <label className="lore__pagesizelabel" htmlFor="lore-sort">
-                Sort by
+                {t('lore.page.sortBy')}
               </label>
               <select
                 id="lore-sort"
@@ -713,16 +722,18 @@ export default function LorePage() {
                 onChange={(event) => update({ sort: event.target.value || null, page: null }, true)}
                 data-testid="lore-sort"
               >
-                <option value="">{ranked ? 'Best match' : 'Last edited'}</option>
-                {ranked ? <option value="updated">Last edited</option> : null}
-                <option value="name">Name</option>
-                <option value="created">Date created</option>
+                <option value="">
+                  {ranked ? t('lore.page.sortBest') : t('lore.page.sortUpdated')}
+                </option>
+                {ranked ? <option value="updated">{t('lore.page.sortUpdated')}</option> : null}
+                <option value="name">{t('lore.page.sortName')}</option>
+                <option value="created">{t('lore.page.sortCreated')}</option>
               </select>
             </div>
             {offerPageSize ? (
               <div className="lore__pagesize">
                 <label className="lore__pagesizelabel" htmlFor="lore-page-size">
-                  Items per page
+                  {t('lore.page.perPage')}
                 </label>
                 <select
                   id="lore-page-size"
@@ -748,7 +759,7 @@ export default function LorePage() {
                 data-testid="lore-select"
               >
                 <ActionIcon icon={ListChecks} />
-                Select
+                {t('lore.page.select')}
               </button>
             ) : null}
           </div>
@@ -758,14 +769,15 @@ export default function LorePage() {
       {trashedNotice ? (
         <p className="lore__created" role="status" data-testid="lore-trashed">
           <ActionIcon icon={Check} />
-          {trashedNotice} <Link to={`/app/universes/${universe.id}/trash`}>Open the Trash</Link>
+          {trashedNotice}{' '}
+          <Link to={`/app/universes/${universe.id}/trash`}>{t('lore.page.openTrash')}</Link>
         </p>
       ) : null}
 
       {massCreated !== null ? (
         <p className="lore__created" role="status" data-testid="lore-mass-created">
           <ActionIcon icon={Check} />
-          Created {massCreated} {massCreated === 1 ? 'entry' : 'entries'}.
+          {tn('lore.page.created', massCreated, { n: massCreated })}
         </p>
       ) : null}
 
@@ -788,7 +800,7 @@ export default function LorePage() {
 
       {typesFailed ? (
         <div className="notice notice--error" role="alert" data-testid="lore-types-error">
-          <p>The categories could not be read.</p>
+          <p>{t('lore.page.typesFailed')}</p>
           <button
             className="button button--secondary"
             type="button"
@@ -796,7 +808,7 @@ export default function LorePage() {
               refreshTypes().catch(() => undefined)
             }}
           >
-            Try again
+            {t('lore.page.retryTypes')}
           </button>
         </div>
       ) : null}
@@ -804,15 +816,18 @@ export default function LorePage() {
       {/* No types at all leaves nothing to choose: one line to where types are made, not a panel. */}
       {types !== null && types.length === 0 ? (
         <p className="notice" data-testid="lore-no-types">
-          This universe has no types yet.{' '}
-          <Link to={`/app/universes/${universe.id}/types`}>Add one on Types</Link>.
+          {tx('lore.page.noTypes', {
+            link: (
+              <Link to={`/app/universes/${universe.id}/types`}>{t('lore.page.noTypesLink')}</Link>
+            ),
+          })}
         </p>
       ) : null}
 
       {view.kind === 'loading' ? (
         <div className="lore__loading">
           <p className="visually-hidden" role="status">
-            Reading the archive…
+            {t('lore.page.reading')}
           </p>
           <ul className="cardgrid lore__skeleton" aria-hidden="true">
             {Array.from({ length: SKELETON_CARDS }, (_, index) => (
@@ -830,7 +845,7 @@ export default function LorePage() {
 
       {view.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="lore-load-error">
-          <p>The lore could not be read.</p>
+          <p>{t('lore.page.loadFailed')}</p>
           <button
             className="button button--secondary"
             type="button"
@@ -839,7 +854,7 @@ export default function LorePage() {
               setReads((count) => count + 1)
             }}
           >
-            Try again
+            {t('lore.page.retryLore')}
           </button>
         </div>
       ) : null}
@@ -866,15 +881,11 @@ export default function LorePage() {
       {chosenName && result && result.items.length === 0 && isFiltered ? (
         <EmptyState
           testId="entity-empty"
-          title="Nothing matches that."
+          title={t('lore.page.noMatchTitle')}
           hint={
-            chosenName ? (
-              <>
-                No <bdi>{chosenName}</bdi> entry matches these filters.
-              </>
-            ) : (
-              'No entry matches these filters.'
-            )
+            chosenName
+              ? tx('lore.page.noMatchNamed', { name: <bdi>{chosenName}</bdi> })
+              : t('lore.page.noMatch')
           }
           action={
             <Link
@@ -882,7 +893,7 @@ export default function LorePage() {
               to={clearedSearch()}
               data-testid="lore-clear-filters"
             >
-              Clear filters
+              {t('lore.page.clearFiltersEmpty')}
             </Link>
           }
         />
@@ -891,18 +902,18 @@ export default function LorePage() {
       {selectedGroup && result && result.items.length === 0 && !isFiltered ? (
         <EmptyState
           testId="entity-empty"
-          title="Nothing in this group yet."
+          title={t('lore.page.emptyGroupTitle')}
           hint={
-            selectedGroup.typeIds.length === 0 ? (
-              <>
-                No type is in <bdi>{selectedGroup.name}</bdi> yet. Add types to it from their
-                settings on <Link to={`/app/universes/${universe.id}/types`}>Types</Link>.
-              </>
-            ) : (
-              <>
-                None of the types in <bdi>{selectedGroup.name}</bdi> has an entry yet.
-              </>
-            )
+            selectedGroup.typeIds.length === 0
+              ? tx('lore.page.emptyGroupNoTypes', {
+                  name: <bdi>{selectedGroup.name}</bdi>,
+                  link: (
+                    <Link to={`/app/universes/${universe.id}/types`}>
+                      {t('lore.page.emptyGroupTypesLink')}
+                    </Link>
+                  ),
+                })
+              : tx('lore.page.emptyGroupNoEntries', { name: <bdi>{selectedGroup.name}</bdi> })
           }
         />
       ) : null}
@@ -910,25 +921,17 @@ export default function LorePage() {
       {selectedType && result && result.items.length === 0 && !isFiltered ? (
         <EmptyState
           testId="entity-empty"
-          title="No entries in this category yet."
+          title={t('lore.page.emptyTypeTitle')}
           hint={
-            selectedNode && selectedNode.children.length > 0 ? (
-              <>
-                Nothing is filed under <bdi>{selectedType.name}</bdi> or anything inside it. Write
-                the first one, and the rest will have something to point at.
-              </>
-            ) : (
-              <>
-                Nothing is filed under <bdi>{selectedType.name}</bdi> yet. Write the first one, and
-                the rest will have something to point at.
-              </>
-            )
+            selectedNode && selectedNode.children.length > 0
+              ? tx('lore.page.emptyTypeNested', { name: <bdi>{selectedType.name}</bdi> })
+              : tx('lore.page.emptyType', { name: <bdi>{selectedType.name}</bdi> })
           }
           action={
             access.editContent ? (
               <Link className="button" to={createTo} data-testid="empty-new-entity">
                 <ActionIcon icon={Plus} />
-                New {selectedType ? <bdi>{selectedType.name}</bdi> : 'entry'}
+                {tx('lore.page.emptyNewType', { type: <bdi>{selectedType.name}</bdi> })}
               </Link>
             ) : undefined
           }
@@ -936,7 +939,7 @@ export default function LorePage() {
       ) : null}
 
       {chosenName && result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label="Pagination">
+        <nav className="pager" aria-label={t('lore.page.pagination')}>
           <button
             className="button button--secondary"
             type="button"
@@ -944,10 +947,10 @@ export default function LorePage() {
             onClick={() => goToPage(page - 1)}
           >
             <ActionIcon icon={ArrowLeft} />
-            Previous
+            {t('lore.page.previous')}
           </button>
           <span className="pager__position">
-            Page {result.page} of {result.totalPages}
+            {t('lore.page.pageOf', { page: result.page, total: result.totalPages })}
           </span>
           <button
             className="button button--secondary"
@@ -955,7 +958,7 @@ export default function LorePage() {
             disabled={page >= result.totalPages}
             onClick={() => goToPage(page + 1)}
           >
-            Next
+            {t('lore.page.next')}
             <ActionIcon icon={ArrowRight} />
           </button>
         </nav>
@@ -965,8 +968,8 @@ export default function LorePage() {
         <footer className="actionbar lore__selectbar" data-testid="lore-selectbar">
           <p className="actionbar__status" role="status" data-testid="lore-selected-count">
             {selected.length === 0
-              ? 'Select entries on this page to move them to the Trash.'
-              : `${selected.length} selected`}
+              ? t('lore.page.selectHint')
+              : t('lore.page.selected', { n: selected.length })}
           </p>
           <div className="actionbar__actions">
             <button
@@ -979,10 +982,10 @@ export default function LorePage() {
             >
               <ActionIcon icon={Trash2} />
               {isTrashing
-                ? 'Moving…'
+                ? t('lore.page.moving')
                 : selected.length > 0
-                  ? `Move ${selected.length} to Trash`
-                  : 'Move to Trash'}
+                  ? t('lore.page.moveSelected', { n: selected.length })
+                  : t('lore.page.moveToTrash')}
             </button>
             <button
               className="button button--secondary"
@@ -991,7 +994,7 @@ export default function LorePage() {
               disabled={pageItems.length === 0 || selected.length === pageItems.length}
               data-testid="lore-select-page"
             >
-              Select page
+              {t('lore.page.selectPage')}
             </button>
             <button
               className="button button--text"
@@ -1000,7 +1003,7 @@ export default function LorePage() {
               disabled={selected.length === 0}
               data-testid="lore-clear-selection"
             >
-              Clear selection
+              {t('lore.page.clearSelection')}
             </button>
             <button
               className="button button--secondary"
@@ -1008,7 +1011,7 @@ export default function LorePage() {
               onClick={stopSelecting}
               data-testid="lore-select-done"
             >
-              Done
+              {t('lore.page.done')}
             </button>
           </div>
         </footer>

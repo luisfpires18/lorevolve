@@ -1,4 +1,5 @@
 import { TypeIcon } from './TypeIcon'
+import { useI18n } from '../i18n'
 import type { MentionSearch } from '../lore/mentionSearch'
 import type { EntitySummary } from '../lore/types'
 
@@ -26,6 +27,7 @@ export function MentionSuggestions({
   onChoose,
   onHover,
 }: MentionSuggestionsProps) {
+  const { t, tx } = useI18n()
   const waiting = search.query === null
   return (
     <div
@@ -34,17 +36,22 @@ export function MentionSuggestions({
       data-testid="mention-suggestions"
     >
       {query.trim() === '' ? (
-        <p className="mentionsuggest__note">Type a name to mention Lore.</p>
+        <p className="mentionsuggest__note">{t('lore.mentions.typeName')}</p>
       ) : waiting ? (
-        <p className="mentionsuggest__note">Looking…</p>
+        <p className="mentionsuggest__note">{t('lore.mentions.looking')}</p>
       ) : search.failed ? (
-        <p className="mentionsuggest__note">Lore could not be searched.</p>
+        <p className="mentionsuggest__note">{t('lore.mentions.failed')}</p>
       ) : search.rows.length === 0 ? (
         <p className="mentionsuggest__note" data-testid="mention-suggestions-none">
-          No Lore matches “<bdi>{query.trim()}</bdi>”.
+          {tx('lore.mentions.none', { query: <bdi>{query.trim()}</bdi> })}
         </p>
       ) : (
-        <ul className="mentionsuggest__list" role="listbox" id={id} aria-label="Lore to mention">
+        <ul
+          className="mentionsuggest__list"
+          role="listbox"
+          id={id}
+          aria-label={t('lore.mentions.listLabel')}
+        >
           {search.rows.map((row, index) => (
             <li
               key={row.id}

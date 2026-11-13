@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { Plus, X } from 'lucide-react'
+import { useI18n } from '../i18n'
 import { getEntity } from '../lore/api'
 import {
   MAX_FIELD_FILTERS,
@@ -42,6 +43,7 @@ export function LoreFieldFilters({
   /** Given a change to the filters, not the result: it is applied to the address as it is when it lands. */
   onChange: (change: (current: FieldFilter[]) => FieldFilter[]) => void
 }) {
+  const { t, tx } = useI18n()
   const fields = filterableFields(type)
   const [editing, setEditing] = useState<FieldDefinition | null>(null)
   const [names, setNames] = useState<Record<string, EntryName | null>>({})
@@ -92,15 +94,15 @@ export function LoreFieldFilters({
       <div className="lore__addfilter" ref={addRef}>
         {full ? (
           <p className="lore__filterlimit" data-testid="lore-field-filter-limit">
-            Up to {MAX_FIELD_FILTERS} field filters at once.
+            {t('lore.filters.limit', { max: MAX_FIELD_FILTERS })}
           </p>
         ) : (
           <ActionMenu
-            label="Add field filter"
+            label={t('lore.filters.add')}
             trigger={
               <>
                 <ActionIcon icon={Plus} />
-                Add field filter
+                {t('lore.filters.add')}
               </>
             }
             triggerClassName="button button--secondary lore__addfiltertrigger"
@@ -127,13 +129,17 @@ export function LoreFieldFilters({
           {filters.length > 0 ? (
             <ul
               className="lore__activefilters"
-              aria-label="Field filters"
+              aria-label={t('lore.filters.list')}
               data-testid="lore-field-filters"
             >
               {filters.map((filter, index) => {
                 const field = type.fields.find((candidate) => candidate.id === filter.fieldId)
                 if (!field) return null
-                const sentence = `${field.name} ${opLabel(field, filter.op)} ${valueLabel(field, filter.value, names[filter.value])}`
+                const sentence = t('lore.filters.sentence', {
+                  field: field.name,
+                  op: opLabel(field, filter.op),
+                  value: valueLabel(field, filter.value, names[filter.value]),
+                })
                 return (
                   <li
                     className="lore__activefilter"
@@ -141,14 +147,17 @@ export function LoreFieldFilters({
                     data-testid="lore-field-filter"
                   >
                     <span className="lore__activefiltertext">
-                      <bdi>{field.name}</bdi> {opLabel(field, filter.op)}{' '}
-                      <bdi>{valueLabel(field, filter.value, names[filter.value])}</bdi>
+                      {tx('lore.filters.sentence', {
+                        field: <bdi>{field.name}</bdi>,
+                        op: opLabel(field, filter.op),
+                        value: <bdi>{valueLabel(field, filter.value, names[filter.value])}</bdi>,
+                      })}
                     </span>
                     <button
                       className="lore__removefilter"
                       type="button"
-                      aria-label={`Remove filter: ${sentence}`}
-                      title="Remove filter"
+                      aria-label={t('lore.filters.removeLabel', { sentence })}
+                      title={t('lore.filters.remove')}
                       onClick={() => {
                         const token = encodeFieldFilter(filter)
                         onChange((current) =>
@@ -196,6 +205,7 @@ function FieldFilterEditor({
   onApply: (filter: FieldFilter, entry: EntryName | null) => void
   onCancel: () => void
 }) {
+  const { t } = useI18n()
   const rule = filterRule(field)!
   const [op, setOp] = useState<FieldFilterOp>(rule.ops[0].op)
   const [value, setValue] = useState('')
@@ -242,7 +252,7 @@ function FieldFilterEditor({
       {rule.ops.length > 1 ? (
         <>
           <label className="visually-hidden" htmlFor={opId}>
-            {field.name}: how to compare
+            {t('lore.filters.howToCompare', { field: field.name })}
           </label>
           <select
             id={opId}
@@ -265,18 +275,18 @@ function FieldFilterEditor({
       <div className="lore__fieldeditorvalue">
         {rule.control === 'entry' ? (
           <EntityPicker
-            label={`${field.name}: entry`}
+            label={t('lore.filters.entryLabel', { field: field.name })}
             universeId={universeId}
             value={entry}
             onChange={setEntry}
             entityTypeId={field.targetEntityTypeId}
             entityTypeGroupId={field.targetGroupId}
-            placeholder="Search for an entry"
+            placeholder={t('lore.filters.entryPlaceholder')}
           />
         ) : (
           <>
             <label className="visually-hidden" htmlFor={valueId}>
-              {field.name}: value
+              {t('lore.filters.valueLabel', { field: field.name })}
             </label>
             {rule.control === 'text' ? (
               <input
@@ -307,12 +317,12 @@ function FieldFilterEditor({
                 data-testid="lore-field-filter-value"
               >
                 <option value="" disabled>
-                  Choose…
+                  {t('lore.filters.choose')}
                 </option>
                 {rule.control === 'yesNo' ? (
                   <>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
+                    <option value="true">{t('lore.filters.yesOption')}</option>
+                    <option value="false">{t('lore.filters.noOption')}</option>
                   </>
                 ) : (
                   [...field.options]
@@ -336,7 +346,7 @@ function FieldFilterEditor({
           disabled={!complete}
           data-testid="lore-field-filter-apply"
         >
-          Apply
+          {t('lore.filters.apply')}
         </button>
         <button
           className="button button--text button--sm"
@@ -344,7 +354,7 @@ function FieldFilterEditor({
           onClick={onCancel}
           data-testid="lore-field-filter-cancel"
         >
-          Cancel
+          {t('lore.filters.cancel')}
         </button>
       </div>
     </form>

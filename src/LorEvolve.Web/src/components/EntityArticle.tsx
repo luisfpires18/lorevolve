@@ -33,6 +33,7 @@ import {
 import { isEmptyDocument } from '../lore/document'
 import { RevisionKind } from '../lore/revisions'
 import { confirmAction, confirmDiscard } from '../lib/confirm'
+import { t, useI18n } from '../i18n'
 
 type LoadState = { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error' }
 
@@ -94,6 +95,7 @@ export function EntityArticleSection({
   onEditingChange,
   onSaved,
 }: EntityArticleSectionProps) {
+  const { t, tx } = useI18n()
   const headingId = useId()
   const statusId = useId()
   const tooLongId = useId()
@@ -189,12 +191,7 @@ export function EntityArticleSection({
     }
   }, [isEditing, draft, isDirty, outgoing, stored.updatedAt, keep, forget])
 
-  useLeaveGuard(
-    isDirty
-      ? `The article for “${entityName}” has unsaved changes. Leave without saving them?`
-      : null,
-    discard,
-  )
+  useLeaveGuard(isDirty ? t('entity.article.leaveGuard', { name: entityName }) : null, discard)
 
   /** Saves the document as it stands, naming the stored article's version it was written over. */
   async function save(expectedVersion: number) {
@@ -220,13 +217,11 @@ export function EntityArticleSection({
       if (isChangedElsewhere(error, ARTICLE_CHANGED)) {
         setConflict(true)
       } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(
-          'This entry is no longer here, so the article could not be saved. It may have been moved to the Trash in another window. Your text is still here: copy it before you leave.',
-        )
+        setFailure(t('entity.article.gone'))
       } else if (error instanceof ApiError && error.status === 400) {
         setFailure(error.fieldErrors.content ?? error.message)
       } else {
-        setFailure('The article could not be saved. Your text is still here. Try again.')
+        setFailure(t('entity.article.saveFailed'))
       }
     } finally {
       inFlight.current = false
@@ -286,7 +281,7 @@ export function EntityArticleSection({
   }
 
   async function finishEditing() {
-    if (isDirty && !(await confirmDiscard('Close the article without saving your changes?'))) {
+    if (isDirty && !(await confirmDiscard(t('entity.article.discardConfirm')))) {
       return
     }
 
@@ -325,7 +320,7 @@ export function EntityArticleSection({
     setConflict(false)
     setHistoryKey((key) => key + 1)
     if (latest.updatedAt) onSaved(latest.updatedAt)
-    setAnnouncement('Your changes are still unsaved. Save when you’re ready.')
+    setAnnouncement(t('entity.article.announce.keptMine'))
     requestAnimationFrame(() => editor.current?.commands.focus())
   }
 
@@ -340,28 +335,28 @@ export function EntityArticleSection({
     if (!offer) return
     settle()
     startEditing(offer.content)
-    setAnnouncement('The recovered draft is in the editor. It is not saved yet.')
+    setAnnouncement(t('entity.article.announce.recovered'))
   }
 
   function discardDraft() {
     discard()
-    setAnnouncement('The recovered draft was discarded. The saved article is unchanged.')
+    setAnnouncement(t('entity.article.announce.discarded'))
     requestAnimationFrame(() => startButton.current?.focus())
   }
 
   const status = isSaving
-    ? { state: 'saving', text: 'Saving…' }
+    ? { state: 'saving', text: t('entity.article.status.saving') }
     : isDirty
-      ? { state: 'dirty', text: 'Unsaved changes' }
+      ? { state: 'dirty', text: t('entity.article.status.unsaved') }
       : stored.updatedAt === null
-        ? { state: 'empty', text: 'Nothing saved yet' }
-        : { state: 'saved', text: 'Saved' }
+        ? { state: 'empty', text: t('entity.article.status.empty') }
+        : { state: 'saved', text: t('entity.article.status.saved') }
 
   const canStart = canEdit && !isHeld
   const note = !canEdit
-    ? 'Save or cancel the changes to this entry first, then edit its article.'
+    ? t('entity.article.note.entryOpen')
     : offer
-      ? 'Recover or discard the recovered draft first, then edit the article.'
+      ? t('entity.article.note.draftOffered')
       : null
 
   return (
@@ -382,7 +377,7 @@ export function EntityArticleSection({
           tabIndex={-1}
           data-arrival-focus
         >
-          Article
+          {t('entity.article.title')}
         </h2>
         {isReady && !isEditing && hasArticle && access.editContent ? (
           <button
@@ -395,7 +390,7 @@ export function EntityArticleSection({
             data-testid="article-edit"
           >
             <ActionIcon icon={Pencil} />
-            Edit article
+            {t('entity.article.edit')}
           </button>
         ) : null}
       </div>
@@ -409,38 +404,38 @@ export function EntityArticleSection({
 
       {load.kind === 'loading' ? (
         <p className="notice" role="status" data-testid="article-loading">
-          Opening the article…
+          {t('entity.article.opening')}
         </p>
       ) : null}
 
       {load.kind === 'missing' ? (
         <p className="entry__blank" data-testid="article-missing">
-          This entry is not here, so neither is its article.
+          {t('entity.article.missing')}
         </p>
       ) : null}
 
       {load.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="article-load-error">
-          <p>The article could not be opened.</p>
+          <p>{t('entity.article.openFailed')}</p>
           <button
             className="button button--secondary"
             type="button"
             onClick={reread}
             data-testid="article-retry"
           >
-            Try again
+            {t('entity.article.retry')}
           </button>
         </div>
       ) : null}
 
       {offer && access.editContent ? (
         <RecoveredDraft
-          what="this article"
+          what={t('entity.article.recoveredWhat')}
           draft={offer}
           savedUpdatedAt={stored.updatedAt}
           preview={
             isEmptyDocument(offer.content) ? (
-              <p className="entry__blank">No text in this draft.</p>
+              <p className="entry__blank">{t('entity.article.draftBlank')}</p>
             ) : (
               <LoreArticle content={offer.content} />
             )
@@ -456,12 +451,11 @@ export function EntityArticleSection({
           <LoreArticle content={stored.content} />
         ) : (
           <div className="article__empty" data-testid="article-empty">
-            <p className="article__emptyline">No article yet.</p>
+            <p className="article__emptyline">{t('entity.article.empty.line')}</p>
             {access.editContent ? (
               <>
                 <p className="article__emptyhint">
-                  Everything worth telling about <bdi>{entityName}</bdi> beyond its facts belongs
-                  here.
+                  {tx('entity.article.empty.hint', { name: <bdi>{entityName}</bdi> })}
                 </p>
                 <button
                   ref={startButton}
@@ -473,7 +467,7 @@ export function EntityArticleSection({
                   data-testid="article-write"
                 >
                   <ActionIcon icon={Pencil} />
-                  Write the article
+                  {t('entity.article.empty.write')}
                 </button>
               </>
             ) : null}
@@ -485,12 +479,12 @@ export function EntityArticleSection({
         <div className="article__editing">
           {conflict ? (
             <EditConflict
-              what="article"
+              what={t('entity.article.conflictWhat')}
               read={() => getEntityArticle(universeId, entityId)}
               renderLatest={(latest) => (
-                <LatestText label="Latest saved article">
+                <LatestText label={t('entity.article.latestLabel')}>
                   {isEmptyDocument(latest.content) ? (
-                    <p className="entry__blank">No text in the latest version.</p>
+                    <p className="entry__blank">{t('entity.article.latestBlank')}</p>
                   ) : (
                     <LoreArticle content={latest.content} />
                   )}
@@ -542,12 +536,12 @@ export function EntityArticleSection({
                 id={tooLongId}
                 data-testid="article-too-long"
               >
-                This article is too long to save. Shorten it, or move part of it into another entry.
+                {t('entity.article.tooLong')}
               </p>
             ) : null}
             {failed && isDirty ? (
               <p className="recovery__warning" role="status" data-testid="article-recovery-warning">
-                This device could not keep a recovery copy of these changes. Save to keep them.
+                {t('entity.article.recoveryWarning')}
               </p>
             ) : null}
             <div className="article__actions">
@@ -561,7 +555,7 @@ export function EntityArticleSection({
                 data-testid="article-save"
               >
                 <ActionIcon icon={Check} />
-                {isSaving ? 'Saving…' : 'Save'}
+                {isSaving ? t('entity.article.saving') : t('entity.article.save')}
               </button>
               <button
                 className="button button--secondary"
@@ -571,7 +565,7 @@ export function EntityArticleSection({
                 data-testid="article-done"
               >
                 <ActionIcon icon={X} />
-                Done
+                {t('entity.article.done')}
               </button>
             </div>
           </div>
@@ -623,10 +617,14 @@ interface ArticleHistoryProps {
 function describeVersion(revision: ArticleRevisionSummary, revisions: ArticleRevisionSummary[]) {
   if (revision.kind === RevisionKind.Restored) {
     const from = revisions.find((candidate) => candidate.id === revision.restoredFromRevisionId)
-    return from ? `Restored version ${from.number}` : 'Restored an earlier version'
+    return from
+      ? t('entity.articleHistory.restored', { number: from.number })
+      : t('entity.articleHistory.restoredEarlier')
   }
-  if (revision.isEmpty) return 'Cleared the article'
-  return revision.kind === RevisionKind.Created ? 'First version' : 'Saved'
+  if (revision.isEmpty) return t('entity.articleHistory.cleared')
+  return revision.kind === RevisionKind.Created
+    ? t('entity.articleHistory.first')
+    : t('entity.articleHistory.saved')
 }
 
 /**
@@ -641,6 +639,7 @@ function ArticleHistory({
   onRestored,
   onStale,
 }: ArticleHistoryProps) {
+  const { t } = useI18n()
   const bodyId = useId()
   const [isOpen, setIsOpen] = useState(false)
   const [revisions, setRevisions] = useState<ArticleRevisionSummary[] | null>(null)
@@ -684,16 +683,16 @@ function ArticleHistory({
       setViewing((open) => (open?.id === revisionId ? { id: revisionId, detail } : open))
     } catch {
       setViewing(null)
-      setMessage('That version could not be opened.')
+      setMessage(t('entity.articleHistory.openFailed'))
     }
   }
 
   async function restore(revision: ArticleRevisionSummary) {
     if (
       !(await confirmAction({
-        title: `Put version ${revision.number} of the article back?`,
-        message: 'It becomes the newest version, and nothing in the history is lost.',
-        confirmLabel: 'Put this version back',
+        title: t('entity.articleHistory.confirm.title', { number: revision.number }),
+        message: t('entity.articleHistory.confirm.message'),
+        confirmLabel: t('entity.articleHistory.confirm.confirm'),
       }))
     ) {
       return
@@ -713,14 +712,12 @@ function ArticleHistory({
       onRestored(restored)
     } catch (error: unknown) {
       if (isChangedElsewhere(error, ARTICLE_CHANGED)) {
-        setMessage(
-          'The article was saved somewhere else after this page opened, so nothing was put back. The article above is now the latest.',
-        )
+        setMessage(t('entity.articleHistory.stale'))
         onStale()
       } else if (error instanceof ApiError && error.status === 404) {
-        setMessage('This entry is no longer here, so nothing was put back.')
+        setMessage(t('entity.articleHistory.entryGone'))
       } else {
-        setMessage('That version could not be put back.')
+        setMessage(t('entity.articleHistory.restoreFailed'))
       }
     } finally {
       setBusyId(null)
@@ -738,7 +735,7 @@ function ArticleHistory({
         data-testid="article-history-toggle"
       >
         <ActionIcon icon={History} />
-        Article history
+        {t('entity.articleHistory.toggle')}
       </button>
 
       {isOpen ? (
@@ -751,14 +748,14 @@ function ArticleHistory({
 
           {failed ? (
             <p className="history__quiet" role="status">
-              The article&rsquo;s history could not be read.
+              {t('entity.articleHistory.readFailed')}
             </p>
           ) : revisions === null ? (
             <p className="history__quiet" role="status">
-              Opening&hellip;
+              {t('entity.articleHistory.opening')}
             </p>
           ) : revisions.length === 0 ? (
-            <p className="history__quiet">No saved versions yet.</p>
+            <p className="history__quiet">{t('entity.articleHistory.none')}</p>
           ) : (
             <ol className="history__list" data-testid="article-history-list">
               {revisions.map((revision, index) => (
@@ -770,10 +767,14 @@ function ArticleHistory({
                   <div className="version__body">
                     <p className="version__what" data-testid="article-version-what">
                       {describeVersion(revision, revisions)}
-                      {index === 0 ? <span className="version__now">now showing</span> : null}
+                      {index === 0 ? (
+                        <span className="version__now">
+                          {t('entity.articleHistory.nowShowing')}
+                        </span>
+                      ) : null}
                     </p>
                     <p className="version__meta">
-                      <span>Version {revision.number}</span>
+                      <span>{t('entity.articleHistory.version', { number: revision.number })}</span>
                       <VersionActor name={revision.actorName} />
                     </p>
                   </div>
@@ -786,7 +787,9 @@ function ArticleHistory({
                       onClick={() => void view(revision.id)}
                       data-testid="article-version-view"
                     >
-                      {viewing?.id === revision.id ? 'Hide' : 'View'}
+                      {viewing?.id === revision.id
+                        ? t('entity.articleHistory.hide')
+                        : t('entity.articleHistory.view')}
                     </button>
                     {index > 0 ? (
                       <button
@@ -796,7 +799,9 @@ function ArticleHistory({
                         onClick={() => void restore(revision)}
                         data-testid="article-version-restore"
                       >
-                        {busyId === revision.id ? 'Restoring' : 'Restore'}
+                        {busyId === revision.id
+                          ? t('entity.articleHistory.restoring')
+                          : t('entity.articleHistory.restore')}
                       </button>
                     ) : null}
                   </div>
@@ -805,10 +810,10 @@ function ArticleHistory({
                     <div className="version__snapshot" data-testid="article-version-snapshot">
                       {viewing.detail === null ? (
                         <p className="history__quiet" role="status">
-                          Opening&hellip;
+                          {t('entity.articleHistory.snapshotOpening')}
                         </p>
                       ) : isEmptyDocument(viewing.detail.content) ? (
-                        <p className="entry__blank">No text in this version.</p>
+                        <p className="entry__blank">{t('entity.articleHistory.snapshotBlank')}</p>
                       ) : (
                         <LoreArticle content={viewing.detail.content} />
                       )}

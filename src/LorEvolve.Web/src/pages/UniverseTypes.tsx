@@ -23,6 +23,7 @@ import { TypeFields } from '../components/TypeFields'
 import { TypeGroupsField, type GroupChoice } from '../components/TypeGroupsField'
 import { TypeGroupsPanel } from '../components/TypeGroupsPanel'
 import { ValidationTermManager } from '../components/ValidationTermManager'
+import { t as translate, tn as translateN, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
@@ -46,22 +47,6 @@ import { PageHeader } from '../components/PageHeader'
 import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { confirmAction } from '../lib/confirm'
 
-/** Three vocabularies, one screen: kept apart as tabs so none of them is a long scroll below another. */
-const TABS = [
-  { id: 'lore', label: 'Lore Types' },
-  { id: 'groups', label: 'Groups' },
-  { id: 'relations', label: 'Relation Kinds' },
-  { id: 'events', label: 'Event Kinds & Methods' },
-] as const
-
-const LEDES: Record<(typeof TABS)[number]['id'], string> = {
-  lore: 'Every entry is one of these. Add your own, nest one inside another to organise Lore, and give each the fields this world actually needs.',
-  groups: 'Types gathered by what they are, in your priority: the order a scene lists its lore in.',
-  relations:
-    'How entries connect: each kind’s two readings, its Canon constraints and its family meaning.',
-  events: 'The event kinds and methods a moment and a world rule’s check can name.',
-}
-
 /** Groups not read: none to offer, one stable list. */
 const NO_GROUPS: EntityTypeGroup[] = []
 
@@ -71,6 +56,7 @@ const NO_GROUPS: EntityTypeGroup[] = []
  * survives a look at another tab.
  */
 export default function UniverseTypes() {
+  const { t, tn, tx } = useI18n()
   const access = useUniverseAccess()
   // The types and groups are the workspace's, read with the universe, so what is changed here is what Lore shows next.
   const {
@@ -81,13 +67,26 @@ export default function UniverseTypes() {
     setGroups,
     refreshTypes,
   } = useWorkspaceTypes()
-  const [tab, chooseTab] = useQueryTab(TABS, { history: 'push' })
+  // Three vocabularies, one screen: kept apart as tabs so none of them is a long scroll below another.
+  const tabs = [
+    { id: 'lore' as const, label: t('entityTypes.page.tabs.lore') },
+    { id: 'groups' as const, label: t('entityTypes.page.tabs.groups') },
+    { id: 'relations' as const, label: t('entityTypes.page.tabs.relations') },
+    { id: 'events' as const, label: t('entityTypes.page.tabs.events') },
+  ]
+  const ledes = {
+    lore: t('entityTypes.page.ledes.lore'),
+    groups: t('entityTypes.page.ledes.groups'),
+    relations: t('entityTypes.page.ledes.relations'),
+    events: t('entityTypes.page.ledes.events'),
+  }
+  const [tab, chooseTab] = useQueryTab(tabs, { history: 'push' })
 
   const types = Array.isArray(typesRead) ? typesRead : null
   // Groups are an extra: without them the types still work, and the group controls simply have none to offer.
   const groups = Array.isArray(groupsRead) ? groupsRead : NO_GROUPS
   const [reported, setMessage] = useState<string | null>(null)
-  const message = reported ?? (typesRead === 'failed' ? 'The types could not be loaded.' : null)
+  const message = reported ?? (typesRead === 'failed' ? t('entityTypes.page.loadFailed') : null)
   // The type editor: a new type, or the existing one being edited. One drawer for both. A new type opened from a row's
   // Add child starts inside that row's type.
   const [editing, setEditing] = useState<EntityType | 'new' | null>(null)
@@ -194,11 +193,17 @@ export default function UniverseTypes() {
       const reordered = await reorderEntityType(universe.id, type.id, to, type.parentId)
       refocus.current = `${type.id}:handle`
       setTypes(reordered)
-      setNotice(`Moved “${type.name}” to place ${to + 1} of ${siblings.length}.`)
+      setNotice(
+        t('entityTypes.page.movedToPlace', {
+          name: type.name,
+          place: to + 1,
+          total: siblings.length,
+        }),
+      )
     } catch (error: unknown) {
       setTypes(previous)
       refocus.current = `${type.id}:handle`
-      report(error, 'That type could not be moved.')
+      report(error, t('entityTypes.page.moveFailed'))
       if (error instanceof ApiError && error.status === 409) await refresh().catch(() => undefined)
     } finally {
       setMoving(null)
@@ -214,7 +219,7 @@ export default function UniverseTypes() {
     const isLifted = lifted === type.id
     // Alone among its siblings, there is nowhere for it to go.
     if (siblings.length < 2) return
-    const say = (to: number) => `place ${to + 1} of ${siblings.length} among its siblings`
+    const total = siblings.length
 
     if (event.key === ' ' || event.key === 'Enter') {
       event.preventDefault()
@@ -222,14 +227,13 @@ export default function UniverseTypes() {
       if (!isLifted) {
         setLifted(type.id)
         setTarget(from)
-        setNotice(
-          `Lifted “${type.name}”, at ${say(from)}. Up and down arrows move it, Space drops it, Escape puts it back.`,
-        )
+        setNotice(t('entityTypes.page.lifted', { name: type.name, place: from + 1, total }))
       } else {
         const to = target ?? from
         setLifted(null)
         setTarget(null)
-        if (to === from) setNotice(`“${type.name}” stays at ${say(from)}.`)
+        if (to === from)
+          setNotice(t('entityTypes.page.stays', { name: type.name, place: from + 1, total }))
         else void reorder(type, to)
       }
     } else if (isLifted && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
@@ -239,13 +243,13 @@ export default function UniverseTypes() {
         Math.max(0, (target ?? from) + (event.key === 'ArrowUp' ? -1 : 1)),
       )
       setTarget(to)
-      setNotice(`“${type.name}”: ${say(to)}.`)
+      setNotice(t('entityTypes.page.carriedAt', { name: type.name, place: to + 1, total }))
     } else if (isLifted && event.key === 'Escape') {
       event.preventDefault()
       event.stopPropagation()
       setLifted(null)
       setTarget(null)
-      setNotice(`Put back. “${type.name}” stays at ${say(from)}.`)
+      setNotice(t('entityTypes.page.putBack', { name: type.name, place: from + 1, total }))
     }
   }
 
@@ -299,10 +303,14 @@ export default function UniverseTypes() {
       const moved = await moveEntityType(universe.id, type.id, direction)
       refocus.current = `${type.id}:${direction}`
       setTypes(moved)
-      setNotice(`Moved “${type.name}” ${direction}.`)
+      setNotice(
+        direction === 'up'
+          ? t('entityTypes.page.movedUp', { name: type.name })
+          : t('entityTypes.page.movedDown', { name: type.name }),
+      )
     } catch (error: unknown) {
       setTypes(previous)
-      report(error, 'That type could not be moved.')
+      report(error, t('entityTypes.page.moveFailed'))
     } finally {
       setMoving(null)
     }
@@ -353,13 +361,9 @@ export default function UniverseTypes() {
 
     if (
       !(await confirmAction({
-        title: (
-          <>
-            Delete the type “<bdi>{type.name}</bdi>”?
-          </>
-        ),
-        message: 'No entry uses it. This cannot be undone.',
-        confirmLabel: 'Delete type',
+        title: <>{tx('entityTypes.page.deleteTitle', { name: <bdi>{type.name}</bdi> })}</>,
+        message: t('entityTypes.page.deleteMessage'),
+        confirmLabel: t('entityTypes.page.deleteConfirm'),
         variant: 'destructive',
       }))
     ) {
@@ -368,7 +372,7 @@ export default function UniverseTypes() {
 
     try {
       await deleteEntityType(universe.id, type.id)
-      setNotice(`Deleted the type “${type.name}”.`)
+      setNotice(t('entityTypes.page.deleted', { name: type.name }))
       if (openTypeId === type.id) setOpenTypeId(null)
       await refresh()
     } catch (error: unknown) {
@@ -377,7 +381,7 @@ export default function UniverseTypes() {
         setBlocked({ typeId: type.id, text: error.message })
         await refresh().catch(() => undefined)
       } else {
-        report(error, 'That type could not be deleted.')
+        report(error, t('entityTypes.page.deleteFailed'))
       }
     }
   }
@@ -391,8 +395,8 @@ export default function UniverseTypes() {
   return (
     <article className="types">
       <PageHeader
-        title="Types"
-        lede={LEDES[tab]}
+        title={t('entityTypes.page.title')}
+        lede={ledes[tab]}
         actions={
           tab === 'lore' && access.editContent ? (
             <button
@@ -405,12 +409,18 @@ export default function UniverseTypes() {
               data-testid="new-type"
             >
               <ActionIcon icon={Plus} />
-              New type
+              {t('entityTypes.page.newType')}
             </button>
           ) : null
         }
       >
-        <QueryTabList label="Types" idPrefix="types" tabs={TABS} tab={tab} onChoose={chooseTab} />
+        <QueryTabList
+          label={t('entityTypes.page.title')}
+          idPrefix="types"
+          tabs={tabs}
+          tab={tab}
+          onChoose={chooseTab}
+        />
       </PageHeader>
 
       {editing ? (
@@ -430,10 +440,10 @@ export default function UniverseTypes() {
             setBlocked(null)
             setNotice(
               parent
-                ? `Created “${savedName}” inside “${parent}”.`
+                ? t('entityTypes.page.createdInside', { name: savedName, parent })
                 : wasNew
-                  ? `Created the type “${savedName}”.`
-                  : `Saved the type “${savedName}”.`,
+                  ? t('entityTypes.page.created', { name: savedName })
+                  : t('entityTypes.page.saved', { name: savedName }),
             )
             await refresh()
           }}
@@ -453,7 +463,7 @@ export default function UniverseTypes() {
                   refresh().catch(() => undefined)
                 }}
               >
-                Try again
+                {t('entityTypes.page.retry')}
               </button>
             ) : null}
           </div>
@@ -466,7 +476,7 @@ export default function UniverseTypes() {
         {!types ? (
           message ? null : (
             <p className="notice" role="status">
-              Reading the types…
+              {t('entityTypes.page.reading')}
             </p>
           )
         ) : (
@@ -492,18 +502,28 @@ export default function UniverseTypes() {
             }}
             accessibility={{
               screenReaderInstructions: {
-                draggable:
-                  'Press Space or Enter to lift this type, the up and down arrows to move it among its siblings, and ' +
-                  'Space or Enter again to drop it, or Escape to put it back. It never moves to another parent.',
+                draggable: t('entityTypes.page.dnd.instructions'),
               },
               announcements: {
                 onDragStart: ({ active }) =>
-                  `Picked up ${tree.byId.get(String(active.id))?.type.name ?? 'a type'}.`,
+                  t('entityTypes.page.dnd.pickedUp', {
+                    name:
+                      tree.byId.get(String(active.id))?.type.name ??
+                      t('entityTypes.page.dnd.aType'),
+                  }),
                 onDragOver: () => undefined,
                 onDragEnd: ({ active }) =>
-                  `Dropped ${tree.byId.get(String(active.id))?.type.name ?? 'the type'}.`,
+                  t('entityTypes.page.dnd.dropped', {
+                    name:
+                      tree.byId.get(String(active.id))?.type.name ??
+                      t('entityTypes.page.dnd.theType'),
+                  }),
                 onDragCancel: ({ active }) =>
-                  `Put back ${tree.byId.get(String(active.id))?.type.name ?? 'the type'}.`,
+                  t('entityTypes.page.dnd.putBack', {
+                    name:
+                      tree.byId.get(String(active.id))?.type.name ??
+                      t('entityTypes.page.dnd.theType'),
+                  }),
               },
             }}
           >
@@ -545,7 +565,7 @@ export default function UniverseTypes() {
                             if (lifted !== type.id) return
                             setLifted(null)
                             setTarget(null)
-                            setNotice(`Put back. “${type.name}” stays where it was.`)
+                            setNotice(t('entityTypes.page.putBackWhereItWas', { name: type.name }))
                           }}
                           buttonRef={(element) => {
                             const key = `${type.id}:handle`
@@ -561,8 +581,11 @@ export default function UniverseTypes() {
                         <bdi>{type.name}</bdi>
                         {node.depth > 0 ? (
                           <span className="visually-hidden">
-                            , inside{' '}
-                            {typePathLabel(tree.byId.get(node.path[node.path.length - 2]!.id)!)}
+                            {t('entityTypes.page.inside', {
+                              path: typePathLabel(
+                                tree.byId.get(node.path[node.path.length - 2]!.id)!,
+                              ),
+                            })}
                           </span>
                         ) : null}
                       </span>
@@ -574,20 +597,23 @@ export default function UniverseTypes() {
                               <span className="types__group" key={group.id}>
                                 <Layers aria-hidden="true" focusable="false" strokeWidth={1.75} />
                                 <bdi>{group.name}</bdi>
-                                <span className="visually-hidden"> (group)</span>
+                                <span className="visually-hidden">
+                                  {' '}
+                                  {t('entityTypes.page.groupSuffix')}
+                                </span>
                               </span>
                             ))}
                         </span>
                       ) : null}
                       <span className="types__count" data-testid={`type-count-${type.name}`}>
-                        {type.entityCount === 1 ? '1 entry' : `${type.entityCount} entries`}
+                        {tn('entityTypes.page.count', type.entityCount, { n: type.entityCount })}
                         {type.trashedEntityCount > 0 ? (
                           <span className="types__trashed">
                             {type.trashedEntityCount === type.entityCount
                               ? type.entityCount === 1
-                                ? ', in the Trash'
-                                : ', all in the Trash'
-                              : `, ${type.trashedEntityCount} in the Trash`}
+                                ? t('entityTypes.page.trashedOne')
+                                : t('entityTypes.page.trashedAll')
+                              : t('entityTypes.page.trashedSome', { n: type.trashedEntityCount })}
                           </span>
                         ) : null}
                       </span>
@@ -597,7 +623,7 @@ export default function UniverseTypes() {
                             <span
                               className="types__move"
                               role="group"
-                              aria-label={`Order of ${type.name}`}
+                              aria-label={t('entityTypes.page.orderOf', { name: type.name })}
                             >
                               {(['up', 'down'] as const).map((direction) => {
                                 const isEnd = direction === 'up' ? isFirst : isLast
@@ -612,12 +638,16 @@ export default function UniverseTypes() {
                                     className="button button--text button--sm types__movebutton"
                                     type="button"
                                     aria-disabled={isEnd || moving !== null || undefined}
-                                    aria-label={`Move ${type.name} ${direction}`}
+                                    aria-label={
+                                      direction === 'up'
+                                        ? t('entityTypes.page.moveUpLabel', { name: type.name })
+                                        : t('entityTypes.page.moveDownLabel', { name: type.name })
+                                    }
                                     title={
                                       isEnd
                                         ? direction === 'up'
-                                          ? 'Already first among its siblings'
-                                          : 'Already last among its siblings'
+                                          ? t('entityTypes.page.alreadyFirst')
+                                          : t('entityTypes.page.alreadyLast')
                                         : undefined
                                     }
                                     onClick={() => {
@@ -626,7 +656,9 @@ export default function UniverseTypes() {
                                     data-testid={`move-${direction}-${type.name}`}
                                   >
                                     <ActionIcon icon={direction === 'up' ? ArrowUp : ArrowDown} />
-                                    {direction === 'up' ? 'Up' : 'Down'}
+                                    {direction === 'up'
+                                      ? t('entityTypes.page.up')
+                                      : t('entityTypes.page.down')}
                                   </button>
                                 )
                               })}
@@ -638,11 +670,11 @@ export default function UniverseTypes() {
                               className="button button--text button--sm types__addchild"
                               type="button"
                               onClick={() => openChild(type)}
-                              aria-label={`Add child type inside ${type.name}`}
+                              aria-label={t('entityTypes.page.addChildLabel', { name: type.name })}
                               data-testid={`add-child-${type.name}`}
                             >
                               <ActionIcon icon={ListTree} />
-                              Add child
+                              {t('entityTypes.page.addChild')}
                             </button>
                             <button
                               className="button button--secondary button--sm"
@@ -651,11 +683,11 @@ export default function UniverseTypes() {
                                 setBlocked(null)
                                 setEditing(type)
                               }}
-                              aria-label={`Edit ${type.name}`}
+                              aria-label={t('entityTypes.page.editLabel', { name: type.name })}
                               data-testid={`edit-type-${type.name}`}
                             >
                               <ActionIcon icon={Pencil} />
-                              Edit
+                              {t('entityTypes.page.edit')}
                             </button>
                           </>
                         ) : null}
@@ -663,29 +695,29 @@ export default function UniverseTypes() {
                           className="button button--secondary button--sm"
                           type="button"
                           aria-expanded={openTypeId === type.id}
-                          aria-label={`Fields of ${type.name}`}
+                          aria-label={t('entityTypes.page.fieldsLabel', { name: type.name })}
                           onClick={() => setOpenTypeId(openTypeId === type.id ? null : type.id)}
                           data-testid={`fields-${type.name}`}
                         >
-                          Fields
+                          {t('entityTypes.page.fields')}
                           {type.fields.length > 0 ? (
                             <span className="types__fieldcount">{type.fields.length}</span>
                           ) : null}
                         </button>
                         {access.editContent ? (
                           <ActionMenu
-                            label={`More actions for ${type.name}`}
+                            label={t('entityTypes.page.moreActions', { name: type.name })}
                             triggerTestId={`type-actions-${type.name}`}
                           >
                             <button
                               className="actionmenu__item types__addchilditem"
                               type="button"
                               onClick={() => openChild(type)}
-                              aria-label={`Add child type inside ${type.name}`}
+                              aria-label={t('entityTypes.page.addChildLabel', { name: type.name })}
                               data-testid={`add-child-item-${type.name}`}
                             >
                               <ActionIcon icon={ListTree} />
-                              Add child type
+                              {t('entityTypes.page.addChildType')}
                             </button>
                             {/* The grip's plain alternative on a wide screen, where Up and Down are not set out on the row. */}
                             {(['up', 'down'] as const).map((direction) =>
@@ -699,7 +731,9 @@ export default function UniverseTypes() {
                                   data-testid={`move-${direction}-item-${type.name}`}
                                 >
                                   <ActionIcon icon={direction === 'up' ? ArrowUp : ArrowDown} />
-                                  {direction === 'up' ? 'Move up' : 'Move down'}
+                                  {direction === 'up'
+                                    ? t('entityTypes.page.moveUp')
+                                    : t('entityTypes.page.moveDown')}
                                 </button>
                               ),
                             )}
@@ -709,7 +743,7 @@ export default function UniverseTypes() {
                               onClick={() => void removeType(type)}
                               data-testid={`delete-type-${type.name}`}
                             >
-                              Delete type
+                              {t('entityTypes.page.deleteType')}
                             </button>
                           </ActionMenu>
                         ) : null}
@@ -730,11 +764,13 @@ export default function UniverseTypes() {
                         <p className="types__blockedlinks">
                           {type.entityCount > type.trashedEntityCount ? (
                             <Link to={`/app/universes/${universe.id}/lore?type=${type.id}`}>
-                              Show its entries in Lore
+                              {t('entityTypes.page.showEntries')}
                             </Link>
                           ) : null}
                           {type.trashedEntityCount > 0 ? (
-                            <Link to={`/app/universes/${universe.id}/trash`}>Open the Trash</Link>
+                            <Link to={`/app/universes/${universe.id}/trash`}>
+                              {t('entityTypes.page.openTrash')}
+                            </Link>
                           ) : null}
                         </p>
                       </div>
@@ -763,8 +799,9 @@ export default function UniverseTypes() {
                   <bdi>{carried.type.name}</bdi>
                   {branchIds(carried).size > 1 ? (
                     <span className="types__draggingnested">
-                      + {branchIds(carried).size - 1} nested{' '}
-                      {branchIds(carried).size === 2 ? 'type' : 'types'}
+                      {tn('entityTypes.page.nested', branchIds(carried).size - 1, {
+                        n: branchIds(carried).size - 1,
+                      })}
                     </span>
                   ) : null}
                 </div>
@@ -808,10 +845,18 @@ function targetedDetail(
   )
   const first = ordered[0]
   const others = ordered.length - 1
-  const rest =
-    others === 0 ? '' : others === 1 ? ' and 1 other field' : ` and ${others} other fields`
-  const mark = first.archived ? ' (archived)' : ''
-  return `${name} can't be deleted because the field "${first.field}"${mark} on ${first.owner}${rest} can only link to it. Change those fields to allow another type first.`
+  const vars = { name, field: first.field, owner: first.owner, n: others }
+  if (others === 0) {
+    return translate(
+      first.archived ? 'entityTypes.page.targetedNoneArchived' : 'entityTypes.page.targetedNone',
+      vars,
+    )
+  }
+  return translateN(
+    first.archived ? 'entityTypes.page.targetedOthersArchived' : 'entityTypes.page.targetedOthers',
+    others,
+    vars,
+  )
 }
 
 /**
@@ -820,32 +865,36 @@ function targetedDetail(
  * Lore and still keeps its type, so it is named.
  */
 function inUseDetail(name: string, live: number, trashed: number, children = 0) {
-  const nested = children === 1 ? '1 nested type' : `${children} nested types`
   if (live + trashed === 0) {
-    return `${name} can't be deleted because it still contains ${nested}. Move or delete those types first.`
+    return translateN('entityTypes.page.inUse.onlyNested', children, { name, n: children })
   }
   const total = live + trashed
-  const uses = total === 1 ? '1 entry still uses it' : `${total} entries still use it`
-  const where =
-    trashed === 0
-      ? ''
-      : trashed === total
-        ? total === 1
-          ? ', and it is in the Trash'
-          : ', all of them in the Trash'
-        : `, ${trashed} of them in the Trash`
-  const fix =
+  const nested = translateN('entityTypes.page.inUse.nested', children, { n: children })
+  const vars = { name, n: total, trashed, nested }
+  const reason =
+    children === 0
+      ? trashed === 0
+        ? translateN('entityTypes.page.inUse.reasonNone', total, vars)
+        : trashed === total
+          ? translateN('entityTypes.page.inUse.reasonAll', total, vars)
+          : translateN('entityTypes.page.inUse.reasonSome', total, vars)
+      : trashed === 0
+        ? translateN('entityTypes.page.inUse.reasonNestedNone', total, vars)
+        : trashed === total
+          ? translateN('entityTypes.page.inUse.reasonNestedAll', total, vars)
+          : translateN('entityTypes.page.inUse.reasonNestedSome', total, vars)
+  const fix = translate(
     total === 1
       ? trashed === 0
-        ? 'Move it to another type first.'
-        : 'Restore it from the Trash, then move it to another type.'
+        ? 'entityTypes.page.inUse.fixOne'
+        : 'entityTypes.page.inUse.fixOneTrashed'
       : trashed === 0
-        ? 'Move them to another type first.'
-        : 'Move them to another type first; an entry in the Trash has to be restored before it can be moved.'
+        ? 'entityTypes.page.inUse.fixMany'
+        : 'entityTypes.page.inUse.fixManyTrashed',
+  )
   return children === 0
-    ? `${name} can't be deleted because ${uses}${where}. ${fix}`
-    : `${name} can't be deleted because ${uses}${where}, and it still contains ${nested}. ${fix} ` +
-        (children === 1 ? 'Move or delete that type too.' : 'Move or delete those types too.')
+    ? `${reason} ${fix}`
+    : `${reason} ${fix} ${translateN('entityTypes.page.inUse.tail', children)}`
 }
 
 /**
@@ -886,6 +935,7 @@ function TypeDialog({
   /** With the parent it was saved under, null at the top. */
   onSaved: (name: string, parentId: string | null) => Promise<void>
 }) {
+  const { t, tx } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const initial = {
     name: type?.name ?? '',
@@ -928,8 +978,8 @@ function TypeDialog({
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     type
-      ? `Your changes to “${type.name}” have not been saved. Leave without saving them?`
-      : 'This type has not been created. Leave without saving it?',
+      ? t('entityTypes.page.dialog.leaveEdit', { name: type.name })
+      : t('entityTypes.page.dialog.leaveNew'),
     onClose,
   )
 
@@ -944,7 +994,7 @@ function TypeDialog({
     setMessage(null)
     setFieldErrors({})
     if (!name.trim()) {
-      setFieldErrors({ name: 'Give the type a name.' })
+      setFieldErrors({ name: t('entityTypes.page.dialog.nameRequired') })
       return
     }
 
@@ -980,10 +1030,16 @@ function TypeDialog({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : `Some details need a change before this can be ${type ? 'saved' : 'created'}.`,
+            : type
+              ? t('entityTypes.page.dialog.detailsSave')
+              : t('entityTypes.page.dialog.detailsCreate'),
         )
       } else {
-        setMessage(type ? 'That type could not be saved.' : 'That type could not be created.')
+        setMessage(
+          type
+            ? t('entityTypes.page.dialog.saveFailed')
+            : t('entityTypes.page.dialog.createFailed'),
+        )
       }
     } finally {
       setIsSaving(false)
@@ -1006,14 +1062,18 @@ function TypeDialog({
         }}
       >
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Lore Types</p>
+          <p className="drawer__eyebrow">{t('entityTypes.page.dialog.eyebrow')}</p>
           <h2 className="drawer__title" id="type-heading">
-            {type ? 'Edit type' : chosenParent ? 'New child type' : 'New type'}
+            {type
+              ? t('entityTypes.page.dialog.editTitle')
+              : chosenParent
+                ? t('entityTypes.page.dialog.newChildTitle')
+                : t('entityTypes.page.dialog.newTitle')}
           </h2>
           {/* Where a new type is going, in a line, while it is going inside one. The Parent type select is what decides. */}
           {!type && chosenParent ? (
             <p className="drawer__context" data-testid="type-dialog-context">
-              Inside <bdi>{chosenParent.name}</bdi>
+              {tx('entityTypes.page.dialog.inside', { name: <bdi>{chosenParent.name}</bdi> })}
             </p>
           ) : null}
         </header>
@@ -1028,12 +1088,12 @@ function TypeDialog({
           {/* The form in three parts, as an author thinks of a type: what it is, where it sits, what it does. */}
           <section className="drawer__group" aria-labelledby="type-identity">
             <h3 className="sectionrule sectionrule--accent" id="type-identity">
-              Identity
+              {t('entityTypes.page.dialog.identity')}
             </h3>
             <Field
-              label="Name"
+              label={t('entityTypes.page.dialog.name')}
               name="type-name"
-              placeholder={type ? undefined : 'Insert a name'}
+              placeholder={type ? undefined : t('entityTypes.page.dialog.namePlaceholder')}
               dir="auto"
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -1043,21 +1103,18 @@ function TypeDialog({
 
             <div className="field">
               <TypeIconPicker value={icon} onChange={setIcon} testId="type-icon" />
-              <p className="field__hint">
-                Optional, and only a picture: it marks the type on the Lore filter. Nothing is
-                chosen for you from the name.
-              </p>
+              <p className="field__hint">{t('entityTypes.page.dialog.iconHint')}</p>
               {fieldErrors.icon ? <p className="field__error">{fieldErrors.icon}</p> : null}
             </div>
           </section>
 
           <section className="drawer__group" aria-labelledby="type-hierarchy">
             <h3 className="sectionrule sectionrule--accent" id="type-hierarchy">
-              Hierarchy
+              {t('entityTypes.page.dialog.hierarchy')}
             </h3>
             <div className="field">
               <label className="field__label" htmlFor="type-parent">
-                Parent type
+                {t('entityTypes.page.dialog.parent')}
               </label>
               <select
                 id="type-parent"
@@ -1067,7 +1124,7 @@ function TypeDialog({
                 aria-describedby="type-parent-hint"
                 data-testid="type-parent"
               >
-                <option value="">None (a top-level type)</option>
+                <option value="">{t('entityTypes.page.dialog.parentNone')}</option>
                 {parents.map((node) => (
                   <option key={node.type.id} value={node.type.id}>
                     {typePathLabel(node)}
@@ -1075,9 +1132,7 @@ function TypeDialog({
                 ))}
               </select>
               <p className="field__hint" id="type-parent-hint">
-                Organises Lore: choosing a type there shows the entries of the types inside it too.
-                A nested type inherits the fields of every type above it; each field is edited on
-                its own type.
+                {t('entityTypes.page.dialog.parentHint')}
               </p>
               {fieldErrors.parent ? <p className="field__error">{fieldErrors.parent}</p> : null}
             </div>
@@ -1089,7 +1144,7 @@ function TypeDialog({
           {type ? null : (
             <section className="drawer__group" aria-labelledby="type-behaviour">
               <h3 className="sectionrule sectionrule--accent" id="type-behaviour">
-                Behaviour
+                {t('entityTypes.page.dialog.behaviour')}
               </h3>
               <label className="check">
                 <input
@@ -1099,8 +1154,10 @@ function TypeDialog({
                   data-testid="type-family"
                 />
                 <span>
-                  <span className="types__familylabel">Family Tree</span>
-                  Entries of this type can appear in Family Tree
+                  <span className="types__familylabel">
+                    {t('entityTypes.page.dialog.familyLabel')}
+                  </span>
+                  {t('entityTypes.page.dialog.familyText')}
                 </span>
               </label>
             </section>
@@ -1109,7 +1166,13 @@ function TypeDialog({
 
         <footer className="drawer__actions">
           <button className="button" type="submit" disabled={isSaving} data-testid="save-type">
-            {type ? (isSaving ? 'Saving…' : 'Save changes') : isSaving ? 'Creating…' : 'Create'}
+            {type
+              ? isSaving
+                ? t('entityTypes.page.dialog.saving')
+                : t('entityTypes.page.dialog.saveChanges')
+              : isSaving
+                ? t('entityTypes.page.dialog.creating')
+                : t('entityTypes.page.dialog.create')}
           </button>
           <button
             className="button button--secondary"
@@ -1117,7 +1180,7 @@ function TypeDialog({
             onClick={close}
             data-testid="cancel-type"
           >
-            Cancel
+            {t('entityTypes.page.dialog.cancel')}
           </button>
         </footer>
       </form>

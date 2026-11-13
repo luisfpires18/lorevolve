@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { t, tn, tx, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { Field } from './Field'
 import { ApiError } from '../lib/api'
@@ -50,8 +51,6 @@ const MIN_KEY = 'canonconstraints.minagedifferenceyears'
 const MAX_KEY = 'canonconstraints.maxagedifferenceyears'
 const FAMILY_KEY = 'familysemantic'
 
-const GAP_MESSAGE = 'An age gap is a whole number of years, 0 or more.'
-
 function draftFrom(type: RelationshipType): TypeDraft {
   const constraints = type.canonConstraints
   return {
@@ -70,21 +69,18 @@ function draftFrom(type: RelationshipType): TypeDraft {
 function familySummary(familySemantic: FamilySemanticValue) {
   if (familySemantic === FamilySemantic.None) return null
   return isParentSemantic(familySemantic)
-    ? `Family: ${FAMILY_SEMANTIC_WORDS[familySemantic]} parent → child`
-    : 'Family: listed on the Family Tree, defines no ancestry'
+    ? t('relationships.types.familyParent', { word: FAMILY_SEMANTIC_WORDS[familySemantic] })
+    : t('relationships.types.familyListed')
 }
 
 /** How a type reads from each side, in the author's own words. */
 function reading(type: RelationshipType) {
-  return type.isSymmetric ? (
-    <>
-      <bdi>{type.name}</bdi>, both ways
-    </>
-  ) : (
-    <>
-      <bdi>{type.name}</bdi> one way, <bdi>{type.inverseName ?? type.name}</bdi> the other
-    </>
-  )
+  return type.isSymmetric
+    ? tx('relationships.types.bothWays', { name: <bdi>{type.name}</bdi> })
+    : tx('relationships.types.oneWay', {
+        name: <bdi>{type.name}</bdi>,
+        inverse: <bdi>{type.inverseName ?? type.name}</bdi>,
+      })
 }
 
 /** Blank is no gap; anything else must be a whole number of years, 0 or more. */
@@ -95,33 +91,40 @@ function readGap(text: string): number | null | 'invalid' {
 }
 
 function years(count: number) {
-  return count === 1 ? '1 year' : `${count} years`
+  return tn('relationships.types.years', count, { n: count })
 }
 
 /** What a kind's Canon constraints say, in words, or null when it has none. */
 function constraintSummary(constraints: RelationshipCanonConstraints) {
   const parts: string[] = []
 
-  if (constraints.ageOrder === AgeOrder.SourceOlder) parts.push('source older than target')
-  if (constraints.ageOrder === AgeOrder.SourceYounger) parts.push('source younger than target')
+  if (constraints.ageOrder === AgeOrder.SourceOlder)
+    parts.push(t('relationships.types.sourceOlder'))
+  if (constraints.ageOrder === AgeOrder.SourceYounger)
+    parts.push(t('relationships.types.sourceYounger'))
 
   const min = constraints.minAgeDifferenceYears
   const max = constraints.maxAgeDifferenceYears
 
   if (min !== null && max !== null) {
     parts.push(
-      min === max ? `born exactly ${years(min)} apart` : `born ${min} to ${max} years apart`,
+      min === max
+        ? t('relationships.types.bornExactly', { years: years(min) })
+        : t('relationships.types.bornRange', { min, max }),
     )
   } else if (min !== null) {
-    parts.push(`born at least ${years(min)} apart`)
+    parts.push(t('relationships.types.bornAtLeast', { years: years(min) }))
   } else if (max !== null) {
-    parts.push(`born at most ${years(max)} apart`)
+    parts.push(t('relationships.types.bornAtMost', { years: years(max) }))
   }
 
-  return parts.length > 0 ? `Canon: ${parts.join(', ')}` : null
+  return parts.length > 0
+    ? t('relationships.types.canonSummary', { parts: parts.join(', ') })
+    : null
 }
 
 export function RelationshipTypeManager({ universeId }: { universeId: string }) {
+  useI18n() // Re-render when the language changes; the module's `t` reads the new one.
   const access = useUniverseAccess()
   const [types, setTypes] = useState<RelationshipType[] | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -138,7 +141,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
       .catch(() => {
         if (controller.signal.aborted) return
         setTypes([])
-        setMessage('The relation kinds could not be loaded.')
+        setMessage(t('relationships.types.loadFailed'))
       })
     return () => {
       controller.abort()
@@ -165,10 +168,10 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
     const min = readGap(draft.minGap)
     const max = readGap(draft.maxGap)
     const errors: Record<string, string> = {}
-    if (min === 'invalid') errors[MIN_KEY] = GAP_MESSAGE
-    if (max === 'invalid') errors[MAX_KEY] = GAP_MESSAGE
+    if (min === 'invalid') errors[MIN_KEY] = t('relationships.types.gapInvalid')
+    if (max === 'invalid') errors[MAX_KEY] = t('relationships.types.gapInvalid')
     if (typeof min === 'number' && typeof max === 'number' && min > max) {
-      errors[MAX_KEY] = `The largest gap cannot be smaller than the smallest gap, ${years(min)}.`
+      errors[MAX_KEY] = t('relationships.types.gapOrder', { years: years(min) })
     }
     if (Object.keys(errors).length > 0 || min === 'invalid' || max === 'invalid') {
       setFieldErrors(errors)
@@ -210,7 +213,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
         setFieldErrors(error.fieldErrors)
         if (Object.keys(error.fieldErrors).length === 0) setMessage(error.message)
       } else {
-        setMessage('That relation kind could not be saved.')
+        setMessage(t('relationships.types.saveFailed'))
       }
     } finally {
       setIsSaving(false)
@@ -225,9 +228,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
       await refresh()
     } catch (error: unknown) {
       // 409 carries the count of relations still using the kind, which is the useful part.
-      setMessage(
-        error instanceof ApiError ? error.message : 'That relation kind could not be deleted.',
-      )
+      setMessage(error instanceof ApiError ? error.message : t('relationships.types.deleteFailed'))
     }
   }
 
@@ -241,9 +242,9 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
   const form = (
     <div className="reltype__form" data-testid="relationship-type-form">
       <Field
-        label="Reads as"
+        label={t('relationships.types.readsAs')}
         name="reltype-name"
-        placeholder="Insert how it reads"
+        placeholder={t('relationships.types.readsAsPlaceholder')}
         dir="auto"
         value={draft.name}
         onChange={(event) => edit({ name: event.target.value })}
@@ -252,13 +253,15 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
 
       {draft.isSymmetric ? (
         <p className="settings__note">
-          Both entries read “{draft.name.trim() || 'this'}”. Nothing is worded in reverse.
+          {t('relationships.types.bothRead', {
+            name: draft.name.trim() || t('relationships.types.thisFallback'),
+          })}
         </p>
       ) : (
         <Field
-          label="Reads as, from the other side"
+          label={t('relationships.types.readsAsOther')}
           name="reltype-inverse"
-          placeholder="Insert how it reads from the other side"
+          placeholder={t('relationships.types.readsAsOtherPlaceholder')}
           dir="auto"
           value={draft.inverseName}
           onChange={(event) => edit({ inverseName: event.target.value })}
@@ -273,42 +276,38 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
           onChange={(event) => edit({ isSymmetric: event.target.checked })}
           data-testid="reltype-symmetric"
         />
-        <span>Reads the same from both sides</span>
+        <span>{t('relationships.types.symmetric')}</span>
       </label>
 
       <Field
-        label="Description"
+        label={t('relationships.types.description')}
         name="reltype-description"
-        placeholder="Optional"
+        placeholder={t('relationships.types.optional')}
         value={draft.description}
         onChange={(event) => edit({ description: event.target.value })}
         error={fieldErrors.description}
       />
 
       <fieldset className="reltype__canon" data-testid="reltype-canon">
-        <legend className="reltype__legend">Canon constraints</legend>
-        <p className="field__hint">
-          Optional rules used by Canon Integrity. LorEvolve never infers these from the relationship
-          name.
-        </p>
+        <legend className="reltype__legend">{t('relationships.types.canonLegend')}</legend>
+        <p className="field__hint">{t('relationships.types.canonHint')}</p>
 
         <p className="reltype__direction" data-testid="reltype-direction">
-          <span className="reltype__end">Source</span>
+          <span className="reltype__end">{t('relationships.types.source')}</span>
           <span aria-hidden="true">→</span>
-          <span>{draft.name.trim() || 'reads as'}</span>
+          <span>{draft.name.trim() || t('relationships.types.readsAsFallback')}</span>
           <span aria-hidden="true">→</span>
-          <span className="reltype__end">Target</span>
+          <span className="reltype__end">{t('relationships.types.target')}</span>
         </p>
 
         {draft.isSymmetric ? (
           <p className="field__hint" data-testid="reltype-no-order">
-            Reads the same from both sides, so neither end is the older one. An age gap still
-            applies.
+            {t('relationships.types.noOrder')}
           </p>
         ) : (
           <div className="field">
             <label className="field__label" htmlFor="reltype-age-order">
-              Age ordering
+              {t('relationships.types.ageOrdering')}
             </label>
             <select
               id="reltype-age-order"
@@ -319,9 +318,13 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
               aria-describedby={orderError ? 'reltype-age-order-error' : undefined}
               data-testid="reltype-age-order"
             >
-              <option value={AgeOrder.None}>No age rule</option>
-              <option value={AgeOrder.SourceOlder}>Source must be older</option>
-              <option value={AgeOrder.SourceYounger}>Source must be younger</option>
+              <option value={AgeOrder.None}>{t('relationships.types.noAgeRule')}</option>
+              <option value={AgeOrder.SourceOlder}>
+                {t('relationships.types.sourceMustBeOlder')}
+              </option>
+              <option value={AgeOrder.SourceYounger}>
+                {t('relationships.types.sourceMustBeYounger')}
+              </option>
             </select>
             {orderError ? (
               <p className="field__error" id="reltype-age-order-error">
@@ -333,20 +336,20 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
 
         <div className="reltype__gaps">
           <Field
-            label="Minimum age gap (years)"
+            label={t('relationships.types.minGap')}
             name="reltype-min-gap"
             inputMode="numeric"
-            placeholder="None"
+            placeholder={t('relationships.types.gapNone')}
             value={draft.minGap}
             onChange={(event) => edit({ minGap: event.target.value })}
             error={fieldErrors[MIN_KEY]}
             data-testid="reltype-min-gap"
           />
           <Field
-            label="Maximum age gap (years)"
+            label={t('relationships.types.maxGap')}
             name="reltype-max-gap"
             inputMode="numeric"
-            placeholder="None"
+            placeholder={t('relationships.types.gapNone')}
             value={draft.maxGap}
             onChange={(event) => edit({ maxGap: event.target.value })}
             error={fieldErrors[MAX_KEY]}
@@ -356,22 +359,18 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
       </fieldset>
 
       <fieldset className="reltype__canon" data-testid="reltype-family">
-        <legend className="reltype__legend">Family meaning</legend>
-        <p className="field__hint">
-          Optional. Only a kind given a family meaning here appears in the Family Tree, and
-          LorEvolve never infers one from the relationship name.
-        </p>
+        <legend className="reltype__legend">{t('relationships.types.familyLegend')}</legend>
+        <p className="field__hint">{t('relationships.types.familyHint')}</p>
 
         {draft.isSymmetric ? (
           <p className="field__hint" data-testid="reltype-no-family">
-            Reads the same from both sides, so neither end is a parent. It can still be a family
-            relationship that defines no ancestry, like “married to”.
+            {t('relationships.types.noFamily')}
           </p>
         ) : null}
 
         <div className="field">
           <label className="field__label" htmlFor="reltype-family-meaning">
-            Family meaning
+            {t('relationships.types.familyMeaning')}
           </label>
           <select
             id="reltype-family-meaning"
@@ -405,17 +404,20 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
 
         {!draft.isSymmetric && isParentSemantic(draft.familySemantic) ? (
           <p className="reltype__direction" data-testid="reltype-family-direction">
-            <span className="reltype__end">Source</span>
-            <span>is the {FAMILY_SEMANTIC_WORDS[draft.familySemantic]} parent</span>
+            <span className="reltype__end">{t('relationships.types.source')}</span>
+            <span>
+              {t('relationships.types.isParent', {
+                word: FAMILY_SEMANTIC_WORDS[draft.familySemantic],
+              })}
+            </span>
             <span aria-hidden="true">·</span>
-            <span className="reltype__end">Target</span>
-            <span>is the child</span>
+            <span className="reltype__end">{t('relationships.types.target')}</span>
+            <span>{t('relationships.types.isChild')}</span>
           </p>
         ) : null}
         {draft.familySemantic === FamilySemantic.NonStructuralFamily ? (
           <p className="field__hint" data-testid="reltype-family-listed">
-            Listed on the Family Tree in this kind&rsquo;s own words. It places nobody in the
-            ancestry and implies no other relative.
+            {t('relationships.types.familyListedHint')}
           </p>
         ) : null}
       </fieldset>
@@ -428,10 +430,14 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
           disabled={isSaving}
           data-testid="save-relationship-type"
         >
-          {isSaving ? 'Saving' : editingId ? 'Save kind' : 'Add kind'}
+          {isSaving
+            ? t('relationships.types.saving')
+            : editingId
+              ? t('relationships.types.saveKind')
+              : t('relationships.types.addKindSubmit')}
         </button>
         <button className="button button--secondary" type="button" onClick={close}>
-          Cancel
+          {t('relationships.types.cancel')}
         </button>
       </div>
     </div>
@@ -440,7 +446,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
   if (!types) {
     return (
       <p className="notice" role="status">
-        Reading the relation kinds…
+        {t('relationships.types.reading')}
       </p>
     )
   }
@@ -449,7 +455,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
     <section className="reltypes" aria-labelledby="reltypes-heading">
       <div className="relations__head">
         <h2 className="settings__heading" id="reltypes-heading">
-          Relation kinds
+          {t('relationships.types.heading')}
         </h2>
         {access.editContent && !isAdding && !editingId ? (
           <button
@@ -464,15 +470,12 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
             }}
             data-testid="add-relationship-type"
           >
-            Add kind
+            {t('relationships.types.addKind')}
           </button>
         ) : null}
       </div>
 
-      <p className="settings__note">
-        How entries connect. Each kind carries both readings, so one link says “rules” on one entry
-        and “ruled by” on the other.
-      </p>
+      <p className="settings__note">{t('relationships.types.intro')}</p>
 
       {message ? (
         <p className="form__message" role="alert" data-testid="reltype-error">
@@ -484,7 +487,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
 
       {types.length === 0 && !isAdding ? (
         <p className="relations__quiet" data-testid="reltypes-empty">
-          No kinds yet. Name the first one and entries can start connecting.
+          {t('relationships.types.empty')}
         </p>
       ) : (
         <ul className="types__list" data-testid="relationship-type-list">
@@ -507,9 +510,9 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
                     <bdi>{type.name}</bdi>
                   </span>
                   <span className="types__count">
-                    {type.relationshipCount === 1
-                      ? '1 relation'
-                      : `${type.relationshipCount} relations`}
+                    {tn('relationships.types.relationCount', type.relationshipCount, {
+                      n: type.relationshipCount,
+                    })}
                   </span>
                   {access.editContent ? (
                     <button
@@ -524,7 +527,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
                       }}
                       data-testid={`edit-reltype-${type.name}`}
                     >
-                      Edit
+                      {t('relationships.types.edit')}
                     </button>
                   ) : null}
                   {access.editContent && type.relationshipCount === 0 ? (
@@ -534,7 +537,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
                       onClick={() => remove(type)}
                       data-testid={`delete-reltype-${type.name}`}
                     >
-                      Delete
+                      {t('relationships.types.delete')}
                     </button>
                   ) : null}
                 </div>

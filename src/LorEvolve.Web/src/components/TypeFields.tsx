@@ -5,6 +5,7 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { Field } from './Field'
 import { FieldSectionsDialog } from './FieldSectionsDialog'
+import { tn as translateN, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
@@ -72,6 +73,7 @@ export function TypeFields({
   canEdit,
   onChanged,
 }: TypeFieldsProps) {
+  const { t, tn, tx } = useI18n()
   const [editing, setEditing] = useState<FieldDefinition | 'new' | null>(null)
   const [arranging, setArranging] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
@@ -97,49 +99,56 @@ export function TypeFields({
   function targetLabel(field: Pick<FieldDefinition, 'targetEntityTypeId' | 'targetGroupId'>) {
     if (field.targetGroupId) {
       const group = groups.find((each) => each.id === field.targetGroupId)
-      return group ? `any type in ${group.name}` : 'a group'
+      return group
+        ? t('entityTypes.fields.targetAnyIn', { name: group.name })
+        : t('entityTypes.fields.targetGroup')
     }
     const node = field.targetEntityTypeId ? tree.byId.get(field.targetEntityTypeId) : undefined
-    return node ? typePathLabel(node) : 'any Lore type'
+    return node ? typePathLabel(node) : t('entityTypes.fields.targetAny')
   }
 
   /** One line under a field's name: its kind, whether it is required, and what it links to or means. */
   function summary(field: FieldDefinition) {
-    const parts = [FIELD_KIND_LABELS[field.kind], field.isRequired ? 'Required' : 'Optional']
-    if (field.kind === FieldKind.EntityReference) parts.push(`Links to ${targetLabel(field)}`)
+    const parts = [
+      FIELD_KIND_LABELS[field.kind],
+      field.isRequired ? t('entityTypes.fields.required') : t('entityTypes.fields.optional'),
+    ]
+    if (field.kind === FieldKind.EntityReference) {
+      parts.push(t('entityTypes.fields.linksTo', { target: targetLabel(field) }))
+    }
     if (field.semantic !== null && field.semantic !== undefined) {
-      parts.push(`Canon: ${FIELD_SEMANTIC_LABELS[field.semantic].toLowerCase()}`)
+      parts.push(
+        t('entityTypes.fields.canonMeaning', {
+          meaning: FIELD_SEMANTIC_LABELS[field.semantic].toLowerCase(),
+        }),
+      )
     }
     return parts.join(' · ')
   }
 
   async function archive(field: FieldDefinition) {
     clear()
-    const lines = [`${type.name} entries will stop showing it.`]
+    const lines = [t('entityTypes.fields.archiveHides', { name: type.name })]
     lines.push(
       field.entryCount === 0
-        ? 'No entry has a value for it yet. You can restore it at any time.'
-        : field.entryCount === 1
-          ? '1 entry keeps its value, and restoring the field brings it back.'
-          : `${field.entryCount} entries keep their values, and restoring the field brings them back.`,
+        ? t('entityTypes.fields.archiveNoValues')
+        : tn('entityTypes.fields.archiveKeepsValues', field.entryCount, { n: field.entryCount }),
     )
-    if (field.isRequired) lines.push('While it is archived, you can save entries without it.')
+    if (field.isRequired) lines.push(t('entityTypes.fields.archiveRequired'))
     if (field.semantic !== null && field.semantic !== undefined) {
       lines.push(
-        `Canon checks stop reading it as the ${FIELD_SEMANTIC_LABELS[field.semantic].toLowerCase()} until you restore it.`,
+        t('entityTypes.fields.archiveCanonMeaning', {
+          meaning: FIELD_SEMANTIC_LABELS[field.semantic].toLowerCase(),
+        }),
       )
     } else if (field.kind === FieldKind.EntityReference) {
-      lines.push('Canon checks stop reading its links until you restore it.')
+      lines.push(t('entityTypes.fields.archiveCanonLinks'))
     }
     if (
       !(await confirmAction({
-        title: (
-          <>
-            Archive “<bdi>{field.name}</bdi>”?
-          </>
-        ),
+        title: <>{tx('entityTypes.fields.archiveTitle', { name: <bdi>{field.name}</bdi> })}</>,
         message: lines.join(' '),
-        confirmLabel: 'Archive field',
+        confirmLabel: t('entityTypes.fields.archiveConfirm'),
         variant: 'warning',
       }))
     ) {
@@ -150,9 +159,9 @@ export function TypeFields({
     try {
       await archiveField(universeId, type.id, field.id)
       await onChanged()
-      setNotice(`Archived “${field.name}”. It is under Archived fields, with all its data.`)
+      setNotice(t('entityTypes.fields.archived', { name: field.name }))
     } catch (error: unknown) {
-      report(error, 'That field could not be archived.')
+      report(error, t('entityTypes.fields.archiveFailed'))
     } finally {
       setBusyFieldId(null)
     }
@@ -166,14 +175,14 @@ export function TypeFields({
       await onChanged()
       setNotice(
         asOptional
-          ? `Restored “${field.name}” as optional. Fill it in where it is missing, then make it required again.`
-          : `Restored “${field.name}” with its values.`,
+          ? t('entityTypes.fields.restoredOptional', { name: field.name })
+          : t('entityTypes.fields.restored', { name: field.name }),
       )
     } catch (error: unknown) {
       if (error instanceof ApiError && error.code === FIELD_REQUIRED_MISSING_CODE) {
         setRestoreOffer({ fieldId: field.id, text: error.message })
       } else {
-        report(error, 'That field could not be restored.')
+        report(error, t('entityTypes.fields.restoreFailed'))
         if (error instanceof ApiError && error.status === 409)
           await onChanged().catch(() => undefined)
       }
@@ -199,19 +208,15 @@ export function TypeFields({
     if (field.usedInHistory) {
       setBlocked({
         fieldId: field.id,
-        text: "Older versions of entries still use this field, so it can't be deleted. Archive it to hide it and keep that history.",
+        text: t('entityTypes.fields.usedInHistory'),
       })
       return
     }
     if (
       !(await confirmAction({
-        title: (
-          <>
-            Delete the field “<bdi>{field.name}</bdi>” for good?
-          </>
-        ),
-        message: "No entry has a value for it. This can't be undone.",
-        confirmLabel: 'Delete field',
+        title: <>{tx('entityTypes.fields.deleteTitle', { name: <bdi>{field.name}</bdi> })}</>,
+        message: t('entityTypes.fields.deleteMessage'),
+        confirmLabel: t('entityTypes.fields.deleteConfirm'),
         variant: 'destructive',
       }))
     ) {
@@ -222,14 +227,14 @@ export function TypeFields({
     try {
       await deleteField(universeId, type.id, field.id)
       await onChanged()
-      setNotice(`Deleted the field “${field.name}”.`)
+      setNotice(t('entityTypes.fields.deleted', { name: field.name }))
     } catch (error: unknown) {
       // Given a value since the list was read: the API's count is the true one.
       if (error instanceof ApiError && error.status === 409) {
         setBlocked({ fieldId: field.id, text: error.message })
         await onChanged().catch(() => undefined)
       } else {
-        report(error, 'That field could not be deleted.')
+        report(error, t('entityTypes.fields.deleteFailed'))
       }
     } finally {
       setBusyFieldId(null)
@@ -255,16 +260,18 @@ export function TypeFields({
               data-testid={`archive-instead-${field.name}`}
             >
               <ActionIcon icon={Archive} />
-              Archive instead
+              {t('entityTypes.fields.archiveInstead')}
             </button>
           ) : null}
           {field.entryCount > field.trashedEntryCount ? (
             <Link to={`/app/universes/${universeId}/lore?type=${type.id}`}>
-              Show {type.name} entries
+              {t('entityTypes.fields.showEntries', { name: type.name })}
             </Link>
           ) : null}
           {field.trashedEntryCount > 0 ? (
-            <Link to={`/app/universes/${universeId}/trash`}>Open the Trash</Link>
+            <Link to={`/app/universes/${universeId}/trash`}>
+              {t('entityTypes.fields.openTrash')}
+            </Link>
           ) : null}
         </p>
       </div>
@@ -314,14 +321,14 @@ export function TypeFields({
                 setEditing(field)
               }}
               disabled={busyFieldId === field.id}
-              aria-label={`Edit ${field.name}`}
+              aria-label={t('entityTypes.fields.editField', { name: field.name })}
               data-testid={`edit-field-${field.name}`}
             >
               <ActionIcon icon={Pencil} />
-              Edit
+              {t('entityTypes.fields.edit')}
             </button>
             <ActionMenu
-              label={`More actions for ${field.name}`}
+              label={t('entityTypes.fields.moreActions', { name: field.name })}
               triggerTestId={`field-actions-${field.name}`}
             >
               <button
@@ -331,7 +338,7 @@ export function TypeFields({
                 data-testid={`archive-field-${field.name}`}
               >
                 <ActionIcon icon={Archive} />
-                Archive field
+                {t('entityTypes.fields.archiveField')}
               </button>
               <button
                 className="actionmenu__item actionmenu__item--danger"
@@ -340,7 +347,7 @@ export function TypeFields({
                 data-testid={`delete-field-${field.name}`}
               >
                 <ActionIcon icon={Trash2} />
-                Delete field
+                {t('entityTypes.fields.deleteField')}
               </button>
             </ActionMenu>
           </span>
@@ -365,10 +372,19 @@ export function TypeFields({
           data-testid={`inherited-fields-${owner.name}`}
         >
           <p className="settings__note">
-            From <bdi>{owner.name}</bdi>. Every entry of {type.name} has these; edit them on{' '}
-            <bdi>{owner.name}</bdi>.
+            {tx('entityTypes.fields.inheritedNote', {
+              owner: <bdi>{owner.name}</bdi>,
+              type: type.name,
+              again: <bdi>{owner.name}</bdi>,
+            })}
           </p>
-          <ul className="fieldlist" aria-label={`Fields ${type.name} inherits from ${owner.name}`}>
+          <ul
+            className="fieldlist"
+            aria-label={t('entityTypes.fields.inheritedLabel', {
+              type: type.name,
+              owner: owner.name,
+            })}
+          >
             {fields.map((field) => (
               <li
                 className="fieldlist__row"
@@ -389,14 +405,22 @@ export function TypeFields({
 
       {type.fields.length === 0 ? (
         <p className="settings__note">
-          {inherited.length > 0 ? 'No fields of its own yet.' : 'No custom fields yet.'}
+          {inherited.length > 0
+            ? t('entityTypes.fields.emptyInherited')
+            : t('entityTypes.fields.empty')}
         </p>
       ) : sections.length === 0 ? (
-        <ul className="fieldlist" aria-label={`Fields of ${type.name}`}>
+        <ul
+          className="fieldlist"
+          aria-label={t('entityTypes.fields.listLabel', { name: type.name })}
+        >
           {type.fields.map(fieldRow)}
         </ul>
       ) : layout.ungrouped.length > 0 ? (
-        <ul className="fieldlist" aria-label={`Fields of ${type.name} in no section`}>
+        <ul
+          className="fieldlist"
+          aria-label={t('entityTypes.fields.listNoSectionLabel', { name: type.name })}
+        >
           {layout.ungrouped.map(fieldRow)}
         </ul>
       ) : null}
@@ -406,15 +430,21 @@ export function TypeFields({
           <p className="fieldgroup__head">
             <bdi>{section.name}</bdi>
             {section.startsCollapsed ? (
-              <span className="fieldgroup__meta">Starts collapsed</span>
+              <span className="fieldgroup__meta">{t('entityTypes.fields.startsCollapsed')}</span>
             ) : null}
           </p>
           {items.length > 0 ? (
-            <ul className="fieldlist" aria-label={`${section.name} fields of ${type.name}`}>
+            <ul
+              className="fieldlist"
+              aria-label={t('entityTypes.fields.sectionListLabel', {
+                section: section.name,
+                type: type.name,
+              })}
+            >
               {items.map(fieldRow)}
             </ul>
           ) : (
-            <p className="settings__note">No fields in this section yet.</p>
+            <p className="settings__note">{t('entityTypes.fields.sectionEmpty')}</p>
           )}
         </div>
       ))}
@@ -431,7 +461,7 @@ export function TypeFields({
             data-testid={`new-field-${type.name}`}
           >
             <ActionIcon icon={Plus} />
-            Add field
+            {t('entityTypes.fields.add')}
           </button>
           {type.fields.length > 0 || sections.length > 0 ? (
             <button
@@ -444,7 +474,7 @@ export function TypeFields({
               data-testid={`arrange-sections-${type.name}`}
             >
               <ActionIcon icon={LayoutList} />
-              Sections
+              {t('entityTypes.fields.sections')}
             </button>
           ) : null}
         </p>
@@ -460,12 +490,14 @@ export function TypeFields({
           open={restoreOffer !== null || archived.some((field) => field.id === blocked?.fieldId)}
           data-testid={`archived-fields-${type.name}`}
         >
-          <summary>Archived fields ({archived.length})</summary>
+          <summary>{t('entityTypes.fields.archivedSummary', { n: archived.length })}</summary>
           <p className="fieldarchive__lede">
-            {type.name} entries don&rsquo;t show these. LorEvolve keeps their values and brings them
-            back when you restore a field.
+            {t('entityTypes.fields.archivedLede', { name: type.name })}
           </p>
-          <ul className="fieldlist" aria-label={`Archived fields of ${type.name}`}>
+          <ul
+            className="fieldlist"
+            aria-label={t('entityTypes.fields.archivedLabel', { name: type.name })}
+          >
             {archived.map((field) => (
               <li
                 className="fieldlist__row"
@@ -480,11 +512,11 @@ export function TypeFields({
                   <span className="fieldlist__meta">
                     {[
                       FIELD_KIND_LABELS[field.kind],
-                      field.isRequired ? 'Previously required' : null,
+                      field.isRequired ? t('entityTypes.fields.previouslyRequired') : null,
                       sectionName(field.sectionId),
                       field.entryCount === 0
-                        ? 'No values'
-                        : `Values in ${entries(field.entryCount)}`,
+                        ? t('entityTypes.fields.noValues')
+                        : t('entityTypes.fields.valuesIn', { entries: entries(field.entryCount) }),
                     ]
                       .filter(Boolean)
                       .join(' · ')}
@@ -497,11 +529,11 @@ export function TypeFields({
                       type="button"
                       onClick={() => void restore(field)}
                       disabled={busyFieldId === field.id}
-                      aria-label={`Restore ${field.name}`}
+                      aria-label={t('entityTypes.fields.restoreField', { name: field.name })}
                       data-testid={`restore-field-${field.name}`}
                     >
                       <ActionIcon icon={ArchiveRestore} />
-                      Restore
+                      {t('entityTypes.fields.restore')}
                     </button>
                     {field.entryCount === 0 && !field.usedInHistory ? (
                       <button
@@ -509,10 +541,10 @@ export function TypeFields({
                         type="button"
                         onClick={() => void remove(field)}
                         disabled={busyFieldId === field.id}
-                        aria-label={`Delete ${field.name} for good`}
+                        aria-label={t('entityTypes.fields.deleteForGood', { name: field.name })}
                         data-testid={`delete-archived-field-${field.name}`}
                       >
-                        Delete
+                        {t('entityTypes.fields.delete')}
                       </button>
                     ) : null}
                   </span>
@@ -532,10 +564,10 @@ export function TypeFields({
                         disabled={busyFieldId === field.id}
                         data-testid={`restore-optional-${field.name}`}
                       >
-                        Restore as optional
+                        {t('entityTypes.fields.restoreOptional')}
                       </button>
                       <Link to={`/app/universes/${universeId}/lore?type=${type.id}`}>
-                        Show {type.name} entries
+                        {t('entityTypes.fields.restoreShowEntries', { name: type.name })}
                       </Link>
                     </p>
                   </div>
@@ -556,7 +588,7 @@ export function TypeFields({
           onSaved={async () => {
             setArranging(false)
             await onChanged()
-            setNotice(`Saved the sections of ${type.name}.`)
+            setNotice(t('entityTypes.fields.sectionsSaved', { name: type.name }))
           }}
         />
       ) : null}
@@ -579,7 +611,11 @@ export function TypeFields({
           onSaved={async (name, wasNew) => {
             setEditing(null)
             await onChanged()
-            setNotice(wasNew ? `Added the field “${name}”.` : `Saved the field “${name}”.`)
+            setNotice(
+              wasNew
+                ? t('entityTypes.fields.addedNotice', { name })
+                : t('entityTypes.fields.savedNotice', { name }),
+            )
           }}
         />
       ) : null}
@@ -588,21 +624,15 @@ export function TypeFields({
 }
 
 function entries(count: number) {
-  return count === 1 ? '1 entry' : `${count} entries`
+  return translateN('entityTypes.fields.entries', count, { n: count })
 }
 
 /** Why a field holding values cannot be deleted: the sentence the API's refusal carries (`FieldInUseDetail`). */
 function fieldInUseDetail(entryCount: number, trashed: number) {
-  const where =
-    trashed === 0
-      ? ''
-      : trashed === entryCount
-        ? entryCount === 1
-          ? ', and it is in the Trash'
-          : ', all of them in the Trash'
-        : `, ${trashed} of them in the Trash`
-  const holds = entryCount === 1 ? 'a value in 1 entry' : `values in ${entryCount} entries`
-  return `This field contains ${holds}${where}. Archive it to hide it without losing its data.`
+  if (trashed === 0) return translateN('entityTypes.fields.inUse', entryCount, { n: entryCount })
+  if (trashed === entryCount)
+    return translateN('entityTypes.fields.inUseAllTrashed', entryCount, { n: entryCount })
+  return translateN('entityTypes.fields.inUseSomeTrashed', entryCount, { n: entryCount, trashed })
 }
 
 /** A link field's allowed target as one select value. `null` is a new field's "not chosen yet". */
@@ -677,6 +707,7 @@ function FieldDialog({
   onChanged: () => Promise<void>
   onSaved: (name: string, wasNew: boolean) => Promise<void>
 }) {
+  const { t, tn, tx } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   // What this drawer was opened over: the settings an unsaved change is measured against, and the version an edit names.
   // A refused stale save moves it on only when the author chooses (ADR 0043).
@@ -707,8 +738,8 @@ function FieldDialog({
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     field
-      ? `Your changes to “${field.name}” have not been saved. Leave without saving them?`
-      : 'This field has not been added. Leave without saving it?',
+      ? t('entityTypes.fields.leaveEdit', { name: field.name })
+      : t('entityTypes.fields.leaveNew'),
     onClose,
   )
 
@@ -749,9 +780,7 @@ function FieldDialog({
   function keepMine(saved: FieldDefinition) {
     setBase((current) => ({ ...current, version: saved.version }))
     setStale(false)
-    setMessage(
-      'Your changes are kept. Saving now replaces what someone else saved with everything this drawer shows.',
-    )
+    setMessage(t('entityTypes.fields.keptMine'))
   }
 
   async function save() {
@@ -759,10 +788,10 @@ function FieldDialog({
     setFieldErrors({})
     setStale(false)
     const errors: Record<string, string> = {}
-    if (!name.trim()) errors.name = 'Give the field a name.'
+    if (!name.trim()) errors.name = t('entityTypes.fields.nameRequired')
     if (hasOptions && splitOptions(options).length === 0)
-      errors.options = 'Add at least one option.'
-    if (isLink && target === null) errors.target = 'Choose what this field can link to.'
+      errors.options = t('entityTypes.fields.optionsRequired')
+    if (isLink && target === null) errors.target = t('entityTypes.fields.targetRequired')
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
       return
@@ -790,9 +819,7 @@ function FieldDialog({
       if (error instanceof ApiError && error.code === FIELD_CHANGED_CODE) {
         // Saved by someone else since this opened: nothing was written, the draft stays, and the latest is read so the
         // author can compare and choose.
-        setMessage(
-          'Someone changed this field after you opened it. Nothing was saved, and your changes are still here.',
-        )
+        setMessage(t('entityTypes.fields.changedMeanwhile'))
         setStale(true)
         await onChanged().catch(() => undefined)
       } else if (error instanceof ApiError) {
@@ -804,12 +831,14 @@ function FieldDialog({
         setMessage(
           Object.keys(mapped).length === 0
             ? error.message
-            : `Some details need a change before this field can be ${field ? 'saved' : 'added'}.`,
+            : field
+              ? t('entityTypes.fields.detailsSave')
+              : t('entityTypes.fields.detailsAdd'),
         )
         // Changed elsewhere since this opened (archived, say): the list behind should say so too.
         if (error.status === 409) await onChanged().catch(() => undefined)
       } else {
-        setMessage(field ? 'That field could not be saved.' : 'That field could not be added.')
+        setMessage(field ? t('entityTypes.fields.saveFailed') : t('entityTypes.fields.addFailed'))
       }
     } finally {
       setIsSaving(false)
@@ -834,10 +863,10 @@ function FieldDialog({
       >
         <header className="drawer__head">
           <p className="drawer__eyebrow">
-            <bdi>{type.name}</bdi> fields
+            {tx('entityTypes.fields.dialogEyebrow', { name: <bdi>{type.name}</bdi> })}
           </p>
           <h2 className="drawer__title" id="field-heading">
-            {field ? 'Edit field' : 'Add field'}
+            {field ? t('entityTypes.fields.editTitle') : t('entityTypes.fields.addTitle')}
           </h2>
         </header>
 
@@ -850,10 +879,17 @@ function FieldDialog({
 
           {stale && latest ? (
             <div className="callout callout--warning" data-testid="field-dialog-stale">
-              <p className="callout__title">Saved now</p>
+              <p className="callout__title">{t('entityTypes.fields.savedNow')}</p>
               <p className="fieldconflict__saved">
-                <bdi>{latest.name}</bdi>: {describe(latest)}
-                {latest.archivedAt !== null ? '. Archived.' : ''}
+                {tx(
+                  latest.archivedAt !== null
+                    ? 'entityTypes.fields.savedNowArchived'
+                    : 'entityTypes.fields.savedNowSummary',
+                  {
+                    name: <bdi>{latest.name}</bdi>,
+                    summary: describe(latest),
+                  },
+                )}
               </p>
               <p className="types__blockedlinks">
                 <button
@@ -862,7 +898,7 @@ function FieldDialog({
                   onClick={() => takeSaved(latest)}
                   data-testid="field-use-saved"
                 >
-                  Use the saved settings
+                  {t('entityTypes.fields.useSaved')}
                 </button>
                 {latest.archivedAt === null ? (
                   <button
@@ -871,7 +907,7 @@ function FieldDialog({
                     onClick={() => keepMine(latest)}
                     data-testid="field-keep-mine"
                   >
-                    Keep my changes
+                    {t('entityTypes.fields.keepMine')}
                   </button>
                 ) : null}
               </p>
@@ -879,7 +915,7 @@ function FieldDialog({
           ) : null}
 
           <Field
-            label="Field name"
+            label={t('entityTypes.fields.fieldName')}
             name="field-name"
             dir="auto"
             value={name}
@@ -890,7 +926,7 @@ function FieldDialog({
 
           <div className="field">
             <label className="field__label" htmlFor="field-kind">
-              Kind
+              {t('entityTypes.fields.kind')}
             </label>
             <select
               id="field-kind"
@@ -910,21 +946,20 @@ function FieldDialog({
             {kindLocked ? (
               <p className="field__hint" id="field-kind-hint" data-testid="field-kind-hint">
                 {held.entryCount > 0
-                  ? `${entries(held.entryCount)} already ${held.entryCount === 1 ? 'has a value' : 'have values'}, so the kind can't change.`
-                  : "Older versions of entries recorded values here, so the kind can't change."}{' '}
-                Add a new field for a different kind.
+                  ? tn('entityTypes.fields.kindLockedHeld', held.entryCount, { n: held.entryCount })
+                  : t('entityTypes.fields.kindLockedHistory')}
               </p>
             ) : null}
           </div>
 
           {hasOptions ? (
             <Field
-              label="Options, separated by commas"
+              label={t('entityTypes.fields.options')}
               name="field-options"
               value={options}
               onChange={(event) => setOptions(event.target.value)}
               error={fieldErrors.options}
-              hint={field ? "You can't remove an option that an entry uses." : undefined}
+              hint={field ? t('entityTypes.fields.optionsHint') : undefined}
               data-testid="field-options"
             />
           ) : null}
@@ -932,7 +967,7 @@ function FieldDialog({
           {isLink ? (
             <div className="field">
               <label className="field__label" htmlFor="field-target">
-                Can link to
+                {t('entityTypes.fields.canLinkTo')}
               </label>
               <select
                 id="field-target"
@@ -945,20 +980,20 @@ function FieldDialog({
               >
                 {target === null ? (
                   <option value="" disabled>
-                    Choose what it can link to…
+                    {t('entityTypes.fields.chooseTarget')}
                   </option>
                 ) : null}
-                <option value="any">Any Lore type</option>
+                <option value="any">{t('entityTypes.fields.anyLoreType')}</option>
                 {groups.length > 0 ? (
-                  <optgroup label="Groups">
+                  <optgroup label={t('entityTypes.fields.optgroupGroups')}>
                     {groups.map((group) => (
                       <option key={group.id} value={`group:${group.id}`}>
-                        {group.name} (group)
+                        {t('entityTypes.fields.groupOption', { name: group.name })}
                       </option>
                     ))}
                   </optgroup>
                 ) : null}
-                <optgroup label="Types">
+                <optgroup label={t('entityTypes.fields.optgroupTypes')}>
                   {tree.ordered.map((node) => (
                     <option key={node.type.id} value={`type:${node.type.id}`}>
                       {typePathLabel(node)}
@@ -968,18 +1003,15 @@ function FieldDialog({
               </select>
               <p className="field__hint" id="field-target-hint">
                 {target === null
-                  ? 'Pick one type, a group, or any Lore type. LorEvolve never guesses from the field’s name.'
+                  ? t('entityTypes.fields.targetHintNone')
                   : target === 'any'
-                    ? 'It can link to any entry in this universe.'
+                    ? t('entityTypes.fields.targetHintAny')
                     : target.startsWith('group:')
-                      ? 'It can link to entries whose type is in this group when you make the link.'
-                      : 'It can link to entries of this type and of any type nested beneath it.'}
+                      ? t('entityTypes.fields.targetHintGroup')
+                      : t('entityTypes.fields.targetHintType')}
               </p>
               {field && field.entryCount > 0 ? (
-                <p className="field__hint">
-                  LorEvolve refuses a narrower choice while an entry links somewhere it would not
-                  allow, and never clears a link to make it fit.
-                </p>
+                <p className="field__hint">{t('entityTypes.fields.targetNarrowHint')}</p>
               ) : null}
               {fieldErrors.target ? <p className="field__error">{fieldErrors.target}</p> : null}
             </div>
@@ -988,7 +1020,7 @@ function FieldDialog({
           {semanticsFor(kind).length > 0 ? (
             <div className="field">
               <label className="field__label" htmlFor="field-semantic">
-                Canon meaning
+                {t('entityTypes.fields.canonMeaningLabel')}
               </label>
               <select
                 id="field-semantic"
@@ -1003,30 +1035,27 @@ function FieldDialog({
                 }
                 data-testid="field-semantic"
               >
-                <option value="">None</option>
+                <option value="">{t('entityTypes.fields.none')}</option>
                 {semanticsFor(kind).map((each) => (
                   <option key={each} value={each}>
                     {FIELD_SEMANTIC_LABELS[each]}
                   </option>
                 ))}
               </select>
-              <p className="field__hint">
-                Read by the Canon Integrity rules, never guessed from the field&rsquo;s name. Most
-                fields need none.
-              </p>
+              <p className="field__hint">{t('entityTypes.fields.semanticHint')}</p>
               {fieldErrors.semantic ? <p className="field__error">{fieldErrors.semantic}</p> : null}
             </div>
           ) : null}
 
           {isText ? (
             <Field
-              label="Default text"
+              label={t('entityTypes.fields.defaultText')}
               name="field-default"
               dir="auto"
               value={defaultValue}
               onChange={(event) => setDefaultValue(event.target.value)}
               error={fieldErrors.defaultvalue}
-              hint="Optional. New entries start with this text, and you can change it there."
+              hint={t('entityTypes.fields.defaultHint')}
               data-testid="field-default"
             />
           ) : null}
@@ -1039,12 +1068,11 @@ function FieldDialog({
                 onChange={(event) => setIsRequired(event.target.checked)}
                 data-testid="field-required"
               />
-              <span>Required</span>
+              <span>{t('entityTypes.fields.requiredLabel')}</span>
             </label>
             {field && isRequired && !field.isRequired ? (
               <p className="field__hint">
-                Every {type.name} entry will need a value. If some don&rsquo;t have one yet,
-                LorEvolve says how many and changes nothing.
+                {t('entityTypes.fields.requiredHint', { name: type.name })}
               </p>
             ) : null}
           </div>
@@ -1052,7 +1080,13 @@ function FieldDialog({
 
         <footer className="drawer__actions">
           <button className="button" type="submit" disabled={isSaving} data-testid="save-field">
-            {field ? (isSaving ? 'Saving…' : 'Save changes') : isSaving ? 'Adding…' : 'Add field'}
+            {field
+              ? isSaving
+                ? t('entityTypes.fields.saving')
+                : t('entityTypes.fields.saveChanges')
+              : isSaving
+                ? t('entityTypes.fields.adding')
+                : t('entityTypes.fields.addTitle')}
           </button>
           <button
             className="button button--secondary"
@@ -1060,7 +1094,7 @@ function FieldDialog({
             onClick={close}
             data-testid="cancel-field"
           >
-            Cancel
+            {t('entityTypes.fields.cancel')}
           </button>
         </footer>
       </form>

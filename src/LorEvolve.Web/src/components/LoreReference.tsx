@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { EntityTile } from './EntityTile'
 import { TypeIcon } from './TypeIcon'
+import { useI18n } from '../i18n'
 import type { SceneLoreReference } from '../stories/types'
 
 /**
@@ -18,6 +19,7 @@ export function LoreReference({
   reference: SceneLoreReference
   portrait?: boolean
 }) {
+  const { t } = useI18n()
   // A trashed entry's picture is not served, so it is drawn as its type's tile or icon instead.
   const image = reference.isTrashed ? null : reference.image
   // An entry with a picture shows it on its chip too, small, in place of its type's icon.
@@ -54,7 +56,7 @@ export function LoreReference({
         style={accent}
         data-testid="lore-reference-trashed"
       >
-        {content} <span className="lorechip__note">(in Trash)</span>
+        {content} <span className="lorechip__note">{t('lore.reference.inTrash')}</span>
       </span>
     )
   }

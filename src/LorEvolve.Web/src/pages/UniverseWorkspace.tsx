@@ -2,7 +2,6 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { AccountMenu } from '../components/AccountMenu'
-import { BRAND_LINK_LABEL } from '../components/BrandMark'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { UniverseAssistant } from '../components/UniverseAssistant'
 import { SiteFooter } from '../components/SiteFooter'
@@ -12,10 +11,11 @@ import type { Chronology } from '../chronology/types'
 import { listEntityTypeGroups, listEntityTypes } from '../lore/api'
 import type { EntityType, EntityTypeGroup } from '../lore/types'
 import { getUniverse } from '../universes/api'
-import { offered, SECTION_GROUPS, UPKEEP } from '../universes/sections'
-import { capabilitiesOf, ROLE_LABELS, UniverseAccessContext } from '../universes/access'
+import { FRONT, offered, SECTION_GROUPS, sectionLabel, UPKEEP } from '../universes/sections'
+import { capabilitiesOf, roleLabel, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { t, useI18n } from '../i18n'
 import { preloadSections } from '../screens'
 import type { UniverseDetail } from '../universes/types'
 import { artworkUrl } from '../publishing/api'
@@ -66,10 +66,13 @@ function pathWithin(pathname: string, id: string | undefined) {
   return rest.replace(/^\/+|\/+$/g, '')
 }
 
-/** Which section the current URL is in. `lore/:entityId` is still Lore. */
+/**
+ * Which section the current URL is in. `lore/:entityId` is still Lore. The section itself, not its name: the name is
+ * read from the dictionary where it is shown, and nothing branches on words that change with the language.
+ */
 function currentSection(pathname: string, id: string | undefined) {
   const segment = pathWithin(pathname, id).split('/')[0] ?? ''
-  return SECTIONS.find((section) => section.segment === segment)?.label ?? 'Overview'
+  return SECTIONS.find((section) => section.segment === segment) ?? FRONT[0]
 }
 
 /** One workspace per universe: another universe's address starts a new one, so nothing read for the last carries over. */
@@ -79,6 +82,10 @@ export default function UniverseWorkspace() {
 }
 
 function Workspace() {
+  // The whole of the workspace chrome is drawn here - the rail, the sidebar and the tab's title - and every section's
+  // name comes from the dictionary through `sectionLabel`. Subscribing once here is what redraws all of them when the
+  // language changes; the exported component above is only the key that restarts this one per universe.
+  useI18n()
   const { id } = useParams<{ id: string }>()
   const { pathname } = useLocation()
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
@@ -113,7 +120,7 @@ function Workspace() {
               ? { kind: 'missing' }
               : {
                   kind: 'error',
-                  message: error instanceof Error ? error.message : 'Could not open this universe.',
+                  message: error instanceof Error ? error.message : t('workspace.missing.failed'),
                 },
           )
         })
@@ -229,13 +236,15 @@ function Workspace() {
   // The tab names the section and then the universe - "Lore | Hollowmere | LorEvolve" - from the shell, which knows both;
   // an entry or a story inside a section is still that section here, and nothing beneath sets a title of its own.
   useDocumentTitle(
-    ...(state.kind === 'ready' ? [currentSection(pathname, id), state.universe.name] : []),
+    ...(state.kind === 'ready'
+      ? [sectionLabel(currentSection(pathname, id)), state.universe.name]
+      : []),
   )
 
   if (state.kind === 'loading') {
     return (
       <p className="notice" role="status">
-        Opening…
+        {t('workspace.rail.opening')}
       </p>
     )
   }
@@ -244,11 +253,11 @@ function Workspace() {
     return (
       <EmptyState
         testId="universe-missing"
-        title="That universe is not here."
+        title={t('workspace.missing.title')}
         hint={
           <>
             It may have been deleted, or it belongs to someone else.{' '}
-            <Link to="/app">Back to your universes</Link>
+            <Link to="/app">{t('workspace.missing.back')}</Link>
           </>
         }
       />
@@ -294,7 +303,7 @@ function Workspace() {
       className="workspace"
       style={accent ? { ['--universe-accent' as string]: accent } : undefined}
     >
-      <nav className="rail" aria-label="LorEvolve">
+      <nav className="rail" aria-label={t('workspace.rail.brand')}>
         {/* The drawn L, deliberately, and not the LorEvolve symbol. The symbol was tried here: at
             the ~30px this rail allows it reads as a red tangle rather than a sphere, and it
             puts the only saturated colour in the chrome directly above the universe's accent
@@ -304,7 +313,7 @@ function Workspace() {
             universes", at the head of the sidebar and of the phone's Sections sheet; the account menu at the rail's
             foot names Explore and My workspace. The glyph stays small and its target does not: a 40px square, the
             rail's own width less its margins. */}
-        <Link className="rail__mark" to="/" aria-label={BRAND_LINK_LABEL}>
+        <Link className="rail__mark" to="/" aria-label={t('shell.brand.homeLabel')}>
           L
         </Link>
         <span className="rail__seal" aria-hidden="true" />
@@ -317,8 +326,10 @@ function Workspace() {
           <span className="rail__universe" dir="auto" title={universe.name}>
             {universe.name}
           </span>
-          <span className="rail__section">{section}</span>
-          {universe.isArchived ? <span className="rail__archived">Archived</span> : null}
+          <span className="rail__section">{sectionLabel(section)}</span>
+          {universe.isArchived ? (
+            <span className="rail__archived">{t('workspace.rail.archived')}</span>
+          ) : null}
         </p>
 
         <button
@@ -329,7 +340,7 @@ function Workspace() {
           onClick={() => setNavOpenAt(isNavOpen ? null : pathname)}
           data-testid="workspace-nav-toggle"
         >
-          {isNavOpen ? 'Close' : 'Sections'}
+          {isNavOpen ? t('workspace.rail.close') : t('workspace.rail.sections')}
         </button>
 
         {/* The account lives on the global rail, not in the sidebar: the sidebar is this
@@ -352,7 +363,7 @@ function Workspace() {
         className="sidebar"
         id={navId}
         data-open={isNavOpen ? 'true' : 'false'}
-        aria-label="Universe"
+        aria-label={t('workspace.rail.universe')}
       >
         <div className="sidebar__head">
           <Link className="sidebar__back" to="/app">
@@ -362,7 +373,7 @@ function Workspace() {
               focusable="false"
               strokeWidth={1.75}
             />
-            All universes
+            {t('workspace.rail.allUniverses')}
           </Link>
           {/* The world's artwork in miniature beside its name, when its owner has given it one. Decorative. */}
           <div className="sidebar__identity">
@@ -383,10 +394,12 @@ function Workspace() {
           </div>
           {shared ? (
             <span className="sidebar__role" data-testid="workspace-role">
-              Shared as {ROLE_LABELS[universe.accessRole]}
+              {t('workspace.rail.sharedAs', { role: roleLabel(universe.accessRole) })}
             </span>
           ) : null}
-          {universe.isArchived ? <span className="sidebar__archived">Archived</span> : null}
+          {universe.isArchived ? (
+            <span className="sidebar__archived">{t('workspace.rail.archived')}</span>
+          ) : null}
         </div>
 
         <ul className="sidebar__nav">
@@ -401,21 +414,21 @@ function Workspace() {
               data-testid={UPKEEP.includes(group[0]) ? 'sidebar-upkeep' : undefined}
             >
               <ul className="sidebar__links">
-                {group.map(({ segment, label, testId, icon: Icon }) => (
-                  <li key={label}>
+                {group.map((section) => (
+                  <li key={section.segment}>
                     <NavLink
-                      to={segment === '' ? '.' : segment}
-                      end={segment === ''}
+                      to={section.segment === '' ? '.' : section.segment}
+                      end={section.segment === ''}
                       className="sidebar__link"
-                      data-testid={testId}
+                      data-testid={section.testId}
                     >
-                      <Icon
+                      <section.icon
                         className="sidebar__icon"
                         aria-hidden="true"
                         focusable="false"
                         strokeWidth={1.75}
                       />
-                      {label}
+                      {sectionLabel(section)}
                     </NavLink>
                   </li>
                 ))}
@@ -435,7 +448,7 @@ function Workspace() {
             aria-hidden="true"
             data-testid="workspace-atmosphere"
             data-source="world"
-            data-size={section === 'Overview' ? 'hero' : undefined}
+            data-size={section.segment === '' ? 'hero' : undefined}
             style={{ ['--atmosphere-image' as string]: `url("${artwork}")` }}
           />
         ) : null}

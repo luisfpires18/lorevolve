@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { Link, useSearchParams, type To } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Layers } from 'lucide-react'
+import { useI18n } from '../i18n'
 import type { EntityTypeGroup } from '../lore/types'
 import { branchIds, type TypeNode, type TypeTree } from '../lore/typeTree'
 import { TypeIcon } from './TypeIcon'
@@ -19,14 +20,13 @@ function listedEntries(node: TypeNode, byId: Map<string, TypeNode>) {
   return count
 }
 
-function entriesLabel(count: number) {
-  return count === 0 ? 'No entries yet' : count === 1 ? '1 entry' : `${count} entries`
-}
-
 function TypeCard({ node, count, href }: { node: TypeNode; count: number; href: To }) {
+  const { t, tn, tx } = useI18n()
   const nameId = useId()
   const detailsId = useId()
   const { type } = node
+  const entries =
+    count === 0 ? t('lore.catalog.noEntries') : tn('lore.catalog.entries', count, { n: count })
   const above = node.path.slice(0, -1)
   const nested = node.children.length
   return (
@@ -50,7 +50,9 @@ function TypeCard({ node, count, href }: { node: TypeNode; count: number; href: 
         <span className="typecard__details" id={detailsId}>
           {above.length > 0 ? (
             <span className="typecard__path">
-              In <bdi>{above.map((ancestor) => ancestor.name).join(' › ')}</bdi>
+              {tx('lore.catalog.inPath', {
+                path: <bdi>{above.map((ancestor) => ancestor.name).join(' › ')}</bdi>,
+              })}
             </span>
           ) : null}
           {type.description ? (
@@ -59,8 +61,12 @@ function TypeCard({ node, count, href }: { node: TypeNode; count: number; href: 
             </span>
           ) : null}
           <span className="typecard__meta" data-testid="lore-type-card-count">
-            {entriesLabel(count)}
-            {nested > 0 ? ` · ${nested === 1 ? '1 nested type' : `${nested} nested types`}` : null}
+            {nested > 0
+              ? t('lore.catalog.entriesWithNested', {
+                  entries: entries,
+                  nested: tn('lore.catalog.nestedTypes', nested, { n: nested }),
+                })
+              : entries}
           </span>
         </span>
       </span>
@@ -94,6 +100,7 @@ export function LoreCatalog({
   groupHref: (groupId: string) => To
   typesUrl: string
 }) {
+  const { t, tn, tx } = useI18n()
   const headingId = useId()
   // The unfolded types are the address's `open`, replacing its entry, so Back from a type finds them still open.
   const [params, setParams] = useSearchParams()
@@ -123,18 +130,18 @@ export function LoreCatalog({
   return (
     <section className="lorecatalog" aria-labelledby={headingId} data-testid="lore-catalog">
       <h2 className="visually-hidden" id={headingId}>
-        Categories
+        {t('lore.catalog.heading')}
       </h2>
 
       {groups.length > 0 ? (
         <div className="lorecatalog__browse">
           <span className="lorecatalog__browselabel" aria-hidden="true">
-            Browse by group
+            {t('lore.catalog.browseLabel')}
           </span>
           <div
             className="lorecatalog__groups"
             role="group"
-            aria-label="Browse by group"
+            aria-label={t('lore.catalog.browseGroups')}
             data-testid="lore-browse-groups"
           >
             <button
@@ -144,7 +151,7 @@ export function LoreCatalog({
               onClick={() => onBrowse(null)}
               data-testid="lore-browse-all"
             >
-              All types
+              {t('lore.catalog.allTypes')}
               <span className="lorecatalog__groupcount" aria-hidden="true">
                 {tree.ordered.length}
               </span>
@@ -166,7 +173,7 @@ export function LoreCatalog({
                   strokeWidth={1.75}
                 />
                 <bdi>{group.name}</bdi>
-                <span className="visually-hidden"> (group)</span>
+                <span className="visually-hidden"> {t('lore.catalog.groupSuffix')}</span>
                 <span className="lorecatalog__groupcount" aria-hidden="true">
                   {group.typeIds.length}
                 </span>
@@ -181,22 +188,28 @@ export function LoreCatalog({
           <>
             {shown.length === 0 ? (
               <>
-                No type is in <bdi>{browsing.name}</bdi> yet. Add types to it from their settings on{' '}
-                <Link to={typesUrl}>Types</Link>.
+                {tx('lore.catalog.emptyGroup', {
+                  name: <bdi>{browsing.name}</bdi>,
+                  link: <Link to={typesUrl}>{t('lore.catalog.typesLink')}</Link>,
+                })}
               </>
             ) : (
               <>
-                {shown.length === 1 ? '1 type' : `${shown.length} types`} in{' '}
-                <bdi>{browsing.name}</bdi>.{' '}
-                <Link to={groupHref(browsing.id)} data-testid="lore-browse-group-entries">
-                  Browse every <bdi>{browsing.name}</bdi> entry
-                </Link>
+                {tx('lore.catalog.groupSummary', {
+                  types: tn('lore.catalog.types', shown.length, { n: shown.length }),
+                  name: <bdi>{browsing.name}</bdi>,
+                  link: (
+                    <Link to={groupHref(browsing.id)} data-testid="lore-browse-group-entries">
+                      {tx('lore.catalog.browseEvery', { name: <bdi>{browsing.name}</bdi> })}
+                    </Link>
+                  ),
+                })}
               </>
             )}
           </>
         ) : (
           <span className="visually-hidden">
-            {shown.length === 1 ? '1 type' : `${shown.length} types`}
+            {tn('lore.catalog.types', shown.length, { n: shown.length })}
           </span>
         )}
       </p>
@@ -227,12 +240,14 @@ export function LoreCatalog({
                     onClick={() => toggle(node.type.id)}
                     data-testid="lore-type-expand"
                     data-type-name={node.type.name}
-                    aria-label={`${isOpen ? 'Hide' : 'Show'} ${
-                      node.children.length === 1
-                        ? '1 nested type'
-                        : `${node.children.length} nested types`
-                    }`}
-                    title={isOpen ? 'Hide nested types' : 'Show nested types'}
+                    aria-label={tn(
+                      isOpen ? 'lore.catalog.hideNested' : 'lore.catalog.showNested',
+                      node.children.length,
+                      { n: node.children.length },
+                    )}
+                    title={
+                      isOpen ? t('lore.catalog.hideNestedTitle') : t('lore.catalog.showNestedTitle')
+                    }
                   >
                     <Chevron aria-hidden="true" focusable="false" strokeWidth={1.75} />
                     <span aria-hidden="true">{node.children.length}</span>
@@ -249,10 +264,11 @@ export function LoreCatalog({
 
 /** The catalog's shape while the types are read: card outlines, said once to assistive technology. */
 export function LoreCatalogSkeleton() {
+  const { t } = useI18n()
   return (
     <div className="lorecatalog" data-testid="lore-catalog-loading">
       <p className="visually-hidden" role="status">
-        Reading the categories…
+        {t('lore.catalog.reading')}
       </p>
       <ul className="lorecatalog__grid" aria-hidden="true">
         {Array.from({ length: SKELETON_CARDS }, (_, index) => (

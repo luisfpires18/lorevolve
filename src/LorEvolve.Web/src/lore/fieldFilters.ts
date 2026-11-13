@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { FieldKind, type EntityType, type FieldDefinition, type FieldKindValue } from './types'
 
 /**
@@ -36,11 +37,23 @@ interface FilterRule {
   ops: { op: FieldFilterOp; label: string }[]
 }
 
+type OpKey = Parameters<typeof t>[0]
+
+/** A comparison whose words are read when asked for, so they follow the language. */
+function opEntry(op: FieldFilterOp, key: OpKey) {
+  return {
+    op,
+    get label() {
+      return t(key)
+    },
+  }
+}
+
 const TEXT: FilterRule = {
   control: 'text',
   ops: [
-    { op: 'contains', label: 'contains' },
-    { op: 'eq', label: 'is' },
+    opEntry('contains', 'lore.filters.op.textContains'),
+    opEntry('eq', 'lore.filters.op.textIs'),
   ],
 }
 
@@ -51,32 +64,29 @@ const RULES: Partial<Record<FieldKindValue, FilterRule>> = {
   [FieldKind.Number]: {
     control: 'number',
     ops: [
-      { op: 'gt', label: 'is more than' },
-      { op: 'lt', label: 'is less than' },
-      { op: 'eq', label: 'is' },
+      opEntry('gt', 'lore.filters.op.moreThan'),
+      opEntry('lt', 'lore.filters.op.lessThan'),
+      opEntry('eq', 'lore.filters.op.numberIs'),
     ],
   },
-  [FieldKind.Boolean]: { control: 'yesNo', ops: [{ op: 'is', label: 'is' }] },
+  [FieldKind.Boolean]: { control: 'yesNo', ops: [opEntry('is', 'lore.filters.op.yesNoIs')] },
   [FieldKind.Select]: {
     control: 'option',
     ops: [
-      { op: 'is', label: 'is' },
-      { op: 'isNot', label: 'is not' },
+      opEntry('is', 'lore.filters.op.optionIs'),
+      opEntry('isNot', 'lore.filters.op.optionIsNot'),
     ],
   },
   [FieldKind.MultiSelect]: {
     control: 'option',
     ops: [
-      { op: 'contains', label: 'includes' },
-      { op: 'notContains', label: 'does not include' },
+      opEntry('contains', 'lore.filters.op.includes'),
+      opEntry('notContains', 'lore.filters.op.notIncludes'),
     ],
   },
   [FieldKind.EntityReference]: {
     control: 'entry',
-    ops: [
-      { op: 'is', label: 'is' },
-      { op: 'isNot', label: 'is not' },
-    ],
+    ops: [opEntry('is', 'lore.filters.op.entryIs'), opEntry('isNot', 'lore.filters.op.entryIsNot')],
   },
 }
 
@@ -163,11 +173,11 @@ export function valueLabel(
 ): string {
   switch (filterRule(field)?.control) {
     case 'yesNo':
-      return value === 'true' ? 'Yes' : 'No'
+      return value === 'true' ? t('lore.filters.yes') : t('lore.filters.no')
     case 'option':
       return field.options.find((option) => option.id === value)?.value ?? ''
     case 'entry':
-      return entryName ? `${entryName.name} (${entryName.typeName})` : 'an entry'
+      return entryName ? `${entryName.name} (${entryName.typeName})` : t('lore.filters.anEntry')
     default:
       return value.trim()
   }

@@ -1,6 +1,11 @@
 import type { Dictionary } from './en'
 import account from './pt-PT/account'
 import auth from './pt-PT/auth'
+import entity from './pt-PT/entity'
+import entityTypes from './pt-PT/entityTypes'
+import lore from './pt-PT/lore'
+import relationships from './pt-PT/relationships'
+import workspace from './pt-PT/workspace'
 import portal from './pt-PT/portal'
 import publishing from './pt-PT/publishing'
 import roles from './pt-PT/roles'
@@ -13,6 +18,11 @@ import shell from './pt-PT/shell'
 const ptPT = {
   account,
   auth,
+  entity,
+  entityTypes,
+  lore,
+  relationships,
+  workspace,
   portal,
   publishing,
   roles,

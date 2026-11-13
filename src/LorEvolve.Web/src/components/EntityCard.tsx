@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { EntityTile } from './EntityTile'
 import { NameList } from './NameList'
 import { StatusBadge } from './StatusBadge'
@@ -29,6 +30,7 @@ export function EntityCard({
    */
   selection?: { checked: boolean; onToggle: () => void }
 }) {
+  const { t } = useI18n()
   const body = <CardBody universeId={universeId} entity={entity} eager={eager} />
 
   if (selection) {
@@ -44,7 +46,7 @@ export function EntityCard({
           type="checkbox"
           checked={selection.checked}
           onChange={selection.onToggle}
-          aria-label={`Select ${entity.name}`}
+          aria-label={t('entity.card.select', { name: entity.name })}
           data-testid="entity-select"
         />
         {body}
@@ -73,6 +75,7 @@ function CardBody({
   entity: EntitySummary
   eager: boolean
 }) {
+  const { t, tx } = useI18n()
   return (
     <>
       <EntityTile
@@ -92,7 +95,7 @@ function CardBody({
 
         {entity.aliases.length > 0 ? (
           <span className="entitycard__aliases">
-            also <NameList names={entity.aliases} />
+            {tx('entity.card.also', { names: <NameList names={entity.aliases} /> })}
           </span>
         ) : null}
 
@@ -122,7 +125,7 @@ function CardBody({
         {/* Why a search found it, when the article is where: plain runs of text, the matched words marked. */}
         {entity.articleExcerpt ? (
           <span className="entitycard__excerpt" data-testid="entity-excerpt">
-            <span className="entitycard__excerptlabel">In the article</span>
+            <span className="entitycard__excerptlabel">{t('entity.card.inArticle')}</span>
             <span className="entitycard__summary prose">
               {entity.articleExcerpt.map((part, index) =>
                 part.isMatch ? (
