@@ -215,10 +215,9 @@ function StoryView({ view }: { view: StoryViewName }) {
     if (!selector || state.kind !== 'ready') return
     pendingFocus.current = null
     const target = document.querySelector<HTMLElement>(selector)
+    // The folds around it open before this returns, so a hidden row can still take the focus.
     revealInFolds(target)
-    // The folds open on the next render; focus once they have.
-    const frame = requestAnimationFrame(() => target?.focus())
-    return () => cancelAnimationFrame(frame)
+    target?.focus()
   }, [state])
 
   // A link to one scene - a search result, or the manuscript's way back to its scene - lands on it, whichever view it
@@ -232,16 +231,12 @@ function StoryView({ view }: { view: StoryViewName }) {
     if (!target) return
 
     revealInFolds(target)
-    // The folds around the target open on the next render; scroll to it and focus it once they have.
-    const frame = requestAnimationFrame(() => {
-      target.scrollIntoView({ block: 'center' })
-      target.focus({ preventScroll: true })
-    })
+    target.scrollIntoView({ block: 'center' })
+    target.focus({ preventScroll: true })
     target.setAttribute('data-arrived', 'true')
     const timer = window.setTimeout(() => target.removeAttribute('data-arrived'), ARRIVAL_MS)
 
     return () => {
-      cancelAnimationFrame(frame)
       window.clearTimeout(timer)
       target.removeAttribute('data-arrived')
     }

@@ -179,13 +179,18 @@ export function ChapterSection({
         ) : null}
 
         {chapter.summary ? (
-          <p className="chapter__summary prose" hidden={!foldOpen} data-testid="chapter-summary">
+          <p
+            className="chapter__summary prose"
+            hidden={!foldOpen}
+            data-fold={foldBodyId}
+            data-testid="chapter-summary"
+          >
             {chapter.summary}
           </p>
         ) : null}
       </header>
 
-      <div id={foldBodyId} hidden={!foldOpen}>
+      <div id={foldBodyId} hidden={!foldOpen} data-fold={foldBodyId}>
         {sceneCount > 0 ? (
           children
         ) : (

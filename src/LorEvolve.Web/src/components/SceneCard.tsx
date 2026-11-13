@@ -132,7 +132,7 @@ export function SceneCard({
           </Title>
         </div>
 
-        <div id={foldBodyId} hidden={foldable && !foldOpen}>
+        <div id={foldBodyId} hidden={foldable && !foldOpen} data-fold={foldBodyId}>
           {scene.summary ? <p className="scene__summary prose">{scene.summary}</p> : null}
 
           <SceneLore universeId={universeId} scene={scene} testId="scene" />
