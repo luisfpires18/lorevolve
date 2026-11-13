@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { ChronologyPointDraft } from '../components/ChronologyPointFields'
 import type { Chronology, ChronologyValue } from '../chronology/types'
 import { formatSpan } from '../progression/eras'
@@ -52,7 +53,7 @@ export function periodDrafts(periods: RelationshipPeriod[]): PeriodDraft[] {
     end: pointDraft(period.end),
     entityEraId: period.entityEraId ?? '',
     eraLabel: period.entityEraId
-      ? `${period.eraName ?? 'An era'}${period.eraEntityName ? ` (${period.eraEntityName})` : ''}`
+      ? `${period.eraName ?? t('relationships.period.anEra')}${period.eraEntityName ? ` (${period.eraEntityName})` : ''}`
       : null,
   }))
 }
@@ -78,7 +79,9 @@ export function periodInputs(
 export function periodText(period: RelationshipPeriod, chronology: Chronology) {
   if (period.entityEraId) {
     const whose = period.eraEntityName ? ` (${period.eraEntityName})` : ''
-    return `During ${period.eraName ?? 'an era'}${whose}`
+    return t('relationships.period.during', {
+      era: `${period.eraName ?? t('relationships.period.anEraMid')}${whose}`,
+    })
   }
   return formatSpan(chronology, period.start, period.end) ?? ''
 }

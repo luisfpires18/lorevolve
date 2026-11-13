@@ -1,5 +1,9 @@
 import { apiFetch, ApiError } from '../lib/api'
+import { t } from '../i18n'
 import type { CanonStatusValue, FieldKindValue } from './types'
+
+type ChangeWord =
+  'name' | 'summary' | 'article' | 'status' | 'type' | 'aliases' | 'tags' | 'details' | 'image'
 
 /** Mirrors the backend enum. What produced a version. */
 export const RevisionKind = {
@@ -35,21 +39,21 @@ export const RevisionChange = {
 
 export type RevisionChangeValue = (typeof RevisionChange)[keyof typeof RevisionChange]
 
-/** How each part is named in the sentence a history row reads as. */
-const CHANGE_WORDS: [RevisionChangeValue, string][] = [
-  [RevisionChange.Name, 'the name'],
-  [RevisionChange.Summary, 'the summary'],
-  [RevisionChange.Article, 'the article'],
-  [RevisionChange.CanonStatus, 'the status'],
-  [RevisionChange.EntityType, 'the type'],
-  [RevisionChange.Aliases, 'the aliases'],
-  [RevisionChange.Tags, 'the tags'],
-  [RevisionChange.Fields, 'the details'],
-  [RevisionChange.Image, 'the image'],
+/** Which dictionary word (`entity.history.change.<word>`) names each part in the sentence a history row reads as. */
+const CHANGE_WORDS: [RevisionChangeValue, ChangeWord][] = [
+  [RevisionChange.Name, 'name'],
+  [RevisionChange.Summary, 'summary'],
+  [RevisionChange.Article, 'article'],
+  [RevisionChange.CanonStatus, 'status'],
+  [RevisionChange.EntityType, 'type'],
+  [RevisionChange.Aliases, 'aliases'],
+  [RevisionChange.Tags, 'tags'],
+  [RevisionChange.Fields, 'details'],
+  [RevisionChange.Image, 'image'],
 ]
 
 /** Said once where it matters, not on every row that mentions a picture. */
-export const IMAGES_NOT_RESTORED = 'Images are not included when restoring a revision.'
+export const imagesNotRestored = () => t('entity.history.imagesNotRestored')
 
 /** Whether this entry's history mentions a picture at all, so the note is only shown when it means something. */
 export function mentionsImage(revisions: EntityRevisionSummary[]) {
@@ -62,21 +66,21 @@ export function mentionsImage(revisions: EntityRevisionSummary[]) {
  * record and not about the edit.
  */
 export function describeChanges(revision: EntityRevisionSummary) {
-  if (revision.kind === RevisionKind.Created) return 'Created'
-  if (revision.changes === RevisionChange.None) return 'First recorded version'
+  if (revision.kind === RevisionKind.Created) return t('entity.history.created')
+  if (revision.changes === RevisionChange.None) return t('entity.history.firstVersion')
 
-  const parts = CHANGE_WORDS.filter(([flag]) => (revision.changes & flag) !== 0).map(
-    ([, word]) => word,
+  const parts = CHANGE_WORDS.filter(([flag]) => (revision.changes & flag) !== 0).map(([, word]) =>
+    t(`entity.history.change.${word}`),
   )
 
-  if (parts.length === 0) return 'Changed'
+  if (parts.length === 0) return t('entity.history.changedNothing')
+  if (parts.length === 1) return t('entity.history.changedOne', { last: parts[0] })
 
-  const listed =
-    parts.length === 1
-      ? parts[0]
-      : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`
-
-  return `Changed ${listed}`
+  // The words before the last are one comma-joined run, so a language can place that run and the last word as it likes.
+  return t('entity.history.changedMany', {
+    list: parts.slice(0, -1).join(', '),
+    last: parts[parts.length - 1],
+  })
 }
 
 export interface EntityRevisionSummary {

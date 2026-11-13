@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { Check } from 'lucide-react'
-import { TYPE_ICONS } from '../lore/typeIcons'
+import { useI18n } from '../i18n'
+import { TYPE_ICONS, typeIconLabel } from '../lore/typeIcons'
 import { TypeIcon } from './TypeIcon'
 
 /**
@@ -25,15 +26,19 @@ export function TypeIconPicker({
   disabled?: boolean
   testId?: string
 }) {
+  const { t } = useI18n()
   const name = useId()
   const choices = [
-    { key: null as string | null, label: 'No icon' },
-    ...TYPE_ICONS.map((option) => ({ key: option.key as string | null, label: option.label })),
+    { key: null as string | null, label: t('entityTypes.iconPicker.none') },
+    ...TYPE_ICONS.map((option) => ({
+      key: option.key as string | null,
+      label: typeIconLabel(option.key),
+    })),
   ]
 
   return (
     <fieldset className="iconpicker" disabled={disabled} data-testid={testId}>
-      <legend className="field__label">Icon</legend>
+      <legend className="field__label">{t('entityTypes.iconPicker.legend')}</legend>
 
       <div className="iconpicker__grid">
         {choices.map((choice) => {

@@ -1,3 +1,4 @@
+import { t, tn } from '../i18n'
 import { CANON_LABELS, CANON_ORDER, type CanonStatusValue, type EntityType } from './types'
 
 /**
@@ -35,15 +36,12 @@ export interface MassDefaults {
 export type PasteResult =
   { kind: 'rows'; rows: MassRowInput[] } | { kind: 'refused'; message: string }
 
-const ACCEPTED_SHAPES =
-  'Paste one name per line, or three columns separated by tabs, in the order Type, Name, Status.'
-
 /** Whether a type can take a name-only entry: a required field is something a mass create cannot fill. */
 export const hasRequiredFields = (type: EntityType) => type.fields.some((field) => field.isRequired)
 
 const folded = (text: string) => text.trim().toLocaleLowerCase()
 
-const columns = (count: number) => (count === 1 ? 'one column' : `${count} columns`)
+const columns = (count: number) => tn('lore.massCreate.paste.columns', count, { n: count })
 
 /**
  * Reads what was pasted - one name per line, or a spreadsheet's Type, Name, Status separated by tabs - into rows.
@@ -62,6 +60,7 @@ export function readPaste(text: string, types: EntityType[], defaults: MassDefau
 
   if (lines.length === 0) return { kind: 'rows', rows: [] }
 
+  const shapes = t('lore.massCreate.paste.shapes')
   const width = lines[0].cells.length
   const odd = lines.find((line) => line.cells.length !== width || (width !== 1 && width !== 3))
   if (odd) {
@@ -70,10 +69,20 @@ export function readPaste(text: string, types: EntityType[], defaults: MassDefau
       kind: 'refused',
       message:
         count === 2
-          ? `Line ${odd.number} has two columns, which could be read more than one way. ${ACCEPTED_SHAPES}`
+          ? t('lore.massCreate.paste.twoColumns', { line: odd.number, shapes })
           : count === width
-            ? `Line ${odd.number} has ${columns(count)}. ${ACCEPTED_SHAPES}`
-            : `Line ${odd.number} has ${columns(count)} but line ${lines[0].number} has ${columns(width)}. ${ACCEPTED_SHAPES}`,
+            ? t('lore.massCreate.paste.columnCount', {
+                line: odd.number,
+                columns: columns(count),
+                shapes,
+              })
+            : t('lore.massCreate.paste.columnMismatch', {
+                line: odd.number,
+                columns: columns(count),
+                first: lines[0].number,
+                firstColumns: columns(width),
+                shapes,
+              }),
     }
   }
 
@@ -114,14 +123,15 @@ export function readPaste(text: string, types: EntityType[], defaults: MassDefau
 export type RowField = 'name' | 'type' | 'status'
 
 /**
- * One thing wrong with a row, as a sentence of LorEvolve's own. `subject` is words an author wrote - a pasted type or
- * status, a type's name - drawn quoted and isolated between `before` and `after`.
+ * One thing wrong with a row, as a sentence of LorEvolve's own: the message `key`, read when it is drawn. `subject` is
+ * words an author wrote - a pasted type or status, a type's name - drawn quoted and isolated where the message puts
+ * `{subject}`; `max` fills `{max}`.
  */
 export interface RowProblem {
   field: RowField
-  before: string
+  key: Parameters<typeof t>[0]
   subject?: string
-  after: string
+  max?: number
 }
 
 /** What stops this row from being created, in the order the row reads. Empty when it is ready. */
@@ -131,45 +141,34 @@ export function rowProblems(row: MassRow, typesById: Map<string, EntityType>): R
 
   const name = row.name.trim()
   if (name === '') {
-    problems.push({ field: 'name', before: 'Name is required.', after: '' })
+    problems.push({ field: 'name', key: 'lore.massCreate.problem.nameRequired' })
   } else if (name.length > NAME_MAX_LENGTH) {
     problems.push({
       field: 'name',
-      before: `Keep the name under ${NAME_MAX_LENGTH} characters.`,
-      after: '',
+      key: 'lore.massCreate.problem.nameTooLong',
+      max: NAME_MAX_LENGTH,
     })
   }
 
   if (!type) {
     problems.push(
       row.typeText
-        ? {
-            field: 'type',
-            before: 'Unknown type ',
-            subject: row.typeText,
-            after: '. Choose one of this world’s types.',
-          }
-        : { field: 'type', before: 'Choose a type.', after: '' },
+        ? { field: 'type', key: 'lore.massCreate.problem.unknownType', subject: row.typeText }
+        : { field: 'type', key: 'lore.massCreate.problem.chooseType' },
     )
   } else if (hasRequiredFields(type)) {
     problems.push({
       field: 'type',
-      before: 'The type ',
+      key: 'lore.massCreate.problem.typeRequiredFields',
       subject: type.name,
-      after: ' has required fields. Create this entry on its own.',
     })
   }
 
   if (row.status === null) {
     problems.push(
       row.statusText
-        ? {
-            field: 'status',
-            before: 'Unknown status ',
-            subject: row.statusText,
-            after: '. Use Idea, Draft or Canon.',
-          }
-        : { field: 'status', before: 'Choose a status.', after: '' },
+        ? { field: 'status', key: 'lore.massCreate.problem.unknownStatus', subject: row.statusText }
+        : { field: 'status', key: 'lore.massCreate.problem.chooseStatus' },
     )
   }
 

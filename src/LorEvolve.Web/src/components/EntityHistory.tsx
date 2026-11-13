@@ -16,7 +16,7 @@ import { isEmptyDocument } from '../lore/document'
 import {
   describeChanges,
   getRevision,
-  IMAGES_NOT_RESTORED,
+  imagesNotRestored,
   isNotRestorable,
   listRevisions,
   mentionsImage,
@@ -28,6 +28,7 @@ import {
 } from '../lore/revisions'
 import { CANON_LABELS, FieldKind } from '../lore/types'
 import { confirmAction } from '../lib/confirm'
+import { t, useI18n } from '../i18n'
 
 interface EntityHistoryProps {
   universeId: string
@@ -68,6 +69,7 @@ export function EntityHistory({
   currentVersion,
   onRestored,
 }: EntityHistoryProps) {
+  const { t } = useI18n()
   const [revisions, setRevisions] = useState<EntityRevisionSummary[]>([])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [expanded, setExpanded] = useState<{ id: string; key: number } | null>(null)
@@ -115,10 +117,10 @@ export function EntityHistory({
         setOpened(await getRevision(universeId, entityId, revisionId))
       } catch {
         setExpanded(null)
-        setMessage('That version could not be opened.')
+        setMessage(t('entity.history.openFailed'))
       }
     },
-    [openId, reloadKey, universeId, entityId],
+    [openId, reloadKey, universeId, entityId, t],
   )
 
   // Said once, where a version is about to be put back and where the list is read - not on
@@ -128,11 +130,10 @@ export function EntityHistory({
   async function restore(revision: EntityRevisionSummary) {
     if (
       !(await confirmAction({
-        title: `Put version ${revision.number} back?`,
-        message:
-          'It becomes the newest version. The article stays as it is: it keeps its own history.',
-        details: carriesImages ? [IMAGES_NOT_RESTORED] : undefined,
-        confirmLabel: 'Put this version back',
+        title: t('entity.history.restoreConfirm.title', { number: revision.number }),
+        message: t('entity.history.restoreConfirm.message'),
+        details: carriesImages ? [imagesNotRestored()] : undefined,
+        confirmLabel: t('entity.history.restoreConfirm.confirm'),
       }))
     ) {
       return
@@ -150,14 +151,12 @@ export function EntityHistory({
       if (blocking) {
         setBlocked(blocking)
       } else if (isChangedElsewhere(error, ENTRY_CHANGED)) {
-        setMessage(
-          'This entry changed after you opened it, so nothing was put back. The history now shows the latest.',
-        )
+        setMessage(t('entity.history.changedElsewhere'))
         onRestored()
       } else if (isNotRestorable(error) || error instanceof ApiError) {
         setMessage((error as ApiError).message)
       } else {
-        setMessage('That version could not be put back.')
+        setMessage(t('entity.history.restoreFailed'))
       }
     } finally {
       setBusyId(null)
@@ -168,18 +167,17 @@ export function EntityHistory({
     <section className="history" aria-labelledby="history-heading">
       <div className="history__head">
         <h2 className="history__title" id="history-heading">
-          History
+          {t('entity.history.title')}
         </h2>
       </div>
 
       <p className="history__quiet" data-testid="history-article-note">
-        Versions of this entry&rsquo;s details. The article keeps its own history, on the Article
-        view.
+        {t('entity.history.articleNote')}
       </p>
 
       {carriesImages ? (
         <p className="history__quiet" data-testid="history-image-note">
-          {IMAGES_NOT_RESTORED}
+          {imagesNotRestored()}
         </p>
       ) : null}
 
@@ -195,7 +193,7 @@ export function EntityHistory({
 
       {status === 'loading' ? null : status === 'error' ? (
         <div className="notice notice--error" role="alert">
-          <p>This entry&rsquo;s history could not be read.</p>
+          <p>{t('entity.history.readFailed')}</p>
           <button
             className="button button--secondary"
             type="button"
@@ -204,14 +202,11 @@ export function EntityHistory({
               setReads((count) => count + 1)
             }}
           >
-            Try again
+            {t('entity.history.retry')}
           </button>
         </div>
       ) : revisions.length === 0 ? (
-        <EmptyState
-          testId="history-empty"
-          title={<>Nothing recorded yet. The next save starts this entry&rsquo;s history.</>}
-        />
+        <EmptyState testId="history-empty" title={t('entity.history.empty')} />
       ) : (
         <ol className="history__list" data-testid="history-list">
           {revisions.map((revision, index) => (
@@ -223,10 +218,12 @@ export function EntityHistory({
               <div className="version__body">
                 <p className="version__what" data-testid="version-what">
                   {describeChanges(revision)}
-                  {index === 0 ? <span className="version__now">now showing</span> : null}
+                  {index === 0 ? (
+                    <span className="version__now">{t('entity.history.nowShowing')}</span>
+                  ) : null}
                 </p>
                 <p className="version__meta">
-                  <span>Version {revision.number}</span>
+                  <span>{t('entity.history.version', { number: revision.number })}</span>
                   <span>
                     <bdi>{revision.name}</bdi>
                   </span>
@@ -234,10 +231,12 @@ export function EntityHistory({
                   <VersionActor name={revision.actorName} />
                   {revision.kind === RevisionKind.Restored ? (
                     <span>
-                      restored version{' '}
-                      {revisions.find(
-                        (candidate) => candidate.id === revision.restoredFromRevisionId,
-                      )?.number ?? '—'}
+                      {t('entity.history.restoredVersion', {
+                        number:
+                          revisions.find(
+                            (candidate) => candidate.id === revision.restoredFromRevisionId,
+                          )?.number ?? '—',
+                      })}
                     </span>
                   ) : null}
                 </p>
@@ -251,7 +250,7 @@ export function EntityHistory({
                   onClick={() => void open(revision.id)}
                   data-testid="version-view"
                 >
-                  {openId === revision.id ? 'Hide' : 'View'}
+                  {openId === revision.id ? t('entity.history.hide') : t('entity.history.view')}
                 </button>
                 {index > 0 ? (
                   <button
@@ -261,7 +260,9 @@ export function EntityHistory({
                     onClick={() => void restore(revision)}
                     data-testid="version-restore"
                   >
-                    {busyId === revision.id ? 'Restoring' : 'Restore'}
+                    {busyId === revision.id
+                      ? t('entity.history.restoring')
+                      : t('entity.history.restore')}
                   </button>
                 ) : null}
               </div>
@@ -270,7 +271,7 @@ export function EntityHistory({
                 <div className="version__snapshot" data-testid="version-snapshot">
                   {opened === null || opened.id !== openId ? (
                     <p className="history__quiet" role="status">
-                      Opening&hellip;
+                      {t('entity.history.opening')}
                     </p>
                   ) : (
                     <Snapshot revision={opened} chronology={chronology} />
@@ -293,6 +294,7 @@ function Snapshot({
   revision: EntityRevisionDetail
   chronology: Chronology
 }) {
+  const { t, tx } = useI18n()
   return (
     <>
       <h3 className="snapshot__name">
@@ -304,7 +306,7 @@ function Snapshot({
 
       {revision.aliases.length > 0 ? (
         <p className="entry__aliases">
-          also known as <NameList names={revision.aliases} />
+          {tx('entity.history.alsoKnownAs', { names: <NameList names={revision.aliases} /> })}
         </p>
       ) : null}
 
@@ -314,9 +316,7 @@ function Snapshot({
           applies that copy - so it is shown as what it is, and a version without one says nothing about the article. */}
       {!isEmptyDocument(revision.content) ? (
         <div className="snapshot__article" data-testid="version-article">
-          <p className="snapshot__articlenote">
-            The article as it read then. Restoring this version leaves the article as it is.
-          </p>
+          <p className="snapshot__articlenote">{t('entity.history.articleThen')}</p>
           <LoreArticle content={revision.content} />
         </div>
       ) : null}
@@ -366,7 +366,7 @@ function renderRevisionFact(value: RevisionFieldValue, chronology: Chronology) {
         ? withEraLabel(formatSignedYear(value.number), value.eraLabel, EraLabelPosition.BeforeYear)
         : value.number
     case FieldKind.Boolean:
-      return value.boolean ? 'Yes' : 'No'
+      return value.boolean ? t('entity.fact.yes') : t('entity.fact.no')
     case FieldKind.Date:
       return value.date ? formatDate(value.date) : '—'
     case FieldKind.Select:

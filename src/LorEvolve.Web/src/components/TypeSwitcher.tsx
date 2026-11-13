@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react'
 import { Link, type To } from 'react-router-dom'
 import { ChevronDown, Layers } from 'lucide-react'
+import { useI18n } from '../i18n'
 import type { EntityTypeGroup } from '../lore/types'
 import type { TypeNode, TypeTree } from '../lore/typeTree'
 import { ActionMenu } from './ActionMenu'
@@ -76,6 +77,7 @@ export function TypeSwitcher({
   selectedGroupId?: string | null
   groupHref?: (groupId: string) => To
 }) {
+  const { t } = useI18n()
   const showGroups = groups.length > 0 && groupHref !== undefined
   const chosenGroup = groups.find((group) => group.id === selectedGroupId) ?? null
   const levels = levelsFor(tree, selected)
@@ -97,7 +99,13 @@ export function TypeSwitcher({
   function items(level: Level) {
     return [
       ...(level.parent
-        ? [{ node: level.parent, label: `All ${level.parent.type.name}`, all: true }]
+        ? [
+            {
+              node: level.parent,
+              label: t('entityTypes.switcher.all', { name: level.parent.type.name }),
+              all: true,
+            },
+          ]
         : []),
       ...level.nodes.map((node) => ({ node, label: node.type.name, all: false })),
     ]
@@ -106,18 +114,26 @@ export function TypeSwitcher({
   /** What a level's menu names as chosen on a phone, or null if nothing on it is. */
   function chosenOn(level: Level) {
     if (level.parent && selected?.type.id === level.parent.type.id)
-      return `All ${level.parent.type.name}`
+      return t('entityTypes.switcher.allChosen', { name: level.parent.type.name })
     return level.nodes.find((node) => onPath.has(node.type.id))?.type.name ?? null
   }
 
   return (
     <>
-      <nav className="typeswitch" aria-label="Lore types" data-testid="lore-types">
+      <nav
+        className="typeswitch"
+        aria-label={t('entityTypes.switcher.types')}
+        data-testid="lore-types"
+      >
         {levels.map((level, depth) => (
           <ul
             key={level.parent?.type.id ?? 'top'}
             className={depth === 0 ? 'typeswitch__row' : 'typeswitch__row typeswitch__row--sub'}
-            aria-label={level.parent ? `Inside ${level.parent.type.name}` : 'Categories'}
+            aria-label={
+              level.parent
+                ? t('entityTypes.switcher.inside', { name: level.parent.type.name })
+                : t('entityTypes.switcher.categories')
+            }
             onKeyDown={move}
             data-testid={depth === 0 ? 'lore-categories' : 'lore-subtypes'}
             data-parent-name={level.parent?.type.name}
@@ -164,10 +180,10 @@ export function TypeSwitcher({
         const groupHere = depth === 0 && chosenGroup !== null
         const chosen = groupHere ? chosenGroup.name : chosenOn(level)
         const what = groupHere
-          ? 'Group'
+          ? t('entityTypes.switcher.whatGroup')
           : level.parent
-            ? `In ${level.parent.type.name}`
-            : 'Category'
+            ? t('entityTypes.switcher.whatIn', { name: level.parent.type.name })
+            : t('entityTypes.switcher.whatCategory')
         return (
           <ActionMenu
             key={level.parent?.type.id ?? 'top'}
@@ -175,10 +191,10 @@ export function TypeSwitcher({
             panelClassName="actionmenu__panel--start typemenu__panel"
             label={
               chosen
-                ? `${what}: ${chosen}`
+                ? t('entityTypes.switcher.menuChosen', { what, chosen })
                 : depth === 0
-                  ? 'Choose category'
-                  : `Choose in ${level.parent!.type.name}`
+                  ? t('entityTypes.switcher.chooseCategory')
+                  : t('entityTypes.switcher.chooseIn', { name: level.parent!.type.name })
             }
             triggerClassName="button button--secondary typemenu__trigger"
             triggerTestId={depth === 0 ? 'lore-type-menu' : 'lore-subtype-menu'}
@@ -188,7 +204,10 @@ export function TypeSwitcher({
                 {chosen ? <span className="typemenu__label">{what}</span> : null}
                 <span className="typemenu__current">
                   <bdi>
-                    {chosen ?? (depth === 0 ? 'Choose category' : `All ${level.parent!.type.name}`)}
+                    {chosen ??
+                      (depth === 0
+                        ? t('entityTypes.switcher.triggerCategory')
+                        : t('entityTypes.switcher.triggerAll', { name: level.parent!.type.name }))}
                   </bdi>
                 </span>
                 <ChevronDown
@@ -218,7 +237,7 @@ export function TypeSwitcher({
             {depth === 0 && showGroups ? (
               <>
                 <p className="typemenu__heading" aria-hidden="true">
-                  Groups
+                  {t('entityTypes.switcher.groups')}
                 </p>
                 {groups.map((group) => (
                   <Link
@@ -235,7 +254,10 @@ export function TypeSwitcher({
                       strokeWidth={1.75}
                     />
                     <bdi>{group.name}</bdi>
-                    <span className="visually-hidden"> (group)</span>
+                    <span className="visually-hidden">
+                      {' '}
+                      {t('entityTypes.switcher.groupSuffix')}
+                    </span>
                   </Link>
                 ))}
               </>
@@ -261,16 +283,17 @@ export function GroupSwitcher({
   selectedGroupId: string | null
   groupHref: (groupId: string) => To
 }) {
+  const { t } = useI18n()
   if (groups.length === 0) return null
   return (
     <nav
       className="typeswitch typeswitch--groups"
-      aria-label="Lore groups"
+      aria-label={t('entityTypes.switcher.loreGroups')}
       data-testid="lore-groups"
     >
       <ul className="typeswitch__row typeswitch__row--groups" onKeyDown={move}>
         <li className="typeswitch__rowlabel" aria-hidden="true">
-          Groups
+          {t('entityTypes.switcher.groupsRow')}
         </li>
         {groups.map((group) => (
           <li key={group.id}>
@@ -289,7 +312,7 @@ export function GroupSwitcher({
               />
               <span className="typeswitch__name">
                 <bdi>{group.name}</bdi>
-                <span className="visually-hidden"> (group)</span>
+                <span className="visually-hidden"> {t('entityTypes.switcher.groupSuffixRow')}</span>
               </span>
             </Link>
           </li>

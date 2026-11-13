@@ -2,6 +2,7 @@ import Link from '@tiptap/extension-link'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { useEffect, useRef } from 'react'
+import { useI18n } from '../i18n'
 import { ALLOWED_LINK_SCHEMES, isSafeHref } from '../lore/document'
 
 /**
@@ -34,9 +35,10 @@ function parseDocument(json: string | null): object | string {
 }
 
 function Toolbar({ editor }: { editor: Editor }) {
+  const { t } = useI18n()
   function promptForLink() {
     const previous = editor.getAttributes('link').href as string | undefined
-    const entered = window.prompt('Link address', previous ?? 'https://')
+    const entered = window.prompt(t('lore.editor.linkPrompt'), previous ?? 'https://')
     if (entered === null) return
 
     if (entered.trim() === '') {
@@ -45,7 +47,7 @@ function Toolbar({ editor }: { editor: Editor }) {
     }
 
     if (!isSafeHref(entered)) {
-      window.alert('Links must be http, https or mailto addresses.')
+      window.alert(t('lore.editor.linkUnsafe'))
       return
     }
 
@@ -54,39 +56,39 @@ function Toolbar({ editor }: { editor: Editor }) {
 
   const controls: { label: string; isActive: boolean; run: () => void }[] = [
     {
-      label: 'Heading',
+      label: t('lore.editor.heading'),
       isActive: editor.isActive('heading', { level: 2 }),
       run: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
     },
     {
-      label: 'Bold',
+      label: t('lore.editor.bold'),
       isActive: editor.isActive('bold'),
       run: () => editor.chain().focus().toggleBold().run(),
     },
     {
-      label: 'Italic',
+      label: t('lore.editor.italic'),
       isActive: editor.isActive('italic'),
       run: () => editor.chain().focus().toggleItalic().run(),
     },
     {
-      label: 'List',
+      label: t('lore.editor.list'),
       isActive: editor.isActive('bulletList'),
       run: () => editor.chain().focus().toggleBulletList().run(),
     },
     {
-      label: 'Numbered',
+      label: t('lore.editor.numbered'),
       isActive: editor.isActive('orderedList'),
       run: () => editor.chain().focus().toggleOrderedList().run(),
     },
     {
-      label: 'Quote',
+      label: t('lore.editor.quote'),
       isActive: editor.isActive('blockquote'),
       run: () => editor.chain().focus().toggleBlockquote().run(),
     },
   ]
 
   return (
-    <div className="editor__bar" role="toolbar" aria-label="Formatting">
+    <div className="editor__bar" role="toolbar" aria-label={t('lore.editor.formatting')}>
       {controls.map((control) => (
         <button
           key={control.label}
@@ -104,7 +106,7 @@ function Toolbar({ editor }: { editor: Editor }) {
         aria-pressed={editor.isActive('link')}
         onClick={promptForLink}
       >
-        Link
+        {t('lore.editor.link')}
       </button>
     </div>
   )
@@ -139,6 +141,7 @@ export function LoreEditor({
   describedBy,
   keyShortcuts,
 }: LoreEditorProps) {
+  const { t } = useI18n()
   const editor = useEditor({
     extensions,
     content: parseDocument(value),
@@ -148,7 +151,7 @@ export function LoreEditor({
       attributes: {
         class: 'editor__surface',
         'data-testid': 'lore-editor',
-        'aria-label': 'Lore article',
+        'aria-label': t('lore.editor.article'),
         role: 'textbox',
         'aria-multiline': 'true',
         ...(describedBy ? { 'aria-describedby': describedBy } : {}),

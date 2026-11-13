@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { GripVertical } from 'lucide-react'
+import { useI18n } from '../i18n'
 
 /**
  * The grip a type is reordered by on a wide screen, and only the grip: the row around it stays text to select and buttons to
@@ -27,6 +28,7 @@ export function TypeReorderHandle({
   onLeave: () => void
   buttonRef: (element: HTMLButtonElement | null) => void
 }) {
+  const { t } = useI18n()
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, disabled })
 
   return (
@@ -39,7 +41,7 @@ export function TypeReorderHandle({
       }}
       className="types__handle"
       type="button"
-      aria-label={`Reorder ${name}`}
+      aria-label={t('entityTypes.reorder.label', { name })}
       aria-pressed={lifted || isDragging}
       aria-disabled={disabled || undefined}
       onKeyDown={onKey}

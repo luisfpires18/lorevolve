@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { UniverseCapabilities } from './access'
 import {
   BadgeCheck,
@@ -20,11 +21,8 @@ import {
 
 export interface Section {
   segment: string
-  label: string
   testId: string
   icon: LucideIcon
-  /** What the section holds, in a line: the Overview's contents page reads it. */
-  purpose: string
   /**
    * The capability a role needs to be offered the section at all (ADR 0041 amendment). Presentation only: the API refuses
    * the rest regardless. Absent means every member reads it.
@@ -38,10 +36,8 @@ export interface Section {
 export const FRONT: readonly Section[] = [
   {
     segment: '',
-    label: 'Overview',
     testId: 'workspace-overview',
     icon: Compass,
-    purpose: 'This universe at a glance.',
   },
 ]
 
@@ -49,31 +45,23 @@ export const FRONT: readonly Section[] = [
 export const WORLD: readonly Section[] = [
   {
     segment: 'lore',
-    label: 'Lore',
     testId: 'workspace-lore',
     icon: Library,
-    purpose: 'Every entry: people, places, things and ideas.',
   },
   {
     segment: 'types',
-    label: 'Types',
     testId: 'workspace-types',
     icon: Blocks,
-    purpose: 'The kinds of entry and relation this world uses.',
   },
   {
     segment: 'family-tree',
-    label: 'Family Tree',
     testId: 'workspace-family-tree',
     icon: Network,
-    purpose: 'Families worked out from recorded connections.',
   },
   {
     segment: 'maps',
-    label: 'Maps',
     testId: 'workspace-maps',
     icon: Map,
-    purpose: 'Pictures of the world, with pins that open the Lore they stand for.',
   },
 ]
 
@@ -81,25 +69,19 @@ export const WORLD: readonly Section[] = [
 export const RULES: readonly Section[] = [
   {
     segment: 'world-rules',
-    label: 'World Rules',
     testId: 'workspace-world-rules',
     icon: Scale,
-    purpose: 'How this universe works, stated plainly.',
   },
   {
     segment: 'canon',
-    label: 'Canon',
     testId: 'workspace-canon',
     icon: BadgeCheck,
-    purpose: 'Where the lore breaks its own World Rules. Still being built.',
     wip: true,
   },
   {
     segment: 'chronology',
-    label: 'Chronology',
     testId: 'workspace-chronology',
     icon: CalendarRange,
-    purpose: 'How its dates are written and ordered: plain years, or named date periods.',
   },
 ]
 
@@ -107,24 +89,18 @@ export const RULES: readonly Section[] = [
 export const WRITING: readonly Section[] = [
   {
     segment: 'stories',
-    label: 'Stories',
     testId: 'workspace-stories',
     icon: Feather,
-    purpose: 'Narratives told with this world, scene by scene.',
   },
   {
     segment: 'timeline',
-    label: 'Timeline',
     testId: 'workspace-timeline',
     icon: Hourglass,
-    purpose: 'What happened, in the order it happened.',
   },
   {
     segment: 'ideas',
-    label: 'Ideas',
     testId: 'workspace-ideas',
     icon: StickyNote,
-    purpose: 'Possibilities, kept apart from the lore.',
     requires: 'keepIdeas',
   },
 ]
@@ -133,10 +109,8 @@ export const WRITING: readonly Section[] = [
 export const REVIEW: readonly Section[] = [
   {
     segment: 'ai-changes',
-    label: 'AI Changes',
     testId: 'workspace-ai-changes',
     icon: FileDiff,
-    purpose: 'Changes an AI proposed, waiting for someone to approve or reject them.',
     requires: 'suggestChanges',
   },
 ]
@@ -148,26 +122,20 @@ export const REVIEW: readonly Section[] = [
 export const UPKEEP: readonly Section[] = [
   {
     segment: 'trash',
-    label: 'Trash',
     testId: 'workspace-trash',
     icon: Trash2,
-    purpose: 'What was removed, waiting to be restored.',
     requires: 'manageTrash',
   },
   {
     segment: 'publish',
-    label: 'Publish',
     testId: 'workspace-publish',
     icon: Globe,
-    purpose: 'How this universe appears on the public portal.',
     requires: 'publish',
   },
   {
     segment: 'settings',
-    label: 'Settings',
     testId: 'workspace-settings',
     icon: Settings,
-    purpose: 'Name, colour, collaborators, backups and archive.',
     requires: 'manageUniverse',
   },
 ]
@@ -185,6 +153,23 @@ export const UPKEEP: readonly Section[] = [
  * The sections a role is offered: those it needs nothing for, and those whose capability it has. AI Changes only while
  * the universe has AI help on.
  */
+/** A section's key in the dictionary: its address, or `overview` for the front page. */
+function sectionKey(segment: string) {
+  return segment === ''
+    ? 'overview'
+    : segment.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase())
+}
+
+/** The section's name, in the current language. The label names the destination; a screen reader reads it. */
+export function sectionLabel(section: Section) {
+  return t(`workspace.sections.${sectionKey(section.segment)}.label` as never)
+}
+
+/** What the section holds, in a line: the Overview's contents page reads it. */
+export function sectionPurpose(section: Section) {
+  return t(`workspace.sections.${sectionKey(section.segment)}.purpose` as never)
+}
+
 export function offered(sections: readonly Section[], access: UniverseCapabilities, aiHelp = true) {
   return sections.filter(
     (section) =>

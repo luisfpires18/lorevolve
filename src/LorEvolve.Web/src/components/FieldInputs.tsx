@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../i18n'
 import { namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { FieldKind, isYearMeaning, type FieldDefinition, type FieldValueInput } from '../lore/types'
@@ -39,8 +40,11 @@ export function FieldInput({
   onChange,
   quickCreate = null,
 }: FieldInputProps) {
+  const { t } = useI18n()
   const id = `field-${definition.id}`
-  const label = definition.isRequired ? `${definition.name} (required)` : definition.name
+  const label = definition.isRequired
+    ? t('entityTypes.input.requiredLabel', { name: definition.name })
+    : definition.name
 
   // A link chosen in this form, kept for its name: the value itself is only an id.
   const [chosen, setChosen] = useState<EntityChoice | null>(null)
@@ -76,7 +80,7 @@ export function FieldInput({
         ? chosen
         : heldReference?.id === value.referencedEntityId
           ? heldReference
-          : { id: value.referencedEntityId, name: 'Unavailable' }
+          : { id: value.referencedEntityId, name: t('entityTypes.input.unavailable') }
       : null
 
     return (
@@ -91,7 +95,7 @@ export function FieldInput({
         excludeId={excludeId}
         entityTypeId={definition.targetEntityTypeId}
         entityTypeGroupId={definition.targetGroupId}
-        placeholder="Search for an entry"
+        placeholder={t('entityTypes.input.searchEntry')}
         quickCreate={quickCreate}
       />
     )
@@ -127,12 +131,16 @@ export function FieldInput({
           <div className="fieldera">
             <select
               className="field__input field__input--select"
-              aria-label={`${definition.name}: date period`}
+              aria-label={t('entityTypes.input.datePeriodLabel', { name: definition.name })}
               value={value.eraId ?? ''}
               onChange={(event) => patch({ eraId: event.target.value || null })}
               data-testid={`field-era-${definition.id}`}
             >
-              <option value="">{yearMeaning ? 'Choose a date period' : 'No date period'}</option>
+              <option value="">
+                {yearMeaning
+                  ? t('entityTypes.input.chooseDatePeriod')
+                  : t('entityTypes.input.noDatePeriod')}
+              </option>
               {chronology.eras.map((era) => (
                 <option key={era.id} value={era.id}>
                   {era.abbreviation ? `${era.name} (${era.abbreviation})` : era.name}
@@ -154,7 +162,7 @@ export function FieldInput({
             checked={value.boolean ?? false}
             onChange={(event) => patch({ boolean: event.target.checked })}
           />
-          <span>Yes</span>
+          <span>{t('entityTypes.input.yes')}</span>
         </label>
       ) : null}
 
@@ -177,7 +185,7 @@ export function FieldInput({
           value={value.optionIds?.[0] ?? ''}
           onChange={(event) => patch({ optionIds: event.target.value ? [event.target.value] : [] })}
         >
-          <option value="">Not set</option>
+          <option value="">{t('entityTypes.input.notSet')}</option>
           {definition.options.map((option) => (
             <option key={option.id} value={option.id}>
               {option.value}

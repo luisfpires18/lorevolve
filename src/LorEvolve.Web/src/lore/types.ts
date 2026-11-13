@@ -1,5 +1,6 @@
 import type { FieldFilter } from './fieldFilters'
 import type { ImageCrop } from '../lib/imageCrop'
+import { t } from '../i18n'
 
 /** Mirrors the backend enum. Ordered from least to most committed. */
 export const CanonStatus = {
@@ -10,10 +11,17 @@ export const CanonStatus = {
 
 export type CanonStatusValue = (typeof CanonStatus)[keyof typeof CanonStatus]
 
+/** Getters, so each word is looked up in the current language when read, never frozen at import. */
 export const CANON_LABELS: Record<CanonStatusValue, string> = {
-  [CanonStatus.Idea]: 'Idea',
-  [CanonStatus.Draft]: 'Draft',
-  [CanonStatus.Canon]: 'Canon',
+  get [CanonStatus.Idea]() {
+    return t('entityTypes.status.idea')
+  },
+  get [CanonStatus.Draft]() {
+    return t('entityTypes.status.draft')
+  },
+  get [CanonStatus.Canon]() {
+    return t('entityTypes.status.canon')
+  },
 }
 
 export const CANON_ORDER: CanonStatusValue[] = [
@@ -37,14 +45,30 @@ export const FieldKind = {
 export type FieldKindValue = (typeof FieldKind)[keyof typeof FieldKind]
 
 export const FIELD_KIND_LABELS: Record<FieldKindValue, string> = {
-  [FieldKind.ShortText]: 'Short text',
-  [FieldKind.LongText]: 'Long text',
-  [FieldKind.Number]: 'Number',
-  [FieldKind.Boolean]: 'Yes or no',
-  [FieldKind.Date]: 'Date',
-  [FieldKind.Select]: 'Choose one',
-  [FieldKind.MultiSelect]: 'Choose several',
-  [FieldKind.EntityReference]: 'Link to an entity',
+  get [FieldKind.ShortText]() {
+    return t('entityTypes.kind.shortText')
+  },
+  get [FieldKind.LongText]() {
+    return t('entityTypes.kind.longText')
+  },
+  get [FieldKind.Number]() {
+    return t('entityTypes.kind.number')
+  },
+  get [FieldKind.Boolean]() {
+    return t('entityTypes.kind.boolean')
+  },
+  get [FieldKind.Date]() {
+    return t('entityTypes.kind.date')
+  },
+  get [FieldKind.Select]() {
+    return t('entityTypes.kind.select')
+  },
+  get [FieldKind.MultiSelect]() {
+    return t('entityTypes.kind.multiSelect')
+  },
+  get [FieldKind.EntityReference]() {
+    return t('entityTypes.kind.entityReference')
+  },
 }
 
 /**
@@ -61,9 +85,15 @@ export const FieldSemantic = {
 export type FieldSemanticValue = (typeof FieldSemantic)[keyof typeof FieldSemantic]
 
 export const FIELD_SEMANTIC_LABELS: Record<FieldSemanticValue, string> = {
-  [FieldSemantic.BirthYear]: 'Birth year',
-  [FieldSemantic.DeathYear]: 'Death year',
-  [FieldSemantic.Age]: 'Age',
+  get [FieldSemantic.BirthYear]() {
+    return t('entityTypes.semantic.birthYear')
+  },
+  get [FieldSemantic.DeathYear]() {
+    return t('entityTypes.semantic.deathYear')
+  },
+  get [FieldSemantic.Age]() {
+    return t('entityTypes.semantic.age')
+  },
 }
 
 /** The order the meanings are offered in: the two a rule reads today, then the one it does not. */

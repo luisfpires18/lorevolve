@@ -11,6 +11,7 @@ import {
 import type { EntityImageCrop, EntityImageRef } from '../lore/types'
 import { ActionIcon } from './ActionIcon'
 import { CroppedPicture, ImageCropDialog } from './ImageCropDialog'
+import { useI18n } from '../i18n'
 
 /** A picture chosen for an entry that does not exist yet, with the square the author framed. */
 export interface PendingImage {
@@ -66,6 +67,7 @@ export function EntityImageField({
   onChanged: (image: EntityImageRef | null) => void
   disabled: boolean
 }) {
+  const { t } = useI18n()
   const inputId = useId()
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
@@ -112,7 +114,7 @@ export function EntityImageField({
     setError(null)
 
     if (file.size > IMAGE_MAX_BYTES) {
-      setError(`Images must be ${IMAGE_MAX_BYTES / (1024 * 1024)} MB or smaller.`)
+      setError(t('entity.image.tooBig', { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
       return
     }
 
@@ -178,7 +180,7 @@ export function EntityImageField({
       await removeEntityImage(universeId, entityId)
       onChanged(null)
     } catch {
-      setError('That image could not be removed.')
+      setError(t('entity.image.removeFailed'))
     } finally {
       setBusy(false)
     }
@@ -186,7 +188,9 @@ export function EntityImageField({
 
   return (
     <div className="imagefield" data-testid="entity-image-field">
-      <h2 className="entryform__heading sectionrule sectionrule--accent">Picture</h2>
+      <h2 className="entryform__heading sectionrule sectionrule--accent">
+        {t('entity.image.heading')}
+      </h2>
 
       <div className="imagefield__row">
         {pending && preview ? (
@@ -225,7 +229,7 @@ export function EntityImageField({
 
           <label className="button button--secondary imagefield__pick" htmlFor={inputId}>
             <ActionIcon icon={hasPicture ? ImageUp : ImagePlus} />
-            {hasPicture ? 'Replace' : 'Add image'}
+            {hasPicture ? t('entity.image.replace') : t('entity.image.add')}
           </label>
 
           {hasPicture ? (
@@ -238,7 +242,7 @@ export function EntityImageField({
                 data-testid="entity-image-reframe"
               >
                 <ActionIcon icon={Crop} />
-                Edit thumbnail
+                {t('entity.image.editThumbnail')}
               </button>
               <button
                 className="button button--secondary button--danger-quiet"
@@ -248,7 +252,7 @@ export function EntityImageField({
                 data-testid="entity-image-remove"
               >
                 <ActionIcon icon={ImageMinus} />
-                {busy ? 'Removing' : 'Remove'}
+                {busy ? t('entity.image.removing') : t('entity.image.remove')}
               </button>
             </>
           ) : null}
@@ -256,9 +260,7 @@ export function EntityImageField({
       </div>
 
       <p className="imagefield__hint">
-        {pending
-          ? 'Added when this entry is created.'
-          : 'One picture. JPEG, PNG or WebP, up to 8 MB.'}
+        {pending ? t('entity.image.hint.pending') : t('entity.image.hint.rules')}
       </p>
 
       {error ? (
@@ -273,9 +275,17 @@ export function EntityImageField({
           key={framing.source}
           source={framing.source}
           initialCrop={framing.kind === 'stored' ? framing.image.crop : framing.initial}
-          title={framing.kind === 'stored' ? 'Edit thumbnail' : 'Frame the thumbnail'}
+          title={
+            framing.kind === 'stored'
+              ? t('entity.image.crop.editTitle')
+              : t('entity.image.crop.frameTitle')
+          }
           confirmLabel={
-            framing.kind === 'stored' ? 'Save thumbnail' : entityId ? 'Upload' : 'Use this picture'
+            framing.kind === 'stored'
+              ? t('entity.image.crop.saveThumbnail')
+              : entityId
+                ? t('entity.image.crop.upload')
+                : t('entity.image.crop.usePicture')
           }
           onConfirm={keep}
           onCancel={() => setFraming(null)}

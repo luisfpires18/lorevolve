@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { SearchExcerptPart } from '../lore/types'
 
 /** Mirrors the backend enum. What a search result is - explicit on every result, never guessed from an id or a name. */
@@ -17,14 +18,31 @@ export type SearchKindValue = (typeof SearchKind)[keyof typeof SearchKind]
 
 /** How each kind is named on a result. Words, never a colour or an icon alone; "Arc", as everywhere else. */
 export const SEARCH_KIND_LABELS: Record<SearchKindValue, string> = {
-  [SearchKind.Entity]: 'Lore',
-  [SearchKind.Story]: 'Story',
-  [SearchKind.Chapter]: 'Chapter',
-  [SearchKind.Scene]: 'Scene',
-  [SearchKind.PlotArc]: 'Arc',
-  [SearchKind.Manuscript]: 'Manuscript',
-  [SearchKind.Idea]: 'Idea',
-  [SearchKind.WorldRule]: 'World rule',
+  // Getters, so the words are read when used and follow the language.
+  get [SearchKind.Entity]() {
+    return t('lore.search.kind.entity')
+  },
+  get [SearchKind.Story]() {
+    return t('lore.search.kind.story')
+  },
+  get [SearchKind.Chapter]() {
+    return t('lore.search.kind.chapter')
+  },
+  get [SearchKind.Scene]() {
+    return t('lore.search.kind.scene')
+  },
+  get [SearchKind.PlotArc]() {
+    return t('lore.search.kind.plotArc')
+  },
+  get [SearchKind.Manuscript]() {
+    return t('lore.search.kind.manuscript')
+  },
+  get [SearchKind.Idea]() {
+    return t('lore.search.kind.idea')
+  },
+  get [SearchKind.WorldRule]() {
+    return t('lore.search.kind.worldRule')
+  },
 }
 
 /** Mirrors the backend enum. Where the searched words were found - the narrowest place that holds all of them. */
@@ -45,14 +63,30 @@ export type SearchFieldValue = (typeof SearchField)[keyof typeof SearchField]
 /** The words that say where an excerpt comes from. A title match carries no excerpt, so it has none. */
 export const SEARCH_FIELD_LABELS: Record<SearchFieldValue, string | null> = {
   [SearchField.Title]: null,
-  [SearchField.Alias]: 'Also known as',
-  [SearchField.Summary]: 'In the summary',
-  [SearchField.Premise]: 'In the premise',
-  [SearchField.Description]: 'In the description',
-  [SearchField.Notes]: 'In the notes',
-  [SearchField.Body]: 'In the idea',
-  [SearchField.Article]: 'In the article',
-  [SearchField.Prose]: 'In the prose',
+  get [SearchField.Alias]() {
+    return t('lore.search.field.alias')
+  },
+  get [SearchField.Summary]() {
+    return t('lore.search.field.summary')
+  },
+  get [SearchField.Premise]() {
+    return t('lore.search.field.premise')
+  },
+  get [SearchField.Description]() {
+    return t('lore.search.field.description')
+  },
+  get [SearchField.Notes]() {
+    return t('lore.search.field.notes')
+  },
+  get [SearchField.Body]() {
+    return t('lore.search.field.body')
+  },
+  get [SearchField.Article]() {
+    return t('lore.search.field.article')
+  },
+  get [SearchField.Prose]() {
+    return t('lore.search.field.prose')
+  },
 }
 
 /**

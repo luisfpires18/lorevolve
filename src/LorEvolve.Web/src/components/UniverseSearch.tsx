@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent
 import { plainExcerpt } from '../lore/mentions'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
+import { useI18n } from '../i18n'
 import { confirmLeaving } from '../lib/leaveGuard'
 import { resultContext, resultPath, searchQuery, searchUniverse } from '../search/api'
 import {
@@ -37,6 +38,7 @@ type Settled =
  * already open - the same address with another anchor - leaves nothing and asks nothing.
  */
 export function UniverseSearch({ universeId }: { universeId: string }) {
+  const { t, tn, tx } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const baseId = useId()
@@ -109,13 +111,17 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
   const announcement = !isOpen
     ? opened
     : status === 'error'
-      ? 'The search could not be reached.'
+      ? t('lore.search.unreachable')
       : status === 'empty'
-        ? `Nothing in this universe matches “${query}”.`
+        ? t('lore.search.empty', { query })
         : status === 'results'
-          ? `${results.length === 1 ? '1 result' : `${results.length} results`}${
-              response?.hasMore ? ', and more that are not shown' : ''
-            }. Use the up and down arrows to choose one.`
+          ? tn(
+              response?.hasMore
+                ? 'lore.search.announce.resultsMore'
+                : 'lore.search.announce.results',
+              results.length,
+              { n: results.length },
+            )
           : ''
 
   /** Shows the list here, and lets go of what was said about the last result opened: it is not news any more. */
@@ -134,7 +140,9 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
     if (!samePage && !(await confirmLeaving())) return
 
     setOpenAt(null)
-    setOpened(`Opened ${SEARCH_KIND_LABELS[result.kind]} “${result.title}”.`)
+    setOpened(
+      t('lore.search.opened', { kind: SEARCH_KIND_LABELS[result.kind], title: result.title }),
+    )
 
     // A tap has done its work: letting go of the box puts a phone's keyboard away. A key press keeps the focus here, so the
     // next search or the next result is one key away.
@@ -212,7 +220,7 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
   return (
     <div className="unisearch" role="search" onBlur={onBlur} data-testid="universe-search">
       <label className="visually-hidden" htmlFor={inputId}>
-        Search this universe
+        {t('lore.search.label')}
       </label>
       <span className="unisearch__icon" aria-hidden="true">
         <Search size={17} strokeWidth={1.75} />
@@ -232,7 +240,7 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
         autoCorrect="off"
         spellCheck={false}
         enterKeyHint="search"
-        placeholder="Search this universe"
+        placeholder={t('lore.search.label')}
         value={text}
         onChange={(event) => {
           setText(event.target.value)
@@ -244,8 +252,7 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
         data-testid="universe-search-input"
       />
       <p className="visually-hidden" id={hintId}>
-        Finds words in the lore and articles, stories, chapters, scenes, arcs, manuscripts and ideas
-        of this universe. Results are listed as you type.
+        {t('lore.search.hint')}
       </p>
       <p className="visually-hidden" role="status" data-testid="universe-search-announcer">
         {announcement}
@@ -258,30 +265,25 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
         onMouseDown={(event) => event.preventDefault()}
         data-testid="universe-search-panel"
       >
-        {status === 'idle' ? (
-          <p className="unisearch__note">
-            Search the lore and articles, stories, chapters, scenes, arcs, manuscripts and ideas of
-            this universe.
-          </p>
-        ) : null}
+        {status === 'idle' ? <p className="unisearch__note">{t('lore.search.idle')}</p> : null}
 
         {status === 'searching' ? (
           <p className="unisearch__note" data-testid="universe-search-searching">
-            Searching…
+            {t('lore.search.searching')}
           </p>
         ) : null}
 
         {status === 'empty' ? (
           <p className="unisearch__note" data-testid="universe-search-empty">
-            Nothing in this universe matches “<span dir="auto">{query}</span>”.
+            {tx('lore.search.empty', { query: <span dir="auto">{query}</span> })}
           </p>
         ) : null}
 
         {status === 'error' ? (
           <div className="unisearch__note unisearch__failure" data-testid="universe-search-error">
-            <p>The search could not be reached.</p>
+            <p>{t('lore.search.unreachable')}</p>
             <button className="button button--secondary" type="button" onClick={retry}>
-              Try again
+              {t('lore.search.retry')}
             </button>
           </div>
         ) : null}
@@ -290,7 +292,7 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
           className="unisearch__list"
           id={listId}
           role="listbox"
-          aria-label="Results"
+          aria-label={t('lore.search.results')}
           hidden={!showList}
           data-testid="universe-search-results"
         >
@@ -344,7 +346,7 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
 
         {showList && response?.hasMore ? (
           <p className="unisearch__more" data-testid="universe-search-more">
-            The closest matches of each kind. Add a word to narrow it down.
+            {t('lore.search.more')}
           </p>
         ) : null}
       </div>
