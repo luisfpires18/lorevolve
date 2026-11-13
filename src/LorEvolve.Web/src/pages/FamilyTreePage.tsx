@@ -24,6 +24,7 @@ import {
 import { PageHeader } from '../components/PageHeader'
 import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { EmptyState } from '../components/EmptyState'
+import { useI18n } from '../i18n'
 
 /** The types and groups the page reads to say where the tree is offered: none yet, read, or not readable. */
 type Setup = { types: EntityType[]; groups: EntityTypeGroup[] } | 'failed' | null
@@ -36,7 +37,7 @@ type LoadState =
   | { kind: 'loading' }
   | { kind: 'ready'; entityId: string; tree: FamilyTree }
   | { kind: 'missing'; entityId: string }
-  | { kind: 'error'; entityId: string; message: string }
+  | { kind: 'error'; entityId: string }
 
 /**
  * The Family Tree: one entry's family, worked out from the parent connections recorded on entries (ADR 0035).
@@ -57,6 +58,7 @@ type LoadState =
  * names and a size each, opening the tree on one of them. "Browse families" on a tree goes back to that list.
  */
 export default function FamilyTreePage() {
+  const { t, tx } = useI18n()
   const access = useUniverseAccess()
   const { universe, types, groups, setGroups, refreshTypes } = useWorkspaceTypes()
   const { entityId } = useParams<{ entityId: string }>()
@@ -106,7 +108,7 @@ export default function FamilyTreePage() {
         setState(
           (error as { status?: number }).status === 404
             ? { kind: 'missing', entityId }
-            : { kind: 'error', entityId, message: 'This family tree could not be read.' },
+            : { kind: 'error', entityId },
         )
       })
 
@@ -193,9 +195,9 @@ export default function FamilyTreePage() {
   return (
     <section className="family" aria-labelledby={headingId} data-testid="family-tree-page">
       <PageHeader
-        title="Family Tree"
+        title={t('places.familyPage.title')}
         titleId={headingId}
-        lede="Parents, grandparents, siblings, aunts and uncles, cousins, nieces and nephews, children and grandchildren, worked out from the connections you have recorded. Only a relation kind you have given a family meaning counts."
+        lede={t('places.familyPage.lede')}
       />
 
       {entityId ? (
@@ -212,16 +214,16 @@ export default function FamilyTreePage() {
               focusable="false"
               strokeWidth={1.75}
             />
-            Browse families
+            {t('places.familyPage.browse')}
           </Link>
           <div className="family__picker">
             <EntityPicker
-              label={focal ? 'Family shown for' : 'Whose family?'}
+              label={focal ? t('places.familyPage.shownFor') : t('places.familyPage.whose')}
               universeId={universe.id}
               value={focal ? { id: focal.entityId, name: focal.name } : null}
               onChange={show}
               familyTreeOnly
-              placeholder="Search this universe"
+              placeholder={t('places.familyPage.pickerPlaceholder')}
             />
           </div>
         </>
@@ -229,19 +231,18 @@ export default function FamilyTreePage() {
 
       {hasEligibleType === false ? (
         <p className="notice" data-testid="family-no-types">
-          No Lore Type is enabled for Family Tree yet. You can enable a type when you create it,
-          under <Link to={typesPath}>Types → Lore Types</Link>, or turn on a group of types under
-          Types in Family Tree, below.
+          {tx('places.familyPage.noTypes', {
+            link: <Link to={typesPath}>{t('places.familyPage.noTypesLink')}</Link>,
+          })}
         </p>
       ) : null}
 
       {hasEligibleType && kinds !== null && familyKinds.length === 0 ? (
         <div className="notice family__nokinds" data-testid="family-no-kinds">
           <p>
-            Family Tree needs a family relation kind: “parent of”, “uncle of”, “married to”. A kind
-            means nothing to the tree until you give it a family meaning, whatever it is called.
-            Create one here, or give a meaning to an existing kind under{' '}
-            <Link to={relationKindsPath}>Types → Relation Kinds</Link>.
+            {tx('places.familyPage.noKinds', {
+              link: <Link to={relationKindsPath}>{t('places.familyPage.noKindsLink')}</Link>,
+            })}
           </p>
           {access.editContent ? (
             <button
@@ -251,7 +252,7 @@ export default function FamilyTreePage() {
               data-testid="family-new-kind"
             >
               <ActionIcon icon={Plus} />
-              New family relationship kind
+              {t('places.familyPage.newKind')}
             </button>
           ) : null}
         </div>
@@ -285,38 +286,39 @@ export default function FamilyTreePage() {
       {view.kind === 'idle' && hasEligibleType && kinds !== null && familyKinds.length === 0 ? (
         <div className="family__picker">
           <EntityPicker
-            label="Whose family?"
+            label={t('places.familyPage.whose')}
             universeId={universe.id}
             value={null}
             onChange={show}
             familyTreeOnly
-            placeholder="Search this universe"
+            placeholder={t('places.familyPage.pickerPlaceholder')}
           />
         </div>
       ) : null}
 
       {view.kind === 'loading' ? (
         <p className="notice" role="status">
-          Working out this family…
+          {t('places.familyPage.loading')}
         </p>
       ) : null}
 
       {view.kind === 'missing' ? (
         <EmptyState
           testId="family-missing"
-          title="That entry is not here."
-          hint={
-            <>
-              It may have been moved to the Trash, deleted, or it belongs to another universe.{' '}
-              <Link to={`/app/universes/${universe.id}/lore`}>Back to Lore</Link>
-            </>
-          }
+          title={t('places.familyPage.missingTitle')}
+          hint={tx('places.familyPage.missingHint', {
+            link: (
+              <Link to={`/app/universes/${universe.id}/lore`}>
+                {t('places.familyPage.missingLink')}
+              </Link>
+            ),
+          })}
         />
       ) : null}
 
       {view.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="family-error">
-          <p>{view.message}</p>
+          <p>{t('places.familyPage.error')}</p>
           <button
             className="button button--secondary"
             type="button"
@@ -325,7 +327,7 @@ export default function FamilyTreePage() {
               setReads((current) => current + 1)
             }}
           >
-            Try again
+            {t('places.familyPage.retry')}
           </button>
         </div>
       ) : null}
@@ -334,18 +336,16 @@ export default function FamilyTreePage() {
         <>
           {focal.entityTypeFamilyTreeEligible ? null : (
             <p className="notice" data-testid="family-type-not-enabled">
-              This entry&rsquo;s type, <bdi>{focal.entityTypeName}</bdi>, is not currently enabled
-              for Family Tree. Its recorded family is still shown here.
+              {tx('places.familyPage.typeNotEnabled', {
+                type: <bdi>{focal.entityTypeName}</bdi>,
+              })}
             </p>
           )}
 
           {tree.loops.length > 0 ? (
             <div className="callout callout--warning family__loopnote" data-testid="family-loop">
-              <p className="callout__title">These connections go round in a circle</p>
-              <p>
-                Nobody in it can be placed above the others, so the tree below shows them where it
-                can. Nothing has been changed: open the entries and correct or remove one of them.
-              </p>
+              <p className="callout__title">{t('places.familyPage.loopTitle')}</p>
+              <p>{t('places.familyPage.loopBody')}</p>
               <ul className="family__loop">
                 {tree.loops.flatMap((loop) =>
                   loop.relationshipIds.map((id) => {
@@ -367,14 +367,7 @@ export default function FamilyTreePage() {
             onFocus={(next) => show({ id: next, name: '' })}
           />
 
-          <p className="family__note">
-            Relatives are worked out from the parent connections themselves, every time this page is
-            opened. Nothing on it is stored as a connection of its own, and a sibling here means one
-            shared parent that somebody wrote down, and nothing more. Other family you recorded,
-            like a spouse or a guardian, is listed in each person&rsquo;s details and shown while
-            you point at or focus them; a spouse stands beside them. It places nobody in a
-            generation.
-          </p>
+          <p className="family__note">{t('places.familyPage.note')}</p>
 
           {otherRelations.length > 0 ? (
             <section
@@ -383,14 +376,17 @@ export default function FamilyTreePage() {
               data-testid="family-other-relationships"
             >
               <h2 className="settings__heading" id={`${headingId}-others`}>
-                Other relationships
+                {t('places.familyPage.othersHeading')}
               </h2>
               <p className="settings__note">
-                <bdi>{focal.name}</bdi>&rsquo;s relationships that are not family. They are not part
-                of the tree above.{' '}
-                <Link to={`/app/universes/${universe.id}/lore/${focal.entityId}/relations`}>
-                  All relations
-                </Link>
+                {tx('places.familyPage.othersNote', {
+                  name: <bdi>{focal.name}</bdi>,
+                  link: (
+                    <Link to={`/app/universes/${universe.id}/lore/${focal.entityId}/relations`}>
+                      {t('places.familyPage.othersLink')}
+                    </Link>
+                  ),
+                })}
               </p>
               <ul className="family__otherlist">
                 {otherRelations.map((relation) => (
@@ -406,7 +402,9 @@ export default function FamilyTreePage() {
                     {relation.canonStatus === CanonStatus.Canon ? null : (
                       <StatusBadge
                         step={relation.canonStatus}
-                        label={`${CANON_LABELS[relation.canonStatus]} relationship`}
+                        label={t('places.familyPage.relationshipStatus', {
+                          status: CANON_LABELS[relation.canonStatus],
+                        })}
                       />
                     )}
                   </li>
@@ -436,7 +434,7 @@ export default function FamilyTreePage() {
                 data-testid="add-family-link"
               >
                 <ActionIcon icon={Plus} />
-                Add family connection
+                {t('places.familyPage.add')}
               </button>
             )
           ) : null}

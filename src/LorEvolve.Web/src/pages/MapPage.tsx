@@ -16,14 +16,12 @@ import { confirmAction } from '../lib/confirm'
 import { deleteMap, deletePin, getMap, mapImageUrl, mapsPath, updatePin } from '../maps/api'
 import type { MapDetail, MapPin } from '../maps/types'
 import { useUniverseAccess } from '../universes/access'
+import { useI18n } from '../i18n'
 import type { MapsListNotice } from './MapsPage'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
 type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready'; map: MapDetail }
-  | { kind: 'missing' }
-  | { kind: 'error'; message: string }
+  { kind: 'loading' } | { kind: 'ready'; map: MapDetail } | { kind: 'missing' } | { kind: 'error' }
 
 type PinForm = { kind: 'new'; at: { x: number; y: number } } | { kind: 'edit'; pin: MapPin }
 
@@ -39,6 +37,7 @@ type MapDialog = 'details' | 'replace' | null
  * whatever the zoom; the picture's own pins are buttons too.
  */
 export default function MapPage() {
+  const { t, tn, tx } = useI18n()
   const access = useUniverseAccess()
   const { universe } = useOutletContext<WorkspaceContext>()
   const { mapId } = useParams<{ mapId: string }>()
@@ -67,7 +66,7 @@ export default function MapPage() {
           setState(
             error instanceof ApiError && error.status === 404
               ? { kind: 'missing' }
-              : { kind: 'error', message: 'The map could not be opened.' },
+              : { kind: 'error' },
           )
         })
     },
@@ -144,20 +143,16 @@ export default function MapPage() {
       })
       pinSaved(saved)
     } catch (error: unknown) {
-      setFailure(error instanceof ApiError ? error.message : 'The pin could not be moved.')
+      setFailure(error instanceof ApiError ? error.message : t('places.mapPage.moveFailed'))
       setReads((current) => current + 1)
     }
   }
 
   async function removePin(pin: MapPin) {
     const confirmed = await confirmAction({
-      title: (
-        <>
-          Remove the pin <Quoted text={pin.title} />?
-        </>
-      ),
-      message: pin.lore ? 'The Lore entry it stands for is not touched.' : 'Only the pin goes.',
-      confirmLabel: 'Remove pin',
+      title: tx('places.mapPage.removePinTitle', { pin: <Quoted text={pin.title} /> }),
+      message: pin.lore ? t('places.mapPage.removePinLore') : t('places.mapPage.removePinOnly'),
+      confirmLabel: t('places.mapPage.removePinConfirm'),
       variant: 'destructive',
       action: () => deletePin(universe.id, mapId!, pin.id),
     })
@@ -181,18 +176,13 @@ export default function MapPage() {
 
   async function removeMap(map: MapDetail) {
     const confirmed = await confirmAction({
-      title: (
-        <>
-          Delete the map <Quoted text={map.name} />?
-        </>
-      ),
-      message:
-        'The map and its pins are deleted for good. Maps do not go to the Trash. The Lore entries its pins stand for are not touched.',
+      title: tx('places.mapPage.deleteTitle', { map: <Quoted text={map.name} /> }),
+      message: t('places.mapPage.deleteMessage'),
       details:
         map.pins.length > 0
-          ? [`${map.pins.length} ${map.pins.length === 1 ? 'pin' : 'pins'}`]
+          ? [tn('places.mapPage.pinCount', map.pins.length, { n: map.pins.length })]
           : undefined,
-      confirmLabel: 'Delete map',
+      confirmLabel: t('places.mapPage.deleteConfirm'),
       variant: 'destructive',
       action: () => deleteMap(universe.id, map.id),
     })
@@ -205,7 +195,7 @@ export default function MapPage() {
   if (state.kind === 'loading') {
     return (
       <p className="notice" role="status">
-        Unrolling the map…
+        {t('places.mapPage.loading')}
       </p>
     )
   }
@@ -214,12 +204,10 @@ export default function MapPage() {
     return (
       <EmptyState
         testId="map-missing"
-        title="That map is not here."
-        hint={
-          <>
-            It may have been deleted. <Link to={mapsPath(universe.id)}>Back to the maps</Link>
-          </>
-        }
+        title={t('places.mapPage.missingTitle')}
+        hint={tx('places.mapPage.missingHint', {
+          link: <Link to={mapsPath(universe.id)}>{t('places.mapPage.missingLink')}</Link>,
+        })}
       />
     )
   }
@@ -227,13 +215,13 @@ export default function MapPage() {
   if (state.kind === 'error') {
     return (
       <div className="notice notice--error" role="alert" data-testid="map-load-error">
-        <p>{state.message}</p>
+        <p>{t('places.mapPage.error')}</p>
         <button
           className="button button--secondary"
           type="button"
           onClick={() => setReads((current) => current + 1)}
         >
-          Try again
+          {t('places.mapPage.retry')}
         </button>
       </div>
     )
@@ -254,7 +242,7 @@ export default function MapPage() {
         title={<bdi>{map.name}</bdi>}
         titleId={headingId}
         titleTestId="map-name"
-        crumb={<Link to={mapsPath(universe.id)}>Maps</Link>}
+        crumb={<Link to={mapsPath(universe.id)}>{t('places.mapPage.crumb')}</Link>}
         lede={map.description ? <span dir="auto">{map.description}</span> : undefined}
         actions={
           canEdit ? (
@@ -268,10 +256,10 @@ export default function MapPage() {
                 data-testid="map-add-pin"
               >
                 <ActionIcon icon={Plus} />
-                {placing ? 'Placing a pin…' : 'Add pin'}
+                {placing ? t('places.mapPage.placingButton') : t('places.mapPage.addPin')}
               </button>
               <ActionMenu
-                label={`More actions for ${map.name}`}
+                label={t('places.mapPage.moreActions', { name: map.name })}
                 triggerTestId="map-actions"
                 panelTestId="map-actions-panel"
               >
@@ -282,7 +270,7 @@ export default function MapPage() {
                   data-testid="map-edit-details"
                 >
                   <ActionIcon icon={Pencil} />
-                  Edit details
+                  {t('places.mapPage.editDetails')}
                 </button>
                 <button
                   className="actionmenu__item"
@@ -291,7 +279,7 @@ export default function MapPage() {
                   data-testid="map-replace-image"
                 >
                   <ActionIcon icon={ImageUp} />
-                  Replace picture
+                  {t('places.mapPage.replacePicture')}
                 </button>
                 <hr className="actionmenu__divider" />
                 <button
@@ -301,7 +289,7 @@ export default function MapPage() {
                   data-testid="map-delete"
                 >
                   <ActionIcon icon={Trash2} />
-                  Delete map
+                  {t('places.mapPage.deleteMap')}
                 </button>
               </ActionMenu>
             </>
@@ -311,35 +299,36 @@ export default function MapPage() {
 
       {map.pinsAwaitingReview > 0 ? (
         <p className="callout mapscreen__review" role="status" data-testid="map-review-notice">
-          {map.pinsAwaitingReview === 1 ? 'One pin was' : `${map.pinsAwaitingReview} pins were`}{' '}
-          placed on an earlier picture of this map.{' '}
-          {canEdit
-            ? 'Open each one to check its place on the new picture and save it to confirm.'
-            : 'Their places are shown as they were.'}
+          {tn(
+            canEdit ? 'places.mapPage.reviewEditor' : 'places.mapPage.reviewViewer',
+            map.pinsAwaitingReview,
+            { n: map.pinsAwaitingReview },
+          )}
         </p>
       ) : null}
 
       {calibrating ? (
         <p className="callout mapscreen__placing" role="status" data-testid="map-calibrating-hint">
-          Setting the scale: press the map to mark point A, then point B, or type where they are
-          beside the map.
+          {t('places.mapPage.calibrating')}
         </p>
       ) : null}
 
       {placing ? (
         <p className="callout mapscreen__placing" role="status" data-testid="map-placing-hint">
-          Press the map where the pin goes, or{' '}
-          <button
-            className="button button--text"
-            type="button"
-            onClick={() => setPinForm({ kind: 'new', at: { x: 0.5, y: 0.5 } })}
-            data-testid="map-place-centre"
-          >
-            type its position
-          </button>
-          .{' '}
+          {tx('places.mapPage.placing', {
+            position: (
+              <button
+                className="button button--text"
+                type="button"
+                onClick={() => setPinForm({ kind: 'new', at: { x: 0.5, y: 0.5 } })}
+                data-testid="map-place-centre"
+              >
+                {t('places.mapPage.typePosition')}
+              </button>
+            ),
+          })}{' '}
           <button className="button button--text" type="button" onClick={() => setPlacing(false)}>
-            Cancel
+            {t('places.mapPage.cancel')}
           </button>
         </p>
       ) : null}
@@ -377,12 +366,22 @@ export default function MapPage() {
                   id: index === 0 ? 'a' : 'b',
                   x: point.x,
                   y: point.y,
-                  label: index === 0 ? 'A' : 'B',
+                  label: index === 0 ? t('places.mapPage.markerA') : t('places.mapPage.markerB'),
                 }))
               : map.calibration
                 ? [
-                    { id: 'a', x: map.calibration.x1, y: map.calibration.y1, label: 'A' },
-                    { id: 'b', x: map.calibration.x2, y: map.calibration.y2, label: 'B' },
+                    {
+                      id: 'a',
+                      x: map.calibration.x1,
+                      y: map.calibration.y1,
+                      label: t('places.mapPage.markerA'),
+                    },
+                    {
+                      id: 'b',
+                      x: map.calibration.x2,
+                      y: map.calibration.y2,
+                      label: t('places.mapPage.markerB'),
+                    },
                   ]
                 : []
           }
@@ -427,7 +426,7 @@ export default function MapPage() {
           }}
         />
 
-        <aside className="mapscreen__panel" aria-label="Pins and scale">
+        <aside className="mapscreen__panel" aria-label={t('places.mapPage.panel')}>
           {calibrating ? (
             <MapCalibrationForm
               universeId={universe.id}
@@ -449,7 +448,7 @@ export default function MapPage() {
               </h2>
               {!selected.placedOnCurrentImage ? (
                 <p className="pincard__review" data-testid="map-pin-card-review">
-                  Position awaiting review
+                  {t('places.mapPage.pinReview')}
                 </p>
               ) : null}
               {selected.note ? (
@@ -463,7 +462,7 @@ export default function MapPage() {
                     className="pincard__lore pincard__lore--trashed"
                     data-testid="map-pin-card-trashed"
                   >
-                    The entry this pin stood for is in the Trash.
+                    {t('places.mapPage.pinTrashed')}
                   </p>
                 ) : (
                   <Link
@@ -473,18 +472,24 @@ export default function MapPage() {
                   >
                     <TypeIcon iconKey={selected.lore.typeIcon} className="pincard__icon" />
                     <span>
-                      Open <bdi>{selected.lore.name}</bdi>
-                      <span className="pincard__type"> · {selected.lore.typeName}</span>
+                      {tx('places.mapPage.openEntry', { name: <bdi>{selected.lore.name}</bdi> })}
+                      <span className="pincard__type">
+                        {' '}
+                        {t('places.mapPage.entryType', { type: selected.lore.typeName ?? '' })}
+                      </span>
                     </span>
                   </Link>
                 )
               ) : (
                 <p className="pincard__lore pincard__lore--none">
-                  An annotation, linked to no entry.
+                  {t('places.mapPage.annotation')}
                 </p>
               )}
               <p className="pincard__position">
-                {(selected.x * 100).toFixed(1)}% across · {(selected.y * 100).toFixed(1)}% down
+                {t('places.mapPage.position', {
+                  x: (selected.x * 100).toFixed(1),
+                  y: (selected.y * 100).toFixed(1),
+                })}
               </p>
               {canEdit ? (
                 <div className="pincard__actions">
@@ -495,7 +500,7 @@ export default function MapPage() {
                     data-testid="map-pin-edit"
                   >
                     <ActionIcon icon={Pencil} />
-                    Edit
+                    {t('places.mapPage.editPin')}
                   </button>
                   <button
                     className="button button--secondary button--sm button--danger-quiet"
@@ -504,7 +509,7 @@ export default function MapPage() {
                     data-testid="map-pin-remove"
                   >
                     <ActionIcon icon={Trash2} />
-                    Remove
+                    {t('places.mapPage.removePin')}
                   </button>
                 </div>
               ) : null}
@@ -532,16 +537,14 @@ export default function MapPage() {
           ) : null}
 
           <h2 className="mapscreen__pinsheading">
-            Pins{' '}
+            {t('places.mapPage.pins')}{' '}
             {map.pins.length > 0 ? (
               <span className="mapscreen__count">({map.pins.length})</span>
             ) : null}
           </h2>
           {map.pins.length === 0 ? (
             <p className="mapscreen__empty" data-testid="map-pins-empty">
-              {canEdit
-                ? 'No pins yet. Add one to mark a place and open its Lore from the map.'
-                : 'No pins on this map yet.'}
+              {canEdit ? t('places.mapPage.noPinsEditor') : t('places.mapPage.noPins')}
             </p>
           ) : (
             <ul className="pinlist" data-testid="map-pin-list">
@@ -564,10 +567,16 @@ export default function MapPage() {
                     <span className="pinlist__text">
                       <bdi>{pin.title}</bdi>
                       {pin.lore?.name ? (
-                        <span className="pinlist__lore"> · {pin.lore.typeName}</span>
+                        <span className="pinlist__lore">
+                          {' '}
+                          {t('places.mapPage.listType', { type: pin.lore.typeName ?? '' })}
+                        </span>
                       ) : null}
                       {!pin.placedOnCurrentImage ? (
-                        <span className="pinlist__review"> · awaiting review</span>
+                        <span className="pinlist__review">
+                          {' '}
+                          {t('places.mapPage.awaitingReview')}
+                        </span>
                       ) : null}
                     </span>
                   </button>

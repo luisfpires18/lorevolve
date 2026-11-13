@@ -14,6 +14,7 @@ import {
 } from '../relationships/types'
 import { CANON_LABELS, CANON_ORDER, CanonStatus, type CanonStatusValue } from '../lore/types'
 import { confirmDiscard } from '../lib/confirm'
+import { useI18n } from '../i18n'
 
 interface Props {
   universeId: string
@@ -24,13 +25,6 @@ interface Props {
   onKindCreated: (kind: RelationshipType) => void
   onSaved: () => void
   onCancel: () => void
-}
-
-/** How a kind is named in the Connection choice: a parent kind says which, any other family kind says nothing more. */
-function kindOption(kind: RelationshipType) {
-  return isParentSemantic(kind.familySemantic)
-    ? `${kind.name} (${FAMILY_SEMANTIC_WORDS[kind.familySemantic]} parent)`
-    : kind.name
 }
 
 /**
@@ -50,6 +44,7 @@ export function FamilyLinkForm({
   onSaved,
   onCancel,
 }: Props) {
+  const { t } = useI18n()
   const [kindId, setKindId] = useState(kinds[0]?.id ?? '')
   // The stored row runs source to target; for a parent kind the source is the parent.
   const [focalIsSource, setFocalIsSource] = useState(true)
@@ -73,9 +68,17 @@ export function FamilyLinkForm({
   )
   const isDirty =
     payloadKey({ kindId, focalIsSource, relatedId: related?.id ?? null, canonStatus }) !== initial
-  useLeaveGuard(
-    isDirty ? 'This family connection has not been added. Leave without saving it?' : null,
-  )
+  useLeaveGuard(isDirty ? t('places.linkForm.leave') : null)
+
+  /** How a kind is named in the Connection choice: a parent kind says which, any other family kind says nothing more. */
+  function kindOption(candidate: RelationshipType) {
+    return isParentSemantic(candidate.familySemantic)
+      ? t('places.linkForm.parentKind', {
+          name: candidate.name,
+          word: FAMILY_SEMANTIC_WORDS[candidate.familySemantic],
+        })
+      : candidate.name
+  }
 
   async function cancel() {
     if (isDirty && !(await confirmDiscard())) return
@@ -101,7 +104,7 @@ export function FamilyLinkForm({
     if (!kind) return
 
     if (!related) {
-      setFieldErrors({ targetentityid: 'Choose the entry this connects to.' })
+      setFieldErrors({ targetentityid: t('places.linkForm.chooseEntry') })
       return
     }
 
@@ -126,10 +129,10 @@ export function FamilyLinkForm({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be saved.',
+            : t('places.linkForm.fieldErrors'),
         )
       } else {
-        setMessage('That family connection could not be saved.')
+        setMessage(t('places.linkForm.failed'))
       }
     } finally {
       setIsSaving(false)
@@ -154,15 +157,15 @@ export function FamilyLinkForm({
       {kind ? (
         <p className="field__hint">
           {isParentKind
-            ? `The parent is on the left and the child on the right, which is what this kind (${FAMILY_SEMANTIC_WORDS[kind.familySemantic]}) was configured to mean.`
-            : 'A family connection as you word it. It places nobody in the tree above and implies no other relative.'}
+            ? t('places.linkForm.hintParent', { word: FAMILY_SEMANTIC_WORDS[kind.familySemantic] })
+            : t('places.linkForm.hintOther')}
         </p>
       ) : null}
 
       <div className="relform__grid">
         <div className="field">
           <label className="field__label" htmlFor="family-link-kind">
-            Connection
+            {t('places.linkForm.connection')}
           </label>
           <select
             id="family-link-kind"
@@ -190,14 +193,14 @@ export function FamilyLinkForm({
             data-testid="new-family-kind"
           >
             <ActionIcon icon={Plus} />
-            New family relationship kind
+            {t('places.linkForm.newKind')}
           </button>
         </div>
 
         {isParentKind ? (
           <div className="field">
             <label className="field__label" htmlFor="family-link-side">
-              Which side
+              {t('places.linkForm.side')}
             </label>
             <select
               id="family-link-side"
@@ -206,14 +209,16 @@ export function FamilyLinkForm({
               onChange={(event) => setFocalIsSource(event.target.value === 'parent')}
               data-testid="family-link-side"
             >
-              <option value="parent">{focal.name} is the parent</option>
-              <option value="child">{focal.name} is the child</option>
+              <option value="parent">
+                {t('places.linkForm.focalParent', { name: focal.name })}
+              </option>
+              <option value="child">{t('places.linkForm.focalChild', { name: focal.name })}</option>
             </select>
           </div>
         ) : hasTwoReadings && kind ? (
           <div className="field">
             <label className="field__label" htmlFor="family-link-reading">
-              {focal.name} is
+              {t('places.linkForm.focalIs', { name: focal.name })}
             </label>
             <select
               id="family-link-reading"
@@ -229,7 +234,13 @@ export function FamilyLinkForm({
         ) : null}
 
         <EntityPicker
-          label={isParentKind ? (focalIsSource ? 'The child' : 'The parent') : 'Connected to'}
+          label={
+            isParentKind
+              ? focalIsSource
+                ? t('places.linkForm.theChild')
+                : t('places.linkForm.theParent')
+              : t('places.linkForm.connectedTo')
+          }
           universeId={universeId}
           value={related}
           onChange={setRelated}
@@ -239,8 +250,8 @@ export function FamilyLinkForm({
         />
 
         <div className="field">
-          <span className="field__label">Status</span>
-          <div className="canon" role="group" aria-label="Connection status">
+          <span className="field__label">{t('places.linkForm.status')}</span>
+          <div className="canon" role="group" aria-label={t('places.linkForm.statusGroup')}>
             {CANON_ORDER.map((option) => (
               <button
                 key={option}
@@ -271,10 +282,10 @@ export function FamilyLinkForm({
           disabled={isSaving || !kind}
           data-testid="save-family-link"
         >
-          {isSaving ? 'Saving' : 'Add connection'}
+          {isSaving ? t('places.linkForm.saving') : t('places.linkForm.add')}
         </button>
         <button className="button button--secondary" type="button" onClick={cancel}>
-          Cancel
+          {t('places.linkForm.cancel')}
         </button>
       </div>
 

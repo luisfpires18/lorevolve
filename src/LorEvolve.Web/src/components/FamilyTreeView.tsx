@@ -8,6 +8,7 @@ import { type FamilyRow, type FamilyTree } from '../familyTree/types'
 import type { FamilyTreeConnection, FamilyTreeNode } from '../familyTree/types'
 import { CanonStatus, type CanonStatusValue } from '../lore/types'
 import { FamilySemantic } from '../relationships/types'
+import { useI18n } from '../i18n'
 
 interface Props {
   universeId: string
@@ -29,13 +30,16 @@ interface Edge {
   canonStatus: number
 }
 
-/** The rows, top to bottom. The focal entry stands in the middle row with its siblings and cousins beside it. */
-const ROWS: { position: FamilyRow; label: string }[] = [
-  { position: 'grandparents', label: 'Grandparents' },
-  { position: 'parents', label: 'Parents, aunts and uncles' },
-  { position: 'siblings', label: 'This entry, siblings and cousins' },
-  { position: 'children', label: 'Children, nieces and nephews' },
-  { position: 'grandchildren', label: 'Grandchildren' },
+/**
+ * The rows, top to bottom. The focal entry stands in the middle row with its siblings and cousins beside it. Each
+ * row's heading is `places.treeView.rows.<position>`.
+ */
+const ROWS: { position: FamilyRow }[] = [
+  { position: 'grandparents' },
+  { position: 'parents' },
+  { position: 'siblings' },
+  { position: 'children' },
+  { position: 'grandchildren' },
 ]
 
 /** Marks a line as a recorded family link rather than a parent link. */
@@ -60,6 +64,7 @@ const CONNECTION = -1
  * every position and every link is written out in words.
  */
 export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
+  const { t } = useI18n()
   const family = useMemo(() => readFamilyTree(tree), [tree])
   // The focal entry's recorded family who hold no derived position - a spouse, or an uncle recorded as one - drawn
   // beside it in its own row, so every recorded link of the entry in focus is on the tree.
@@ -311,7 +316,11 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
   function sentence(connection: FamilyTreeConnection) {
     const from = family.nodes.get(connection.entityId)?.name ?? ''
     const to = family.nodes.get(connection.relatedEntityId)?.name ?? ''
-    return `${from} ${connection.label.charAt(0).toLowerCase()}${connection.label.slice(1)} ${to}`
+    return t('places.treeView.connection', {
+      from,
+      label: `${connection.label.charAt(0).toLowerCase()}${connection.label.slice(1)}`,
+      to,
+    })
   }
 
   function node(member: FamilyTreeNode, isFocal: boolean) {
@@ -355,7 +364,9 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
             data-testid={`family-focus-${member.name}`}
           >
             {portrait}
-            <span className="visually-hidden">Show the family of {member.name}</span>
+            <span className="visually-hidden">
+              {t('places.treeView.showFamily', { name: member.name })}
+            </span>
           </button>
         )}
         <button
@@ -370,15 +381,17 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
           }
           aria-haspopup="dialog"
           aria-expanded={shown?.entityId === member.entityId}
-          aria-label={`Details for ${member.name}`}
-          title={`Details for ${member.name}`}
+          aria-label={t('places.treeView.details', { name: member.name })}
+          title={t('places.treeView.details', { name: member.name })}
           data-testid={`family-details-${member.name}`}
         >
           <Eye aria-hidden="true" focusable="false" strokeWidth={1.75} />
         </button>
         <p className="familynode__name" title={member.name}>
           <bdi>{member.name}</bdi>
-          {isFocal ? <span className="visually-hidden"> (family shown for this entry)</span> : null}
+          {isFocal ? (
+            <span className="visually-hidden"> {t('places.treeView.focalNote')}</span>
+          ) : null}
         </p>
       </li>
     )
@@ -409,6 +422,7 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
 
           {ROWS.map((row) => {
             const units = layout.rows[row.position]
+            const rowLabel = t(`places.treeView.rows.${row.position}`)
             const isFocalRow = row.position === 'siblings'
             if (units.length === 0 || (isFocalRow && !focal && family.rows.siblings.length === 0)) {
               return null
@@ -418,10 +432,10 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
               <section
                 className="familytree__row"
                 key={row.position}
-                aria-label={row.label}
+                aria-label={rowLabel}
                 data-row={row.position}
               >
-                <h2 className="familytree__rowlabel">{row.label}</h2>
+                <h2 className="familytree__rowlabel">{rowLabel}</h2>
                 <ul className="familytree__members">
                   {units.flatMap((unit) => {
                     const members = unit
@@ -452,9 +466,7 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
       </div>
 
       <p className="familytree__caption" aria-live="polite" data-testid="family-caption">
-        {caption.length > 0
-          ? caption.join('; ')
-          : 'Point at or focus a person to see the other family recorded for them.'}
+        {caption.length > 0 ? caption.join('; ') : t('places.treeView.caption')}
       </p>
 
       <p className="familytree__legend" data-testid="family-legend">
@@ -463,21 +475,16 @@ export function FamilyTreeView({ universeId, tree, onFocus }: Props) {
           data-semantic={FamilySemantic.BiologicalParent}
           aria-hidden="true"
         />
-        <span>Biological</span>
+        <span>{t('places.treeView.legendBiological')}</span>
         <span
           className="familytree__key"
           data-semantic={FamilySemantic.AdoptiveParent}
           aria-hidden="true"
         />
-        <span>Adoptive</span>
+        <span>{t('places.treeView.legendAdoptive')}</span>
         <span className="familytree__key" data-semantic={CONNECTION} aria-hidden="true" />
-        <span>Other recorded family</span>
-        <span className="familytree__legendnote">
-          Children hang from the line between their parents. Side by side and joined: parents of one
-          child, or family recorded in one generation. Faded lines and dashed rings mark what is not
-          Canon yet. Open the eye beside a portrait to see that person&rsquo;s details, with every
-          connection written out.
-        </span>
+        <span>{t('places.treeView.legendOther')}</span>
+        <span className="familytree__legendnote">{t('places.treeView.legendNote')}</span>
       </p>
 
       {shown ? (

@@ -1,5 +1,6 @@
 import type { CanonStatusValue, EntityImageRef } from '../lore/types'
 import type { FamilySemanticValue, PerspectiveValue } from '../relationships/types'
+import { t } from '../i18n'
 
 /** One entry in the tree. Enough to recognise it; its article, fields and dates are not here. */
 export interface FamilyTreeNode {
@@ -112,16 +113,31 @@ export const ROW_OF: Record<FamilyPosition, FamilyRow> = {
   grandchildren: 'grandchildren',
 }
 
-/** What each position is called on screen, for one relative and for the group. */
+/** Getters, so each word is looked up in the current language when read, never frozen at import. */
+function positionLabel(position: FamilyPosition) {
+  return {
+    get one() {
+      return t(`places.positions.${position}.one`)
+    },
+    get many() {
+      return t(`places.positions.${position}.many`)
+    },
+  }
+}
+
+/**
+ * What each position is called on screen, for one relative (`one`) and for the group (`many`). Neither is a counted
+ * plural: `one` labels a single relative's card, `many` heads a whole group whatever its size.
+ */
 export const POSITION_LABELS: Record<FamilyPosition, { one: string; many: string }> = {
-  grandparents: { one: 'Grandparent', many: 'Grandparents' },
-  parents: { one: 'Parent', many: 'Parents' },
-  siblings: { one: 'Sibling', many: 'Siblings' },
-  children: { one: 'Child', many: 'Children' },
-  grandchildren: { one: 'Grandchild', many: 'Grandchildren' },
-  auntsUncles: { one: 'Aunt or uncle', many: 'Aunts and uncles' },
-  cousins: { one: 'Cousin', many: 'Cousins' },
-  niecesNephews: { one: 'Niece or nephew', many: 'Nieces and nephews' },
+  grandparents: positionLabel('grandparents'),
+  parents: positionLabel('parents'),
+  siblings: positionLabel('siblings'),
+  children: positionLabel('children'),
+  grandchildren: positionLabel('grandchildren'),
+  auntsUncles: positionLabel('auntsUncles'),
+  cousins: positionLabel('cousins'),
+  niecesNephews: positionLabel('niecesNephews'),
 }
 
 /** A member named on a family's summary. */

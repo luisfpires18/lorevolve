@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { EditConflict } from './EditConflict'
 import { MomentPick } from './MomentPick'
 import { ScenePicks } from './ScenePicks'
+import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { isChangedElsewhere } from '../lib/editConflict'
@@ -97,10 +98,49 @@ const SHOWN = [
 /** The server's limit on what a form or ability is (`ProgressionLimits.DescriptionMaxLength`). */
 const DESCRIPTION_MAX = 10000
 
-const WORDS: Record<Kind, { one: string; list: string }> = {
-  form: { one: 'form', list: 'forms' },
-  ability: { one: 'ability', list: 'abilities' },
-  appearance: { one: 'appearance', list: 'appearances' },
+/** The name each kind goes by in the progression's error keys (`forms[0].name`): the server's, not shown. */
+const LISTS: Record<Kind, string> = {
+  form: 'forms',
+  ability: 'abilities',
+  appearance: 'appearances',
+}
+
+/** Every sentence that names the kind, whole, so another language can inflect each one. */
+function wordsOf(kind: Kind) {
+  if (kind === 'form') {
+    return {
+      unsaved: t('progression.item.form.unsaved'),
+      someDetails: t('progression.item.form.someDetails'),
+      saveFailed: t('progression.item.form.saveFailed'),
+      heading: t('progression.item.form.heading'),
+      eyebrow: (name: string) => t('progression.item.form.eyebrow', { name }),
+      eyebrowNew: (name: string) => t('progression.item.form.eyebrowNew', { name }),
+      save: t('progression.item.form.save'),
+      add: t('progression.item.form.add'),
+    }
+  }
+  if (kind === 'ability') {
+    return {
+      unsaved: t('progression.item.ability.unsaved'),
+      someDetails: t('progression.item.ability.someDetails'),
+      saveFailed: t('progression.item.ability.saveFailed'),
+      heading: t('progression.item.ability.heading'),
+      eyebrow: (name: string) => t('progression.item.ability.eyebrow', { name }),
+      eyebrowNew: (name: string) => t('progression.item.ability.eyebrowNew', { name }),
+      save: t('progression.item.ability.save'),
+      add: t('progression.item.ability.add'),
+    }
+  }
+  return {
+    unsaved: t('progression.item.appearance.unsaved'),
+    someDetails: t('progression.item.appearance.someDetails'),
+    saveFailed: t('progression.item.appearance.saveFailed'),
+    heading: t('progression.item.appearance.heading'),
+    eyebrow: (name: string) => t('progression.item.appearance.eyebrow', { name }),
+    eyebrowNew: (name: string) => t('progression.item.appearance.eyebrowNew', { name }),
+    save: t('progression.item.appearance.save'),
+    add: t('progression.item.appearance.add'),
+  }
 }
 
 /** An appearance's name and description are its label and notes (Issue #43), in its errors too. */
@@ -137,10 +177,11 @@ export function ProgressionItemForm({
   onClose: () => void
   onSaved: (progression: Progression) => void
 }) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const nameInput = useRef<HTMLInputElement>(null)
   const saveButton = useRef<HTMLButtonElement>(null)
-  const words = WORDS[kind]
+  const words = wordsOf(kind)
   const [base, setBase] = useState(progression)
   const [initial, setInitial] = useState(() => draftOf(item))
   const [draft, setDraft] = useState(initial)
@@ -152,9 +193,7 @@ export function ProgressionItemForm({
   const isDirty = payloadKey(inputOf(draft, null)) !== payloadKey(inputOf(initial, null))
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
-    item
-      ? `“${nameOf(item)}” has unsaved changes. Leave without saving them?`
-      : `This new ${words.one} has not been saved. Leave without saving it?`,
+    item ? t('progression.item.unsavedExisting', { name: nameOf(item) }) : words.unsaved,
     onClose,
   )
 
@@ -167,7 +206,7 @@ export function ProgressionItemForm({
 
   const list = listOf(base, kind)
   const index = item ? list.findIndex((one) => one.id === item.id) : -1
-  const key = `${words.list}[${index === -1 ? list.length : index}]`
+  const key = `${LISTS[kind]}[${index === -1 ? list.length : index}]`
   const errorOf = (part: string) => fieldErrors[`${key}.${partOf(kind, part)}`.toLowerCase()]
   const isLook = kind === 'appearance'
 
@@ -243,17 +282,17 @@ export function ProgressionItemForm({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : (unshown?.[1] ?? `Some details need a change before this ${words.one} can be saved.`),
+            : (unshown?.[1] ?? words.someDetails),
         )
       } else {
-        setMessage(`That ${words.one} could not be saved.`)
+        setMessage(words.saveFailed)
       }
     } finally {
       setIsSaving(false)
     }
   }
 
-  const heading = item ? nameOf(item) : `New ${words.one}`
+  const heading = item ? nameOf(item) : words.heading
   const unlockAt = base.eras.findIndex((era) => era.id === draft.unlockEraId)
 
   return (
@@ -273,7 +312,7 @@ export function ProgressionItemForm({
       >
         <header className="drawer__head">
           <p className="drawer__eyebrow">
-            {item ? `A ${words.one} of ${entityName}` : `New ${words.one} of ${entityName}`}
+            {item ? words.eyebrow(entityName) : words.eyebrowNew(entityName)}
           </p>
           <h2 className="drawer__title" id="item-heading">
             {heading}
@@ -289,7 +328,7 @@ export function ProgressionItemForm({
 
           {conflict ? (
             <EditConflict
-              what="eras"
+              what={t('progression.item.conflictWhat')}
               read={() => getProgression(universeId, entityId)}
               renderLatest={(latest) => (
                 <ul className="namelist">
@@ -317,14 +356,18 @@ export function ProgressionItemForm({
 
           <div className="field">
             <label className="field__label" htmlFor="item-name">
-              {isLook ? 'Label' : 'Name'}
+              {isLook ? t('progression.item.label') : t('progression.item.name')}
             </label>
             <input
               id="item-name"
               ref={nameInput}
               className="field__input"
               dir="auto"
-              placeholder={isLook ? 'Insert a label' : 'Insert a name'}
+              placeholder={
+                isLook
+                  ? t('progression.item.labelPlaceholder')
+                  : t('progression.item.namePlaceholder')
+              }
               value={draft.name}
               onChange={(event) => edit({ name: event.target.value })}
               aria-invalid={errorOf('name') ? true : undefined}
@@ -340,14 +383,14 @@ export function ProgressionItemForm({
 
           <div className="field">
             <label className="field__label" htmlFor="item-description">
-              {isLook ? 'Notes' : 'What it is'}
+              {isLook ? t('progression.item.notes') : t('progression.item.whatItIs')}
             </label>
             <p className="field__hint">
               {kind === 'form'
-                ? 'How it changes them: abilities, looks, strength. A form changes no detail of the entry.'
+                ? t('progression.item.hint.form')
                 : kind === 'ability'
-                  ? 'What it does, and what it costs.'
-                  : 'What it looks like, what it is made of, who made it.'}
+                  ? t('progression.item.hint.ability')
+                  : t('progression.item.hint.appearance')}
             </p>
             <textarea
               id="item-description"
@@ -370,12 +413,12 @@ export function ProgressionItemForm({
 
           {isLook ? null : (
             <fieldset className="itemunlock" data-testid={`${kind}-unlock`}>
-              <legend className="field__label">First unlocked</legend>
-              <p className="field__hint">Each is optional. Say only what you know.</p>
+              <legend className="field__label">{t('progression.item.unlock.title')}</legend>
+              <p className="field__hint">{t('progression.item.unlock.hint')}</p>
 
               <div className="field">
                 <label className="field__label" htmlFor="item-unlock-era">
-                  In the stage
+                  {t('progression.item.unlock.stage')}
                 </label>
                 <select
                   id="item-unlock-era"
@@ -385,7 +428,11 @@ export function ProgressionItemForm({
                   aria-invalid={errorOf('unlockEraId') ? true : undefined}
                   data-testid={`${kind}-unlock-era`}
                 >
-                  <option value="">{base.eras.length === 0 ? 'No stages yet' : 'Not said'}</option>
+                  <option value="">
+                    {base.eras.length === 0
+                      ? t('progression.item.unlock.noStages')
+                      : t('progression.item.unlock.notSaid')}
+                  </option>
                   {base.eras.map((era) => (
                     <option key={era.id} value={era.id}>
                       {era.name}
@@ -399,7 +446,7 @@ export function ProgressionItemForm({
 
               <ScenePicks
                 universeId={universeId}
-                label="In the scene"
+                label={t('progression.item.unlock.scene')}
                 value={draft.unlockScene}
                 onChange={(unlockScene) => edit({ unlockScene })}
                 single
@@ -409,7 +456,7 @@ export function ProgressionItemForm({
 
               <MomentPick
                 universeId={universeId}
-                label="At the timeline moment"
+                label={t('progression.item.unlock.moment')}
                 value={draft.unlockMoment}
                 onChange={(unlockMoment) => edit({ unlockMoment })}
                 error={errorOf('unlockMomentId')}
@@ -420,11 +467,11 @@ export function ProgressionItemForm({
 
           {base.eras.length > 0 ? (
             <fieldset className="itemeras" data-testid={`${kind}-eras`}>
-              <legend className="field__label">{isLook ? 'Stages' : 'Available in'}</legend>
+              <legend className="field__label">
+                {isLook ? t('progression.item.eras.titleLook') : t('progression.item.eras.title')}
+              </legend>
               <p className="field__hint">
-                {isLook
-                  ? 'Tick every stage it belongs to. Nothing is assumed from the order of stages.'
-                  : 'Tick every stage it can be used in. Nothing is assumed from the order of stages or from when it was first unlocked.'}
+                {isLook ? t('progression.item.eras.hintLook') : t('progression.item.eras.hint')}
               </p>
               {base.eras.map((era) => (
                 <label className="check" key={era.id}>
@@ -446,7 +493,7 @@ export function ProgressionItemForm({
                   onClick={fromUnlockOn}
                   data-testid={`${kind}-eras-from-unlock`}
                 >
-                  Tick {base.eras[unlockAt].name} and every later stage
+                  {t('progression.item.eras.fromUnlock', { name: base.eras[unlockAt].name })}
                 </button>
               ) : null}
               {errorOf('eraIds') ? <p className="field__error">{errorOf('eraIds')}</p> : null}
@@ -455,11 +502,11 @@ export function ProgressionItemForm({
 
           <ScenePicks
             universeId={universeId}
-            label={isLook ? 'Seen in scenes' : 'Used in scenes'}
+            label={
+              isLook ? t('progression.item.scenes.labelLook') : t('progression.item.scenes.label')
+            }
             hint={
-              isLook
-                ? 'Scenes where it is worn or seen.'
-                : 'Scenes where it is used or active. Being available and being used are kept apart.'
+              isLook ? t('progression.item.scenes.hintLook') : t('progression.item.scenes.hint')
             }
             value={draft.scenes}
             onChange={(scenes) => edit({ scenes })}
@@ -470,9 +517,9 @@ export function ProgressionItemForm({
           {kind !== 'form' && base.forms.length > 0 ? (
             <fieldset className="itemeras" data-testid={`${kind}-forms`}>
               <legend className="field__label">
-                {isLook ? 'A look of forms' : 'Belongs to forms'}
+                {isLook ? t('progression.item.forms.titleLook') : t('progression.item.forms.title')}
               </legend>
-              <p className="field__hint">None, one or several.</p>
+              <p className="field__hint">{t('progression.item.forms.hint')}</p>
               {base.forms.map((form) => (
                 <label className="check" key={form.id}>
                   <input
@@ -499,10 +546,10 @@ export function ProgressionItemForm({
             disabled={isSaving}
             data-testid={`save-${kind}`}
           >
-            {isSaving ? 'Saving' : item ? `Save ${words.one}` : `Add ${words.one}`}
+            {isSaving ? t('progression.item.saving') : item ? words.save : words.add}
           </button>
           <button className="button button--secondary" type="button" onClick={close}>
-            Cancel
+            {t('progression.item.cancel')}
           </button>
         </footer>
       </form>

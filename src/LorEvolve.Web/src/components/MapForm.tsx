@@ -12,6 +12,7 @@ import {
   updateMapDetails,
 } from '../maps/api'
 import { MAP_NAME_MAX_LENGTH, type MapDetail, type ReplacePinsPolicy } from '../maps/types'
+import { useI18n } from '../i18n'
 
 interface MapDraft {
   name: string
@@ -49,6 +50,7 @@ function inputOf(draft: MapDraft) {
  * is shown whole, so there is nothing to choose but the file.
  */
 export function MapForm(props: MapFormProps) {
+  const { t, tn, tx } = useI18n()
   const { universeId, onClose, onSaved } = props
   const map = props.mode === 'new' ? null : props.map
   const dialog = useRef<HTMLDialogElement>(null)
@@ -71,9 +73,7 @@ export function MapForm(props: MapFormProps) {
       : payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial)) || file !== null
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
-    props.mode === 'new'
-      ? 'This map has not been created. Leave without creating it?'
-      : 'There are unsaved changes. Leave without saving them?',
+    props.mode === 'new' ? t('places.mapForm.leaveNew') : t('places.mapForm.leaveChanges'),
     onClose,
   )
 
@@ -94,7 +94,7 @@ export function MapForm(props: MapFormProps) {
       setFile(null)
       setFieldErrors((current) => ({
         ...current,
-        file: `Images must be ${formatBytes(MAP_IMAGE_MAX_BYTES)} or smaller.`,
+        file: t('places.mapForm.tooLarge', { size: formatBytes(MAP_IMAGE_MAX_BYTES) }),
       }))
       return
     }
@@ -107,15 +107,15 @@ export function MapForm(props: MapFormProps) {
     const details = inputOf(draft)
 
     if (props.mode !== 'replace' && details.name === '') {
-      setFieldErrors({ name: 'Give the map a name.' })
+      setFieldErrors({ name: t('places.mapForm.nameMissing') })
       return
     }
     if (props.mode !== 'details' && !file) {
-      setFieldErrors({ file: 'Choose a map image.' })
+      setFieldErrors({ file: t('places.mapForm.fileMissing') })
       return
     }
     if (props.mode === 'replace' && !pins) {
-      setFieldErrors({ pins: 'Say what happens to the pins already on the map.' })
+      setFieldErrors({ pins: t('places.mapForm.pinsMissing') })
       return
     }
 
@@ -137,10 +137,10 @@ export function MapForm(props: MapFormProps) {
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be saved.',
+            : t('places.mapForm.fieldErrors'),
         )
       } else {
-        setMessage('That could not be saved.')
+        setMessage(t('places.mapForm.failed'))
       }
     } finally {
       setIsSaving(false)
@@ -150,10 +150,10 @@ export function MapForm(props: MapFormProps) {
 
   const heading =
     props.mode === 'new'
-      ? 'New map'
+      ? t('places.mapForm.headingNew')
       : props.mode === 'details'
-        ? 'Map details'
-        : 'Replace the picture'
+        ? t('places.mapForm.headingDetails')
+        : t('places.mapForm.headingReplace')
   const pinCount = map?.pins.length ?? 0
 
   return (
@@ -193,7 +193,7 @@ export function MapForm(props: MapFormProps) {
             <>
               <div className="field">
                 <label className="field__label" htmlFor="map-name">
-                  Name
+                  {t('places.mapForm.name')}
                 </label>
                 <input
                   id="map-name"
@@ -202,7 +202,7 @@ export function MapForm(props: MapFormProps) {
                   type="text"
                   dir="auto"
                   maxLength={MAP_NAME_MAX_LENGTH}
-                  placeholder="Insert a name"
+                  placeholder={t('places.mapForm.namePlaceholder')}
                   value={draft.name}
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, name: event.target.value }))
@@ -215,9 +215,9 @@ export function MapForm(props: MapFormProps) {
 
               <div className="field">
                 <label className="field__label" htmlFor="map-description">
-                  Description
+                  {t('places.mapForm.description')}
                 </label>
-                <p className="field__hint">What this map shows, in a line or two. Optional.</p>
+                <p className="field__hint">{t('places.mapForm.descriptionHint')}</p>
                 <textarea
                   id="map-description"
                   className="field__input"
@@ -240,11 +240,12 @@ export function MapForm(props: MapFormProps) {
           {props.mode !== 'details' ? (
             <div className="field">
               <label className="field__label" htmlFor="map-file">
-                {props.mode === 'new' ? 'Map image' : 'New picture'}
+                {props.mode === 'new'
+                  ? t('places.mapForm.imageNew')
+                  : t('places.mapForm.imageReplace')}
               </label>
               <p className="field__hint">
-                A JPEG, PNG or WebP up to {formatBytes(MAP_IMAGE_MAX_BYTES)}. The original is kept
-                as it is; the viewer shows a copy fitted for the screen.
+                {t('places.mapForm.imageHint', { size: formatBytes(MAP_IMAGE_MAX_BYTES) })}
               </p>
               <input
                 id="map-file"
@@ -258,7 +259,10 @@ export function MapForm(props: MapFormProps) {
               />
               {file ? (
                 <p className="field__hint" data-testid="map-file-chosen">
-                  <bdi>{file.name}</bdi> · {formatBytes(file.size)}
+                  {tx('places.mapForm.chosen', {
+                    name: <bdi>{file.name}</bdi>,
+                    size: formatBytes(file.size),
+                  })}
                 </p>
               ) : null}
               {fieldErrors.file ? <p className="field__error">{fieldErrors.file}</p> : null}
@@ -267,16 +271,15 @@ export function MapForm(props: MapFormProps) {
 
           {props.mode === 'replace' ? (
             <fieldset className="field">
-              <legend className="field__label">The pins already on this map</legend>
+              <legend className="field__label">{t('places.mapForm.pinsLegend')}</legend>
               <p className="field__hint">
                 {pinCount === 0
-                  ? 'This map has no pins, so nothing is at risk. Choose either way.'
-                  : `${pinCount} ${pinCount === 1 ? 'pin was' : 'pins were'} placed on the current picture. A new picture may put them somewhere else.`}
+                  ? t('places.mapForm.noPins')
+                  : tn('places.mapForm.pinsPlaced', pinCount, { n: pinCount })}
               </p>
               {map?.calibration ? (
                 <p className="field__hint" data-testid="map-replace-scale-note">
-                  The scale was measured on the current picture and goes with it. Set it again on
-                  the new one before asking for distances.
+                  {t('places.mapForm.scaleNote')}
                 </p>
               ) : null}
               <label className="mapform__choice">
@@ -289,9 +292,9 @@ export function MapForm(props: MapFormProps) {
                   data-testid="map-replace-keep"
                 />
                 <span>
-                  <strong>Keep the pins where they are</strong>, and mark each one as waiting for
-                  review. Open each pin to check its place on the new picture and save it to
-                  confirm.
+                  {tx('places.mapForm.keep', {
+                    lead: <strong>{t('places.mapForm.keepLead')}</strong>,
+                  })}
                 </span>
               </label>
               <label className="mapform__choice">
@@ -304,8 +307,9 @@ export function MapForm(props: MapFormProps) {
                   data-testid="map-replace-remove"
                 />
                 <span>
-                  <strong>Remove every pin.</strong> The Lore entries they stood for are not
-                  touched.
+                  {tx('places.mapForm.remove', {
+                    lead: <strong>{t('places.mapForm.removeLead')}</strong>,
+                  })}
                 </span>
               </label>
               {fieldErrors.pins ? <p className="field__error">{fieldErrors.pins}</p> : null}
@@ -315,8 +319,8 @@ export function MapForm(props: MapFormProps) {
           {progress ? (
             <p className="field__hint" role="status" data-testid="map-upload-progress">
               {progress.ratio !== null && progress.ratio < 1
-                ? `Uploading… ${Math.round(progress.ratio * 100)}%`
-                : 'Uploaded. Preparing the map…'}
+                ? t('places.mapForm.uploading', { percent: Math.round(progress.ratio * 100) })
+                : t('places.mapForm.uploaded')}
             </p>
           ) : null}
         </div>
@@ -330,12 +334,12 @@ export function MapForm(props: MapFormProps) {
             data-testid="map-form-save"
           >
             {isSaving
-              ? 'Saving…'
+              ? t('places.mapForm.saving')
               : props.mode === 'new'
-                ? 'Create map'
+                ? t('places.mapForm.createMap')
                 : props.mode === 'details'
-                  ? 'Save details'
-                  : 'Replace picture'}
+                  ? t('places.mapForm.saveDetails')
+                  : t('places.mapForm.replacePicture')}
           </button>
           <button
             className="button button--secondary"
@@ -343,7 +347,7 @@ export function MapForm(props: MapFormProps) {
             onClick={() => void close()}
             disabled={isSaving}
           >
-            Cancel
+            {t('places.mapForm.cancel')}
           </button>
         </div>
       </form>

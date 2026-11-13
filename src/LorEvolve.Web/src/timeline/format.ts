@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { formatChronologyPoint, isPlaced, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import {
@@ -51,7 +52,7 @@ export function formatTimelineDate(date: TimelineDate, chronology: Chronology) {
     case DateKind.Exact:
       return start
     case DateKind.Approximate:
-      return start ? `c. ${start}` : ''
+      return start ? t('time.format.approximate', { date: start }) : ''
     case DateKind.Range: {
       const end = formatPoint(
         chronology,
@@ -62,10 +63,10 @@ export function formatTimelineDate(date: TimelineDate, chronology: Chronology) {
         date.endEraId,
         date.endMonthId,
       )
-      return end ? `${start} – ${end}` : start
+      return end ? t('time.format.range', { start, end }) : start
     }
     default:
-      return 'Date unknown'
+      return t('time.format.unknown')
   }
 }
 

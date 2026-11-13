@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ApiError } from '../lib/api'
 import { setEntityTypeGroupFamilyTree } from '../lore/api'
 import type { EntityType, EntityTypeGroup } from '../lore/types'
+import { useI18n } from '../i18n'
 
 interface Props {
   universeId: string
@@ -31,6 +32,7 @@ export function FamilyTreeTypes({
   defaultOpen,
   onChanged,
 }: Props) {
+  const { t, tx } = useI18n()
   const headingId = useId()
   // Open or folded as the page first found it; the author's own opening and closing is left alone after that.
   const [startOpen] = useState(defaultOpen)
@@ -51,7 +53,9 @@ export function FamilyTreeTypes({
       setMessage(
         error instanceof ApiError
           ? error.message
-          : `${group.name} could not be ${enabled ? 'turned on' : 'turned off'}.`,
+          : t(enabled ? 'places.familyTypes.groupNotOn' : 'places.familyTypes.groupNotOff', {
+              name: group.name,
+            }),
       )
     } finally {
       setPending(null)
@@ -60,42 +64,38 @@ export function FamilyTreeTypes({
 
   return (
     <details className="family__setup" open={startOpen} data-testid="family-setup">
-      <summary id={headingId}>Types in Family Tree</summary>
+      <summary id={headingId}>{t('places.familyTypes.summary')}</summary>
 
       <div className="family__setupbody">
-        <p className="settings__note">
-          Family Tree search and the Family tree action on an entry work for entries of these types.
-          Family already recorded on an entry is always shown, whatever its type.
-        </p>
+        <p className="settings__note">{t('places.familyTypes.intro')}</p>
 
         <section aria-labelledby={`${headingId}-types`}>
           <h3 className="family__setupheading" id={`${headingId}-types`}>
-            Types enabled one by one
+            {t('places.familyTypes.oneByOne')}
           </h3>
           <p data-testid="family-setup-types">
-            {ownTypes.length > 0 ? ownTypes.join(', ') : 'None yet.'}{' '}
+            {ownTypes.length > 0 ? ownTypes.join(', ') : t('places.familyTypes.none')}{' '}
             <span className="settings__note">
-              You choose this when you create a type, under{' '}
-              <Link to={typesPath}>Types → Lore Types</Link>.
+              {tx('places.familyTypes.chooseWhere', {
+                link: <Link to={typesPath}>{t('places.familyTypes.chooseWhereLink')}</Link>,
+              })}
             </span>
           </p>
         </section>
 
         <section aria-labelledby={`${headingId}-groups`}>
           <h3 className="family__setupheading" id={`${headingId}-groups`}>
-            Groups
+            {t('places.familyTypes.groups')}
           </h3>
           {groups.length === 0 ? (
             <p className="settings__note">
-              This universe has no type groups yet. You can make one in a type&rsquo;s editor, under{' '}
-              <Link to={typesPath}>Types → Lore Types</Link>.
+              {tx('places.familyTypes.noGroups', {
+                link: <Link to={typesPath}>{t('places.familyTypes.noGroupsLink')}</Link>,
+              })}
             </p>
           ) : (
             <>
-              <p className="settings__note">
-                Turn a group on to offer Family Tree for every type in it, including types you add
-                later. Turning it off leaves your recorded family as it is.
-              </p>
+              <p className="settings__note">{t('places.familyTypes.groupHelp')}</p>
               <ul className="family__grouplist">
                 {groups.map((group) => {
                   const covers = group.typeIds
@@ -117,13 +117,11 @@ export function FamilyTreeTypes({
                         <span>
                           <bdi className="family__groupname">{group.name}</bdi>
                           <span className="family__groupcovers">
-                            {covers.length > 0 ? (
-                              <>
-                                Covers <bdi>{covers.join(', ')}</bdi>
-                              </>
-                            ) : (
-                              'No types in it yet'
-                            )}
+                            {covers.length > 0
+                              ? tx('places.familyTypes.covers', {
+                                  types: <bdi>{covers.join(', ')}</bdi>,
+                                })
+                              : t('places.familyTypes.coversNone')}
                           </span>
                         </span>
                       </label>
@@ -132,7 +130,7 @@ export function FamilyTreeTypes({
                 })}
               </ul>
               {canEdit ? null : (
-                <p className="settings__note">Only an owner or an editor can change these.</p>
+                <p className="settings__note">{t('places.familyTypes.ownersOnly')}</p>
               )}
             </>
           )}

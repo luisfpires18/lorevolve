@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n'
 import { findMonth, hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 
@@ -35,12 +36,13 @@ interface ChronologyPointFieldsProps {
 export function ChronologyPointFields({
   chronology,
   ids,
-  eraLabel = 'Date period',
-  yearLabel = 'Year',
+  eraLabel,
+  yearLabel,
   value,
   onChange,
   errors,
 }: ChronologyPointFieldsProps) {
+  const { t, tn } = useI18n()
   const reckonsInEras = namesEras(chronology)
   const custom = hasCalendar(chronology)
   const month = custom ? findMonth(chronology, value.month) : null
@@ -53,7 +55,7 @@ export function ChronologyPointFields({
       {reckonsInEras ? (
         <div className="field">
           <label className="field__label" htmlFor={ids.eraId}>
-            {eraLabel}
+            {eraLabel ?? t('time.point.era')}
           </label>
           <select
             id={ids.eraId}
@@ -64,7 +66,7 @@ export function ChronologyPointFields({
             aria-describedby={errorId('eraId')}
             data-testid={ids.eraId}
           >
-            <option value="">Choose a date period</option>
+            <option value="">{t('time.point.chooseEra')}</option>
             {chronology.eras.map((option) => (
               <option key={option.id} value={option.id}>
                 {option.abbreviation ? `${option.name} (${option.abbreviation})` : option.name}
@@ -81,7 +83,7 @@ export function ChronologyPointFields({
 
       <div className="field">
         <label className="field__label" htmlFor={ids.year}>
-          {yearLabel}
+          {yearLabel ?? t('time.point.year')}
         </label>
         <input
           id={ids.year}
@@ -90,7 +92,7 @@ export function ChronologyPointFields({
           step="1"
           min={reckonsInEras ? 1 : undefined}
           inputMode="numeric"
-          placeholder="Insert a year"
+          placeholder={t('time.point.yearPlaceholder')}
           value={value.year}
           onChange={(event) => onChange('year', event.target.value)}
           aria-invalid={errors.year ? true : undefined}
@@ -106,7 +108,7 @@ export function ChronologyPointFields({
 
       <div className="field">
         <label className="field__label" htmlFor={ids.month}>
-          Month
+          {t('time.point.month')}
         </label>
         {custom ? (
           <select
@@ -122,10 +124,10 @@ export function ChronologyPointFields({
             aria-describedby={errorId('month')}
             data-testid={ids.month}
           >
-            <option value="">No month</option>
+            <option value="">{t('time.point.noMonth')}</option>
             {chronology.calendar?.months.map((option) => (
               <option key={option.id} value={option.id}>
-                {option.name} · {option.dayCount === 1 ? '1 day' : `${option.dayCount} days`}
+                {option.name} · {tn('time.point.days', option.dayCount, { n: option.dayCount })}
               </option>
             ))}
           </select>
@@ -138,7 +140,7 @@ export function ChronologyPointFields({
             min={1}
             max={12}
             inputMode="numeric"
-            placeholder="Insert a month"
+            placeholder={t('time.point.monthPlaceholder')}
             value={value.month}
             onChange={(event) => onChange('month', event.target.value)}
             aria-invalid={errors.month ? true : undefined}
@@ -155,7 +157,7 @@ export function ChronologyPointFields({
 
       <div className="field">
         <label className="field__label" htmlFor={ids.day}>
-          Day
+          {t('time.point.day')}
         </label>
         <input
           id={ids.day}
@@ -165,7 +167,7 @@ export function ChronologyPointFields({
           min={1}
           max={custom ? month?.dayCount : 31}
           inputMode="numeric"
-          placeholder="Insert a day"
+          placeholder={t('time.point.dayPlaceholder')}
           disabled={custom && !month && value.day === ''}
           value={value.day}
           onChange={(event) => onChange('day', event.target.value)}

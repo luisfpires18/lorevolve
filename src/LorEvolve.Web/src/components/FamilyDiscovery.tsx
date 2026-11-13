@@ -6,6 +6,7 @@ import { EmptyState } from './EmptyState'
 import { EntityPicker, type EntityChoice } from './EntityPicker'
 import { listFamilies } from '../familyTree/api'
 import type { FamilyDiscoveryPage } from '../familyTree/types'
+import { useI18n } from '../i18n'
 
 /** What a family summary carries in history, so "Browse families" on its tree can come back to this search and page. */
 export interface FamiliesReturn {
@@ -38,6 +39,7 @@ export function FamilyDiscovery({
   canEdit: boolean
   onChoose: (choice: EntityChoice | null) => void
 }) {
+  const { t, tn } = useI18n()
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
   const navigate = useNavigate()
@@ -128,7 +130,7 @@ export function FamilyDiscovery({
         <div className="discovery__bar">
           <div className="discovery__search">
             <label className="field__label" htmlFor={searchId}>
-              Search families by member
+              {t('places.discovery.searchLabel')}
             </label>
             <span className="controls__searchfield">
               <Search
@@ -142,7 +144,7 @@ export function FamilyDiscovery({
                 className="field__input"
                 type="search"
                 name="q"
-                placeholder="Any name in the family"
+                placeholder={t('places.discovery.searchPlaceholder')}
                 autoComplete="off"
                 spellCheck={false}
                 value={text}
@@ -160,7 +162,7 @@ export function FamilyDiscovery({
             data-testid="family-find-character"
           >
             <ActionIcon icon={UserSearch} />
-            Find a character
+            {t('places.discovery.find')}
           </button>
         </div>
       )}
@@ -168,12 +170,8 @@ export function FamilyDiscovery({
       {isEmpty ? (
         <EmptyState
           testId="family-none"
-          title="No families recorded yet."
-          hint={
-            canEdit
-              ? 'A family shows up here once two people are connected by a kind with a family meaning. Choose someone to record their first connection.'
-              : 'A family shows up here once two people are connected by a kind with a family meaning.'
-          }
+          title={t('places.discovery.noneTitle')}
+          hint={canEdit ? t('places.discovery.noneHintEditor') : t('places.discovery.noneHint')}
         />
       ) : null}
 
@@ -185,17 +183,15 @@ export function FamilyDiscovery({
           data-testid="family-picker"
         >
           <EntityPicker
-            label="Whose family?"
+            label={t('places.discovery.whose')}
             universeId={universeId}
             value={null}
             onChange={onChoose}
             familyTreeOnly
-            placeholder="Search this universe"
+            placeholder={t('places.discovery.pickerPlaceholder')}
           />
           {isEmpty ? null : (
-            <p className="discovery__pickerhint">
-              Opens anyone&rsquo;s tree, even with no family recorded yet.
-            </p>
+            <p className="discovery__pickerhint">{t('places.discovery.pickerHint')}</p>
           )}
         </div>
       ) : null}
@@ -204,34 +200,37 @@ export function FamilyDiscovery({
         <section className="discovery__families" aria-labelledby={headingId}>
           <div className="discovery__head">
             <h2 className="settings__heading" id={headingId} ref={headingRef} tabIndex={-1}>
-              Families in this universe
+              {t('places.discovery.heading')}
             </h2>
             {result ? (
               <p className="discovery__count" role="status" data-testid="family-count">
                 {result.totalCount === 0
-                  ? 'No family has a member by that name.'
+                  ? t('places.discovery.noMatch')
                   : q
-                    ? `${result.totalCount} ${result.totalCount === 1 ? 'family includes' : 'families include'} “${q}”.`
-                    : `${result.totalCount} ${result.totalCount === 1 ? 'family' : 'families'}`}
+                    ? tn('places.discovery.matches', result.totalCount, {
+                        n: result.totalCount,
+                        q,
+                      })
+                    : tn('places.discovery.count', result.totalCount, { n: result.totalCount })}
               </p>
             ) : null}
           </div>
 
           {state.kind === 'loading' && !result ? (
             <p className="notice" role="status">
-              Finding families…
+              {t('places.discovery.finding')}
             </p>
           ) : null}
 
           {state.kind === 'error' && isCurrent ? (
             <div className="notice notice--error" role="alert" data-testid="family-discovery-error">
-              <p>The families could not be read.</p>
+              <p>{t('places.discovery.error')}</p>
               <button
                 className="button button--secondary"
                 type="button"
                 onClick={() => setReads((current) => current + 1)}
               >
-                Try again
+                {t('places.discovery.retry')}
               </button>
             </div>
           ) : null}
@@ -255,7 +254,9 @@ export function FamilyDiscovery({
                       ))}
                     </span>
                     <span className="familycard__count" data-testid="family-card-count">
-                      {family.memberCount} {family.memberCount === 1 ? 'member' : 'members'}
+                      {tn('places.discovery.members', family.memberCount, {
+                        n: family.memberCount,
+                      })}
                     </span>
                     <ChevronRight
                       className="familycard__chevron"
@@ -270,17 +271,17 @@ export function FamilyDiscovery({
           ) : null}
 
           {result && result.totalPages > 1 ? (
-            <nav className="pager" aria-label="Family pages">
+            <nav className="pager" aria-label={t('places.discovery.pages')}>
               <button
                 className="button button--secondary"
                 type="button"
                 disabled={result.page <= 1}
                 onClick={() => goToPage(result.page - 1)}
               >
-                Previous
+                {t('places.discovery.previous')}
               </button>
               <span className="pager__position">
-                Page {result.page} of {result.totalPages}
+                {t('places.discovery.position', { page: result.page, total: result.totalPages })}
               </span>
               <button
                 className="button button--secondary"
@@ -289,7 +290,7 @@ export function FamilyDiscovery({
                 onClick={() => goToPage(result.page + 1)}
                 data-testid="family-next-page"
               >
-                Next
+                {t('places.discovery.next')}
               </button>
             </nav>
           ) : null}

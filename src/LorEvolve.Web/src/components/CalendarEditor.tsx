@@ -8,6 +8,7 @@ import type {
   ChronologyCalendar,
   ChronologyCalendarMonthInput,
 } from '../chronology/types'
+import { t, tn, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { confirmAction, confirmDiscard } from '../lib/confirm'
@@ -49,10 +50,12 @@ function inputOf(drafts: MonthDraft[]): ChronologyCalendarMonthInput[] {
 
 /** Said only when it matters: a new month, or one dates still use. A saved month nothing uses needs no line of its own. */
 function usageOf(month: MonthDraft) {
-  if (!month.id) return 'New, not saved yet'
+  if (!month.id) return t('time.calendar.usage.new')
   if (month.useCount === 0) return null
-  const dates = month.useCount === 1 ? 'Used by 1 date' : `Used by ${month.useCount} dates`
-  return month.maxDayUsed ? `${dates}, up to day ${month.maxDayUsed}` : dates
+  const dates = tn('time.calendar.usage.dates', month.useCount, { n: month.useCount })
+  return month.maxDayUsed
+    ? t('time.calendar.usage.upToDay', { dates, day: month.maxDayUsed })
+    : dates
 }
 
 interface CalendarEditorProps {
@@ -73,6 +76,7 @@ interface CalendarEditorProps {
  * fits, a range a new order would turn around - comes back as one plain sentence under the list.
  */
 export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEditorProps) {
+  useI18n()
   const stored = chronology.calendar
   const storedMode: Mode = stored ? 'custom' : 'simple'
   const [mode, setMode] = useState<Mode>(storedMode)
@@ -107,7 +111,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
     mode !== storedMode ||
     (mode === 'custom' &&
       JSON.stringify(inputOf(drafts)) !== JSON.stringify(inputOf(draftsFrom(stored))))
-  useLeaveGuard(dirty ? 'The calendar has unsaved changes. Leave without saving them?' : null)
+  useLeaveGuard(dirty ? t('time.calendar.leaveGuard') : null)
 
   function change(next: MonthDraft[]) {
     touched.current = true
@@ -157,7 +161,13 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
     const [month] = next.splice(index, 1)
     next.splice(to, 0, month)
     change(next)
-    setMoved(`${month.name.trim() || 'New month'} is now ${to + 1} of ${next.length}.`)
+    setMoved(
+      t('time.calendar.moved', {
+        name: month.name.trim() || t('time.calendar.newMonthCap'),
+        position: to + 1,
+        total: next.length,
+      }),
+    )
   }
 
   function remove(index: number) {
@@ -165,11 +175,13 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
     // A calendar keeps at least one month; to have none is simple dates, chosen above.
     if (month.useCount > 0 || drafts.length === 1) return
     change(drafts.filter((_, position) => position !== index))
-    setMoved(`${month.name.trim() || 'New month'} removed.`)
+    setMoved(
+      t('time.calendar.removed', { name: month.name.trim() || t('time.calendar.newMonthCap') }),
+    )
   }
 
   async function discard() {
-    if (!(await confirmDiscard('Discard your changes to the calendar?'))) return
+    if (!(await confirmDiscard(t('time.calendar.discardConfirm')))) return
     touched.current = false
     setMode(storedMode)
     setDrafts(draftsFrom(stored))
@@ -181,10 +193,9 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
     if (
       mode === 'simple' &&
       !(await confirmAction({
-        title: 'Switch to simple dates?',
-        message:
-          'This removes month names and lengths. Each date keeps its month as a number: its place in the year.',
-        confirmLabel: 'Switch to simple dates',
+        title: t('time.calendar.switchConfirm.title'),
+        message: t('time.calendar.switchConfirm.message'),
+        confirmLabel: t('time.calendar.switchConfirm.confirm'),
         variant: 'destructive',
       }))
     ) {
@@ -211,10 +222,10 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
         setMessage(
           Object.keys(error.fieldErrors).length === 0 || error.fieldErrors.months
             ? error.message
-            : 'Some months need a change before this can be saved.',
+            : t('time.calendar.monthsNeedChange'),
         )
       } else {
-        setMessage('The calendar could not be saved.')
+        setMessage(t('time.calendar.saveFailed'))
       }
     } finally {
       setSaving(false)
@@ -222,7 +233,11 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
   }
 
   const label =
-    mode === 'simple' ? 'Switch to simple dates' : stored ? 'Save calendar' : 'Use custom calendar'
+    mode === 'simple'
+      ? t('time.calendar.switchConfirm.confirm')
+      : stored
+        ? t('time.calendar.save')
+        : t('time.calendar.useCustom')
 
   return (
     <section
@@ -231,12 +246,12 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
       data-testid="calendar-settings"
     >
       <h2 className="settings__heading" id={headingId}>
-        Calendar
+        {t('time.calendar.heading')}
       </h2>
 
       <div className="field calendar__mode">
         <span className="field__label" id={modeId}>
-          Dates use
+          {t('time.calendar.datesUse')}
         </span>
         <div
           className="segmented"
@@ -251,7 +266,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
             onClick={() => choose('simple')}
             data-testid="calendar-mode-simple"
           >
-            Simple dates
+            {t('time.calendar.simple')}
           </button>
           <button
             type="button"
@@ -260,30 +275,26 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
             onClick={() => choose('custom')}
             data-testid="calendar-mode-custom"
           >
-            Custom calendar
+            {t('time.calendar.custom')}
           </button>
         </div>
       </div>
 
       {mode === 'simple' ? (
         <p className="settings__note" data-testid="calendar-note">
-          {stored
-            ? 'Each date keeps its month as a number: its place in the year. This works only while every date fits 12 months of up to 31 days.'
-            : 'Months and days are numbers: months 1 to 12, days 1 to 31. Choose a custom calendar if your world names its own months.'}
+          {stored ? t('time.calendar.simpleNoteStored') : t('time.calendar.simpleNote')}
         </p>
       ) : (
         <>
           <p className="settings__note" data-testid="calendar-note">
-            {stored
-              ? 'The months of one year, earliest first. Dates stay with their month when you rename or move it. A month that a date uses can’t be removed.'
-              : 'Name the months of one year, in order, and give each its number of days. When you save, any date that already has a month moves to the month in the same place: month 3 becomes your third month.'}
+            {stored ? t('time.calendar.customNoteStored') : t('time.calendar.customNote')}
           </p>
 
           <ol className="months" data-testid="months">
             {drafts.map((month, index) => {
               const prefix = `months[${index}]`
               const base = `month-${month.key}`
-              const name = month.name.trim() || 'new month'
+              const name = month.name.trim() || t('time.calendar.newMonthLower')
               const inUse = month.useCount > 0
               const usage = usageOf(month)
               const useId = usage ? `${base}-use` : undefined
@@ -302,12 +313,12 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
                   <div className="month__fields">
                     <div className="field">
                       <label className="field__label" htmlFor={`${base}-name`}>
-                        Name
+                        {t('time.calendar.name')}
                       </label>
                       <input
                         id={`${base}-name`}
                         className="field__input"
-                        placeholder="Insert a name"
+                        placeholder={t('time.calendar.namePlaceholder')}
                         autoComplete="off"
                         value={month.name}
                         onChange={(event) => update(index, { name: event.target.value })}
@@ -324,12 +335,12 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
 
                     <div className="field">
                       <label className="field__label" htmlFor={`${base}-short`}>
-                        Short name
+                        {t('time.calendar.shortName')}
                       </label>
                       <input
                         id={`${base}-short`}
                         className="field__input"
-                        placeholder="Optional"
+                        placeholder={t('time.calendar.optional')}
                         autoComplete="off"
                         value={month.abbreviation}
                         onChange={(event) => update(index, { abbreviation: event.target.value })}
@@ -346,7 +357,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
 
                     <div className="field month__days">
                       <label className="field__label" htmlFor={`${base}-days`}>
-                        Days
+                        {t('time.calendar.days')}
                       </label>
                       <input
                         id={`${base}-days`}
@@ -380,8 +391,8 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
                       type="button"
                       onClick={() => move(index, -1)}
                       aria-disabled={first ? true : undefined}
-                      aria-label={`Move ${name} earlier`}
-                      title="Earlier"
+                      aria-label={t('time.calendar.moveEarlier', { name })}
+                      title={t('time.calendar.earlier')}
                       data-testid="month-earlier"
                     >
                       <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -391,8 +402,8 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
                       type="button"
                       onClick={() => move(index, 1)}
                       aria-disabled={last ? true : undefined}
-                      aria-label={`Move ${name} later`}
-                      title="Later"
+                      aria-label={t('time.calendar.moveLater', { name })}
+                      title={t('time.calendar.later')}
                       data-testid="month-later"
                     >
                       <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -402,16 +413,16 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
                       type="button"
                       onClick={() => remove(index)}
                       aria-disabled={inUse || drafts.length === 1 ? true : undefined}
-                      aria-label={`Remove ${name}`}
+                      aria-label={t('time.calendar.removeNamed', { name })}
                       aria-describedby={inUse ? `${useId} ${base}-keep` : undefined}
-                      title={inUse ? 'In use. Change its dates before removing it.' : 'Remove'}
+                      title={inUse ? t('time.calendar.inUse') : t('time.calendar.remove')}
                       data-testid="month-remove"
                     >
                       <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
                     </button>
                     {inUse ? (
                       <span className="visually-hidden" id={`${base}-keep`}>
-                        In use. Change its dates before removing it.
+                        {t('time.calendar.inUse')}
                       </span>
                     ) : null}
                   </div>
@@ -433,7 +444,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
             data-testid="add-month"
           >
             <ActionIcon icon={Plus} />
-            Add month
+            {t('time.calendar.add')}
           </button>
 
           {fieldErrors.months ? <p className="field__error">{fieldErrors.months}</p> : null}
@@ -458,7 +469,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
             isDirty={dirty}
             isSaving={saving}
             saves={saves}
-            restingStatus="Saved"
+            restingStatus={t('time.calendar.saved')}
             statusId={statusId}
             statusTestId="calendar-status"
             testId="save-calendar"
@@ -467,13 +478,13 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
           />
           {dirty ? (
             <button className="button button--secondary" type="button" onClick={discard}>
-              Discard changes
+              {t('time.calendar.discard')}
             </button>
           ) : null}
         </div>
       ) : (
         <p className="visually-hidden" id={statusId} role="status" data-testid="calendar-status">
-          {saves > 0 ? 'Calendar saved.' : ''}
+          {saves > 0 ? t('time.calendar.savedStatus') : ''}
         </p>
       )}
     </section>

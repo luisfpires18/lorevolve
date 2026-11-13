@@ -4,6 +4,10 @@ import auth from './pt-PT/auth'
 import entity from './pt-PT/entity'
 import entityTypes from './pt-PT/entityTypes'
 import lore from './pt-PT/lore'
+import time from './pt-PT/time'
+import progression from './pt-PT/progression'
+import places from './pt-PT/places'
+import manuscript from './pt-PT/manuscript'
 import relationships from './pt-PT/relationships'
 import workspace from './pt-PT/workspace'
 import portal from './pt-PT/portal'
@@ -21,6 +25,10 @@ const ptPT = {
   entity,
   entityTypes,
   lore,
+  time,
+  progression,
+  places,
+  manuscript,
   relationships,
   workspace,
   portal,

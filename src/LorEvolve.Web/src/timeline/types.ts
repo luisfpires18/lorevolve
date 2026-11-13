@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { CanonStatusValue, FieldSemanticValue } from '../lore/types'
 import type { TimelineValidation, TimelineValidationInput } from '../ruleValidation/types'
 
@@ -11,11 +12,20 @@ export const DateKind = {
 
 export type DateKindValue = (typeof DateKind)[keyof typeof DateKind]
 
+/** Getters, so each word is looked up in the current language when read, never frozen at import. */
 export const DATE_KIND_LABELS: Record<DateKindValue, string> = {
-  [DateKind.Exact]: 'Exact',
-  [DateKind.Approximate]: 'Approximate',
-  [DateKind.Range]: 'Range',
-  [DateKind.Unknown]: 'Unknown',
+  get [DateKind.Exact]() {
+    return t('time.dateKind.exact.label')
+  },
+  get [DateKind.Approximate]() {
+    return t('time.dateKind.approximate.label')
+  },
+  get [DateKind.Range]() {
+    return t('time.dateKind.range.label')
+  },
+  get [DateKind.Unknown]() {
+    return t('time.dateKind.unknown.label')
+  },
 }
 
 export const DATE_KIND_ORDER: DateKindValue[] = [
@@ -27,10 +37,18 @@ export const DATE_KIND_ORDER: DateKindValue[] = [
 
 /** What each kind promises the author, in the author's own words. */
 export const DATE_KIND_HINTS: Record<DateKindValue, string> = {
-  [DateKind.Exact]: 'A day, month or year you are sure of.',
-  [DateKind.Approximate]: 'Around then. Shown with a “c.” in front.',
-  [DateKind.Range]: 'A span, from one point to another.',
-  [DateKind.Unknown]: 'In the story, but not yet placed in time.',
+  get [DateKind.Exact]() {
+    return t('time.dateKind.exact.hint')
+  },
+  get [DateKind.Approximate]() {
+    return t('time.dateKind.approximate.hint')
+  },
+  get [DateKind.Range]() {
+    return t('time.dateKind.range.hint')
+  },
+  get [DateKind.Unknown]() {
+    return t('time.dateKind.unknown.hint')
+  },
 }
 
 /** Mirrors the backend enum. How far down a set of components goes. Derived, never sent. */

@@ -10,6 +10,7 @@ import { EraRelations } from './EraRelations'
 import { ProgressionItemForm } from './ProgressionItemForm'
 import { VersionActor } from './VersionActor'
 import type { Chronology } from '../chronology/types'
+import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
 import { formatDateTime } from '../lib/dates'
@@ -55,10 +56,17 @@ interface ProgressionViewProps {
   onChanged: () => void
 }
 
+/** Getters, so each label is looked up in the current language when read. */
 const SOURCE_LABELS: Record<FieldSource, string> = {
-  era: 'Set for this stage',
-  cleared: 'None in this stage',
-  entry: 'From the main profile',
+  get era() {
+    return t('progression.view.source.era')
+  },
+  get cleared() {
+    return t('progression.view.source.cleared')
+  },
+  get entry() {
+    return t('progression.view.source.entry')
+  },
 }
 
 /**
@@ -74,6 +82,7 @@ export function ProgressionView({
   chronology,
   onChanged,
 }: ProgressionViewProps) {
+  const { t, tn } = useI18n()
   const access = useUniverseAccess()
   const [params, setParams] = useSearchParams()
   const [progression, setProgression] = useState<Progression | null>(null)
@@ -122,16 +131,16 @@ export function ProgressionView({
   if (failed) {
     return (
       <div className="notice notice--error" role="alert">
-        <p>The stages could not be read.</p>
+        <p>{t('progression.view.readFailed')}</p>
         <button className="button button--secondary" type="button" onClick={() => void load()}>
-          Try again
+          {t('progression.view.retry')}
         </button>
       </div>
     )
   }
 
   if (!progression) {
-    return <p className="muted">Reading stages…</p>
+    return <p className="muted">{t('progression.view.reading')}</p>
   }
 
   const selectedId = params.get('era')
@@ -164,10 +173,10 @@ export function ProgressionView({
       done?.()
     } catch (error: unknown) {
       if (isChangedElsewhere(error, PROGRESSION_CHANGED)) {
-        setMessage('These stages were changed somewhere else. The latest are shown now; try again.')
+        setMessage(t('progression.view.changedElsewhere'))
         void load()
       } else {
-        setMessage(error instanceof ApiError ? error.message : 'That change could not be saved.')
+        setMessage(error instanceof ApiError ? error.message : t('progression.view.saveFailed'))
       }
     } finally {
       setBusy(false)
@@ -186,9 +195,9 @@ export function ProgressionView({
   async function remove(era: Era) {
     if (
       !(await confirmAction({
-        title: `Remove the stage “${era.name}”?`,
-        message: `What it sets for ${entry.name} goes with it; forms, abilities and appearances stop belonging to it. The main profile is not changed. Stage history can bring it back.`,
-        confirmLabel: 'Remove stage',
+        title: t('progression.view.removeStage.title', { name: era.name }),
+        message: t('progression.view.removeStage.message', { name: entry.name }),
+        confirmLabel: t('progression.view.removeStage.confirm'),
         variant: 'destructive',
       }))
     ) {
@@ -207,15 +216,20 @@ export function ProgressionView({
   }
 
   async function removeItem(kind: 'form' | 'ability', item: Form | Ability) {
-    const what = kind === 'form' ? 'form' : 'ability'
     if (
       !(await confirmAction({
-        title: `Remove the ${what} “${item.name}”?`,
+        title:
+          kind === 'form'
+            ? t('progression.view.removeForm.title', { name: item.name })
+            : t('progression.view.removeAbility.title', { name: item.name }),
         message:
           kind === 'form'
-            ? `Abilities and appearances stop belonging to it. Stage history can bring it back.`
-            : `Stage history can bring it back.`,
-        confirmLabel: `Remove ${what}`,
+            ? t('progression.view.removeForm.message')
+            : t('progression.view.removeAbility.message'),
+        confirmLabel:
+          kind === 'form'
+            ? t('progression.view.removeForm.confirm')
+            : t('progression.view.removeAbility.confirm'),
         variant: 'destructive',
       }))
     ) {
@@ -240,12 +254,12 @@ export function ProgressionView({
     const pictures = appearance.images.length
     if (
       !(await confirmAction({
-        title: `Remove the appearance “${appearance.label}”?`,
+        title: t('progression.view.removeAppearance.title', { name: appearance.label }),
         message:
           pictures === 0
-            ? 'Stage history can bring it back.'
-            : `Its ${pictures === 1 ? 'picture is' : `${pictures} pictures are`} deleted for good; stage history keeps the appearance but not its pictures.`,
-        confirmLabel: 'Remove appearance',
+            ? t('progression.view.removeAppearance.messageEmpty')
+            : tn('progression.view.removeAppearance.message', pictures, { n: pictures }),
+        confirmLabel: t('progression.view.removeAppearance.confirm'),
         variant: 'destructive',
       }))
     ) {
@@ -260,7 +274,7 @@ export function ProgressionView({
       if (latest.version !== progression!.version) {
         ticket.current++
         setProgression(latest)
-        setMessage('These stages were changed somewhere else. The latest are shown now; try again.')
+        setMessage(t('progression.view.changedElsewhere'))
         return
       }
       for (const image of appearance.images) {
@@ -277,7 +291,7 @@ export function ProgressionView({
       )
     } catch (error: unknown) {
       setMessage(
-        error instanceof ApiError ? error.message : 'That appearance could not be removed.',
+        error instanceof ApiError ? error.message : t('progression.view.removeAppearance.failed'),
       )
       void load()
     } finally {
@@ -320,7 +334,7 @@ export function ProgressionView({
     >
       <div className="progression__head">
         <h2 className="sectiontitle" id="progression-heading">
-          Progression
+          {t('progression.view.title')}
         </h2>
         {access.editContent ? (
           <button
@@ -330,7 +344,7 @@ export function ProgressionView({
             data-testid="add-era"
           >
             <ActionIcon icon={Plus} />
-            Add stage
+            {t('progression.view.addStage')}
           </button>
         ) : null}
       </div>
@@ -348,12 +362,16 @@ export function ProgressionView({
       {progression.eras.length === 0 ? (
         <EmptyState
           testId="progression-empty"
-          title={`${entry.name} has no stages yet.`}
-          hint="A stage is a stretch of this entry's story. It holds only what changes then; everything else stays as on the main profile."
+          title={t('progression.view.empty.title', { name: entry.name })}
+          hint={t('progression.view.empty.hint')}
         />
       ) : (
         <>
-          <nav className="eranav" aria-label={`Stages of ${entry.name}`} data-testid="era-nav">
+          <nav
+            className="eranav"
+            aria-label={t('progression.view.nav', { name: entry.name })}
+            data-testid="era-nav"
+          >
             <ul className="eranav__list">
               <li>
                 <Link
@@ -362,7 +380,7 @@ export function ProgressionView({
                   aria-current={selected ? undefined : 'page'}
                   data-testid="era-nav-main"
                 >
-                  Main profile
+                  {t('progression.view.mainProfile')}
                 </Link>
               </li>
               {progression.eras.map((era) => (
@@ -413,10 +431,8 @@ export function ProgressionView({
                     ) : null}
                     <p className="eralist__meta">
                       {era.fields.length === 0
-                        ? 'Everything from the main profile'
-                        : era.fields.length === 1
-                          ? '1 detail of its own'
-                          : `${era.fields.length} details of its own`}
+                        ? t('progression.view.eraMeta.none')
+                        : tn('progression.view.eraMeta.own', era.fields.length)}
                     </p>
                   </li>
                 )
@@ -563,6 +579,7 @@ function EraPanel({
   onMove: (by: number) => void
   onRemove: () => void
 }) {
+  const { t } = useI18n()
   const title = useRef<HTMLHeadingElement>(null)
   const shown = useRef(era.id)
   useEffect(() => {
@@ -585,7 +602,7 @@ function EraPanel({
     <article className="erapanel" aria-labelledby="era-title" data-testid="era-panel">
       <header className="erapanel__head">
         <div>
-          <p className="erapanel__eyebrow">Stage of {entry.name}</p>
+          <p className="erapanel__eyebrow">{t('progression.era.eyebrow', { name: entry.name })}</p>
           <h3
             className="erapanel__title"
             id="era-title"
@@ -610,9 +627,12 @@ function EraPanel({
               data-testid="edit-era"
             >
               <ActionIcon icon={Pencil} />
-              Edit stage
+              {t('progression.era.edit')}
             </button>
-            <ActionMenu label={`More actions for ${era.name}`} triggerTestId="era-actions">
+            <ActionMenu
+              label={t('progression.era.moreActions', { name: era.name })}
+              triggerTestId="era-actions"
+            >
               <button
                 className="actionmenu__item"
                 type="button"
@@ -621,7 +641,7 @@ function EraPanel({
                 data-testid="era-earlier"
               >
                 <ActionIcon icon={ArrowUp} />
-                Move earlier
+                {t('progression.era.moveEarlier')}
               </button>
               <button
                 className="actionmenu__item"
@@ -631,7 +651,7 @@ function EraPanel({
                 data-testid="era-later"
               >
                 <ActionIcon icon={ArrowDown} />
-                Move later
+                {t('progression.era.moveLater')}
               </button>
               <hr className="actionmenu__divider" />
               <button
@@ -642,7 +662,7 @@ function EraPanel({
                 data-testid="remove-era"
               >
                 <ActionIcon icon={Trash} />
-                Remove stage
+                {t('progression.era.remove')}
               </button>
             </ActionMenu>
           </div>
@@ -657,12 +677,12 @@ function EraPanel({
 
       {era.stories.length > 0 || era.scenes.length > 0 ? (
         <div className="rail__block">
-          <h4 className="rail__heading">Covers</h4>
+          <h4 className="rail__heading">{t('progression.era.covers')}</h4>
           <ul className="eracovers" data-testid="era-covers">
             {era.stories.map((story) => (
               <li key={story.id}>
                 {story.isTrashed ? (
-                  <span>{story.title} (in Trash)</span>
+                  <span>{t('progression.era.inTrash', { title: story.title })}</span>
                 ) : (
                   <Link to={`/app/universes/${universeId}/stories/${story.id}`}>{story.title}</Link>
                 )}
@@ -671,7 +691,7 @@ function EraPanel({
             {era.scenes.map((scene) => (
               <li key={scene.id}>
                 {scene.isTrashed ? (
-                  <span>{scene.title} (in Trash)</span>
+                  <span>{t('progression.era.inTrash', { title: scene.title })}</span>
                 ) : (
                   <Link
                     to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
@@ -711,9 +731,9 @@ function EraPanel({
         </dl>
       ) : null}
 
-      <EraItems heading="Forms in this stage" era={era} items={forms} testId="era-forms" />
+      <EraItems heading={t('progression.era.forms')} era={era} items={forms} testId="era-forms" />
       <EraItems
-        heading="Abilities in this stage"
+        heading={t('progression.era.abilities')}
         era={era}
         items={abilities}
         testId="era-abilities"
@@ -721,7 +741,7 @@ function EraPanel({
 
       {looks.length > 0 ? (
         <div className="rail__block">
-          <h4 className="rail__heading">Appearances in this stage</h4>
+          <h4 className="rail__heading">{t('progression.era.appearances')}</h4>
           <ul className="eralooks" data-testid="era-appearances">
             {looks.map((look) => (
               <li
@@ -757,13 +777,13 @@ function EraPanel({
 
       <nav
         className="erasteps"
-        aria-label={`Other stages of ${entry.name}`}
+        aria-label={t('progression.era.otherStages', { name: entry.name })}
         data-testid="era-steps"
       >
         {previous ? (
           <Link className="erasteps__link" to={{ search: withEra(params, previous.id) }} rel="prev">
             <span aria-hidden="true">← </span>
-            <span className="visually-hidden">Earlier stage: </span>
+            <span className="visually-hidden">{t('progression.era.earlier')}</span>
             <bdi>{previous.name}</bdi>
           </Link>
         ) : null}
@@ -772,11 +792,11 @@ function EraPanel({
           to={{ search: withoutEra(params) }}
           data-testid="era-steps-main"
         >
-          Main profile
+          {t('progression.era.mainProfile')}
         </Link>
         {next ? (
           <Link className="erasteps__link" to={{ search: withEra(params, next.id) }} rel="next">
-            <span className="visually-hidden">Later stage: </span>
+            <span className="visually-hidden">{t('progression.era.later')}</span>
             <bdi>{next.name}</bdi>
             <span aria-hidden="true"> →</span>
           </Link>
@@ -799,15 +819,14 @@ function Overview({
   entry: EntityDetail
   progression: Progression
 }) {
+  const { t, tn } = useI18n()
   const counts = [
-    [progression.eras.length, 'stage', 'stages'],
-    [progression.forms.length, 'form', 'forms'],
-    [progression.abilities.length, 'ability', 'abilities'],
-    [progression.appearances.length, 'appearance', 'appearances'],
+    [progression.eras.length, 'progression.overview.stages'],
+    [progression.forms.length, 'progression.overview.forms'],
+    [progression.abilities.length, 'progression.overview.abilities'],
+    [progression.appearances.length, 'progression.overview.appearances'],
   ] as const
-  const told = counts
-    .filter(([count]) => count > 0)
-    .map(([count, one, many]) => `${count} ${count === 1 ? one : many}`)
+  const told = counts.filter(([count]) => count > 0).map(([count, key]) => tn(key, count))
 
   return (
     <div className="progoverview" data-testid="progression-overview">
@@ -818,7 +837,7 @@ function Overview({
           to={`/app/universes/${universeId}/lore/${entry.id}`}
           data-testid="progression-article"
         >
-          Read the article
+          {t('progression.overview.article')}
         </Link>
       </p>
     </div>
@@ -837,6 +856,7 @@ function EraItems({
   items: (Form | Ability)[]
   testId: string
 }) {
+  const { t } = useI18n()
   if (items.length === 0) return null
   return (
     <div className="rail__block">
@@ -846,7 +866,10 @@ function EraItems({
           <li key={item.id} data-testid={`${testId}-${item.name}`}>
             <bdi>{item.name}</bdi>
             {item.unlock.era?.id === era.id ? (
-              <span className="erasource erasource--era"> First unlocked here</span>
+              <span className="erasource erasource--era">
+                {' '}
+                {t('progression.era.firstUnlocked')}
+              </span>
             ) : null}
           </li>
         ))}
@@ -857,12 +880,19 @@ function EraItems({
 
 function unlockParts(unlock: UnlockMilestone) {
   return [
-    unlock.era ? `in ${unlock.era.name}` : null,
+    unlock.era ? t('progression.unlock.era', { name: unlock.era.name }) : null,
     unlock.scene
-      ? `in the scene ${unlock.scene.title}${unlock.scene.isTrashed ? ' (in Trash)' : ''}`
+      ? t(unlock.scene.isTrashed ? 'progression.unlock.sceneTrashed' : 'progression.unlock.scene', {
+          title: unlock.scene.title,
+        })
       : null,
     unlock.moment
-      ? `at ${unlock.moment.title}${unlock.moment.isTrashed ? ' (in Trash)' : ''}`
+      ? t(
+          unlock.moment.isTrashed
+            ? 'progression.unlock.momentTrashed'
+            : 'progression.unlock.moment',
+          { title: unlock.moment.title },
+        )
       : null,
   ].filter((part): part is string => part !== null)
 }
@@ -892,9 +922,24 @@ function ItemList({
   onMove: (item: Form | Ability, by: number) => void
   onRemove: (item: Form | Ability) => void
 }) {
+  const { t } = useI18n()
   const access = useUniverseAccess()
-  const title = kind === 'form' ? 'Forms' : 'Abilities'
-  const one = kind === 'form' ? 'form' : 'ability'
+  const words =
+    kind === 'form'
+      ? {
+          title: t('progression.items.form.title'),
+          add: t('progression.items.form.add'),
+          edit: t('progression.items.form.edit'),
+          remove: t('progression.items.form.remove'),
+          empty: t('progression.items.form.empty', { name: entryName }),
+        }
+      : {
+          title: t('progression.items.ability.title'),
+          add: t('progression.items.ability.add'),
+          edit: t('progression.items.ability.edit'),
+          remove: t('progression.items.ability.remove'),
+          empty: t('progression.items.ability.empty'),
+        }
   const headingId = `${kind}-list-heading`
 
   if (items.length === 0 && !access.editContent) return null
@@ -903,7 +948,7 @@ function ItemList({
     <section className="progitems" aria-labelledby={headingId} data-testid={`${kind}-list`}>
       <div className="progression__head">
         <h3 className="rail__heading" id={headingId}>
-          {title}
+          {words.title}
         </h3>
         {access.editContent ? (
           <button
@@ -914,16 +959,12 @@ function ItemList({
             data-testid={`add-${kind}`}
           >
             <ActionIcon icon={Plus} />
-            Add {one}
+            {words.add}
           </button>
         ) : null}
       </div>
       {items.length === 0 ? (
-        <p className="muted">
-          {kind === 'form'
-            ? `No forms. A form is a state ${entryName} can take, like a transformation.`
-            : `No abilities. Add only the ones that matter to the story.`}
-        </p>
+        <p className="muted">{words.empty}</p>
       ) : (
         <ul className="progitems__list">
           {items.map((item, index) => {
@@ -936,7 +977,7 @@ function ItemList({
                   </h4>
                   {access.editContent ? (
                     <ActionMenu
-                      label={`Actions for ${item.name}`}
+                      label={t('progression.items.actions', { name: item.name })}
                       triggerTestId={`${kind}-actions-${item.name}`}
                     >
                       <button
@@ -947,7 +988,7 @@ function ItemList({
                         data-testid={`edit-${kind}`}
                       >
                         <ActionIcon icon={Pencil} />
-                        Edit {one}
+                        {words.edit}
                       </button>
                       {index > 0 ? (
                         <button
@@ -957,7 +998,7 @@ function ItemList({
                           onClick={() => onMove(item, -1)}
                         >
                           <ActionIcon icon={ArrowUp} />
-                          Move earlier
+                          {t('progression.items.moveEarlier')}
                         </button>
                       ) : null}
                       {index < items.length - 1 ? (
@@ -968,7 +1009,7 @@ function ItemList({
                           onClick={() => onMove(item, 1)}
                         >
                           <ActionIcon icon={ArrowDown} />
-                          Move later
+                          {t('progression.items.moveLater')}
                         </button>
                       ) : null}
                       <button
@@ -979,7 +1020,7 @@ function ItemList({
                         data-testid={`remove-${kind}`}
                       >
                         <ActionIcon icon={Trash} />
-                        Remove {one}
+                        {words.remove}
                       </button>
                     </ActionMenu>
                   ) : null}
@@ -990,22 +1031,22 @@ function ItemList({
                 <dl className="progitems__facts">
                   {unlock.length > 0 ? (
                     <div>
-                      <dt>First unlocked</dt>
+                      <dt>{t('progression.items.firstUnlocked')}</dt>
                       <dd data-testid={`${kind}-unlock`}>{unlock.join(', ')}</dd>
                     </div>
                   ) : null}
                   <div>
-                    <dt>Available in</dt>
+                    <dt>{t('progression.items.availableIn')}</dt>
                     <dd data-testid={`${kind}-available`}>
                       {item.eras.length === 0
-                        ? 'No stage ticked'
+                        ? t('progression.items.noStage')
                         : item.eras.map((era) => era.name).join(', ')}
                     </dd>
                   </div>
                   {kind === 'form' &&
                   appearances.some((look) => look.forms.some((form) => form.id === item.id)) ? (
                     <div>
-                      <dt>Looks</dt>
+                      <dt>{t('progression.items.looks')}</dt>
                       <dd data-testid="form-looks">
                         {appearances
                           .filter((look) => look.forms.some((form) => form.id === item.id))
@@ -1016,7 +1057,7 @@ function ItemList({
                   ) : null}
                   {'forms' in item && item.forms.length > 0 ? (
                     <div>
-                      <dt>Forms</dt>
+                      <dt>{t('progression.items.forms')}</dt>
                       <dd data-testid="ability-forms-read">
                         {item.forms.map((form) => form.name).join(', ')}
                       </dd>
@@ -1024,13 +1065,13 @@ function ItemList({
                   ) : null}
                   {item.scenes.length > 0 ? (
                     <div>
-                      <dt>Used in</dt>
+                      <dt>{t('progression.items.usedIn')}</dt>
                       <dd>
                         <ul className="eracovers">
                           {item.scenes.map((scene) => (
                             <li key={scene.id}>
                               {scene.isTrashed ? (
-                                <span>{scene.title} (in Trash)</span>
+                                <span>{t('progression.era.inTrash', { title: scene.title })}</span>
                               ) : (
                                 <Link
                                   to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
@@ -1069,6 +1110,7 @@ function ProgressionHistory({
   onRestored: (progression: Progression) => void
   onStale: () => void
 }) {
+  useI18n() // Re-renders on a language change; the words are read through the module's t.
   const [open, setOpen] = useState(false)
   const [revisions, setRevisions] = useState<ProgressionRevisionSummary[] | null>(null)
   const [opened, setOpened] = useState<ProgressionRevisionDetail | null>(null)
@@ -1080,7 +1122,7 @@ function ProgressionHistory({
     listProgressionRevisions(universeId, entityId, controller.signal)
       .then(setRevisions)
       .catch(() => {
-        if (!controller.signal.aborted) setMessage('Stage history could not be read.')
+        if (!controller.signal.aborted) setMessage(t('progression.history.readFailed'))
       })
     return () => controller.abort()
   }, [open, universeId, entityId])
@@ -1094,17 +1136,16 @@ function ProgressionHistory({
     try {
       setOpened(await getProgressionRevision(universeId, entityId, revision.id))
     } catch {
-      setMessage('That version could not be read.')
+      setMessage(t('progression.history.versionReadFailed'))
     }
   }
 
   async function restore(revision: ProgressionRevisionSummary) {
     if (
       !(await confirmAction({
-        title: `Put version ${revision.number} of the stages back?`,
-        message:
-          'The stages, forms and abilities become exactly what they were then; a version from before forms existed leaves them as they are. This is saved as a new version, so it can be undone.',
-        confirmLabel: 'Restore this version',
+        title: t('progression.history.restore.title', { number: revision.number }),
+        message: t('progression.history.restore.message'),
+        confirmLabel: t('progression.history.restore.confirm'),
       }))
     ) {
       return
@@ -1116,11 +1157,11 @@ function ProgressionHistory({
       )
     } catch (error: unknown) {
       if (isChangedElsewhere(error, PROGRESSION_CHANGED)) {
-        setMessage('The stages changed since this history was read. The latest are shown now.')
+        setMessage(t('progression.history.stale'))
         onStale()
       } else {
         setMessage(
-          error instanceof ApiError ? error.message : 'That version could not be restored.',
+          error instanceof ApiError ? error.message : t('progression.history.restoreFailed'),
         )
       }
     }
@@ -1135,7 +1176,7 @@ function ProgressionHistory({
     >
       <summary className="erahistory__summary">
         <ActionIcon icon={History} />
-        Stage history
+        {t('progression.history.title')}
       </summary>
       {message ? (
         <p className="form__message" role="alert">
@@ -1144,7 +1185,7 @@ function ProgressionHistory({
       ) : null}
       {revisions === null ? (
         open ? (
-          <p className="muted">Reading history…</p>
+          <p className="muted">{t('progression.history.reading')}</p>
         ) : null
       ) : (
         <ol className="history__list">
@@ -1155,47 +1196,58 @@ function ProgressionHistory({
               data-testid={`era-version-${revision.number}`}
             >
               <p className="history__line">
-                <strong>Version {revision.number}</strong>{' '}
+                <strong>{t('progression.history.version', { number: revision.number })}</strong>{' '}
                 {revision.kind === RevisionKind.Created
-                  ? 'First saved'
+                  ? t('progression.history.kind.created')
                   : revision.kind === RevisionKind.Restored
-                    ? 'Restored'
-                    : 'Changed'}{' '}
+                    ? t('progression.history.kind.restored')
+                    : t('progression.history.kind.changed')}{' '}
                 {formatDateTime(revision.createdAt)} <VersionActor name={revision.actorName} />
               </p>
               <div className="history__actions">
                 <button
                   className="linkbutton"
                   type="button"
-                  aria-label={`${opened?.id === revision.id ? 'Hide' : 'View'} version ${revision.number}`}
+                  aria-label={t(
+                    opened?.id === revision.id
+                      ? 'progression.history.hideVersion'
+                      : 'progression.history.viewVersion',
+                    { number: revision.number },
+                  )}
                   onClick={() => void view(revision)}
                 >
-                  {opened?.id === revision.id ? 'Hide' : 'View'}
+                  {opened?.id === revision.id
+                    ? t('progression.history.hide')
+                    : t('progression.history.view')}
                 </button>
                 {index > 0 ? (
                   <button
                     className="linkbutton"
                     type="button"
-                    aria-label={`Restore version ${revision.number}`}
+                    aria-label={t('progression.history.restoreVersion', {
+                      number: revision.number,
+                    })}
                     onClick={() => void restore(revision)}
                     data-testid={`restore-era-version-${revision.number}`}
                   >
-                    Restore
+                    {t('progression.history.restoreButton')}
                   </button>
                 ) : null}
               </div>
               {opened?.id === revision.id ? (
                 <ul className="namelist" data-testid={`era-version-${revision.number}-eras`}>
                   {opened.eras.length === 0 ? (
-                    <li>No stages</li>
+                    <li>{t('progression.history.noStages')}</li>
                   ) : (
                     opened.eras.map((era) => <li key={era.id}>{era.name}</li>)
                   )}
                   {opened.forms.map((form) => (
-                    <li key={form.id}>Form: {form.name}</li>
+                    <li key={form.id}>{t('progression.history.formItem', { name: form.name })}</li>
                   ))}
                   {opened.abilities.map((ability) => (
-                    <li key={ability.id}>Ability: {ability.name}</li>
+                    <li key={ability.id}>
+                      {t('progression.history.abilityItem', { name: ability.name })}
+                    </li>
                   ))}
                 </ul>
               ) : null}

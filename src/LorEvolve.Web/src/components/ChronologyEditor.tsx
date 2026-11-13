@@ -16,6 +16,7 @@ import {
   type EraDirectionValue,
   type EraLabelPositionValue,
 } from '../chronology/types'
+import { t, tn, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { PageHeader } from './PageHeader'
@@ -70,20 +71,23 @@ function inputOf(drafts: EraDraft[]): ChronologyInput {
   }
 }
 
-function plural(count: number, one: string, many: string) {
-  return count === 1 ? `1 ${one}` : `${count} ${many}`
+function joinAnd(parts: string[]) {
+  return parts.join(t('time.periods.and'))
 }
 
 function usageOf(era: EraDraft) {
   const parts: string[] = []
-  if (era.momentCount > 0) parts.push(plural(era.momentCount, 'moment', 'moments'))
-  if (era.yearCount > 0) parts.push(plural(era.yearCount, 'year on an entry', 'years on entries'))
-  if (era.sceneCount > 0) parts.push(plural(era.sceneCount, 'scene', 'scenes'))
+  if (era.momentCount > 0)
+    parts.push(tn('time.periods.counts.moments', era.momentCount, { n: era.momentCount }))
+  if (era.yearCount > 0)
+    parts.push(tn('time.periods.counts.years', era.yearCount, { n: era.yearCount }))
+  if (era.sceneCount > 0)
+    parts.push(tn('time.periods.counts.scenes', era.sceneCount, { n: era.sceneCount }))
   if (era.entryEraCount > 0)
-    parts.push(plural(era.entryEraCount, 'era of an entry', 'eras of entries'))
+    parts.push(tn('time.periods.counts.entryEras', era.entryEraCount, { n: era.entryEraCount }))
   if (era.periodCount > 0)
-    parts.push(plural(era.periodCount, 'relationship period', 'relationship periods'))
-  return parts.length === 0 ? null : `Dates ${parts.join(' and ')}`
+    parts.push(tn('time.periods.counts.periods', era.periodCount, { n: era.periodCount }))
+  return parts.length === 0 ? null : t('time.periods.usage', { list: joinAnd(parts) })
 }
 
 /** A year of 10 written the way a period asks. An example of the format only - never a bound. */
@@ -99,9 +103,13 @@ function ExampleYear({ label, position }: { label: string; position: EraLabelPos
   )
 }
 
-const DIRECTIONS: { value: EraDirectionValue; label: string; testId: string }[] = [
-  { value: EraDirection.Ascending, label: 'Up from 1', testId: 'era-direction-up' },
-  { value: EraDirection.Descending, label: 'Down to 1', testId: 'era-direction-down' },
+const DIRECTIONS: { value: EraDirectionValue; label: () => string; testId: string }[] = [
+  { value: EraDirection.Ascending, label: () => t('time.periods.up'), testId: 'era-direction-up' },
+  {
+    value: EraDirection.Descending,
+    label: () => t('time.periods.down'),
+    testId: 'era-direction-down',
+  },
 ]
 
 interface ChronologyEditorProps {
@@ -128,6 +136,7 @@ interface ChronologyEditorProps {
  * form shows.
  */
 export function ChronologyEditor({ universeId, chronology, onSaved }: ChronologyEditorProps) {
+  useI18n()
   const [stored, setStored] = useState(chronology)
   const [drafts, setDrafts] = useState(() => draftsFrom(chronology))
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -166,7 +175,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
 
   const dirty = JSON.stringify(inputOf(drafts)) !== JSON.stringify(inputOf(draftsFrom(stored)))
   // Periods put back as they were read clean; a failed save leaves the draft, and the question, standing.
-  useLeaveGuard(dirty ? 'The chronology has unsaved changes. Leave without saving them?' : null)
+  useLeaveGuard(dirty ? t('time.periods.leaveGuard') : null)
 
   function change(next: EraDraft[]) {
     touched.current = true
@@ -190,7 +199,13 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
     const [era] = next.splice(index, 1)
     next.splice(to, 0, era)
     change(next)
-    setMoved(`${era.name.trim() || 'New date period'} is now ${to + 1} of ${next.length}.`)
+    setMoved(
+      t('time.periods.moved', {
+        name: era.name.trim() || t('time.periods.newCap'),
+        position: to + 1,
+        total: next.length,
+      }),
+    )
   }
 
   function add() {
@@ -215,7 +230,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
   }
 
   async function discard() {
-    if (!(await confirmDiscard('Discard your changes to the chronology?'))) return
+    if (!(await confirmDiscard(t('time.periods.discardConfirm')))) return
     touched.current = false
     setDrafts(draftsFrom(stored))
     setFieldErrors({})
@@ -245,10 +260,10 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some date periods need a change before this can be saved.',
+            : t('time.periods.needChange'),
         )
       } else {
-        setMessage('The chronology could not be saved.')
+        setMessage(t('time.periods.saveFailed'))
       }
     } finally {
       setSaving(false)
@@ -257,55 +272,54 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
 
   const unplacedParts = [
     stored.unplacedMomentCount > 0
-      ? plural(stored.unplacedMomentCount, 'timeline moment', 'timeline moments')
+      ? tn('time.periods.counts.timelineMoments', stored.unplacedMomentCount, {
+          n: stored.unplacedMomentCount,
+        })
       : null,
     stored.unplacedYearCount > 0
-      ? plural(stored.unplacedYearCount, 'birth or death year', 'birth or death years')
+      ? tn('time.periods.counts.birthDeathYears', stored.unplacedYearCount, {
+          n: stored.unplacedYearCount,
+        })
       : null,
   ].filter((part): part is string => part !== null)
 
   const unplacedTotal = stored.unplacedMomentCount + stored.unplacedYearCount
-  const one = unplacedTotal === 1
   const storedNamesEras = stored.eras.length > 0
 
   return (
     <>
       <PageHeader
-        title="Chronology"
-        lede={<p>Choose how dates are written and ordered in this universe.</p>}
+        title={t('time.periods.title')}
+        lede={<p>{t('time.periods.lede')}</p>}
         actions={
           <button className="button" type="button" onClick={add} data-testid="add-era">
             <ActionIcon icon={Plus} />
-            Add date period
+            {t('time.periods.add')}
           </button>
         }
       />
       <section className="chronology" aria-labelledby={headingId} data-testid="chronology-settings">
         <h2 className="settings__heading" id={headingId}>
-          Date periods
+          {t('time.periods.heading')}
         </h2>
 
         {drafts.length === 0 ? (
           <EmptyState
             testId="chronology-empty"
             title={
-              storedNamesEras
-                ? 'Save to go back to plain numbered years.'
-                : 'This universe uses plain numbered years.'
+              storedNamesEras ? t('time.periods.empty.saveToGoBack') : t('time.periods.empty.plain')
             }
-            hint="Add date periods if its timeline has named stretches of time with their own year numbers, such as Ages, reigns, dynasties, or before and after an event. They are optional."
+            hint={t('time.periods.empty.hint')}
             action={
               <button className="button" type="button" onClick={add} data-testid="add-era-empty">
                 <ActionIcon icon={Plus} />
-                Add date period
+                {t('time.periods.add')}
               </button>
             }
           />
         ) : (
           <p className="settings__note" data-testid="chronology-note">
-            Every date in this universe names one of these periods. They run in the order listed,
-            earliest first, and none has a set length. Remove them all to go back to plain numbered
-            years.
+            {t('time.periods.note')}
           </p>
         )}
 
@@ -317,24 +331,16 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
             {storedNamesEras ? (
               <>
                 <strong>
-                  {plural(unplacedTotal, 'existing date doesn’t', 'existing dates don’t')} have a
-                  date period yet
+                  {tn('time.periods.unplaced.lead', unplacedTotal, { n: unplacedTotal })}
                 </strong>{' '}
-                ({unplacedParts.join(' and ')}). {one ? 'It is' : 'They are'} still saved. LorEvolve
-                doesn’t guess which period {one ? 'it belongs' : 'they belong'} to, so until{' '}
-                {one ? 'it is' : 'each is'} given one {one ? 'it sits' : 'they sit'} apart on the
-                timeline and Canon Integrity doesn’t compare {one ? 'it' : 'them'}.
+                {tn('time.periods.unplaced.rest', unplacedTotal, { list: joinAnd(unplacedParts) })}
               </>
             ) : (
               <>
                 <strong>
-                  {plural(unplacedTotal, 'existing date is', 'existing dates are')} written as a
-                  plain year
+                  {tn('time.periods.plainYear.lead', unplacedTotal, { n: unplacedTotal })}
                 </strong>{' '}
-                ({unplacedParts.join(' and ')}). Once you save, {one ? 'it stays' : 'they stay'}{' '}
-                saved, but LorEvolve won’t guess which period {one ? 'it belongs' : 'they belong'}{' '}
-                to: {one ? 'it sits' : 'they sit'} apart on the timeline until{' '}
-                {one ? 'it is' : 'each is'} given one.
+                {tn('time.periods.plainYear.rest', unplacedTotal, { list: joinAnd(unplacedParts) })}
               </>
             )}
             {stored.unplacedMomentCount > 0 ? (
@@ -344,7 +350,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                   to={`/app/universes/${universeId}/timeline`}
                   data-testid="chronology-unplaced-link"
                 >
-                  Open the timeline
+                  {t('time.periods.openTimeline')}
                 </Link>
               </>
             ) : null}
@@ -354,7 +360,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
         {drafts.length > 1 ? (
           <div className="eras__order">
             <p className="field__label" id={`${headingId}-order`}>
-              Earliest first
+              {t('time.periods.earliestFirst')}
             </p>
             <ol
               className="eras__line"
@@ -363,7 +369,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
             >
               {drafts.map((era) => (
                 <li key={era.key}>
-                  <bdi>{era.name.trim() || 'New date period'}</bdi>
+                  <bdi>{era.name.trim() || t('time.periods.newCap')}</bdi>
                 </li>
               ))}
             </ol>
@@ -375,8 +381,9 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
             {drafts.map((era, index) => {
               const prefix = `eras[${index}]`
               const base = `era-${era.key}`
-              const name = era.name.trim() || 'new date period'
-              const label = era.abbreviation.trim() || era.name.trim() || 'Label'
+              const name = era.name.trim() || t('time.periods.newLower')
+              const label =
+                era.abbreviation.trim() || era.name.trim() || t('time.periods.labelDefault')
               const usage = usageOf(era)
               const inUse = usage !== null
               const first = index === 0
@@ -392,12 +399,12 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                     <div className="era__fields">
                       <div className="field">
                         <label className="field__label" htmlFor={`${base}-name`}>
-                          Name
+                          {t('time.periods.name')}
                         </label>
                         <input
                           id={`${base}-name`}
                           className="field__input"
-                          placeholder="Insert a name"
+                          placeholder={t('time.periods.namePlaceholder')}
                           autoComplete="off"
                           value={era.name}
                           onChange={(event) => update(index, { name: event.target.value })}
@@ -411,12 +418,12 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
 
                       <div className="field">
                         <label className="field__label" htmlFor={`${base}-abbreviation`}>
-                          Short label (optional)
+                          {t('time.periods.shortLabel')}
                         </label>
                         <input
                           id={`${base}-abbreviation`}
                           className="field__input"
-                          placeholder="Insert an abbreviation"
+                          placeholder={t('time.periods.abbreviationPlaceholder')}
                           autoComplete="off"
                           value={era.abbreviation}
                           onChange={(event) => update(index, { abbreviation: event.target.value })}
@@ -429,7 +436,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                         {/* Only while empty: once there is a label, Write dates as shows it in use. */}
                         {era.abbreviation.trim() ? null : (
                           <p className="field__hint" id={`${base}-abbreviation-hint`}>
-                            Without one, dates are written with the full name.
+                            {t('time.periods.abbreviationHint')}
                           </p>
                         )}
                         {fieldErrors[`${prefix}.abbreviation`] ? (
@@ -439,7 +446,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
 
                       <div className="field">
                         <span className="field__label" id={`${base}-direction`}>
-                          Years count
+                          {t('time.periods.yearsCount')}
                         </span>
                         <div
                           className="segmented"
@@ -457,7 +464,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                               onClick={() => update(index, { direction: option.value })}
                               data-testid={option.testId}
                             >
-                              {option.label}
+                              {option.label()}
                             </button>
                           ))}
                         </div>
@@ -471,16 +478,20 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                               <span className="era__sequence" aria-hidden="true">
                                 … → 3 → 2 → 1
                               </span>
-                              <span className="visually-hidden">Counting down: 3, 2, 1. </span>
-                              Year 1 is the last before the next period.
+                              <span className="visually-hidden">
+                                {t('time.periods.countDown.spoken')}
+                              </span>
+                              {t('time.periods.countDown.text')}
                             </>
                           ) : (
                             <>
                               <span className="era__sequence" aria-hidden="true">
                                 1 → 2 → 3 → …
                               </span>
-                              <span className="visually-hidden">Counting up: 1, 2, 3. </span>
-                              No set end.
+                              <span className="visually-hidden">
+                                {t('time.periods.countUp.spoken')}
+                              </span>
+                              {t('time.periods.countUp.text')}
                             </>
                           )}
                         </p>
@@ -488,7 +499,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
 
                       <div className="field">
                         <span className="field__label" id={`${base}-position`}>
-                          Write dates as
+                          {t('time.periods.writeAs')}
                         </span>
                         <div
                           className="segmented"
@@ -520,7 +531,8 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
 
                     <div className="era__foot">
                       <p className="era__use" id={`${base}-use`}>
-                        {usage ?? (era.id ? 'Nothing dated in it yet' : 'New, not saved yet')}
+                        {usage ??
+                          (era.id ? t('time.periods.nothingDated') : t('time.periods.notSaved'))}
                       </p>
                       <div className="era__tools">
                         <button
@@ -528,22 +540,22 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                           type="button"
                           onClick={() => move(index, -1)}
                           aria-disabled={first ? true : undefined}
-                          aria-label={`Move ${name} earlier`}
+                          aria-label={t('time.periods.moveEarlier', { name })}
                           data-testid="era-earlier"
                         >
                           <ActionIcon icon={ArrowUp} />
-                          Earlier
+                          {t('time.periods.earlier')}
                         </button>
                         <button
                           className="button button--secondary button--sm"
                           type="button"
                           onClick={() => move(index, 1)}
                           aria-disabled={last ? true : undefined}
-                          aria-label={`Move ${name} later`}
+                          aria-label={t('time.periods.moveLater', { name })}
                           data-testid="era-later"
                         >
                           <ActionIcon icon={ArrowDown} />
-                          Later
+                          {t('time.periods.later')}
                         </button>
                         <button
                           className="button button--secondary button--sm"
@@ -553,17 +565,15 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                           }}
                           aria-disabled={inUse ? true : undefined}
                           aria-describedby={inUse ? `${base}-use ${base}-keep` : undefined}
-                          title={
-                            inUse ? 'In use. Move its dates to another period first.' : undefined
-                          }
-                          aria-label={`Remove ${name}`}
+                          title={inUse ? t('time.periods.inUseTitle') : undefined}
+                          aria-label={t('time.periods.removeNamed', { name })}
                           data-testid="era-remove"
                         >
-                          Remove
+                          {t('time.periods.remove')}
                         </button>
                         {inUse ? (
                           <span className="visually-hidden" id={`${base}-keep`}>
-                            In use. Move its dates to another date period before removing it.
+                            {t('time.periods.inUseHidden')}
                           </span>
                         ) : null}
                       </div>
@@ -595,11 +605,11 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
         {dirty || drafts.length > 0 ? (
           <div className="form__actions eras__actions">
             <SaveAction
-              label="Save chronology"
+              label={t('time.periods.save')}
               isDirty={dirty}
               isSaving={saving}
               saves={saves}
-              restingStatus="Saved"
+              restingStatus={t('time.periods.saved')}
               statusId={statusId}
               statusTestId="chronology-status"
               testId="save-chronology"
@@ -608,7 +618,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
             />
             {dirty ? (
               <button className="button button--secondary" type="button" onClick={discard}>
-                Discard changes
+                {t('time.periods.discard')}
               </button>
             ) : null}
           </div>

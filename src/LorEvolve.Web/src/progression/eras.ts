@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { formatChronologyPoint } from '../chronology/format'
 import type { Chronology, ChronologyValue } from '../chronology/types'
 import type { FieldDefinition, FieldValue } from '../lore/types'
@@ -50,8 +51,12 @@ export function formatSpan(
   start: ChronologyValue | null,
   end: ChronologyValue | null,
 ) {
-  if (start && end) return `${point(chronology, start)} – ${point(chronology, end)}`
-  if (start) return `From ${point(chronology, start)}`
-  if (end) return `Until ${point(chronology, end)}`
+  if (start && end)
+    return t('progression.span.between', {
+      start: point(chronology, start),
+      end: point(chronology, end),
+    })
+  if (start) return t('progression.span.from', { start: point(chronology, start) })
+  if (end) return t('progression.span.until', { end: point(chronology, end) })
   return null
 }

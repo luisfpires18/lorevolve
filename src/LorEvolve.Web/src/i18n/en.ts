@@ -4,6 +4,10 @@ import auth from './en/auth'
 import entity from './en/entity'
 import entityTypes from './en/entityTypes'
 import lore from './en/lore'
+import time from './en/time'
+import progression from './en/progression'
+import places from './en/places'
+import manuscript from './en/manuscript'
 import relationships from './en/relationships'
 import workspace from './en/workspace'
 import portal from './en/portal'
@@ -26,6 +30,10 @@ const en = {
   entity,
   entityTypes,
   lore,
+  time,
+  progression,
+  places,
+  manuscript,
   relationships,
   workspace,
   portal,
