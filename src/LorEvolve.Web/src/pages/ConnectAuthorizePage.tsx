@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { BRAND_LINK_LABEL, BrandMark } from '../components/BrandMark'
+import { BrandMark } from '../components/BrandMark'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { Wordmark } from '../components/Wordmark'
 import { useAuth } from '../auth/useAuth'
@@ -14,7 +14,6 @@ import {
   type ConnectionRequestDetails,
   type ConsentToken,
 } from '../mcp/api'
-import { ROLE_LABELS } from '../universes/access'
 import { UniverseRole, type UniverseRoleValue } from '../universes/types'
 import { useI18n } from '../i18n'
 
@@ -37,8 +36,7 @@ const DECISION_FIELD = 'lorevolve_decision'
  * approved without one of them being pressed.
  */
 export default function ConnectAuthorizePage() {
-  // Its own text moves in #105; the list of what an app may read is already read from the dictionary.
-  useI18n()
+  const { t, tx } = useI18n()
   const { search } = useLocation()
   const { user } = useAuth()
   const params = useMemo(() => new URLSearchParams(search), [search])
@@ -48,7 +46,7 @@ export default function ConnectAuthorizePage() {
   const submitted = useRef(false)
   const detailsId = useId()
 
-  useDocumentTitle('Connect an AI app')
+  useDocumentTitle(t('universe.connect.title'))
 
   useEffect(() => {
     const controller = new AbortController()
@@ -120,7 +118,7 @@ export default function ConnectAuthorizePage() {
             aria-describedby={detailsId}
             data-testid="consent-approve"
           >
-            {deciding ? 'Connecting' : 'Approve'}
+            {deciding ? t('universe.connect.connecting') : t('universe.connect.approve')}
           </button>
         ) : null}
         <button
@@ -130,7 +128,7 @@ export default function ConnectAuthorizePage() {
           value="deny"
           data-testid="consent-deny"
         >
-          {load.kind === 'ready' ? 'Deny' : 'Go back to the app'}
+          {load.kind === 'ready' ? t('universe.connect.deny') : t('universe.connect.goBack')}
         </button>
       </div>
     </form>
@@ -140,8 +138,8 @@ export default function ConnectAuthorizePage() {
   const request =
     load.kind === 'no-access' ? (
       <div className="notice notice--error" role="alert" data-testid="consent-no-access">
-        <p>You don&rsquo;t have access to the universe this app asked for.</p>
-        <p>Nothing was connected. Going back tells the app it wasn&rsquo;t approved.</p>
+        <p>{t('universe.connect.noAccount')}</p>
+        <p>{t('universe.connect.noAccountNote')}</p>
       </div>
     ) : load.kind === 'ready' ? (
       <ConsentDetails details={load.details} id={detailsId} />
@@ -149,41 +147,47 @@ export default function ConnectAuthorizePage() {
 
   return (
     <ConsentLayout
-      heading="Connect an AI app"
+      heading={t('universe.connect.heading')}
       intro={
         // The gist, above the fold even when the warnings below are long (issue 38): read-only, manuscripts included,
         // and where the content goes. The full list and notes follow unchanged.
         <>
-          This app wants <strong>read-only</strong> access to one of your universes: its lore
-          entries, relationships, stories, scene manuscripts and timeline. What it reads goes to the
-          AI service behind it. Check who is asking before you approve.
-          {load.kind === 'ready' && load.details.proposalsRequested && load.details.canPropose
-            ? ' It also asks to propose changes for you to review, which you can allow below.'
-            : null}
+          {tx(
+            load.kind === 'ready' && load.details.proposalsRequested && load.details.canPropose
+              ? 'universe.connect.introProposals'
+              : 'universe.connect.intro',
+            { readOnly: <strong>{t('universe.connect.introReadOnly')}</strong> },
+          )}
         </>
       }
       footer={
         user ? (
           <>
-            Signed in as <bdi>{user.username}</bdi>.{' '}
-            <Link to="/app/profile?tab=connected-apps#connected-apps">See connected apps</Link>
+            {tx('universe.connect.signedIn', {
+              name: <bdi>{user.username}</bdi>,
+              link: (
+                <Link to="/app/profile?tab=connected-apps#connected-apps">
+                  {t('universe.connect.connectedApps')}
+                </Link>
+              ),
+            })}
           </>
         ) : null
       }
     >
       {load.kind === 'loading' ? (
         <p className="notice" role="status">
-          Checking this request&hellip;
+          {t('universe.connect.checking')}
         </p>
       ) : load.kind === 'invalid' ? (
         // An app or a return address LorEvolve does not recognise: there is nowhere trusted to send the browser back to.
         <div className="notice notice--error" role="alert" data-testid="consent-invalid">
-          <p>This connection request isn&rsquo;t valid, so nothing was connected.</p>
-          <p>Start again from your AI app.</p>
+          <p>{t('universe.connect.invalid')}</p>
+          <p>{t('universe.connect.invalidNote')}</p>
         </div>
       ) : load.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="consent-error">
-          <p>LorEvolve couldn&rsquo;t check this request. Reload the page to try again.</p>
+          <p>{t('universe.connect.checkFailed')}</p>
         </div>
       ) : token ? (
         decide(request)
@@ -210,13 +214,15 @@ function ConsentLayout({
   footer: ReactNode
   children: ReactNode
 }) {
+  const { t } = useI18n()
+
   return (
     <div className="consent-page">
       <main className="consent-card" id={MAIN_CONTENT_ID} tabIndex={-1} data-testid="consent-card">
         <Link
           className="consent-card__brand"
           to="/"
-          aria-label={BRAND_LINK_LABEL}
+          aria-label={t('shell.brand.homeLabel')}
           data-testid="auth-brand"
         >
           <BrandMark />
@@ -236,68 +242,62 @@ function ConsentLayout({
 }
 
 function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id: string }) {
+  const { t, tx } = useI18n()
+
   return (
     <div className="consent" id={id} data-testid="consent-details">
-      <section className="consent__part" aria-label="The app">
-        <p className="consent__label">App</p>
+      <section className="consent__part" aria-label={t('universe.connect.appSection')}>
+        <p className="consent__label">{t('universe.connect.appLabel')}</p>
         <p className="consent__app" data-testid="consent-app">
           <bdi>{details.clientName}</bdi>
         </p>
         {details.verifiedHost ? (
           <p className="consent__identity" data-testid="consent-verified">
-            Its details are published by <strong>{details.verifiedHost}</strong>, and LorEvolve
-            fetched them from there. The name is the one that site gives.
+            {tx('universe.connect.verified', { host: <strong>{details.verifiedHost}</strong> })}
           </p>
         ) : (
           <p className="callout callout--warning consent__warning" data-testid="consent-unverified">
-            LorEvolve can&rsquo;t confirm who made this app. It registered itself, and it chose its
-            own name. Approve only if you just added LorEvolve to an app you trust.
+            {t('universe.connect.unverified')}
           </p>
         )}
         <p className="consent__identity" data-testid="consent-return">
-          After you decide, your browser goes back to <strong>{details.redirectHost}</strong>.
+          {tx('universe.connect.returnTo', { host: <strong>{details.redirectHost}</strong> })}
         </p>
         {details.loopbackOnly ? (
           <p className="callout callout--warning consent__warning" data-testid="consent-loopback">
-            This app runs on your own device. Any program on this computer could use that address,
-            so approve only if you started this from an app on this computer.
+            {t('universe.connect.loopback')}
           </p>
         ) : null}
       </section>
 
-      <section className="consent__part" aria-label="The universe">
-        <p className="consent__label">Universe</p>
+      <section className="consent__part" aria-label={t('universe.connect.universeSection')}>
+        <p className="consent__label">{t('universe.connect.universeLabel')}</p>
         <p className="consent__universe" data-testid="consent-universe">
           <bdi>{details.universeName}</bdi>
         </p>
         <p className="consent__identity">
-          You&rsquo;re {roleWords(details.role)} here. The app gets your access to this universe and
-          no other.
+          {t(`universe.connect.youAre.${ROLE_SENTENCES[details.role]}`)}
         </p>
       </section>
 
-      <section className="consent__part" aria-label="What it can do">
-        <p className="consent__label">Read-only access to</p>
+      <section className="consent__part" aria-label={t('universe.connect.canDoSection')}>
+        <p className="consent__label">{t('universe.connect.readOnlyAccess')}</p>
         <ul className="consent__list" data-testid="consent-scope">
           {readable().map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
-        <p className="consent__identity">It can&rsquo;t create, edit or delete anything.</p>
+        <p className="consent__identity">{t('universe.connect.cannotWrite')}</p>
       </section>
 
       {details.proposalsRequested ? <ProposalChoice details={details} /> : null}
 
-      <section className="consent__part consent__part--notes" aria-label="Before you approve">
-        <p className="settings__note">
-          What the app reads goes to the AI service behind it, which handles it under its own terms.
-          Long manuscripts can take up a lot of the app&rsquo;s context, so it reads them a section
-          at a time.
-        </p>
-        <p className="settings__note">
-          The app stays connected until you disconnect it in Profile, Connected apps, or until you
-          no longer have access to this universe.
-        </p>
+      <section
+        className="consent__part consent__part--notes"
+        aria-label={t('universe.connect.notesSection')}
+      >
+        <p className="settings__note">{t('universe.connect.noteService')}</p>
+        <p className="settings__note">{t('universe.connect.noteStays')}</p>
       </section>
     </div>
   )
@@ -309,12 +309,13 @@ function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id
  * (ADR 0047, ADR 0062). Proposing is not writing: what the app sends waits in Pending AI Changes.
  */
 function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
+  const { t, tx } = useI18n()
+
   if (!details.canPropose) {
     return (
-      <section className="consent__part" aria-label="Access level">
+      <section className="consent__part" aria-label={t('universe.connect.levelSection')}>
         <p className="consent__identity" data-testid="consent-propose-unavailable">
-          The app also asked to propose changes. Your role here only reads, so it gets Reader
-          access.
+          {t('universe.connect.proposeUnavailable')}
         </p>
       </section>
     )
@@ -322,7 +323,7 @@ function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
 
   return (
     <fieldset className="consent__part consent__propose" aria-describedby="consent-propose-what">
-      <legend className="consent__label">Access level</legend>
+      <legend className="consent__label">{t('universe.connect.level')}</legend>
       <div className="consent__check">
         <input
           id="consent-reader"
@@ -333,7 +334,10 @@ function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
           data-testid="consent-reader"
         />
         <label htmlFor="consent-reader">
-          <strong>Reader</strong>: <bdi>{details.clientName}</bdi> only reads this universe
+          {tx('universe.connect.levelReader', {
+            level: <strong>{t('universe.connect.levelReaderName')}</strong>,
+            app: <bdi>{details.clientName}</bdi>,
+          })}
         </label>
       </div>
       <div className="consent__check">
@@ -345,22 +349,27 @@ function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
           data-testid="consent-propose"
         />
         <label htmlFor="consent-propose">
-          <strong>Creator</strong>: it also proposes new and changed content for you to review
+          {tx('universe.connect.levelCreator', {
+            level: <strong>{t('universe.connect.levelCreatorName')}</strong>,
+          })}
         </label>
       </div>
       <p className="consent__identity" id="consent-propose-what">
-        A Creator can send lore entries, articles, relationships, stories, scenes, prose, plot,
-        timeline moments, world rules
-        {details.canProposeSchema ? ', lore types, fields and groups' : ''} and, if you own this
-        universe, your ideas to Pending AI Changes in LorEvolve, as you. Removals only go to the
-        Trash, and a field is only ever archived. Nothing changes until you, or the universe&rsquo;s
-        owner or an Editor, approves it there. You can make it a Reader again in Connected apps.
+        {details.canProposeSchema
+          ? t('universe.connect.creatorCanSchema')
+          : t('universe.connect.creatorCan')}
       </p>
     </fieldset>
   )
 }
 
-function roleWords(role: UniverseRoleValue) {
-  if (role === UniverseRole.Owner) return 'the owner'
-  return role === UniverseRole.Editor ? 'an Editor' : `a ${ROLE_LABELS[role]}`
-}
+/**
+ * Each role gets its own whole sentence: "the owner", "an Editor", "a Reviewer" are an article glued to a noun, which
+ * no other language can follow, so nothing here is assembled from pieces.
+ */
+const ROLE_SENTENCES = {
+  [UniverseRole.Owner]: 'owner',
+  [UniverseRole.Editor]: 'editor',
+  [UniverseRole.Reviewer]: 'reviewer',
+  [UniverseRole.Viewer]: 'viewer',
+} as const satisfies Record<UniverseRoleValue, string>

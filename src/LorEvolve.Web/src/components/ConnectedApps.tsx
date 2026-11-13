@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { ApiError } from '../lib/api'
+import { t, tx, useI18n } from '../i18n'
 import { formatDate, formatDateTime } from '../lib/dates'
 import {
   ConnectedAppStatus,
@@ -13,9 +14,15 @@ import {
 type Load = { kind: 'loading' } | { kind: 'ready'; apps: ConnectedApp[] } | { kind: 'error' }
 
 const STATUS_WORDS: Record<ConnectedAppStatusValue, string> = {
-  [ConnectedAppStatus.Active]: 'Connected',
-  [ConnectedAppStatus.NoAccess]: 'No access: you’re no longer a member of this universe',
-  [ConnectedAppStatus.Expired]: 'Needs reconnecting: connect it again from the app to use it',
+  get [ConnectedAppStatus.Active]() {
+    return t('data.connectedApps.status.active')
+  },
+  get [ConnectedAppStatus.NoAccess]() {
+    return t('data.connectedApps.status.noAccess')
+  },
+  get [ConnectedAppStatus.Expired]() {
+    return t('data.connectedApps.status.expired')
+  },
 }
 
 /**
@@ -24,6 +31,7 @@ const STATUS_WORDS: Record<ConnectedAppStatusValue, string> = {
  * other connections carry on. Nothing secret is ever shown, because the API never sends any.
  */
 export function ConnectedApps() {
+  const { t } = useI18n()
   const [load, setLoad] = useState<Load>({ kind: 'loading' })
   const [announcement, setAnnouncement] = useState('')
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -55,7 +63,12 @@ export function ConnectedApps() {
         ? { kind: 'ready', apps: current.apps.filter((one) => one.id !== app.id) }
         : current,
     )
-    setAnnouncement(`${app.clientName} is disconnected from ${app.universeName}.`)
+    setAnnouncement(
+      t('data.connectedApps.disconnectedAnnouncement', {
+        client: app.clientName,
+        universe: app.universeName,
+      }),
+    )
     headingRef.current?.focus()
   }
 
@@ -72,31 +85,28 @@ export function ConnectedApps() {
         ref={headingRef}
         tabIndex={-1}
       >
-        Connected apps
+        {t('data.connectedApps.title')}
       </h2>
-      <p className="settings__note">
-        AI apps you&rsquo;ve allowed to read a universe. Each one reads only that universe, with
-        your access, and can&rsquo;t change anything.
-      </p>
+      <p className="settings__note">{t('data.connectedApps.note')}</p>
 
       {load.kind === 'loading' ? (
         <p className="usage__status" role="status">
-          Loading your connected apps&hellip;
+          {t('data.connectedApps.loading')}
         </p>
       ) : load.kind === 'error' ? (
         <div className="form__message" role="alert" data-testid="connected-apps-error">
-          <p>Your connected apps couldn&rsquo;t be loaded.</p>
+          <p>{t('data.connectedApps.loadFailed')}</p>
           <button
             className="button button--secondary button--sm"
             type="button"
             onClick={() => read()}
           >
-            Try again
+            {t('data.connectedApps.retry')}
           </button>
         </div>
       ) : load.apps.length === 0 ? (
         <p className="connectedapps__empty" data-testid="connected-apps-empty">
-          No apps are connected. To connect one, open a universe and choose Connect to AI.
+          {t('data.connectedApps.empty')}
         </p>
       ) : (
         <ul className="connectedapps__list">
@@ -114,6 +124,7 @@ export function ConnectedApps() {
 }
 
 function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemoved: () => void }) {
+  const { t } = useI18n()
   const [app, setApp] = useState(listed)
   const [stopping, setStopping] = useState(false)
   const [stopped, setStopped] = useState(false)
@@ -147,7 +158,7 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
         onRemoved()
         return
       }
-      setError('The app couldn’t be disconnected. Try again.')
+      setError(t('data.connectedApps.disconnectFailed'))
       setBusy(false)
     }
   }
@@ -160,7 +171,7 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
       setApp({ ...app, canPropose: false, canProposeSchema: false })
       setStopped(true)
     } catch {
-      setError('It couldn’t be made a Reader. Try again.')
+      setError(t('data.connectedApps.readerFailed'))
     } finally {
       setStopping(false)
     }
@@ -173,25 +184,21 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
           <bdi>{app.clientName}</bdi>
         </p>
         <p className="connectedapps__meta">
-          {app.verifiedHost ? (
-            <>
-              Published by <bdi>{app.verifiedHost}</bdi>
-            </>
-          ) : (
-            'Unverified app'
-          )}
+          {app.verifiedHost
+            ? tx('data.connectedApps.publishedBy', { host: <bdi>{app.verifiedHost}</bdi> })
+            : t('data.connectedApps.unverified')}
           {' · '}
-          {app.canPropose
-            ? 'Creator: reads, and proposes changes for review'
-            : 'Reader: reads only'}
+          {app.canPropose ? t('data.connectedApps.creator') : t('data.connectedApps.reader')}
         </p>
         <p className="connectedapps__meta">
-          Reads <bdi>{app.universeName}</bdi>
+          {tx('data.connectedApps.reads', { universe: <bdi>{app.universeName}</bdi> })}
         </p>
         <p className="connectedapps__meta">
-          Connected {formatDate(app.createdAt)}
+          {t('data.connectedApps.connectedOn', { date: formatDate(app.createdAt) })}
           {' · '}
-          {app.lastUsedAt ? `Last used ${formatDateTime(app.lastUsedAt)}` : 'Not used yet'}
+          {app.lastUsedAt
+            ? t('data.connectedApps.lastUsed', { date: formatDateTime(app.lastUsedAt) })
+            : t('data.connectedApps.neverUsed')}
         </p>
         <p
           className={
@@ -211,10 +218,13 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
             type="button"
             onClick={() => void stop()}
             disabled={busy || stopping}
-            aria-label={`Make ${app.clientName} a Reader of ${app.universeName}`}
+            aria-label={t('data.connectedApps.makeReaderLabel', {
+              client: app.clientName,
+              universe: app.universeName,
+            })}
             data-testid="stop-app-proposals"
           >
-            {stopping ? 'Changing' : 'Make Reader'}
+            {stopping ? t('data.connectedApps.changing') : t('data.connectedApps.makeReader')}
           </button>
         ) : null}
         <button
@@ -223,10 +233,13 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
           type="button"
           onClick={() => setConfirming(true)}
           disabled={busy || confirming}
-          aria-label={`Disconnect ${app.clientName} from ${app.universeName}`}
+          aria-label={t('data.connectedApps.disconnectLabel', {
+            client: app.clientName,
+            universe: app.universeName,
+          })}
           data-testid="disconnect-app"
         >
-          Disconnect
+          {t('data.connectedApps.disconnect')}
         </button>
       </div>
       {confirming ? (
@@ -239,12 +252,12 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
           data-testid="disconnect-app-confirm"
         >
           <p className="settings__confirmtitle" id={`${id}-confirm`}>
-            Disconnect <bdi>{app.clientName}</bdi> from <bdi>{app.universeName}</bdi>?
+            {tx('data.connectedApps.confirmTitle', {
+              client: <bdi>{app.clientName}</bdi>,
+              universe: <bdi>{app.universeName}</bdi>,
+            })}
           </p>
-          <p className="settings__note">
-            The app loses access straight away. You stay signed in to LorEvolve, and your other
-            connections keep working. You can connect it again later.
-          </p>
+          <p className="settings__note">{t('data.connectedApps.confirmNote')}</p>
           <div className="form__actions">
             <button
               className="button button--danger"
@@ -253,7 +266,7 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
               disabled={busy}
               data-testid="confirm-disconnect-app"
             >
-              {busy ? 'Disconnecting' : 'Disconnect'}
+              {busy ? t('data.connectedApps.disconnecting') : t('data.connectedApps.disconnect')}
             </button>
             <button
               className="button button--secondary"
@@ -261,15 +274,14 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
               onClick={() => setConfirming(false)}
               disabled={busy}
             >
-              Keep
+              {t('data.connectedApps.keep')}
             </button>
           </div>
         </div>
       ) : null}
       {stopped ? (
         <p className="connectedapps__meta" role="status" data-testid="app-proposals-stopped">
-          It is a Reader now: it can still read, and can&rsquo;t propose changes. What it already
-          proposed can only be rejected.
+          {t('data.connectedApps.stopped')}
         </p>
       ) : null}
       {error ? (
