@@ -40,6 +40,7 @@ import {
   reorderChapters,
   reorderPlotArcs,
   reorderScenes,
+  updateScene,
 } from '../stories/api'
 import {
   arcCountLabel,
@@ -294,6 +295,8 @@ function StoryView({ view }: { view: StoryViewName }) {
   const isEmpty = !hasStructure && scenes.length === 0
   const unchaptered = scenesIn(scenes, null)
   const groups = chapterGroups(arcs, chapters)
+  // The story opens on its first arc and the first chapter on the page, so a folded story still shows where it starts.
+  const opensOn = (groups.unarced[0] ?? groups.arcs[0]?.chapters[0])?.id ?? null
   const numbers = chapterNumbers(arcs, chapters)
   const labels = new Map(chapterChoices(arcs, chapters).map((choice) => [choice.id, choice.label]))
   const storyPath = `/app/universes/${universe.id}/stories/${story.id}`
@@ -334,6 +337,38 @@ function StoryView({ view }: { view: StoryViewName }) {
       storyPublication.state.universeIsPublic &&
       storyPublication.state.publicSummary !== null
     : null
+
+  /**
+   * The lore of one scene, dragged into a new order on its card. The chips move at once and the scene is saved behind
+   * them; a refused save puts the story back as the server has it and says so.
+   */
+  async function reorderLore(scene: Scene, entityIds: string[]) {
+    const byId = new Map(scene.entities.map((reference) => [reference.entityId, reference]))
+    const reordered = entityIds.map((id) => byId.get(id)).filter((one) => one !== undefined)
+    if (reordered.length !== scene.entities.length) return
+
+    setMessage(null)
+    patchScene(scene.id, { entities: reordered })
+
+    try {
+      const saved = await updateScene(universe.id, story.id, scene.id, {
+        title: scene.title,
+        summary: scene.summary,
+        notes: scene.notes,
+        povEntityId: scene.pov?.entityId ?? null,
+        chronology: scene.chronology,
+        entityIds,
+        chapterId: scene.chapterId,
+        expectedVersion: scene.version,
+      })
+      patchScene(scene.id, saved)
+      setAnnouncement(`The lore of “${scene.title}” is in a new order.`)
+    } catch (error: unknown) {
+      patchScene(scene.id, { entities: scene.entities })
+      setMessage(error instanceof ApiError ? error.message : 'The new order could not be saved.')
+      reload()
+    }
+  }
 
   function patchScene(id: string, patch: Partial<Scene>) {
     setState((current) =>
@@ -697,6 +732,7 @@ function StoryView({ view }: { view: StoryViewName }) {
         onAddBeat={(target) => setSceneForm({ mode: 'edit', scene: target, addBeat: true })}
         onSuggest={(target) => setSceneForm({ mode: 'suggest', scene: target })}
         onDelete={(target) => void removeScene(target)}
+        onReorderLore={(target, entityIds) => void reorderLore(target, entityIds)}
         publication={
           access.publish ? (
             <StoryPartPublication
@@ -780,6 +816,7 @@ function StoryView({ view }: { view: StoryViewName }) {
           onAddScene={(target) => setSceneForm({ mode: 'new', chapterId: target.id })}
           onEdit={(target, at) => setChapterForm({ mode: 'edit', chapter: target, index: at })}
           onDelete={(target, at) => void removeChapter(target, at)}
+          startsOpen={chapter.id === opensOn}
         >
           <ol className="scenes" data-testid="chapter-scenes">
             {sceneCards(inside, titleLevel === 4 ? 5 : 4)}
@@ -1061,6 +1098,7 @@ function StoryView({ view }: { view: StoryViewName }) {
               onAddChapter={(target) => setChapterForm({ mode: 'new', arcId: target.id })}
               onEdit={(target, at) => setArcForm({ mode: 'edit', arc: target, index: at })}
               onDelete={(target, at) => void removeArc(target, at)}
+              startsOpen={index === 0}
               publication={
                 access.publish ? (
                   <StoryPartPublication

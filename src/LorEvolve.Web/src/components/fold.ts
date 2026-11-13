@@ -16,9 +16,12 @@ export function revealInFolds(target: Element | null) {
   target?.dispatchEvent(new Event(REVEAL, { bubbles: true }))
 }
 
-/** A fold's open state, the id its parts carry, and the ref its container takes so `revealInFolds` can open it. */
-export function useFold<T extends HTMLElement>() {
-  const [open, setOpen] = useState(false)
+/**
+ * A fold's open state, the id its parts carry, and the ref its container takes so `revealInFolds` can open it. `startsOpen`
+ * is for the one arc and the one chapter a story opens on, so the page is not a wall of folded headings.
+ */
+export function useFold<T extends HTMLElement>(startsOpen = false) {
+  const [open, setOpen] = useState(startsOpen)
   const ref = useRef<T>(null)
   const bodyId = useId()
 

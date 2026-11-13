@@ -1,23 +1,22 @@
-import { useId, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { useId, type KeyboardEvent } from 'react'
+import { DndContext, MouseSensor, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
+import { Link } from 'react-router-dom'
+import { FoldToggle } from './FoldToggle'
 import { LoreReference } from './LoreReference'
+import { LoreReorderHandle } from './LoreReorderHandle'
+import { useFold } from './fold'
 import type { Chronology } from '../chronology/types'
-import { byGroupPriority } from '../lore/groupOrder'
-import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import { sceneWhen } from '../stories/format'
-import type { Scene, SceneBeat } from '../stories/types'
+import type { Scene, SceneBeat, SceneLoreReference } from '../stories/types'
 
 /*
  * What a scene refers to, drawn the same way wherever a scene is shown - its card on the Scenes view and its page on the
- * Manuscript view - so the two cannot drift apart. All of it is read-only here: the scene form edits the date, the point
- * of view, the lore and the beats. `testId` names the surface, so each keeps its own
- * test ids.
+ * Manuscript view - so the two cannot drift apart. The scene form edits the date, the point of view, the lore and the
+ * beats; the one edit made here is the order of the lore, dragged on the card. `testId` names the surface, so each keeps
+ * its own test ids.
  */
 
 type Surface = 'scene' | 'manuscript'
-
-/** Lore chips shown before the list folds behind "Show all"; a scene can link many entries. */
-const LORE_COLLAPSED = 6
 
 /**
  * Where the scene happens in the world and whose eyes it is seen through, or nothing when it has neither. The date opens
@@ -64,77 +63,144 @@ export function SceneStamp({
 }
 
 /**
- * The lore the scene links, each a way to the entry's own page - or named and unlinked while it is in the Trash. Read in
- * the universe's group priority (the Groups tab of Types), picked order inside a group; until the groups are read, or
- * outside the workspace, in picked order.
+ * The lore the scene links, each a way to the entry's own page - or named and unlinked while it is in the Trash. All of
+ * it, always, in the order the author put it in. Where `onReorder` is given - the scene's card, for an author who may
+ * edit - each chip carries a grip: a mouse drags it, the arrow keys move it one place, and either way the whole order
+ * goes back to the scene.
  */
 export function SceneLore({
   universeId,
   scene,
   testId,
+  onReorder,
 }: {
   universeId: string
   scene: Scene
   testId: Surface
+  /** The scene's lore in its new order, to save. Left out, the list is read-only. */
+  onReorder?: (entityIds: string[]) => void
 }) {
   const labelId = useId()
-  const listId = useId()
-  const [expanded, setExpanded] = useState(false)
-  const groups = useOutletContext<WorkspaceContext | undefined>()?.groups
-  if (scene.entities.length === 0) return null
-  const entities = Array.isArray(groups) ? byGroupPriority(scene.entities, groups) : scene.entities
-  const collapsible = entities.length > LORE_COLLAPSED
-  const shown = collapsible && !expanded ? entities.slice(0, LORE_COLLAPSED) : entities
+  const sensors = useSensors(useSensor(MouseSensor, { activationConstraint: { distance: 4 } }))
+  const entities = scene.entities
+  if (entities.length === 0) return null
+
+  const move = (from: number, to: number) => {
+    if (!onReorder || to < 0 || to >= entities.length || from === to) return
+    const order = entities.map((reference) => reference.entityId)
+    const [carried] = order.splice(from, 1)
+    order.splice(to, 0, carried!)
+    onReorder(order)
+  }
+
+  const list = (
+    <ul className="scene__lore" aria-labelledby={labelId} data-testid={`${testId}-lore`}>
+      {entities.map((reference, index) => (
+        <LoreChip
+          key={reference.entityId}
+          universeId={universeId}
+          reference={reference}
+          draggable={Boolean(onReorder)}
+          onKey={(event) => {
+            const back = event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+            const on = event.key === 'ArrowRight' || event.key === 'ArrowDown'
+            if (!back && !on) return
+            event.preventDefault()
+            move(index, index + (back ? -1 : 1))
+          }}
+        />
+      ))}
+    </ul>
+  )
 
   return (
     <div className="scene__refs scene__refs--lore">
       <span className="scene__label" id={labelId}>
         Lore <span className="scene__count">{entities.length}</span>
       </span>
-      <ul
-        id={listId}
-        className="scene__lore"
-        aria-labelledby={labelId}
-        data-testid={`${testId}-lore`}
-      >
-        {shown.map((reference) => (
-          <li key={reference.entityId}>
-            <LoreReference universeId={universeId} reference={reference} />
-          </li>
-        ))}
-        {collapsible ? (
-          <li>
-            <button
-              className="scene__loretoggle"
-              type="button"
-              aria-expanded={expanded}
-              aria-controls={listId}
-              onClick={() => setExpanded((open) => !open)}
-              data-testid={`${testId}-lore-toggle`}
-            >
-              {expanded ? 'Show less' : `Show all ${entities.length}`}
-            </button>
-          </li>
-        ) : null}
-      </ul>
+      {onReorder ? (
+        <DndContext
+          sensors={sensors}
+          onDragEnd={({ active, over }) => {
+            if (!over) return
+            const from = entities.findIndex((one) => one.entityId === active.id)
+            const to = entities.findIndex((one) => one.entityId === over.id)
+            if (from !== -1 && to !== -1) move(from, to)
+          }}
+          accessibility={{
+            screenReaderInstructions: {
+              draggable: 'Drag a lore entry to move it, or move it with the arrow keys.',
+            },
+          }}
+        >
+          {list}
+        </DndContext>
+      ) : (
+        list
+      )}
     </div>
+  )
+}
+
+/** One chip in the list: the entry, and the grip it is moved by where the list can be reordered. */
+function LoreChip({
+  universeId,
+  reference,
+  draggable,
+  onKey,
+}: {
+  universeId: string
+  reference: SceneLoreReference
+  draggable: boolean
+  onKey: (event: KeyboardEvent<HTMLButtonElement>) => void
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: reference.entityId, disabled: !draggable })
+
+  return (
+    <li ref={draggable ? setNodeRef : undefined} data-over={isOver ? 'true' : undefined}>
+      {draggable ? (
+        <LoreReorderHandle id={reference.entityId} name={reference.name} onKey={onKey} />
+      ) : null}
+      <LoreReference universeId={universeId} reference={reference} />
+    </li>
   )
 }
 
 /**
  * The scene's beats, in order (ADR 0070): each step a line, its note under it. Nothing when it has none - a scene needs no
- * beat. Edited in the scene's own drawer.
+ * beat. Folded like the rest of a story, so a scene of twenty beats stays one line until it is asked for. Edited in the
+ * scene's own drawer.
  */
 export function SceneBeatList({ beats, testId }: { beats: SceneBeat[]; testId: Surface }) {
   const labelId = useId()
+  const {
+    open: foldOpen,
+    setOpen: setFoldOpen,
+    ref: foldRef,
+    bodyId: foldBodyId,
+  } = useFold<HTMLDivElement>()
   if (beats.length === 0) return null
 
   return (
-    <div className="scene__refs scene__refs--beats">
+    <div className="scene__refs scene__refs--beats" ref={foldRef}>
       <span className="scene__label" id={labelId}>
-        Beats
+        <FoldToggle
+          open={foldOpen}
+          onToggle={setFoldOpen}
+          controls={foldBodyId}
+          label="the beats"
+          testId={`${testId}-beats-toggle`}
+        />
+        Beats <span className="scene__count">{beats.length}</span>
       </span>
-      <ol className="scene__beats" aria-labelledby={labelId} data-testid={`${testId}-beats`}>
+      <ol
+        id={foldBodyId}
+        className="scene__beats"
+        aria-labelledby={labelId}
+        hidden={!foldOpen}
+        data-fold={foldBodyId}
+        data-testid={`${testId}-beats`}
+      >
         {beats.map((beat) => (
           <li key={beat.id} className="scene__beat" data-testid={`${testId}-beat`}>
             <bdi className="scene__beattitle">{beat.title}</bdi>

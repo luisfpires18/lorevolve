@@ -26,11 +26,20 @@ async function seedStory(page: Page, title: string): Promise<Seeded> {
     premise: null,
     status: 1,
   })
-  return { universeId, storyId, story: `/api/universes/${universeId}/stories/${storyId}` }
+  return {
+    universeId,
+    storyId,
+    story: `/api/universes/${universeId}/stories/${storyId}`,
+  }
 }
 
 const chapter = (page: Page, s: Seeded, title: string, plotArcId: string | null = null) =>
-  post(page, `${s.story}/chapters`, { title, summary: null, notes: null, plotArcId })
+  post(page, `${s.story}/chapters`, {
+    title,
+    summary: null,
+    notes: null,
+    plotArcId,
+  })
 
 const scene = (page: Page, s: Seeded, title: string, chapterId: string | null = null) =>
   post(page, `${s.story}/scenes`, {
@@ -45,6 +54,22 @@ const scene = (page: Page, s: Seeded, title: string, chapterId: string | null = 
 
 const arc = (page: Page, s: Seeded, title: string, description: string | null = null) =>
   post(page, `${s.story}/plot-arcs`, { title, description, notes: null })
+
+/** One lore entry of the universe's own Character type, to link to a scene. */
+async function entity(page: Page, universeId: string, name: string) {
+  const types = (await (
+    await page.request.get(`/api/universes/${universeId}/entity-types`)
+  ).json()) as { id: string; name: string }[]
+  return post(page, `/api/universes/${universeId}/entities`, {
+    entityTypeId: types.find((type) => type.name === 'Character')!.id,
+    name,
+    summary: null,
+    canonStatus: 2,
+    aliases: [],
+    tags: [],
+    fields: [],
+  })
+}
 
 /** Each arc, chapter and scene as the Scenes view draws it, in page order. */
 async function structure(page: Page) {
@@ -358,7 +383,7 @@ test.describe('arcs', () => {
     }
   })
 
-  test('arcs and chapters start folded, open to show what they hold, and fold it away again', async ({
+  test('a story opens on its first arc and chapter, folds the rest, and folds them away again', async ({
     page,
   }) => {
     await signUp(page)
@@ -366,30 +391,69 @@ test.describe('arcs', () => {
     const forging = await arc(page, s, 'Forging', 'Where the weapon is made.')
     const expedition = await chapter(page, s, 'Expedition', forging)
     await scene(page, s, 'The Orders', expedition)
+    const aftermath = await arc(page, s, 'Aftermath', 'What the weapon leaves.')
+    const roads = await chapter(page, s, 'Roads', aftermath)
+    await scene(page, s, 'The Long Walk', roads)
 
     await page.goto(`/app/universes/${s.universeId}/stories/${s.storyId}`)
     const forgingArc = page.locator(`#arc-${forging}`)
+    const aftermathArc = page.locator(`#arc-${aftermath}`)
     const expeditionChapter = page.locator(`#chapter-${expedition}`)
     const orders = page.locator('[data-testid="scene"][data-title="The Orders"]')
 
-    // Folded on arrival: the arc is there, what it holds is not.
-    await expect(forgingArc.getByTestId('arc-toggle')).toHaveAttribute('aria-expanded', 'false')
-    await expect(forgingArc.getByTestId('arc-description')).toBeHidden()
-    await expect(expeditionChapter).toBeHidden()
-
-    // Opening the arc shows its chapter, still folded over its scene.
-    await forgingArc.getByTestId('arc-toggle').click()
+    // On arrival the first arc and its first chapter are open, so the story shows where it starts; its scene is folded.
     await expect(forgingArc.getByTestId('arc-toggle')).toHaveAttribute('aria-expanded', 'true')
     await expect(forgingArc.getByTestId('arc-description')).toBeVisible()
     await expect(expeditionChapter).toBeVisible()
-    await expect(orders).toBeHidden()
-    await expeditionChapter.getByTestId('chapter-toggle').click()
+    await expect(expeditionChapter.getByTestId('chapter-toggle')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
     await expect(orders).toBeVisible()
 
-    // Folding the arc takes the chapter and its scene with it.
+    // Every later arc is folded, and holds its chapters out of sight.
+    await expect(aftermathArc.getByTestId('arc-toggle')).toHaveAttribute('aria-expanded', 'false')
+    await expect(page.locator(`#chapter-${roads}`)).toBeHidden()
+    await aftermathArc.getByTestId('arc-toggle').click()
+    await expect(page.locator(`#chapter-${roads}`)).toBeVisible()
+
+    // Folding the first arc takes its chapter and that chapter's scene with it.
     await forgingArc.getByTestId('arc-toggle').click()
     await expect(forgingArc.getByTestId('arc-toggle')).toHaveAttribute('aria-expanded', 'false')
     await expect(expeditionChapter).toBeHidden()
     await expect(orders).toBeHidden()
+  })
+
+  test("an author drags a scene's lore into another order, and it keeps it", async ({ page }) => {
+    await signUp(page)
+    const s = await seedStory(page, unique('The Ordered Lore '))
+    const mara = await entity(page, s.universeId, 'Mara')
+    const tower = await entity(page, s.universeId, 'White Tower')
+    const sceneId = await post(page, `${s.story}/scenes`, {
+      title: 'The Council',
+      summary: null,
+      notes: null,
+      povEntityId: null,
+      chronology: null,
+      entityIds: [mara, tower],
+      chapterId: null,
+    })
+
+    await page.goto(`/app/universes/${s.universeId}/stories/${s.storyId}`)
+    await expandStory(page)
+    const lore = page.locator(`#scene-${sceneId}`).getByTestId('scene-lore')
+    await expect(lore.getByRole('listitem')).toHaveText(['Mara', 'White Tower'])
+
+    // The grip moves a chip with the arrow keys, which is the same move a drag makes.
+    await lore.getByTestId('lore-reorder-Mara').focus()
+    await page.keyboard.press('ArrowRight')
+    await expect(lore.getByRole('listitem')).toHaveText(['White Tower', 'Mara'])
+
+    // The order is the scene's own: it survives a reload.
+    await page.reload()
+    await expandStory(page)
+    await expect(
+      page.locator(`#scene-${sceneId}`).getByTestId('scene-lore').getByRole('listitem'),
+    ).toHaveText(['White Tower', 'Mara'])
   })
 })

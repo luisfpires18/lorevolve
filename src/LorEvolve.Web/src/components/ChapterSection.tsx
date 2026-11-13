@@ -29,6 +29,8 @@ interface ChapterSectionProps {
   onAddScene: (chapter: Chapter) => void
   onEdit: (chapter: Chapter, index: number) => void
   onDelete: (chapter: Chapter, index: number) => void
+  /** The one chapter a story opens on: its scenes are in view without a click. */
+  startsOpen?: boolean
   /** The chapter's scenes, already drawn. */
   children: ReactNode
 }
@@ -55,6 +57,7 @@ export function ChapterSection({
   onEdit,
   onDelete,
   children,
+  startsOpen = false,
 }: ChapterSectionProps) {
   const access = useUniverseAccess()
   const headingId = useId()
@@ -64,7 +67,7 @@ export function ChapterSection({
     setOpen: setFoldOpen,
     ref: foldRef,
     bodyId: foldBodyId,
-  } = useFold<HTMLElement>()
+  } = useFold<HTMLElement>(startsOpen)
 
   return (
     <section

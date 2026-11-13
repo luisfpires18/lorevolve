@@ -19,6 +19,8 @@ interface ArcSectionProps {
   onAddChapter: (arc: PlotArc) => void
   onEdit: (arc: PlotArc, index: number) => void
   onDelete: (arc: PlotArc, index: number) => void
+  /** The one arc a story opens on: its chapters are in view without a click. */
+  startsOpen?: boolean
   /** The arc's chapters, already drawn. */
   children: ReactNode
   /** The arc's publication control (ADR 0039), drawn first among its tools. */
@@ -43,6 +45,7 @@ export function ArcSection({
   onDelete,
   children,
   publication,
+  startsOpen = false,
 }: ArcSectionProps) {
   const access = useUniverseAccess()
   const headingId = useId()
@@ -51,7 +54,7 @@ export function ArcSection({
     setOpen: setFoldOpen,
     ref: foldRef,
     bodyId: foldBodyId,
-  } = useFold<HTMLElement>()
+  } = useFold<HTMLElement>(startsOpen)
 
   return (
     <section
