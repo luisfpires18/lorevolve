@@ -71,6 +71,10 @@ public static class PublishEverythingEndpoints
             [.. stories.Where(story => !story.Ready).Select(story => new PublishEverythingSkipped(story.Id, story.Title))]));
     }
 
+    private static async Task<HashSet<string>> TakenSlugsAsync(IQueryable<string?> slugs, CancellationToken cancellationToken) =>
+        (await slugs.Where(slug => slug != null).Select(slug => slug!).ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.Ordinal);
+
     private static async Task<IResult> PublishAsync(
         Guid universeId, ClaimsPrincipal principal, LorEvolveDbContext db, CancellationToken cancellationToken)
     {
@@ -84,36 +88,36 @@ public static class PublishEverythingEndpoints
 
         var now = DateTime.UtcNow;
         var lore = await Lore(db, universeId).ToListAsync(cancellationToken);
+
+        // Each namespace's addresses are read once; Choose adds every new one, so the next entry sees it as taken.
+        var loreSlugs = await TakenSlugsAsync(
+            db.Entities.AsNoTracking().Where(candidate => candidate.UniverseId == universeId).Select(candidate => candidate.PublicSlug),
+            cancellationToken);
         foreach (var entry in lore)
         {
-            entry.PublicSlug ??= await PublicSlugs.ChooseAsync(
-                db.Entities.AsNoTracking().Where(candidate => candidate.UniverseId == universeId).Select(candidate => candidate.PublicSlug),
-                entry.Name,
-                PublicSlugs.LoreFallback,
-                cancellationToken);
+            entry.PublicSlug ??= PublicSlugs.Choose(loreSlugs, entry.Name, PublicSlugs.LoreFallback);
             entry.PublishedAt ??= now;
             entry.Visibility = ContentVisibility.Public;
-
-            // Saved one by one, so the next address chosen sees this one as taken.
-            await db.SaveChangesAsync(cancellationToken);
         }
+
+        await db.SaveChangesAsync(cancellationToken);
 
         var stories = await CompleteStories(db, universeId)
             .Where(story => story.PublicSummary != null)
             .ToListAsync(cancellationToken);
+        var storySlugs = await TakenSlugsAsync(
+            db.Stories.AsNoTracking().Where(candidate => candidate.UniverseId == universeId).Select(candidate => candidate.PublicSlug),
+            cancellationToken);
         var storiesPublished = 0;
         foreach (var story in stories.Where(story => story.Visibility == ContentVisibility.Private))
         {
-            story.PublicSlug ??= await PublicSlugs.ChooseAsync(
-                db.Stories.AsNoTracking().Where(candidate => candidate.UniverseId == universeId).Select(candidate => candidate.PublicSlug),
-                story.Title,
-                PublicSlugs.StoryFallback,
-                cancellationToken);
+            story.PublicSlug ??= PublicSlugs.Choose(storySlugs, story.Title, PublicSlugs.StoryFallback);
             story.PublishedAt ??= now;
             story.Visibility = ContentVisibility.Public;
             storiesPublished++;
-            await db.SaveChangesAsync(cancellationToken);
         }
+
+        await db.SaveChangesAsync(cancellationToken);
 
         var storyIds = stories.Select(story => story.Id).ToList();
         var scenes = await db.Scenes

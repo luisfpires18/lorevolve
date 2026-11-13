@@ -275,7 +275,23 @@ export default function UniverseTypes() {
 
   /** One place up or down among the type's own siblings; the list comes back from the move itself. */
   async function move(type: EntityType, direction: 'up' | 'down') {
-    if (moving) return
+    if (moving || !types) return
+    // Shown at once by swapping places with the neighbour; the server's list replaces it, or the snapshot comes back.
+    const previous = types
+    const node = tree.byId.get(type.id)
+    const siblings = node ? siblingsOf(node) : []
+    const neighbour = siblings[siblings.indexOf(node!) + (direction === 'up' ? -1 : 1)]?.type
+    if (neighbour) {
+      setTypes(
+        previous.map((each) =>
+          each.id === type.id
+            ? { ...each, displayOrder: neighbour.displayOrder }
+            : each.id === neighbour.id
+              ? { ...each, displayOrder: type.displayOrder }
+              : each,
+        ),
+      )
+    }
     setMessage(null)
     setNotice(null)
     setMoving(type.id)
@@ -285,6 +301,7 @@ export default function UniverseTypes() {
       setTypes(moved)
       setNotice(`Moved “${type.name}” ${direction}.`)
     } catch (error: unknown) {
+      setTypes(previous)
       report(error, 'That type could not be moved.')
     } finally {
       setMoving(null)

@@ -367,7 +367,14 @@ function Workspace() {
           {/* The world's artwork in miniature beside its name, when its owner has given it one. Decorative. */}
           <div className="sidebar__identity">
             {artwork ? (
-              <img className="sidebar__art" src={artwork} alt="" width={44} height={44} />
+              <img
+                className="sidebar__art"
+                src={artwork}
+                alt=""
+                width={44}
+                height={44}
+                decoding="async"
+              />
             ) : null}
             {/* A name, not the screen's heading: each screen's own title is its h1. */}
             <p className="sidebar__name" data-testid="workspace-name">
