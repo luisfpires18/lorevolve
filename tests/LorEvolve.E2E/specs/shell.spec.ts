@@ -129,7 +129,9 @@ test.describe('the shell', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'true')
     await expect(workspace).toBeFocused()
 
-    // Go to's three places, then the profile; the theme's two buttons sit between it and the way out (013).
+    // Go to's three places, then the profile; the theme's two buttons and the language's two sit between it
+    // and the way out (013, ADR 0071). Both switches are segmented controls, and their buttons take their
+    // turn in the walk like every other item in the menu.
     await page.keyboard.press('ArrowDown')
     await expect(page.getByTestId('account-menu-ideas')).toBeFocused()
     await page.keyboard.press('ArrowDown')
@@ -140,6 +142,10 @@ test.describe('the shell', () => {
     await expect(page.getByTestId('theme-light')).toBeFocused()
     await page.keyboard.press('ArrowDown')
     await expect(page.getByTestId('theme-dark')).toBeFocused()
+    await page.keyboard.press('ArrowDown')
+    await expect(page.getByTestId('language-en')).toBeFocused()
+    await page.keyboard.press('ArrowDown')
+    await expect(page.getByTestId('language-pt-PT')).toBeFocused()
     await page.keyboard.press('ArrowDown')
     await expect(signOut).toBeFocused()
     await page.keyboard.press('ArrowDown')
@@ -160,8 +166,8 @@ test.describe('the shell', () => {
     // Tab past the last item leaves the menu, and the menu closes behind it.
     await page.keyboard.press('Enter')
     await expect(workspace).toBeFocused()
-    // My workspace, Ideas, Explore, Profile, Light, Dark, Sign out - and the next Tab is out.
-    for (let press = 0; press < 7; press++) await page.keyboard.press('Tab')
+    // My workspace, Ideas, Explore, Profile, Light, Dark, English, Português, Sign out - and the next Tab is out.
+    for (let press = 0; press < 9; press++) await page.keyboard.press('Tab')
     await expect(panel).toHaveCount(0)
 
     // Choosing an item does what it says.

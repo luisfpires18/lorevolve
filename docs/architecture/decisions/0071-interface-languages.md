@@ -33,7 +33,7 @@ and 107 end-to-end specs that find elements by their English text.
   segmented control: an inline SVG flag (flag emoji do not render on Windows) and the language's own name.
 - Each language in `locales.ts` has `ready`. Only ready languages are offered or picked from the browser. A saved choice
   of a known but unready language still applies, so a translation in progress can be previewed by setting the key; the
-  switch then shows, so English is one press away. `pt-PT` stays unready until #107.
+  switch then shows, so English is one press away. `pt-PT` became ready in #107, so the switch is live.
 
 ### Adding a language
 
@@ -45,6 +45,11 @@ and 107 end-to-end specs that find elements by their English text.
 ## Consequences
 
 - Moving strings into `en.ts` must keep English output identical, so the English end-to-end specs stay valid.
+- The end-to-end suite pins `locale: 'en-US'` (`playwright.config.ts`), because LorEvolve otherwise opens in the
+  language the browser asks for and every English assertion would fail on a Portuguese machine. `language.spec.ts`
+  asks for other languages itself.
+- A visible switch adds two buttons to the account menu, which is a roving keyboard walk: a spec that counts its items
+  counts these too.
 - New UI text goes through `t()` from now on. `python scripts/find-hardcoded-text.py` is the check: it parses each
   `.tsx` and exits 1 on any prose left in a component. Three strings reached review past a grep before it existed.
 - A component that only formats a date (no `useI18n`) shows the new format on its next render, not at the moment of the

@@ -26,8 +26,7 @@ export const LOCALES: readonly Locale[] = [
     code: 'pt-PT',
     label: 'Português',
     flag: FlagPT,
-    // Not offered until every message is translated and the layout holds in Portuguese (#107). Also in index.html.
-    ready: false,
+    ready: true,
     load: () => import('./pt-PT').then((module) => module.default),
   },
 ]
