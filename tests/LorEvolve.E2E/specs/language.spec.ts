@@ -74,25 +74,50 @@ test('the workspace follows the same choice, and English comes back', async ({ p
 test.describe('a browser that asks for Portuguese', () => {
   test.use({ locale: 'pt-PT' })
 
-  test('is answered in Portuguese, with its dates and its numbers', async ({ page }) => {
+  test('is answered in Portuguese, and its dates are written that way', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt-PT')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Explorar mundos')
+    // Explore reads every published world before it draws its heading, and this suite leaves a great many
+    // behind, so give the first paint longer than the default here.
+    await expect(page).toHaveTitle(/Explorar mundos/, { timeout: 20_000 })
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Explorar mundos', {
+      timeout: 20_000,
+    })
 
-    // The same instant, written as each language writes it: the formatters follow the choice, not the browser.
-    const written = await page.evaluate(() =>
-      new Intl.DateTimeFormat(document.documentElement.lang, {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      }).format(new Date('2026-03-01T12:00:00Z')),
-    )
-    expect(written).toContain('2026')
-    expect(written).not.toContain('Mar 1')
+    // Through the API, not the form: this browser is being served the Portuguese form, and the point of
+    // the test is the date, not the sign-up labels (the first test covers those).
+    const username = unique('language')
+    const registered = await page.request.post('/api/auth/register', {
+      data: {
+        username,
+        email: `${username}@example.test`,
+        password: PASSWORD,
+        confirmPassword: PASSWORD,
+      },
+    })
+    expect(registered.ok(), 'register').toBe(true)
+    const { id } = await page.request
+      .post('/api/universes', { data: { name: unique('Hollowmere ') } })
+      .then((response) => response.json() as Promise<{ id: string }>)
 
-    // Choosing English is remembered over what the browser asks for.
-    await page.getByTestId('portal-appearance').click()
+    // A date the app itself wrote, through `formatDate`, not one this spec formatted: the universe's
+    // overview says when it was created, and that line is the shortest path to the formatter.
+    await page.goto(`/app/universes/${id}`)
+    const dates = page.locator('.overview__meta').first()
+    const portuguese = (await dates.textContent())?.trim() ?? ''
+    expect(portuguese).toMatch(/\d{4}/)
+    expect(portuguese).not.toMatch(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/)
+
+    // The same instant in English, so the difference is the formatter following the language and not
+    // the clock: the words around it change, and so do the digits.
+    await openAccountMenu(page)
     await page.getByTestId('language-en').click()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    const english = (await dates.textContent())?.trim() ?? ''
+    expect(english).toMatch(/^Created /)
+    expect(english).not.toBe(portuguese)
+
+    // And that choice is remembered over what the browser asks for.
     await page.reload()
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   })
