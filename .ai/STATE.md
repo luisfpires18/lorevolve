@@ -64,7 +64,7 @@ Checked 2026-10-29 with `git log origin/dev..<branch>`.
 
 ## Open issues
 
-- **Languages** (umbrella #99, ADR 0071): foundation #100, shell #101, lore workspace #102, story and time #103 (PRs #122, #124), ideas and review #104 and admin and data #105 on `dev`: every string is in the dictionary. Next: pt-PT #106 (the translation, awaiting the owner's native review) and #107 (layout pass; the switch goes live). Preview pt-PT locally: `localStorage['lorevolve-locale'] = 'pt-PT'`.
+- **Languages** (umbrella #99, ADR 0071): foundation #100, shell #101, lore workspace #102, story and time #103 (PRs #122, #124), ideas and review #104 and admin and data #105 on `dev`: every string is in the dictionary. Next: #106 (the translation, PR #130, awaiting the owner's native review) and #107 (PR stacked on it; the switch is live, the layout holds). Once both merge, the switch is in the account menu, the portal's appearance menu and Profile; before that, preview with `localStorage['lorevolve-locale'] = 'pt-PT'`.
 `gh issue list --repo luisfpires18/lorevolve --state open`. As of 2026-10-29:
 
 - Alpha: #34 launch readiness / final review (high), #35 alpha plan and issue index, #54 daily backups (high; the
