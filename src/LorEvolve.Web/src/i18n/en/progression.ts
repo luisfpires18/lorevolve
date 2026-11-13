@@ -3,7 +3,8 @@ const progression = {
   appearanceList: {
     heading: 'Appearances',
     add: 'Add appearance',
-    empty: 'No appearances yet.',
+    empty:
+      'No appearances. An appearance is a look: an outfit, armour, a disguise, how a place looked.',
     saveFailed: 'That change could not be saved.',
     tooBig: 'Images must be {mb} MB or smaller.',
     addingOne: 'Adding the picture\u2026',

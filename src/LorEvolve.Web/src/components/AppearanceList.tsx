@@ -68,15 +68,12 @@ export function AppearanceList({
             data-testid="add-appearance"
           >
             <ActionIcon icon={ImagePlus} />
-            Add appearance
+            {t('progression.appearanceList.add')}
           </button>
         ) : null}
       </div>
       {appearances.length === 0 ? (
-        <p className="muted">
-          No appearances. An appearance is a look: an outfit, armour, a disguise, how a place
-          looked.
-        </p>
+        <p className="muted">{t('progression.appearanceList.empty')}</p>
       ) : (
         <ul className="progitems__list">
           {appearances.map((appearance, index) => (
