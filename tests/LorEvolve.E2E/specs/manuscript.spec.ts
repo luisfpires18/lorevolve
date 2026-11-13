@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { chooseFromMenu, openMenuFor } from './support/rowMenu'
 import { acceptConfirm, confirmDialog, dismissConfirm } from './support/confirm'
 import { expectWritten } from './support/manuscript'
+import { expandStory } from './support/story'
 
 /**
  * A story's manuscript, end to end: the prose an author writes, scene by scene, on the story's Manuscript view. Each
@@ -211,6 +212,7 @@ test.describe('manuscript', () => {
 
     // The manuscript is a view of the story. With no scene named, the first scene the story is read in opens.
     await page.goto(storyUrl)
+    await expandStory(page)
     await page.getByTestId('story-view-manuscript').click()
     await page.waitForURL(new RegExp(`/manuscript/${prologue}$`))
     await expect(page.getByTestId('story-view-manuscript')).toHaveAttribute('aria-current', 'page')
@@ -246,6 +248,7 @@ test.describe('manuscript', () => {
 
     // Exactly the same after a reload, on screen and in the API.
     await page.reload()
+    await expandStory(page)
     await expectWritten(editor, councilProse)
     await expect(status).toHaveText('Saved')
     expect((await readManuscript(page, universeId, storyId, council)).content).toBe(councilProse)
@@ -269,6 +272,7 @@ test.describe('manuscript', () => {
     // The Council moves to another chapter on the Scenes view. Same scene, same address, same prose.
     await page.getByTestId('story-view-scenes').click()
     await page.waitForURL(new RegExp(`/stories/${storyId}$`))
+    await expandStory(page)
     await structural(page, `/scenes/${council}/position`, async () => {
       await openMenuFor(scene(page, 'The Council'), 'scene-move-to-option')
       await scene(page, 'The Council')
@@ -289,6 +293,7 @@ test.describe('manuscript', () => {
 
     // Reordered inside its chapter: still the same prose.
     await page.goto(storyUrl)
+    await expandStory(page)
     await structural(page, '/scenes/order', () =>
       chooseFromMenu(scene(page, 'The Council'), 'scene-move-up'),
     )
@@ -302,6 +307,7 @@ test.describe('manuscript', () => {
 
     // Arrival is deleted: The Gates goes to Unchaptered with every word it had.
     await page.goto(storyUrl)
+    await expandStory(page)
     await chooseFromMenu(chapter(page, 'Arrival'), 'chapter-delete')
     await acceptConfirm(page)
     await expect(page.getByTestId('chapter')).toHaveCount(1)
@@ -318,6 +324,7 @@ test.describe('manuscript', () => {
 
     // The Gates is deleted, and its prose with it. Its old address opens nothing.
     await page.goto(storyUrl)
+    await expandStory(page)
     await chooseFromMenu(scene(page, 'The Gates'), 'scene-delete')
     await acceptConfirm(page)
     await expect(scene(page, 'The Gates')).toHaveCount(0)

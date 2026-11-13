@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { acceptConfirm } from './support/confirm'
 import { chooseFromMenu, openMenuFor } from './support/rowMenu'
 import { post, signUp, unique, world } from './support/trash'
+import { expandStory } from './support/story'
 
 /**
  * A story's structure, end to end (ADR 0070): arcs holding chapters, chapters holding scenes, and each scene's own beats.
@@ -83,6 +84,7 @@ test.describe('arcs', () => {
     await scene(page, s, 'Sylvara Border Trail', jungle)
 
     await page.goto(`/app/universes/${s.universeId}/stories/${s.storyId}`)
+    await expandStory(page)
     await expect
       .poll(() => structure(page))
       .toEqual([
@@ -162,6 +164,7 @@ test.describe('arcs', () => {
     await expect(page.locator(`#chapter-${loose}`)).toBeVisible()
 
     await page.reload()
+    await expandStory(page)
     await expect(page.getByTestId('scene')).toHaveCount(2)
     await expect(page.getByTestId('arc')).toHaveCount(1)
   })
@@ -174,6 +177,7 @@ test.describe('arcs', () => {
     const council = await scene(page, s, 'The Council')
 
     await page.goto(`/app/universes/${s.universeId}/stories/${s.storyId}`)
+    await expandStory(page)
     const card = page.locator(`#scene-${council}`)
     await expect(card.getByTestId('scene-beats')).toHaveCount(0)
 
@@ -215,6 +219,7 @@ test.describe('arcs', () => {
     await expect(page.getByTestId('manuscript-beat')).toHaveText(['Marcus instructs Theo'])
 
     await page.reload()
+    await expandStory(page)
     await expect(page.getByTestId('manuscript-beat')).toHaveText(['Marcus instructs Theo'])
   })
 
@@ -228,6 +233,7 @@ test.describe('arcs', () => {
     const orders = await scene(page, s, "The King's Orders", tragic)
 
     await page.goto(`/app/universes/${s.universeId}/stories/${s.storyId}`)
+    await expandStory(page)
     // The empty arc says how a chapter gets into it.
     await expect(page.getByTestId('arc-empty')).toContainText('Edit chapter, then choose')
 
@@ -245,6 +251,7 @@ test.describe('arcs', () => {
         'Chapter 1: The Tragic Expedition',
         "  The King's Orders",
       ])
+    await expandStory(page)
 
     // Reopened, the drawer names the arc it is in; nothing changed asks nothing.
     await chooseFromMenu(page.locator(`#chapter-${tragic}`), 'chapter-edit')
@@ -260,6 +267,7 @@ test.describe('arcs', () => {
     await page.keyboard.type('Marcus reads orders')
     await page.getByTestId('save-scene').click()
     await expect(form).toHaveCount(0)
+    await expandStory(page)
     await expect(card.getByTestId('scene-beat')).toHaveText(['Marcus reads orders'])
 
     // Opened that way and left empty, the drawer has nothing to save and closes without asking.
@@ -320,6 +328,7 @@ test.describe('arcs', () => {
       const edge = width + 1
       await page.setViewportSize({ width, height: 900 })
       await page.goto(`/app/universes/${s.universeId}/stories/${s.storyId}`)
+      await expandStory(page)
       await expect(page.getByTestId('arc')).toHaveCount(1)
       expect(await scrollsSideways(page), `story at ${width}px`).toBe(false)
 
@@ -347,5 +356,40 @@ test.describe('arcs', () => {
       await page.getByTestId('cancel-scene').click()
       await expect(page.getByTestId('scene-form')).toHaveCount(0)
     }
+  })
+
+  test('arcs and chapters start folded, open to show what they hold, and fold it away again', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const s = await seedStory(page, unique('The Folded Story '))
+    const forging = await arc(page, s, 'Forging', 'Where the weapon is made.')
+    const expedition = await chapter(page, s, 'Expedition', forging)
+    await scene(page, s, 'The Orders', expedition)
+
+    await page.goto(`/app/universes/${s.universeId}/stories/${s.storyId}`)
+    const forgingArc = page.locator(`#arc-${forging}`)
+    const expeditionChapter = page.locator(`#chapter-${expedition}`)
+    const orders = page.locator('[data-testid="scene"][data-title="The Orders"]')
+
+    // Folded on arrival: the arc is there, what it holds is not.
+    await expect(forgingArc.getByTestId('arc-toggle')).toHaveAttribute('aria-expanded', 'false')
+    await expect(forgingArc.getByTestId('arc-description')).toBeHidden()
+    await expect(expeditionChapter).toBeHidden()
+
+    // Opening the arc shows its chapter, still folded over its scene.
+    await forgingArc.getByTestId('arc-toggle').click()
+    await expect(forgingArc.getByTestId('arc-toggle')).toHaveAttribute('aria-expanded', 'true')
+    await expect(forgingArc.getByTestId('arc-description')).toBeVisible()
+    await expect(expeditionChapter).toBeVisible()
+    await expect(orders).toBeHidden()
+    await expeditionChapter.getByTestId('chapter-toggle').click()
+    await expect(orders).toBeVisible()
+
+    // Folding the arc takes the chapter and its scene with it.
+    await forgingArc.getByTestId('arc-toggle').click()
+    await expect(forgingArc.getByTestId('arc-toggle')).toHaveAttribute('aria-expanded', 'false')
+    await expect(expeditionChapter).toBeHidden()
+    await expect(orders).toBeHidden()
   })
 })

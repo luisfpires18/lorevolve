@@ -12,6 +12,7 @@ import {
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ArcSection } from '../components/ArcSection'
+import { revealInFolds } from '../components/fold'
 import { ContentPublication } from '../components/ContentPublication'
 import { ChapterForm } from '../components/ChapterForm'
 import { ChapterSection, type ArcTarget } from '../components/ChapterSection'
@@ -213,7 +214,11 @@ function StoryView({ view }: { view: StoryViewName }) {
     const selector = pendingFocus.current
     if (!selector || state.kind !== 'ready') return
     pendingFocus.current = null
-    document.querySelector<HTMLElement>(selector)?.focus()
+    const target = document.querySelector<HTMLElement>(selector)
+    revealInFolds(target)
+    // The folds open on the next render; focus once they have.
+    const frame = requestAnimationFrame(() => target?.focus())
+    return () => cancelAnimationFrame(frame)
   }, [state])
 
   // A link to one scene - a search result, or the manuscript's way back to its scene - lands on it, whichever view it
@@ -226,12 +231,17 @@ function StoryView({ view }: { view: StoryViewName }) {
     const target = document.getElementById(decodeURIComponent(location.hash.slice(1)))
     if (!target) return
 
-    target.scrollIntoView({ block: 'center' })
-    target.focus({ preventScroll: true })
+    revealInFolds(target)
+    // The folds around the target open on the next render; scroll to it and focus it once they have.
+    const frame = requestAnimationFrame(() => {
+      target.scrollIntoView({ block: 'center' })
+      target.focus({ preventScroll: true })
+    })
     target.setAttribute('data-arrived', 'true')
     const timer = window.setTimeout(() => target.removeAttribute('data-arrived'), ARRIVAL_MS)
 
     return () => {
+      cancelAnimationFrame(frame)
       window.clearTimeout(timer)
       target.removeAttribute('data-arrived')
     }
