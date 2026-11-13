@@ -9,14 +9,6 @@ export const IdeaReferenceKind = {
 
 export type IdeaReferenceKindValue = (typeof IdeaReferenceKind)[keyof typeof IdeaReferenceKind]
 
-/** A kind's stable key: what a test id or an address is built from, never the translated word. */
-export const IDEA_REFERENCE_KIND_KEYS: Record<IdeaReferenceKindValue, string> = {
-  [IdeaReferenceKind.Entity]: 'lore',
-  [IdeaReferenceKind.Story]: 'story',
-  [IdeaReferenceKind.Scene]: 'scene',
-  [IdeaReferenceKind.PlotArc]: 'arc',
-}
-
 /** The kinds in the order a picker offers them and a list of references reads. */
 export const IDEA_REFERENCE_KINDS: IdeaReferenceKindValue[] = [
   IdeaReferenceKind.Entity,

@@ -137,7 +137,8 @@ const stories = {
   scene: {
     count: { one: '{n} scene', other: '{n} scenes' },
     foldLabel: 'scene {n}: {title}',
-    number: 'Scene {n}: ',
+    /** The whole heading a screen reader reads: the number and the author's title, in one message. */
+    heading: 'Scene {n}: {title}',
     edit: 'Edit scene',
     write: 'Write',
     read: 'Read',

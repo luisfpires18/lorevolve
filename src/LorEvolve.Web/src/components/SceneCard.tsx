@@ -131,8 +131,14 @@ export function SceneCard({
               testId="scene-toggle"
             />
           ) : null}
-          <Title className="scene__title" id={titleId}>
-            <span className="visually-hidden">{t('stories.scene.number', { n: index + 1 })}</span>
+          {/* The number is read, not drawn. It is the heading's accessible name, as one message rather than a
+              prefix glued to the title, so a translation may put the two in its own order; the title itself is
+              drawn once and keeps its own direction. */}
+          <Title
+            className="scene__title"
+            id={titleId}
+            aria-label={t('stories.scene.heading', { n: index + 1, title: scene.title })}
+          >
             <bdi>{scene.title}</bdi>
           </Title>
         </div>
