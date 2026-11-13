@@ -33,6 +33,7 @@ import {
   type SceneManuscript,
 } from '../stories/types'
 import { EmptyState } from './EmptyState'
+import { numberFormat } from '../i18n/format'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error'; message: string }
@@ -52,7 +53,7 @@ function storedOf(manuscript: SceneManuscript): Stored {
   }
 }
 
-const count = new Intl.NumberFormat('en')
+const count = (value: number) => numberFormat({}, 'en').format(value)
 
 interface ManuscriptEditorProps {
   universeId: string
@@ -659,8 +660,8 @@ export function ManuscriptEditor({
                   id={tooLongId}
                   data-testid="manuscript-too-long"
                 >
-                  Too long to save: {count.format(draft.length)} of{' '}
-                  {count.format(MANUSCRIPT_MAX_LENGTH)} characters. Split it into more scenes.
+                  Too long to save: {count(draft.length)} of {count(MANUSCRIPT_MAX_LENGTH)}{' '}
+                  characters. Split it into more scenes.
                 </p>
               ) : null}
               {failed && isDirty ? (

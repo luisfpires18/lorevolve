@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n'
 import { formatBytes } from '../lib/bytes'
 import { getAccountStorage } from '../profile/api'
 import { useUsageLoad } from '../lib/useUsageLoad'
@@ -10,10 +11,11 @@ import { UsageItem, UsageMeter } from './UsageItem'
  * so nothing offers to. The full state is said in a sentence rather than left to a colour.
  */
 export function StorageUsage() {
+  const { t } = useI18n()
   const { load, retry } = useUsageLoad(getAccountStorage)
 
   return (
-    <UsageItem name="Storage" testId="usage-storage" load={load} onRetry={retry}>
+    <UsageItem name={t('account.storage.name')} testId="usage-storage" load={load} onRetry={retry}>
       {(storage, labelId) => {
         const full = storage.usedBytes >= storage.quotaBytes
 
@@ -22,7 +24,10 @@ export function StorageUsage() {
             <UsageMeter
               labelId={labelId}
               testId="usage-storage"
-              amount={`${formatBytes(storage.usedBytes)} used of ${formatBytes(storage.quotaBytes)}`}
+              amount={t('account.storage.amount', {
+                used: formatBytes(storage.usedBytes),
+                quota: formatBytes(storage.quotaBytes),
+              })}
               used={storage.usedBytes}
               limit={storage.quotaBytes}
               full={full}
@@ -30,14 +35,11 @@ export function StorageUsage() {
 
             {full ? (
               <p className="usage__full" data-testid="usage-storage-full">
-                Your storage is full. Remove some images to add new ones.
+                {t('account.storage.full')}
               </p>
             ) : null}
 
-            <p className="settings__note">
-              Images on Lore entries and maps in universes you own count here, including entries in
-              the Trash and images your collaborators add.
-            </p>
+            <p className="settings__note">{t('account.storage.note')}</p>
           </>
         )
       }}

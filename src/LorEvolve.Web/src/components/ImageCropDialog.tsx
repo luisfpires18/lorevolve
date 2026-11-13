@@ -6,6 +6,7 @@ import { ApiError } from '../lib/api'
 import type { ImageCrop } from '../lib/imageCrop'
 import { ActionIcon } from './ActionIcon'
 import { useReturnFocus } from '../lib/returnFocus'
+import { useI18n } from '../i18n'
 
 /**
  * How far the author may zoom out: to the picture exactly covering the square, and no further. With
@@ -58,8 +59,8 @@ export function ImageCropDialog({
   initialCrop,
   title,
   confirmLabel,
-  hint = 'Drag the picture to place the square, or select it and use the arrow keys. The whole picture is kept; the square is what cards show.',
-  workingLabel = 'Saving',
+  hint,
+  workingLabel,
   aspect = 1,
   onConfirm,
   onCancel,
@@ -89,6 +90,9 @@ export function ImageCropDialog({
   onConfirm: (crop: ImageCrop, report: (stage: SaveStage) => void) => Promise<void>
   onCancel: () => void
 }) {
+  const { t } = useI18n()
+  const shownHint = hint ?? t('account.crop.hint')
+  const shownWorking = workingLabel ?? t('account.crop.working')
   const dialog = useRef<HTMLDialogElement>(null)
   const headingId = useId()
   const hintId = useId()
@@ -149,7 +153,7 @@ export function ImageCropDialog({
       setError(
         failure instanceof ApiError
           ? (failure.fieldErrors.file ?? failure.fieldErrors.crop ?? failure.message)
-          : 'That could not be saved. Try again.',
+          : t('account.crop.saveFailed'),
       )
       setStage(null)
     }
@@ -165,7 +169,11 @@ export function ImageCropDialog({
   // "Uploading 40%" while bytes are moving, then the caller's own word for the server's part. The
   // two are deliberately different: the first can be counted and the second cannot.
   const savingLabel =
-    stage === null ? null : percent === null ? workingLabel : `Uploading ${percent}%`
+    stage === null
+      ? null
+      : percent === null
+        ? shownWorking
+        : t('account.crop.uploadingPercent', { percent })
 
   return (
     <dialog
@@ -185,7 +193,7 @@ export function ImageCropDialog({
             {title}
           </h2>
           <p className="cropper__hint" id={hintId}>
-            {hint}
+            {shownHint}
           </p>
         </header>
 
@@ -195,7 +203,7 @@ export function ImageCropDialog({
         <div className="cropper__stage" data-testid="image-crop-stage" inert={saving || undefined}>
           {loadFailed ? (
             <p className="cropper__status" role="alert">
-              That picture could not be loaded.
+              {t('account.crop.loadFailed')}
             </p>
           ) : (
             <Cropper
@@ -221,7 +229,8 @@ export function ImageCropDialog({
                 role: 'group',
                 // Names the control, not the errand: the dialog's own title and hint already say
                 // whether this square becomes a card's portrait or an avatar.
-                'aria-label': aspect === 1 ? 'Thumbnail square' : 'Card frame',
+                'aria-label':
+                  aspect === 1 ? t('account.crop.thumbnailSquare') : t('account.crop.cardFrame'),
                 'aria-describedby': hintId,
               }}
             />
@@ -229,7 +238,7 @@ export function ImageCropDialog({
 
           {loading ? (
             <p className="cropper__status" aria-live="polite">
-              Loading the picture
+              {t('account.crop.loading')}
             </p>
           ) : null}
         </div>
@@ -237,7 +246,7 @@ export function ImageCropDialog({
         <div className="cropper__controls">
           <div className="cropper__zoom">
             <label className="field__label" htmlFor={zoomId}>
-              Zoom
+              {t('account.crop.zoom')}
             </label>
             <input
               id={zoomId}
@@ -266,7 +275,7 @@ export function ImageCropDialog({
                   source={source}
                   crop={crop}
                 />
-                <span className="cropper__caption">Thumbnail preview</span>
+                <span className="cropper__caption">{t('account.crop.thumbnailPreview')}</span>
               </>
             ) : (
               <>
@@ -276,7 +285,7 @@ export function ImageCropDialog({
                   crop={crop}
                   testId="image-crop-preview"
                 />
-                <span className="cropper__caption">Card preview</span>
+                <span className="cropper__caption">{t('account.crop.cardPreview')}</span>
               </>
             )}
           </div>
@@ -289,7 +298,7 @@ export function ImageCropDialog({
               <div
                 className="progressbar"
                 role="progressbar"
-                aria-label={percent === null ? workingLabel : 'Uploading photo'}
+                aria-label={percent === null ? shownWorking : t('account.crop.uploadingPhoto')}
                 aria-valuemin={percent === null ? undefined : 0}
                 aria-valuemax={percent === null ? undefined : 100}
                 aria-valuenow={percent ?? undefined}
@@ -306,7 +315,9 @@ export function ImageCropDialog({
               {/* The words are the status, not the animation: a bar that only moves says nothing
                   to a screen reader, and nothing at all with reduced motion. */}
               <p className="cropper__stagetext" role="status" data-testid="image-crop-stagetext">
-                {percent === null ? `${workingLabel}…` : `Uploading… ${percent}%`}
+                {percent === null
+                  ? t('account.crop.workingText', { label: shownWorking })
+                  : t('account.crop.uploadingText', { percent })}
               </p>
             </div>
           )}
@@ -337,7 +348,7 @@ export function ImageCropDialog({
             data-testid="image-crop-cancel"
           >
             <ActionIcon icon={X} />
-            Cancel
+            {t('account.crop.cancel')}
           </button>
         </footer>
       </div>

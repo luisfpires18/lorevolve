@@ -31,6 +31,7 @@ import { confirmAction } from '../lib/confirm'
 import { formatDateTime } from '../lib/dates'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { FeedbackKind, listFeedback } from '../feedback/api'
+import { dateFormat } from '../i18n/format'
 
 /**
  * LorEvolve Admin (#40): the service's own workspace, apart from My workspace and from every universe. Main, Users and
@@ -171,11 +172,11 @@ function Heading({ title, lede }: { title: string; lede: ReactNode }) {
 
 // ---------- Main ----------
 
-const monthFormatter = new Intl.DateTimeFormat(undefined, {
+const MONTH: Intl.DateTimeFormatOptions = {
   month: 'short',
   year: 'numeric',
   timeZone: 'UTC',
-})
+}
 
 function Stat({
   label,
@@ -414,7 +415,7 @@ function Overview({ overview }: { overview: AdminOverview }) {
           {trend.map((month) => (
             <li className="admintrend__row" key={`${month.year}-${month.month}`}>
               <span className="admintrend__month">
-                {monthFormatter.format(new Date(Date.UTC(month.year, month.month - 1, 1)))}
+                {dateFormat(MONTH).format(new Date(Date.UTC(month.year, month.month - 1, 1)))}
               </span>
               <span className="admintrend__bar" aria-hidden="true">
                 <span style={{ width: `${(month.count / peak) * 100}%` }} />

@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { Wordmark } from './Wordmark'
 import { VERSION_LABEL } from '../lib/buildInfo'
+import { useI18n } from '../i18n'
 
 /**
  * The foot of LorEvolve's main screens (ADR 0069): where else there is to go, and nothing invented. The wordmark and its
@@ -16,6 +17,7 @@ import { VERSION_LABEL } from '../lib/buildInfo'
  */
 export function SiteFooter() {
   const { user, isLoading } = useAuth()
+  const { t } = useI18n()
   const inWorkspace = useLocation().pathname.startsWith('/app')
 
   return (
@@ -25,29 +27,29 @@ export function SiteFooter() {
           <Link className="sitefooter__home" to="/">
             <Wordmark />
           </Link>
-          <p>A workspace for fictional universes</p>
+          <p>{t('portal.footer.tagline')}</p>
         </div>
         <nav className="sitefooter__nav" aria-labelledby="sitefooter-product">
           <p className="sitefooter__heading" id="sitefooter-product">
-            Product
+            {t('portal.footer.product')}
           </p>
           <ul data-testid="portal-footer-links">
             <li>
-              <Link to="/">Explore</Link>
+              <Link to="/">{t('portal.footer.explore')}</Link>
             </li>
             {isLoading ? null : user ? (
               inWorkspace ? null : (
                 <li>
-                  <Link to="/app">My workspace</Link>
+                  <Link to="/app">{t('portal.footer.workspace')}</Link>
                 </li>
               )
             ) : (
               <>
                 <li>
-                  <Link to="/register">Create account</Link>
+                  <Link to="/register">{t('portal.footer.register')}</Link>
                 </li>
                 <li>
-                  <Link to="/login">Log in</Link>
+                  <Link to="/login">{t('portal.footer.login')}</Link>
                 </li>
               </>
             )}
@@ -55,7 +57,9 @@ export function SiteFooter() {
         </nav>
       </div>
       <div className="sitefooter__base">
-        <p data-testid="portal-footer-copyright">©&nbsp;{new Date().getFullYear()} LorEvolve</p>
+        <p data-testid="portal-footer-copyright">
+          {t('portal.footer.copyright', { year: new Date().getFullYear() })}
+        </p>
         <p data-testid="portal-footer-version">{VERSION_LABEL}</p>
       </div>
     </footer>

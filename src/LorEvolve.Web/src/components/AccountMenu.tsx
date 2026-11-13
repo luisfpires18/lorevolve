@@ -8,7 +8,9 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { Avatar } from './Avatar'
 import { ThemeSwitch } from './ThemeSwitch'
+import { LanguageSwitch } from './LanguageSwitch'
 import { VERSION_LABEL } from '../lib/buildInfo'
+import { useI18n } from '../i18n'
 
 /**
  * The account, everywhere: a circular avatar that opens onto who you are, your profile and the way
@@ -41,6 +43,7 @@ export function AccountMenu({
   variant: 'rail' | 'bar'
   signedOutTo?: string
 }) {
+  const { t } = useI18n()
   const { user, logOut } = useAuth()
   const { image } = useProfileImage()
   const navigate = useNavigate()
@@ -83,7 +86,7 @@ export function AccountMenu({
       ) : null}
 
       <ActionMenu
-        label="Open account menu"
+        label={t('account.menu.open')}
         trigger={<Avatar image={image} name={user.username} className="accountmenu__avatar" />}
         triggerClassName="accountmenu__trigger"
         panelClassName="accountmenu__panel"
@@ -101,37 +104,38 @@ export function AccountMenu({
 
         <div className="accountmenu__goto" role="group" aria-labelledby={goToId}>
           <p className="accountmenu__grouplabel" id={goToId}>
-            Go to
+            {t('account.menu.goTo')}
           </p>
           <Link className="actionmenu__item" to="/app" data-testid="account-menu-workspace">
             <ActionIcon icon={BookOpen} />
-            My workspace
+            {t('account.menu.workspace')}
           </Link>
           <Link className="actionmenu__item" to="/app/ideas" data-testid="account-menu-ideas">
             <ActionIcon icon={StickyNote} />
-            Ideas
+            {t('account.menu.ideas')}
           </Link>
           <Link className="actionmenu__item" to="/" data-testid="account-menu-explore">
             <ActionIcon icon={Telescope} />
-            Explore
+            {t('account.menu.explore')}
           </Link>
           {/* Only for an Admin (#40). Hiding it is courtesy; the server refuses the Admin API to anyone else. */}
           {user.isAdmin ? (
             <Link className="actionmenu__item" to="/admin" data-testid="account-menu-admin">
               <ActionIcon icon={ShieldCheck} />
-              LorEvolve Admin
+              {t('account.menu.admin')}
             </Link>
           ) : null}
         </div>
 
         <Link className="actionmenu__item" to="/app/profile" data-testid="account-menu-profile">
           <ActionIcon icon={UserRound} />
-          Profile
+          {t('account.menu.profile')}
         </Link>
 
         {/* The one appearance choice, for the portal and the workspace alike (013). */}
         <div className="actionmenu__section">
           <ThemeSwitch inMenu />
+          <LanguageSwitch inMenu />
         </div>
 
         {/* Stays open while it works, so "Signing out" is seen where the press was. */}
@@ -144,7 +148,7 @@ export function AccountMenu({
           data-testid="account-menu-signout"
         >
           <ActionIcon icon={LogOut} />
-          {busy ? 'Signing out' : 'Sign out'}
+          {busy ? t('account.menu.signingOut') : t('account.menu.signOut')}
         </button>
 
         {/* Which LorEvolve is running, for anyone asked "what version are you on?". Read, never pressed. */}

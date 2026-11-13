@@ -11,12 +11,10 @@ import {
 } from '../profile/api'
 import type { ProfileImageRef } from '../profile/types'
 import { useProfileImage } from '../profile/useProfileImage'
+import { useI18n } from '../i18n'
 import { ActionIcon } from './ActionIcon'
 import { Avatar } from './Avatar'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
-
-const CROP_HINT =
-  'Drag the photo to place the square, or select it and use the arrow keys. The whole photo is kept; the square is what your avatar shows.'
 
 /**
  * What the cropper is open on. A file just picked is framed before anything is uploaded; a photo
@@ -41,6 +39,7 @@ type Framing =
  * mobile bar and the universes header change at the same moment this circle does.
  */
 export function ProfileAvatar({ name }: { name: string }) {
+  const { t } = useI18n()
   const { image, changed } = useProfileImage()
 
   const input = useRef<HTMLInputElement>(null)
@@ -74,7 +73,7 @@ export function ProfileAvatar({ name }: { name: string }) {
     setError(null)
 
     if (file.size > IMAGE_MAX_BYTES) {
-      setError(`Photos must be ${IMAGE_MAX_BYTES / (1024 * 1024)} MB or smaller.`)
+      setError(t('account.avatar.tooBig', { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
       return
     }
 
@@ -116,7 +115,7 @@ export function ProfileAvatar({ name }: { name: string }) {
       await removeProfileImage()
       changed(null)
     } catch {
-      setError('That photo could not be removed.')
+      setError(t('account.avatar.removeFailed'))
     } finally {
       setBusy(false)
     }
@@ -149,7 +148,7 @@ export function ProfileAvatar({ name }: { name: string }) {
           data-testid="profile-photo-pick"
         >
           <ActionIcon icon={image ? ImageUp : ImagePlus} />
-          {image ? 'Replace photo' : 'Upload photo'}
+          {image ? t('account.avatar.replace') : t('account.avatar.upload')}
         </label>
 
         {image ? (
@@ -162,7 +161,7 @@ export function ProfileAvatar({ name }: { name: string }) {
               data-testid="profile-photo-reframe"
             >
               <ActionIcon icon={Crop} />
-              Edit photo
+              {t('account.avatar.edit')}
             </button>
             <button
               className="button button--secondary"
@@ -172,15 +171,13 @@ export function ProfileAvatar({ name }: { name: string }) {
               data-testid="profile-photo-remove"
             >
               <ActionIcon icon={ImageMinus} />
-              {busy ? 'Removing' : 'Remove photo'}
+              {busy ? t('account.avatar.removing') : t('account.avatar.remove')}
             </button>
           </>
         ) : null}
       </div>
 
-      <p className="avatar__hint">
-        One photo. JPEG, PNG or WebP, up to 8 MB. Private unless you show it on your author page.
-      </p>
+      <p className="avatar__hint">{t('account.avatar.hint')}</p>
 
       {error ? (
         <p className="field__error" role="alert" data-testid="profile-photo-error">
@@ -194,10 +191,20 @@ export function ProfileAvatar({ name }: { name: string }) {
           key={source}
           source={source}
           initialCrop={framing.kind === 'stored' ? framing.image.crop : null}
-          title={framing.kind === 'stored' ? 'Edit photo' : 'Frame your photo'}
-          confirmLabel={framing.kind === 'stored' ? 'Save photo' : 'Upload'}
-          workingLabel={framing.kind === 'stored' ? 'Updating photo' : 'Processing photo'}
-          hint={CROP_HINT}
+          title={
+            framing.kind === 'stored'
+              ? t('account.avatar.editTitle')
+              : t('account.avatar.frameTitle')
+          }
+          confirmLabel={
+            framing.kind === 'stored' ? t('account.avatar.save') : t('account.avatar.confirmUpload')
+          }
+          workingLabel={
+            framing.kind === 'stored'
+              ? t('account.avatar.updating')
+              : t('account.avatar.processing')
+          }
+          hint={t('account.avatar.cropHint')}
           onConfirm={keep}
           onCancel={() => setFraming(null)}
         />

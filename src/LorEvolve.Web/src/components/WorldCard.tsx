@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { BrandMark } from './BrandMark'
 import { authorPath, worldPath, type PublicUniverse } from '../portal/api'
 import { categoryLabel, genreKey, genreLabel } from '../publishing/types'
+import { useI18n } from '../i18n'
 
 /**
  * One public universe as a card: one dark panel with the artwork across its top, fading into the panel, the name set over
@@ -27,6 +28,7 @@ export function WorldCard({
   /** A card in the first rows of Explore: its picture is fetched at once and first. */
   eager?: boolean
 }) {
+  const { t, tx } = useI18n()
   const [broken, setBroken] = useState(false)
 
   return (
@@ -57,7 +59,7 @@ export function WorldCard({
               <bdi>{world.name}</bdi>
             </Link>
           </h3>
-          <ul className="worldcard__genres" aria-label="Genres">
+          <ul className="worldcard__genres" aria-label={t('portal.card.genres')}>
             {world.genres.map((genre) => (
               <li className="genrechip" data-genre={genreKey(genre)} key={genre}>
                 {genreLabel(genre)}
@@ -68,30 +70,33 @@ export function WorldCard({
             <p
               className="worldcard__original"
               dir="auto"
-              title={`Based on works by ${world.originalCreator}`}
+              title={t('portal.card.basedOn', { creator: world.originalCreator })}
               data-testid="worldcard-original"
             >
-              Based on works by <bdi>{world.originalCreator}</bdi>
+              {tx('portal.card.basedOn', { creator: <bdi>{world.originalCreator}</bdi> })}
             </p>
           ) : null}
           <p className="worldcard__byline">
             <span
               className="worldcard__author"
               dir="auto"
-              title={`${world.originalCreator ? 'curated by' : 'by'} ${world.authorDisplayName}`}
+              title={t(world.originalCreator ? 'portal.card.curatedBy' : 'portal.card.by', {
+                author: world.authorDisplayName,
+              })}
             >
-              {world.originalCreator ? 'curated by' : 'by'}{' '}
-              {linkAuthor ? (
-                <Link
-                  className="worldcard__authorlink"
-                  to={authorPath(world.authorSlug)}
-                  data-testid="worldcard-author"
-                >
+              {tx(world.originalCreator ? 'portal.card.curatedBy' : 'portal.card.by', {
+                author: linkAuthor ? (
+                  <Link
+                    className="worldcard__authorlink"
+                    to={authorPath(world.authorSlug)}
+                    data-testid="worldcard-author"
+                  >
+                    <bdi>{world.authorDisplayName}</bdi>
+                  </Link>
+                ) : (
                   <bdi>{world.authorDisplayName}</bdi>
-                </Link>
-              ) : (
-                <bdi>{world.authorDisplayName}</bdi>
-              )}
+                ),
+              })}
             </span>
             <span className="worldcard__category">{categoryLabel(world.category)}</span>
           </p>

@@ -15,6 +15,7 @@ import { PublicLayout } from './components/PublicLayout'
 import { RoleGate } from './components/RoleGate'
 import { RouteFocus, SkipLink } from './components/SkipLink'
 import { WorkspaceLayout } from './components/WorkspaceLayout'
+import { useI18n } from './i18n'
 import { HistoryLeaveGuard } from './lib/leaveGuard'
 import { ProfileImageProvider } from './profile/ProfileImageProvider'
 import UniverseOverview from './pages/UniverseOverview'
@@ -64,14 +65,16 @@ import {
  * (`SessionPending`): the paper the app is about to draw on, so nothing flashes and nothing moves.
  */
 function ScreenPending() {
-  return <div className="session-pending" role="status" aria-label="Loading this screen" />
+  const { t } = useI18n()
+  return <div className="session-pending" role="status" aria-label={t('shell.app.screenPending')} />
 }
 
 /** The same hold inside a frame that stays put around it: a universe's rail, sidebar and search, or the workspace bar. */
 function SectionPending() {
+  const { t } = useI18n()
   return (
     <p className="notice" role="status">
-      Opening&hellip;
+      {t('shell.app.sectionPending')}
     </p>
   )
 }
@@ -414,21 +417,18 @@ function isStaleChunk(error: unknown) {
  */
 function AppCrashed() {
   const error = useRouteError()
+  const { t } = useI18n()
   const stale = isStaleChunk(error)
   return (
     <main className="session-pending session-pending--unreachable">
       <div className="notice notice--error" role="alert">
-        <p>
-          {stale
-            ? 'LorEvolve was updated while this page was open. Reload to continue.'
-            : 'Something went wrong on this page. Reload to try again.'}
-        </p>
+        <p>{stale ? t('shell.app.crashed.stale') : t('shell.app.crashed.generic')}</p>
         <button
           className="button button--secondary"
           type="button"
           onClick={() => window.location.reload()}
         >
-          Reload
+          {t('shell.app.crashed.reload')}
         </button>
       </div>
     </main>

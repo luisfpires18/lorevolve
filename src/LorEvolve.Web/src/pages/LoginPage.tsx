@@ -5,8 +5,10 @@ import { Field } from '../components/Field'
 import { returnPath } from '../auth/returnPath'
 import { useAuth } from '../auth/useAuth'
 import { ApiError } from '../lib/api'
+import { useI18n } from '../i18n'
 
 export default function LoginPage() {
+  const { t, tx } = useI18n()
   const { logIn } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -29,23 +31,22 @@ export default function LoginPage() {
       await logIn({ usernameOrEmail, password })
       await navigate(destination, { replace: true })
     } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'Sign-in is unavailable right now.')
+      setMessage(error instanceof ApiError ? error.message : t('auth.login.unavailable'))
       setIsSubmitting(false)
     }
   }
 
   return (
     <AuthLayout
-      heading="Sign in"
-      intro="Pick up where your world left off."
-      footer={
-        <>
-          No account yet?{' '}
+      heading={t('auth.login.heading')}
+      intro={t('auth.login.intro')}
+      footer={tx('auth.login.noAccount', {
+        link: (
           <Link to="/register" state={location.state}>
-            Create account
+            {t('auth.login.createAccount')}
           </Link>
-        </>
-      }
+        ),
+      })}
     >
       <form className="form" onSubmit={handleSubmit} noValidate>
         {message ? (
@@ -55,7 +56,7 @@ export default function LoginPage() {
         ) : null}
 
         <Field
-          label="Username or email"
+          label={t('auth.login.usernameOrEmail')}
           name="usernameOrEmail"
           autoComplete="username"
           autoFocus
@@ -65,7 +66,7 @@ export default function LoginPage() {
         />
 
         <Field
-          label="Password"
+          label={t('auth.login.password')}
           name="password"
           type="password"
           autoComplete="current-password"
@@ -75,12 +76,12 @@ export default function LoginPage() {
         />
         <p className="form__aside">
           <Link to="/forgot-password" data-testid="forgot-password-link">
-            Forgot your password?
+            {t('auth.login.forgot')}
           </Link>
         </p>
 
         <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-          {isSubmitting ? 'Signing in' : 'Sign in'}
+          {isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
         </button>
       </form>
     </AuthLayout>

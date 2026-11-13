@@ -4,6 +4,7 @@ import { entryText } from './support/zip'
 import { chooseFromMenu } from './support/rowMenu'
 import { acceptConfirm, confirmDialog } from './support/confirm'
 import { expectWritten } from './support/manuscript'
+import { expandStory } from './support/story'
 
 /**
  * Content recovery, end to end (ADR 0029): the three ways LorEvolve gives writing back, kept apart.
@@ -575,6 +576,7 @@ test.describe('content recovery', () => {
 
     // A scene deleted says where it goes.
     await page.goto(storyUrl)
+    await expandStory(page)
     await chooseFromMenu(scene(page, 'The Council'), 'scene-delete')
     await expect(confirmDialog(page)).toContainText('to the Trash')
     await acceptConfirm(page, 'restore it from the Trash')
@@ -613,6 +615,7 @@ test.describe('content recovery', () => {
       ).status(),
     ).toBe(204)
     await page.goto(storyUrl)
+    await expandStory(page)
     await chooseFromMenu(page, 'delete-story')
     await acceptConfirm(page, 'to the Trash')
     await page.waitForURL(/\/stories$/)
@@ -637,6 +640,7 @@ test.describe('content recovery', () => {
     await page.getByTestId('trash-open').click()
     await page.waitForURL(new RegExp(`/stories/${storyId}$`))
     await expect(page.getByTestId('story-title')).toHaveText('The Long Winter')
+    await expandStory(page)
     await expect(scene(page, 'The Council')).toBeVisible()
     await expect(scene(page, 'The Gates')).toHaveCount(0)
   })

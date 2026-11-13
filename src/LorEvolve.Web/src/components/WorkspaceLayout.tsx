@@ -1,17 +1,18 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { t, useI18n } from '../i18n'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { AccountMenu } from './AccountMenu'
-import { BRAND_LINK_LABEL, BrandMark } from './BrandMark'
+import { BrandMark } from './BrandMark'
 import { SiteFooter } from './SiteFooter'
 import { MAIN_CONTENT_ID } from './SkipLink'
 import { Wordmark } from './Wordmark'
 
 /** The account-level screen an address is, named as its tab and its title say it. */
 function screenName(pathname: string) {
-  if (pathname.startsWith('/app/ideas')) return 'Ideas'
-  if (pathname.startsWith('/app/profile')) return 'Profile'
-  if (pathname.startsWith('/app/ai-changes')) return 'Pending AI Changes'
-  return 'Universes'
+  if (pathname.startsWith('/app/ideas')) return t('shell.workspace.screen.ideas')
+  if (pathname.startsWith('/app/profile')) return t('shell.workspace.screen.profile')
+  if (pathname.startsWith('/app/ai-changes')) return t('shell.workspace.screen.aiChanges')
+  return t('shell.workspace.screen.universes')
 }
 
 /**
@@ -31,6 +32,7 @@ function screenName(pathname: string) {
  */
 export function WorkspaceLayout() {
   const { pathname } = useLocation()
+  useI18n()
   useDocumentTitle(screenName(pathname))
 
   return (
@@ -39,17 +41,17 @@ export function WorkspaceLayout() {
         <Link
           className="home__brand workspacebar__brand"
           to="/"
-          aria-label={BRAND_LINK_LABEL}
+          aria-label={t('shell.brand.homeLabel')}
           data-testid="home-brand"
         >
           <BrandMark />
           <Wordmark />
         </Link>
 
-        <nav className="workspacebar__nav" aria-label="My workspace">
+        <nav className="workspacebar__nav" aria-label={t('shell.workspace.navLabel')}>
           {/* Shown, not spoken: the landmark's own name already says it. */}
           <span className="workspacebar__context" aria-hidden="true">
-            My workspace
+            {t('shell.workspace.context')}
           </span>
           <ul className="workspacebar__links">
             <li>
@@ -59,7 +61,7 @@ export function WorkspaceLayout() {
                 end
                 data-testid="workspacebar-universes"
               >
-                Universes
+                {t('shell.workspace.universes')}
               </NavLink>
             </li>
             <li>
@@ -68,14 +70,14 @@ export function WorkspaceLayout() {
                 to="/app/ideas"
                 data-testid="workspacebar-ideas"
               >
-                Ideas
+                {t('shell.workspace.ideas')}
               </NavLink>
             </li>
           </ul>
         </nav>
 
         <Link className="workspacebar__explore" to="/" data-testid="home-explore">
-          Explore
+          {t('shell.workspace.explore')}
         </Link>
         <AccountMenu variant="bar" />
       </header>

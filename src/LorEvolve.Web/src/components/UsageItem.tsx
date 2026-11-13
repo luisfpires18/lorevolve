@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from 'react'
+import { useI18n } from '../i18n'
 import type { UsageLoad } from '../lib/useUsageLoad'
 
 /**
@@ -18,6 +19,7 @@ export function UsageItem<T>({
   onRetry: () => void
   children: (value: T, labelId: string) => ReactNode
 }) {
+  const { t } = useI18n()
   const labelId = useId()
 
   return (
@@ -28,7 +30,7 @@ export function UsageItem<T>({
 
       {load.kind === 'loading' ? (
         <p className="usage__status" role="status">
-          Checking your usage…
+          {t('account.usage.checking')}
         </p>
       ) : null}
 
@@ -38,9 +40,9 @@ export function UsageItem<T>({
           role="alert"
           data-testid={`${testId}-error`}
         >
-          <p>Your usage didn't load.</p>
+          <p>{t('account.usage.failed')}</p>
           <button className="button button--secondary" type="button" onClick={onRetry}>
-            Try again
+            {t('account.usage.retry')}
           </button>
         </div>
       ) : null}
@@ -70,9 +72,10 @@ export function UsageMeter({
   limit: number
   full: boolean
 }) {
+  const { t } = useI18n()
   const percent = Math.min(100, Math.round((used / limit) * 100))
   const tiny = used > 0 && percent === 0
-  const shown = tiny ? 'Under 1%' : `${percent}%`
+  const shown = tiny ? t('account.usage.underOne') : `${percent}%`
 
   return (
     <>

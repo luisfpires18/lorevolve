@@ -5,6 +5,7 @@ import { Field } from '../components/Field'
 import { returnPath } from '../auth/returnPath'
 import { useAuth } from '../auth/useAuth'
 import { ApiError, apiFetch } from '../lib/api'
+import { useI18n } from '../i18n'
 
 /**
  * The token that lets this visitor register while registration is invitation-only: an Admin's sign-up link
@@ -18,6 +19,7 @@ function inviteTokenFor(search: string, state: unknown): string | undefined {
 }
 
 export default function RegisterPage() {
+  const { t, tx } = useI18n()
   const { register } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -50,7 +52,7 @@ export default function RegisterPage() {
     setMessage(null)
 
     if (password !== confirmPassword) {
-      setFieldErrors({ confirmpassword: 'Both passwords need to match.' })
+      setFieldErrors({ confirmpassword: t('auth.register.passwordsMatch') })
       return
     }
 
@@ -67,7 +69,7 @@ export default function RegisterPage() {
           setMessage(error.message)
         }
       } else {
-        setMessage('Registration is unavailable right now.')
+        setMessage(t('auth.register.unavailable'))
       }
       setIsSubmitting(false)
     }
@@ -75,21 +77,19 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout
-      heading="Create account"
-      intro="Claim a name, and the workroom is yours."
-      footer={
-        <>
-          Already have an account?{' '}
+      heading={t('auth.register.heading')}
+      intro={t('auth.register.intro')}
+      footer={tx('auth.register.haveAccount', {
+        link: (
           <Link to="/login" state={location.state}>
-            Sign in
+            {t('auth.register.signIn')}
           </Link>
-        </>
-      }
+        ),
+      })}
     >
       {inviteOnly === null ? null : inviteOnly && !inviteToken ? (
         <p className="callout" role="status" data-testid="register-invite-only">
-          LorEvolve is invitation-only for now. Open the invitation link you were sent to create
-          your account.
+          {t('auth.register.inviteOnly')}
         </p>
       ) : (
         <form className="form" onSubmit={handleSubmit} noValidate>
@@ -100,7 +100,7 @@ export default function RegisterPage() {
           ) : null}
 
           <Field
-            label="Username"
+            label={t('auth.register.username')}
             name="username"
             autoComplete="username"
             autoFocus
@@ -111,7 +111,7 @@ export default function RegisterPage() {
           />
 
           <Field
-            label="Email"
+            label={t('auth.register.email')}
             name="email"
             type="email"
             autoComplete="email"
@@ -122,7 +122,7 @@ export default function RegisterPage() {
           />
 
           <Field
-            label="Password"
+            label={t('auth.register.password')}
             name="password"
             type="password"
             autoComplete="new-password"
@@ -133,7 +133,7 @@ export default function RegisterPage() {
           />
 
           <Field
-            label="Confirm password"
+            label={t('auth.register.confirmPassword')}
             name="confirmPassword"
             type="password"
             autoComplete="new-password"
@@ -144,7 +144,7 @@ export default function RegisterPage() {
           />
 
           <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-            {isSubmitting ? 'Creating account' : 'Create account'}
+            {isSubmitting ? t('auth.register.submitting') : t('auth.register.submit')}
           </button>
         </form>
       )}

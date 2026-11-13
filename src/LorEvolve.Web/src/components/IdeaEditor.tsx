@@ -33,6 +33,7 @@ import { useLocalDraft } from '../lib/useLocalDraft'
 import type { UniverseSummary } from '../universes/types'
 import { EmptyState } from './EmptyState'
 import { confirmAction } from '../lib/confirm'
+import { numberFormat } from '../i18n/format'
 
 type LoadState =
   | { kind: 'loading' }
@@ -55,7 +56,7 @@ interface Stored extends Fields {
   updatedAt: string | null
 }
 
-const count = new Intl.NumberFormat('en')
+const count = (value: number) => numberFormat({}, 'en').format(value)
 
 function referenceKey(reference: { kind: number; id: string }) {
   return `${reference.kind}:${reference.id}`
@@ -750,7 +751,7 @@ export function IdeaEditor({
               data-testid="idea-body-count"
             >
               {isTooLong ? 'Too long to save: ' : null}
-              {count.format(draft.body.length)} of {count.format(IDEA_BODY_MAX_LENGTH)} characters.
+              {count(draft.body.length)} of {count(IDEA_BODY_MAX_LENGTH)} characters.
             </p>
           ) : null}
           {fieldErrors.body ? <p className="field__error">{fieldErrors.body}</p> : null}

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { NavigationType, useBlocker } from 'react-router-dom'
+import { t } from '../i18n'
 import { confirmAction } from './confirm'
 
 /** One editor's unsaved work: the question it asks, and what it lets go of when the author leaves it anyway. */
@@ -18,8 +19,8 @@ let passing = false
 function askToLeave(message: string) {
   return confirmAction({
     title: message,
-    confirmLabel: 'Leave without saving',
-    cancelLabel: 'Stay',
+    confirmLabel: t('shell.confirm.leave.confirm'),
+    cancelLabel: t('shell.confirm.leave.cancel'),
     variant: 'destructive',
   })
 }

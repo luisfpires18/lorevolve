@@ -1,10 +1,11 @@
 import { useId } from 'react'
 import { Moon, Sun } from 'lucide-react'
+import { useI18n } from '../i18n'
 import { useTheme, type Theme } from '../lib/theme'
 
-const OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
-  { value: 'light', label: 'Light', icon: Sun },
-  { value: 'dark', label: 'Dark', icon: Moon },
+const OPTIONS: { value: Theme; icon: typeof Sun }[] = [
+  { value: 'light', icon: Sun },
+  { value: 'dark', icon: Moon },
 ]
 
 /**
@@ -15,16 +16,17 @@ const OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
  * so the change is seen where it was made.
  */
 export function ThemeSwitch({ inMenu = false }: { inMenu?: boolean }) {
+  const { t } = useI18n()
   const [theme, setTheme] = useTheme()
   const labelId = useId()
 
   return (
     <div className={inMenu ? 'themeswitch themeswitch--menu' : 'themeswitch'}>
       <span className="themeswitch__label" id={labelId}>
-        Theme
+        {t('account.theme.label')}
       </span>
       <div className="themeswitch__track" role="group" aria-labelledby={labelId}>
-        {OPTIONS.map(({ value, label, icon: Icon }) => (
+        {OPTIONS.map(({ value, icon: Icon }) => (
           <button
             key={value}
             type="button"
@@ -40,7 +42,7 @@ export function ThemeSwitch({ inMenu = false }: { inMenu?: boolean }) {
               focusable="false"
               strokeWidth={1.75}
             />
-            {label}
+            {t(value === 'light' ? 'account.theme.light' : 'account.theme.dark')}
           </button>
         ))}
       </div>

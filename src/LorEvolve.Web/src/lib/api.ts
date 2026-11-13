@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+
 /**
  * Shape of an RFC 7807 response, plus the field errors ASP.NET Core adds and the
  * extensions this API flattens alongside them. `code` is a stable machine-readable
@@ -60,10 +62,7 @@ export function apiErrorFrom(status: number, payload: unknown) {
   const problem = (payload ?? {}) as ProblemDetails
   const fieldErrors = flattenFieldErrors(problem.errors)
   const message =
-    problem.detail ??
-    Object.values(fieldErrors)[0] ??
-    problem.title ??
-    'Something went wrong. Try again.'
+    problem.detail ?? Object.values(fieldErrors)[0] ?? problem.title ?? t('shell.api.fallbackError')
 
   return new ApiError(status, message, fieldErrors, problem.code ?? null, payload)
 }
@@ -76,6 +75,11 @@ export function apiErrorFrom(status: number, payload: unknown) {
 export const SESSION_ENDED = 'lorevolve:session-ended'
 
 /** What any screen says when the server could not be reached at all. */
+export function networkFailure() {
+  return t('shell.api.networkFailure')
+}
+
+/** @deprecated English only; read `networkFailure()` when the error is built so it follows the language. */
 export const NETWORK_FAILURE =
   'LorEvolve could not be reached. Check your connection and try again.'
 
@@ -145,7 +149,7 @@ async function performFetch<T>(
     // An abort is the caller's own doing and is passed on as it is. Anything else is the network, and the browser's
     // own words for it ("Failed to fetch", "NetworkError when…") are not something to put in front of an author.
     if (error instanceof DOMException && error.name === 'AbortError') throw error
-    throw new ApiError(0, NETWORK_FAILURE, {}, null, null)
+    throw new ApiError(0, networkFailure(), {}, null, null)
   }
 
   if (response.status === 204) {

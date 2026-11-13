@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
+import { useI18n } from '../i18n'
 
 /** The id of the one `main` every layout draws, and the place the skip link lands. */
 export const MAIN_CONTENT_ID = 'main-content'
@@ -12,6 +13,7 @@ export const MAIN_CONTENT_ID = 'main-content'
  * and Back would both have to reason about, for a jump that is only about the keyboard.
  */
 export function SkipLink() {
+  const { t } = useI18n()
   return (
     <a
       className="skiplink"
@@ -22,7 +24,7 @@ export function SkipLink() {
       }}
       data-testid="skip-link"
     >
-      Skip to main content
+      {t('shell.skipLink.label')}
     </a>
   )
 }

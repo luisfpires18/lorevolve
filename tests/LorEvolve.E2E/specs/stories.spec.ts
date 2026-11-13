@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { chooseFromMenu, openMenuFor } from './support/rowMenu'
 import { acceptConfirm, confirmDialog } from './support/confirm'
+import { expandStory } from './support/story'
 
 /**
  * Stories, their chapters and their scenes, end to end. Each test registers its own account and builds
@@ -368,6 +369,7 @@ test.describe('stories', () => {
     )
 
     await page.reload()
+    await expandStory(page)
     await expect.poll(() => sceneOrder(page)).toEqual(told)
 
     // Childhood moves to the front of the telling, and stays there.
@@ -384,6 +386,7 @@ test.describe('stories', () => {
     await expect.poll(() => sceneOrder(page)).toEqual(['Childhood', 'Aftermath', 'The Battle'])
 
     await page.reload()
+    await expandStory(page)
     await expect.poll(() => sceneOrder(page)).toEqual(['Childhood', 'Aftermath', 'The Battle'])
 
     // A linked entry is the entry's own page, not a copy of it.
@@ -395,12 +398,14 @@ test.describe('stories', () => {
     await expect(page.getByText('White Tower').first()).toBeVisible()
 
     await page.goto(storyUrl)
+    await expandStory(page)
     await scene(page, 'Aftermath').getByTestId('scene-pov').getByRole('link').click()
     await page.waitForURL(/\/lore\/[0-9a-f-]+$/)
     await expect(page.getByText('Arlen').first()).toBeVisible()
 
     // Edited in place: still the second scene told.
     await page.goto(storyUrl)
+    await expandStory(page)
     await scene(page, 'Aftermath').getByTestId('scene-edit').click()
     await page.getByTestId('scene-title-input').fill('Aftermath at the Gate')
     await page.getByTestId('scene-notes-input').fill('Open on the silence.')
@@ -437,6 +442,7 @@ test.describe('stories', () => {
     // Two chapters, numbered by where they sit and titled as written.
     await addChapter(page, 'Arrival', 'They reach the gate.')
     await addChapter(page, 'Ashes')
+    await expandStory(page)
     await expect(chapter(page, 'Arrival').getByTestId('chapter-heading')).toHaveText(
       'Chapter 1: Arrival',
     )
@@ -538,6 +544,7 @@ test.describe('stories', () => {
     await expect.poll(() => structure(page)).toEqual(arranged)
 
     await page.reload()
+    await expandStory(page)
     await expect.poll(() => structure(page)).toEqual(arranged)
     await expect(page.getByTestId('story-chapter-count')).toHaveText('2 chapters')
 
@@ -557,6 +564,7 @@ test.describe('stories', () => {
       ])
 
     await page.reload()
+    await expandStory(page)
     await expect
       .poll(() => structure(page))
       .toEqual([
@@ -665,6 +673,7 @@ test.describe('stories', () => {
     await seedScene(page, universeId, storyId, { title: 'c', chapter: two })
 
     await page.goto(`/app/universes/${universeId}/stories/${storyId}`)
+    await expandStory(page)
     await expect
       .poll(() => structure(page))
       .toEqual(['Chapter 1: One | a | b', 'Chapter 2: Two | c', 'Chapter 3: Three'])
@@ -754,6 +763,7 @@ test.describe('stories', () => {
     await expect.poll(() => structure(page)).toEqual(moved)
 
     await page.reload()
+    await expandStory(page)
     await expect.poll(() => structure(page)).toEqual(moved)
   })
 
@@ -771,6 +781,7 @@ test.describe('stories', () => {
     expect(trashed.status()).toBe(204)
 
     await page.goto(`/app/universes/${universeId}/stories/${storyId}`)
+    await expandStory(page)
     const council = scene(page, 'The Council')
 
     await expect(council.getByTestId('scene-pov')).toContainText('Arlen')
@@ -856,6 +867,7 @@ test.describe('stories', () => {
       expect(await scrollsSideways(page), `stories at ${width}px`).toBe(false)
 
       await page.goto(`/app/universes/${universeId}/stories/${storyId}`)
+      await expandStory(page)
       await expect(page.getByTestId('scene')).toHaveCount(3)
       await expect(page.getByTestId('chapter')).toHaveCount(2)
       expect(await scrollsSideways(page), `story at ${width}px`).toBe(false)

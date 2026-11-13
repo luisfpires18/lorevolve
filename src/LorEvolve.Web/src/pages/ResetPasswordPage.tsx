@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { Field } from '../components/Field'
 import { ApiError, apiFetch } from '../lib/api'
+import { useI18n } from '../i18n'
 
 /**
  * The page a password reset email opens (#69): `/reset-password#user=&token=`, the token in the fragment so it never
@@ -10,6 +11,7 @@ import { ApiError, apiFetch } from '../lib/api'
  * the account had, so it signs in afresh rather than here.
  */
 export default function ResetPasswordPage() {
+  const { t, tx } = useI18n()
   const location = useLocation()
   const query = new URLSearchParams(
     location.hash.length > 1 ? location.hash.slice(1) : location.search,
@@ -29,7 +31,7 @@ export default function ResetPasswordPage() {
     setMessage(null)
 
     if (password !== confirmPassword) {
-      setFieldErrors({ confirmpassword: 'Both passwords need to match.' })
+      setFieldErrors({ confirmpassword: t('auth.reset.passwordsMatch') })
       return
     }
 
@@ -47,7 +49,7 @@ export default function ResetPasswordPage() {
         setFieldErrors(rest)
         if (tokenError || Object.keys(rest).length === 0) setMessage(tokenError ?? error.message)
       } else {
-        setMessage('The password cannot be changed right now.')
+        setMessage(t('auth.reset.failed'))
       }
     } finally {
       setIsSubmitting(false)
@@ -58,29 +60,30 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthLayout
-      heading="Choose a new password"
-      intro="Your new password signs you out everywhere else."
-      footer={<Link to="/login">Back to sign in</Link>}
+      heading={t('auth.reset.heading')}
+      intro={t('auth.reset.intro')}
+      footer={<Link to="/login">{t('auth.reset.back')}</Link>}
     >
       {done ? (
         <p className="callout" role="status" data-testid="reset-done">
-          Your password is changed. <Link to="/login">Sign in</Link> with the new one.
+          {tx('auth.reset.done', { link: <Link to="/login">{t('auth.reset.doneSignIn')}</Link> })}
         </p>
       ) : linkMissing ? (
         <p className="callout" role="status" data-testid="reset-link-missing">
-          This page needs the link from your email.{' '}
-          <Link to="/forgot-password">Ask for a new one</Link>.
+          {tx('auth.reset.linkMissing', {
+            link: <Link to="/forgot-password">{t('auth.reset.linkMissingAsk')}</Link>,
+          })}
         </p>
       ) : (
         <form className="form" onSubmit={handleSubmit} noValidate>
           {message ? (
             <p className="form__message" role="alert" data-testid="auth-error">
-              {message} <Link to="/forgot-password">Ask again</Link>
+              {message} <Link to="/forgot-password">{t('auth.reset.askAgain')}</Link>
             </p>
           ) : null}
 
           <Field
-            label="New password"
+            label={t('auth.reset.newPassword')}
             name="password"
             type="password"
             autoComplete="new-password"
@@ -92,7 +95,7 @@ export default function ResetPasswordPage() {
           />
 
           <Field
-            label="Confirm new password"
+            label={t('auth.reset.confirmPassword')}
             name="confirmPassword"
             type="password"
             autoComplete="new-password"
@@ -103,7 +106,7 @@ export default function ResetPasswordPage() {
           />
 
           <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-            {isSubmitting ? 'Saving' : 'Save the new password'}
+            {isSubmitting ? t('auth.reset.submitting') : t('auth.reset.submit')}
           </button>
         </form>
       )}

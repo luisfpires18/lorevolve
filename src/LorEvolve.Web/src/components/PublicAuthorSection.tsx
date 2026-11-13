@@ -4,6 +4,7 @@ import { authorPath } from '../portal/api'
 import { useProfileImage } from '../profile/useProfileImage'
 import { getPublicAuthorSettings, setPublicAuthorPhoto } from '../publishing/api'
 import type { PublicAuthorSettings } from '../publishing/types'
+import { useI18n } from '../i18n'
 
 /**
  * The Profile's view of the account's public author page (ADR 0037): where it is, whether anyone can see it, and the
@@ -12,6 +13,7 @@ import type { PublicAuthorSettings } from '../publishing/types'
  * this stays a workspace screen.
  */
 export function PublicAuthorSection() {
+  const { t, tx } = useI18n()
   const photoId = useId()
   const { image } = useProfileImage()
   const [settings, setSettings] = useState<PublicAuthorSettings | null>(null)
@@ -28,12 +30,12 @@ export function PublicAuthorSection() {
     getPublicAuthorSettings(controller.signal)
       .then(setSettings)
       .catch(() => {
-        if (!controller.signal.aborted) setMessage('Your author page settings could not be loaded.')
+        if (!controller.signal.aborted) setMessage(t('portal.authorSection.loadFailed'))
       })
     return () => {
       controller.abort()
     }
-  }, [photoKey])
+  }, [photoKey, t])
 
   if (!settings) {
     return message ? (
@@ -50,10 +52,10 @@ export function PublicAuthorSection() {
     try {
       setSettings(await setPublicAuthorPhoto(isPublic))
       setAnnouncement(
-        isPublic ? 'Your photo is shown on your author page.' : 'Your photo is no longer shown.',
+        isPublic ? t('portal.authorSection.photoShown') : t('portal.authorSection.photoHidden'),
       )
     } catch {
-      setMessage('That could not be changed. Try again.')
+      setMessage(t('portal.authorSection.changeFailed'))
     } finally {
       setPending(null)
       setBusy(false)
@@ -62,20 +64,22 @@ export function PublicAuthorSection() {
 
   return (
     <div className="profile__author" data-testid="public-author-settings">
-      <h3 className="profile__subtitle">Author page</h3>
+      <h3 className="profile__subtitle">{t('portal.authorSection.title')}</h3>
       {settings.authorSlug && settings.hasPublicWorld ? (
         <p className="settings__note">
-          Readers find your public worlds on{' '}
-          <Link to={authorPath(settings.authorSlug)} data-testid="view-author-page">
-            your author page
-          </Link>
-          .
+          {tx('portal.authorSection.readersFind', {
+            link: (
+              <Link to={authorPath(settings.authorSlug)} data-testid="view-author-page">
+                {t('portal.authorSection.readersFindLink')}
+              </Link>
+            ),
+          })}
         </p>
       ) : (
         <p className="settings__note" data-testid="author-page-hidden">
           {settings.authorSlug
-            ? 'Your author page appears again while one of your universes is public.'
-            : 'Your author page appears when you publish your first universe.'}
+            ? t('portal.authorSection.hiddenAgain')
+            : t('portal.authorSection.hiddenFirst')}
         </p>
       )}
 
@@ -89,12 +93,12 @@ export function PublicAuthorSection() {
           aria-describedby={`${photoId}-hint`}
           data-testid="public-photo-toggle"
         />
-        <span>Show my photo on my author page</span>
+        <span>{t('portal.authorSection.showPhoto')}</span>
       </label>
       <p className="field__hint" id={`${photoId}-hint`}>
         {settings.hasPhoto
-          ? 'Off unless you turn it on. Replacing your photo turns it off again.'
-          : 'Add a photo above first. Without one, your author page shows your initial.'}
+          ? t('portal.authorSection.photoHintHas')
+          : t('portal.authorSection.photoHintNone')}
       </p>
       {message ? (
         <p className="form__message" role="alert">

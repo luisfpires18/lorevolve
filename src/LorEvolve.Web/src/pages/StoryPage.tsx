@@ -12,6 +12,7 @@ import {
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ArcSection } from '../components/ArcSection'
+import { revealInFolds } from '../components/fold'
 import { ContentPublication } from '../components/ContentPublication'
 import { ChapterForm } from '../components/ChapterForm'
 import { ChapterSection, type ArcTarget } from '../components/ChapterSection'
@@ -213,7 +214,10 @@ function StoryView({ view }: { view: StoryViewName }) {
     const selector = pendingFocus.current
     if (!selector || state.kind !== 'ready') return
     pendingFocus.current = null
-    document.querySelector<HTMLElement>(selector)?.focus()
+    const target = document.querySelector<HTMLElement>(selector)
+    // The folds around it open before this returns, so a hidden row can still take the focus.
+    revealInFolds(target)
+    target?.focus()
   }, [state])
 
   // A link to one scene - a search result, or the manuscript's way back to its scene - lands on it, whichever view it
@@ -226,6 +230,7 @@ function StoryView({ view }: { view: StoryViewName }) {
     const target = document.getElementById(decodeURIComponent(location.hash.slice(1)))
     if (!target) return
 
+    revealInFolds(target)
     target.scrollIntoView({ block: 'center' })
     target.focus({ preventScroll: true })
     target.setAttribute('data-arrived', 'true')

@@ -10060,6 +10060,93 @@ a.lorechip--pov:focus-visible .lorechip__name {
   min-width: 0;
 }
 
+/* A scene's point of view and lore: raised tiles with a real portrait, so the cast reads at a glance. */
+.scene__pov {
+  gap: var(--space-2);
+  padding: 0.3rem 0.75rem 0.3rem 0.35rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+}
+
+.scene__pov .lorechip__tile {
+  width: 2rem;
+}
+
+.scene__pov .lorechip--pov {
+  font-weight: 600;
+}
+
+.scene__refs--lore {
+  align-items: center;
+}
+
+.scene__count {
+  margin-inline-start: 0.2rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--raised);
+  font-variant-numeric: tabular-nums;
+}
+
+.scene__refs--lore .scene__lore {
+  gap: var(--space-2);
+}
+
+.scene__refs--lore .lorechip {
+  gap: var(--space-2);
+  padding: 0.3rem 0.65rem 0.3rem 0.3rem;
+  font-size: var(--text-ui);
+  color: var(--ink);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.scene__refs--lore a.lorechip:hover,
+.scene__refs--lore a.lorechip:focus-visible {
+  border-color: var(--type-ink);
+}
+
+.scene__refs--lore .lorechip:not(.lorechip--pictured) {
+  padding-inline-start: 0.6rem;
+}
+
+.scene__refs--lore .lorechip__thumb {
+  width: 1.6rem;
+  border-radius: var(--radius-xs);
+}
+
+.scene__refs--lore .lorechip__icon {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.scene__loretoggle {
+  height: 100%;
+  min-height: 2.3rem;
+  padding: 0 0.75rem;
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius-sm);
+  background: none;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.scene__loretoggle:hover,
+.scene__loretoggle:focus-visible {
+  color: var(--ink);
+  border-style: solid;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene__refs--lore .lorechip {
+    transition: none;
+  }
+}
+
 /* A scene's world date, leading to its story's timeline: the date as written, underlined only when pointed at. */
 .scene__whenlink {
   color: inherit;
@@ -18533,4 +18620,67 @@ details.reviewsection > .reviewsection__list {
 .boardlist__choose[aria-pressed='true'] {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* Folding a story's arcs, chapters and scenes: a chevron before the heading, turned down while open. */
+.foldtoggle {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.foldtoggle:hover,
+.foldtoggle:focus-visible {
+  background: var(--raised);
+  color: var(--ink);
+}
+
+.foldtoggle__chevron {
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: transform 120ms ease-out;
+}
+
+.foldtoggle[aria-expanded='true'] .foldtoggle__chevron {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foldtoggle__chevron {
+    transition: none;
+  }
+}
+
+.chapter__heading:has(> .foldtoggle) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-2);
+  align-items: start;
+}
+
+.chapter__heading > .foldtoggle {
+  grid-row: 1 / span 2;
+}
+
+.chapter__heading > :not(.foldtoggle) {
+  grid-column: 2;
+}
+
+.scene__titlerow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.scene__titlerow > .foldtoggle {
+  margin-inline-start: -0.4rem;
 }

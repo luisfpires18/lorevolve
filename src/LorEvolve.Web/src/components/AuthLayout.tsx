@@ -1,7 +1,8 @@
 import type { ReactNode, Ref } from 'react'
 
 import { Link } from 'react-router-dom'
-import { BRAND_LINK_LABEL, BrandMark } from './BrandMark'
+import { useI18n } from '../i18n'
+import { BrandMark } from './BrandMark'
 import { MAIN_CONTENT_ID } from './SkipLink'
 import { Wordmark } from './Wordmark'
 
@@ -19,6 +20,7 @@ interface AuthLayoutProps {
  * carrying the form. The plate becomes a slim band on narrow screens.
  */
 export function AuthLayout({ heading, intro, children, footer, headingRef }: AuthLayoutProps) {
+  const { t } = useI18n()
   return (
     <div className="auth">
       <aside className="auth__plate">
@@ -30,17 +32,14 @@ export function AuthLayout({ heading, intro, children, footer, headingRef }: Aut
           <Link
             className="auth__brand"
             to="/"
-            aria-label={BRAND_LINK_LABEL}
+            aria-label={t('shell.brand.homeLabel')}
             data-testid="auth-brand"
           >
             <BrandMark className="brandmark brandmark--plate" />
             <Wordmark large />
           </Link>
           <span className="auth__rule" aria-hidden="true" />
-          <p className="auth__pitch">
-            A workroom for the worlds you keep: their people, places, history and the rules that
-            hold them together.
-          </p>
+          <p className="auth__pitch">{t('auth.layout.pitch')}</p>
         </div>
       </aside>
 

@@ -3,6 +3,8 @@ import { useUniverseAccess } from '../universes/access'
 import { ArrowDown, ArrowRightLeft, ArrowUp, Pencil, Plus, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { useFold } from './fold'
+import { FoldToggle } from './FoldToggle'
 import { chapterLabel, chapterNumber, sceneCountLabel } from '../stories/format'
 import type { Chapter } from '../stories/types'
 
@@ -57,18 +59,33 @@ export function ChapterSection({
   const access = useUniverseAccess()
   const headingId = useId()
   const Title = titleLevel === 4 ? 'h4' : 'h3'
+  const {
+    open: foldOpen,
+    setOpen: setFoldOpen,
+    ref: foldRef,
+    bodyId: foldBodyId,
+  } = useFold<HTMLElement>()
 
   return (
     <section
+      ref={foldRef}
       className="chapter"
       id={`chapter-${chapter.id}`}
       tabIndex={-1}
       aria-labelledby={headingId}
       data-testid="chapter"
       data-title={chapter.title}
+      data-open={foldOpen ? 'true' : undefined}
     >
       <header className="chapter__head">
         <div className="chapter__heading">
+          <FoldToggle
+            open={foldOpen}
+            onToggle={setFoldOpen}
+            controls={foldBodyId}
+            label={chapterLabel(index, chapter.title)}
+            testId="chapter-toggle"
+          />
           <Title className="chapter__title" id={headingId} data-testid="chapter-heading">
             <span className="chapter__number">{chapterNumber(index)}</span>
             <span className="chapter__dash">: </span>
@@ -88,7 +105,10 @@ export function ChapterSection({
             <button
               className="button button--text"
               type="button"
-              onClick={() => onAddScene(chapter)}
+              onClick={() => {
+                setFoldOpen(true)
+                onAddScene(chapter)
+              }}
               aria-describedby={headingId}
               data-testid="chapter-new-scene"
             >
@@ -159,19 +179,26 @@ export function ChapterSection({
         ) : null}
 
         {chapter.summary ? (
-          <p className="chapter__summary prose" data-testid="chapter-summary">
+          <p
+            className="chapter__summary prose"
+            hidden={!foldOpen}
+            data-fold={foldBodyId}
+            data-testid="chapter-summary"
+          >
             {chapter.summary}
           </p>
         ) : null}
       </header>
 
-      {sceneCount > 0 ? (
-        children
-      ) : (
-        <p className="chapter__empty" data-testid="chapter-empty">
-          No scenes in this chapter yet.
-        </p>
-      )}
+      <div id={foldBodyId} hidden={!foldOpen} data-fold={foldBodyId}>
+        {sceneCount > 0 ? (
+          children
+        ) : (
+          <p className="chapter__empty" data-testid="chapter-empty">
+            No scenes in this chapter yet.
+          </p>
+        )}
+      </div>
     </section>
   )
 }

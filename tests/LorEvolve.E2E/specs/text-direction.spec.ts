@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { chooseLoreType } from './support/lore'
 import { expectWritten, writtenSelection } from './support/manuscript'
+import { expandStory } from './support/story'
 
 /**
  * Titles and names written right to left, or mixing scripts, drawn in their own direction.
@@ -395,6 +396,7 @@ test.describe('text direction', () => {
     // ---- The story's header and its Scenes view ----
 
     await page.goto(base)
+    await expandStory(page)
     await expectIsolated(page.getByTestId('story-title'), Text.numbers)
     expect(await drawnOrder(page.getByTestId('story-title'), ['آكرون', '12', 'Wright'])).toEqual([
       'Wright',
@@ -1154,6 +1156,7 @@ test.describe('authored prose direction', () => {
       })
 
       await page.goto(`/app/universes/${universeId}/stories/${storyId}`)
+      await expandStory(page)
       const shown = page.getByTestId('story-premise')
       await expect(shown).toHaveText(premise)
       expect(await sideOf(shown, Prose.english)).toBe('left')
