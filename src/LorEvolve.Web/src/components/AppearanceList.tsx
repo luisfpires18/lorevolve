@@ -16,6 +16,7 @@ import {
 } from '../progression/api'
 import type { Appearance, AppearanceImage } from '../progression/types'
 import { useUniverseAccess } from '../universes/access'
+import { t, useI18n } from '../i18n'
 
 /**
  * An entry's appearances on the main profile (Issue #43): each look's label, notes, gallery and what it belongs to. Pictures are
@@ -43,6 +44,7 @@ export function AppearanceList({
   /** A picture was added, moved or removed: the progression is read again. */
   onPicturesChanged: () => void
 }) {
+  useI18n()
   const access = useUniverseAccess()
 
   if (appearances.length === 0 && !access.editContent) return null
@@ -55,7 +57,7 @@ export function AppearanceList({
     >
       <div className="progression__head">
         <h3 className="rail__heading" id="appearance-list-heading">
-          Appearances
+          {t('progression.appearanceList.heading')}
         </h3>
         {access.editContent ? (
           <button
@@ -121,6 +123,7 @@ function AppearanceItem({
   onRemove: () => void
   onPicturesChanged: () => void
 }) {
+  useI18n()
   const access = useUniverseAccess()
   const inputId = useId()
   const [working, setWorking] = useState<string | null>(null)
@@ -134,7 +137,9 @@ function AppearanceItem({
     try {
       await action()
     } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That change could not be saved.')
+      setMessage(
+        error instanceof ApiError ? error.message : t('progression.appearanceList.saveFailed'),
+      )
     } finally {
       setWorking(null)
       onPicturesChanged()
@@ -146,11 +151,13 @@ function AppearanceItem({
     if (chosen.length === 0 || locked) return
     const tooBig = chosen.find((file) => file.size > IMAGE_MAX_BYTES)
     if (tooBig) {
-      setMessage(`Images must be ${IMAGE_MAX_BYTES / (1024 * 1024)} MB or smaller.`)
+      setMessage(t('progression.appearanceList.tooBig', { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
       return
     }
     await run(
-      chosen.length === 1 ? 'Adding the picture…' : `Adding ${chosen.length} pictures…`,
+      chosen.length === 1
+        ? t('progression.appearanceList.addingOne')
+        : t('progression.appearanceList.addingMany', { n: chosen.length }),
       async () => {
         for (const file of chosen)
           await addAppearanceImage(universeId, entityId, appearance.id, file)
@@ -164,7 +171,7 @@ function AppearanceItem({
     const to = from + by
     if (to < 0 || to >= ids.length) return
     ;[ids[from], ids[to]] = [ids[to], ids[from]]
-    await run('Moving the picture…', () =>
+    await run(t('progression.appearanceList.moving'), () =>
       orderAppearanceImages(universeId, entityId, appearance.id, ids),
     )
   }
@@ -172,27 +179,30 @@ function AppearanceItem({
   async function remove(image: AppearanceImage, index: number) {
     if (
       !(await confirmAction({
-        title: `Delete picture ${index + 1} of “${appearance.label}”?`,
-        message: 'The picture is deleted for good. Stage history does not keep pictures.',
-        confirmLabel: 'Delete picture',
+        title: t('progression.appearanceList.deleteTitle', {
+          index: index + 1,
+          name: appearance.label,
+        }),
+        message: t('progression.appearanceList.deleteMessage'),
+        confirmLabel: t('progression.appearanceList.deletePicture'),
         variant: 'destructive',
       }))
     ) {
       return
     }
-    await run('Deleting the picture…', () =>
+    await run(t('progression.appearanceList.deleting'), () =>
       removeAppearanceImage(universeId, entityId, appearance.id, image.id),
     )
   }
 
   const facts = [
     {
-      term: 'Stages',
+      term: t('progression.appearanceList.stages'),
       value: appearance.eras.map((era) => era.name).join(', '),
       testId: 'appearance-eras',
     },
     {
-      term: 'A look of',
+      term: t('progression.appearanceList.aLookOf'),
       value: appearance.forms.map((form) => form.name).join(', '),
       testId: 'appearance-forms',
     },
@@ -206,7 +216,7 @@ function AppearanceItem({
         </h4>
         {access.editContent ? (
           <ActionMenu
-            label={`Actions for ${appearance.label}`}
+            label={t('progression.appearanceList.actions', { name: appearance.label })}
             triggerTestId={`appearance-actions-${appearance.label}`}
           >
             <button
@@ -217,7 +227,7 @@ function AppearanceItem({
               data-testid="edit-appearance"
             >
               <ActionIcon icon={Pencil} />
-              Edit appearance
+              {t('progression.appearanceList.edit')}
             </button>
             {canMoveEarlier ? (
               <button
@@ -227,7 +237,7 @@ function AppearanceItem({
                 onClick={() => onMove(-1)}
               >
                 <ActionIcon icon={ArrowUp} />
-                Move earlier
+                {t('progression.appearanceList.moveEarlier')}
               </button>
             ) : null}
             {canMoveLater ? (
@@ -238,7 +248,7 @@ function AppearanceItem({
                 onClick={() => onMove(1)}
               >
                 <ActionIcon icon={ArrowDown} />
-                Move later
+                {t('progression.appearanceList.moveLater')}
               </button>
             ) : null}
             <button
@@ -249,7 +259,7 @@ function AppearanceItem({
               data-testid="remove-appearance"
             >
               <ActionIcon icon={Trash} />
-              Remove appearance
+              {t('progression.appearanceList.remove')}
             </button>
           </ActionMenu>
         ) : null}
@@ -265,18 +275,22 @@ function AppearanceItem({
       {appearance.images.length > 0 ? (
         <ol
           className="gallery"
-          aria-label={`Pictures of ${appearance.label}`}
+          aria-label={t('progression.appearanceList.gallery', { name: appearance.label })}
           data-testid="appearance-gallery"
         >
           {appearance.images.map((image, index) => {
-            const name = `${appearance.label}, picture ${index + 1} of ${appearance.images.length}`
+            const name = t('progression.appearanceList.pictureName', {
+              name: appearance.label,
+              index: index + 1,
+              total: appearance.images.length,
+            })
             return (
               <li className="gallery__item" key={image.id}>
                 <button
                   className="gallery__open"
                   type="button"
                   onClick={() => setViewing(image)}
-                  aria-label={`View ${name}`}
+                  aria-label={t('progression.appearanceList.view', { name })}
                 >
                   <img
                     className="gallery__thumb"
@@ -291,7 +305,7 @@ function AppearanceItem({
                 </button>
                 {access.editContent ? (
                   <ActionMenu
-                    label={`Actions for ${name}`}
+                    label={t('progression.appearanceList.pictureActions', { name })}
                     triggerTestId={`picture-actions-${index + 1}`}
                   >
                     {index > 0 ? (
@@ -302,7 +316,7 @@ function AppearanceItem({
                         onClick={() => void move(image, -1)}
                       >
                         <ActionIcon icon={ArrowLeft} />
-                        Move earlier
+                        {t('progression.appearanceList.moveEarlier')}
                       </button>
                     ) : null}
                     {index < appearance.images.length - 1 ? (
@@ -313,7 +327,7 @@ function AppearanceItem({
                         onClick={() => void move(image, 1)}
                       >
                         <ActionIcon icon={ArrowRight} />
-                        Move later
+                        {t('progression.appearanceList.moveLater')}
                       </button>
                     ) : null}
                     <button
@@ -324,7 +338,7 @@ function AppearanceItem({
                       data-testid="remove-picture"
                     >
                       <ActionIcon icon={Trash} />
-                      Delete picture
+                      {t('progression.appearanceList.deletePicture')}
                     </button>
                   </ActionMenu>
                 ) : null}
@@ -353,7 +367,7 @@ function AppearanceItem({
           />
           <label className="button button--secondary button--sm imagefield__pick" htmlFor={inputId}>
             <ActionIcon icon={ImagePlus} />
-            Add pictures
+            {t('progression.appearanceList.addPictures')}
           </label>
           {working ? (
             <span className="muted" role="status">
@@ -373,13 +387,15 @@ function AppearanceItem({
           ))}
           {appearance.scenes.length > 0 ? (
             <div>
-              <dt>Seen in</dt>
+              <dt>{t('progression.appearanceList.seenIn')}</dt>
               <dd>
                 <ul className="eracovers">
                   {appearance.scenes.map((scene) => (
                     <li key={scene.id}>
                       {scene.isTrashed ? (
-                        <span>{scene.title} (in Trash)</span>
+                        <span>
+                          {t('progression.appearanceList.sceneInTrash', { title: scene.title })}
+                        </span>
                       ) : (
                         <Link
                           to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
