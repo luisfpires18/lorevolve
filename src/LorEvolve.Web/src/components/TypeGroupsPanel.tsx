@@ -160,6 +160,8 @@ export function TypeGroupsPanel({
         text: error instanceof ApiError ? error.message : 'That group could not be moved.',
         fields: [],
       })
+      // Back to the order the server holds, which another tab may have changed meanwhile.
+      await onGroupsChanged().catch(() => undefined)
     } finally {
       setMoving(null)
       setBusy(false)
