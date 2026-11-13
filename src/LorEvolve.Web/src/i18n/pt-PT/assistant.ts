@@ -1,2 +1,182 @@
-// Untranslated: the English text stands in until the pt-PT dictionary issue (#106) replaces this file.
-export { default } from '../en/assistant'
+import type { Dictionary } from '../en'
+
+/** The universe assistant and what an outside AI app may read: its panel, sources and knowledge view (#104). */
+const assistant: Dictionary['assistant'] = {
+  sourceKind: {
+    lore: 'Lore',
+    story: 'História',
+    chapter: 'Capítulo',
+    scene: 'Cena',
+    plotArc: 'Arco',
+    timelineMoment: 'Acontecimento',
+    mapPin: 'Marcador',
+    map: 'Mapa',
+  },
+  panel: {
+    part: {
+      recorded: 'Registado',
+      inference: 'Inferência',
+      suggestion: 'Sugestão',
+    },
+    prompt: {
+      summarize: 'Resume este universo',
+      connected: 'O que está ligado a ',
+      scenes: 'Que cenas envolvem ',
+    },
+    failed: 'O assistente não conseguiu responder a isso. Tenta novamente.',
+    triggerTitle: 'Assistente',
+    triggerLabel: 'Assistente',
+    announceBusy: 'A consultar {name}.',
+    announceAnswered: 'Respondido.',
+    eyebrow: 'Assistente',
+    contextPropose:
+      'Pode preparar as alterações que pedires. Ficam à espera da tua revisão, e nada muda até as aprovares.',
+    contextRead: 'Lê este universo e nunca o altera.',
+    unavailable:
+      'O assistente ainda não está configurado neste LorEvolve. Tudo o resto funciona como de costume.',
+    emptyLead:
+      'Pergunta sobre qualquer coisa registada em {name}. As respostas vêm apenas do que está escrito aqui.',
+    emptyHint:
+      'Cada resposta assinala o que está registado, o que é inferido e o que é apenas uma sugestão, e liga de volta à origem.',
+    waysToStart: 'Formas de começar',
+    conversation: 'Conversa',
+    youPropose: 'Tu, a pedir alterações',
+    you: 'Tu',
+    retry: 'Tentar novamente',
+    pending: 'A consultar {name}…',
+    proposeLabel: 'Propor alterações',
+    proposeOn:
+      'Diz exatamente o que criar ou alterar. Vai para as Alterações da IA pendentes para o reveres.',
+    proposeOff: 'Desativado: o Assistente só lê.',
+    changesLabel: 'As alterações que queres',
+    questionLabel: 'A tua pergunta',
+    inputHint: 'Enter para perguntar, Shift+Enter para uma nova linha.',
+    preparing: 'A preparar',
+    asking: 'A perguntar',
+    prepare: 'Preparar alterações',
+    ask: 'Perguntar',
+    close: 'Fechar',
+    closeUnavailable: 'Fechar',
+  },
+  answer: {
+    waiting: {
+      one: '{n} alteração aguarda a tua revisão.',
+      other: '{n} alterações aguardam a tua revisão.',
+    },
+    nothingChanged: 'Ainda nada foi alterado.',
+    review: 'Rever as alterações',
+    incomplete:
+      'Parei antes de ler tudo o que pode ser relevante. Uma pergunta mais restrita pode obter uma resposta mais completa.',
+    sources: 'Fontes',
+  },
+  connect: {
+    readable: {
+      lore: 'Entradas de lore, com os respetivos campos, nomes alternativos e resumos',
+      relationships: 'Relações entre entradas',
+      stories: 'Histórias, com os seus capítulos e enredo',
+      scenes: 'Cenas e os seus manuscritos',
+      timeline: 'A cronologia dos acontecimentos',
+    },
+    trigger: 'Ligar à IA',
+    eyebrow: 'Ligar à IA',
+    context:
+      'Deixa uma aplicação de IA, como o Claude ou o ChatGPT, ler este universo. Não pode alterar nada.',
+    loading: 'A obter o endereço deste universo…',
+    loadFailed: 'Não foi possível obter o endereço. Fecha isto e tenta novamente.',
+    unavailable: 'A ligação de aplicações de IA ainda não está configurada neste LorEvolve.',
+    close: 'Fechar',
+    urlLabel: 'URL do servidor MCP',
+    copy: 'Copiar URL',
+    urlHint:
+      'Este URL é apenas um endereço. Quem o usar tem de iniciar sessão no LorEvolve e ser membro deste universo. Mantém-se o mesmo se o universo mudar de nome.',
+    copied: 'URL copiado.',
+    copyManual: 'A cópia não funcionou aqui. O URL está selecionado, por isso podes copiá-lo tu.',
+    how: 'Como ligar',
+    step1: 'Copia o URL acima.',
+    step2:
+      'Na tua aplicação de IA, adiciona um conector personalizado ou servidor MCP e cola o URL. O Claude, o ChatGPT e outras aplicações que suportem servidores MCP remotos com início de sessão podem usá-lo.',
+    step2Name:
+      'Dá-lhe o nome {name}, para distinguires os teus universos: cada ligação lê apenas um universo.',
+    step3:
+      'A aplicação abre o LorEvolve no teu navegador. Inicia sessão se te for pedido, verifica que aplicação está a pedir acesso e aprova-a.',
+    reads: 'O que a aplicação pode ler',
+    readsNote:
+      'Lê apenas este universo, com o teu acesso. Não pode criar, editar nem eliminar nada. Se deixares este universo, a aplicação deixa de o poder ler.',
+    privacyNote:
+      'O que a aplicação lê é enviado para o serviço de IA que está por trás dela, nos termos desse serviço. Manuscritos longos podem consumir grande parte do contexto da aplicação, por isso lê a prosa uma secção de cada vez. As perguntas feitas desta forma não contam para o Assistente do próprio LorEvolve.',
+    manage: 'Para desligar uma aplicação, vai a {link}.',
+    manageLink: 'Perfil, Aplicações ligadas',
+  },
+  knowledge: {
+    sceneUnchaptered: 'cena {position} de {story}',
+    sceneInChapter: 'Capítulo {chapter}, cena {position} de {story}',
+    issue: {
+      knowerNotInScene: 'Não está no lore desta cena',
+      sceneTrashed: 'Cena na Reciclagem',
+      knowerTrashed: 'Quem sabe, na Reciclagem',
+      subjectTrashed: 'Assunto na Reciclagem',
+    },
+    remove: {
+      title: 'Remover este registo de conhecimento?',
+      message: '“{statement}” é removido de vez. Mais nada muda.',
+      confirm: 'Remover',
+      cancel: 'Manter',
+      failed: 'Não foi possível remover esse registo.',
+      button: 'Remover',
+    },
+    title: 'Conhecimento',
+    add: 'Adicionar o que {name} sabe',
+    lede: 'O que {name} sabe, pela ordem em que as histórias o contam, e quem sabe sobre {name}. Cada linha é tua: o LorEvolve não infere nada de uma cena, de uma relação nem da prosa.',
+    loadFailed: 'Não foi possível ler o conhecimento.',
+    retry: 'Tentar novamente',
+    reading: 'A ler…',
+    emptyKnows: 'Ainda nada registado sobre o que {name} sabe.',
+    knownAbout: 'O que se sabe sobre {name}',
+    addAbout: 'Adicionar quem sabe sobre {name}',
+    emptyAbout: 'Ninguém está registado como sabendo alguma coisa sobre {name}.',
+    fromStartGroup: 'Conhecido desde o início',
+    fromStartMeta: 'Conhecido desde o início',
+    fromStartLabel: 'Conhecido desde o início',
+    knowerKnows: '{knower} sabe: ',
+    about: 'Sobre {subject}',
+    since: 'Desde {scene}, {where}',
+    actions: 'Ações para este registo',
+    edit: 'Editar',
+    form: {
+      discard: 'Fechar sem guardar este registo?',
+      storiesFailed: 'Não foi possível ler as histórias.',
+      storyFailed: 'Não foi possível ler essa história.',
+      chapter: 'Capítulo {number}: {title}',
+      chooseKnower: 'Escolhe quem sabe isto.',
+      sayWhat: 'Diz o que se sabe.',
+      chooseScene:
+        'Escolhe a cena em que passa a saber isto, ou marca como conhecido desde o início.',
+      gone: 'Este registo já não está aqui. Pode ter sido removido noutra janela.',
+      saveFailed: 'Não foi possível guardar o registo. Tenta novamente.',
+      eyebrow: 'Conhecimento',
+      titleEdit: 'Editar o que se sabe',
+      titleKnows: 'O que {name} sabe',
+      titleAbout: 'Quem sabe sobre {name}',
+      context:
+        'Uma afirmação nas tuas palavras e a cena em que passa a ser conhecida. Nada é inferido.',
+      whoKnowsFixed: 'Quem sabe',
+      aboutOptional: 'Sobre (opcional)',
+      whoKnowsPicker: 'Quem sabe',
+      aboutFixed: 'Sobre',
+      statement: 'O que se sabe',
+      story: 'História',
+      readingStories: 'A ler as histórias…',
+      chooseStory: 'Escolhe uma história',
+      scene: 'Conhecido desde a cena',
+      chooseStoryFirst: 'Escolhe primeiro uma história',
+      readingScenes: 'A ler as cenas…',
+      chooseSceneOption: 'Escolhe uma cena',
+      saving: 'A guardar…',
+      save: 'Guardar registo',
+      add: 'Adicionar registo',
+      cancel: 'Cancelar',
+    },
+  },
+}
+
+export default assistant

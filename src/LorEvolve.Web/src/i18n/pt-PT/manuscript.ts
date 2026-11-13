@@ -1,2 +1,114 @@
-// Untranslated: the English text stands in until the pt-PT dictionary issue (#106) replaces this file.
-export { default } from '../en/manuscript'
+import type { Dictionary } from '../en'
+
+/** A scene's prose: its writer, its panel and its history (#103). */
+const manuscript: Dictionary['manuscript'] = {
+  panel: {
+    position: 'Cena {number} de {total}',
+    empty: {
+      title: 'Ainda não há cenas.',
+      hint: 'Um manuscrito escreve-se cena a cena. {link} para começares a escrever.',
+      link: 'Adiciona uma cena na vista Cenas',
+    },
+    heading: 'Manuscrito',
+    outline: 'Cenas por escrever',
+    closeScenes: 'Fechar cenas',
+    scenes: 'Cenas',
+    chooseScene: 'Escolhe uma cena',
+    noScenes: 'Ainda não há cenas.',
+    missing: {
+      title: 'Essa cena não está nesta história.',
+      hint: 'Pode ter sido eliminada. Escolhe uma cena da lista.',
+    },
+  },
+  writer: {
+    mentioned: 'Menção a {name}.',
+  },
+  history: {
+    restoredFrom: 'Restaurou a versão {number}',
+    restoredEarlier: 'Restaurou uma versão anterior',
+    emptied: 'Esvaziou o manuscrito',
+    first: 'Primeira versão',
+    saved: 'Guardada',
+    openFailed: 'Não foi possível abrir essa versão.',
+    restore: {
+      title: 'Restaurar a versão {number} do manuscrito?',
+      message: 'Passa a ser a versão guardada mais recente, e nada do histórico se perde.',
+      confirm: 'Restaurar esta versão',
+      done: 'A versão {number} foi restaurada como a versão guardada mais recente.',
+      stale:
+        'O manuscrito foi guardado noutro local depois de esta página abrir, por isso nada foi restaurado. O texto guardado mais recente está agora no editor.',
+      gone: 'Esta cena já não está na história, por isso nada foi restaurado.',
+      failed: 'Não foi possível restaurar essa versão.',
+    },
+    title: 'Histórico do manuscrito',
+    lede: 'Cada gravação que alterou a prosa fica guardada como uma versão. Restaurar uma versão guarda-a de novo como a mais recente, e nada do histórico se perde.',
+    readFailed: 'Não foi possível ler o histórico do manuscrito.',
+    opening: 'A abrir…',
+    none: 'Ainda não há versões guardadas.',
+    savedNow: 'guardada agora',
+    version: 'Versão {number}',
+    hideVersion: 'Ocultar a versão {number}',
+    viewVersion: 'Ver a versão {number}',
+    hide: 'Ocultar',
+    view: 'Ver',
+    restoreVersion: 'Restaurar a versão {number}',
+    restoring: 'A restaurar…',
+    restoreButton: 'Restaurar',
+    noText: 'Sem texto nesta versão.',
+    textOf: 'Texto da versão {number}',
+  },
+  editor: {
+    openFailed: 'Não foi possível abrir este manuscrito.',
+    unsaved: '“{title}” tem alterações por guardar. Sair sem as guardar?',
+    saveGone:
+      'Esta cena já não está na história, por isso não foi possível guardar o manuscrito. Pode ter sido movida para a reciclagem noutra janela. O teu texto continua aqui: copia-o antes de sair.',
+    saveFailed:
+      'Não foi possível guardar o manuscrito. O teu texto continua aqui. Tenta novamente.',
+    linked: { one: 'Ligado 1 nome.', other: 'Ligados {n} nomes.' },
+    keptMine: 'As tuas alterações continuam por guardar. Guarda quando estiveres pronto.',
+    recovered: 'O rascunho recuperado está no editor. Ainda não está guardado.',
+    discarded: 'O rascunho recuperado foi descartado. O manuscrito guardado não mudou.',
+    detailsTitle: 'Detalhes da cena',
+    detailsName: 'Detalhes da cena',
+    historyName: 'Histórico do manuscrito',
+    historyShort: 'Histórico',
+    moreActions: 'Mais ações para {title}',
+    editScene: 'Editar cena',
+    suggest: 'Sugerir alterações',
+    linkNames: 'Ligar nomes do Lore desta cena',
+    showInScenes: 'Mostrar em Cenas',
+    blocked: {
+      opening: 'A abrir o manuscrito…',
+      recovered: 'Recupera ou descarta primeiro o rascunho recuperado.',
+      unsaved:
+        'Guarda primeiro as tuas alterações: restaurar uma versão guardada substituiria texto que não está guardado.',
+    },
+    opening: 'A abrir o manuscrito…',
+    missing: {
+      title: 'Esta cena não está aqui.',
+      hint: 'Pode ter sido movida para a reciclagem.',
+    },
+    retry: 'Tentar novamente',
+    recoveredWhat: 'o manuscrito desta cena',
+    draftEmpty: 'Sem texto neste rascunho.',
+    draftText: 'Texto do rascunho recuperado',
+    conflictWhat: 'manuscrito',
+    latestLabel: 'Último manuscrito guardado',
+    latestEmpty: 'Sem texto na última versão.',
+    mode: 'Mostrar o manuscrito',
+    modeWrite: 'Escrever',
+    modeRead: 'Ler',
+    writeLabel: 'Manuscrito de “{title}”',
+    readLabel: 'Manuscrito de “{title}”',
+    placeholder: 'Escreve a cena. Escreve @ para mencionar o Lore.',
+    nothingYet: 'Ainda nada escrito.',
+    tooLong: 'Demasiado longo para guardar: {used} de {max} caracteres. Divide-o em mais cenas.',
+    noRecoveryCopy:
+      'Este dispositivo não conseguiu manter uma cópia de recuperação destas alterações. Guarda para as manter.',
+    save: 'Guardar alterações',
+    nothingSaved: 'Ainda nada guardado',
+    savedStatus: 'Guardado',
+  },
+}
+
+export default manuscript

@@ -1,2 +1,115 @@
-// Untranslated: the English text stands in until the pt-PT dictionary issue (#106) replaces this file.
-export { default } from '../en/account'
+import type { Dictionary } from '../en'
+
+/** Menu da conta, Perfil, fotografia, nome público, espaço e utilização do assistente, tema, recorte de imagens (#101). */
+const account: Dictionary['account'] = {
+  menu: {
+    open: 'Abrir o menu da conta',
+    goTo: 'Ir para',
+    workspace: 'O meu espaço',
+    ideas: 'Ideias',
+    explore: 'Explorar',
+    admin: 'Administração do LorEvolve',
+    profile: 'Perfil',
+    signOut: 'Terminar sessão',
+    signingOut: 'A terminar sessão',
+  },
+  profile: {
+    title: 'Perfil',
+    tabsLabel: 'Perfil',
+    tabs: {
+      account: 'Conta',
+      usage: 'Utilização',
+      connectedApps: 'Aplicações ligadas',
+    },
+    email: 'Email',
+    universes: 'Universos',
+    publishing: 'Publicação',
+    appearance: 'Aparência',
+    themeNote:
+      'Um tema para todo o LorEvolve: o portal público e o teu espaço. Fica guardado neste navegador.',
+    note: 'O LorEvolve guarda apenas o que precisa para te autenticar: um nome de utilizador, um email, a fotografia acima se a adicionares, e o nome público acima se escolheres um. Esse nome é a única coisa que o portal público mostra sobre ti, junto com o endereço da tua página de autor. A tua fotografia é privada, servida apenas à tua própria sessão, a menos que escolhas mostrá-la na tua página de autor, e nunca faz parte de uma cópia de segurança de um universo.',
+    usageHeading: 'Utilização',
+  },
+  avatar: {
+    cropHint:
+      'Arrasta a fotografia para colocar o quadrado, ou seleciona-a e usa as setas. A fotografia é guardada inteira; o quadrado é o que a tua imagem mostra.',
+    tooBig: 'As fotografias têm de ter {mb} MB ou menos.',
+    removeFailed: 'Não foi possível remover essa fotografia.',
+    replace: 'Substituir a fotografia',
+    upload: 'Carregar fotografia',
+    edit: 'Editar a fotografia',
+    removing: 'A remover',
+    remove: 'Remover a fotografia',
+    hint: 'Uma fotografia. JPEG, PNG ou WebP, até 8 MB. Privada, a menos que a mostres na tua página de autor.',
+    editTitle: 'Editar a fotografia',
+    frameTitle: 'Enquadra a tua fotografia',
+    save: 'Guardar a fotografia',
+    confirmUpload: 'Carregar',
+    updating: 'A atualizar a fotografia',
+    processing: 'A processar a fotografia',
+  },
+  publicName: {
+    unsaved: 'O teu nome público tem uma alteração por guardar. Sair sem a guardar?',
+    saveFailed: 'Não foi possível guardar o teu nome público.',
+    loadFailed: 'Não foi possível carregar o teu nome público.',
+    label: 'Nome público',
+    hint: 'Mostrado como autor dos universos que publicas - “por …” - e em mais lado nenhum. O teu nome de utilizador e o teu email nunca são mostrados publicamente.',
+    saving: 'A guardar',
+    save: 'Guardar o nome público',
+    saved: 'Guardado.',
+  },
+  usage: {
+    checking: 'A verificar a tua utilização…',
+    failed: 'A tua utilização não carregou.',
+    retry: 'Tentar de novo',
+    underOne: 'Menos de 1%',
+  },
+  storage: {
+    name: 'Espaço',
+    amount: '{used} usados de {quota}',
+    full: 'O teu espaço está cheio. Remove algumas imagens para adicionares novas.',
+    note: 'As imagens das entradas de lore e dos mapas dos universos que te pertencem contam aqui, incluindo as entradas na Reciclagem e as imagens que os teus colaboradores adicionam.',
+  },
+  assistant: {
+    name: 'Assistente de IA',
+    note: 'Em cada hora podes fazer {ask} perguntas e enviar {propose} pedidos de alteração, em todos os teus universos. Cada um conta mesmo quando a resposta falha. Os {minutes} minutos começam no primeiro, e depois voltam todos de uma vez.',
+    ask: {
+      name: 'Perguntas',
+      amount: '{used} de {limit} perguntas usadas',
+      none: 'Não restam perguntas.',
+      noneAgain: 'Não restam perguntas. Podes perguntar de novo às {time}.',
+      left: { one: 'Resta {n} pergunta', other: 'Restam {n} perguntas' },
+    },
+    propose: {
+      name: 'Pedidos de alteração',
+      amount: '{used} de {limit} pedidos de alteração usados',
+      none: 'Não restam pedidos de alteração.',
+      noneAgain: 'Não restam pedidos de alteração. Podes pedir de novo às {time}.',
+      left: { one: 'Resta {n} pedido de alteração', other: 'Restam {n} pedidos de alteração' },
+    },
+  },
+  theme: {
+    label: 'Tema',
+    light: 'Claro',
+    dark: 'Escuro',
+  },
+  crop: {
+    hint: 'Arrasta a imagem para colocar o quadrado, ou seleciona-a e usa as setas. A imagem é guardada inteira; o quadrado é o que os cartões mostram.',
+    working: 'A guardar',
+    saveFailed: 'Não foi possível guardar. Tenta de novo.',
+    uploadingPercent: 'A carregar {percent}%',
+    loadFailed: 'Não foi possível carregar essa imagem.',
+    thumbnailSquare: 'Quadrado da miniatura',
+    cardFrame: 'Enquadramento do cartão',
+    loading: 'A carregar a imagem',
+    zoom: 'Ampliação',
+    thumbnailPreview: 'Pré-visualização da miniatura',
+    cardPreview: 'Pré-visualização do cartão',
+    uploadingPhoto: 'A carregar a fotografia',
+    workingText: '{label}…',
+    uploadingText: 'A carregar… {percent}%',
+    cancel: 'Cancelar',
+  },
+}
+
+export default account
