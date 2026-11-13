@@ -82,6 +82,9 @@ export default function UniverseWorkspace() {
 }
 
 function Workspace() {
+  // The whole of the workspace chrome is drawn here - the rail, the sidebar and the tab's title - and every section's
+  // name comes from the dictionary through `sectionLabel`. Subscribing once here is what redraws all of them when the
+  // language changes; the exported component above is only the key that restarts this one per universe.
   useI18n()
   const { id } = useParams<{ id: string }>()
   const { pathname } = useLocation()
