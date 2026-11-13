@@ -12,7 +12,7 @@ what an untended translation drifts into.
 | --- | --- | --- |
 | usuário | utilizador | pt-BR |
 | tela | ecrã | pt-BR |
-| arquivo | ficheiro | pt-BR |
+| arquivo (meaning a file) | ficheiro | pt-BR. "Arquivo" as *archive* is right and is used for an archived universe. |
 | salvar | guardar | pt-BR |
 | excluir, deletar | eliminar | pt-BR |
 | cadastro, cadastrar | registo, registar | pt-BR |
@@ -70,6 +70,10 @@ what an untended translation drifts into.
 | publish | publicar | The section is "Publicação". |
 | collaborator | colaborador | Roles: Owner "Proprietário", Editor "Editor", Reviewer "Revisor", Viewer "Leitor". |
 | backup | cópia de segurança | Feminine. Never "backup". |
+| archive (a universe) | arquivo | Masculine. The verb is "arquivar". Not the same word as a file. |
+| feedback | opinião | "Opiniões" for the admin list of them. |
+| tag | etiqueta | Feminine. |
+| artwork | ilustração | Feminine. |
 | export | exportação | Feminine. The verb is "exportar". |
 | account | conta | Feminine. |
 | sign in / sign out | iniciar sessão / terminar sessão | Not "logar" or "login". |
