@@ -3,6 +3,8 @@ import { useUniverseAccess } from '../universes/access'
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { useFold } from './fold'
+import { FoldToggle } from './FoldToggle'
 import { arcLabel, arcNumber, chapterCountLabel } from '../stories/format'
 import type { PlotArc } from '../stories/types'
 
@@ -44,18 +46,33 @@ export function ArcSection({
 }: ArcSectionProps) {
   const access = useUniverseAccess()
   const headingId = useId()
+  const {
+    open: foldOpen,
+    setOpen: setFoldOpen,
+    ref: foldRef,
+    bodyId: foldBodyId,
+  } = useFold<HTMLElement>()
 
   return (
     <section
+      ref={foldRef}
       className="plotarc"
       id={`arc-${arc.id}`}
       tabIndex={-1}
       aria-labelledby={headingId}
       data-testid="arc"
       data-title={arc.title}
+      data-open={foldOpen ? 'true' : undefined}
     >
       <header className="plotarc__head">
         <div className="chapter__heading">
+          <FoldToggle
+            open={foldOpen}
+            onToggle={setFoldOpen}
+            controls={foldBodyId}
+            label={arcLabel(index, arc.title)}
+            testId="arc-toggle"
+          />
           <h3 className="plotarc__title" id={headingId} data-testid="arc-heading">
             <span className="plotarc__number">{arcNumber(index)}</span>
             <span className="plotarc__dash">: </span>
@@ -77,7 +94,10 @@ export function ArcSection({
               <button
                 className="button button--text"
                 type="button"
-                onClick={() => onAddChapter(arc)}
+                onClick={() => {
+                  setFoldOpen(true)
+                  onAddChapter(arc)
+                }}
                 aria-describedby={headingId}
                 data-testid="arc-new-chapter"
               >
@@ -135,20 +155,26 @@ export function ArcSection({
         </div>
 
         {arc.description ? (
-          <p className="plotarc__description prose" data-testid="arc-description">
+          <p
+            className="plotarc__description prose"
+            hidden={!foldOpen}
+            data-testid="arc-description"
+          >
             {arc.description}
           </p>
         ) : null}
       </header>
 
-      {chapterCount > 0 ? (
-        children
-      ) : (
-        <p className="plotarc__empty" data-testid="arc-empty">
-          No chapters in this arc yet. Add one with New chapter, or move one here: Edit chapter,
-          then choose this arc, or Move to from the chapter&rsquo;s ⋯ menu.
-        </p>
-      )}
+      <div id={foldBodyId} hidden={!foldOpen}>
+        {chapterCount > 0 ? (
+          children
+        ) : (
+          <p className="plotarc__empty" data-testid="arc-empty">
+            No chapters in this arc yet. Add one with New chapter, or move one here: Edit chapter,
+            then choose this arc, or Move to from the chapter&rsquo;s ⋯ menu.
+          </p>
+        )}
+      </div>
     </section>
   )
 }

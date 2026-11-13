@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { post, signUp, unique, world } from './support/trash'
+import { expandStory } from './support/story'
 
 /**
  * The author's orders (Product request 2026-11-11): a universe's stories read in the order the author sets from each row's
@@ -105,6 +106,7 @@ test.describe('author order', () => {
     })
 
     await page.goto(`/app/universes/${universeId}/stories/${storyId}`)
+    await expandStory(page)
     const card = page.locator(`#scene-${sceneId}`)
     await expect(card.getByTestId('scene-lore').getByRole('listitem')).toHaveText([
       'Marcus Coyote',
@@ -131,6 +133,7 @@ test.describe('author order', () => {
     ])
 
     await page.reload()
+    await expandStory(page)
     await expect(card.getByTestId('scene-lore').getByRole('listitem')).toHaveText([
       'Ruth Lestasc',
       'Theo Blake',

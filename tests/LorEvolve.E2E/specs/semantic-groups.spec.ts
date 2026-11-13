@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
 import { fieldDialog, fieldSummary, fillField, showFields } from './support/typeFields'
 import { acceptConfirm } from './support/confirm'
+import { expandStory } from './support/story'
 
 /**
  * Semantic groups of Lore types (Issue #36): chosen, created, renamed and deleted inside a type's own editor; used by a link
@@ -391,6 +392,7 @@ test.describe('group priority', () => {
       entityIds: [w.mara, w.lava, w.arkazia],
     })
     await page.goto(`/app/universes/${w.u}/stories/${story.id}`)
+    await expandStory(page)
     await expect(page.getByTestId('scene-lore').getByRole('listitem')).toHaveText([
       /Arkazia/,
       /Mara/,

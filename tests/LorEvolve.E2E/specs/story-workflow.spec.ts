@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { expandStory } from './support/story'
 
 /**
  * Issue #48: moving between a story's writing (Scenes: chapter -> scene -> manuscript) and the world's chronology
@@ -138,6 +139,7 @@ test.describe('story workflow across Scenes, Manuscript and Timeline', () => {
 
     // From the Scenes view.
     await page.goto(base)
+    await expandStory(page)
     const card = page.locator(`[data-testid="scene"][data-title="Bilbo's birthday and farewell"]`)
     await expect(card.getByTestId('scene-timeline')).toHaveText('3001')
     await card.getByTestId('scene-timeline').click()

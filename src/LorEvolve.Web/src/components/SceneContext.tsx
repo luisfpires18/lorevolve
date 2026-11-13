@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { LoreReference } from './LoreReference'
 import type { Chronology } from '../chronology/types'
@@ -15,6 +15,9 @@ import type { Scene, SceneBeat } from '../stories/types'
  */
 
 type Surface = 'scene' | 'manuscript'
+
+/** Lore chips shown before the list folds behind "Show all"; a scene can link many entries. */
+const LORE_COLLAPSED = 6
 
 /**
  * Where the scene happens in the world and whose eyes it is seen through, or nothing when it has neither. The date opens
@@ -75,21 +78,44 @@ export function SceneLore({
   testId: Surface
 }) {
   const labelId = useId()
+  const listId = useId()
+  const [expanded, setExpanded] = useState(false)
   const groups = useOutletContext<WorkspaceContext | undefined>()?.groups
   if (scene.entities.length === 0) return null
   const entities = Array.isArray(groups) ? byGroupPriority(scene.entities, groups) : scene.entities
+  const collapsible = entities.length > LORE_COLLAPSED
+  const shown = collapsible && !expanded ? entities.slice(0, LORE_COLLAPSED) : entities
 
   return (
-    <div className="scene__refs">
+    <div className="scene__refs scene__refs--lore">
       <span className="scene__label" id={labelId}>
-        Lore
+        Lore <span className="scene__count">{entities.length}</span>
       </span>
-      <ul className="scene__lore" aria-labelledby={labelId} data-testid={`${testId}-lore`}>
-        {entities.map((reference) => (
+      <ul
+        id={listId}
+        className="scene__lore"
+        aria-labelledby={labelId}
+        data-testid={`${testId}-lore`}
+      >
+        {shown.map((reference) => (
           <li key={reference.entityId}>
             <LoreReference universeId={universeId} reference={reference} />
           </li>
         ))}
+        {collapsible ? (
+          <li>
+            <button
+              className="scene__loretoggle"
+              type="button"
+              aria-expanded={expanded}
+              aria-controls={listId}
+              onClick={() => setExpanded((open) => !open)}
+              data-testid={`${testId}-lore-toggle`}
+            >
+              {expanded ? 'Show less' : `Show all ${entities.length}`}
+            </button>
+          </li>
+        ) : null}
       </ul>
     </div>
   )

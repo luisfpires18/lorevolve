@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { chooseFromMenu } from './support/rowMenu'
 import { answerConfirms } from './support/confirm'
+import { expandStory } from './support/story'
 
 /**
  * The four story drawers - story, chapter, scene and arc - never let unsaved changes go without asking, and never
@@ -311,6 +312,7 @@ test.describe('story drawers', () => {
     await page.goto(`/app/universes/${universeId}/stories`)
     await page.getByTestId('story-row').getByRole('link').click()
     await page.waitForURL(storyUrl)
+    await expandStory(page)
     const form = page.getByTestId('scene-form')
     const title = page.getByTestId('scene-title-input')
 
@@ -382,6 +384,7 @@ test.describe('story drawers', () => {
     const storyUrl = await seedStory(page, universeId)
     const { asked, answer } = await dialogs(page)
     await page.goto(storyUrl)
+    await expandStory(page)
     const arc = page.locator('[data-testid="arc"][data-title="The siege"]')
 
     // A new arc: untouched it closes; with a title it asks, and discarding creates nothing.

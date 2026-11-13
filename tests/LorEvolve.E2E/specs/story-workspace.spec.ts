@@ -3,6 +3,7 @@ import { openAccountMenu } from './support/account'
 import { chooseFromMenu, openMenuFor } from './support/rowMenu'
 import { acceptConfirm, dismissConfirm } from './support/confirm'
 import { expectWritten, writtenText } from './support/manuscript'
+import { expandStory } from './support/story'
 
 /**
  * The Story workspace as one product rather than three screens: Scenes, Plot and Manuscript under one header, reached
@@ -245,6 +246,7 @@ test.describe('story workspace', () => {
 
     // Write, on the scene itself, opens that scene's manuscript at the one address it has.
     await page.goto(storyUrl)
+    await expandStory(page)
     const write = scene(page, 'The Council').getByTestId('scene-write')
     await expect(write).toHaveAccessibleName('Write')
     await expect(write).toHaveAccessibleDescription(/The Council/)
@@ -291,6 +293,7 @@ test.describe('story workspace', () => {
 
     // A deep link survives a reload, and still lands where it points.
     await page.reload()
+    await expandStory(page)
     await expect(scene(page, 'The Council')).toBeInViewport()
     await expect(scene(page, 'The Council')).toBeFocused()
 

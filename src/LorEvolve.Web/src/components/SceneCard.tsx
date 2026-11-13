@@ -14,6 +14,8 @@ import {
 import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { useFold } from './fold'
+import { FoldToggle } from './FoldToggle'
 import { ContainerName } from './ContainerName'
 import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
 import type { Chronology } from '../chronology/types'
@@ -89,9 +91,18 @@ export function SceneCard({
   const access = useUniverseAccess()
   const titleId = useId()
   const Title = titleLevel === 5 ? 'h5' : titleLevel === 4 ? 'h4' : 'h3'
+  const {
+    open: foldOpen,
+    setOpen: setFoldOpen,
+    ref: foldRef,
+    bodyId: foldBodyId,
+  } = useFold<HTMLLIElement>()
+  // Only a scene with something under its title folds.
+  const foldable = Boolean(scene.summary) || scene.entities.length > 0 || scene.beats.length > 0
 
   return (
     <li
+      ref={foldRef}
       className="scene"
       id={`scene-${scene.id}`}
       tabIndex={-1}
@@ -105,15 +116,28 @@ export function SceneCard({
       <div className="scene__body">
         <SceneStamp universeId={universeId} chronology={chronology} scene={scene} testId="scene" />
 
-        <Title className="scene__title" id={titleId}>
-          <span className="visually-hidden">Scene {index + 1}: </span>
-          <bdi>{scene.title}</bdi>
-        </Title>
+        <div className="scene__titlerow">
+          {foldable ? (
+            <FoldToggle
+              open={foldOpen}
+              onToggle={setFoldOpen}
+              controls={foldBodyId}
+              label={`scene ${index + 1}: ${scene.title}`}
+              testId="scene-toggle"
+            />
+          ) : null}
+          <Title className="scene__title" id={titleId}>
+            <span className="visually-hidden">Scene {index + 1}: </span>
+            <bdi>{scene.title}</bdi>
+          </Title>
+        </div>
 
-        {scene.summary ? <p className="scene__summary prose">{scene.summary}</p> : null}
+        <div id={foldBodyId} hidden={foldable && !foldOpen}>
+          {scene.summary ? <p className="scene__summary prose">{scene.summary}</p> : null}
 
-        <SceneLore universeId={universeId} scene={scene} testId="scene" />
-        <SceneBeatList beats={scene.beats} testId="scene" />
+          <SceneLore universeId={universeId} scene={scene} testId="scene" />
+          <SceneBeatList beats={scene.beats} testId="scene" />
+        </div>
       </div>
 
       <div className="scene__tools rowtools">
