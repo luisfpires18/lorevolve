@@ -15,6 +15,7 @@ import {
  * LorEvolve's language (ADR 0071), shaped like the theme (`lib/theme.ts`): a choice kept in this browser, not on the
  * account, so it holds signed in and out alike. Without one, the first browser language a ready translation covers,
  * else English. `startI18n` runs before the first render, so a reader never sees English and then their language.
+ * The key is also read by the language bootstrap in `index.html`; keep the two in step.
  */
 export const LOCALE_STORAGE_KEY = 'lorevolve-locale'
 

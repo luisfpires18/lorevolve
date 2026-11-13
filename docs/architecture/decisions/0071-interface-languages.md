@@ -23,8 +23,8 @@ and 107 end-to-end specs that find elements by their English text.
   browser language a ready translation covers (on its base, so `pt-BR` opens `pt-PT`), else English. Not an account
   setting: nothing server-side reads it yet.
 - `main.tsx` awaits `startI18n()` before the first render, so a reader never sees English and then their language; for
-  English that is one resolved promise. `startI18n` sets `<html lang>`. There is no inline bootstrap in `index.html`:
-  nothing language-dependent paints before React does.
+  English that is one resolved promise. An inline bootstrap in `index.html` makes the same choice as `pickLocale` and
+  sets `<html lang>` before the first paint; `startI18n` owns it afterwards.
 - Dates and numbers go through `i18n/format.ts` (`dateFormat`, `numberFormat`, cached per locale). English keeps exactly
   what each call site used before (the browser's locale, or `'en'`), so nothing changes for English readers.
 - `LanguageSwitch` sits beside `ThemeSwitch` (account menu, portal appearance menu, Profile), built from the same
@@ -38,6 +38,7 @@ and 107 end-to-end specs that find elements by their English text.
 1. `i18n/<code>.ts`: `const xx = { ... } satisfies Dictionary`; typecheck lists every missing key.
 2. One entry in `LOCALES` (`i18n/locales.ts`): code, own name, flag, `ready`, `load`.
 3. Its flag component in `i18n/flags.tsx`.
+4. The same code and `ready` in the `known` list of the language bootstrap in `index.html`.
 
 ## Consequences
 

@@ -41,6 +41,47 @@
       })()
     </script>
 
+    <!-- The language, before anything is drawn (ADR 0071): the same choice src/i18n/core.ts's pickLocale
+         makes - the saved one if LorEvolve knows it, else the first browser language a ready translation
+         covers, else English - so <html lang> is right from the first paint. src/i18n owns it afterwards.
+         Keep this list in step with src/i18n/locales.ts. -->
+    <script>
+      ;(function () {
+        var known = [
+          { code: 'en', ready: true },
+          { code: 'pt-PT', ready: false },
+        ]
+        var saved = null
+        try {
+          saved = localStorage.getItem('lorevolve-locale')
+        } catch (e) {}
+        var base = function (tag) {
+          return tag.toLowerCase().split('-')[0]
+        }
+        var pick = 'en'
+        var i, j
+        for (i = 0; i < known.length; i++) if (known[i].code === saved) pick = saved
+        if (pick === 'en' && saved !== 'en') {
+          var browser = navigator.languages || []
+          search: for (i = 0; i < browser.length; i++) {
+            for (j = 0; j < known.length; j++) {
+              if (known[j].ready && known[j].code.toLowerCase() === browser[i].toLowerCase()) {
+                pick = known[j].code
+                break search
+              }
+            }
+            for (j = 0; j < known.length; j++) {
+              if (known[j].ready && base(known[j].code) === base(browser[i])) {
+                pick = known[j].code
+                break search
+              }
+            }
+          }
+        }
+        document.documentElement.setAttribute('lang', pick)
+      })()
+    </script>
+
     <!-- The launch layer (043.5) and its opening: LorEvolve opens on black, the logo resolves, a book, a world, a game and a
          screen draw themselves around it, a red edge rises and the curtain wipes onto the app, which has been starting
          underneath all along. Every launch of the installed app, and a browser's first visit to LorEvolve's home in a

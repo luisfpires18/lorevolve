@@ -16,14 +16,17 @@ export type Locale = {
   load: () => Promise<Dictionary>
 }
 
-/** Every language LorEvolve knows (ADR 0071). Adding one: its dictionary file, one entry here, its flag in `flags.tsx`. */
+/**
+ * Every language LorEvolve knows (ADR 0071). Adding one: its dictionary file, one entry here, its flag in `flags.tsx`,
+ * and the same code and `ready` in the language bootstrap's list in `index.html`.
+ */
 export const LOCALES: readonly Locale[] = [
   { code: 'en', label: 'English', flag: FlagGB, ready: true, load: async () => en },
   {
     code: 'pt-PT',
     label: 'Português',
     flag: FlagPT,
-    // Not offered until every message is translated and the layout holds in Portuguese (#107).
+    // Not offered until every message is translated and the layout holds in Portuguese (#107). Also in index.html.
     ready: false,
     load: () => import('./pt-PT').then((module) => module.default),
   },
