@@ -14,6 +14,7 @@ const workspace = {
     title: 'That universe is not here.',
     back: 'Back to your universes',
     failed: 'Could not open this universe.',
+    tryAgain: 'Try again',
   },
   overview: {
     noDescription: 'No description yet.',

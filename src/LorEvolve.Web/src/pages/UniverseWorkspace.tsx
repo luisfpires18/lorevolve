@@ -276,7 +276,7 @@ function Workspace() {
             refreshTypes().catch(() => undefined)
           }}
         >
-          Try again
+          {t('workspace.missing.tryAgain')}
         </button>
       </div>
     )

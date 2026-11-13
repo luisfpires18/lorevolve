@@ -45,7 +45,8 @@ and 107 end-to-end specs that find elements by their English text.
 ## Consequences
 
 - Moving strings into `en.ts` must keep English output identical, so the English end-to-end specs stay valid.
-- New UI text goes through `t()` from now on.
+- New UI text goes through `t()` from now on. `python scripts/find-hardcoded-text.py` is the check: it parses each
+  `.tsx` and exits 1 on any prose left in a component. Three strings reached review past a grep before it existed.
 - A component that only formats a date (no `useI18n`) shows the new format on its next render, not at the moment of the
   switch. Almost every such component also has text, so it subscribes once its strings move.
 - The segmented control fits two or three languages; it becomes a menu when there are more.

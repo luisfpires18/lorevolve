@@ -1,5 +1,35 @@
 /** How an entry changes across eras: its stages, their pictures and their fields (#103). */
 const progression = {
+  appearanceList: {
+    heading: 'Appearances',
+    add: 'Add appearance',
+    empty:
+      'No appearances. An appearance is a look: an outfit, armour, a disguise, how a place looked.',
+    saveFailed: 'That change could not be saved.',
+    tooBig: 'Images must be {mb} MB or smaller.',
+    addingOne: 'Adding the picture\u2026',
+    addingMany: 'Adding {n} pictures\u2026',
+    moving: 'Moving the picture\u2026',
+    deleting: 'Deleting the picture\u2026',
+    actions: 'Actions for {name}',
+    edit: 'Edit appearance',
+    moveEarlier: 'Move earlier',
+    moveLater: 'Move later',
+    remove: 'Remove appearance',
+    gallery: 'Pictures of {name}',
+    /** A picture's name wherever one is read out: its place in the appearance's own gallery. */
+    pictureName: '{name}, picture {index} of {total}',
+    view: 'View {name}',
+    pictureActions: 'Actions for {name}',
+    deletePicture: 'Delete picture',
+    deleteTitle: 'Delete picture {index} of \u201c{name}\u201d?',
+    deleteMessage: 'The picture is deleted for good. Stage history does not keep pictures.',
+    addPictures: 'Add pictures',
+    stages: 'Stages',
+    aLookOf: 'A look of',
+    seenIn: 'Seen in',
+    sceneInTrash: '{title} (in Trash)',
+  },
   span: {
     between: '{start} – {end}',
     from: 'From {start}',
