@@ -10,6 +10,7 @@ import {
   type IdeaReference,
   type IdeaReferenceKindValue,
 } from './types'
+import { t } from '../i18n'
 
 const BASE = '/api/ideas'
 
@@ -102,6 +103,6 @@ export function referenceContext(reference: IdeaReference) {
     case IdeaReferenceKind.Story:
       return null
     default:
-      return `In “${reference.storyTitle ?? ''}”`
+      return t('ideas.reference.inStory', { title: reference.storyTitle ?? '' })
   }
 }

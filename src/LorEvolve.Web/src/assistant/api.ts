@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { apiFetch } from '../lib/api'
 import {
   SourceKind,
@@ -52,15 +53,32 @@ export function askAssistant(
 }
 
 /** How each source is named beside its title. Words, as the search bar names its results. */
+/** Getters, so each word is looked up in the current language when read, never frozen at import. */
 export const SOURCE_KIND_LABELS: Record<SourceKindValue, string> = {
-  [SourceKind.Lore]: 'Lore',
-  [SourceKind.Story]: 'Story',
-  [SourceKind.Chapter]: 'Chapter',
-  [SourceKind.Scene]: 'Scene',
-  [SourceKind.PlotArc]: 'Arc',
-  [SourceKind.TimelineMoment]: 'Moment',
-  [SourceKind.MapPin]: 'Pin',
-  [SourceKind.Map]: 'Map',
+  get [SourceKind.Lore]() {
+    return t('assistant.sourceKind.lore')
+  },
+  get [SourceKind.Story]() {
+    return t('assistant.sourceKind.story')
+  },
+  get [SourceKind.Chapter]() {
+    return t('assistant.sourceKind.chapter')
+  },
+  get [SourceKind.Scene]() {
+    return t('assistant.sourceKind.scene')
+  },
+  get [SourceKind.PlotArc]() {
+    return t('assistant.sourceKind.plotArc')
+  },
+  get [SourceKind.TimelineMoment]() {
+    return t('assistant.sourceKind.timelineMoment')
+  },
+  get [SourceKind.MapPin]() {
+    return t('assistant.sourceKind.mapPin')
+  },
+  get [SourceKind.Map]() {
+    return t('assistant.sourceKind.map')
+  },
 }
 
 /**

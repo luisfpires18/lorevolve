@@ -22,7 +22,8 @@ import { compareProse } from '../aiChanges/diff'
 import { countWords, sourceWords, STATUS_WORDS } from '../aiChanges/words'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
-import { ApiError, NETWORK_FAILURE } from '../lib/api'
+import { t, useI18n } from '../i18n'
+import { ApiError, networkFailure } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
 import { CANON_LABELS, CanonStatus, type CanonStatusValue } from '../lore/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
@@ -35,18 +36,18 @@ type Load =
 
 type Feedback = { text: string; isError: boolean }
 
-const ACTION_WORDS = {
-  [ChangeAction.Create]: 'New',
-  [ChangeAction.Update]: 'Edit',
-  [ChangeAction.Remove]: 'To the Trash',
-  [ChangeAction.Reorder]: 'Order',
+const ACTION_KEYS = {
+  [ChangeAction.Create]: 'review.aiChange.item.action.create',
+  [ChangeAction.Update]: 'review.aiChange.item.action.update',
+  [ChangeAction.Remove]: 'review.aiChange.item.action.remove',
+  [ChangeAction.Reorder]: 'review.aiChange.item.action.reorder',
 } as const
 
 /** A field is archived, not trashed: it keeps its values and comes back from Types. */
 const actionWords = (change: Change) =>
   change.resource === ChangeResource.LoreField && change.action === ChangeAction.Remove
-    ? 'Archive'
-    : ACTION_WORDS[change.action]
+    ? t('review.aiChange.item.action.archive')
+    : t(ACTION_KEYS[change.action])
 
 /** Prose changes - a scene's manuscript, an entry's article - are shown as prose, never as before-and-after lines. */
 const isProse = (change: Change) =>
@@ -65,6 +66,7 @@ function approvable(change: Change) {
  * exactly what was shown at this revision, all together or not at all.
  */
 export default function AiChangePage() {
+  const { t, tn, tx } = useI18n()
   const { universe } = useOutletContext<WorkspaceContext>()
   const location = useLocation()
   const { proposalId = '' } = useParams<{ proposalId: string }>()
@@ -109,7 +111,7 @@ export default function AiChangePage() {
   if (load.kind === 'loading') {
     return (
       <p className="notice" role="status">
-        Opening&hellip;
+        {t('review.aiChange.opening')}
       </p>
     )
   }
@@ -118,11 +120,11 @@ export default function AiChangePage() {
     return (
       <EmptyState
         testId="ai-change-missing"
-        title="That proposal isn't here."
+        title={t('review.aiChange.missing.title')}
         hint={
           <>
-            It may have been removed, or it isn&rsquo;t yours to see.{' '}
-            <Link to="..">Back to Pending AI Changes</Link>
+            {t('review.aiChange.missing.hint')}{' '}
+            <Link to="..">{t('review.aiChange.missing.back')}</Link>
           </>
         }
       />
@@ -132,13 +134,13 @@ export default function AiChangePage() {
   if (load.kind === 'error' || !proposal) {
     return (
       <div className="notice notice--error" role="alert">
-        <p>This proposal couldn&rsquo;t be loaded.</p>
+        <p>{t('review.aiChange.loadFailed')}</p>
         <button
           className="button button--secondary"
           type="button"
           onClick={() => setReads((count) => count + 1)}
         >
-          Try again
+          {t('review.aiChange.retry')}
         </button>
       </div>
     )
@@ -224,21 +226,21 @@ export default function AiChangePage() {
       approval.current = null
       accept(
         receipt.proposal,
-        `${receipt.applied.length === 1 ? '1 change was' : `${receipt.applied.length} changes were`} applied.`,
+        tn('review.aiChange.feedback.applied', receipt.applied.length, {
+          n: receipt.applied.length,
+        }),
       )
     } catch (error: unknown) {
       if (error instanceof ApiError && error.status === 0) {
         setFeedback({
-          text: `${NETWORK_FAILURE} Pressing Approve again won't apply anything twice.`,
+          text: t('review.aiChange.feedback.networkFailure', { failure: networkFailure() }),
           isError: true,
         })
       } else {
         approval.current = null
         setFeedback({
           text:
-            error instanceof ApiError
-              ? error.message
-              : 'LorEvolve couldn’t apply these changes. Try again.',
+            error instanceof ApiError ? error.message : t('review.aiChange.feedback.applyFailed'),
           isError: true,
         })
         setReads((count) => count + 1)
@@ -260,15 +262,13 @@ export default function AiChangePage() {
       accept(
         next,
         ids === null
-          ? 'Every waiting change was rejected. Nothing was applied.'
-          : 'Rejected. Nothing was applied.',
+          ? t('review.aiChange.feedback.rejectedAll')
+          : t('review.aiChange.feedback.rejected'),
       )
     } catch (error: unknown) {
       setFeedback({
         text:
-          error instanceof ApiError
-            ? error.message
-            : 'LorEvolve couldn’t reject these changes. Try again.',
+          error instanceof ApiError ? error.message : t('review.aiChange.feedback.rejectFailed'),
         isError: true,
       })
       setReads((count) => count + 1)
@@ -278,8 +278,8 @@ export default function AiChangePage() {
   }
 
   const who = proposal.proposal.proposedByMe
-    ? 'you'
-    : (proposal.proposal.proposedByName ?? 'someone no longer here')
+    ? t('review.aiChange.who.you')
+    : (proposal.proposal.proposedByName ?? t('review.aiChange.who.gone'))
 
   return (
     <section className="aichange" aria-labelledby="aichange-title" data-testid="ai-change">
@@ -287,22 +287,27 @@ export default function AiChangePage() {
         crumb={
           <Link className="aichange__back" to={backTo} data-testid="ai-change-back">
             <ArrowLeft aria-hidden="true" focusable="false" strokeWidth={1.75} />
-            Back to Pending AI Changes
+            {t('review.aiChange.back')}
           </Link>
         }
         title={
           <span dir="auto">
-            {proposal.proposal.summary ?? `${proposal.proposal.operationCount} proposed changes`}
+            {proposal.proposal.summary ??
+              t('review.aiChange.proposedChanges', { n: proposal.proposal.operationCount })}
           </span>
         }
         titleId="aichange-title"
         lede={
           <>
-            From <span data-testid="ai-change-source">{sourceWords(proposal.proposal)}</span>, asked
-            for by <bdi>{who}</bdi> ·{' '}
-            <time dateTime={proposal.proposal.createdAt}>
-              {formatDateTime(proposal.proposal.createdAt)}
-            </time>
+            {tx('review.aiChange.lede', {
+              source: <span data-testid="ai-change-source">{sourceWords(proposal.proposal)}</span>,
+              who: <bdi>{who}</bdi>,
+              time: (
+                <time dateTime={proposal.proposal.createdAt}>
+                  {formatDateTime(proposal.proposal.createdAt)}
+                </time>
+              ),
+            })}
             <br />
             <span
               className="aichanges__status"
@@ -319,11 +324,15 @@ export default function AiChangePage() {
 
       {open ? (
         <p className="callout aichange__note">
-          Nothing here has changed {universe.name ? <bdi>{universe.name}</bdi> : 'this universe'}{' '}
-          yet. Approved changes are applied together, through the same checks as your own edits.
-          Removals go to the Trash, never away for good.
+          {tx('review.aiChange.note.body', {
+            universe: universe.name ? (
+              <bdi>{universe.name}</bdi>
+            ) : (
+              t('review.aiChange.note.thisUniverse')
+            ),
+          })}
           {open
-            ? ` If no one decides, this proposal closes on ${formatDateTime(proposal.proposal.expiresAt)}.`
+            ? ` ${t('review.aiChange.note.expires', { date: formatDateTime(proposal.proposal.expiresAt) })}`
             : null}
         </p>
       ) : null}
@@ -334,10 +343,10 @@ export default function AiChangePage() {
           role="status"
           data-testid="ai-change-awaiting-pictures"
         >
-          {awaitingPictures.length === 1
-            ? '1 picture is waiting to be uploaded.'
-            : `${awaitingPictures.length} pictures are waiting to be uploaded.`}{' '}
-          The AI sends no file: upload each one below, in LorEvolve, before approving its change.
+          {tn('review.aiChange.pictures.waiting', awaitingPictures.length, {
+            n: awaitingPictures.length,
+          })}{' '}
+          {t('review.aiChange.pictures.hand')}
         </p>
       ) : null}
 
@@ -349,8 +358,7 @@ export default function AiChangePage() {
 
       {!proposal.canReview && open ? (
         <p className="history__quiet" data-testid="ai-change-read-only">
-          Your role can&rsquo;t approve changes here. The owner or an Editor of this universe
-          decides them.
+          {t('review.aiChange.readOnly')}
         </p>
       ) : null}
 
@@ -370,11 +378,13 @@ export default function AiChangePage() {
         <div
           className="aichange__toolbar"
           role="group"
-          aria-label="Decide"
+          aria-label={t('review.aiChange.toolbar.label')}
           data-testid="ai-change-toolbar"
         >
           <p className="aichange__chosen" aria-live="polite">
-            {chosen.length === 0 ? 'No changes selected.' : `${chosen.length} selected.`}
+            {chosen.length === 0
+              ? t('review.aiChange.toolbar.none')
+              : tn('review.aiChange.toolbar.selected', chosen.length, { n: chosen.length })}
           </p>
           <div className="aichange__buttons">
             {canApprove ? (
@@ -386,7 +396,7 @@ export default function AiChangePage() {
                   onClick={() => setSelected(new Set(ready.map((change) => change.id)))}
                   data-testid="ai-change-select-all"
                 >
-                  Select all that can be applied
+                  {t('review.aiChange.toolbar.selectAll')}
                 </button>
                 <button
                   className="button button--sm"
@@ -397,8 +407,12 @@ export default function AiChangePage() {
                   data-testid="ai-change-approve"
                 >
                   {busy === 'approve'
-                    ? 'Applying'
-                    : `Approve ${chosen.length === 0 ? 'selected' : chosen.length}`}
+                    ? t('review.aiChange.toolbar.applying')
+                    : chosen.length === 0
+                      ? t('review.aiChange.toolbar.approveSelected')
+                      : tn('review.aiChange.toolbar.approveCount', chosen.length, {
+                          n: chosen.length,
+                        })}
                 </button>
               </>
             ) : null}
@@ -409,7 +423,9 @@ export default function AiChangePage() {
               onClick={() => void reject(chosen.map((change) => change.id))}
               data-testid="ai-change-reject"
             >
-              {busy === 'reject' ? 'Rejecting' : 'Reject selected'}
+              {busy === 'reject'
+                ? t('review.aiChange.toolbar.rejecting')
+                : t('review.aiChange.toolbar.rejectSelected')}
             </button>
             <button
               className="button button--secondary button--danger-quiet button--sm"
@@ -418,7 +434,7 @@ export default function AiChangePage() {
               onClick={() => void reject(null)}
               data-testid="ai-change-reject-all"
             >
-              Reject all
+              {t('review.aiChange.toolbar.rejectAll')}
             </button>
           </div>
           {applied ? (
@@ -426,11 +442,14 @@ export default function AiChangePage() {
               <div
                 className="progressbar"
                 role="progressbar"
-                aria-label="Applying changes"
+                aria-label={t('review.aiChange.progress.label')}
                 aria-valuemin={0}
                 aria-valuemax={applied.total}
                 aria-valuenow={applied.done}
-                aria-valuetext={`${applied.done} of ${applied.total} applied`}
+                aria-valuetext={t('review.aiChange.progress.done', {
+                  done: applied.done,
+                  total: applied.total,
+                })}
                 data-state={applied.done === 0 ? 'working' : 'sending'}
               >
                 <span
@@ -444,8 +463,11 @@ export default function AiChangePage() {
               </div>
               <p className="aichange__count">
                 {applied.done === 0
-                  ? `Checking ${applied.total === 1 ? '1 change' : `${applied.total} changes`}…`
-                  : `${applied.done} of ${applied.total} applied`}
+                  ? tn('review.aiChange.progress.checking', applied.total, { n: applied.total })
+                  : t('review.aiChange.progress.done', {
+                      done: applied.done,
+                      total: applied.total,
+                    })}
               </p>
             </div>
           ) : null}
@@ -459,12 +481,12 @@ export default function AiChangePage() {
             onClick={() => void reject(null)}
             data-testid="ai-change-withdraw"
           >
-            Withdraw this proposal
+            {t('review.aiChange.toolbar.withdraw')}
           </button>
         </div>
       ) : null}
 
-      <ol className="aichange__list" id={listId} aria-label="Proposed changes">
+      <ol className="aichange__list" id={listId} aria-label={t('review.aiChange.listLabel')}>
         {changes.map((change) => (
           <ChangeItem
             key={change.id}
@@ -479,7 +501,7 @@ export default function AiChangePage() {
             onEdit={(on) => setEditing(on ? change.id : null)}
             onEdited={(next) => {
               setEditing(null)
-              accept(next, 'Your edit was saved. Review it, then approve.')
+              accept(next, t('review.aiChange.feedback.edited'))
             }}
             // An upload says so beside the picture, and the page stays where it is.
             onUploaded={(next) => setLoad({ kind: 'ready', proposal: next })}
@@ -515,6 +537,7 @@ function ChangeItem({
   onEdited: (next: Proposal) => void
   onUploaded: (next: Proposal) => void
 }) {
+  const { t, tx } = useI18n()
   const titleId = useId()
   const detailsId = useId()
   const pending = change.status === ChangeStatus.Pending
@@ -549,7 +572,7 @@ function ChangeItem({
         ) : null}
         <div className="aichangeitem__heading">
           <span className="aichangeitem__action" data-action={change.action}>
-            {isProse(change) ? 'Prose' : actionWords(change)}
+            {isProse(change) ? t('review.aiChange.item.prose') : actionWords(change)}
           </span>
           <h2 className="aichangeitem__title" id={titleId} dir="auto">
             {change.title}
@@ -557,17 +580,20 @@ function ChangeItem({
         </div>
         {!pending ? (
           <span className="aichangeitem__outcome" data-testid="ai-change-outcome">
-            {change.status === ChangeStatus.Committed
-              ? 'Applied'
-              : change.resolutionNote === 'expired'
-                ? 'Expired'
-                : 'Rejected'}
-            {change.resolvedByName ? (
-              <>
-                {' by '}
-                <bdi>{change.resolvedByName}</bdi>
-              </>
-            ) : null}
+            {change.resolvedByName
+              ? tx(
+                  change.status === ChangeStatus.Committed
+                    ? 'review.aiChange.item.appliedBy'
+                    : change.resolutionNote === 'expired'
+                      ? 'review.aiChange.item.expiredBy'
+                      : 'review.aiChange.item.rejectedBy',
+                  { name: <bdi>{change.resolvedByName}</bdi> },
+                )
+              : change.status === ChangeStatus.Committed
+                ? t('review.aiChange.item.applied')
+                : change.resolutionNote === 'expired'
+                  ? t('review.aiChange.item.expired')
+                  : t('review.aiChange.item.rejected')}
           </span>
         ) : null}
       </div>
@@ -584,15 +610,17 @@ function ChangeItem({
                   !isProse(change) ? (
                     <>
                       <span className="aichangeitem__before" dir="auto">
-                        <span className="visually-hidden">Now: </span>
-                        {line.before ?? 'empty'}
+                        <span className="visually-hidden">{t('review.aiChange.item.now')}</span>
+                        {line.before ?? t('review.aiChange.item.empty')}
                       </span>
                       <span className="aichangeitem__arrow" aria-hidden="true">
                         →
                       </span>
                       <span className="aichangeitem__after" dir="auto">
-                        <span className="visually-hidden">Proposed: </span>
-                        {line.after ?? 'empty'}
+                        <span className="visually-hidden">
+                          {t('review.aiChange.item.proposed')}
+                        </span>
+                        {line.after ?? t('review.aiChange.item.empty')}
                       </span>
                     </>
                   ) : (
@@ -625,12 +653,12 @@ function ChangeItem({
 
         {pending && needs.length > 0 ? (
           <p className="aichangeitem__deps" data-testid="ai-change-needs">
-            Needs: {named(needs).join('; ')}. Selecting this selects them too.
+            {t('review.aiChange.item.needs', { list: named(needs).join('; ') })}
           </p>
         ) : null}
         {pending && neededBy.length > 0 ? (
           <p className="aichangeitem__deps">
-            Needed by: {named(neededBy).join('; ')}. Rejecting this rejects them too.
+            {t('review.aiChange.item.neededBy', { list: named(neededBy).join('; ') })}
           </p>
         ) : null}
 
@@ -656,7 +684,7 @@ function ChangeItem({
           to={link}
           data-testid="ai-change-open-item"
         >
-          Open it
+          {t('review.aiChange.item.open')}
         </Link>
       ) : null}
 
@@ -665,10 +693,10 @@ function ChangeItem({
           className="button button--text button--sm"
           type="button"
           onClick={() => onEdit(true)}
-          aria-label={`Edit ${change.title} before approving`}
+          aria-label={t('review.aiChange.item.editLabel', { title: change.title })}
           data-testid="ai-change-edit"
         >
-          Edit before approving
+          {t('review.aiChange.item.edit')}
         </button>
       ) : null}
 
@@ -701,6 +729,7 @@ function MediaChange({
   change: Change
   onUploaded: (next: Proposal) => void
 }) {
+  const { t } = useI18n()
   const media = change.media!
   const inputId = useId()
   const [busy, setBusy] = useState(false)
@@ -723,7 +752,7 @@ function MediaChange({
       setError(
         problem instanceof ApiError
           ? (Object.values(problem.fieldErrors)[0] ?? problem.message)
-          : 'The picture couldn’t be uploaded. Try again.',
+          : t('review.aiChange.media.failed'),
       )
     } finally {
       setBusy(false)
@@ -736,7 +765,7 @@ function MediaChange({
         <figure className="aichangeitem__picture">
           <img
             src={mediaPreviewPath(universeId, proposal.proposal.id, change.id, media.uploadedAt)}
-            alt={`The picture uploaded for: ${change.title}`}
+            alt={t('review.aiChange.media.alt', { title: change.title })}
             width={160}
             height={160}
             loading="lazy"
@@ -744,16 +773,19 @@ function MediaChange({
             data-testid="ai-change-media-preview"
           />
           <figcaption>
-            {media.fileName ?? 'Picture'} · {media.width}×{media.height}
+            {media.fileName ?? t('review.aiChange.media.fallbackName')} · {media.width}×
+            {media.height}
           </figcaption>
         </figure>
       ) : (
-        <p className="aichangeitem__deps">No picture yet. The AI sends no file: upload it here.</p>
+        <p className="aichangeitem__deps">{t('review.aiChange.media.none')}</p>
       )}
       {waiting ? (
         <div className="field">
           <label className="field__label" htmlFor={inputId}>
-            {media.uploaded ? 'Replace the picture' : 'Upload the picture'}
+            {media.uploaded
+              ? t('review.aiChange.media.replace')
+              : t('review.aiChange.media.upload')}
           </label>
           <input
             id={inputId}
@@ -768,7 +800,7 @@ function MediaChange({
       ) : null}
       {uploaded ? (
         <p className="aichangeitem__deps" role="status" data-testid="ai-change-media-uploaded">
-          Picture uploaded. This change can be approved now.
+          {t('review.aiChange.media.uploaded')}
         </p>
       ) : null}
       {error ? (
@@ -782,12 +814,13 @@ function MediaChange({
 
 /** A manuscript change, as prose: what is added, or the paragraphs it would take out and put in. */
 function ProseChange({ change }: { change: Change }) {
+  const { t, tn } = useI18n()
   const prose = change.prose!
   if (prose.append || prose.current === null) {
     return (
       <div className="aichangeprose">
         <p className="aichangeprose__label">
-          {prose.append ? 'Added at the end' : 'The new prose'}
+          {prose.append ? t('review.aiChange.prose.appended') : t('review.aiChange.prose.added')}
         </p>
         <div className="aichangeprose__text aichangeprose__text--added" dir="auto">
           {prose.proposed}
@@ -799,13 +832,13 @@ function ProseChange({ change }: { change: Change }) {
   const parts = compareProse(prose.current, prose.proposed)
   return (
     <div className="aichangeprose" data-testid="ai-change-prose">
-      <p className="aichangeprose__label">Changes to the prose</p>
+      <p className="aichangeprose__label">{t('review.aiChange.prose.changes')}</p>
       {parts.map((part, index) =>
         part.kind === 'same' ? (
           <p className="aichangeprose__same" key={index}>
-            {part.paragraphs.length === 1
-              ? '1 paragraph unchanged'
-              : `${part.paragraphs.length} paragraphs unchanged`}
+            {tn('review.aiChange.prose.unchanged', part.paragraphs.length, {
+              n: part.paragraphs.length,
+            })}
           </p>
         ) : (
           <div
@@ -814,7 +847,9 @@ function ProseChange({ change }: { change: Change }) {
             dir="auto"
           >
             <span className="visually-hidden">
-              {part.kind === 'added' ? 'Added: ' : 'Taken out: '}
+              {part.kind === 'added'
+                ? t('review.aiChange.prose.addedHidden')
+                : t('review.aiChange.prose.removedHidden')}
             </span>
             {part.paragraphs.join('\n\n')}
           </div>
@@ -840,6 +875,7 @@ function EditChange({
   onCancel: () => void
   onSaved: (next: Proposal) => void
 }) {
+  const { t } = useI18n()
   const [draft, setDraft] = useState<ChangeEditable>(values)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -860,9 +896,7 @@ function EditChange({
         await editChange(universeId, proposal.proposal.id, change.id, proposal.revision, draft),
       )
     } catch (problem: unknown) {
-      setError(
-        problem instanceof ApiError ? problem.message : 'Your edit couldn’t be saved. Try again.',
-      )
+      setError(problem instanceof ApiError ? problem.message : t('review.aiChange.edit.failed'))
       setSaving(false)
     }
   }
@@ -900,28 +934,28 @@ function EditChange({
       ref={form}
       className="aichangeedit"
       onSubmit={(event) => void submit(event)}
-      aria-label={`Edit ${change.title}`}
+      aria-label={t('review.aiChange.edit.form', { title: change.title })}
       data-testid="ai-change-edit-form"
     >
-      {text('name', 'Name')}
-      {text('title', 'Title')}
-      {text('summary', 'Summary', true)}
-      {text('premise', 'Premise', true)}
-      {text('notes', 'Notes', true)}
-      {text('description', 'Description', true)}
+      {text('name', t('review.aiChange.edit.name'))}
+      {text('title', t('review.aiChange.edit.title'))}
+      {text('summary', t('review.aiChange.edit.summary'), true)}
+      {text('premise', t('review.aiChange.edit.premise'), true)}
+      {text('notes', t('review.aiChange.edit.notes'), true)}
+      {text('description', t('review.aiChange.edit.description'), true)}
       {text(
         'text',
         change.resource === ChangeResource.Manuscript
-          ? 'Prose'
+          ? t('review.aiChange.edit.prose')
           : change.resource === ChangeResource.Idea
-            ? 'Idea'
-            : 'Text',
+            ? t('review.aiChange.edit.idea')
+            : t('review.aiChange.edit.text'),
         true,
       )}
       {draft.canonStatus !== undefined && draft.canonStatus !== null ? (
         <div className="field">
           <label className="field__label" htmlFor={`${id}-canon`}>
-            Canon status
+            {t('review.aiChange.edit.canon')}
           </label>
           <select
             id={`${id}-canon`}
@@ -951,7 +985,7 @@ function EditChange({
           disabled={saving}
           data-testid="ai-change-edit-save"
         >
-          {saving ? 'Saving' : 'Save edit'}
+          {saving ? t('review.aiChange.edit.saving') : t('review.aiChange.edit.save')}
         </button>
         <button
           className="button button--secondary button--sm"
@@ -959,7 +993,7 @@ function EditChange({
           onClick={onCancel}
           disabled={saving}
         >
-          Cancel
+          {t('review.aiChange.edit.cancel')}
         </button>
       </div>
     </form>

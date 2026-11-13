@@ -1,5 +1,6 @@
 import { apiFetch } from '../lib/api'
 import type { UniverseRoleValue } from '../universes/types'
+import { t } from '../i18n'
 
 /** Where a universe's MCP server is (ADR 0046). Null when connecting AI apps is not set up on this LorEvolve. */
 export interface McpConnectInfo {
@@ -113,10 +114,9 @@ export const PROPOSE_FIELD = 'lorevolve_propose'
 export const SCHEMA_FIELD = 'lorevolve_schema'
 
 /** What the connection lets an app read, in the words the screens use. */
-export const READABLE = [
-  'Lore entries, with their fields, aliases and summaries',
-  'Relationships between entries',
-  'Stories, with their chapters and plot',
-  'Scenes and their manuscripts',
-  'The timeline',
-] as const
+const READABLE_KEYS = ['lore', 'relationships', 'stories', 'scenes', 'timeline'] as const
+
+/** What an outside AI app may read, in the current language. Read it when the list is drawn. */
+export function readable() {
+  return READABLE_KEYS.map((key) => t(`assistant.connect.readable.${key}` as never))
+}

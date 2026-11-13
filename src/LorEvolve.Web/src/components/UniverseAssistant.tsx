@@ -17,6 +17,7 @@ import {
   type SegmentKindValue,
 } from '../assistant/types'
 import { reviewPath } from '../aiChanges/api'
+import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
@@ -34,6 +35,20 @@ type Availability = 'unknown' | 'available' | 'unavailable'
 
 /** The word shown above each part of an answer. A note needs none. */
 const PART_LABELS: Record<SegmentKindValue, string | null> = {
+  get [SegmentKind.Recorded]() {
+    return t('assistant.panel.part.recorded')
+  },
+  get [SegmentKind.Inference]() {
+    return t('assistant.panel.part.inference')
+  },
+  get [SegmentKind.Suggestion]() {
+    return t('assistant.panel.part.suggestion')
+  },
+  [SegmentKind.Note]: null,
+}
+
+/** The same words as they go to the model in the conversation: not shown, so they stay English in every language. */
+const HISTORY_LABELS: Record<SegmentKindValue, string | null> = {
   [SegmentKind.Recorded]: 'Recorded',
   [SegmentKind.Inference]: 'Inference',
   [SegmentKind.Suggestion]: 'Suggestion',
@@ -48,17 +63,19 @@ const PART_CLASSES: Record<SegmentKindValue, string> = {
 }
 
 /** Starting points that need no AI call to show. The open-ended ones fill the box for the writer to finish. */
-const PROMPTS = [
-  { text: 'Summarize this universe', complete: true },
-  { text: 'What is connected to ', complete: false },
-  { text: 'Which scenes involve ', complete: false },
-] as const
+function starterPrompts() {
+  return [
+    { text: t('assistant.panel.prompt.summarize'), complete: true },
+    { text: t('assistant.panel.prompt.connected'), complete: false },
+    { text: t('assistant.panel.prompt.scenes'), complete: false },
+  ]
+}
 
 /** An answer as plain text, for the conversation the next question carries. */
 function answerText(answer: AssistantAnswer) {
   return answer.segments
     .map((segment) => {
-      const label = PART_LABELS[segment.kind]
+      const label = HISTORY_LABELS[segment.kind]
       return label ? `(${label}) ${segment.text}` : segment.text
     })
     .join('\n\n')
@@ -83,6 +100,7 @@ export function UniverseAssistant({
   /** The role can propose changes for review (ADR 0047). Presentation only: the API decides. */
   canPropose?: boolean
 }) {
+  useI18n() // re-renders when the language changes
   const location = useLocation()
   // Open for one address only: following a source (or any link) closes the drawer, as the phone's Sections sheet closes.
   const [openAt, setOpenAt] = useState<string | null>(null)
@@ -132,10 +150,7 @@ export function UniverseAssistant({
         setTurns((current) => current.filter((turn) => turn.id !== turnId))
         setDraft((current) => (current.trim() === '' ? question : current))
       } else {
-        const message =
-          error instanceof ApiError
-            ? error.message
-            : "The assistant couldn't answer that. Try again."
+        const message = error instanceof ApiError ? error.message : t('assistant.panel.failed')
         if (error instanceof ApiError && error.code === 'assistant_unavailable') {
           setAvailability('unavailable')
         }
@@ -186,12 +201,12 @@ export function UniverseAssistant({
         className="button button--secondary assistanttrigger"
         type="button"
         aria-haspopup="dialog"
-        title="Assistant"
+        title={t('assistant.panel.triggerTitle')}
         onClick={() => setOpenAt(location.key)}
         data-testid="assistant-trigger"
       >
         <ActionIcon icon={MessageCircleQuestionMark} />
-        <span className="assistanttrigger__label">Assistant</span>
+        <span className="assistanttrigger__label">{t('assistant.panel.triggerLabel')}</span>
       </button>
 
       {isOpen ? (
@@ -249,6 +264,7 @@ function AssistantDrawer({
   propose,
   onPropose,
 }: DrawerProps) {
+  const { tx } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
   const end = useRef<HTMLDivElement>(null)
@@ -288,7 +304,11 @@ function AssistantDrawer({
   }, [turns.length, last?.answer, last?.error])
 
   const busy = pending !== null
-  const announcement = busy ? `Looking through ${universeName}.` : last?.answer ? 'Answered.' : ''
+  const announcement = busy
+    ? t('assistant.panel.announceBusy', { name: universeName })
+    : last?.answer
+      ? t('assistant.panel.announceAnswered')
+      : ''
 
   function submit(event?: FormEvent) {
     event?.preventDefault()
@@ -321,35 +341,28 @@ function AssistantDrawer({
     >
       <div className="drawer__panel">
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Assistant</p>
+          <p className="drawer__eyebrow">{t('assistant.panel.eyebrow')}</p>
           <h2 className="drawer__title" id={headingId}>
             <bdi>{universeName}</bdi>
           </h2>
           <p className="drawer__context">
-            {proposing
-              ? 'It can prepare changes you ask for. They wait for your review, and nothing changes until you approve them.'
-              : 'It reads this universe and never changes it.'}
+            {proposing ? t('assistant.panel.contextPropose') : t('assistant.panel.contextRead')}
           </p>
         </header>
 
         <div className="drawer__body assistant__body">
           {availability === 'unavailable' ? (
             <p className="history__quiet" data-testid="assistant-unavailable">
-              The assistant isn&rsquo;t set up on this LorEvolve yet. Everything else works as
-              usual.
+              {t('assistant.panel.unavailable')}
             </p>
           ) : turns.length === 0 ? (
             <div className="assistantempty" data-testid="assistant-empty">
               <p className="assistantempty__lead">
-                Ask about anything recorded in <bdi>{universeName}</bdi>. Answers come only from
-                what&rsquo;s written here.
+                {tx('assistant.panel.emptyLead', { name: <bdi>{universeName}</bdi> })}
               </p>
-              <p className="assistantempty__hint">
-                Each answer marks what&rsquo;s recorded, what&rsquo;s inferred and what&rsquo;s only
-                a suggestion, and links back to where it comes from.
-              </p>
-              <ul className="assistantprompts" aria-label="Ways to start">
-                {PROMPTS.map((prompt) => (
+              <p className="assistantempty__hint">{t('assistant.panel.emptyHint')}</p>
+              <ul className="assistantprompts" aria-label={t('assistant.panel.waysToStart')}>
+                {starterPrompts().map((prompt) => (
                   <li key={prompt.text}>
                     <button
                       className="assistantprompts__prompt"
@@ -364,12 +377,12 @@ function AssistantDrawer({
               </ul>
             </div>
           ) : (
-            <ol className="assistantturns" aria-label="Conversation">
+            <ol className="assistantturns" aria-label={t('assistant.panel.conversation')}>
               {turns.map((turn) => (
                 <li className="assistantturn" key={turn.id} data-testid="assistant-turn">
                   <div className="assistantturn__question">
                     <p className="assistantturn__who">
-                      {turn.propose ? 'You, asking for changes' : 'You'}
+                      {turn.propose ? t('assistant.panel.youPropose') : t('assistant.panel.you')}
                     </p>
                     <p className="assistantturn__text" dir="auto">
                       {turn.question}
@@ -388,12 +401,12 @@ function AssistantDrawer({
                         disabled={busy}
                         data-testid="assistant-retry"
                       >
-                        Try again
+                        {t('assistant.panel.retry')}
                       </button>
                     </div>
                   ) : (
                     <p className="assistantturn__pending" data-testid="assistant-pending">
-                      Looking through <bdi>{universeName}</bdi>&hellip;
+                      {tx('assistant.panel.pending', { name: <bdi>{universeName}</bdi> })}
                     </p>
                   )}
                 </li>
@@ -419,16 +432,14 @@ function AssistantDrawer({
                     aria-describedby={`${proposeId}-hint`}
                     data-testid="assistant-propose"
                   />
-                  <label htmlFor={proposeId}>Propose changes</label>
+                  <label htmlFor={proposeId}>{t('assistant.panel.proposeLabel')}</label>
                   <span className="assistantform__modehint" id={`${proposeId}-hint`}>
-                    {propose
-                      ? 'Say exactly what to create or change. It goes to Pending AI Changes for you to review.'
-                      : 'Off: the Assistant only reads.'}
+                    {propose ? t('assistant.panel.proposeOn') : t('assistant.panel.proposeOff')}
                   </span>
                 </div>
               ) : null}
               <label className="field__label" htmlFor={inputId}>
-                {proposing ? 'The changes you want' : 'Your question'}
+                {proposing ? t('assistant.panel.changesLabel') : t('assistant.panel.questionLabel')}
               </label>
               <textarea
                 id={inputId}
@@ -444,7 +455,7 @@ function AssistantDrawer({
                 data-testid="assistant-input"
               />
               <p className="assistantform__hint" id={hintId}>
-                Enter to ask, Shift+Enter for a new line.
+                {t('assistant.panel.inputHint')}
               </p>
               <div className="assistant__buttons">
                 <button
@@ -455,11 +466,11 @@ function AssistantDrawer({
                 >
                   {busy
                     ? proposing
-                      ? 'Preparing'
-                      : 'Asking'
+                      ? t('assistant.panel.preparing')
+                      : t('assistant.panel.asking')
                     : proposing
-                      ? 'Prepare changes'
-                      : 'Ask'}
+                      ? t('assistant.panel.prepare')
+                      : t('assistant.panel.ask')}
                 </button>
                 <button
                   className="button button--secondary"
@@ -467,7 +478,7 @@ function AssistantDrawer({
                   onClick={close}
                   data-testid="assistant-close"
                 >
-                  Close
+                  {t('assistant.panel.close')}
                 </button>
               </div>
             </form>
@@ -479,7 +490,7 @@ function AssistantDrawer({
                 onClick={close}
                 data-testid="assistant-close"
               >
-                Close
+                {t('assistant.panel.closeUnavailable')}
               </button>
             </div>
           )}
@@ -499,6 +510,7 @@ function Answer({
   answer: AssistantAnswer
   onFollow: () => void
 }) {
+  const { tn } = useI18n()
   const sourcesId = useId()
 
   return (
@@ -523,10 +535,10 @@ function Answer({
       {answer.proposal ? (
         <div className="assistantproposal" data-testid="assistant-proposal">
           <p>
-            {answer.proposal.changeCount === 1
-              ? '1 change is waiting for your review.'
-              : `${answer.proposal.changeCount} changes are waiting for your review.`}{' '}
-            Nothing has changed yet.
+            {tn('assistant.answer.waiting', answer.proposal.changeCount, {
+              n: answer.proposal.changeCount,
+            })}{' '}
+            {t('assistant.answer.nothingChanged')}
           </p>
           <Link
             className="button button--sm"
@@ -534,22 +546,19 @@ function Answer({
             onClick={onFollow}
             data-testid="assistant-proposal-review"
           >
-            Review the changes
+            {t('assistant.answer.review')}
           </Link>
         </div>
       ) : null}
 
       {answer.isIncomplete ? (
-        <p className="assistantanswer__incomplete">
-          I stopped before reading everything that might matter. A narrower question may get a
-          fuller answer.
-        </p>
+        <p className="assistantanswer__incomplete">{t('assistant.answer.incomplete')}</p>
       ) : null}
 
       {answer.sources.length > 0 ? (
         <div className="assistantsources">
           <p className="assistantsources__title" id={sourcesId}>
-            Sources
+            {t('assistant.answer.sources')}
           </p>
           <ul className="assistantsources__list" aria-labelledby={sourcesId}>
             {answer.sources.map((source) => (

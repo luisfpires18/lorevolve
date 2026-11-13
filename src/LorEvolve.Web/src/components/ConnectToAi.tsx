@@ -2,7 +2,8 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Plug } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
-import { getMcpConnectInfo, READABLE } from '../mcp/api'
+import { useI18n } from '../i18n'
+import { getMcpConnectInfo, readable } from '../mcp/api'
 import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 
@@ -23,6 +24,7 @@ export function ConnectToAi({
   universeId: string
   universeName: string
 }) {
+  const { t } = useI18n()
   const location = useLocation()
   // Open for one address only, as the Assistant's drawer is: following the Profile link closes it.
   const [openAt, setOpenAt] = useState<string | null>(null)
@@ -38,7 +40,7 @@ export function ConnectToAi({
         data-testid="connect-ai-trigger"
       >
         <ActionIcon icon={Plug} />
-        Connect to AI
+        {t('assistant.connect.trigger')}
       </button>
 
       {isOpen ? (
@@ -61,6 +63,7 @@ function ConnectDrawer({
   universeName: string
   onClose: () => void
 }) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const headingId = useId()
   const [load, setLoad] = useState<Load>({ kind: 'loading' })
@@ -94,28 +97,25 @@ function ConnectDrawer({
     >
       <div className="drawer__panel">
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Connect to AI</p>
+          <p className="drawer__eyebrow">{t('assistant.connect.eyebrow')}</p>
           <h2 className="drawer__title" id={headingId}>
             <bdi>{universeName}</bdi>
           </h2>
-          <p className="drawer__context">
-            Let an AI app such as Claude or ChatGPT read this universe. It can&rsquo;t change
-            anything.
-          </p>
+          <p className="drawer__context">{t('assistant.connect.context')}</p>
         </header>
 
         <div className="drawer__body connect__body">
           {load.kind === 'loading' ? (
             <p className="history__quiet" role="status">
-              Getting this universe&rsquo;s address&hellip;
+              {t('assistant.connect.loading')}
             </p>
           ) : load.kind === 'error' ? (
             <p className="form__message" role="alert" data-testid="connect-ai-error">
-              The address couldn&rsquo;t be loaded. Close this and try again.
+              {t('assistant.connect.loadFailed')}
             </p>
           ) : load.url === null ? (
             <p className="history__quiet" data-testid="connect-ai-unavailable">
-              Connecting AI apps isn&rsquo;t set up on this LorEvolve yet.
+              {t('assistant.connect.unavailable')}
             </p>
           ) : (
             <ConnectSteps url={load.url} name={load.name} onFollow={onClose} />
@@ -129,7 +129,7 @@ function ConnectDrawer({
             onClick={close}
             data-testid="connect-ai-close"
           >
-            Close
+            {t('assistant.connect.close')}
           </button>
         </footer>
       </div>
@@ -146,6 +146,7 @@ function ConnectSteps({
   name: string | null
   onFollow: () => void
 }) {
+  const { t, tx } = useI18n()
   const inputId = useId()
   const hintId = useId()
   const input = useRef<HTMLInputElement>(null)
@@ -168,7 +169,7 @@ function ConnectSteps({
     <>
       <div className="connect__url">
         <label className="field__label" htmlFor={inputId}>
-          MCP server URL
+          {t('assistant.connect.urlLabel')}
         </label>
         <div className="connect__copyrow">
           <input
@@ -188,77 +189,67 @@ function ConnectSteps({
             onClick={() => void copy()}
             data-testid="connect-ai-copy"
           >
-            Copy URL
+            {t('assistant.connect.copy')}
           </button>
         </div>
         <p className="connect__hint" id={hintId}>
-          This URL is only an address. Anyone who uses it still has to sign in to LorEvolve and be a
-          member of this universe. It stays the same if the universe is renamed.
+          {t('assistant.connect.urlHint')}
         </p>
         <p className="connect__status" role="status" data-testid="connect-ai-copy-status">
           {copied === 'copied'
-            ? 'URL copied.'
+            ? t('assistant.connect.copied')
             : copied === 'manual'
-              ? 'Copying didn’t work here. The URL is selected, so you can copy it yourself.'
+              ? t('assistant.connect.copyManual')
               : ''}
         </p>
       </div>
 
       <section className="connect__section" aria-labelledby={`${inputId}-how`}>
         <h3 className="connect__heading" id={`${inputId}-how`}>
-          How to connect
+          {t('assistant.connect.how')}
         </h3>
         <ol className="connect__steps">
-          <li>Copy the URL above.</li>
+          <li>{t('assistant.connect.step1')}</li>
           <li>
-            In your AI app, add a custom connector or MCP server and paste the URL. Claude, ChatGPT
-            and other apps that support remote MCP servers with sign-in can use it.
+            {t('assistant.connect.step2')}
             {name ? (
               <>
                 {' '}
-                Name it <q data-testid="connect-ai-name">{name}</q>, so you can tell your universes
-                apart: each connection reads one universe only.
+                {tx('assistant.connect.step2Name', {
+                  name: <q data-testid="connect-ai-name">{name}</q>,
+                })}
               </>
             ) : null}
           </li>
-          <li>
-            The app opens LorEvolve in your browser. Sign in if you&rsquo;re asked to, check which
-            app is asking, and approve it.
-          </li>
+          <li>{t('assistant.connect.step3')}</li>
         </ol>
       </section>
 
       <section className="connect__section" aria-labelledby={`${inputId}-reads`}>
         <h3 className="connect__heading" id={`${inputId}-reads`}>
-          What the app can read
+          {t('assistant.connect.reads')}
         </h3>
         <ul className="connect__list">
-          {READABLE.map((item) => (
+          {readable().map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
-        <p className="settings__note">
-          It reads only this universe, with your access. It can&rsquo;t create, edit or delete
-          anything. If you leave this universe, the app stops being able to read it.
-        </p>
-        <p className="settings__note">
-          What the app reads is sent to the AI service behind it, under that service&rsquo;s terms.
-          Long manuscripts can use up a lot of the app&rsquo;s context, so it reads prose a section
-          at a time. Questions asked this way don&rsquo;t count toward LorEvolve&rsquo;s own
-          Assistant.
-        </p>
+        <p className="settings__note">{t('assistant.connect.readsNote')}</p>
+        <p className="settings__note">{t('assistant.connect.privacyNote')}</p>
       </section>
 
       <p className="connect__manage">
-        To disconnect an app, go to{' '}
-        <Link
-          to="/app/profile?tab=connected-apps#connected-apps"
-          onClick={onFollow}
-          data-testid="connect-ai-manage"
-        >
-          Profile, Connected apps
-        </Link>
-        .
+        {tx('assistant.connect.manage', {
+          link: (
+            <Link
+              to="/app/profile?tab=connected-apps#connected-apps"
+              onClick={onFollow}
+              data-testid="connect-ai-manage"
+            >
+              {t('assistant.connect.manageLink')}
+            </Link>
+          ),
+        })}
       </p>
     </>
   )

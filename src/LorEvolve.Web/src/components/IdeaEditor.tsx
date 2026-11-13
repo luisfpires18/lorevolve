@@ -20,6 +20,7 @@ import {
 } from '../ideas/api'
 import {
   IDEA_BODY_MAX_LENGTH,
+  IDEA_REFERENCE_KIND_KEYS,
   IDEA_REFERENCE_KIND_LABELS,
   IDEA_TITLE_MAX_LENGTH,
   type IdeaDetail,
@@ -34,6 +35,7 @@ import type { UniverseSummary } from '../universes/types'
 import { EmptyState } from './EmptyState'
 import { confirmAction } from '../lib/confirm'
 import { numberFormat } from '../i18n/format'
+import { useI18n } from '../i18n'
 
 type LoadState =
   | { kind: 'loading' }
@@ -119,10 +121,6 @@ function storedMomentOf(problem: unknown) {
   return typeof updatedAt === 'string' ? updatedAt : null
 }
 
-function referenceCountLabel(total: number) {
-  return total === 1 ? '1 reference' : `${total} references`
-}
-
 interface IdeaEditorProps {
   /** The idea being edited, or null for a new one. */
   ideaId: string | null
@@ -168,6 +166,7 @@ export function IdeaEditor({
   onCreated,
   onDeleted,
 }: IdeaEditorProps) {
+  const { t, tn, tx } = useI18n()
   const headingId = useId()
   const titleId = useId()
   const bodyId = useId()
@@ -241,14 +240,14 @@ export function IdeaEditor({
         setLoad(
           error instanceof ApiError && error.status === 404
             ? { kind: 'missing' }
-            : { kind: 'error', message: 'This idea could not be opened.' },
+            : { kind: 'error', message: t('ideas.editor.openFailed') },
         )
       })
 
     return () => {
       controller.abort()
     }
-  }, [isNew, ideaId, reads, contextUniverseId])
+  }, [isNew, ideaId, reads, contextUniverseId, t])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -299,11 +298,8 @@ export function IdeaEditor({
     titleInput.current?.focus()
   }, [isNew, isHeld])
 
-  const name = draft.title.trim() || stored.title || 'This idea'
-  useLeaveGuard(
-    isDirty ? `“${name}” has unsaved changes. Leave without saving them?` : null,
-    discard,
-  )
+  const name = draft.title.trim() || stored.title || t('ideas.editor.thisIdea')
+  useLeaveGuard(isDirty ? t('ideas.editor.leaveGuard', { name }) : null, discard)
 
   function edit(change: Partial<Fields>) {
     setDraft((current) => ({ ...current, ...change }))
@@ -320,7 +316,7 @@ export function IdeaEditor({
     if (inFlight.current || !isDirty || isTooLong || isHeld) return
 
     if (draft.title.trim() === '') {
-      setFieldErrors({ title: 'Give the idea a title, so you can find it again.' })
+      setFieldErrors({ title: t('ideas.editor.titleRequired') })
       titleInput.current?.focus()
       return
     }
@@ -359,18 +355,16 @@ export function IdeaEditor({
       if (error instanceof ApiError && error.status === 409 && error.code === IDEA_CHANGED) {
         setConflict({ updatedAt: storedMomentOf(error.problem) })
       } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(
-          'This idea is no longer here, so it could not be saved. It may have been deleted in another window. Your writing is still here: copy it before you leave.',
-        )
+        setFailure(t('ideas.editor.saveGone'))
       } else if (error instanceof ApiError && error.status === 400) {
         setFieldErrors(error.fieldErrors)
         setFailure(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Something needs a change before this idea can be saved.',
+            : t('ideas.editor.saveNeedsChange'),
         )
       } else {
-        setFailure('The idea could not be saved. Your writing is still here. Try again.')
+        setFailure(t('ideas.editor.saveFailed'))
       }
     } finally {
       inFlight.current = false
@@ -407,10 +401,10 @@ export function IdeaEditor({
   async function loadSavedVersion() {
     if (
       !(await confirmAction({
-        title: 'Replace this idea with the version saved elsewhere?',
-        message: 'What you changed here since your last save will be lost.',
-        confirmLabel: 'Use the saved version',
-        cancelLabel: 'Keep my changes',
+        title: t('ideas.editor.loadSaved.title'),
+        message: t('ideas.editor.loadSaved.message'),
+        confirmLabel: t('ideas.editor.loadSaved.confirm'),
+        cancelLabel: t('ideas.editor.loadSaved.cancel'),
         variant: 'destructive',
       }))
     ) {
@@ -432,20 +426,14 @@ export function IdeaEditor({
 
     setDraft(universeGone ? { ...copy, universeId: null, references: [] } : copy)
     setAnnouncement(
-      universeGone
-        ? 'The recovered draft is in the form, unassigned: the universe it named no longer exists. It is not saved yet.'
-        : 'The recovered draft is in the form. It is not saved yet.',
+      universeGone ? t('ideas.editor.recoveredUnassigned') : t('ideas.editor.recovered'),
     )
     requestAnimationFrame(() => titleInput.current?.focus())
   }
 
   function discardDraft() {
     discard()
-    setAnnouncement(
-      isNew
-        ? 'The recovered draft was discarded.'
-        : 'The recovered draft was discarded. The saved idea is unchanged.',
-    )
+    setAnnouncement(isNew ? t('ideas.editor.discardedNew') : t('ideas.editor.discardedSaved'))
     requestAnimationFrame(() => titleInput.current?.focus())
   }
 
@@ -453,14 +441,16 @@ export function IdeaEditor({
     if (next === draft.universeId) return
     if (draft.references.length > 0) {
       const confirmed = await confirmAction({
-        title: "Change this idea's universe?",
-        message: `An idea's references stay inside its universe. Changing the universe takes this idea's ${referenceCountLabel(draft.references.length)} out of it. Nothing is saved until you save.`,
-        confirmLabel: 'Change universe',
+        title: t('ideas.editor.changeUniverse.title'),
+        message: tn('ideas.editor.changeUniverse.message', draft.references.length, {
+          n: draft.references.length,
+        }),
+        confirmLabel: t('ideas.editor.changeUniverse.confirm'),
         variant: 'warning',
       })
       if (!confirmed) return
       edit({ universeId: next, references: [] })
-      setAnnouncement('Universe changed. Its references were taken out of the unsaved idea.')
+      setAnnouncement(t('ideas.editor.universeChanged'))
       return
     }
     edit({ universeId: next })
@@ -471,7 +461,7 @@ export function IdeaEditor({
     if (!draft.references.some((current) => referenceKey(current) === referenceKey(reference))) {
       edit({ references: [...draft.references, reference] })
     }
-    setAnnouncement(`Added a reference to “${reference.name}”. It is not saved yet.`)
+    setAnnouncement(t('ideas.editor.referenceAdded', { name: reference.name }))
     requestAnimationFrame(() => addButton.current?.focus())
   }
 
@@ -481,7 +471,7 @@ export function IdeaEditor({
         (current) => referenceKey(current) !== referenceKey(reference),
       ),
     })
-    setAnnouncement(`Removed the reference to “${reference.name}”. It is not saved yet.`)
+    setAnnouncement(t('ideas.editor.referenceRemoved', { name: reference.name }))
     requestAnimationFrame(() => addButton.current?.focus())
   }
 
@@ -490,21 +480,15 @@ export function IdeaEditor({
     const title = stored.title
     setFailure(null)
     const deleted = await confirmAction({
-      title: (
-        <>
-          Delete “<bdi>{title}</bdi>”?
-        </>
-      ),
-      message: isDirty
-        ? 'Your unsaved changes will be lost. The idea as last saved goes to Recently deleted, where you can restore it.'
-        : 'It goes to Recently deleted, where you can restore it.',
-      confirmLabel: 'Delete idea',
-      busyLabel: 'Deleting…',
+      title: tx('ideas.editor.delete.title', { title: <bdi>{title}</bdi> }),
+      message: isDirty ? t('ideas.editor.delete.messageDirty') : t('ideas.editor.delete.message'),
+      confirmLabel: t('ideas.editor.delete.confirm'),
+      busyLabel: t('ideas.editor.delete.busy'),
       variant: isDirty ? 'destructive' : 'warning',
       failure: (error) =>
         error instanceof ApiError && error.status === 404
-          ? 'This idea is no longer here. It may already have been deleted in another window.'
-          : 'The idea could not be deleted. Try again.',
+          ? t('ideas.editor.delete.gone')
+          : t('ideas.editor.delete.failed'),
       action: () => deleteIdea(ideaId),
     })
     if (!deleted) return
@@ -515,7 +499,7 @@ export function IdeaEditor({
   if (load.kind === 'loading') {
     return (
       <p className="notice" role="status" data-testid="idea-loading">
-        Opening the idea…
+        {t('ideas.editor.loading')}
       </p>
     )
   }
@@ -524,13 +508,10 @@ export function IdeaEditor({
     return (
       <EmptyState
         testId="idea-missing"
-        title="This idea is not here."
-        hint={
-          <>
-            It may have been deleted, or it belongs to someone else. Deleted ideas wait in{' '}
-            <Link to={`${listPath}?view=deleted`}>Recently deleted</Link>.
-          </>
-        }
+        title={t('ideas.editor.missing.title')}
+        hint={tx('ideas.editor.missing.hint', {
+          link: <Link to={`${listPath}?view=deleted`}>{t('ideas.editor.missing.link')}</Link>,
+        })}
       />
     )
   }
@@ -539,18 +520,13 @@ export function IdeaEditor({
     return (
       <EmptyState
         testId="idea-not-in-universe"
-        title={
-          <>
-            This idea is not in <Quoted text={contextUniverse?.name ?? ''} />.
-          </>
-        }
-        hint={
-          <>
-            It belongs to another universe, or to none, so it does not open here.{' '}
-            <Link to={`/app/ideas/${ideaId}`}>Open it in all ideas</Link>, or go back to{' '}
-            <Link to={listPath}>{listLabel}</Link>.
-          </>
-        }
+        title={tx('ideas.editor.elsewhere.title', {
+          universe: <Quoted text={contextUniverse?.name ?? ''} />,
+        })}
+        hint={tx('ideas.editor.elsewhere.hint', {
+          open: <Link to={`/app/ideas/${ideaId}`}>{t('ideas.editor.openInAll')}</Link>,
+          back: <Link to={listPath}>{listLabel}</Link>,
+        })}
       />
     )
   }
@@ -560,7 +536,7 @@ export function IdeaEditor({
       <div className="notice notice--error" role="alert" data-testid="idea-load-error">
         <p>{load.message}</p>
         <button className="button button--secondary" type="button" onClick={reread}>
-          Try again
+          {t('ideas.editor.retry')}
         </button>
       </div>
     )
@@ -582,10 +558,13 @@ export function IdeaEditor({
         </Link>
         <div className="doc__titlerow">
           <h1 className="idea__heading" id={headingId} data-testid="idea-heading">
-            {isNew ? 'New idea' : <bdi>{stored.title}</bdi>}
+            {isNew ? t('ideas.editor.newIdea') : <bdi>{stored.title}</bdi>}
           </h1>
           {!isNew ? (
-            <ActionMenu label={`More actions for ${stored.title}`} triggerTestId="idea-actions">
+            <ActionMenu
+              label={t('ideas.editor.moreActions', { title: stored.title })}
+              triggerTestId="idea-actions"
+            >
               <button
                 className="actionmenu__item actionmenu__item--danger"
                 type="button"
@@ -594,32 +573,31 @@ export function IdeaEditor({
                 data-testid="idea-delete"
               >
                 <ActionIcon icon={Trash2} />
-                Delete idea
+                {t('ideas.editor.deleteIdea')}
               </button>
             </ActionMenu>
           ) : null}
         </div>
         <p className="idea__lede">
-          A possibility, not lore. Nothing saved here changes your world.
+          {t('ideas.editor.lede')}
           {!isNew && stored.updatedAt ? (
             <>
               {' '}
-              Last saved <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>
-              .
+              {tx('ideas.editor.lastSaved', {
+                time: <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>,
+              })}
             </>
           ) : null}
         </p>
         {belongsElsewhere ? (
           <p className="idea__elsewhere" data-testid="idea-elsewhere">
-            {stored.universe ? (
-              <>
-                This idea belongs to <Quoted text={stored.universe.name} />, not to{' '}
-                <Quoted text={contextUniverse.name} />.
-              </>
-            ) : (
-              'This idea belongs to no universe.'
-            )}{' '}
-            <Link to={`/app/ideas/${ideaId}`}>Open it in all ideas</Link>
+            {stored.universe
+              ? tx('ideas.editor.belongsTo', {
+                  universe: <Quoted text={stored.universe.name} />,
+                  context: <Quoted text={contextUniverse.name} />,
+                })
+              : t('ideas.editor.belongsToNone')}{' '}
+            <Link to={`/app/ideas/${ideaId}`}>{t('ideas.editor.openInAll')}</Link>
           </p>
         ) : null}
       </header>
@@ -627,19 +605,19 @@ export function IdeaEditor({
       {offer && copy ? (
         <div id={recoveryId}>
           <RecoveredDraft
-            what={isNew ? 'a new idea' : 'this idea'}
+            what={isNew ? t('ideas.editor.recoveryNew') : t('ideas.editor.recoveryThis')}
             draft={offer}
             savedUpdatedAt={stored.updatedAt}
             preview={
               <div
                 className="recovery__prose idea__preview prose"
                 role="region"
-                aria-label="The recovered draft"
+                aria-label={t('ideas.editor.recoveredDraft')}
                 tabIndex={0}
               >
-                <p className="idea__previewtitle">{copy.title || 'Untitled'}</p>
+                <p className="idea__previewtitle">{copy.title || t('ideas.editor.untitled')}</p>
                 {copy.body === '' ? (
-                  <p className="entry__blank">No body in this draft.</p>
+                  <p className="entry__blank">{t('ideas.editor.noBody')}</p>
                 ) : (
                   copy.body
                 )}
@@ -654,10 +632,7 @@ export function IdeaEditor({
 
       {conflict ? (
         <div className="manuscript__conflict" role="alert" data-testid="idea-conflict">
-          <p className="manuscript__conflicttext">
-            This idea was saved in another tab or on another device after you opened it here.
-            Nothing was overwritten, and your version below is not saved.
-          </p>
+          <p className="manuscript__conflicttext">{t('ideas.editor.conflict.text')}</p>
           <div className="manuscript__conflictactions">
             <button
               className="button button--secondary"
@@ -666,7 +641,7 @@ export function IdeaEditor({
               onClick={() => void save(conflict.updatedAt)}
               data-testid="idea-keep-mine"
             >
-              Save mine over it
+              {t('ideas.editor.conflict.keepMine')}
             </button>
             <button
               className="button button--secondary"
@@ -675,7 +650,7 @@ export function IdeaEditor({
               onClick={loadSavedVersion}
               data-testid="idea-load-saved"
             >
-              Load the saved version
+              {t('ideas.editor.conflict.loadSaved')}
             </button>
           </div>
         </div>
@@ -697,7 +672,7 @@ export function IdeaEditor({
       >
         <div className="field">
           <label className="field__label" htmlFor={titleId}>
-            Title
+            {t('ideas.editor.fields.title')}
           </label>
           <input
             id={titleId}
@@ -707,7 +682,7 @@ export function IdeaEditor({
             dir="auto"
             value={draft.title}
             maxLength={IDEA_TITLE_MAX_LENGTH}
-            placeholder="Insert a title"
+            placeholder={t('ideas.editor.fields.titlePlaceholder')}
             readOnly={isHeld}
             onChange={(event) => edit({ title: event.target.value })}
             aria-invalid={fieldErrors.title ? true : undefined}
@@ -724,17 +699,17 @@ export function IdeaEditor({
 
         <div className="field">
           <label className="field__label" htmlFor={bodyId}>
-            Body
+            {t('ideas.editor.fields.body')}
           </label>
           <p className="field__hint" id={`${bodyId}-hint`}>
-            Optional. Plain text, kept exactly as you write it.
+            {t('ideas.editor.fields.bodyHint')}
           </p>
           <textarea
             id={bodyId}
             className="field__input field__input--area idea__body"
             rows={10}
             value={draft.body}
-            placeholder="Insert the idea"
+            placeholder={t('ideas.editor.fields.bodyPlaceholder')}
             readOnly={isHeld}
             spellCheck
             onChange={(event) => edit({ body: event.target.value })}
@@ -750,8 +725,10 @@ export function IdeaEditor({
               id={bodyCountId}
               data-testid="idea-body-count"
             >
-              {isTooLong ? 'Too long to save: ' : null}
-              {count(draft.body.length)} of {count(IDEA_BODY_MAX_LENGTH)} characters.
+              {t(isTooLong ? 'ideas.editor.fields.bodyTooLong' : 'ideas.editor.fields.bodyCount', {
+                used: count(draft.body.length),
+                max: count(IDEA_BODY_MAX_LENGTH),
+              })}
             </p>
           ) : null}
           {fieldErrors.body ? <p className="field__error">{fieldErrors.body}</p> : null}
@@ -759,10 +736,10 @@ export function IdeaEditor({
 
         <div className="field">
           <label className="field__label" htmlFor={universeFieldId}>
-            Universe
+            {t('ideas.editor.fields.universe')}
           </label>
           <p className="field__hint" id={`${universeFieldId}-hint`}>
-            Optional. An idea can belong to one of your universes, or to none.
+            {t('ideas.editor.fields.universeHint')}
           </p>
           <select
             id={universeFieldId}
@@ -776,13 +753,15 @@ export function IdeaEditor({
             aria-describedby={`${universeFieldId}-hint`}
             data-testid="idea-universe"
           >
-            <option value="">No universe</option>
+            <option value="">{t('ideas.editor.fields.noUniverse')}</option>
             {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
               <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
             ) : null}
             {(universes ?? []).map((universe) => (
               <option key={universe.id} value={universe.id}>
-                {universe.isArchived ? `${universe.name} (archived)` : universe.name}
+                {universe.isArchived
+                  ? t('ideas.editor.fields.archivedUniverse', { name: universe.name })
+                  : universe.name}
               </option>
             ))}
           </select>
@@ -795,30 +774,28 @@ export function IdeaEditor({
           data-testid="idea-references"
         >
           <h2 className="idea__subheading" id={referencesId}>
-            References
+            {t('ideas.editor.references.heading')}
           </h2>
-          <p className="field__hint">
-            Optional. Point at lore or story content this idea is about. A reference changes nothing
-            in what it points at.
-          </p>
+          <p className="field__hint">{t('ideas.editor.references.hint')}</p>
 
           {draft.universeId === null ? (
             <p className="idea__noreferences" data-testid="idea-references-need-universe">
-              Choose a universe to reference its lore and stories.
+              {t('ideas.editor.references.needUniverse')}
             </p>
           ) : draft.references.length === 0 ? (
-            <p className="idea__noreferences">No references.</p>
+            <p className="idea__noreferences">{t('ideas.editor.references.none')}</p>
           ) : (
             <ul className="idearefs" data-testid="idea-reference-list">
               {draft.references.map((reference) => {
                 const kind = IDEA_REFERENCE_KIND_LABELS[reference.kind]
+                const kindKey = IDEA_REFERENCE_KIND_KEYS[reference.kind]
                 const context = referenceContext(reference)
                 return (
                   <li
                     className="idearef"
                     key={referenceKey(reference)}
                     data-testid="idea-reference"
-                    data-kind={kind}
+                    data-kind={kindKey.charAt(0).toUpperCase() + kindKey.slice(1)}
                     data-name={reference.name}
                     data-trashed={reference.isInTrash ? 'true' : 'false'}
                   >
@@ -840,7 +817,7 @@ export function IdeaEditor({
                       {context ? <span className="idearef__context">{context}</span> : null}
                       {reference.isInTrash ? (
                         <span className="idearef__trashed" data-testid="idea-reference-trashed">
-                          In the Trash: restore it to open it
+                          {t('ideas.editor.references.trashed')}
                         </span>
                       ) : null}
                     </span>
@@ -849,11 +826,16 @@ export function IdeaEditor({
                       type="button"
                       disabled={isHeld}
                       onClick={() => removeReference(reference)}
-                      aria-label={`Remove the reference to ${kind.toLowerCase()} “${reference.name}”`}
+                      aria-label={t('ideas.editor.references.removeAria', {
+                        kind: kind.toLowerCase(),
+                        name: reference.name,
+                      })}
                       data-testid="idea-reference-remove"
                     >
                       <ActionIcon icon={X} />
-                      <span className="idearef__removelabel">Remove</span>
+                      <span className="idearef__removelabel">
+                        {t('ideas.editor.references.remove')}
+                      </span>
                     </button>
                   </li>
                 )
@@ -870,7 +852,7 @@ export function IdeaEditor({
             data-testid="idea-add-reference"
           >
             <ActionIcon icon={Plus} />
-            Add reference
+            {t('ideas.editor.references.add')}
           </button>
           {fieldErrors.references ? (
             <p className="field__error" data-testid="idea-references-error">
@@ -882,17 +864,19 @@ export function IdeaEditor({
         <div className="manuscript__bar idea__bar">
           {failed && isDirty ? (
             <p className="recovery__warning" role="status" data-testid="idea-recovery-warning">
-              This device could not keep a recovery copy of these changes. Save to keep them.
+              {t('ideas.editor.recoveryWarning')}
             </p>
           ) : null}
           <div className="idea__actions">
             <SaveAction
-              label={isNew ? 'Create idea' : 'Save changes'}
+              label={isNew ? t('ideas.editor.create') : t('ideas.editor.save')}
               isDirty={isDirty}
               isSaving={isSaving}
               isBlocked={isTooLong || isHeld}
               saves={saves}
-              restingStatus={stored.updatedAt === null ? 'Not saved yet' : 'Saved'}
+              restingStatus={
+                stored.updatedAt === null ? t('ideas.editor.notSavedYet') : t('ideas.editor.saved')
+              }
               statusId={statusId}
               statusTestId="idea-status"
               testId="idea-save"

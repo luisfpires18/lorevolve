@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { WorldRuleEditor } from '../components/WorldRuleEditor'
+import { t, useI18n } from '../i18n'
 import { formatDate } from '../lib/dates'
 import { useUniverseAccess } from '../universes/access'
 import { getWorldRule } from '../worldRules/api'
@@ -18,6 +19,7 @@ interface WorldRuleOpenNotice {
  * the same rule, which is where a search result for it lands.
  */
 export default function WorldRulePage({ isNew = false }: { isNew?: boolean }) {
+  useI18n() // re-renders when the language changes
   const { ruleId } = useParams<{ ruleId: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -46,7 +48,7 @@ export default function WorldRulePage({ isNew = false }: { isNew?: boolean }) {
       ruleId={isNew ? null : (ruleId ?? null)}
       listPath={listPath}
       trashPath={`/app/universes/${universe.id}/trash`}
-      announceOnOpen={justCreated ? 'Rule created.' : null}
+      announceOnOpen={justCreated ? t('canon.rule.created') : null}
       onCreated={(rule) =>
         void navigate(`${listPath}/${rule.id}`, {
           replace: true,
@@ -75,6 +77,7 @@ function WorldRuleReading({
   ruleId: string
   listPath: string
 }) {
+  useI18n() // re-renders when the language changes
   const [state, setState] = useState<Reading>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
 
@@ -90,7 +93,7 @@ function WorldRuleReading({
             ? { kind: 'missing' }
             : {
                 kind: 'error',
-                message: problem instanceof Error ? problem.message : 'The rule could not be read.',
+                message: problem instanceof Error ? problem.message : t('canon.rule.readFailed'),
               },
         )
       })
@@ -103,20 +106,20 @@ function WorldRuleReading({
     <article className="rule" data-testid="world-rule-reading">
       <header className="rule__head">
         <Link className="rule__back" to={listPath} data-testid="world-rule-back">
-          World Rules
+          {t('canon.rule.back')}
         </Link>
         <h1 className="rule__heading" data-testid="world-rule-heading">
-          {state.kind === 'ready' ? <bdi>{state.rule.title}</bdi> : 'World rule'}
+          {state.kind === 'ready' ? <bdi>{state.rule.title}</bdi> : t('canon.rule.heading')}
         </h1>
       </header>
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Opening the rule…
+          {t('canon.rule.opening')}
         </p>
       ) : null}
       {state.kind === 'missing' ? (
         <p className="notice" data-testid="world-rule-missing">
-          This rule is not here. It may have been moved to the Trash.
+          {t('canon.rule.missing')}
         </p>
       ) : null}
       {state.kind === 'error' ? (
@@ -130,7 +133,7 @@ function WorldRuleReading({
               setReads((count) => count + 1)
             }}
           >
-            Try again
+            {t('canon.rule.retry')}
           </button>
         </div>
       ) : null}
@@ -141,9 +144,11 @@ function WorldRuleReading({
               {state.rule.description}
             </p>
           ) : (
-            <p className="notice">No description.</p>
+            <p className="notice">{t('canon.rule.noDescription')}</p>
           )}
-          <p className="rule__meta">Last changed {formatDate(state.rule.updatedAt)}</p>
+          <p className="rule__meta">
+            {t('canon.rule.lastChanged', { date: formatDate(state.rule.updatedAt) })}
+          </p>
         </>
       ) : null}
     </article>

@@ -10,12 +10,13 @@ import {
   describeConnectionRequest,
   getConsentToken,
   PROPOSE_FIELD,
-  READABLE,
+  readable,
   type ConnectionRequestDetails,
   type ConsentToken,
 } from '../mcp/api'
 import { ROLE_LABELS } from '../universes/access'
 import { UniverseRole, type UniverseRoleValue } from '../universes/types'
+import { useI18n } from '../i18n'
 
 type Load =
   | { kind: 'loading' }
@@ -36,6 +37,8 @@ const DECISION_FIELD = 'lorevolve_decision'
  * approved without one of them being pressed.
  */
 export default function ConnectAuthorizePage() {
+  // Its own text moves in #105; the list of what an app may read is already read from the dictionary.
+  useI18n()
   const { search } = useLocation()
   const { user } = useAuth()
   const params = useMemo(() => new URLSearchParams(search), [search])
@@ -276,7 +279,7 @@ function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id
       <section className="consent__part" aria-label="What it can do">
         <p className="consent__label">Read-only access to</p>
         <ul className="consent__list" data-testid="consent-scope">
-          {READABLE.map((item) => (
+          {readable().map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>

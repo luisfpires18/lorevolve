@@ -26,6 +26,7 @@ import {
 } from '../ideas/types'
 import { ApiError } from '../lib/api'
 import { formatDate, formatDateTime } from '../lib/dates'
+import { tn, useI18n } from '../i18n'
 import type { UniverseSummary } from '../universes/types'
 
 type LoadState =
@@ -62,7 +63,7 @@ function captureInput(scope: IdeasScope, title: string): IdeaInput {
 }
 
 function referenceCountLabel(total: number) {
-  return total === 1 ? '1 reference' : `${total} references`
+  return tn('ideas.browser.references', total, { n: total })
 }
 
 /**
@@ -77,6 +78,7 @@ function referenceCountLabel(total: number) {
  * at its universe's address or the account's.
  */
 export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
+  const { t, tx } = useI18n()
   const [params, setParams] = useSearchParams()
   const location = useLocation()
   const headingId = useId()
@@ -177,13 +179,13 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       .then((result) => setState({ kind: 'ready', page: result }))
       .catch(() => {
         if (controller.signal.aborted) return
-        setState({ kind: 'error', message: 'The ideas could not be read.' })
+        setState({ kind: 'error', message: t('ideas.browser.loadFailed') })
       })
 
     return () => {
       controller.abort()
     }
-  }, [show, storyId, view, search, page, reads])
+  }, [show, storyId, view, search, page, reads, t])
 
   useEffect(() => {
     if (outcome) outcomeRef.current?.focus()
@@ -195,32 +197,20 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
     try {
       const restored = await restoreIdea(idea.id)
       setOutcome({
-        text: restored.universe ? (
-          <>
-            <Quoted text={restored.title} /> is back in your ideas, in{' '}
-            <Quoted text={restored.universe.name} />.
-          </>
-        ) : (
-          <>
-            <Quoted text={restored.title} /> is back in your ideas.
-          </>
-        ),
+        text: restored.universe
+          ? tx('ideas.browser.restoredIn', {
+              title: <Quoted text={restored.title} />,
+              universe: <Quoted text={restored.universe.name} />,
+            })
+          : tx('ideas.browser.restored', { title: <Quoted text={restored.title} /> }),
         link: {
           to: `${basePath}/${restored.id}`,
-          label: (
-            <>
-              Open <Quoted text={restored.title} />
-            </>
-          ),
+          label: tx('ideas.browser.open', { title: <Quoted text={restored.title} /> }),
         },
       })
     } catch {
       setOutcome({
-        text: (
-          <>
-            <Quoted text={idea.title} /> could not be restored. Try again.
-          </>
-        ),
+        text: tx('ideas.browser.restoreFailed', { title: <Quoted text={idea.title} /> }),
         link: null,
       })
     } finally {
@@ -243,7 +233,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
   const allLink = universe ? (
     <p className="ideas__all">
       <Link to="/app/ideas" data-testid="ideas-all">
-        All your ideas
+        {t('ideas.browser.allYours')}
       </Link>
     </p>
   ) : null
@@ -258,28 +248,21 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
         // Inside a story the story's own header is the page's: this is one of its views, named for a screen reader.
         <div className="ideas__intro">
           <h2 className="visually-hidden" id={headingId}>
-            Ideas
+            {t('ideas.browser.heading')}
           </h2>
-          <p className="ideas__lede">
-            Ideas linked to this story or to one of its scenes or arcs. Only you can see them.
-          </p>
+          <p className="ideas__lede">{t('ideas.browser.ledeStory')}</p>
           {allLink}
         </div>
       ) : (
         <PageHeader
-          title="Ideas"
+          title={t('ideas.browser.heading')}
           titleId={headingId}
           lede={
             <>
               <p className="ideas__lede">
-                {universe ? (
-                  <>
-                    Your ideas for <Quoted text={universe.name} />. Only you can see them, and
-                    nothing here changes the world.
-                  </>
-                ) : (
-                  'Every idea you have, in a universe or not. Only you can see them, and they stay out of your lore.'
-                )}
+                {universe
+                  ? tx('ideas.browser.ledeUniverse', { universe: <Quoted text={universe.name} /> })
+                  : t('ideas.browser.ledeAll')}
               </p>
               {allLink}
             </>
@@ -287,7 +270,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
           actions={
             <Link className="button" to={`${basePath}/new`} data-testid="new-idea">
               <ActionIcon icon={Plus} />
-              New idea
+              {t('ideas.browser.newIdea')}
             </Link>
           }
         />
@@ -300,7 +283,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       {created && !deleted ? (
         <div className="notice ideas__notice" data-testid="ideas-created-notice">
           <p role="status">
-            Created <Quoted text={created.title} />.
+            {tx('ideas.browser.created', { title: <Quoted text={created.title} /> })}
           </p>
         </div>
       ) : null}
@@ -308,8 +291,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       {notice && !deleted ? (
         <div className="notice ideas__notice" data-testid="ideas-deleted-notice">
           <p role="status">
-            <Quoted text={notice.title} /> was deleted. It is in Recently deleted, where you can
-            restore it.
+            {tx('ideas.browser.deletedNotice', { title: <Quoted text={notice.title} /> })}
           </p>
         </div>
       ) : null}
@@ -317,13 +299,13 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       <div className="controls ideas__controls">
         <div className="controls__search">
           <label className="field__label" htmlFor={searchId}>
-            Filter ideas
+            {t('ideas.browser.filter')}
           </label>
           <input
             id={searchId}
             className="field__input"
             type="search"
-            placeholder="Words in a title or body"
+            placeholder={t('ideas.browser.searchPlaceholder')}
             value={typed}
             onChange={(event) => setTyped(event.target.value)}
             data-testid="ideas-search"
@@ -333,7 +315,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
         {universe ? null : (
           <div className="ideas__show">
             <label className="field__label" htmlFor={showId}>
-              Show
+              {t('ideas.browser.show')}
             </label>
             <select
               id={showId}
@@ -342,21 +324,23 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
               onChange={(event) => update({ show: event.target.value })}
               data-testid="ideas-show"
             >
-              <option value="">All ideas</option>
-              <option value={UNASSIGNED}>No universe</option>
+              <option value="">{t('ideas.browser.allIdeas')}</option>
+              <option value={UNASSIGNED}>{t('ideas.browser.noUniverse')}</option>
               {show !== '' && show !== UNASSIGNED && !universes?.some((one) => one.id === show) ? (
-                <option value={show}>A universe</option>
+                <option value={show}>{t('ideas.browser.aUniverse')}</option>
               ) : null}
               {(universes ?? []).map((one) => (
                 <option key={one.id} value={one.id}>
-                  {one.isArchived ? `${one.name} (archived)` : one.name}
+                  {one.isArchived
+                    ? t('ideas.browser.archivedUniverse', { name: one.name })
+                    : one.name}
                 </option>
               ))}
             </select>
           </div>
         )}
 
-        <div className="segmented" role="group" aria-label="Which ideas">
+        <div className="segmented" role="group" aria-label={t('ideas.browser.which')}>
           <button
             type="button"
             className="segmented__option"
@@ -364,7 +348,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
             onClick={() => update({ view: null })}
             data-testid="ideas-view-live"
           >
-            Ideas
+            {t('ideas.browser.viewLive')}
           </button>
           <button
             type="button"
@@ -373,7 +357,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
             onClick={() => update({ view: 'deleted' })}
             data-testid="ideas-view-deleted"
           >
-            Recently deleted
+            {t('ideas.browser.viewDeleted')}
           </button>
         </div>
       </div>
@@ -393,7 +377,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Gathering ideas…
+          {t('ideas.browser.loading')}
         </p>
       ) : null}
 
@@ -408,7 +392,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
               setReads((current) => current + 1)
             }}
           >
-            Try again
+            {t('ideas.browser.retry')}
           </button>
         </div>
       ) : null}
@@ -462,17 +446,22 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
                       className="idearow__universe idearow__universe--none"
                       data-testid="idea-universe-label"
                     >
-                      No universe
+                      {t('ideas.browser.noUniverse')}
                     </span>
                   )}
                   {deleted && idea.deletedAt ? (
                     <span>
-                      Deleted{' '}
-                      <time dateTime={idea.deletedAt}>{formatDateTime(idea.deletedAt)}</time>
+                      {tx('ideas.browser.deletedAt', {
+                        time: (
+                          <time dateTime={idea.deletedAt}>{formatDateTime(idea.deletedAt)}</time>
+                        ),
+                      })}
                     </span>
                   ) : (
                     <span>
-                      Updated <time dateTime={idea.updatedAt}>{formatDate(idea.updatedAt)}</time>
+                      {tx('ideas.browser.updatedAt', {
+                        time: <time dateTime={idea.updatedAt}>{formatDate(idea.updatedAt)}</time>,
+                      })}
                     </span>
                   )}
                   {idea.referenceCount > 0 ? (
@@ -486,10 +475,12 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
                   type="button"
                   disabled={restoring !== null}
                   onClick={() => void restore(idea)}
-                  aria-label={`Restore idea “${idea.title}”`}
+                  aria-label={t('ideas.browser.restoreAria', { title: idea.title })}
                   data-testid="idea-restore"
                 >
-                  {restoring === idea.id ? 'Restoring…' : 'Restore'}
+                  {restoring === idea.id
+                    ? t('ideas.browser.restoring')
+                    : t('ideas.browser.restore')}
                 </button>
               ) : null}
             </li>
@@ -501,30 +492,30 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
         deleted ? (
           <EmptyState
             testId="ideas-empty"
-            title="Nothing recently deleted."
-            hint="A deleted idea waits here, whole, until you restore it."
+            title={t('ideas.browser.empty.deletedTitle')}
+            hint={t('ideas.browser.empty.deletedHint')}
           />
         ) : isFiltered ? (
           <EmptyState
             testId="ideas-empty"
-            title="No ideas match."
-            hint="Try other words, or show all ideas."
+            title={t('ideas.browser.empty.filteredTitle')}
+            hint={t('ideas.browser.empty.filteredHint')}
           />
         ) : scope.kind === 'story' ? (
           <EmptyState
             testId="ideas-empty"
-            title="No ideas for this story yet."
-            hint="Capture one above. Ideas linked to any scene or arc in it show up here too."
+            title={t('ideas.browser.empty.storyTitle')}
+            hint={t('ideas.browser.empty.storyHint')}
           />
         ) : (
           <EmptyState
             testId="ideas-empty"
-            title="No ideas yet."
-            hint="Keep possibilities here, apart from what is true in your world."
+            title={t('ideas.browser.empty.noneTitle')}
+            hint={t('ideas.browser.empty.noneHint')}
             action={
               <Link className="button" to={`${basePath}/new`} data-testid="empty-new-idea">
                 <ActionIcon icon={Plus} />
-                New idea
+                {t('ideas.browser.newIdea')}
               </Link>
             }
           />
@@ -532,17 +523,17 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       ) : null}
 
       {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label="Pagination">
+        <nav className="pager" aria-label={t('ideas.browser.pagination')}>
           <button
             className="button button--secondary"
             type="button"
             disabled={result.page <= 1}
             onClick={() => update({ page: String(result.page - 1) })}
           >
-            Previous
+            {t('ideas.browser.previous')}
           </button>
           <span className="pager__position">
-            Page {result.page} of {result.totalPages}
+            {t('ideas.browser.position', { page: result.page, total: result.totalPages })}
           </span>
           <button
             className="button button--secondary"
@@ -550,7 +541,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
             disabled={result.page >= result.totalPages}
             onClick={() => update({ page: String(result.page + 1) })}
           >
-            Next
+            {t('ideas.browser.next')}
           </button>
         </nav>
       ) : null}
@@ -564,6 +555,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
  * and said so; refused ones stay in the box with the reason beside it. The full editor is one click away on the new row.
  */
 function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptured: () => void }) {
+  const { t } = useI18n()
   const inputId = useId()
   const errorId = useId()
   const [text, setText] = useState('')
@@ -582,7 +574,7 @@ function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptured: ()
     setSaid('')
     const title = text.trim()
     if (title === '') {
-      setError('Write a few words first.')
+      setError(t('ideas.capture.empty'))
       return
     }
 
@@ -594,13 +586,13 @@ function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptured: ()
       setText('')
       // Ready for the next thought, even when the button was what kept this one.
       inputRef.current?.focus()
-      setSaid(`Captured “${idea.title}”.`)
+      setSaid(t('ideas.capture.captured', { title: idea.title }))
       onCaptured()
     } catch (caught) {
       setError(
         caught instanceof ApiError && caught.status === 400
           ? caught.message
-          : 'The idea could not be saved. Your words are still here. Try again.',
+          : t('ideas.capture.failed'),
       )
     } finally {
       inFlight.current = false
@@ -623,7 +615,7 @@ function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptured: ()
       data-testid="idea-capture"
     >
       <label className="field__label" htmlFor={inputId}>
-        Capture an idea
+        {t('ideas.capture.label')}
       </label>
       <div className="ideacapture__row">
         <input
@@ -635,7 +627,7 @@ function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptured: ()
           autoComplete="off"
           enterKeyHint="done"
           maxLength={IDEA_TITLE_MAX_LENGTH}
-          placeholder="One line is enough…"
+          placeholder={t('ideas.capture.placeholder')}
           value={text}
           readOnly={saving}
           aria-invalid={error ? true : undefined}
@@ -654,7 +646,7 @@ function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptured: ()
           data-testid="idea-capture-submit"
         >
           <ActionIcon icon={Plus} />
-          {saving ? 'Capturing…' : 'Capture'}
+          {saving ? t('ideas.capture.capturing') : t('ideas.capture.submit')}
         </button>
       </div>
       {error ? (

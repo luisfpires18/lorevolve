@@ -1,6 +1,10 @@
 import type { Shape } from './core'
 import account from './en/account'
 import auth from './en/auth'
+import ideas from './en/ideas'
+import review from './en/review'
+import canon from './en/canon'
+import assistant from './en/assistant'
 import entity from './en/entity'
 import entityTypes from './en/entityTypes'
 import lore from './en/lore'
@@ -28,6 +32,10 @@ import stories from './en/stories'
 const en = {
   account,
   auth,
+  ideas,
+  review,
+  canon,
+  assistant,
   entity,
   entityTypes,
   lore,

@@ -32,6 +32,7 @@ import {
 } from '../worldRules/types'
 import { EmptyState } from './EmptyState'
 import { confirmAction } from '../lib/confirm'
+import { t, useI18n } from '../i18n'
 import { numberFormat } from '../i18n/format'
 
 type LoadState =
@@ -122,6 +123,7 @@ export function WorldRuleEditor({
   onCreated,
   onDeleted,
 }: WorldRuleEditorProps) {
+  const { tx } = useI18n()
   const headingId = useId()
   const titleId = useId()
   const descriptionId = useId()
@@ -160,7 +162,7 @@ export function WorldRuleEditor({
         setLoad(
           error instanceof ApiError && error.status === 404
             ? { kind: 'missing' }
-            : { kind: 'error', message: 'This rule could not be opened.' },
+            : { kind: 'error', message: t('canon.editor.openFailed') },
         )
       })
 
@@ -184,8 +186,8 @@ export function WorldRuleEditor({
       : !sameFields(draft, stored))
   const isTooLong = draft.description.length > WORLD_RULE_DESCRIPTION_MAX_LENGTH
 
-  const name = draft.title.trim() || stored.title || 'This rule'
-  useLeaveGuard(isDirty ? `“${name}” has unsaved changes. Leave without saving them?` : null)
+  const name = draft.title.trim() || stored.title || t('canon.editor.thisRule')
+  useLeaveGuard(isDirty ? t('canon.editor.unsaved', { name }) : null)
 
   function edit(change: Partial<Omit<Fields, 'check'>>) {
     setDraft((current) => ({ ...current, ...change }))
@@ -215,7 +217,7 @@ export function WorldRuleEditor({
 
     if (draft.title.trim() === '') {
       setFailure(null)
-      setFieldErrors({ title: 'Give the rule a title, so you can find it again.' })
+      setFieldErrors({ title: t('canon.editor.titleRequired') })
       titleInput.current?.focus()
       return
     }
@@ -251,18 +253,16 @@ export function WorldRuleEditor({
       if (error instanceof ApiError && error.status === 409 && error.code === WORLD_RULE_CHANGED) {
         setConflict({ updatedAt: storedMomentOf(error.problem) })
       } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(
-          'This rule is no longer here, so it could not be saved. It may have been moved to the Trash in another window. Your writing is still here: copy it before you leave.',
-        )
+        setFailure(t('canon.editor.saveGone'))
       } else if (error instanceof ApiError && error.status === 400) {
         setFieldErrors(error.fieldErrors)
         setFailure(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Something needs a change before this rule can be saved.',
+            : t('canon.editor.saveInvalid'),
         )
       } else {
-        setFailure('The rule could not be saved. Your writing is still here. Try again.')
+        setFailure(t('canon.editor.saveFailed'))
       }
     } finally {
       inFlight.current = false
@@ -299,17 +299,17 @@ export function WorldRuleEditor({
   async function loadSavedVersion() {
     if (
       !(await confirmAction({
-        title: 'Replace this rule with the version saved elsewhere?',
-        message: 'What you changed here since your last save will be lost.',
-        confirmLabel: 'Use the saved version',
-        cancelLabel: 'Keep my changes',
+        title: t('canon.editor.replace.title'),
+        message: t('canon.editor.replace.message'),
+        confirmLabel: t('canon.editor.replace.confirm'),
+        cancelLabel: t('canon.editor.replace.cancel'),
         variant: 'destructive',
       }))
     ) {
       return
     }
     reread()
-    setAnnouncement('The saved version of the rule is loaded.')
+    setAnnouncement(t('canon.editor.savedLoaded'))
   }
 
   async function remove() {
@@ -317,21 +317,15 @@ export function WorldRuleEditor({
     const title = stored.title
     setFailure(null)
     const trashed = await confirmAction({
-      title: (
-        <>
-          Move “<bdi>{title}</bdi>” to the Trash?
-        </>
-      ),
-      message: isDirty
-        ? 'Your unsaved changes will be lost. The rule as last saved goes to the Trash, where you can restore it.'
-        : 'You can restore it from the Trash.',
-      confirmLabel: 'Move to Trash',
-      busyLabel: 'Moving…',
+      title: tx('canon.editor.trash.title', { title: <bdi>{title}</bdi> }),
+      message: isDirty ? t('canon.editor.trash.messageDirty') : t('canon.editor.trash.message'),
+      confirmLabel: t('canon.editor.trash.confirm'),
+      busyLabel: t('canon.editor.trash.busy'),
       variant: isDirty ? 'destructive' : 'warning',
       failure: (error) =>
         error instanceof ApiError && error.status === 404
-          ? 'This rule is no longer here. It may already be in the Trash.'
-          : 'The rule could not be moved to the Trash. Try again.',
+          ? t('canon.editor.trash.gone')
+          : t('canon.editor.trash.failed'),
       action: () => deleteWorldRule(universeId, ruleId),
     })
     if (trashed) onDeleted({ id: ruleId, title })
@@ -340,7 +334,7 @@ export function WorldRuleEditor({
   if (load.kind === 'loading') {
     return (
       <p className="notice" role="status" data-testid="world-rule-loading">
-        Opening the rule…
+        {t('canon.editor.opening')}
       </p>
     )
   }
@@ -349,14 +343,11 @@ export function WorldRuleEditor({
     return (
       <EmptyState
         testId="world-rule-missing"
-        title="This rule is not here."
-        hint={
-          <>
-            It may be in the Trash, or it is not a rule of this universe.{' '}
-            <Link to={trashPath}>Open the Trash</Link>, or go back to{' '}
-            <Link to={listPath}>World Rules</Link>.
-          </>
-        }
+        title={t('canon.editor.missing.title')}
+        hint={tx('canon.editor.missing.hint', {
+          trash: <Link to={trashPath}>{t('canon.editor.missing.openTrash')}</Link>,
+          rules: <Link to={listPath}>{t('canon.editor.missing.rules')}</Link>,
+        })}
       />
     )
   }
@@ -366,7 +357,7 @@ export function WorldRuleEditor({
       <div className="notice notice--error" role="alert" data-testid="world-rule-load-error">
         <p>{load.message}</p>
         <button className="button button--secondary" type="button" onClick={reread}>
-          Try again
+          {t('canon.editor.retry')}
         </button>
       </div>
     )
@@ -381,15 +372,15 @@ export function WorldRuleEditor({
     <article className="rule" aria-labelledby={headingId} data-testid="world-rule-editor">
       <header className="rule__head">
         <Link className="rule__back" to={listPath} data-testid="world-rule-back">
-          World Rules
+          {t('canon.editor.back')}
         </Link>
         <div className="doc__titlerow">
           <h1 className="rule__heading" id={headingId} data-testid="world-rule-heading">
-            {isNew ? 'New rule' : <bdi>{stored.title}</bdi>}
+            {isNew ? t('canon.editor.newRule') : <bdi>{stored.title}</bdi>}
           </h1>
           {!isNew ? (
             <ActionMenu
-              label={`More actions for ${stored.title}`}
+              label={t('canon.editor.actions', { title: stored.title })}
               triggerTestId="world-rule-actions"
             >
               <button
@@ -400,19 +391,19 @@ export function WorldRuleEditor({
                 data-testid="world-rule-delete"
               >
                 <ActionIcon icon={Trash2} />
-                Delete rule
+                {t('canon.editor.delete')}
               </button>
             </ActionMenu>
           ) : null}
         </div>
         <p className="rule__lede">
-          A rule of how this world works, in your own words. LorEvolve never reads them, and saving
-          changes nothing else in the universe; only a timeline check you set below is ever counted.
+          {t('canon.editor.lede')}
           {!isNew && stored.updatedAt ? (
             <>
               {' '}
-              Last saved <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>
-              .
+              {tx('canon.editor.lastSaved', {
+                time: <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>,
+              })}
             </>
           ) : null}
         </p>
@@ -420,10 +411,7 @@ export function WorldRuleEditor({
 
       {conflict ? (
         <div className="manuscript__conflict" role="alert" data-testid="world-rule-conflict">
-          <p className="manuscript__conflicttext">
-            This rule was saved in another tab or on another device after you opened it here.
-            Nothing was overwritten, and your version below is not saved.
-          </p>
+          <p className="manuscript__conflicttext">{t('canon.editor.conflict')}</p>
           <div className="manuscript__conflictactions">
             <button
               className="button button--secondary"
@@ -432,7 +420,7 @@ export function WorldRuleEditor({
               onClick={() => void save(conflict.updatedAt)}
               data-testid="world-rule-keep-mine"
             >
-              Save mine over it
+              {t('canon.editor.keepMine')}
             </button>
             <button
               className="button button--secondary"
@@ -441,7 +429,7 @@ export function WorldRuleEditor({
               onClick={loadSavedVersion}
               data-testid="world-rule-load-saved"
             >
-              Load the saved version
+              {t('canon.editor.loadSaved')}
             </button>
           </div>
         </div>
@@ -463,7 +451,7 @@ export function WorldRuleEditor({
       >
         <div className="field">
           <label className="field__label" htmlFor={titleId}>
-            Title
+            {t('canon.editor.title')}
           </label>
           <input
             id={titleId}
@@ -473,7 +461,7 @@ export function WorldRuleEditor({
             dir="auto"
             value={draft.title}
             maxLength={WORLD_RULE_TITLE_MAX_LENGTH}
-            placeholder="Insert a title"
+            placeholder={t('canon.editor.titlePlaceholder')}
             onChange={(event) => edit({ title: event.target.value })}
             aria-invalid={fieldErrors.title ? true : undefined}
             aria-describedby={fieldErrors.title ? titleErrorId : undefined}
@@ -489,10 +477,10 @@ export function WorldRuleEditor({
 
         <div className="field">
           <label className="field__label" htmlFor={descriptionId}>
-            Description
+            {t('canon.editor.description')}
           </label>
           <p className="field__hint" id={descriptionHintId}>
-            Optional. Plain text, kept exactly as you write it.
+            {t('canon.editor.descriptionHint')}
           </p>
           <textarea
             id={descriptionId}
@@ -500,7 +488,7 @@ export function WorldRuleEditor({
             rows={8}
             dir="auto"
             value={draft.description}
-            placeholder="What the rule says, where it holds, and what it does not cover."
+            placeholder={t('canon.editor.descriptionPlaceholder')}
             spellCheck
             onChange={(event) => edit({ description: event.target.value })}
             aria-invalid={isTooLong || fieldErrors.description ? true : undefined}
@@ -519,9 +507,10 @@ export function WorldRuleEditor({
               id={countId}
               data-testid="world-rule-description-count"
             >
-              {isTooLong ? 'Too long to save: ' : null}
-              {count(draft.description.length)} of {count(WORLD_RULE_DESCRIPTION_MAX_LENGTH)}{' '}
-              characters.
+              {t(isTooLong ? 'canon.editor.countTooLong' : 'canon.editor.count', {
+                used: count(draft.description.length),
+                max: count(WORLD_RULE_DESCRIPTION_MAX_LENGTH),
+              })}
             </p>
           ) : null}
           {fieldErrors.description ? (
@@ -544,12 +533,14 @@ export function WorldRuleEditor({
         <div className="manuscript__bar rule__bar">
           <div className="rule__actions">
             <SaveAction
-              label={isNew ? 'Create rule' : 'Save changes'}
+              label={isNew ? t('canon.editor.create') : t('canon.editor.save')}
               isDirty={isDirty}
               isSaving={isSaving}
               isBlocked={isTooLong}
               saves={saves}
-              restingStatus={stored.updatedAt === null ? 'Not saved yet' : 'Saved'}
+              restingStatus={
+                stored.updatedAt === null ? t('canon.editor.notSaved') : t('canon.editor.saved')
+              }
               statusId={statusId}
               statusTestId="world-rule-status"
               testId="world-rule-save"

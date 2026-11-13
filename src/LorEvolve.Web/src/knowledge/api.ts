@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { apiFetch } from '../lib/api'
 
 /** The longest statement the API keeps, after trimming. */
@@ -99,9 +100,14 @@ export function deleteKnowledgeRecord(universeId: string, recordId: string) {
 
 /** Where a record was learnt, in a reader's words: "The Causeway · Chapter 2: Arrival, scene 1 of The Drowned Heir". */
 export function describeScene(scene: KnowledgeSceneRef) {
-  const container =
-    scene.chapterNumber === null
-      ? `scene ${scene.position}`
-      : `Chapter ${scene.chapterNumber}, scene ${scene.position}`
-  return `${container} of ${scene.storyTitle}`
+  return scene.chapterNumber === null
+    ? t('assistant.knowledge.sceneUnchaptered', {
+        position: scene.position,
+        story: scene.storyTitle,
+      })
+    : t('assistant.knowledge.sceneInChapter', {
+        chapter: scene.chapterNumber,
+        position: scene.position,
+        story: scene.storyTitle,
+      })
 }

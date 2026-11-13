@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+
 /**
  * World rule checks against the timeline (ADR 0034): a universe's event kinds and methods, a rule's one optional check, a
  * moment's optional details, and what counting a check found. Every part is an explicit id or number - nothing is read from a
@@ -19,18 +21,30 @@ export const TERM_KIND_ORDER: ValidationTermKindValue[] = [
 
 /** The kind as a label, and as a word inside a sentence. */
 export const TERM_KIND_LABELS: Record<ValidationTermKindValue, string> = {
-  [ValidationTermKind.EventKind]: 'Event kind',
-  [ValidationTermKind.Method]: 'Method',
+  get [ValidationTermKind.EventKind]() {
+    return t('canon.termKind.label.eventKind')
+  },
+  get [ValidationTermKind.Method]() {
+    return t('canon.termKind.label.method')
+  },
 }
 
 export const TERM_KIND_PLURALS: Record<ValidationTermKindValue, string> = {
-  [ValidationTermKind.EventKind]: 'Event kinds',
-  [ValidationTermKind.Method]: 'Methods',
+  get [ValidationTermKind.EventKind]() {
+    return t('canon.termKind.plural.eventKind')
+  },
+  get [ValidationTermKind.Method]() {
+    return t('canon.termKind.plural.method')
+  },
 }
 
 export const TERM_KIND_WORDS: Record<ValidationTermKindValue, string> = {
-  [ValidationTermKind.EventKind]: 'event kind',
-  [ValidationTermKind.Method]: 'method',
+  get [ValidationTermKind.EventKind]() {
+    return t('canon.termKind.word.eventKind')
+  },
+  get [ValidationTermKind.Method]() {
+    return t('canon.termKind.word.method')
+  },
 }
 
 /** Mirrored from `RuleValidationLimits`. */
@@ -103,10 +117,18 @@ export const UncountedReason = {
 export type UncountedReasonValue = (typeof UncountedReason)[keyof typeof UncountedReason]
 
 export const UNCOUNTED_REASON_LABELS: Record<UncountedReasonValue, string> = {
-  [UncountedReason.NoParticipant]: 'no participant recorded',
-  [UncountedReason.ParticipantInTrash]: 'its participant is in the Trash',
-  [UncountedReason.NoEventKind]: 'no event kind recorded',
-  [UncountedReason.NoMethod]: 'no method recorded',
+  get [UncountedReason.NoParticipant]() {
+    return t('canon.uncounted.noParticipant')
+  },
+  get [UncountedReason.ParticipantInTrash]() {
+    return t('canon.uncounted.participantInTrash')
+  },
+  get [UncountedReason.NoEventKind]() {
+    return t('canon.uncounted.noEventKind')
+  },
+  get [UncountedReason.NoMethod]() {
+    return t('canon.uncounted.noMethod')
+  },
 }
 
 export interface WorldRuleUncountedMoment {
