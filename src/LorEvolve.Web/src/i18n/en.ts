@@ -1,6 +1,11 @@
 import type { Shape } from './core'
 import account from './en/account'
 import auth from './en/auth'
+import entity from './en/entity'
+import entityTypes from './en/entityTypes'
+import lore from './en/lore'
+import relationships from './en/relationships'
+import workspace from './en/workspace'
 import portal from './en/portal'
 import publishing from './en/publishing'
 import roles from './en/roles'
@@ -18,6 +23,11 @@ import shell from './en/shell'
 const en = {
   account,
   auth,
+  entity,
+  entityTypes,
+  lore,
+  relationships,
+  workspace,
   portal,
   publishing,
   roles,

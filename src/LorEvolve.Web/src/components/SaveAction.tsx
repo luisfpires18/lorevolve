@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { useI18n } from '../i18n'
 
 /** How long "Saved" stays on the button after a save, before it goes quiet again. */
 const SAVED_FOR_MS = 2000
@@ -48,6 +49,7 @@ export function SaveAction({
   onSave,
   keyShortcuts,
 }: SaveActionProps) {
+  const { t } = useI18n()
   // The last save whose "Saved" has run its course. Only a timer's own save is ever retired, so a second save restarts the
   // moment rather than being cut short by the first one's timer, and an unmounted editor cancels its timer.
   const [retired, setRetired] = useState(0)
@@ -72,7 +74,13 @@ export function SaveAction({
         data-state={state}
         data-testid={statusTestId}
       >
-        {isSaving ? 'Saving…' : isDirty ? 'Unsaved changes' : justSaved ? 'Saved' : restingStatus}
+        {isSaving
+          ? t('entity.save.status.saving')
+          : isDirty
+            ? t('entity.save.status.unsaved')
+            : justSaved
+              ? t('entity.save.status.saved')
+              : restingStatus}
       </span>
       <button
         className="button saveaction"
@@ -91,11 +99,11 @@ export function SaveAction({
         }}
       >
         {state === 'saving' ? (
-          'Saving…'
+          t('entity.save.button.saving')
         ) : state === 'saved' ? (
           <>
             <ActionIcon icon={Check} />
-            Saved
+            {t('entity.save.button.saved')}
           </>
         ) : (
           label

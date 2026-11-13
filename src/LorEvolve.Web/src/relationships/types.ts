@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { ChronologyValue } from '../chronology/types'
 import type { CanonStatusValue } from '../lore/types'
 
@@ -50,18 +51,33 @@ export const FAMILY_SEMANTIC_ORDER: FamilySemanticValue[] = [
 
 /** What each meaning is called on screen. No enum name is ever shown. */
 export const FAMILY_SEMANTIC_LABELS: Record<FamilySemanticValue, string> = {
-  [FamilySemantic.None]: 'Not a family connection',
-  [FamilySemantic.BiologicalParent]: 'Source is the biological parent',
-  [FamilySemantic.AdoptiveParent]: 'Source is the adoptive parent',
-  [FamilySemantic.NonStructuralFamily]: 'Family relationship, does not define ancestry',
+  // Getters, so the words are read when used and follow the language.
+  get [FamilySemantic.None]() {
+    return t('relationships.family.label.none')
+  },
+  get [FamilySemantic.BiologicalParent]() {
+    return t('relationships.family.label.biologicalParent')
+  },
+  get [FamilySemantic.AdoptiveParent]() {
+    return t('relationships.family.label.adoptiveParent')
+  },
+  get [FamilySemantic.NonStructuralFamily]() {
+    return t('relationships.family.label.nonStructural')
+  },
 }
 
 /** The one word a family tree uses for a link of each meaning. */
 export const FAMILY_SEMANTIC_WORDS: Record<FamilySemanticValue, string> = {
   [FamilySemantic.None]: '',
-  [FamilySemantic.BiologicalParent]: 'biological',
-  [FamilySemantic.AdoptiveParent]: 'adoptive',
-  [FamilySemantic.NonStructuralFamily]: 'family',
+  get [FamilySemantic.BiologicalParent]() {
+    return t('relationships.family.word.biological')
+  },
+  get [FamilySemantic.AdoptiveParent]() {
+    return t('relationships.family.word.adoptive')
+  },
+  get [FamilySemantic.NonStructuralFamily]() {
+    return t('relationships.family.word.family')
+  },
 }
 
 /**

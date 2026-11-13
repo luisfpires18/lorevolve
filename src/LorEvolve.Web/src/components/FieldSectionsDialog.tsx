@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
@@ -61,6 +62,7 @@ export function FieldSectionsDialog({
   onChanged: () => Promise<void>
   onSaved: () => Promise<void>
 }) {
+  const { t, tx } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const added = useRef(0)
   const [base, setBase] = useState(() => ({
@@ -80,7 +82,7 @@ export function FieldSectionsDialog({
   const isDirty = payloadKey({ sections, placed, order }) !== payloadKey(base.layout)
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
-    `Your changes to the sections of “${type.name}” have not been saved. Leave without saving them?`,
+    t('entityTypes.sections.leaveConfirm', { name: type.name }),
     onClose,
   )
 
@@ -158,7 +160,7 @@ export function FieldSectionsDialog({
   function keepMine() {
     setBase((current) => ({ ...current, version: type.fieldLayoutVersion }))
     setStale(false)
-    setMessage('Your changes are kept. Saving now replaces the saved sections with these.')
+    setMessage(t('entityTypes.sections.keptMine'))
   }
 
   async function save() {
@@ -168,8 +170,8 @@ export function FieldSectionsDialog({
     const names = new Set<string>()
     for (const section of sections) {
       const name = section.name.trim().toLowerCase()
-      if (!name) found[section.key] = 'Give the section a name.'
-      else if (names.has(name)) found[section.key] = 'Another section already has this name.'
+      if (!name) found[section.key] = t('entityTypes.sections.nameRequired')
+      else if (names.has(name)) found[section.key] = t('entityTypes.sections.nameTaken')
       names.add(name)
     }
     setErrors(found)
@@ -195,9 +197,7 @@ export function FieldSectionsDialog({
       await onSaved()
     } catch (error: unknown) {
       if (error instanceof ApiError && error.code === FIELD_LAYOUT_CHANGED_CODE) {
-        setMessage(
-          'Someone changed these sections after you opened them. Nothing was saved, and your changes are still here.',
-        )
+        setMessage(t('entityTypes.sections.changedMeanwhile'))
         setStale(true)
         await onChanged().catch(() => undefined)
       } else if (error instanceof ApiError) {
@@ -210,7 +210,7 @@ export function FieldSectionsDialog({
         setErrors(mapped)
         setMessage(error.message)
       } else {
-        setMessage('These sections could not be saved.')
+        setMessage(t('entityTypes.sections.saveFailed'))
       }
     } finally {
       setIsSaving(false)
@@ -218,12 +218,12 @@ export function FieldSectionsDialog({
   }
 
   const sectionLabel = (section: DraftSection, index: number) =>
-    section.name.trim() || `Section ${index + 1}`
+    section.name.trim() || t('entityTypes.sections.defaultName', { n: index + 1 })
 
   // The active fields, as the drawer shows them: grouped like the form - no section first, then each section - in order.
   const active = new Map(type.fields.map((field) => [field.id, field]))
   const groups = [
-    { key: '', label: 'No section' },
+    { key: '', label: t('entityTypes.sections.noSectionGroup') },
     ...sections.map((section, index) => ({
       key: section.key,
       label: sectionLabel(section, index),
@@ -255,10 +255,10 @@ export function FieldSectionsDialog({
       >
         <header className="drawer__head">
           <p className="drawer__eyebrow">
-            <bdi>{type.name}</bdi> fields
+            {tx('entityTypes.sections.eyebrow', { name: <bdi>{type.name}</bdi> })}
           </p>
           <h2 className="drawer__title" id="sections-heading">
-            Sections
+            {t('entityTypes.sections.title')}
           </h2>
         </header>
 
@@ -271,10 +271,10 @@ export function FieldSectionsDialog({
 
           {stale ? (
             <div className="callout callout--warning" data-testid="sections-dialog-stale">
-              <p className="callout__title">Saved now</p>
+              <p className="callout__title">{t('entityTypes.sections.savedNow')}</p>
               <p className="fieldconflict__saved">
                 {type.fieldSections.length === 0
-                  ? 'No sections.'
+                  ? t('entityTypes.sections.noneSaved')
                   : type.fieldSections.map((section) => section.name).join(', ')}
               </p>
               <p className="types__blockedlinks">
@@ -284,7 +284,7 @@ export function FieldSectionsDialog({
                   onClick={takeSaved}
                   data-testid="sections-use-saved"
                 >
-                  Use the saved sections
+                  {t('entityTypes.sections.useSaved')}
                 </button>
                 <button
                   className="button button--text button--sm"
@@ -292,23 +292,20 @@ export function FieldSectionsDialog({
                   onClick={keepMine}
                   data-testid="sections-keep-mine"
                 >
-                  Keep my changes
+                  {t('entityTypes.sections.keepMine')}
                 </button>
               </p>
             </div>
           ) : null}
 
-          <p className="field__hint">
-            Sections and order arrange this type&rsquo;s fields in forms and on entries. Fields in
-            no section come first. Nothing about a field or its values changes.
-          </p>
+          <p className="field__hint">{t('entityTypes.sections.hint')}</p>
 
           <section className="drawer__group" aria-labelledby="sections-list">
             <h3 className="sectionrule sectionrule--accent" id="sections-list">
-              Sections
+              {t('entityTypes.sections.heading')}
             </h3>
             {sections.length === 0 ? (
-              <p className="settings__note">No sections. Every field shows in one list.</p>
+              <p className="settings__note">{t('entityTypes.sections.empty')}</p>
             ) : (
               <ol className="sectionlist">
                 {sections.map((section, index) => (
@@ -318,7 +315,7 @@ export function FieldSectionsDialog({
                     data-testid={`section-row-${index}`}
                   >
                     <Field
-                      label="Section name"
+                      label={t('entityTypes.sections.sectionName')}
                       name={`section-name-${section.key}`}
                       dir="auto"
                       value={section.name}
@@ -335,7 +332,7 @@ export function FieldSectionsDialog({
                         }
                         data-testid={`section-collapsed-${index}`}
                       />
-                      <span>Starts collapsed</span>
+                      <span>{t('entityTypes.sections.startsCollapsed')}</span>
                     </label>
                     <span className="sectionlist__actions">
                       <button
@@ -343,8 +340,10 @@ export function FieldSectionsDialog({
                         type="button"
                         onClick={() => move(index, -1)}
                         disabled={index === 0}
-                        aria-label={`Move ${sectionLabel(section, index)} up`}
-                        title="Move up"
+                        aria-label={t('entityTypes.sections.moveSectionUp', {
+                          name: sectionLabel(section, index),
+                        })}
+                        title={t('entityTypes.sections.moveUp')}
                         data-testid={`section-up-${index}`}
                       >
                         <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -354,8 +353,10 @@ export function FieldSectionsDialog({
                         type="button"
                         onClick={() => move(index, 1)}
                         disabled={index === sections.length - 1}
-                        aria-label={`Move ${sectionLabel(section, index)} down`}
-                        title="Move down"
+                        aria-label={t('entityTypes.sections.moveSectionDown', {
+                          name: sectionLabel(section, index),
+                        })}
+                        title={t('entityTypes.sections.moveDown')}
                         data-testid={`section-down-${index}`}
                       >
                         <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -364,11 +365,13 @@ export function FieldSectionsDialog({
                         className="button button--text button--sm fieldlist__delete"
                         type="button"
                         onClick={() => remove(section.key)}
-                        aria-label={`Remove ${sectionLabel(section, index)}`}
+                        aria-label={t('entityTypes.sections.removeSection', {
+                          name: sectionLabel(section, index),
+                        })}
                         data-testid={`section-remove-${index}`}
                       >
                         <ActionIcon icon={Trash2} />
-                        Remove
+                        {t('entityTypes.sections.remove')}
                       </button>
                     </span>
                   </li>
@@ -382,14 +385,14 @@ export function FieldSectionsDialog({
               data-testid="add-section"
             >
               <ActionIcon icon={Plus} />
-              Add section
+              {t('entityTypes.sections.add')}
             </button>
           </section>
 
           {type.fields.length > 0 ? (
             <section className="drawer__group" aria-labelledby="sections-fields">
               <h3 className="sectionrule sectionrule--accent" id="sections-fields">
-                Fields
+                {t('entityTypes.sections.fields')}
               </h3>
               {groups.map((group) => (
                 <div className="sectionfields__group" key={group.key || 'none'}>
@@ -398,7 +401,7 @@ export function FieldSectionsDialog({
                   </p>
                   <ol
                     className="sectionfields"
-                    aria-label={`Fields in ${group.label}`}
+                    aria-label={t('entityTypes.sections.fieldsIn', { name: group.label })}
                     data-testid={`fields-in-${group.label}`}
                   >
                     {group.fields.map((field, index) => (
@@ -416,7 +419,7 @@ export function FieldSectionsDialog({
                           onChange={(event) => place(field.id, event.target.value)}
                           data-testid={`place-${field.name}`}
                         >
-                          <option value="">No section</option>
+                          <option value="">{t('entityTypes.sections.noSectionOption')}</option>
                           {sections.map((section, at) => (
                             <option key={section.key} value={section.key}>
                               {sectionLabel(section, at)}
@@ -429,8 +432,8 @@ export function FieldSectionsDialog({
                             type="button"
                             onClick={() => shift(field.id, -1)}
                             disabled={index === 0}
-                            aria-label={`Move ${field.name} up`}
-                            title="Move up"
+                            aria-label={t('entityTypes.sections.moveFieldUp', { name: field.name })}
+                            title={t('entityTypes.sections.moveFieldUpTitle')}
                             data-testid={`field-up-${field.name}`}
                           >
                             <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -440,8 +443,10 @@ export function FieldSectionsDialog({
                             type="button"
                             onClick={() => shift(field.id, 1)}
                             disabled={index === group.fields.length - 1}
-                            aria-label={`Move ${field.name} down`}
-                            title="Move down"
+                            aria-label={t('entityTypes.sections.moveFieldDown', {
+                              name: field.name,
+                            })}
+                            title={t('entityTypes.sections.moveFieldDownTitle')}
                             data-testid={`field-down-${field.name}`}
                           >
                             <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -458,7 +463,7 @@ export function FieldSectionsDialog({
 
         <footer className="drawer__actions">
           <button className="button" type="submit" disabled={isSaving} data-testid="save-sections">
-            {isSaving ? 'Saving…' : 'Save sections'}
+            {isSaving ? t('entityTypes.sections.saving') : t('entityTypes.sections.save')}
           </button>
           <button
             className="button button--secondary"
@@ -466,7 +471,7 @@ export function FieldSectionsDialog({
             onClick={close}
             data-testid="cancel-sections"
           >
-            Cancel
+            {t('entityTypes.sections.cancel')}
           </button>
         </footer>
       </form>

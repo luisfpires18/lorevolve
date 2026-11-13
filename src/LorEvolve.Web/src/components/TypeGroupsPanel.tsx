@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { ArrowDown, ArrowUp, Plus } from 'lucide-react'
+import { t as translate, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
 import {
@@ -30,6 +31,7 @@ export function TypeGroupsPanel({
   /** After any change: read the groups again. */
   onGroupsChanged: () => Promise<void>
 }) {
+  const { t, tn, tx } = useI18n()
   const ids = useId()
   const [newName, setNewName] = useState('')
   const [newError, setNewError] = useState<string | null>(null)
@@ -52,9 +54,11 @@ export function TypeGroupsPanel({
 
   function usedBy(group: EntityTypeGroup) {
     const names = membersOf(group)
-    if (names.length === 0) return 'No type is in it.'
-    if (names.length === 1) return `Used by ${names[0]}.`
-    return `Used by ${names.length} types: ${names.join(', ')}.`
+    if (names.length === 0) return t('entityTypes.groupsPanel.usedByNone')
+    return tn('entityTypes.groupsPanel.usedBy', names.length, {
+      name: names[0],
+      names: names.join(', '),
+    })
   }
 
   async function rename(group: EntityTypeGroup) {
@@ -76,7 +80,7 @@ export function TypeGroupsPanel({
         text:
           error instanceof ApiError
             ? (error.fieldErrors.name ?? error.message)
-            : 'That group could not be renamed.',
+            : t('entityTypes.groupsPanel.renameFailed'),
         fields: [],
       })
     } finally {
@@ -89,17 +93,13 @@ export function TypeGroupsPanel({
     const names = membersOf(group)
     const effect =
       names.length === 0
-        ? 'No type is in it.'
-        : `${names.join(', ')} will no longer be in it. The types, their fields and their entries stay as they are.`
+        ? t('entityTypes.groupsPanel.usedByNone')
+        : t('entityTypes.groupsPanel.deleteEffect', { names: names.join(', ') })
     if (
       !(await confirmAction({
-        title: (
-          <>
-            Delete the group “<bdi>{group.name}</bdi>”?
-          </>
-        ),
-        message: `${effect} This cannot be undone.`,
-        confirmLabel: 'Delete group',
+        title: <>{tx('entityTypes.groupsPanel.deleteTitle', { name: <bdi>{group.name}</bdi> })}</>,
+        message: t('entityTypes.groupsPanel.deleteMessage', { effect }),
+        confirmLabel: t('entityTypes.groupsPanel.deleteConfirm'),
         variant: 'destructive',
       }))
     ) {
@@ -113,7 +113,7 @@ export function TypeGroupsPanel({
     } catch (error: unknown) {
       setProblem({
         groupId: group.id,
-        text: error instanceof ApiError ? error.message : 'That group could not be deleted.',
+        text: error instanceof ApiError ? error.message : t('entityTypes.groupsPanel.deleteFailed'),
         fields: fieldsOf(error),
       })
     } finally {
@@ -134,7 +134,7 @@ export function TypeGroupsPanel({
       setNewError(
         error instanceof ApiError
           ? (error.fieldErrors.name ?? error.message)
-          : 'That group could not be created.',
+          : t('entityTypes.groupsPanel.createFailed'),
       )
     } finally {
       setBusy(false)
@@ -157,7 +157,7 @@ export function TypeGroupsPanel({
     } catch (error: unknown) {
       setProblem({
         groupId: moved,
-        text: error instanceof ApiError ? error.message : 'That group could not be moved.',
+        text: error instanceof ApiError ? error.message : t('entityTypes.groupsPanel.moveFailed'),
         fields: [],
       })
       // Back to the order the server holds, which another tab may have changed meanwhile.
@@ -170,15 +170,11 @@ export function TypeGroupsPanel({
 
   return (
     <section className="typegroups typegroups--panel" data-testid="type-groups-panel">
-      <p className="typegroups__intro">
-        A group gathers types that are the same kind of thing. Its place here is its priority: a
-        scene's lore lists entries by the first group their type is in, top group first. Choose a
-        type's groups in its editor.
-      </p>
+      <p className="typegroups__intro">{t('entityTypes.groupsPanel.intro')}</p>
       {canEdit ? (
         <div className="field">
           <label className="field__label" htmlFor={`${ids}-new`}>
-            New group
+            {t('entityTypes.groupsPanel.newGroup')}
           </label>
           <div className="typegroups__newrow">
             <input
@@ -186,7 +182,7 @@ export function TypeGroupsPanel({
               className="field__input"
               dir="auto"
               value={newName}
-              placeholder="Insert a name"
+              placeholder={t('entityTypes.groupsPanel.namePlaceholder')}
               onChange={(event) => setNewName(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -204,7 +200,7 @@ export function TypeGroupsPanel({
               data-testid="type-group-create"
             >
               <Plus aria-hidden="true" focusable="false" strokeWidth={1.75} />
-              Add group
+              {t('entityTypes.groupsPanel.add')}
             </button>
           </div>
           {newError ? <p className="field__error">{newError}</p> : null}
@@ -212,7 +208,7 @@ export function TypeGroupsPanel({
       ) : null}
       {groups.length === 0 ? (
         <p className="typegroups__empty" data-testid="type-groups-empty">
-          No groups yet.
+          {t('entityTypes.groupsPanel.empty')}
         </p>
       ) : null}
       <ol className="typegroups__list" data-testid="type-groups-list">
@@ -226,7 +222,7 @@ export function TypeGroupsPanel({
             {renaming === group.id ? (
               <div className="field">
                 <label className="field__label" htmlFor={`${ids}-${group.id}`}>
-                  New name for <bdi>{group.name}</bdi>
+                  {tx('entityTypes.groupsPanel.newNameFor', { name: <bdi>{group.name}</bdi> })}
                 </label>
                 <div className="typegroups__newrow">
                   <input
@@ -256,21 +252,20 @@ export function TypeGroupsPanel({
                     onClick={() => void rename(group)}
                     data-testid="type-group-rename-save"
                   >
-                    Rename
+                    {t('entityTypes.groupsPanel.rename')}
                   </button>
                   <button
                     className="button button--text button--sm"
                     type="button"
                     onClick={() => setRenaming(null)}
                   >
-                    Cancel
+                    {t('entityTypes.groupsPanel.cancel')}
                   </button>
                 </div>
                 <p className="field__hint" id={`${ids}-${group.id}-hint`}>
                   {membersOf(group).length > 1
-                    ? `The new name shows for every type in it. ${usedBy(group)}`
-                    : usedBy(group)}{' '}
-                  Fields that link to it keep working.
+                    ? t('entityTypes.groupsPanel.renameHintMany', { used: usedBy(group) })
+                    : t('entityTypes.groupsPanel.renameHintOne', { used: usedBy(group) })}
                 </p>
               </div>
             ) : (
@@ -286,7 +281,7 @@ export function TypeGroupsPanel({
                       type="button"
                       disabled={busy || index === 0}
                       onClick={() => void move(index, -1)}
-                      aria-label={`Move the group ${group.name} up`}
+                      aria-label={t('entityTypes.groupsPanel.moveUp', { name: group.name })}
                       data-testid={`type-group-up-${group.name}`}
                     >
                       <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -296,7 +291,7 @@ export function TypeGroupsPanel({
                       type="button"
                       disabled={busy || index === groups.length - 1}
                       onClick={() => void move(index, 1)}
-                      aria-label={`Move the group ${group.name} down`}
+                      aria-label={t('entityTypes.groupsPanel.moveDown', { name: group.name })}
                       data-testid={`type-group-down-${group.name}`}
                     >
                       <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -310,20 +305,20 @@ export function TypeGroupsPanel({
                         setDraft(group.name)
                         setRenaming(group.id)
                       }}
-                      aria-label={`Rename the group ${group.name}`}
+                      aria-label={t('entityTypes.groupsPanel.renameGroup', { name: group.name })}
                       data-testid={`type-group-rename-${group.name}`}
                     >
-                      Rename
+                      {t('entityTypes.groupsPanel.rename')}
                     </button>
                     <button
                       className="button button--text button--sm typegroups__delete"
                       type="button"
                       disabled={busy}
                       onClick={() => void remove(group)}
-                      aria-label={`Delete the group ${group.name}`}
+                      aria-label={t('entityTypes.groupsPanel.deleteGroup', { name: group.name })}
                       data-testid={`type-group-delete-${group.name}`}
                     >
-                      Delete
+                      {t('entityTypes.groupsPanel.delete')}
                     </button>
                   </span>
                 ) : null}
@@ -358,6 +353,11 @@ function fieldsOf(error: unknown): string[] {
   const fields = (error.problem as { fields?: { fieldName?: string; typeName?: string }[] } | null)
     ?.fields
   return Array.isArray(fields)
-    ? fields.map((field) => `“${field.fieldName ?? ''}” on ${field.typeName ?? ''}`)
+    ? fields.map((field) =>
+        translate('entityTypes.groupsPanel.fieldOnType', {
+          field: field.fieldName ?? '',
+          type: field.typeName ?? '',
+        }),
+      )
     : []
 }

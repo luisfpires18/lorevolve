@@ -8,6 +8,7 @@ import {
   type SyntheticEvent,
 } from 'react'
 import type { Chronology } from '../chronology/types'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { emptyValue } from '../lore/document'
@@ -70,6 +71,7 @@ export function QuickCreateDialog({
   onChooseExisting,
   onCancel,
 }: Props) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const nameId = useId()
   const headingId = useId()
@@ -95,11 +97,7 @@ export function QuickCreateDialog({
   const isDirty =
     payloadKey({ name: name.trim(), chosenTypeId, values }) !==
     payloadKey({ name: initialName.trim(), chosenTypeId: takenTypeId, values: {} })
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    'This new entry has not been created. Leave without creating it?',
-    onCancel,
-  )
+  const { close, dialogProps } = useDrawerGuard(isDirty, t('lore.quickCreate.leave'), onCancel)
 
   // While a create is out there is nothing to close: Cancel is disabled with the rest of the form, and Escape and the
   // backdrop are swallowed here before the drawer guard sees them.
@@ -215,7 +213,7 @@ export function QuickCreateDialog({
   async function create() {
     if (sending.current) return
     if (!chosenType) {
-      setFieldErrors({ entitytypeid: 'Choose what kind of entry this is.' })
+      setFieldErrors({ entitytypeid: t('lore.quickCreate.chooseKind') })
       setMessage(null)
       return
     }
@@ -249,10 +247,10 @@ export function QuickCreateDialog({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be created.',
+            : t('lore.quickCreate.detailsNeedChange'),
         )
       } else {
-        setMessage('The entry couldn’t be created. Check your connection and try again.')
+        setMessage(t('lore.quickCreate.failed'))
       }
     } finally {
       if (!gone.current) setIsSaving(false)
@@ -278,9 +276,9 @@ export function QuickCreateDialog({
         }}
       >
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Quick create</p>
+          <p className="drawer__eyebrow">{t('lore.quickCreate.eyebrow')}</p>
           <h2 className="drawer__title" id={headingId}>
-            New entry
+            {t('lore.quickCreate.title')}
           </h2>
         </header>
 
@@ -298,18 +296,15 @@ export function QuickCreateDialog({
           ) : null}
 
           <p className="quickcreate__pending" role="status" data-testid="quick-create-pending">
-            {isSaving ? 'Creating the entry. This can’t be closed until LorEvolve answers.' : null}
+            {isSaving ? t('lore.quickCreate.pending') : null}
           </p>
 
           {/* Everything the create was sent with stays as it was sent until the answer comes. */}
           <fieldset className="quickcreate__inputs" disabled={isSaving}>
-            <p className="quickcreate__note">
-              It’s saved as soon as you create it. Add its article and other details later from its
-              own page.
-            </p>
+            <p className="quickcreate__note">{t('lore.quickCreate.note')}</p>
 
             <Field
-              label="Name"
+              label={t('lore.quickCreate.name')}
               name={nameId}
               dir="auto"
               autoComplete="off"
@@ -324,10 +319,8 @@ export function QuickCreateDialog({
                 className="callout callout--warning quickcreate__similar"
                 data-testid="quick-create-similar"
               >
-                <p className="callout__title">Something with this name is already here</p>
-                <p>
-                  Choose it instead, or create a new entry anyway. Two entries can share a name.
-                </p>
+                <p className="callout__title">{t('lore.quickCreate.similarTitle')}</p>
+                <p>{t('lore.quickCreate.similarBody')}</p>
                 <ul className="quickcreate__matches">
                   {shownSimilar.map((item) => (
                     <li key={item.id}>
@@ -347,10 +340,13 @@ export function QuickCreateDialog({
                             typeName: item.entityTypeName,
                           })
                         }
-                        aria-label={`Use ${item.name}, ${item.entityTypeName}`}
+                        aria-label={t('lore.quickCreate.useLabel', {
+                          name: item.name,
+                          type: item.entityTypeName,
+                        })}
                         data-testid={`quick-create-use-${item.name}`}
                       >
-                        Use this one
+                        {t('lore.quickCreate.useThis')}
                       </button>
                     </li>
                   ))}
@@ -360,25 +356,25 @@ export function QuickCreateDialog({
 
             {types.kind === 'loading' ? (
               <p className="field__hint" role="status">
-                Reading the types…
+                {t('lore.quickCreate.readingTypes')}
               </p>
             ) : types.kind === 'error' ? (
               <p className="form__message" role="alert">
-                The types couldn’t be read. Close this and try again.
+                {t('lore.quickCreate.typesFailed')}
               </p>
             ) : eligible.length === 0 ? (
               <p className="form__message" role="alert" data-testid="quick-create-no-types">
-                No type can be created here. This field only takes entries of a type that no longer
-                exists, or of a group with no types in it. Change that under Types.
+                {t('lore.quickCreate.noTypes')}
               </p>
             ) : eligible.length === 1 ? (
               <p className="quickcreate__type" data-testid="quick-create-type">
-                <span className="field__label">Type</span> <bdi>{eligible[0].name}</bdi>
+                <span className="field__label">{t('lore.quickCreate.typeFixed')}</span>{' '}
+                <bdi>{eligible[0].name}</bdi>
               </p>
             ) : (
               <div className="field">
                 <label className="field__label" htmlFor={typeId}>
-                  Type
+                  {t('lore.quickCreate.typeLabel')}
                 </label>
                 <select
                   id={typeId}
@@ -391,7 +387,7 @@ export function QuickCreateDialog({
                   aria-invalid={fieldErrors.entitytypeid ? true : undefined}
                   data-testid="quick-create-type-select"
                 >
-                  <option value="">Choose a type</option>
+                  <option value="">{t('lore.quickCreate.chooseType')}</option>
                   {eligible.map((type) => (
                     <option key={type.id} value={type.id}>
                       {type.name}
@@ -435,7 +431,7 @@ export function QuickCreateDialog({
             disabled={isSaving || eligible.length === 0}
             data-testid="quick-create-submit"
           >
-            {isSaving ? 'Creating' : 'Create'}
+            {isSaving ? t('lore.quickCreate.creating') : t('lore.quickCreate.create')}
           </button>
           <button
             className="button button--secondary"
@@ -444,7 +440,7 @@ export function QuickCreateDialog({
             disabled={isSaving}
             data-testid="quick-create-cancel"
           >
-            Cancel
+            {t('lore.quickCreate.cancel')}
           </button>
         </footer>
       </form>

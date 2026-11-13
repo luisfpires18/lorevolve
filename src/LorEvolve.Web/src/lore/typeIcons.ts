@@ -33,12 +33,13 @@ import {
   WandSparkles,
   type LucideIcon,
 } from 'lucide-react'
+import { t } from '../i18n'
+import type { TextKey } from '../i18n/core'
+import type { Dictionary } from '../i18n/en'
 
 export interface TypeIconOption {
   /** What is stored on the type and sent to the API. Never shown. */
   key: string
-  /** What the picture shows, written beside it in the picker and read out. Not what the type means. */
-  label: string
   glyph: LucideIcon
 }
 
@@ -55,42 +56,42 @@ export interface TypeIconOption {
  */
 export const TYPE_ICONS: readonly TypeIconOption[] = [
   // People and powers
-  { key: 'character', label: 'Person', glyph: User },
-  { key: 'organization', label: 'Group', glyph: Users },
-  { key: 'crown', label: 'Crown', glyph: Crown },
-  { key: 'landmark', label: 'Pillared hall', glyph: Landmark },
-  { key: 'languages', label: 'Languages', glyph: Languages },
+  { key: 'character', glyph: User },
+  { key: 'organization', glyph: Users },
+  { key: 'crown', glyph: Crown },
+  { key: 'landmark', glyph: Landmark },
+  { key: 'languages', glyph: Languages },
   // Places
-  { key: 'location', label: 'Map pin', glyph: MapPin },
-  { key: 'globe', label: 'Globe', glyph: Globe },
-  { key: 'castle', label: 'Castle', glyph: Castle },
-  { key: 'house', label: 'House', glyph: House },
-  { key: 'mountain', label: 'Mountain', glyph: Mountain },
-  { key: 'tree', label: 'Tree', glyph: TreePine },
+  { key: 'location', glyph: MapPin },
+  { key: 'globe', glyph: Globe },
+  { key: 'castle', glyph: Castle },
+  { key: 'house', glyph: House },
+  { key: 'mountain', glyph: Mountain },
+  { key: 'tree', glyph: TreePine },
   // Time and conflict
-  { key: 'event', label: 'Calendar', glyph: CalendarDays },
-  { key: 'sword', label: 'Sword', glyph: Sword },
-  { key: 'swords', label: 'Crossed swords', glyph: Swords },
-  { key: 'shield', label: 'Shield', glyph: Shield },
-  { key: 'skull', label: 'Skull', glyph: Skull },
+  { key: 'event', glyph: CalendarDays },
+  { key: 'sword', glyph: Sword },
+  { key: 'swords', glyph: Swords },
+  { key: 'shield', glyph: Shield },
+  { key: 'skull', glyph: Skull },
   // Things
-  { key: 'item', label: 'Package', glyph: Package },
-  { key: 'gem', label: 'Gem', glyph: Gem },
-  { key: 'coins', label: 'Coins', glyph: Coins },
-  { key: 'ship', label: 'Ship', glyph: Ship },
-  { key: 'book', label: 'Book', glyph: BookOpen },
-  { key: 'scroll', label: 'Scroll', glyph: ScrollText },
-  { key: 'flask', label: 'Flask', glyph: FlaskConical },
+  { key: 'item', glyph: Package },
+  { key: 'gem', glyph: Gem },
+  { key: 'coins', glyph: Coins },
+  { key: 'ship', glyph: Ship },
+  { key: 'book', glyph: BookOpen },
+  { key: 'scroll', glyph: ScrollText },
+  { key: 'flask', glyph: FlaskConical },
   // Living things and nature
-  { key: 'species', label: 'Paw print', glyph: PawPrint },
-  { key: 'leaf', label: 'Leaf', glyph: Leaf },
+  { key: 'species', glyph: PawPrint },
+  { key: 'leaf', glyph: Leaf },
   // Ideas, magic and the sky
-  { key: 'concept', label: 'Lightbulb', glyph: Lightbulb },
-  { key: 'sparkles', label: 'Sparkles', glyph: Sparkles },
-  { key: 'wand', label: 'Wand', glyph: WandSparkles },
-  { key: 'flame', label: 'Flame', glyph: Flame },
-  { key: 'star', label: 'Star', glyph: Star },
-  { key: 'moon', label: 'Moon', glyph: Moon },
+  { key: 'concept', glyph: Lightbulb },
+  { key: 'sparkles', glyph: Sparkles },
+  { key: 'wand', glyph: WandSparkles },
+  { key: 'flame', glyph: Flame },
+  { key: 'star', glyph: Star },
+  { key: 'moon', glyph: Moon },
 ]
 
 /** Drawn for a type with no icon, and for a key this build does not know. Neutral on purpose. */
@@ -101,4 +102,9 @@ const BY_KEY = new Map(TYPE_ICONS.map((option) => [option.key, option]))
 /** The option for a stored key, or null when there is none or the key is not one this build draws. */
 export function typeIconOption(key: string | null): TypeIconOption | null {
   return key ? (BY_KEY.get(key) ?? null) : null
+}
+
+/** What the picture shows, written beside it in the picker and read out. Not what the type means. */
+export function typeIconLabel(key: string): string {
+  return t(`entityTypes.icons.${key}` as TextKey<Dictionary>)
 }

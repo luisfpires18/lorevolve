@@ -62,6 +62,7 @@ import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { EmptyState } from '../components/EmptyState'
 import { useStagePictures } from '../progression/stagePictures'
 import { confirmAction } from '../lib/confirm'
+import { t, tn, useI18n } from '../i18n'
 
 interface Draft {
   entityTypeId: string
@@ -137,7 +138,7 @@ function copiedDraft(detail: EntityDetail, types: EntityType[]): Draft {
     entityTypeId: types.some((type) => type.id === detail.entityTypeId)
       ? detail.entityTypeId
       : types[0].id,
-    name: `${detail.name} (copy)`,
+    name: t('entity.page.copyName', { name: detail.name }),
     canonStatus: CanonStatus.Idea,
     aliases: [],
   }
@@ -195,6 +196,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
 }
 
 function EntityScreen({ view }: { view: EntryView }) {
+  const { t, tx } = useI18n()
   const { universe, chronology, entryTypes: typesFound } = useWorkspaceTypes()
   const access = useUniverseAccess()
   const { entityId } = useParams<{ entityId: string }>()
@@ -409,9 +411,9 @@ function EntityScreen({ view }: { view: EntryView }) {
   const quickCreate = useMemo(
     () =>
       access.editContent && !isSuggesting
-        ? { chronology, keepHint: 'Save this entry to keep the link.' }
+        ? { chronology, keepHint: t('entity.page.keepLinkHint') }
         : null,
-    [access.editContent, isSuggesting, chronology],
+    [access.editContent, isSuggesting, chronology, t],
   )
 
   const offersFamilyTree =
@@ -446,10 +448,14 @@ function EntityScreen({ view }: { view: EntryView }) {
     !isDirty
       ? null
       : isNew
-        ? 'This new entry has not been created. Leave without saving it?'
+        ? t('entity.page.leave.newEntry')
         : isSuggesting
-          ? `Your suggestion for “${detail?.name ?? 'this entry'}” hasn’t been sent. Leave without sending it?`
-          : `“${detail?.name ?? 'This entry'}” has unsaved changes. Leave without saving them?`,
+          ? t('entity.page.leave.suggestion', {
+              name: detail?.name ?? t('entity.page.leave.suggestionFallback'),
+            })
+          : t('entity.page.leave.edit', {
+              name: detail?.name ?? t('entity.page.leave.editFallback'),
+            }),
     discard,
   )
 
@@ -524,7 +530,7 @@ function EntityScreen({ view }: { view: EntryView }) {
           setMessage(
             failure instanceof ApiError
               ? (failure.fieldErrors.file ?? failure.message)
-              : 'The entry was created, but its image could not be uploaded.',
+              : t('entity.page.save.imageFailed'),
           )
         }
       }
@@ -538,7 +544,7 @@ function EntityScreen({ view }: { view: EntryView }) {
             expectedVersion: 0,
           })
         } catch {
-          setMessage('The entry was created, but its article could not be copied.')
+          setMessage(t('entity.page.save.articleFailed'))
         }
       }
 
@@ -583,11 +589,13 @@ function EntityScreen({ view }: { view: EntryView }) {
           Object.keys(error.fieldErrors).length === 0
             ? error.message
             : isSuggesting
-              ? 'Some details need a change before this can be sent.'
-              : 'Some details need a change before this can be saved.',
+              ? t('entity.page.save.fieldsSuggest')
+              : t('entity.page.save.fieldsSave'),
         )
       } else {
-        setMessage(isSuggesting ? 'That suggestion couldn’t be sent.' : 'That could not be saved.')
+        setMessage(
+          isSuggesting ? t('entity.page.save.suggestFailed') : t('entity.page.save.failed'),
+        )
       }
     } finally {
       setIsSaving(false)
@@ -605,6 +613,7 @@ function EntityScreen({ view }: { view: EntryView }) {
     isSuggesting,
     copyArticle,
     source,
+    t,
   ])
 
   /**
@@ -659,11 +668,9 @@ function EntityScreen({ view }: { view: EntryView }) {
         } catch {
           /* The message below still holds; the page shows what it last read. */
         }
-        setMessage(
-          'This entry changed after you opened it, so the status wasn’t changed. It now shows the latest version. Choose the status again if you still want it.',
-        )
+        setMessage(t('entity.page.canon.changedElsewhere'))
       } else {
-        setMessage('The status could not be changed.')
+        setMessage(t('entity.page.canon.failed'))
       }
     } finally {
       setIsSaving(false)
@@ -678,7 +685,7 @@ function EntityScreen({ view }: { view: EntryView }) {
     setDetail(latest)
     setConflict(false)
     setHistoryKey((key) => key + 1)
-    setAnnouncement('Your changes are still unsaved. Save when you’re ready.')
+    setAnnouncement(t('entity.page.announce.keptMine'))
     requestAnimationFrame(() => saveButton.current?.focus())
   }
 
@@ -717,13 +724,12 @@ function EntityScreen({ view }: { view: EntryView }) {
   async function moveToTrash() {
     if (isNew) return
     const trashed = await confirmAction({
-      title: 'Move this entry to the Trash?',
-      message:
-        'It leaves your lore, your search and your pickers, but nothing is erased. Its article, fields, history and connections are kept, and you can restore it from Trash at any time.',
-      confirmLabel: 'Move to Trash',
-      busyLabel: 'Moving…',
+      title: t('entity.page.trash.title'),
+      message: t('entity.page.trash.message'),
+      confirmLabel: t('entity.page.trash.confirm'),
+      busyLabel: t('entity.page.trash.busy'),
       variant: 'warning',
-      failure: 'This entry could not be moved to the Trash.',
+      failure: t('entity.page.trash.failed'),
       action: () => deleteEntity(universe.id, entityId),
     })
     if (trashed) await navigate(`/app/universes/${universe.id}/trash`, { replace: true })
@@ -736,18 +742,19 @@ function EntityScreen({ view }: { view: EntryView }) {
     return (
       <EmptyState
         testId="entity-missing"
-        title="That entry is not here."
+        title={t('entity.page.missing.title')}
         hint={
           <>
-            {access.manageTrash ? (
-              <>
-                It may be in the <Link to={`/app/universes/${universe.id}/trash`}>Trash</Link>,
-                where it can be restored.{' '}
-              </>
-            ) : (
-              'It may have been moved to the Trash. '
-            )}
-            <Link to={`/app/universes/${universe.id}/lore`}>Back to the lore</Link>
+            {access.manageTrash
+              ? tx('entity.page.missing.withTrash', {
+                  link: (
+                    <Link to={`/app/universes/${universe.id}/trash`}>
+                      {t('entity.page.missing.trashLink')}
+                    </Link>
+                  ),
+                })
+              : t('entity.page.missing.withoutTrash')}{' '}
+            <Link to={`/app/universes/${universe.id}/lore`}>{t('entity.page.missing.back')}</Link>
           </>
         }
       />
@@ -760,11 +767,11 @@ function EntityScreen({ view }: { view: EntryView }) {
     return (
       <EmptyState
         testId="entity-no-types"
-        title="This world has no types yet."
-        hint="Every entry is one of its world's types. Add one, then write the entry."
+        title={t('entity.page.noTypes.title')}
+        hint={t('entity.page.noTypes.hint')}
         action={
           <Link className="button" to={`/app/universes/${universe.id}/types`}>
-            Go to Types
+            {t('entity.page.noTypes.action')}
           </Link>
         }
       />
@@ -775,7 +782,7 @@ function EntityScreen({ view }: { view: EntryView }) {
   if (status === 'error') {
     return (
       <div className="notice notice--error" role="alert">
-        <p>This entry could not be opened.</p>
+        <p>{t('entity.page.openFailed')}</p>
         <button
           className="button button--secondary"
           type="button"
@@ -784,7 +791,7 @@ function EntityScreen({ view }: { view: EntryView }) {
             setReads((count) => count + 1)
           }}
         >
-          Try again
+          {t('entity.page.retry')}
         </button>
       </div>
     )
@@ -793,7 +800,7 @@ function EntityScreen({ view }: { view: EntryView }) {
   if (status === 'loading' || !draft) {
     return (
       <p className="notice" role="status">
-        Opening…
+        {t('entity.page.opening')}
       </p>
     )
   }
@@ -864,7 +871,7 @@ function EntityScreen({ view }: { view: EntryView }) {
         <div
           className="entry__stages"
           role="group"
-          aria-label="Picture"
+          aria-label={t('entity.page.picture.group')}
           data-testid="entry-picture-stages"
         >
           {mainPicture ? (
@@ -874,7 +881,7 @@ function EntityScreen({ view }: { view: EntryView }) {
               aria-pressed={picture === mainPicture}
               onClick={() => setChosenPicture(null)}
             >
-              Main
+              {t('entity.page.picture.main')}
             </button>
           ) : null}
           {stagePictures.map((one) => (
@@ -909,8 +916,8 @@ function EntityScreen({ view }: { view: EntryView }) {
         className="iconbutton entry__expand"
         type="button"
         onClick={() => setIsViewing(true)}
-        aria-label="View full image"
-        title="View full image"
+        aria-label={t('entity.page.picture.viewLabel')}
+        title={t('entity.page.picture.viewTitle')}
         data-testid="entry-image-expand"
       >
         <Maximize2 aria-hidden="true" focusable="false" strokeWidth={1.75} />
@@ -925,19 +932,19 @@ function EntityScreen({ view }: { view: EntryView }) {
     >
       <header className="entry__head">
         <div className="entry__kind">
-          <nav className="entry__crumbs" aria-label="Breadcrumb">
+          <nav className="entry__crumbs" aria-label={t('entity.page.head.breadcrumb')}>
             {/* Lore lists nothing until a type is chosen, so the way back is to this entry's own type. */}
             <Link
               to={`/app/universes/${universe.id}/lore?type=${detail?.entityTypeId ?? draft.entityTypeId}`}
             >
-              Lore
+              {t('entity.page.head.lore')}
             </Link>
           </nav>
 
           {isEditing ? (
             <select
               className="field__input field__input--select entry__typepick"
-              aria-label="Entry type"
+              aria-label={t('entity.page.head.typeLabel')}
               value={draft.entityTypeId}
               onChange={(event) =>
                 setDraft({ ...draft, entityTypeId: event.target.value, fields: {} })
@@ -969,7 +976,7 @@ function EntityScreen({ view }: { view: EntryView }) {
           {/* How settled the entry is, changed in one press. A choice, not an action: the chosen step is
               raised paper with its glyph and word, never a filled block louder than the name. */}
           {access.editContent || isNew || suggesting ? (
-            <div className="canon" role="group" aria-label="Canon status">
+            <div className="canon" role="group" aria-label={t('entity.page.head.canonGroup')}>
               {CANON_ORDER.map((option) => (
                 <button
                   key={option}
@@ -998,24 +1005,18 @@ function EntityScreen({ view }: { view: EntryView }) {
         {isEditing ? (
           // The screen still has its one heading while the name is a field.
           <h1 className="visually-hidden">
-            {isNew ? (
-              'New entry'
-            ) : suggesting ? (
-              <>
-                Suggesting changes to <bdi>{detail?.name}</bdi>
-              </>
-            ) : (
-              <>
-                Editing <bdi>{detail?.name}</bdi>
-              </>
-            )}
+            {isNew
+              ? t('entity.page.head.newEntry')
+              : suggesting
+                ? tx('entity.page.head.suggesting', { name: <bdi>{detail?.name}</bdi> })
+                : tx('entity.page.head.editing', { name: <bdi>{detail?.name}</bdi> })}
           </h1>
         ) : null}
         {isEditing ? (
           <input
             className="entry__nameinput"
-            aria-label="Name"
-            placeholder="Name this"
+            aria-label={t('entity.page.head.nameLabel')}
+            placeholder={t('entity.page.head.namePlaceholder')}
             dir="auto"
             value={draft.name}
             onChange={(event) => setDraft({ ...draft, name: event.target.value })}
@@ -1029,16 +1030,16 @@ function EntityScreen({ view }: { view: EntryView }) {
 
         {!isEditing && (detail?.aliases.length ?? 0) > 0 ? (
           <p className="entry__aliases" data-testid="entry-aliases">
-            also known as <NameList names={detail!.aliases} />
+            {tx('entity.page.head.alsoKnownAs', { names: <NameList names={detail!.aliases} /> })}
           </p>
         ) : null}
 
         {isEditing ? (
           <textarea
             className="entry__summaryinput"
-            aria-label="Summary"
+            aria-label={t('entity.page.head.summaryLabel')}
             rows={2}
-            placeholder="One or two lines that say what this is."
+            placeholder={t('entity.page.head.summaryPlaceholder')}
             value={draft.summary}
             onChange={(event) => setDraft({ ...draft, summary: event.target.value })}
           />
@@ -1057,9 +1058,13 @@ function EntityScreen({ view }: { view: EntryView }) {
       {!isNew && !isEditing ? (
         <div className="entry__bar">
           <div className="entry__lenses">
-            <nav className="views" aria-label="Entry views" data-testid="entry-views">
+            <nav
+              className="views"
+              aria-label={t('entity.page.views.label')}
+              data-testid="entry-views"
+            >
               <NavLink to={entryPath} end className="views__link" data-testid="entry-view-article">
-                Article
+                {t('entity.page.views.article')}
               </NavLink>
               {/* An entry's progression (Issue #30): offered to whoever can add to it, and to everyone once it has any. */}
               {access.editContent || detail?.hasProgression ? (
@@ -1068,7 +1073,7 @@ function EntityScreen({ view }: { view: EntryView }) {
                   className="views__link"
                   data-testid="entry-view-progression"
                 >
-                  Progression
+                  {t('entity.page.views.progression')}
                 </NavLink>
               ) : null}
               <NavLink
@@ -1076,7 +1081,7 @@ function EntityScreen({ view }: { view: EntryView }) {
                 className="views__link"
                 data-testid="entry-view-relations"
               >
-                Relations
+                {t('entity.page.views.relations')}
               </NavLink>
               {access.manageHistory ? (
                 <NavLink
@@ -1084,7 +1089,7 @@ function EntityScreen({ view }: { view: EntryView }) {
                   className="views__link"
                   data-testid="entry-view-history"
                 >
-                  History
+                  {t('entity.page.views.history')}
                 </NavLink>
               ) : null}
             </nav>
@@ -1125,7 +1130,7 @@ function EntityScreen({ view }: { view: EntryView }) {
                   data-testid="edit-entity"
                 >
                   <ActionIcon icon={Pencil} />
-                  Edit
+                  {t('entity.page.tools.edit')}
                 </button>
               ) : access.suggestChanges ? (
                 // A Reviewer's way into the same form, where an Editor's Edit stands. Its icon alone on a phone.
@@ -1133,11 +1138,11 @@ function EntityScreen({ view }: { view: EntryView }) {
                   className="button button--secondary"
                   type="button"
                   onClick={startSuggesting}
-                  title="Suggest changes"
+                  title={t('entity.page.tools.suggestTitle')}
                   data-testid="suggest-entity"
                 >
                   <ActionIcon icon={FilePenLine} />
-                  <span className="entry__toollabel">Suggest changes</span>
+                  <span className="entry__toollabel">{t('entity.page.tools.suggestLabel')}</span>
                 </button>
               ) : null}
               {/* Offered on an entry whose type the author enabled for Family Tree, and on any entry
@@ -1147,11 +1152,11 @@ function EntityScreen({ view }: { view: EntryView }) {
                 <Link
                   className="button button--text"
                   to={`/app/universes/${universe.id}/family-tree/${entityId}`}
-                  title="Family tree"
+                  title={t('entity.page.tools.familyTreeTitle')}
                   data-testid="entity-family-tree"
                 >
                   <ActionIcon icon={Network} />
-                  <span className="entry__toollabel">Family tree</span>
+                  <span className="entry__toollabel">{t('entity.page.tools.familyTreeLabel')}</span>
                 </Link>
               ) : null}
               {/* The owner's private note on the entry (issue 23): a tool on the entry itself, offered to the owner alone,
@@ -1165,7 +1170,9 @@ function EntityScreen({ view }: { view: EntryView }) {
               ) : null}
               {access.editContent || access.manageTrash ? (
                 <ActionMenu
-                  label={`More actions for ${detail?.name ?? 'this entry'}`}
+                  label={t('entity.page.tools.moreActions', {
+                    name: detail?.name ?? t('entity.page.tools.moreActionsFallback'),
+                  })}
                   triggerTestId="entity-actions"
                 >
                   {/* A new entry filled from this one, to change before it is created (Issue #27). */}
@@ -1176,7 +1183,7 @@ function EntityScreen({ view }: { view: EntryView }) {
                       data-testid="duplicate-entity"
                     >
                       <ActionIcon icon={Copy} />
-                      Duplicate
+                      {t('entity.page.tools.duplicate')}
                     </Link>
                   ) : null}
                   {access.manageTrash ? (
@@ -1190,7 +1197,7 @@ function EntityScreen({ view }: { view: EntryView }) {
                         data-testid="trash-entity"
                       >
                         <ActionIcon icon={Trash} />
-                        Move to Trash
+                        {t('entity.page.tools.moveToTrash')}
                       </button>
                     </>
                   ) : null}
@@ -1215,13 +1222,13 @@ function EntityScreen({ view }: { view: EntryView }) {
 
       {sent && !isEditing ? (
         <p className="callout" role="status" data-testid="suggestion-sent">
-          Suggestion sent. It&rsquo;s waiting under Review.
+          {t('entity.page.suggestionSent')}
         </p>
       ) : null}
 
       {conflict && isEditing && !isNew && entityId !== undefined ? (
         <EditConflict
-          what="entry"
+          what={t('entity.page.conflictWhat')}
           read={() => getEntity(universe.id, entityId)}
           renderLatest={(latest) => (
             <ChangeList changes={entryChanges(latest, draft, types, chronology, detail)} />
@@ -1251,8 +1258,7 @@ function EntityScreen({ view }: { view: EntryView }) {
 
           {suggesting ? (
             <p className="callout" data-testid="entry-suggesting">
-              You&rsquo;re suggesting changes. The entry stays as it is until the owner or an Editor
-              accepts them.
+              {t('entity.page.suggestingNote')}
             </p>
           ) : (
             <section className="entryform__section">
@@ -1275,19 +1281,19 @@ function EntityScreen({ view }: { view: EntryView }) {
 
           <section className="entryform__section">
             <h2 className="entryform__heading sectionrule sectionrule--accent">
-              Other names and tags
+              {t('entity.page.form.namesAndTags')}
             </h2>
             <TokenInput
-              label="Aliases"
+              label={t('entity.page.form.aliases')}
               name="aliases"
-              placeholder="Other names"
+              placeholder={t('entity.page.form.aliasesPlaceholder')}
               values={draft.aliases}
               onChange={(aliases) => setDraft({ ...draft, aliases })}
             />
             <TokenInput
-              label="Tags"
+              label={t('entity.page.form.tags')}
               name="tags"
-              placeholder="Add a tag"
+              placeholder={t('entity.page.form.tagsPlaceholder')}
               values={draft.tags}
               onChange={(tags) => setDraft({ ...draft, tags })}
             />
@@ -1296,7 +1302,7 @@ function EntityScreen({ view }: { view: EntryView }) {
           {(selectedType?.fields.length ?? 0) > 0 ? (
             <section className="entryform__section">
               <h2 className="entryform__heading sectionrule sectionrule--accent">
-                What a <bdi>{selectedType?.name}</bdi> records
+                {tx('entity.page.form.records', { type: <bdi>{selectedType?.name}</bdi> })}
               </h2>
               {formSections.ungrouped.length > 0 ? (
                 <div className="entryform__fields">{formSections.ungrouped.map(fieldInput)}</div>
@@ -1324,8 +1330,8 @@ function EntityScreen({ view }: { view: EntryView }) {
           {isNew ? (
             <p className="entryform__note">
               {copyArticle && source?.article
-                ? 'The copied article is added to the entry once it exists.'
-                : 'The article is written on the entry once it exists.'}
+                ? t('entity.page.form.noteCopied')
+                : t('entity.page.form.noteArticle')}
             </p>
           ) : null}
         </div>
@@ -1351,7 +1357,7 @@ function EntityScreen({ view }: { view: EntryView }) {
             )}
           </div>
 
-          <aside className="entry__rail" aria-label="Details">
+          <aside className="entry__rail" aria-label={t('entity.page.rail.label')}>
             {(detail?.fields.length ?? 0) > 0 && factSections.groups.length === 0 ? (
               <dl className="facts" data-testid="entry-fields">
                 {detail!.fields.map(fact)}
@@ -1380,7 +1386,7 @@ function EntityScreen({ view }: { view: EntryView }) {
 
             {(detail?.tags.length ?? 0) > 0 ? (
               <div className="rail__block">
-                <h2 className="rail__heading">Tags</h2>
+                <h2 className="rail__heading">{t('entity.page.rail.tags')}</h2>
                 <p className="dossier__tags" data-testid="entry-tags">
                   {detail!.tags.map((tag) => (
                     <span className="chip" key={tag}>
@@ -1397,9 +1403,9 @@ function EntityScreen({ view }: { view: EntryView }) {
 
             {detail ? (
               <p className="rail__meta">
-                Created {formatDate(detail.createdAt)}
+                {t('entity.page.rail.created', { date: formatDate(detail.createdAt) })}
                 <br />
-                Last changed {formatDate(detail.updatedAt)}
+                {t('entity.page.rail.lastChanged', { date: formatDate(detail.updatedAt) })}
               </p>
             ) : null}
           </aside>
@@ -1473,11 +1479,11 @@ function EntityScreen({ view }: { view: EntryView }) {
           <p className="actionbar__status" role="status" data-testid="entry-form-status">
             {isDirty
               ? suggesting
-                ? 'Not sent yet'
-                : 'Unsaved changes'
+                ? t('entity.page.bar.notSent')
+                : t('entity.page.bar.unsaved')
               : isNew
-                ? 'New entry'
-                : 'No changes yet'}
+                ? t('entity.page.bar.newEntry')
+                : t('entity.page.bar.noChanges')}
           </p>
           <div className="actionbar__actions">
             <button
@@ -1492,13 +1498,13 @@ function EntityScreen({ view }: { view: EntryView }) {
               <ActionIcon icon={suggesting ? FilePenLine : Check} />
               {suggesting
                 ? isSaving
-                  ? 'Sending'
-                  : 'Send suggestion'
+                  ? t('entity.page.bar.sending')
+                  : t('entity.page.bar.send')
                 : isSaving
-                  ? 'Saving'
+                  ? t('entity.page.bar.saving')
                   : isNew
-                    ? 'Create entry'
-                    : 'Save changes'}
+                    ? t('entity.page.bar.create')
+                    : t('entity.page.bar.save')}
             </button>
             {!isNew ? (
               <button
@@ -1510,11 +1516,15 @@ function EntityScreen({ view }: { view: EntryView }) {
                     isDirty &&
                     !(await confirmAction({
                       title: suggesting
-                        ? 'Close the form without sending your suggestion?'
-                        : 'Close the form without saving your changes?',
-                      message: suggesting ? 'It will be lost.' : 'They will be lost.',
-                      confirmLabel: suggesting ? 'Discard suggestion' : 'Discard changes',
-                      cancelLabel: 'Keep editing',
+                        ? t('entity.page.bar.closeSuggestion.title')
+                        : t('entity.page.bar.closeEdit.title'),
+                      message: suggesting
+                        ? t('entity.page.bar.closeSuggestion.message')
+                        : t('entity.page.bar.closeEdit.message'),
+                      confirmLabel: suggesting
+                        ? t('entity.page.bar.closeSuggestion.confirm')
+                        : t('entity.page.bar.closeEdit.confirm'),
+                      cancelLabel: t('entity.page.bar.keepEditing'),
                       variant: 'destructive',
                     }))
                   ) {
@@ -1525,7 +1535,7 @@ function EntityScreen({ view }: { view: EntryView }) {
                 data-testid="cancel-entity"
               >
                 <ActionIcon icon={X} />
-                Cancel
+                {t('entity.page.bar.cancel')}
               </button>
             ) : null}
           </div>
@@ -1578,10 +1588,12 @@ function CopyPanel({
   copyArticle: boolean
   onCopyArticle: (copy: boolean) => void
 }) {
+  const { t, tn, tx } = useI18n()
+
   if (!source) {
     return (
       <p className="callout callout--warning" role="status" data-testid="entry-copy-unavailable">
-        The entry to copy from couldn&rsquo;t be opened. This is a blank new entry.
+        {t('entity.copy.unavailable')}
       </p>
     )
   }
@@ -1641,16 +1653,13 @@ function CopyPanel({
       <p className="callout__title" id="entry-copy-title">
         {/* Named, not linked: the new form and an entry are one page, and a link from one to the other would carry the open
             form onto the source. */}
-        Copying from <bdi>{detail.name}</bdi>
+        {tx('entity.copy.title', { name: <bdi>{detail.name}</bdi> })}
       </p>
-      <p>
-        Its type, summary, tags and fields are in the form below. Change anything before you create
-        the entry.
-      </p>
+      <p>{t('entity.copy.intro')}</p>
 
       {aliases.length > 0 || references.length > 0 || article ? (
         <fieldset className="entrycopy__options">
-          <legend>Also copy</legend>
+          <legend>{t('entity.copy.also')}</legend>
           <div className="choices">
             {aliases.length > 0 ? (
               <label className="check">
@@ -1660,9 +1669,7 @@ function CopyPanel({
                   onChange={(event) => setAliases(event.target.checked)}
                   data-testid="entry-copy-aliases"
                 />
-                <span>
-                  Other names: <NameList names={aliases} />
-                </span>
+                <span>{tx('entity.copy.aliases', { names: <NameList names={aliases} /> })}</span>
               </label>
             ) : null}
             {references.length > 0 ? (
@@ -1675,13 +1682,18 @@ function CopyPanel({
                   data-testid="entry-copy-references"
                 />
                 <span>
-                  Links to other entries:{' '}
-                  <NameList
-                    names={references.map(
-                      (value) => `${value.name}: ${value.referencedEntityName ?? 'Another entry'}`,
-                    )}
-                  />
-                  {sameType ? null : ' (only within the same type)'}
+                  {tx(sameType ? 'entity.copy.references' : 'entity.copy.referencesSameType', {
+                    names: (
+                      <NameList
+                        names={references.map((value) =>
+                          t('entity.copy.referenceItem', {
+                            field: value.name,
+                            entry: value.referencedEntityName ?? t('entity.copy.anotherEntry'),
+                          }),
+                        )}
+                      />
+                    ),
+                  })}
                 </span>
               </label>
             ) : null}
@@ -1693,7 +1705,7 @@ function CopyPanel({
                   onChange={(event) => onCopyArticle(event.target.checked)}
                   data-testid="entry-copy-article"
                 />
-                <span>Article</span>
+                <span>{t('entity.copy.article')}</span>
               </label>
             ) : null}
           </div>
@@ -1702,20 +1714,17 @@ function CopyPanel({
 
       {copyArticle && article ? (
         links.length === 0 ? (
-          <p data-testid="entry-copy-links">The article has no links.</p>
+          <p data-testid="entry-copy-links">{t('entity.copy.noLinks')}</p>
         ) : (
           <div data-testid="entry-copy-links">
-            <p>
-              The article is copied with its {links.length === 1 ? 'link' : `${links.length} links`}
-              , as written:
-            </p>
+            <p>{tn('entity.copy.linksCopied', links.length, { n: links.length })}</p>
             <ul className="entrycopy__links">
               {links.map((link, index) => (
                 <li key={index}>
                   <bdi>{link.text}</bdi> &rarr;{' '}
                   <span className="entrycopy__href">
                     {link.href.startsWith('/') || link.href.startsWith('#')
-                      ? `${link.href} (inside LorEvolve)`
+                      ? t('entity.copy.inside', { href: link.href })
                       : link.href}
                   </span>
                 </li>
@@ -1726,8 +1735,7 @@ function CopyPanel({
       ) : null}
 
       <p className="entryform__note" data-testid="entry-copy-skipped">
-        Not copied: its picture, relationships, story and scene links, eras, forms and appearances,
-        comments, history and publication. The copy starts as an Idea and stays private.
+        {t('entity.copy.skipped')}
       </p>
     </section>
   )
@@ -1739,15 +1747,15 @@ function CopyPanel({
  */
 function sectionMeta(items: FieldDefinition[], refused: number) {
   const required = items.filter((definition) => definition.isRequired).length
-  const parts = [items.length === 1 ? '1 field' : `${items.length} fields`]
-  if (required > 0) parts.push(`${required} required`)
+  const parts = [tn('entity.sections.fields', items.length, { n: items.length })]
+  if (required > 0) parts.push(t('entity.sections.required', { n: required }))
   return (
     <>
       {parts.join(' · ')}
       {refused > 0 ? (
         <span className="fieldsection__alert">
           {' · '}
-          {refused === 1 ? '1 needs attention' : `${refused} need attention`}
+          {tn('entity.sections.attention', refused, { n: refused })}
         </span>
       ) : null}
     </>
@@ -1776,11 +1784,11 @@ function heldReference(detail: EntityDetail | null, fieldDefinitionId: string) {
     return null
   }
 
-  const name = held.referencedEntityName ?? 'Unavailable'
+  const name = held.referencedEntityName ?? t('entity.page.held.unavailable')
 
   return {
     id: held.referencedEntityId,
-    name: held.referencedEntityIsTrashed ? `${name} (in Trash)` : name,
+    name: held.referencedEntityIsTrashed ? t('entity.page.held.inTrash', { name }) : name,
   }
 }
 
@@ -1802,9 +1810,9 @@ function entryChanges(
 ): Change[] {
   const sorted = (values: string[]) => [...values].sort().join(', ')
   const rows: Change[] = [
-    { label: 'Name', latest: latest.name, mine: draft.name.trim() },
+    { label: t('entity.page.changes.name'), latest: latest.name, mine: draft.name.trim() },
     {
-      label: 'Type',
+      label: t('entity.page.changes.type'),
       latest: latest.entityTypeName,
       mine:
         draft.entityTypeId === latest.entityTypeId
@@ -1812,13 +1820,21 @@ function entryChanges(
           : (types.find((type) => type.id === draft.entityTypeId)?.name ?? ''),
     },
     {
-      label: 'Status',
+      label: t('entity.page.changes.status'),
       latest: CANON_LABELS[latest.canonStatus],
       mine: CANON_LABELS[draft.canonStatus],
     },
-    { label: 'Summary', latest: latest.summary ?? '', mine: draft.summary.trim() },
-    { label: 'Also known as', latest: sorted(latest.aliases), mine: sorted(draft.aliases) },
-    { label: 'Tags', latest: sorted(latest.tags), mine: sorted(draft.tags) },
+    {
+      label: t('entity.page.changes.summary'),
+      latest: latest.summary ?? '',
+      mine: draft.summary.trim(),
+    },
+    {
+      label: t('entity.page.changes.aliases'),
+      latest: sorted(latest.aliases),
+      mine: sorted(draft.aliases),
+    },
+    { label: t('entity.page.changes.tags'), latest: sorted(latest.tags), mine: sorted(draft.tags) },
   ]
 
   const definitions = types.find((type) => type.id === draft.entityTypeId)?.fields ?? []
@@ -1852,7 +1868,7 @@ function entryChanges(
           referencedEntityName:
             mine.referencedEntityId === null
               ? null
-              : (known?.referencedEntityName ?? 'Another entry'),
+              : (known?.referencedEntityName ?? t('entity.page.changes.anotherEntry')),
           referencedEntityIsTrashed: known?.referencedEntityIsTrashed ?? false,
         },
         chronology,

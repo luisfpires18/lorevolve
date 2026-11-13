@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { EntityPicker } from './EntityPicker'
 import { ApiError } from '../lib/api'
@@ -112,6 +113,7 @@ export function RelationshipSection({
   entityName,
   chronology,
 }: RelationshipSectionProps) {
+  const { t, tx } = useI18n()
   const access = useUniverseAccess()
   const [views, setViews] = useState<RelationshipView[] | null>(null)
   const [types, setTypes] = useState<RelationshipType[]>([])
@@ -139,7 +141,7 @@ export function RelationshipSection({
   const custom = hasCalendar(chronology)
 
   const isDirty = draft !== null && draftKey(draft) !== opened
-  useLeaveGuard(isDirty ? 'This relation has unsaved changes. Leave without saving it?' : null)
+  useLeaveGuard(isDirty ? t('relationships.section.leave') : null)
 
   const at = shownAt ? chronologyOf(shownAt, reckonsInEras, custom) : null
   const whenReady =
@@ -161,9 +163,7 @@ export function RelationshipSection({
           // A failed read at a time keeps what was shown; a failed first read has nothing to keep.
           setViews((current) => current ?? [])
           setReadError(
-            at
-              ? 'The relations at that time could not be read. Check the date and try again.'
-              : 'The relations could not be read.',
+            at ? t('relationships.section.readFailedAt') : t('relationships.section.readFailed'),
           )
         }),
     // `at` is rebuilt every render from what was shown; its text is what decides.
@@ -255,7 +255,7 @@ export function RelationshipSection({
     if (!draft) return
 
     if (!draft.related) {
-      setFieldErrors({ targetentityid: 'Choose the entry this connects to.' })
+      setFieldErrors({ targetentityid: t('relationships.section.chooseEntry') })
       return
     }
 
@@ -290,10 +290,10 @@ export function RelationshipSection({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be saved.',
+            : t('relationships.section.detailsNeedChange'),
         )
       } else {
-        setMessage('That relation could not be saved.')
+        setMessage(t('relationships.section.saveFailed'))
       }
     } finally {
       setIsSaving(false)
@@ -305,14 +305,17 @@ export function RelationshipSection({
     const removed = await confirmAction({
       title: (
         <>
-          Move “<bdi>{view.label}</bdi> <bdi>{view.relatedEntityName}</bdi>” to the Trash?
+          {tx('relationships.section.moveTitle', {
+            label: <bdi>{view.label}</bdi>,
+            related: <bdi>{view.relatedEntityName}</bdi>,
+          })}
         </>
       ),
-      message: 'You can restore it from the Trash.',
-      confirmLabel: 'Move to Trash',
-      busyLabel: 'Moving…',
+      message: t('relationships.section.moveMessage'),
+      confirmLabel: t('relationships.section.moveConfirm'),
+      busyLabel: t('relationships.section.moveBusy'),
       variant: 'warning',
-      failure: 'That relation could not be removed.',
+      failure: t('relationships.section.removeFailed'),
       action: () => deleteRelationship(universeId, view.id),
     })
     if (!removed) return
@@ -342,14 +345,16 @@ export function RelationshipSection({
   const eraChoices: EraChoice[] = ends.flatMap((id) =>
     (erasOf[id]?.eras ?? []).map((era) => ({
       id: era.id,
-      label: `${era.name} (${id === entityId ? entityName || 'this entry' : (draft?.related?.name ?? '')})`,
+      label: `${era.name} (${id === entityId ? entityName || t('relationships.section.thisEntry') : (draft?.related?.name ?? '')})`,
     })),
   )
 
   const form = draft ? (
     <div className="relform" data-testid="relationship-form">
       <p className="relform__reads" data-testid="relationship-preview">
-        <span className="relform__subject">{entityName || 'This entry'}</span>{' '}
+        <span className="relform__subject">
+          {entityName || t('relationships.section.thisEntryCap')}
+        </span>{' '}
         <span className="relform__verb">{labelFor(types, draft.typeId, draft.useInverse)}</span>{' '}
         <span className="relform__object">{draft.related?.name ?? '…'}</span>
       </p>
@@ -357,7 +362,7 @@ export function RelationshipSection({
       <div className="relform__grid">
         <div className="field">
           <label className="field__label" htmlFor="relation-reading">
-            Reading
+            {t('relationships.section.reading')}
           </label>
           <select
             id="relation-reading"
@@ -383,7 +388,7 @@ export function RelationshipSection({
         </div>
 
         <EntityPicker
-          label="Connected to"
+          label={t('relationships.section.connectedTo')}
           universeId={universeId}
           value={draft.related}
           onChange={(related) => edit({ related })}
@@ -392,13 +397,15 @@ export function RelationshipSection({
           // The form only opens for someone who may edit content, which is who may create Lore. Any type: a relation's
           // other end has no limit of its own.
           quickCreate={
-            access.editContent ? { chronology, keepHint: 'Save the relation to connect it.' } : null
+            access.editContent
+              ? { chronology, keepHint: t('relationships.section.keepHint') }
+              : null
           }
         />
 
         <div className="field">
-          <span className="field__label">Status</span>
-          <div className="canon" role="group" aria-label="Relation status">
+          <span className="field__label">{t('relationships.section.status')}</span>
+          <div className="canon" role="group" aria-label={t('relationships.section.statusGroup')}>
             {CANON_ORDER.map((option) => (
               <button
                 key={option}
@@ -429,10 +436,11 @@ export function RelationshipSection({
           clearable, never typed any more (Issue #18). */}
       {draft.legacyStart || draft.legacyEnd ? (
         <div className="field relform__legacy" data-testid="relation-legacy-dates">
-          <span className="field__label">Real-world dates</span>
+          <span className="field__label">{t('relationships.section.legacyLabel')}</span>
           <p className="field__hint">
-            {formatSpan(draft.legacyStart, draft.legacyEnd)}. Recorded before relations could be
-            placed in this universe&rsquo;s own time.
+            {t('relationships.section.legacyHint', {
+              span: formatSpan(draft.legacyStart, draft.legacyEnd) ?? '',
+            })}
           </p>
           <button
             type="button"
@@ -440,7 +448,7 @@ export function RelationshipSection({
             onClick={() => edit({ legacyStart: null, legacyEnd: null })}
             data-testid="relation-legacy-clear"
           >
-            Clear real-world dates
+            {t('relationships.section.legacyClear')}
           </button>
           {fieldErrors.enddate ? <p className="field__error">{fieldErrors.enddate}</p> : null}
         </div>
@@ -448,13 +456,13 @@ export function RelationshipSection({
 
       <div className="field">
         <label className="field__label" htmlFor="relation-notes">
-          Notes
+          {t('relationships.section.notes')}
         </label>
         <textarea
           id="relation-notes"
           className="entry__summaryinput"
           rows={2}
-          placeholder="What is worth remembering about this connection."
+          placeholder={t('relationships.section.notesPlaceholder')}
           value={draft.notes}
           onChange={(event) => edit({ notes: event.target.value })}
           data-testid="relation-notes"
@@ -470,7 +478,11 @@ export function RelationshipSection({
           disabled={isSaving}
           data-testid="save-relationship"
         >
-          {isSaving ? 'Saving' : editingId ? 'Save relation' : 'Add relation'}
+          {isSaving
+            ? t('relationships.section.saving')
+            : editingId
+              ? t('relationships.section.save')
+              : t('relationships.section.addSubmit')}
         </button>
         <button
           className="button button--secondary"
@@ -479,7 +491,7 @@ export function RelationshipSection({
             void mayDiscard().then((discarding) => discarding && close())
           }}
         >
-          Cancel
+          {t('relationships.section.cancel')}
         </button>
       </div>
     </div>
@@ -489,7 +501,7 @@ export function RelationshipSection({
     <section className="relations" aria-labelledby="relations-heading">
       <div className="relations__head">
         <h2 className="relations__title" id="relations-heading">
-          Relations
+          {t('relationships.section.heading')}
         </h2>
         {access.editContent && types.length > 0 && !isAdding && !editingId ? (
           <button
@@ -499,7 +511,7 @@ export function RelationshipSection({
             data-testid="add-relationship"
           >
             <ActionIcon icon={Plus} />
-            Add relation
+            {t('relationships.section.add')}
           </button>
         ) : null}
       </div>
@@ -509,7 +521,7 @@ export function RelationshipSection({
           <p>{message ?? readError}</p>
           {readError && !message ? (
             <button className="button button--secondary" type="button" onClick={() => void load()}>
-              Try again
+              {t('relationships.section.retry')}
             </button>
           ) : null}
         </div>
@@ -525,7 +537,9 @@ export function RelationshipSection({
             onClick={() => setWhen(shownAt ?? EMPTY_POINT)}
             data-testid="relations-when-open"
           >
-            {shownAt ? 'Change the time' : 'Show the relations at a time'}
+            {shownAt
+              ? t('relationships.section.changeTime')
+              : t('relationships.section.showAtTime')}
           </button>
         ) : (
           <form
@@ -553,8 +567,8 @@ export function RelationshipSection({
             {!whenReady ? (
               <p className="field__hint" data-testid="relations-when-hint">
                 {reckonsInEras
-                  ? 'Give a date period and a year, then Show.'
-                  : 'Give a year, then Show.'}
+                  ? t('relationships.section.whenHintEras')
+                  : t('relationships.section.whenHint')}
               </p>
             ) : null}
             <div className="relwhen__actions">
@@ -564,7 +578,7 @@ export function RelationshipSection({
                 disabled={!whenReady}
                 data-testid="relations-when-show"
               >
-                Show
+                {t('relationships.section.show')}
               </button>
               <button
                 className="button button--secondary button--sm"
@@ -574,7 +588,7 @@ export function RelationshipSection({
                   requestAnimationFrame(() => whenOpen.current?.focus())
                 }}
               >
-                Cancel
+                {t('relationships.section.whenCancel')}
               </button>
             </div>
           </form>
@@ -587,15 +601,15 @@ export function RelationshipSection({
             ref={whenStatus}
             data-testid="relations-when-status"
           >
-            Showing what holds at{' '}
-            {formatChronologyPoint(chronology, {
-              year: at.year ?? 0,
-              month: at.month,
-              day: at.day,
-              eraId: at.eraId,
-              monthId: at.monthId,
-            })}
-            .{' '}
+            {t('relationships.section.showingAt', {
+              date: formatChronologyPoint(chronology, {
+                year: at.year ?? 0,
+                month: at.month,
+                day: at.day,
+                eraId: at.eraId,
+                monthId: at.monthId,
+              }),
+            })}{' '}
             <button
               type="button"
               className="linkbutton"
@@ -605,7 +619,7 @@ export function RelationshipSection({
               }}
               data-testid="relations-when-clear"
             >
-              Show all
+              {t('relationships.section.showAll')}
             </button>
           </p>
         ) : null}
@@ -615,24 +629,25 @@ export function RelationshipSection({
 
       {views === null ? (
         <p className="relations__quiet" role="status">
-          Reading the relations…
+          {t('relationships.section.readingRelations')}
         </p>
       ) : views.length === 0 && !isAdding ? (
         <EmptyState
           testId="relations-empty"
           title={
-            shownAt ? (
-              'No relation holds then.'
-            ) : readError ? (
-              'Nothing could be shown.'
-            ) : types.length === 0 ? (
-              <>
-                Relations need a kind first, like who rules what or who is married to whom. Name one
-                under <Link to={`/app/universes/${universeId}/types`}>Types</Link>.
-              </>
-            ) : (
-              'Nothing connects to this yet. Add the first relation.'
-            )
+            shownAt
+              ? t('relationships.section.noneThen')
+              : readError
+                ? t('relationships.section.nothingShown')
+                : types.length === 0
+                  ? tx('relationships.section.needKind', {
+                      link: (
+                        <Link to={`/app/universes/${universeId}/types`}>
+                          {t('relationships.section.typesLink')}
+                        </Link>
+                      ),
+                    })
+                  : t('relationships.section.empty')
           }
         />
       ) : (
@@ -683,14 +698,18 @@ export function RelationshipSection({
                           ) : null}
                           {formatSpan(view.startDate, view.endDate) ? (
                             <span className="relation__span">
-                              Real-world: {formatSpan(view.startDate, view.endDate)}
+                              {t('relationships.section.realWorld', {
+                                span: formatSpan(view.startDate, view.endDate) ?? '',
+                              })}
                             </span>
                           ) : null}
                           {view.validity === Validity.Timeless ? (
-                            <span className="relation__validity">Always</span>
+                            <span className="relation__validity">
+                              {t('relationships.section.always')}
+                            </span>
                           ) : view.validity === Validity.Unplaced ? (
                             <span className="relation__validity" data-testid="relation-unplaced">
-                              Can&rsquo;t be placed then
+                              {t('relationships.section.unplaced')}
                             </span>
                           ) : null}
                         </p>
@@ -700,7 +719,10 @@ export function RelationshipSection({
                       {access.editContent ? (
                         <ActionMenu
                           className="relation__menu"
-                          label={`More actions for ${view.label} ${view.relatedEntityName}`}
+                          label={t('relationships.section.moreActions', {
+                            label: view.label,
+                            related: view.relatedEntityName,
+                          })}
                           triggerTestId={`relationship-actions-${view.relatedEntityName}`}
                         >
                           <button
@@ -710,7 +732,7 @@ export function RelationshipSection({
                             data-testid={`edit-relationship-${view.relatedEntityName}`}
                           >
                             <ActionIcon icon={Pencil} />
-                            Edit relation
+                            {t('relationships.section.edit')}
                           </button>
                           <hr className="actionmenu__divider" />
                           <button
@@ -720,7 +742,7 @@ export function RelationshipSection({
                             data-testid={`delete-relationship-${view.relatedEntityName}`}
                           >
                             <ActionIcon icon={Trash} />
-                            Remove relation
+                            {t('relationships.section.remove')}
                           </button>
                         </ActionMenu>
                       ) : null}
