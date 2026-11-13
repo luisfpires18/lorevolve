@@ -39,7 +39,8 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-12 `master` and `dev` match (PRs #91 to #95 released). `WEBSITE_RUN_FROM_PACKAGE=1` and
+As of 2026-11-13 `master` and `dev` match (PR #97 merged to `master`; PROD not yet deployed with it, run
+`deploy-prod.yml` when the owner asks). `WEBSITE_RUN_FROM_PACKAGE=1` and
 `SCM_MAX_ZIP_PACKAGE_COUNT=2` are set on DEV and PROD (2026-11-11), so a deploy no longer swaps files under the running app. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
@@ -76,6 +77,9 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 ## Owner steps and unverified items
 
+- **Perf pass** (PR #97), on DEV and `master`. Owner to check: move a type up or down, reorder groups on
+  the Groups tab and resolve a comment thread; each should change at once, before the server answers. Redis and new
+  indexes were judged not worth it (reasons in the PR).
 - **Types: group priority (#94) and inherited fields (#95)**, on PROD. Owner to check: reorder groups on the
   Groups tab and look at a scene's Lore chips; give a parent type a field and write an entry of a nested type.
 - **AI proposals for story structure** (PR #92, on PROD): a scene's beats as its whole list, a chapter's `arc`/`noArc`,

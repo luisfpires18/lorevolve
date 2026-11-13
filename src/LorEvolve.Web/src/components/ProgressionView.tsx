@@ -732,6 +732,7 @@ function EraPanel({
                 {look.images[0] ? (
                   <img
                     className="gallery__thumb"
+                    decoding="async"
                     src={appearanceDisplayUrl(universeId, entry.id, look.id, look.images[0])}
                     alt=""
                     width={look.images[0].width}

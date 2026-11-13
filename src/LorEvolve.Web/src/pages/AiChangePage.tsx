@@ -739,6 +739,8 @@ function MediaChange({
             alt={`The picture uploaded for: ${change.title}`}
             width={160}
             height={160}
+            loading="lazy"
+            decoding="async"
             data-testid="ai-change-media-preview"
           />
           <figcaption>

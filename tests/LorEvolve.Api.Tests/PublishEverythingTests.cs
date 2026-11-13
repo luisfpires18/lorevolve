@@ -104,6 +104,28 @@ public sealed class PublishEverythingTests(LorEvolveApiFactory factory) : IClass
     }
 
     [Fact]
+    public async Task Namesakes_published_together_each_get_their_own_address()
+    {
+        var (owner, _) = await Account(_factory, "pe-twins");
+        var universe = await Ready(owner, "Pe twins world");
+        var u = universe.Id;
+
+        var first = await Entry(owner, u, "Twin hollow", CanonStatus.Canon);
+        var second = await Entry(owner, u, "Twin hollow", CanonStatus.Canon);
+        var third = await Entry(owner, u, "Twin hollow", CanonStatus.Canon);
+
+        Assert.Equal(new PublishEverythingResult(3, 0, 0), await PublishAll(owner, u));
+
+        var slugs = new[]
+        {
+            (await EntryState(owner, u, first)).PublicSlug,
+            (await EntryState(owner, u, second)).PublicSlug,
+            (await EntryState(owner, u, third)).PublicSlug,
+        };
+        Assert.Equal(["twin-hollow", "twin-hollow-2", "twin-hollow-3"], slugs.Order());
+    }
+
+    [Fact]
     public async Task Only_the_owner_may_preview_or_publish_everything()
     {
         var (owner, _) = await Account(_factory, "pe-owner");

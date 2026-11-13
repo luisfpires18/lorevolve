@@ -362,6 +362,20 @@ test.describe('group priority', () => {
     }
     await expect(panel.getByTestId('type-group-up-Realms')).toBeDisabled()
 
+    // A move shows at once; a refused one puts the order back and says so.
+    let release!: () => void
+    const held = new Promise<void>((resolve) => (release = resolve))
+    await page.route('**/entity-type-groups/order', async (route) => {
+      await held
+      await route.fulfill({ status: 500, json: { title: 'Server error' } })
+    })
+    await panel.getByTestId('type-group-down-Realms').click()
+    await expect(rows.nth(1)).toContainText('Realms')
+    release()
+    await expect(rows.nth(0)).toContainText('Realms')
+    await expect(panel.getByTestId('type-group-problem')).toBeVisible()
+    await page.unroute('**/entity-type-groups/order')
+
     // A scene picked Mara, Lava Rune, Arkazia: Realms (Arkazia) first, then Characters (Mara), ungrouped runes last.
     const story = await post(page, `/api/universes/${w.u}/stories`, {
       title: 'Orders',
