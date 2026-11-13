@@ -14,7 +14,9 @@ and 107 end-to-end specs that find elements by their English text.
 **A small typed module in `src/LorEvolve.Web/src/i18n/`, no dependency.**
 
 - `en.ts` is the source dictionary, nested by feature. Its shape is the contract: `pt-PT.ts` uses `satisfies Dictionary`,
-  so a missing or unknown key fails `npm run typecheck`. Never name a group `other`; that key marks a plural.
+  so a missing or unknown key fails `npm run typecheck`. An object whose keys are only plural forms (`zero`, `one`,
+  `two`, `few`, `many`, `other`) is a plural; a group may still hold a message called `other`. Each feature area keeps
+  its group in `en/<area>.ts`; every language mirrors the folder, and an untranslated area re-exports the English file.
 - `t(key, vars)` for a message with `{name}` placeholders, `tn(key, count)` for a plural chosen by `Intl.PluralRules`
   (Portuguese counts 0 as plural), `tx(key, nodes)` for a sentence holding a link or a bold name. Components read them
   through `useI18n()`, which re-renders when the language changes. A key a translation lacks falls back to English.

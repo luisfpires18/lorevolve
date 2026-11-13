@@ -10,6 +10,7 @@ import {
 } from '../portal/api'
 import { usePublicPages } from '../portal/usePublicPages'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useI18n } from '../i18n'
 
 type LoadState =
   | { slug: string; kind: 'ready'; author: PublicAuthor }
@@ -26,6 +27,7 @@ type LoadState =
  * holds. The workspace's own Profile is a different thing, and stays in the workspace.
  */
 export default function PublicAuthorPage() {
+  const { t } = useI18n()
   const { authorSlug = '' } = useParams<{ authorSlug: string }>()
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<LoadState | null>(null)
@@ -49,7 +51,7 @@ export default function PublicAuthorPage() {
   const current = state?.slug === authorSlug ? state : null
 
   if (current?.kind === 'missing') {
-    return <PortalMissing title="This author is not available." testId="author-missing" />
+    return <PortalMissing title={t('portal.author.missing')} testId="author-missing" />
   }
 
   if (current?.kind === 'error') {
@@ -58,7 +60,7 @@ export default function PublicAuthorPage() {
 
   if (!current) {
     return (
-      <div className="pauthor" role="status" aria-label="Opening this author">
+      <div className="pauthor" role="status" aria-label={t('portal.author.opening')}>
         <div className="pauthor__head pauthor__head--skeleton" />
       </div>
     )
@@ -68,6 +70,7 @@ export default function PublicAuthorPage() {
 }
 
 function Author({ author }: { author: PublicAuthor }) {
+  const { t, tn } = useI18n()
   useDocumentTitle(author.displayName)
   const fetchWorlds = useCallback(
     (page: number, signal: AbortSignal) =>
@@ -98,15 +101,13 @@ function Author({ author }: { author: PublicAuthor }) {
           )}
         </span>
         <div className="pauthor__text">
-          <p className="pread__eyebrow">Creator on LorEvolve</p>
+          <p className="pread__eyebrow">{t('portal.author.eyebrow')}</p>
           <h1 className="pauthor__name" dir="auto">
             <bdi>{author.displayName}</bdi>
           </h1>
           {worlds.status === 'ready' ? (
             <p className="pauthor__count" data-testid="public-author-count">
-              {worlds.totalCount === 1
-                ? '1 published world'
-                : `${worlds.totalCount} published worlds`}
+              {tn('portal.author.count', worlds.totalCount, { n: worlds.totalCount })}
             </p>
           ) : null}
         </div>
@@ -114,18 +115,18 @@ function Author({ author }: { author: PublicAuthor }) {
 
       <section className="pauthor__worlds" aria-labelledby="author-worlds-heading">
         <h2 className="pworld__heading" id="author-worlds-heading">
-          Worlds
+          {t('portal.author.worldsHeading')}
         </h2>
         {worlds.status === 'error' ? (
           <div className="pworld__empty" role="alert">
-            <p>These worlds could not be loaded.</p>
+            <p>{t('portal.author.loadFailed')}</p>
             <button className="portal__pill" type="button" onClick={worlds.retry}>
-              Try again
+              {t('portal.author.retry')}
             </button>
           </div>
         ) : worlds.status === 'loading' ? (
           <p className="pworld__status" role="status">
-            Opening their worlds…
+            {t('portal.author.loading')}
           </p>
         ) : (
           <ul className="explore-grid" data-testid="public-author-worlds">
@@ -143,7 +144,7 @@ function Author({ author }: { author: PublicAuthor }) {
               disabled={worlds.more === 'loading'}
               aria-busy={worlds.more === 'loading'}
             >
-              {worlds.more === 'loading' ? 'Loading…' : 'Show more worlds'}
+              {worlds.more === 'loading' ? t('portal.author.moreLoading') : t('portal.author.more')}
             </button>
           </div>
         ) : null}

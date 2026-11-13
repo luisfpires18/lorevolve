@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { authorPath, type PublicUniverse } from '../portal/api'
+import { useI18n } from '../i18n'
 
 /**
  * Who a public world is by (ADR 0039). A world of its author's own: "by" its author. A world based on someone else's work:
@@ -22,6 +23,7 @@ export function WorldAttribution({
   /** Anything that follows the author on the same line, such as a story's publication date. */
   after?: ReactNode
 }) {
+  const { t, tx } = useI18n()
   const author = (
     <Link className="plink" to={authorPath(world.authorSlug)} data-testid={`${testId}-author`}>
       <bdi>{world.authorDisplayName}</bdi>
@@ -31,7 +33,7 @@ export function WorldAttribution({
   if (!world.originalCreator) {
     return (
       <p className={className} data-testid={`${testId}-byline`}>
-        by {author}
+        {tx('portal.attribution.by', { author })}
         {after}
       </p>
     )
@@ -40,7 +42,9 @@ export function WorldAttribution({
   return (
     <div className={`attribution ${className}`} data-testid={`${testId}-byline`}>
       <p className="attribution__original" data-testid={`${testId}-original`}>
-        Based on works by <bdi className="attribution__creator">{world.originalCreator}</bdi>
+        {tx('portal.attribution.basedOn', {
+          creator: <bdi className="attribution__creator">{world.originalCreator}</bdi>,
+        })}
         {world.originalWork ? (
           <>
             <span aria-hidden="true"> · </span>
@@ -51,12 +55,11 @@ export function WorldAttribution({
         ) : null}
       </p>
       <p className="attribution__curator">
-        Curated on LorEvolve by {author}
+        {tx('portal.attribution.curatedOn', { author })}
         {after}
       </p>
       <p className="attribution__note" data-testid={`${testId}-unofficial`}>
-        Unofficial fan or reference project. Not affiliated with or endorsed by the original
-        creator.
+        {t('portal.attribution.unofficial')}
       </p>
     </div>
   )

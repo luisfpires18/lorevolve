@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import { t } from '../i18n'
 import { UniverseRole, type UniverseRoleValue } from './types'
 
 /**
@@ -130,6 +131,24 @@ export const COLLABORATOR_ROLES = [
   UniverseRole.Viewer,
 ] as const
 
+const ROLE_KEYS = {
+  [UniverseRole.Owner]: 'owner',
+  [UniverseRole.Editor]: 'editor',
+  [UniverseRole.Reviewer]: 'reviewer',
+  [UniverseRole.Viewer]: 'viewer',
+} as const satisfies Record<UniverseRoleValue, string>
+
+/** A role's name in the current language. Read it when rendering. */
+export function roleLabel(role: UniverseRoleValue) {
+  return t(`roles.${ROLE_KEYS[role]}.label`)
+}
+
+/** One line per role, beside the picker, in the current language. Nothing promised that does not exist. */
+export function roleDescription(role: UniverseRoleValue) {
+  return t(`roles.${ROLE_KEYS[role]}.description`)
+}
+
+/** @deprecated English only; use `roleLabel` (kept for the screens #102 to #105 move). */
 export const ROLE_LABELS: Record<UniverseRoleValue, string> = {
   [UniverseRole.Owner]: 'Owner',
   [UniverseRole.Editor]: 'Editor',
@@ -137,7 +156,7 @@ export const ROLE_LABELS: Record<UniverseRoleValue, string> = {
   [UniverseRole.Viewer]: 'Viewer',
 }
 
-/** One line per role, beside the picker. Nothing promised that does not exist. */
+/** @deprecated English only; use `roleDescription` (kept for the screens #102 to #105 move). */
 export const ROLE_DESCRIPTIONS: Record<UniverseRoleValue, string> = {
   [UniverseRole.Owner]: 'Owns this universe.',
   [UniverseRole.Editor]:

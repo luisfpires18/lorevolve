@@ -4,6 +4,7 @@ import type { AssistantKindUsage } from '../assistant/types'
 import { useUsageLoad } from '../lib/useUsageLoad'
 import { UsageItem, UsageMeter } from './UsageItem'
 import { dateFormat } from '../i18n/format'
+import { useI18n } from '../i18n'
 
 const TIME: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' }
 
@@ -16,6 +17,7 @@ const TIME: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' }
  * once more when the sooner window ends - one timer, never polling.
  */
 export function AssistantUsage() {
+  const { t } = useI18n()
   const { load, refresh, retry } = useUsageLoad(getAssistantUsage)
 
   useEffect(() => {
@@ -46,29 +48,26 @@ export function AssistantUsage() {
   }, [resetsAt, refresh])
 
   return (
-    <UsageItem name="AI Assistant" testId="usage-assistant" load={load} onRetry={retry}>
+    <UsageItem
+      name={t('account.assistant.name')}
+      testId="usage-assistant"
+      load={load}
+      onRetry={retry}
+    >
       {(usage) => {
         const minutes = Math.round(usage.windowSeconds / 60)
 
         return (
           <>
-            <KindUsage
-              name="Questions"
-              testId="usage-assistant"
-              usage={usage.ask}
-              noun={['question', 'questions']}
-            />
-            <KindUsage
-              name="Change requests"
-              testId="usage-assistant-propose"
-              usage={usage.propose}
-              noun={['change request', 'change requests']}
-            />
+            <KindUsage kind="ask" testId="usage-assistant" usage={usage.ask} />
+            <KindUsage kind="propose" testId="usage-assistant-propose" usage={usage.propose} />
 
             <p className="settings__note">
-              Each hour you can ask {usage.ask.limit} questions and send {usage.propose.limit}{' '}
-              change requests, across all your universes. One counts even when the answer fails. The{' '}
-              {minutes} minutes start with your first one, and then they all come back at once.
+              {t('account.assistant.note', {
+                ask: usage.ask.limit,
+                propose: usage.propose.limit,
+                minutes,
+              })}
             </p>
           </>
         )
@@ -78,28 +77,48 @@ export function AssistantUsage() {
 }
 
 function KindUsage({
-  name,
+  kind,
   testId,
   usage,
-  noun,
 }: {
-  name: string
+  kind: 'ask' | 'propose'
   testId: string
   usage: AssistantKindUsage
-  noun: [string, string]
 }) {
+  const { t, tn } = useI18n()
   const labelId = useId()
   const full = usage.remaining <= 0
+  const time = usage.resetsAt ? dateFormat(TIME).format(new Date(usage.resetsAt)) : null
+  const words =
+    kind === 'ask'
+      ? {
+          name: t('account.assistant.ask.name'),
+          amount: t('account.assistant.ask.amount', { used: usage.used, limit: usage.limit }),
+          none:
+            time === null
+              ? t('account.assistant.ask.none')
+              : t('account.assistant.ask.noneAgain', { time }),
+          left: tn('account.assistant.ask.left', usage.remaining, { n: usage.remaining }),
+        }
+      : {
+          name: t('account.assistant.propose.name'),
+          amount: t('account.assistant.propose.amount', { used: usage.used, limit: usage.limit }),
+          none:
+            time === null
+              ? t('account.assistant.propose.none')
+              : t('account.assistant.propose.noneAgain', { time }),
+          left: tn('account.assistant.propose.left', usage.remaining, { n: usage.remaining }),
+        }
 
   return (
     <div className="usage__kind">
       <h4 className="usage__kind-name" id={labelId}>
-        {name}
+        {words.name}
       </h4>
       <UsageMeter
         labelId={labelId}
         testId={testId}
-        amount={`${usage.used} of ${usage.limit} ${noun[1]} used`}
+        amount={words.amount}
         used={usage.used}
         limit={usage.limit}
         full={full}
@@ -107,14 +126,11 @@ function KindUsage({
 
       {full ? (
         <p className="usage__full" data-testid={`${testId}-left`}>
-          No {noun[1]} left.
-          {usage.resetsAt
-            ? ` You can ask again at ${dateFormat(TIME).format(new Date(usage.resetsAt))}.`
-            : null}
+          {words.none}
         </p>
       ) : (
         <p className="usage__left" data-testid={`${testId}-left`}>
-          {usage.remaining === 1 ? `1 ${noun[0]} left` : `${usage.remaining} ${noun[1]} left`}
+          {words.left}
         </p>
       )}
     </div>

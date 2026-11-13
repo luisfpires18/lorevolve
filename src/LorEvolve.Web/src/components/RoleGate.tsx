@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { useUniverseAccess, type UniverseCapabilities } from '../universes/access'
 import { EmptyState } from './EmptyState'
 
@@ -16,6 +17,7 @@ export function RoleGate({
   need?: keyof UniverseCapabilities
   children: ReactNode
 }) {
+  const { t, tx } = useI18n()
   const access = useUniverseAccess()
   const { id } = useParams<{ id: string }>()
 
@@ -24,13 +26,10 @@ export function RoleGate({
   return (
     <EmptyState
       testId="role-unavailable"
-      title="This part of the universe is not available to you."
-      hint={
-        <>
-          Your role in this shared universe does not include it.{' '}
-          <Link to={`/app/universes/${id ?? ''}`}>Back to the overview</Link>
-        </>
-      }
+      title={t('shell.roleGate.title')}
+      hint={tx('shell.roleGate.hint', {
+        back: <Link to={`/app/universes/${id ?? ''}`}>{t('shell.roleGate.back')}</Link>,
+      })}
     />
   )
 }

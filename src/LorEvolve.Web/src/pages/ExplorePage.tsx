@@ -3,8 +3,9 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { WorldCard } from '../components/WorldCard'
 import { listPublicUniverses, type ExploreQuery, type PublicUniverse } from '../portal/api'
-import { CATEGORIES, GENRES } from '../publishing/types'
+import { CATEGORIES, categoryLabel, GENRES, genreLabel } from '../publishing/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { t, tn, useI18n } from '../i18n'
 
 /** The API's own limit on a search; the portal bar's field holds the same. */
 const SEARCH_MAX = 100
@@ -32,7 +33,8 @@ type Results =
  * address - a refresh starts from the first page again, with the same filters.</p>
  */
 export default function ExplorePage() {
-  useDocumentTitle('Explore Worlds')
+  useI18n()
+  useDocumentTitle(t('portal.explore.documentTitle'))
   const [params, setParams] = useSearchParams()
 
   // Only keys LorEvolve knows. A stale or hand-edited address shows everything rather than an error.
@@ -106,14 +108,20 @@ export default function ExplorePage() {
       <section className="explore-hero" aria-labelledby="explore-title">
         <div className="explore-hero__inner">
           <h1 className="explore-hero__title" id="explore-title">
-            Explore Worlds
+            {t('portal.explore.title')}
           </h1>
-          <p className="explore-hero__lede">Universes their authors have chosen to share.</p>
+          <p className="explore-hero__lede">{t('portal.explore.lede')}</p>
           <div className="explore-filters">
-            <nav className="explore-cats" aria-label="Categories">
+            <nav className="explore-cats" aria-label={t('portal.explore.categories')}>
               <ul className="explore-cats__list">
-                {[{ key: undefined, label: 'All' }, ...CATEGORIES].map((option) => (
-                  <li key={option.label}>
+                {[
+                  { key: undefined, label: t('portal.explore.all') },
+                  ...CATEGORIES.map((option) => ({
+                    key: option.key,
+                    label: categoryLabel(option.value),
+                  })),
+                ].map((option) => (
+                  <li key={option.key ?? 'all'}>
                     <Link
                       className="explore-cats__chip"
                       to={{ search: withParam(params, 'category', option.key) }}
@@ -129,7 +137,7 @@ export default function ExplorePage() {
 
             <div className="explore-filters__selects">
               <label className="explore-select">
-                <span className="explore-select__label">Genre</span>
+                <span className="explore-select__label">{t('portal.explore.genre')}</span>
                 <select
                   className="explore-select__control"
                   value={genre ?? ''}
@@ -138,16 +146,16 @@ export default function ExplorePage() {
                   }
                   data-testid="explore-genre"
                 >
-                  <option value="">All genres</option>
+                  <option value="">{t('portal.explore.allGenres')}</option>
                   {GENRES.map((option) => (
                     <option key={option.key} value={option.key}>
-                      {option.label}
+                      {genreLabel(option.value)}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="explore-select">
-                <span className="explore-select__label">Sort by</span>
+                <span className="explore-select__label">{t('portal.explore.sortBy')}</span>
                 <select
                   className="explore-select__control"
                   value={sort ?? 'recent'}
@@ -158,8 +166,8 @@ export default function ExplorePage() {
                   }
                   data-testid="explore-sort"
                 >
-                  <option value="recent">Recently published</option>
-                  <option value="az">A to Z</option>
+                  <option value="recent">{t('portal.explore.sortRecent')}</option>
+                  <option value="az">{t('portal.explore.sortAz')}</option>
                 </select>
               </label>
             </div>
@@ -171,13 +179,13 @@ export default function ExplorePage() {
         {/* Announced, not shown: the grid says how many at a glance, and Show more says how many are left. */}
         <p className="visually-hidden" role="status" data-testid="explore-count">
           {current === null
-            ? 'Finding worlds…'
+            ? t('portal.explore.finding')
             : ready
               ? countLine(ready.items.length, ready.totalCount, isFiltered)
               : ''}
         </p>
 
-        <h2 className="visually-hidden">Worlds</h2>
+        <h2 className="visually-hidden">{t('portal.explore.worldsHeading')}</h2>
 
         {current === null ? (
           <ul className="explore-grid" aria-hidden="true" data-testid="explore-loading">
@@ -200,13 +208,13 @@ export default function ExplorePage() {
             role="alert"
             data-testid="explore-error"
           >
-            <p>The published worlds could not be loaded. Check your connection and try again.</p>
+            <p>{t('portal.explore.error.message')}</p>
             <button
               className="button button--secondary"
               type="button"
               onClick={() => setAttempt((count) => count + 1)}
             >
-              Try again
+              {t('portal.explore.error.retry')}
             </button>
           </div>
         ) : null}
@@ -214,19 +222,19 @@ export default function ExplorePage() {
         {ready && ready.items.length === 0 && !isFiltered ? (
           <EmptyState
             testId="explore-empty"
-            title="No worlds have been published yet."
-            hint="When an author makes a universe public, it appears here."
+            title={t('portal.explore.empty.title')}
+            hint={t('portal.explore.empty.hint')}
           />
         ) : null}
 
         {ready && ready.items.length === 0 && isFiltered ? (
           <EmptyState
             testId="explore-no-match"
-            title="No published worlds match."
-            hint="Try another word, category or genre, or see every world."
+            title={t('portal.explore.noMatch.title')}
+            hint={t('portal.explore.noMatch.hint')}
             action={
               <button className="button button--secondary" type="button" onClick={clearAll}>
-                Clear search and filters
+                {t('portal.explore.noMatch.clear')}
               </button>
             }
           />
@@ -243,11 +251,11 @@ export default function ExplorePage() {
         {ready && ready.page < ready.totalPages ? (
           <div className="explore__more">
             <p className="explore__shown" aria-hidden="true">
-              Showing {ready.items.length} of {ready.totalCount} worlds
+              {t('portal.explore.shown', { shown: ready.items.length, total: ready.totalCount })}
             </p>
             {more === 'error' ? (
               <p className="explore__more-error" role="alert">
-                More worlds could not be loaded.
+                {t('portal.explore.more.error')}
               </p>
             ) : null}
             <button
@@ -259,10 +267,10 @@ export default function ExplorePage() {
               data-testid="explore-more"
             >
               {more === 'loading'
-                ? 'Loading worlds…'
+                ? t('portal.explore.more.loading')
                 : more === 'error'
-                  ? 'Try again'
-                  : 'Show more worlds'}
+                  ? t('portal.explore.more.retry')
+                  : t('portal.explore.more.show')}
             </button>
           </div>
         ) : null}
@@ -283,7 +291,7 @@ function withParam(params: URLSearchParams, name: string, value: string | undefi
 function countLine(shown: number, total: number, isFiltered: boolean) {
   // Nothing to count: the empty state below says so, once.
   if (total === 0) return ''
-  const worlds = total === 1 ? 'world' : 'worlds'
-  if (shown < total) return `Showing ${shown} of ${total} ${worlds}`
-  return isFiltered ? `${total} ${worlds} match` : `${total} ${worlds}`
+  const vars = { shown, total }
+  if (shown < total) return tn('portal.explore.count.partial', total, vars)
+  return tn(isFiltered ? 'portal.explore.count.matching' : 'portal.explore.count.all', total, vars)
 }

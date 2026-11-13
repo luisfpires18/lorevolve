@@ -55,3 +55,9 @@ test('without a choice, the first browser language a ready translation covers, e
   assert.equal(pickLocale(null, ['de-DE'], known), 'en')
   assert.equal(pickLocale(null, [], known), 'en')
 })
+
+test('a group may hold a message called other without becoming a plural', () => {
+  const groups = { kinds: { other: 'Other', audio: 'Audio' } }
+  assert.equal(translate(groups, groups, 'kinds.other'), 'Other')
+  assert.equal(translate(groups, groups, 'kinds.audio'), 'Audio')
+})

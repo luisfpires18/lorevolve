@@ -1,4 +1,6 @@
 import type { ImageCrop } from '../lib/imageCrop'
+import { t } from '../i18n'
+import type publishing from '../i18n/en/publishing'
 
 /** Mirrors `UniverseVisibility`. Private until its owner publishes it (ADR 0036). */
 export const Visibility = {
@@ -26,15 +28,15 @@ export type CategoryValue = (typeof Category)[keyof typeof Category]
  * The categories in the order they are offered, with the words they are shown in. No enum name is ever shown.
  * `key` is how Explore's address and the public API name one - the API derives the same keys from its enum.
  */
-export const CATEGORIES: { value: CategoryValue; key: string; label: string }[] = [
-  { value: Category.Original, key: 'original', label: 'Original' },
-  { value: Category.MoviesAndTv, key: 'movies-and-tv', label: 'Movies & TV' },
-  { value: Category.Games, key: 'games', label: 'Games' },
-  { value: Category.Books, key: 'books', label: 'Books' },
-  { value: Category.Comics, key: 'comics', label: 'Comics' },
-  { value: Category.TabletopAndRpg, key: 'tabletop-and-rpg', label: 'Tabletop & RPG' },
-  { value: Category.Audio, key: 'audio', label: 'Audio' },
-  { value: Category.Other, key: 'other', label: 'Other' },
+export const CATEGORIES: { value: CategoryValue; key: keyof typeof publishing.categories }[] = [
+  { value: Category.Original, key: 'original' },
+  { value: Category.MoviesAndTv, key: 'movies-and-tv' },
+  { value: Category.Games, key: 'games' },
+  { value: Category.Books, key: 'books' },
+  { value: Category.Comics, key: 'comics' },
+  { value: Category.TabletopAndRpg, key: 'tabletop-and-rpg' },
+  { value: Category.Audio, key: 'audio' },
+  { value: Category.Other, key: 'other' },
 ]
 
 /** Mirrors `UniverseGenres`: one bit each, and the one order they are always listed in. */
@@ -55,23 +57,24 @@ export const Genre = {
 
 export type GenreValue = (typeof Genre)[keyof typeof Genre]
 
-export const GENRES: { value: GenreValue; key: string; label: string }[] = [
-  { value: Genre.Fantasy, key: 'fantasy', label: 'Fantasy' },
-  { value: Genre.ScienceFiction, key: 'science-fiction', label: 'Science fiction' },
-  { value: Genre.Adventure, key: 'adventure', label: 'Adventure' },
-  { value: Genre.Horror, key: 'horror', label: 'Horror' },
-  { value: Genre.Mystery, key: 'mystery', label: 'Mystery' },
-  { value: Genre.Historical, key: 'historical', label: 'Historical' },
-  { value: Genre.Romance, key: 'romance', label: 'Romance' },
-  { value: Genre.Thriller, key: 'thriller', label: 'Thriller' },
-  { value: Genre.Supernatural, key: 'supernatural', label: 'Supernatural' },
-  { value: Genre.PostApocalyptic, key: 'post-apocalyptic', label: 'Post-apocalyptic' },
-  { value: Genre.Contemporary, key: 'contemporary', label: 'Contemporary' },
-  { value: Genre.Other, key: 'other', label: 'Other' },
+export const GENRES: { value: GenreValue; key: keyof typeof publishing.genres }[] = [
+  { value: Genre.Fantasy, key: 'fantasy' },
+  { value: Genre.ScienceFiction, key: 'science-fiction' },
+  { value: Genre.Adventure, key: 'adventure' },
+  { value: Genre.Horror, key: 'horror' },
+  { value: Genre.Mystery, key: 'mystery' },
+  { value: Genre.Historical, key: 'historical' },
+  { value: Genre.Romance, key: 'romance' },
+  { value: Genre.Thriller, key: 'thriller' },
+  { value: Genre.Supernatural, key: 'supernatural' },
+  { value: Genre.PostApocalyptic, key: 'post-apocalyptic' },
+  { value: Genre.Contemporary, key: 'contemporary' },
+  { value: Genre.Other, key: 'other' },
 ]
 
 export function categoryLabel(value: CategoryValue) {
-  return CATEGORIES.find((category) => category.value === value)?.label ?? ''
+  const key = CATEGORIES.find((category) => category.value === value)?.key
+  return key ? t(`publishing.categories.${key}`) : ''
 }
 
 /** A genre's address key, which is also what its chip is tinted by. */
@@ -80,7 +83,8 @@ export function genreKey(value: GenreValue) {
 }
 
 export function genreLabel(value: GenreValue) {
-  return GENRES.find((genre) => genre.value === value)?.label ?? ''
+  const key = GENRES.find((genre) => genre.value === value)?.key
+  return key ? t(`publishing.genres.${key}`) : ''
 }
 
 /** Mirrors `PublicationLimits`. */

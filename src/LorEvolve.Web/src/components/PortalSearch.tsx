@@ -6,6 +6,7 @@ import {
   type SetURLSearchParams,
 } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
+import { useI18n } from '../i18n'
 
 /** The API's own limit on a search, so the field cannot ask for something it would refuse. */
 const SEARCH_MAX = 100
@@ -19,6 +20,7 @@ const SEARCH_PAUSE_MS = 300
  * Back returns to the unsearched page. Anywhere else, Enter opens Explore with the search.
  */
 export function PortalSearch() {
+  const { t } = useI18n()
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
@@ -56,14 +58,14 @@ export function PortalSearch() {
   return (
     <form className="portal-search" role="search" onSubmit={submit}>
       <label className="visually-hidden" htmlFor="portal-q">
-        Search worlds and authors
+        {t('portal.search.label')}
       </label>
       <Search className="portal-search__icon" aria-hidden="true" size={18} strokeWidth={1.75} />
       <input
         className="portal-search__input"
         id="portal-q"
         type="search"
-        placeholder="Search worlds and authors"
+        placeholder={t('portal.search.placeholder')}
         value={draft}
         maxLength={SEARCH_MAX}
         autoComplete="off"
@@ -78,7 +80,7 @@ export function PortalSearch() {
         <button
           className="portal-search__clear"
           type="button"
-          aria-label="Clear search"
+          aria-label={t('portal.search.clear')}
           onClick={() => {
             setDraft('')
             if (onExplore) commitSearch('', q, setParams)

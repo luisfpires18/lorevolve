@@ -14,6 +14,7 @@ import {
 } from '../portal/api'
 import { useWorkspaceLink } from '../portal/useWorkspaceLink'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useI18n } from '../i18n'
 
 type LoadState =
   | { key: string; kind: 'ready'; world: PublicUniverse; story: PublicStoryDetail }
@@ -29,6 +30,7 @@ type LoadState =
  * Private and missing are one page; the owner, signed in, gets "Edit in workspace".
  */
 export default function PublicStoryPage() {
+  const { t } = useI18n()
   const { slug = '', storySlug = '' } = useParams<{ slug: string; storySlug: string }>()
   const key = `${slug}/${storySlug}`
   const [attempt, setAttempt] = useState(0)
@@ -53,7 +55,7 @@ export default function PublicStoryPage() {
   const current = state?.key === key ? state : null
 
   if (current?.kind === 'missing') {
-    return <PortalMissing title="This page is not available." testId="story-missing" />
+    return <PortalMissing title={t('portal.story.missing')} testId="story-missing" />
   }
 
   if (current?.kind === 'error') {
@@ -62,7 +64,7 @@ export default function PublicStoryPage() {
 
   if (!current) {
     return (
-      <div className="pread" role="status" aria-label="Opening this story">
+      <div className="pread" role="status" aria-label={t('portal.story.opening')}>
         <div className="pread__skeleton" />
       </div>
     )
@@ -107,17 +109,18 @@ function paragraphs(world: string, { text, links }: PublicStoryDetail['manuscrip
 }
 
 function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDetail }) {
+  const { t } = useI18n()
   useDocumentTitle(story.title, world.name)
   const owner = useWorkspaceLink(world.slug, { story: story.slug })
   const sections = [
-    story.manuscript.length > 0 ? { id: 'manuscript', label: 'Manuscript' } : null,
-    story.scenes.length > 0 ? { id: 'scenes', label: 'Scenes' } : null,
-    story.plot.length > 0 ? { id: 'plot', label: 'Arcs' } : null,
+    story.manuscript.length > 0 ? { id: 'manuscript', label: t('portal.story.manuscript') } : null,
+    story.scenes.length > 0 ? { id: 'scenes', label: t('portal.story.scenes') } : null,
+    story.plot.length > 0 ? { id: 'plot', label: t('portal.story.arcs') } : null,
   ].filter((section) => section !== null)
 
   return (
     <article className="pread pstory" data-testid="public-story">
-      <nav className="pcrumbs" aria-label="Breadcrumb">
+      <nav className="pcrumbs" aria-label={t('portal.story.breadcrumb')}>
         <ol>
           <li>
             <Link
@@ -129,12 +132,12 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
               <bdi>{world.name}</bdi>
             </Link>
           </li>
-          <li aria-current="page">Stories</li>
+          <li aria-current="page">{t('portal.story.crumb')}</li>
         </ol>
       </nav>
 
       <header className="pread__head pstory__head">
-        <p className="pread__eyebrow">A story</p>
+        <p className="pread__eyebrow">{t('portal.story.eyebrow')}</p>
         <h1 className="pread__title pstory__title" dir="auto">
           <bdi>{story.title}</bdi>
         </h1>
@@ -145,7 +148,7 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
           after={
             <>
               <span aria-hidden="true"> · </span>
-              <span>Published {formatDate(story.publishedAt)}</span>
+              <span>{t('portal.story.published', { date: formatDate(story.publishedAt) })}</span>
             </>
           }
         />
@@ -158,12 +161,12 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
             to={`/app/universes/${owner.universeId}/stories/${owner.storyId}`}
             data-testid="edit-in-workspace"
           >
-            Edit in workspace
+            {t('portal.story.edit')}
             <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.75} />
           </Link>
         ) : null}
         {sections.length > 1 ? (
-          <nav className="pstory__sections" aria-label="In this story">
+          <nav className="pstory__sections" aria-label={t('portal.story.sections')}>
             <ul>
               {sections.map((section) => (
                 <li key={section.id}>
@@ -185,10 +188,10 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
           data-testid="public-story-manuscript"
         >
           <h2 className="pstory__heading" id="pstory-manuscript">
-            Manuscript
+            {t('portal.story.manuscriptHeading')}
           </h2>
           {story.manuscript.length > 1 ? (
-            <nav className="pstory__toc" aria-label="Manuscript contents">
+            <nav className="pstory__toc" aria-label={t('portal.story.manuscriptContents')}>
               <ol>
                 {story.manuscript.map((part, index) => (
                   <li key={index}>
@@ -229,7 +232,7 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
           data-testid="public-story-scenes"
         >
           <h2 className="pstory__heading" id="pstory-scenes">
-            Scenes
+            {t('portal.story.scenesHeading')}
           </h2>
           <ol className="pstory__scenes">
             {story.scenes.map((scene, index) => (
@@ -256,7 +259,7 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
           data-testid="public-story-plot"
         >
           <h2 className="pstory__heading" id="pstory-plot">
-            Arcs
+            {t('portal.story.arcsHeading')}
           </h2>
           {story.plot.map((arc, index) => (
             <section
@@ -278,7 +281,7 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
         </section>
       ) : null}
 
-      <aside className="pstory__world" aria-label="The world of this story">
+      <aside className="pstory__world" aria-label={t('portal.story.worldLabel')}>
         <img
           className="pstory__worldart"
           src={world.cardImageUrl}
@@ -289,7 +292,7 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
           decoding="async"
         />
         <div className="pstory__worldtext">
-          <p className="pread__eyebrow">Set in</p>
+          <p className="pread__eyebrow">{t('portal.story.setIn')}</p>
           <p className="pstory__worldname" dir="auto">
             <bdi>{world.name}</bdi>
           </p>
@@ -297,7 +300,7 @@ function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDeta
             {world.publicSummary}
           </p>
           <Link className="portal__pill" to={worldPath(world.slug)}>
-            Explore this world
+            {t('portal.story.exploreWorld')}
           </Link>
         </div>
       </aside>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useI18n } from '../i18n'
 
 /**
  * The one page every public address answers with when it has nothing to show: a private world, a private or trashed
@@ -7,13 +8,14 @@ import { useDocumentTitle } from '../lib/useDocumentTitle'
  * says which it was (ADR 0036, 0037).
  */
 export function PortalMissing({ title, testId }: { title: string; testId: string }) {
-  useDocumentTitle('Page not available')
+  const { t } = useI18n()
+  useDocumentTitle(t('portal.missing.documentTitle'))
   return (
     <div className="pmissing" data-testid={testId}>
       <h1 className="pmissing__title">{title}</h1>
-      <p className="pmissing__hint">Its address may be wrong, or it is not public.</p>
+      <p className="pmissing__hint">{t('portal.missing.hint')}</p>
       <Link className="portal__pill" to="/">
-        Explore
+        {t('portal.missing.explore')}
       </Link>
     </div>
   )
@@ -21,13 +23,14 @@ export function PortalMissing({ title, testId }: { title: string; testId: string
 
 /** A public page that could not be read at all - never mistaken for one that is not there. */
 export function PortalError({ onRetry }: { onRetry: () => void }) {
-  useDocumentTitle('Page could not be loaded')
+  const { t } = useI18n()
+  useDocumentTitle(t('portal.error.documentTitle'))
   return (
     <div className="pmissing" role="alert" data-testid="public-error">
-      <h1 className="pmissing__title">This page could not be loaded.</h1>
-      <p className="pmissing__hint">Something went wrong on the way. Try again in a moment.</p>
+      <h1 className="pmissing__title">{t('portal.error.title')}</h1>
+      <p className="pmissing__hint">{t('portal.error.hint')}</p>
       <button className="portal__pill" type="button" onClick={onRetry}>
-        Try again
+        {t('portal.error.retry')}
       </button>
     </div>
   )

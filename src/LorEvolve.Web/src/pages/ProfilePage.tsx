@@ -9,15 +9,9 @@ import { QueryTabList, TabPanel } from '../components/QueryTabs'
 import { StorageUsage } from '../components/StorageUsage'
 import { ThemeSwitch } from '../components/ThemeSwitch'
 import { LanguageSwitch } from '../components/LanguageSwitch'
+import { useI18n } from '../i18n'
 import { useQueryTab } from '../lib/queryTab'
 import { listUniverses } from '../universes/api'
-
-/** The profile's tabs, as Settings' are: kept in the address (`?tab=`), Account the page itself. */
-const TABS = [
-  { id: 'account', label: 'Account' },
-  { id: 'usage', label: 'Usage' },
-  { id: 'connected-apps', label: 'Connected apps' },
-] as const
 
 /**
  * The signed-in account, and only what LorEvolve genuinely knows about it.
@@ -35,7 +29,14 @@ const TABS = [
  * Usage, and Connected apps, which `/app/profile?tab=connected-apps` opens directly.
  */
 export default function ProfilePage() {
+  const { t } = useI18n()
   const { user } = useAuth()
+  // The profile's tabs, as Settings' are: kept in the address (`?tab=`), Account the page itself.
+  const TABS = [
+    { id: 'account', label: t('account.profile.tabs.account') },
+    { id: 'usage', label: t('account.profile.tabs.usage') },
+    { id: 'connected-apps', label: t('account.profile.tabs.connectedApps') },
+  ] as const
   const [tab, choose] = useQueryTab(TABS)
 
   const [universeCount, setUniverseCount] = useState<number | null>(null)
@@ -59,7 +60,7 @@ export default function ProfilePage() {
 
   return (
     <article className="profile" data-testid="profile">
-      <h1 className="profile__title">Profile</h1>
+      <h1 className="profile__title">{t('account.profile.title')}</h1>
 
       <ProfileAvatar name={user.username} />
 
@@ -67,19 +68,25 @@ export default function ProfilePage() {
         {user.username}
       </p>
 
-      <QueryTabList label="Profile" idPrefix="profile" tabs={TABS} tab={tab} onChoose={choose} />
+      <QueryTabList
+        label={t('account.profile.tabsLabel')}
+        idPrefix="profile"
+        tabs={TABS}
+        tab={tab}
+        onChoose={choose}
+      />
 
       <TabPanel idPrefix="profile" id="account" tab={tab}>
         <dl className="profile__facts">
           <div className="profile__fact">
-            <dt className="profile__label">Email</dt>
+            <dt className="profile__label">{t('account.profile.email')}</dt>
             <dd className="profile__value" data-testid="profile-email">
               {user.email}
             </dd>
           </div>
           {universeCount === null ? null : (
             <div className="profile__fact">
-              <dt className="profile__label">Universes</dt>
+              <dt className="profile__label">{t('account.profile.universes')}</dt>
               <dd className="profile__value" data-testid="profile-universes">
                 {universeCount}
               </dd>
@@ -89,7 +96,7 @@ export default function ProfilePage() {
 
         <section className="profile__public" aria-labelledby="profile-public-heading">
           <h2 className="profile__subtitle" id="profile-public-heading">
-            Publishing
+            {t('account.profile.publishing')}
           </h2>
           <PublicNameForm />
           <PublicAuthorSection />
@@ -97,23 +104,14 @@ export default function ProfilePage() {
 
         <section className="profile__public" aria-labelledby="profile-appearance-heading">
           <h2 className="profile__subtitle" id="profile-appearance-heading">
-            Appearance
+            {t('account.profile.appearance')}
           </h2>
-          <p className="settings__note">
-            One theme for the whole of LorEvolve: the public portal and your workspace. It is kept
-            in this browser.
-          </p>
+          <p className="settings__note">{t('account.profile.themeNote')}</p>
           <ThemeSwitch />
           <LanguageSwitch />
         </section>
 
-        <p className="profile__note">
-          LorEvolve keeps only what it needs to sign you in: a username, an email address, and the
-          photo above if you add one, and the public name above if you choose one. That name is the
-          only thing the public portal shows about you, with your author page's address. Your photo
-          is private, served only to your own signed-in session, unless you choose to show it on
-          your author page, and it is never part of a universe backup.
-        </p>
+        <p className="profile__note">{t('account.profile.note')}</p>
       </TabPanel>
 
       <TabPanel idPrefix="profile" id="usage" tab={tab}>
@@ -123,7 +121,7 @@ export default function ProfilePage() {
           data-testid="profile-usage"
         >
           <h2 className="profile__subtitle" id="profile-usage-heading">
-            Usage
+            {t('account.profile.usageHeading')}
           </h2>
           <StorageUsage />
           <AssistantUsage />

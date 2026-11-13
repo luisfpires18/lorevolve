@@ -3,6 +3,7 @@ import { ApiError } from '../lib/api'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { getPublicName, setPublicName } from '../profile/api'
 import { PUBLIC_NAME_MAX } from '../publishing/types'
+import { useI18n } from '../i18n'
 
 /**
  * The account's public name: the "by …" on its published universes, and the only thing about the account the
@@ -10,6 +11,7 @@ import { PUBLIC_NAME_MAX } from '../publishing/types'
  * guarded while it holds an unsaved change; clearing it is refused while any universe is public.
  */
 export function PublicNameForm() {
+  const { t } = useI18n()
   const inputId = useId()
   const hintId = useId()
   const [saved, setSaved] = useState<string | null>(null)
@@ -37,7 +39,7 @@ export function PublicNameForm() {
   }, [])
 
   const isDirty = loaded && !isSaving && value.trim() !== (saved ?? '')
-  useLeaveGuard(isDirty ? 'Your public name has an unsaved change. Leave without saving it?' : null)
+  useLeaveGuard(isDirty ? t('account.publicName.unsaved') : null)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -53,7 +55,7 @@ export function PublicNameForm() {
       setError(
         problem instanceof ApiError
           ? (problem.fieldErrors.publicdisplayname ?? problem.message)
-          : 'Your public name could not be saved.',
+          : t('account.publicName.saveFailed'),
       )
     } finally {
       setIsSaving(false)
@@ -63,7 +65,7 @@ export function PublicNameForm() {
   if (loadFailed) {
     return (
       <p className="field__error" role="alert">
-        Your public name could not be loaded.
+        {t('account.publicName.loadFailed')}
       </p>
     )
   }
@@ -77,7 +79,7 @@ export function PublicNameForm() {
     >
       <div className="field">
         <label className="field__label" htmlFor={inputId}>
-          Public name
+          {t('account.publicName.label')}
         </label>
         <input
           id={inputId}
@@ -95,8 +97,7 @@ export function PublicNameForm() {
           data-testid="public-name"
         />
         <p className="field__hint" id={hintId}>
-          Shown as the author of universes you publish - &ldquo;by …&rdquo; - and nowhere else. Your
-          username and email are never shown publicly.
+          {t('account.publicName.hint')}
         </p>
         {error ? (
           <p className="field__error" role="alert" data-testid="public-name-error">
@@ -111,11 +112,11 @@ export function PublicNameForm() {
           disabled={isSaving || !loaded}
           data-testid="save-public-name"
         >
-          {isSaving ? 'Saving' : 'Save public name'}
+          {isSaving ? t('account.publicName.saving') : t('account.publicName.save')}
         </button>
         {done && !isDirty ? (
           <p className="settings__saved" role="status" data-testid="public-name-saved">
-            Saved.
+            {t('account.publicName.saved')}
           </p>
         ) : null}
       </div>

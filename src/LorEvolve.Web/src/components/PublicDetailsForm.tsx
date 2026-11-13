@@ -5,7 +5,9 @@ import { useLeaveGuard } from '../lib/leaveGuard'
 import { savePublication } from '../publishing/api'
 import {
   CATEGORIES,
+  categoryLabel,
   GENRES,
+  genreLabel,
   MAX_GENRES,
   ORIGINAL_CREATOR_MAX,
   ORIGINAL_WORK_MAX,
@@ -233,7 +235,7 @@ export function PublicDetailsForm({
           <option value="">Choose a category</option>
           {CATEGORIES.map((option) => (
             <option key={option.value} value={option.value}>
-              {option.label}
+              {categoryLabel(option.value)}
             </option>
           ))}
         </select>
@@ -260,7 +262,7 @@ export function PublicDetailsForm({
                   disabled={!chosen && atLimit}
                   onChange={(event) => toggleGenre(genre.value, event.target.checked)}
                 />
-                {genre.label}
+                {genreLabel(genre.value)}
               </label>
             )
           })}
