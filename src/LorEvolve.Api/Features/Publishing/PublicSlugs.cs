@@ -113,18 +113,24 @@ internal static class PublicSlugs
                 .ToListAsync(cancellationToken))
             .ToHashSet(StringComparer.Ordinal);
 
-        if (!held.Contains(stem))
+        return Choose(held, name, fallback);
+    }
+
+    /// <summary>
+    /// The first free address for <paramref name="name"/> among <paramref name="held"/>, which it then adds, so a
+    /// batch can load the namespace once and choose every address in memory.
+    /// </summary>
+    public static string Choose(ISet<string> held, string name, string fallback)
+    {
+        var stem = Stem(name, fallback);
+        var candidate = stem;
+
+        for (var suffix = 2; held.Contains(candidate); suffix++)
         {
-            return stem;
+            candidate = $"{stem}-{suffix.ToString(CultureInfo.InvariantCulture)}";
         }
 
-        for (var suffix = 2; ; suffix++)
-        {
-            var candidate = $"{stem}-{suffix.ToString(CultureInfo.InvariantCulture)}";
-            if (!held.Contains(candidate))
-            {
-                return candidate;
-            }
-        }
+        held.Add(candidate);
+        return candidate;
     }
 }

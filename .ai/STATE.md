@@ -76,6 +76,9 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 
 ## Owner steps and unverified items
 
+- **Perf pass** (`feat/perf-pass`), on DEV once merged. Owner to check: move a type up or down, reorder groups on
+  the Groups tab and resolve a comment thread; each should change at once, before the server answers. Redis and new
+  indexes were judged not worth it (reasons in the PR).
 - **Types: group priority (#94) and inherited fields (#95)**, on PROD. Owner to check: reorder groups on the
   Groups tab and look at a scene's Lore chips; give a parent type a field and write an entry of a nested type.
 - **AI proposals for story structure** (PR #92, on PROD): a scene's beats as its whole list, a chapter's `arc`/`noArc`,

@@ -229,10 +229,13 @@ function CommentsDrawer<T>({
   async function resolve(thread: CommentThread) {
     setMessage(null)
     setBusy(thread.id)
+    // Moved to its new list at once; the server's thread replaces it, or the old one comes back.
+    replace({ ...thread, isResolved: !thread.isResolved })
+    if (replyTo === thread.id) setReplyTo(null)
     try {
       replace(await setThreadResolved(universeId, thread.id, !thread.isResolved))
-      if (replyTo === thread.id) setReplyTo(null)
     } catch {
+      replace(thread)
       setMessage('That thread could not be changed.')
     } finally {
       setBusy(null)

@@ -18,7 +18,7 @@ import type { EntityType, EntityTypeGroup } from '../lore/types'
  */
 export function TypeGroupsPanel({
   universeId,
-  groups,
+  groups: saved,
   types,
   canEdit,
   onGroupsChanged,
@@ -41,6 +41,9 @@ export function TypeGroupsPanel({
     text: string
     fields: string[]
   } | null>(null)
+  // A move shows its new order at once; the saved list takes over once it is read again, or comes back on failure.
+  const [moving, setMoving] = useState<EntityTypeGroup[] | null>(null)
+  const groups = moving ?? saved
   const typeName = new Map(types.map((type) => [type.id, type.name]))
 
   function membersOf(group: EntityTypeGroup) {
@@ -144,6 +147,8 @@ export function TypeGroupsPanel({
     const order = groups.map((group) => group.id)
     const [moved] = order.splice(index, 1)
     order.splice(index + by, 0, moved)
+    const byId = new Map(groups.map((group) => [group.id, group]))
+    setMoving(order.map((id) => byId.get(id)!))
     setBusy(true)
     setProblem(null)
     try {
@@ -156,6 +161,7 @@ export function TypeGroupsPanel({
         fields: [],
       })
     } finally {
+      setMoving(null)
       setBusy(false)
     }
   }

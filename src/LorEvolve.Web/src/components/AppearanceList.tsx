@@ -280,6 +280,7 @@ function AppearanceItem({
                 >
                   <img
                     className="gallery__thumb"
+                    decoding="async"
                     src={appearanceDisplayUrl(universeId, entityId, appearance.id, image)}
                     alt=""
                     // The picture's own shape: the square thumbnail cut wide and tall pictures down to their middle.

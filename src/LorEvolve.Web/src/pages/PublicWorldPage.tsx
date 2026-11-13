@@ -98,7 +98,13 @@ function World({ world }: { world: PublicUniverse }) {
   return (
     <article className="pworld" data-testid="public-world">
       <header className="pworld-hero">
-        <img className="pworld-hero__backdrop" src={world.cardImageUrl} alt="" aria-hidden="true" />
+        <img
+          className="pworld-hero__backdrop"
+          src={world.cardImageUrl}
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+        />
         <div className="pworld-hero__inner">
           <div className="pworld-hero__text">
             <p className="pworld-hero__eyebrow" data-testid="public-world-category">

@@ -1012,15 +1012,25 @@ public static class EntityEndpoints
             universeId,
             async token =>
             {
-                foreach (var id in ids)
+                // One read and one write for the whole batch. UpdatedAt and the search index are left alone, as in
+                // TrashCoreAsync.
+                var entities = await db.Entities
+                    .Where(entity => entity.UniverseId == universeId && entity.DeletedAt == null && ids.Contains(entity.Id))
+                    .ToListAsync(token);
+
+                // Unreachable once checked, short of an entry being trashed under this request; nothing is written.
+                if (entities.Count != ids.Count)
                 {
-                    // Unreachable once checked, short of the entry being trashed under this request; the transaction
-                    // then takes every earlier one back with it.
-                    if (await TrashCoreAsync(universeId, id, db, token) is IStatusCodeHttpResult { StatusCode: 404 } missing)
-                    {
-                        return (IResult)missing;
-                    }
+                    return Results.NotFound();
                 }
+
+                var now = DateTime.UtcNow;
+                foreach (var entity in entities)
+                {
+                    entity.DeletedAt = now;
+                }
+
+                await db.SaveChangesAsync(token);
 
                 return Results.Ok(new BulkTrashResponse(ids.Count));
             },
