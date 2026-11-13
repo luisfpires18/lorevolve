@@ -32,6 +32,7 @@ import {
 } from '../worldRules/types'
 import { EmptyState } from './EmptyState'
 import { confirmAction } from '../lib/confirm'
+import { numberFormat } from '../i18n/format'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error'; message: string }
@@ -59,7 +60,7 @@ const EMPTY_STORED: Stored = {
   found: null,
 }
 
-const count = new Intl.NumberFormat('en')
+const count = (value: number) => numberFormat({}, 'en').format(value)
 
 function sameFields(a: Fields, b: Fields) {
   return a.title === b.title && a.description === b.description && sameCheck(a.check, b.check)
@@ -519,8 +520,8 @@ export function WorldRuleEditor({
               data-testid="world-rule-description-count"
             >
               {isTooLong ? 'Too long to save: ' : null}
-              {count.format(draft.description.length)} of{' '}
-              {count.format(WORLD_RULE_DESCRIPTION_MAX_LENGTH)} characters.
+              {count(draft.description.length)} of {count(WORLD_RULE_DESCRIPTION_MAX_LENGTH)}{' '}
+              characters.
             </p>
           ) : null}
           {fieldErrors.description ? (

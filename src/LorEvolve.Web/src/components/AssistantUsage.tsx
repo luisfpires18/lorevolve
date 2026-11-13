@@ -3,8 +3,9 @@ import { getAssistantUsage } from '../assistant/api'
 import type { AssistantKindUsage } from '../assistant/types'
 import { useUsageLoad } from '../lib/useUsageLoad'
 import { UsageItem, UsageMeter } from './UsageItem'
+import { dateFormat } from '../i18n/format'
 
-const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' })
+const TIME: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' }
 
 /**
  * The AI Assistant's allowance in the Profile's Usage section (ADR 0045): questions and change requests, each counted
@@ -108,7 +109,7 @@ function KindUsage({
         <p className="usage__full" data-testid={`${testId}-left`}>
           No {noun[1]} left.
           {usage.resetsAt
-            ? ` You can ask again at ${timeFormatter.format(new Date(usage.resetsAt))}.`
+            ? ` You can ask again at ${dateFormat(TIME).format(new Date(usage.resetsAt))}.`
             : null}
         </p>
       ) : (

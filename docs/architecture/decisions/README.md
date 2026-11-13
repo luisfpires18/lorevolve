@@ -74,8 +74,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0068 | LorEvolve shows no stock artwork; only authors' pictures and the brand mark | [0068-no-stock-artwork.md](0068-no-stock-artwork.md) |
 | 0069 | Explore is the front door at `/`; the page about LorEvolve is retired, `/explore` redirects | [0069-explore-is-the-front-door.md](0069-explore-is-the-front-door.md) |
 | 0070 | Arcs are story structure (Story, arcs, chapters, scenes) and beats belong to scenes; plot beats retired, supersedes 0026 | [0070-story-arcs-as-structure.md](0070-story-arcs-as-structure.md) |
+| 0071 | Interface languages: typed dictionaries in the web app (`src/i18n/`), chosen per browser; pt-PT unready until #107 | [0071-interface-languages.md](0071-interface-languages.md) |
 
-All accepted. Next number: `0070`.
+All accepted. Next number: `0072`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

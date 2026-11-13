@@ -8,6 +8,7 @@ import { PublicNameForm } from '../components/PublicNameForm'
 import { QueryTabList, TabPanel } from '../components/QueryTabs'
 import { StorageUsage } from '../components/StorageUsage'
 import { ThemeSwitch } from '../components/ThemeSwitch'
+import { LanguageSwitch } from '../components/LanguageSwitch'
 import { useQueryTab } from '../lib/queryTab'
 import { listUniverses } from '../universes/api'
 
@@ -103,6 +104,7 @@ export default function ProfilePage() {
             in this browser.
           </p>
           <ThemeSwitch />
+          <LanguageSwitch />
         </section>
 
         <p className="profile__note">

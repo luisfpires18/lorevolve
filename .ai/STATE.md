@@ -64,6 +64,8 @@ Checked 2026-10-29 with `git log origin/dev..<branch>`.
 
 ## Open issues
 
+- **Languages** (umbrella #99, ADR 0071): foundation #100 on `dev` (module, hidden switch). Next: string extraction #101 to
+  #105, then pt-PT #106 and #107 (switch goes live). Preview pt-PT locally: `localStorage['lorevolve-locale'] = 'pt-PT'`.
 `gh issue list --repo luisfpires18/lorevolve --state open`. As of 2026-10-29:
 
 - Alpha: #34 launch readiness / final review (high), #35 alpha plan and issue index, #54 daily backups (high; the

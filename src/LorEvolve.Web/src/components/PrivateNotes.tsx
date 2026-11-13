@@ -15,6 +15,7 @@ import {
   savePrivateNote,
   type PrivateNote,
 } from '../lore/privateNote'
+import { numberFormat } from '../i18n/format'
 
 interface PrivateNotesProps {
   universeId: string
@@ -23,7 +24,7 @@ interface PrivateNotesProps {
   entryName: string
 }
 
-const count = new Intl.NumberFormat('en')
+const count = (value: number) => numberFormat({}, 'en').format(value)
 
 /**
  * The owner's private note on an entry (issue 23): a Private note tool beside Family tree, opening a drawer with one plain
@@ -283,8 +284,8 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
 
               {isTooLong ? (
                 <p className="field__error" id={tooLongId} data-testid="private-note-too-long">
-                  Too long to save: {count.format(draft.length)} of{' '}
-                  {count.format(PRIVATE_NOTE_MAX_LENGTH)} characters.
+                  Too long to save: {count(draft.length)} of {count(PRIVATE_NOTE_MAX_LENGTH)}{' '}
+                  characters.
                 </p>
               ) : null}
 

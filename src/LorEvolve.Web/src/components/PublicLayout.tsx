@@ -7,6 +7,7 @@ import { BRAND_LINK_LABEL, BrandMark } from './BrandMark'
 import { PortalSearch } from './PortalSearch'
 import { SiteFooter } from './SiteFooter'
 import { ThemeSwitch } from './ThemeSwitch'
+import { LanguageSwitch } from './LanguageSwitch'
 import { MAIN_CONTENT_ID } from './SkipLink'
 import { Wordmark } from './Wordmark'
 
@@ -75,6 +76,7 @@ export function PublicLayout() {
                 triggerTestId="portal-appearance"
               >
                 <ThemeSwitch inMenu />
+                <LanguageSwitch inMenu />
               </ActionMenu>
               <Link
                 className="portal__pill"

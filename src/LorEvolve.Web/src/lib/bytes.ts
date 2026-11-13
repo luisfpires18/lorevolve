@@ -1,3 +1,5 @@
+import { numberFormat } from '../i18n/format'
+
 const UNITS = ['KB', 'MB', 'GB', 'TB'] as const
 
 /**
@@ -25,5 +27,5 @@ export function formatBytes(bytes: number) {
     return `1 ${UNITS[unit + 1]}`
   }
 
-  return `${Math.max(shown, 1).toLocaleString('en', { maximumFractionDigits: 1 })} ${UNITS[unit]}`
+  return `${numberFormat({ maximumFractionDigits: 1 }, 'en').format(Math.max(shown, 1))} ${UNITS[unit]}`
 }
