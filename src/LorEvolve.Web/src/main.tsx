@@ -4,6 +4,7 @@ import App from './App.tsx'
 import { preloadPath } from './screens'
 import { warmStart } from './lib/warmStart'
 import { watchTheme } from './lib/theme'
+import { startI18n } from './i18n'
 import { revealWhenReady } from './lib/launch'
 import { registerServiceWorker } from './pwa'
 import './styles.css'
@@ -32,11 +33,15 @@ if (!rootElement) {
   throw new Error('Root element #root was not found in index.html')
 }
 
-createRoot(rootElement).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+// The language first (ADR 0071): English is in the bundle and resolves at once; another language's dictionary is fetched
+// before the first render, so no screen is drawn in English and then redrawn.
+void startI18n().finally(() => {
+  createRoot(rootElement).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+})
 
 watchTheme()
 registerServiceWorker()

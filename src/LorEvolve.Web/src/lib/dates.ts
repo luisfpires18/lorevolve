@@ -1,8 +1,10 @@
-const formatter = new Intl.DateTimeFormat(undefined, {
+import { dateFormat } from '../i18n/format'
+
+const DAY: Intl.DateTimeFormatOptions = {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
-})
+}
 
 /**
  * Reads an API timestamp as the instant it is. The API stores every timestamp in UTC, but those read back from SQLite
@@ -17,16 +19,16 @@ export function parseApiDate(iso: string) {
 /** Formats an API timestamp, returning an empty string rather than "Invalid Date". */
 export function formatDate(iso: string) {
   const parsed = parseApiDate(iso)
-  return Number.isNaN(parsed.getTime()) ? '' : formatter.format(parsed)
+  return Number.isNaN(parsed.getTime()) ? '' : dateFormat(DAY).format(parsed)
 }
 
-const stampFormatter = new Intl.DateTimeFormat(undefined, {
+const STAMP: Intl.DateTimeFormatOptions = {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
   hour: '2-digit',
   minute: '2-digit',
-})
+}
 
 /**
  * Formats an API timestamp down to the minute, for the places where two entries on the
@@ -34,7 +36,7 @@ const stampFormatter = new Intl.DateTimeFormat(undefined, {
  */
 export function formatDateTime(iso: string) {
   const parsed = parseApiDate(iso)
-  return Number.isNaN(parsed.getTime()) ? '' : stampFormatter.format(parsed)
+  return Number.isNaN(parsed.getTime()) ? '' : dateFormat(STAMP).format(parsed)
 }
 
 /**

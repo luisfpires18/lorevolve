@@ -8,6 +8,7 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { Avatar } from './Avatar'
 import { ThemeSwitch } from './ThemeSwitch'
+import { LanguageSwitch } from './LanguageSwitch'
 import { VERSION_LABEL } from '../lib/buildInfo'
 
 /**
@@ -132,6 +133,7 @@ export function AccountMenu({
         {/* The one appearance choice, for the portal and the workspace alike (013). */}
         <div className="actionmenu__section">
           <ThemeSwitch inMenu />
+          <LanguageSwitch inMenu />
         </div>
 
         {/* Stays open while it works, so "Signing out" is seen where the press was. */}
