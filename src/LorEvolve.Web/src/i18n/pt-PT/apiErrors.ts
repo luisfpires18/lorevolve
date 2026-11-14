@@ -55,13 +55,10 @@ const apiErrors: Dictionary['apiErrors'] = {
   entity_in_trash: 'Restaura a entrada da Reciclagem para mudares as suas imagens.',
   relationship_end_in_trash:
     'Uma das entradas que esta relação liga está na Reciclagem. Restaura essa entrada primeiro.',
-  trash_parent_in_trash: 'Restaura primeiro aquilo a que isto pertence.',
 
   // ---------- Imagens e espaço ----------
   image_storage_unavailable:
     'O armazenamento de imagens não está disponível neste momento. Tenta de novo dentro de um momento.',
-  storage_quota_exceeded:
-    'Não há espaço no armazenamento para isto. Remove algumas imagens e tenta de novo.',
   image_changed:
     'Esta imagem foi substituída ou removida noutro lado, por isso esta não foi guardada. Abre de novo e escolhe a imagem.',
   image_original_unavailable:
@@ -94,7 +91,7 @@ const apiErrors: Dictionary['apiErrors'] = {
 
   // ---------- Universos e publicação ----------
   universe_not_archived: 'Arquiva o universo antes de o eliminares.',
-  publication_incomplete: 'Este universo ainda não está pronto para ser publicado.',
+  publication_incomplete: 'Isto ainda não está pronto para ser publicado.',
   publication_required_while_public:
     'Um universo público precisa disto. Preenche-o, ou despublica o universo primeiro.',
   artwork_required_while_public:
@@ -118,25 +115,15 @@ const apiErrors: Dictionary['apiErrors'] = {
     'Essa cópia de segurança já não está à espera de ser restaurada. Escolhe o ficheiro de novo.',
   backup_restore_failed:
     'Não foi possível restaurar a cópia de segurança, por isso nada foi guardado. Continua à espera: tenta de novo.',
-  backup_media_missing: 'Não foi possível concluir essa cópia de segurança.',
-  database_backup_not_configured:
-    'As cópias de segurança da base de dados não estão configuradas neste LorEvolve.',
   database_backup_running:
     'Já está a correr uma cópia de segurança da base de dados. Espera que termine.',
 
   // ---------- Canon, regras e relações ----------
-  canon_promotion_blocked: 'As regras de canon recusam esta gravação.',
   relationship_already_exists: 'Esta relação já existe. Edita a que já lá está.',
   relationship_period_era_moved:
     'Esta relação vigora durante uma era de uma entrada que já não ligaria. Altera esse período primeiro.',
-  chronology_era_in_use: 'Algo foi datado num destes períodos de datas enquanto isto era guardado.',
-  chronology_dates_incompatible: 'Algumas datas não encaixam neste calendário.',
 
   // ---------- Tipos e campos, quando a recusa não nomeia nada teu ----------
-  entity_type_parent_cycle: 'Um tipo não pode estar dentro de si mesmo.',
-  entity_field_kind_locked: 'Este campo já tem valores, por isso o seu tipo não pode mudar.',
-  entity_field_target_conflict:
-    'Algumas entradas ligam este campo a entradas que o novo limite não permitiria. Altera essas ligações primeiro.',
   entity_progression_revision_unrestorable:
     'Esta versão nomeia algo que já não está como estava, por isso não pode voltar como estava.',
 

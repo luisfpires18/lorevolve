@@ -69,12 +69,9 @@ const apiErrors = {
   entity_in_trash: 'Restore the entry from the Trash to change its pictures.',
   relationship_end_in_trash:
     'One of the entries this relationship connects is in the Trash. Restore that entry first.',
-  trash_parent_in_trash: 'Restore what this belongs to first.',
 
   // ---------- Pictures and storage ----------
   image_storage_unavailable: 'Image storage is unavailable right now. Try again in a moment.',
-  storage_quota_exceeded:
-    "There isn't room in storage for this. Remove some images, then try again.",
   image_changed:
     'This picture was replaced or removed somewhere else, so this one was not kept. Open it again and choose the picture.',
   image_original_unavailable:
@@ -105,7 +102,7 @@ const apiErrors = {
 
   // ---------- Universes and publishing ----------
   universe_not_archived: 'Archive the universe before deleting it.',
-  publication_incomplete: 'This universe is not ready to publish yet.',
+  publication_incomplete: 'This is not ready to publish yet.',
   publication_required_while_public:
     'A public universe needs this. Fill it in, or unpublish the universe first.',
   artwork_required_while_public:
@@ -127,25 +124,15 @@ const apiErrors = {
     'That backup is no longer waiting to be restored. Choose the backup file again.',
   backup_restore_failed:
     'The backup could not be restored, so nothing was kept. It is still waiting: try again.',
-  backup_media_missing: 'That backup could not be completed.',
-  database_backup_not_configured: 'Database backups are not set up on this LorEvolve.',
   database_backup_running: 'A database backup is already running. Wait for it to finish.',
 
   // ---------- Canon, rules and relationships ----------
-  canon_promotion_blocked: 'Canon rules refuse this save.',
   relationship_already_exists:
     'This relationship already exists. Edit the one that is already there.',
   relationship_period_era_moved:
     'This relation holds during an era of an entry it would no longer connect. Change that period first.',
-  chronology_era_in_use:
-    'Something was dated in one of these date periods while this was being saved.',
-  chronology_dates_incompatible: "Some dates don't fit this calendar.",
 
   // ---------- Types and fields, where the refusal names nothing of yours ----------
-  entity_type_parent_cycle: "A type can't sit inside itself.",
-  entity_field_kind_locked: 'This field already holds values, so its type cannot change.',
-  entity_field_target_conflict:
-    'Some entries link this field to entries the new limit would not allow. Change those links first.',
   entity_progression_revision_unrestorable:
     'This version names something that is no longer as it was, so it cannot be put back as it was.',
 

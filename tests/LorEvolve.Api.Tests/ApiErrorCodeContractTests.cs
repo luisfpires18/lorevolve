@@ -47,6 +47,167 @@ public sealed class ApiErrorCodeContractTests
     }
 
     /// <summary>
+    /// A translated code's refusal says the same thing wherever it is answered.
+    ///
+    /// This is the assertion that matters most, and the one whose absence cost a round of CI. A dictionary entry
+    /// replaces the server's sentence for every refusal carrying that code. Where the server's sentence is built from
+    /// the author's own records - "a date in {month} uses day {day}", "{entity} can't change type because {field}
+    /// points at it" - or differs by who is asking, one fixed sentence cannot say it, and translating the code throws
+    /// the detail away. So a code may be translated only where every call site's <c>detail</c> is a plain string
+    /// literal: no interpolation, no expression, no variable. A refusal with no <c>detail</c> at all is fine, because
+    /// then the dictionary entry is the only sentence there is.
+    ///
+    /// A code that fails this does not stay English for good: it waits for the API to send its pieces as extensions,
+    /// which is the follow-up #108 names.
+    /// </summary>
+    [Fact]
+    public void A_translated_code_never_covers_a_detail_built_from_the_author_s_own_records()
+    {
+        var translated = DictionaryCodes().ToHashSet(StringComparer.Ordinal);
+        var names = ConstantNames();
+        var offenders = new List<string>();
+
+        foreach (var file in Directory.EnumerateFiles(Path.Combine(RepositoryRoot(), "src", "LorEvolve.Api"), "*.cs", SearchOption.AllDirectories))
+        {
+            if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var body = File.ReadAllText(file);
+
+            // A constant's simple name is not unique in the API: two features both call theirs `BlockedCode`. So an
+            // unqualified name is resolved against the file it is written in, and a qualified one against its type.
+            var local = Regex
+                .Matches(body, @"const string (\w+)\s*=\s*""([a-z0-9_]+)""")
+                .ToDictionary(match => match.Groups[1].Value, match => match.Groups[2].Value, StringComparer.Ordinal);
+
+            foreach (var call in Calls(body))
+            {
+                if (CodeOf(call, local, names) is not { } code || !translated.Contains(code))
+                {
+                    continue;
+                }
+
+                if (DetailArgument(call) is { } detail && !IsFixedSentence(detail, body) && !LorEvolveOwnWords.Contains(code))
+                {
+                    offenders.Add($"{code} in {Path.GetFileName(file)} (detail: {detail[..Math.Min(40, detail.Length)]})");
+                }
+            }
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            "These codes are translated in src/i18n/en/apiErrors.ts, but the API builds their detail from the "
+                + "author's own records or from who is asking, so one fixed sentence cannot say it. Remove the "
+                + $"dictionary entry, or make the refusal's detail a plain literal:{Environment.NewLine}"
+                + string.Join(Environment.NewLine, offenders.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)));
+    }
+
+    /// <summary>Every <c>Results.Problem</c> and friend in a file, each as its own whole call, parentheses matched.</summary>
+    private static IEnumerable<string> Calls(string body)
+    {
+        string[] openers = ["Results.Problem(", "Results.ValidationProblem(", "EditVersion.Changed(", "Refused("];
+
+        foreach (var opener in openers)
+        {
+            var at = 0;
+            while ((at = body.IndexOf(opener, at, StringComparison.Ordinal)) >= 0)
+            {
+                var index = at + opener.Length;
+                var depth = 1;
+                while (index < body.Length && depth > 0)
+                {
+                    depth += body[index] switch { '(' => 1, ')' => -1, _ => 0 };
+                    index++;
+                }
+
+                yield return body[at..index];
+                at = index;
+            }
+        }
+    }
+
+    /// <summary>The code a call carries: its <c>["code"]</c> extension, or the first argument of a helper that takes one.</summary>
+    private static string? CodeOf(string call, IReadOnlyDictionary<string, string> local, IReadOnlyDictionary<string, string> qualified)
+    {
+        var extension = Regex.Match(call, @"\[""code""\]\s*=\s*(""[a-z0-9_]+""|[A-Za-z0-9_.]+)");
+        if (extension.Success)
+        {
+            var token = extension.Groups[1].Value;
+            return token.StartsWith('"') ? token.Trim('"') : Resolve(token, local, qualified);
+        }
+
+        var first = Regex.Match(call, @"^(?:EditVersion\.Changed|Refused)\(\s*([A-Za-z0-9_.]+)\s*,");
+        return first.Success ? Resolve(first.Groups[1].Value, local, qualified) : null;
+    }
+
+    /// <summary><c>Type.Name</c> against that type's constants; a bare <c>Name</c> against its own file's.</summary>
+    private static string? Resolve(string token, IReadOnlyDictionary<string, string> local, IReadOnlyDictionary<string, string> qualified)
+    {
+        var parts = token.Split('.');
+        return parts.Length > 1
+            ? qualified.GetValueOrDefault(string.Join('.', parts[^2..]))
+            : local.GetValueOrDefault(parts[0]);
+    }
+
+    /// <summary>
+    /// The codes whose <c>detail</c> varies and may still be translated, because what it varies between is
+    /// LorEvolve's own prose rather than anything of the author's. Adding to this list is a deliberate act: every
+    /// entry has to be a case where one dictionary sentence is true of every detail the API can send.
+    /// </summary>
+    private static readonly HashSet<string> LorEvolveOwnWords = new(StringComparer.Ordinal)
+    {
+        // The detail is the MediaStorageException's message, which is LorEvolve's own sentence and never the
+        // provider's (see MediaObjectStore.cs): "not configured" or "did not answer", and the dictionary's
+        // "unavailable right now" is true of both.
+        MediaProblem.UnavailableCode,
+    };
+
+    /// <summary>
+    /// Whether a <c>detail</c> is one fixed sentence: a string literal, or a bare name that is a <c>const string</c>
+    /// in the same file. Interpolation, a ternary, a member access or a parameter is not.
+    /// </summary>
+    private static bool IsFixedSentence(string detail, string body)
+    {
+        if (detail.StartsWith('"'))
+        {
+            return true;
+        }
+
+        var name = Regex.Match(detail, @"^([A-Za-z_][A-Za-z0-9_]*)\s*,");
+        return name.Success
+            && Regex.IsMatch(body, @"const string " + Regex.Escape(name.Groups[1].Value) + @"\s*=\s*$?""");
+    }
+
+    /// <summary>The <c>detail:</c> argument as written, or null when the call has none.</summary>
+    private static string? DetailArgument(string call)
+    {
+        var match = Regex.Match(call, @"detail:\s*(\S)");
+        return match.Success ? call[match.Groups[1].Index..] : null;
+    }
+
+    /// <summary><c>Type.Constant</c> to its string value, for a call site that names another feature's constant.</summary>
+    private static Dictionary<string, string> ConstantNames()
+    {
+        var names = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var type in typeof(MediaProblem).Assembly.GetTypes())
+        {
+            foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            {
+                if (field.IsLiteral && field.FieldType == typeof(string) && field.GetRawConstantValue() is string value)
+                {
+                    names[$"{type.Name}.{field.Name}"] = value;
+                }
+            }
+        }
+
+        return names;
+    }
+
+    /// <summary>
     /// The string values of the API's public <c>*Code</c> constants, plus every constant of its <c>*Codes</c>
     /// classes. That is where a refusal's code comes from, by convention, everywhere in the API.
     /// </summary>
