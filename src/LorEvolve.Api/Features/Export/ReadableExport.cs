@@ -42,9 +42,10 @@ public static class ReadableExport
         UniverseBackupSnapshot snapshot,
         DateTime generatedAt,
         Func<string, CancellationToken, Task<Stream?>> readObject,
+        string language,
         CancellationToken cancellationToken)
     {
-        var book = new ReadableBook(snapshot.Payload, generatedAt);
+        var book = new ReadableBook(snapshot.Payload, generatedAt, ReadableWords.For(language));
         var pages = book.Render();
 
         using var buffer = new MemoryStream();
@@ -89,6 +90,9 @@ internal sealed class ReadableBook
 
     private readonly UniverseBackupPayload _payload;
     private readonly DateTime _generatedAt;
+
+    /// <summary>LorEvolve's own words, in the language the request asked for (#110). Never the author's text.</summary>
+    private readonly ReadableWords _w;
     private readonly Dictionary<string, string> _pages = new(StringComparer.Ordinal);
 
     private readonly Dictionary<Guid, BackupEntityType> _types;
@@ -108,10 +112,11 @@ internal sealed class ReadableBook
     private readonly Dictionary<Guid, string> _scenePaths = [];
     private readonly Dictionary<Guid, string> _mapPaths = [];
 
-    public ReadableBook(UniverseBackupPayload payload, DateTime generatedAt)
+    public ReadableBook(UniverseBackupPayload payload, DateTime generatedAt, ReadableWords words)
     {
         _payload = payload;
         _generatedAt = generatedAt;
+        _w = words;
 
         _types = payload.EntityTypes.ToDictionary(type => type.Id);
         _fields = payload.EntityTypes.SelectMany(type => type.Fields).ToDictionary(field => field.Id);
@@ -264,21 +269,21 @@ internal sealed class ReadableBook
         _entities.TryGetValue(id, out var entity)
             ? Link(entity.Name, Relative(from, _entityPaths[id]))
             : _payload.Entities.FirstOrDefault(candidate => candidate.Id == id) is { } trashed
-                ? $"{Inline(trashed.Name)} (in the Trash)"
-                : "(an entry not in this export)";
+                ? $"{Inline(trashed.Name)}{_w.InTheTrashSuffix}"
+                : _w.EntryNotExported;
 
     private string SceneLink(string from, Guid id) =>
         _scenes.TryGetValue(id, out var scene)
             ? Link(scene.Scene.Title, Relative(from, _scenePaths[id]))
-            : "(a scene in the Trash)";
+            : _w.SceneInTrash;
 
     private string StoryLink(string from, Guid id) =>
         _storyPaths.TryGetValue(id, out var path)
             ? Link(LiveStories().First(story => story.Id == id).Title, Relative(from, path))
-            : "(a story in the Trash)";
+            : _w.StoryInTrash;
 
     private string MomentName(Guid id) =>
-        _moments.TryGetValue(id, out var moment) ? $"{Inline(moment.Title)} ({Moment(moment)})" : "(a moment in the Trash)";
+        _moments.TryGetValue(id, out var moment) ? $"{Inline(moment.Title)} ({Moment(moment)})" : _w.MomentInTrash;
 
     private static string Link(string text, string target) => $"[{Inline(text)}]({target})";
 
@@ -301,44 +306,44 @@ internal sealed class ReadableBook
 
         if (universe.IsArchived)
         {
-            text.AppendLine("*This universe is archived in LorEvolve.*").AppendLine();
+            text.AppendLine(_w.ArchivedUniverse).AppendLine();
         }
 
         Paragraph(text, universe.Description);
 
-        text.Append("> Readable export of a LorEvolve universe, taken ")
+        text.Append(_w.TakenPrefix)
             .Append(_generatedAt.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture))
-            .Append(" UTC (layout ").Append(ReadableExport.LayoutVersion).Append(", backup format ")
+            .Append(_w.LayoutPrefix).Append(ReadableExport.LayoutVersion).Append(_w.BackupFormatPrefix)
             .Append(UniverseBackup.CurrentVersion).AppendLine(").")
-            .AppendLine("> It is for reading and keeping. LorEvolve cannot read it back: to restore this universe, use a backup")
-            .AppendLine("> (Settings, Data, Download backup), which also carries the Trash and every saved version.")
+            .AppendLine(_w.ForReadingLine)
+            .AppendLine(_w.BackupHintLine)
             .AppendLine();
 
         if (universe.Artwork is { } artwork)
         {
-            text.AppendLine(Image(page, $"{universe.Name} artwork", artwork.MediaPath)).AppendLine();
+            text.AppendLine(Image(page, $"{universe.Name} {_w.Artwork}", artwork.MediaPath)).AppendLine();
         }
 
-        Field(text, "Public summary", universe.PublicSummary);
-        Field(text, "Category", universe.Category is { } category ? Words(category.ToString()) : null);
-        Field(text, "Genres", universe.Genres is { Count: > 0 } genres ? string.Join(", ", genres.Select(genre => Words(genre.ToString()))) : null);
-        Field(text, "Based on", Join(" - ", universe.OriginalWork, universe.OriginalCreator));
+        Field(text, _w.PublicSummary, universe.PublicSummary);
+        Field(text, _w.Category, universe.Category is { } category ? _w.CategoryOf(category) : null);
+        Field(text, _w.Genres, universe.Genres is { Count: > 0 } genres ? string.Join(", ", genres.Select(_w.GenreOf)) : null);
+        Field(text, _w.BasedOn, Join(" - ", universe.OriginalWork, universe.OriginalCreator));
 
         var stories = LiveStories().ToList();
         var maps = _payload.Maps ?? [];
-        text.AppendLine("## Contents").AppendLine()
-            .AppendLine($"- {Link("Lore", LoreIndex)} - {_entities.Count} entries in {_payload.EntityTypes.Count} types")
-            .AppendLine($"- {Link("Relationships", RelationshipsPage)} - {LiveRelationships().Count()}")
-            .AppendLine($"- {Link("Timeline", TimelinePage)} - {_moments.Count} moments")
-            .AppendLine($"- {Link("World rules", WorldRulesPage)} - {LiveRules().Count()}")
-            .AppendLine($"- {Link("Ideas", IdeasPage)} - {LiveIdeas().Count()}")
-            .AppendLine($"- Stories - {stories.Count}");
+        text.Append("## ").AppendLine(_w.Contents).AppendLine()
+            .AppendLine($"- {Link(_w.Lore, LoreIndex)} - {_entities.Count}{_w.EntriesInPrefix}{_payload.EntityTypes.Count}{_w.TypesSuffix}")
+            .AppendLine($"- {Link(_w.Relationships, RelationshipsPage)} - {LiveRelationships().Count()}")
+            .AppendLine($"- {Link(_w.Timeline, TimelinePage)} - {_moments.Count}{_w.MomentsSuffix}")
+            .AppendLine($"- {Link(_w.WorldRules, WorldRulesPage)} - {LiveRules().Count()}")
+            .AppendLine($"- {Link(_w.Ideas, IdeasPage)} - {LiveIdeas().Count()}")
+            .AppendLine($"- {_w.Stories} - {stories.Count}");
         foreach (var story in stories)
         {
             text.AppendLine($"  - {Link(story.Title, _storyPaths[story.Id])}");
         }
 
-        text.AppendLine($"- Maps - {maps.Count}");
+        text.AppendLine($"- {_w.Maps} - {maps.Count}");
         foreach (var map in maps)
         {
             text.AppendLine($"  - {Link(map.Name, _mapPaths[map.Id])}");
@@ -353,17 +358,17 @@ internal sealed class ReadableBook
             + (_payload.Ideas ?? []).Count(idea => idea.DeletedAt is not null);
 
         text.AppendLine()
-            .AppendLine("## Not in this export").AppendLine()
-            .AppendLine($"- What is in the Trash ({trashed} items here). A backup carries it.")
-            .AppendLine("- Saved versions of entries, articles, manuscripts and progressions. A backup carries them.")
-            .AppendLine("- Accounts, collaborators, comments, suggestions, pending AI changes and whether anything is public.")
-            .AppendLine("- What LorEvolve derives again: thumbnails, search, Canon findings. Dismissed findings are in a backup.")
-            .AppendLine("- Ideas that belong to no universe: they are your account's, not this universe's.")
+            .Append("## ").AppendLine(_w.NotInThisExport).AppendLine()
+            .AppendLine(string.Format(CultureInfo.InvariantCulture, _w.TrashLine, trashed))
+            .AppendLine(_w.SavedVersionsLine)
+            .AppendLine(_w.AccountsLine)
+            .AppendLine(_w.DerivedLine)
+            .AppendLine(_w.LooseIdeasLine)
             .AppendLine()
-            .AppendLine("## Pictures").AppendLine()
-            .AppendLine("Every picture a page shows is here as the original you uploaded, byte for byte, under `media/` - at the")
-            .AppendLine("same path a backup of this universe uses: `media/entities/{entry id}/original.{ext}`,")
-            .AppendLine("`media/entities/{entry id}/appearances/{picture id}/original.{ext}`, `media/maps/{map id}/original.{ext}` and")
+            .Append("## ").AppendLine(_w.Pictures).AppendLine()
+            .AppendLine(_w.PicturesLineA)
+            .AppendLine(_w.PicturesLineB)
+            .AppendLine(_w.PicturesLineC)
             .AppendLine("`media/universe/artwork/original.{ext}`.");
 
         return text.ToString();
@@ -371,7 +376,7 @@ internal sealed class ReadableBook
 
     private string LoreReadme()
     {
-        var text = new StringBuilder("# Lore\n\n");
+        var text = new StringBuilder($"# {_w.Lore}\n\n");
         var children = _payload.EntityTypes.ToLookup(type => type.ParentId);
 
         void Type(BackupEntityType type, int depth)
@@ -382,7 +387,7 @@ internal sealed class ReadableBook
                          .OrderBy(entity => entity.Name, StringComparer.Ordinal).ThenBy(entity => entity.Id))
             {
                 text.Append(indent).Append("  - ").Append(Link(entity.Name, Relative(LoreIndex, _entityPaths[entity.Id])))
-                    .AppendLine(entity.IsArchived ? " (archived)" : string.Empty);
+                    .AppendLine(entity.IsArchived ? _w.Archived : string.Empty);
             }
 
             foreach (var child in children[type.Id].OrderBy(child => child.DisplayOrder).ThenBy(child => child.Name, StringComparer.Ordinal))
@@ -398,7 +403,7 @@ internal sealed class ReadableBook
 
         if (_payload.EntityTypeGroups is { Count: > 0 } groups)
         {
-            text.AppendLine().AppendLine("## Groups").AppendLine();
+            text.AppendLine().Append("## ").AppendLine(_w.Groups).AppendLine();
             foreach (var group in groups)
             {
                 text.Append("- **").Append(Inline(group.Name)).Append("**: ")
@@ -415,11 +420,11 @@ internal sealed class ReadableBook
         var type = _types[entity.EntityTypeId];
         var text = new StringBuilder();
         text.Append("# ").AppendLine(Inline(entity.Name)).AppendLine();
-        text.Append('*').Append(Inline(type.Name)).Append("* - ").Append(entity.CanonStatus)
-            .AppendLine(entity.IsArchived ? " - archived" : string.Empty).AppendLine();
+        text.Append('*').Append(Inline(type.Name)).Append("* - ").Append(_w.StatusOf(entity.CanonStatus))
+            .AppendLine(entity.IsArchived ? _w.ArchivedDash : string.Empty).AppendLine();
 
-        Field(text, "Also known as", entity.Aliases.Count > 0 ? string.Join(", ", entity.Aliases) : null);
-        Field(text, "Tags", entity.TagIds.Count > 0 ? string.Join(", ", entity.TagIds.Where(_tags.ContainsKey).Select(id => _tags[id])) : null);
+        Field(text, _w.AlsoKnownAs, entity.Aliases.Count > 0 ? string.Join(", ", entity.Aliases) : null);
+        Field(text, _w.Tags, entity.TagIds.Count > 0 ? string.Join(", ", entity.TagIds.Where(_tags.ContainsKey).Select(id => _tags[id])) : null);
 
         if (entity.Image is { } image)
         {
@@ -431,7 +436,7 @@ internal sealed class ReadableBook
 
         if (Article(entity.Content) is { Length: > 0 } article)
         {
-            text.AppendLine("## Article").AppendLine().AppendLine(article).AppendLine();
+            text.Append("## ").AppendLine(_w.Article).AppendLine().AppendLine(article).AppendLine();
         }
 
         var links = LiveRelationships()
@@ -439,7 +444,7 @@ internal sealed class ReadableBook
             .ToList();
         if (links.Count > 0)
         {
-            text.AppendLine("## Relationships").AppendLine();
+            text.Append("## ").AppendLine(_w.Relationships).AppendLine();
             foreach (var relationship in links)
             {
                 var kind = _relationshipTypes[relationship.RelationshipTypeId];
@@ -447,7 +452,7 @@ internal sealed class ReadableBook
                 var other = outgoing ? relationship.TargetEntityId : relationship.SourceEntityId;
                 var name = outgoing || kind.IsSymmetric ? kind.Name : kind.InverseName ?? kind.Name;
                 text.Append("- ").Append(Inline(name)).Append(' ').Append(EntityLink(page, other))
-                    .Append(" - ").Append(relationship.CanonStatus);
+                    .Append(" - ").Append(_w.StatusOf(relationship.CanonStatus));
                 AppendPeriods(text, relationship);
                 text.AppendLine(relationship.Notes is { Length: > 0 } notes ? $" - {Inline(notes)}" : string.Empty);
             }
@@ -458,13 +463,13 @@ internal sealed class ReadableBook
         var moments = _moments.Values.Where(moment => moment.ParticipantEntityIds.Contains(entity.Id)).OrderBy(MomentOrder).ToList();
         if (moments.Count > 0)
         {
-            text.AppendLine("## Timeline").AppendLine();
+            text.Append("## ").AppendLine(_w.Timeline).AppendLine();
             foreach (var moment in moments)
             {
                 text.Append("- ").Append(Inline(moment.Title)).Append(" - ").AppendLine(Moment(moment));
             }
 
-            text.AppendLine().AppendLine($"All moments: {Link("Timeline", Relative(page, TimelinePage))}.").AppendLine();
+            text.AppendLine().AppendLine($"{_w.AllMomentsPrefix}{Link(_w.Timeline, Relative(page, TimelinePage))}.").AppendLine();
         }
 
         var scenes = _scenes.Values
@@ -472,11 +477,11 @@ internal sealed class ReadableBook
             .ToList();
         if (scenes.Count > 0)
         {
-            text.AppendLine("## Scenes").AppendLine();
+            text.Append("## ").AppendLine(_w.Scenes).AppendLine();
             foreach (var (story, scene) in scenes)
             {
-                text.Append("- ").Append(SceneLink(page, scene.Id)).Append(" in ").Append(Inline(story.Title))
-                    .AppendLine(scene.PovEntityId == entity.Id ? " (point of view)" : string.Empty);
+                text.Append("- ").Append(SceneLink(page, scene.Id)).Append(_w.InInfix).Append(Inline(story.Title))
+                    .AppendLine(scene.PovEntityId == entity.Id ? _w.PointOfViewNote : string.Empty);
             }
 
             text.AppendLine();
@@ -492,7 +497,7 @@ internal sealed class ReadableBook
         var pins = (_payload.Maps ?? []).SelectMany(map => map.Pins.Where(pin => pin.EntityId == entity.Id).Select(pin => (map, pin))).ToList();
         if (pins.Count > 0)
         {
-            text.AppendLine("## On maps").AppendLine();
+            text.Append("## ").AppendLine(_w.OnMaps).AppendLine();
             foreach (var (map, pin) in pins)
             {
                 text.Append("- ").Append(Link(map.Name, Relative(page, _mapPaths[map.Id]))).Append(": ").AppendLine(Inline(pin.Title));
@@ -503,8 +508,8 @@ internal sealed class ReadableBook
 
         if (entity.PrivateNote is { Content.Length: > 0 } note)
         {
-            text.AppendLine("## Private note").AppendLine()
-                .AppendLine("*Only the universe's owner can read this in LorEvolve.*").AppendLine();
+            text.Append("## ").AppendLine(_w.PrivateNote).AppendLine()
+                .AppendLine(_w.OwnerOnlyLine).AppendLine();
             Paragraph(text, note.Content);
         }
 
@@ -539,7 +544,7 @@ internal sealed class ReadableBook
             return;
         }
 
-        text.AppendLine("## Details").AppendLine();
+        text.Append("## ").AppendLine(_w.Details).AppendLine();
         Guid? currentSection = null;
         foreach (var field in shown)
         {
@@ -549,7 +554,7 @@ internal sealed class ReadableBook
             }
 
             currentSection = field.SectionId;
-            var label = field.ArchivedAt is null ? field.Name : $"{field.Name} (archived field)";
+            var label = field.ArchivedAt is null ? field.Name : $"{field.Name}{_w.ArchivedFieldSuffix}";
             Field(text, label, FieldValue(page, field, byField[field.Id].ToList()), escape: false);
         }
     }
@@ -559,7 +564,7 @@ internal sealed class ReadableBook
         string.Join(", ", values.Select(value => field.Kind switch
         {
             EntityFieldKind.Number when value.NumberValue is { } number => Year(value.EraId, number),
-            EntityFieldKind.Boolean when value.BooleanValue is { } flag => flag ? "Yes" : "No",
+            EntityFieldKind.Boolean when value.BooleanValue is { } flag => flag ? _w.Yes : _w.No,
             EntityFieldKind.Date when value.DateValue is { } date => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             EntityFieldKind.Select or EntityFieldKind.MultiSelect when value.OptionId is { } option =>
                 Inline(field.Options.FirstOrDefault(candidate => candidate.Id == option)?.Value ?? string.Empty),
@@ -575,19 +580,19 @@ internal sealed class ReadableBook
 
         if (progression.Eras.Count > 0)
         {
-            text.AppendLine("## Eras").AppendLine();
+            text.Append("## ").AppendLine(_w.Eras).AppendLine();
             foreach (var era in progression.Eras.OrderBy(era => era.SortOrder))
             {
                 text.Append("### ").AppendLine(Inline(era.Name)).AppendLine();
-                Field(text, "When", Join(" to ", era.Start is { } start ? Point(start) : null, era.End is { } end ? Point(end) : null), escape: false);
+                Field(text, _w.When, Join(_w.To, era.Start is { } start ? Point(start) : null, era.End is { } end ? Point(end) : null), escape: false);
                 Paragraph(text, era.Description);
-                Field(text, "Stories", era.StoryIds.Count > 0 ? Links(era.StoryIds.Select(id => StoryLink(page, id))) : null, escape: false);
-                Field(text, "Scenes", era.SceneIds.Count > 0 ? Scenes(era.SceneIds) : null, escape: false);
+                Field(text, _w.Stories, era.StoryIds.Count > 0 ? Links(era.StoryIds.Select(id => StoryLink(page, id))) : null, escape: false);
+                Field(text, _w.Scenes, era.SceneIds.Count > 0 ? Scenes(era.SceneIds) : null, escape: false);
                 foreach (var value in era.FieldValues.Where(value => _fields.ContainsKey(value.FieldDefinitionId)))
                 {
                     var field = _fields[value.FieldDefinitionId];
                     Field(text, field.Name, value.IsCleared
-                        ? "(cleared in this era)"
+                        ? _w.ClearedInThisEra
                         : FieldValue(page, field, [new BackupFieldValue(value.FieldDefinitionId, value.TextValue, value.NumberValue, value.EraId, value.BooleanValue, value.DateValue, value.OptionId, value.ReferencedEntityId)]), escape: false);
                 }
             }
@@ -595,49 +600,49 @@ internal sealed class ReadableBook
 
         string? Unlock(Guid? era, Guid? scene, Guid? moment) =>
             Join("; ",
-                era is { } e && eras.TryGetValue(e, out var eraName) ? $"era {Inline(eraName)}" : null,
-                scene is { } s ? $"scene {SceneLink(page, s)}" : null,
-                moment is { } m ? $"moment {MomentName(m)}" : null);
+                era is { } e && eras.TryGetValue(e, out var eraName) ? $"{_w.EraPrefix}{Inline(eraName)}" : null,
+                scene is { } s ? $"{_w.ScenePrefix}{SceneLink(page, s)}" : null,
+                moment is { } m ? $"{_w.MomentPrefix}{MomentName(m)}" : null);
 
         if (progression.Forms is { Count: > 0 } forms)
         {
-            text.AppendLine("## Forms").AppendLine();
+            text.Append("## ").AppendLine(_w.Forms).AppendLine();
             foreach (var form in forms.OrderBy(form => form.SortOrder))
             {
                 text.Append("### ").AppendLine(Inline(form.Name)).AppendLine();
                 Paragraph(text, form.Description);
-                Field(text, "First unlocked", Unlock(form.UnlockEraId, form.UnlockSceneId, form.UnlockMomentId), escape: false);
-                Field(text, "Available in eras", form.EraIds.Count > 0 ? Eras(form.EraIds) : null, escape: false);
-                Field(text, "Used in scenes", form.SceneIds.Count > 0 ? Scenes(form.SceneIds) : null, escape: false);
+                Field(text, _w.FirstUnlocked, Unlock(form.UnlockEraId, form.UnlockSceneId, form.UnlockMomentId), escape: false);
+                Field(text, _w.AvailableInEras, form.EraIds.Count > 0 ? Eras(form.EraIds) : null, escape: false);
+                Field(text, _w.UsedInScenes, form.SceneIds.Count > 0 ? Scenes(form.SceneIds) : null, escape: false);
             }
         }
 
         if (progression.Abilities is { Count: > 0 } abilities)
         {
             var formNames = (progression.Forms ?? []).ToDictionary(form => form.Id, form => form.Name);
-            text.AppendLine("## Abilities").AppendLine();
+            text.Append("## ").AppendLine(_w.Abilities).AppendLine();
             foreach (var ability in abilities.OrderBy(ability => ability.SortOrder))
             {
                 text.Append("### ").AppendLine(Inline(ability.Name)).AppendLine();
                 Paragraph(text, ability.Description);
-                Field(text, "First unlocked", Unlock(ability.UnlockEraId, ability.UnlockSceneId, ability.UnlockMomentId), escape: false);
-                Field(text, "Forms", ability.FormIds.Count > 0 ? string.Join(", ", ability.FormIds.Where(formNames.ContainsKey).Select(id => Inline(formNames[id]))) : null, escape: false);
-                Field(text, "Available in eras", ability.EraIds.Count > 0 ? Eras(ability.EraIds) : null, escape: false);
-                Field(text, "Used in scenes", ability.SceneIds.Count > 0 ? Scenes(ability.SceneIds) : null, escape: false);
+                Field(text, _w.FirstUnlocked, Unlock(ability.UnlockEraId, ability.UnlockSceneId, ability.UnlockMomentId), escape: false);
+                Field(text, _w.Forms, ability.FormIds.Count > 0 ? string.Join(", ", ability.FormIds.Where(formNames.ContainsKey).Select(id => Inline(formNames[id]))) : null, escape: false);
+                Field(text, _w.AvailableInEras, ability.EraIds.Count > 0 ? Eras(ability.EraIds) : null, escape: false);
+                Field(text, _w.UsedInScenes, ability.SceneIds.Count > 0 ? Scenes(ability.SceneIds) : null, escape: false);
             }
         }
 
         if (progression.Appearances is { Count: > 0 } appearances)
         {
             var formNames = (progression.Forms ?? []).ToDictionary(form => form.Id, form => form.Name);
-            text.AppendLine("## Appearances").AppendLine();
+            text.Append("## ").AppendLine(_w.Appearances).AppendLine();
             foreach (var appearance in appearances.OrderBy(appearance => appearance.SortOrder))
             {
                 text.Append("### ").AppendLine(Inline(appearance.Label)).AppendLine();
                 Paragraph(text, appearance.Notes);
-                Field(text, "Eras", appearance.EraIds.Count > 0 ? Eras(appearance.EraIds) : null, escape: false);
-                Field(text, "Forms", appearance.FormIds.Count > 0 ? string.Join(", ", appearance.FormIds.Where(formNames.ContainsKey).Select(id => Inline(formNames[id]))) : null, escape: false);
-                Field(text, "Scenes", appearance.SceneIds.Count > 0 ? Scenes(appearance.SceneIds) : null, escape: false);
+                Field(text, _w.Eras, appearance.EraIds.Count > 0 ? Eras(appearance.EraIds) : null, escape: false);
+                Field(text, _w.Forms, appearance.FormIds.Count > 0 ? string.Join(", ", appearance.FormIds.Where(formNames.ContainsKey).Select(id => Inline(formNames[id]))) : null, escape: false);
+                Field(text, _w.Scenes, appearance.SceneIds.Count > 0 ? Scenes(appearance.SceneIds) : null, escape: false);
                 foreach (var picture in appearance.Images)
                 {
                     text.AppendLine(Image(page, appearance.Label, picture.MediaPath)).AppendLine();
@@ -650,7 +655,7 @@ internal sealed class ReadableBook
     {
         var records = _payload.KnowledgeRecords ?? [];
         string Source(BackupKnowledgeRecord record) =>
-            record.KnownFromStart ? "known from the start" : record.SceneId is { } scene ? $"learnt in {SceneLink(page, scene)}" : string.Empty;
+            record.KnownFromStart ? _w.KnownFromStart : record.SceneId is { } scene ? $"{_w.LearntInPrefix}{SceneLink(page, scene)}" : string.Empty;
 
         var knows = records.Where(record => record.KnowerEntityId == entityId).ToList();
         var knownBy = records.Where(record => record.SubjectEntityId == entityId && record.KnowerEntityId != entityId).ToList();
@@ -659,17 +664,17 @@ internal sealed class ReadableBook
             return;
         }
 
-        text.AppendLine("## Knowledge").AppendLine();
+        text.Append("## ").AppendLine(_w.Knowledge).AppendLine();
         foreach (var record in knows)
         {
-            text.Append("- Knows: ").Append(Inline(record.Statement))
-                .Append(record.SubjectEntityId is { } subject && subject != entityId ? $" (about {EntityLink(page, subject)})" : string.Empty)
+            text.Append(_w.KnowsLabel).Append(Inline(record.Statement))
+                .Append(record.SubjectEntityId is { } subject && subject != entityId ? $"{_w.AboutPrefix}{EntityLink(page, subject)})" : string.Empty)
                 .Append(" - ").AppendLine(Source(record));
         }
 
         foreach (var record in knownBy)
         {
-            text.Append("- ").Append(EntityLink(page, record.KnowerEntityId)).Append(" knows: ").Append(Inline(record.Statement))
+            text.Append("- ").Append(EntityLink(page, record.KnowerEntityId)).Append(_w.KnowsInfix).Append(Inline(record.Statement))
                 .Append(" - ").AppendLine(Source(record));
         }
 
@@ -678,14 +683,14 @@ internal sealed class ReadableBook
 
     private string Relationships()
     {
-        var text = new StringBuilder("# Relationships\n\n");
+        var text = new StringBuilder($"# {_w.Relationships}\n\n");
         var rows = LiveRelationships().ToList();
         if (rows.Count == 0)
         {
-            return text.AppendLine("None.").ToString();
+            return text.AppendLine(_w.None).ToString();
         }
 
-        text.AppendLine("| From | Relationship | To | Status | When | Notes |").AppendLine("| --- | --- | --- | --- | --- | --- |");
+        text.AppendLine(_w.RelationshipTableHeader).AppendLine("| --- | --- | --- | --- | --- | --- |");
         foreach (var relationship in rows
                      .OrderBy(row => EntityName(row.SourceEntityId), StringComparer.Ordinal)
                      .ThenBy(row => _relationshipTypes[row.RelationshipTypeId].Name, StringComparer.Ordinal)
@@ -696,7 +701,7 @@ internal sealed class ReadableBook
             text.Append("| ").Append(EntityLink(RelationshipsPage, relationship.SourceEntityId))
                 .Append(" | ").Append(Inline(_relationshipTypes[relationship.RelationshipTypeId].Name))
                 .Append(" | ").Append(EntityLink(RelationshipsPage, relationship.TargetEntityId))
-                .Append(" | ").Append(relationship.CanonStatus)
+                .Append(" | ").Append(_w.StatusOf(relationship.CanonStatus))
                 .Append(" | ").Append(when.ToString().TrimStart(' ', '-'))
                 .Append(" | ").Append(Inline(relationship.Notes))
                 .AppendLine(" |");
@@ -704,11 +709,11 @@ internal sealed class ReadableBook
 
         if (_payload.RelationshipTypes.Count > 0)
         {
-            text.AppendLine().AppendLine("## Kinds").AppendLine();
+            text.AppendLine().Append("## ").AppendLine(_w.Kinds).AppendLine();
             foreach (var kind in _payload.RelationshipTypes.OrderBy(kind => kind.DisplayOrder))
             {
                 text.Append("- **").Append(Inline(kind.Name)).Append("**")
-                    .Append(kind.IsSymmetric ? " (both ways)" : kind.InverseName is { Length: > 0 } inverse ? $" / {Inline(inverse)}" : string.Empty)
+                    .Append(kind.IsSymmetric ? _w.BothWays : kind.InverseName is { Length: > 0 } inverse ? $" / {Inline(inverse)}" : string.Empty)
                     .AppendLine(kind.Description is { Length: > 0 } description ? $" - {Inline(description)}" : string.Empty);
             }
         }
@@ -718,16 +723,16 @@ internal sealed class ReadableBook
 
     private string TimelineReadme()
     {
-        var text = new StringBuilder("# Timeline\n\n");
+        var text = new StringBuilder($"# {_w.Timeline}\n\n");
 
         if (_payload.ChronologyEras is { Count: > 0 } eras)
         {
-            text.AppendLine("## Date periods").AppendLine();
+            text.Append("## ").AppendLine(_w.DatePeriods).AppendLine();
             foreach (var era in eras.OrderBy(era => era.SortOrder))
             {
                 text.Append("- **").Append(Inline(era.Name)).Append("**")
                     .Append(era.Abbreviation is { Length: > 0 } abbreviation ? $" ({Inline(abbreviation)})" : string.Empty)
-                    .AppendLine(era.Direction == ChronologyEraDirection.Descending ? " - years count down" : string.Empty);
+                    .AppendLine(era.Direction == ChronologyEraDirection.Descending ? _w.YearsCountDown : string.Empty);
             }
 
             text.AppendLine();
@@ -735,34 +740,34 @@ internal sealed class ReadableBook
 
         if (_payload.ChronologyCalendar is { Months.Count: > 0 } calendar)
         {
-            text.AppendLine("## Calendar").AppendLine();
+            text.Append("## ").AppendLine(_w.Calendar).AppendLine();
             foreach (var month in calendar.Months.OrderBy(month => month.SortOrder))
             {
-                text.Append(month.SortOrder + 1).Append(". ").Append(Inline(month.Name)).Append(" - ").Append(month.DayCount).AppendLine(" days");
+                text.Append(month.SortOrder + 1).Append(". ").Append(Inline(month.Name)).Append(" - ").Append(month.DayCount).AppendLine(_w.Days);
             }
 
             text.AppendLine();
         }
 
-        text.AppendLine("## Moments").AppendLine();
+        text.Append("## ").AppendLine(_w.Moments).AppendLine();
         if (_moments.Count == 0)
         {
-            text.AppendLine("None.");
+            text.AppendLine(_w.None);
         }
 
         foreach (var moment in _moments.Values.OrderBy(MomentOrder))
         {
             text.Append("### ").AppendLine(Inline(moment.Title)).AppendLine();
-            text.Append(Moment(moment)).Append(" - ").AppendLine(moment.CanonStatus.ToString()).AppendLine();
+            text.Append(Moment(moment)).Append(" - ").AppendLine(_w.StatusOf(moment.CanonStatus)).AppendLine();
             Paragraph(text, moment.Description);
-            Field(text, "Who", moment.ParticipantEntityIds.Count > 0 ? Links(moment.ParticipantEntityIds.Select(id => EntityLink(TimelinePage, id))) : null, escape: false);
-            Field(text, "Stories", moment.StoryIds is { Count: > 0 } stories ? Links(stories.Select(id => StoryLink(TimelinePage, id))) : null, escape: false);
+            Field(text, _w.Who, moment.ParticipantEntityIds.Count > 0 ? Links(moment.ParticipantEntityIds.Select(id => EntityLink(TimelinePage, id))) : null, escape: false);
+            Field(text, _w.Stories, moment.StoryIds is { Count: > 0 } stories ? Links(stories.Select(id => StoryLink(TimelinePage, id))) : null, escape: false);
             if (moment.Validation is { } details)
             {
-                Field(text, "Details", Join(", ",
-                    details.EventKindTermId is { } kind && _terms.TryGetValue(kind, out var kindName) ? $"event: {Inline(kindName)}" : null,
-                    details.MethodTermId is { } method && _terms.TryGetValue(method, out var methodName) ? $"method: {Inline(methodName)}" : null,
-                    details.ParticipantEntityId is { } who ? $"participant: {EntityLink(TimelinePage, who)}" : null), escape: false);
+                Field(text, _w.Details, Join(", ",
+                    details.EventKindTermId is { } kind && _terms.TryGetValue(kind, out var kindName) ? $"{_w.EventPrefix}{Inline(kindName)}" : null,
+                    details.MethodTermId is { } method && _terms.TryGetValue(method, out var methodName) ? $"{_w.MethodPrefix}{Inline(methodName)}" : null,
+                    details.ParticipantEntityId is { } who ? $"{_w.ParticipantPrefix}{EntityLink(TimelinePage, who)}" : null), escape: false);
             }
         }
 
@@ -774,9 +779,9 @@ internal sealed class ReadableBook
         var page = _storyPaths[story.Id];
         var text = new StringBuilder();
         text.Append("# ").AppendLine(Inline(story.Title)).AppendLine();
-        text.Append('*').Append(story.Status).AppendLine("*").AppendLine();
+        text.Append('*').Append(_w.StatusOf(story.Status)).AppendLine("*").AppendLine();
         Paragraph(text, story.Premise);
-        Field(text, "Public summary", story.PublicSummary);
+        Field(text, _w.PublicSummary, story.PublicSummary);
 
         var scenes = LiveScenes(story).ToList();
         var chapters = (story.Chapters ?? []).Where(chapter => chapter.DeletedAt is null).OrderBy(chapter => chapter.SortOrder).ToList();
@@ -790,10 +795,10 @@ internal sealed class ReadableBook
             text.AppendLine();
         }
 
-        text.AppendLine("## Scenes").AppendLine();
+        text.Append("## ").AppendLine(_w.Scenes).AppendLine();
         if (scenes.Count == 0)
         {
-            text.AppendLine("None.").AppendLine();
+            text.AppendLine(_w.None).AppendLine();
         }
 
         var unchaptered = scenes.Where(scene => scene.ChapterId is null).ToList();
@@ -801,7 +806,7 @@ internal sealed class ReadableBook
         {
             if (chapters.Count > 0)
             {
-                text.AppendLine("### Unchaptered").AppendLine();
+                text.Append("### ").AppendLine(_w.Unchaptered).AppendLine();
             }
 
             SceneList(unchaptered);
@@ -815,9 +820,9 @@ internal sealed class ReadableBook
         {
             foreach (var chapter in list)
             {
-                text.Append(heading).Append(" Chapter ").Append(numbers[chapter.Id]).Append(": ").AppendLine(Inline(chapter.Title)).AppendLine();
+                text.Append(heading).Append(_w.ChapterWord).Append(numbers[chapter.Id]).Append(": ").AppendLine(Inline(chapter.Title)).AppendLine();
                 Paragraph(text, chapter.Summary);
-                Field(text, "Notes", chapter.Notes);
+                Field(text, _w.Notes, chapter.Notes);
                 SceneList(scenes.Where(scene => scene.ChapterId == chapter.Id));
             }
         }
@@ -826,9 +831,9 @@ internal sealed class ReadableBook
 
         foreach (var arc in arcs)
         {
-            text.Append("### Arc ").Append(arc.SortOrder + 1).Append(": ").AppendLine(Inline(arc.Title)).AppendLine();
+            text.Append(_w.ArcHeading).Append(arc.SortOrder + 1).Append(": ").AppendLine(Inline(arc.Title)).AppendLine();
             Paragraph(text, arc.Description);
-            Field(text, "Notes", arc.Notes);
+            Field(text, _w.Notes, arc.Notes);
             ChapterList(chapters.Where(chapter => ArcOf(story, chapter) == arc.Id), "####");
         }
 
@@ -864,19 +869,19 @@ internal sealed class ReadableBook
         var text = new StringBuilder();
         text.Append("# ").AppendLine(Inline(scene.Title)).AppendLine();
         var chapter = (story.Chapters ?? []).FirstOrDefault(candidate => candidate.Id == scene.ChapterId && candidate.DeletedAt is null);
-        text.Append("In ").Append(Link(story.Title, Relative(page, _storyPaths[story.Id])))
-            .AppendLine(chapter is null ? "." : $", chapter {ChapterNumbers(story)[chapter.Id]}: {Inline(chapter.Title)}.").AppendLine();
+        text.Append(_w.InPrefix).Append(Link(story.Title, Relative(page, _storyPaths[story.Id])))
+            .AppendLine(chapter is null ? "." : $"{_w.ChapterInfix}{ChapterNumbers(story)[chapter.Id]}: {Inline(chapter.Title)}.").AppendLine();
 
-        Field(text, "Point of view", scene.PovEntityId is { } pov ? EntityLink(page, pov) : null, escape: false);
-        Field(text, "When", scene.Chronology is { } when ? Point(when) : null, escape: false);
-        Field(text, "Lore", scene.LinkedEntityIds.Count > 0 ? Links(scene.LinkedEntityIds.Select(id => EntityLink(page, id))) : null, escape: false);
+        Field(text, _w.PointOfView, scene.PovEntityId is { } pov ? EntityLink(page, pov) : null, escape: false);
+        Field(text, _w.When, scene.Chronology is { } when ? Point(when) : null, escape: false);
+        Field(text, _w.Lore, scene.LinkedEntityIds.Count > 0 ? Links(scene.LinkedEntityIds.Select(id => EntityLink(page, id))) : null, escape: false);
         Paragraph(text, scene.Summary);
-        Field(text, "Notes", scene.Notes);
+        Field(text, _w.Notes, scene.Notes);
 
         var beats = (scene.Beats ?? []).OrderBy(beat => beat.SortOrder).ToList();
         if (beats.Count > 0)
         {
-            text.AppendLine("## Beats").AppendLine();
+            text.Append("## ").AppendLine(_w.Beats).AppendLine();
             foreach (var beat in beats)
             {
                 text.Append("1. ").Append(Inline(beat.Title))
@@ -888,7 +893,7 @@ internal sealed class ReadableBook
 
         if (scene.Manuscript is { Content.Length: > 0 } manuscript)
         {
-            text.AppendLine("## Manuscript").AppendLine().AppendLine(Manuscript(page, manuscript.Content));
+            text.Append("## ").AppendLine(_w.Manuscript).AppendLine().AppendLine(Manuscript(page, manuscript.Content));
         }
 
         return text.ToString();
@@ -901,23 +906,23 @@ internal sealed class ReadableBook
         text.Append("# ").AppendLine(Inline(map.Name)).AppendLine();
         Paragraph(text, map.Description);
         text.AppendLine(Image(page, map.Name, map.Image.MediaPath)).AppendLine();
-        Field(text, "Size", $"{map.Image.Width} x {map.Image.Height} pixels");
+        Field(text, _w.Size, $"{map.Image.Width} x {map.Image.Height}{_w.PixelsSuffix}");
         if (map.Calibration is { } scale)
         {
-            Field(text, "Scale", $"{scale.Distance.ToString("0.####", CultureInfo.InvariantCulture)} {scale.Unit} between ({Percent(scale.X1)}, {Percent(scale.Y1)}) and ({Percent(scale.X2)}, {Percent(scale.Y2)})");
+            Field(text, _w.Scale, $"{scale.Distance.ToString("0.####", CultureInfo.InvariantCulture)} {scale.Unit}{_w.BetweenWord}({Percent(scale.X1)}, {Percent(scale.Y1)}){_w.AndWord}({Percent(scale.X2)}, {Percent(scale.Y2)})");
         }
 
-        text.AppendLine("## Pins").AppendLine();
+        text.Append("## ").AppendLine(_w.Pins).AppendLine();
         if (map.Pins.Count == 0)
         {
-            return text.AppendLine("None.").ToString();
+            return text.AppendLine(_w.None).ToString();
         }
 
-        text.AppendLine("| Pin | Lore | Across | Down | Note |").AppendLine("| --- | --- | --- | --- | --- |");
+        text.AppendLine(_w.PinTableHeader).AppendLine("| --- | --- | --- | --- | --- |");
         foreach (var pin in map.Pins)
         {
             text.Append("| ").Append(Inline(pin.Title))
-                .Append(pin.PlacedOnCurrentImage ? string.Empty : " (placed on an earlier picture)")
+                .Append(pin.PlacedOnCurrentImage ? string.Empty : _w.PlacedOnEarlierPicture)
                 .Append(" | ").Append(pin.EntityId is { } entity ? EntityLink(page, entity) : string.Empty)
                 .Append(" | ").Append(Percent(pin.X)).Append(" | ").Append(Percent(pin.Y))
                 .Append(" | ").Append(Inline(pin.Note)).AppendLine(" |");
@@ -928,11 +933,11 @@ internal sealed class ReadableBook
 
     private string WorldRules()
     {
-        var text = new StringBuilder("# World rules\n\n");
+        var text = new StringBuilder($"# {_w.WorldRules}\n\n");
         var rules = LiveRules().ToList();
         if (rules.Count == 0)
         {
-            return text.AppendLine("None.").ToString();
+            return text.AppendLine(_w.None).ToString();
         }
 
         foreach (var rule in rules)
@@ -941,7 +946,12 @@ internal sealed class ReadableBook
             Paragraph(text, rule.Description);
             if (rule.Validation is { } check)
             {
-                Field(text, "Check", $"at most {check.MaxOccurrences} per participant of event {_terms.GetValueOrDefault(check.EventKindTermId, "?")} by method {_terms.GetValueOrDefault(check.MethodTermId, "?")}");
+                Field(text, _w.Check, string.Format(
+                    CultureInfo.InvariantCulture,
+                    _w.CheckSentence,
+                    check.MaxOccurrences,
+                    _terms.GetValueOrDefault(check.EventKindTermId, "?"),
+                    _terms.GetValueOrDefault(check.MethodTermId, "?")));
             }
         }
 
@@ -950,23 +960,23 @@ internal sealed class ReadableBook
 
     private string Ideas()
     {
-        var text = new StringBuilder("# Ideas\n\n*Possibilities kept for this universe. None of them is lore.*\n\n");
+        var text = new StringBuilder($"# {_w.Ideas}\n\n{_w.IdeasIntro}\n\n");
         var ideas = LiveIdeas().ToList();
         if (ideas.Count == 0)
         {
-            return text.AppendLine("None.").ToString();
+            return text.AppendLine(_w.None).ToString();
         }
 
         foreach (var idea in ideas)
         {
             text.Append("## ").AppendLine(Inline(idea.Title)).AppendLine();
             Paragraph(text, idea.Body);
-            Field(text, "About", idea.References.Count > 0 ? Links(idea.References.Select(reference => reference.Kind switch
+            Field(text, _w.About, idea.References.Count > 0 ? Links(idea.References.Select(reference => reference.Kind switch
             {
                 IdeaReferenceKind.Entity => EntityLink(IdeasPage, reference.Id),
                 IdeaReferenceKind.Story => StoryLink(IdeasPage, reference.Id),
                 IdeaReferenceKind.Scene => SceneLink(IdeasPage, reference.Id),
-                _ => StoryOfArc(reference.Id) is { } story ? StoryLink(IdeasPage, story) : "(arc in the Trash)",
+                _ => StoryOfArc(reference.Id) is { } story ? StoryLink(IdeasPage, story) : _w.ArcInTrash,
             }).Distinct(StringComparer.Ordinal)) : null, escape: false);
         }
 
@@ -1007,7 +1017,7 @@ internal sealed class ReadableBook
     {
         if (year is not { } y)
         {
-            return "date unknown";
+            return _w.DateUnknown;
         }
 
         var written = Year(eraId, y);
@@ -1016,8 +1026,8 @@ internal sealed class ReadableBook
             written = $"{written} {Inline(plainLabel)}";
         }
 
-        var monthName = monthId is { } id && _months.TryGetValue(id, out var named) ? Inline(named.Name) : month is { } number ? $"month {number}" : null;
-        return Join(", ", written, monthName, day is { } d ? $"day {d}" : null)!;
+        var monthName = monthId is { } id && _months.TryGetValue(id, out var named) ? Inline(named.Name) : month is { } number ? $"{_w.MonthPrefix}{number}" : null;
+        return Join(", ", written, monthName, day is { } d ? $"{_w.DayPrefix}{d}" : null)!;
     }
 
     private string Point(BackupChronologyValue point) => Date(point.Year, point.Month, point.Day, point.EraId, point.MonthId, null);
@@ -1027,9 +1037,9 @@ internal sealed class ReadableBook
         var start = Date(moment.StartYear, moment.StartMonth, moment.StartDay, moment.StartEraId, moment.StartMonthId, moment.EraLabel);
         return moment.DateKind switch
         {
-            TimelineDateKind.Unknown => "date unknown",
-            TimelineDateKind.Approximate => $"around {start}",
-            TimelineDateKind.Range => $"{start} to {Date(moment.EndYear, moment.EndMonth, moment.EndDay, moment.EndEraId, moment.EndMonthId, moment.EraLabel)}",
+            TimelineDateKind.Unknown => _w.DateUnknown,
+            TimelineDateKind.Approximate => $"{_w.AroundPrefix}{start}",
+            TimelineDateKind.Range => $"{start}{_w.To}{Date(moment.EndYear, moment.EndMonth, moment.EndDay, moment.EndEraId, moment.EndMonthId, moment.EraLabel)}",
             _ => start,
         };
     }
@@ -1053,8 +1063,8 @@ internal sealed class ReadableBook
         foreach (var period in relationship.Periods ?? [])
         {
             text.Append(" - ").Append(period.EntityEraId is { } era && _entityEras.TryGetValue(era, out var named)
-                ? $"during {Inline(named.Name)}"
-                : Join(" to ", period.Start is { } start ? Point(start) : "?", period.End is { } end ? Point(end) : "?"));
+                ? $"{_w.DuringPrefix}{Inline(named.Name)}"
+                : Join(_w.To, period.Start is { } start ? Point(start) : "?", period.End is { } end ? Point(end) : "?"));
         }
     }
 
@@ -1118,24 +1128,6 @@ internal sealed class ReadableBook
         return present.Count == 0 ? null : string.Join(separator, present);
     }
 
-    /// <summary>"MoviesAndTv" as "Movies and tv".</summary>
-    private static string Words(string name)
-    {
-        var text = new StringBuilder();
-        foreach (var character in name)
-        {
-            if (char.IsUpper(character) && text.Length > 0)
-            {
-                text.Append(' ').Append(char.ToLowerInvariant(character));
-            }
-            else
-            {
-                text.Append(character);
-            }
-        }
-
-        return text.ToString();
-    }
 
     /// <summary>
     /// A scene's prose as written - every line as it is, so the words stay the author's - with each mention a link to the
