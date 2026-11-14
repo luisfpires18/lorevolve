@@ -22,8 +22,15 @@ const KINDS: readonly ProjectKindValue[] = [
 ]
 
 /** One project: its own page, or the form that makes one. */
-export default function ProjectPage({ isNew = false }: { isNew?: boolean }) {
-  return isNew ? <NewProject /> : <Project />
+export default function ProjectPage({
+  isNew = false,
+  inUniverse = false,
+}: {
+  isNew?: boolean
+  /** Inside a universe's workspace, whose sidebar already carries the projects group. */
+  inUniverse?: boolean
+}) {
+  return isNew ? <NewProject /> : <Project inUniverse={inUniverse} />
 }
 
 function NewProject() {
@@ -129,7 +136,7 @@ type LoadState =
   | { kind: 'missing'; for: string }
   | { kind: 'failed'; for: string }
 
-function Project() {
+function Project({ inUniverse }: { inUniverse: boolean }) {
   useI18n()
   const { projectId } = useParams<{ projectId: string }>()
   const [state, setState] = useState<LoadState | null>(null)
@@ -179,12 +186,14 @@ function Project() {
    * account-level screens, which have no sidebar of their own.
    */
   return (
-    <div className="projectshell">
-      <nav className="projectshell__nav" aria-label={t('projects.list.title')}>
-        <ul className="sidebar__nav">
-          <ProjectsNav />
-        </ul>
-      </nav>
+    <div className={inUniverse ? undefined : 'projectshell'}>
+      {inUniverse ? null : (
+        <nav className="projectshell__nav" aria-label={t('projects.list.title')}>
+          <ul className="sidebar__nav">
+            <ProjectsNav />
+          </ul>
+        </nav>
+      )}
 
       <section className="projects" data-testid="project-page">
         <header className="projects__head">

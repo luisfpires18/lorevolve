@@ -6,9 +6,16 @@ import { PROJECT_SECTIONS, kindLabel, projectPath, projectSectionLabel } from '.
 import type { ProjectDetail } from '../projects/types'
 import { t } from '../i18n'
 
-/** The project an address is in, or null anywhere else. `/app/projects/<id>/anything` is still that project. */
+/**
+ * The project an address is in, or null anywhere else. Both of a project's frames count, the account-level
+ * `/app/projects/<id>` and the universe-scoped `/app/universes/<universeId>/projects/<id>`, because the group is drawn
+ * in both and the project being read is the one that starts expanded in either. Anything below the project, as its
+ * later pages will be, is still that project.
+ */
 function projectInPath(pathname: string) {
-  const match = /^\/app\/projects\/([0-9a-fA-F-]{36})(?:\/|$)/.exec(pathname)
+  const match =
+    /^\/app\/projects\/([0-9a-fA-F-]{36})(?:\/|$)/.exec(pathname) ??
+    /^\/app\/universes\/[0-9a-fA-F-]{36}\/projects\/([0-9a-fA-F-]{36})(?:\/|$)/.exec(pathname)
   return match ? match[1] : null
 }
 
@@ -99,7 +106,7 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
                 </button>
                 <NavLink
                   className="sidebar__link sidebar__link--project"
-                  to={projectPath(project.id)}
+                  to={projectPath(project.id, '', universeId)}
                   end
                   data-testid={`project-link-${project.id}`}
                 >
@@ -118,7 +125,7 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
                     <li key={section.segment}>
                       <NavLink
                         className="sidebar__sublink"
-                        to={projectPath(project.id, section.segment)}
+                        to={projectPath(project.id, section.segment, universeId)}
                         end={section.segment === ''}
                         data-testid={`${section.testId}-${project.id}`}
                       >

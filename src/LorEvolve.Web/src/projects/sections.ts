@@ -61,7 +61,17 @@ export function lifecycleLabel(lifecycle: ProjectDetail['lifecycle']) {
   }
 }
 
-/** Where a project's pages live. One address, whether the project was reached from a universe or from the workspace. */
-export function projectPath(projectId: string, segment = '') {
-  return segment ? `/app/projects/${projectId}/${segment}` : `/app/projects/${projectId}`
+/**
+ * Where a project's pages live.
+ *
+ * `/app/projects/<id>` is the canonical address: a project may belong to no universe, so it has to have a home that
+ * does not depend on one. Inside a universe's workspace the same project is served at
+ * `/app/universes/<universeId>/projects/<id>`, so opening one from that sidebar keeps the author inside the universe
+ * shell, as every other section does. The page is the same component either way; only the frame around it differs.
+ */
+export function projectPath(projectId: string, segment = '', universeId?: string) {
+  const base = universeId
+    ? `/app/universes/${universeId}/projects/${projectId}`
+    : `/app/projects/${projectId}`
+  return segment ? `${base}/${segment}` : base
 }

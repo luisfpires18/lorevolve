@@ -87,6 +87,38 @@ test.describe('Projects navigation', () => {
     await expect(page.getByTestId(`projects-row-${first.id}`)).toContainText(first.name)
   })
 
+  test('opening a project from a universe keeps the author inside that universe', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const inWorld = await project(page, unique('The Deep Survey '), world.id)
+
+    await page.goto(`/app/universes/${world.id}`)
+
+    // The project itself, from the universe's own sidebar.
+    await page.getByTestId(`project-link-${inWorld.id}`).click()
+    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}$`))
+    await expect(page.getByTestId('project-name')).toContainText(inWorld.name)
+
+    // The universe's own sections are still in the same navigation, which is the point.
+    await expect(page.getByTestId('workspace-lore')).toBeVisible()
+    await expect(page.getByTestId('workspace-stories')).toBeVisible()
+    await expect(page.getByTestId('workspace-name')).toContainText(world.name)
+
+    // Being the project that is open, it is already expanded here: the universe's frame is one of the two the
+    // sidebar counts, so nothing has to be clicked to reveal its pages.
+    await expect(page.getByTestId(`project-toggle-${inWorld.id}`)).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+
+    // And the project's Overview entry stays inside the universe too.
+    await page.getByTestId(`project-overview-${inWorld.id}`).click()
+    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}$`))
+    await expect(page.getByTestId('workspace-lore')).toBeVisible()
+  })
+
   test('only the project being read is expanded, and the others open on request', async ({
     page,
   }) => {

@@ -169,7 +169,10 @@ function Root() {
               <Route path="/app" element={asSection('universes', <UniversesPage />)} />
               <Route path="/app/profile" element={asSection('profile', <ProfilePage />)} />
               <Route path="/app/projects" element={asSection('projects', <ProjectsPage />)} />
-              <Route path="/app/projects/new" element={asSection('project', <ProjectPage isNew />)} />
+              <Route
+                path="/app/projects/new"
+                element={asSection('project', <ProjectPage isNew />)}
+              />
               <Route
                 path="/app/projects/:projectId"
                 element={asSection('project', <ProjectPage />)}
@@ -273,9 +276,10 @@ function Root() {
                   </RoleGate>,
                 )}
               />
+              <Route path="projects" element={asSection('projects', <ProjectsPage inUniverse />)} />
               <Route
-                path="projects"
-                element={asSection('projects', <ProjectsPage inUniverse />)}
+                path="projects/:projectId"
+                element={asSection('project', <ProjectPage inUniverse />)}
               />
               <Route path="stories" element={asSection('stories', <StoriesPage />)} />
               <Route
