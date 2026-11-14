@@ -284,6 +284,7 @@ public static class McpSetup
             .WithTools<LorEvolveMcpTools>()
             .WithTools<LorEvolveMcpImageTools>()
             .WithTools<LorEvolveMcpMapTools>()
+            .WithTools<LorEvolveMcpProjectTools>()
             .WithTools<LorEvolveMcpProposalTools>()
             .WithRequestFilters(LorEvolveMcpProposalTools.Filters);
 
