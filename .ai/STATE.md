@@ -1,4 +1,4 @@
-# STATE
+﻿# STATE
 
 Current operational state only, as of 2026-11-13. Trim instead of appending: when work merges, delete its line here;
 git history and ADRs keep the detail. History before this trim: `docs/history/state-archive-2026-10.md`.
