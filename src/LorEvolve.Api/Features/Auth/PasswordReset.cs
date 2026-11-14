@@ -2,6 +2,7 @@ using LorEvolve.Api.Hosting;
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using LorEvolve.Api.Features.Email;
+using LorEvolve.Api.Features.Localization;
 using LorEvolve.Api.Features.Seo;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -42,15 +43,16 @@ public static class PasswordReset
     /// The reset email for one account, its link built on the configured public origin, never the request's host. The token
     /// rides after <c>#</c>: a browser never sends the fragment, so it stays out of server and proxy request logs (N-4).
     /// </summary>
-    public static async Task<AppEmailMessage> MessageAsync(UserManager<LorEvolveUser> userManager, LorEvolveUser user, PublicSite site)
+    public static async Task<AppEmailMessage> MessageAsync(UserManager<LorEvolveUser> userManager, LorEvolveUser user, PublicSite site, string language)
     {
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
         var link = site.Absolute($"/reset-password#user={Uri.EscapeDataString(user.Id)}&token={Uri.EscapeDataString(token)}")!;
-        return PasswordResetEmail.For(user.Email!, link);
+        return PasswordResetEmail.For(user.Email!, link, language);
     }
 
     private static async Task<IResult> ForgotAsync(
         [FromBody] ForgotPasswordRequest request,
+        HttpContext http,
         UserManager<LorEvolveUser> userManager,
         AppEmail email,
         PublicSite site,
@@ -69,7 +71,7 @@ public static class PasswordReset
             && (!LastSent.TryGetValue(user.Id, out var last) || now - last >= Cooldown))
         {
             LastSent[user.Id] = now;
-            var message = await MessageAsync(userManager, user, site);
+            var message = await MessageAsync(userManager, user, site, RequestLanguage.Of(http.Request));
 
             // After the answer, so its timing is the same as for an unknown address. AppEmail logs its own failures.
             _ = Task.Run(() => email.SendAsync(message, CancellationToken.None));

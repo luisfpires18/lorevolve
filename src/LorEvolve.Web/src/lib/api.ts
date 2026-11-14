@@ -1,4 +1,4 @@
-import { t } from '../i18n'
+import { currentLocale, t } from '../i18n'
 
 /**
  * Shape of an RFC 7807 response, plus the field errors ASP.NET Core adds and the
@@ -137,6 +137,10 @@ async function performFetch<T>(
       credentials: 'same-origin',
       headers: {
         Accept: 'application/json',
+        // The language the reader chose here, not the list the browser sends of its own accord (ADR 0071). The API
+        // writes in it where it writes at all: the two emails, a new universe's starter types, and the language it
+        // tells the assistant to answer in.
+        'Accept-Language': currentLocale(),
         ...(init?.body && !isForm ? { 'Content-Type': 'application/json' } : {}),
         ...init?.headers,
       },

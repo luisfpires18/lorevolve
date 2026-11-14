@@ -1,4 +1,5 @@
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace LorEvolve.Api.Features.Lore;
@@ -28,6 +29,27 @@ public static class EntityTypeDefaults
     ];
 
     /// <summary>
+    /// The same template in European Portuguese (ADR 0071, #109), written into a universe whose creator asked for it in
+    /// Portuguese. The icon, the colour and the Family Tree flag are the same template; only the words differ, and they
+    /// are the author's from the moment they are written: renaming or deleting one is an ordinary edit, and nothing
+    /// translates a universe that already exists.
+    /// </summary>
+    private static readonly IReadOnlyList<(string Name, string Description, string Icon, string Accent, bool FamilyTree)> PortugueseDefaults =
+    [
+        ("Personagem", "Pessoas, e tudo o resto que tenha vontade própria.", "character", "#4f6bd6", true),
+        ("Lugar", "Lugares, de uma sala a um continente.", "location", "#1f8f74", false),
+        ("Organização", "Grupos que agem em conjunto: casas, guildas, exércitos, cultos.", "organization", "#7a4bbd", false),
+        ("Acontecimento", "Coisas que aconteceram, e coisas que hão de acontecer.", "event", "#a8562c", false),
+        ("Objeto", "Objetos que importam o suficiente para terem nome.", "item", "#b3922f", false),
+        ("Espécie", "Tipos de ser vivo.", "species", "#2f8fa8", false),
+        ("Conceito", "Ideias, forças, línguas, leis, sistemas de magia.", "concept", "#3c4a57", false),
+    ];
+
+    /// <summary>The starter types in <paramref name="language"/>, English for anything LorEvolve has no words for.</summary>
+    public static IReadOnlyList<(string Name, string Description, string Icon, string Accent, bool FamilyTree)> DefaultsFor(string language) =>
+        language == RequestLanguage.Portuguese ? PortugueseDefaults : Defaults;
+
+    /// <summary>
     /// The starter template's semantic groups (Issue #36), each with the starter types it holds, named by the starter names
     /// above. Data for this one template, not a taxonomy: the author renames, reshapes or deletes them like any group. Only
     /// types created in the same call join one, so nothing is ever classified after the fact, and a type of any other name
@@ -41,6 +63,19 @@ public static class EntityTypeDefaults
         ("Objects", ["Item"]),
     ];
 
+    /// <summary>The same groups in European Portuguese, naming the Portuguese starter types (#109).</summary>
+    private static readonly IReadOnlyList<(string Name, string[] Types)> PortugueseStarterGroups =
+    [
+        ("Personagens", ["Personagem"]),
+        ("Lugares", ["Lugar"]),
+        ("Facções", ["Organização"]),
+        ("Objetos", ["Objeto"]),
+    ];
+
+    /// <summary>The starter groups in <paramref name="language"/>, naming that language's starter types.</summary>
+    public static IReadOnlyList<(string Name, string[] Types)> StarterGroupsFor(string language) =>
+        language == RequestLanguage.Portuguese ? PortugueseStarterGroups : StarterGroups;
+
     /// <summary>
     /// Whether a stored type is the starter Character exactly as seeded - name, description, icon and colour all untouched.
     /// The one rule that gives an existing type Family Tree eligibility it was not given by its author: the migration applies it
@@ -53,11 +88,16 @@ public static class EntityTypeDefaults
         return name == starterName && description == starterDescription && icon == starterIcon && accentColor == starterAccent;
     }
 
-    /// <summary>Adds any missing default type. Returns how many were created.</summary>
+    /// <summary>
+    /// Adds any missing default type, in <paramref name="language"/>. Returns how many were created. The language is the
+    /// creating request's and is used nowhere else: a universe is seeded once, and what it holds afterwards is the
+    /// author's, whatever language they later read LorEvolve in.
+    /// </summary>
     public static async Task<int> EnsureAsync(
         LorEvolveDbContext db,
         Guid universeId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string language = RequestLanguage.English)
     {
         var existing = await db.EntityTypes
             .Where(type => type.UniverseId == universeId)
@@ -69,7 +109,7 @@ public static class EntityTypeDefaults
         var order = 0;
         var created = new Dictionary<string, Guid>(StringComparer.Ordinal);
 
-        foreach (var (name, description, icon, accent, familyTree) in Defaults)
+        foreach (var (name, description, icon, accent, familyTree) in DefaultsFor(language))
         {
             order++;
             if (present.Contains(name))
@@ -97,7 +137,7 @@ public static class EntityTypeDefaults
         // Only types written just now join a starter group, and only a group with a member is created - after any the
         // universe has, by name, as groups were listed before they had a priority.
         var nextGroup = await EntityTypeGroupEndpoints.NextOrderAsync(db, universeId, cancellationToken);
-        foreach (var (groupName, typeNames) in StarterGroups.OrderBy(group => group.Name, StringComparer.OrdinalIgnoreCase))
+        foreach (var (groupName, typeNames) in StarterGroupsFor(language).OrderBy(group => group.Name, StringComparer.OrdinalIgnoreCase))
         {
             var memberIds = typeNames.Where(created.ContainsKey).Select(typeName => created[typeName]).ToList();
             if (memberIds.Count == 0

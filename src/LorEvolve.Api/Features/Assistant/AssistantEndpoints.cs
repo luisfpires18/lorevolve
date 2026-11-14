@@ -1,9 +1,10 @@
-using System.Security.Claims;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.Localization;
 using LorEvolve.Api.Features.Reading;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace LorEvolve.Api.Features.Assistant;
 
@@ -159,7 +160,7 @@ public static partial class AssistantEndpoints
 
         try
         {
-            return Results.Ok(await UniverseAssistant.AskAsync(provider, db, universeId, universeName, messages, logger, timeout.Token, proposing));
+            return Results.Ok(await UniverseAssistant.AskAsync(provider, db, universeId, universeName, messages, logger, timeout.Token, proposing, RequestLanguage.Of(http.Request)));
         }
         catch (AssistantProviderException exception)
         {

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.Localization;
 using LorEvolve.Api.Features.Reading;
 
 namespace LorEvolve.Api.Features.Assistant;
@@ -55,14 +56,15 @@ internal static partial class UniverseAssistant
     /// content never appears here - it reaches the model only as tool results, which these instructions name as data - so
     /// nothing a writer typed can speak with the instructions' voice.
     /// </summary>
-    public static string Instructions(string universeName) => $"{GroundRules(universeName)}\n\n{AnswerFormat}";
+    public static string Instructions(string universeName, string language = RequestLanguage.English) =>
+        $"{GroundRules(universeName, language)}\n\n{AnswerFormat}";
 
     /// <summary>
     /// The instructions without <see cref="AnswerFormat"/>, for a step that carries no answer schema (Groq's tool steps).
     /// Told there to "reply with JSON", gpt-oss on Groq addresses its answer to a tool called "json" that does not exist,
     /// and Groq refuses the request: measured live, 5/5 refused with it and 5/5 answered without it (ADR 0045).
     /// </summary>
-    public static string GroundRules(string universeName) => $"""
+    public static string GroundRules(string universeName, string language = RequestLanguage.English) => $"""
         You are the assistant inside LorEvolve, a worldbuilding and writing app. You help a writer with one fictional universe, named {JsonSerializer.Serialize(universeName)}, using only what its authors recorded in LorEvolve.
 
         Ground rules:
@@ -78,7 +80,17 @@ internal static partial class UniverseAssistant
         10. Search with one or two distinctive words, usually a name. Read an object before relying on it.
         11. An entry's article and a scene's prose are read from their start. When a search found your words in an article or in prose, or the start does not answer the question, read the object again with find set to those words to get the passage around them before saying anything is not recorded.
         12. Geography comes only from the maps' pins. To locate something, find its lore entry first - by search, or through recorded relationships and fields when the question names a role, such as a kingdom's capital - and call get_map_location with its id; if no entry is recorded for the role, or several could be meant, say so or ask which. Say plainly when an entry is on no map, and name each map when it is on several. A distance comes only from measure_map_distance: it is a straight line on the map picture by the creator's recorded scale, approximate, and exists only when that tool returns one. Never estimate a distance, a direction or a travel time from pixels, descriptions or the picture.
+        {LanguageRule(language)}
         """;
+
+    /// <summary>
+    /// The line that tells the assistant which language to answer in (#109). The reader chose it in LorEvolve, so the
+    /// answer follows that and not whatever language the universe's own content happens to be written in: an author
+    /// reading LorEvolve in Portuguese is answered in Portuguese about an English universe, and the recorded names,
+    /// titles and quotations stay exactly as their author wrote them.
+    /// </summary>
+    public static string LanguageRule(string language) =>
+        $"13. Answer in {RequestLanguage.NameOf(language)}, whatever language the recorded content is written in. Never translate a name, a title or a quotation from a tool result: write those exactly as they are recorded.";
 
     /// <summary>Rule 6 of an ordinary question. Propose mode says something else in its place (<see cref="AssistantProposing.ProposeRule"/>).</summary>
     public const string ReadOnlyRule =
@@ -102,11 +114,14 @@ internal static partial class UniverseAssistant
         IReadOnlyList<AssistantMessage> messages,
         ILogger logger,
         CancellationToken cancellationToken,
-        AssistantProposing? proposing = null)
+        AssistantProposing? proposing = null,
+        string language = RequestLanguage.English)
     {
         // Propose mode adds two tools and says so in rule 6; an ordinary question is handed neither (ADR 0047).
         var tools = new AssistantTools(db, universeId, proposing);
-        var rules = proposing is null ? GroundRules(universeName) : AssistantProposing.Instructions(universeName);
+        var rules = proposing is null
+            ? GroundRules(universeName, language)
+            : AssistantProposing.Instructions(universeName, language);
         var conversation = provider.Begin(new AssistantBrief(
             $"{rules}\n\n{AnswerFormat}",
             messages,

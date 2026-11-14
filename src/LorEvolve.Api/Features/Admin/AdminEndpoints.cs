@@ -3,6 +3,7 @@ using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Auth;
 using LorEvolve.Api.Features.Email;
+using LorEvolve.Api.Features.Localization;
 using LorEvolve.Api.Features.Mcp;
 using LorEvolve.Api.Features.Publishing;
 using LorEvolve.Api.Features.Seo;
@@ -167,6 +168,7 @@ public static class AdminEndpoints
     /// </summary>
     private static async Task<IResult> EmailSignUpLinkAsync(
         [FromBody] SignUpLinkRequest request,
+        HttpContext http,
         IDataProtectionProvider protection,
         UserManager<LorEvolveUser> userManager,
         AppEmail email,
@@ -193,7 +195,7 @@ public static class AdminEndpoints
         var token = SignUpLinks.Issue(protection, userManager.NormalizeEmail(address), expiresAt);
         var link = site.Absolute($"/register?invite={Uri.EscapeDataString(token)}")!;
 
-        if (!await email.SendAsync(SignUpEmail.For(address, link, expiresAt), cancellationToken))
+        if (!await email.SendAsync(SignUpEmail.For(address, link, expiresAt, RequestLanguage.Of(http.Request)), cancellationToken))
         {
             return Results.Problem(
                 title: "The email was not sent",
@@ -212,6 +214,7 @@ public static class AdminEndpoints
     /// </summary>
     private static async Task<IResult> EmailPasswordResetAsync(
         string userId,
+        HttpContext http,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         UserManager<LorEvolveUser> userManager,
@@ -239,7 +242,7 @@ public static class AdminEndpoints
                 extensions: new Dictionary<string, object?> { ["code"] = EmailOffCode });
         }
 
-        if (!await email.SendAsync(await PasswordReset.MessageAsync(userManager, user, site), cancellationToken))
+        if (!await email.SendAsync(await PasswordReset.MessageAsync(userManager, user, site, RequestLanguage.Of(http.Request)), cancellationToken))
         {
             return Results.Problem(
                 title: "The email was not sent",
