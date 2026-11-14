@@ -32,8 +32,6 @@ const projects = {
     emptyHint:
       'Um projeto é o que está a fazer: um romance, um jogo, uma série, um filme ou uma banda desenhada.',
     noUniverse: 'Sem universo',
-    filterAll: 'Todos',
-    filterStandalone: 'Sem universo',
   },
   one: {
     title: 'Projeto',
@@ -53,6 +51,10 @@ const projects = {
     save: 'Criar projeto',
     saving: 'A criar.',
     failed: 'Não foi possível criar o projeto.',
+    needsUniverse: 'Um projeto pertence a um universo.',
+    needsUniverseHint:
+      'Abra o universo a que este trabalho pertence e crie o projeto aí. Um universo pode ter muito pouco conteúdo e continuar a ser o lugar onde um projeto vive.',
+    chooseUniverse: 'Escolher um universo',
   },
 } satisfies Dictionary['projects']
 

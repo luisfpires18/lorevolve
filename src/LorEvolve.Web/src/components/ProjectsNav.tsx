@@ -34,8 +34,8 @@ function projectInPath(pathname: string) {
  * with Tab and opened with Enter or Space without this component handling a single key.
  *
  * `universeId` narrows the list to one universe's projects, which is what the universe's sidebar shows. Without it the
- * list is everything the account can reach, including projects that belong to no universe at all: that is how a
- * standalone project is reached without first making a world.
+ * list is every project of every universe the account can reach, which is all of them: a project belongs to exactly
+ * one universe (#172).
  */
 export function ProjectsNav({ universeId }: { universeId?: string }) {
   const { pathname } = useLocation()
@@ -168,21 +168,24 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
           )
         })}
 
-        <li>
-          <NavLink
-            className="sidebar__link"
-            to={universeId ? `/app/projects/new?universeId=${universeId}` : '/app/projects/new'}
-            data-testid="projects-new"
-          >
-            <Plus
-              className="sidebar__icon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            {t('projects.nav.new')}
-          </NavLink>
-        </li>
+        {/* New project only where the universe it would belong to is known (#172). */}
+        {universeId ? (
+          <li>
+            <NavLink
+              className="sidebar__link"
+              to={`/app/projects/new?universeId=${universeId}`}
+              data-testid="projects-new"
+            >
+              <Plus
+                className="sidebar__icon"
+                aria-hidden="true"
+                focusable="false"
+                strokeWidth={1.75}
+              />
+              {t('projects.nav.new')}
+            </NavLink>
+          </li>
+        ) : null}
       </ul>
     </li>
   )

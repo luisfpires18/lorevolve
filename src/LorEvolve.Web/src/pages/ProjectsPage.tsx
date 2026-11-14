@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { listProjects } from '../projects/api'
 import { kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
@@ -17,32 +17,31 @@ type LoadState =
   { kind: 'ready'; for: string; projects: ProjectDetail[] } | { kind: 'failed'; for: string }
 
 /**
- * Every project an author can reach, most recently updated first.
+ * Every project an author can reach, most recently updated first, each inside the universe it belongs to.
  *
  * `inUniverse` is the same screen inside one universe's workspace, narrowed to that universe's projects. Outside it the
- * list is everything, projects belonging to no universe included, with a filter for those: a standalone project has to
- * be findable without opening a world, because it may have no world to open.
+ * list is every project of every universe the account can reach, which is all of them: a project belongs to exactly
+ * one universe (#172), so there is no filter for projects without one and no way to make one here. New project is
+ * offered inside a universe, where the universe it belongs to is already known.
  */
 export default function ProjectsPage({ inUniverse = false }: { inUniverse?: boolean }) {
   useI18n()
-  const [params, setParams] = useSearchParams()
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = inUniverse ? workspace?.universe.id : undefined
-  const standalone = !inUniverse && params.get('standalone') === 'true'
-  const requested = universeId ?? (standalone ? 'standalone' : 'all')
+  const requested = universeId ?? 'all'
   const [state, setState] = useState<LoadState | null>(null)
 
   useDocumentTitle(t('projects.list.title'))
 
   useEffect(() => {
     const controller = new AbortController()
-    listProjects(universeId ? { universeId } : { standalone }, controller.signal)
+    listProjects(universeId ? { universeId } : {}, controller.signal)
       .then((projects) => setState({ kind: 'ready', for: requested, projects }))
       .catch(() => {
         if (!controller.signal.aborted) setState({ kind: 'failed', for: requested })
       })
     return () => controller.abort()
-  }, [universeId, standalone, requested])
+  }, [universeId, requested])
 
   if (state === null || state.for !== requested) {
     return <p className="projects__lede">{t('projects.list.loading')}</p>
@@ -56,37 +55,21 @@ export default function ProjectsPage({ inUniverse = false }: { inUniverse?: bool
     <section className="projects" data-testid="projects-page">
       <header className="projects__head">
         <h1>{t('projects.list.title')}</h1>
-        <Link
-          className="button"
-          to={universeId ? `/app/projects/new?universeId=${universeId}` : '/app/projects/new'}
-          data-testid="projects-page-new"
-        >
-          {t('projects.nav.new')}
-        </Link>
+        {/*
+         * Only inside a universe: a project belongs to exactly one, so the account-level list has no universe to put a
+         * new project in and does not pretend otherwise (#172). The universe's own Projects screen is one click away
+         * from any row here.
+         */}
+        {universeId ? (
+          <Link
+            className="button"
+            to={`/app/projects/new?universeId=${universeId}`}
+            data-testid="projects-page-new"
+          >
+            {t('projects.nav.new')}
+          </Link>
+        ) : null}
       </header>
-
-      {inUniverse ? null : (
-        <p className="segmented projects__filters">
-          <button
-            type="button"
-            className="segmented__option"
-            aria-pressed={!standalone}
-            data-testid="projects-filter-all"
-            onClick={() => setParams({})}
-          >
-            {t('projects.list.filterAll')}
-          </button>
-          <button
-            type="button"
-            className="segmented__option"
-            aria-pressed={standalone}
-            data-testid="projects-filter-standalone"
-            onClick={() => setParams({ standalone: 'true' })}
-          >
-            {t('projects.list.filterStandalone')}
-          </button>
-        </p>
-      )}
 
       {state.projects.length === 0 ? (
         <EmptyState
