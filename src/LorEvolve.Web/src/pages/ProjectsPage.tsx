@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { listProjects } from '../projects/api'
-import { kindLabel, lifecycleLabel, projectPath } from '../projects/sections'
+import { kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
 import type { ProjectDetail } from '../projects/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
@@ -100,7 +100,7 @@ export default function ProjectsPage({ inUniverse = false }: { inUniverse?: bool
             <li className="projectrow" key={project.id}>
               <Link
                 className="projectrow__main"
-                to={projectPath(project.id)}
+                to={projectRowPath(project, universeId)}
                 data-testid={`projects-row-${project.id}`}
               >
                 <span className="projectrow__title">{project.name}</span>

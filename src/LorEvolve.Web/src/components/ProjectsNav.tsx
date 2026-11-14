@@ -2,7 +2,13 @@ import { useEffect, useId, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { ChevronRight, FolderOpen, Plus } from 'lucide-react'
 import { listProjects } from '../projects/api'
-import { PROJECT_SECTIONS, kindLabel, projectPath, projectSectionLabel } from '../projects/sections'
+import {
+  PROJECT_SECTIONS,
+  kindLabel,
+  projectPath,
+  projectRowPath,
+  projectSectionLabel,
+} from '../projects/sections'
 import type { ProjectDetail } from '../projects/types'
 import { t } from '../i18n'
 
@@ -80,6 +86,23 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
         {rows.map((project) => {
           const isOpen = opened[project.id] ?? project.id === active
           const panelId = `${listId}-${project.id}`
+
+          // A Story shown as a Writing Project is one link to the story, with no disclosure: its pages are the story's
+          // own tabs, reached on the story's screen, and #141 is what renames the first of them to Structure (#140).
+          if (project.storyId) {
+            return (
+              <li key={project.id}>
+                <NavLink
+                  className="sidebar__link sidebar__link--project"
+                  to={projectRowPath(project, universeId)}
+                  data-testid={`project-link-${project.id}`}
+                >
+                  <span className="sidebar__projectname">{project.name}</span>
+                  <span className="sidebar__projectkind">{kindLabel(project.kind)}</span>
+                </NavLink>
+              </li>
+            )
+          }
 
           return (
             <li key={project.id}>

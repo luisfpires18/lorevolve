@@ -51,6 +51,14 @@ async function project(page: Page, name: string, universeId: string | null) {
   })
 }
 
+async function story(page: Page, universeId: string, title: string) {
+  return api<{ id: string; title: string }>(page, 'POST', `/api/universes/${universeId}/stories`, {
+    title,
+    premise: null,
+    status: 0,
+  })
+}
+
 test.describe('Projects navigation', () => {
   test('a universe keeps every section it had, and gains its projects beside them', async ({
     page,
@@ -202,5 +210,31 @@ test.describe('Projects navigation', () => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     )
     expect(overflow).toBeLessThanOrEqual(0)
+  })
+
+  test('a story an author already has is a Writing Project, and leads to the story', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const existing = await story(page, world.id, unique('The Glass Harvest '))
+
+    // In the account-level list, beside projects that are projects of their own.
+    await page.goto('/app/projects')
+    const row = page.getByTestId(`projects-row-${existing.id}`)
+    await expect(row).toContainText(existing.title)
+    await expect(row).toContainText('Writing')
+
+    // It leads to the story, at the address the story has always had: nothing of it was copied anywhere (#140).
+    await row.click()
+    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}/stories/${existing.id}`))
+
+    // And in the universe's own sidebar, as one link rather than a group of its own.
+    await page.goto(`/app/universes/${world.id}`)
+    const link = page.getByTestId(`project-link-${existing.id}`)
+    await expect(link).toContainText(existing.title)
+    await expect(page.getByTestId(`project-toggle-${existing.id}`)).toHaveCount(0)
+    await link.click()
+    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}/stories/${existing.id}`))
   })
 })
