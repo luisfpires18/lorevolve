@@ -1,7 +1,9 @@
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Projects;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using static LorEvolve.Api.Tests.PlotTestClient;
+using static LorEvolve.Api.Tests.RestoreTestClient;
 
 namespace LorEvolve.Api.Tests;
 
@@ -208,34 +210,60 @@ public sealed class ProjectScopedEntityTypeTests(LorEvolveApiFactory factory) : 
     }
 
     /// <summary>
-    /// A universe backup holds the lore's types and not a project's, and that is deliberate rather than incidental.
+    /// A project's type survives a backup and a restore in its own scope, which needed the archive to learn about
+    /// projects at all.
     ///
-    /// <para>Carrying a project's types would need the projects themselves in the archive, and a universe backup does
-    /// not hold projects: #138 left <c>CreativeProjects</c> out when a project was account-owned and outlived its
-    /// universe. #171 ended that, so a universe now owns its projects and deletes them with it, which means a backup
-    /// will have to learn about them. Until it does, a project's types are absent rather than restored into the wrong
-    /// scope: the filter sees to that, and this test says so out loud so the absence is a decision and not a
-    /// surprise.</para>
-    ///
-    /// <para><b>This must be settled before #144 can create project types</b>, or a backup silently drops an author's
-    /// work. It is recorded on #143 and #144 rather than left here.</para>
+    /// <para>#138 left <c>CreativeProjects</c> out of the archive, when a project was account-owned and outlived its
+    /// universe. #171 ended that: a universe owns its projects and deletes them with it. So a project-scoped type had
+    /// two ways to go wrong and no way to go right. Dropped, an author's work disappears from their own backup;
+    /// restored without its project, it comes back as universe lore, which is worse than losing it. The archive now
+    /// carries the projects (version 39) and a restored type is mapped to the restored project.</para>
     /// </summary>
     [Fact]
-    public async Task A_universe_backup_holds_the_lore_s_types_and_not_a_project_s()
+    public async Task A_project_s_type_comes_back_from_a_restore_still_scoped_to_that_project()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "scopedbackup");
         var projectId = Guid.NewGuid();
 
         await WithDb(_factory, async db =>
         {
+            var owner = await db.Universes.Where(u => u.Id == universe.Id).Select(u => u.OwnerId).SingleAsync();
+            db.CreativeProjects.Add(new CreativeProject
+            {
+                Id = projectId,
+                OwnerId = owner,
+                UniverseId = universe.Id,
+                Name = "The Great Forging",
+                Kind = ProjectKind.Game,
+                Lifecycle = ProjectLifecycle.Active,
+                Summary = string.Empty,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            });
             db.EntityTypes.Add(Type(universe.Id, "Vehicle", projectId));
+            db.EntityTypes.Add(Type(universe.Id, "Artefact", null));
             await db.SaveChangesAsync();
         });
 
-        var types = (await Backup(client, universe.Id)).Payload.EntityTypes;
+        var restored = await RestoreArchive(client, await RawArchive(client, universe.Id), "Scoped backup restored");
+        Assert.NotEqual(universe.Id, restored.Id);
 
-        Assert.DoesNotContain(types, type => type.Name == "Vehicle");
-        Assert.NotEmpty(types);
+        await WithDb(_factory, async db =>
+        {
+            // The project came with it, under a new id, and the project's type is scoped to that new id.
+            var copied = await db.CreativeProjects.AsNoTracking().SingleAsync(project => project.UniverseId == restored.Id);
+            Assert.Equal("The Great Forging", copied.Name);
+            Assert.NotEqual(projectId, copied.Id);
+
+            var vehicle = await db.EntityTypes.IgnoreQueryFilters().AsNoTracking()
+                .SingleAsync(type => type.UniverseId == restored.Id && type.Name == "Vehicle");
+            Assert.Equal(copied.Id, vehicle.ProjectId);
+
+            // And the lore type is still lore: the two scopes did not collapse into one.
+            var artefact = await db.EntityTypes.AsNoTracking()
+                .SingleAsync(type => type.UniverseId == restored.Id && type.Name == "Artefact");
+            Assert.Null(artefact.ProjectId);
+        });
     }
 
     private static EntityType Type(Guid universeId, string name, Guid? projectId) => new()

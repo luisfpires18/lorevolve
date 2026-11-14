@@ -119,7 +119,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await EntityTypeGroupsAsync(universeId, cancellationToken),
             await KnowledgeAsync(universeId, cancellationToken),
             MapsOf(maps, calibrations),
-            await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken));
+            await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken),
+            await CreativeProjectsAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -337,11 +338,10 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         Guid universeId,
         CancellationToken cancellationToken)
     {
-        // The lore's types only. A project's types are hidden by the query filter (#143), and that is deliberate
-        // here rather than incidental: carrying them would need the projects themselves in the archive, and a
-        // universe backup does not hold projects yet. See the note on #143 and #144 before project types can be
-        // created, because a backup that silently drops them is worse than one that never claimed to hold them.
+        // Both scopes: the universe's lore types and its projects' types, which travel with the projects themselves
+        // (version 39). This is the one read that means to see past the query filter (#143).
         var types = await db.EntityTypes.AsNoTracking()
+            .IgnoreQueryFilters()
             .Where(type => type.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
@@ -424,7 +424,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                     Utc(type.UpdatedAt),
                     fieldsByType.GetValueOrDefault(type.Id, []),
                     type.ParentId,
-                    sectionsByType.GetValueOrDefault(type.Id, []))),
+                    sectionsByType.GetValueOrDefault(type.Id, []),
+                    type.ProjectId)),
         ];
     }
 
@@ -1296,6 +1297,30 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     }
 
     // ---------- Idea boards ----------
+
+    /// <summary>
+    /// Every project of this universe, oldest first (version 39). A universe owns its projects and deletes them with
+    /// it (#171), so they belong in its archive; the project-scoped entry types name them by the ids written here.
+    /// Nothing of the owning account travels: a restore makes each project the restoring account's, as it does the
+    /// universe itself.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupCreativeProject>> CreativeProjectsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.CreativeProjects.AsNoTracking()
+            .Where(project => project.UniverseId == universeId)
+            .OrderBy(project => project.CreatedAt)
+            .ThenBy(project => project.Id)
+            .Select(project => new BackupCreativeProject(
+                project.Id,
+                project.Name,
+                project.Kind,
+                project.Lifecycle,
+                project.Subtype,
+                project.Summary,
+                Utc(project.CreatedAt),
+                Utc(project.UpdatedAt)))
+            .ToListAsync(cancellationToken);
 
     /// <summary>
     /// Every idea board that belongs to this universe, live ones first, each group by title and then id, with its cards in

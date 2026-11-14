@@ -5,6 +5,7 @@ using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Knowledge;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Media;
@@ -478,6 +479,7 @@ internal static partial class BackupValidation
     private sealed class ContentChecks(UniverseBackupPayload payload, int version, BackupIssueList issues, OpenedBackup opened)
     {
         private readonly HashSet<Guid> _ids = [];
+        private readonly HashSet<Guid> _projects = [];
         private readonly Dictionary<Guid, BackupEntityType> _types = [];
         private readonly Dictionary<Guid, Guid> _fieldOwner = [];
         private readonly HashSet<Guid> _requiredFields = [];
@@ -532,6 +534,7 @@ internal static partial class BackupValidation
             // point anywhere in the file regardless of order.
             RegisterEras(eras);
             RegisterCalendar(payload.ChronologyCalendar);
+            RegisterProjects(Required(payload.CreativeProjects, "the list of projects", since: 39));
             RegisterTypes(types);
             CheckTypeHierarchy(types);
             RegisterGroups(groups);
@@ -947,12 +950,49 @@ internal static partial class BackupValidation
             }
         }
 
+        /// <summary>The universe's projects (version 39), so a project-scoped entry type can name one of them.</summary>
+        private void RegisterProjects(IReadOnlyList<BackupCreativeProject> projects)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var project in projects)
+            {
+                if (project is null)
+                {
+                    Missing("a project");
+                    continue;
+                }
+
+                var what = $"The project {Quote(project.Name)}";
+                Register(project.Id, what);
+                _projects.Add(project.Id);
+
+                if (Text(project.Name, ProjectLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(project.Name))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"Two projects are both called {Quote(project.Name)}.");
+                }
+
+                Text(project.Subtype, ProjectLimits.SubtypeMaxLength, $"{what}'s subtype");
+                Text(project.Summary, ProjectLimits.SummaryMaxLength, $"{what}'s summary");
+
+                if (!Enum.IsDefined(project.Kind))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is of a kind LorEvolve does not have.");
+                }
+
+                if (!Enum.IsDefined(project.Lifecycle))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is at a stage LorEvolve does not have.");
+                }
+            }
+        }
+
         private void RegisterTypes(IReadOnlyList<BackupEntityType> types)
         {
-            // One name set, because a universe backup holds only the lore's types: a project's are hidden by the
-            // query filter and the archive has no projects to put them in (#143). When backups learn about projects,
-            // this must become one set per scope, or it will refuse a backup the database had just produced.
-            var names = new HashSet<string>(StringComparer.Ordinal);
+            // One name set per scope: the lore's types among themselves, and each project's among themselves (#143).
+            // The database says the same with two partial unique indexes, so a single set across the file would
+            // refuse a backup the database had just produced.
+            var loreNames = new HashSet<string>(StringComparer.Ordinal);
+            var namesByProject = new Dictionary<Guid, HashSet<string>>();
 
             foreach (var type in types)
             {
@@ -966,9 +1006,24 @@ internal static partial class BackupValidation
                 Register(type.Id, what);
                 _types[type.Id] = type;
 
-                if (Text(type.Name, LoreLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(type.Name))
+                if (type.ProjectId is { } scope && !_projects.Contains(scope))
                 {
-                    Add(BackupIssueCodes.Duplicate, $"Two entry types are both called {Quote(type.Name)}.");
+                    Reference(false, $"{what} belongs to a project the backup does not hold.");
+                }
+
+                var scopeNames = type.ProjectId is { } projectId
+                    ? namesByProject.TryGetValue(projectId, out var held)
+                        ? held
+                        : namesByProject[projectId] = new HashSet<string>(StringComparer.Ordinal)
+                    : loreNames;
+
+                if (Text(type.Name, LoreLimits.NameMaxLength, $"{what}'s name", required: true) && !scopeNames.Add(type.Name))
+                {
+                    Add(
+                        BackupIssueCodes.Duplicate,
+                        type.ProjectId is null
+                            ? $"Two of the universe's entry types are both called {Quote(type.Name)}."
+                            : $"Two entry types of one project are both called {Quote(type.Name)}.");
                 }
 
                 Text(type.Description, LoreLimits.DescriptionMaxLength, $"{what}'s description");

@@ -159,7 +159,7 @@ universe-level lore type. It does not block the implementation.
 `EntityTypes.UniverseId` stays required. `EntityTypes.ProjectId` is added, nullable. `ProjectId IS NULL` is a
 universe-level lore type; `ProjectId IS NOT NULL` is a type scoped to one project inside that same universe.
 
-## 1. The migration: measured, and it needs no table rebuild
+## 1. The migration: measured, and the upgrade needs no table rebuild
 
 Probed by making the change in the model, generating the migration, reading the SQL, then removing the probe. The
 whole schema change is:
@@ -177,6 +177,14 @@ column and swapping indexes keeps them.
 
 Precedent in the codebase for the same reasoning: `ParentId` is deliberately not a foreign key, and
 `LoreConfiguration` says why in a comment, that SQLite would add one only by rebuilding the table.
+
+**Amended after implementation: this held for the upgrade only, and the rollback is where it bit.** EF implements a
+SQLite column drop by rebuilding the table, so the generated `Down` rebuilt `EntityTypes` and took down every
+rollback test with `no such table: main.EntityTypes`, raised from the seven triggers on *other* tables that reference
+it. `Down` is written by hand instead: the universe-only triggers come back first, because SQLite refuses to drop a
+column a trigger mentions, and then the column goes with `ALTER TABLE "EntityTypes" DROP COLUMN "ProjectId"`,
+supported since SQLite 3.35 and running on 3.50 here. `ef_temp` is absent in both directions, read from the generated
+SQL.
 
 ## 2. Unique constraints: the trap that would have broken lore silently
 
@@ -213,12 +221,18 @@ a universe-level lore type? Allowing it is how a project would reuse the world's
 forbidding it keeps the two scopes cleanly apart. The plan assumes **forbidden** for now, because it is the stricter
 option and the one that can be relaxed later without rewriting rows, but it is a decision worth making deliberately.
 
-## 4. Query isolation: seven sites, and the inheritance map
+## 4. Query isolation: thirty sites, and the inheritance map
 
-Seven query sites scope entity types by `UniverseId`. Each needs `ProjectId == null` added, or every lore list, picker
-and export starts showing a project's types. This is the part most likely to be got wrong by omission, so it wants a
-test that asserts a project type never appears in a universe-level listing, rather than only tests that project types
-appear where they should.
+**Amended after implementation: there are thirty reads of `EntityTypes`, across twelve features, not seven.** The
+count here was taken from the obvious lore sites and missed AiChanges, Export, FamilyTrees, Restore, Revisions and
+Suggestions. Thirty hand-written conditions are thirty chances to forget one, and a forgotten one puts a project's
+types into a lore list, a universe backup or an AI proposal with nothing announcing it.
+
+So isolation is one global query filter, `HasQueryFilter(type => type.ProjectId == null)`, rather than a condition per
+site: every existing read is correct untouched, and code that means to see project types says `IgnoreQueryFilters()`,
+which is greppable. What this section asks for still stands, and is what the filter is tested through: a test that
+asserts a project type never appears in a universe-level listing, rather than only that project types appear where
+they should.
 
 The inheritance helper is where it matters most. `EntityTypeHierarchy` works on a parent map built by
 `ParentsAsync(db, universeId, ...)`; if that map is built per universe rather than per scope, a project's type becomes
@@ -241,7 +255,7 @@ What it needs is the scope discipline of point 4 and the decision in point 3.
 
 1. The column, the two partial unique indexes, and the scope added to the ordering and hierarchy indexes.
 2. The three triggers recreated with the project in their condition.
-3. `ProjectId == null` on the seven universe-scoped query sites, and the parent map built per scope.
+3. Isolation for every read of `EntityTypes` (see point 4: one query filter, not thirty conditions), and the parent map built per scope.
 4. Project type endpoints reached through `ProjectAccess`, which already resolves to the universe's matrix.
 5. Tests: a project type is invisible to every universe-level listing; two projects in one universe may each have a
    type of the same name; two lore types in one universe still may not; inheritance resolves within a scope and not
