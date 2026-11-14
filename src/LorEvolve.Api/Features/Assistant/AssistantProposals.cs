@@ -4,6 +4,8 @@ using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.AiChanges;
 using LorEvolve.Api.Features.Universes;
 
+using LorEvolve.Api.Features.Localization;
+
 namespace LorEvolve.Api.Features.Assistant;
 
 /// <summary>
@@ -38,8 +40,8 @@ internal sealed class AssistantProposing(LorEvolveDbContext db, TimeProvider clo
             Schema()),
     ];
 
-    public static string Instructions(string universeName) => $$"""
-        {{UniverseAssistant.GroundRules(universeName).Replace(UniverseAssistant.ReadOnlyRule, ProposeRule, StringComparison.Ordinal)}}
+    public static string Instructions(string universeName, string language = RequestLanguage.English) => $$"""
+        {{UniverseAssistant.GroundRules(universeName, language).Replace(UniverseAssistant.ReadOnlyRule, ProposeRule, StringComparison.Ordinal)}}
 
         The writer turned on Propose changes and asked you for changes. To prepare them:
         - Read what you need first. Call get_change_options for the ids of types, fields, choices, relationship kinds, stories and chapters.

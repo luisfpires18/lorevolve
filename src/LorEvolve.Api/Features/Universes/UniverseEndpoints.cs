@@ -1,12 +1,13 @@
-using System.Security.Claims;
-using System.Text.RegularExpressions;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Ideas;
+using LorEvolve.Api.Features.Localization;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Publishing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace LorEvolve.Api.Features.Universes;
 
@@ -145,6 +146,7 @@ public static partial class UniverseEndpoints
         [FromBody] CreateUniverseRequest request,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
+        HttpContext http,
         CancellationToken cancellationToken)
     {
         var ownerId = principal.RequireUserId();
@@ -195,7 +197,7 @@ public static partial class UniverseEndpoints
         // the author's, and no read puts back one they removed.
         if (request.StarterTypes != false)
         {
-            await EntityTypeDefaults.EnsureAsync(db, universe.Id, cancellationToken);
+            await EntityTypeDefaults.EnsureAsync(db, universe.Id, cancellationToken, RequestLanguage.Of(http.Request));
         }
 
         return Results.Created($"/api/universes/{universe.Id}", ToDetail(universe, artwork: null, aiHelp: request.AiHelp != false));

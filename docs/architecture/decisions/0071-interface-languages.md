@@ -56,9 +56,29 @@ and 107 end-to-end specs that find elements by their English text.
   switch. Almost every such component also has text, so it subscribes once its strings move.
 - The segmented control fits two or three languages; it becomes a menu when there are more.
 
+## The API's own text (#109)
+
+The web app sends `Accept-Language` with the reader's chosen language, not the browser's list, and
+`Features/Localization/RequestLanguage.cs` reads it: the first tag LorEvolve has words for, matched on its base so
+`pt`, `pt-BR` and `pt-PT` all mean European Portuguese, else English.
+
+There is no resource file and no `IStringLocalizer`. The API writes text in a handful of places, so each holds its own
+words beside the English, the way the web app's dictionary does:
+
+- The two emails take a `language` and switch subject, HTML, plain text and `<html lang>`. English is the default and
+  is unchanged to the byte, so an English reader gets exactly what they got before.
+- A new universe's starter types and groups are seeded in the creating request's language, once. What a universe holds
+  afterwards is its author's: nothing translates an existing universe, and reading it in another language shows the
+  names that were written.
+- The assistant is told which language to answer in, and told not to translate a recorded name, title or quotation.
+
+Two things that must stay English, and do: `EntityTypeDefaults.IsUntouchedStarterCharacter`, which recognises a starter
+type in a backup from before version 18 and so can only ever meet the English words; and the dates in `SignUpEmail`,
+where the host runs with `InvariantGlobalization`, so a `pt-PT` `CultureInfo` would print English month names and the
+Portuguese month is written out instead.
+
 ## Not covered here
 
-API problem text (#108), emails, the assistant's language and starter types (#109), the readable export and canon
-messages (#110), and public SEO with locale routes (#111) stay English until their issues. If the needs outgrow this
-module (ICU messages, a translation platform, many languages), `react-i18next` can replace it behind the same `t()`
-call sites.
+API problem text (#108), the readable export and canon messages (#110), and public SEO with locale routes (#111) stay
+English until their issues. If the needs outgrow this module (ICU messages, a translation platform, many languages),
+`react-i18next` can replace it behind the same `t()` call sites.
