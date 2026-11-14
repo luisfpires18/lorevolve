@@ -15,9 +15,9 @@ namespace LorEvolve.Api.Tests;
 /// the real transport.
 ///
 /// The two things worth pinning down are the boundary and the handover. The boundary: a connection is to one universe,
-/// so another universe's project is not listed and its id reads as nothing, and a project belonging to no universe is
-/// not visible at all. The handover: a story is listed as the Writing Project it is, carrying `storyId`, and
-/// `get_project` on that id says to use `get_story` rather than pretending the id is unknown.
+/// so another universe's project is not listed and its id reads as nothing. The handover: a story is listed as the
+/// Writing Project it is, carrying `storyId`, and `get_project` on that id says to use `get_story` rather than
+/// pretending the id is unknown.
 /// </summary>
 public sealed class McpProjectToolTests(McpProjectToolFixture fixture) : IClassFixture<McpProjectToolFixture>
 {
@@ -88,11 +88,11 @@ public sealed class McpProjectToolTests(McpProjectToolFixture fixture) : IClassF
     }
 
     /// <summary>
-    /// The boundary: a connection is to one universe. Another universe's project is not listed, its id reads as
-    /// nothing, and a project belonging to no universe is not visible here at all.
+    /// The boundary: a connection is to one universe, so another universe's projects are not listed and their ids read
+    /// as nothing. Every project is in some universe (#171), so that is the whole of the boundary.
     /// </summary>
     [Fact]
-    public async Task Another_universe_s_project_and_a_standalone_one_are_not_visible()
+    public async Task Another_universe_s_projects_are_not_visible()
     {
         await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
 
@@ -100,9 +100,9 @@ public sealed class McpProjectToolTests(McpProjectToolFixture fixture) : IClassF
         var ids = listed.GetProperty("projects").EnumerateArray().Select(project => project.GetProperty("id").GetGuid()).ToList();
 
         Assert.DoesNotContain(fixture.Elsewhere, ids);
-        Assert.DoesNotContain(fixture.Standalone, ids);
+        Assert.DoesNotContain(fixture.AlsoElsewhere, ids);
 
-        foreach (var hidden in new[] { fixture.Elsewhere, fixture.Standalone })
+        foreach (var hidden in new[] { fixture.Elsewhere, fixture.AlsoElsewhere })
         {
             var refused = await client.CallToolAsync(
                 LorEvolveMcpProjectTools.GetTool,
@@ -175,8 +175,8 @@ public sealed class McpProjectToolFixture : IAsyncLifetime
     /// <summary>A project in another universe of the same owner: not this connection's to read.</summary>
     public Guid Elsewhere { get; private set; }
 
-    /// <summary>A project belonging to no universe: not visible over a connection that is to one.</summary>
-    public Guid Standalone { get; private set; }
+    /// <summary>A second project in that other universe, so the boundary is tested on more than one row.</summary>
+    public Guid AlsoElsewhere { get; private set; }
 
     /// <summary>The connected universe's name, as the API reports it, for what the tools say about it.</summary>
     public string UniverseName { get; private set; } = string.Empty;
@@ -194,7 +194,7 @@ public sealed class McpProjectToolFixture : IAsyncLifetime
 
         var other = (await CreateUniverse(World.Owner, "Elsewhere for projects")).Id;
         Elsewhere = await Create(World.Owner, "Another world's project", kind: 0, universeId: other);
-        Standalone = await Create(World.Owner, "Belongs to no world", kind: 0, universeId: null);
+        AlsoElsewhere = await Create(World.Owner, "Another world's second project", kind: 0, universeId: other);
     }
 
     public Task DisposeAsync()
@@ -204,7 +204,7 @@ public sealed class McpProjectToolFixture : IAsyncLifetime
     }
 
     /// <summary>Kind and stage travel as numbers: 1 is Game, 0 is Writing, and 0 is Planning.</summary>
-    private static async Task<Guid> Create(HttpClient client, string name, int kind, Guid? universeId)
+    private static async Task<Guid> Create(HttpClient client, string name, int kind, Guid universeId)
     {
         var response = await client.PostAsJsonAsync(
             "/api/projects",

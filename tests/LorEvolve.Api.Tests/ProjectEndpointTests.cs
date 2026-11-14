@@ -8,9 +8,9 @@ using static LorEvolve.Api.Tests.PlotTestClient;
 namespace LorEvolve.Api.Tests;
 
 /// <summary>
-/// An account's creative projects (#138): created standalone or in a universe, saved whole, refused when stale, and
-/// invisible to another account. The collaborator cases are the point of the feature: a project linked to a universe is
-/// reachable by the people who work in that universe, which is where it differs from an idea.
+/// A universe's creative projects (#138, with the universe made required by #171): created inside a universe, saved
+/// whole, refused when stale, and invisible to another account. The collaborator cases are the point of the feature: a
+/// project is reachable by the people who work in the universe it belongs to.
 /// </summary>
 public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFixture<LorEvolveApiFactory>
 {
@@ -21,17 +21,17 @@ public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFi
     private static string Project(Guid id) => $"{Projects}/{id}";
 
     [Fact]
-    public async Task A_project_is_created_without_a_universe_and_read_back_exactly()
+    public async Task A_project_is_created_in_its_universe_and_read_back_exactly()
     {
-        var client = await SignedIn(_factory, "user-projcreate");
+        var (client, universe) = await SignedInWithUniverse(_factory, "projcreate");
 
-        var created = await Create(client, "  The Salt Road  ", ProjectKind.Writing, subtype: "  novel  ", summary: "Three caravans, one winter.");
+        var created = await Create(client, "  The Salt Road  ", ProjectKind.Writing, subtype: "  novel  ", summary: "Three caravans, one winter.", universeId: universe.Id);
 
         Assert.Equal("The Salt Road", created.Name);
         Assert.Equal("novel", created.Subtype);
         Assert.Equal(ProjectKind.Writing, created.Kind);
         Assert.Equal(ProjectLifecycle.Planning, created.Lifecycle);
-        Assert.Null(created.Universe);
+        Assert.Equal(universe.Id, created.Universe!.Id);
         Assert.True(created.IsOwned);
         Assert.Equal(1, created.Version);
         Assert.Equal(created.CreatedAt, created.UpdatedAt);
@@ -43,30 +43,35 @@ public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFi
     [Fact]
     public async Task A_blank_subtype_is_no_subtype_and_a_name_is_required()
     {
-        var client = await SignedIn(_factory, "user-projshape");
+        var (client, universe) = await SignedInWithUniverse(_factory, "projshape");
 
-        var bare = await Create(client, "Hollow Season", ProjectKind.Game);
+        var bare = await Create(client, "Hollow Season", ProjectKind.Game, universeId: universe.Id);
         Assert.Null(bare.Subtype);
         Assert.Equal(string.Empty, bare.Summary);
 
-        var blankSubtype = await Create(client, "Second Season", ProjectKind.Game, subtype: "   ");
+        var blankSubtype = await Create(client, "Second Season", ProjectKind.Game, subtype: "   ", universeId: universe.Id);
         Assert.Null(blankSubtype.Subtype);
 
-        Assert.Contains("name", await Errors(await Post(client, new ProjectRequest("   ", ProjectKind.Writing, ProjectLifecycle.Planning, null, null, null, null))), StringComparison.Ordinal);
+        Assert.Contains("name", await Errors(await Post(client, new ProjectRequest("   ", ProjectKind.Writing, ProjectLifecycle.Planning, null, null, universe.Id, null))), StringComparison.Ordinal);
         Assert.Contains(
             "name",
-            await Errors(await Post(client, new ProjectRequest(new string('n', ProjectLimits.NameMaxLength + 1), ProjectKind.Writing, ProjectLifecycle.Planning, null, null, null, null))),
+            await Errors(await Post(client, new ProjectRequest(new string('n', ProjectLimits.NameMaxLength + 1), ProjectKind.Writing, ProjectLifecycle.Planning, null, null, universe.Id, null))),
             StringComparison.Ordinal);
         Assert.Contains(
             "subtype",
-            await Errors(await Post(client, new ProjectRequest("Too much subtype", ProjectKind.Comic, ProjectLifecycle.Planning, new string('s', ProjectLimits.SubtypeMaxLength + 1), null, null, null))),
+            await Errors(await Post(client, new ProjectRequest("Too much subtype", ProjectKind.Comic, ProjectLifecycle.Planning, new string('s', ProjectLimits.SubtypeMaxLength + 1), null, universe.Id, null))),
             StringComparison.Ordinal);
         Assert.Contains(
             "summary",
-            await Errors(await Post(client, new ProjectRequest("Too much summary", ProjectKind.Film, ProjectLifecycle.Planning, null, new string('b', ProjectLimits.SummaryMaxLength + 1), null, null))),
+            await Errors(await Post(client, new ProjectRequest("Too much summary", ProjectKind.Film, ProjectLifecycle.Planning, null, new string('b', ProjectLimits.SummaryMaxLength + 1), universe.Id, null))),
             StringComparison.Ordinal);
 
-        var atBound = await Create(client, new string('n', ProjectLimits.NameMaxLength), ProjectKind.Series, summary: new string('b', ProjectLimits.SummaryMaxLength));
+        var atBound = await Create(
+            client,
+            new string('n', ProjectLimits.NameMaxLength),
+            ProjectKind.Series,
+            summary: new string('b', ProjectLimits.SummaryMaxLength),
+            universeId: universe.Id);
         Assert.Equal(ProjectLimits.SummaryMaxLength, (await Read(client, atBound.Id)).Summary.Length);
     }
 
@@ -77,13 +82,17 @@ public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFi
     [Fact]
     public async Task A_kind_or_a_stage_the_api_never_declared_is_refused()
     {
-        var client = await SignedIn(_factory, "user-projenum");
+        var (client, universe) = await SignedInWithUniverse(_factory, "projenum");
 
-        var badKind = await client.PostAsJsonAsync(Projects, new { name = "Unknown medium", kind = 99, lifecycle = 0 });
+        var badKind = await client.PostAsJsonAsync(
+            Projects,
+            new { name = "Unknown medium", kind = 99, lifecycle = 0, universeId = universe.Id });
         Assert.Equal(HttpStatusCode.BadRequest, badKind.StatusCode);
         Assert.Contains("kind", await Errors(badKind), StringComparison.Ordinal);
 
-        var badLifecycle = await client.PostAsJsonAsync(Projects, new { name = "Unknown stage", kind = 0, lifecycle = 42 });
+        var badLifecycle = await client.PostAsJsonAsync(
+            Projects,
+            new { name = "Unknown stage", kind = 0, lifecycle = 42, universeId = universe.Id });
         Assert.Equal(HttpStatusCode.BadRequest, badLifecycle.StatusCode);
         Assert.Contains("lifecycle", await Errors(badLifecycle), StringComparison.Ordinal);
 
@@ -91,9 +100,10 @@ public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFi
     }
 
     [Fact]
-    public async Task A_project_moves_between_a_universe_and_none_and_a_save_that_changes_nothing_writes_nothing()
+    public async Task A_project_moves_between_universes_and_a_save_that_changes_nothing_writes_nothing()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "projmove");
+        var second = await CreateUniverse(client, "Second world projmove");
 
         var created = await Create(client, "The Tide Engine", ProjectKind.Film, universeId: universe.Id);
         Assert.Equal(universe.Id, created.Universe!.Id);
@@ -105,25 +115,26 @@ public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFi
         Assert.True(advanced.UpdatedAt > created.UpdatedAt);
         Assert.Equal(created.CreatedAt, advanced.CreatedAt);
 
-        var standalone = await Save(client, advanced with { Universe = null });
-        Assert.Null(standalone.Universe);
-        Assert.Equal(3, standalone.Version);
+        // A project moves between two universes the author owns; it never moves to no universe at all (#171).
+        var moved = await Save(client, advanced with { Universe = advanced.Universe with { Id = second.Id } });
+        Assert.Equal(second.Id, moved.Universe!.Id);
+        Assert.Equal(3, moved.Version);
 
         // Nothing changed, so nothing is written: the version and the timestamp both stay where they were.
-        var again = await Save(client, standalone);
+        var again = await Save(client, moved);
         Assert.Equal(3, again.Version);
-        Assert.Equal(standalone.UpdatedAt, again.UpdatedAt);
+        Assert.Equal(moved.UpdatedAt, again.UpdatedAt);
 
-        Assert.Single(await List(client, standalone: true));
+        Assert.Single(await List(client, universeId: second.Id));
         Assert.Empty(await List(client, universeId: universe.Id));
     }
 
     [Fact]
     public async Task A_save_written_over_a_project_that_changed_is_refused_and_writes_nothing()
     {
-        var client = await SignedIn(_factory, "user-projstale");
+        var (client, universe) = await SignedInWithUniverse(_factory, "projstale");
 
-        var created = await Create(client, "Winter Light", ProjectKind.Series);
+        var created = await Create(client, "Winter Light", ProjectKind.Series, universeId: universe.Id);
         var saved = await Save(client, created with { Name = "Winter Light, revised" });
 
         // The first editor's view is now one version behind.
@@ -141,18 +152,18 @@ public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFi
         // A save that names no version at all is refused the same way: it cannot say what it was written over.
         var versionless = await client.PutAsJsonAsync(
             Project(created.Id),
-            new ProjectRequest("No version named", ProjectKind.Series, ProjectLifecycle.Planning, null, null, null, null));
+            new ProjectRequest("No version named", ProjectKind.Series, ProjectLifecycle.Planning, null, null, universe.Id, null));
         Assert.Equal(HttpStatusCode.Conflict, versionless.StatusCode);
     }
 
     [Fact]
     public async Task Another_accounts_project_answers_as_a_missing_one_does()
     {
-        var mine = await SignedIn(_factory, "user-projmine");
-        var theirs = await SignedIn(_factory, "user-projtheirs");
+        var (mine, myWorld) = await SignedInWithUniverse(_factory, "projmine");
+        var (theirs, theirWorld) = await SignedInWithUniverse(_factory, "projtheirs");
 
-        var hidden = await Create(theirs, "Their standalone project", ProjectKind.Comic);
-        var ours = await Create(mine, "Our own project", ProjectKind.Writing);
+        var hidden = await Create(theirs, "Their own project", ProjectKind.Comic, universeId: theirWorld.Id);
+        var ours = await Create(mine, "Our own project", ProjectKind.Writing, universeId: myWorld.Id);
 
         Assert.Equal(HttpStatusCode.NotFound, (await mine.GetAsync(Project(hidden.Id))).StatusCode);
         Assert.Equal(
@@ -163,7 +174,7 @@ public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Equal([ours.Id], listed.Select(project => project.Id));
 
         // Untouched, and still theirs.
-        Assert.Equal("Their standalone project", (await Read(theirs, hidden.Id)).Name);
+        Assert.Equal("Their own project", (await Read(theirs, hidden.Id)).Name);
     }
 
     /// <summary>
@@ -199,22 +210,45 @@ public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFi
         Assert.False(allowed.IsOwned);
         Assert.Equal("Renamed by an editor", (await Read(owner, project.Id)).Name);
 
-        // A viewer cannot put a project of their own into someone else's universe either.
+        // A viewer cannot put a project into someone else's universe either.
         var linked = await viewer.PostAsJsonAsync(
             Projects,
             new ProjectRequest("Mine, in their world", ProjectKind.Game, ProjectLifecycle.Planning, null, null, universe.Id, null));
         Assert.Equal(HttpStatusCode.Forbidden, linked.StatusCode);
     }
 
+    /// <summary>
+    /// The invariant #171 establishes: a project without a universe cannot be made, through any field value, and the
+    /// refusal names the universe rather than failing on a foreign key later.
+    /// </summary>
     [Fact]
-    public async Task Asking_for_one_universe_and_for_no_universe_at_once_is_refused()
+    public async Task A_project_cannot_be_made_without_a_universe()
     {
-        var (client, universe) = await SignedInWithUniverse(_factory, "projfilter");
+        var (client, universe) = await SignedInWithUniverse(_factory, "projuniverse");
 
-        var response = await client.GetAsync($"{Projects}?universeId={universe.Id}&standalone=true");
+        foreach (var missing in new Guid?[] { null, Guid.Empty })
+        {
+            var refused = await Post(
+                client,
+                new ProjectRequest("No world", ProjectKind.Game, ProjectLifecycle.Planning, null, null, missing, null));
+
+            Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+            Assert.Contains("universeId", await Errors(refused), StringComparison.Ordinal);
+        }
+
+        // Nor can an existing project be saved out of its universe.
+        var project = await Create(client, "Has a world", ProjectKind.Game, universeId: universe.Id);
+        var response = await client.PutAsJsonAsync(
+            Project(project.Id),
+            new ProjectRequest(project.Name, project.Kind, project.Lifecycle, null, project.Summary, null, project.Version));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Contains("standalone", await Errors(response), StringComparison.Ordinal);
+        Assert.Contains("universeId", await Errors(response), StringComparison.Ordinal);
+        Assert.Equal(universe.Id, (await Read(client, project.Id)).Universe!.Id);
+
+        // And nothing in the database holds a project with no universe.
+        await WithDb(_factory, async db =>
+            Assert.Equal(0, await db.CreativeProjects.CountAsync(candidate => candidate.UniverseId == Guid.Empty)));
     }
 
     // ---------- steps ----------
@@ -254,9 +288,9 @@ public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFi
         return (await response.Content.ReadFromJsonAsync<ProjectDetail>())!;
     }
 
-    private static async Task<List<ProjectDetail>> List(HttpClient client, Guid? universeId = null, bool standalone = false)
+    private static async Task<List<ProjectDetail>> List(HttpClient client, Guid? universeId = null)
     {
-        var query = universeId is { } id ? $"?universeId={id}" : standalone ? "?standalone=true" : string.Empty;
+        var query = universeId is { } id ? $"?universeId={id}" : string.Empty;
         var response = await client.GetAsync($"{Projects}{query}");
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<List<ProjectDetail>>())!;

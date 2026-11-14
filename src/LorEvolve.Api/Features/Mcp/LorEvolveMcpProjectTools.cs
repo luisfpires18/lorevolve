@@ -13,10 +13,9 @@ namespace LorEvolve.Api.Features.Mcp;
 /// The MCP project tools (#142): what the connected universe is used to make, and one project read by its id.
 ///
 /// <para><b>The connection's universe, and nothing wider.</b> Like every other tool here, the universe is
-/// <see cref="McpCaller"/>'s, set by the gate from the token, so these never take one and never read another. A project
-/// belonging to no universe is therefore not reachable over MCP at all: a connection is to one universe, and a
-/// standalone project is in none. That is a deliberate consequence of the existing design rather than an oversight;
-/// it is recorded on Issue #142.</para>
+/// <see cref="McpCaller"/>'s, set by the gate from the token, so these never take one and never read another. Every
+/// project is inside exactly one universe (#171), so a connection to a universe reaches all of its projects and none
+/// of anyone else's.</para>
 ///
 /// <para><b>Both kinds of project, told apart.</b> A project of its own is a stored
 /// <see cref="CreativeProject"/>. A Story is the Writing Project it already is (#140), derived and never copied, and
@@ -37,8 +36,8 @@ public sealed class LorEvolveMcpProjectTools(LorEvolveDbContext db, McpCaller ca
         "Projects: list_projects names what the connected universe is used to make - novels, games, series, films and comics - "
         + "each with its id, kind and stage. A project that carries storyId is one of the universe's stories shown as the "
         + "Writing Project it is: read its structure with get_story using that id, not with get_project. get_project reads one "
-        + "project of its own by id. A project belonging to no universe is not visible here, because a connection is to one "
-        + "universe.";
+        + "project of its own by id. Every project belongs to one universe, so this connection sees all of this universe's "
+        + "projects.";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {

@@ -2426,7 +2426,7 @@ namespace LorEvolve.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("UniverseId")
+                    b.Property<Guid>("UniverseId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -4915,7 +4915,8 @@ namespace LorEvolve.Api.Data.Migrations
                     b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
                         .WithMany()
                         .HasForeignKey("UniverseId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Owner");
 

@@ -41,24 +41,17 @@ public static class ProjectEndpoints
 
     /// <summary>
     /// The projects the caller can reach, most recently updated first. <paramref name="universeId"/> narrows to one
-    /// universe's projects and <paramref name="standalone"/> to those linked to none; asking for both is refused, since
-    /// no project is both.
+    /// universe's projects.
+    ///
+    /// There is no filter for projects belonging to no universe, because there are none: every project is inside
+    /// exactly one (#171).
     /// </summary>
     private static async Task<IResult> ListAsync(
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         CancellationToken cancellationToken,
-        [FromQuery] Guid? universeId = null,
-        [FromQuery] bool standalone = false)
+        [FromQuery] Guid? universeId = null)
     {
-        if (universeId is not null && standalone)
-        {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["standalone"] = ["A project is either in a universe or in none, so asking for both finds nothing."],
-            });
-        }
-
         var userId = principal.RequireUserId();
         IQueryable<CreativeProject> query = ProjectAccess.Readable(db, userId)
             .AsNoTracking()
@@ -68,21 +61,13 @@ public static class ProjectEndpoints
         {
             query = query.Where(project => project.UniverseId == id);
         }
-        else if (standalone)
-        {
-            query = query.Where(project => project.UniverseId == null);
-        }
 
         var projects = await query.ToListAsync(cancellationToken);
         var rows = projects.Select(project => Detail(project, userId)).ToList();
 
         // Every Story the caller can read is already a Writing Project, so the list says so rather than pretending an
         // author's existing work is not a project (#140). Nothing of the story is stored or copied: see StoryProjects.
-        // A standalone list asks for projects belonging to no universe, and a story always has one, so it has none.
-        if (!standalone)
-        {
-            rows.AddRange(await StoryProjects.ReadableAsync(db, userId, universeId, cancellationToken));
-        }
+        rows.AddRange(await StoryProjects.ReadableAsync(db, userId, universeId, cancellationToken));
 
         return Results.Ok(rows.OrderByDescending(project => project.UpdatedAt).ToList());
     }
@@ -124,7 +109,7 @@ public static class ProjectEndpoints
         {
             Id = Guid.NewGuid(),
             OwnerId = userId,
-            UniverseId = request.UniverseId,
+            UniverseId = request.UniverseId!.Value,
             Kind = request.Kind,
             Lifecycle = request.Lifecycle,
             Subtype = Cleaned(request.Subtype),
@@ -198,7 +183,7 @@ public static class ProjectEndpoints
             && project.Lifecycle == request.Lifecycle
             && project.Subtype == subtype
             && project.Summary == summary
-            && project.UniverseId == request.UniverseId;
+            && project.UniverseId == request.UniverseId!.Value;
 
         if (!unchanged)
         {
@@ -207,7 +192,7 @@ public static class ProjectEndpoints
             project.Lifecycle = request.Lifecycle;
             project.Subtype = subtype;
             project.Summary = summary;
-            project.UniverseId = request.UniverseId;
+            project.UniverseId = request.UniverseId!.Value;
             project.UpdatedAt = DateTime.UtcNow;
             project.Version++;
             await db.SaveChangesAsync(cancellationToken);
@@ -233,6 +218,13 @@ public static class ProjectEndpoints
         else if (request.Name.Trim().Length > ProjectLimits.NameMaxLength)
         {
             errors["name"] = [$"A name is at most {ProjectLimits.NameMaxLength} characters."];
+        }
+
+        // Every project is inside exactly one universe (#171), so a request without one is a field error here rather
+        // than a foreign key failure later.
+        if (request.UniverseId is null || request.UniverseId == Guid.Empty)
+        {
+            errors["universeId"] = ["Choose the universe this project belongs to."];
         }
 
         if (!Enum.IsDefined(request.Kind))
