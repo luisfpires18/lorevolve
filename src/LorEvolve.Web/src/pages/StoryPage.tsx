@@ -903,7 +903,7 @@ function StoryView({ view }: { view: StoryViewName }) {
             data-testid="story-views"
           >
             <NavLink to={storyPath} end className="views__link" data-testid="story-view-scenes">
-              {t('stories.page.viewScenes')}
+              {t('stories.page.viewStructure')}
             </NavLink>
             <NavLink
               to={`${storyPath}/manuscript`}
@@ -1031,7 +1031,7 @@ function StoryView({ view }: { view: StoryViewName }) {
       ) : (
         <section className="story__scenes" aria-labelledby="story-scenes-heading">
           <h2 className="visually-hidden" id="story-scenes-heading">
-            {t('stories.page.scenesHeading')}
+            {t('stories.page.structureHeading')}
           </h2>
 
           {story.premise ? (

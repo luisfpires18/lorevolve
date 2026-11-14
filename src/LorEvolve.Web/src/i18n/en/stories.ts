@@ -70,7 +70,7 @@ const stories = {
     crumb: 'Stories',
     timeline: 'View on timeline',
     views: 'Story views',
-    viewScenes: 'Scenes',
+    viewStructure: 'Structure',
     viewManuscript: 'Manuscript',
     viewIdeas: 'Ideas',
     storyActions: 'Story actions for {title}',
@@ -85,7 +85,7 @@ const stories = {
       title: 'This part of the universe is not available to you.',
       hint: 'Ideas are private to each account. The ideas in this universe belong to its owner.',
     },
-    scenesHeading: 'Scenes',
+    structureHeading: 'Structure',
     asideStructured:
       'Arcs and chapters in order, and the scenes in each in the order they are told. When each happens in the world never moves it.',
     aside: 'In the order they are told. When each happens in the world never moves it.',

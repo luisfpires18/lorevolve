@@ -242,7 +242,7 @@ test.describe('ideas workspace', () => {
 
     await page.goto(storyPath)
     const views = page.getByRole('navigation', { name: 'Story views' })
-    await expect(views.getByRole('link')).toHaveText(['Scenes', 'Manuscript', 'Ideas'])
+    await expect(views.getByRole('link')).toHaveText(['Structure', 'Manuscript', 'Ideas'])
     await views.getByRole('link', { name: 'Ideas' }).click()
     await page.waitForURL(`${storyPath}/ideas`)
     await expect(views.getByRole('link', { name: 'Ideas' })).toHaveAttribute('aria-current', 'page')
@@ -394,7 +394,7 @@ test.describe('ideas workspace', () => {
     const storyPath = `/app/universes/${universeId}/stories/${storyId}`
     await editor.page.goto(storyPath)
     const views = editor.page.getByRole('navigation', { name: 'Story views' })
-    await expect(views.getByRole('link')).toHaveText(['Scenes', 'Manuscript'])
+    await expect(views.getByRole('link')).toHaveText(['Structure', 'Manuscript'])
 
     // By address, the view says it is not theirs, and asks for nothing.
     let asked = false

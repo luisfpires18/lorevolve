@@ -167,7 +167,7 @@ test.describe('story workspace', () => {
     await expect(page.getByTestId('story-premise')).toHaveText(
       'A siege, told from its last day back to its first.',
     )
-    await expect(views.getByRole('link', { name: 'Scenes' })).toHaveAttribute(
+    await expect(views.getByRole('link', { name: 'Structure' })).toHaveAttribute(
       'aria-current',
       'page',
     )
@@ -196,7 +196,7 @@ test.describe('story workspace', () => {
       const path = new URL(request.url()).pathname
       if (path === `/api/universes/${universeId}/stories/${storyId}`) reads.push(path)
     })
-    await views.getByRole('link', { name: 'Scenes' }).click()
+    await views.getByRole('link', { name: 'Structure' }).click()
     await expect(page.getByTestId('scenes-empty')).toBeVisible()
     await views.getByRole('link', { name: 'Manuscript' }).click()
     await expect(page.getByTestId('manuscript-empty')).toBeVisible()
@@ -448,5 +448,80 @@ test.describe('story workspace', () => {
         expect(ground, `dark ground at ${width}px`).toBe('rgb(21, 22, 23)')
       }
     }
+  })
+})
+
+/**
+ * Issue #141: the Scenes tab reads Structure. The label is all that changes, so these pin down that the view behind it
+ * still holds the same arcs, chapters and scenes with the same actions, that Manuscript and Ideas keep their
+ * addresses, and that the new word exists in both languages rather than only in English.
+ */
+test.describe('the Structure tab', () => {
+  test('holds the same hierarchy and actions, and the other views keep their addresses', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const universeId = await newUniverse(page, unique('Structureworld '))
+    const storyId = await seedStory(page, universeId, unique('The Long Siege '), 'Told backwards.')
+    const arcId = await seedArc(page, universeId, storyId, 'The last day')
+    const chapterId = await seedChapter(page, universeId, storyId, 'Dawn')
+    const sceneId = await seedScene(page, universeId, storyId, 'The wall', chapterId)
+
+    const storyUrl = `/app/universes/${universeId}/stories/${storyId}`
+    await page.goto(storyUrl)
+
+    const views = page.getByTestId('story-views')
+    await expect(views.getByRole('link')).toHaveText(['Structure', 'Manuscript', 'Ideas'])
+    await expect(views.getByRole('link', { name: 'Structure' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+
+    // The view behind the renamed tab is the one that was there: the arc, its chapter, its scene, and the actions.
+    await expect(page.getByText('The last day')).toBeVisible()
+    await expect(page.getByText('Dawn')).toBeVisible()
+    await expect(page.getByText('The wall')).toBeVisible()
+    await expect(page.getByTestId('new-scene').first()).toBeVisible()
+    await expect(page.getByTestId('new-chapter')).toHaveCount(1)
+    await expect(page.getByTestId('new-arc')).toHaveCount(1)
+
+    // A scene is still a link away, at the address it had: its own Write link, from its card.
+    await page.locator(`#scene-${sceneId} [data-testid="scene-write"]`).click()
+    await page.waitForURL(new RegExp(`/stories/${storyId}/manuscript/${sceneId}$`))
+
+    // And the other two views keep theirs.
+    await page.goto(`${storyUrl}/manuscript`)
+    await expect(views.getByRole('link', { name: 'Manuscript' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await page.goto(`${storyUrl}/ideas`)
+    await expect(views.getByRole('link', { name: 'Ideas' })).toHaveAttribute('aria-current', 'page')
+
+    // The story's own address is unchanged, and it is the Structure view.
+    await page.goto(storyUrl)
+    await expect(views.getByRole('link', { name: 'Structure' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(arcId).not.toBe('')
+  })
+
+  test('reads Estrutura for a Portuguese reader', async ({ page }) => {
+    await signUp(page)
+    const universeId = await newUniverse(page, unique('Estruturamundo '))
+    const storyId = await seedStory(page, universeId, unique('O Cerco '), null)
+
+    // The reader's own language, chosen before anything is drawn.
+    await page.addInitScript(() => window.localStorage.setItem('lorevolve-locale', 'pt-PT'))
+    await page.goto(`/app/universes/${universeId}/stories/${storyId}`)
+
+    const views = page.getByTestId('story-views')
+    await expect(views.getByRole('link', { name: 'Estrutura' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await expect(views.getByRole('link', { name: 'Scenes' })).toHaveCount(0)
+    await expect(views.getByRole('link', { name: 'Structure' })).toHaveCount(0)
   })
 })
