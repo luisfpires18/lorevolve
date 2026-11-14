@@ -32,12 +32,21 @@ public static class StoryProjects
     /// How far along a story is, as a project's lifecycle. <see cref="StoryStatus.Drafting"/> is
     /// <see cref="ProjectLifecycle.Active"/>: the two vocabularies were deliberately modelled on each other
     /// (see <see cref="ProjectLifecycle"/>), and a story has nothing that maps to Archived.
+    ///
+    /// Every status is named, and anything else throws rather than being labelled Planning. A catch-all would make a
+    /// status added to <see cref="StoryStatus"/> later read as "Planning" on every author's project list, silently and
+    /// for as long as nobody noticed. A story's status is validated when it is written, so a value outside the enum
+    /// means the database disagrees with the model, and that is worth a failure rather than a plausible-looking label.
     /// </summary>
     public static ProjectLifecycle LifecycleOf(StoryStatus status) => status switch
     {
+        StoryStatus.Planning => ProjectLifecycle.Planning,
         StoryStatus.Drafting => ProjectLifecycle.Active,
         StoryStatus.Complete => ProjectLifecycle.Complete,
-        _ => ProjectLifecycle.Planning,
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(status),
+            status,
+            "This story status has no project lifecycle. Give it one here when StoryStatus gains a value."),
     };
 
     /// <summary>

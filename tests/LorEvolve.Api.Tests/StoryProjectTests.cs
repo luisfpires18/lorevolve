@@ -122,6 +122,26 @@ public sealed class StoryProjectTests(LorEvolveApiFactory factory) : IClassFixtu
         Assert.Equal(ProjectLifecycle.Active, Assert.Single(again, row => row.StoryId == kept).Lifecycle);
     }
 
+    /// <summary>
+    /// A status the mapping does not name throws, rather than reading as Planning. The test exists so that adding a
+    /// value to <see cref="StoryStatus"/> fails here immediately instead of mislabelling every author's list.
+    /// </summary>
+    [Fact]
+    public void A_story_status_with_no_lifecycle_throws_rather_than_reading_as_planning()
+    {
+        foreach (var status in Enum.GetValues<StoryStatus>())
+        {
+            // Every declared status has one, so none of these throws.
+            Assert.IsType<ProjectLifecycle>(StoryProjects.LifecycleOf(status));
+        }
+
+        var undeclared = (StoryStatus)99;
+        Assert.False(Enum.IsDefined(undeclared));
+
+        var thrown = Assert.Throws<ArgumentOutOfRangeException>(() => StoryProjects.LifecycleOf(undeclared));
+        Assert.Equal("status", thrown.ParamName);
+    }
+
     [Fact]
     public async Task Another_accounts_story_is_not_in_the_list_and_a_member_sees_it()
     {
