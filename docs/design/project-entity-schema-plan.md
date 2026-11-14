@@ -140,11 +140,19 @@ Nothing of #143 is implemented in this PR. It is the decision and the plan.
 
 # Verification of the chosen approach (2026-11-14, after #171)
 
-The owner decided the shared-table approach and asked for five things to be verified rather than assumed: query
+The owner chose the shared-table approach, conditional on five things being verified rather than assumed: query
 isolation, unique constraints, permissions, inherited fields and the SQLite migration. This section is that
-verification. The earlier options above are kept as the record of how the decision was reached; **Option C, previously
-rejected, is now the chosen one**, because its only objection was that a standalone project would have to borrow a
-universe, and after #171 there is no standalone project.
+verification.
+
+**Approval evidence:** the decision and its condition are recorded on Issue #143,
+<https://github.com/luisfpires18/lorevolve/issues/143#issuecomment-6881091626>, which also supersedes the earlier
+comment there asking the owner to pick Option A or Option B. The answer was neither: it is what this document first
+called **Option C and rejected**, and the rejection no longer holds, because its only objection was that a standalone
+project would have to borrow a universe, and after #171 there is no standalone project. The earlier options are kept
+above as the record of how the decision was reached, not as live alternatives.
+
+**What remains the owner's** is one narrower question, in point 3 below: whether a project's type may nest under a
+universe-level lore type. It does not block the implementation.
 
 ## The shape
 
@@ -240,5 +248,5 @@ What it needs is the scope discipline of point 4 and the decision in point 3.
    across one; and the migration's rollback restores the single unique index.
 6. The `LaterSchema` entries the new indexes need, since a rollback past this migration will drop them.
 
-Nothing here is implemented yet. The decision is made and the unknowns named above are the ones to settle while
-implementing, not before.
+Nothing here is implemented yet. The architecture is settled and recorded on the issue; the one open question is the
+nesting policy in point 3, and the rest of the unknowns above are to be settled while implementing rather than before.
