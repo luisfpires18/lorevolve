@@ -9,6 +9,8 @@ using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Stories;
 using LorEvolve.Api.Features.Timeline;
 
+using LorEvolve.Api.Features.Projects;
+
 namespace LorEvolve.Api.Features.Export;
 
 /// <summary>
@@ -306,7 +308,7 @@ public sealed record UniverseBackup(
     /// ignorable: a version 37 reader would list stories by title and a scene's lore by name. A file at version 37 or earlier
     /// restores its stories in title order and each scene's lore by the entry's name, as it read then.
     /// </summary>
-    public const int CurrentVersion = 38;
+    public const int CurrentVersion = 39;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -339,6 +341,10 @@ public sealed record UniverseBackup(
 /// absent - null, in any earlier file - means the same thing.
 ///
 /// <paramref name="IdeaBoards"/> is every idea board that belongs to the universe, live ones first (since version 36).
+///
+/// <paramref name="CreativeProjects"/> is every project of the universe (since version 39). A universe owns its
+/// projects and deletes them with it (#171), so a backup that left them out would lose them, and the project-scoped
+/// entry types that name them could not come back in their own scope.
 /// Empty means none; absent means the same thing. Boards that belong to no universe are never here.
 /// </summary>
 public sealed record UniverseBackupPayload(
@@ -359,7 +365,8 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupEntityTypeGroup>? EntityTypeGroups = null,
     IReadOnlyList<BackupKnowledgeRecord>? KnowledgeRecords = null,
     IReadOnlyList<BackupMap>? Maps = null,
-    IReadOnlyList<BackupIdeaBoard>? IdeaBoards = null);
+    IReadOnlyList<BackupIdeaBoard>? IdeaBoards = null,
+    IReadOnlyList<BackupCreativeProject>? CreativeProjects = null);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
@@ -550,7 +557,24 @@ public sealed record BackupEntityType(
     DateTime UpdatedAt,
     IReadOnlyList<BackupFieldDefinition> Fields,
     Guid? ParentId = null,
-    IReadOnlyList<BackupFieldSection>? FieldSections = null);
+    IReadOnlyList<BackupFieldSection>? FieldSections = null,
+    Guid? ProjectId = null);
+
+/// <summary>
+/// One creative project of the universe (since version 39): what the author is making, with its kind and stage.
+///
+/// Its <c>Id</c> is this file's, like every other id here, and the entry types that belong to it name it by that id.
+/// Nothing of the account is carried: a restore makes the project the restoring account's, as it does the universe.
+/// </summary>
+public sealed record BackupCreativeProject(
+    Guid Id,
+    string Name,
+    ProjectKind Kind,
+    ProjectLifecycle Lifecycle,
+    string? Subtype,
+    string Summary,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
 /// <summary>One section of a type's fields (since version 31): its id, which its fields name, its name, place and fold.</summary>
 public sealed record BackupFieldSection(Guid Id, string Name, int DisplayOrder, bool StartsCollapsed);

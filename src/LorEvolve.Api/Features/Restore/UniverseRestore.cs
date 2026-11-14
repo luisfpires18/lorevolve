@@ -7,6 +7,7 @@ using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Knowledge;
 using LorEvolve.Api.Features.WorldRules;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Media;
@@ -86,6 +87,11 @@ internal sealed class RestoreIdentity
             {
                 yield return month.Id;
             }
+        }
+
+        foreach (var project in payload.CreativeProjects ?? [])
+        {
+            yield return project.Id;
         }
 
         foreach (var type in payload.EntityTypes)
@@ -767,7 +773,7 @@ internal sealed partial class UniverseRestore(
                 db.UniverseArtworks.Add(artwork);
             }
 
-            AddLore(payload, ids, universeId, images);
+            AddLore(payload, ids, universeId, ownerId, images);
             AddMaps();
             AddStories(payload, ids, universeId);
             AddIdeas(payload, ids, universeId, ownerId);
@@ -811,7 +817,7 @@ internal sealed partial class UniverseRestore(
         return universe;
     }
 
-    private void AddLore(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId, Dictionary<Guid, EntityImage> images)
+    private void AddLore(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId, string ownerId, Dictionary<Guid, EntityImage> images)
     {
         foreach (var era in payload.ChronologyEras!)
         {
@@ -886,12 +892,37 @@ internal sealed partial class UniverseRestore(
             });
         }
 
+        // The universe's projects, before the entry types that name them (version 39). A universe owns its projects
+        // and deletes them with it (#171), so a restored universe comes back with them; each becomes the restoring
+        // account's, as the universe itself does.
+        foreach (var project in payload.CreativeProjects ?? [])
+        {
+            db.CreativeProjects.Add(new CreativeProject
+            {
+                Id = ids.Map(project.Id),
+                UniverseId = universeId,
+                OwnerId = ownerId,
+                Name = project.Name,
+                Kind = project.Kind,
+                Lifecycle = project.Lifecycle,
+                Subtype = project.Subtype,
+                Summary = project.Summary,
+                CreatedAt = project.CreatedAt,
+                UpdatedAt = project.UpdatedAt,
+            });
+        }
+
         foreach (var type in payload.EntityTypes)
         {
             db.EntityTypes.Add(new EntityType
             {
                 Id = ids.Map(type.Id),
                 UniverseId = universeId,
+
+                // A project's type comes back in its project, not promoted into the world's lore (#143). The project
+                // was written just above under its restored id, so this reads through the same map as every other
+                // reference in this file.
+                ProjectId = type.ProjectId is { } projectId ? ids.Map(projectId) : null,
                 Name = type.Name,
                 Description = type.Description,
                 Icon = type.Icon,

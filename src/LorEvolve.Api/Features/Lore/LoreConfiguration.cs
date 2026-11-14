@@ -38,8 +38,27 @@ public sealed class EntityTypeConfiguration : IEntityTypeConfiguration<EntityTyp
             .HasForeignKey(type => type.UniverseId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Lore never sees a project's types (#143). A filter here rather than a condition at each of the thirty reads
+        // of EntityTypes: one forgotten condition would leak a project's types into a lore list, a universe backup or
+        // an AI proposal, and nothing would fail to say so. Code that means to see them says IgnoreQueryFilters().
+        builder.HasQueryFilter(type => type.ProjectId == null);
+
         // Names are unique per universe, which is also what makes default seeding idempotent.
-        builder.HasIndex(type => new { type.UniverseId, type.Name }).IsUnique();
+        //
+        // Two partial indexes rather than one over (UniverseId, ProjectId, Name): a nullable column in a unique index
+        // makes NULLs distinct, so a single index would accept two lore types of the same name and seeding would
+        // duplicate instead of refusing. Lore keeps exactly the guarantee it had; two projects of one universe may
+        // each have a type of the same name.
+        builder.HasIndex(type => new { type.UniverseId, type.Name })
+            .IsUnique()
+            .HasFilter("\"ProjectId\" IS NULL");
+        builder.HasIndex(type => new { type.ProjectId, type.Name })
+            .IsUnique()
+            .HasFilter("\"ProjectId\" IS NOT NULL");
+
+        // The ordering index keeps its universe-only shape. Narrowing it to the project as well was tempting and is
+        // not needed: ordering is read per scope in code, and renaming an index that 37 migration tests enumerate buys
+        // a selectivity nobody measured. Performance work is the owner's to ask for.
         builder.HasIndex(type => new { type.UniverseId, type.DisplayOrder });
 
         // A type's parent (ADR 0007 amendment, 2026-10-01). Deliberately not a foreign key: SQLite adds one only by rebuilding

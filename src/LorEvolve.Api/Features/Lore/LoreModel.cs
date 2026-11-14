@@ -68,6 +68,22 @@ public sealed class EntityType
 
     public Guid UniverseId { get; set; }
 
+    /// <summary>
+    /// The project this type belongs to, or null for a universe's own lore type (#143).
+    ///
+    /// <para>A type is scoped to exactly one of the two: null means it is part of the world's lore, and a value means
+    /// it describes something in one project of <see cref="UniverseId"/> and has no place in the lore. The universe is
+    /// required either way, because every project belongs to exactly one universe (#171), so a project type is always
+    /// inside the same universe as the project that owns it.</para>
+    ///
+    /// <para><b>Lore never sees a project's types.</b> That is enforced by a query filter on this entity rather than
+    /// by a condition repeated at every read, because there are thirty reads of <c>EntityTypes</c> across twelve
+    /// features and one forgotten condition would put a project's types into the lore list, a backup or an AI
+    /// proposal. Code that means to see project types says so with <c>IgnoreQueryFilters()</c>, which is greppable;
+    /// code that forgets cannot leak.</para>
+    /// </summary>
+    public Guid? ProjectId { get; set; }
+
     public Universe? Universe { get; set; }
 
     public required string Name { get; set; }

@@ -105,6 +105,10 @@ public sealed class BackupInventoryTests
 
         // Only the dismissals: the author's judgement, which nothing re-derives (ADR 0014).
         "CanonConflicts",
+
+        // The universe's projects. #171 made every project belong to exactly one universe, which deletes them with
+        // it, and #143 lets an entry type be scoped to one of them, so a universe is not whole without them.
+        "CreativeProjects",
     ];
 
     /// <summary>Not in the archive because LorEvolve produces it again from what is.</summary>
@@ -123,8 +127,6 @@ public sealed class BackupInventoryTests
         ("AspNetUsers", "identity tables are not the world (ADR 0014)"),
         ("FeedbackReports", "bug reports and feature requests sent to the Admin, not the world"),
         ("UniverseAiHelpOff", "a workspace display preference; a restored universe starts with AI help on"),
-        ("CreativeProjects", "the account's own record of what it is making, not content of the world: a project outlives the universe it links to (#138), so a restore needs nothing of it to make that universe whole"),
-
         ("AspNetRoles", "identity tables are not the world (ADR 0014)"),
         ("AspNetRoleClaims", "identity tables are not the world (ADR 0014)"),
         ("AspNetUserClaims", "identity tables are not the world (ADR 0014)"),
