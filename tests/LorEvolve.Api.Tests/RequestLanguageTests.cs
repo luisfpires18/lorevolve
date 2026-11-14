@@ -60,8 +60,20 @@ public sealed class RequestLanguageTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Contains(types, type => type.Name == "Personagem");
         Assert.DoesNotContain(types, type => type.Name == "Character");
 
+        // The accented words, exactly: the source file, the compiler, SQLite and the JSON response each have to
+        // carry them unharmed, and only an end-to-end assertion proves all four at once.
+        Assert.Contains(types, type => type.Name == "Organização");
+        Assert.Contains(types, type => type.Name == "Espécie");
+        Assert.Contains(
+            types,
+            type => type.Description == "Pessoas, e tudo o resto que tenha vontade própria.");
+        Assert.Contains(
+            types,
+            type => type.Description == "Grupos que agem em conjunto: casas, guildas, exércitos, cultos.");
+
         var groups = (await owner.GetFromJsonAsync<List<GroupName>>($"/api/universes/{id}/entity-type-groups"))!;
         Assert.Contains(groups, group => group.Name == "Personagens");
+        Assert.Contains(groups, group => group.Name == "Facções");
 
         // Reading the same universe in English later shows what was written, not a translation of it.
         owner.DefaultRequestHeaders.AcceptLanguage.Clear();
