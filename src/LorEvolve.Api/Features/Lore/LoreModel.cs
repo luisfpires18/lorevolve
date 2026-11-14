@@ -312,6 +312,34 @@ public sealed class LoreEntity : Publishing.IPublishable
 
     public Universe? Universe { get; set; }
 
+    /// <summary>
+    /// The project this entry belongs to, or null when it is one of the universe's own lore entries. The same scoping
+    /// <see cref="EntityType.ProjectId"/> gives a type (#143), one level down: a project's entry is of one of that
+    /// project's types, and a lore entry is of a lore type.
+    ///
+    /// Isolation is a global query filter rather than a condition at each read, for the reason the type's is: there are
+    /// seventy-five reads of <c>db.Entities</c> across twenty-two features, and a forgotten one would put a game's units
+    /// into the world's lore, a universe backup or an AI proposal with nothing announcing it. Code that means to see a
+    /// project's entries says <c>IgnoreQueryFilters</c>, which is greppable. The pair of filters is also what lets EF
+    /// keep the required relationship to <see cref="EntityType"/> honest: both ends are filtered the same way, so a
+    /// filtered-out type can never leave a visible entry pointing at nothing.
+    /// </summary>
+    public Guid? ProjectId { get; set; }
+
+    /// <summary>
+    /// The universe's lore entry this project entry stands for, or null. A game's "Alenna Vance" unit may point at the
+    /// character in the lore, and a map at the city it is set in; the link is **optional on purpose** (#144), because a
+    /// game or a film may be made in a universe that holds almost no worldbuilding, and the lore must never become a
+    /// precondition for working on a project.
+    ///
+    /// Only ever a lore entry of the project's own universe, which the route checks, and only ever on a project entry:
+    /// a lore entry does not point at another. Not a foreign key, for the reason <see cref="EntityType.ParentId"/> is
+    /// not one: SQLite would add one only by rebuilding the table, which would drop this table's search trigger.
+    /// Deleting a lore entry a project entry still names is refused by a trigger rather than quietly unlinking an
+    /// author's reference.
+    /// </summary>
+    public Guid? CanonEntityId { get; set; }
+
     public Guid EntityTypeId { get; set; }
 
     public EntityType? EntityType { get; set; }
