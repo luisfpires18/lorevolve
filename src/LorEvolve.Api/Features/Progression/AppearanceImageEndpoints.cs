@@ -40,6 +40,9 @@ public static class AppearanceImageKeys
 /// </summary>
 public static partial class AppearanceImageEndpoints
 {
+    /// <summary>Stable marker for changing the pictures of an entry that is in the Trash.</summary>
+    public const string EntityInTrashCode = "entity_in_trash";
+
     private const long RequestBodyCeiling = ImagePreparation.MaxUploadBytes * 2;
 
     private const int InMemoryBodyThreshold = (int)ImagePreparation.MaxUploadBytes + 64 * 1024;
@@ -362,7 +365,8 @@ public static partial class AppearanceImageEndpoints
             return Results.Problem(
                 title: "Entry is in the Trash",
                 detail: "Restore the entry from the Trash to change its pictures.",
-                statusCode: StatusCodes.Status409Conflict);
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = EntityInTrashCode });
         }
 
         string[] keys = [.. new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>()];
@@ -466,10 +470,7 @@ public static partial class AppearanceImageEndpoints
         Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
 
     private static IResult Unavailable(MediaStorageException exception) =>
-        Results.Problem(
-            title: "Image storage is unavailable.",
-            detail: exception.Message,
-            statusCode: StatusCodes.Status503ServiceUnavailable);
+        MediaProblem.Unavailable(exception);
 
     private static string? FileNameLabel(string? fileName)
     {

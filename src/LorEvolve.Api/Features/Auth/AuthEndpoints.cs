@@ -302,11 +302,15 @@ public static partial class AuthEndpoints
         return user is null ? Results.Unauthorized() : Results.Ok(ToResponse(user));
     }
 
+    /// <summary>Stable marker for a sign-in that named no account LorEvolve would let in.</summary>
+    public const string InvalidCredentialsCode = "sign_in_failed";
+
     private static IResult InvalidCredentialsProblem() =>
         Results.Problem(
             title: "Sign-in failed",
             detail: InvalidCredentials,
-            statusCode: StatusCodes.Status401Unauthorized);
+            statusCode: StatusCodes.Status401Unauthorized,
+            extensions: new Dictionary<string, object?> { ["code"] = InvalidCredentialsCode });
 
     private static AuthUserResponse ToResponse(LorEvolveUser user) =>
         new(user.Id, user.UserName ?? string.Empty, user.Email ?? string.Empty, user.PlatformRole == Admin.PlatformRole.Admin);

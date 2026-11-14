@@ -15,6 +15,9 @@ namespace LorEvolve.Api.Features.Relationships;
 /// </summary>
 public static class RelationshipTypeEndpoints
 {
+    /// <summary>The 409 for deleting a relationship type that relationships, trashed ones included, still use.</summary>
+    public const string TypeInUseCode = "relationship_type_in_use";
+
     public static IEndpointRouteBuilder MapRelationshipTypeEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/universes/{universeId:guid}/relationship-types")
@@ -272,7 +275,8 @@ public static class RelationshipTypeEndpoints
                     ? $"1 relationship still uses this type{where}. Delete it first"
                     : $"{inUse} relationships still use this type{where}. Delete them first")
                     + (trashed == 0 ? "." : ", and erase what is in the Trash."),
-                statusCode: StatusCodes.Status409Conflict);
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = TypeInUseCode });
         }
 
         db.RelationshipTypes.Remove(relationshipType);

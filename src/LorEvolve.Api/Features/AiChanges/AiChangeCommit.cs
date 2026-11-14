@@ -622,7 +622,7 @@ internal static class AiChangeCommit
         var staged = await db.AiChangeMedia.FirstOrDefaultAsync(row => row.OperationId == work.OperationId && row.UniverseId == universeId, cancellationToken);
         if (staged is null)
         {
-            return (null, Results.Problem(detail: "The picture hasn't been uploaded.", statusCode: StatusCodes.Status409Conflict));
+            return (null, Refused(AiChangeCodes.AwaitingUpload, "Picture not uploaded", "The picture hasn't been uploaded."));
         }
 
         bool attached;
@@ -675,16 +675,17 @@ internal static class AiChangeCommit
         }
         catch (StorageQuotaExceededException)
         {
-            return (null, Results.Problem(detail: "The universe owner's storage has no room for this picture.", statusCode: StatusCodes.Status409Conflict));
+            return (null, Refused(StorageQuota.ExceededCode, "Not enough storage.", "The universe owner's storage has no room for this picture."));
         }
 
         if (!attached)
         {
-            return (null, Results.Problem(
-                detail: media.AppearanceId is null
+            return (null, Refused(
+                AiChangeCodes.ChangedSince,
+                "Changed since the proposal",
+                media.AppearanceId is null
                     ? "The entry was trashed or given a picture since, so this one wasn't attached."
-                    : "The appearance was removed or its gallery filled up since, so this picture wasn't attached.",
-                statusCode: StatusCodes.Status409Conflict));
+                    : "The appearance was removed or its gallery filled up since, so this picture wasn't attached."));
         }
 
         db.AiChangeMedia.Remove(staged);
