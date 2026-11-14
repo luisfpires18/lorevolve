@@ -892,10 +892,6 @@ internal sealed partial class UniverseRestore(
             {
                 Id = ids.Map(type.Id),
                 UniverseId = universeId,
-
-                // A project's type comes back scoped to its project, not promoted into the world's lore (#143). The
-                // project ids are the restore's own, so this reads through the same map every other reference does.
-                ProjectId = type.ProjectId is { } projectId ? ids.Map(projectId) : null,
                 Name = type.Name,
                 Description = type.Description,
                 Icon = type.Icon,

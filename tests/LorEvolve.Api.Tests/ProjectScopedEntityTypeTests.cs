@@ -208,11 +208,20 @@ public sealed class ProjectScopedEntityTypeTests(LorEvolveApiFactory factory) : 
     }
 
     /// <summary>
-    /// The scope survives a backup and a restore. Without this the restore would bring a project's type back as a
-    /// universe lore type, promoting it into the world, which is worse than losing it.
+    /// A universe backup holds the lore's types and not a project's, and that is deliberate rather than incidental.
+    ///
+    /// <para>Carrying a project's types would need the projects themselves in the archive, and a universe backup does
+    /// not hold projects: #138 left <c>CreativeProjects</c> out when a project was account-owned and outlived its
+    /// universe. #171 ended that, so a universe now owns its projects and deletes them with it, which means a backup
+    /// will have to learn about them. Until it does, a project's types are absent rather than restored into the wrong
+    /// scope: the filter sees to that, and this test says so out loud so the absence is a decision and not a
+    /// surprise.</para>
+    ///
+    /// <para><b>This must be settled before #144 can create project types</b>, or a backup silently drops an author's
+    /// work. It is recorded on #143 and #144 rather than left here.</para>
     /// </summary>
     [Fact]
-    public async Task A_backup_carries_the_scope_so_a_restore_does_not_promote_a_project_type_into_lore()
+    public async Task A_universe_backup_holds_the_lore_s_types_and_not_a_project_s()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "scopedbackup");
         var projectId = Guid.NewGuid();
@@ -224,10 +233,9 @@ public sealed class ProjectScopedEntityTypeTests(LorEvolveApiFactory factory) : 
         });
 
         var types = (await Backup(client, universe.Id)).Payload.EntityTypes;
-        var carried = Assert.Single(types.Where(type => type.Name == "Vehicle"));
 
-        Assert.Equal(projectId, carried.ProjectId);
-        Assert.DoesNotContain(types, type => type.Name == "Vehicle" && type.ProjectId is null);
+        Assert.DoesNotContain(types, type => type.Name == "Vehicle");
+        Assert.NotEmpty(types);
     }
 
     private static EntityType Type(Guid universeId, string name, Guid? projectId) => new()

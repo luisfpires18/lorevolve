@@ -949,6 +949,9 @@ internal static partial class BackupValidation
 
         private void RegisterTypes(IReadOnlyList<BackupEntityType> types)
         {
+            // One name set, because a universe backup holds only the lore's types: a project's are hidden by the
+            // query filter and the archive has no projects to put them in (#143). When backups learn about projects,
+            // this must become one set per scope, or it will refuse a backup the database had just produced.
             var names = new HashSet<string>(StringComparer.Ordinal);
 
             foreach (var type in types)

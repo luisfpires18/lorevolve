@@ -550,8 +550,7 @@ public sealed record BackupEntityType(
     DateTime UpdatedAt,
     IReadOnlyList<BackupFieldDefinition> Fields,
     Guid? ParentId = null,
-    IReadOnlyList<BackupFieldSection>? FieldSections = null,
-    Guid? ProjectId = null);
+    IReadOnlyList<BackupFieldSection>? FieldSections = null);
 
 /// <summary>One section of a type's fields (since version 31): its id, which its fields name, its name, place and fold.</summary>
 public sealed record BackupFieldSection(Guid Id, string Name, int DisplayOrder, bool StartsCollapsed);

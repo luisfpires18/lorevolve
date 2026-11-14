@@ -337,10 +337,11 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         Guid universeId,
         CancellationToken cancellationToken)
     {
-        // Both scopes on purpose: a universe's backup holds its lore types and its projects' types, or a restore
-        // would come back missing the second kind. This is the one read that means to see past the filter (#143).
+        // The lore's types only. A project's types are hidden by the query filter (#143), and that is deliberate
+        // here rather than incidental: carrying them would need the projects themselves in the archive, and a
+        // universe backup does not hold projects yet. See the note on #143 and #144 before project types can be
+        // created, because a backup that silently drops them is worse than one that never claimed to hold them.
         var types = await db.EntityTypes.AsNoTracking()
-            .IgnoreQueryFilters()
             .Where(type => type.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
@@ -423,8 +424,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                     Utc(type.UpdatedAt),
                     fieldsByType.GetValueOrDefault(type.Id, []),
                     type.ParentId,
-                    sectionsByType.GetValueOrDefault(type.Id, []),
-                    type.ProjectId)),
+                    sectionsByType.GetValueOrDefault(type.Id, []))),
         ];
     }
 
