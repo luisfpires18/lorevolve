@@ -35,12 +35,12 @@ public static class RequestLanguage
                     continue;
                 }
 
-                if (tag.StartsWith("pt", StringComparison.OrdinalIgnoreCase))
+                if (IsBase(tag, "pt"))
                 {
                     return Portuguese;
                 }
 
-                if (tag.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+                if (IsBase(tag, "en"))
                 {
                     return English;
                 }
@@ -49,6 +49,17 @@ public static class RequestLanguage
 
         return English;
     }
+
+    /// <summary>
+    /// Whether a tag is that language: the base subtag itself, or the base followed by a region or script
+    /// (`pt`, `pt-PT`, `pt-BR`). A tag that merely starts with the same letters is a different language, so
+    /// `ptx` and `english` are not matches and fall through to English.
+    /// </summary>
+    private static bool IsBase(string tag, string language) =>
+        tag.Equals(language, StringComparison.OrdinalIgnoreCase)
+        || (tag.Length > language.Length
+            && tag[language.Length] == '-'
+            && tag.AsSpan(0, language.Length).Equals(language, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The language's own name, for telling the assistant which one to answer in.</summary>
     public static string NameOf(string language) => language == Portuguese ? "European Portuguese" : "English";

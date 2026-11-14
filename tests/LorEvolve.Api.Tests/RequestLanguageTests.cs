@@ -29,6 +29,13 @@ public sealed class RequestLanguageTests(LorEvolveApiFactory factory) : IClassFi
     [InlineData("*", RequestLanguage.English)]
     [InlineData("de-DE, pt-PT;q=0.8", RequestLanguage.Portuguese)]
     [InlineData("pt-PT, en;q=0.9", RequestLanguage.Portuguese)]
+    // A tag that merely starts with the same letters is a different language, not a dialect of this one.
+    [InlineData("ptx", RequestLanguage.English)]
+    [InlineData("pt_PT", RequestLanguage.English)]
+    [InlineData("entish", RequestLanguage.English)]
+    [InlineData("ptx, pt-PT", RequestLanguage.Portuguese)]
+    [InlineData("PT-pt", RequestLanguage.Portuguese)]
+    [InlineData("EN-GB", RequestLanguage.English)]
     public void The_language_is_the_first_tag_LorEvolve_has_words_for(string? header, string expected)
     {
         var request = new DefaultHttpContext().Request;
