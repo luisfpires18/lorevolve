@@ -8,6 +8,7 @@ using LorEvolve.Api.Features.Knowledge;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Mcp;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Profile;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Publishing;
@@ -144,6 +145,8 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     public DbSet<ChronologyCalendar> ChronologyCalendars => Set<ChronologyCalendar>();
 
     public DbSet<ChronologyCalendarMonth> ChronologyCalendarMonths => Set<ChronologyCalendarMonth>();
+
+    public DbSet<CreativeProject> CreativeProjects => Set<CreativeProject>();
 
     public DbSet<Story> Stories => Set<Story>();
 

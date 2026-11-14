@@ -1,0 +1,44 @@
+namespace LorEvolve.Api.Features.Projects;
+
+/// <summary>
+/// Creating a project, or saving one whole.
+///
+/// <paramref name="Name"/> is required and trimmed. <paramref name="Kind"/> and <paramref name="Lifecycle"/> must be
+/// values the API declares: they travel as numbers, so an unknown one is refused rather than stored.
+/// <paramref name="Subtype"/> is trimmed and reads as null when it is empty. <paramref name="Summary"/> is stored as
+/// sent; null reads as <c>""</c>. <paramref name="UniverseId"/> is one universe the caller may edit, or null for a
+/// standalone project.
+///
+/// <paramref name="ExpectedVersion"/> is the <c>version</c> the edit was written over, on an update. When the project has
+/// changed since, the save is refused with 409 <c>project_changed</c> and nothing is written. Ignored on create.
+/// </summary>
+public sealed record ProjectRequest(
+    string? Name,
+    ProjectKind Kind,
+    ProjectLifecycle Lifecycle,
+    string? Subtype,
+    string? Summary,
+    Guid? UniverseId,
+    int? ExpectedVersion);
+
+/// <summary>The universe a project is linked to, as much of it as a list or a header draws.</summary>
+public sealed record ProjectUniverse(Guid Id, string Name, string? AccentColor, bool IsArchived);
+
+/// <summary>
+/// One project. The same shape in a list and on its own, because a project is small: there is no body to leave out.
+///
+/// <paramref name="IsOwned"/> says the caller owns it, rather than reaching it through the linked universe. A client
+/// needs it to know whether the project would survive losing access to that universe.
+/// </summary>
+public sealed record ProjectDetail(
+    Guid Id,
+    string Name,
+    ProjectKind Kind,
+    ProjectLifecycle Lifecycle,
+    string? Subtype,
+    string Summary,
+    ProjectUniverse? Universe,
+    bool IsOwned,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    int Version);

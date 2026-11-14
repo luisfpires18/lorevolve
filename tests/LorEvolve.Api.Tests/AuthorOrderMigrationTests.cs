@@ -68,7 +68,7 @@ public sealed class AuthorOrderMigrationTests : IDisposable
 
             Assert.DoesNotContain("SortOrder", await Strings(db, "SELECT name AS Value FROM pragma_table_info('Stories')"));
             Assert.DoesNotContain("SortOrder", await Strings(db, "SELECT name AS Value FROM pragma_table_info('SceneEntityLinks')"));
-            Assert.Equal(indexes, await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
+            Assert.Equal(indexes.Where(LaterSchema.BeforeProjects), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
             Assert.Equal(triggers, await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
             Assert.Equal(2, await Scalar(db, "SELECT COUNT(*) AS Value FROM \"Stories\""));
             Assert.Equal(3, await Scalar(db, "SELECT COUNT(*) AS Value FROM \"SceneEntityLinks\""));
