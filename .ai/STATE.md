@@ -1,4 +1,4 @@
-﻿# STATE
+# STATE
 
 Current operational state only, as of 2026-11-13. Trim instead of appending: when work merges, delete its line here;
 git history and ADRs keep the detail. History before this trim: `docs/history/state-archive-2026-10.md`.
@@ -39,7 +39,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-13 `master` and `dev` match (PR #121 released). `WEBSITE_RUN_FROM_PACKAGE=1` and
+As of 2026-11-14 `dev` is ahead of `master` by the language work merged since PR #121 (latest: #161, #162). `WEBSITE_RUN_FROM_PACKAGE=1` and
 `SCM_MAX_ZIP_PACKAGE_COUNT=2` are set on DEV and PROD (2026-11-11), so a deploy no longer swaps files under the running app. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
@@ -64,7 +64,7 @@ Checked 2026-10-29 with `git log origin/dev..<branch>`.
 
 ## Open issues
 
-- **Languages** (umbrella #99, ADR 0071): #100 to #107 and #109 are on `dev`. The switch is live in the account menu, the portal's appearance menu and Profile; the API writes emails, starter types and the assistant's language in the reader's language. Left: #108 (API refusal codes, in flight), #110 (readable export and canon rule messages), #111 (public SEO, deferred until `PublicSite__AllowIndexing` is set at launch).
+- **Languages** (umbrella #99, ADR 0071): #100 to #109 are on `dev`, and #108 (refusal codes, PR #161) with #110's export half (PR #162) landed 2026-11-14; `dev` is at `4490106`. The switch is live in the account menu, the portal's appearance menu and Profile; the API writes its emails, starter types, assistant language, 56 refusal codes and the readable export in the reader's language. Open: #110's canon rule messages (approach is the owner's choice, TBD and plan on the issue) and #111 (public SEO, deferred until `PublicSite__AllowIndexing` is set at launch). #99 itself stays open for the owner, with its deferred checks in the milestone summary. A refusal whose English names the author's own records stays English by design; `ApiErrorCodeContractTests` refuses to translate one.
 `gh issue list --repo luisfpires18/lorevolve --state open`. As of 2026-10-29:
 
 - Alpha: #34 launch readiness / final review (high), #35 alpha plan and issue index, #54 daily backups (high; the
