@@ -39,7 +39,8 @@ async function universe(page: Page, name = unique('Projectworld ')) {
 }
 
 /** Kind and lifecycle travel as numbers: 0 is Writing and 0 is Planning. */
-async function project(page: Page, name: string, universeId: string | null) {
+/** Every project belongs to a universe (#171), so the helper takes one rather than allowing null. */
+async function project(page: Page, name: string, universeId: string) {
   return api<{ id: string; name: string }>(page, 'POST', '/api/projects', {
     name,
     kind: 0,
@@ -161,39 +162,44 @@ test.describe('Projects navigation', () => {
     await expect(page.getByTestId('project-name')).toContainText(shut.name)
   })
 
-  test('a project with no universe is reachable without opening a world', async ({ page }) => {
+  /**
+   * Every project belongs to exactly one universe (#171), so the account-level list is every universe's projects
+   * gathered in one place rather than a list with some projects outside the worlds. What that screen stops offering is
+   * #172's work; this pins down what it gathers.
+   */
+  test('the account-level list gathers the projects of every universe', async ({ page }) => {
     await signUp(page)
-    const world = await universe(page)
-    const inWorld = await project(page, unique('In a world '), world.id)
-    const alone = await project(page, unique('On its own '), null)
+    const first = await universe(page)
+    const second = await universe(page)
+    const here = await project(page, unique('In the first world '), first.id)
+    const there = await project(page, unique('In the second world '), second.id)
 
     await page.goto('/app')
     await page.getByTestId('workspacebar-projects').click()
     await expect(page).toHaveURL('/app/projects')
 
-    // Everything the account can reach, both kinds.
-    await expect(page.getByTestId(`projects-row-${alone.id}`)).toContainText(alone.name)
-    await expect(page.getByTestId(`projects-row-${inWorld.id}`)).toContainText(inWorld.name)
+    // Both universes' projects, each naming the universe it belongs to.
+    await expect(page.getByTestId(`projects-row-${here.id}`)).toContainText(here.name)
+    await expect(page.getByTestId(`projects-row-${here.id}`)).toContainText(first.name)
+    await expect(page.getByTestId(`projects-row-${there.id}`)).toContainText(there.name)
+    await expect(page.getByTestId(`projects-row-${there.id}`)).toContainText(second.name)
 
-    // Then only the ones belonging to no universe.
-    await page.getByTestId('projects-filter-standalone').click()
-    await expect(page.getByTestId(`projects-row-${alone.id}`)).toBeVisible()
-    await expect(page.getByTestId(`projects-row-${inWorld.id}`)).toHaveCount(0)
-
-    await page.getByTestId(`projects-row-${alone.id}`).click()
-    await expect(page.getByTestId('project-name')).toContainText(alone.name)
-    await expect(page.getByTestId('project-universe')).toContainText('No universe')
+    await page.getByTestId(`projects-row-${there.id}`).click()
+    await expect(page.getByTestId('project-name')).toContainText(there.name)
+    await expect(page.getByTestId('project-universe')).toContainText(second.name)
   })
 
   test('a project is made from the sidebar, and the list works at phone width', async ({
     page,
   }) => {
     await signUp(page)
+    const world = await universe(page)
     await page.setViewportSize({ width: 390, height: 844 })
 
-    await page.goto('/app/projects')
+    // From the universe's own Projects screen, which is where a project is made: it belongs to that universe (#171).
+    await page.goto(`/app/universes/${world.id}/projects`)
     await page.getByTestId('projects-page-new').click()
-    await expect(page).toHaveURL('/app/projects/new')
+    await expect(page).toHaveURL(new RegExp(`/app/projects/new\\?universeId=${world.id}$`))
 
     const name = unique('The Tide Engine ')
     await page.getByTestId('project-new-name').fill(name)
