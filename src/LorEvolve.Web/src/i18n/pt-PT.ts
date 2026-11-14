@@ -17,6 +17,7 @@ import places from './pt-PT/places'
 import manuscript from './pt-PT/manuscript'
 import relationships from './pt-PT/relationships'
 import workspace from './pt-PT/workspace'
+import projects from './pt-PT/projects'
 import portal from './pt-PT/portal'
 import publishing from './pt-PT/publishing'
 import roles from './pt-PT/roles'
@@ -47,6 +48,7 @@ const ptPT = {
   manuscript,
   relationships,
   workspace,
+  projects,
   portal,
   publishing,
   roles,

@@ -17,6 +17,7 @@ import places from './en/places'
 import manuscript from './en/manuscript'
 import relationships from './en/relationships'
 import workspace from './en/workspace'
+import projects from './en/projects'
 import portal from './en/portal'
 import publishing from './en/publishing'
 import roles from './en/roles'
@@ -52,6 +53,7 @@ const en = {
   manuscript,
   relationships,
   workspace,
+  projects,
   portal,
   publishing,
   roles,

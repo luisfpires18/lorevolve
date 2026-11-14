@@ -18733,3 +18733,175 @@ details.reviewsection > .reviewsection__list {
     transition: none;
   }
 }
+
+/* ---------- Projects (#139) ---------- */
+
+/*
+ * A project in the sidebar: the disclosure that opens it and the link that goes to it sit on one row, so the row reads
+ * as one thing while each half stays its own control. The row is positioned because the disclosure's label is for
+ * screen readers only and an absolutely positioned span in a scrolling column would otherwise stretch the column on a
+ * phone.
+ */
+.sidebar__projectrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.sidebar__disclosure {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sidebar__disclosure:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.sidebar__chevron {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 150ms ease;
+}
+
+.sidebar__chevron--open {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar__chevron {
+    transition: none;
+  }
+}
+
+.sidebar__link--project {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.sidebar__projectname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar__projectkind {
+  flex: 0 0 auto;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.sidebar__sublinks {
+  margin: 0;
+  padding: 0 0 0 var(--space-5);
+  list-style: none;
+}
+
+.sidebar__sublink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
+  text-decoration: none;
+}
+
+.sidebar__sublink:hover,
+.sidebar__sublink.active {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+/* The Projects screens: the list of projects, and one project. */
+.projects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.projects__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.projects__lede {
+  margin: 0;
+  color: var(--muted);
+}
+
+.projects__filters {
+  margin: 0;
+}
+
+.projectlist {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.projectrow {
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.projectrow__main {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  color: inherit;
+  text-decoration: none;
+}
+
+.projectrow__title {
+  font-weight: 600;
+}
+
+.projectrow__meta {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+/*
+ * One project beside the list of projects, on the account-level screens that have no sidebar. One column on a phone,
+ * where the list comes first because it is how the author got here.
+ */
+.projectshell {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.projectshell__nav {
+  min-width: 0;
+}
+
+.projectshell__nav .sidebar__nav {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 60rem) {
+  .projectshell {
+    grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+    align-items: start;
+  }
+}

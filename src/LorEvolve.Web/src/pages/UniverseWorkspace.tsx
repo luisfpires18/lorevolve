@@ -21,6 +21,7 @@ import type { UniverseDetail } from '../universes/types'
 import { artworkUrl } from '../publishing/api'
 import type { UniverseArtworkRef } from '../publishing/types'
 import { EmptyState } from '../components/EmptyState'
+import { ProjectsNav } from '../components/ProjectsNav'
 
 const SECTIONS = SECTION_GROUPS.flat()
 
@@ -403,6 +404,10 @@ function Workspace() {
         </div>
 
         <ul className="sidebar__nav">
+          {/*
+           * The universe's own sections first, then this universe's projects. The group is drawn by its own component
+           * because, unlike a section, its rows are read from the API and each one expands.
+           */}
           {groups.map((group) => (
             <li
               className={
@@ -435,6 +440,7 @@ function Workspace() {
               </ul>
             </li>
           ))}
+          {id ? <ProjectsNav universeId={id} /> : null}
         </ul>
       </nav>
 

@@ -12,6 +12,7 @@ const shell = {
   workspace: {
     screen: {
       ideas: 'Ideas',
+      projects: 'Projects',
       profile: 'Profile',
       aiChanges: 'Pending AI Changes',
       universes: 'Universes',
@@ -20,6 +21,7 @@ const shell = {
     context: 'My workspace',
     universes: 'Universes',
     ideas: 'Ideas',
+    projects: 'Projects',
     explore: 'Explore',
   },
   brand: {

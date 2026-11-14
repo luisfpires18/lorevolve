@@ -42,6 +42,8 @@ import {
   MapsPage,
   MassCreatePage,
   ProfilePage,
+  ProjectPage,
+  ProjectsPage,
   PublicAuthorPage,
   PublicLorePage,
   PublicStoryPage,
@@ -166,6 +168,12 @@ function Root() {
             <Route element={<WorkspaceLayout />}>
               <Route path="/app" element={asSection('universes', <UniversesPage />)} />
               <Route path="/app/profile" element={asSection('profile', <ProfilePage />)} />
+              <Route path="/app/projects" element={asSection('projects', <ProjectsPage />)} />
+              <Route path="/app/projects/new" element={asSection('project', <ProjectPage isNew />)} />
+              <Route
+                path="/app/projects/:projectId"
+                element={asSection('project', <ProjectPage />)}
+              />
               <Route path="/app/ideas" element={asSection('ideas', <IdeasPage />)} />
               <Route path="/app/ai-changes" element={asSection('ai-changes', <AiChangesPage />)} />
               <Route path="/app/ideas/new" element={asSection('idea', <IdeaPage isNew />)} />
@@ -264,6 +272,10 @@ function Root() {
                     <WorldRulePage />
                   </RoleGate>,
                 )}
+              />
+              <Route
+                path="projects"
+                element={asSection('projects', <ProjectsPage inUniverse />)}
               />
               <Route path="stories" element={asSection('stories', <StoriesPage />)} />
               <Route

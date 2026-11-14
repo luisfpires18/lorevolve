@@ -15,6 +15,7 @@ const shell: Dictionary['shell'] = {
   workspace: {
     screen: {
       ideas: 'Ideias',
+      projects: 'Projetos',
       profile: 'Perfil',
       aiChanges: 'Alterações da IA pendentes',
       universes: 'Universos',
@@ -23,6 +24,7 @@ const shell: Dictionary['shell'] = {
     context: 'O meu espaço',
     universes: 'Universos',
     ideas: 'Ideias',
+    projects: 'Projetos',
     explore: 'Explorar',
   },
   brand: {
