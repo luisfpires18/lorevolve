@@ -29,8 +29,6 @@ const projects = {
     empty: 'No projects yet.',
     emptyHint: 'A project is what you are making: a novel, a game, a series, a film or a comic.',
     noUniverse: 'No universe',
-    filterAll: 'All',
-    filterStandalone: 'Without a universe',
   },
   one: {
     title: 'Project',
@@ -50,6 +48,10 @@ const projects = {
     save: 'Create project',
     saving: 'Creating.',
     failed: 'The project could not be created.',
+    needsUniverse: 'A project belongs to a universe.',
+    needsUniverseHint:
+      'Open the universe this work belongs to and make the project there. A universe can hold very little worldbuilding and still be the place a project lives.',
+    chooseUniverse: 'Choose a universe',
   },
 }
 

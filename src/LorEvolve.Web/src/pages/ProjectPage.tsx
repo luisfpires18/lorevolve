@@ -46,6 +46,19 @@ function NewProject() {
 
   useDocumentTitle(t('projects.new.title'))
 
+  // A project belongs to exactly one universe (#172), so this screen cannot do its job without one. Reached without a
+  // universe, it says so and points at the universes rather than offering a form whose save can only be refused.
+  if (!universeId) {
+    return (
+      <EmptyState
+        title={t('projects.new.needsUniverse')}
+        hint={t('projects.new.needsUniverseHint')}
+        action={<Link to="/app">{t('projects.new.chooseUniverse')}</Link>}
+        testId="project-new-needs-universe"
+      />
+    )
+  }
+
   return (
     <section className="projects" data-testid="project-new">
       <h1>{t('projects.new.title')}</h1>

@@ -39,7 +39,7 @@ async function universe(page: Page, name = unique('Projectworld ')) {
 }
 
 /** Kind and lifecycle travel as numbers: 0 is Writing and 0 is Planning. */
-/** Every project belongs to a universe (#171), so the helper takes one rather than allowing null. */
+/** Every project belongs to a universe (#172), so the helper takes one rather than allowing null. */
 async function project(page: Page, name: string, universeId: string) {
   return api<{ id: string; name: string }>(page, 'POST', '/api/projects', {
     name,
@@ -163,11 +163,12 @@ test.describe('Projects navigation', () => {
   })
 
   /**
-   * Every project belongs to exactly one universe (#171), so the account-level list is every universe's projects
-   * gathered in one place rather than a list with some projects outside the worlds. What that screen stops offering is
-   * #172's work; this pins down what it gathers.
+   * Every project belongs to exactly one universe (#172), so the account-level list gathers the projects of every
+   * universe the account can reach, offers no filter for projects without one, and cannot make a project there.
    */
-  test('the account-level list gathers the projects of every universe', async ({ page }) => {
+  test('the account-level list gathers every universe s projects and makes none of its own', async ({
+    page,
+  }) => {
     await signUp(page)
     const first = await universe(page)
     const second = await universe(page)
@@ -184,6 +185,17 @@ test.describe('Projects navigation', () => {
     await expect(page.getByTestId(`projects-row-${there.id}`)).toContainText(there.name)
     await expect(page.getByTestId(`projects-row-${there.id}`)).toContainText(second.name)
 
+    // No filter for projects without a universe, because there are none, and nothing here makes one.
+    await expect(page.getByTestId('projects-filter-standalone')).toHaveCount(0)
+    await expect(page.getByTestId('projects-filter-all')).toHaveCount(0)
+    await expect(page.getByTestId('projects-page-new')).toHaveCount(0)
+
+    // Opening the form directly says what it needs rather than offering a save that can only be refused.
+    await page.goto('/app/projects/new')
+    await expect(page.getByTestId('project-new-needs-universe')).toBeVisible()
+    await expect(page.getByTestId('project-new-save')).toHaveCount(0)
+
+    await page.goto('/app/projects')
     await page.getByTestId(`projects-row-${there.id}`).click()
     await expect(page.getByTestId('project-name')).toContainText(there.name)
     await expect(page.getByTestId('project-universe')).toContainText(second.name)
@@ -196,7 +208,7 @@ test.describe('Projects navigation', () => {
     const world = await universe(page)
     await page.setViewportSize({ width: 390, height: 844 })
 
-    // From the universe's own Projects screen, which is where a project is made: it belongs to that universe (#171).
+    // From the universe's own Projects screen, where the universe it belongs to is known (#172).
     await page.goto(`/app/universes/${world.id}/projects`)
     await page.getByTestId('projects-page-new').click()
     await expect(page).toHaveURL(new RegExp(`/app/projects/new\\?universeId=${world.id}$`))
