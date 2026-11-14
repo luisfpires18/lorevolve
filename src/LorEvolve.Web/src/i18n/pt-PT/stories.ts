@@ -72,7 +72,7 @@ const stories: Dictionary['stories'] = {
     crumb: 'Histórias',
     timeline: 'Ver na linha do tempo',
     views: 'Vistas da história',
-    viewScenes: 'Cenas',
+    viewStructure: 'Estrutura',
     viewManuscript: 'Manuscrito',
     viewIdeas: 'Ideias',
     storyActions: 'Ações da história {title}',
@@ -88,7 +88,7 @@ const stories: Dictionary['stories'] = {
       title: 'Esta parte do universo não está disponível para ti.',
       hint: 'As ideias são privadas de cada conta. As ideias deste universo pertencem ao seu proprietário.',
     },
-    scenesHeading: 'Cenas',
+    structureHeading: 'Estrutura',
     asideStructured:
       'Arcos e capítulos por ordem, e as cenas de cada um pela ordem em que são contadas. O momento em que cada uma acontece no universo nunca a desloca.',
     aside:
