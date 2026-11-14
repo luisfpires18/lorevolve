@@ -38,15 +38,15 @@ public enum ProjectLifecycle
 /// <summary>
 /// One creative project: a novel, a game, a series, a film or a comic an author is making.
 ///
-/// <b>Owned by the account, like an idea.</b> <see cref="OwnerId"/> is the privacy boundary and every query starts from
-/// it. <see cref="UniverseId"/> is an optional link to one universe the account can reach, and a project with no
-/// universe belongs to the account directly: a standalone project is the ordinary case, not a special one. This follows
-/// <see cref="Ideas.Idea"/> rather than <see cref="Stories.Story"/>, which is owned by its universe and deleted with it.
+/// <b>Inside exactly one universe.</b> <see cref="UniverseId"/> is required: a project is a subdivision of a universe,
+/// alongside its worldbuilding, and there is no such thing as a project without one (#171). <see cref="OwnerId"/> is
+/// still the account that made it and still the privacy boundary for a project nobody has been given access to, but it
+/// is no longer what holds a project in existence. In that respect this follows <see cref="Stories.Story"/>, which is
+/// owned by its universe and deleted with it, rather than <see cref="Ideas.Idea"/>, which may belong to no universe.
 ///
-/// <b>Where it differs from an idea.</b> An idea's universe link never grants access to anyone; a project's does, on
-/// purpose, because a project is the thing a team works on together. A collaborator who can read the linked universe can
-/// read its projects, and one who can edit its content can edit them. Deciding that in one place is why every route goes
-/// through <see cref="ProjectAccess"/>.
+/// <b>Access comes from the universe.</b> A collaborator who can read the universe can read its projects, and one who
+/// can edit its content can edit them. Deciding that in one place is why every route goes through
+/// <see cref="ProjectAccess"/>.
 ///
 /// <b>It holds nothing yet.</b> A project has no scenes, entries, media or members of its own. Associating existing
 /// Stories with a project is #140's work, and nothing here reads or writes a Story, a scene or an id either of them
@@ -62,10 +62,14 @@ public sealed class CreativeProject
     public LorEvolveUser? Owner { get; set; }
 
     /// <summary>
-    /// The universe this project draws on, or null for a standalone project. Deleting the universe leaves the project,
-    /// unlinked, with everything else intact: the work is the author's, not the world's.
+    /// The universe this project belongs to. **Required: every project belongs to exactly one universe** (#171,
+    /// superseding the optional-universe design of #138). A universe may hold very little worldbuilding, so a game or a
+    /// film with almost no lore still has one; what it may not do is float free of every universe.
+    ///
+    /// Deleting the universe deletes its projects with it, as it deletes its stories: a project is a subdivision of a
+    /// universe, not an account-level record that happens to point at one.
     /// </summary>
-    public Guid? UniverseId { get; set; }
+    public Guid UniverseId { get; set; }
 
     public Universe? Universe { get; set; }
 

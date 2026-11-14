@@ -160,24 +160,22 @@ public sealed class StoryProjectTests(LorEvolveApiFactory factory) : IClassFixtu
     }
 
     [Fact]
-    public async Task A_standalone_list_holds_no_stories_because_a_story_always_has_a_universe()
+    public async Task A_story_is_listed_under_its_own_universe_and_not_another()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "storyalone");
+        var other = await CreateUniverse(client, "Second world storyalone");
         var storyId = await CreateStory(client, universe.Id, "In a world");
 
         Assert.Contains(await List(client), row => row.StoryId == storyId);
-        Assert.DoesNotContain(await List(client, standalone: true), row => row.StoryId == storyId);
         Assert.Contains(await List(client, universeId: universe.Id), row => row.StoryId == storyId);
+        Assert.DoesNotContain(await List(client, universeId: other.Id), row => row.StoryId == storyId);
     }
 
     // ---------- steps ----------
 
-    private static async Task<List<ProjectDetail>> List(
-        HttpClient client,
-        Guid? universeId = null,
-        bool standalone = false)
+    private static async Task<List<ProjectDetail>> List(HttpClient client, Guid? universeId = null)
     {
-        var query = universeId is { } id ? $"?universeId={id}" : standalone ? "?standalone=true" : string.Empty;
+        var query = universeId is { } id ? $"?universeId={id}" : string.Empty;
         var response = await client.GetAsync($"{Projects}{query}");
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<List<ProjectDetail>>())!;

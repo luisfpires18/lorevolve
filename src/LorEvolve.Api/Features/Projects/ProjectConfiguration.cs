@@ -39,12 +39,13 @@ public sealed class CreativeProjectConfiguration : IEntityTypeConfiguration<Crea
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        // A link, not ownership. Deleting a universe never deletes a project: SET NULL leaves it standalone with its
-        // name, summary and lifecycle intact.
+        // Ownership, not a link (#171). A project is a subdivision of its universe and goes with it, the way a story
+        // does; SET NULL is gone because there is no standalone state left for a project to fall back to.
         builder.HasOne(project => project.Universe)
             .WithMany()
             .HasForeignKey(project => project.UniverseId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
 
         // The account's own list, newest first.
         builder.HasIndex(project => new { project.OwnerId, project.UpdatedAt });
