@@ -67,14 +67,8 @@ public sealed class ApiErrorCodeContractTests
         var names = ConstantNames();
         var offenders = new List<string>();
 
-        foreach (var file in Directory.EnumerateFiles(Path.Combine(RepositoryRoot(), "src", "LorEvolve.Api"), "*.cs", SearchOption.AllDirectories))
+        foreach (var file in ApiSources())
         {
-            if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
             var body = File.ReadAllText(file);
 
             // A constant's simple name is not unique in the API: two features both call theirs `BlockedCode`. So an
@@ -104,6 +98,135 @@ public sealed class ApiErrorCodeContractTests
                 + $"dictionary entry, or make the refusal's detail a plain literal:{Environment.NewLine}"
                 + string.Join(Environment.NewLine, offenders.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)));
     }
+
+    /// <summary>
+    /// A translated code says, in English, exactly what the server already said.
+    ///
+    /// This is #99's rule for all of its children: taking text out of the server is a pure move, so the English a
+    /// reader sees does not change and the specs that assert it keep passing. Portuguese is the only new text. The
+    /// rule was followed by eye once and eighteen entries had drifted, none of them caught by a test, so it is
+    /// checked here against the API's own sources.
+    ///
+    /// A code whose refusal carries no <c>detail</c> at all is exempt: there is no English to preserve, and the
+    /// dictionary entry says something where nothing was said.
+    /// </summary>
+    [Fact]
+    public void A_translated_code_says_in_english_exactly_what_the_server_says()
+    {
+        var english = DictionaryEntries();
+        var names = ConstantNames();
+        var saidBy = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+
+        foreach (var file in ApiSources())
+        {
+            var body = File.ReadAllText(file);
+            var local = Regex
+                .Matches(body, @"const string (\w+)\s*=\s*""([a-z0-9_]+)""")
+                .ToDictionary(match => match.Groups[1].Value, match => match.Groups[2].Value, StringComparer.Ordinal);
+
+            foreach (var call in Calls(body))
+            {
+                if (CodeOf(call, local, names) is not { } code || !english.ContainsKey(code))
+                {
+                    continue;
+                }
+
+                if (SentenceOf(call, body) is { } sentence)
+                {
+                    (saidBy.TryGetValue(code, out var said) ? said : saidBy[code] = new(StringComparer.Ordinal)).Add(sentence);
+                }
+            }
+        }
+
+        var drifted = english
+            .Where(entry => saidBy.TryGetValue(entry.Key, out var said) && !said.Contains(entry.Value))
+            .Select(entry =>
+                $"{entry.Key}{Environment.NewLine}      dictionary: {entry.Value}{Environment.NewLine}"
+                + string.Join(Environment.NewLine, saidBy[entry.Key].Select(said => $"      server:     {said}")))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.True(
+            drifted.Count == 0,
+            "These entries in src/i18n/en/apiErrors.ts do not say what the server says, so this PR changes the "
+                + "English a reader sees. Copy the server's sentence, or, where the code is answered with more than "
+                + $"one sentence, drop the entry and let it fall back:{Environment.NewLine}"
+                + string.Join(Environment.NewLine, drifted));
+    }
+
+    /// <summary>
+    /// The <c>detail</c> a call states as one fixed sentence, or null when it has none or builds one. Covers the
+    /// named argument, a <c>const string</c> in the same file, adjacent literals joined with <c>+</c>, and the third
+    /// positional argument of the <c>Changed</c> and <c>Problem</c> helpers that take <c>(code, title, detail)</c>.
+    /// </summary>
+    private static string? SentenceOf(string call, string body)
+    {
+        var flat = Regex.Replace(call, @"\n\s+", " ");
+
+        var named = Regex.Match(flat, @"detail:\s*((?:""(?:[^""\\]|\\.)*""\s*\+?\s*)+)");
+        if (named.Success)
+        {
+            return Joined(named.Groups[1].Value);
+        }
+
+        var byName = Regex.Match(flat, @"detail:\s*([A-Za-z_][A-Za-z0-9_]*)\s*,");
+        if (byName.Success)
+        {
+            var declared = Regex.Match(body, @"const string " + Regex.Escape(byName.Groups[1].Value) + @"\s*=\s*\n?\s*""((?:[^""\\]|\\.)*)""");
+            return declared.Success ? Unescape(declared.Groups[1].Value) : null;
+        }
+
+        var positional = Regex.Match(
+            flat,
+            @"^(?:EditVersion\.Changed|Problem)\s*\(\s*[A-Za-z0-9_.]+\s*,\s*""(?:[^""\\]|\\.)*""\s*,\s*((?:""(?:[^""\\]|\\.)*""\s*\+?\s*)+)");
+
+        return positional.Success ? Joined(positional.Groups[1].Value) : null;
+    }
+
+    /// <summary>Adjacent C# literals joined with <c>+</c>, as one sentence.</summary>
+    private static string Joined(string literals) =>
+        string.Concat(Regex.Matches(literals, @"""((?:[^""\\]|\\.)*)""").Select(match => Unescape(match.Groups[1].Value)));
+
+    private static string Unescape(string literal) => literal.Replace("\\\"", "\"", StringComparison.Ordinal);
+
+    /// <summary>Every code in the English dictionary with the sentence it gives, read from the file that ships.</summary>
+    private static Dictionary<string, string> DictionaryEntries()
+    {
+        var body = File.ReadAllText(DictionaryPath());
+        var start = body.IndexOf("const apiErrors = {", StringComparison.Ordinal);
+        Assert.True(start >= 0, "apiErrors.ts no longer declares `const apiErrors = {`.");
+
+        // A key at two spaces, then its value: one quoted string, or several that Prettier wrapped onto the lines
+        // after it. A following key always starts a line at two spaces, which ends the value.
+        var entries = Regex
+            .Matches(
+                body[start..],
+                @"^  ([a-z][a-z0-9_]*):((?:[^\n]*\n(?:    [^\n]*\n)*))",
+                RegexOptions.Multiline)
+            .ToDictionary(
+                match => match.Groups[1].Value,
+                match => string.Concat(
+                    Regex.Matches(match.Groups[2].Value, @"'((?:[^'\\]|\\.)*)'|""((?:[^""\\]|\\.)*)""")
+                        .Select(piece => (piece.Groups[1].Success ? piece.Groups[1].Value : piece.Groups[2].Value)
+                            .Replace("\\'", "'", StringComparison.Ordinal)
+                            .Replace("\\\"", "\"", StringComparison.Ordinal))),
+                StringComparer.Ordinal);
+
+        Assert.True(entries.Count > 30, $"Only {entries.Count} entries were read out of apiErrors.ts; the parse must be wrong.");
+        Assert.DoesNotContain(entries, entry => entry.Value.Length == 0);
+        return entries;
+    }
+
+    /// <summary>Every C# source file of the API, skipping what the build writes.</summary>
+    private static IEnumerable<string> ApiSources() =>
+        Directory
+            .EnumerateFiles(Path.Combine(RepositoryRoot(), "src", "LorEvolve.Api"), "*.cs", SearchOption.AllDirectories)
+            .Where(file =>
+                !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
+
+    private static string DictionaryPath() =>
+        Path.Combine(RepositoryRoot(), "src", "LorEvolve.Web", "src", "i18n", "en", "apiErrors.ts");
 
     /// <summary>Every <c>Results.Problem</c> and friend in a file, each as its own whole call, parentheses matched.</summary>
     private static IEnumerable<string> Calls(string body)
@@ -243,7 +366,7 @@ public sealed class ApiErrorCodeContractTests
     /// <summary>The keys of the English dictionary, read from the file the web app ships.</summary>
     private static List<string> DictionaryCodes()
     {
-        var path = Path.Combine(RepositoryRoot(), "src", "LorEvolve.Web", "src", "i18n", "en", "apiErrors.ts");
+        var path = DictionaryPath();
         Assert.True(File.Exists(path), $"{path} is not there. Did the dictionary move?");
 
         var body = File.ReadAllText(path);

@@ -2,41 +2,43 @@ import type { Dictionary } from '../en'
 
 /**
  * O que uma recusa da API diz, pelo `code` que traz (#108). Um code que falte aqui usa o `detail` em inglês do
- * servidor, por isso uma recusa nunca desaparece. As chaves são os codes tal como a API os envia.
+ * servidor, por isso uma recusa nunca desaparece. As chaves são os codes tal como a API os envia, e cada frase
+ * traduz exatamente a frase inglesa que o servidor já enviava: nada foi reescrito, só traduzido.
  */
 const apiErrors: Dictionary['apiErrors'] = {
   // ---------- Escrito por cima de algo que mudou (ADR 0043) ----------
-  entity_changed: 'Esta entrada mudou depois de a abrires. Nada foi substituído.',
+  entity_changed: 'Esta entrada foi alterada depois de ser aberta aqui. Nada foi substituído.',
   entity_article_changed:
-    'O artigo desta entrada foi guardado noutro lado depois de o abrires. Nada foi substituído.',
+    'O artigo desta entrada foi guardado noutro lado depois de ser aberto aqui. Nada foi substituído.',
   entity_private_note_changed:
     'Esta nota foi guardada noutro lado desde que a abriste. Lê a versão mais recente antes de escreveres por cima.',
   entity_progression_changed:
-    'As eras desta entrada foram alteradas noutro lado depois de as abrires. Nada foi substituído.',
-  entity_field_changed: 'Este campo mudou depois de o abrires. Nada foi guardado.',
+    'As eras desta entrada foram alteradas noutro lado depois de serem abertas aqui. Nada foi substituído.',
+  entity_field_changed: 'Este campo foi alterado depois de ser aberto aqui. Nada foi guardado.',
   entity_field_layout_changed:
-    'As secções deste tipo mudaram depois de as abrires. Nada foi guardado.',
+    'As secções deste tipo foram alteradas depois de serem abertas aqui. Nada foi guardado.',
   entity_type_parent_changed:
-    'Este tipo já não está onde esta lista o mostrava. Recarrega os tipos e tenta de novo.',
-  story_changed: 'Esta história mudou depois de a abrires. Nada foi substituído.',
+    'Já não está onde esta lista o mostrava. Recarrega os tipos e tenta de novo.',
+  story_changed: 'Esta história foi alterada depois de ser aberta aqui. Nada foi substituído.',
   story_chapter_order_changed:
     'Os capítulos desta história mudaram enquanto isto era guardado. Recarrega a história e tenta de novo.',
   story_plot_order_changed:
     'Os arcos desta história mudaram enquanto isto era guardado. Recarrega a história e tenta de novo.',
   story_scene_order_changed:
     'As cenas desta história mudaram enquanto isto era guardado. Recarrega a história e tenta de novo.',
-  scene_changed: 'Esta cena mudou depois de a abrires. Nada foi substituído.',
+  scene_changed: 'Esta cena foi alterada depois de ser aberta aqui. Nada foi substituído.',
   scene_manuscript_changed:
-    'O manuscrito desta cena foi guardado noutro lado depois de o abrires. Nada foi substituído.',
-  idea_changed: 'Esta ideia foi guardada noutro lado depois de a abrires. Nada foi substituído.',
+    'O manuscrito desta cena foi guardado noutro lado depois de ser aberto aqui. Nada foi substituído.',
+  idea_changed:
+    'Esta ideia foi guardada noutro lado depois de ser aberta aqui. Nada foi substituído.',
   idea_board_changed:
-    'Este painel foi guardado noutro lado depois de o abrires. Nada foi substituído.',
-  map_changed: 'Este mapa mudou noutro lado. Abre-o de novo para veres a versão mais recente.',
+    'Este painel foi guardado noutro lado depois de ser aberto aqui. Nada foi substituído.',
+  map_changed:
+    'Este mapa foi alterado noutro lado. Abre-o de novo para veres a versão mais recente.',
   world_rule_changed:
-    'Esta regra foi guardada noutro lado depois de a abrires. Nada foi substituído.',
+    'Esta regra foi guardada noutro lado depois de ser aberta aqui. Nada foi substituído.',
   chronology_calendar_changed:
     'Algo mudou neste calendário ou nas suas datas enquanto isto era guardado. Recarrega a cronologia e tenta de novo.',
-  admin_state_changed: 'Esta conta mudou enquanto isto era guardado. Recarrega e tenta de novo.',
   trash_selection_changed:
     'A Reciclagem mudou antes de estes itens poderem ser eliminados. Atualiza e seleciona-os de novo.',
   suggestion_target_changed:
@@ -44,9 +46,11 @@ const apiErrors: Dictionary['apiErrors'] = {
 
   // ---------- Quem pode fazer o quê ----------
   universe_permission_denied: 'O teu papel neste universo não permite isto.',
-  admin_target: 'Isso não pode ser feito a esta conta.',
+  admin_target:
+    'Só contas Membro podem ser bloqueadas, para que nenhum Admin se tranque fora nem tranque o último Admin.',
   account_blocked: 'Esta conta foi bloqueada por um administrador do LorEvolve.',
-  sign_in_failed: 'Esse nome de utilizador ou palavra-passe não está correto.',
+  sign_in_failed:
+    'Essa combinação de nome de utilizador ou email e palavra-passe não está correta, ou houve demasiadas tentativas. Tenta de novo dentro de alguns minutos, ou repõe a tua palavra-passe.',
   registration_invite_only:
     'O LorEvolve é por convite para já. Abre o link do convite que recebeste para criares a tua conta.',
   cross_origin_write: 'Esta alteração tem de ser feita a partir do próprio LorEvolve.',
@@ -56,25 +60,14 @@ const apiErrors: Dictionary['apiErrors'] = {
   relationship_end_in_trash:
     'Uma das entradas que esta relação liga está na Reciclagem. Restaura essa entrada primeiro.',
 
-  // ---------- Imagens e espaço ----------
-  image_storage_unavailable:
-    'O armazenamento de imagens não está disponível neste momento. Tenta de novo dentro de um momento.',
-  image_changed:
-    'Esta imagem foi substituída ou removida noutro lado, por isso esta não foi guardada. Abre de novo e escolhe a imagem.',
-  image_original_unavailable:
-    'Não foi possível ler a imagem guardada. Carrega-a de novo para a substituir.',
+  // ---------- Imagens ----------
+  image_storage_unavailable: 'O armazenamento de imagens não está disponível.',
   artwork_changed:
     'A arte deste universo foi substituída noutro lado. Abre de novo para escolheres o enquadramento.',
   artwork_original_unavailable:
-    'Não foi possível ler a arte guardada. Carrega-a de novo para a substituir.',
+    'O cartão não pode ser cortado de novo. Carrega a imagem outra vez para a substituir.',
   map_image_changed:
-    'A imagem do mapa foi substituída noutro lado, por isso esta não foi guardada. Abre o mapa de novo e escolhe a imagem.',
-
-  // ---------- Email ----------
-  email_not_configured:
-    'Este LorEvolve ainda não consegue enviar email. Cria o link e envia-o tu mesmo.',
-  email_failed:
-    'O serviço de email não o aceitou. Tenta de novo, ou cria o link e envia-o tu mesmo.',
+    'A sua imagem foi substituída noutro lado, por isso esta não foi guardada. Abre o mapa de novo e escolhe a imagem.',
 
   // ---------- Convites e colaboradores ----------
   invitation_pending: 'Este endereço já tem um convite pendente para este universo.',
@@ -91,11 +84,10 @@ const apiErrors: Dictionary['apiErrors'] = {
 
   // ---------- Universos e publicação ----------
   universe_not_archived: 'Arquiva o universo antes de o eliminares.',
-  publication_incomplete: 'Isto ainda não está pronto para ser publicado.',
+  artwork_required_while_public:
+    'Substitui a arte, ou torna o universo privado antes de a remover.',
   publication_required_while_public:
     'Um universo público precisa disto. Preenche-o, ou despublica o universo primeiro.',
-  artwork_required_while_public:
-    'Um universo público precisa da sua arte. Carrega uma, ou despublica o universo primeiro.',
 
   // ---------- O assistente ----------
   assistant_unavailable: 'O assistente ainda não está configurado neste LorEvolve.',
@@ -103,29 +95,25 @@ const apiErrors: Dictionary['apiErrors'] = {
   assistant_timeout:
     'Isso demorou demasiado a responder. Tenta de novo, ou pergunta algo mais específico.',
   assistant_failed: 'O assistente não conseguiu responder a isso. Tenta de novo.',
-  assistant_rate_limited:
-    'Já perguntaste tudo o que esta hora permite. Espera um pouco e tenta de novo.',
 
   // ---------- Cópias de segurança e restauros ----------
   backup_restore_busy:
     'Estão demasiadas cópias de segurança à espera de serem restauradas ao mesmo tempo. Tenta de novo dentro de alguns minutos.',
-  backup_restore_in_progress:
-    'Esta cópia de segurança já está a ser restaurada. Espera que essa termine.',
+  backup_restore_in_progress: 'Espera que o restauro em curso termine.',
   backup_restore_expired:
-    'Essa cópia de segurança já não está à espera de ser restaurada. Escolhe o ficheiro de novo.',
+    'Expirou, já foi restaurada, ou foi substituída por outro ficheiro. Escolhe o ficheiro da cópia de segurança de novo.',
   backup_restore_failed:
-    'Não foi possível restaurar a cópia de segurança, por isso nada foi guardado. Continua à espera: tenta de novo.',
-  database_backup_running:
-    'Já está a correr uma cópia de segurança da base de dados. Espera que termine.',
+    'Algo falhou enquanto o universo estava a ser criado, por isso nada foi guardado. A cópia de segurança continua à espera: tenta de novo.',
 
-  // ---------- Canon, regras e relações ----------
-  relationship_already_exists: 'Esta relação já existe. Edita a que já lá está.',
+  // ---------- Relações ----------
+  relationship_already_exists:
+    'Esta relação já existe. Edita a que já lá está, ou escolhe uma ligação diferente.',
   relationship_period_era_moved:
-    'Esta relação vigora durante uma era de uma entrada que já não ligaria. Altera esse período primeiro.',
+    'Esta relação vigora durante uma era de uma entrada que já não ligaria. Altera esse período primeiro, e depois move a relação.',
 
-  // ---------- Tipos e campos, quando a recusa não nomeia nada teu ----------
+  // ---------- Versões que não podem voltar ----------
   entity_progression_revision_unrestorable:
-    'Esta versão nomeia algo que já não está como estava, por isso não pode voltar como estava.',
+    'Esta versão nomeia algo que já não está como estava: um campo arquivado ou removido desde então, uma opção retirada de um campo, ou uma história, cena ou entrada eliminada ou movida para a Reciclagem. Nada foi alterado.',
 
   // ---------- Tudo o resto ----------
   feedback_too_many_reports: 'Isso é muito relato numa hora. Tenta de novo mais tarde.',
