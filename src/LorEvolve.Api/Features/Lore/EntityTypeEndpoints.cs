@@ -707,12 +707,19 @@ public static class EntityTypeEndpoints
             .MaxAsync(type => (int?)type.DisplayOrder, cancellationToken) ?? 0) + 1;
 
     /// <summary>Every type of the universe and its parent: the whole graph, which is small.</summary>
+    /// <summary>
+    /// Every type in one scope and its parent: the universe's lore when <paramref name="projectId"/> is null, or that
+    /// project's own types when it is not (#144). One map per scope, never both at once, because a lineage that mixed
+    /// them would let a project's type inherit the world's fields through the back door - the database refuses such a
+    /// parent outright (#143), and this is the read that would otherwise disagree with it.
+    /// </summary>
     internal static async Task<Dictionary<Guid, Guid?>> ParentsAsync(
         LorEvolveDbContext db,
         Guid universeId,
-        CancellationToken cancellationToken) =>
-        await db.EntityTypes.AsNoTracking()
-            .Where(type => type.UniverseId == universeId)
+        CancellationToken cancellationToken,
+        Guid? projectId = null) =>
+        await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
+            .Where(type => type.UniverseId == universeId && type.ProjectId == projectId)
             .ToDictionaryAsync(type => type.Id, type => type.ParentId, cancellationToken);
 
     private static IResult ParentMissing() =>
