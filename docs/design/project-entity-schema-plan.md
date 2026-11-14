@@ -135,3 +135,110 @@ above shows that losing them is the default behaviour rather than an unlikely ac
    suites green unchanged.
 
 Nothing of #143 is implemented in this PR. It is the decision and the plan.
+
+---
+
+# Verification of the chosen approach (2026-11-14, after #171)
+
+The owner decided the shared-table approach and asked for five things to be verified rather than assumed: query
+isolation, unique constraints, permissions, inherited fields and the SQLite migration. This section is that
+verification. The earlier options above are kept as the record of how the decision was reached; **Option C, previously
+rejected, is now the chosen one**, because its only objection was that a standalone project would have to borrow a
+universe, and after #171 there is no standalone project.
+
+## The shape
+
+`EntityTypes.UniverseId` stays required. `EntityTypes.ProjectId` is added, nullable. `ProjectId IS NULL` is a
+universe-level lore type; `ProjectId IS NOT NULL` is a type scoped to one project inside that same universe.
+
+## 1. The migration: measured, and it needs no table rebuild
+
+Probed by making the change in the model, generating the migration, reading the SQL, then removing the probe. The
+whole schema change is:
+
+```sql
+ALTER TABLE "EntityTypes" ADD "ProjectId" TEXT NULL;
+DROP INDEX "IX_EntityTypes_UniverseId_Name";
+CREATE UNIQUE INDEX "IX_EntityTypes_UniverseId_Name" ON "EntityTypes" ("UniverseId", "Name") WHERE "ProjectId" IS NULL;
+CREATE UNIQUE INDEX "IX_EntityTypes_ProjectId_Name" ON "EntityTypes" ("ProjectId", "Name") WHERE "ProjectId" IS NOT NULL;
+```
+
+`ef_temp` appears **zero** times and there is no `DROP TABLE`. That matters more than convenience: a rebuild would
+drop the three hierarchy triggers silently, which is what the measurement earlier in this document found. Adding a
+column and swapping indexes keeps them.
+
+Precedent in the codebase for the same reasoning: `ParentId` is deliberately not a foreign key, and
+`LoreConfiguration` says why in a comment, that SQLite would add one only by rebuilding the table.
+
+## 2. Unique constraints: the trap that would have broken lore silently
+
+Today: `HasIndex(type => new { type.UniverseId, type.Name }).IsUnique()`. The obvious move is to extend it to
+`(UniverseId, ProjectId, Name)`. **That silently stops enforcing uniqueness for lore types**, because SQL treats NULLs
+as distinct in a unique index: two universe-level types both named "Weapon" would each have `ProjectId` NULL, the rows
+would differ as far as the index is concerned, and both would be accepted. Default type seeding relies on this
+uniqueness for idempotence, so the failure would surface as duplicated starter types rather than as an error.
+
+The fix is two partial unique indexes, as generated above: one on `(UniverseId, Name)` filtered to
+`ProjectId IS NULL`, one on `(ProjectId, Name)` filtered to `ProjectId IS NOT NULL`. Lore keeps exactly the guarantee
+it has, and two projects in one universe may each have a type of the same name.
+
+The other two indexes need the same treatment for the same reason: `(UniverseId, DisplayOrder)` and
+`(UniverseId, ParentId)` both scope ordering and hierarchy by universe, so project types would interleave with lore
+types in display order unless the scope includes the project.
+
+## 3. The triggers: they enforce the universe and must learn the project
+
+`EntityTypes_ParentInUniverse_Insert` and `_Update` abort unless the parent type is in the same universe:
+
+```sql
+WHEN NEW.ParentId IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM EntityTypes AS parent
+    WHERE parent.Id = NEW.ParentId AND parent.UniverseId = NEW.UniverseId AND parent.Id <> NEW.Id)
+```
+
+As written, a project type could be given a parent that is a lore type of the same universe, or a type in a different
+project of it, and the database would allow both. The condition needs the project to match as well. That is
+`DROP TRIGGER` plus `CREATE TRIGGER`, which is not a rebuild. `EntityTypes_KeepsChildren_Delete` needs the same.
+
+**One product question falls out of this and is not mine to answer:** should a project's type be allowed to nest under
+a universe-level lore type? Allowing it is how a project would reuse the world's taxonomy and inherit its fields;
+forbidding it keeps the two scopes cleanly apart. The plan assumes **forbidden** for now, because it is the stricter
+option and the one that can be relaxed later without rewriting rows, but it is a decision worth making deliberately.
+
+## 4. Query isolation: seven sites, and the inheritance map
+
+Seven query sites scope entity types by `UniverseId`. Each needs `ProjectId == null` added, or every lore list, picker
+and export starts showing a project's types. This is the part most likely to be got wrong by omission, so it wants a
+test that asserts a project type never appears in a universe-level listing, rather than only tests that project types
+appear where they should.
+
+The inheritance helper is where it matters most. `EntityTypeHierarchy` works on a parent map built by
+`ParentsAsync(db, universeId, ...)`; if that map is built per universe rather than per scope, a project's type becomes
+a candidate parent for a lore type and vice versa. The map must be built for one scope at a time.
+
+## 5. Permissions and inherited fields
+
+**Permissions need nothing new, and that is worth stating rather than assuming.** A project type lives in the same
+universe row as the lore types, and after #171 every project is inside exactly one universe, so the existing
+`UniverseAccess` matrix already decides who may read and edit it: reading needs `Read`, which every role has, and
+changing needs `EditContent`, which is Owner and Editor. There is no project-level permission concept to add, because
+all of a universe's projects share its access.
+
+**Inherited fields need no new mechanism either**, provided point 4 holds. Fields belong to a type through
+`EntityFieldDefinition.EntityTypeId`, which is unchanged, and inheritance is resolved from the lineage in the parent
+map. So "no duplicated field definitions" is satisfied literally: one field table, one resolution path, one engine.
+What it needs is the scope discipline of point 4 and the decision in point 3.
+
+## What #143 is, concretely
+
+1. The column, the two partial unique indexes, and the scope added to the ordering and hierarchy indexes.
+2. The three triggers recreated with the project in their condition.
+3. `ProjectId == null` on the seven universe-scoped query sites, and the parent map built per scope.
+4. Project type endpoints reached through `ProjectAccess`, which already resolves to the universe's matrix.
+5. Tests: a project type is invisible to every universe-level listing; two projects in one universe may each have a
+   type of the same name; two lore types in one universe still may not; inheritance resolves within a scope and not
+   across one; and the migration's rollback restores the single unique index.
+6. The `LaterSchema` entries the new indexes need, since a rollback past this migration will drop them.
+
+Nothing here is implemented yet. The decision is made and the unknowns named above are the ones to settle while
+implementing, not before.
