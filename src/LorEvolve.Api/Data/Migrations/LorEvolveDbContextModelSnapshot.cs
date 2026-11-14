@@ -1463,6 +1463,9 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("UniverseId")
                         .HasColumnType("TEXT");
 
@@ -1471,10 +1474,15 @@ namespace LorEvolve.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ProjectId", "Name")
+                        .IsUnique()
+                        .HasFilter("\"ProjectId\" IS NOT NULL");
+
                     b.HasIndex("UniverseId", "DisplayOrder");
 
                     b.HasIndex("UniverseId", "Name")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"ProjectId\" IS NULL");
 
                     b.HasIndex("UniverseId", "ParentId");
 

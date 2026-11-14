@@ -337,7 +337,10 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         Guid universeId,
         CancellationToken cancellationToken)
     {
+        // Both scopes on purpose: a universe's backup holds its lore types and its projects' types, or a restore
+        // would come back missing the second kind. This is the one read that means to see past the filter (#143).
         var types = await db.EntityTypes.AsNoTracking()
+            .IgnoreQueryFilters()
             .Where(type => type.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
@@ -420,7 +423,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                     Utc(type.UpdatedAt),
                     fieldsByType.GetValueOrDefault(type.Id, []),
                     type.ParentId,
-                    sectionsByType.GetValueOrDefault(type.Id, []))),
+                    sectionsByType.GetValueOrDefault(type.Id, []),
+                    type.ProjectId)),
         ];
     }
 
