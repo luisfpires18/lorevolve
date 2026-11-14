@@ -2394,6 +2394,56 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("EntityProgressionRevisions", (string)null);
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Projects.CreativeProject", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Lifecycle")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Subtype")
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "UpdatedAt");
+
+                    b.HasIndex("UniverseId", "UpdatedAt");
+
+                    b.ToTable("CreativeProjects", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Publishing.UniverseArtwork", b =>
                 {
                     b.Property<Guid>("UniverseId")
@@ -4852,6 +4902,24 @@ namespace LorEvolve.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Entity");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Projects.CreativeProject", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Auth.LorEvolveUser", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Universe");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Publishing.UniverseArtwork", b =>

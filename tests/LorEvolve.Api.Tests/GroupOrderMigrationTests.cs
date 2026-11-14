@@ -56,7 +56,7 @@ public sealed class GroupOrderMigrationTests : IDisposable
             await db.GetService<IMigrator>().MigrateAsync(Before);
 
             Assert.DoesNotContain("SortOrder", await Strings(db, "SELECT name AS Value FROM pragma_table_info('EntityTypeGroups')"));
-            Assert.Equal(indexes, await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
+            Assert.Equal(indexes.Where(LaterSchema.BeforeProjects), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
             Assert.Equal(triggers, await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
             Assert.Equal(6, await Scalar(db, "SELECT COUNT(*) AS Value FROM \"EntityTypeGroups\""));
             Assert.Empty(await Strings(db, "SELECT \"table\" AS Value FROM pragma_foreign_key_check"));

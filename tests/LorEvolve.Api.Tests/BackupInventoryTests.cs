@@ -123,6 +123,7 @@ public sealed class BackupInventoryTests
         ("AspNetUsers", "identity tables are not the world (ADR 0014)"),
         ("FeedbackReports", "bug reports and feature requests sent to the Admin, not the world"),
         ("UniverseAiHelpOff", "a workspace display preference; a restored universe starts with AI help on"),
+        ("CreativeProjects", "the account's own record of what it is making, not content of the world: a project outlives the universe it links to (#138), so a restore needs nothing of it to make that universe whole"),
 
         ("AspNetRoles", "identity tables are not the world (ADR 0014)"),
         ("AspNetRoleClaims", "identity tables are not the world (ADR 0014)"),
