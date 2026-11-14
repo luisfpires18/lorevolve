@@ -72,8 +72,9 @@ test.describe('the shell', () => {
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
     // The way up, then fifteen sections: Publish joined the foot in 014, Chronology left Settings for a section of its
     // own, AI Changes joined (ADR 0047) and Maps (ADR 0060). All universes shares the
-    // landmark since refinement 024.
-    await expect(sections.getByRole('link')).toHaveCount(16)
+    // landmark since refinement 024. Projects added All projects and New project above upkeep (#139); this universe
+    // has no projects yet, so those two are all that group contributes here.
+    await expect(sections.getByRole('link')).toHaveCount(18)
     await expect(sections.getByRole('link').first()).toHaveText('All universes')
 
     // One h1 per screen, and it is the screen's title - the universe name in the sidebar is not it.
