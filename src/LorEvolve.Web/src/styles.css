@@ -18905,3 +18905,14 @@ details.reviewsection > .reviewsection__list {
     align-items: start;
   }
 }
+
+/*
+ * The dot between a project's facts. Presentation, so it lives here rather than in the markup or the dictionary: a
+ * separator is not a message anyone translates, and as a CSS escape it keeps every source file ASCII.
+ */
+.projectrow__meta > span + span::before,
+.projectmeta > span + span::before {
+  content: '\00b7';
+  margin: 0 var(--space-2);
+  color: var(--muted);
+}

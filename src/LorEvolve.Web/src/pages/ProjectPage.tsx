@@ -189,9 +189,10 @@ function Project() {
       <section className="projects" data-testid="project-page">
         <header className="projects__head">
           <h1 data-testid="project-name">{project.name}</h1>
-          <p className="projects__lede" data-testid="project-meta">
-            {kindLabel(project.kind)} {'·'} {lifecycleLabel(project.lifecycle)}
-            {project.subtype ? ` ${'·'} ${project.subtype}` : ''}
+          <p className="projects__lede projectmeta" data-testid="project-meta">
+            <span>{kindLabel(project.kind)}</span>
+            <span>{lifecycleLabel(project.lifecycle)}</span>
+            {project.subtype ? <span>{project.subtype}</span> : null}
           </p>
         </header>
 

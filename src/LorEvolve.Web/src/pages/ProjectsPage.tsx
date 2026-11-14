@@ -105,7 +105,8 @@ export default function ProjectsPage({ inUniverse = false }: { inUniverse?: bool
               >
                 <span className="projectrow__title">{project.name}</span>
                 <span className="projectrow__meta">
-                  {kindLabel(project.kind)} {'·'} {lifecycleLabel(project.lifecycle)}
+                  <span>{kindLabel(project.kind)}</span>
+                  <span>{lifecycleLabel(project.lifecycle)}</span>
                 </span>
                 <span className="projectrow__meta">
                   {project.universe ? project.universe.name : t('projects.list.noUniverse')}
