@@ -6,6 +6,7 @@ import review from './en/review'
 import canon from './en/canon'
 import data from './en/data'
 import admin from './en/admin'
+import apiErrors from './en/apiErrors'
 import assistant from './en/assistant'
 import entity from './en/entity'
 import entityTypes from './en/entityTypes'
@@ -40,6 +41,7 @@ const en = {
   canon,
   data,
   admin,
+  apiErrors,
   assistant,
   entity,
   entityTypes,

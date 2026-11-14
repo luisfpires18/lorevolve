@@ -19,6 +19,9 @@ public static class EntityTypeEndpoints
     /// <summary>The machine-readable marker on the 409 a type still used by an entry gets, in Lore or in the Trash.</summary>
     public const string TypeInUseCode = "entity_type_in_use";
 
+    /// <summary>The 409 for removing a select option that an entry still has chosen.</summary>
+    public const string OptionInUseCode = "entity_field_option_in_use";
+
     /// <summary>
     /// Why a type cannot be deleted, in the author's terms: how many entries still use it and how many of those are in the
     /// Trash, since an entry there is invisible in Lore and still keeps its type. Mirrored by the Types screen.
@@ -1200,7 +1203,8 @@ public static class EntityTypeEndpoints
                         title: "Option is in use",
                         detail: $"The option \"{option.Value}\" is chosen on at least one entity. "
                             + "Clear it there before removing the option.",
-                        statusCode: StatusCodes.Status409Conflict);
+                        statusCode: StatusCodes.Status409Conflict,
+                        extensions: new Dictionary<string, object?> { ["code"] = OptionInUseCode });
                 }
 
                 // An older version that chose it could no longer be restored as it was written, so the choice stays.

@@ -1,4 +1,4 @@
-import { currentLocale, t } from '../i18n'
+import { apiErrorMessage, currentLocale, t } from '../i18n'
 
 /**
  * Shape of an RFC 7807 response, plus the field errors ASP.NET Core adds and the
@@ -61,8 +61,15 @@ function flattenFieldErrors(errors: Record<string, string[]> | undefined) {
 export function apiErrorFrom(status: number, payload: unknown) {
   const problem = (payload ?? {}) as ProblemDetails
   const fieldErrors = flattenFieldErrors(problem.errors)
+  // A refusal LorEvolve has words for is said in the reader's language; anything else keeps the server's own
+  // English sentence, so a refusal is never swallowed and the API can add one without the web app changing (#108).
+  const translated = problem.code ? apiErrorMessage(problem.code) : null
   const message =
-    problem.detail ?? Object.values(fieldErrors)[0] ?? problem.title ?? t('shell.api.fallbackError')
+    translated ??
+    problem.detail ??
+    Object.values(fieldErrors)[0] ??
+    problem.title ??
+    t('shell.api.fallbackError')
 
   return new ApiError(status, message, fieldErrors, problem.code ?? null, payload)
 }

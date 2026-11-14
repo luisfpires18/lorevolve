@@ -548,10 +548,7 @@ public static partial class UniverseArtworkEndpoints
         Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
 
     internal static IResult Unavailable(MediaStorageException exception) =>
-        Results.Problem(
-            title: "Image storage is unavailable.",
-            detail: exception.Message,
-            statusCode: StatusCodes.Status503ServiceUnavailable);
+        MediaProblem.Unavailable(exception);
 
     private static IResult Changed() =>
         Results.Problem(

@@ -1,3 +1,4 @@
+import { currentLocale } from '../i18n'
 import { apiErrorFrom } from './api'
 
 /** How far the bytes have got. `ratio` is null while the browser cannot say how many there are. */
@@ -47,6 +48,9 @@ export function apiUpload<T>(
     const request = new XMLHttpRequest()
     request.open(method, path, true)
     request.setRequestHeader('Accept', 'application/json')
+    // The reader's own choice, exactly as `apiFetch` sends it (ADR 0071): an upload refused for the picture's
+    // size or the owner's storage is a refusal like any other, and it is read in the same language.
+    request.setRequestHeader('Accept-Language', currentLocale())
     request.responseType = 'text'
 
     // Same-origin, so the cookie rides along exactly as it does on a fetch.

@@ -6,6 +6,7 @@ import review from './pt-PT/review'
 import canon from './pt-PT/canon'
 import data from './pt-PT/data'
 import admin from './pt-PT/admin'
+import apiErrors from './pt-PT/apiErrors'
 import assistant from './pt-PT/assistant'
 import entity from './pt-PT/entity'
 import entityTypes from './pt-PT/entityTypes'
@@ -35,6 +36,7 @@ const ptPT = {
   canon,
   data,
   admin,
+  apiErrors,
   assistant,
   entity,
   entityTypes,

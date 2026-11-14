@@ -18,6 +18,9 @@ namespace LorEvolve.Api.Features.Universes;
 /// </summary>
 public static partial class UniverseEndpoints
 {
+    /// <summary>The 409 for deleting a universe that has not been archived first.</summary>
+    public const string NotArchivedCode = "universe_not_archived";
+
     private const int DefaultPageSize = 12;
     private const int MaxPageSize = 50;
 
@@ -354,7 +357,8 @@ public static partial class UniverseEndpoints
             return Results.Problem(
                 title: "Universe is not archived",
                 detail: "Archive the universe before deleting it.",
-                statusCode: StatusCodes.Status409Conflict);
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = NotArchivedCode });
         }
 
         // Ideas belong to the account, not to the universe (ADR 0030): every idea about this
