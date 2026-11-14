@@ -31,21 +31,45 @@ Around it:
 
 A project, from #138, is account-owned with an **optional** universe, and a standalone project is the ordinary case.
 
-## The conflict
+## The conflict, measured rather than assumed
 
 The clean domain model is one type table whose scope is either a universe or a project: make `UniverseId` nullable,
-add a nullable `ProjectId`, and require exactly one of them. In SQLite, making an existing column nullable is not an
-`ALTER`: EF Core rebuilds the table, which here means dropping and recreating `EntityTypes` with its indexes and its
-three triggers while five foreign keys point at it.
+add a nullable `ProjectId`, and require exactly one of them. What that costs in SQLite was measured rather than
+guessed, by making the column nullable, generating the migration, and reading the SQL it produces. The probe was then
+removed and the model restored; nothing of it is in this PR.
 
-That is the operation this repository's migration tests exist to refuse. They compare the whole schema and every
-table's row counts across a rollback and a roll-forward, and the rule learned from a smaller version of this change
-is recorded in the project's own notes: no column migrations on a table like this, because the rebuild breaks the
-rollback tests. #143's constraints also say to keep schema inheritance, backup and MCP boundaries intact, and a
-rebuild of the lore schema's central table puts all three at risk for a feature that adds nothing to lore.
+**Verified, by generating and reading the migration SQL:**
 
-So the decision is not "which is tidier" but **which cost the owner prefers**, and it is theirs because it changes a
-load-bearing architecture decision either way.
+1. **The C# cost is almost nothing.** Making `EntityType.UniverseId` nullable breaks exactly **one** call site in the
+   whole API, `Features/Lore/EntityTypeEndpoints.cs:2006`, where a type's universe is read to find its parents.
+2. **The migration is a full table rebuild.** `dotnet ef migrations add` emits two `AlterColumn` operations, which the
+   SQLite provider turns into this when applied:
+
+   ```sql
+   CREATE TABLE "ef_temp_EntityTypes" ( ... );
+   INSERT INTO "ef_temp_EntityTypes" ("Id", "AccentColor", ... "UniverseId", "UpdatedAt") SELECT ... FROM "EntityTypes";
+   DROP TABLE "EntityTypes";
+   ALTER TABLE "ef_temp_EntityTypes" RENAME TO "EntityTypes";
+   ```
+
+3. **The rebuild silently loses the three hierarchy triggers.** The word "trigger" does not appear anywhere in the
+   generated SQL. SQLite drops a table's triggers with the table, so `EntityTypes_ParentInUniverse_Insert`,
+   `EntityTypes_ParentInUniverse_Update` and `EntityTypes_KeepsChildren_Delete` are dropped by `DROP TABLE` and never
+   recreated. The database-level guarantee that a parent type is in the same universe as its child, which
+   `AddEntityTypeHierarchy` put in the database deliberately rather than only in C#, would be gone with no error and
+   no failing request to say so.
+
+**Anticipated, not verified:** that this repository's migration tests would fail on it. They compare the whole
+schema, every index and trigger, and every table's row counts across a rollback and a roll-forward, so a rebuild that
+drops three triggers is the kind of thing they are built to notice, and `LaterSchema` exists precisely because such
+comparisons are sensitive to schema changes. But I did not run them against the probe, so this is a reasonable
+expectation rather than a measurement, and the plan does not rest on it.
+
+**What actually makes this the owner's decision** is point 3, not the test suite. The rebuild is survivable: the
+migration can recreate the triggers by hand, and a test can be written to prove they came back. But that turns a
+schema change into a careful, hand-written migration over the lore schema's central table, with five foreign keys
+pointing at it, in service of a feature that adds nothing to lore. Whether that is worth doing is a judgement about
+risk appetite on an alpha product with real author data, which is the owner's and not an implementer's.
 
 ## Option A: one table, scope made optional
 
@@ -54,11 +78,12 @@ triggers both scopes.
 
 - **For:** one type table, one field table, one inheritance implementation, literally no duplication. Every later M2
   child inherits the engine for free. `TargetEntityTypeId`, groups and sections keep working unchanged.
-- **Against:** a rebuild of `EntityTypes` with five dependent foreign keys and three triggers; the rollback tests
-  have to be rewritten rather than extended; the migration touches every author's existing lore schema to deliver a
-  feature that changes nothing about lore; and a rollback after release cannot be trusted, which is the exact risk
-  ADR 0018 already flags for SQLite.
-- **Cost:** the migration and its tests are most of the work of #143, before any project entity exists.
+- **Against:** the rebuild above, over the lore schema's central table with five foreign keys pointing at it, and the
+  three hierarchy triggers must be recreated by hand in the migration or they are lost silently. The migration
+  touches every author's existing lore schema to deliver a feature that changes nothing about lore, and a rollback
+  after release cannot be trusted, which is the risk ADR 0018 already flags for SQLite.
+- **Cost:** the hand-written migration, its trigger restoration, a test proving the triggers came back, and whatever
+  the existing migration tests need, all before a single project entity exists. The C# change itself is one line.
 
 ## Option B: project types in their own tables, one shared engine (recommended)
 
@@ -92,8 +117,9 @@ The literal reading of "no duplicated field definitions" is the one thing it giv
 backing tables honours the intent, which is that M2 must not become five implementations.
 
 If the owner prefers Option A, it is a coherent choice and the right time for it is **now**, before four more M2
-children are built on the other shape. It should then be its own issue with its own migration plan, because
-rebuilding `EntityTypes` deserves more than a line in a feature issue.
+children are built on the other shape. It should then be its own issue with its own migration plan, whose first
+requirement is recreating the three triggers and a test that fails when they are missing, because the measurement
+above shows that losing them is the default behaviour rather than an unlikely accident.
 
 ## What #143 becomes under Option B
 
