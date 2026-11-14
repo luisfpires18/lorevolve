@@ -42,6 +42,12 @@ export interface ProjectDetail {
   createdAt: string
   updatedAt: string
   version: number
+  /**
+   * Set when this row is a Story shown as the Writing Project it already is (#140). Nothing of the story is copied:
+   * the row is read from the story on every request, and the story's own address is where its content lives, so a
+   * client follows this id rather than opening a project page that would have nothing of its own to show.
+   */
+  storyId: string | null
 }
 
 /** Creating a project, or saving one whole. `expectedVersion` is ignored on create. */

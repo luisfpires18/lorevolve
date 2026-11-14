@@ -73,11 +73,18 @@ public static class ProjectEndpoints
             query = query.Where(project => project.UniverseId == null);
         }
 
-        var projects = await query
-            .OrderByDescending(project => project.UpdatedAt)
-            .ToListAsync(cancellationToken);
+        var projects = await query.ToListAsync(cancellationToken);
+        var rows = projects.Select(project => Detail(project, userId)).ToList();
 
-        return Results.Ok(projects.Select(project => Detail(project, userId)).ToList());
+        // Every Story the caller can read is already a Writing Project, so the list says so rather than pretending an
+        // author's existing work is not a project (#140). Nothing of the story is stored or copied: see StoryProjects.
+        // A standalone list asks for projects belonging to no universe, and a story always has one, so it has none.
+        if (!standalone)
+        {
+            rows.AddRange(await StoryProjects.ReadableAsync(db, userId, universeId, cancellationToken));
+        }
+
+        return Results.Ok(rows.OrderByDescending(project => project.UpdatedAt).ToList());
     }
 
     private static async Task<IResult> GetAsync(

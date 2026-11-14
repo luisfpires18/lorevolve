@@ -75,3 +75,17 @@ export function projectPath(projectId: string, segment = '', universeId?: string
     : `/app/projects/${projectId}`
   return segment ? `${base}/${segment}` : base
 }
+
+/**
+ * Where one row of the projects list leads.
+ *
+ * A Story shown as a Writing Project leads to the story, at the address it has always had: its content is the story's
+ * and nothing was copied anywhere else (#140). Anything else leads to the project's own page.
+ */
+export function projectRowPath(project: ProjectDetail, universeId?: string) {
+  if (project.storyId && project.universe) {
+    return `/app/universes/${project.universe.id}/stories/${project.storyId}`
+  }
+
+  return projectPath(project.id, '', universeId)
+}

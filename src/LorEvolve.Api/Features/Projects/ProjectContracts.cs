@@ -29,6 +29,12 @@ public sealed record ProjectUniverse(Guid Id, string Name, string? AccentColor, 
 ///
 /// <paramref name="IsOwned"/> says the caller owns it, rather than reaching it through the linked universe. A client
 /// needs it to know whether the project would survive losing access to that universe.
+///
+/// <paramref name="StoryId"/> is set when this row is a Story shown as a Writing Project rather than a project of its
+/// own (#140). Nothing of the story is copied: the row is read from the story every time, its <c>Id</c> is the story's
+/// own id, and the story remains the thing that is opened, saved and published. A client reads it to know that the
+/// project's content lives at the story's address, and that the project's own fields are not editable here because
+/// they belong to the story.
 /// </summary>
 public sealed record ProjectDetail(
     Guid Id,
@@ -41,4 +47,5 @@ public sealed record ProjectDetail(
     bool IsOwned,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    int Version);
+    int Version,
+    Guid? StoryId = null);
