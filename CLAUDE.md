@@ -32,6 +32,11 @@ Router only. No architecture detail and no operational state here.
 4. Keep context and state files concise. Trim instead of appending.
 5. Use caveman-style concise output.
 
+## Issues
+
+When given an issue, read the acceptance criteria and verification commands first, and don't finish
+until every box passes. Report a box you could not check as unchecked, with the reason.
+
 ## Git safety
 
 An owner-started Issue (or milestone run) authorizes, for its own branch: commit, push, open and update its draft PR, run the Codex review, make its corrections, and merge into `dev` on a Codex ACCEPTED review. Merging into `dev` deploys DEV; that is intended, because the owner tests on DEV.
