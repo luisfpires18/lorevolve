@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { AccountMenu } from '../components/AccountMenu'
@@ -405,42 +405,48 @@ function Workspace() {
 
         <ul className="sidebar__nav">
           {/*
-           * The universe's own sections first, then this universe's projects. The group is drawn by its own component
-           * because, unlike a section, its rows are read from the API and each one expands.
+           * The universe's own sections, then this universe's projects, and upkeep last - set apart at the foot, as it
+           * was before this group existed. Projects is drawn by its own component because, unlike a section, its rows
+           * are read from the API and each one expands.
            */}
           {groups.map((group) => (
-            <li
-              className={
-                UPKEEP.includes(group[0])
-                  ? 'sidebar__group sidebar__group--upkeep'
-                  : 'sidebar__group'
-              }
-              key={group[0].segment}
-              data-testid={UPKEEP.includes(group[0]) ? 'sidebar-upkeep' : undefined}
-            >
-              <ul className="sidebar__links">
-                {group.map((section) => (
-                  <li key={section.segment}>
-                    <NavLink
-                      to={section.segment === '' ? '.' : section.segment}
-                      end={section.segment === ''}
-                      className="sidebar__link"
-                      data-testid={section.testId}
-                    >
-                      <section.icon
-                        className="sidebar__icon"
-                        aria-hidden="true"
-                        focusable="false"
-                        strokeWidth={1.75}
-                      />
-                      {sectionLabel(section)}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </li>
+            <Fragment key={`group-${group[0].segment}`}>
+              {UPKEEP.includes(group[0]) && id ? <ProjectsNav universeId={id} /> : null}
+              <li
+                className={
+                  UPKEEP.includes(group[0])
+                    ? 'sidebar__group sidebar__group--upkeep'
+                    : 'sidebar__group'
+                }
+                data-testid={UPKEEP.includes(group[0]) ? 'sidebar-upkeep' : undefined}
+              >
+                <ul className="sidebar__links">
+                  {group.map((section) => (
+                    <li key={section.segment}>
+                      <NavLink
+                        to={section.segment === '' ? '.' : section.segment}
+                        end={section.segment === ''}
+                        className="sidebar__link"
+                        data-testid={section.testId}
+                      >
+                        <section.icon
+                          className="sidebar__icon"
+                          aria-hidden="true"
+                          focusable="false"
+                          strokeWidth={1.75}
+                        />
+                        {sectionLabel(section)}
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            </Fragment>
           ))}
-          {id ? <ProjectsNav universeId={id} /> : null}
+          {/* A role with no upkeep section at all still gets the group, at the foot. */}
+          {!groups.some((group) => UPKEEP.includes(group[0])) && id ? (
+            <ProjectsNav universeId={id} />
+          ) : null}
         </ul>
       </nav>
 
