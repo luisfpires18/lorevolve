@@ -7,6 +7,7 @@ using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Knowledge;
 using LorEvolve.Api.Features.WorldRules;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.ProjectEntities;
 using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.RuleValidation;
@@ -97,6 +98,16 @@ internal sealed class RestoreIdentity
         foreach (var entry in payload.ProjectEntities ?? [])
         {
             yield return entry.Id;
+        }
+
+        foreach (var season in payload.ProjectSeasons ?? [])
+        {
+            yield return season.Id;
+
+            foreach (var episode in season.Episodes ?? [])
+            {
+                yield return episode.Id;
+            }
         }
 
         foreach (var type in payload.EntityTypes)
@@ -915,6 +926,37 @@ internal sealed partial class UniverseRestore(
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt,
             });
+        }
+
+        // The projects' seasons and episodes (version 41, #145), after the projects they belong to.
+        foreach (var season in payload.ProjectSeasons ?? [])
+        {
+            db.ProjectSeasons.Add(new ProjectSeason
+            {
+                Id = ids.Map(season.Id),
+                ProjectId = ids.Map(season.ProjectId),
+                Name = season.Name,
+                Summary = season.Summary,
+                SortOrder = season.SortOrder,
+                CreatedAt = season.CreatedAt,
+                UpdatedAt = season.UpdatedAt,
+            });
+
+            foreach (var episode in season.Episodes ?? [])
+            {
+                db.ProjectEpisodes.Add(new ProjectEpisode
+                {
+                    Id = ids.Map(episode.Id),
+                    SeasonId = ids.Map(season.Id),
+                    Title = episode.Title,
+                    Synopsis = episode.Synopsis,
+                    Script = episode.Script,
+                    SortOrder = episode.SortOrder,
+                    CreatedAt = episode.CreatedAt,
+                    UpdatedAt = episode.UpdatedAt,
+                    Version = 1,
+                });
+            }
         }
 
         foreach (var type in payload.EntityTypes)

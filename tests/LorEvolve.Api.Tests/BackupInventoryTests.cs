@@ -109,6 +109,10 @@ public sealed class BackupInventoryTests
         // The universe's projects. #171 made every project belong to exactly one universe, which deletes them with
         // it, and #143 lets an entry type be scoped to one of them, so a universe is not whole without them.
         "CreativeProjects",
+
+        // A project's seasons and the episodes in them, with their scripts (#145).
+        "ProjectSeasons",
+        "ProjectEpisodes",
     ];
 
     /// <summary>Not in the archive because LorEvolve produces it again from what is.</summary>

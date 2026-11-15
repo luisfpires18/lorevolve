@@ -121,7 +121,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             MapsOf(maps, calibrations),
             await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken),
             await CreativeProjectsAsync(universeId, cancellationToken),
-            await ProjectEntriesAsync(universeId, cancellationToken));
+            await ProjectEntriesAsync(universeId, cancellationToken),
+            await ProjectSeasonsAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1310,6 +1311,38 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     /// Nothing of the owning account travels: a restore makes each project the restoring account's, as it does the
     /// universe itself.
     /// </summary>
+    /// <summary>
+    /// Every season of every project of this universe, each with its episodes and their scripts, in their own order
+    /// (version 41, #145). No query filter stands in the way here: seasons are a project's own tables.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupProjectSeason>> ProjectSeasonsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.ProjectSeasons.AsNoTracking()
+            .Where(season => season.Project!.UniverseId == universeId)
+            .OrderBy(season => season.ProjectId)
+            .ThenBy(season => season.SortOrder)
+            .Select(season => new BackupProjectSeason(
+                season.Id,
+                season.ProjectId,
+                season.Name,
+                season.Summary,
+                season.SortOrder,
+                season.CreatedAt,
+                season.UpdatedAt,
+                season.Episodes
+                    .OrderBy(episode => episode.SortOrder)
+                    .Select(episode => new BackupProjectEpisode(
+                        episode.Id,
+                        episode.Title,
+                        episode.Synopsis,
+                        episode.Script,
+                        episode.SortOrder,
+                        episode.CreatedAt,
+                        episode.UpdatedAt))
+                    .ToList()))
+            .ToListAsync(cancellationToken);
+
     /// <summary>
     /// Every entry of every project of this universe, the trashed ones included (version 40, #144).
     ///
