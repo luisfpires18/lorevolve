@@ -457,7 +457,7 @@ test.describe('each role is shown what it can do', () => {
         'Lore',
         'Timeline',
         'Chronology',
-        'World Rules',
+        'World Logic',
         'Stories',
         'Canon',
         'Types',

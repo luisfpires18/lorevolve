@@ -53,8 +53,9 @@ One line per branch. Delete the line when it merges.
   specification (ADR 0072, `docs/architecture/world-logic-condition-spec.md`, six fixtures under
   `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/`); #150 persistence (`Features/Systems/`, backup format 44,
   migration `AddWorldLogicSystems`); #151 the evaluator (`Features/RuleValidation/Conditions/`, stored exceptions,
-  backup format 45, migration `AddRuleExceptions`). Next: #152 the World Logic page. Delete this line when #155
-  merges.
+  backup format 45, migration `AddRuleExceptions`); #152 the World Logic page (`src/pages/WorldLogicPage.tsx`, the
+  sidebar's World Logic section, which owns every `world-rules` address). Next: #153 persisted findings. Delete this
+  line when #155 merges.
 
 ## Committed, not on `dev`
 
