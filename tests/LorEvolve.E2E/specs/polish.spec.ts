@@ -90,8 +90,8 @@ test.describe('product-wide polish', () => {
     // Untouched, leaving asks nothing.
     await page.getByTestId('workspace-timeline').click()
     await page.waitForURL(/\/timeline$/)
-    await page.getByTestId('workspace-chronology').click()
-    await page.waitForURL(/\/chronology$/)
+    await page.getByTestId('timeline-configuration').click()
+    await page.waitForURL(/\/timeline\/configuration$/)
     await expect.poll(() => asked).toEqual([])
 
     // An era being named is unsaved work: a link asks, and staying keeps it.
@@ -99,14 +99,14 @@ test.describe('product-wide polish', () => {
     await page.getByTestId('era-name').fill('After the Fall')
     await page.getByTestId('workspace-timeline').click()
     await expect.poll(() => asked).toEqual([LEAVE])
-    await expect(page).toHaveURL(/\/chronology$/)
+    await expect(page).toHaveURL(/\/timeline\/configuration$/)
     await expect(page.getByTestId('era-name')).toHaveValue('After the Fall')
 
     // Back asks too, once, and staying keeps the address and the draft.
     await page.goBack()
     await expect.poll(() => asked.length).toBe(2)
     await expect.poll(() => asked).toEqual([LEAVE, LEAVE])
-    await expect(page).toHaveURL(/\/chronology$/)
+    await expect(page).toHaveURL(/\/timeline\/configuration$/)
     await expect(page.getByTestId('era-name')).toHaveValue('After the Fall')
 
     // Leaving the page itself is the browser's own question.
@@ -136,7 +136,7 @@ test.describe('product-wide polish', () => {
     await expect(page.getByTestId('chronology-error')).toBeVisible()
     await page.getByTestId('workspace-lore').click()
     await expect.poll(() => asked.at(-1)).toBe(LEAVE)
-    await expect(page).toHaveURL(/\/chronology$/)
+    await expect(page).toHaveURL(/\/timeline\/configuration$/)
 
     await page.getByTestId('era-name').fill('After the Fall')
     await page.getByTestId('save-chronology').click()

@@ -146,8 +146,18 @@ test.describe('chronology', () => {
     await signUp(page)
     const universeId = await newUniverse(page, unique('Fallen Reach '))
 
-    await page.getByTestId('workspace-chronology').click()
-    await page.waitForURL(/\/chronology$/)
+    // Chronology has no sidebar row: it is reached from Timeline, in one interaction (#200).
+    await expect(page.getByTestId('workspace-chronology')).toHaveCount(0)
+    await page.getByTestId('workspace-timeline').click()
+    await page.waitForURL(/\/timeline$/)
+    await page.getByTestId('timeline-configuration').click()
+    await page.waitForURL(/\/timeline\/configuration$/)
+    await expect(page.getByTestId('workspace-timeline')).toHaveAttribute('aria-current', 'page')
+
+    // The old address still resolves: it redirects to the configuration view and opens the editor.
+    await page.goto(`/app/universes/${universeId}/chronology`)
+    await page.waitForURL(/\/timeline\/configuration$/)
+    await expect(page.getByTestId('chronology-settings')).toBeVisible()
 
     const settings = page.getByTestId('chronology-settings')
     await expect(settings).toContainText('This universe uses plain numbered years.')
@@ -223,8 +233,9 @@ test.describe('chronology', () => {
     await expect(page.getByTestId('moment-form')).toHaveCount(0)
 
     // Relabelling a date period rewords every date written in it and moves none of them.
-    await page.getByTestId('workspace-chronology').click()
-    await page.waitForURL(/\/chronology$/)
+    await page.getByTestId('workspace-timeline').click()
+    await page.getByTestId('timeline-configuration').click()
+    await page.waitForURL(/\/timeline\/configuration$/)
 
     const before = page.getByTestId('era').nth(0)
     await expect(before).toContainText('Dates 3 moments')

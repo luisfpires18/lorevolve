@@ -181,7 +181,6 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
       'Family Tree',
       'Maps',
       'Timeline',
-      'Chronology',
       'World Logic',
       'Ideas',
       'All projects',
@@ -207,11 +206,13 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
       'Settings',
     ])
 
-    // Chronology is a page of its own, with its editor, and Settings has no trace of it.
-    await page.getByTestId('workspace-chronology').click()
-    await page.waitForURL(`/app/universes/${w.id}/chronology`)
+    // Chronology is Timeline's configuration view, with its editor, and Settings has no trace of it.
+    await expect(page.getByTestId('workspace-chronology')).toHaveCount(0)
+    await page.getByTestId('workspace-timeline').click()
+    await page.getByTestId('timeline-configuration').click()
+    await page.waitForURL(`/app/universes/${w.id}/timeline/configuration`)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Chronology')
-    await expect(sections.getByRole('link', { name: 'Chronology' })).toHaveAttribute(
+    await expect(sections.getByRole('link', { name: 'Timeline' })).toHaveAttribute(
       'aria-current',
       'page',
     )
@@ -235,7 +236,7 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
 
     // Browser history moves between the two pages as it does between any sections.
     await page.goBack()
-    await expect(page).toHaveURL(`/app/universes/${w.id}/chronology`)
+    await expect(page).toHaveURL(`/app/universes/${w.id}/timeline/configuration`)
     await expect(page.getByTestId('era')).toHaveCount(1)
   })
 

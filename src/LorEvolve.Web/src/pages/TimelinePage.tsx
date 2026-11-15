@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { CalendarRange, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
@@ -528,17 +528,28 @@ export default function TimelinePage() {
         title={t('time.timeline.title')}
         lede={t('time.timeline.lede')}
         actions={
-          access.editContent ? (
-            <button
-              className="button"
-              type="button"
-              onClick={() => setForm({ mode: 'new' })}
-              data-testid="new-moment"
+          <>
+            {/* How this universe's dates are written and ordered: the calendar, reached from the timeline it governs. */}
+            <Link
+              className="button button--secondary"
+              to="configuration"
+              data-testid="timeline-configuration"
             >
-              <ActionIcon icon={Plus} />
-              {t('time.timeline.newMoment')}
-            </button>
-          ) : undefined
+              <ActionIcon icon={CalendarRange} />
+              {t('time.timeline.configuration')}
+            </Link>
+            {access.editContent ? (
+              <button
+                className="button"
+                type="button"
+                onClick={() => setForm({ mode: 'new' })}
+                data-testid="new-moment"
+              >
+                <ActionIcon icon={Plus} />
+                {t('time.timeline.newMoment')}
+              </button>
+            ) : null}
+          </>
         }
       />
 
