@@ -356,6 +356,7 @@ const time = {
     },
     title: 'Timeline',
     lede: 'Everything that happens in this world, in the order it happens.',
+    configuration: 'Configuration',
     newMoment: 'New moment',
     emptyNewMoment: 'New moment',
     search: 'Search',

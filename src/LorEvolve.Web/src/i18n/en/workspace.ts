@@ -71,10 +71,6 @@ const workspace = {
       label: 'Canon',
       purpose: 'Where the lore breaks its own World Rules. Still being built.',
     },
-    chronology: {
-      label: 'Chronology',
-      purpose: 'How its dates are written and ordered: plain years, or named date periods.',
-    },
     stories: {
       label: 'Stories',
       purpose: 'Narratives told with this world, scene by scene.',

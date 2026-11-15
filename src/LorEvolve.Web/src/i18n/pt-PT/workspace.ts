@@ -73,11 +73,6 @@ const workspace: Dictionary['workspace'] = {
       label: 'Cânone',
       purpose: 'Onde a lore quebra as suas próprias Regras do mundo. Ainda em construção.',
     },
-    chronology: {
-      label: 'Calendário',
-      purpose:
-        'Como as datas são escritas e ordenadas: anos simples, ou períodos de datas com nome.',
-    },
     stories: {
       label: 'Histórias',
       purpose: 'Narrativas contadas com este mundo, cena a cena.',
