@@ -76,12 +76,14 @@ const script: ProjectSection = {
   icon: FileText,
 }
 
+// Every kind opens on its overview and offers Entities, because the overview holds the project's schema and Entities
+// its entries until #196 moves the schema into Entities (#193): a kind without either would put a panel out of reach.
 const SECTIONS_BY_KIND: Record<ProjectDetail['kind'], readonly ProjectSection[]> = {
-  [ProjectKind.Writing]: [structure, manuscript, ideas],
+  [ProjectKind.Writing]: [overview, structure, manuscript, entities, ideas],
   [ProjectKind.Game]: [overview, entities, systems, ideas],
-  [ProjectKind.Series]: [structure, script, entities, ideas],
-  [ProjectKind.Film]: [structure, script, entities, ideas],
-  [ProjectKind.Comic]: [structure, script, entities, ideas],
+  [ProjectKind.Series]: [overview, structure, script, entities, ideas],
+  [ProjectKind.Film]: [overview, structure, script, entities, ideas],
+  [ProjectKind.Comic]: [overview, structure, script, entities, ideas],
 }
 
 /** The sections a project of this kind offers, in order. */

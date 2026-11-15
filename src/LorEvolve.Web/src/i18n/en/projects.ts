@@ -28,6 +28,10 @@ const projects = {
   tabs: {
     label: 'Project views',
   },
+  view: {
+    empty: 'Nothing in this view yet.',
+    emptyHint: 'This view will fill as the project gains what belongs here.',
+  },
   ideas: {
     empty: 'No ideas in this project yet.',
     emptyHint: 'Ideas will gather here once an idea can belong to a project.',
