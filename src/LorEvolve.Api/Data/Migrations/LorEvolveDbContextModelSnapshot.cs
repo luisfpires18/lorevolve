@@ -645,6 +645,9 @@ namespace LorEvolve.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -659,6 +662,8 @@ namespace LorEvolve.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId", "DeletedAt", "UpdatedAt");
+
+                    b.HasIndex("ProjectId", "DeletedAt", "UpdatedAt");
 
                     b.HasIndex("UniverseId", "DeletedAt", "UpdatedAt");
 
@@ -4586,12 +4591,19 @@ namespace LorEvolve.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
                         .WithMany()
                         .HasForeignKey("UniverseId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Owner");
+
+                    b.Navigation("Project");
 
                     b.Navigation("Universe");
                 });

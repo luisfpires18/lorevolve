@@ -334,8 +334,13 @@ public sealed record UniverseBackup(
     /// as <see cref="UniverseBackupPayload.DismissedConflicts"/> carries only a Canon dismissal. Not ignorable: a
     /// dismissal is the author's own decision that a finding needs no action, and a version 45 reader would restore
     /// the universe and report it again. A file at version 45 or earlier has none, and restores with none.
+    ///
+    /// 47 - An idea may be a note for one of the universe's projects (#197). <see cref="BackupIdea.ProjectId"/> names
+    /// a project of the same file, translated on restore like every other id. Not ignorable: a version 46 reader would
+    /// restore the idea on no project, and the project's Ideas view would come back empty. A file at version 46 or
+    /// earlier has none, and every restored idea is on no project.
     /// </summary>
-    public const int CurrentVersion = 46;
+    public const int CurrentVersion = 47;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -1297,6 +1302,8 @@ public sealed record BackupPlotArc(
 /// carried. The owning account is not in the file: an importer gives the idea to the importing account and associates it
 /// with the universe being restored, re-creates each reference whose target is in the file, and never attaches the idea to
 /// any other universe. A browser's unsaved recovery copy of an idea is never in a backup: it was never saved.
+///
+/// <paramref name="ProjectId"/> (since version 47, #197) is the project of this same file the idea is a note for, or null.
 /// </summary>
 public sealed record BackupIdea(
     Guid Id,
@@ -1305,7 +1312,8 @@ public sealed record BackupIdea(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     DateTime? DeletedAt,
-    IReadOnlyList<BackupIdeaReference> References);
+    IReadOnlyList<BackupIdeaReference> References,
+    Guid? ProjectId = null);
 
 /// <summary>One reference of an idea: what the target is, stated explicitly, and its id.</summary>
 public sealed record BackupIdeaReference(IdeaReferenceKind Kind, Guid Id);

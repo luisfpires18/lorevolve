@@ -301,7 +301,8 @@ internal static partial class AiChangeStaging
 
             // The body is plain text stored exactly as written; only a cleared one changes.
             var body = idea.Body is null ? before?.Body ?? string.Empty : idea.Body.Trim().Length == 0 ? string.Empty : idea.Body;
-            return new IdeaValues((idea.Title ?? before?.Title ?? string.Empty).Trim(), body, references);
+            var project = idea.ProjectId is { } asked2 ? asked2 == Guid.Empty ? null : asked2 : before?.ProjectId;
+            return new IdeaValues((idea.Title ?? before?.Title ?? string.Empty).Trim(), body, references, project);
         }
 
         /// <summary>

@@ -94,7 +94,7 @@ public sealed class IdeaBackupTests(LorEvolveApiFactory factory) : IClassFixture
         {
             var written = document.RootElement.GetProperty("payload").GetProperty("ideas")[1];
             Assert.Equal(
-                ["id", "title", "body", "createdAt", "updatedAt", "deletedAt", "references"],
+                ["id", "title", "body", "createdAt", "updatedAt", "deletedAt", "references", "projectId"],
                 written.EnumerateObject().Select(property => property.Name));
             Assert.Equal("PlotArc", written.GetProperty("references")[3].GetProperty("kind").GetString());
         }

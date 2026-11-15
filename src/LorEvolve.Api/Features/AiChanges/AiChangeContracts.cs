@@ -207,7 +207,8 @@ public sealed record AiRuleCheckInput(
 public sealed record AiIdeaInput(
     string? Title = null,
     [property: Description("Plain text. On update, \"\" clears it.")] string? Body = null,
-    [property: Description("The whole set of what it refers to. On update, leave it out to keep them.")] IReadOnlyList<AiIdeaReferenceInput>? References = null);
+    [property: Description("The whole set of what it refers to. On update, leave it out to keep them.")] IReadOnlyList<AiIdeaReferenceInput>? References = null,
+    [property: Description("A project of this universe the idea is a note for. On update, leave it out to keep it; the all-zero id takes the idea off its project.")] Guid? ProjectId = null);
 
 public sealed record AiIdeaReferenceInput(
     [property: Description("lore_entry, story, scene or plot_arc.")] string? Kind = null,
@@ -367,7 +368,8 @@ public sealed record ProjectFieldValue(
 public sealed record IdeaReferenceValue(Ideas.IdeaReferenceKind Kind, AiRef Target);
 
 /// <summary>An idea of the universe owner's, always in this universe: its universe is never an AI's to change.</summary>
-public sealed record IdeaValues(string Title, string Body, List<IdeaReferenceValue> References);
+/// <summary><paramref name="ProjectId"/> arrived with #197: a change stored before then has none, and reads as an idea on no project.</summary>
+public sealed record IdeaValues(string Title, string Body, List<IdeaReferenceValue> References, Guid? ProjectId = null);
 
 /// <summary>
 /// A container's whole order. <paramref name="Story"/> for chapters, arcs and scenes; <paramref name="Chapter"/> for scenes

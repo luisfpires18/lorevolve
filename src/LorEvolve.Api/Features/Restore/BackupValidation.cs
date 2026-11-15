@@ -2332,6 +2332,11 @@ internal static partial class BackupValidation
                 Text(idea.Body, IdeaLimits.BodyMaxLength, $"{what}'s body");
             }
 
+            if (idea.ProjectId is { } projectId)
+            {
+                Reference(_projects.Contains(projectId), $"{what} is in a project the backup does not hold.");
+            }
+
             var references = new HashSet<(IdeaReferenceKind, Guid)>();
 
             foreach (var reference in Required(idea.References, $"{what}'s references"))

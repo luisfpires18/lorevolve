@@ -1307,7 +1307,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                     Utc(idea.CreatedAt),
                     Utc(idea.UpdatedAt),
                     Utc(idea.DeletedAt),
-                    referencesByIdea.GetValueOrDefault(idea.Id, []))),
+                    referencesByIdea.GetValueOrDefault(idea.Id, []),
+                    idea.ProjectId)),
         ];
     }
 

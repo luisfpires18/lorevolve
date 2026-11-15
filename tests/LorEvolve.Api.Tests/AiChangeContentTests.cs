@@ -391,6 +391,42 @@ public sealed class AiChangeContentTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Equal([mine.Id], options.Ideas!.Select(item => item.Id));
     }
 
+    [Fact]
+    public async Task An_idea_proposed_over_MCP_may_be_a_note_for_a_project_of_this_universe_only()
+    {
+        var (owner, ownerId, u, _) = await World("aiideaproject");
+        var project = await PostJson<LorEvolve.Api.Features.Projects.ProjectDetail>(
+            owner,
+            "/api/projects",
+            new LorEvolve.Api.Features.Projects.ProjectRequest(
+                "Salt Road", LorEvolve.Api.Features.Projects.ProjectKind.Game, LorEvolve.Api.Features.Projects.ProjectLifecycle.Active, null, null, u, null));
+        var elsewhere = await PostJson<LorEvolve.Api.Features.Projects.ProjectDetail>(
+            owner,
+            "/api/projects",
+            new LorEvolve.Api.Features.Projects.ProjectRequest(
+                "Elsewhere", LorEvolve.Api.Features.Projects.ProjectKind.Game, LorEvolve.Api.Features.Projects.ProjectLifecycle.Active, null, null, (await CreateUniverse(owner, "Elsewhere")).Id, null));
+
+        // A project of another universe is refused before anything is staged.
+        var refused = await Stage(_factory, u, ownerId, new AiChangeOperationInput("i", "create", "idea", Idea: new AiIdeaInput("Lost", ProjectId: elsewhere.Id)));
+        Assert.Equal(AiChangeCodes.Invalid, Assert.Single(refused.Issues).Code);
+
+        // Created on the project.
+        var receipt = await ApproveAll(owner, u, await Staged(_factory, u, ownerId, new AiChangeOperationInput("i", "create", "idea", Idea: new AiIdeaInput("A boss fight", ProjectId: project.Id))));
+        var ideaId = receipt.Applied.Single(line => line.Key == "i").ResultId!.Value;
+        var idea = await owner.GetFromJsonAsync<IdeaDetail>($"/api/ideas/{ideaId}");
+        Assert.Equal((u, project.Id), (idea!.Universe!.Id, idea.Project!.Id));
+
+        // An update that leaves the project out keeps it.
+        await ApproveAll(owner, u, await Staged(_factory, u, ownerId, new AiChangeOperationInput("e", "update", "idea", ideaId, Idea: new AiIdeaInput(Title: "Two boss fights"))));
+        idea = await owner.GetFromJsonAsync<IdeaDetail>($"/api/ideas/{ideaId}");
+        Assert.Equal(("Two boss fights", project.Id), (idea!.Title, idea.Project?.Id));
+
+        // The all-zero id takes it off the project and leaves it in the universe.
+        await ApproveAll(owner, u, await Staged(_factory, u, ownerId, new AiChangeOperationInput("e", "update", "idea", ideaId, Idea: new AiIdeaInput(ProjectId: Guid.Empty))));
+        idea = await owner.GetFromJsonAsync<IdeaDetail>($"/api/ideas/{ideaId}");
+        Assert.Equal((u, (Guid?)null), (idea!.Universe!.Id, idea.Project?.Id));
+    }
+
     // ---------- Relationships and moments ----------
 
     [Fact]

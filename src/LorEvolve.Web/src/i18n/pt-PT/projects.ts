@@ -31,8 +31,9 @@ const projects = {
     emptyHint: 'Esta vista vai encher-se à medida que o projeto ganhar o que pertence aqui.',
   },
   ideas: {
-    empty: 'Ainda não há ideias neste projeto.',
-    emptyHint: 'As ideias vão reunir-se aqui quando uma ideia puder pertencer a um projeto.',
+    ownerOnly: 'As ideias aqui são do dono do universo.',
+    ownerOnlyHint:
+      'Uma ideia pertence à conta que a guarda, por isso só o dono deste universo guarda ideias para os seus projetos.',
   },
   kind: {
     writing: 'Escrita',

@@ -99,15 +99,16 @@ test.describe('Project sections', () => {
       await expect(page).toHaveURL(new RegExp(`${base}/${segment}$`))
     }
 
-    // Ideas has nothing to show yet, and says so rather than failing.
+    // Ideas lists the project's own ideas (#197), empty so far.
     await page.getByTestId('projecttab-ideas').click()
-    await expect(page.getByTestId('project-view-empty-ideas')).toBeVisible()
+    await expect(page.getByTestId('ideas')).toBeVisible()
+    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this project yet.')
 
     // Each view renders one panel and never another's (#193).
     await page.getByTestId('projecttab-entities').click()
     await expect(page.getByTestId('project-entries')).toBeVisible()
     await expect(page.getByTestId('project-schema')).toHaveCount(0)
-    await expect(page.getByTestId('project-view-empty-ideas')).toHaveCount(0)
+    await expect(page.getByTestId('ideas')).toHaveCount(0)
     await page.getByTestId('projecttab-overview').click()
     await expect(page.getByTestId('project-schema')).toBeVisible()
     await expect(page.getByTestId('project-entries')).toHaveCount(0)

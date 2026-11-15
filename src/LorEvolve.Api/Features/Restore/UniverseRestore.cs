@@ -1789,6 +1789,7 @@ internal sealed partial class UniverseRestore(
                 Id = ideaId,
                 OwnerId = ownerId,
                 UniverseId = universeId,
+                ProjectId = idea.ProjectId is { } projectId ? ids.Map(projectId) : null,
                 Title = idea.Title,
                 Body = idea.Body,
                 CreatedAt = idea.CreatedAt,
