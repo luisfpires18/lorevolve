@@ -50,7 +50,8 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
     private static readonly string[] ToolNames =
     [
         "browse_timeline", "get_arc", "get_lore_entry", "get_lore_image", "get_lore_relationships", "get_map_location", "get_project",
-        "get_scene", "get_story", "get_timeline_moment", "get_universe_overview", "list_lore_images", "list_maps", "list_projects",
+        "get_project_entry", "get_project_schema", "get_project_structure", "get_scene", "get_story", "get_timeline_moment",
+        "get_universe_overview", "list_lore_images", "list_maps", "list_project_entries", "list_projects",
         "measure_map_distance", "read_scene_manuscript", "search_map_locations", "search_scene_manuscript", "search_universe",
     ];
 
