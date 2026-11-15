@@ -372,6 +372,7 @@ const time: Dictionary['time'] = {
     },
     title: 'Linha do tempo',
     lede: 'Tudo o que acontece neste universo, pela ordem em que acontece.',
+    configuration: 'Configuração',
     newMoment: 'Novo acontecimento',
     emptyNewMoment: 'Novo acontecimento',
     search: 'Pesquisar',

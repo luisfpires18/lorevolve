@@ -78,12 +78,13 @@ test.describe('Projects navigation', () => {
       'workspace-family-tree',
       'workspace-maps',
       'workspace-world-logic',
-      'workspace-chronology',
       'workspace-timeline',
       'workspace-ideas',
     ]) {
       await expect(page.getByTestId(testId)).toBeVisible()
     }
+    // Chronology is Timeline's configuration view, not a section beside it (#200).
+    await expect(page.getByTestId('workspace-chronology')).toHaveCount(0)
     // Stories is no longer a section beside the projects that list the same stories (#191).
     await expect(page.getByTestId('workspace-stories')).toHaveCount(0)
 
