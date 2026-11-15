@@ -117,6 +117,16 @@ public sealed class BackupInventoryTests
         // A comic chapter's pages and the panels on them (#147).
         "ProjectPages",
         "ProjectPanels",
+
+        // World Logic (#150, ADR 0072): the universe's Systems and reusable rule definitions, the links between
+        // them, the declared dependencies and both sets of saved states. All authored, so all carried; the ids
+        // inside a stored condition are translated on restore like any other reference.
+        "LoreSystems",
+        "LoreSystemRevisions",
+        "LoreSystemRules",
+        "SystemRules",
+        "SystemRuleRevisions",
+        "SystemRuleDependencies",
     ];
 
     /// <summary>Not in the archive because LorEvolve produces it again from what is.</summary>

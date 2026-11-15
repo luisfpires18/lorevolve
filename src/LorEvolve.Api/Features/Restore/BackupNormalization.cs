@@ -134,6 +134,11 @@ internal static class BackupNormalization
                 ? [.. payload.Maps.Select(map => map is null ? null! : map with { Calibration = null })]
                 : null,
         IdeaBoards = version >= 36 ? payload.IdeaBoards : null,
+
+        // World Logic arrived at version 44 (ADR 0072). An older file has no System and no rule definition, and
+        // nothing is inferred for it: a universe restored from one simply has no World Logic.
+        LoreSystems = version >= 44 ? payload.LoreSystems : null,
+        SystemRules = version >= 44 ? payload.SystemRules : null,
     };
 
     /// <summary>
@@ -241,6 +246,8 @@ internal static class BackupNormalization
         KnowledgeRecords = payload.KnowledgeRecords ?? [],
         Maps = payload.Maps ?? [],
         IdeaBoards = payload.IdeaBoards ?? [],
+        LoreSystems = payload.LoreSystems ?? [],
+        SystemRules = payload.SystemRules ?? [],
         TimelineEntries =
         [
             .. payload.TimelineEntries.Select(entry =>

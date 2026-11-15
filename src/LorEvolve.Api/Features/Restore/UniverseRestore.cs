@@ -5,6 +5,7 @@ using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Knowledge;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.WorldRules;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.ProjectEntities;
@@ -275,6 +276,18 @@ internal sealed class RestoreIdentity
         foreach (var term in payload.ValidationTerms!)
         {
             yield return term.Id;
+        }
+
+        // World Logic (version 44): a System and a rule definition each get a new id, and the ids inside a stored
+        // condition are translated through this same map, which is why both are allocated before anything is written.
+        foreach (var system in payload.LoreSystems ?? [])
+        {
+            yield return system.Id;
+        }
+
+        foreach (var rule in payload.SystemRules ?? [])
+        {
+            yield return rule.Id;
         }
     }
 }
@@ -812,6 +825,7 @@ internal sealed partial class UniverseRestore(
             AddIdeas(payload, ids, universeId, ownerId);
             AddIdeaBoards(payload, ids, universeId, ownerId, ownedOutsideIdeas);
             AddWorldRules(payload, ids, universeId);
+            AddWorldLogic(payload, ids, universeId);
             AddRuleValidation(payload, ids, universeId);
 
             await db.SaveChangesAsync(cancellationToken);
@@ -1903,6 +1917,110 @@ internal sealed partial class UniverseRestore(
             });
         }
     }
+
+    /// <summary>
+    /// The backed-up universe's World Logic becomes the restored universe's (ADR 0072): every System, every rule
+    /// definition, the links between them, the declared dependencies and both sets of saved states.
+    ///
+    /// <b>The ids inside a condition are translated.</b> A condition names records by id, so one carried through
+    /// unchanged would point at rows that are not in the restored universe. Every id the map knows is replaced; one
+    /// it does not know is left as it was, and evaluation reports it as <c>invalid_reference</c> rather than the
+    /// restore quietly changing what the rule says.
+    ///
+    /// <b>Nothing is evaluated.</b> No finding is written: a finding is derived, and the next evaluation produces it
+    /// again from the restored rules and the restored lore.
+    /// </summary>
+    private void AddWorldLogic(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId)
+    {
+        foreach (var rule in payload.SystemRules ?? [])
+        {
+            db.SystemRules.Add(new SystemRule
+            {
+                Id = ids.Map(rule.Id),
+                UniverseId = universeId,
+                Scope = rule.Scope,
+                ProjectId = ids.Map(rule.ProjectId),
+                Title = rule.Title,
+                Description = rule.Description,
+                SchemaVersion = rule.SchemaVersion,
+                ConditionJson = Condition(rule.Condition, ids),
+                Version = rule.Version,
+                CreatedAt = rule.CreatedAt,
+                UpdatedAt = rule.UpdatedAt,
+            });
+
+            foreach (var dependency in rule.DependsOn)
+            {
+                db.SystemRuleDependencies.Add(new SystemRuleDependency
+                {
+                    RuleId = ids.Map(rule.Id),
+                    DependsOnRuleId = ids.Map(dependency),
+                });
+            }
+
+            foreach (var revision in rule.Revisions)
+            {
+                db.SystemRuleRevisions.Add(new SystemRuleRevision
+                {
+                    RuleId = ids.Map(rule.Id),
+                    Version = revision.Version,
+                    Title = revision.Title,
+                    Description = revision.Body,
+                    SchemaVersion = revision.SchemaVersion,
+                    ConditionJson = Condition(revision.Condition, ids),
+                    SavedAt = revision.SavedAt,
+                });
+            }
+        }
+
+        foreach (var system in payload.LoreSystems ?? [])
+        {
+            db.LoreSystems.Add(new LoreSystem
+            {
+                Id = ids.Map(system.Id),
+                UniverseId = universeId,
+                Scope = system.Scope,
+                ProjectId = ids.Map(system.ProjectId),
+                Name = system.Name,
+                NormalizedName = WorldLogicAccess.Normalize(system.Name),
+                Summary = system.Summary,
+                Version = system.Version,
+                CreatedAt = system.CreatedAt,
+                UpdatedAt = system.UpdatedAt,
+            });
+
+            var order = 0;
+            foreach (var ruleId in system.RuleIds)
+            {
+                db.LoreSystemRules.Add(new LoreSystemRule
+                {
+                    SystemId = ids.Map(system.Id),
+                    RuleId = ids.Map(ruleId),
+
+                    // The file carries the order as a sequence, so it is rewritten as 0, 1, 2 rather than carrying
+                    // whatever numbers the source happened to hold.
+                    SortOrder = order++,
+                    CreatedAt = system.CreatedAt,
+                });
+            }
+
+            foreach (var revision in system.Revisions)
+            {
+                db.LoreSystemRevisions.Add(new LoreSystemRevision
+                {
+                    SystemId = ids.Map(system.Id),
+                    Version = revision.Version,
+                    Name = revision.Title,
+                    Summary = revision.Body,
+                    SavedAt = revision.SavedAt,
+                });
+            }
+        }
+    }
+
+    /// <summary>A condition with every id the backup holds replaced by its restored one, or null for a rule that is words only.</summary>
+    private static string? Condition(string? conditionJson, RestoreIdentity ids) =>
+        conditionJson is null ? null : ConditionIdRewrite.Translate(conditionJson, ids.Known);
 
     /// <summary>
     /// The universe's event kinds and methods, each rule's check and each moment's details (ADR 0034), every id through the one map -

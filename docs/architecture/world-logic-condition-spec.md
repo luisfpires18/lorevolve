@@ -47,7 +47,8 @@ No other field exists. A query or operand naming a field outside this table is a
 empty result: silently reading nothing is how a broken rule comes to look satisfied.
 
 An id is an opaque string in a fixture and a GUID in production. The evaluator compares ids for equality and never
-parses, orders or interprets them.
+parses, orders or interprets them, but a save requires every stored id to be a GUID, because a stored id names a row
+in the database. A fixture is never saved: it is read straight into the evaluator's own fact source.
 
 ### 2.1 Types
 
