@@ -48,7 +48,7 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
-- `fix/project-screens-app-design`: the project screens use the app's own design (#184). The owner called them a mess and full of placeholders. First half: the class names that were in the markup and in no stylesheet, the buttons that carried no class, and `PageHeader` on the two pages that hand-rolled a head. Second half: the four always-open creation forms now open from each panel's head, a row's secondary and destructive verbs moved into `ActionMenu`, the panels stack in one column with one rhythm, and the copy went through `stop-slop` and `humanizer` (one "Loading" for every panel, fifteen of the sixteen placeholders gone, an action keeps its name from trigger to submit).
+Nothing in flight. `fix/project-screens-app-design` (#184) merged as PR #186 on 2026-11-15, so its line is gone by the rule above.
 
 ## Committed, not on `dev`
 
