@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
 /**
  * World Logic, end to end (#152, ADR 0072): one place that reads both kinds of rule, the Systems that group them, and
@@ -13,6 +13,23 @@ import { expect, test, type Page } from '@playwright/test'
  * Each test registers its own account and builds what it needs through the API.
  */
 const PASSWORD = 'Test-password-123!'
+
+/** Mirrors WORLD_LOGIC_PAGE_SIZE in src/LorEvolve.Web/src/worldLogic/api.ts. */
+const WORLD_LOGIC_PAGE_SIZE = 50
+
+/** The title of each row of either list, which both draw with the same class. */
+async function titlesOf(rows: Locator) {
+  return rows.locator('.rulerow__title').allInnerTexts()
+}
+
+/** Seeds `count` things a few at a time, because one at a time is slow and all at once floods the API. */
+async function inBatches(count: number, size: number, make: (at: number) => Promise<unknown>) {
+  for (let from = 0; from < count; from += size) {
+    const batch = []
+    for (let at = from; at < Math.min(from + size, count); at += 1) batch.push(make(at))
+    await Promise.all(batch)
+  }
+}
 
 function unique(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`
@@ -242,6 +259,81 @@ test.describe('World Logic', () => {
 
     await page.getByTestId('world-logic-tab-systems').click()
     await expect(page.getByTestId('world-logic-systems-empty')).toContainText('No Systems yet')
+  })
+
+  test('each list reaches page 2, keeps its page in the address, and pages on its own', async ({
+    page,
+  }) => {
+    test.slow()
+    await signUp(page)
+    const universeId = await seedUniverse(page)
+
+    // One more than a page of each kind, so page 2 holds exactly one row.
+    const overAPage = WORLD_LOGIC_PAGE_SIZE + 1
+    const index = (at: number) => String(at + 1).padStart(3, '0')
+
+    await inBatches(overAPage, 10, (at) =>
+      api(page, 'POST', `/api/universes/${universeId}/system-rules`, {
+        title: `Rule ${index(at)}`,
+        description: 'Seeded for paging.',
+      }),
+    )
+    await inBatches(overAPage, 10, (at) =>
+      api(page, 'POST', `/api/universes/${universeId}/systems`, {
+        name: `System ${index(at)}`,
+        summary: 'Seeded for paging.',
+      }),
+    )
+
+    const base = `/app/universes/${universeId}/world-logic`
+    await page.goto(base)
+
+    // Rules: a pager, a full first page, and a second page holding what the first did not.
+    const ruleRows = page.getByTestId('world-logic-rule-row')
+    await expect(ruleRows).toHaveCount(WORLD_LOGIC_PAGE_SIZE)
+    const rulesPager = page.getByTestId('world-logic-rules-pager')
+    await expect(rulesPager).toBeVisible()
+    await expect(rulesPager).toContainText('Page 1 of 2')
+
+    const firstRuleTitles = await titlesOf(ruleRows)
+    await rulesPager.getByRole('button', { name: 'Next' }).click()
+    await expect(page).toHaveURL(`${base}?rulesPage=2`)
+    await expect(ruleRows).toHaveCount(1)
+    await expect(rulesPager).toContainText('Page 2 of 2')
+    const secondRuleTitles = await titlesOf(ruleRows)
+    expect(secondRuleTitles.filter((title) => firstRuleTitles.includes(title))).toEqual([])
+
+    // The page is in the address, so a reload lands on it again.
+    await page.reload()
+    await expect(ruleRows).toHaveCount(1)
+    await expect(page.getByTestId('world-logic-rules-pager')).toContainText('Page 2 of 2')
+    expect(await titlesOf(ruleRows)).toEqual(secondRuleTitles)
+
+    // Systems page on their own: moving them leaves the rules where the author left them.
+    await page.getByTestId('world-logic-tab-systems').click()
+    const systemRows = page.getByTestId('world-logic-system-row')
+    await expect(systemRows).toHaveCount(WORLD_LOGIC_PAGE_SIZE)
+    const systemsPager = page.getByTestId('world-logic-systems-pager')
+    await expect(systemsPager).toContainText('Page 1 of 2')
+    const firstSystemTitles = await titlesOf(systemRows)
+
+    await systemsPager.getByRole('button', { name: 'Next' }).click()
+    await expect(systemRows).toHaveCount(1)
+    const secondSystemTitles = await titlesOf(systemRows)
+    expect(secondSystemTitles.filter((title) => firstSystemTitles.includes(title))).toEqual([])
+
+    const address = new URL(page.url())
+    expect(address.searchParams.get('systemsPage')).toBe('2')
+    expect(address.searchParams.get('rulesPage')).toBe('2')
+
+    // And moving the Systems back to page 1 leaves the rules on page 2.
+    await systemsPager.getByRole('button', { name: 'Previous' }).click()
+    await expect(systemRows).toHaveCount(WORLD_LOGIC_PAGE_SIZE)
+    expect(new URL(page.url()).searchParams.get('systemsPage')).toBeNull()
+    expect(new URL(page.url()).searchParams.get('rulesPage')).toBe('2')
+
+    await page.getByTestId('world-logic-tab-rules').click()
+    await expect(ruleRows).toHaveCount(1)
   })
 
   test('it reads on a phone, and the sections sheet reaches it', async ({ page }) => {
