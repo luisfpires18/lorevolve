@@ -325,8 +325,17 @@ public sealed record UniverseBackup(
     /// ignorable: an exception is the author's own statement that a violation is allowed, and a version 44 reader
     /// would restore the rule without it and report a violation the author had excused. A file at version 44 or
     /// earlier has none, and every restored rule has none.
+    ///
+    /// 46 - A universe carries the World Logic findings its author chose to live with (#153, ADR 0072).
+    /// <see cref="UniverseBackupPayload.DismissedFindings"/> holds one record per dismissed finding: the rule and
+    /// the scope it was found in, the outcome, the error code, the versions it was produced at, the trace and the
+    /// evidence ids the outcome depended on, with those ids translated on restore like a condition's. Nothing
+    /// pending or resolved is carried, because a finding is derived and the next sweep produces it again - exactly
+    /// as <see cref="UniverseBackupPayload.DismissedConflicts"/> carries only a Canon dismissal. Not ignorable: a
+    /// dismissal is the author's own decision that a finding needs no action, and a version 45 reader would restore
+    /// the universe and report it again. A file at version 45 or earlier has none, and restores with none.
     /// </summary>
-    public const int CurrentVersion = 45;
+    public const int CurrentVersion = 46;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -365,6 +374,9 @@ public sealed record UniverseBackup(
 /// definition is carried whether or not a System references it, because it is a definition in its own right. Empty
 /// means none; absent means the same thing.
 ///
+/// <paramref name="DismissedFindings"/> is every World Logic finding the author dismissed (since version 46). Empty
+/// means none; absent means the same thing.
+///
 /// <paramref name="CreativeProjects"/> is every project of the universe (since version 39). A universe owns its
 /// projects and deletes them with it (#171), so a backup that left them out would lose them, and the project-scoped
 /// entry types that name them could not come back in their own scope.
@@ -393,7 +405,8 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupProjectEntity>? ProjectEntities = null,
     IReadOnlyList<BackupProjectSeason>? ProjectSeasons = null,
     IReadOnlyList<BackupLoreSystem>? LoreSystems = null,
-    IReadOnlyList<BackupSystemRule>? SystemRules = null);
+    IReadOnlyList<BackupSystemRule>? SystemRules = null,
+    IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
@@ -1423,6 +1436,36 @@ public sealed record BackupChronologyValue(Guid? EraId, int Year, int? Month, in
 /// is not derived, and the fingerprint is enough to re-apply it, because it hashes only the
 /// rule code and the ids of the records at fault, all of which this backup preserves.
 /// </summary>
+/// <summary>
+/// One World Logic finding the author chose to live with (since version 46, ADR 0072, #153).
+///
+/// Findings themselves are derived and the whole table regenerates by sweeping the restored lore again, so nothing
+/// pending or resolved is carried. A dismissal is not derived, and unlike a Canon dismissal it cannot be carried as
+/// a bare fingerprint: the fingerprint is a hash over ids this universe no longer uses, so what the hash was taken
+/// over is carried instead and the fingerprint is computed again from the restored ids.
+///
+/// <paramref name="Evidence"/> is in the evaluator's own order, which is part of the fingerprint.
+/// <paramref name="Rationale"/> is the stored trace as text, unlocalised and never shown as prose.
+/// </summary>
+public sealed record BackupDismissedFinding(
+    Guid RuleId,
+    Guid? ProjectId,
+    WorldLogicFindingOutcome Outcome,
+    string? ErrorCode,
+    int RuleVersion,
+    int SchemaVersion,
+    string Rationale,
+    IReadOnlyList<BackupFindingEvidence> Evidence,
+    DateTime DetectedAt,
+    DateTime DismissedAt);
+
+/// <summary>
+/// One id a dismissed finding's outcome depended on (since version 46): the fact source, the id as the evaluator
+/// reported it, and the part it played. An id that is one of this file's rows is translated on restore; anything
+/// else is carried through as it was.
+/// </summary>
+public sealed record BackupFindingEvidence(string Source, string Id, string Role);
+
 public sealed record BackupDismissedConflict(
     string RuleCode,
     CanonConflictSeverity Severity,

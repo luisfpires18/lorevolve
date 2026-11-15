@@ -53,8 +53,10 @@ One line per branch. Delete the line when it merges.
   specification (ADR 0072, `docs/architecture/world-logic-condition-spec.md`, six fixtures under
   `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/`); #150 persistence (`Features/Systems/`, backup format 44,
   migration `AddWorldLogicSystems`); #151 the evaluator (`Features/RuleValidation/Conditions/`, stored exceptions,
-  backup format 45, migration `AddRuleExceptions`). Next: #152 the World Logic page. Delete this line when #155
-  merges.
+  backup format 45, migration `AddRuleExceptions`); #153 persisted findings (`Features/Systems/Finding*`,
+  `WorldLogicFindingSweep`, `/world-logic/findings`, backup format 46, migration `AddWorldLogicFindings`). Next:
+  #152 the World Logic page, then #154. The Integrity tab does not show the new findings yet; that is noted on
+  #153 and belongs to whoever touches the page next. Delete this line when #155 merges.
 
 ## Committed, not on `dev`
 

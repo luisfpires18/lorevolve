@@ -523,6 +523,12 @@ internal static partial class BackupValidation
             ? 0L
             : 1L + rule.DependsOn.Count + rule.Revisions.Count);
 
+        // World Logic dismissals (version 46): the finding, its evidence and the one history entry the restore
+        // writes to say the dismissal was re-applied.
+        count += (payload.DismissedFindings ?? []).Sum(finding => finding is null
+            ? 0L
+            : 2L + finding.Evidence.Count);
+
         return (int)Math.Min(count, int.MaxValue);
     }
 
@@ -596,6 +602,7 @@ internal static partial class BackupValidation
             var boards = Required(payload.IdeaBoards, "the list of idea boards", since: 36);
             var systems = Required(payload.LoreSystems, "the list of Systems", since: 44);
             var systemRules = Required(payload.SystemRules, "the list of rule definitions", since: 44);
+            var dismissedFindings = Required(payload.DismissedFindings, "the dismissed World Logic findings", since: 46);
 
             // Everything that can be referenced is listed first, so a reference checked below can
             // point anywhere in the file regardless of order.
@@ -663,6 +670,11 @@ internal static partial class BackupValidation
             foreach (var conflict in dismissed)
             {
                 CheckDismissedConflict(conflict);
+            }
+
+            foreach (var finding in dismissedFindings)
+            {
+                CheckDismissedFinding(finding);
             }
 
             CheckArchiveHoldsOnlyPictures();
@@ -2682,6 +2694,60 @@ internal static partial class BackupValidation
             if (conflict.Fingerprint is null || !FingerprintPattern().IsMatch(conflict.Fingerprint))
             {
                 Add(BackupIssueCodes.InvalidValue, "A dismissed Canon conflict does not carry a fingerprint LorEvolve wrote.");
+            }
+        }
+
+        /// <summary>
+        /// One dismissed World Logic finding (version 46). Its rule and its project have to be ones this file
+        /// holds, because the restore re-applies the dismissal to the finding that rule produces in that scope; a
+        /// dismissal naming a rule the file does not carry could never be matched to anything.
+        ///
+        /// The evidence ids are not resolved: they are the evaluator's own text, which is a row id in production
+        /// and a fixture's label in a test, and a restore translates the ones it knows and leaves the rest.
+        /// </summary>
+        private void CheckDismissedFinding(BackupDismissedFinding finding)
+        {
+            if (finding is null)
+            {
+                Missing("a dismissed World Logic finding");
+                return;
+            }
+
+            const string what = "A dismissed World Logic finding";
+
+            Defined(finding.Outcome, $"{what}'s outcome");
+            Reference(_systemRules.Contains(finding.RuleId), $"{what} names a rule the backup does not hold.");
+
+            if (finding.ProjectId is { } projectId)
+            {
+                Reference(_projects.Contains(projectId), $"{what} is in a project the backup does not hold.");
+            }
+
+            Text(finding.ErrorCode, WorldLogicFindingLimits.ErrorCodeMaxLength, $"{what}'s error code");
+            Text(finding.Rationale, WorldLogicFindingLimits.RationaleMaxLength, $"{what}'s rationale", required: true);
+
+            if (finding.RuleVersion < 1)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} is at a rule version below 1.");
+            }
+
+            if (finding.Evidence is null)
+            {
+                Missing($"the evidence of {what.ToLowerInvariant()}");
+                return;
+            }
+
+            foreach (var item in finding.Evidence)
+            {
+                if (item is null)
+                {
+                    Missing($"one piece of evidence of {what.ToLowerInvariant()}");
+                    continue;
+                }
+
+                Text(item.Source, WorldLogicFindingLimits.SourceMaxLength, $"{what}'s evidence source", required: true);
+                Text(item.Id, WorldLogicFindingLimits.SourceRowIdMaxLength, $"{what}'s evidence id", required: true);
+                Text(item.Role, WorldLogicFindingLimits.RoleMaxLength, $"{what}'s evidence role", required: true);
             }
         }
 

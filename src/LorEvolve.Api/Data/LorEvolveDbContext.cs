@@ -212,6 +212,16 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     /// <summary>Which rule definitions one rule's condition may reference.</summary>
     public DbSet<SystemRuleDependency> SystemRuleDependencies => Set<SystemRuleDependency>();
 
+    /// <summary>
+    /// What evaluating the rule definitions found, with the evidence each outcome depended on and the history of
+    /// what the author did about it (ADR 0072, LOREX-020). Derived from the lore, apart from the dismissals.
+    /// </summary>
+    public DbSet<WorldLogicFinding> WorldLogicFindings => Set<WorldLogicFinding>();
+
+    public DbSet<WorldLogicFindingEvidence> WorldLogicFindingEvidence => Set<WorldLogicFindingEvidence>();
+
+    public DbSet<WorldLogicFindingEvent> WorldLogicFindingEvents => Set<WorldLogicFindingEvent>();
+
     public DbSet<EntityPrivateNote> EntityPrivateNotes => Set<EntityPrivateNote>();
 
     public DbSet<KnowledgeRecord> KnowledgeRecords => Set<KnowledgeRecord>();
