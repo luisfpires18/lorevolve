@@ -469,7 +469,7 @@ test.describe('lore types', () => {
       'workspace-lore',
       'workspace-timeline',
       'workspace-world-logic',
-      'workspace-canon',
+      'workspace-chronology',
       'workspace-types',
       'workspace-trash',
       'workspace-settings',

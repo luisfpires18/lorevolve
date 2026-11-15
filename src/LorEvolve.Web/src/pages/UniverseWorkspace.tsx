@@ -10,7 +10,17 @@ import type { Chronology } from '../chronology/types'
 import { listEntityTypeGroups, listEntityTypes } from '../lore/api'
 import type { EntityType, EntityTypeGroup } from '../lore/types'
 import { getUniverse } from '../universes/api'
-import { FRONT, offered, owns, SECTION_GROUPS, sectionLabel, UPKEEP } from '../universes/sections'
+import {
+  ALL_SECTIONS,
+  FRONT,
+  MANAGEMENT,
+  offered,
+  owns,
+  SECTION_GROUPS,
+  sectionLabel,
+  WORLD_BUILDING,
+  type Section,
+} from '../universes/sections'
 import { capabilitiesOf, roleLabel, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -22,7 +32,23 @@ import type { UniverseArtworkRef } from '../publishing/types'
 import { EmptyState } from '../components/EmptyState'
 import { ProjectsNav } from '../components/ProjectsNav'
 
-const SECTIONS = SECTION_GROUPS.flat()
+const SECTIONS = ALL_SECTIONS
+
+/** A labelled group's dictionary key; the front page alone carries no label (#191). */
+function groupKey(first: Section) {
+  if (WORLD_BUILDING.includes(first)) return 'worldBuilding'
+  if (MANAGEMENT.includes(first)) return 'management'
+  return null
+}
+
+/** A group's name, drawn as a heading so a screen reader reads it as the group's name and can jump between them. */
+function GroupLabel({ id, label }: { id: string; label: string }) {
+  return (
+    <h2 className="sidebar__grouplabel" id={id}>
+      {label}
+    </h2>
+  )
+}
 
 type LoadState =
   | { kind: 'loading' }
@@ -404,50 +430,58 @@ function Workspace() {
 
         <ul className="sidebar__nav">
           {/*
-           * The universe's own sections, then this universe's projects, and upkeep last - set apart at the foot, as it
-           * was before this group existed. Projects is drawn by its own component because, unlike a section, its rows
+           * The universe's own sections, then this universe's projects, and management last - set apart at the foot,
+           * as upkeep was before the projects group existed. Projects is drawn by its own component because, unlike a section, its rows
            * are read from the API and each one expands.
            */}
-          {groups.map((group) => (
-            <Fragment key={`group-${group[0].segment}`}>
-              {UPKEEP.includes(group[0]) && id ? <ProjectsNav universeId={id} /> : null}
-              <li
-                className={
-                  UPKEEP.includes(group[0])
-                    ? 'sidebar__group sidebar__group--upkeep'
-                    : 'sidebar__group'
-                }
-                data-testid={UPKEEP.includes(group[0]) ? 'sidebar-upkeep' : undefined}
-              >
-                <ul className="sidebar__links">
-                  {group.map((each) => (
-                    <li key={each.segment}>
-                      {/* A Link rather than a NavLink: which section is current is this component's answer, not a
-                          path match, because World Logic is still the current section at a world rule's own address
-                          (#152). The style keys off aria-current either way. */}
-                      <Link
-                        to={each.segment === '' ? '.' : each.segment}
-                        className="sidebar__link"
-                        aria-current={section.testId === each.testId ? 'page' : undefined}
-                        data-testid={each.testId}
-                      >
-                        <each.icon
-                          className="sidebar__icon"
-                          aria-hidden="true"
-                          focusable="false"
-                          strokeWidth={1.75}
-                        />
-                        {sectionLabel(each)}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            </Fragment>
-          ))}
-          {/* A role with no upkeep section at all still gets the group, at the foot. */}
-          {!groups.some((group) => UPKEEP.includes(group[0])) && id ? (
-            <ProjectsNav universeId={id} />
+          {groups.map((group) => {
+            const key = groupKey(group[0])
+            const isManagement = key === 'management'
+            const labelId = key ? `sidebar-group-${key}` : undefined
+            return (
+              <Fragment key={`group-${group[0].segment}`}>
+                {isManagement && id ? <ProjectsLabelled universeId={id} /> : null}
+                <li
+                  className={
+                    isManagement ? 'sidebar__group sidebar__group--upkeep' : 'sidebar__group'
+                  }
+                  data-testid={
+                    isManagement ? 'sidebar-upkeep' : key ? 'sidebar-world-building' : undefined
+                  }
+                >
+                  {key && labelId ? (
+                    <GroupLabel id={labelId} label={t(`workspace.rail.groups.${key}`)} />
+                  ) : null}
+                  <ul className="sidebar__links" aria-labelledby={labelId}>
+                    {group.map((each) => (
+                      <li key={each.segment}>
+                        {/* A Link rather than a NavLink: which section is current is this component's answer, not a
+                            path match, because World Logic is still the current section at a world rule's own address
+                            (#152). The style keys off aria-current either way. */}
+                        <Link
+                          to={each.segment === '' ? '.' : each.segment}
+                          className="sidebar__link"
+                          aria-current={section.testId === each.testId ? 'page' : undefined}
+                          data-testid={each.testId}
+                        >
+                          <each.icon
+                            className="sidebar__icon"
+                            aria-hidden="true"
+                            focusable="false"
+                            strokeWidth={1.75}
+                          />
+                          {sectionLabel(each)}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              </Fragment>
+            )
+          })}
+          {/* A role with no management section at all still gets the projects group, at the foot. */}
+          {!groups.some((group) => MANAGEMENT.includes(group[0])) && id ? (
+            <ProjectsLabelled universeId={id} />
           ) : null}
         </ul>
       </nav>
@@ -499,5 +533,20 @@ function Workspace() {
         <SiteFooter />
       </div>
     </div>
+  )
+}
+
+/**
+ * The projects group under its label. Its label is drawn here, as its own row just above it, so the projects group
+ * reads the same as the two section groups around it while its component keeps its own rows (#191).
+ */
+function ProjectsLabelled({ universeId }: { universeId: string }) {
+  return (
+    <>
+      <li className="sidebar__labelrow">
+        <GroupLabel id="sidebar-group-projects" label={t('workspace.rail.groups.projects')} />
+      </li>
+      <ProjectsNav universeId={universeId} />
+    </>
   )
 }

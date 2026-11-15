@@ -2820,8 +2820,8 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   color: var(--muted);
 }
 
-/* Groups are told apart by space, not by labels: the front page, the world, the writing, the
-   upkeep, the settings. */
+/* Groups were told apart by space alone until #191; now each but the front page carries a label too: the front page,
+   world building, projects, management. */
 .sidebar__nav,
 .sidebar__links {
   list-style: none;
@@ -2838,11 +2838,29 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   border-top: 1px solid var(--rule);
 }
 
-/* Upkeep - Trash, Publish, Settings - is not worldbuilding: a hairline and a little more space set it apart. */
+/* Management - AI Changes, Publish, Trash, Settings - is not worldbuilding: a hairline and a little more space set it
+   apart. */
 .sidebar__group--upkeep {
   margin-top: var(--space-2);
   padding-top: var(--space-4);
   border-top: 1px solid var(--rule);
+}
+
+/* A group's name (#191): small capitals above its links, quiet enough that the links still lead. */
+.sidebar__grouplabel {
+  margin: 0 0 var(--space-1);
+  padding-inline: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* The projects group's label sits on its own row; keep it with the group below, even across the sheet's columns. */
+.sidebar__labelrow {
+  margin-bottom: calc(-1 * var(--space-3));
+  break-after: avoid;
 }
 
 .sidebar__links {
@@ -8728,7 +8746,7 @@ html:has(.viewer[open]) {
     padding-bottom: var(--space-3);
   }
 
-  /* The upkeep row spans the sheet under a rule, its three links side by side. */
+  /* The management row spans the sheet under a rule, its four links two by two. */
   .sidebar__group--upkeep {
     column-span: all;
     margin-top: 0;
@@ -8738,7 +8756,7 @@ html:has(.viewer[open]) {
 
   .sidebar__group--upkeep .sidebar__links {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-1);
   }
 

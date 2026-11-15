@@ -79,11 +79,13 @@ test.describe('Projects navigation', () => {
       'workspace-maps',
       'workspace-world-logic',
       'workspace-chronology',
-      'workspace-stories',
       'workspace-timeline',
+      'workspace-ideas',
     ]) {
       await expect(page.getByTestId(testId)).toBeVisible()
     }
+    // Stories is no longer a section beside the projects that list the same stories (#191).
+    await expect(page.getByTestId('workspace-stories')).toHaveCount(0)
 
     await expect(page.getByTestId('sidebar-projects')).toBeVisible()
     await expect(page.getByTestId('projects-all')).toBeVisible()
@@ -112,7 +114,7 @@ test.describe('Projects navigation', () => {
 
     // The universe's own sections are still in the same navigation, which is the point.
     await expect(page.getByTestId('workspace-lore')).toBeVisible()
-    await expect(page.getByTestId('workspace-stories')).toBeVisible()
+    await expect(page.getByTestId('workspace-timeline')).toBeVisible()
     await expect(page.getByTestId('workspace-name')).toContainText(world.name)
 
     // Being the project that is open, it is already expanded here: the universe's frame is one of the two the
