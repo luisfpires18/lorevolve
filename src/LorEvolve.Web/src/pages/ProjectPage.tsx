@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useOutletContext,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
@@ -7,10 +15,10 @@ import { ProjectIdeas } from '../components/ProjectIdeas'
 import { ProjectOverview } from '../components/ProjectOverview'
 import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
-import { ProjectsNav } from '../components/ProjectsNav'
 import { createProject, getProject } from '../projects/api'
 import { getStory } from '../stories/api'
 import StoryPage from './StoryPage'
+import type { WorkspaceContext } from './UniverseWorkspace'
 import { kindLabel, lifecycleLabel, projectPath, projectSections } from '../projects/sections'
 import {
   ProjectKind,
@@ -94,7 +102,7 @@ function NewProject() {
             universeId,
             expectedVersion: null,
           })
-            .then((project) => navigate(projectPath(project.id)))
+            .then((project) => navigate(projectPath(project.id, '', project.universe.id)))
             .catch((error: unknown) => {
               // `ApiError`'s message is already the refusal in the reader's language (#108).
               setFailed(error instanceof Error ? error.message : t('projects.new.failed'))
@@ -160,7 +168,7 @@ function NewProject() {
 type LoadState =
   | { kind: 'ready'; for: string; project: ProjectDetail }
   /** A Story shown as a Writing Project (#140): read as the story, because no project row exists for it. */
-  | { kind: 'story'; for: string }
+  | { kind: 'story'; for: string; title: string }
   | { kind: 'missing'; for: string }
   | { kind: 'failed'; for: string }
 
@@ -177,6 +185,9 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   const projectId = params.projectId ?? params.storyId
   const universeId = params.id
   const segment = view ?? params['*'] ?? ''
+  const { search, hash } = useLocation()
+  // Read only by the story branch, which is reached inside a universe's workspace alone (the story read needs one).
+  const workspace = useOutletContext<WorkspaceContext>()
   const [state, setState] = useState<LoadState | null>(null)
   const [schemaVersion, setSchemaVersion] = useState(0)
   const read = state !== null && state.for === projectId ? state : null
@@ -200,7 +211,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
           return
         }
         getStory(universeId, projectId, controller.signal)
-          .then(() => setState({ kind: 'story', for: projectId }))
+          .then((story) => setState({ kind: 'story', for: projectId, title: story.title }))
           .catch((storyError: unknown) => {
             if (controller.signal.aborted) return
             const storyStatus = (storyError as { status?: number }).status
@@ -241,11 +252,17 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
     // Reached through `*` (the bare address, or a view a story does not have) or by a segment the story routes do not
     // carry, the story-backed project lands on its Structure, which is the story's own first view.
     if (!storyView || !view) {
-      return <Navigate to={projectPath(read.for, 'structure', universeId)} replace />
+      return <Navigate to={projectPath(read.for, 'structure', workspace.universe.id)} replace />
     }
     // The story's page, unchanged, with its own header and views; the shell only adds the project's tab bar above it.
     return (
-      <ProjectShell projectId={read.for} universeId={universeId} sections={storySections} story>
+      <ProjectShell
+        projectId={read.for}
+        projectName={read.title}
+        universe={workspace.universe}
+        sections={storySections}
+        story
+      >
         <StoryPage
           view={view === 'structure' ? 'scenes' : view === 'manuscript' ? 'manuscript' : 'ideas'}
         />
@@ -254,21 +271,24 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   }
 
   const { project } = read
-  const frameUniverseId = inUniverse ? universeId : undefined
   const sections = projectSections(project.kind)
   const section = sections.find((candidate) => candidate.segment === segment)
 
-  // The bare address and any segment this kind does not offer lead to the kind's first view, so an old link or a
-  // mistyped one lands on the project rather than on a failure (#192).
-  if (!section) {
-    return <Navigate to={projectPath(project.id, sections[0].segment, frameUniverseId)} replace />
+  /*
+   * One address per view (#199): `/app/universes/<universeId>/projects/<id>/<view>`, inside the universe the project
+   * belongs to. The account-level address, a universe the project is not in, the bare address and any segment this
+   * kind does not offer all land there, keeping the query and the hash, so an old or mistyped link opens the project
+   * rather than a failure (#192).
+   */
+  if (!inUniverse || universeId !== project.universe.id || !section) {
+    const target = projectPath(
+      project.id,
+      section ? section.segment : sections[0].segment,
+      project.universe.id,
+    )
+    return <Navigate to={`${target}${search}${hash}`} replace />
   }
 
-  /*
-   * The project's own pages sit beside the list of projects, because this screen is where an author moves between one
-   * project and the next. A universe's workspace has the same group in its sidebar; this is the copy for the
-   * account-level screens, which have no sidebar of their own.
-   */
   /*
    * One column, one rhythm. The panels used to be the grid children of the shell beside the nav, which auto-placed
    * Types and Entries into two columns of unequal weight and dropped the structure panel full width underneath. They
@@ -278,21 +298,12 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
     <div className="projectbody">
       <section className="projects" data-testid="project-page">
         {/*
-         * The head every other workspace screen uses (#184): the universe above the name as the crumb it already was,
-         * the project's facts as the lede, and the summary under it as the project's own words.
+         * The head every other workspace screen uses (#184): the project's facts as the lede, and the summary under it
+         * as the project's own words. The universe is named by the shell's breadcrumb above the tabs (#199).
          */}
         <PageHeader
           title={project.name}
           titleTestId="project-name"
-          crumb={
-            <span data-testid="project-universe">
-              {project.universe ? (
-                <Link to={`/app/universes/${project.universe.id}`}>{project.universe.name}</Link>
-              ) : (
-                t('projects.list.noUniverse')
-              )}
-            </span>
-          }
           lede={
             <span className="projectmeta" data-testid="project-meta">
               <span>{kindLabel(project.kind)}</span>
@@ -325,7 +336,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       {section.pending ? (
         <ProjectIdeas project={project} />
       ) : section.segment === 'overview' ? (
-        <ProjectOverview project={project} universeId={frameUniverseId} />
+        <ProjectOverview project={project} />
       ) : section.segment === 'entities' ? (
         <ProjectEntitiesView
           projectId={project.id}
@@ -344,7 +355,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
           project.kind === ProjectKind.Comic) ? (
         <ProjectSeasons
           projectId={project.id}
-          universeId={project.universe!.id}
+          universeId={project.universe.id}
           words={
             project.kind === ProjectKind.Film
               ? 'sequences'
@@ -364,22 +375,14 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
     </div>
   )
 
-  const framed = (
-    <ProjectShell projectId={project.id} universeId={frameUniverseId} sections={sections}>
+  return (
+    <ProjectShell
+      projectId={project.id}
+      projectName={project.name}
+      universe={project.universe}
+      sections={sections}
+    >
       {body}
     </ProjectShell>
-  )
-
-  if (inUniverse) return framed
-
-  return (
-    <div className="projectshell">
-      <nav className="projectshell__nav" aria-label={t('projects.list.title')}>
-        <ul className="sidebar__nav">
-          <ProjectsNav />
-        </ul>
-      </nav>
-      {framed}
-    </div>
   )
 }

@@ -165,7 +165,9 @@ test.describe('Projects navigation', () => {
     await expect(shutToggle).toHaveAttribute('aria-expanded', 'true')
 
     await page.getByTestId(`project-structure-${shut.id}`).click()
-    await expect(page).toHaveURL(new RegExp(`/app/projects/${shut.id}/structure$`))
+    await expect(page).toHaveURL(
+      new RegExp(`/app/universes/${world.id}/projects/${shut.id}/structure$`),
+    )
     await expect(page.getByTestId('project-name')).toContainText(shut.name)
   })
 
@@ -205,7 +207,7 @@ test.describe('Projects navigation', () => {
     await page.goto('/app/projects')
     await page.getByTestId(`projects-row-${there.id}`).click()
     await expect(page.getByTestId('project-name')).toContainText(there.name)
-    await expect(page.getByTestId('project-universe')).toContainText(second.name)
+    await expect(page.getByTestId('project-breadcrumb-universe')).toContainText(second.name)
   })
 
   test('a project is made from the sidebar, and the list works at phone width', async ({

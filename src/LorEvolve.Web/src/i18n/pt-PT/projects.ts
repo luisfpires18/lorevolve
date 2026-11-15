@@ -23,6 +23,9 @@ const projects = {
     systems: 'Sistemas',
     ideas: 'Ideias',
   },
+  shell: {
+    breadcrumb: 'Caminho',
+  },
   tabs: {
     label: 'Vistas do projeto',
   },
@@ -71,7 +74,6 @@ const projects = {
     empty: 'Ainda não há projetos.',
     emptyHint:
       'Um projeto é o que está a fazer: um romance, um jogo, uma série, um filme ou uma banda desenhada.',
-    noUniverse: 'Sem universo',
   },
   one: {
     title: 'Projeto',

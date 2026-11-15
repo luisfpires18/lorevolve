@@ -89,7 +89,7 @@ export default function ProjectsPage({ inUniverse = false }: { inUniverse?: bool
             <li className="projectrow" key={project.id}>
               <Link
                 className="projectrow__main"
-                to={projectRowPath(project, universeId)}
+                to={projectRowPath(project)}
                 data-testid={`projects-row-${project.id}`}
               >
                 <span className="projectrow__title">{project.name}</span>
@@ -97,9 +97,7 @@ export default function ProjectsPage({ inUniverse = false }: { inUniverse?: bool
                   <span>{kindLabel(project.kind)}</span>
                   <span>{lifecycleLabel(project.lifecycle)}</span>
                 </span>
-                <span className="projectrow__meta">
-                  {project.universe ? project.universe.name : t('projects.list.noUniverse')}
-                </span>
+                <span className="projectrow__meta">{project.universe.name}</span>
               </Link>
             </li>
           ))}
