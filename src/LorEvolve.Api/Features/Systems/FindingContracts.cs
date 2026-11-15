@@ -16,6 +16,21 @@ public sealed record WorldLogicSweepResponse(
     DateTime EvaluatedAt);
 
 /// <summary>
+/// The order a page of findings comes back in.
+///
+/// <see cref="Attention"/> is the default and what every caller before #209 got: open findings first, then the worst
+/// severity, then the oldest. <see cref="Newest"/> is the plain reverse-chronological order a list of records reads
+/// in, which is what the World Logic page asks for.
+///
+/// Both end on the id, so a finding never swaps pages between two requests whichever order was asked for.
+/// </summary>
+public enum WorldLogicFindingSort
+{
+    Attention = 0,
+    Newest = 1,
+}
+
+/// <summary>
 /// One recorded finding, as a list row.
 ///
 /// <paramref name="Outcome"/> is <c>violation</c>, <c>unknown</c> or <c>error</c>, and <paramref name="Status"/> is
