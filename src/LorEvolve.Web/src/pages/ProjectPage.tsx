@@ -266,6 +266,7 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
       project.kind === ProjectKind.Comic ? (
         <ProjectSeasons
           projectId={project.id}
+          universeId={project.universe!.id}
           words={
             project.kind === ProjectKind.Film
               ? 'sequences'

@@ -196,6 +196,8 @@ const projects = {
     deletePanel: 'Apagar vinheta',
     shows: 'Mostra',
     showsNone: 'Nada do saber',
+    chooseShows: 'Escolher o que mostra',
+    changeShows: 'Mudar o que mostra',
   },
   entries: {
     title: 'Registos',

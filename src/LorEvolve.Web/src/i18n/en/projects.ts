@@ -193,6 +193,8 @@ const projects = {
     deletePanel: 'Delete panel',
     shows: 'Shows',
     showsNone: 'Nothing from the lore',
+    chooseShows: 'Choose what it shows',
+    changeShows: 'Change what it shows',
   },
   entries: {
     title: 'Entries',

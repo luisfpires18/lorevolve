@@ -80,10 +80,13 @@ export type ProjectStructureWords = keyof typeof WORDS
 
 export function ProjectSeasons({
   projectId,
+  universeId,
   words = 'seasons',
   pages = false,
 }: {
   projectId: string
+  /** The project's universe, for the lore a comic's panels may name (#147). */
+  universeId: string
   /** Which vocabulary to draw: a series' seasons, a film's sequences, or a comic's volumes. */
   words?: ProjectStructureWords
   /** Whether a chapter opens its pages and panels, which only a comic has. */
@@ -305,6 +308,7 @@ export function ProjectSeasons({
                   {pages ? (
                     <ChapterPages
                       projectId={projectId}
+                      universeId={universeId}
                       volumeId={season.id}
                       chapterId={episode.id}
                     />

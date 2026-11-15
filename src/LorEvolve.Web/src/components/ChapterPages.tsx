@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   createPage,
   createPanel,
@@ -7,8 +8,10 @@ import {
   listPages,
   movePage,
   movePanel,
+  savePanel,
   type ProjectPage,
 } from '../projectEntities/pages'
+import { EntityPicker } from './EntityPicker'
 import { t, tn, useI18n } from '../i18n'
 
 /**
@@ -24,10 +27,13 @@ import { t, tn, useI18n } from '../i18n'
  */
 export function ChapterPages({
   projectId,
+  universeId,
   volumeId,
   chapterId,
 }: {
   projectId: string
+  /** The project's universe: whose lore a panel may name, and where a named entry is read. */
+  universeId: string
   volumeId: string
   chapterId: string
 }) {
@@ -149,8 +155,39 @@ export function ChapterPages({
                   {panel.dialogue ? <blockquote>{panel.dialogue}</blockquote> : null}
                   <span className="projects__lede">
                     {t('projects.pages.shows')}:{' '}
-                    {panel.canonEntityName ?? t('projects.pages.showsNone')}
+                    {panel.canonEntityId && panel.canonEntityName ? (
+                      // A usable way through to the entry, which is where its picture is served from: the Media
+                      // feature draws it on the entry's own screen, and this points at that rather than copying it.
+                      <Link
+                        to={`/app/universes/${universeId}/lore/${panel.canonEntityId}`}
+                        data-testid={`project-panel-shows-${panel.id}`}
+                      >
+                        {panel.canonEntityName}
+                      </Link>
+                    ) : (
+                      t('projects.pages.showsNone')
+                    )}
                   </span>
+
+                  <PanelLore
+                    universeId={universeId}
+                    panelId={panel.id}
+                    chosen={
+                      panel.canonEntityId && panel.canonEntityName
+                        ? { id: panel.canonEntityId, name: panel.canonEntityName }
+                        : null
+                    }
+                    busy={busy}
+                    onChange={(choice) =>
+                      run(
+                        savePanel(projectId, volumeId, chapterId, page.id, panel.id, {
+                          description: panel.description,
+                          dialogue: panel.dialogue,
+                          canonEntityId: choice?.id ?? null,
+                        }),
+                      )
+                    }
+                  />
 
                   <button
                     type="button"
@@ -196,13 +233,14 @@ export function ChapterPages({
             {addingTo === page.id ? (
               <PanelForm
                 busy={busy}
+                universeId={universeId}
                 onCancel={() => setAddingTo(null)}
-                onSubmit={(description, dialogue) => {
+                onSubmit={(description, dialogue, canonEntityId) => {
                   setBusy(true)
                   createPanel(projectId, volumeId, chapterId, page.id, {
                     description,
                     dialogue,
-                    canonEntityId: null,
+                    canonEntityId,
                   })
                     .then(() => {
                       setAddingTo(null)
@@ -262,16 +300,23 @@ export function ChapterPages({
 
 function PanelForm({
   busy,
+  universeId,
   onSubmit,
   onCancel,
 }: {
   busy: boolean
-  onSubmit: (description: string | null, dialogue: string | null) => void
+  universeId: string
+  onSubmit: (
+    description: string | null,
+    dialogue: string | null,
+    canonEntityId: string | null,
+  ) => void
   onCancel: () => void
 }) {
   useI18n()
   const [description, setDescription] = useState('')
   const [dialogue, setDialogue] = useState('')
+  const [shows, setShows] = useState<{ id: string; name: string } | null>(null)
 
   return (
     <form
@@ -280,7 +325,11 @@ function PanelForm({
       onSubmit={(event) => {
         event.preventDefault()
         if (busy) return
-        onSubmit(description.length > 0 ? description : null, dialogue.length > 0 ? dialogue : null)
+        onSubmit(
+          description.length > 0 ? description : null,
+          dialogue.length > 0 ? dialogue : null,
+          shows?.id ?? null,
+        )
       }}
     >
       <label className="field">
@@ -303,6 +352,17 @@ function PanelForm({
           data-testid="project-panel-new-dialogue"
         />
       </label>
+      {/* The lore entry this panel shows, chosen with the picker the rest of LorEvolve uses. Optional: a panel of
+          scenery names nothing. */}
+      <div data-testid="project-panel-new-shows">
+        <EntityPicker
+          label={t('projects.pages.shows')}
+          universeId={universeId}
+          value={shows}
+          onChange={(choice) => setShows(choice ? { id: choice.id, name: choice.name } : null)}
+        />
+      </div>
+
       <button type="submit" disabled={busy} data-testid="project-panel-new-save">
         {t('projects.pages.savePanel')}
       </button>
@@ -310,5 +370,61 @@ function PanelForm({
         {t('projects.pages.close')}
       </button>
     </form>
+  )
+}
+
+/**
+ * Changes which lore entry a panel shows, with the same picker the rest of LorEvolve uses, so the search, the
+ * keyboard handling and the same-universe scoping are the ones an author already knows. The API checks the entry is a
+ * live lore entry of this universe as well; this is the way in, not the guarantee.
+ */
+function PanelLore({
+  universeId,
+  panelId,
+  chosen,
+  busy,
+  onChange,
+}: {
+  universeId: string
+  panelId: string
+  chosen: { id: string; name: string } | null
+  busy: boolean
+  onChange: (choice: { id: string; name: string } | null) => void
+}) {
+  useI18n()
+  const [open, setOpen] = useState(false)
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        disabled={busy}
+        data-testid={`project-panel-shows-change-${panelId}`}
+        onClick={() => setOpen(true)}
+      >
+        {chosen ? t('projects.pages.changeShows') : t('projects.pages.chooseShows')}
+      </button>
+    )
+  }
+
+  return (
+    <div data-testid={`project-panel-shows-picker-${panelId}`}>
+      <EntityPicker
+        label={t('projects.pages.shows')}
+        universeId={universeId}
+        value={chosen}
+        onChange={(choice) => {
+          setOpen(false)
+          onChange(choice ? { id: choice.id, name: choice.name } : null)
+        }}
+      />
+      <button
+        type="button"
+        data-testid={`project-panel-shows-cancel-${panelId}`}
+        onClick={() => setOpen(false)}
+      >
+        {t('projects.pages.close')}
+      </button>
+    </div>
   )
 }
