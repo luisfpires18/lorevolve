@@ -349,18 +349,63 @@ public sealed class WorldLogicEvaluatorTests
     [Fact]
     public void The_rule_budget_bounds_a_whole_run()
     {
-        using var document = Load("edge-cases");
-        var root = document.RootElement;
+        // Ten rules that each answer on their own, so the only thing that stops the sweep is the budget. A fixture
+        // would not do here: its rules fail for reasons of their own before the counter is reached.
+        var rules = Enumerable.Range(0, 10)
+            .Select(index => new EvaluatedRule(
+                $"rule.{index}",
+                1,
+                1,
+                "{\"kind\":\"always\",\"value\":\"true\"}",
+                [],
+                []))
+            .ToList();
 
         var evaluator = new WorldLogicEvaluator(
-            new WorldLogicFixtureFacts(root.GetProperty("facts")),
-            Rules(root),
-            new ConditionBudget(MaxRules: 3));
+            new WorldLogicFixtureFacts(Empty()),
+            rules,
+            new ConditionBudget(MaxRules: 4));
 
-        var results = evaluator.EvaluateAll("s.a");
+        var results = evaluator.EvaluateAll();
 
-        Assert.Equal(3, results.Count(result => result.ErrorCode != ConditionErrors.RuleBudget));
-        Assert.Contains(results, result => result.ErrorCode == ConditionErrors.RuleBudget);
+        Assert.Equal(4, results.Count(result => result.Outcome == ConditionOutcome.True));
+        Assert.Equal(6, results.Count(result => result.ErrorCode == ConditionErrors.RuleBudget));
+    }
+
+    /// <summary>
+    /// The budget bounds one evaluation too, dependencies included. Codex round 4 on #151 found that it was
+    /// enforced only by the sweep, so a single call could walk a dependency chain of any length: the production
+    /// route calls the single path, which made the budget decorative exactly where it mattered.
+    /// </summary>
+    [Fact]
+    public void The_rule_budget_bounds_one_evaluation_and_the_dependencies_it_walks_into()
+    {
+        // Ten rules in a chain, each depending on the next, with the budget at four and the dependency depth left
+        // alone so it is the rule budget that stops the walk.
+        var rules = new List<EvaluatedRule>();
+        for (var i = 0; i < 10; i++)
+        {
+            var dependsOn = i < 9 ? new[] { $"rule.{i + 1}" } : [];
+            var condition = i < 9
+                ? $"{{\"kind\":\"ruleHolds\",\"ruleId\":\"rule.{i + 1}\"}}"
+                : "{\"kind\":\"always\",\"value\":\"true\"}";
+
+            rules.Add(new EvaluatedRule($"rule.{i}", 1, 1, condition, dependsOn, []));
+        }
+
+        var evaluator = new WorldLogicEvaluator(
+            new WorldLogicFixtureFacts(Empty()),
+            rules,
+            new ConditionBudget(MaxRules: 4, MaxDependencyDepth: 32));
+
+        var result = evaluator.Evaluate("rule.0");
+
+        Assert.Equal(ConditionOutcome.Error, result.Outcome);
+        Assert.Equal(ConditionErrors.RuleBudget, result.ErrorCode);
+
+        // The rules it did evaluate are the budget's worth, and the first one past it is the one that failed.
+        var fifth = evaluator.Evaluate("rule.4");
+        Assert.Equal(ConditionErrors.RuleBudget, fifth.ErrorCode);
     }
 
     [Fact]

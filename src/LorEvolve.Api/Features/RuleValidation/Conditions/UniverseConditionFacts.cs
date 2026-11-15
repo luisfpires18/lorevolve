@@ -72,6 +72,7 @@ public sealed class UniverseConditionFacts : IConditionFacts
                 value.BooleanValue,
                 value.DateValue,
                 value.EraId,
+                value.ReferencedEntityId,
                 OptionValue = value.Option != null ? value.Option.Value : null,
             })
             .ToListAsync(cancellationToken);
@@ -105,7 +106,11 @@ public sealed class UniverseConditionFacts : IConditionFacts
                     ? ConditionValue.OfTimePoint(Calendar(DateOnly.FromDateTime(date)))
                     : ConditionValue.Missing,
 
-                EntityFieldKind.EntityReference => ConditionValue.OfReference(value.TextValue),
+                // A link field stores the entry it points at as a foreign key, not as text: reading TextValue here
+                // made every reference attribute resolve as missing, which Codex round 4 on #151 caught.
+                EntityFieldKind.EntityReference => value.ReferencedEntityId is { } referenced
+                    ? ConditionValue.OfReference(referenced.ToString())
+                    : ConditionValue.Missing,
                 EntityFieldKind.Select or EntityFieldKind.MultiSelect => ConditionValue.OfText(value.OptionValue),
                 _ => ConditionValue.OfText(value.TextValue),
             };

@@ -60,6 +60,72 @@ public sealed class WorldLogicEvaluationRouteTests(LorEvolveApiFactory factory) 
         Assert.Equal("unknown", untargeted.Outcome);
     }
 
+    /// <summary>
+    /// A link field's value is the entry it points at, and a condition compares it as a reference. Codex round 4 on
+    /// #151 found the snapshot reading it from the text column, where it is never stored, so every reference
+    /// attribute resolved as missing and every rule over one answered unknown.
+    /// </summary>
+    [Fact]
+    public async Task A_rule_over_a_link_field_compares_the_entry_it_points_at()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlevalref");
+        var types = (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{universe.Id}/entity-types"))!;
+        var character = types.First(candidate => candidate.Name == "Character").Id;
+
+        var smith = await CreateEntity(client, universe.Id, "The smith");
+        var other = await CreateEntity(client, universe.Id, "Another maker");
+
+        var madeBy = await AiChangeTestClient.Field(
+            client,
+            universe.Id,
+            character,
+            new FieldDefinitionRequest("MadeBy", EntityFieldKind.EntityReference, false, null, null, null));
+
+        var theirs = (await PostJson<EntityDetail>(
+            client,
+            $"/api/universes/{universe.Id}/entities",
+            new EntityRequest(
+                character,
+                "The smith's ingot",
+                null,
+                CanonStatus.Canon,
+                null,
+                null,
+                [new FieldValueInput(madeBy.Id, null, null, null, null, null, smith)]))).Id;
+
+        var unlinked = await CreateEntity(client, universe.Id, "Nobody's ingot");
+
+        var rule = await PostJson<SystemRuleDetail>(
+            client,
+            Rules(universe.Id),
+            new SystemRuleRequest(
+                "Made by the smith",
+                null,
+                null,
+                1,
+                Parse("{\"kind\":\"compare\",\"left\":{\"attribute\":\"MadeBy\",\"of\":{\"subject\":\"self\"}},"
+                      + $"\"op\":\"eq\",\"right\":{{\"literal\":\"{smith}\",\"type\":\"reference\"}}}}")));
+
+        // It resolves, and it compares: the right entry passes and another one fails.
+        Assert.Equal("true", (await Evaluate(client, universe.Id, rule.Id, theirs)).Outcome);
+
+        var otherRule = await PostJson<SystemRuleDetail>(
+            client,
+            Rules(universe.Id),
+            new SystemRuleRequest(
+                "Made by the other maker",
+                null,
+                null,
+                1,
+                Parse("{\"kind\":\"compare\",\"left\":{\"attribute\":\"MadeBy\",\"of\":{\"subject\":\"self\"}},"
+                      + $"\"op\":\"eq\",\"right\":{{\"literal\":\"{other}\",\"type\":\"reference\"}}}}")));
+
+        Assert.Equal("false", (await Evaluate(client, universe.Id, otherRule.Id, theirs)).Outcome);
+
+        // An entry with no link is unknown, which is the absence and not a false.
+        Assert.Equal("unknown", (await Evaluate(client, universe.Id, rule.Id, unlinked)).Outcome);
+    }
+
     [Fact]
     public async Task A_rule_over_a_relationship_reads_the_stored_direction()
     {

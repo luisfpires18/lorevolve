@@ -37,6 +37,16 @@ public sealed class WorldLogicEvaluator
     private readonly Dictionary<string, JsonDocument> _parsed = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Rule, string? Target, string? Project), ConditionResult> _memo = [];
 
+    /// <summary>
+    /// How many rules this evaluator has evaluated, across every call and every dependency it walked into.
+    ///
+    /// The budget is per evaluator rather than per call because an evaluator is one universe's rule set and one
+    /// snapshot of its facts: that is the unit of work a caller pays for. Counting per call would leave a single
+    /// <see cref="Evaluate"/> free to walk a dependency chain of any length, which is the gap Codex round 4 on #151
+    /// found. A memoised result is not counted again, so a diamond costs what it evaluated.
+    /// </summary>
+    private int _evaluated;
+
     /// <summary>The rule set this evaluator answers for, and the facts it reads. Both are one universe's.</summary>
     public WorldLogicEvaluator(IConditionFacts facts, IEnumerable<EvaluatedRule> rules, ConditionBudget? budget = null)
     {
@@ -71,20 +81,16 @@ public sealed class WorldLogicEvaluator
         return result;
     }
 
-    /// <summary>Every rule of the set against one target, in the set's own order. Bounded by the rule budget.</summary>
+    /// <summary>
+    /// Every rule of the set against one target, in the set's own order. Bounded by the same rule budget one
+    /// evaluation is, so the sweep and the single call cannot disagree about how much work is allowed.
+    /// </summary>
     public IReadOnlyList<ConditionResult> EvaluateAll(string? targetId = null, string? projectId = null)
     {
         var results = new List<ConditionResult>();
-        var taken = 0;
 
         foreach (var rule in _rules.Values)
         {
-            if (++taken > _budget.MaxRules)
-            {
-                results.Add(Failed(rule, ConditionErrors.RuleBudget));
-                continue;
-            }
-
             results.Add(Evaluate(rule.Id, targetId, projectId));
         }
 
@@ -116,6 +122,13 @@ public sealed class WorldLogicEvaluator
         if (rule.SchemaVersion != Systems.ConditionSchema.CurrentVersion)
         {
             return Failed(rule, ConditionErrors.SchemaVersionUnsupported);
+        }
+
+        // Counted here, where every path arrives: a direct call, a dependency walked into, and each rule of a
+        // sweep. A rule past the budget fails with its own code rather than the run failing as a whole.
+        if (++_evaluated > _budget.MaxRules)
+        {
+            return Failed(rule, ConditionErrors.RuleBudget);
         }
 
         if (rule.ConditionJson is null)
