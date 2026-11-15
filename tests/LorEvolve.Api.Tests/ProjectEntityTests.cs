@@ -391,6 +391,111 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    /// <summary>
+    /// A Film gets its own starter types and the shared engine under them (#146).
+    ///
+    /// <para>The first review of PR #179 was right to ask for this: the PR body claimed the criterion was met by the
+    /// shared infrastructure without a test saying so for a Film in particular. This is that test: the template is
+    /// offered and applied, a field of its own is added, a value is stored, an entry links to another entry of the
+    /// same film, and one points at a lore entry.</para>
+    ///
+    /// <para><b>Revisions are deliberately absent</b>, which is #144's decision and is asserted here rather than left
+    /// to be assumed: a lore entry's history is a record of the world's claims, and a film's prop is not one. The
+    /// entry's own <c>Version</c> still guards a concurrent save, and an episode's screenplay has the same guard.</para>
+    /// </summary>
+    [Fact]
+    public async Task A_film_gets_its_starter_types_and_the_shared_engine_under_them()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "filmengine");
+        var film = await NewFilm(client, universe.Id);
+
+        // Offered, named for a film, and not yet applied.
+        var offer = await client.GetFromJsonAsync<ProjectTemplateResponse>($"/api/projects/{film.Id}/template");
+        Assert.Equal("Film", offer!.Name);
+        Assert.Equal(["Character", "Location", "Prop"], offer.Types);
+        Assert.False(offer.AlreadyApplied);
+
+        var applied = await Apply(client, film.Id);
+        Assert.Equal(["Character", "Location", "Prop"], applied.Select(type => type.Name));
+
+        // A film's billing words, which differ from a series' on purpose.
+        var billing = applied.First(type => type.Name == "Character").Fields.First(field => field.Name == "Billing");
+        Assert.Equal(EntityFieldKind.Select, billing.Kind);
+        Assert.Equal(["Lead", "Supporting", "Background"], billing.Options.Select(option => option.Value));
+
+        // A custom field of the author's own, on a starter type, through the shared engine.
+        var prop = applied.First(type => type.Name == "Prop");
+        var withField = await AddField(
+            client,
+            film.Id,
+            prop.Id,
+            new ProjectEntityFieldRequest("Made of", EntityFieldKind.ShortText));
+        var madeOf = withField.Fields.First(field => field.Name == "Made of");
+
+        var knife = await NewEntry(
+            client,
+            film.Id,
+            prop.Id,
+            "The salt knife",
+            fields: [new FieldValueInput(madeOf.Id, "bone", null, null, null, null, null)]);
+
+        Assert.Equal("bone", knife.Fields.First(field => field.FieldDefinitionId == madeOf.Id).Text);
+
+        // A link to another entry of the same film, and an optional link to the lore.
+        var carries = await AddField(
+            client,
+            film.Id,
+            applied.First(type => type.Name == "Character").Id,
+            new ProjectEntityFieldRequest("Carries", EntityFieldKind.EntityReference));
+        var carriesField = carries.Fields.First(field => field.Name == "Carries");
+
+        var loreId = await CreateEntity(client, universe.Id, "Alenna Vance");
+
+        var alenna = await NewEntry(
+            client,
+            film.Id,
+            applied.First(type => type.Name == "Character").Id,
+            "Alenna",
+            canonEntityId: loreId,
+            fields: [new FieldValueInput(carriesField.Id, null, null, null, null, null, knife.Id)]);
+
+        var link = alenna.Fields.First(field => field.FieldDefinitionId == carriesField.Id);
+        Assert.Equal(knife.Id, link.ReferencedEntityId);
+        Assert.Equal("The salt knife", link.ReferencedEntityName);
+
+        var row = (await Entries(client, film.Id)).First(entry => entry.Id == alenna.Id);
+        Assert.Equal(loreId, row.CanonEntityId);
+        Assert.Equal("Alenna Vance", row.CanonEntityName);
+
+        // The concurrency guard is the shared one: a save over a stale version is refused, and nothing is overwritten.
+        var stale = await client.PutAsJsonAsync(
+            $"/api/projects/{film.Id}/entities/{alenna.Id}",
+            new ProjectEntityRequest(
+                alenna.EntityTypeId,
+                "Alenna, rewritten",
+                null,
+                null,
+                null,
+                alenna.Version - 1));
+
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        Assert.Equal("Alenna", (await Entries(client, film.Id)).First(entry => entry.Id == alenna.Id).Name);
+
+        // And a project's entry has no revision history of its own, by design (#144): the lore's history records the
+        // world's claims, and a film's prop makes none.
+        await WithDb(_factory, async db =>
+            Assert.Empty(await db.EntityRevisions.Where(revision => revision.EntityId == knife.Id).ToListAsync()));
+    }
+
+    private static async Task<ProjectDetail> NewFilm(HttpClient client, Guid universeId)
+    {
+        var response = await client.PostAsJsonAsync(
+            "/api/projects",
+            new ProjectRequest("Low Tide", ProjectKind.Film, ProjectLifecycle.Active, "animated", null, universeId, null));
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<ProjectDetail>())!;
+    }
+
     // ---------- helpers ----------
 
     private static async Task<ProjectDetail> NewProject(HttpClient client, Guid universeId, string name)
