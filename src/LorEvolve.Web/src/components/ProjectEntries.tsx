@@ -21,7 +21,16 @@ import { t, useI18n } from '../i18n'
  * The type is chosen first, because an entry is of a type and its fields are that type's. Values are edited with the
  * plainest control each kind allows; nothing here infers a meaning from a field's name.
  */
-export function ProjectEntries({ projectId, reloadKey }: { projectId: string; reloadKey: number }) {
+export function ProjectEntries({
+  projectId,
+  reloadKey,
+  onChanged,
+}: {
+  projectId: string
+  reloadKey: number
+  /** Called after a write, so the Types panel's entry counts are re-read rather than left stale. */
+  onChanged?: () => void
+}) {
   useI18n()
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
   const [typeId, setTypeId] = useState<string | null>(null)
@@ -74,6 +83,7 @@ export function ProjectEntries({ projectId, reloadKey }: { projectId: string; re
         setEntries(read)
         setBusy(false)
         setFailed(null)
+        onChanged?.()
       })
       .catch(failing)
   }

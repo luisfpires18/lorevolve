@@ -245,9 +245,14 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
        */}
       <ProjectSchema
         projectId={project.id}
+        reloadKey={schemaVersion}
         onChanged={() => setSchemaVersion((version) => version + 1)}
       />
-      <ProjectEntries projectId={project.id} reloadKey={schemaVersion} />
+      <ProjectEntries
+        projectId={project.id}
+        reloadKey={schemaVersion}
+        onChanged={() => setSchemaVersion((version) => version + 1)}
+      />
     </div>
   )
 }

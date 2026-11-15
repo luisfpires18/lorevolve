@@ -43,9 +43,16 @@ function kindLabel(kind: FieldKindValue) {
  */
 export function ProjectSchema({
   projectId,
+  reloadKey,
   onChanged,
 }: {
   projectId: string
+  /**
+   * Changed by the page when something outside this panel changed what it shows. An entry added beside it is one: a
+   * type's entry count is part of this screen, so it has to be re-read rather than left saying "No entries yet" over
+   * an entry the author just made.
+   */
+  reloadKey: number
   /** Called after any write, so the entries panel beside this one re-reads the types it offers. */
   onChanged?: () => void
 }) {
@@ -75,7 +82,7 @@ export function ProjectSchema({
         setFailed(error instanceof Error ? error.message : t('projects.schema.failed'))
       })
     return () => controller.abort()
-  }, [projectId])
+  }, [projectId, reloadKey])
 
   function after(read: ProjectEntityType[]) {
     setTypes(read)
