@@ -16,6 +16,7 @@ import {
   type ProjectField,
   type ProjectTemplate,
 } from '../projectEntities/types'
+import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
 import { t, tn, useI18n } from '../i18n'
 
@@ -62,6 +63,7 @@ export function ProjectSchema({
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [name, setName] = useState('')
+  const [adding, setAdding] = useState(false)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameTo, setRenameTo] = useState('')
   const [addingFieldTo, setAddingFieldTo] = useState<string | null>(null)
@@ -106,17 +108,87 @@ export function ProjectSchema({
   }
 
   if (types === null) {
-    return <p className="projects__lede">{t('projects.schema.loading')}</p>
+    return <p className="projectcard__meta">{t('projects.common.loading')}</p>
   }
 
   const offerStarters = types.length === 0 && template !== null && template.types.length > 0
 
   return (
     <section className="projects" data-testid="project-schema">
+      {/* The panel's own primary action sits in its head, where `PageHeader` and the lore screens put one (#184). */}
       <header className="projects__head">
-        <h2>{t('projects.schema.title')}</h2>
-        <p className="projects__lede">{t('projects.schema.lede')}</p>
+        <div className="projects__headtext">
+          <h2>{t('projects.schema.title')}</h2>
+          <p className="projects__lede">{t('projects.schema.lede')}</p>
+        </div>
+        <button
+          className="button"
+          type="button"
+          aria-expanded={adding}
+          data-testid="project-type-add"
+          onClick={() => setAdding((open) => !open)}
+        >
+          {t('projects.schema.addType')}
+        </button>
       </header>
+
+      {/*
+       * Shown when asked for rather than standing open under the list: an empty box with a grey placeholder in it is
+       * not a thing an author came to read, and three of them on one screen were what made this page look unfinished.
+       */}
+      {adding ? (
+        <form
+          className="form"
+          data-testid="project-type-new"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (busy) return
+            setBusy(true)
+            createProjectType(projectId, {
+              name,
+              description: null,
+              icon: null,
+              accentColor: null,
+              parentId: null,
+            })
+              .then(() => {
+                setName('')
+                setAdding(false)
+                refresh()
+              })
+              .catch(failing)
+          }}
+        >
+          <label className="field">
+            <span className="field__label">{t('projects.schema.typeName')}</span>
+            <input
+              className="field__input"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              data-testid="project-type-new-name"
+              required
+            />
+          </label>
+          <div className="form__actions">
+            <button
+              className="button"
+              type="submit"
+              disabled={busy}
+              data-testid="project-type-new-save"
+            >
+              {busy ? t('projects.schema.typeSaving') : t('projects.schema.addType')}
+            </button>
+            <button
+              className="button button--secondary"
+              type="button"
+              onClick={() => setAdding(false)}
+              data-testid="project-type-new-cancel"
+            >
+              {t('projects.common.cancel')}
+            </button>
+          </div>
+        </form>
+      ) : null}
 
       {failed ? (
         <p role="alert" data-testid="project-schema-failed">
@@ -130,6 +202,7 @@ export function ProjectSchema({
           hint={t('projects.schema.starterHint')}
           action={
             <button
+              className="button"
               type="button"
               disabled={busy}
               data-testid="project-schema-starters"
@@ -153,12 +226,12 @@ export function ProjectSchema({
         />
       ) : null}
 
-      <ul className="cardlist" data-testid="project-types">
+      <ul className="projectcardlist" data-testid="project-types">
         {types.map((type) => (
-          <li key={type.id} className="card" data-testid={`project-type-${type.id}`}>
+          <li key={type.id} className="projectcard" data-testid={`project-type-${type.id}`}>
             {renaming === type.id ? (
               <form
-                className="form form--inline"
+                className="form projectform--inline"
                 onSubmit={(event) => {
                   event.preventDefault()
                   if (busy) return
@@ -187,76 +260,128 @@ export function ProjectSchema({
                     required
                   />
                 </label>
-                <button type="submit" disabled={busy} data-testid="project-type-rename-save">
+                <button
+                  className="button button--sm"
+                  type="submit"
+                  disabled={busy}
+                  data-testid="project-type-rename-save"
+                >
                   {t('projects.schema.renameSave')}
+                </button>
+                {/* A rename the author started and thought better of: without this the only way out of the form was
+                    to save it. */}
+                <button
+                  className="button button--secondary button--sm"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setRenaming(null)}
+                  data-testid="project-type-rename-cancel"
+                >
+                  {t('projects.common.cancel')}
                 </button>
               </form>
             ) : (
-              <div className="card__head">
-                <h3 className="card__title">{type.name}</h3>
-                <p className="projects__lede">
+              <div className="projectcard__head">
+                <h3 className="projectcard__title">{type.name}</h3>
+                <p className="projectcard__meta">
                   {type.entryCount === 0
                     ? t('projects.schema.noEntries')
                     : tn('projects.schema.entryCount', type.entryCount)}
                 </p>
-                <div className="card__actions">
-                  <button
-                    type="button"
-                    data-testid={`project-type-rename-${type.id}`}
-                    onClick={() => {
-                      setRenaming(type.id)
-                      setRenameTo(type.name)
-                    }}
+                {/* A row's secondary and destructive verbs go in the app's one menu for them, as a lore type's row
+                    already does, rather than as two outlined pills repeated down the list. */}
+                <div className="projectcard__actions">
+                  <ActionMenu
+                    label={t('projects.common.more', { name: type.name })}
+                    triggerTestId={`project-type-actions-${type.id}`}
                   >
-                    {t('projects.schema.rename')}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    data-testid={`project-type-delete-${type.id}`}
-                    onClick={() => {
-                      setBusy(true)
-                      deleteProjectType(projectId, type.id).then(refresh).catch(failing)
-                    }}
-                  >
-                    {t('projects.schema.deleteType')}
-                  </button>
+                    <button
+                      className="actionmenu__item"
+                      type="button"
+                      data-testid={`project-type-rename-${type.id}`}
+                      onClick={() => {
+                        setRenaming(type.id)
+                        setRenameTo(type.name)
+                      }}
+                    >
+                      {t('projects.schema.rename')}
+                    </button>
+                    <button
+                      className="actionmenu__item actionmenu__item--danger"
+                      type="button"
+                      disabled={busy}
+                      data-testid={`project-type-delete-${type.id}`}
+                      onClick={() => {
+                        setBusy(true)
+                        deleteProjectType(projectId, type.id).then(refresh).catch(failing)
+                      }}
+                    >
+                      {t('projects.schema.deleteType')}
+                    </button>
+                  </ActionMenu>
                 </div>
               </div>
             )}
 
-            <h4>{t('projects.schema.fields')}</h4>
+            <h4 className="sectionrule sectionrule--accent">{t('projects.schema.fields')}</h4>
             {type.fields.length === 0 && type.inheritedFields.length === 0 ? (
-              <p className="projects__lede">{t('projects.schema.noFields')}</p>
+              <p className="projectcard__meta">{t('projects.schema.noFields')}</p>
             ) : (
-              <ul data-testid={`project-type-fields-${type.id}`}>
-                {type.fields.map((field) => (
-                  <li key={field.id}>
-                    <span>{field.name}</span>{' '}
-                    <span className="projects__lede">{kindLabel(field.kind)}</span>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      data-testid={`project-field-delete-${field.id}`}
-                      onClick={() => {
-                        setBusy(true)
-                        deleteProjectField(projectId, type.id, field.id)
-                          .then(refresh)
-                          .catch(failing)
-                      }}
-                    >
-                      {t('projects.schema.deleteField')}
-                    </button>
-                  </li>
-                ))}
-                {/* Inherited fields are shown and not editable here: they are defined once, on the type above. */}
-                {type.inheritedFields.map((field) => (
-                  <li key={field.id} data-testid={`project-field-inherited-${field.id}`}>
-                    <span>{field.name}</span>{' '}
-                    <span className="projects__lede">{kindLabel(field.kind)}</span>
-                  </li>
-                ))}
-              </ul>
+              /* The same rows the lore types screen draws for a type's fields, because they are the same thing:
+                 what the type above hands down first, quieter, then this type's own. */
+              <>
+                {type.inheritedFields.length > 0 ? (
+                  <div className="fieldlist__inherited">
+                    {/* Inherited fields are shown and not editable here: they are defined once, on the type above. */}
+                    <ul className="fieldlist">
+                      {type.inheritedFields.map((field) => (
+                        <li
+                          key={field.id}
+                          className="fieldlist__row"
+                          data-testid={`project-field-inherited-${field.id}`}
+                        >
+                          <span className="fieldlist__text">
+                            <span className="fieldlist__name">{field.name}</span>
+                            <span className="fieldlist__meta">{kindLabel(field.kind)}</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                <ul className="fieldlist" data-testid={`project-type-fields-${type.id}`}>
+                  {type.fields.map((field) => (
+                    <li key={field.id} className="fieldlist__row">
+                      <span className="fieldlist__text">
+                        <span className="fieldlist__name">{field.name}</span>
+                        <span className="fieldlist__meta">{kindLabel(field.kind)}</span>
+                      </span>
+                      <div className="fieldlist__actions">
+                        <ActionMenu
+                          label={t('projects.common.more', { name: field.name })}
+                          triggerTestId={`project-field-actions-${field.id}`}
+                        >
+                          <button
+                            className="actionmenu__item actionmenu__item--danger"
+                            type="button"
+                            disabled={busy}
+                            data-testid={`project-field-delete-${field.id}`}
+                            onClick={() => {
+                              setBusy(true)
+                              deleteProjectField(projectId, type.id, field.id)
+                                .then(refresh)
+                                .catch(failing)
+                            }}
+                          >
+                            {t('projects.schema.deleteField')}
+                          </button>
+                        </ActionMenu>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
 
             {addingFieldTo === type.id ? (
@@ -275,6 +400,7 @@ export function ProjectSchema({
               />
             ) : (
               <button
+                className="button button--text button--sm"
                 type="button"
                 data-testid={`project-field-add-${type.id}`}
                 onClick={() => setAddingFieldTo(type.id)}
@@ -285,44 +411,6 @@ export function ProjectSchema({
           </li>
         ))}
       </ul>
-
-      <form
-        className="form"
-        data-testid="project-type-new"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (busy) return
-          setBusy(true)
-          createProjectType(projectId, {
-            name,
-            description: null,
-            icon: null,
-            accentColor: null,
-            parentId: null,
-          })
-            .then(() => {
-              setName('')
-              refresh()
-            })
-            .catch(failing)
-        }}
-      >
-        <h3>{t('projects.schema.addType')}</h3>
-        <label className="field">
-          <span className="field__label">{t('projects.schema.typeName')}</span>
-          <input
-            className="field__input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t('projects.schema.typeNamePlaceholder')}
-            data-testid="project-type-new-name"
-            required
-          />
-        </label>
-        <button type="submit" disabled={busy} data-testid="project-type-new-save">
-          {busy ? t('projects.schema.typeSaving') : t('projects.schema.typeSave')}
-        </button>
-      </form>
     </section>
   )
 }
@@ -375,7 +463,6 @@ function FieldForm({
           className="field__input"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder={t('projects.schema.fieldNamePlaceholder')}
           data-testid="project-field-new-name"
           required
         />
@@ -404,28 +491,41 @@ function FieldForm({
             className="field__input"
             value={options}
             onChange={(event) => setOptions(event.target.value)}
-            placeholder={t('projects.schema.fieldOptionsPlaceholder')}
             data-testid="project-field-new-options"
           />
         </label>
       ) : null}
 
-      <label className="field field--check">
-        <input
-          type="checkbox"
-          checked={required}
-          onChange={(event) => setRequired(event.target.checked)}
-          data-testid="project-field-new-required"
-        />
-        <span className="field__label">{t('projects.schema.fieldRequired')}</span>
-      </label>
+      <div className="field">
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={required}
+            onChange={(event) => setRequired(event.target.checked)}
+            data-testid="project-field-new-required"
+          />
+          <span>{t('projects.schema.fieldRequired')}</span>
+        </label>
+      </div>
 
-      <button type="submit" disabled={busy} data-testid="project-field-new-save">
-        {busy ? t('projects.schema.fieldSaving') : t('projects.schema.fieldSave')}
-      </button>
-      <button type="button" onClick={onCancel} data-testid="project-field-new-cancel">
-        {t('projects.entries.close')}
-      </button>
+      <div className="form__actions">
+        <button
+          className="button"
+          type="submit"
+          disabled={busy}
+          data-testid="project-field-new-save"
+        >
+          {busy ? t('projects.schema.fieldSaving') : t('projects.schema.addField')}
+        </button>
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={onCancel}
+          data-testid="project-field-new-cancel"
+        >
+          {t('projects.common.cancel')}
+        </button>
+      </div>
     </form>
   )
 }

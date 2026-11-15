@@ -12,6 +12,7 @@ import {
   type ProjectEntitySummary,
   type ProjectField,
 } from '../projectEntities/types'
+import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
 
@@ -39,6 +40,7 @@ export function ProjectEntries({
   const [busy, setBusy] = useState(false)
   const [name, setName] = useState('')
   const [summary, setSummary] = useState('')
+  const [adding, setAdding] = useState(false)
   const [values, setValues] = useState<Record<string, FieldValueInput>>({})
 
   useEffect(() => {
@@ -94,7 +96,7 @@ export function ProjectEntries({
   }
 
   if (types === null) {
-    return <p className="projects__lede">{t('projects.entries.loading')}</p>
+    return <p className="projectcard__meta">{t('projects.common.loading')}</p>
   }
 
   if (types.length === 0) {
@@ -118,8 +120,19 @@ export function ProjectEntries({
   return (
     <section className="projects" data-testid="project-entries">
       <header className="projects__head">
-        <h2>{t('projects.entries.title')}</h2>
-        <p className="projects__lede">{t('projects.entries.lede')}</p>
+        <div className="projects__headtext">
+          <h2>{t('projects.entries.title')}</h2>
+          <p className="projects__lede">{t('projects.entries.lede')}</p>
+        </div>
+        <button
+          className="button"
+          type="button"
+          aria-expanded={adding}
+          data-testid="project-entry-add"
+          onClick={() => setAdding((open) => !open)}
+        >
+          {t('projects.entries.add')}
+        </button>
       </header>
 
       {failed ? (
@@ -147,8 +160,93 @@ export function ProjectEntries({
         </select>
       </label>
 
+      {/*
+       * Asked for rather than always open. Its fields are the chosen type's, so it sits under the type above it and
+       * the author reads the type's name before the boxes that belong to it.
+       */}
+      {adding ? (
+        <form
+          className="form"
+          data-testid="project-entry-new"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (busy || typeId === null) return
+            setBusy(true)
+            createProjectEntity(projectId, {
+              entityTypeId: typeId,
+              name,
+              summary: summary.length > 0 ? summary : null,
+              canonEntityId: null,
+              fields: Object.values(values),
+              expectedVersion: null,
+            })
+              .then(() => {
+                setName('')
+                setSummary('')
+                setValues({})
+                setAdding(false)
+                refresh()
+              })
+              .catch(failing)
+          }}
+        >
+          <label className="field">
+            <span className="field__label">{t('projects.entries.name')}</span>
+            <input
+              className="field__input"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              data-testid="project-entry-new-name"
+              required
+            />
+          </label>
+
+          <label className="field">
+            <span className="field__label">{t('projects.entries.summary')}</span>
+            <input
+              className="field__input"
+              value={summary}
+              onChange={(event) => setSummary(event.target.value)}
+              data-testid="project-entry-new-summary"
+            />
+          </label>
+
+          {fields.length > 0 ? (
+            <h4 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h4>
+          ) : null}
+
+          {fields.map((field) => (
+            <ValueField
+              key={field.id}
+              field={field}
+              value={values[field.id]}
+              onChange={(next) => setValues((current) => ({ ...current, [field.id]: next }))}
+            />
+          ))}
+
+          <div className="form__actions">
+            <button
+              className="button"
+              type="submit"
+              disabled={busy}
+              data-testid="project-entry-new-save"
+            >
+              {busy ? t('projects.entries.saving') : t('projects.entries.add')}
+            </button>
+            <button
+              className="button button--secondary"
+              type="button"
+              onClick={() => setAdding(false)}
+              data-testid="project-entry-new-cancel"
+            >
+              {t('projects.common.cancel')}
+            </button>
+          </div>
+        </form>
+      ) : null}
+
       {typeId !== null && entries === null ? (
-        <p className="projects__lede">{t('projects.entries.loading')}</p>
+        <p className="projectcard__meta">{t('projects.common.loading')}</p>
       ) : (entries ?? []).length === 0 ? (
         <EmptyState
           title={t('projects.entries.empty')}
@@ -156,94 +254,39 @@ export function ProjectEntries({
           testId="project-entries-empty"
         />
       ) : (
-        <ul className="cardlist" data-testid="project-entry-list">
+        <ul className="projectcardlist" data-testid="project-entry-list">
           {(entries ?? []).map((entry) => (
-            <li key={entry.id} className="card" data-testid={`project-entry-${entry.id}`}>
-              <h3 className="card__title">{entry.name}</h3>
-              {entry.summary ? <p>{entry.summary}</p> : null}
-              <p className="projects__lede">
-                {entry.canonEntityName ?? t('projects.entries.canonNone')}
-              </p>
-              <button
-                type="button"
-                disabled={busy}
-                data-testid={`project-entry-delete-${entry.id}`}
-                onClick={() => {
-                  setBusy(true)
-                  deleteProjectEntity(projectId, entry.id).then(refresh).catch(failing)
-                }}
-              >
-                {t('projects.entries.delete')}
-              </button>
+            <li key={entry.id} className="projectcard" data-testid={`project-entry-${entry.id}`}>
+              <div className="projectcard__head">
+                <h3 className="projectcard__title">{entry.name}</h3>
+                <p className="projectcard__meta">
+                  {entry.canonEntityName ?? t('projects.entries.canonNone')}
+                </p>
+                <div className="projectcard__actions">
+                  <ActionMenu
+                    label={t('projects.common.more', { name: entry.name })}
+                    triggerTestId={`project-entry-actions-${entry.id}`}
+                  >
+                    <button
+                      className="actionmenu__item actionmenu__item--danger"
+                      type="button"
+                      disabled={busy}
+                      data-testid={`project-entry-delete-${entry.id}`}
+                      onClick={() => {
+                        setBusy(true)
+                        deleteProjectEntity(projectId, entry.id).then(refresh).catch(failing)
+                      }}
+                    >
+                      {t('projects.entries.delete')}
+                    </button>
+                  </ActionMenu>
+                </div>
+              </div>
+              {entry.summary ? <p className="prose">{entry.summary}</p> : null}
             </li>
           ))}
         </ul>
       )}
-
-      <form
-        className="form"
-        data-testid="project-entry-new"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (busy || typeId === null) return
-          setBusy(true)
-          createProjectEntity(projectId, {
-            entityTypeId: typeId,
-            name,
-            summary: summary.length > 0 ? summary : null,
-            canonEntityId: null,
-            fields: Object.values(values),
-            expectedVersion: null,
-          })
-            .then(() => {
-              setName('')
-              setSummary('')
-              setValues({})
-              refresh()
-            })
-            .catch(failing)
-        }}
-      >
-        <h3>{t('projects.entries.add')}</h3>
-
-        <label className="field">
-          <span className="field__label">{t('projects.entries.name')}</span>
-          <input
-            className="field__input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t('projects.entries.namePlaceholder')}
-            data-testid="project-entry-new-name"
-            required
-          />
-        </label>
-
-        <label className="field">
-          <span className="field__label">{t('projects.entries.summary')}</span>
-          <input
-            className="field__input"
-            value={summary}
-            onChange={(event) => setSummary(event.target.value)}
-            placeholder={t('projects.entries.summaryPlaceholder')}
-            data-testid="project-entry-new-summary"
-          />
-        </label>
-
-        {fields.length > 0 ? <h4>{t('projects.entries.values')}</h4> : null}
-
-        {fields.map((field) => (
-          <ValueField
-            key={field.id}
-            field={field}
-            value={values[field.id]}
-            onChange={(next) => setValues((current) => ({ ...current, [field.id]: next }))}
-          />
-        ))}
-
-        <button type="submit" disabled={busy} data-testid="project-entry-new-save">
-          {busy ? t('projects.entries.saving') : t('projects.entries.save')}
-        </button>
-      </form>
     </section>
   )
 }
@@ -280,45 +323,49 @@ function ValueField({
           {field.name}
           {field.isRequired ? ' *' : ''}
         </legend>
-        {field.options.map((option) => (
-          <label key={option.id} className="field field--check">
-            <input
-              type="checkbox"
-              checked={chosen.includes(option.id)}
-              data-testid={`${testId}-${option.id}`}
-              onChange={(event) =>
-                onChange({
-                  ...blank,
-                  // One choice replaces, several accumulate: the kind decides, not the control.
-                  optionIds: event.target.checked
-                    ? field.kind === FieldKind.Select
-                      ? [option.id]
-                      : [...chosen, option.id]
-                    : chosen.filter((id) => id !== option.id),
-                })
-              }
-            />
-            <span>{option.value}</span>
-          </label>
-        ))}
+        <div className="choices">
+          {field.options.map((option) => (
+            <label key={option.id} className="check">
+              <input
+                type="checkbox"
+                checked={chosen.includes(option.id)}
+                data-testid={`${testId}-${option.id}`}
+                onChange={(event) =>
+                  onChange({
+                    ...blank,
+                    // One choice replaces, several accumulate: the kind decides, not the control.
+                    optionIds: event.target.checked
+                      ? field.kind === FieldKind.Select
+                        ? [option.id]
+                        : [...chosen, option.id]
+                      : chosen.filter((id) => id !== option.id),
+                  })
+                }
+              />
+              <span>{option.value}</span>
+            </label>
+          ))}
+        </div>
       </fieldset>
     )
   }
 
   if (field.kind === FieldKind.Boolean) {
     return (
-      <label className="field field--check">
-        <input
-          type="checkbox"
-          checked={current.boolean === true}
-          data-testid={testId}
-          onChange={(event) => onChange({ ...blank, boolean: event.target.checked })}
-        />
-        <span className="field__label">
-          {field.name}
-          {field.isRequired ? ' *' : ''}
-        </span>
-      </label>
+      <div className="field">
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={current.boolean === true}
+            data-testid={testId}
+            onChange={(event) => onChange({ ...blank, boolean: event.target.checked })}
+          />
+          <span>
+            {field.name}
+            {field.isRequired ? ' *' : ''}
+          </span>
+        </label>
+      </div>
     )
   }
 
