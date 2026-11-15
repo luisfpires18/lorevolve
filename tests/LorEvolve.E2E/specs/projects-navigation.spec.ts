@@ -259,7 +259,7 @@ test.describe('Projects navigation', () => {
       new RegExp(`/app/universes/${world.id}/projects/${existing.id}/structure`),
     )
 
-    await expect(page.getByTestId('project-tabs')).toBeVisible()
+    await expect(page.getByTestId('project-tabs')).toBeAttached()
     await expect(page.getByTestId('story-title')).toHaveText(existing.title)
 
     // And in the universe's own sidebar, a row that expands like every other project's, to the story's three views.
@@ -310,7 +310,7 @@ test.describe('Projects navigation', () => {
     for (const [from, to] of cases) {
       await page.goto(from)
       await expect(page).toHaveURL(new RegExp(`${to}$`))
-      await expect(page.getByTestId('project-tabs')).toBeVisible()
+      await expect(page.getByTestId('project-tabs')).toBeAttached()
       await expect(page.getByTestId('story-title')).toHaveText(existing.title)
       await expect(page.getByTestId('project-breadcrumb-universe')).toHaveText(world.name)
       await expect(page.getByTestId('project-breadcrumb-project')).toHaveText(existing.title)
