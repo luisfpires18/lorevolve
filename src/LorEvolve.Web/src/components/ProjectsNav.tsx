@@ -4,6 +4,7 @@ import { ChevronRight, FolderOpen, Plus } from 'lucide-react'
 import { listProjects } from '../projects/api'
 import {
   kindLabel,
+  projectFrameUniverse,
   projectPath,
   projectRowPath,
   projectSectionLabel,
@@ -137,22 +138,10 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
           const isOpen = opened[project.id] ?? project.id === active
           const panelId = `${listId}-${project.id}`
 
-          // A Story shown as a Writing Project is one link to the story, with no disclosure: its pages are the story's
-          // own tabs, reached on the story's screen, and #141 is what renames the first of them to Structure (#140).
-          if (project.storyId) {
-            return (
-              <li key={project.id}>
-                <NavLink
-                  className="sidebar__link sidebar__link--project"
-                  to={projectRowPath(project, universeId)}
-                  data-testid={`project-link-${project.id}`}
-                >
-                  <span className="sidebar__projectname">{project.name}</span>
-                  <span className="sidebar__projectkind">{kindLabel(project.kind)}</span>
-                </NavLink>
-              </li>
-            )
-          }
+          // #140 gave a Story shown as a Writing Project one link to the story and no disclosure, because its pages were
+          // the story's own tabs on the story's screen. Since #194 the project shell renders those same views, so its row
+          // expands like every other project's, to the story's Structure, Manuscript and Ideas.
+          const frame = projectFrameUniverse(project, universeId)
 
           return (
             <li key={project.id}>
@@ -179,7 +168,7 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
                 </button>
                 <NavLink
                   className="sidebar__link sidebar__link--project"
-                  to={projectPath(project.id, '', universeId)}
+                  to={projectRowPath(project, universeId)}
                   data-testid={`project-link-${project.id}`}
                 >
                   <span className="sidebar__projectname">{project.name}</span>
@@ -195,11 +184,11 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
                   id={panelId}
                   data-testid={`project-pages-${project.id}`}
                 >
-                  {projectSections(project.kind).map((section) => (
+                  {projectSections(project.kind, project.storyId).map((section) => (
                     <li key={section.segment}>
                       <NavLink
                         className="sidebar__sublink"
-                        to={projectPath(project.id, section.segment, universeId)}
+                        to={projectPath(project.id, section.segment, frame)}
                         data-testid={`${section.testId}-${project.id}`}
                       >
                         <section.icon

@@ -603,7 +603,7 @@ test.describe('content recovery', () => {
 
     // The way back lands on it, and its prose came back with it.
     await page.getByTestId('trash-open').click()
-    await page.waitForURL(new RegExp(`/stories/${storyId}#scene-${council}$`))
+    await page.waitForURL(new RegExp(`/projects/${storyId}/structure#scene-${council}$`))
     await expect(scene(page, 'The Council')).toBeFocused()
     await page.goto(`${storyUrl}/manuscript/${council}`)
     await expectWritten(page.getByTestId('manuscript-editor'), 'Prose of the council.')
@@ -638,7 +638,7 @@ test.describe('content recovery', () => {
     await expect(gatesRow.getByRole('button', { name: 'Restore scene “The Gates”' })).toBeEnabled()
 
     await page.getByTestId('trash-open').click()
-    await page.waitForURL(new RegExp(`/stories/${storyId}$`))
+    await page.waitForURL(new RegExp(`/projects/${storyId}/structure$`))
     await expect(page.getByTestId('story-title')).toHaveText('The Long Winter')
     await expandStory(page)
     await expect(scene(page, 'The Council')).toBeVisible()

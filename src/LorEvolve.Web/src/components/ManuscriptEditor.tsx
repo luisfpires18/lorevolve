@@ -35,6 +35,7 @@ import {
 } from '../stories/types'
 import { EmptyState } from './EmptyState'
 import { numberFormat } from '../i18n/format'
+import { storyProjectPath } from '../projects/sections'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error'; message: string }
@@ -436,7 +437,7 @@ export function ManuscriptEditor({
               ) : null}
               <Link
                 className="actionmenu__item"
-                to={`/app/universes/${universeId}/stories/${storyId}#scene-${scene.id}`}
+                to={`${storyProjectPath(universeId, storyId)}#scene-${scene.id}`}
                 data-testid="manuscript-show-scene"
               >
                 <ActionIcon icon={LocateFixed} />

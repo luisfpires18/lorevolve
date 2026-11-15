@@ -419,7 +419,7 @@ test.describe('ideas', () => {
       .locator('[data-testid="idea-reference"][data-name="The Council"]')
       .getByTestId('idea-reference-open')
       .click()
-    await page.waitForURL(`/app/universes/${worldA}/stories/${storyId}#scene-${sceneId}`)
+    await page.waitForURL(`/app/universes/${worldA}/projects/${storyId}/structure#scene-${sceneId}`)
     await expect(page.locator('[data-testid="scene"][data-title="The Council"]')).toBeVisible()
 
     // Moving the idea out of its universe asks, and takes the reference out of the unsaved idea in plain sight.

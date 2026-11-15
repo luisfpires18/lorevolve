@@ -613,7 +613,7 @@ test.describe('stories', () => {
     // A press anywhere on the row - here, near its far corner, well away from the title - opens the story.
     const box = (await row.boundingBox())!
     await row.click({ position: { x: box.width - 12, y: box.height - 12 } })
-    await page.waitForURL(new RegExp(`/stories/${storyId}$`))
+    await page.waitForURL(new RegExp(`/projects/${storyId}/structure$`))
     await expect(page.getByTestId('story-title')).toHaveText('ظل المنارة 7')
     await expect(page.getByTestId('story-view-scenes')).toHaveAttribute('aria-current', 'page')
 

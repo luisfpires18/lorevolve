@@ -272,7 +272,7 @@ test.describe('reading a public universe', () => {
 
     await page.goto(`/worlds/${w.slug}/stories/bridge-tale`)
     await page.getByTestId('edit-in-workspace').click()
-    await page.waitForURL(`/app/universes/${w.id}/stories/${storyId}`)
+    await page.waitForURL(`/app/universes/${w.id}/projects/${storyId}/structure`)
 
     // My workspace enters the workspace; the portal never does so on its own.
     await page.goto(`/worlds/${w.slug}`)

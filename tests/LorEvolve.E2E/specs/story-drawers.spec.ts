@@ -89,7 +89,8 @@ async function seedStory(page: Page, universeId: string) {
     description: null,
     notes: null,
   })
-  return `/app/universes/${universeId}/stories/${storyId}`
+  // A story's page is its Writing Project's Structure since #194; the old story address redirects there.
+  return `/app/universes/${universeId}/projects/${storyId}/structure`
 }
 
 /**

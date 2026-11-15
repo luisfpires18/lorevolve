@@ -244,7 +244,7 @@ test.describe('ideas workspace', () => {
     const views = page.getByRole('navigation', { name: 'Story views' })
     await expect(views.getByRole('link')).toHaveText(['Structure', 'Manuscript', 'Ideas'])
     await views.getByRole('link', { name: 'Ideas' }).click()
-    await page.waitForURL(`${storyPath}/ideas`)
+    await page.waitForURL(`${storyPath.replace('/stories/', '/projects/')}/ideas`)
     await expect(views.getByRole('link', { name: 'Ideas' })).toHaveAttribute('aria-current', 'page')
     await expect(page.getByTestId('story-title')).toHaveText('The Long Winter')
     await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this story yet.')
@@ -266,7 +266,7 @@ test.describe('ideas workspace', () => {
     await expect(reference).toContainText('Story')
 
     await page.goBack()
-    await page.waitForURL(`${storyPath}/ideas`)
+    await page.waitForURL(`${storyPath.replace('/stories/', '/projects/')}/ideas`)
     await expect(row(page, 'What if the council already knows?')).toBeVisible()
     await expect(page.getByTestId('story-title')).toHaveText('The Long Winter')
   })
@@ -311,7 +311,7 @@ test.describe('ideas workspace', () => {
       ])
     }
     await seedIdea(page, 'Ember thought', universeId, [{ kind: Kind.Story, id: storyId }])
-    const ideasPath = `/app/universes/${universeId}/stories/${storyId}/ideas`
+    const ideasPath = `/app/universes/${universeId}/projects/${storyId}/ideas`
 
     await page.goto(ideasPath)
     await expect(rows(page)).toHaveCount(20)
@@ -350,7 +350,7 @@ test.describe('ideas workspace', () => {
     ])
     expect((await page.request.delete(`/api/ideas/${id}`)).status()).toBe(204)
 
-    const ideasPath = `/app/universes/${universeId}/stories/${storyId}/ideas`
+    const ideasPath = `/app/universes/${universeId}/projects/${storyId}/ideas`
     await page.goto(ideasPath)
     await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this story yet.')
 

@@ -274,7 +274,7 @@ test.describe('universe search', () => {
     await signUp(page)
     const world = await seedWorld(page)
     const base = `/app/universes/${world.universeId}`
-    const story = `${base}/stories/${world.storyId}`
+    const story = `${base}/projects/${world.storyId}`
     await page.goto(`${base}/lore`)
 
     // An entry by its name: the entry.
@@ -304,7 +304,7 @@ test.describe('universe search', () => {
     // A story, by its title.
     await search(page, 'Ondrelle')
     await result(page, 'Story', 'The Ondrelle Siege').click()
-    await page.waitForURL(story)
+    await page.waitForURL(`${story}/structure`)
     await expect(page.getByTestId('story-title')).toHaveText('The Ondrelle Siege')
 
     // A chapter: the story's Scenes view, landing on the chapter.
@@ -312,7 +312,7 @@ test.describe('universe search', () => {
     const chapter = result(page, 'Chapter', 'Crossing the Veldmark')
     await expect(chapter).toContainText('Chapter 1 of “The Ondrelle Siege”')
     await chapter.click()
-    await page.waitForURL(`${story}#chapter-${world.chapterId}`)
+    await page.waitForURL(`${story}/structure#chapter-${world.chapterId}`)
     await expect(page.locator(`#chapter-${world.chapterId}`)).toBeFocused()
 
     // A scene by its summary: the Scenes view, landing on the scene, marked.
@@ -321,14 +321,14 @@ test.describe('universe search', () => {
     await expect(scene).toContainText('In the summary')
     await expect(scene).toContainText('Chapter 1: Crossing the Veldmark')
     await scene.click()
-    await page.waitForURL(`${story}#scene-${world.sceneId}`)
+    await page.waitForURL(`${story}/structure#scene-${world.sceneId}`)
     await expect(page.locator(`#scene-${world.sceneId}`)).toBeFocused()
     await expect(page.locator(`#scene-${world.sceneId}`)).toHaveAttribute('data-arrived', 'true')
 
     // An arc, by its title or its description: the Scenes view, landing on the arc.
     await search(page, 'Cindervane')
     await result(page, 'Arc', 'Fall of Cindervane').click()
-    await page.waitForURL(`${story}#arc-${world.arcId}`)
+    await page.waitForURL(`${story}/structure#arc-${world.arcId}`)
     await expect(page.locator(`#arc-${world.arcId}`)).toBeFocused()
 
     await search(page, 'Pellucid')
@@ -356,7 +356,7 @@ test.describe('universe search', () => {
     await page.goBack()
     await page.waitForURL(`${story}/manuscript/${world.proseSceneId}`)
     await page.goBack()
-    await page.waitForURL(`${story}#arc-${world.arcId}`)
+    await page.waitForURL(`${story}/structure#arc-${world.arcId}`)
   })
 
   test('an idea result opens that very idea in the universe’s Ideas, at an address that reloads, by pointer and keyboard, on a phone', async ({
@@ -414,7 +414,7 @@ test.describe('universe search', () => {
 
     // On a phone: the same, the long title wrapping inside the screen.
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto(`${base}/stories/${world.storyId}`)
+    await page.goto(`${base}/projects/${world.storyId}/structure`)
     await search(page, 'Vesperine')
     await result(page, 'Idea', long).click()
     await page.waitForURL(`${base}/ideas/${other.id}`)
@@ -546,7 +546,7 @@ test.describe('universe search', () => {
     await search(page, 'Cindervane')
     await page.keyboard.press('ArrowDown')
     await page.keyboard.press('Enter')
-    await page.waitForURL(`${base}/stories/${world.storyId}#arc-${world.arcId}`)
+    await page.waitForURL(`${base}/projects/${world.storyId}/structure#arc-${world.arcId}`)
 
     // With nothing highlighted, Enter opens the first result.
     await page.goto(`${base}/lore`)
@@ -688,7 +688,7 @@ test.describe('universe search', () => {
     await answerConfirms(page, () => answer === 'leave', questions)
 
     // A manuscript with unsaved prose. A click on a result asks; staying keeps the prose, the page and the list.
-    await page.goto(`${base}/stories/${world.storyId}/manuscript/${world.proseSceneId}`)
+    await page.goto(`${base}/projects/${world.storyId}/manuscript/${world.proseSceneId}`)
     const prose = page.getByTestId('manuscript-editor')
     await expectWritten(prose, 'The hall had emptied long before the Hollowmere bells rang.')
     await prose.fill('Unsaved prose.')
@@ -699,7 +699,7 @@ test.describe('universe search', () => {
     await expect.poll(() => questions.length).toBe(1)
     await expect.poll(() => questions[0]).toContain('unsaved')
     await expect(page).toHaveURL(
-      `${base}/stories/${world.storyId}/manuscript/${world.proseSceneId}`,
+      `${base}/projects/${world.storyId}/manuscript/${world.proseSceneId}`,
     )
     await expectWritten(prose, 'Unsaved prose.')
     await expect(result(page, 'Lore', 'Quennell of the Salt Road')).toBeVisible()
@@ -748,7 +748,7 @@ test.describe('universe search', () => {
     await search(page, 'Veldmark')
     await result(page, 'Chapter', 'Crossing the Veldmark').click()
     await expect.poll(() => questions.length).toBe(5)
-    await page.waitForURL(`${base}/stories/${world.storyId}#chapter-${world.chapterId}`)
+    await page.waitForURL(`${base}/projects/${world.storyId}/structure#chapter-${world.chapterId}`)
   })
 
   test('the results fit and read from a phone to a wide desktop, light and dark', async ({
@@ -783,7 +783,7 @@ test.describe('universe search', () => {
     ] as const) {
       await page.emulateMedia({ colorScheme })
       await page.setViewportSize({ width, height })
-      await page.goto(`/app/universes/${world.universeId}/stories/${world.storyId}`)
+      await page.goto(`/app/universes/${world.universeId}/projects/${world.storyId}/structure`)
 
       await search(page, 'Quorra')
       await expect(results(page)).toHaveCount(3)

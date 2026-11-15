@@ -227,12 +227,12 @@ test.describe('unified timeline', () => {
 
     // The ways out: the scene, its manuscript, and the entry.
     await coronation.getByTestId('timeline-open-scene').click()
-    await page.waitForURL(`**/stories/${w.kingdom}#scene-${w.coronation}`)
+    await page.waitForURL(`**/projects/${w.kingdom}/structure#scene-${w.coronation}`)
     await expect(page.locator(`#scene-${w.coronation}`)).toBeVisible()
     await page.goBack()
 
     await item(page, 'Coronation').getByTestId('timeline-open-manuscript').click()
-    await page.waitForURL(`**/stories/${w.kingdom}/manuscript/${w.coronation}`)
+    await page.waitForURL(`**/projects/${w.kingdom}/manuscript/${w.coronation}`)
     await expect(page.getByTestId('manuscript-editor')).toBeVisible()
     await page.goBack()
 
@@ -260,7 +260,7 @@ test.describe('unified timeline', () => {
     await expectTitles(page, ['Aftermath', 'Coronation', 'The Accord'])
 
     await page.goBack()
-    await page.waitForURL(`**${storyPath}`)
+    await page.waitForURL(`**${storyPath.replace('/stories/', '/projects/')}/structure`)
 
     await page.goForward()
     await page.waitForURL(`**/timeline?story=${w.kingdom}`)

@@ -8,6 +8,8 @@ import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
 import { ProjectsNav } from '../components/ProjectsNav'
 import { createProject, getProject } from '../projects/api'
+import { getStory } from '../stories/api'
+import StoryPage from './StoryPage'
 import { kindLabel, lifecycleLabel, projectPath, projectSections } from '../projects/sections'
 import {
   ProjectKind,
@@ -30,12 +32,19 @@ const KINDS: readonly ProjectKindValue[] = [
 export default function ProjectPage({
   isNew = false,
   inUniverse = false,
+  view,
 }: {
   isNew?: boolean
   /** Inside a universe's workspace, whose sidebar already carries the projects group. */
   inUniverse?: boolean
+  /**
+   * The view, when the route names it rather than leaving it to `*`. A Story shown as a Writing Project renders the
+   * story's own page, which reads `storyId` and `sceneId` from the address, so those views have routes of their own
+   * that carry those names (#194); any other project reached through one of them reads it as that segment.
+   */
+  view?: 'structure' | 'manuscript' | 'ideas'
 }) {
-  return isNew ? <NewProject /> : <Project inUniverse={inUniverse} />
+  return isNew ? <NewProject /> : <Project inUniverse={inUniverse} view={view} />
 }
 
 function NewProject() {
@@ -149,21 +158,24 @@ function NewProject() {
 /** The project that was read, and the id it was read for; see `ProjectsPage` for why the key is kept. */
 type LoadState =
   | { kind: 'ready'; for: string; project: ProjectDetail }
+  /** A Story shown as a Writing Project (#140): read as the story, because no project row exists for it. */
+  | { kind: 'story'; for: string }
   | { kind: 'missing'; for: string }
   | { kind: 'failed'; for: string }
 
-function Project({ inUniverse }: { inUniverse: boolean }) {
+function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   useI18n()
-  // `id` is the universe in the universe-scoped twin; `*` is whatever the address names below the project.
-  const {
-    projectId,
-    id: universeId,
-    '*': segment = '',
-  } = useParams<{
+  // `id` is the universe in the universe-scoped twin; `*` is whatever the address names below the project. The story
+  // view routes name the project `storyId` instead, for the story's page (#194).
+  const params = useParams<{
     projectId: string
+    storyId: string
     id: string
     '*': string
   }>()
+  const projectId = params.projectId ?? params.storyId
+  const universeId = params.id
+  const segment = view ?? params['*'] ?? ''
   const [state, setState] = useState<LoadState | null>(null)
   const [schemaVersion, setSchemaVersion] = useState(0)
   const read = state !== null && state.for === projectId ? state : null
@@ -176,12 +188,30 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         const status = (error as { status?: number }).status
-        setState(
-          status === 404 ? { kind: 'missing', for: projectId } : { kind: 'failed', for: projectId },
-        )
+        if (status !== 404) {
+          setState({ kind: 'failed', for: projectId })
+          return
+        }
+        // `/api/projects/{id}` does not resolve a story id, by design (#140), so a project that is not stored may be a
+        // story of this universe. Only read here, never copied: the story's page reads the story itself.
+        if (!inUniverse || !universeId) {
+          setState({ kind: 'missing', for: projectId })
+          return
+        }
+        getStory(universeId, projectId, controller.signal)
+          .then(() => setState({ kind: 'story', for: projectId }))
+          .catch((storyError: unknown) => {
+            if (controller.signal.aborted) return
+            const storyStatus = (storyError as { status?: number }).status
+            setState(
+              storyStatus === 404
+                ? { kind: 'missing', for: projectId }
+                : { kind: 'failed', for: projectId },
+            )
+          })
       })
     return () => controller.abort()
-  }, [projectId])
+  }, [projectId, inUniverse, universeId])
 
   useDocumentTitle(read?.kind === 'ready' ? read.project.name : t('projects.one.title'))
 
@@ -202,6 +232,24 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
 
   if (read.kind === 'failed') {
     return <EmptyState title={t('projects.one.failed')} testId="project-failed" />
+  }
+
+  if (read.kind === 'story') {
+    const storySections = projectSections(ProjectKind.Writing, read.for)
+    const storyView = storySections.find((candidate) => candidate.segment === segment)
+    // Reached through `*` (the bare address, or a view a story does not have) or by a segment the story routes do not
+    // carry, the story-backed project lands on its Structure, which is the story's own first view.
+    if (!storyView || !view) {
+      return <Navigate to={projectPath(read.for, 'structure', universeId)} replace />
+    }
+    // The story's page, unchanged, with its own header and views; the shell only adds the project's tab bar above it.
+    return (
+      <ProjectShell projectId={read.for} universeId={universeId} sections={storySections} story>
+        <StoryPage
+          view={view === 'structure' ? 'scenes' : view === 'manuscript' ? 'manuscript' : 'ideas'}
+        />
+      </ProjectShell>
+    )
   }
 
   const { project } = read
