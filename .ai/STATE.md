@@ -9,7 +9,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 - Architecture decisions: `docs/architecture/decisions/README.md`. Files and responsibilities: `SYSTEMS.md`.
 - Branches, naming, sequence log: `docs/architecture/branching.md`. Tooling rules: `.claude/CLAUDE.md`.
 - Runbooks: `docs/deployment/azure-prod.md`, `docs/deployment/azure-dev.md`, `docs/deployment/cloudflare-r2.md`,
-  `docs/deployment/assistant-limits-and-cost.md`, `docs/recovery/database-backups.md`,
+  `docs/recovery/database-backups.md`,
   `docs/recovery/universe-recovery.md`. Domain and email layout: `docs/design/custom-domain-plan.md`.
 - Security assessment and open findings: `docs/security/alpha-security-assessment.md`.
 - Manual checklists: `docs/testing/` (PWA, maps, MCP images).
@@ -49,10 +49,10 @@ deferred.
 One line per branch. Delete the line when it merges.
 
 - `fix/project-screens-app-design`: the project screens use the app's own design (#184). The owner called them a mess and full of placeholders. First half: the class names that were in the markup and in no stylesheet, the buttons that carried no class, and `PageHeader` on the two pages that hand-rolled a head. Second half: the four always-open creation forms now open from each panel's head, a row's secondary and destructive verbs moved into `ActionMenu`, the panels stack in one column with one rhythm, and the copy went through `stop-slop` and `humanizer` (one "Loading" for every panel, fifteen of the sixteen placeholders gone, an action keeps its name from trigger to submit).
-- `docs/m4-assistant-audit`: the M4 retirement inventory (#156), `docs/architecture/audits/2026-11-15-m4-assistant-retirement-audit.md`. Its findings bind #157 to #160: `UniverseAiHelpOff` and `AiChangeSource.Assistant` are kept (they gate and label MCP and AI Changes), so #159 writes no migration, and the AI Changes E2E specs must move off the assistant drawer onto MCP staging in #157. The assistant runs on Groq on DEV and has never been on in PROD.
 - M3 World Logic run (tracker #135, issues #149 to #155), one PR per issue. Landed: #149 the condition and System
   specification (ADR 0072, `docs/architecture/world-logic-condition-spec.md`, six fixtures under
-  `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/`). Next: #150 persistence. Delete this line when #155 merges.
+  `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/`); #150 persistence (`Features/Systems/`, backup format 44,
+  migration `AddWorldLogicSystems`). Next: #151 the evaluator. Delete this line when #155 merges.
 
 ## Committed, not on `dev`
 
@@ -69,9 +69,9 @@ Checked 2026-10-29 with `git log origin/dev..<branch>`.
 
 ## Open issues
 
-- **Languages** (umbrella #99, ADR 0071): #100 to #109 are on `dev`, and #108 (refusal codes, PR #161) with #110's export half (PR #162) landed 2026-11-14; `dev` is at `4490106`. The switch is live in the account menu, the portal's appearance menu and Profile; the API writes its emails, starter types, assistant language, 56 refusal codes and the readable export in the reader's language. Open: #110's canon rule messages (approach is the owner's choice, TBD and plan on the issue) and #111 (public SEO, deferred until `PublicSite__AllowIndexing` is set at launch). #99 itself stays open for the owner, with its deferred checks in the milestone summary. A refusal whose English names the author's own records stays English by design; `ApiErrorCodeContractTests` refuses to translate one.
-- **Roadmap M1 to M4** (trackers #133, #134, #135, #136), started 2026-11-14 as an unattended milestone run. M1 Projects Foundation and Writing: #137 (agent task template, PR #164), #138 (`CreativeProject` domain, PR #165) #139 (Projects navigation, PR #166), #140 (existing Stories listed as Writing Projects, PR #167, a derived mapping with no migration), #141 (the Structure tab, PR #168) and #142 (projects over MCP, PR #169) done. The milestone summary on #133 is next; closing #133 and starting M2 are the owner's. A project is account-owned with an optional universe link, reached at `/app/projects/<id>` whether or not it has one; a universe backup leaves projects out on purpose. #140 is the one that must not lose author data: existing Story URLs and MCP story IDs keep resolving. Trackers close only on the owner's word.
-- **Roadmap M5 Navigation and project workspace** (tracker #201, issues #191 to #200), opened 2026-11-15 from the owner's IA brief and the review at `docs/architecture/audits/2026-11-15-navigation-and-project-workspace-review.md` (PR #203). Not started, and it must not start while M3 (#135) or M4 (#136) has an open child: #152 changes the worldbuilding sidebar and #159, #160 still touch configuration and docs. Order is dependency order: #191 sidebar groups and the duplicate Stories entry, #192 project sections and shell, #193 the project page split, #194 one entry point per kind, #195 non-Writing overview, #196 Entity Types inside Entities with paging, #197 project-scoped Ideas (needs a column on `Idea` and a migration, which is why it is P1 and not the brief's P2), #198 bound the sidebar project list, #199 addresses and the leftover no-universe assumptions, #200 Chronology under Timeline. Three open questions sit on the tracker.
+- **Languages** (umbrella #99, ADR 0071): #100 to #109 are on `dev`, and #108 (refusal codes, PR #161) with #110's export half (PR #162) landed 2026-11-14; `dev` is at `4490106`. The switch is live in the account menu, the portal's appearance menu and Profile; the API writes its emails, starter types, the language line it hands a connected AI app, 56 refusal codes and the readable export in the reader's language. Open: #110's canon rule messages (approach is the owner's choice, TBD and plan on the issue) and #111 (public SEO, deferred until `PublicSite__AllowIndexing` is set at launch). #99 itself stays open for the owner, with its deferred checks in the milestone summary. A refusal whose English names the author's own records stays English by design; `ApiErrorCodeContractTests` refuses to translate one.
+- **Roadmap M1 to M4** (trackers #133, #134, #135, #136), started 2026-11-14 as an unattended milestone run. **M4 (#136) is done**, merged 2026-11-15: #156 (PR #182) the retirement inventory, #157 (PR #185) the web UI, #158 (PR #187) the API, the Groq and OpenAI providers and the `OpenAI` package, #159 (PR #190) no migration because nothing assistant-only was stored, #160 (PR #202) the settings, the Groq cost guide, the docs and `docs/testing/mcp-only-ai-checklist.md`. AI reaches a universe over MCP only. `UniverseAiHelpOff` (now the Connect to AI and AI Changes switch) and `AiChangeSource.Assistant` are kept on purpose. Owner actions on the milestone summary: delete the five `Assistant__*` settings on `dev-lorevolve`, revoke the Groq and OpenAI keys, and walk the MCP-only checklist on DEV. Closing #136 is the owner's. M1 Projects Foundation and Writing: #137 (agent task template, PR #164), #138 (`CreativeProject` domain, PR #165) #139 (Projects navigation, PR #166), #140 (existing Stories listed as Writing Projects, PR #167, a derived mapping with no migration), #141 (the Structure tab, PR #168) and #142 (projects over MCP, PR #169) done. The milestone summary on #133 is next; closing #133 and starting M2 are the owner's. A project is account-owned with an optional universe link, reached at `/app/projects/<id>` whether or not it has one; a universe backup leaves projects out on purpose. #140 is the one that must not lose author data: existing Story URLs and MCP story IDs keep resolving. Trackers close only on the owner's word.
+- **Roadmap M5 Navigation and project workspace** (tracker #201, issues #191 to #200), opened 2026-11-15 from the owner's IA brief and the review at `docs/architecture/audits/2026-11-15-navigation-and-project-workspace-review.md` (PR #203). Not started. It waits for M3 (#135), whose #150 to #155 are open and whose #152 changes the worldbuilding sidebar; M4's children all merged on 2026-11-15, so M4 no longer blocks it. Order is dependency order: #191 sidebar groups and the duplicate Stories entry, #192 project sections and shell, #193 the project page split, #194 one entry point per kind, #195 non-Writing overview, #196 Entity Types inside Entities with paging, #197 project-scoped Ideas (needs a column on `Idea` and a migration, which is why it is P1 and not the brief's P2), #198 bound the sidebar project list, #199 addresses and the leftover no-universe assumptions, #200 Chronology under Timeline. Three open questions sit on the tracker.
 
 `gh issue list --repo luisfpires18/lorevolve --state open`. As of 2026-10-29:
 
@@ -94,10 +94,10 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
   MCP `get_arc`. Not yet tried in a real client: add, reorder, remove beats and move a chapter between arcs, approve.
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
   `/mcp/u/{name}` URL, and ChatGPT image rendering or its fallback link. Never tried in a real client
-  (`docs/testing/mcp-images-checklist.md`). The assistant's 10,000-character tool-result cap can cut a large catalog.
+  (`docs/testing/mcp-images-checklist.md`). A client's own tool-result cap can cut a large catalog.
 - **Real-device PWA**: Lore entities in an installed iOS, Android and desktop app (`docs/testing/pwa-checklist.md`).
   Passed only in Chromium simulation; #58 was closed without that check.
-- **Maps on a device**: a real map, real touch, the assistant's phrasing over geography tools
+- **Maps on a device**: a real map, real touch, a connected app's phrasing over the geography tools
   (`docs/testing/maps-checklist.md`).
 - **Password reset email live**: request a reset on DEV and on PROD, open the emailed link, set a password. Not tried
   with real Resend yet.
@@ -110,7 +110,6 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 ## Settings off until the owner sets them
 
 - PROD `PublicSite__AllowIndexing`: unset, so search engines are told not to index. Set at public launch.
-- PROD `Assistant__*`: only if PROD offers the assistant (`docs/deployment/assistant-limits-and-cost.md`).
 - Backup retention deletion is proposed and off (ADR 0064, `docs/recovery/database-backups.md`).
 - DEV `Mcp__Origin` and `PlatformAdmin__OwnerUserId` were owner steps; not rechecked here. Unset means MCP is off and
   nobody is Admin on DEV.

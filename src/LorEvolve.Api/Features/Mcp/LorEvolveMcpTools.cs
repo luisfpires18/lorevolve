@@ -12,7 +12,7 @@ namespace LorEvolve.Api.Features.Mcp;
 
 /// <summary>
 /// The MCP tools (ADR 0046): one universe, read through <see cref="UniverseReader"/> - the same permission-safe read layer
-/// the built-in assistant uses, and nothing of the assistant itself.
+/// the app's own screens use.
 ///
 /// <para><b>Read-only by construction.</b> Every tool reads; none writes, and each says so in its annotations. Nothing
 /// takes a universe: the universe is <see cref="McpCaller"/>'s, set by the gate from the token, so an id from another

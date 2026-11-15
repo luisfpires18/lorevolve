@@ -18,6 +18,7 @@ using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Storage;
 using LorEvolve.Api.Features.Stories;
 using LorEvolve.Api.Features.Suggestions;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.Timeline;
 using LorEvolve.Api.Features.Universes;
 using LorEvolve.Api.Features.WorldRules;
@@ -194,6 +195,22 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     public DbSet<IdeaBoardConnection> IdeaBoardConnections => Set<IdeaBoardConnection>();
 
     public DbSet<WorldRule> WorldRules => Set<WorldRule>();
+
+    /// <summary>World Logic: named sets of reusable rule definitions, and their saved states (ADR 0072).</summary>
+    public DbSet<LoreSystem> LoreSystems => Set<LoreSystem>();
+
+    public DbSet<LoreSystemRevision> LoreSystemRevisions => Set<LoreSystemRevision>();
+
+    /// <summary>Reusable rule definitions: words, and optionally one typed condition tree (ADR 0072).</summary>
+    public DbSet<SystemRule> SystemRules => Set<SystemRule>();
+
+    public DbSet<SystemRuleRevision> SystemRuleRevisions => Set<SystemRuleRevision>();
+
+    /// <summary>Which rule definitions a System references, and in what order inside it.</summary>
+    public DbSet<LoreSystemRule> LoreSystemRules => Set<LoreSystemRule>();
+
+    /// <summary>Which rule definitions one rule's condition may reference.</summary>
+    public DbSet<SystemRuleDependency> SystemRuleDependencies => Set<SystemRuleDependency>();
 
     public DbSet<EntityPrivateNote> EntityPrivateNotes => Set<EntityPrivateNote>();
 

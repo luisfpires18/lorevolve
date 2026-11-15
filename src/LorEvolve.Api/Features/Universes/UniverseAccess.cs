@@ -54,7 +54,7 @@ public enum UniverseCapability
 
     /// <summary>
     /// Read and write the owner's private note on an entry (issue 23). The owner's alone: a note is author-only context
-    /// that no collaborator, public page, search, assistant or outside app may read.
+    /// that no collaborator, public page, search or outside app may read.
     /// </summary>
     PrivateNotes,
 }

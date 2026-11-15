@@ -49,7 +49,7 @@ public sealed class EntityImage
     /// <summary>
     /// Object key of the display copy: the whole picture fitted within <see cref="Media.ImagePreparation.DisplaySide"/>,
     /// WebP, cut once per asset at upload (audit 2026-11-07, A3). Null for a picture stored before display copies
-    /// existed, restored from a backup, or staged by the assistant; the client then draws the original as it always did.
+    /// existed, restored from a backup, or staged by an AI; the client then draws the original as it always did.
     /// </summary>
     public string? DisplayKey { get; set; }
 

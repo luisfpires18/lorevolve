@@ -304,3 +304,64 @@ Nothing here blocks M4; the plan above proceeds without any of it.
    Assistant block in the Profile's Usage section, Connect to AI still offered on a universe's front page, the AI
    Changes section still listed, a proposal from a connected AI app still reviewable and applicable, and the AI help
    toggle in universe settings still hiding the last two.
+
+## 8. Appendix: what #159 found when it looked again (2026-11-15)
+
+Issue #159 was to retire the assistant's persisted state. Section 2.2 predicted there was none to retire; the task
+confirmed it against the schema as it stands with #157 and #158 merged, and wrote no migration.
+
+| Checked | Result |
+| --- | --- |
+| Tables, columns or indexes owned by the assistant | none. The feature folder held no entity type and no configuration; the only persistence that ever carried its name is the two items below |
+| `UniverseAiHelpOff` | kept. It is the author's choice to hide this universe's AI, which is now Connect to AI and Pending AI Changes |
+| `AiChangeSource.Assistant` (value 1) | kept, number unchanged. Proposals authors reviewed hold it, and `AiChangeTestClient.Stage` still stages with it, so the whole AI Changes suite exercises the value on every run |
+| The allowance and its windows | nothing persisted. `AssistantAllowance` counted in the process's memory, so its removal deleted no row |
+| Questions, answers, conversations | nothing persisted. The provider was asked with `store: false` and no turn was ever written |
+| Backup format | unchanged. Both kept items are classified LeftOut (`BackupInventoryTests`), so no export, no validation count and no restore reads them, and `UniverseBackup.CurrentVersion` did not move |
+| `LaterSchema` and the four table-list fingerprints | unchanged, because no table was added or dropped |
+| `dotnet ef migrations has-pending-model-changes` | "No changes have been made to the model since the last migration" |
+
+Backups written before the retirement restore unchanged, which is the same statement as the format not moving: the file a
+host wrote the day before M4 is in the version this code wrote before M4 too, because M4 added no table and no
+migration. `BackupVersionTests` restores every version LorEvolve has ever written, and
+`AssistantRetirementPersistenceTests` restores versions 1 and 17 and the current one by name, so the oldest file the
+project supports and a file from just before M4 are both proved to come back. (The M3 World Logic work raised the
+current version to 44 for its own tables, after this task; that is its change, not M4's.)
+
+So the retirement needed no rollback path, because it changed no schema. `AssistantRetirementPersistenceTests` now holds
+the decision where it fails if someone undoes it: the AI help row is written and removed by the author's switch, a
+proposal staged with the assistant's source reads back with it, and a restored universe starts with AI help on and no
+proposal.
+
+The owner decision in section 7.3 is unchanged and still theirs: if they would rather `UniverseAiHelpOff` went, that is
+a migration and a separate task, and every author's choice would be lost with it.
+
+## 9. Appendix: every "Assistant" and "Groq" left in the repository (#160, 2026-11-15)
+
+M4's last task removed the configuration and the operational documents, and then read every remaining match of
+`assistant` or `groq`, case-insensitive, outside `node_modules`, `bin`, `obj`, `.git` and `src/LorEvolve.Web/dist` (a
+build output). Nothing was deleted for matching a search. These are the matches that stay, and why.
+
+| Where | What it says | Why it stays |
+| --- | --- | --- |
+| `Features/AiChanges/AiChangeModel.cs` | `AiChangeSource.Assistant = 1`, with its summary saying it is retired and its number fixed | Proposals authors reviewed hold the value (section 2.2) |
+| `Features/AiChanges/AiChangeEndpoints.cs`, `AiChangeContracts.cs` | the two entry points a proposal could come from, one of them now retired | The review reads rows from both |
+| `Features/Reading/UniverseReader.cs`, `Features/Maps/MapGeography.cs` | the retired assistant read these same classes | True, and it says why the readers are shaped as they are |
+| `i18n/*/review.ts` | "LorEvolve Assistant", the label of a proposal it staged | Historical rows still show it (section 2.4) |
+| `aiChanges/api.ts`, `words.ts` | the `AiChangeSource` map and the label chosen from it | The web side of the same two rows |
+| `src/LorEvolve.Web/src/pages/UniverseWorkspace.tsx`, `styles.css` | a line each saying the assistant's button stood here until M4 | Explains a layout that was built around it |
+| `docs/architecture/decisions/0045-universe-assistant.md` and its row in `README.md` | the decision, now marked retired, with what it decided that is kept | A decision record is not rewritten; ADR 0047, 0048, 0061 and 0062 name the assistant the same way, as the record of what was decided then |
+| `docs/architecture/audits/*`, `docs/history/*` | dated records, including this file and the 2026-10 and 2026-11 audits | Records of what was true when written |
+| `docs/testing/maps-checklist.md`, `docs/testing/mcp-only-ai-checklist.md` | one line each saying the built-in assistant is gone, so the check is through a connected app | Tells whoever runs the checklist why it changed |
+| `tests/LorEvolve.Api.Tests/AiChangeTestClient.cs` and the suites using it | staging with `AiChangeSource.Assistant` | Exercises the kept value on every run |
+| `tests/LorEvolve.Api.Tests/RetiredAssistantRoutesTests.cs`, `AssistantRetirementPersistenceTests.cs` | the retirement's own tests | They are the proof it happened |
+| `tests/LorEvolve.E2E/specs/*` | comments saying a proposal is staged over MCP because the drawer is gone, and `account-usage.spec.ts` asserting the allowance block is absent | Says why those specs look as they do |
+| `.claude/settings.local.json` | one allowed `ffmpeg` command naming `assistant.png`, from building the alpha page's screenshot | A local tool permission, not app behaviour; the picture on that page shows an AI app, and its alt text says so |
+| `site/alpha/public/assets/shots/assistant.webp` | the alpha page's screenshot file name | The picture is of an AI app answering from a universe, which is still what the page offers; the sentence promising a built-in assistant was removed |
+
+Removed in this task: the `Assistant` block in `appsettings.json`, `Assistant:Provider` in
+`appsettings.Development.json`, `docs/deployment/assistant-limits-and-cost.md` whole, the `Assistant__*` paragraph in
+`docs/deployment/azure-dev.md` and the row in `docs/deployment/azure-prod.md`, 20 rows of `SYSTEMS.md` and the assistant
+clauses in 13 more, two pointers in `.ai/STATE.md`, the assistant step in the maps checklist and the drawer in the PWA
+checklist's "how to read `display-mode`", and the alpha page's promise of a built-in assistant. No `Assistant__*`
+setting is needed to boot: `appsettings.json` names none.

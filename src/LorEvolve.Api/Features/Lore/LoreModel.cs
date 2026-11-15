@@ -137,7 +137,7 @@ public sealed class EntityType
 /// <summary>
 /// An optional, author-named section of one type's fields (Issue #26), such as "Combat" or "Politics". Presentation only: it
 /// changes where a field is shown in a form and on an entry, never the field's id, values, required check, target, filters,
-/// Canon reading or anything the API, MCP or the assistant answers about an entry. A type with none shows its fields as one
+/// Canon reading or anything the API or MCP answers about an entry. A type with none shows its fields as one
 /// list. Fields in no section are shown first, with no heading.
 /// </summary>
 public sealed class EntityFieldSection
