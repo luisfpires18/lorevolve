@@ -15,6 +15,12 @@ namespace LorEvolve.Api.Features.DatabaseBackups;
 /// </summary>
 public static class DatabaseBackupSetup
 {
+    /// <summary>Stable marker for a run asked for where database backups are not configured.</summary>
+    public const string NotConfiguredCode = "database_backup_not_configured";
+
+    /// <summary>Stable marker for a run asked for while one is already going.</summary>
+    public const string RunningCode = "database_backup_running";
+
     public static IServiceCollection AddLorEvolveDatabaseBackups(this IServiceCollection services, IConfiguration configuration)
     {
         services.TryAddSingleton(TimeProvider.System);
@@ -80,7 +86,7 @@ public static class DatabaseBackupSetup
                     title: "Database backups are not set up.",
                     detail: runner.Status().Problem ?? "Database backups are off.",
                     statusCode: StatusCodes.Status409Conflict,
-                    extensions: new Dictionary<string, object?> { ["code"] = "database_backup_not_configured" });
+                    extensions: new Dictionary<string, object?> { ["code"] = NotConfiguredCode });
             }
 
             // The run outlives this request: it is bound to the host, not to a browser tab.
@@ -89,7 +95,7 @@ public static class DatabaseBackupSetup
                     title: "A database backup is already running.",
                     detail: "Wait for it to finish; its result shows here.",
                     statusCode: StatusCodes.Status409Conflict,
-                    extensions: new Dictionary<string, object?> { ["code"] = "database_backup_running" })
+                    extensions: new Dictionary<string, object?> { ["code"] = RunningCode })
                 : Results.Accepted("/api/admin/database-backups", runner.Status());
         }).WithName("RunDatabaseBackup");
 

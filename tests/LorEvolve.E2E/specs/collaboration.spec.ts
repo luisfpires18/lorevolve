@@ -453,15 +453,7 @@ test.describe('each role is shown what it can do', () => {
       for (const section of ['Trash', 'Publish', 'Settings', 'Ideas']) {
         await expect(sidebar(page).getByRole('link', { name: section })).toHaveCount(0)
       }
-      for (const section of [
-        'Lore',
-        'Timeline',
-        'Chronology',
-        'World Rules',
-        'Stories',
-        'Canon',
-        'Types',
-      ]) {
+      for (const section of ['Lore', 'Timeline', 'World Logic', 'Types']) {
         await expect(sidebar(page).getByRole('link', { name: section })).toBeVisible()
       }
 

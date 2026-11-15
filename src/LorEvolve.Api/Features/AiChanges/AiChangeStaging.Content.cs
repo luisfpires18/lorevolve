@@ -118,6 +118,97 @@ internal static partial class AiChangeStaging
             return new PlotArcValues(story, (arc.Title ?? before?.Title ?? string.Empty).Trim(), Cleared(arc.Description, before?.Description), Cleared(arc.Notes, before?.Notes));
         }
 
+        private async Task<AiChangeWork?> ProjectEntryAsync(CancellationToken cancellationToken)
+        {
+            if (action == AiChangeAction.Create)
+            {
+                return Work(null, null, ProjectEntry(input.ProjectEntry, null));
+            }
+
+            return await StoredAsync(
+                () => AiChangeSnapshots.ProjectEntryAsync(db, universeId, input.TargetId!.Value, cancellationToken),
+                stored => Work(
+                    stored,
+                    null,
+                    action == AiChangeAction.Remove ? new RemoveValues(null) : ProjectEntry(input.ProjectEntry, stored)));
+        }
+
+        /// <summary>
+        /// The values a proposed project entry would hold (#148). On an update the stored entry is the starting point,
+        /// so a proposal that names only a name changes only the name, and only the fields it names are touched: the
+        /// rest of an author's entry is left exactly as it is.
+        /// </summary>
+        private ProjectEntryValues? ProjectEntry(AiProjectEntryInput? entry, ProjectEntryValues? before)
+        {
+            if (entry is null && before is null)
+            {
+                Fail(AiChangeCodes.Invalid, "Say what the project entry should hold.", "projectEntry");
+                return null;
+            }
+
+            // An entry belongs to the project it was made in and does not move between projects, so on an update the
+            // stored project wins and a proposal naming another one is refused rather than quietly corrected. Found by
+            // the first review round of #148: without this a cross-project update reached the commit, which refused it
+            // as a missing entry, so the person would have approved a change that then failed.
+            if (before is { } current && entry?.ProjectId is { } named && named != current.ProjectId)
+            {
+                Fail(
+                    AiChangeCodes.Invalid,
+                    "An entry stays in the project it was made in. Leave projectId out, or send its own project.",
+                    "projectEntry.projectId");
+                return null;
+            }
+
+            var projectId = before?.ProjectId ?? entry?.ProjectId ?? Guid.Empty;
+            var typeId = entry?.TypeId ?? before?.TypeId ?? Guid.Empty;
+
+            if (projectId == Guid.Empty)
+            {
+                Fail(AiChangeCodes.Invalid, "Name the project this entry belongs to.", "projectEntry.projectId");
+                return null;
+            }
+
+            if (typeId == Guid.Empty)
+            {
+                Fail(AiChangeCodes.Invalid, "Name a type of that project, from get_project_schema.", "projectEntry.typeId");
+                return null;
+            }
+
+            var fields = before?.Fields is { } stored ? new List<ProjectFieldValue>(stored) : [];
+
+            foreach (var value in entry?.Fields ?? [])
+            {
+                if (value?.FieldId is not { } fieldId)
+                {
+                    Fail(AiChangeCodes.Invalid, "Every field value needs the field's id.", "projectEntry.fields");
+                    return null;
+                }
+
+                fields.RemoveAll(each => each.FieldId == fieldId);
+                fields.Add(new ProjectFieldValue(
+                    fieldId,
+                    value.Text,
+                    value.Number,
+                    value.Boolean,
+                    value.Date,
+                    value.Choices?.ToList(),
+                    value.LinkedEntryId));
+            }
+
+            // The link to a lore entry: left as it was unless this change names one or asks for it to go.
+            var canon = entry?.ClearCanonEntry == true
+                ? null
+                : entry?.CanonEntryId ?? before?.CanonEntryId;
+
+            return new ProjectEntryValues(
+                projectId,
+                typeId,
+                (entry?.Name ?? before?.Name ?? string.Empty).Trim(),
+                Cleared(entry?.Summary, before?.Summary) ?? string.Empty,
+                canon,
+                fields);
+        }
+
         private async Task<AiChangeWork?> WorldRuleAsync(CancellationToken cancellationToken)
         {
             if (action == AiChangeAction.Create)
@@ -210,7 +301,8 @@ internal static partial class AiChangeStaging
 
             // The body is plain text stored exactly as written; only a cleared one changes.
             var body = idea.Body is null ? before?.Body ?? string.Empty : idea.Body.Trim().Length == 0 ? string.Empty : idea.Body;
-            return new IdeaValues((idea.Title ?? before?.Title ?? string.Empty).Trim(), body, references);
+            var project = idea.ProjectId is { } asked2 ? asked2 == Guid.Empty ? null : asked2 : before?.ProjectId;
+            return new IdeaValues((idea.Title ?? before?.Title ?? string.Empty).Trim(), body, references, project);
         }
 
         /// <summary>

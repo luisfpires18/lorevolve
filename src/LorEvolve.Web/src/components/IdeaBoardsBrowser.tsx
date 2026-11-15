@@ -14,6 +14,7 @@ import {
   type IdeaBoardSummary,
 } from '../ideas/boards'
 import { formatDate, formatDateTime } from '../lib/dates'
+import { useI18n } from '../i18n'
 import type { UniverseSummary } from '../universes/types'
 
 type LoadState =
@@ -32,6 +33,7 @@ const UNASSIGNED = 'unassigned'
  * recently updated first; the filter lives in the address. Recently deleted lists deleted boards with Restore.
  */
 export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: string } | null }) {
+  const { t, tn, tx } = useI18n()
   const [params, setParams] = useSearchParams()
   const location = useLocation()
   const headingId = useId()
@@ -103,10 +105,10 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
       .then((result) => setState({ kind: 'ready', page: result }))
       .catch(() => {
         if (!controller.signal.aborted)
-          setState({ kind: 'error', message: 'The boards could not be read.' })
+          setState({ kind: 'error', message: t('ideas.boards.loadFailed') })
       })
     return () => controller.abort()
-  }, [show, deleted, search, page, reads])
+  }, [show, deleted, search, page, reads, t])
 
   useEffect(() => {
     if (outcome) outcomeRef.current?.focus()
@@ -118,20 +120,12 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
     try {
       const restored = await restoreIdeaBoard(board.id)
       setOutcome({
-        text: (
-          <>
-            <Quoted text={restored.title} /> is back in your boards.
-          </>
-        ),
+        text: tx('ideas.boards.restored', { title: <Quoted text={restored.title} /> }),
         to: `${basePath}/${restored.id}`,
       })
     } catch {
       setOutcome({
-        text: (
-          <>
-            <Quoted text={board.title} /> could not be restored. Try again.
-          </>
-        ),
+        text: tx('ideas.boards.restoreFailed', { title: <Quoted text={board.title} /> }),
         to: null,
       })
     } finally {
@@ -146,24 +140,19 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
   return (
     <section className="ideas" aria-labelledby={headingId} data-testid="boards">
       <PageHeader
-        title="Idea boards"
+        title={t('ideas.boards.title')}
         titleId={headingId}
         lede={
           <p className="ideas__lede">
-            {universe ? (
-              <>
-                Boards for <Quoted text={universe.name} />: notes, ideas and lore laid out side by
-                side. Only you can see them.
-              </>
-            ) : (
-              'Every board you have, in a universe or not. Only you can see them, and they stay out of your lore.'
-            )}
+            {universe
+              ? tx('ideas.boards.ledeUniverse', { universe: <Quoted text={universe.name} /> })
+              : t('ideas.boards.ledeAll')}
           </p>
         }
         actions={
           <Link className="button" to={`${basePath}/new`} data-testid="new-board">
             <ActionIcon icon={Plus} />
-            New board
+            {t('ideas.boards.newBoard')}
           </Link>
         }
       />
@@ -173,15 +162,14 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
       {notice?.created && !deleted ? (
         <div className="notice ideas__notice" data-testid="boards-created-notice">
           <p role="status">
-            Created <Quoted text={notice.created.title} />.
+            {tx('ideas.boards.created', { title: <Quoted text={notice.created.title} /> })}
           </p>
         </div>
       ) : null}
       {notice?.deleted && !deleted ? (
         <div className="notice ideas__notice" data-testid="boards-deleted-notice">
           <p role="status">
-            <Quoted text={notice.deleted.title} /> was deleted. It is in Recently deleted, where you
-            can restore it.
+            {tx('ideas.boards.deletedNotice', { title: <Quoted text={notice.deleted.title} /> })}
           </p>
         </div>
       ) : null}
@@ -189,13 +177,13 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
       <div className="controls ideas__controls">
         <div className="controls__search">
           <label className="field__label" htmlFor={searchId}>
-            Filter boards
+            {t('ideas.boards.filter')}
           </label>
           <input
             id={searchId}
             className="field__input"
             type="search"
-            placeholder="Words in a title"
+            placeholder={t('ideas.boards.searchPlaceholder')}
             value={typed}
             onChange={(event) => setTyped(event.target.value)}
             data-testid="boards-search"
@@ -205,7 +193,7 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
         {universe ? null : (
           <div className="ideas__show">
             <label className="field__label" htmlFor={showId}>
-              Show
+              {t('ideas.boards.show')}
             </label>
             <select
               id={showId}
@@ -214,18 +202,20 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
               onChange={(event) => update({ show: event.target.value })}
               data-testid="boards-show"
             >
-              <option value="">All boards</option>
-              <option value={UNASSIGNED}>No universe</option>
+              <option value="">{t('ideas.boards.allBoards')}</option>
+              <option value={UNASSIGNED}>{t('ideas.boards.noUniverse')}</option>
               {(universes ?? []).map((one) => (
                 <option key={one.id} value={one.id}>
-                  {one.isArchived ? `${one.name} (archived)` : one.name}
+                  {one.isArchived
+                    ? t('ideas.boards.archivedUniverse', { name: one.name })
+                    : one.name}
                 </option>
               ))}
             </select>
           </div>
         )}
 
-        <div className="segmented" role="group" aria-label="Which boards">
+        <div className="segmented" role="group" aria-label={t('ideas.boards.which')}>
           <button
             type="button"
             className="segmented__option"
@@ -233,7 +223,7 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
             onClick={() => update({ view: null })}
             data-testid="boards-view-live"
           >
-            Boards
+            {t('ideas.boards.viewLive')}
           </button>
           <button
             type="button"
@@ -242,7 +232,7 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
             onClick={() => update({ view: 'deleted' })}
             data-testid="boards-view-deleted"
           >
-            Recently deleted
+            {t('ideas.boards.viewDeleted')}
           </button>
         </div>
       </div>
@@ -252,13 +242,13 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
           <p role="status" data-testid="boards-message">
             {outcome.text}
           </p>
-          {outcome.to ? <Link to={outcome.to}>Open it</Link> : null}
+          {outcome.to ? <Link to={outcome.to}>{t('ideas.boards.openIt')}</Link> : null}
         </div>
       ) : null}
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Gathering boards…
+          {t('ideas.boards.loading')}
         </p>
       ) : null}
 
@@ -273,7 +263,7 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
               setReads((current) => current + 1)
             }}
           >
-            Try again
+            {t('ideas.boards.retry')}
           </button>
         </div>
       ) : null}
@@ -310,18 +300,23 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
                           : 'idearow__universe idearow__universe--none'
                       }
                     >
-                      {board.universe ? board.universe.name : 'No universe'}
+                      {board.universe ? board.universe.name : t('ideas.boards.noUniverse')}
                     </span>
                   )}
-                  <span>{board.cardCount === 1 ? '1 card' : `${board.cardCount} cards`}</span>
+                  <span>{tn('ideas.boards.cards', board.cardCount)}</span>
                   {deleted && board.deletedAt ? (
                     <span>
-                      Deleted{' '}
-                      <time dateTime={board.deletedAt}>{formatDateTime(board.deletedAt)}</time>
+                      {tx('ideas.boards.deletedAt', {
+                        time: (
+                          <time dateTime={board.deletedAt}>{formatDateTime(board.deletedAt)}</time>
+                        ),
+                      })}
                     </span>
                   ) : (
                     <span>
-                      Updated <time dateTime={board.updatedAt}>{formatDate(board.updatedAt)}</time>
+                      {tx('ideas.boards.updatedAt', {
+                        time: <time dateTime={board.updatedAt}>{formatDate(board.updatedAt)}</time>,
+                      })}
                     </span>
                   )}
                 </p>
@@ -332,10 +327,10 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
                   type="button"
                   disabled={restoring !== null}
                   onClick={() => void restore(board)}
-                  aria-label={`Restore board “${board.title}”`}
+                  aria-label={t('ideas.boards.restoreAria', { title: board.title })}
                   data-testid="board-restore"
                 >
-                  {restoring === board.id ? 'Restoring…' : 'Restore'}
+                  {restoring === board.id ? t('ideas.boards.restoring') : t('ideas.boards.restore')}
                 </button>
               ) : null}
             </li>
@@ -347,24 +342,24 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
         deleted ? (
           <EmptyState
             testId="boards-empty"
-            title="Nothing recently deleted."
-            hint="A deleted board waits here, whole, until you restore it."
+            title={t('ideas.boards.empty.deletedTitle')}
+            hint={t('ideas.boards.empty.deletedHint')}
           />
         ) : isFiltered ? (
           <EmptyState
             testId="boards-empty"
-            title="No boards match."
-            hint="Try other words, or show all boards."
+            title={t('ideas.boards.empty.filteredTitle')}
+            hint={t('ideas.boards.empty.filteredHint')}
           />
         ) : (
           <EmptyState
             testId="boards-empty"
-            title="No boards yet."
-            hint="Lay notes, ideas and lore out side by side, and draw lines between them."
+            title={t('ideas.boards.empty.noneTitle')}
+            hint={t('ideas.boards.empty.noneHint')}
             action={
               <Link className="button" to={`${basePath}/new`} data-testid="empty-new-board">
                 <ActionIcon icon={Plus} />
-                New board
+                {t('ideas.boards.newBoard')}
               </Link>
             }
           />
@@ -372,17 +367,17 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
       ) : null}
 
       {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label="Pagination">
+        <nav className="pager" aria-label={t('ideas.boards.pagination')}>
           <button
             className="button button--secondary"
             type="button"
             disabled={result.page <= 1}
             onClick={() => update({ page: String(result.page - 1) })}
           >
-            Previous
+            {t('ideas.boards.previous')}
           </button>
           <span className="pager__position">
-            Page {result.page} of {result.totalPages}
+            {t('ideas.boards.position', { page: result.page, total: result.totalPages })}
           </span>
           <button
             className="button button--secondary"
@@ -390,7 +385,7 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
             disabled={result.page >= result.totalPages}
             onClick={() => update({ page: String(result.page + 1) })}
           >
-            Next
+            {t('ideas.boards.next')}
           </button>
         </nav>
       ) : null}

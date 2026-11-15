@@ -38,6 +38,7 @@ import { formatDateTime } from '../lib/dates'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { useLocalDraft } from '../lib/useLocalDraft'
 import type { UniverseSummary } from '../universes/types'
+import { useI18n } from '../i18n'
 
 type LoadState =
   | { kind: 'loading' }
@@ -167,10 +168,6 @@ function storedMomentOf(problem: unknown) {
   return typeof updatedAt === 'string' ? updatedAt : null
 }
 
-function plural(total: number, one: string, many: string) {
-  return `${total} ${total === 1 ? one : many}`
-}
-
 interface IdeaBoardEditorProps {
   /** The board being edited, or null for a new one. */
   boardId: string | null
@@ -204,6 +201,7 @@ export function IdeaBoardEditor({
   onCreated,
   onDeleted,
 }: IdeaBoardEditorProps) {
+  const { t, tn, tx } = useI18n()
   const headingId = useId()
   const titleId = useId()
   const universeFieldId = useId()
@@ -273,11 +271,11 @@ export function IdeaBoardEditor({
         setLoad(
           error instanceof ApiError && error.status === 404
             ? { kind: 'missing' }
-            : { kind: 'error', message: 'This board could not be opened.' },
+            : { kind: 'error', message: t('ideas.board.openFailed') },
         )
       })
     return () => controller.abort()
-  }, [isNew, boardId, reads, contextUniverseId])
+  }, [isNew, boardId, reads, contextUniverseId, t])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -310,11 +308,8 @@ export function IdeaBoardEditor({
     else forget()
   }, [isReady, isHeld, isDirty, draft, stored.updatedAt, keep, forget])
 
-  const name = draft.title.trim() || stored.title || 'This board'
-  useLeaveGuard(
-    isDirty ? `“${name}” has unsaved changes. Leave without saving them?` : null,
-    discard,
-  )
+  const name = draft.title.trim() || stored.title || t('ideas.board.thisBoard')
+  useLeaveGuard(isDirty ? t('ideas.board.leaveGuard', { name }) : null, discard)
 
   function edit(change: Partial<Fields>) {
     setDraft((current) => ({ ...current, ...change }))
@@ -331,7 +326,7 @@ export function IdeaBoardEditor({
   async function save(expectedUpdatedAt: string | null) {
     if (inFlight.current || !isDirty || isHeld) return
     if (draft.title.trim() === '') {
-      setFieldErrors({ title: 'Give the board a title, so you can find it again.' })
+      setFieldErrors({ title: t('ideas.board.titleRequired') })
       titleInput.current?.focus()
       return
     }
@@ -360,15 +355,13 @@ export function IdeaBoardEditor({
       if (error instanceof ApiError && error.status === 409 && error.code === IDEA_BOARD_CHANGED) {
         setConflict({ updatedAt: storedMomentOf(error.problem) })
       } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(
-          'This board is no longer here, so it could not be saved. It may have been deleted in another window.',
-        )
+        setFailure(t('ideas.board.saveGone'))
       } else if (error instanceof ApiError && error.status === 400) {
         setFieldErrors(error.fieldErrors)
         const first = Object.values(error.fieldErrors)[0]
         setFailure(first ?? error.message)
       } else {
-        setFailure('The board could not be saved. Your changes are still here. Try again.')
+        setFailure(t('ideas.board.saveFailed'))
       }
     } finally {
       inFlight.current = false
@@ -404,10 +397,10 @@ export function IdeaBoardEditor({
   async function loadSavedVersion() {
     if (
       !(await confirmAction({
-        title: 'Replace this board with the version saved elsewhere?',
-        message: 'What you changed here since your last save will be lost.',
-        confirmLabel: 'Use the saved version',
-        cancelLabel: 'Keep my changes',
+        title: t('ideas.board.loadSaved.title'),
+        message: t('ideas.board.loadSaved.message'),
+        confirmLabel: t('ideas.board.loadSaved.confirm'),
+        cancelLabel: t('ideas.board.loadSaved.cancel'),
         variant: 'destructive',
       }))
     ) {
@@ -426,15 +419,13 @@ export function IdeaBoardEditor({
       !universes.some((universe) => universe.id === copy.universeId)
     setDraft(universeGone ? withoutEntries({ ...copy, universeId: null }) : copy)
     setAnnouncement(
-      universeGone
-        ? 'The recovered draft is on the board, unassigned: the universe it named no longer exists. It is not saved yet.'
-        : 'The recovered draft is on the board. It is not saved yet.',
+      universeGone ? t('ideas.board.recoveredUnassigned') : t('ideas.board.recovered'),
     )
   }
 
   function discardDraft() {
     discard()
-    setAnnouncement('The recovered draft was discarded.')
+    setAnnouncement(t('ideas.board.discarded'))
   }
 
   /** The fields without their lore cards and the lines that touched them: lore cards need the board's universe. */
@@ -456,16 +447,16 @@ export function IdeaBoardEditor({
     const entries = draft.cards.filter((card) => card.kind === BoardCardKind.Entity).length
     if (entries > 0) {
       const confirmed = await confirmAction({
-        title: "Change this board's universe?",
-        message: `Lore cards stay inside their universe. Changing it takes this board's ${plural(entries, 'lore card', 'lore cards')} off it, with their lines. Nothing is saved until you save.`,
-        confirmLabel: 'Change universe',
+        title: t('ideas.board.changeUniverse.title'),
+        message: tn('ideas.board.changeUniverse.message', entries),
+        confirmLabel: t('ideas.board.changeUniverse.confirm'),
         variant: 'warning',
       })
       if (!confirmed) return
       setDraft((current) => ({ ...withoutEntries(current), universeId: next }))
       setSelected(null)
       setConnecting(null)
-      setAnnouncement('Universe changed. Its lore cards were taken off the unsaved board.')
+      setAnnouncement(t('ideas.board.universeChanged'))
       return
     }
     edit({ universeId: next })
@@ -478,7 +469,7 @@ export function IdeaBoardEditor({
     const placed: BoardCard = { ...card, id, x: Math.round(spot.x), y: Math.round(spot.y) }
     setDraft((current) => ({ ...current, cards: [...current.cards, placed] }))
     setSelected({ kind: 'card', id })
-    setAnnouncement(`Added “${cardName(placed)}” to the board. It is not saved yet.`)
+    setAnnouncement(t('ideas.board.cardAdded', { name: cardName(placed) }))
   }
 
   function addNote() {
@@ -536,7 +527,7 @@ export function IdeaBoardEditor({
     }))
     setSelected(null)
     setConnecting(null)
-    setAnnouncement(`Took “${cardName(card)}” off the board. It is not saved yet.`)
+    setAnnouncement(t('ideas.board.cardRemoved', { name: cardName(card) }))
   }
 
   function connectTo(toCardId: string) {
@@ -550,11 +541,11 @@ export function IdeaBoardEditor({
     )
     if (exists) {
       setSelected({ kind: 'line', id: exists.id })
-      setAnnouncement('Those two cards are already joined.')
+      setAnnouncement(t('ideas.board.alreadyJoined'))
       return
     }
     if (draft.connections.length >= BOARD_MAX_CONNECTIONS) {
-      setAnnouncement(`A board holds up to ${BOARD_MAX_CONNECTIONS} lines.`)
+      setAnnouncement(t('ideas.board.linesFull', { max: BOARD_MAX_CONNECTIONS }))
       return
     }
     const id = crypto.randomUUID()
@@ -566,7 +557,7 @@ export function IdeaBoardEditor({
     const ends = [from, toCardId].map((cardId) =>
       cardName(draft.cards.find((card) => card.id === cardId)!),
     )
-    setAnnouncement(`Joined “${ends[0]}” and “${ends[1]}”. It is not saved yet.`)
+    setAnnouncement(t('ideas.board.joined', { from: ends[0]!, to: ends[1]! }))
   }
 
   function editLine(id: string, label: string) {
@@ -582,7 +573,7 @@ export function IdeaBoardEditor({
       connections: current.connections.filter((line) => line.id !== id),
     }))
     setSelected(null)
-    setAnnouncement('Removed the line. It is not saved yet.')
+    setAnnouncement(t('ideas.board.lineRemoved'))
   }
 
   function select(selection: BoardSelection) {
@@ -595,21 +586,15 @@ export function IdeaBoardEditor({
     const title = stored.title
     setFailure(null)
     const deleted = await confirmAction({
-      title: (
-        <>
-          Delete “<bdi>{title}</bdi>”?
-        </>
-      ),
-      message: isDirty
-        ? 'Your unsaved changes will be lost. The board as last saved goes to Recently deleted, where you can restore it.'
-        : 'It goes to Recently deleted, where you can restore it.',
-      confirmLabel: 'Delete board',
-      busyLabel: 'Deleting…',
+      title: tx('ideas.board.delete.title', { title: <bdi>{title}</bdi> }),
+      message: isDirty ? t('ideas.board.delete.messageDirty') : t('ideas.board.delete.message'),
+      confirmLabel: t('ideas.board.delete.confirm'),
+      busyLabel: t('ideas.board.delete.busy'),
       variant: isDirty ? 'destructive' : 'warning',
       failure: (error) =>
         error instanceof ApiError && error.status === 404
-          ? 'This board is no longer here. It may already have been deleted in another window.'
-          : 'The board could not be deleted. Try again.',
+          ? t('ideas.board.delete.gone')
+          : t('ideas.board.delete.failed'),
       action: () => deleteIdeaBoard(boardId),
     })
     if (!deleted) return
@@ -620,7 +605,7 @@ export function IdeaBoardEditor({
   if (load.kind === 'loading') {
     return (
       <p className="notice" role="status" data-testid="board-loading">
-        Opening the board…
+        {t('ideas.board.loading')}
       </p>
     )
   }
@@ -629,13 +614,10 @@ export function IdeaBoardEditor({
     return (
       <EmptyState
         testId="board-missing"
-        title="This board is not here."
-        hint={
-          <>
-            It may have been deleted, or it belongs to someone else. Deleted boards wait in{' '}
-            <Link to={`${listPath}?view=deleted`}>Recently deleted</Link>.
-          </>
-        }
+        title={t('ideas.board.missing.title')}
+        hint={tx('ideas.board.missing.hint', {
+          link: <Link to={`${listPath}?view=deleted`}>{t('ideas.board.missing.link')}</Link>,
+        })}
       />
     )
   }
@@ -644,17 +626,12 @@ export function IdeaBoardEditor({
     return (
       <EmptyState
         testId="board-not-in-universe"
-        title={
-          <>
-            This board is not in <Quoted text={contextUniverse?.name ?? ''} />.
-          </>
-        }
-        hint={
-          <>
-            It belongs to another universe, or to none, so it does not open here.{' '}
-            <Link to={`/app/ideas/boards/${boardId}`}>Open it in all boards</Link>.
-          </>
-        }
+        title={tx('ideas.board.elsewhere.title', {
+          universe: <Quoted text={contextUniverse?.name ?? ''} />,
+        })}
+        hint={tx('ideas.board.elsewhere.hint', {
+          open: <Link to={`/app/ideas/boards/${boardId}`}>{t('ideas.board.elsewhere.open')}</Link>,
+        })}
       />
     )
   }
@@ -664,7 +641,7 @@ export function IdeaBoardEditor({
       <div className="notice notice--error" role="alert" data-testid="board-load-error">
         <p>{load.message}</p>
         <button className="button button--secondary" type="button" onClick={reread}>
-          Try again
+          {t('ideas.board.retry')}
         </button>
       </div>
     )
@@ -693,10 +670,13 @@ export function IdeaBoardEditor({
         </Link>
         <div className="doc__titlerow">
           <h1 className="idea__heading" id={headingId} data-testid="board-heading">
-            {isNew ? 'New board' : <bdi>{stored.title}</bdi>}
+            {isNew ? t('ideas.board.newBoard') : <bdi>{stored.title}</bdi>}
           </h1>
           {!isNew ? (
-            <ActionMenu label={`More actions for ${stored.title}`} triggerTestId="board-actions">
+            <ActionMenu
+              label={t('ideas.board.moreActions', { title: stored.title })}
+              triggerTestId="board-actions"
+            >
               <button
                 className="actionmenu__item actionmenu__item--danger"
                 type="button"
@@ -705,19 +685,19 @@ export function IdeaBoardEditor({
                 data-testid="board-delete"
               >
                 <ActionIcon icon={Trash2} />
-                Delete board
+                {t('ideas.board.deleteBoard')}
               </button>
             </ActionMenu>
           ) : null}
         </div>
         <p className="idea__lede">
-          A place to lay possibilities out. Nothing on a board changes your world, and a line is not
-          a relationship.
+          {t('ideas.board.lede')}
           {!isNew && stored.updatedAt ? (
             <>
               {' '}
-              Last saved <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>
-              .
+              {tx('ideas.board.lastSaved', {
+                time: <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>,
+              })}
             </>
           ) : null}
         </p>
@@ -726,20 +706,22 @@ export function IdeaBoardEditor({
       {offer && copy ? (
         <div id={recoveryId}>
           <RecoveredDraft
-            what={isNew ? 'a new board' : 'this board'}
+            what={isNew ? t('ideas.board.recoveryNew') : t('ideas.board.recoveryThis')}
             draft={offer}
             savedUpdatedAt={stored.updatedAt}
             preview={
               <div
                 className="recovery__prose idea__preview prose"
                 role="region"
-                aria-label="The recovered draft"
+                aria-label={t('ideas.board.recoveredDraft')}
                 tabIndex={0}
               >
-                <p className="idea__previewtitle">{copy.title || 'Untitled'}</p>
+                <p className="idea__previewtitle">{copy.title || t('ideas.board.untitled')}</p>
                 <p>
-                  {plural(copy.cards.length, 'card', 'cards')},{' '}
-                  {plural(copy.connections.length, 'line', 'lines')}.
+                  {t('ideas.board.countsStop', {
+                    cards: tn('ideas.board.cards', copy.cards.length),
+                    lines: tn('ideas.board.lines', copy.connections.length),
+                  })}
                 </p>
               </div>
             }
@@ -752,10 +734,7 @@ export function IdeaBoardEditor({
 
       {conflict ? (
         <div className="manuscript__conflict" role="alert" data-testid="board-conflict">
-          <p className="manuscript__conflicttext">
-            This board was saved in another tab or on another device after you opened it here.
-            Nothing was overwritten, and your version below is not saved.
-          </p>
+          <p className="manuscript__conflicttext">{t('ideas.board.conflict.text')}</p>
           <div className="manuscript__conflictactions">
             <button
               className="button button--secondary"
@@ -764,7 +743,7 @@ export function IdeaBoardEditor({
               onClick={() => void save(conflict.updatedAt)}
               data-testid="board-keep-mine"
             >
-              Save mine over it
+              {t('ideas.board.conflict.keepMine')}
             </button>
             <button
               className="button button--secondary"
@@ -773,7 +752,7 @@ export function IdeaBoardEditor({
               onClick={() => void loadSavedVersion()}
               data-testid="board-load-saved"
             >
-              Load the saved version
+              {t('ideas.board.conflict.loadSaved')}
             </button>
           </div>
         </div>
@@ -788,7 +767,7 @@ export function IdeaBoardEditor({
       <div className="board__fields">
         <div className="field">
           <label className="field__label" htmlFor={titleId}>
-            Title
+            {t('ideas.board.fields.title')}
           </label>
           <input
             id={titleId}
@@ -798,7 +777,7 @@ export function IdeaBoardEditor({
             dir="auto"
             value={draft.title}
             maxLength={BOARD_TITLE_MAX_LENGTH}
-            placeholder="Insert a title"
+            placeholder={t('ideas.board.fields.titlePlaceholder')}
             readOnly={isHeld}
             onChange={(event) => edit({ title: event.target.value })}
             aria-invalid={fieldErrors.title ? true : undefined}
@@ -814,7 +793,7 @@ export function IdeaBoardEditor({
         </div>
         <div className="field">
           <label className="field__label" htmlFor={universeFieldId}>
-            Universe
+            {t('ideas.board.fields.universe')}
           </label>
           <select
             id={universeFieldId}
@@ -826,20 +805,22 @@ export function IdeaBoardEditor({
             }
             data-testid="board-universe"
           >
-            <option value="">No universe</option>
+            <option value="">{t('ideas.board.fields.noUniverse')}</option>
             {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
               <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
             ) : null}
             {(universes ?? []).map((universe) => (
               <option key={universe.id} value={universe.id}>
-                {universe.isArchived ? `${universe.name} (archived)` : universe.name}
+                {universe.isArchived
+                  ? t('ideas.board.fields.archivedUniverse', { name: universe.name })
+                  : universe.name}
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      <div className="board__toolbar" role="toolbar" aria-label="Board">
+      <div className="board__toolbar" role="toolbar" aria-label={t('ideas.board.toolbar')}>
         <button
           className="button button--secondary"
           type="button"
@@ -848,7 +829,7 @@ export function IdeaBoardEditor({
           data-testid="board-add-note"
         >
           <ActionIcon icon={StickyNote} />
-          Add note
+          {t('ideas.board.addNote')}
         </button>
         <button
           className="button button--secondary"
@@ -858,18 +839,18 @@ export function IdeaBoardEditor({
           data-testid="board-add-idea"
         >
           <ActionIcon icon={Lightbulb} />
-          Add idea
+          {t('ideas.board.addIdea')}
         </button>
         <button
           className="button button--secondary"
           type="button"
           disabled={isHeld || isFull || draft.universeId === null}
-          title={draft.universeId === null ? 'Choose a universe to place its lore' : undefined}
+          title={draft.universeId === null ? t('ideas.board.addLoreNeedsUniverse') : undefined}
           onClick={() => setPicking('entry')}
           data-testid="board-add-entry"
         >
           <ActionIcon icon={Plus} />
-          Add lore
+          {t('ideas.board.addLore')}
         </button>
         <button
           className="button button--secondary board__layout"
@@ -879,24 +860,24 @@ export function IdeaBoardEditor({
           data-testid="board-list-toggle"
         >
           <ActionIcon icon={List} />
-          List view
+          {t('ideas.board.listView')}
         </button>
       </div>
       {isFull ? (
         <p className="field__hint" data-testid="board-full">
-          A board holds up to {BOARD_MAX_CARDS} cards.
+          {t('ideas.board.cardsFull', { max: BOARD_MAX_CARDS })}
         </p>
       ) : null}
       {connecting ? (
         <p className="notice board__connecting" role="status" data-testid="board-connecting">
-          Drawing a line from “{cardName(cardsById.get(connecting)!)}”: choose the card it ends at.{' '}
+          {t('ideas.board.connecting', { name: cardName(cardsById.get(connecting)!) })}{' '}
           <button
             className="button button--secondary button--sm"
             type="button"
             onClick={() => setConnecting(null)}
             data-testid="board-connect-cancel"
           >
-            Cancel
+            {t('ideas.board.cancel')}
           </button>
         </p>
       ) : null}
@@ -918,7 +899,7 @@ export function IdeaBoardEditor({
         ) : (
           <div className="boardlist" data-testid="board-list">
             {draft.cards.length === 0 ? (
-              <p className="idea__noreferences">No cards yet.</p>
+              <p className="idea__noreferences">{t('ideas.board.noCards')}</p>
             ) : (
               <ol className="boardlist__cards">
                 {readingOrder(draft.cards).map((card) => {
@@ -942,7 +923,9 @@ export function IdeaBoardEditor({
                         {card.isGone ? (
                           <span className="idearef__trashed">
                             {' '}
-                            {card.kind === BoardCardKind.Idea ? 'Deleted idea' : 'In the Trash'}
+                            {card.kind === BoardCardKind.Idea
+                              ? t('ideas.board.deletedIdea')
+                              : t('ideas.board.inTrash')}
                           </span>
                         ) : null}
                       </button>
@@ -950,7 +933,9 @@ export function IdeaBoardEditor({
                         <ul className="boardlist__lines">
                           {lines.map((line) => (
                             <li key={line.id}>
-                              Joined to <bdi>{cardName(otherEnd(line, card)!)}</bdi>
+                              {tx('ideas.board.joinedTo', {
+                                name: <bdi>{cardName(otherEnd(line, card)!)}</bdi>,
+                              })}
                               {line.label ? <> - {line.label}</> : null}
                             </li>
                           ))}
@@ -972,15 +957,17 @@ export function IdeaBoardEditor({
           {selectedCard ? (
             <>
               <h2 className="idea__subheading" id={inspectorId}>
-                {BOARD_CARD_KIND_LABELS[selectedCard.kind]}
                 {selectedCard.kind === BoardCardKind.Entity && selectedCard.entityTypeName
-                  ? ` · ${selectedCard.entityTypeName}`
-                  : ''}
+                  ? t('ideas.board.kindOfType', {
+                      kind: BOARD_CARD_KIND_LABELS[selectedCard.kind],
+                      type: selectedCard.entityTypeName,
+                    })
+                  : BOARD_CARD_KIND_LABELS[selectedCard.kind]}
               </h2>
               {selectedCard.kind === BoardCardKind.Note ? (
                 <div className="field">
                   <label className="field__label" htmlFor={`${inspectorId}-text`}>
-                    Note
+                    {t('ideas.board.inspector.note')}
                   </label>
                   <textarea
                     id={`${inspectorId}-text`}
@@ -1004,19 +991,19 @@ export function IdeaBoardEditor({
                   {selectedCard.isGone ? (
                     <p className="idearef__trashed" data-testid="board-card-gone">
                       {selectedCard.kind === BoardCardKind.Idea
-                        ? 'This idea was deleted. Restore it from Recently deleted to open it.'
-                        : 'This entry is in the Trash. Restore it to open it.'}
+                        ? t('ideas.board.inspector.ideaDeleted')
+                        : t('ideas.board.inspector.entryTrashed')}
                     </p>
                   ) : selectedCard.kind === BoardCardKind.Idea ? (
                     <Link to={`/app/ideas/${selectedCard.ideaId}`} data-testid="board-card-open">
-                      Open the idea
+                      {t('ideas.board.inspector.openIdea')}
                     </Link>
                   ) : draft.universeId ? (
                     <Link
                       to={`/app/universes/${draft.universeId}/lore/${selectedCard.entityId}`}
                       data-testid="board-card-open"
                     >
-                      Open the entry
+                      {t('ideas.board.inspector.openEntry')}
                     </Link>
                   ) : null}
                 </div>
@@ -1031,7 +1018,9 @@ export function IdeaBoardEditor({
                         type="button"
                         onClick={() => select({ kind: 'line', id: line.id })}
                       >
-                        Line to <bdi>{cardName(otherEnd(line, selectedCard)!)}</bdi>
+                        {tx('ideas.board.lineTo', {
+                          name: <bdi>{cardName(otherEnd(line, selectedCard)!)}</bdi>,
+                        })}
                         {line.label ? <> - {line.label}</> : null}
                       </button>
                     </li>
@@ -1051,7 +1040,7 @@ export function IdeaBoardEditor({
                   data-testid="board-connect"
                 >
                   <ActionIcon icon={Spline} />
-                  Draw a line from here
+                  {t('ideas.board.inspector.drawLine')}
                 </button>
                 <button
                   className="button button--secondary"
@@ -1061,22 +1050,24 @@ export function IdeaBoardEditor({
                   data-testid="board-remove-card"
                 >
                   <ActionIcon icon={X} />
-                  Take off the board
+                  {t('ideas.board.inspector.takeOff')}
                 </button>
               </div>
             </>
           ) : selectedLine ? (
             <>
               <h2 className="idea__subheading" id={inspectorId}>
-                Line
+                {t('ideas.board.inspector.line')}
               </h2>
               <p>
-                Between <bdi>{cardName(cardsById.get(selectedLine.fromCardId)!)}</bdi> and{' '}
-                <bdi>{cardName(cardsById.get(selectedLine.toCardId)!)}</bdi>.
+                {tx('ideas.board.inspector.between', {
+                  from: <bdi>{cardName(cardsById.get(selectedLine.fromCardId)!)}</bdi>,
+                  to: <bdi>{cardName(cardsById.get(selectedLine.toCardId)!)}</bdi>,
+                })}
               </p>
               <div className="field">
                 <label className="field__label" htmlFor={`${inspectorId}-label`}>
-                  Label
+                  {t('ideas.board.inspector.label')}
                 </label>
                 <input
                   id={`${inspectorId}-label`}
@@ -1084,7 +1075,7 @@ export function IdeaBoardEditor({
                   type="text"
                   value={selectedLine.label ?? ''}
                   maxLength={BOARD_LABEL_MAX_LENGTH}
-                  placeholder="Optional: why?"
+                  placeholder={t('ideas.board.inspector.labelPlaceholder')}
                   readOnly={isHeld}
                   onChange={(event) => editLine(selectedLine.id, event.target.value)}
                   data-testid="board-line-label"
@@ -1098,18 +1089,18 @@ export function IdeaBoardEditor({
                 data-testid="board-remove-line"
               >
                 <ActionIcon icon={X} />
-                Remove line
+                {t('ideas.board.inspector.removeLine')}
               </button>
             </>
           ) : (
             <>
               <h2 className="idea__subheading" id={inspectorId}>
-                {plural(draft.cards.length, 'card', 'cards')},{' '}
-                {plural(draft.connections.length, 'line', 'lines')}
+                {t('ideas.board.counts', {
+                  cards: tn('ideas.board.cards', draft.cards.length),
+                  lines: tn('ideas.board.lines', draft.connections.length),
+                })}
               </h2>
-              <p className="field__hint">
-                Choose a card to write on it, open what it points at, or draw a line from it.
-              </p>
+              <p className="field__hint">{t('ideas.board.inspector.hint')}</p>
             </>
           )}
         </aside>
@@ -1118,17 +1109,19 @@ export function IdeaBoardEditor({
       <div className="manuscript__bar idea__bar">
         {failed && isDirty ? (
           <p className="recovery__warning" role="status" data-testid="board-recovery-warning">
-            This device could not keep a recovery copy of these changes. Save to keep them.
+            {t('ideas.board.recoveryWarning')}
           </p>
         ) : null}
         <div className="idea__actions">
           <SaveAction
-            label={isNew ? 'Create board' : 'Save changes'}
+            label={isNew ? t('ideas.board.create') : t('ideas.board.save')}
             isDirty={isDirty}
             isSaving={isSaving}
             isBlocked={isHeld}
             saves={saves}
-            restingStatus={stored.updatedAt === null ? 'Not saved yet' : 'Saved'}
+            restingStatus={
+              stored.updatedAt === null ? t('ideas.board.notSavedYet') : t('ideas.board.saved')
+            }
             statusId={statusId}
             statusTestId="board-status"
             testId="board-save"
@@ -1144,7 +1137,10 @@ export function IdeaBoardEditor({
           what={picking}
           universe={
             draft.universeId
-              ? { id: draft.universeId, name: chosenUniverse?.name ?? 'this universe' }
+              ? {
+                  id: draft.universeId,
+                  name: chosenUniverse?.name ?? t('ideas.board.thisUniverse'),
+                }
               : null
           }
           placed={

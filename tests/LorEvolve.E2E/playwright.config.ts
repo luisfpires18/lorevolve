@@ -51,6 +51,10 @@ export default defineConfig({
     baseURL: webBaseUrl,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    // Every spec but `language.spec.ts` is written against the English words (ADR 0071), and LorEvolve
+    // opens in the first language the browser asks for. Without this the suite would run in Portuguese
+    // on a Portuguese machine and fail on every assertion; a spec that wants another language says so.
+    locale: 'en-US',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [

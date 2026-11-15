@@ -1,5 +1,6 @@
 import { formatChronologyPoint, isPlaced } from '../chronology/format'
 import type { Chronology, ChronologyValue } from '../chronology/types'
+import { t, tn } from '../i18n'
 
 /**
  * Where a scene happens in the world, written by the shared chronology formatter - or null when the
@@ -24,34 +25,36 @@ export function sceneWhen(chronology: Chronology, value: ChronologyValue | null)
 }
 
 export function sceneCountLabel(count: number) {
-  return count === 1 ? '1 scene' : `${count} scenes`
+  return tn('stories.scene.count', count, { n: count })
 }
 
 export function chapterCountLabel(count: number) {
-  return count === 1 ? '1 chapter' : `${count} chapters`
+  return tn('stories.chapter.count', count, { n: count })
 }
 
 /** What a scene that belongs to no chapter is said to be in. A place on screen, not a chapter. */
-export const UNCHAPTERED = 'Unchaptered'
+export function unchaptered() {
+  return t('stories.chapter.unchaptered')
+}
 
 /**
  * "Chapter 3": presentation, from the chapter's position in the list. Never stored and never part of
  * the title, so reordering renumbers every chapter without touching a word the author wrote.
  */
 export function chapterNumber(index: number) {
-  return `Chapter ${index + 1}`
+  return t('stories.chapter.number', { n: index + 1 })
 }
 
 /** "Chapter 3: The Fall". */
 export function chapterLabel(index: number, title: string) {
-  return `${chapterNumber(index)}: ${title}`
+  return t('stories.chapter.label', { n: index + 1, title })
 }
 
 /** "Chapter 3", or "Unchaptered": where a scene sits, short enough for a chip. */
 export function containerNumber(chapters: { id: string }[], chapterId: string | null) {
-  if (chapterId === null) return UNCHAPTERED
+  if (chapterId === null) return unchaptered()
   const index = chapters.findIndex((chapter) => chapter.id === chapterId)
-  return index < 0 ? UNCHAPTERED : chapterNumber(index)
+  return index < 0 ? unchaptered() : chapterNumber(index)
 }
 
 /**
@@ -59,20 +62,20 @@ export function containerNumber(chapters: { id: string }[], chapterId: string | 
  * reordering renumbers every arc without touching a word the author wrote.
  */
 export function arcNumber(index: number) {
-  return `Arc ${index + 1}`
+  return t('stories.arc.number', { n: index + 1 })
 }
 
 /** "Arc 2: Fall of the King". */
 export function arcLabel(index: number, title: string) {
-  return `${arcNumber(index)}: ${title}`
+  return t('stories.arc.label', { n: index + 1, title })
 }
 
 export function beatCountLabel(count: number) {
-  return count === 1 ? '1 beat' : `${count} beats`
+  return tn('stories.beats.count', count, { n: count })
 }
 
 export function arcCountLabel(count: number) {
-  return count === 1 ? '1 arc' : `${count} arcs`
+  return tn('stories.arc.countLabel', count, { n: count })
 }
 
 /** The container a scene is in, named the way the page names it. */
@@ -80,7 +83,7 @@ export function containerLabel(
   chapters: { id: string; title: string }[],
   chapterId: string | null,
 ) {
-  if (chapterId === null) return UNCHAPTERED
+  if (chapterId === null) return unchaptered()
   const index = chapters.findIndex((chapter) => chapter.id === chapterId)
-  return index < 0 ? UNCHAPTERED : chapterLabel(index, chapters[index].title)
+  return index < 0 ? unchaptered() : chapterLabel(index, chapters[index].title)
 }

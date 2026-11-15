@@ -9,11 +9,17 @@ const workspace = {
     close: 'Close',
     allUniverses: 'All universes',
     sharedAs: 'Shared as {role}',
+    groups: {
+      worldBuilding: 'World building',
+      projects: 'Projects',
+      management: 'Management',
+    },
   },
   missing: {
     title: 'That universe is not here.',
     back: 'Back to your universes',
     failed: 'Could not open this universe.',
+    tryAgain: 'Try again',
   },
   overview: {
     noDescription: 'No description yet.',
@@ -53,6 +59,10 @@ const workspace = {
       label: 'Maps',
       purpose: 'Pictures of the world, with pins that open the Lore they stand for.',
     },
+    worldLogic: {
+      label: 'World Logic',
+      purpose: 'The rules it keeps, the Systems that group them, and what checking them found.',
+    },
     worldRules: {
       label: 'World Rules',
       purpose: 'How this universe works, stated plainly.',
@@ -60,10 +70,6 @@ const workspace = {
     canon: {
       label: 'Canon',
       purpose: 'Where the lore breaks its own World Rules. Still being built.',
-    },
-    chronology: {
-      label: 'Chronology',
-      purpose: 'How its dates are written and ordered: plain years, or named date periods.',
     },
     stories: {
       label: 'Stories',

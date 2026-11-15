@@ -354,6 +354,12 @@ const lore = {
     nothingCreatedKept: 'Nothing was created. {reason} Your rows are still here.',
     pasteHint:
       'Blank lines are skipped. From a spreadsheet, copy three columns in the order Type, Name, Status.',
+    /** The header row a spreadsheet brings with it, which the paste skips rather than reads as an entry. */
+    header: {
+      type: 'Type',
+      name: 'Name',
+      status: 'Status',
+    },
     pasteLabel: 'Paste names, one per line',
     readingTypes: 'Reading this world’s types…',
     removeRow: 'Remove row {number}',

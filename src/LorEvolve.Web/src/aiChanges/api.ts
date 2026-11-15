@@ -2,7 +2,8 @@ import { apiFetch } from '../lib/api'
 import type { CanonStatusValue } from '../lore/types'
 
 /*
- * Pending AI Changes (ADR 0047): proposals an AI staged - from an app over MCP or from the assistant - and the decisions
+ * Pending AI Changes (ADR 0047): proposals an AI staged - from an app over MCP, or from the web assistant before M4
+ * retired it - and the decisions
  * a person makes on them. Every enum mirrors the backend and is sent as its number, like every enum this API sends.
  */
 
@@ -59,7 +60,7 @@ export interface ProposalSummary {
   universeId: string
   universeName: string
   source: AiChangeSourceValue
-  /** The app's own name, as it registered itself. Null for the assistant. */
+  /** The app's own name, as it registered itself. Null for a proposal the retired web assistant staged. */
   clientName: string | null
   proposedByName: string | null
   proposedByMe: boolean
@@ -284,7 +285,7 @@ export function editChange(
   })
 }
 
-/** Where a change's item opens once it exists: the same places search and the assistant link to. */
+/** Where a change's item opens once it exists: the same places search links to. */
 export function itemPath(universeId: string, change: Change) {
   const id = change.resultId ?? change.targetId
   const universe = `/app/universes/${universeId}`

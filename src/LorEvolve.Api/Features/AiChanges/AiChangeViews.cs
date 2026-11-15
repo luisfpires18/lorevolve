@@ -271,6 +271,7 @@ internal static class AiChangeViews
                 Line("Title", old?.Title, idea.Title);
                 Line("Idea", old is null ? null : Blank(old.Body), Blank(idea.Body));
                 Line("Refers to", Join(old?.References.Select(names.Reference)), Join(idea.References.Select(names.Reference)));
+                Line("Project", old is null ? null : names.Project(old.ProjectId), names.Project(idea.ProjectId));
                 return (work.Action == AiChangeAction.Create ? $"New idea: {idea.Title}" : $"Edit idea: {old?.Title ?? idea.Title}", lines);
             }
 
@@ -667,6 +668,7 @@ internal static class AiChangeViews
         AiChangeResource.TimelineEvent => "timeline moment",
         AiChangeResource.PlotArc => "plot arc",
         AiChangeResource.WorldRule => "world rule",
+        AiChangeResource.ProjectEntry => "project entry",
         _ => "item",
     };
 
@@ -708,6 +710,7 @@ internal static class AiChangeViews
         private Dictionary<Guid, string> _arcs = [];
         private Dictionary<Guid, string> _terms = [];
         private Dictionary<Guid, string> _groups = [];
+        private Dictionary<Guid, string> _projects = [];
         private Dictionary<Guid, string> _appearances = [];
         private Dictionary<string, AiChangeWork> _pending = [];
         private UniverseChronology _chronology = UniverseChronology.Plain;
@@ -739,6 +742,7 @@ internal static class AiChangeViews
                 _arcs = await db.PlotArcs.AsNoTracking().Where(arc => arc.Story!.UniverseId == universeId && ids.Contains(arc.Id)).ToDictionaryAsync(arc => arc.Id, arc => arc.Title, cancellationToken),
                 _terms = await db.ValidationTerms.AsNoTracking().Where(term => term.UniverseId == universeId).ToDictionaryAsync(term => term.Id, term => term.Name, cancellationToken),
                 _groups = await db.EntityTypeGroups.AsNoTracking().Where(group => group.UniverseId == universeId).ToDictionaryAsync(group => group.Id, group => group.Name, cancellationToken),
+                _projects = await db.CreativeProjects.AsNoTracking().Where(project => project.UniverseId == universeId).ToDictionaryAsync(project => project.Id, project => project.Name, cancellationToken),
                 _appearances = await db.EntityAppearances.AsNoTracking()
                     .Where(look => look.Entity!.UniverseId == universeId && ids.Contains(look.EntityId))
                     .ToDictionaryAsync(look => look.Id, look => look.Label, cancellationToken),
@@ -748,6 +752,9 @@ internal static class AiChangeViews
         }
 
         public string Type(Guid id) => _types.GetValueOrDefault(id) ?? "Unknown type";
+
+        /// <summary>The project an idea is a note for, or null for none, so an unchanged "none" draws no line.</summary>
+        public string? Project(Guid? id) => id is { } project ? _projects.GetValueOrDefault(project) ?? "Unknown project" : null;
 
         /// <summary>A type an existing id names, or one this proposal creates: "Kingdom (new)".</summary>
         public string TypeRef(AiRef reference) => Named(reference, _types, work => (work.Proposed as TypeValues)?.Name);

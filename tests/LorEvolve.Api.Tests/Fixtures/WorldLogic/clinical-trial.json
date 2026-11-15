@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "scenario": "clinical-trial",
+  "description": "A study protocol with enrolment criteria and a dosing window. Deliberately contains no fantasy, game or world term anywhere: the same rule model holds for an ordinary records domain.",
+  "facts": {
+    "subjects": [
+      { "id": "s.p-001", "type": "participant", "attributes": { "age": 44, "consentOn": "calendar:2026-03-01", "withdrawn": false, "creatinine": 0.9 } },
+      { "id": "s.p-002", "type": "participant", "attributes": { "age": 15, "consentOn": "calendar:2026-03-04", "withdrawn": false, "creatinine": 0.8 } },
+      { "id": "s.p-003", "type": "participant", "attributes": { "age": 52, "withdrawn": false, "creatinine": 2.4 } },
+      { "id": "s.p-004", "type": "participant", "attributes": { "age": 61, "consentOn": "calendar:2026-03-07", "withdrawn": true, "creatinine": 1.0 } },
+      { "id": "s.protocol", "type": "protocol", "attributes": { "dosingFrom": "calendar:2026-03-10", "dosingUntil": "calendar:2026-06-30", "ageFloor": 18, "creatinineCeiling": 1.5 } }
+    ],
+    "relations": [
+      { "type": "enrolledUnder", "fromId": "s.p-001", "toId": "s.protocol" },
+      { "type": "enrolledUnder", "fromId": "s.p-002", "toId": "s.protocol" },
+      { "type": "enrolledUnder", "fromId": "s.p-003", "toId": "s.protocol" },
+      { "type": "enrolledUnder", "fromId": "s.p-004", "toId": "s.protocol" }
+    ],
+    "events": [
+      { "id": "e.dose-001", "kind": "dose", "method": "oral", "subjectIds": ["s.p-001"], "at": "calendar:2026-04-02", "canon": true },
+      { "id": "e.dose-002", "kind": "dose", "method": "oral", "subjectIds": ["s.p-002"], "at": "calendar:2026-03-05", "canon": true },
+      { "id": "e.dose-004", "kind": "dose", "method": "oral", "subjectIds": ["s.p-004"], "at": "calendar:2026-05-01", "canon": true }
+    ]
+  },
+  "rules": [
+    {
+      "id": "rule.enrolment-criteria",
+      "version": 2,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "all",
+        "of": [
+          { "kind": "compare", "left": { "attribute": "age", "of": { "subject": "self" } }, "op": "gte", "right": { "attribute": "ageFloor", "of": { "subject": "s.protocol" } } },
+          { "kind": "compare", "left": { "attribute": "creatinine", "of": { "subject": "self" } }, "op": "lte", "right": { "attribute": "creatinineCeiling", "of": { "subject": "s.protocol" } } },
+          { "kind": "compare", "left": { "attribute": "consentOn", "of": { "subject": "self" } }, "op": "lt", "right": { "attribute": "dosingFrom", "of": { "subject": "s.protocol" } } }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.dose-inside-window",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "within",
+        "point": { "field": "at", "of": { "subject": "self" }, "from": "events" },
+        "from": { "attribute": "dosingFrom", "of": { "subject": "s.protocol" } },
+        "to": { "attribute": "dosingUntil", "of": { "subject": "s.protocol" } }
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.no-dose-after-withdrawal",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          { "kind": "compare", "left": { "attribute": "withdrawn", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": false, "type": "boolean" } },
+          {
+            "kind": "compare",
+            "left": {
+              "count": {
+                "from": "events",
+                "where": [
+                  { "field": "kind", "op": "eq", "value": "dose", "type": "text" },
+                  { "field": "subjectIds", "op": "contains", "operandValue": { "subject": "self" } }
+                ]
+              }
+            },
+            "op": "eq",
+            "right": { "literal": 0, "type": "number" }
+          }
+        ]
+      },
+      "exceptions": []
+    }
+  ],
+  "cases": [
+    {
+      "name": "a participant meeting every criterion passes",
+      "ruleId": "rule.enrolment-criteria",
+      "target": "s.p-001",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.p-001", "s.protocol"] }
+    },
+    {
+      "name": "an underage participant is a proven violation on the first clause",
+      "ruleId": "rule.enrolment-criteria",
+      "target": "s.p-002",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.p-002", "s.protocol"] }
+    },
+    {
+      "name": "a definite failure on one clause outweighs an unknown on another",
+      "ruleId": "rule.enrolment-criteria",
+      "target": "s.p-003",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.p-003", "s.protocol"] }
+    },
+    {
+      "name": "a dose inside the window passes",
+      "ruleId": "rule.dose-inside-window",
+      "target": "e.dose-001",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["e.dose-001", "s.protocol"] }
+    },
+    {
+      "name": "a dose before the window opened is a proven violation",
+      "ruleId": "rule.dose-inside-window",
+      "target": "e.dose-002",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["e.dose-002", "s.protocol"] }
+    },
+    {
+      "name": "a withdrawn participant with a recorded dose is a proven violation",
+      "ruleId": "rule.no-dose-after-withdrawal",
+      "target": "s.p-004",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.p-004", "e.dose-004"] }
+    },
+    {
+      "name": "a participant who has not withdrawn passes on the first branch",
+      "ruleId": "rule.no-dose-after-withdrawal",
+      "target": "s.p-001",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.p-001"] }
+    }
+  ]
+}

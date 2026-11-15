@@ -3,6 +3,7 @@ import { closeHistory, history, redo, undo } from '@tiptap/pm/history'
 import { keymap } from '@tiptap/pm/keymap'
 import { Slice, type Fragment } from '@tiptap/pm/model'
 import { useEffect, useId, useRef, useState } from 'react'
+import { t } from '../i18n'
 import { useMentionSearch } from '../lore/mentionSearch'
 import {
   manuscriptDoc,
@@ -199,7 +200,7 @@ export function ManuscriptWriter({
       .run()
     dismissed.current = null
     setMention(null)
-    onAnnounce(`Mentioned ${row.name}.`)
+    onAnnounce(t('manuscript.writer.mentioned', { name: row.name }))
   }
 
   // Read once: the editor takes its content when it is made, and a new object every render would only be parsed for nothing.

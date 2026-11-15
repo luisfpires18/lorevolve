@@ -335,9 +335,9 @@ test.describe('workspace navigation', () => {
     const universeId = await seedUniverse(page)
     await page.goto(`/app/universes/${universeId}`)
 
-    // The world, its rules, then the writing - Stories, the Timeline it is told against, Ideas (Issue #48).
-    const world = ['Lore', 'Types', 'Family Tree', 'Maps', 'World Rules', 'Canon', 'Chronology']
-    const writing = ['Stories', 'Timeline', 'Ideas']
+    // One world building group (#191): the world, the Timeline it is told against, its logic, Ideas.
+    const world = ['Lore', 'Types', 'Family Tree', 'Maps', 'Timeline', 'World Logic']
+    const writing = ['Ideas']
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
     await expect(sections.getByRole('link')).toContainText([
       'All universes',
@@ -354,8 +354,7 @@ test.describe('workspace navigation', () => {
       'types',
       'family-tree',
       'maps',
-      'world-rules',
-      'chronology',
+      'world-logic',
       'stories',
       'timeline',
       'ideas',

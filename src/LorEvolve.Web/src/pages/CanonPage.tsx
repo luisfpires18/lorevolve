@@ -22,6 +22,7 @@ import type {
 } from '../canon/types'
 import { ConflictEntry } from '../components/ConflictEntry'
 import { ApiError } from '../lib/api'
+import { t, useI18n } from '../i18n'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { WipBadge } from '../components/WipBadge'
@@ -51,6 +52,7 @@ const STATUS_TABS: CanonConflictStatusValue[] = [
  * record, and resolutions are evaluation's.
  */
 export default function CanonPage() {
+  const { tx } = useI18n()
   const access = useUniverseAccess()
   const { universe } = useOutletContext<WorkspaceContext>()
 
@@ -73,7 +75,7 @@ export default function CanonPage() {
         if (controller.signal.aborted) return
         setState({
           kind: 'error',
-          message: error instanceof Error ? error.message : 'Could not read these findings.',
+          message: error instanceof Error ? error.message : t('canon.page.readFailed'),
         })
       })
 
@@ -94,9 +96,7 @@ export default function CanonPage() {
       setPage(1)
       reload()
     } catch (error: unknown) {
-      setMessage(
-        error instanceof ApiError ? error.message : 'This universe could not be evaluated.',
-      )
+      setMessage(error instanceof ApiError ? error.message : t('canon.page.evaluateFailed'))
     } finally {
       setIsEvaluating(false)
     }
@@ -121,7 +121,7 @@ export default function CanonPage() {
         reload()
       }
     } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : 'That finding could not be changed.')
+      setMessage(error instanceof ApiError ? error.message : t('canon.page.changeFailed'))
     } finally {
       setBusyId(null)
     }
@@ -132,11 +132,11 @@ export default function CanonPage() {
       <PageHeader
         title={
           <>
-            Canon integrity
+            {t('canon.page.title')}
             <WipBadge />
           </>
         }
-        lede="Work in progress: this does not work reliably yet. It is meant to find where your lore breaks this world's World Rules. Findings are derived from your lore and change nothing in it."
+        lede={t('canon.page.lede')}
         actions={
           // Evaluating writes the findings, so it is editing (ADR 0041); everyone reads what the last one found.
           access.editContent ? (
@@ -148,21 +148,19 @@ export default function CanonPage() {
               aria-busy={isEvaluating}
               data-testid="evaluate-canon"
             >
-              {isEvaluating ? 'Evaluating…' : 'Evaluate'}
+              {isEvaluating ? t('canon.page.evaluating') : t('canon.page.evaluate')}
             </button>
           ) : undefined
         }
       />
 
       <p className="callout integrity__law">
-        Only a <strong>High</strong> finding refuses a save, and only the save that would create
-        one. A world already carrying one stays editable everywhere else. Medium and Low are
-        reported and never block.
+        {tx('canon.page.law', { high: <strong>{t('canon.page.lawHigh')}</strong> })}
       </p>
 
       <div className="controls">
         <div className="controls__filters">
-          <div className="segmented" role="group" aria-label="Status">
+          <div className="segmented" role="group" aria-label={t('canon.page.statusGroup')}>
             {STATUS_TABS.map((option) => (
               <button
                 key={option}
@@ -182,7 +180,7 @@ export default function CanonPage() {
 
           <div className="field">
             <label className="field__label" htmlFor="canon-severity">
-              Severity
+              {t('canon.page.severity')}
             </label>
             <select
               id="canon-severity"
@@ -198,7 +196,7 @@ export default function CanonPage() {
               }}
               data-testid="canon-severity"
             >
-              <option value="">Any severity</option>
+              <option value="">{t('canon.page.anySeverity')}</option>
               {SEVERITY_ORDER.map((option) => (
                 <option key={option} value={option}>
                   {SEVERITY_LABELS[option]}
@@ -212,8 +210,12 @@ export default function CanonPage() {
 
       {evaluation ? (
         <p className="integrity__run" role="status" data-testid="canon-run">
-          Evaluated: {evaluation.detected} found, {evaluation.created} new, {evaluation.reopened}{' '}
-          reopened, {evaluation.resolved} closed.
+          {t('canon.page.run', {
+            detected: evaluation.detected,
+            created: evaluation.created,
+            reopened: evaluation.reopened,
+            resolved: evaluation.resolved,
+          })}
         </p>
       ) : null}
 
@@ -225,7 +227,7 @@ export default function CanonPage() {
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Reading the findings…
+          {t('canon.page.loading')}
         </p>
       ) : null}
 
@@ -233,13 +235,15 @@ export default function CanonPage() {
         <div className="notice notice--error" role="alert">
           <p>{state.message}</p>
           <button className="button button--secondary" type="button" onClick={reload}>
-            Try again
+            {t('canon.page.retry')}
           </button>
         </div>
       ) : null}
 
       {result && result.items.length > 0 ? (
-        <h2 className="visually-hidden">{CONFLICT_STATUS_LABELS[status]} findings</h2>
+        <h2 className="visually-hidden">
+          {t('canon.page.findingsHeading', { status: CONFLICT_STATUS_LABELS[status] })}
+        </h2>
       ) : null}
 
       {result && result.items.length > 0 ? (
@@ -261,11 +265,7 @@ export default function CanonPage() {
         <EmptyState
           testId="canon-empty"
           title={emptyLine(status, severity)}
-          hint={
-            severity !== null
-              ? 'Another severity may have something. Clear the filter to see them all.'
-              : hint(status)
-          }
+          hint={severity !== null ? t('canon.page.otherSeverity') : hint(status)}
           action={
             access.editContent && severity === null && status === CanonConflictStatus.Pending ? (
               <button
@@ -275,7 +275,7 @@ export default function CanonPage() {
                 disabled={isEvaluating}
                 data-testid="empty-evaluate-canon"
               >
-                {isEvaluating ? 'Evaluating…' : 'Evaluate'}
+                {isEvaluating ? t('canon.page.emptyEvaluating') : t('canon.page.emptyEvaluate')}
               </button>
             ) : undefined
           }
@@ -283,17 +283,17 @@ export default function CanonPage() {
       ) : null}
 
       {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label="Pagination">
+        <nav className="pager" aria-label={t('canon.page.pagination')}>
           <button
             className="button button--secondary"
             type="button"
             disabled={result.page <= 1}
             onClick={() => setPage((current) => current - 1)}
           >
-            Previous
+            {t('canon.page.previous')}
           </button>
           <span className="pager__position">
-            Page {result.page} of {result.totalPages}
+            {t('canon.page.position', { page: result.page, totalPages: result.totalPages })}
           </span>
           <button
             className="button button--secondary"
@@ -301,7 +301,7 @@ export default function CanonPage() {
             disabled={result.page >= result.totalPages}
             onClick={() => setPage((current) => current + 1)}
           >
-            Next
+            {t('canon.page.next')}
           </button>
         </nav>
       ) : null}
@@ -311,22 +311,25 @@ export default function CanonPage() {
 
 function emptyLine(status: CanonConflictStatusValue, severity: CanonSeverityValue | null) {
   if (severity !== null) {
-    return `Nothing ${CONFLICT_STATUS_LABELS[status].toLowerCase()} at ${SEVERITY_LABELS[severity]} severity.`
+    return t('canon.page.emptyAtSeverity', {
+      status: CONFLICT_STATUS_LABELS[status].toLowerCase(),
+      severity: SEVERITY_LABELS[severity],
+    })
   }
 
-  if (status === CanonConflictStatus.Dismissed) return 'Nothing set aside.'
-  if (status === CanonConflictStatus.Resolved) return 'Nothing closed yet.'
-  return 'No open findings.'
+  if (status === CanonConflictStatus.Dismissed) return t('canon.page.emptyDismissed')
+  if (status === CanonConflictStatus.Resolved) return t('canon.page.emptyResolved')
+  return t('canon.page.emptyPending')
 }
 
 function hint(status: CanonConflictStatusValue) {
   if (status === CanonConflictStatus.Dismissed) {
-    return 'A finding you choose to live with is kept here, and only while the problem lasts.'
+    return t('canon.page.hintDismissed')
   }
 
   if (status === CanonConflictStatus.Resolved) {
-    return 'A finding closes when evaluation stops seeing it. Nothing has closed yet.'
+    return t('canon.page.hintResolved')
   }
 
-  return 'The checks have nothing open to report. That is all it means: they look only for the contradictions they know about. Evaluate reads the whole world again.'
+  return t('canon.page.hintPending')
 }

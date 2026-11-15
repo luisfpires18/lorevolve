@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { formatDate } from '../lib/dates'
-import { COLLABORATOR_ROLES, ROLE_DESCRIPTIONS, ROLE_LABELS } from '../universes/access'
+import { COLLABORATOR_ROLES, roleDescription, roleLabel } from '../universes/access'
 import {
   changeCollaboratorRole,
   changeInvitationRole,
@@ -29,6 +30,7 @@ type LoadState =
  * same whether an account holds the address or not.
  */
 export function CollaboratorsPanel({ universeId }: { universeId: string }) {
+  const { t, tx } = useI18n()
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [reloadKey, setReloadKey] = useState(0)
   const [announcement, setAnnouncement] = useState('')
@@ -43,13 +45,13 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
         if (controller.signal.aborted) return
         setState({
           kind: 'error',
-          message: problem instanceof Error ? problem.message : 'Collaborators could not be read.',
+          message: problem instanceof Error ? problem.message : t('universe.collab.loadFailed'),
         })
       })
     return () => {
       controller.abort()
     }
-  }, [universeId, reloadKey])
+  }, [universeId, reloadKey, t])
 
   function update(change: (data: Collaborators) => Collaborators) {
     setState((current) =>
@@ -67,9 +69,9 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
 
       <section className="settings__section" aria-labelledby="collab-invite-heading">
         <h2 className="settings__heading" id="collab-invite-heading">
-          Invite someone
+          {t('universe.collab.inviteHeading')}
         </h2>
-        <p className="settings__note">Invite someone to work on this universe.</p>
+        <p className="settings__note">{t('universe.collab.inviteNote')}</p>
         <InviteForm
           universeId={universeId}
           onCreated={(invitation) => {
@@ -86,16 +88,16 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
         {created ? (
           <div className="collab__created" data-testid="invitation-created">
             <p className="collab__createdtitle" role="status">
-              Invitation created
+              {t('universe.collab.created')}
             </p>
             <p className="settings__note">
-              LorEvolve does not send email. Send{' '}
-              <bdi className="collab__email">{created.email}</bdi> this link; they accept it signed
-              in with that email:
+              {tx('universe.collab.createdNote', {
+                email: <bdi className="collab__email">{created.email}</bdi>,
+              })}
             </p>
             <CopyLink
               claimToken={created.claimToken}
-              label="Copy invite link"
+              label={t('universe.collab.copyCreated')}
               testId="copy-created-link"
             />
           </div>
@@ -104,7 +106,7 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Reading collaborators…
+          {t('universe.collab.loading')}
         </p>
       ) : null}
 
@@ -116,7 +118,7 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
             type="button"
             onClick={() => setReloadKey((key) => key + 1)}
           >
-            Try again
+            {t('universe.collab.retry')}
           </button>
         </div>
       ) : null}
@@ -128,11 +130,11 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
             aria-labelledby="collab-people-heading"
           >
             <h2 className="settings__heading" id="collab-people-heading">
-              People
+              {t('universe.collab.people')}
             </h2>
             {data.members.length === 0 ? (
               <p className="settings__note" data-testid="collaborators-empty">
-                Nobody else works on this universe yet.
+                {t('universe.collab.peopleEmpty')}
               </p>
             ) : (
               <ul className="collab__list" data-testid="collaborator-list">
@@ -148,14 +150,21 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
                           item.userId === next.userId ? next : item,
                         ),
                       }))
-                      setAnnouncement(`${next.username} is now ${ROLE_LABELS[next.role]}.`)
+                      setAnnouncement(
+                        t('universe.collab.nowRole', {
+                          name: next.username,
+                          role: roleLabel(next.role),
+                        }),
+                      )
                     }}
                     onRemoved={() => {
                       update((current) => ({
                         ...current,
                         members: current.members.filter((item) => item.userId !== member.userId),
                       }))
-                      setAnnouncement(`${member.username} no longer collaborates on this universe.`)
+                      setAnnouncement(
+                        t('universe.collab.removedAnnounce', { name: member.username }),
+                      )
                     }}
                   />
                 ))}
@@ -168,11 +177,11 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
             aria-labelledby="collab-pending-heading"
           >
             <h2 className="settings__heading" id="collab-pending-heading">
-              Pending invitations
+              {t('universe.collab.pending')}
             </h2>
             {data.invitations.length === 0 ? (
               <p className="settings__note" data-testid="invitations-empty">
-                No invitations are waiting.
+                {t('universe.collab.pendingEmpty')}
               </p>
             ) : (
               <ul className="collab__list" data-testid="pending-invitation-list">
@@ -190,7 +199,10 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
                         ),
                       }))
                       setAnnouncement(
-                        `The invitation to ${next.email} is now for ${ROLE_LABELS[next.role]}.`,
+                        t('universe.collab.invitationNowRole', {
+                          email: next.email,
+                          role: roleLabel(next.role),
+                        }),
                       )
                     }}
                     onRevoked={() => {
@@ -201,7 +213,9 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
                         ),
                       }))
                       if (created?.id === invitation.id) setCreated(null)
-                      setAnnouncement(`The invitation to ${invitation.email} was revoked.`)
+                      setAnnouncement(
+                        t('universe.collab.revokedAnnounce', { email: invitation.email }),
+                      )
                     }}
                   />
                 ))}
@@ -225,6 +239,7 @@ function InviteForm({
   onCreated: (invitation: PendingInvitation) => void
   onPending: (invitationId: string) => void
 }) {
+  const { t } = useI18n()
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<UniverseRoleValue>(UniverseRole.Editor)
   const [busy, setBusy] = useState(false)
@@ -234,7 +249,7 @@ function InviteForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!email.trim()) {
-      setErrors({ email: 'Enter the email address of the person to invite.' })
+      setErrors({ email: t('universe.collab.emailRequired') })
       emailInput.current?.focus()
       return
     }
@@ -248,15 +263,14 @@ function InviteForm({
       if (problem instanceof ApiError && problem.code === INVITATION_PENDING) {
         const invitationId = (problem.problem as { invitationId?: string } | null)?.invitationId
         setErrors({
-          email:
-            'This address already has a pending invitation. It is listed below, to change, copy or revoke.',
+          email: t('universe.collab.alreadyPending'),
         })
         if (invitationId) onPending(invitationId)
       } else if (problem instanceof ApiError && Object.keys(problem.fieldErrors).length > 0) {
         setErrors({ email: problem.fieldErrors.email, role: problem.fieldErrors.role })
       } else {
         setErrors({
-          form: problem instanceof Error ? problem.message : 'The invitation could not be created.',
+          form: problem instanceof Error ? problem.message : t('universe.collab.createFailed'),
         })
       }
       emailInput.current?.focus()
@@ -269,7 +283,7 @@ function InviteForm({
     <form className="form collab__invite" onSubmit={submit} noValidate data-testid="invite-form">
       <div className="field">
         <label className="field__label" htmlFor="invite-email">
-          Email
+          {t('universe.collab.email')}
         </label>
         <input
           ref={emailInput}
@@ -294,7 +308,7 @@ function InviteForm({
       </div>
       <div className="field">
         <label className="field__label" htmlFor="invite-role">
-          Role
+          {t('universe.collab.role')}
         </label>
         <RoleSelect
           id="invite-role"
@@ -308,7 +322,7 @@ function InviteForm({
           id="invite-role-hint"
           data-testid="invite-role-hint"
         >
-          {ROLE_DESCRIPTIONS[role]}
+          {roleDescription(role)}
         </p>
         {errors.role ? (
           <p className="field__error" id="invite-role-error">
@@ -323,7 +337,7 @@ function InviteForm({
       ) : null}
       <div className="form__actions">
         <button className="button" type="submit" disabled={busy} data-testid="create-invitation">
-          {busy ? 'Creating' : 'Create invitation'}
+          {busy ? t('universe.collab.creating') : t('universe.collab.create')}
         </button>
       </div>
     </form>
@@ -343,6 +357,7 @@ function MemberRow({
   onChanged: (next: Collaborator) => void
   onRemoved: () => void
 }) {
+  const { t, tx } = useI18n()
   const id = useId()
   const [busy, setBusy] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -367,7 +382,7 @@ function MemberRow({
     try {
       onChanged(await changeCollaboratorRole(universeId, member.userId, role))
     } catch (problem: unknown) {
-      setError(problem instanceof Error ? problem.message : 'The role could not be changed.')
+      setError(problem instanceof Error ? problem.message : t('universe.collab.memberRoleFailed'))
     } finally {
       setBusy(false)
     }
@@ -385,7 +400,7 @@ function MemberRow({
         onRemoved()
         return
       }
-      setError(problem instanceof Error ? problem.message : 'They could not be removed.')
+      setError(problem instanceof Error ? problem.message : t('universe.collab.removeFailed'))
       setBusy(false)
     }
   }
@@ -402,11 +417,13 @@ function MemberRow({
         <p className="collab__name">
           <bdi>{member.username}</bdi>
         </p>
-        <p className="collab__meta">Joined {formatDate(member.joinedAt)}</p>
+        <p className="collab__meta">
+          {t('universe.collab.joined', { date: formatDate(member.joinedAt) })}
+        </p>
       </div>
       <div className="collab__controls">
         <label className="visually-hidden" htmlFor={`${id}-role`}>
-          Role for {member.username}
+          {t('universe.collab.memberRole', { name: member.username })}
         </label>
         <RoleSelect
           id={`${id}-role`}
@@ -421,10 +438,10 @@ function MemberRow({
           type="button"
           onClick={() => setConfirming(true)}
           disabled={busy || confirming}
-          aria-label={`Remove ${member.username}`}
+          aria-label={t('universe.collab.removeLabel', { name: member.username })}
           data-testid="remove-collaborator"
         >
-          Remove
+          {t('universe.collab.remove')}
         </button>
       </div>
       {confirming ? (
@@ -437,12 +454,9 @@ function MemberRow({
           data-testid="remove-collaborator-confirm"
         >
           <p className="settings__confirmtitle" id={`${id}-confirm`}>
-            Remove <bdi>{member.username}</bdi> from this universe?
+            {tx('universe.collab.removeConfirm', { name: <bdi>{member.username}</bdi> })}
           </p>
-          <p className="settings__note">
-            They lose access straight away. Nothing they wrote, changed or trashed is undone, and
-            their account is not affected.
-          </p>
+          <p className="settings__note">{t('universe.collab.removeNote')}</p>
           <div className="form__actions">
             <button
               className="button button--danger"
@@ -451,7 +465,7 @@ function MemberRow({
               disabled={busy}
               data-testid="confirm-remove-collaborator"
             >
-              {busy ? 'Removing' : 'Remove'}
+              {busy ? t('universe.collab.removing') : t('universe.collab.removeConfirmButton')}
             </button>
             <button
               className="button button--secondary"
@@ -459,7 +473,7 @@ function MemberRow({
               onClick={() => setConfirming(false)}
               disabled={busy}
             >
-              Keep
+              {t('universe.collab.keep')}
             </button>
           </div>
         </div>
@@ -488,6 +502,7 @@ function InvitationRow({
   onChanged: (next: PendingInvitation) => void
   onRevoked: () => void
 }) {
+  const { t } = useI18n()
   const id = useId()
   const row = useRef<HTMLLIElement>(null)
   const [busy, setBusy] = useState(false)
@@ -503,7 +518,9 @@ function InvitationRow({
     try {
       onChanged(await changeInvitationRole(universeId, invitation.id, role))
     } catch (problem: unknown) {
-      setError(problem instanceof Error ? problem.message : 'The role could not be changed.')
+      setError(
+        problem instanceof Error ? problem.message : t('universe.collab.invitationRoleFailed'),
+      )
     } finally {
       setBusy(false)
     }
@@ -520,7 +537,7 @@ function InvitationRow({
         onRevoked()
         return
       }
-      setError(problem instanceof Error ? problem.message : 'The invitation could not be revoked.')
+      setError(problem instanceof Error ? problem.message : t('universe.collab.revokeFailed'))
       setBusy(false)
     }
   }
@@ -536,11 +553,13 @@ function InvitationRow({
         <p className="collab__name collab__email">
           <bdi>{invitation.email}</bdi>
         </p>
-        <p className="collab__meta">Expires {formatDate(invitation.expiresAt)}</p>
+        <p className="collab__meta">
+          {t('universe.collab.expires', { date: formatDate(invitation.expiresAt) })}
+        </p>
       </div>
       <div className="collab__controls">
         <label className="visually-hidden" htmlFor={`${id}-role`}>
-          Role for {invitation.email}
+          {t('universe.collab.invitationRole', { email: invitation.email })}
         </label>
         <RoleSelect
           id={`${id}-role`}
@@ -551,7 +570,7 @@ function InvitationRow({
         />
         <CopyLink
           claimToken={invitation.claimToken}
-          label="Copy invite link"
+          label={t('universe.collab.copyInvite')}
           testId="copy-invite-link"
         />
         <button
@@ -559,10 +578,10 @@ function InvitationRow({
           type="button"
           onClick={() => void revoke()}
           disabled={busy}
-          aria-label={`Revoke the invitation to ${invitation.email}`}
+          aria-label={t('universe.collab.revokeLabel', { email: invitation.email })}
           data-testid="revoke-invitation"
         >
-          Revoke
+          {t('universe.collab.revoke')}
         </button>
       </div>
       {error ? (
@@ -591,6 +610,8 @@ function RoleSelect({
   describedBy?: string
   testId: string
 }) {
+  useI18n()
+
   return (
     <select
       id={id}
@@ -604,7 +625,7 @@ function RoleSelect({
     >
       {COLLABORATOR_ROLES.map((role) => (
         <option key={role} value={role}>
-          {ROLE_LABELS[role]}
+          {roleLabel(role)}
         </option>
       ))}
     </select>
@@ -624,6 +645,7 @@ function CopyLink({
   label: string
   testId: string
 }) {
+  const { t } = useI18n()
   const link = invitationLink(claimToken)
   const [status, setStatus] = useState<'idle' | 'copied' | 'manual'>('idle')
   const manualInput = useRef<HTMLInputElement>(null)
@@ -654,12 +676,12 @@ function CopyLink({
         {label}
       </button>
       <span className="collab__copystatus" role="status" data-testid={`${testId}-status`}>
-        {status === 'copied' ? 'Invite link copied.' : ''}
+        {status === 'copied' ? t('universe.collab.copied') : ''}
       </span>
       {status === 'manual' ? (
         <span className="collab__manual">
           <label className="field__label" htmlFor={inputId}>
-            Copy this link
+            {t('universe.collab.copyManual')}
           </label>
           <input
             ref={manualInput}

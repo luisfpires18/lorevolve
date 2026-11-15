@@ -79,6 +79,83 @@ public sealed class UniverseRecoveryTests(LorEvolveApiFactory factory) : IClassF
         Assert.Contains($"@[Alenna Vance](lore:{warden.Id:D})", council.Manuscript!.Content, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The readable export in the reader's language (#110): the pages LorEvolve writes are Portuguese, what the
+    /// author wrote is untouched, and the archive's layout - its file names and its `media/` paths - does not move.
+    ///
+    /// The accents are asserted as bytes as well as as text, because a reviewer's tooling has twice reported correct
+    /// UTF-8 as corrupted: a page holding U+FFFD would fail here, and none does.
+    /// </summary>
+    [Fact]
+    public async Task The_readable_export_is_written_in_the_language_the_request_asked_for()
+    {
+        var client = await SignedIn(_factory, "readable-pt");
+        var world = await BuildFullWorld(client, "Livro legivel");
+        var u = world.Rich.Universe.Id;
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/universes/{u}/export/readable");
+        request.Headers.Add("Accept-Language", "pt-PT");
+        var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        var files = Entries(bytes);
+        var readme = Encoding.UTF8.GetString(files["README.md"]);
+
+        // LorEvolve's own words are Portuguese.
+        Assert.Contains("Exportação legível de um universo LorEvolve", readme, StringComparison.Ordinal);
+        Assert.Contains("## Conteúdo", readme, StringComparison.Ordinal);
+        Assert.Contains("## Não está nesta exportação", readme, StringComparison.Ordinal);
+        Assert.DoesNotContain("LorEvolve cannot read it back", readme, StringComparison.Ordinal);
+        Assert.DoesNotContain("## Contents", readme, StringComparison.Ordinal);
+
+        // The author's own text is theirs, in whatever language they wrote it.
+        Assert.StartsWith("# Livro legivel", readme, StringComparison.Ordinal);
+        var warden = Encoding.UTF8.GetString(files["lore/character/alenna-vance.md"]);
+        Assert.StartsWith("# Alenna Vance", warden, StringComparison.Ordinal);
+        Assert.Contains("**Title:** High Warden", warden, StringComparison.Ordinal);
+
+        // A heading LorEvolve writes is Portuguese on an entry page too, and the status word with it.
+        Assert.Contains("## Relações", warden, StringComparison.Ordinal);
+        Assert.DoesNotContain("## Relationships", warden, StringComparison.Ordinal);
+
+        // The layout never moves with the language: the same file names, and the same media paths a backup uses.
+        foreach (var path in new[] { "README.md", "lore/README.md", "relationships.md", "timeline.md", "world-rules.md", "ideas.md" })
+        {
+            Assert.True(files.ContainsKey(path), path);
+        }
+
+        Assert.Contains($"![Alenna Vance](../../media/entities/{world.Rich.Warden:D}/original.png)", warden, StringComparison.Ordinal);
+
+        // Every page is well-formed UTF-8: no replacement character anywhere, and the accented bytes are the real ones.
+        foreach (var (path, page) in files.Where(file => file.Key.EndsWith(".md", StringComparison.Ordinal)))
+        {
+            Assert.DoesNotContain("\uFFFD", Encoding.UTF8.GetString(page), StringComparison.Ordinal);
+        }
+
+        // "ção" is C3 A7 C3 A3 6F, the two-byte forms of U+00E7 and U+00E3. A mojibaked file could not hold these.
+        Assert.Contains(files["README.md"], _ => true);
+        var readmeBytes = files["README.md"];
+        byte[] cao = [0xC3, 0xA7, 0xC3, 0xA3, 0x6F];
+        Assert.True(
+            Contains(readmeBytes, cao),
+            "README.md does not hold the UTF-8 bytes of \"ção\", so the Portuguese words did not survive the write.");
+    }
+
+    /// <summary>Whether <paramref name="haystack"/> holds <paramref name="needle"/> as a run of bytes.</summary>
+    private static bool Contains(byte[] haystack, byte[] needle)
+    {
+        for (var at = 0; at + needle.Length <= haystack.Length; at++)
+        {
+            if (haystack.AsSpan(at, needle.Length).SequenceEqual(needle))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     [Fact]
     public async Task The_readable_export_is_a_linked_markdown_book_of_the_live_world_with_its_pictures()
     {

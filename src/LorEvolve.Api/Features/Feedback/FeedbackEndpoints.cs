@@ -31,6 +31,9 @@ public static class FeedbackEndpoints
     /// <summary>How many reports one account may send in an hour. A typo resent is fine; a loop is not.</summary>
     public const int HourlyLimit = 20;
 
+    /// <summary>Stable marker for the 429 past <see cref="HourlyLimit"/>.</summary>
+    public const string TooManyReportsCode = "feedback_too_many_reports";
+
     public static IEndpointRouteBuilder MapFeedbackEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/api/feedback", SendAsync).WithTags("Feedback").WithName("SendFeedback").RequireAuthorization();
@@ -74,7 +77,8 @@ public static class FeedbackEndpoints
             return Results.Problem(
                 title: "Too many reports",
                 detail: "That is a lot of reports in one hour. Try again later.",
-                statusCode: StatusCodes.Status429TooManyRequests);
+                statusCode: StatusCodes.Status429TooManyRequests,
+                extensions: new Dictionary<string, object?> { ["code"] = TooManyReportsCode });
         }
 
         db.FeedbackReports.Add(new FeedbackReport

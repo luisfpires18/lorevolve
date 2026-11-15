@@ -19,6 +19,9 @@ public static class EntityTypeEndpoints
     /// <summary>The machine-readable marker on the 409 a type still used by an entry gets, in Lore or in the Trash.</summary>
     public const string TypeInUseCode = "entity_type_in_use";
 
+    /// <summary>The 409 for removing a select option that an entry still has chosen.</summary>
+    public const string OptionInUseCode = "entity_field_option_in_use";
+
     /// <summary>
     /// Why a type cannot be deleted, in the author's terms: how many entries still use it and how many of those are in the
     /// Trash, since an entry there is invisible in Lore and still keeps its type. Mirrored by the Types screen.
@@ -704,12 +707,19 @@ public static class EntityTypeEndpoints
             .MaxAsync(type => (int?)type.DisplayOrder, cancellationToken) ?? 0) + 1;
 
     /// <summary>Every type of the universe and its parent: the whole graph, which is small.</summary>
+    /// <summary>
+    /// Every type in one scope and its parent: the universe's lore when <paramref name="projectId"/> is null, or that
+    /// project's own types when it is not (#144). One map per scope, never both at once, because a lineage that mixed
+    /// them would let a project's type inherit the world's fields through the back door - the database refuses such a
+    /// parent outright (#143), and this is the read that would otherwise disagree with it.
+    /// </summary>
     internal static async Task<Dictionary<Guid, Guid?>> ParentsAsync(
         LorEvolveDbContext db,
         Guid universeId,
-        CancellationToken cancellationToken) =>
-        await db.EntityTypes.AsNoTracking()
-            .Where(type => type.UniverseId == universeId)
+        CancellationToken cancellationToken,
+        Guid? projectId = null) =>
+        await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
+            .Where(type => type.UniverseId == universeId && type.ProjectId == projectId)
             .ToDictionaryAsync(type => type.Id, type => type.ParentId, cancellationToken);
 
     private static IResult ParentMissing() =>
@@ -1200,7 +1210,8 @@ public static class EntityTypeEndpoints
                         title: "Option is in use",
                         detail: $"The option \"{option.Value}\" is chosen on at least one entity. "
                             + "Clear it there before removing the option.",
-                        statusCode: StatusCodes.Status409Conflict);
+                        statusCode: StatusCodes.Status409Conflict,
+                        extensions: new Dictionary<string, object?> { ["code"] = OptionInUseCode });
                 }
 
                 // An older version that chose it could no longer be restored as it was written, so the choice stays.

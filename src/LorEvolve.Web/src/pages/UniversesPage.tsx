@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArchiveRestore, Plus, Search } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
+import { useI18n } from '../i18n'
 import { RestoreBackup } from '../components/RestoreBackup'
 import { UniverseCard } from '../components/UniverseCard'
 import { UniverseForm } from '../components/UniverseForm'
@@ -13,6 +14,7 @@ type LoadState =
   { kind: 'loading' } | { kind: 'ready'; page: UniversePage } | { kind: 'error'; message: string }
 
 export default function UniversesPage() {
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -74,14 +76,14 @@ export default function UniversesPage() {
         if (controller.signal.aborted) return
         setState({
           kind: 'error',
-          message: error instanceof Error ? error.message : 'Could not load your universes.',
+          message: error instanceof Error ? error.message : t('universe.list.loadFailed'),
         })
       })
 
     return () => {
       controller.abort()
     }
-  }, [searched, includeArchived, page, reloadKey])
+  }, [searched, includeArchived, page, reloadKey, t])
 
   function changeFilter(next: boolean) {
     setIncludeArchived(next)
@@ -96,8 +98,8 @@ export default function UniversesPage() {
     <>
       <div className="home__heading">
         <div>
-          <h1 className="home__title">Universes</h1>
-          <p className="home__lede">Your worlds, and any shared with you.</p>
+          <h1 className="home__title">{t('universe.list.title')}</h1>
+          <p className="home__lede">{t('universe.list.lede')}</p>
         </div>
         <div className="home__actions">
           <button
@@ -110,7 +112,7 @@ export default function UniversesPage() {
             data-testid="new-universe"
           >
             <ActionIcon icon={Plus} />
-            New universe
+            {t('universe.list.new')}
           </button>
           <button
             className="button button--secondary"
@@ -120,7 +122,7 @@ export default function UniversesPage() {
             data-testid="restore-backup"
           >
             <ActionIcon icon={ArchiveRestore} />
-            Restore backup
+            {t('universe.list.restore')}
           </button>
         </div>
       </div>
@@ -135,18 +137,18 @@ export default function UniversesPage() {
       {isCreating || isStarting ? (
         <section
           className="composer"
-          aria-label="Create a universe"
+          aria-label={t('universe.list.composerLabel')}
           data-testid="universe-composer"
         >
           <h2 className="composer__title">
-            {isFirstRun ? 'Name your first world' : 'Name a new world'}
+            {isFirstRun ? t('universe.list.nameFirst') : t('universe.list.nameNew')}
           </h2>
           <UniverseForm
             // Asked for, the form starts in its name; offered on a first visit, it leaves focus where it was.
             key={isCreating ? 'asked' : 'offered'}
             takesFocus={isCreating}
-            submitLabel="Create universe"
-            busyLabel="Creating"
+            submitLabel={t('universe.list.create')}
+            busyLabel={t('universe.list.creating')}
             onCancel={() => {
               setIsCreating(false)
               setIsDismissed(true)
@@ -162,7 +164,7 @@ export default function UniversesPage() {
       <div className="controls">
         <div className="controls__search">
           <label className="field__label" htmlFor="universe-search">
-            Filter universes
+            {t('universe.list.filter')}
           </label>
           <span className="controls__searchfield">
             <Search
@@ -175,21 +177,21 @@ export default function UniversesPage() {
               id="universe-search"
               className="field__input"
               type="search"
-              placeholder="Name of a world"
+              placeholder={t('universe.list.filterPlaceholder')}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
           </span>
         </div>
 
-        <div className="segmented" role="group" aria-label="Archive filter">
+        <div className="segmented" role="group" aria-label={t('universe.list.archiveFilter')}>
           <button
             type="button"
             className="segmented__option"
             aria-pressed={!includeArchived}
             onClick={() => changeFilter(false)}
           >
-            Active
+            {t('universe.list.active')}
           </button>
           <button
             type="button"
@@ -198,14 +200,14 @@ export default function UniversesPage() {
             onClick={() => changeFilter(true)}
             data-testid="filter-all"
           >
-            All
+            {t('universe.list.all')}
           </button>
         </div>
       </div>
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Gathering your universes…
+          {t('universe.list.loading')}
         </p>
       ) : null}
 
@@ -217,7 +219,7 @@ export default function UniversesPage() {
             type="button"
             onClick={() => setReloadKey((current) => current + 1)}
           >
-            Try again
+            {t('universe.list.retry')}
           </button>
         </div>
       ) : null}
@@ -235,13 +237,13 @@ export default function UniversesPage() {
       {result && result.items.length === 0 && !isStarting ? (
         <EmptyState
           testId="universe-empty"
-          title={<>{isFiltered ? 'Nothing here by that name.' : 'No universes yet.'}</>}
-          hint={
+          title={
             <>
-              {isFiltered
-                ? 'Try a different word, or clear the search.'
-                : 'Start one, and everything you invent will hang off it.'}
+              {isFiltered ? t('universe.list.emptyFilteredTitle') : t('universe.list.emptyTitle')}
             </>
+          }
+          hint={
+            <>{isFiltered ? t('universe.list.emptyFilteredHint') : t('universe.list.emptyHint')}</>
           }
           action={
             isFiltered ? undefined : (
@@ -254,7 +256,7 @@ export default function UniversesPage() {
                 }}
               >
                 <ActionIcon icon={Plus} />
-                New universe
+                {t('universe.list.emptyNew')}
               </button>
             )
           }
@@ -262,17 +264,17 @@ export default function UniversesPage() {
       ) : null}
 
       {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label="Pagination">
+        <nav className="pager" aria-label={t('universe.list.pagination')}>
           <button
             className="button button--secondary"
             type="button"
             disabled={result.page <= 1}
             onClick={() => setPage((current) => current - 1)}
           >
-            Previous
+            {t('universe.list.previous')}
           </button>
           <span className="pager__position">
-            Page {result.page} of {result.totalPages}
+            {t('universe.list.page', { page: result.page, total: result.totalPages })}
           </span>
           <button
             className="button button--secondary"
@@ -280,7 +282,7 @@ export default function UniversesPage() {
             disabled={result.page >= result.totalPages}
             onClick={() => setPage((current) => current + 1)}
           >
-            Next
+            {t('universe.list.next')}
           </button>
         </nav>
       ) : null}

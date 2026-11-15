@@ -134,6 +134,24 @@ internal static class BackupNormalization
                 ? [.. payload.Maps.Select(map => map is null ? null! : map with { Calibration = null })]
                 : null,
         IdeaBoards = version >= 36 ? payload.IdeaBoards : null,
+
+        // World Logic arrived at version 44 (ADR 0072). An older file has no System and no rule definition, and
+        // nothing is inferred for it: a universe restored from one simply has no World Logic.
+        LoreSystems = version >= 44 ? payload.LoreSystems : null,
+
+        // Exceptions arrived at version 45. An older file carries a rule without them, and none is invented: a
+        // restored rule simply excuses nothing, which is what the file says.
+        SystemRules = version >= 45 || payload.SystemRules is null
+            ? version >= 44 ? payload.SystemRules : null
+            : [.. payload.SystemRules.Select(rule => rule is null
+                ? null!
+                : rule with
+                {
+                    Exceptions = null,
+                    Revisions = [.. rule.Revisions.Select(revision => revision is null
+                        ? null!
+                        : revision with { Exceptions = null })],
+                })],
     };
 
     /// <summary>
@@ -241,6 +259,17 @@ internal static class BackupNormalization
         KnowledgeRecords = payload.KnowledgeRecords ?? [],
         Maps = payload.Maps ?? [],
         IdeaBoards = payload.IdeaBoards ?? [],
+        LoreSystems = payload.LoreSystems ?? [],
+        SystemRules = payload.SystemRules ?? [],
+
+        // One dismissal per finding. Two records of the same finding would be the same decision twice, and the
+        // restore re-applies it by fingerprint, so a duplicate would be a wasted row at best.
+        DismissedFindings =
+        [
+            .. (payload.DismissedFindings ?? []).DistinctBy(
+                finding => (finding.RuleId, finding.ProjectId, finding.Outcome, finding.ErrorCode,
+                    string.Join('', finding.Evidence.Select(item => $"{item.Source}:{item.Id}:{item.Role}")))),
+        ],
         TimelineEntries =
         [
             .. payload.TimelineEntries.Select(entry =>

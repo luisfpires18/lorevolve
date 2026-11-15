@@ -8,6 +8,8 @@ using LorEvolve.Api.Features.Knowledge;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Mcp;
+using LorEvolve.Api.Features.ProjectEntities;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Profile;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Publishing;
@@ -16,6 +18,7 @@ using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Storage;
 using LorEvolve.Api.Features.Stories;
 using LorEvolve.Api.Features.Suggestions;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.Timeline;
 using LorEvolve.Api.Features.Universes;
 using LorEvolve.Api.Features.WorldRules;
@@ -145,6 +148,18 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
 
     public DbSet<ChronologyCalendarMonth> ChronologyCalendarMonths => Set<ChronologyCalendarMonth>();
 
+    public DbSet<CreativeProject> CreativeProjects => Set<CreativeProject>();
+
+    /// <summary>The seasons of a Series project, and the episodes in them (#145).</summary>
+    public DbSet<ProjectSeason> ProjectSeasons => Set<ProjectSeason>();
+
+    public DbSet<ProjectEpisode> ProjectEpisodes => Set<ProjectEpisode>();
+
+    /// <summary>The pages of a comic's chapter, and the panels on them (#147).</summary>
+    public DbSet<ProjectPage> ProjectPages => Set<ProjectPage>();
+
+    public DbSet<ProjectPanel> ProjectPanels => Set<ProjectPanel>();
+
     public DbSet<Story> Stories => Set<Story>();
 
     public DbSet<Chapter> Chapters => Set<Chapter>();
@@ -180,6 +195,41 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     public DbSet<IdeaBoardConnection> IdeaBoardConnections => Set<IdeaBoardConnection>();
 
     public DbSet<WorldRule> WorldRules => Set<WorldRule>();
+
+    /// <summary>World Logic: named sets of reusable rule definitions, and their saved states (ADR 0072).</summary>
+    public DbSet<LoreSystem> LoreSystems => Set<LoreSystem>();
+
+    public DbSet<LoreSystemRevision> LoreSystemRevisions => Set<LoreSystemRevision>();
+
+    /// <summary>Reusable rule definitions: words, and optionally one typed condition tree (ADR 0072).</summary>
+    public DbSet<SystemRule> SystemRules => Set<SystemRule>();
+
+    public DbSet<SystemRuleRevision> SystemRuleRevisions => Set<SystemRuleRevision>();
+
+    /// <summary>Which rule definitions a System references, and in what order inside it.</summary>
+    public DbSet<LoreSystemRule> LoreSystemRules => Set<LoreSystemRule>();
+
+    /// <summary>Which rule definitions one rule's condition may reference.</summary>
+    public DbSet<SystemRuleDependency> SystemRuleDependencies => Set<SystemRuleDependency>();
+
+    /// <summary>
+    /// What evaluating the rule definitions found, with the evidence each outcome depended on and the history of
+    /// what the author did about it (ADR 0072, LOREX-020). Derived from the lore, apart from the dismissals.
+    /// </summary>
+    public DbSet<WorldLogicFinding> WorldLogicFindings => Set<WorldLogicFinding>();
+
+    public DbSet<WorldLogicFindingEvidence> WorldLogicFindingEvidence => Set<WorldLogicFindingEvidence>();
+
+    public DbSet<WorldLogicFindingEvent> WorldLogicFindingEvents => Set<WorldLogicFindingEvent>();
+
+    /// <summary>
+    /// What connected AI clients claimed about this universe's meaning, waiting for the author to accept or dismiss
+    /// (ADR 0072, ADR 0046, LOREX-021). Deliberately a different table from <see cref="WorldLogicFindings"/>: nothing
+    /// a model asserts is ever recorded as a proven violation.
+    /// </summary>
+    public DbSet<SemanticFinding> SemanticFindings => Set<SemanticFinding>();
+
+    public DbSet<SemanticFindingCitation> SemanticFindingCitations => Set<SemanticFindingCitation>();
 
     public DbSet<EntityPrivateNote> EntityPrivateNotes => Set<EntityPrivateNote>();
 

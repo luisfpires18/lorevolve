@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/useAuth'
-import { AssistantUsage } from '../components/AssistantUsage'
 import { ConnectedApps } from '../components/ConnectedApps'
 import { ProfileAvatar } from '../components/ProfileAvatar'
 import { PublicAuthorSection } from '../components/PublicAuthorSection'
@@ -124,7 +123,6 @@ export default function ProfilePage() {
             {t('account.profile.usageHeading')}
           </h2>
           <StorageUsage />
-          <AssistantUsage />
         </section>
       </TabPanel>
 

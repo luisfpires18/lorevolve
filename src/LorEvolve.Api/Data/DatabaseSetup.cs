@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace LorEvolve.Api.Data;
 
@@ -23,7 +24,17 @@ public static class DatabaseSetup
 
         connectionString = ResolveDataSourceDirectory(connectionString, environment.ContentRootPath);
 
-        services.AddDbContext<LorEvolveDbContext>(options => options.UseSqlite(connectionString));
+        services.AddDbContext<LorEvolveDbContext>(options => options
+            .UseSqlite(connectionString)
+            // EntityType and LoreEntity each carry a query filter that hides a project's own schema and entries from
+            // the universe's lore (#143, #144), and both are the required end of many relationships, so EF warns that a
+            // filtered-out principal could surprise a read through one of those twenty-two dependents. The alternative
+            // it suggests, a matching filter on each dependent, means a navigation join added to every read of every
+            // one of them to express a rule that already holds: a dependent row of a project's entry is only ever
+            // reached from the project's own code, which says IgnoreQueryFilters where it means to. Suppressed here,
+            // once and visibly, rather than by twenty-two filters nobody would keep in step.
+            .ConfigureWarnings(warnings => warnings.Ignore(
+                CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning)));
 
         // One instance, reachable two ways: as the first hosted service, and directly by any
         // other startup step that has to await the schema before it queries a table.

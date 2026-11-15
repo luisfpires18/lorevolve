@@ -2,7 +2,6 @@ using System.Net;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Json;
 using System.Text.Json;
-using LorEvolve.Api.Features.Assistant;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Relationships;
@@ -12,7 +11,6 @@ using static LorEvolve.Api.Tests.CollaborationTestClient;
 using static LorEvolve.Api.Tests.MapTestClient;
 using static LorEvolve.Api.Tests.McpTestClient;
 using static LorEvolve.Api.Tests.PlotTestClient;
-using static LorEvolve.Api.Tests.ScriptedAssistantProvider;
 
 namespace LorEvolve.Api.Tests;
 
@@ -20,15 +18,13 @@ namespace LorEvolve.Api.Tests;
 /// A shared universe with two maps: "The Known World" (1000 by 500), calibrated at half a league a pixel, pinning the capital
 /// Arkazia at (0.2, 0.5), the Sylvara Jungle at (0.5, 0.9) and an annotation; and "The North" (400 by 400), uncalibrated,
 /// pinning Arkazia again. A kingdom whose recorded relationship names Arkazia as its capital, an entry pinned nowhere, two
-/// entries sharing an alias, and a Viewer's MCP connection. The assistant runs on a scripted model. Made once for the class.
+/// entries sharing an alias, and a Viewer's MCP connection. Made once for the class.
 /// </summary>
 public sealed class MapGeographyFixture : IAsyncLifetime
 {
-    public MapGeographyFixture() => Api = new LorEvolveApiFactory { Assistant = Model };
+    public MapGeographyFixture() => Api = new LorEvolveApiFactory();
 
     public LorEvolveApiFactory Api { get; }
-
-    public ScriptedAssistantProvider Model { get; } = new();
 
     internal SharedWorld World { get; private set; } = null!;
 
@@ -102,7 +98,8 @@ public sealed class MapGeographyFixture : IAsyncLifetime
 /// <summary>
 /// Map geography (issue #53, ADR 0061): a calibration validated and read, a distance measured only on one calibrated map with
 /// confirmed pins and refused with its reason otherwise, locations that are recorded pins and nothing more, the same reading
-/// through the assistant and through MCP, read-only tools, and the usual walls - roles, the Trash, another universe.
+/// through the one reader every MCP map tool goes to, read-only tools, and the usual walls - roles, the Trash, another
+/// universe. The web assistant read the same geography until M4 (issue #158) retired it.
 /// </summary>
 public sealed class MapGeographyTests(MapGeographyFixture fixture) : IClassFixture<MapGeographyFixture>
 {
@@ -321,79 +318,41 @@ public sealed class MapGeographyTests(MapGeographyFixture fixture) : IClassFixtu
         });
     }
 
-    // ---------- Two transports, one reader ----------
+    // ---------- The reader over MCP ----------
 
     [Fact]
-    public async Task The_assistant_locates_a_capital_through_its_recorded_relationship_and_measures_the_same_distance_MCP_gives()
+    public async Task A_capital_is_located_through_its_recorded_relationship_and_measured_on_the_map_it_shares()
     {
-        fixture.Model.Use(step => step.Number switch
-        {
-            1 => Calls((AssistantTools.GetRelationships, new { id = fixture.Kingdom })),
-            2 => Calls((AssistantTools.GetMapLocation, new { lore_id = fixture.Capital })),
-            3 => Calls((AssistantTools.MeasureMapDistance, new { from_pin_id = fixture.CapitalPin, to_pin_id = fixture.JunglePin })),
-            _ => Answer(("recorded", "Arkazia, the kingdom's capital, is on The Known World, about 180 leagues from the Sylvara Jungle in a straight line.",
-                [fixture.CapitalPin.ToString(), fixture.JunglePin.ToString(), fixture.WorldMap.ToString(), Guid.NewGuid().ToString()])),
-        });
+        // The route an AI app takes (#53): the kingdom's relationships name the capital, the capital's location names
+        // the maps it is pinned on, and two pins of one map are measured by the creator's own scale.
+        await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
+        var related = await Call(client, "get_lore_relationships", new() { ["loreId"] = fixture.Kingdom.ToString() });
+        Assert.Equal(fixture.Capital, Assert.Single(related.GetProperty("relationships").EnumerateArray()).GetProperty("related").GetProperty("id").GetGuid());
 
-        var response = await W.Viewer.PostAsJsonAsync($"/api/universes/{W.U}/assistant", new AssistantRequest("Where is Arkazia Kingdom's capital, and how far is it from the Sylvara Jungle?", null));
-        Assert.True(response.StatusCode == HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
-        var answer = (await response.Content.ReadFromJsonAsync<AssistantAnswer>())!;
+        var located = await Call(client, "get_map_location", new() { ["lore"] = fixture.Capital.ToString() });
+        Assert.Equal(2, located.GetProperty("locations").GetArrayLength());
 
-        var segment = Assert.Single(answer.Segments);
-        Assert.Equal(AssistantSegmentKind.Recorded, segment.Kind);
-        // The invented id is not a source; the pins and the map, read this question, are.
-        Assert.Equal([fixture.CapitalPin, fixture.JunglePin, fixture.WorldMap], segment.SourceIds);
-        Assert.Contains(answer.Sources, source => source.Kind == AssistantSourceKind.MapPin && source.Id == fixture.CapitalPin && source.Title == "Arkazia" && source.StoryId == fixture.WorldMap);
-        Assert.Contains(answer.Sources, source => source.Kind == AssistantSourceKind.Map && source.Id == fixture.WorldMap && source.Title == "The Known World");
-
-        // What the model was handed: the relationship names the capital, the location names two maps, the distance is the reader's.
-        var seen = fixture.Model.ResultsSeen();
-        Assert.Equal(fixture.Capital, Assert.Single(seen[0].GetProperty("relationships").EnumerateArray()).GetProperty("related").GetProperty("id").GetGuid());
-        Assert.Equal(2, seen[1].GetProperty("pins").GetArrayLength());
-        var measured = seen[2];
+        var measured = await Call(client, "measure_map_distance", new() { ["fromPinId"] = fixture.CapitalPin.ToString(), ["toPinId"] = fixture.JunglePin.ToString() });
         Assert.Equal("Measured", measured.GetProperty("status").GetString());
         Assert.Equal(180d, measured.GetProperty("distance").GetDouble());
         Assert.Equal("leagues", measured.GetProperty("unit").GetString());
+        Assert.EndsWith($"?pin={fixture.CapitalPin:D}", measured.GetProperty("from").GetProperty("url").GetString(), StringComparison.Ordinal);
 
-        // MCP, same pins: the same numbers, the same words, from the same reader.
-        await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
-        var mcp = await Call(client, "measure_map_distance", new() { ["fromPinId"] = fixture.CapitalPin.ToString(), ["toPinId"] = fixture.JunglePin.ToString() });
-        Assert.Equal("Measured", mcp.GetProperty("status").GetString());
-        Assert.Equal(measured.GetProperty("distance").GetDouble(), mcp.GetProperty("distance").GetDouble());
-        Assert.Equal(measured.GetProperty("pixelDistance").GetDouble(), mcp.GetProperty("pixelDistance").GetDouble());
-        Assert.Equal(measured.GetProperty("unit").GetString(), mcp.GetProperty("unit").GetString());
-        Assert.Equal(measured.GetProperty("note").GetString(), mcp.GetProperty("note").GetString());
-        Assert.Equal(measured.GetProperty("method").GetString(), mcp.GetProperty("method").GetString());
-        Assert.EndsWith($"?pin={fixture.CapitalPin:D}", mcp.GetProperty("from").GetProperty("url").GetString(), StringComparison.Ordinal);
-
-        // And where a distance cannot be given, both say why in the same words.
-        fixture.Model.Use(step => step.Number == 1
-            ? Calls((AssistantTools.MeasureMapDistance, new { from_pin_id = fixture.CapitalPin, to_pin_id = fixture.NorthPin }))
-            : Answer(("note", "They are on different maps.", [])));
-        (await W.Viewer.PostAsJsonAsync($"/api/universes/{W.U}/assistant", new AssistantRequest("How far from Arkazia to Frostgate?", null))).EnsureSuccessStatusCode();
-        var apart = fixture.Model.ResultsSeen()[0];
-        var mcpApart = await Call(client, "measure_map_distance", new() { ["fromPinId"] = fixture.CapitalPin.ToString(), ["toPinId"] = fixture.NorthPin.ToString() });
+        // Where a distance cannot be given, the reason is given instead, and never a number.
+        var apart = await Call(client, "measure_map_distance", new() { ["fromPinId"] = fixture.CapitalPin.ToString(), ["toPinId"] = fixture.NorthPin.ToString() });
         Assert.Equal("DifferentMaps", apart.GetProperty("status").GetString());
-        Assert.Equal(apart.GetProperty("note").GetString(), mcpApart.GetProperty("note").GetString());
         Assert.False(apart.TryGetProperty("distance", out _));
-        Assert.False(mcpApart.TryGetProperty("distance", out _));
+        Assert.NotNull(apart.GetProperty("note").GetString());
     }
 
     [Fact]
-    public async Task The_assistant_refuses_bad_pin_ids_and_the_same_pin_twice()
+    public async Task The_map_tools_refuse_bad_pin_ids_and_the_same_pin_twice()
     {
-        fixture.Model.Use(step => step.Number switch
-        {
-            1 => Calls(
-                (AssistantTools.MeasureMapDistance, new { from_pin_id = fixture.CapitalPin, to_pin_id = fixture.CapitalPin }),
-                (AssistantTools.MeasureMapDistance, new { from_pin_id = "nope", to_pin_id = fixture.CapitalPin }),
-                (AssistantTools.GetMapLocation, new { lore_id = W.Trash.Entry }),
-                (AssistantTools.SearchMapLocations, new { query = "" })),
-            _ => Answer(("note", "Nothing to say.", [])),
-        });
-        (await W.Owner.PostAsJsonAsync($"/api/universes/{W.U}/assistant", new AssistantRequest("Measure nothing", null))).EnsureSuccessStatusCode();
-        var seen = fixture.Model.ResultsSeen();
-        Assert.Equal(["bad_arguments", "not_found", "not_found", "bad_arguments"], seen.Select(result => result.GetProperty("error").GetString()));
+        await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
+        await Refused(client, "measure_map_distance", new() { ["fromPinId"] = fixture.CapitalPin.ToString(), ["toPinId"] = fixture.CapitalPin.ToString() }, "bad_arguments");
+        await Refused(client, "measure_map_distance", new() { ["fromPinId"] = "nope", ["toPinId"] = fixture.CapitalPin.ToString() }, "not_found");
+        await Refused(client, "get_map_location", new() { ["lore"] = W.Trash.Entry.ToString() }, "not_found");
+        await Refused(client, "search_map_locations", new() { ["query"] = "" }, "bad_arguments");
     }
 
     // ---------- Read-only, and the walls ----------

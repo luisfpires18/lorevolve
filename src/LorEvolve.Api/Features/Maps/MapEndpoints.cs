@@ -1061,10 +1061,7 @@ public static partial class MapEndpoints
         Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
 
     private static IResult Unavailable(MediaStorageException exception) =>
-        Results.Problem(
-            title: "Image storage is unavailable.",
-            detail: exception.Message,
-            statusCode: StatusCodes.Status503ServiceUnavailable);
+        MediaProblem.Unavailable(exception);
 
     private static IResult ReplacedMeanwhile() =>
         Results.Problem(

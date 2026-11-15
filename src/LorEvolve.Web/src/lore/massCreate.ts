@@ -41,6 +41,10 @@ export const hasRequiredFields = (type: EntityType) => type.fields.some((field) 
 
 const folded = (text: string) => text.trim().toLocaleLowerCase()
 
+/** Whether a pasted cell is that column's heading, in the current language or in English. */
+const headerWord = (cell: string, column: 'type' | 'name' | 'status') =>
+  folded(cell) === column || folded(cell) === folded(t(`lore.massCreate.header.${column}`))
+
 const columns = (count: number) => tn('lore.massCreate.paste.columns', count, { n: count })
 
 /**
@@ -100,11 +104,14 @@ export function readPaste(text: string, types: EntityType[], defaults: MassDefau
     }
   }
 
+  // A spreadsheet's own header row, named in the reader's language or in English. Both are recognised
+  // whatever the language, because a sheet written in one is often pasted in the other, and a header
+  // read as a row would create an entry called "Name".
   const [first] = lines
   const isHeader =
-    folded(first.cells[0]) === 'type' &&
-    folded(first.cells[1]) === 'name' &&
-    folded(first.cells[2]) === 'status'
+    headerWord(first.cells[0], 'type') &&
+    headerWord(first.cells[1], 'name') &&
+    headerWord(first.cells[2], 'status')
 
   return {
     kind: 'rows',

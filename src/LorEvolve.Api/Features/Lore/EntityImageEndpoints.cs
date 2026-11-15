@@ -910,10 +910,7 @@ public static partial class EntityImageEndpoints
     /// always LorEvolve's sentence - never the provider's, which stays in the log.
     /// </summary>
     private static IResult Unavailable(MediaStorageException exception) =>
-        Results.Problem(
-            title: "Image storage is unavailable.",
-            detail: exception.Message,
-            statusCode: StatusCodes.Status503ServiceUnavailable);
+        MediaProblem.Unavailable(exception);
 
     private static IResult Changed() =>
         Results.Problem(

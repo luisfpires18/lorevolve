@@ -19,16 +19,24 @@ public sealed record IdeaReferenceInput(IdeaReferenceKind Kind, Guid Id);
 ///
 /// <paramref name="ExpectedUpdatedAt"/> is the <c>updatedAt</c> the edit was written over, on an update. When the idea has
 /// changed since, the save is refused with 409 <c>idea_changed</c> and nothing is written. Ignored on create.
+///
+/// <paramref name="ProjectId"/> is a project in one of the caller's universes, or null (#197). A project idea takes the
+/// project's universe: <paramref name="UniverseId"/> may be left out, and naming a different one is refused. Like every
+/// other member it is saved whole, so an update that leaves it out takes the idea off its project.
 /// </summary>
 public sealed record IdeaRequest(
     string? Title,
     string? Body,
     Guid? UniverseId,
     IReadOnlyList<IdeaReferenceInput>? References,
-    DateTime? ExpectedUpdatedAt);
+    DateTime? ExpectedUpdatedAt,
+    Guid? ProjectId = null);
 
 /// <summary>The universe an idea belongs to, as much of it as a list or an editor draws.</summary>
 public sealed record IdeaUniverse(Guid Id, string Name, string? AccentColor, bool IsArchived);
+
+/// <summary>The project an idea is a note for, as much of it as a list or an editor draws.</summary>
+public sealed record IdeaProject(Guid Id, string Name, Projects.ProjectKind Kind);
 
 /// <summary>
 /// A list row: enough to find an idea again, never its whole body. <paramref name="Excerpt"/> is the start of the body, and
@@ -43,7 +51,8 @@ public sealed record IdeaSummary(
     int ReferenceCount,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    DateTime? DeletedAt);
+    DateTime? DeletedAt,
+    IdeaProject? Project = null);
 
 public sealed record IdeaPage(
     IReadOnlyList<IdeaSummary> Items,
@@ -77,4 +86,5 @@ public sealed record IdeaDetail(
     IdeaUniverse? Universe,
     IReadOnlyList<IdeaReferenceView> References,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    IdeaProject? Project = null);

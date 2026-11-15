@@ -449,3 +449,20 @@ from a filtered build or test run.
 
 `rtk proxy` used once, deliberately and not for a failure: `gh run list --json` to read Deploy DEV #50's number, head SHA
 and conclusion before branching. No diagnostic was missing from a filtered build or test run.
+
+## Project entities, #144 (2026-11-15)
+
+`rtk proxy` used once, for an ambiguous failure: `npm run lint` came back as the single line
+`ESLint output (JSON parse failed: EOF while parsing a value at line 1 column 0)` and then, on a second
+attempt, `Lint: 2 errors, 0 warnings` with no file, line or rule. The project lints with `oxlint`, not
+ESLint, so the filter was parsing the wrong tool's output and the count it reported was wrong as well:
+the unfiltered run showed two **warnings**, one of them pre-existing in `LorePage.tsx`. Without
+`rtk proxy` there was no way to know which file or rule to fix.
+
+## Project screens, #184 (2026-11-15)
+
+`rtk proxy` used twice, once for an ambiguous failure and once beside it. `npm run lint` came back as the
+single line `ESLint output (JSON parse failed: EOF while parsing a value at line 1 column 0)`, the same
+wrong-tool parse recorded under #144: the project lints with `oxlint`. The unfiltered run showed one
+pre-existing warning in `LorePage.tsx` and nothing else. `npm test` was run through `rtk proxy` in the
+same step to read the per-test lines rather than a collapsed count.

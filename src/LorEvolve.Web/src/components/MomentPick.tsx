@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import { useI18n } from '../i18n'
 import { listTimelineItems } from '../timeline/api'
 import { TimelineSource } from '../timeline/types'
 import type { MomentRef } from '../progression/types'
@@ -22,6 +23,7 @@ export function MomentPick({
   error?: string
   testId: string
 }) {
+  const { t } = useI18n()
   const id = useId()
   const errorId = useId()
   const [search, setSearch] = useState('')
@@ -66,11 +68,13 @@ export function MomentPick({
       {value ? (
         <p className="token" data-testid={`${testId}-chosen`}>
           <bdi>{value.title}</bdi>
-          {value.isTrashed ? <span className="token__note"> (in Trash)</span> : null}
+          {value.isTrashed ? (
+            <span className="token__note"> {t('time.momentPick.inTrash')}</span>
+          ) : null}
           <button
             type="button"
             className="token__remove"
-            aria-label={`Remove ${value.title}`}
+            aria-label={t('time.momentPick.remove', { title: value.title })}
             onClick={() => onChange(null)}
           >
             &times;
@@ -82,7 +86,7 @@ export function MomentPick({
             id={id}
             className="field__input"
             type="search"
-            placeholder="Search the timeline's moments"
+            placeholder={t('time.momentPick.search')}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             aria-invalid={error ? true : undefined}
@@ -90,7 +94,7 @@ export function MomentPick({
             data-testid={`${testId}-search`}
           />
           {found && found.length > 0 ? (
-            <ul className="momentpick__list" aria-label={`${label}: moments found`}>
+            <ul className="momentpick__list" aria-label={t('time.momentPick.found', { label })}>
               {found.map((moment) => (
                 <li key={moment.id}>
                   <button
@@ -105,7 +109,7 @@ export function MomentPick({
               ))}
             </ul>
           ) : found ? (
-            <p className="field__hint">No moment found.</p>
+            <p className="field__hint">{t('time.momentPick.none')}</p>
           ) : null}
         </>
       )}

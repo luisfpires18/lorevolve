@@ -2,6 +2,7 @@ import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import type { BoardsListNotice } from '../components/IdeaBoardsBrowser'
 import { IdeaBoardEditor } from '../components/IdeaBoardEditor'
 import { Quoted } from '../components/NameList'
+import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
 /**
@@ -15,6 +16,7 @@ export default function IdeaBoardPage({
   inUniverse?: boolean
   isNew?: boolean
 }) {
+  const { t, tx } = useI18n()
   const { boardId } = useParams<{ boardId: string }>()
   const navigate = useNavigate()
   const context = useOutletContext<WorkspaceContext | undefined>()
@@ -29,13 +31,9 @@ export default function IdeaBoardPage({
       contextUniverse={universe ? { id: universe.id, name: universe.name } : null}
       listPath={listPath}
       listLabel={
-        universe ? (
-          <>
-            Boards in <Quoted text={universe.name} />
-          </>
-        ) : (
-          'All boards'
-        )
+        universe
+          ? tx('ideas.pages.boardsIn', { universe: <Quoted text={universe.name} /> })
+          : t('ideas.pages.allBoards')
       }
       // A created board opens where it now lives, replacing the new form in history.
       onCreated={(board) =>

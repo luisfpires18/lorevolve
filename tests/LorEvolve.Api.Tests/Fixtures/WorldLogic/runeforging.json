@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "scenario": "runeforging",
+  "description": "A craft where a worked piece carries a graded purity and a count of how many times it was struck. Covers attribute comparison, a count over events, and a project-scoped exception.",
+  "facts": {
+    "subjects": [
+      { "id": "s.pure-ingot", "type": "worked-piece", "attributes": { "purity": 4, "ceremonial": false } },
+      { "id": "s.flawed-ingot", "type": "worked-piece", "attributes": { "purity": 1, "ceremonial": false } },
+      { "id": "s.rite-ingot", "type": "worked-piece", "attributes": { "purity": 1, "ceremonial": true } },
+      { "id": "s.overworked-ingot", "type": "worked-piece", "attributes": { "purity": 4, "ceremonial": false } },
+      { "id": "s.undescribed-ingot", "type": "worked-piece", "attributes": {} },
+      { "id": "s.master", "type": "maker", "attributes": { "ranked": true } }
+    ],
+    "relations": [
+      { "type": "madeBy", "fromId": "s.pure-ingot", "toId": "s.master" },
+      { "type": "madeBy", "fromId": "s.overworked-ingot", "toId": "s.master" }
+    ],
+    "events": [
+      { "id": "e.1", "kind": "strike", "method": "cold", "subjectIds": ["s.pure-ingot"], "at": "calendar:0145-03-02", "canon": true },
+      { "id": "e.2", "kind": "strike", "method": "cold", "subjectIds": ["s.overworked-ingot"], "at": "calendar:0145-03-02", "canon": true },
+      { "id": "e.3", "kind": "strike", "method": "cold", "subjectIds": ["s.overworked-ingot"], "at": "calendar:0145-03-04", "canon": true },
+      { "id": "e.4", "kind": "strike", "method": "cold", "subjectIds": ["s.overworked-ingot"], "at": "calendar:0145-03-09", "canon": true },
+      { "id": "e.5", "kind": "strike", "method": "warm", "subjectIds": ["s.overworked-ingot"], "at": "calendar:0145-04-01", "canon": false }
+    ]
+  },
+  "rules": [
+    {
+      "id": "rule.purity-floor",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "compare",
+        "left": { "attribute": "purity", "of": { "subject": "self" } },
+        "op": "gte",
+        "right": { "literal": 2, "type": "number" }
+      },
+      "exceptions": [
+        {
+          "id": "ex.ceremonial",
+          "scope": { "kind": "project", "projectId": "p.rites" },
+          "when": {
+            "kind": "compare",
+            "left": { "attribute": "ceremonial", "of": { "subject": "self" } },
+            "op": "eq",
+            "right": { "literal": true, "type": "boolean" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "rule.strike-limit",
+      "version": 2,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "compare",
+        "left": {
+          "count": {
+            "from": "events",
+            "where": [
+              { "field": "kind", "op": "eq", "value": "strike", "type": "text" },
+              { "field": "canon", "op": "eq", "value": true, "type": "boolean" },
+              { "field": "subjectIds", "op": "contains", "operandValue": { "subject": "self" } }
+            ]
+          }
+        },
+        "op": "lte",
+        "right": { "literal": 2, "type": "number" }
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.ranked-maker",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          { "kind": "not", "of": { "kind": "exists", "query": { "from": "relations", "where": [ { "field": "type", "op": "eq", "value": "madeBy", "type": "text" }, { "field": "fromId", "op": "eq", "operandValue": { "subject": "self" } } ] } } },
+          { "kind": "related", "relation": "madeBy", "from": { "subject": "self" }, "to": { "subject": "s.master" } }
+        ]
+      },
+      "exceptions": []
+    }
+  ],
+  "cases": [
+    {
+      "name": "a piece above the purity floor passes",
+      "ruleId": "rule.purity-floor",
+      "target": "s.pure-ingot",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.pure-ingot"] }
+    },
+    {
+      "name": "a piece below the floor is a proven violation outside the rites project",
+      "ruleId": "rule.purity-floor",
+      "target": "s.flawed-ingot",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.flawed-ingot"] }
+    },
+    {
+      "name": "the project-scoped exception exempts a ceremonial piece inside that project",
+      "ruleId": "rule.purity-floor",
+      "target": "s.rite-ingot",
+      "projectId": "p.rites",
+      "expect": { "outcome": "exempt", "errorCode": null, "exemptionId": "ex.ceremonial", "evidence": ["s.rite-ingot"] }
+    },
+    {
+      "name": "the same exception is skipped in another project, so the violation stands",
+      "ruleId": "rule.purity-floor",
+      "target": "s.rite-ingot",
+      "projectId": "p.other",
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.rite-ingot"] }
+    },
+    {
+      "name": "a piece with no purity recorded is unknown, never a pass and never a violation",
+      "ruleId": "rule.purity-floor",
+      "target": "s.undescribed-ingot",
+      "projectId": null,
+      "expect": { "outcome": "unknown", "errorCode": null, "exemptionId": null, "evidence": ["s.undescribed-ingot"] }
+    },
+    {
+      "name": "one Canon strike is within the limit",
+      "ruleId": "rule.strike-limit",
+      "target": "s.pure-ingot",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.pure-ingot", "e.1"] }
+    },
+    {
+      "name": "three Canon strikes break the limit",
+      "ruleId": "rule.strike-limit",
+      "target": "s.overworked-ingot",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.overworked-ingot", "e.2", "e.3", "e.4"] }
+    },
+    {
+      "name": "a piece with no maker relation at all satisfies the ranked-maker rule by the first branch",
+      "ruleId": "rule.ranked-maker",
+      "target": "s.flawed-ingot",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.flawed-ingot"] }
+    },
+    {
+      "name": "a piece made by the ranked maker satisfies the second branch",
+      "ruleId": "rule.ranked-maker",
+      "target": "s.pure-ingot",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.pure-ingot", "s.master"] }
+    }
+  ]
+}

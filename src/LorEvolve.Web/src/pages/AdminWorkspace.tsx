@@ -20,7 +20,7 @@ import { useAuth } from '../auth/useAuth'
 import { AccountMenu } from '../components/AccountMenu'
 import { ActionIcon } from '../components/ActionIcon'
 import { Avatar } from '../components/Avatar'
-import { BRAND_LINK_LABEL, BrandMark } from '../components/BrandMark'
+import { BrandMark } from '../components/BrandMark'
 import { EmptyState } from '../components/EmptyState'
 import { Field } from '../components/Field'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
@@ -32,6 +32,7 @@ import { formatDateTime } from '../lib/dates'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { FeedbackKind, listFeedback } from '../feedback/api'
 import { dateFormat } from '../i18n/format'
+import { useI18n } from '../i18n'
 
 /**
  * LorEvolve Admin (#40): the service's own workspace, apart from My workspace and from every universe. Main, Users and
@@ -46,6 +47,7 @@ type Load<T> =
 
 /** Reads `load` once per change of it (callers memoize it on what it asks for) and again on Try again. */
 function useLoad<T>(load: (signal: AbortSignal) => Promise<T>) {
+  const { t } = useI18n()
   const [state, setState] = useState<Load<T>>({ kind: 'loading' })
   const [attempt, setAttempt] = useState(0)
 
@@ -57,56 +59,81 @@ function useLoad<T>(load: (signal: AbortSignal) => Promise<T>) {
         if (controller.signal.aborted) return
         setState({
           kind: 'error',
-          message: error instanceof Error ? error.message : 'Could not load this.',
+          message: error instanceof Error ? error.message : t('admin.loadFailed'),
         })
       })
     return () => controller.abort()
-  }, [load, attempt])
+  }, [load, attempt, t])
 
   return { state, setState, retry: () => setAttempt((current) => current + 1) }
 }
 
 function Failure({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useI18n()
   return (
     <div className="notice notice--error" role="alert">
       <p>{message}</p>
       <button className="button button--secondary" type="button" onClick={onRetry}>
-        Try again
+        {t('admin.tryAgain')}
       </button>
     </div>
   )
 }
 
-const NOT_TRACKED = 'Not tracked yet'
-const NOT_RECORDED = 'Before records began'
+// A cell with nothing to show. These stay symbols so the check never depends on the words, which change with the language.
+const NOT_TRACKED = Symbol('not tracked')
+const NOT_RECORDED = Symbol('not recorded')
 
-function screenName(pathname: string) {
-  if (pathname.startsWith('/admin/users')) return 'Users'
-  if (pathname.startsWith('/admin/tracing')) return 'Tracing'
-  if (pathname.startsWith('/admin/feedback')) return 'Feedback'
-  return 'Main'
+// Wire values from the server, mapped to the words they show as.
+const ROLE_KEYS = {
+  Member: 'admin.role.member',
+  Admin: 'admin.role.admin',
+} as const
+
+const OUTCOME_KEYS = {
+  Running: 'admin.backups.outcome.running',
+  Succeeded: 'admin.backups.outcome.succeeded',
+  Failed: 'admin.backups.outcome.failed',
+} as const
+
+const HISTORY_KEYS = {
+  Block: 'admin.history.blocked',
+  Unblock: 'admin.history.unblocked',
+  PasswordResetSent: 'admin.history.passwordResetSent',
+} as const
+
+function screenTitleKey(pathname: string) {
+  if (pathname.startsWith('/admin/users')) return 'admin.documentTitle.users' as const
+  if (pathname.startsWith('/admin/tracing')) return 'admin.documentTitle.tracing' as const
+  if (pathname.startsWith('/admin/feedback')) return 'admin.documentTitle.feedback' as const
+  return 'admin.documentTitle.main' as const
 }
 
 export default function AdminWorkspace() {
   const { pathname } = useLocation()
-  useDocumentTitle(screenName(pathname), 'Admin')
+  const { t } = useI18n()
+  useDocumentTitle(t(screenTitleKey(pathname)), t('admin.documentTitle.admin'))
 
   return (
     <div className="home">
       <header className="workspacebar">
-        <Link className="home__brand workspacebar__brand" to="/" aria-label={BRAND_LINK_LABEL}>
+        <Link
+          className="home__brand workspacebar__brand"
+          to="/"
+          aria-label={t('shell.brand.homeLabel')}
+        >
           <BrandMark />
           <Wordmark />
         </Link>
 
-        <nav className="workspacebar__nav" aria-label="LorEvolve Admin">
+        <nav className="workspacebar__nav" aria-label={t('admin.nav.label')}>
           <span className="workspacebar__context" aria-hidden="true">
-            LorEvolve Admin
+            {t('admin.nav.context')}
           </span>
           <ul className="workspacebar__links">
             <li>
               <NavLink className="workspacebar__link" to="/admin" end data-testid="admin-nav-main">
-                Main
+                {t('admin.nav.main')}
               </NavLink>
             </li>
             <li>
@@ -115,7 +142,7 @@ export default function AdminWorkspace() {
                 to="/admin/users"
                 data-testid="admin-nav-users"
               >
-                Users
+                {t('admin.nav.users')}
               </NavLink>
             </li>
             <li>
@@ -124,7 +151,7 @@ export default function AdminWorkspace() {
                 to="/admin/feedback"
                 data-testid="admin-nav-feedback"
               >
-                Feedback
+                {t('admin.nav.feedback')}
               </NavLink>
             </li>
             <li>
@@ -133,14 +160,14 @@ export default function AdminWorkspace() {
                 to="/admin/tracing"
                 data-testid="admin-nav-tracing"
               >
-                Tracing
+                {t('admin.nav.tracing')}
               </NavLink>
             </li>
           </ul>
         </nav>
 
         <Link className="workspacebar__explore" to="/app" data-testid="admin-my-workspace">
-          My workspace
+          {t('admin.nav.myWorkspace')}
         </Link>
         <AccountMenu variant="bar" />
       </header>
@@ -185,10 +212,11 @@ function Stat({
   testId,
 }: {
   label: string
-  value: ReactNode
+  value: ReactNode | typeof NOT_TRACKED
   source: string
   testId: string
 }) {
+  const { t } = useI18n()
   const tracked = value !== NOT_TRACKED
   return (
     <li className="adminstat" data-testid={testId} data-tracked={tracked}>
@@ -197,7 +225,7 @@ function Stat({
         className={tracked ? 'adminstat__value' : 'adminstat__value adminstat__value--none'}
         data-testid={`${testId}-value`}
       >
-        {value}
+        {value === NOT_TRACKED ? t('admin.untracked.value') : value}
       </span>
       <span className="adminstat__source">{source}</span>
     </li>
@@ -205,18 +233,16 @@ function Stat({
 }
 
 function MainScreen() {
+  const { t } = useI18n()
   const { state, retry } = useLoad(getOverview)
 
   return (
     <>
-      <Heading
-        title="Main"
-        lede="What LorEvolve records about the service, counted when this page opened. Times are UTC."
-      />
+      <Heading title={t('admin.main.title')} lede={t('admin.main.lede')} />
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Counting&hellip;
+          {t('admin.main.counting')}
         </p>
       ) : null}
       {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
@@ -231,6 +257,7 @@ function MainScreen() {
  * Run now. While one runs, the status is read again every few seconds until it ends.
  */
 function DatabaseBackups() {
+  const { t } = useI18n()
   const { state, setState, retry } = useLoad(getDatabaseBackups)
   const [starting, setStarting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -248,7 +275,7 @@ function DatabaseBackups() {
     try {
       setState({ kind: 'ready', value: await runDatabaseBackup() })
     } catch (error: unknown) {
-      setMessage(error instanceof Error ? error.message : 'The backup could not be started.')
+      setMessage(error instanceof Error ? error.message : t('admin.backups.startFailed'))
     } finally {
       setStarting(false)
     }
@@ -257,11 +284,11 @@ function DatabaseBackups() {
   return (
     <section className="adminsection" aria-labelledby="admin-backups" data-testid="admin-backups">
       <h2 className="settings__heading" id="admin-backups">
-        Database backups
+        {t('admin.backups.heading')}
       </h2>
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Reading&hellip;
+          {t('admin.backups.reading')}
         </p>
       ) : null}
       {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
@@ -274,7 +301,7 @@ function DatabaseBackups() {
           disabled={starting || running}
           data-testid="admin-backup-run"
         >
-          {running ? 'Backing up' : 'Run backup now'}
+          {running ? t('admin.backups.backingUp') : t('admin.backups.runNow')}
         </button>
       ) : null}
       {message ? (
@@ -287,11 +314,12 @@ function DatabaseBackups() {
 }
 
 function BackupFacts({ status }: { status: DatabaseBackupStatus }) {
+  const { t } = useI18n()
+
   if (!status.enabled) {
     return (
       <p className="settings__note" data-testid="admin-backups-off">
-        Off on this server. Turned on by the deployment&rsquo;s settings:
-        docs/recovery/database-backups.md.
+        {t('admin.backups.off')}
       </p>
     )
   }
@@ -308,30 +336,48 @@ function BackupFacts({ status }: { status: DatabaseBackupStatus }) {
   return (
     <ul className="adminstats" data-testid="admin-backup-facts">
       <Stat
-        label="Last verified backup"
-        value={status.lastVerified ? formatDateTime(status.lastVerified.createdAt) : 'None yet'}
+        label={t('admin.backups.lastVerified.label')}
+        value={
+          status.lastVerified
+            ? formatDateTime(status.lastVerified.createdAt)
+            : t('admin.backups.lastVerified.none')
+        }
         source={
           status.stale
-            ? `Stale: older than expected (every ${status.intervalHours} hours).`
-            : `Uploaded and read back. Every ${status.intervalHours} hours${status.automatic ? '' : ', manual only'}.`
+            ? t('admin.backups.lastVerified.stale', { hours: status.intervalHours })
+            : t(
+                status.automatic
+                  ? 'admin.backups.lastVerified.fresh'
+                  : 'admin.backups.lastVerified.freshManual',
+                { hours: status.intervalHours },
+              )
         }
         testId="stat-backup-last"
       />
       <Stat
-        label="Kept"
-        value={`${status.verifiedCount} · ${formatBytes(status.storedBytes)}`}
-        source={`${status.environment}, ${status.store}. Pruning ${status.pruneEnabled ? 'on' : 'off'}.`}
+        label={t('admin.backups.kept.label')}
+        value={t('admin.backups.kept.value', {
+          verified: status.verifiedCount,
+          size: formatBytes(status.storedBytes),
+        })}
+        source={t(
+          status.pruneEnabled ? 'admin.backups.kept.pruningOn' : 'admin.backups.kept.pruningOff',
+          { environment: String(status.environment), store: String(status.store) },
+        )}
         testId="stat-backup-kept"
       />
       <Stat
-        label="Last attempt"
-        value={last ? `${last.outcome}` : 'None since this server started'}
+        label={t('admin.backups.attempt.label')}
+        value={last ? t(OUTCOME_KEYS[last.outcome]) : t('admin.backups.attempt.none')}
         source={
           last?.error
-            ? `${last.error} (${status.consecutiveFailures} in a row)`
+            ? t('admin.backups.attempt.failures', {
+                error: last.error,
+                count: status.consecutiveFailures,
+              })
             : last
               ? formatDateTime(last.startedAt)
-              : 'The schedule checks every 15 minutes.'
+              : t('admin.backups.attempt.schedule')
         }
         testId="stat-backup-attempt"
       />
@@ -340,6 +386,7 @@ function BackupFacts({ status }: { status: DatabaseBackupStatus }) {
 }
 
 function Overview({ overview }: { overview: AdminOverview }) {
+  const { t } = useI18n()
   const trend = overview.universesCreatedByMonth
   const peak = Math.max(1, ...trend.map((month) => month.count))
 
@@ -347,58 +394,58 @@ function Overview({ overview }: { overview: AdminOverview }) {
     <>
       <section className="adminsection" aria-labelledby="admin-measured">
         <h2 className="settings__heading" id="admin-measured">
-          Measured
+          {t('admin.main.measured')}
         </h2>
         <p className="settings__note" data-testid="admin-generated">
-          Counted {formatDateTime(overview.generatedAt)}.
+          {t('admin.main.counted', { time: formatDateTime(overview.generatedAt) })}
         </p>
         <ul className="adminstats" data-testid="admin-stats">
           <Stat
-            label="Accounts"
+            label={t('admin.main.stats.accounts.label')}
             value={overview.accounts}
-            source="Every account that exists."
+            source={t('admin.main.stats.accounts.source')}
             testId="stat-accounts"
           />
           <Stat
-            label="Admins"
+            label={t('admin.main.stats.admins.label')}
             value={overview.admins}
-            source="Accounts with the Admin role."
+            source={t('admin.main.stats.admins.source')}
             testId="stat-admins"
           />
           <Stat
-            label="Blocked accounts"
+            label={t('admin.main.stats.blocked.label')}
             value={overview.blockedAccounts}
-            source="Blocked now."
+            source={t('admin.main.stats.blocked.source')}
             testId="stat-blocked"
           />
           <Stat
-            label="Universes"
+            label={t('admin.main.stats.universes.label')}
             value={overview.universes}
-            source="Every universe that exists, archived included."
+            source={t('admin.main.stats.universes.source')}
             testId="stat-universes"
           />
           <Stat
-            label="Public universes"
+            label={t('admin.main.stats.public.label')}
             value={overview.publicUniverses}
-            source="Published on the portal now."
+            source={t('admin.main.stats.public.source')}
             testId="stat-public"
           />
           <Stat
-            label="Collaborations"
+            label={t('admin.main.stats.collaborations.label')}
             value={overview.collaborations}
-            source="Collaborator places across all universes."
+            source={t('admin.main.stats.collaborations.source')}
             testId="stat-collaborations"
           />
           <Stat
-            label="Stored pictures"
+            label={t('admin.main.stats.storage.label')}
             value={formatBytes(overview.storedImageBytes)}
-            source="Originals of Lore pictures, Trash included, as storage allowances count them."
+            source={t('admin.main.stats.storage.source')}
             testId="stat-storage"
           />
           <Stat
-            label="Connected AI apps"
+            label={t('admin.main.stats.apps.label')}
             value={overview.connectedApps}
-            source="Live MCP connections."
+            source={t('admin.main.stats.apps.source')}
             testId="stat-apps"
           />
         </ul>
@@ -406,11 +453,9 @@ function Overview({ overview }: { overview: AdminOverview }) {
 
       <section className="adminsection" aria-labelledby="admin-trend">
         <h2 className="settings__heading" id="admin-trend">
-          Universes created per month
+          {t('admin.main.trend.heading')}
         </h2>
-        <p className="settings__note">
-          By creation date, UTC. Universes deleted since are not counted.
-        </p>
+        <p className="settings__note">{t('admin.main.trend.note')}</p>
         <ol className="admintrend" data-testid="admin-trend">
           {trend.map((month) => (
             <li className="admintrend__row" key={`${month.year}-${month.month}`}>
@@ -428,34 +473,32 @@ function Overview({ overview }: { overview: AdminOverview }) {
 
       <section className="adminsection" aria-labelledby="admin-untracked">
         <h2 className="settings__heading" id="admin-untracked">
-          Not tracked yet
+          {t('admin.untracked.heading')}
         </h2>
-        <p className="settings__note">
-          LorEvolve does not record these, so nothing is shown in their place.
-        </p>
+        <p className="settings__note">{t('admin.untracked.note')}</p>
         <ul className="adminstats" data-testid="admin-untracked">
           <Stat
-            label="New accounts over time"
+            label={t('admin.untracked.newAccounts.label')}
             value={NOT_TRACKED}
-            source="Each account's creation date is recorded from now on, not counted here yet."
+            source={t('admin.untracked.newAccounts.source')}
             testId="stat-new-accounts"
           />
           <Stat
-            label="Active users"
+            label={t('admin.untracked.active.label')}
             value={NOT_TRACKED}
-            source="Each account's last sign-in is recorded from now on, not counted here yet."
+            source={t('admin.untracked.active.source')}
             testId="stat-active"
           />
           <Stat
-            label="Requests and errors"
+            label={t('admin.untracked.requests.label')}
             value={NOT_TRACKED}
-            source="No request telemetry is kept."
+            source={t('admin.untracked.requests.source')}
             testId="stat-requests"
           />
           <Stat
-            label="AI usage and cost"
+            label={t('admin.untracked.ai.label')}
             value={NOT_TRACKED}
-            source="Assistant questions are counted in memory only, per server process."
+            source={t('admin.untracked.ai.source')}
             testId="stat-ai"
           />
         </ul>
@@ -467,6 +510,7 @@ function Overview({ overview }: { overview: AdminOverview }) {
 // ---------- Users ----------
 
 function UsersScreen() {
+  const { t, tn } = useI18n()
   const [search, setSearch] = useState('')
   const [searched, setSearched] = useState('')
   const [page, setPage] = useState(1)
@@ -489,17 +533,14 @@ function UsersScreen() {
 
   return (
     <>
-      <Heading
-        title="Users"
-        lede="Every LorEvolve account. Universe content is never shown here."
-      />
+      <Heading title={t('admin.users.title')} lede={t('admin.users.lede')} />
 
       <SignUpLink />
 
       <div className="controls">
         <div className="controls__search">
           <label className="field__label" htmlFor="admin-user-search">
-            Find an account
+            {t('admin.users.search.label')}
           </label>
           <span className="controls__searchfield">
             <Search
@@ -512,7 +553,7 @@ function UsersScreen() {
               id="admin-user-search"
               className="field__input"
               type="search"
-              placeholder="Username or public name"
+              placeholder={t('admin.users.search.placeholder')}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               data-testid="admin-user-search"
@@ -523,7 +564,7 @@ function UsersScreen() {
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Gathering accounts&hellip;
+          {t('admin.users.gathering')}
         </p>
       ) : null}
       {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
@@ -531,7 +572,7 @@ function UsersScreen() {
       {result && result.items.length > 0 ? (
         <>
           <p className="settings__note" role="status" data-testid="admin-user-count">
-            {result.totalCount === 1 ? '1 account' : `${result.totalCount} accounts`}
+            {tn('admin.users.count', result.totalCount, { n: result.totalCount })}
           </p>
           <ul className="adminusers" data-testid="admin-user-grid">
             {result.items.map((user) => (
@@ -552,19 +593,21 @@ function UsersScreen() {
                       </p>
                     ) : null}
                     <p className="adminuser__tags">
-                      <span className="admintag">{user.role}</span>
+                      <span className="admintag">{t(ROLE_KEYS[user.role])}</span>
                       {user.isBlocked ? (
-                        <span className="admintag admintag--blocked">Blocked</span>
+                        <span className="admintag admintag--blocked">
+                          {t('admin.users.blocked')}
+                        </span>
                       ) : null}
                     </p>
                   </div>
                   <Link
                     className="button button--secondary adminuser__open"
                     to={`/admin/users/${encodeURIComponent(user.id)}`}
-                    aria-label={`View details for ${user.username}`}
+                    aria-label={t('admin.users.viewDetailsFor', { username: user.username })}
                     data-testid="admin-user-open"
                   >
-                    View details
+                    {t('admin.users.viewDetails')}
                   </Link>
                 </article>
               </li>
@@ -576,23 +619,23 @@ function UsersScreen() {
       {result && result.items.length === 0 ? (
         <EmptyState
           testId="admin-user-empty"
-          title={searched.trim() ? 'No account matches that.' : 'No accounts yet.'}
-          hint={searched.trim() ? 'Try another name, or clear the search.' : undefined}
+          title={searched.trim() ? t('admin.users.empty.noMatch') : t('admin.users.empty.none')}
+          hint={searched.trim() ? t('admin.users.empty.hint') : undefined}
         />
       ) : null}
 
       {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label="Pagination">
+        <nav className="pager" aria-label={t('admin.users.pager.label')}>
           <button
             className="button button--secondary"
             type="button"
             disabled={result.page <= 1}
             onClick={() => setPage((current) => current - 1)}
           >
-            Previous
+            {t('admin.users.pager.previous')}
           </button>
           <span className="pager__position">
-            Page {result.page} of {result.totalPages}
+            {t('admin.users.pager.position', { page: result.page, total: result.totalPages })}
           </span>
           <button
             className="button button--secondary"
@@ -600,7 +643,7 @@ function UsersScreen() {
             disabled={result.page >= result.totalPages}
             onClick={() => setPage((current) => current + 1)}
           >
-            Next
+            {t('admin.users.pager.next')}
           </button>
         </nav>
       ) : null}
@@ -610,7 +653,16 @@ function UsersScreen() {
 
 // ---------- One account ----------
 
-function Fact({ label, value, testId }: { label: string; value: ReactNode; testId: string }) {
+function Fact({
+  label,
+  value,
+  testId,
+}: {
+  label: string
+  value: ReactNode | typeof NOT_TRACKED | typeof NOT_RECORDED
+  testId: string
+}) {
+  const { t } = useI18n()
   return (
     <div className="facts__row">
       <dt className="facts__key">{label}</dt>
@@ -622,23 +674,28 @@ function Fact({ label, value, testId }: { label: string; value: ReactNode; testI
         }
         data-testid={testId}
       >
-        {value}
+        {value === NOT_TRACKED
+          ? t('admin.untracked.value')
+          : value === NOT_RECORDED
+            ? t('admin.user.beforeRecords')
+            : value}
       </dd>
     </div>
   )
 }
 
 function UserScreen() {
+  const { t } = useI18n()
   const { userId = '' } = useParams()
   const load = useCallback(
     (signal: AbortSignal) =>
       getUser(userId, signal).catch((error: unknown) => {
         if (error instanceof ApiError && error.status === 404) {
-          throw new Error('There is no account with this id.')
+          throw new Error(t('admin.user.notFound'))
         }
         throw error
       }),
-    [userId],
+    [userId, t],
   )
   const { state, setState, retry } = useLoad(load)
 
@@ -647,13 +704,13 @@ function UserScreen() {
       <p className="adminback">
         <Link to="/admin/users" data-testid="admin-back-users">
           <ActionIcon icon={ArrowLeft} />
-          All users
+          {t('admin.user.all')}
         </Link>
       </p>
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Opening the account&hellip;
+          {t('admin.user.opening')}
         </p>
       ) : null}
       {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
@@ -677,6 +734,7 @@ function UserDetail({
   onChange: (user: AdminUserDetail) => void
   onStale: () => void
 }) {
+  const { t, tx } = useI18n()
   const { user: me } = useAuth()
 
   return (
@@ -689,7 +747,7 @@ function UserDetail({
           </h1>
           {user.publicDisplayName ? (
             <p className="home__lede" dir="auto">
-              Public name: {user.publicDisplayName}
+              {t('admin.user.publicName', { name: user.publicDisplayName })}
             </p>
           ) : null}
         </div>
@@ -697,67 +755,102 @@ function UserDetail({
 
       <section className="adminsection" aria-labelledby="admin-account">
         <h2 className="settings__heading" id="admin-account">
-          Account
+          {t('admin.user.account.heading')}
         </h2>
         <dl className="facts admindetail" data-testid="admin-user-facts">
-          <Fact label="User ID" value={<code>{user.id}</code>} testId="admin-user-id" />
-          <Fact label="Email" value={user.email} testId="admin-user-email" />
-          <Fact label="Platform role" value={user.role} testId="admin-user-role" />
           <Fact
-            label="Status"
+            label={t('admin.user.account.id')}
+            value={<code>{user.id}</code>}
+            testId="admin-user-id"
+          />
+          <Fact
+            label={t('admin.user.account.email')}
+            value={user.email}
+            testId="admin-user-email"
+          />
+          <Fact
+            label={t('admin.user.account.role')}
+            value={t(ROLE_KEYS[user.role])}
+            testId="admin-user-role"
+          />
+          <Fact
+            label={t('admin.user.account.status')}
             value={
               user.isBlocked
-                ? `Blocked since ${user.blockedAt ? formatDateTime(user.blockedAt) : 'an unknown time'}`
-                : 'Active'
+                ? user.blockedAt
+                  ? t('admin.user.account.blockedSince', { time: formatDateTime(user.blockedAt) })
+                  : t('admin.user.account.blockedSinceUnknown')
+                : t('admin.user.account.active')
             }
             testId="admin-user-status"
           />
-          <Fact label="Universes owned" value={user.ownedUniverses} testId="admin-user-owned" />
           <Fact
-            label="Universes shared with them"
+            label={t('admin.user.account.owned')}
+            value={user.ownedUniverses}
+            testId="admin-user-owned"
+          />
+          <Fact
+            label={t('admin.user.account.shared')}
             value={user.sharedUniverses}
             testId="admin-user-shared"
           />
           <Fact
-            label="Storage"
-            value={`${formatBytes(user.storageUsedBytes)} used of ${formatBytes(user.storageQuotaBytes)}`}
+            label={t('admin.user.account.storage')}
+            value={t('admin.user.account.storageValue', {
+              used: formatBytes(user.storageUsedBytes),
+              quota: formatBytes(user.storageQuotaBytes),
+            })}
             testId="admin-user-storage"
           />
           <Fact
-            label="Account created"
+            label={t('admin.user.account.created')}
             value={user.createdAt ? formatDateTime(user.createdAt) : NOT_RECORDED}
             testId="admin-user-created"
           />
-          <Fact label="Subscription" value={NOT_TRACKED} testId="admin-user-subscription" />
+          <Fact
+            label={t('admin.user.account.subscription')}
+            value={NOT_TRACKED}
+            testId="admin-user-subscription"
+          />
         </dl>
       </section>
 
       <section className="adminsection" aria-labelledby="admin-sign-in">
         <h2 className="settings__heading" id="admin-sign-in">
-          Sign-in and access
+          {t('admin.user.signIn.heading')}
         </h2>
         <dl className="facts admindetail" data-testid="admin-user-sign-in">
           <Fact
-            label="Last sign-in"
+            label={t('admin.user.signIn.last')}
             value={user.lastSignInAt ? formatDateTime(user.lastSignInAt) : NOT_RECORDED}
             testId="admin-user-last-login"
           />
           <Fact
-            label="Wrong passwords since then"
+            label={t('admin.user.signIn.failed')}
             value={user.failedSignInAttempts}
             testId="admin-user-failed"
           />
           <Fact
-            label="Sign-in lockout"
+            label={t('admin.user.signIn.lockout')}
             value={
-              user.lockedOutUntil ? `Locked until ${formatDateTime(user.lockedOutUntil)}` : 'None'
+              user.lockedOutUntil
+                ? t('admin.user.signIn.lockedUntil', { time: formatDateTime(user.lockedOutUntil) })
+                : t('admin.user.signIn.lockoutNone')
             }
             testId="admin-user-lockout"
           />
-          <Fact label="Connected AI apps" value={user.connectedApps} testId="admin-user-apps" />
           <Fact
-            label="AI apps last used"
-            value={user.appLastUsedAt ? formatDateTime(user.appLastUsedAt) : 'Never'}
+            label={t('admin.user.signIn.apps')}
+            value={user.connectedApps}
+            testId="admin-user-apps"
+          />
+          <Fact
+            label={t('admin.user.signIn.appsUsed')}
+            value={
+              user.appLastUsedAt
+                ? formatDateTime(user.appLastUsedAt)
+                : t('admin.user.signIn.appsNever')
+            }
             testId="admin-user-apps-used"
           />
         </dl>
@@ -769,20 +862,22 @@ function UserDetail({
 
       <section className="adminsection" aria-labelledby="admin-history">
         <h2 className="settings__heading" id="admin-history">
-          Admin actions
+          {t('admin.history.heading')}
         </h2>
         {user.history.length === 0 ? (
           <p className="settings__note" data-testid="admin-history-empty">
-            No admin action has been taken on this account.
+            {t('admin.history.empty')}
           </p>
         ) : (
           <ol className="adminhistory" data-testid="admin-history">
             {user.history.map((entry) => (
               <li className="adminhistory__item" key={entry.id} data-testid="admin-history-item">
                 <p className="adminhistory__line">
-                  <strong>{HISTORY_LABELS[entry.action]}</strong> by{' '}
-                  {entry.actorUsername ?? 'a removed account'} &middot;{' '}
-                  <time dateTime={entry.createdAt}>{formatDateTime(entry.createdAt)}</time>
+                  {tx('admin.history.line', {
+                    action: <strong>{t(HISTORY_KEYS[entry.action])}</strong>,
+                    actor: entry.actorUsername ?? t('admin.history.removedActor'),
+                    time: <time dateTime={entry.createdAt}>{formatDateTime(entry.createdAt)}</time>,
+                  })}
                 </p>
                 {entry.reason ? (
                   <p className="adminhistory__reason" dir="auto">
@@ -803,6 +898,7 @@ function UserDetail({
  * address create an account for seven days; with registration open, anyone can already register.
  */
 function SignUpLink() {
+  const { t, tx } = useI18n()
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null)
@@ -821,7 +917,7 @@ function SignUpLink() {
       setError(
         failure instanceof ApiError
           ? (failure.fieldErrors.email ?? failure.message)
-          : 'The email could not be sent.',
+          : t('admin.signUp.emailFailed'),
       )
     } finally {
       setSending(false)
@@ -843,7 +939,7 @@ function SignUpLink() {
       setError(
         failure instanceof ApiError
           ? (failure.fieldErrors.email ?? failure.message)
-          : 'The link could not be made.',
+          : t('admin.signUp.linkFailed'),
       )
     }
   }
@@ -851,16 +947,12 @@ function SignUpLink() {
   return (
     <section className="adminsection" aria-labelledby="admin-signup-link">
       <h2 className="settings__heading" id="admin-signup-link">
-        Sign-up link
+        {t('admin.signUp.heading')}
       </h2>
-      <p className="settings__note">
-        For someone to join LorEvolve while registration is invitation-only. The link lets that
-        email address, and only that one, create an account. Email link sends it to them from
-        noreply@lorevolve.com; Make link shows it for you to send yourself.
-      </p>
+      <p className="settings__note">{t('admin.signUp.note')}</p>
       <form className="form" onSubmit={submit} noValidate>
         <Field
-          label="Their email address"
+          label={t('admin.signUp.emailLabel')}
           name="admin-signup-email"
           type="email"
           autoComplete="off"
@@ -882,7 +974,7 @@ function SignUpLink() {
             aria-busy={sending}
             data-testid="admin-signup-email-send"
           >
-            {sending ? 'Sending' : 'Email link'}
+            {sending ? t('admin.signUp.sending') : t('admin.signUp.emailLink')}
           </button>
           <button
             className="button button--secondary"
@@ -890,29 +982,28 @@ function SignUpLink() {
             disabled={sending}
             data-testid="admin-signup-create"
           >
-            Make link
+            {t('admin.signUp.makeLink')}
           </button>
         </div>
       </form>
       {sent ? (
         <p className="settings__note" role="status" data-testid="admin-signup-sent">
-          Sent to <bdi>{sent.to}</bdi>. The link works until {formatDateTime(sent.expiresAt)}.
+          {tx('admin.signUp.sent', {
+            to: <bdi>{sent.to}</bdi>,
+            time: formatDateTime(sent.expiresAt),
+          })}
         </p>
       ) : null}
       {link ? (
         <p className="settings__note" role="status">
-          Send them this link, valid until {formatDateTime(link.expiresAt)}:{' '}
-          <code data-testid="admin-signup-url">{link.url}</code>
+          {tx('admin.signUp.link', {
+            time: formatDateTime(link.expiresAt),
+            url: <code data-testid="admin-signup-url">{link.url}</code>,
+          })}
         </p>
       ) : null}
     </section>
   )
-}
-
-const HISTORY_LABELS: Record<AdminUserDetail['history'][number]['action'], string> = {
-  Block: 'Blocked',
-  Unblock: 'Unblocked',
-  PasswordResetSent: 'Sent a password reset link',
 }
 
 /**
@@ -928,16 +1019,16 @@ function PasswordSection({
   onChange: (user: AdminUserDetail) => void
   onStale: () => void
 }) {
+  const { t } = useI18n()
   const [sent, setSent] = useState(false)
 
   async function send() {
     setSent(false)
     const done = await confirmAction({
-      title: `Email ${user.username} a password reset link?`,
-      message:
-        'LorEvolve sends the link to their account email address. It works once, for 1 hour, and choosing a new password signs them out everywhere.',
-      confirmLabel: 'Send the link',
-      busyLabel: 'Sending…',
+      title: t('admin.password.confirmTitle', { username: user.username }),
+      message: t('admin.password.confirmMessage'),
+      confirmLabel: t('admin.password.confirmLabel'),
+      busyLabel: t('admin.password.busy'),
       variant: 'neutral',
       action: async () => {
         try {
@@ -954,12 +1045,10 @@ function PasswordSection({
   return (
     <section className="adminsection" aria-labelledby="admin-password">
       <h2 className="settings__heading" id="admin-password">
-        Password
+        {t('admin.password.heading')}
       </h2>
       <p className="settings__note">
-        {user.isBlocked
-          ? 'A blocked account cannot reset its password. Unblock it first.'
-          : 'For someone who cannot sign in. They can also use Forgot your password? on the sign-in page.'}
+        {user.isBlocked ? t('admin.password.noteBlocked') : t('admin.password.note')}
       </p>
       <div className="form__actions">
         <button
@@ -969,12 +1058,12 @@ function PasswordSection({
           onClick={() => void send()}
           data-testid="admin-password-reset"
         >
-          Email a reset link
+          {t('admin.password.send')}
         </button>
       </div>
       {sent ? (
         <p className="settings__note" role="status" data-testid="admin-password-reset-sent">
-          Sent. The link works for 1 hour.
+          {t('admin.password.sent')}
         </p>
       ) : null}
     </section>
@@ -992,6 +1081,7 @@ function BlockSection({
   onChange: (user: AdminUserDetail) => void
   onStale: () => void
 }) {
+  const { t } = useI18n()
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
   const block = !user.isBlocked
@@ -1000,11 +1090,10 @@ function BlockSection({
     return (
       <section className="adminsection" aria-labelledby="admin-access">
         <h2 className="settings__heading" id="admin-access">
-          Access
+          {t('admin.block.access')}
         </h2>
         <p className="settings__note" data-testid="admin-block-unavailable">
-          {isSelf ? 'This is your account. ' : ''}Admin accounts cannot be blocked, so no Admin can
-          lock out themselves or the last Admin.
+          {t(isSelf ? 'admin.block.unavailableSelf' : 'admin.block.unavailable')}
         </p>
       </section>
     )
@@ -1013,19 +1102,21 @@ function BlockSection({
   async function submit() {
     const trimmed = reason.trim()
     if (!trimmed) {
-      setError('Say why. The reason is kept in the audit record.')
+      setError(t('admin.block.reasonRequired'))
       return
     }
     setError(null)
 
     const done = await confirmAction({
-      title: block ? `Block ${user.username}?` : `Unblock ${user.username}?`,
-      message: block
-        ? 'They are signed out everywhere at once, cannot sign in, and every AI app they connected is disconnected. Their universes and everything in them stay as they are.'
-        : 'They can sign in again. Sessions and AI apps ended by the block do not come back: they sign in and connect again themselves.',
-      details: [`Reason: ${trimmed}`],
-      confirmLabel: block ? 'Block account' : 'Unblock account',
-      busyLabel: block ? 'Blocking…' : 'Unblocking…',
+      title: t(block ? 'admin.block.block.confirmTitle' : 'admin.block.unblock.confirmTitle', {
+        username: user.username,
+      }),
+      message: t(block ? 'admin.block.block.confirmMessage' : 'admin.block.unblock.confirmMessage'),
+      details: [t('admin.block.reasonDetail', { reason: trimmed })],
+      confirmLabel: t(
+        block ? 'admin.block.block.confirmLabel' : 'admin.block.unblock.confirmLabel',
+      ),
+      busyLabel: t(block ? 'admin.block.block.busy' : 'admin.block.unblock.busy'),
       variant: block ? 'destructive' : 'neutral',
       action: async () => {
         try {
@@ -1045,12 +1136,10 @@ function BlockSection({
       aria-labelledby="admin-access"
     >
       <h2 className="settings__heading" id="admin-access">
-        {block ? 'Block this account' : 'Unblock this account'}
+        {t(block ? 'admin.block.block.heading' : 'admin.block.unblock.heading')}
       </h2>
       <p className="settings__note">
-        {block
-          ? 'Blocking signs them out everywhere, refuses their sign-in and disconnects their AI apps. Nothing they wrote is touched.'
-          : 'Unblocking lets them sign in again.'}
+        {t(block ? 'admin.block.block.note' : 'admin.block.unblock.note')}
       </p>
       <form
         className="adminblock"
@@ -1061,7 +1150,7 @@ function BlockSection({
       >
         <div className="field">
           <label className="field__label" htmlFor="admin-reason">
-            Reason (kept in the audit record)
+            {t('admin.block.reasonLabel')}
           </label>
           <textarea
             id="admin-reason"
@@ -1085,7 +1174,7 @@ function BlockSection({
           type="submit"
           data-testid={block ? 'admin-block' : 'admin-unblock'}
         >
-          {block ? 'Block account' : 'Unblock account'}
+          {t(block ? 'admin.block.block.submit' : 'admin.block.unblock.submit')}
         </button>
       </form>
     </section>
@@ -1095,13 +1184,14 @@ function BlockSection({
 // ---------- Tracing ----------
 
 function TracingScreen() {
+  const { t } = useI18n()
   return (
     <>
-      <Heading title="Tracing" lede="Request and error tracing for the service." />
+      <Heading title={t('admin.tracing.title')} lede={t('admin.tracing.lede')} />
       <EmptyState
         testId="admin-tracing-empty"
-        title="Tracing is not available yet."
-        hint="Block and unblock actions are recorded, with who, why and when, on each account's details."
+        title={t('admin.tracing.emptyTitle')}
+        hint={t('admin.tracing.emptyHint')}
       />
     </>
   )
@@ -1109,24 +1199,22 @@ function TracingScreen() {
 
 /** Bug reports and feature requests from the button on every signed-in page, newest first. Read only. */
 function FeedbackScreen() {
+  const { t } = useI18n()
   const [page, setPage] = useState(1)
   const load = useCallback((signal: AbortSignal) => listFeedback(page, signal), [page])
   const { state, retry } = useLoad(load)
 
   return (
     <>
-      <Heading
-        title="Feedback"
-        lede="Bug reports and feature requests, newest first, with the page each was sent from. Times are UTC."
-      />
+      <Heading title={t('admin.feedback.title')} lede={t('admin.feedback.lede')} />
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Reading&hellip;
+          {t('admin.feedback.reading')}
         </p>
       ) : null}
       {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
       {state.kind === 'ready' && state.value.items.length === 0 ? (
-        <EmptyState testId="admin-feedback-empty" title="Nothing sent yet." />
+        <EmptyState testId="admin-feedback-empty" title={t('admin.feedback.empty')} />
       ) : null}
       {state.kind === 'ready' && state.value.items.length > 0 ? (
         <>
@@ -1134,9 +1222,13 @@ function FeedbackScreen() {
             {state.value.items.map((report) => (
               <li className="feedbackreport" key={report.id} data-testid="admin-feedback-report">
                 <p className="feedbackreport__meta">
-                  <strong>{report.kind === FeedbackKind.Bug ? 'Bug' : 'Feature request'}</strong>
+                  <strong>
+                    {report.kind === FeedbackKind.Bug
+                      ? t('admin.feedback.bug')
+                      : t('admin.feedback.featureRequest')}
+                  </strong>
                   {' · '}
-                  <bdi>{report.userName ?? 'A removed account'}</bdi>
+                  <bdi>{report.userName ?? t('admin.feedback.removedAccount')}</bdi>
                   {' · '}
                   {formatDateTime(report.createdAt)}
                   {report.page ? (
@@ -1153,14 +1245,14 @@ function FeedbackScreen() {
             ))}
           </ul>
           {state.value.totalCount > state.value.pageSize ? (
-            <nav className="pager" aria-label="Pagination">
+            <nav className="pager" aria-label={t('admin.feedback.pager.label')}>
               <button
                 className="button button--secondary"
                 type="button"
                 disabled={page === 1}
                 onClick={() => setPage(page - 1)}
               >
-                Newer
+                {t('admin.feedback.pager.newer')}
               </button>
               <button
                 className="button button--secondary"
@@ -1168,7 +1260,7 @@ function FeedbackScreen() {
                 disabled={page * state.value.pageSize >= state.value.totalCount}
                 onClick={() => setPage(page + 1)}
               >
-                Older
+                {t('admin.feedback.pager.older')}
               </button>
             </nav>
           ) : null}

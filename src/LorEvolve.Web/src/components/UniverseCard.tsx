@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { Clock } from 'lucide-react'
 import { formatDate } from '../lib/dates'
-import { ROLE_LABELS } from '../universes/access'
+import { useI18n } from '../i18n'
+import { roleLabel } from '../universes/access'
 import { artworkUrl } from '../publishing/api'
 import { UniverseRole, type UniverseSummary } from '../universes/types'
 
@@ -18,6 +19,7 @@ import { UniverseRole, type UniverseSummary } from '../universes/types'
  * never beside the name. One the account owns carries no badge: owning is the ordinary case.
  */
 export function UniverseCard({ universe }: { universe: UniverseSummary }) {
+  const { t } = useI18n()
   const artwork = universe.artwork ? artworkUrl(universe.id, universe.artwork, 'card') : null
 
   return (
@@ -56,7 +58,9 @@ export function UniverseCard({ universe }: { universe: UniverseSummary }) {
         {universe.description ? (
           <span className="plate__description prose">{universe.description}</span>
         ) : (
-          <span className="plate__description plate__description--empty">No description yet</span>
+          <span className="plate__description plate__description--empty">
+            {t('universe.card.noDescription')}
+          </span>
         )}
         <span className="plate__meta">
           <span className="plate__updated">
@@ -66,16 +70,18 @@ export function UniverseCard({ universe }: { universe: UniverseSummary }) {
               focusable="false"
               strokeWidth={1.75}
             />
-            Updated {formatDate(universe.updatedAt)}
+            {t('universe.card.updated', { date: formatDate(universe.updatedAt) })}
           </span>
           {universe.accessRole !== UniverseRole.Owner || universe.isArchived ? (
             <span className="plate__marks">
               {universe.accessRole !== UniverseRole.Owner ? (
                 <span className="plate__role" data-testid="universe-card-role">
-                  Shared as {ROLE_LABELS[universe.accessRole]}
+                  {t('universe.card.sharedAs', { role: roleLabel(universe.accessRole) })}
                 </span>
               ) : null}
-              {universe.isArchived ? <span className="plate__archived">Archived</span> : null}
+              {universe.isArchived ? (
+                <span className="plate__archived">{t('universe.card.archived')}</span>
+              ) : null}
             </span>
           ) : null}
         </span>

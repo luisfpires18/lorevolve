@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
+import { useI18n } from '../i18n'
 import { createChapter, moveChapterToArc, updateChapter } from '../stories/api'
 import { arcLabel } from '../stories/format'
 import type { Chapter, PlotArc } from '../stories/types'
@@ -60,6 +61,7 @@ export function ChapterForm({
   onClose,
   onSaved,
 }: ChapterFormProps) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the chapter as stored, or the blank form - which the draft is measured against.
@@ -79,8 +81,8 @@ export function ChapterForm({
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     chapter
-      ? `“${chapter.title}” has unsaved changes. Leave without saving them?`
-      : 'This new chapter has not been created. Leave without saving it?',
+      ? t('stories.chapterForm.leaveUnsaved', { title: chapter.title })
+      : t('stories.chapterForm.leaveNew'),
     onClose,
   )
 
@@ -118,10 +120,10 @@ export function ChapterForm({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be saved.',
+            : t('stories.chapterForm.detailsToSave'),
         )
       } else {
-        setMessage('That chapter could not be saved.')
+        setMessage(t('stories.chapterForm.failedSave'))
       }
     } finally {
       setIsSaving(false)
@@ -144,9 +146,15 @@ export function ChapterForm({
         }}
       >
         <header className="drawer__head">
-          {chapter ? <p className="drawer__eyebrow">{`Editing ${number ?? 'a chapter'}`}</p> : null}
+          {chapter ? (
+            <p className="drawer__eyebrow">
+              {t('stories.chapterForm.eyebrow', {
+                what: number ?? t('stories.chapterForm.aChapter'),
+              })}
+            </p>
+          ) : null}
           <h2 className="drawer__title" id="chapter-heading">
-            {chapter ? chapter.title : 'New chapter'}
+            {chapter ? chapter.title : t('stories.chapterForm.newTitle')}
           </h2>
         </header>
 
@@ -159,18 +167,16 @@ export function ChapterForm({
 
           <div className="field">
             <label className="field__label" htmlFor="chapter-title">
-              Title
+              {t('stories.chapterForm.titleLabel')}
             </label>
-            <p className="field__hint">
-              The chapter number comes from its place in the story, so leave it out.
-            </p>
+            <p className="field__hint">{t('stories.chapterForm.titleHint')}</p>
             <input
               id="chapter-title"
               className="field__input"
               ref={title}
               type="text"
               dir="auto"
-              placeholder="Insert a title"
+              placeholder={t('stories.chapterForm.titlePlaceholder')}
               value={draft.title}
               onChange={(event) => edit({ title: event.target.value })}
               aria-invalid={fieldErrors.title ? true : undefined}
@@ -182,12 +188,12 @@ export function ChapterForm({
           {arcs.length > 0 ? (
             <div className="field">
               <label className="field__label" htmlFor="chapter-arc">
-                Arc
+                {t('stories.chapterForm.arcLabel')}
               </label>
               <p className="field__hint">
                 {chapter
-                  ? 'Choosing another arc moves the chapter there, last, with its scenes.'
-                  : 'The chapter goes last in it.'}
+                  ? t('stories.chapterForm.arcHintMove')
+                  : t('stories.chapterForm.arcHintNew')}
               </p>
               <select
                 id="chapter-arc"
@@ -197,7 +203,7 @@ export function ChapterForm({
                 aria-invalid={fieldErrors.plotarcid ? true : undefined}
                 data-testid="chapter-arc-select"
               >
-                <option value="">No arc</option>
+                <option value="">{t('stories.chapterForm.noArc')}</option>
                 {arcs.map((arc, index) => (
                   <option key={arc.id} value={arc.id}>
                     {arcLabel(index, arc.title)}
@@ -212,9 +218,9 @@ export function ChapterForm({
 
           <div className="field">
             <label className="field__label" htmlFor="chapter-summary">
-              Summary
+              {t('stories.chapterForm.summaryLabel')}
             </label>
-            <p className="field__hint">What this chapter covers, briefly. Optional.</p>
+            <p className="field__hint">{t('stories.chapterForm.summaryHint')}</p>
             <textarea
               id="chapter-summary"
               className="field__input field__input--area"
@@ -229,9 +235,9 @@ export function ChapterForm({
 
           <div className="field">
             <label className="field__label" htmlFor="chapter-notes">
-              Notes
+              {t('stories.chapterForm.notesLabel')}
             </label>
-            <p className="field__hint">Your own planning notes. Only shown here.</p>
+            <p className="field__hint">{t('stories.chapterForm.notesHint')}</p>
             <textarea
               id="chapter-notes"
               className="field__input field__input--area"
@@ -247,7 +253,11 @@ export function ChapterForm({
 
         <footer className="drawer__actions">
           <button className="button" type="submit" disabled={isSaving} data-testid="save-chapter">
-            {isSaving ? 'Saving' : chapter ? 'Save chapter' : 'Add chapter'}
+            {isSaving
+              ? t('stories.chapterForm.saving')
+              : chapter
+                ? t('stories.chapterForm.save')
+                : t('stories.chapterForm.add')}
           </button>
           <button
             className="button button--secondary"
@@ -255,7 +265,7 @@ export function ChapterForm({
             onClick={close}
             data-testid="cancel-chapter"
           >
-            Cancel
+            {t('stories.chapterForm.cancel')}
           </button>
         </footer>
       </form>

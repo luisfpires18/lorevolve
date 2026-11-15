@@ -13,6 +13,7 @@ import {
   type CommentSubject,
   type CommentThread,
 } from '../comments/api'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
 import { useDrawerGuard } from '../lib/drawerGuard'
@@ -35,18 +36,13 @@ interface ReviewCommentsProps<T> {
   onSuggest: () => void
 }
 
-const SUBJECT_WORDS: Record<CommentSubject['kind'], string> = {
-  entry: 'On this entry',
-  story: 'On this story',
-  scene: 'On this scene',
-}
+const SUBJECT_WORDS = {
+  entry: 'review.comments.subject.entry',
+  story: 'review.comments.subject.story',
+  scene: 'review.comments.subject.scene',
+} as const
 
-const REVIEW_TABS = [
-  { id: 'comments', label: 'Comments' },
-  { id: 'suggestions', label: 'Suggestions' },
-] as const
-
-type ReviewTab = (typeof REVIEW_TABS)[number]['id']
+type ReviewTab = 'comments' | 'suggestions'
 
 /**
  * The review layer for one piece of content: a Review button opening a drawer about the content as a whole, with its
@@ -63,6 +59,7 @@ export function ReviewComments<T>({
   onSuggestionAccepted,
   onSuggest,
 }: ReviewCommentsProps<T>) {
+  const { t } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
   const path = commentsPath(universeId, subject)
 
@@ -72,12 +69,12 @@ export function ReviewComments<T>({
         className="button button--text reviewtrigger"
         type="button"
         aria-haspopup="dialog"
-        title="Review"
+        title={t('review.comments.trigger.title')}
         onClick={() => setIsOpen(true)}
         data-testid="comments-trigger"
       >
         <ActionIcon icon={MessageSquare} />
-        <span className="reviewtrigger__label">Review</span>
+        <span className="reviewtrigger__label">{t('review.comments.trigger.label')}</span>
       </button>
 
       {isOpen ? (
@@ -122,6 +119,7 @@ function CommentsDrawer<T>({
   onSuggest,
   onClose,
 }: DrawerProps<T>) {
+  const { t, tx } = useI18n()
   const access = useUniverseAccess()
   const dialog = useRef<HTMLDialogElement>(null)
   const headingId = useId()
@@ -138,11 +136,7 @@ function CommentsDrawer<T>({
   const [failed, setFailed] = useState(false)
 
   const isDirty = draft.trim() !== '' || (replyTo !== null && reply.trim() !== '')
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    "Your comment hasn't been posted. Leave without posting it?",
-    onClose,
-  )
+  const { close, dialogProps } = useDrawerGuard(isDirty, t('review.comments.leave.title'), onClose)
 
   useReturnFocus()
 
@@ -151,9 +145,9 @@ function CommentsDrawer<T>({
     if (
       isDirty &&
       !(await confirmAction({
-        title: "Your comment hasn't been posted. Leave without posting it?",
-        confirmLabel: 'Leave without posting',
-        cancelLabel: 'Keep writing',
+        title: t('review.comments.leave.title'),
+        confirmLabel: t('review.comments.leave.confirm'),
+        cancelLabel: t('review.comments.leave.keep'),
         variant: 'destructive',
       }))
     ) {
@@ -205,7 +199,7 @@ function CommentsDrawer<T>({
       onThreads((current) => [created, ...current])
       setDraft('')
     } catch (error: unknown) {
-      explain(error, 'That comment could not be posted.', setDraftError)
+      explain(error, t('review.comments.postFailed'), setDraftError)
     } finally {
       setBusy(null)
     }
@@ -220,7 +214,7 @@ function CommentsDrawer<T>({
       setReply('')
       setReplyTo(null)
     } catch (error: unknown) {
-      explain(error, 'That comment could not be posted.', setReplyError)
+      explain(error, t('review.comments.postFailed'), setReplyError)
     } finally {
       setBusy(null)
     }
@@ -236,7 +230,7 @@ function CommentsDrawer<T>({
       replace(await setThreadResolved(universeId, thread.id, !thread.isResolved))
     } catch {
       replace(thread)
-      setMessage('That thread could not be changed.')
+      setMessage(t('review.comments.threadFailed'))
     } finally {
       setBusy(null)
     }
@@ -264,7 +258,11 @@ function CommentsDrawer<T>({
             >
               <p className="reviewcomment__meta">
                 <span className="reviewcomment__author" data-testid="comment-author">
-                  {comment.authorName === null ? 'Unknown author' : <bdi>{comment.authorName}</bdi>}
+                  {comment.authorName === null ? (
+                    t('review.comments.unknownAuthor')
+                  ) : (
+                    <bdi>{comment.authorName}</bdi>
+                  )}
                 </span>
                 <time dateTime={comment.createdAt}>{formatDateTime(comment.createdAt)}</time>
               </p>
@@ -277,8 +275,14 @@ function CommentsDrawer<T>({
 
         {thread.isResolved ? (
           <p className="reviewthread__resolved" data-testid="comment-resolved">
-            Resolved by{' '}
-            {thread.resolvedByName === null ? 'Unknown author' : <bdi>{thread.resolvedByName}</bdi>}
+            {tx('review.comments.resolvedBy', {
+              name:
+                thread.resolvedByName === null ? (
+                  t('review.comments.unknownResolver')
+                ) : (
+                  <bdi>{thread.resolvedByName}</bdi>
+                ),
+            })}
             {thread.resolvedAt ? <> · {formatDateTime(thread.resolvedAt)}</> : null}
           </p>
         ) : null}
@@ -292,7 +296,7 @@ function CommentsDrawer<T>({
             }}
           >
             <label className="field__label" htmlFor={replyId}>
-              Reply
+              {t('review.comments.reply')}
             </label>
             <textarea
               id={replyId}
@@ -319,7 +323,7 @@ function CommentsDrawer<T>({
                 disabled={busy !== null}
                 data-testid="comment-reply-post"
               >
-                {busy === thread.id ? 'Posting' : 'Reply'}
+                {busy === thread.id ? t('review.comments.posting') : t('review.comments.replyPost')}
               </button>
               <button
                 className="button button--text button--sm"
@@ -330,7 +334,7 @@ function CommentsDrawer<T>({
                   setReplyError(null)
                 }}
               >
-                Cancel
+                {t('review.comments.cancel')}
               </button>
             </div>
           </form>
@@ -346,9 +350,9 @@ function CommentsDrawer<T>({
                     replyTo !== null &&
                     reply.trim() !== '' &&
                     !(await confirmAction({
-                      title: "Your reply hasn't been posted. Leave it and reply here instead?",
-                      confirmLabel: 'Reply here instead',
-                      cancelLabel: 'Keep writing',
+                      title: t('review.comments.replyLeave.title'),
+                      confirmLabel: t('review.comments.replyLeave.confirm'),
+                      cancelLabel: t('review.comments.replyLeave.keep'),
                       variant: 'destructive',
                     }))
                   ) {
@@ -360,7 +364,7 @@ function CommentsDrawer<T>({
                 }}
                 data-testid="comment-reply"
               >
-                Reply
+                {t('review.comments.reply')}
               </button>
             ) : null}
             {access.resolveComments ? (
@@ -371,7 +375,7 @@ function CommentsDrawer<T>({
                 onClick={() => void resolve(thread)}
                 data-testid={thread.isResolved ? 'comment-reopen' : 'comment-resolve'}
               >
-                {thread.isResolved ? 'Reopen' : 'Resolve'}
+                {thread.isResolved ? t('review.comments.reopen') : t('review.comments.resolve')}
               </button>
             ) : null}
           </div>
@@ -390,18 +394,21 @@ function CommentsDrawer<T>({
     >
       <div className="drawer__panel">
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Review</p>
+          <p className="drawer__eyebrow">{t('review.comments.drawer.eyebrow')}</p>
           <h2 className="drawer__title" id={headingId}>
             <bdi>{subjectName}</bdi>
           </h2>
-          <p className="drawer__context">{SUBJECT_WORDS[kind]}</p>
+          <p className="drawer__context">{t(SUBJECT_WORDS[kind])}</p>
         </header>
 
         <div className="drawer__body">
           <QueryTabList
-            label="Review"
+            label={t('review.comments.tabs.label')}
             idPrefix="review"
-            tabs={REVIEW_TABS}
+            tabs={[
+              { id: 'comments', label: t('review.comments.tabs.comments') },
+              { id: 'suggestions', label: t('review.comments.tabs.suggestions') },
+            ]}
             tab={tab}
             onChoose={setTab}
           />
@@ -422,7 +429,7 @@ function CommentsDrawer<T>({
                 }}
               >
                 <label className="field__label" htmlFor={newId}>
-                  New comment
+                  {t('review.comments.newComment')}
                 </label>
                 <textarea
                   id={newId}
@@ -448,34 +455,36 @@ function CommentsDrawer<T>({
                     disabled={busy !== null}
                     data-testid="comment-new-post"
                   >
-                    {busy === 'new' ? 'Posting' : 'Post comment'}
+                    {busy === 'new' ? t('review.comments.posting') : t('review.comments.post')}
                   </button>
                 </div>
               </form>
             ) : (
               <p className="history__quiet" data-testid="comments-read-only">
-                You can read comments here, but your role can&rsquo;t add them.
+                {t('review.comments.readOnly')}
               </p>
             )}
 
             {failed ? (
               <p className="history__quiet" role="status">
-                The comments could not be read.
+                {t('review.comments.readFailed')}
               </p>
             ) : threads === null ? (
               <p className="history__quiet" role="status">
-                Opening&hellip;
+                {t('review.comments.opening')}
               </p>
             ) : threads.length === 0 ? (
               <p className="history__quiet" data-testid="comments-empty">
-                No comments yet.
+                {t('review.comments.empty')}
               </p>
             ) : (
               <>
                 {open.length > 0 ? (
                   <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
                     <h3 className="reviewsection__title" id={`${headingId}-open`}>
-                      Open <span className="reviewsection__count">{open.length}</span>
+                      {tx('review.comments.open', {
+                        n: <span className="reviewsection__count">{open.length}</span>,
+                      })}
                     </h3>
                     <ol className="reviewsection__list" data-testid="comments-open">
                       {open.map(renderThread)}
@@ -485,7 +494,9 @@ function CommentsDrawer<T>({
                 {resolved.length > 0 ? (
                   <details className="reviewsection" data-testid="comments-resolved-group">
                     <summary className="reviewsection__title">
-                      Resolved <span className="reviewsection__count">{resolved.length}</span>
+                      {tx('review.comments.resolved', {
+                        n: <span className="reviewsection__count">{resolved.length}</span>,
+                      })}
                     </summary>
                     <ol className="reviewsection__list" data-testid="comments-resolved">
                       {resolved.map(renderThread)}
@@ -516,7 +527,7 @@ function CommentsDrawer<T>({
             onClick={close}
             data-testid="comments-close"
           >
-            Close
+            {t('review.comments.drawer.close')}
           </button>
         </footer>
       </div>

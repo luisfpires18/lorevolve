@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { FilePenLine } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ChangeList } from './EditConflict'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
 import type { Change } from '../lib/editConflict'
@@ -21,7 +22,7 @@ interface ReviewSuggestionsProps<T> {
   /** Where the subject's suggestions are read (`suggestionsPath`). */
   path: string
   /** What they are about, in a creator's words: "entry", "story", "scene". */
-  what: string
+  what: keyof typeof CHANGED_SINCE
   /** Whether the Suggestions tab is showing. Nothing is read until it first is. */
   active: boolean
   /** A suggestion's two sides as the subject's form shows its fields. */
@@ -45,6 +46,12 @@ interface Loaded<T> {
 }
 
 const STATES: SuggestionState[] = ['open', 'decided']
+
+const CHANGED_SINCE = {
+  entry: 'review.suggestions.changed.entry',
+  story: 'review.suggestions.changed.story',
+  scene: 'review.suggestions.changed.scene',
+} as const
 
 /** Newest first, then by id: the API's own order, kept when a decision moves one from a list to the other. */
 function newestFirst<T>(a: Suggestion<T>, b: Suggestion<T>) {
@@ -73,6 +80,7 @@ export function ReviewSuggestions<T>({
   onAccepted,
   onSuggest,
 }: ReviewSuggestionsProps<T>) {
+  const { t, tx } = useI18n()
   const access = useUniverseAccess()
   const headingId = useId()
   const [wanted, setWanted] = useState(active)
@@ -122,7 +130,7 @@ export function ReviewSuggestions<T>({
             },
       )
     } catch {
-      setFeedback({ text: 'The suggestions couldn’t be read.', isError: true })
+      setFeedback({ text: t('review.suggestions.readFailedFeedback'), isError: true })
     } finally {
       setReading(null)
     }
@@ -142,7 +150,10 @@ export function ReviewSuggestions<T>({
         current === null ? current : { ...current, items: merged(current.items, [decided]) },
       )
       setFeedback({
-        text: decision === 'accept' ? 'Suggestion accepted.' : 'Suggestion rejected.',
+        text:
+          decision === 'accept'
+            ? t('review.suggestions.accepted')
+            : t('review.suggestions.rejected'),
         isError: false,
       })
       if (decision === 'accept') onAccepted()
@@ -159,13 +170,16 @@ export function ReviewSuggestions<T>({
         error instanceof ApiError &&
         (error.status === 400 || error.status === 409)
       ) {
-        setFeedback({ text: `This suggestion can’t be accepted. ${error.message}`, isError: true })
+        setFeedback({
+          text: t('review.suggestions.cantAccept', { reason: error.message }),
+          isError: true,
+        })
       } else {
         setFeedback({
           text:
             decision === 'accept'
-              ? 'LorEvolve couldn’t accept that suggestion. Try again.'
-              : 'LorEvolve couldn’t reject that suggestion. Try again.',
+              ? t('review.suggestions.acceptFailed')
+              : t('review.suggestions.rejectFailed'),
           isError: true,
         })
       }
@@ -193,7 +207,7 @@ export function ReviewSuggestions<T>({
           onClick={() => void readMore(state)}
           data-testid={`suggestions-more-${state}`}
         >
-          Show more
+          {t('review.suggestions.showMore')}
         </button>
       </div>
     ) : null
@@ -219,7 +233,7 @@ export function ReviewSuggestions<T>({
         <p className="reviewcomment__meta">
           <span className="reviewcomment__author" data-testid="suggestion-author">
             {suggestion.proposedByName === null ? (
-              'Unknown author'
+              t('review.suggestions.unknownAuthor')
             ) : (
               <bdi>{suggestion.proposedByName}</bdi>
             )}
@@ -229,27 +243,37 @@ export function ReviewSuggestions<T>({
 
         {isOpen && suggestion.targetChanged ? (
           <p className="callout callout--warning suggestion__note" data-testid="suggestion-changed">
-            The {what} has changed since this suggestion was made.{' '}
+            {t(CHANGED_SINCE[what])}{' '}
             {access.resolveSuggestions
-              ? 'It can’t be accepted now. Reject it, or make the change yourself.'
-              : 'It can’t be accepted now. Suggest it again if it still applies.'}
+              ? t('review.suggestions.cantAcceptReject')
+              : t('review.suggestions.cantAcceptAgain')}
           </p>
         ) : null}
 
         <ChangeList
           changes={describe(suggestion.before, suggestion.proposed)}
-          sides={{ latest: 'Before', mine: 'Suggested' }}
-          empty="LorEvolve can’t show these changes anymore."
+          sides={{
+            latest: t('review.suggestions.before'),
+            mine: t('review.suggestions.suggested'),
+          }}
+          empty={t('review.suggestions.noLongerShown')}
           testId="suggestion"
         />
 
         {isOpen ? null : (
           <p className="reviewthread__resolved" data-testid="suggestion-resolution">
-            {state === 'accepted' ? 'Accepted by ' : 'Rejected by '}
-            {suggestion.resolvedByName === null ? (
-              'Unknown author'
-            ) : (
-              <bdi>{suggestion.resolvedByName}</bdi>
+            {tx(
+              state === 'accepted'
+                ? 'review.suggestions.acceptedBy'
+                : 'review.suggestions.rejectedBy',
+              {
+                name:
+                  suggestion.resolvedByName === null ? (
+                    t('review.suggestions.unknownResolver')
+                  ) : (
+                    <bdi>{suggestion.resolvedByName}</bdi>
+                  ),
+              },
             )}
             {suggestion.resolvedAt ? <> · {formatDateTime(suggestion.resolvedAt)}</> : null}
           </p>
@@ -265,7 +289,9 @@ export function ReviewSuggestions<T>({
                 onClick={() => void decide(suggestion, 'accept')}
                 data-testid="suggestion-accept"
               >
-                {busy === suggestion.id ? 'Accepting' : 'Accept'}
+                {busy === suggestion.id
+                  ? t('review.suggestions.accepting')
+                  : t('review.suggestions.accept')}
               </button>
             )}
             <button
@@ -275,7 +301,7 @@ export function ReviewSuggestions<T>({
               onClick={() => void decide(suggestion, 'reject')}
               data-testid="suggestion-reject"
             >
-              Reject
+              {t('review.suggestions.reject')}
             </button>
           </div>
         ) : null}
@@ -306,33 +332,35 @@ export function ReviewSuggestions<T>({
             data-testid="suggestions-new"
           >
             <ActionIcon icon={FilePenLine} />
-            Suggest changes
+            {t('review.suggestions.suggest')}
           </button>
         </div>
       ) : (
         <p className="history__quiet" data-testid="suggestions-read-only">
-          You can read suggestions here, but your role can&rsquo;t make them.
+          {t('review.suggestions.readOnly')}
         </p>
       )}
 
       {failed ? (
         <p className="history__quiet" role="status">
-          The suggestions couldn&rsquo;t be read.
+          {t('review.suggestions.readFailed')}
         </p>
       ) : loaded === null ? (
         <p className="history__quiet" role="status">
-          Opening&hellip;
+          {t('review.suggestions.opening')}
         </p>
       ) : items.length === 0 && !loaded.more.open && !loaded.more.decided ? (
         <p className="history__quiet" data-testid="suggestions-empty">
-          No suggestions yet.
+          {t('review.suggestions.empty')}
         </p>
       ) : (
         <>
           {open.length > 0 || loaded.more.open ? (
             <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
               <h3 className="reviewsection__title" id={`${headingId}-open`}>
-                Open <span className="reviewsection__count">{counted('open', open.length)}</span>
+                {tx('review.suggestions.open', {
+                  n: <span className="reviewsection__count">{counted('open', open.length)}</span>,
+                })}
               </h3>
               <ol className="reviewsection__list" data-testid="suggestions-open">
                 {open.map(renderSuggestion)}
@@ -343,8 +371,13 @@ export function ReviewSuggestions<T>({
           {decided.length > 0 || loaded.more.decided ? (
             <details className="reviewsection" data-testid="suggestions-decided-group">
               <summary className="reviewsection__title">
-                Accepted and rejected{' '}
-                <span className="reviewsection__count">{counted('decided', decided.length)}</span>
+                {tx('review.suggestions.decided', {
+                  n: (
+                    <span className="reviewsection__count">
+                      {counted('decided', decided.length)}
+                    </span>
+                  ),
+                })}
               </summary>
               <ol className="reviewsection__list" data-testid="suggestions-decided">
                 {decided.map(renderSuggestion)}

@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import type { Chapter, PlotArc, Scene } from './types'
 
 /**
@@ -61,7 +62,12 @@ export function readingOrder(arcs: PlotArc[], chapters: Chapter[], scenes: Scene
 
 /** A chapter as a choice: LorEvolve's words (`prefix`) and the author's title, apart for a `<bdi>`, and both as one label. */
 function choice(chapter: Chapter, prefix: string) {
-  return { id: chapter.id, prefix, title: chapter.title, label: `${prefix}: ${chapter.title}` }
+  return {
+    id: chapter.id,
+    prefix,
+    title: chapter.title,
+    label: t('stories.chapter.choice', { prefix, title: chapter.title }),
+  }
 }
 
 /**
@@ -72,10 +78,15 @@ export function chapterChoices(arcs: PlotArc[], chapters: Chapter[]) {
   const groups = chapterGroups(arcs, chapters)
   const sortedArcs = groups.arcs.map((entry) => entry.arc)
   return [
-    ...groups.unarced.map((chapter, index) => choice(chapter, `Chapter ${index + 1}`)),
+    ...groups.unarced.map((chapter, index) =>
+      choice(chapter, t('stories.chapter.number', { n: index + 1 })),
+    ),
     ...groups.arcs.flatMap(({ arc, chapters: inArc }) =>
       inArc.map((chapter, index) =>
-        choice(chapter, `Arc ${sortedArcs.indexOf(arc) + 1}, Chapter ${index + 1}`),
+        choice(
+          chapter,
+          t('stories.chapter.inArc', { arc: sortedArcs.indexOf(arc) + 1, n: index + 1 }),
+        ),
       ),
     ),
   ]

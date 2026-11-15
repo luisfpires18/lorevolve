@@ -37,7 +37,7 @@ export interface UniverseSummary {
 
 export interface UniverseDetail extends UniverseSummary {
   createdAt: string
-  /** False hides the assistant, Connect to AI and AI Changes in this universe's workspace. */
+  /** False hides Connect to AI and AI Changes in this universe's workspace. */
   aiHelp: boolean
 }
 

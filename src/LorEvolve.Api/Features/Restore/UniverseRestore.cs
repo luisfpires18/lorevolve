@@ -5,10 +5,14 @@ using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Knowledge;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.WorldRules;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.ProjectEntities;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.RuleValidation;
+using LorEvolve.Api.Features.RuleValidation.Conditions;
 using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Storage;
@@ -85,6 +89,43 @@ internal sealed class RestoreIdentity
             foreach (var month in calendar.Months)
             {
                 yield return month.Id;
+            }
+        }
+
+        foreach (var project in payload.CreativeProjects ?? [])
+        {
+            yield return project.Id;
+        }
+
+        foreach (var entry in payload.ProjectEntities ?? [])
+        {
+            yield return entry.Id;
+
+            // Its saved versions' ids too (version 42, #146), the way a lore entry's are: AddRevisions maps every id
+            // it writes, so a version whose id was never collected fails the whole restore.
+            foreach (var revision in entry.Revisions ?? [])
+            {
+                yield return revision.Id;
+            }
+        }
+
+        foreach (var season in payload.ProjectSeasons ?? [])
+        {
+            yield return season.Id;
+
+            foreach (var episode in season.Episodes ?? [])
+            {
+                yield return episode.Id;
+
+                foreach (var page in episode.Pages ?? [])
+                {
+                    yield return page.Id;
+
+                    foreach (var panel in page.Panels ?? [])
+                    {
+                        yield return panel.Id;
+                    }
+                }
             }
         }
 
@@ -236,6 +277,18 @@ internal sealed class RestoreIdentity
         foreach (var term in payload.ValidationTerms!)
         {
             yield return term.Id;
+        }
+
+        // World Logic (version 44): a System and a rule definition each get a new id, and the ids inside a stored
+        // condition are translated through this same map, which is why both are allocated before anything is written.
+        foreach (var system in payload.LoreSystems ?? [])
+        {
+            yield return system.Id;
+        }
+
+        foreach (var rule in payload.SystemRules ?? [])
+        {
+            yield return rule.Id;
         }
     }
 }
@@ -767,12 +820,14 @@ internal sealed partial class UniverseRestore(
                 db.UniverseArtworks.Add(artwork);
             }
 
-            AddLore(payload, ids, universeId, images);
+            AddLore(payload, ids, universeId, ownerId, images);
             AddMaps();
             AddStories(payload, ids, universeId);
             AddIdeas(payload, ids, universeId, ownerId);
             AddIdeaBoards(payload, ids, universeId, ownerId, ownedOutsideIdeas);
             AddWorldRules(payload, ids, universeId);
+            AddWorldLogic(payload, ids, universeId);
+            AddDismissedFindings(payload, ids, universeId);
             AddRuleValidation(payload, ids, universeId);
 
             await db.SaveChangesAsync(cancellationToken);
@@ -811,7 +866,7 @@ internal sealed partial class UniverseRestore(
         return universe;
     }
 
-    private void AddLore(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId, Dictionary<Guid, EntityImage> images)
+    private void AddLore(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId, string ownerId, Dictionary<Guid, EntityImage> images)
     {
         foreach (var era in payload.ChronologyEras!)
         {
@@ -886,12 +941,99 @@ internal sealed partial class UniverseRestore(
             });
         }
 
+        // The universe's projects, before the entry types that name them (version 39). A universe owns its projects
+        // and deletes them with it (#171), so a restored universe comes back with them; each becomes the restoring
+        // account's, as the universe itself does.
+        foreach (var project in payload.CreativeProjects ?? [])
+        {
+            db.CreativeProjects.Add(new CreativeProject
+            {
+                Id = ids.Map(project.Id),
+                UniverseId = universeId,
+                OwnerId = ownerId,
+                Name = project.Name,
+                Kind = project.Kind,
+                Lifecycle = project.Lifecycle,
+                Subtype = project.Subtype,
+                Summary = project.Summary,
+                CreatedAt = project.CreatedAt,
+                UpdatedAt = project.UpdatedAt,
+            });
+        }
+
+        // The projects' seasons and episodes (version 41, #145), after the projects they belong to.
+        foreach (var season in payload.ProjectSeasons ?? [])
+        {
+            db.ProjectSeasons.Add(new ProjectSeason
+            {
+                Id = ids.Map(season.Id),
+                ProjectId = ids.Map(season.ProjectId),
+                Name = season.Name,
+                Summary = season.Summary,
+                SortOrder = season.SortOrder,
+                CreatedAt = season.CreatedAt,
+                UpdatedAt = season.UpdatedAt,
+            });
+
+            foreach (var episode in season.Episodes ?? [])
+            {
+                db.ProjectEpisodes.Add(new ProjectEpisode
+                {
+                    Id = ids.Map(episode.Id),
+                    SeasonId = ids.Map(season.Id),
+                    Title = episode.Title,
+                    Synopsis = episode.Synopsis,
+                    Script = episode.Script,
+                    SortOrder = episode.SortOrder,
+                    CreatedAt = episode.CreatedAt,
+                    UpdatedAt = episode.UpdatedAt,
+                    Version = 1,
+                });
+
+                // A comic chapter's pages and panels (version 43, #147). A panel's lore link is mapped like every
+                // other reference, so it names the restored entry rather than the one in the file.
+                foreach (var page in episode.Pages ?? [])
+                {
+                    db.ProjectPages.Add(new ProjectPage
+                    {
+                        Id = ids.Map(page.Id),
+                        EpisodeId = ids.Map(episode.Id),
+                        Name = page.Name,
+                        Notes = page.Notes,
+                        SortOrder = page.SortOrder,
+                        CreatedAt = page.CreatedAt,
+                        UpdatedAt = page.UpdatedAt,
+                    });
+
+                    foreach (var panel in page.Panels ?? [])
+                    {
+                        db.ProjectPanels.Add(new ProjectPanel
+                        {
+                            Id = ids.Map(panel.Id),
+                            PageId = ids.Map(page.Id),
+                            Description = panel.Description,
+                            Dialogue = panel.Dialogue,
+                            CanonEntityId = panel.CanonEntityId is { } shown ? ids.Map(shown) : null,
+                            SortOrder = panel.SortOrder,
+                            CreatedAt = panel.CreatedAt,
+                            UpdatedAt = panel.UpdatedAt,
+                        });
+                    }
+                }
+            }
+        }
+
         foreach (var type in payload.EntityTypes)
         {
             db.EntityTypes.Add(new EntityType
             {
                 Id = ids.Map(type.Id),
                 UniverseId = universeId,
+
+                // A project's type comes back in its project, not promoted into the world's lore (#143). The project
+                // was written just above under its restored id, so this reads through the same map as every other
+                // reference in this file.
+                ProjectId = type.ProjectId is { } projectId ? ids.Map(projectId) : null,
                 Name = type.Name,
                 Description = type.Description,
                 Icon = type.Icon,
@@ -967,6 +1109,47 @@ internal sealed partial class UniverseRestore(
         foreach (var entity in payload.Entities)
         {
             AddEntity(entity, ids, universeId, images);
+        }
+
+        // The projects' own entries (version 40, #144), after the lore entries, because a project entry may stand for
+        // one of them. Each keeps its scope: the project and the type come back under their restored ids, so what was
+        // a game's unit is a game's unit again and never the universe's lore.
+        foreach (var entry in payload.ProjectEntities ?? [])
+        {
+            db.Entities.Add(new LoreEntity
+            {
+                Id = ids.Map(entry.Id),
+                UniverseId = universeId,
+                ProjectId = ids.Map(entry.ProjectId),
+                CanonEntityId = entry.CanonEntityId is { } canonId ? ids.Map(canonId) : null,
+                EntityTypeId = ids.Map(entry.EntityTypeId),
+                Name = entry.Name,
+                Summary = entry.Summary,
+                CanonStatus = CanonStatus.Draft,
+                DeletedAt = entry.DeletedAt,
+                CreatedAt = entry.CreatedAt,
+                UpdatedAt = entry.UpdatedAt,
+            });
+
+            // The entry's history, through the same writer the lore's entries use (version 42, #146).
+            AddRevisions(ids.Map(entry.Id), entry.Revisions ?? [], ids);
+
+            foreach (var value in entry.FieldValues ?? [])
+            {
+                db.EntityFieldValues.Add(new EntityFieldValue
+                {
+                    Id = Guid.NewGuid(),
+                    EntityId = ids.Map(entry.Id),
+                    FieldDefinitionId = ids.Map(value.FieldDefinitionId),
+                    TextValue = value.TextValue,
+                    NumberValue = value.NumberValue,
+                    EraId = value.EraId is { } eraId ? ids.Map(eraId) : null,
+                    BooleanValue = value.BooleanValue,
+                    DateValue = value.DateValue,
+                    OptionId = value.OptionId is { } optionId ? ids.Map(optionId) : null,
+                    ReferencedEntityId = value.ReferencedEntityId is { } referenced ? ids.Map(referenced) : null,
+                });
+            }
         }
 
         foreach (var type in payload.RelationshipTypes)
@@ -1160,7 +1343,22 @@ internal sealed partial class UniverseRestore(
             db.EntityImages.Add(image);
         }
 
-        foreach (var revision in entity.Revisions)
+        AddRevisions(entityId, entity.Revisions, ids);
+
+        if (entity.Progression is { } progression)
+        {
+            AddProgression(entityId, progression, ids);
+        }
+    }
+
+    /// <summary>
+    /// An entry's saved versions, with every id inside them translated the same way every other reference is (ADR
+    /// 0013). Shared by a lore entry and a project's entry (#146), which is the point: a project entry's history is
+    /// captured by the same code, so it is restored by the same code rather than by a copy of it.
+    /// </summary>
+    private void AddRevisions(Guid entityId, IReadOnlyList<BackupRevision> revisions, RestoreIdentity ids)
+    {
+        foreach (var revision in revisions)
         {
             var revisionRow = new EntityRevision
             {
@@ -1215,10 +1413,6 @@ internal sealed partial class UniverseRestore(
             }
         }
 
-        if (entity.Progression is { } progression)
-        {
-            AddProgression(entityId, progression, ids);
-        }
     }
 
     /// <summary>
@@ -1595,6 +1789,7 @@ internal sealed partial class UniverseRestore(
                 Id = ideaId,
                 OwnerId = ownerId,
                 UniverseId = universeId,
+                ProjectId = idea.ProjectId is { } projectId ? ids.Map(projectId) : null,
                 Title = idea.Title,
                 Body = idea.Body,
                 CreatedAt = idea.CreatedAt,
@@ -1727,6 +1922,113 @@ internal sealed partial class UniverseRestore(
     }
 
     /// <summary>
+    /// The backed-up universe's World Logic becomes the restored universe's (ADR 0072): every System, every rule
+    /// definition, the links between them, the declared dependencies and both sets of saved states.
+    ///
+    /// <b>The ids inside a condition are translated.</b> A condition names records by id, so one carried through
+    /// unchanged would point at rows that are not in the restored universe. Every id the map knows is replaced; one
+    /// it does not know is left as it was, and evaluation reports it as <c>invalid_reference</c> rather than the
+    /// restore quietly changing what the rule says.
+    ///
+    /// <b>Nothing is evaluated.</b> No finding is produced here: a finding is derived, and the next sweep produces
+    /// it again from the restored rules and the restored lore. The one exception is a finding the author dismissed,
+    /// which is not derived and is written back dismissed (<see cref="AddDismissedFindings"/>).
+    /// </summary>
+    private void AddWorldLogic(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId)
+    {
+        foreach (var rule in payload.SystemRules ?? [])
+        {
+            db.SystemRules.Add(new SystemRule
+            {
+                Id = ids.Map(rule.Id),
+                UniverseId = universeId,
+                Scope = rule.Scope,
+                ProjectId = ids.Map(rule.ProjectId),
+                Title = rule.Title,
+                Description = rule.Description,
+                SchemaVersion = rule.SchemaVersion,
+                ConditionJson = Condition(rule.Condition, ids),
+                ExceptionsJson = Condition(rule.Exceptions, ids),
+                Version = rule.Version,
+                CreatedAt = rule.CreatedAt,
+                UpdatedAt = rule.UpdatedAt,
+            });
+
+            foreach (var dependency in rule.DependsOn)
+            {
+                db.SystemRuleDependencies.Add(new SystemRuleDependency
+                {
+                    RuleId = ids.Map(rule.Id),
+                    DependsOnRuleId = ids.Map(dependency),
+                });
+            }
+
+            foreach (var revision in rule.Revisions)
+            {
+                db.SystemRuleRevisions.Add(new SystemRuleRevision
+                {
+                    RuleId = ids.Map(rule.Id),
+                    Version = revision.Version,
+                    Title = revision.Title,
+                    Description = revision.Body,
+                    SchemaVersion = revision.SchemaVersion,
+                    ConditionJson = Condition(revision.Condition, ids),
+                    ExceptionsJson = Condition(revision.Exceptions, ids),
+                    SavedAt = revision.SavedAt,
+                });
+            }
+        }
+
+        foreach (var system in payload.LoreSystems ?? [])
+        {
+            db.LoreSystems.Add(new LoreSystem
+            {
+                Id = ids.Map(system.Id),
+                UniverseId = universeId,
+                Scope = system.Scope,
+                ProjectId = ids.Map(system.ProjectId),
+                Name = system.Name,
+                NormalizedName = WorldLogicAccess.Normalize(system.Name),
+                Summary = system.Summary,
+                Version = system.Version,
+                CreatedAt = system.CreatedAt,
+                UpdatedAt = system.UpdatedAt,
+            });
+
+            var order = 0;
+            foreach (var ruleId in system.RuleIds)
+            {
+                db.LoreSystemRules.Add(new LoreSystemRule
+                {
+                    SystemId = ids.Map(system.Id),
+                    RuleId = ids.Map(ruleId),
+
+                    // The file carries the order as a sequence, so it is rewritten as 0, 1, 2 rather than carrying
+                    // whatever numbers the source happened to hold.
+                    SortOrder = order++,
+                    CreatedAt = system.CreatedAt,
+                });
+            }
+
+            foreach (var revision in system.Revisions)
+            {
+                db.LoreSystemRevisions.Add(new LoreSystemRevision
+                {
+                    SystemId = ids.Map(system.Id),
+                    Version = revision.Version,
+                    Name = revision.Title,
+                    Summary = revision.Body,
+                    SavedAt = revision.SavedAt,
+                });
+            }
+        }
+    }
+
+    /// <summary>A condition with every id the backup holds replaced by its restored one, or null for a rule that is words only.</summary>
+    private static string? Condition(string? conditionJson, RestoreIdentity ids) =>
+        conditionJson is null ? null : ConditionIdRewrite.Translate(conditionJson, ids.Known);
+
+    /// <summary>
     /// The universe's event kinds and methods, each rule's check and each moment's details (ADR 0034), every id through the one map -
     /// so a check or a moment can only ever name a term, rule, moment or entry of the restored universe. What a check finds is not
     /// written: Canon, evaluated below, counts it again from the restored moments.
@@ -1786,6 +2088,93 @@ internal sealed partial class UniverseRestore(
     /// finding whose old fingerprint was dismissed is dismissed again, as of when it was. A dismissal whose finding no
     /// longer arises is not kept: evaluation would have resolved it in the source universe the next time it ran.
     /// </summary>
+    /// <summary>
+    /// Writes back the World Logic findings the author chose to live with (version 46, ADR 0072).
+    ///
+    /// <b>Only the dismissals, and dismissed.</b> Every other finding is derived and the next sweep produces it
+    /// again. A dismissal is the author's own decision that a finding needs no action, so restoring the universe
+    /// without it would report the same thing again and ask the author to decide twice.
+    ///
+    /// <b>The fingerprint is computed again, not carried.</b> It is a hash over the rule, the scope, the outcome,
+    /// the error code and the evidence ids, and a restore gives every record a new id, so the backup carries what
+    /// the hash was taken over and the hash is taken again from the restored ids. The next sweep then matches the
+    /// finding it produces to the dismissal rather than opening a second one beside it.
+    ///
+    /// <b>An evidence id the map does not know is left as it was</b>, exactly as a condition's is: evidence may
+    /// name a row the backup did not hold, and the honest answer is a dismissal that the next sweep simply does not
+    /// match, rather than a quietly different fingerprint.
+    ///
+    /// The history entry carries no actor: no account did this, the restore did.
+    /// </summary>
+    private void AddDismissedFindings(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId)
+    {
+        foreach (var dismissed in payload.DismissedFindings ?? [])
+        {
+            var ruleId = ids.Map(dismissed.RuleId);
+            var projectId = ids.Map(dismissed.ProjectId);
+
+            var evidence = dismissed.Evidence
+                .Select(item => new ConditionEvidence(item.Source, Translated(item.Id, ids), item.Role))
+                .ToList();
+
+            var finding = new WorldLogicFinding
+            {
+                Id = Guid.NewGuid(),
+                UniverseId = universeId,
+                RuleId = ruleId,
+                ProjectId = projectId,
+                Outcome = dismissed.Outcome,
+                ErrorCode = dismissed.ErrorCode,
+                RuleVersion = dismissed.RuleVersion,
+                SchemaVersion = dismissed.SchemaVersion,
+                Fingerprint = WorldLogicFingerprint.Of(
+                    ruleId,
+                    projectId,
+                    dismissed.Outcome,
+                    dismissed.ErrorCode,
+                    evidence),
+                Status = WorldLogicFindingStatus.Dismissed,
+                Rationale = dismissed.Rationale,
+                CreatedAt = dismissed.DetectedAt,
+                UpdatedAt = dismissed.DismissedAt,
+            };
+
+            var order = 0;
+            foreach (var item in evidence)
+            {
+                finding.Evidence.Add(new WorldLogicFindingEvidence
+                {
+                    FindingId = finding.Id,
+                    SortOrder = order++,
+                    Source = item.Source,
+                    SourceRowId = item.Id,
+                    Role = item.Role,
+                });
+            }
+
+            finding.Events.Add(new WorldLogicFindingEvent
+            {
+                Id = Guid.NewGuid(),
+                FindingId = finding.Id,
+                Action = WorldLogicFindingAction.Dismissed,
+                ActorId = null,
+                Note = string.Empty,
+                At = dismissed.DismissedAt,
+            });
+
+            db.WorldLogicFindings.Add(finding);
+        }
+    }
+
+    /// <summary>
+    /// An evidence id through the restore's map. The evaluator reports a row id as text in production and a
+    /// fixture's own label in a test, so anything that is not a Guid the map knows passes through unchanged.
+    /// </summary>
+    private static string Translated(string id, RestoreIdentity ids) =>
+        Guid.TryParse(id, out var parsed) && ids.Known(parsed) is { } restored
+            ? restored.ToString()
+            : id;
+
     private async Task ReconcileCanonAsync(
         UniverseBackupPayload payload,
         RestoreIdentity ids,

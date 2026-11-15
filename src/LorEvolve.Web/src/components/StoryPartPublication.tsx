@@ -3,38 +3,38 @@ import { ChevronDown, Globe, Lock } from 'lucide-react'
 import { ActionMenu } from './ActionMenu'
 import { setStoryPartPublication } from '../publishing/api'
 import { Visibility, type StoryPartKind, type VisibilityValue } from '../publishing/types'
+import { t, useI18n } from '../i18n'
 
 /** What each part puts on the story's public page and what it keeps - said before publishing, never discovered after. */
-const WORDS: Record<
-  StoryPartKind,
-  { what: string; verb: string; listed: string; kept: string; isPublic: string }
-> = {
-  scene: {
-    what: 'scene outline',
-    verb: 'Publish outline',
-    listed: 'Readers see this scene’s title and summary in the story’s outline.',
-    kept: 'Its notes, point of view, lore, date, beats and prose are not published by this.',
-    isPublic: 'This scene’s outline is on the story’s public page.',
-  },
-  manuscript: {
-    what: 'scene prose',
-    verb: 'Publish prose',
-    listed: 'Readers can read this scene’s prose, under its title, on the story’s public page.',
-    kept: 'Its summary, notes and saved versions are not published by this.',
-    isPublic: 'This scene’s prose is on the story’s public page.',
-  },
-  arc: {
-    what: 'plot arc',
-    verb: 'Publish arc',
-    listed: 'Readers see the arc’s title and description.',
-    kept: 'Notes and links to scenes and lore are not published. Plot often gives a story away: publish it only on purpose.',
-    isPublic: 'This arc is on the story’s public page.',
-  },
+function wordsOf(kind: StoryPartKind) {
+  if (kind === 'scene') {
+    return {
+      what: t('stories.publication.part.scene.what'),
+      verb: t('stories.publication.part.scene.verb'),
+      listed: t('stories.publication.part.scene.listed'),
+      kept: t('stories.publication.part.scene.kept'),
+      isPublic: t('stories.publication.part.scene.isPublic'),
+    }
+  }
+  if (kind === 'manuscript') {
+    return {
+      what: t('stories.publication.part.manuscript.what'),
+      verb: t('stories.publication.part.manuscript.verb'),
+      listed: t('stories.publication.part.manuscript.listed'),
+      kept: t('stories.publication.part.manuscript.kept'),
+      isPublic: t('stories.publication.part.manuscript.isPublic'),
+    }
+  }
+  return {
+    what: t('stories.publication.part.arc.what'),
+    verb: t('stories.publication.part.arc.verb'),
+    listed: t('stories.publication.part.arc.listed'),
+    kept: t('stories.publication.part.arc.kept'),
+    isPublic: t('stories.publication.part.arc.isPublic'),
+  }
 }
 
 type Shown = 'private' | 'public' | 'selected'
-
-const LABELS: Record<Shown, string> = { private: 'Private', public: 'Public', selected: 'Selected' }
 
 /**
  * One part of a story - a scene's outline, a scene's prose, a plot arc - and its publication (ADR 0039), beside where the
@@ -63,11 +63,17 @@ export function StoryPartPublication({
   storyIsPublic: boolean | null
   onChange: (visibility: VisibilityValue) => void
 }) {
+  useI18n()
   const noteId = useId()
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [announcement, setAnnouncement] = useState('')
-  const words = WORDS[kind]
+  const words = wordsOf(kind)
+  const LABELS: Record<Shown, string> = {
+    private: t('stories.publication.part.shown.private'),
+    public: t('stories.publication.part.shown.public'),
+    selected: t('stories.publication.part.shown.selected'),
+  }
   const isSelected = visibility === Visibility.Public
   const shown: Shown = !isSelected ? 'private' : storyIsPublic ? 'public' : 'selected'
 
@@ -80,13 +86,17 @@ export function StoryPartPublication({
       onChange(next.visibility)
       setAnnouncement(
         !publish
-          ? 'Made private. It is no longer on the story’s public page.'
+          ? t('stories.publication.part.madePrivate')
           : next.storyIsPublic
-            ? 'Published. It is on the story’s public page.'
-            : 'Selected for publication. It stays hidden until the story is public.',
+            ? t('stories.publication.part.published')
+            : t('stories.publication.part.selected'),
       )
     } catch {
-      setFailed(`It could not be ${publish ? 'published' : 'made private'}. Try again.`)
+      setFailed(
+        publish
+          ? t('stories.publication.part.failedPublish')
+          : t('stories.publication.part.failedPrivate'),
+      )
     } finally {
       setBusy(false)
     }
@@ -96,14 +106,11 @@ export function StoryPartPublication({
     shown === 'public'
       ? [words.isPublic, words.listed, words.kept]
       : shown === 'selected'
-        ? [
-            'Selected for publication, but hidden until the story is public: the story, with its public summary, in a public universe.',
-            words.kept,
-          ]
+        ? [t('stories.publication.part.selectedHidden'), words.kept]
         : [
             storyIsPublic
-              ? `Only you can see this ${words.what}.`
-              : `Only you can see this ${words.what}. The story is not public yet, so publishing selects it: it stays hidden until the story is.`,
+              ? t('stories.publication.part.onlyYou', { what: words.what })
+              : t('stories.publication.part.onlyYouSelects', { what: words.what }),
             words.listed,
             words.kept,
           ]
@@ -114,7 +121,11 @@ export function StoryPartPublication({
     <div className="contentpub contentpub--bar partpub" data-testid={`${kind}-publication-control`}>
       <ActionMenu
         className="contentpub__menu"
-        label={`Publication of ${words.what} “${name}”: ${LABELS[shown]}`}
+        label={t('stories.publication.part.label', {
+          what: words.what,
+          name,
+          state: LABELS[shown],
+        })}
         triggerClassName={`contentpub__trigger contentpub__trigger--${shown}`}
         trigger={
           <>
@@ -139,7 +150,7 @@ export function StoryPartPublication({
       >
         <div className="actionmenu__context contentpub__context" id={noteId}>
           <p className="contentpub__heading">
-            {shown === 'selected' ? 'Selected for publication' : LABELS[shown]}
+            {shown === 'selected' ? t('stories.publication.part.heading') : LABELS[shown]}
             <span className="contentpub__what"> · {words.what}</span>
           </p>
           {explanation.map((line) => (
@@ -171,7 +182,7 @@ export function StoryPartPublication({
               strokeWidth={1.75}
             />
           )}
-          {isSelected ? 'Make private' : words.verb}
+          {isSelected ? t('stories.publication.part.makePrivate') : words.verb}
         </button>
       </ActionMenu>
       {failed ? (

@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from 'react'
+import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { ArrowDown, ArrowRightLeft, ArrowUp, Pencil, Plus, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
@@ -59,6 +60,7 @@ export function ChapterSection({
   children,
   startsOpen = false,
 }: ChapterSectionProps) {
+  const { t } = useI18n()
   const access = useUniverseAccess()
   const headingId = useId()
   const Title = titleLevel === 4 ? 'h4' : 'h3'
@@ -116,10 +118,12 @@ export function ChapterSection({
               data-testid="chapter-new-scene"
             >
               <ActionIcon icon={Plus} />
-              Add scene
+              {t('stories.chapter.addScene')}
             </button>
             <ActionMenu
-              label={`More actions for ${chapterLabel(index, chapter.title)}`}
+              label={t('stories.chapter.moreActions', {
+                label: chapterLabel(index, chapter.title),
+              })}
               triggerTestId="chapter-actions"
             >
               <button
@@ -129,7 +133,7 @@ export function ChapterSection({
                 data-testid="chapter-edit"
               >
                 <ActionIcon icon={Pencil} />
-                Edit chapter
+                {t('stories.chapter.edit')}
               </button>
               {index > 0 ? (
                 <button
@@ -139,7 +143,7 @@ export function ChapterSection({
                   data-testid="chapter-move-up"
                 >
                   <ActionIcon icon={ArrowUp} />
-                  Move up
+                  {t('stories.chapter.moveUp')}
                 </button>
               ) : null}
               {index < count - 1 ? (
@@ -150,7 +154,7 @@ export function ChapterSection({
                   data-testid="chapter-move-down"
                 >
                   <ActionIcon icon={ArrowDown} />
-                  Move down
+                  {t('stories.chapter.moveDown')}
                 </button>
               ) : null}
               {onMoveToArc
@@ -163,7 +167,9 @@ export function ChapterSection({
                       data-testid="chapter-move-to-arc"
                     >
                       <ActionIcon icon={ArrowRightLeft} />
-                      {target.id === null ? 'Move out of its arc' : `Move to ${target.label}`}
+                      {target.id === null
+                        ? t('stories.chapter.moveOutOfArc')
+                        : t('stories.chapter.moveToArc', { label: target.label })}
                     </button>
                   ))
                 : null}
@@ -175,7 +181,7 @@ export function ChapterSection({
                 data-testid="chapter-delete"
               >
                 <ActionIcon icon={Trash} />
-                Delete chapter
+                {t('stories.chapter.delete')}
               </button>
             </ActionMenu>
           </div>
@@ -198,7 +204,7 @@ export function ChapterSection({
           children
         ) : (
           <p className="chapter__empty" data-testid="chapter-empty">
-            No scenes in this chapter yet.
+            {t('stories.chapter.empty')}
           </p>
         )}
       </div>

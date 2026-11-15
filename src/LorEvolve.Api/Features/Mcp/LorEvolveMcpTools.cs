@@ -12,7 +12,7 @@ namespace LorEvolve.Api.Features.Mcp;
 
 /// <summary>
 /// The MCP tools (ADR 0046): one universe, read through <see cref="UniverseReader"/> - the same permission-safe read layer
-/// the built-in assistant uses, and nothing of the assistant itself.
+/// the app's own screens use.
 ///
 /// <para><b>Read-only by construction.</b> Every tool reads; none writes, and each says so in its annotations. Nothing
 /// takes a universe: the universe is <see cref="McpCaller"/>'s, set by the gate from the token, so an id from another
@@ -38,7 +38,10 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         + "each has a recorded scale; get_map_location gives every map a lore entry is pinned on, by id or exact name; "
         + "search_map_locations finds pins by name; measure_map_distance gives the straight-line separation of two pins, as a "
         + "distance only when both are on one calibrated map. A location is a pin someone placed and a distance only what that tool "
-        + "returns - never estimate either from a name, a description or the picture.";
+        + "returns - never estimate either from a name, a description or the picture. "
+        + LorEvolveMcpProjectTools.Instructions
+        + LorEvolveMcpProjectEntityTools.Instructions
+        + LorEvolveMcpWorldLogicTools.Instructions;
 
     /// <summary>A chunk of prose by default: about 2,000 tokens of English.</summary>
     public const int ManuscriptChunkDefault = 8_000;

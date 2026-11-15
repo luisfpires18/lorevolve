@@ -24,7 +24,7 @@ namespace LorEvolve.Api.Features.Knowledge;
 /// leaves the record about nobody in particular. The Trash takes nothing: a record whose scene, knower or subject is binned
 /// is kept and marked, and comes back whole with them.
 ///
-/// Read by every member, changed by whoever edits content, never public and never read by the assistant, MCP or an AI
+/// Read by every member, changed by whoever edits content, never public and never read by MCP or an AI
 /// proposal - its own table, no projection of an entry or a scene carries it. In the owner's backup since format 33.
 /// </summary>
 public sealed class KnowledgeRecord

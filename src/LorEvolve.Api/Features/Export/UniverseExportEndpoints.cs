@@ -5,6 +5,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.Localization;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Universes;
@@ -71,15 +72,22 @@ public static partial class UniverseExportEndpoints
     private static Task<IResult> ExportReadableAsync(
         Guid universeId,
         ClaimsPrincipal principal,
+        HttpRequest request,
         LorEvolveDbContext db,
         IMediaObjectStore store,
         ILoggerFactory loggerFactory,
-        CancellationToken cancellationToken) =>
-        ArchiveAsync(
+        CancellationToken cancellationToken)
+    {
+        // The pages are written in the reader's language (#110): the request carries it, and nothing reads the
+        // archive back, so this is the only moment at which the words can be chosen.
+        var language = RequestLanguage.Of(request);
+
+        return ArchiveAsync(
             universeId, principal, db, store, loggerFactory,
-            (snapshot, generatedAt, read, token) => ReadableExport.WriteAsync(snapshot, generatedAt, read, token),
+            (snapshot, generatedAt, read, token) => ReadableExport.WriteAsync(snapshot, generatedAt, read, language, token),
             ReadableExport.FileNameFor,
             cancellationToken);
+    }
 
     private static async Task<IResult> ArchiveAsync(
         Guid universeId,

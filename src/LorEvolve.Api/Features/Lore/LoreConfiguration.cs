@@ -38,8 +38,27 @@ public sealed class EntityTypeConfiguration : IEntityTypeConfiguration<EntityTyp
             .HasForeignKey(type => type.UniverseId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Lore never sees a project's types (#143). A filter here rather than a condition at each of the thirty reads
+        // of EntityTypes: one forgotten condition would leak a project's types into a lore list, a universe backup or
+        // an AI proposal, and nothing would fail to say so. Code that means to see them says IgnoreQueryFilters().
+        builder.HasQueryFilter(type => type.ProjectId == null);
+
         // Names are unique per universe, which is also what makes default seeding idempotent.
-        builder.HasIndex(type => new { type.UniverseId, type.Name }).IsUnique();
+        //
+        // Two partial indexes rather than one over (UniverseId, ProjectId, Name): a nullable column in a unique index
+        // makes NULLs distinct, so a single index would accept two lore types of the same name and seeding would
+        // duplicate instead of refusing. Lore keeps exactly the guarantee it had; two projects of one universe may
+        // each have a type of the same name.
+        builder.HasIndex(type => new { type.UniverseId, type.Name })
+            .IsUnique()
+            .HasFilter("\"ProjectId\" IS NULL");
+        builder.HasIndex(type => new { type.ProjectId, type.Name })
+            .IsUnique()
+            .HasFilter("\"ProjectId\" IS NOT NULL");
+
+        // The ordering index keeps its universe-only shape. Narrowing it to the project as well was tempting and is
+        // not needed: ordering is read per scope in code, and renaming an index that 37 migration tests enumerate buys
+        // a selectivity nobody measured. Performance work is the owner's to ask for.
         builder.HasIndex(type => new { type.UniverseId, type.DisplayOrder });
 
         // A type's parent (ADR 0007 amendment, 2026-10-01). Deliberately not a foreign key: SQLite adds one only by rebuilding
@@ -209,6 +228,23 @@ public sealed class LoreEntityConfiguration : IEntityTypeConfiguration<LoreEntit
         });
         builder.HasIndex(entity => new { entity.UniverseId, entity.EntityTypeId });
         builder.HasIndex(entity => new { entity.UniverseId, entity.Name });
+
+        // A project's entries are not the universe's lore (#144), and the filter is what keeps every existing read of
+        // this table right without being edited. It matches EntityTypeConfiguration's, which is also what settles the
+        // required relationship between them: an entry and its type are visible or hidden together.
+        builder.HasQueryFilter(entity => entity.ProjectId == null);
+
+        // The optional canon link a project's entry may carry (#144). Deliberately **not** a foreign key, for the
+        // reason EntityType.ParentId is not one either: SQLite adds a foreign key only by rebuilding the table, and a
+        // rebuild of "Entities" drops the EntitySearchIndex_EntityDeleted trigger with it, silently. The link is
+        // enforced where it can be read instead: the route checks the lore entry is in the project's own universe, and
+        // a trigger refuses deleting a lore entry a project entry still names, so nothing unlinks an author's
+        // reference behind their back.
+        builder.HasIndex(entity => entity.CanonEntityId).HasFilter("\"CanonEntityId\" IS NOT NULL");
+
+        // One index for a project's own listing, the same shape as the universe's above.
+        builder.HasIndex(entity => new { entity.ProjectId, entity.DeletedAt, entity.UpdatedAt })
+            .HasFilter("\"ProjectId\" IS NOT NULL");
 
         // Publishing (ADR 0036). An address is unique among one universe's entries - a story may share it, under
         // its own route segment. Only entries ever published have one, so the same index is what the public

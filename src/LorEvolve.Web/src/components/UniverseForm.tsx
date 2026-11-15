@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
+import { useI18n } from '../i18n'
 import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { ApiError } from '../lib/api'
@@ -68,6 +69,7 @@ export function UniverseForm({
   onCancel,
   onDone,
 }: UniverseFormProps) {
+  const { t } = useI18n()
   const colourId = useId()
   const [name, setName] = useState(initial?.name ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
@@ -101,8 +103,8 @@ export function UniverseForm({
   useLeaveGuard(
     isDirty
       ? initial
-        ? `“${initial.name}” has unsaved changes. Leave without saving them?`
-        : 'This universe has not been created. Leave without saving it?'
+        ? t('universe.form.leaveEdited', { name: initial.name })
+        : t('universe.form.leaveNew')
       : null,
   )
 
@@ -116,7 +118,7 @@ export function UniverseForm({
     setMessage(null)
     setFieldErrors({})
     if (showColour && colourInvalid) {
-      setFieldErrors({ accentcolor: 'Use a colour like #8b3242, or clear it for none.' })
+      setFieldErrors({ accentcolor: t('universe.form.colourInvalidSubmit') })
       return
     }
     setIsSubmitting(true)
@@ -132,7 +134,7 @@ export function UniverseForm({
           setMessage(error.message)
         }
       } else {
-        setMessage('That could not be saved. Try again.')
+        setMessage(t('universe.form.saveFailed'))
       }
     } finally {
       setIsSubmitting(false)
@@ -150,7 +152,7 @@ export function UniverseForm({
       {showDetails ? (
         <>
           <Field
-            label="Name"
+            label={t('universe.form.name')}
             name="name"
             // Opening a new universe starts at its name; Settings opens on the page, not in a field.
             autoFocus={!initial && takesFocus}
@@ -164,7 +166,7 @@ export function UniverseForm({
 
           <div className="field">
             <label className="field__label" htmlFor="description">
-              Description
+              {t('universe.form.description')}
             </label>
             <textarea
               id="description"
@@ -189,12 +191,9 @@ export function UniverseForm({
                 onChange={(event) => setAiHelp(event.target.checked)}
                 data-testid="universe-ai-help"
               />
-              AI help
+              {t('universe.form.aiHelp')}
             </label>
-            <p className="field__hint">
-              Shows the AI assistant, Connect to AI and AI Changes in this universe. Turn it off to
-              hide them.
-            </p>
+            <p className="field__hint">{t('universe.form.aiHelpHint')}</p>
           </div>
 
           {initial ? null : (
@@ -206,12 +205,9 @@ export function UniverseForm({
                   onChange={(event) => setStarterTypes(event.target.checked)}
                   data-testid="universe-starter-types"
                 />
-                Start with starter lore types
+                {t('universe.form.starterTypes')}
               </label>
-              <p className="field__hint">
-                Off, the universe starts empty and you make your own lore types in Types. On, it
-                starts with a few common ones and groups you can rename or delete.
-              </p>
+              <p className="field__hint">{t('universe.form.starterTypesHint')}</p>
             </div>
           )}
         </>
@@ -220,13 +216,13 @@ export function UniverseForm({
       {showColour ? (
         <div className="field colourfield">
           <label className="field__label" htmlFor={`${colourId}-hex`}>
-            Universe colour
+            {t('universe.form.colour')}
           </label>
           <div className="colourfield__row">
             <input
               className="colourfield__picker"
               type="color"
-              aria-label="Choose a colour"
+              aria-label={t('universe.form.colourPick')}
               value={HEX.test(accentColor) ? accentColor : PICKER_IDLE}
               onChange={(event) => {
                 setAccentColor(event.target.value)
@@ -242,7 +238,7 @@ export function UniverseForm({
               spellCheck={false}
               autoComplete="off"
               maxLength={7}
-              placeholder="None"
+              placeholder={t('universe.form.colourNone')}
               value={colourText}
               aria-invalid={colourInvalid || fieldErrors.accentcolor ? true : undefined}
               aria-describedby={`${colourId}-hint`}
@@ -266,18 +262,16 @@ export function UniverseForm({
                 data-testid="universe-colour-clear"
               >
                 <ActionIcon icon={X} />
-                No colour
+                {t('universe.form.colourClear')}
               </button>
             ) : null}
           </div>
           <p className="field__hint" id={`${colourId}-hint`}>
-            {accentColor
-              ? 'Marks this universe in your workspace.'
-              : 'No colour: the universe uses LorEvolve’s own.'}
+            {accentColor ? t('universe.form.colourHintSet') : t('universe.form.colourHintUnset')}
           </p>
           {colourInvalid && !fieldErrors.accentcolor ? (
             <p className="field__error" role="alert">
-              Use a colour like #8b3242, or clear it for none.
+              {t('universe.form.colourInvalid')}
             </p>
           ) : null}
           {fieldErrors.accentcolor ? (
@@ -294,7 +288,7 @@ export function UniverseForm({
         </button>
         {onCancel ? (
           <button className="button button--secondary" type="button" onClick={cancel}>
-            Cancel
+            {t('universe.form.cancel')}
           </button>
         ) : null}
       </div>

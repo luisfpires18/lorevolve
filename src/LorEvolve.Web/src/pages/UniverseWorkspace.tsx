@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
+import { Fragment, useCallback, useEffect, useId, useRef, useState } from 'react'
+import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { AccountMenu } from '../components/AccountMenu'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
-import { UniverseAssistant } from '../components/UniverseAssistant'
 import { SiteFooter } from '../components/SiteFooter'
 import { UniverseSearch } from '../components/UniverseSearch'
 import { getChronology } from '../chronology/api'
@@ -11,7 +10,17 @@ import type { Chronology } from '../chronology/types'
 import { listEntityTypeGroups, listEntityTypes } from '../lore/api'
 import type { EntityType, EntityTypeGroup } from '../lore/types'
 import { getUniverse } from '../universes/api'
-import { FRONT, offered, SECTION_GROUPS, sectionLabel, UPKEEP } from '../universes/sections'
+import {
+  ALL_SECTIONS,
+  FRONT,
+  MANAGEMENT,
+  offered,
+  owns,
+  SECTION_GROUPS,
+  sectionLabel,
+  WORLD_BUILDING,
+  type Section,
+} from '../universes/sections'
 import { capabilitiesOf, roleLabel, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -21,8 +30,26 @@ import type { UniverseDetail } from '../universes/types'
 import { artworkUrl } from '../publishing/api'
 import type { UniverseArtworkRef } from '../publishing/types'
 import { EmptyState } from '../components/EmptyState'
+import { ProjectsNav } from '../components/ProjectsNav'
 
-const SECTIONS = SECTION_GROUPS.flat()
+const SECTIONS = ALL_SECTIONS
+
+/** A labelled group's dictionary key; the front page alone carries no label (#191). */
+function groupKey(first: Section) {
+  if (WORLD_BUILDING.includes(first)) return 'worldBuilding'
+  if (MANAGEMENT.includes(first)) return 'management'
+  return null
+}
+
+/** A group's name, drawn as a heading so a screen reader reads it as the group's name and can jump between them. */
+function GroupLabel({ id, label }: { id: string; label: string }) {
+  return (
+    // The small muted capitals the type switcher already uses for its row labels; no new style (#191).
+    <h2 className="typeswitch__rowlabel" id={id}>
+      {label}
+    </h2>
+  )
+}
 
 type LoadState =
   | { kind: 'loading' }
@@ -72,7 +99,7 @@ function pathWithin(pathname: string, id: string | undefined) {
  */
 function currentSection(pathname: string, id: string | undefined) {
   const segment = pathWithin(pathname, id).split('/')[0] ?? ''
-  return SECTIONS.find((section) => section.segment === segment) ?? FRONT[0]
+  return SECTIONS.find((section) => owns(section, segment)) ?? FRONT[0]
 }
 
 /** One workspace per universe: another universe's address starts a new one, so nothing read for the last carries over. */
@@ -276,7 +303,7 @@ function Workspace() {
             refreshTypes().catch(() => undefined)
           }}
         >
-          Try again
+          {t('workspace.missing.tryAgain')}
         </button>
       </div>
     )
@@ -403,38 +430,60 @@ function Workspace() {
         </div>
 
         <ul className="sidebar__nav">
-          {groups.map((group) => (
-            <li
-              className={
-                UPKEEP.includes(group[0])
-                  ? 'sidebar__group sidebar__group--upkeep'
-                  : 'sidebar__group'
-              }
-              key={group[0].segment}
-              data-testid={UPKEEP.includes(group[0]) ? 'sidebar-upkeep' : undefined}
-            >
-              <ul className="sidebar__links">
-                {group.map((section) => (
-                  <li key={section.segment}>
-                    <NavLink
-                      to={section.segment === '' ? '.' : section.segment}
-                      end={section.segment === ''}
-                      className="sidebar__link"
-                      data-testid={section.testId}
-                    >
-                      <section.icon
-                        className="sidebar__icon"
-                        aria-hidden="true"
-                        focusable="false"
-                        strokeWidth={1.75}
-                      />
-                      {sectionLabel(section)}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
+          {/*
+           * The universe's own sections, then this universe's projects, and management last - set apart at the foot,
+           * as upkeep was before the projects group existed. Projects is drawn by its own component because, unlike a section, its rows
+           * are read from the API and each one expands.
+           */}
+          {groups.map((group) => {
+            const key = groupKey(group[0])
+            const isManagement = key === 'management'
+            const labelId = key ? `sidebar-group-${key}` : undefined
+            return (
+              <Fragment key={`group-${group[0].segment}`}>
+                {isManagement && id ? <ProjectsLabelled universeId={id} /> : null}
+                <li
+                  className={
+                    isManagement ? 'sidebar__group sidebar__group--upkeep' : 'sidebar__group'
+                  }
+                  data-testid={
+                    isManagement ? 'sidebar-upkeep' : key ? 'sidebar-world-building' : undefined
+                  }
+                >
+                  {key && labelId ? (
+                    <GroupLabel id={labelId} label={t(`workspace.rail.groups.${key}`)} />
+                  ) : null}
+                  <ul className="sidebar__links" aria-labelledby={labelId}>
+                    {group.map((each) => (
+                      <li key={each.segment}>
+                        {/* A Link rather than a NavLink: which section is current is this component's answer, not a
+                            path match, because World Logic is still the current section at a world rule's own address
+                            (#152). The style keys off aria-current either way. */}
+                        <Link
+                          to={each.segment === '' ? '.' : each.segment}
+                          className="sidebar__link"
+                          aria-current={section.testId === each.testId ? 'page' : undefined}
+                          data-testid={each.testId}
+                        >
+                          <each.icon
+                            className="sidebar__icon"
+                            aria-hidden="true"
+                            focusable="false"
+                            strokeWidth={1.75}
+                          />
+                          {sectionLabel(each)}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              </Fragment>
+            )
+          })}
+          {/* A role with no management section at all still gets the projects group, at the foot. */}
+          {!groups.some((group) => MANAGEMENT.includes(group[0])) && id ? (
+            <ProjectsLabelled universeId={id} />
+          ) : null}
         </ul>
       </nav>
 
@@ -455,17 +504,10 @@ function Workspace() {
 
         {/* The universe's search, above every screen in it rather than on any one of them. Keyed by the universe, so a
             search typed in one world is never left standing in the next. Search was the sidebar's last greyed section;
-            it is not a section, it is how any section's content is reached. The assistant sits beside it for the same
-            reason, keyed the same way so one world's conversation never follows the author into the next (ADR 0045). */}
+            it is not a section, it is how any section's content is reached. The web assistant stood beside it until M4
+            (issue #157) retired it; AI reaches a universe over MCP now (ADR 0046). */}
         <div className="workspace__top" key={universe.id}>
           <UniverseSearch universeId={universe.id} />
-          {universe.aiHelp ? (
-            <UniverseAssistant
-              universeId={universe.id}
-              universeName={universe.name}
-              canPropose={access.suggestChanges}
-            />
-          ) : null}
         </div>
 
         <main className="canvas" id={MAIN_CONTENT_ID} tabIndex={-1}>
@@ -493,4 +535,12 @@ function Workspace() {
       </div>
     </div>
   )
+}
+
+/**
+ * The projects group under its label. The label is drawn by `ProjectsNav` itself since #198, because there it is the
+ * button that folds the group; it reads the same as the section groups' labels around it (#191).
+ */
+function ProjectsLabelled({ universeId }: { universeId: string }) {
+  return <ProjectsNav universeId={universeId} />
 }

@@ -105,6 +105,35 @@ public sealed class BackupInventoryTests
 
         // Only the dismissals: the author's judgement, which nothing re-derives (ADR 0014).
         "CanonConflicts",
+
+        // The universe's projects. #171 made every project belong to exactly one universe, which deletes them with
+        // it, and #143 lets an entry type be scoped to one of them, so a universe is not whole without them.
+        "CreativeProjects",
+
+        // A project's seasons and the episodes in them, with their scripts (#145).
+        "ProjectSeasons",
+        "ProjectEpisodes",
+
+        // A comic chapter's pages and the panels on them (#147).
+        "ProjectPages",
+        "ProjectPanels",
+
+        // World Logic (#150, ADR 0072): the universe's Systems and reusable rule definitions, the links between
+        // them, the declared dependencies and both sets of saved states. All authored, so all carried; the ids
+        // inside a stored condition are translated on restore like any other reference.
+        "LoreSystems",
+        "LoreSystemRevisions",
+        "LoreSystemRules",
+        "SystemRules",
+        "SystemRuleRevisions",
+        "SystemRuleDependencies",
+
+        // Only the dismissals, exactly as a Canon conflict carries only its own (#153, ADR 0072): a finding is
+        // derived from the lore and the whole table regenerates by sweeping again, while the author's decision to
+        // live with one is not derived. The evidence comes with a carried dismissal, because the fingerprint that
+        // re-applies it is a hash of those ids.
+        "WorldLogicFindings",
+        "WorldLogicFindingEvidence",
     ];
 
     /// <summary>Not in the archive because LorEvolve produces it again from what is.</summary>
@@ -123,7 +152,6 @@ public sealed class BackupInventoryTests
         ("AspNetUsers", "identity tables are not the world (ADR 0014)"),
         ("FeedbackReports", "bug reports and feature requests sent to the Admin, not the world"),
         ("UniverseAiHelpOff", "a workspace display preference; a restored universe starts with AI help on"),
-
         ("AspNetRoles", "identity tables are not the world (ADR 0014)"),
         ("AspNetRoleClaims", "identity tables are not the world (ADR 0014)"),
         ("AspNetUserClaims", "identity tables are not the world (ADR 0014)"),
@@ -138,6 +166,14 @@ public sealed class BackupInventoryTests
         ("CommentThreads", "private collaboration metadata about accounts (ADR 0041)"),
         ("Comments", "private collaboration metadata about accounts (ADR 0041)"),
         ("SuggestedChanges", "private review metadata about accounts (ADR 0044)"),
+        ("WorldLogicFindingEvents", "private review metadata about accounts (ADR 0041); a restored dismissal gets one entry of its own"),
+
+        // What a connected AI client claimed and what the author decided about it (#154): review state about an
+        // account and a connection, exactly as an AI change proposal is, and never the world. A claim resolves
+        // either into a change the author approves through propose_changes - which the archive then carries as the
+        // lore it became - or into a dismissal of something no backup should preserve as if it were canon.
+        ("SemanticFindings", "review state about accounts and connections (ADR 0046, ADR 0047); a claim is not the world"),
+        ("SemanticFindingCitations", "what a submitted claim cited, and it goes with the claim"),
         ("AiChangeProposals", "review state about accounts and connections (ADR 0047)"),
         ("AiChangeOperations", "review state about accounts and connections (ADR 0047)"),
         ("AiChangeMedia", "quarantined pictures of pending AI changes (ADR 0062)"),

@@ -17,12 +17,12 @@ ADR 0061 hold the decisions.
 - Backup 35: maps, pins and scales travel with the originals; a restore keeps a waiting pin waiting and refits the display
   copy; version 33 and 34 files restore without maps and without scales; a pin off the map, for an unknown entry, a wrong
   picture size, a missing original and a bad scale are refused.
-- Geography: distances only on one calibrated map with confirmed pins, honestly rounded, the same through the assistant
+- Geography: distances only on one calibrated map with confirmed pins, honestly rounded, the same through every caller
   and MCP; different maps and uncalibrated maps say why; locations are pins only; ambiguous and trashed names refused;
   the four tools read-only.
 - Browser: upload, place with the pointer and by typed position, link to an entry, pin to entry and back, reload, zoom and
-  fit by keyboard, Tab to a pin, the scale typed and shown, the Fake assistant's "Where is" from pins and its "no map
-  location", replacement with review, a 390px column with no sideways scroll.
+  fit by keyboard, Tab to a pin, the scale typed and shown,
+  replacement with review, a 390px column with no sideways scroll.
 
 ## By hand on DEV
 
@@ -43,13 +43,15 @@ Signed in as the owner of a universe with a few Lore entries. Tick each.
    style, Edit > Save confirms one; the scale is gone. Replace again with Remove: no pins.
 7. **Calibrate.** Set the scale: press two points you know the distance between, type it and a unit of your world
    ("leagues", "days' ride"); the dashed line and the words appear. Set again with different points: the words change.
-8. **Ask the assistant** (Groq on DEV): "Where is <an entry on a map>?" - names the map, with a source link that opens the
-   map on the pin. "Where is <an entry on no map>?" - says it is on no map, invents nothing. "Where is <a kingdom>'s
-   capital?" - only when a relationship or field records the capital; otherwise it asks or says none is recorded. "How
-   far is A from B?" - a number only when both are on one calibrated map, said as approximate and straight-line; on an
-   uncalibrated map it says a real distance cannot be measured; across two maps it refuses.
-9. **MCP** (Claude or ChatGPT connected to the universe): `list_maps`, `get_map_location` by name and by id,
-   `search_map_locations`, `measure_map_distance` - the same answers as the assistant; a disconnected app gets nothing.
+8. **Ask a connected AI app** (M4 retired the built-in assistant, so this is the only way to ask): "Where is <an entry
+   on a map>?" - names the map, with a source link that opens the map on the pin. "Where is <an entry on no map>?" -
+   says it is on no map, invents nothing. "Where is <a kingdom>'s capital?" - only when a relationship or field records
+   the capital; otherwise it asks or says none is recorded. "How far is A from B?" - a straight-line distance in your
+   unit on a calibrated map; on an uncalibrated map it says a real distance cannot be measured; across two maps it
+   refuses.
+9. **The tools behind those answers** (Claude or ChatGPT connected to the universe): `list_maps`, `get_map_location` by
+   name and by id, `search_map_locations`, `measure_map_distance` - the numbers and the refusals above come from these;
+   a disconnected app gets nothing.
 10. **Export and restore.** Settings > Backup; restore it as a new universe: the maps, pins, links and scale are there, the
     waiting pin still waits.
 11. **Delete.** ⋯ > Delete map: the dialog names the pin count; the entry's Maps block no longer lists it; Storage shrank.

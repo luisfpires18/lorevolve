@@ -68,6 +68,22 @@ public sealed class EntityType
 
     public Guid UniverseId { get; set; }
 
+    /// <summary>
+    /// The project this type belongs to, or null for a universe's own lore type (#143).
+    ///
+    /// <para>A type is scoped to exactly one of the two: null means it is part of the world's lore, and a value means
+    /// it describes something in one project of <see cref="UniverseId"/> and has no place in the lore. The universe is
+    /// required either way, because every project belongs to exactly one universe (#171), so a project type is always
+    /// inside the same universe as the project that owns it.</para>
+    ///
+    /// <para><b>Lore never sees a project's types.</b> That is enforced by a query filter on this entity rather than
+    /// by a condition repeated at every read, because there are thirty reads of <c>EntityTypes</c> across twelve
+    /// features and one forgotten condition would put a project's types into the lore list, a backup or an AI
+    /// proposal. Code that means to see project types says so with <c>IgnoreQueryFilters()</c>, which is greppable;
+    /// code that forgets cannot leak.</para>
+    /// </summary>
+    public Guid? ProjectId { get; set; }
+
     public Universe? Universe { get; set; }
 
     public required string Name { get; set; }
@@ -121,7 +137,7 @@ public sealed class EntityType
 /// <summary>
 /// An optional, author-named section of one type's fields (Issue #26), such as "Combat" or "Politics". Presentation only: it
 /// changes where a field is shown in a form and on an entry, never the field's id, values, required check, target, filters,
-/// Canon reading or anything the API, MCP or the assistant answers about an entry. A type with none shows its fields as one
+/// Canon reading or anything the API or MCP answers about an entry. A type with none shows its fields as one
 /// list. Fields in no section are shown first, with no heading.
 /// </summary>
 public sealed class EntityFieldSection
@@ -295,6 +311,34 @@ public sealed class LoreEntity : Publishing.IPublishable
     public Guid UniverseId { get; set; }
 
     public Universe? Universe { get; set; }
+
+    /// <summary>
+    /// The project this entry belongs to, or null when it is one of the universe's own lore entries. The same scoping
+    /// <see cref="EntityType.ProjectId"/> gives a type (#143), one level down: a project's entry is of one of that
+    /// project's types, and a lore entry is of a lore type.
+    ///
+    /// Isolation is a global query filter rather than a condition at each read, for the reason the type's is: there are
+    /// seventy-five reads of <c>db.Entities</c> across twenty-two features, and a forgotten one would put a game's units
+    /// into the world's lore, a universe backup or an AI proposal with nothing announcing it. Code that means to see a
+    /// project's entries says <c>IgnoreQueryFilters</c>, which is greppable. The pair of filters is also what lets EF
+    /// keep the required relationship to <see cref="EntityType"/> honest: both ends are filtered the same way, so a
+    /// filtered-out type can never leave a visible entry pointing at nothing.
+    /// </summary>
+    public Guid? ProjectId { get; set; }
+
+    /// <summary>
+    /// The universe's lore entry this project entry stands for, or null. A game's "Alenna Vance" unit may point at the
+    /// character in the lore, and a map at the city it is set in; the link is **optional on purpose** (#144), because a
+    /// game or a film may be made in a universe that holds almost no worldbuilding, and the lore must never become a
+    /// precondition for working on a project.
+    ///
+    /// Only ever a lore entry of the project's own universe, which the route checks, and only ever on a project entry:
+    /// a lore entry does not point at another. Not a foreign key, for the reason <see cref="EntityType.ParentId"/> is
+    /// not one: SQLite would add one only by rebuilding the table, which would drop this table's search trigger.
+    /// Deleting a lore entry a project entry still names is refused by a trigger rather than quietly unlinking an
+    /// author's reference.
+    /// </summary>
+    public Guid? CanonEntityId { get; set; }
 
     public Guid EntityTypeId { get; set; }
 

@@ -368,7 +368,7 @@ public static partial class AiChangeMediaEndpoints
         Results.ValidationProblem(new Dictionary<string, string[]> { [ImagePreparation.FileField] = [message] });
 
     private static IResult Unavailable(MediaStorageException exception) =>
-        Results.Problem(title: "Image storage is unavailable.", detail: exception.Message, statusCode: StatusCodes.Status503ServiceUnavailable);
+        MediaProblem.Unavailable(exception);
 
     private static string Megabytes(long bytes) => (bytes / (1024.0 * 1024.0)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 }

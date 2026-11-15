@@ -1,4 +1,5 @@
 import { useOutletContext } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { CalendarEditor } from '../components/CalendarEditor'
 import { ChronologyEditor } from '../components/ChronologyEditor'
 import { EmptyState } from '../components/EmptyState'
@@ -42,18 +43,20 @@ export default function ChronologyPage() {
 }
 
 function ChronologyReading({ chronology }: { chronology: Chronology }) {
+  const { t, tn, tx } = useI18n()
+
   return (
     <>
       <PageHeader
-        title="Chronology"
-        lede={<p>How dates are written and ordered in this universe.</p>}
+        title={t('time.chronology.reading.title')}
+        lede={<p>{t('time.chronology.reading.lede')}</p>}
       />
       <section className="chronology" aria-labelledby="chronology-reading-heading">
         <h2 className="settings__heading" id="chronology-reading-heading">
-          Date periods
+          {t('time.chronology.reading.periods')}
         </h2>
         {chronology.eras.length === 0 ? (
-          <EmptyState testId="chronology-empty" title="This universe uses plain numbered years." />
+          <EmptyState testId="chronology-empty" title={t('time.chronology.reading.plain')} />
         ) : (
           <ol className="eras eras--reading" data-testid="eras-reading">
             {chronology.eras.map((era, index) => {
@@ -70,9 +73,12 @@ function ChronologyReading({ chronology }: { chronology: Chronology }) {
                       <bdi>{era.name}</bdi>
                     </p>
                     <p className="field__hint">
-                      Years count{' '}
-                      {era.direction === EraDirection.Descending ? 'down to 1' : 'up from 1'} ·
-                      written <bdi>{sample}</bdi>
+                      {tx(
+                        era.direction === EraDirection.Descending
+                          ? 'time.chronology.reading.countsDown'
+                          : 'time.chronology.reading.countsUp',
+                        { sample: <bdi>{sample}</bdi> },
+                      )}
                     </p>
                   </div>
                 </li>
@@ -83,7 +89,7 @@ function ChronologyReading({ chronology }: { chronology: Chronology }) {
       </section>
       <section className="chronology calendar" aria-labelledby="calendar-reading-heading">
         <h2 className="settings__heading" id="calendar-reading-heading">
-          Calendar
+          {t('time.chronology.reading.calendar')}
         </h2>
         {chronology.calendar ? (
           <ol className="months months--reading" data-testid="months-reading">
@@ -94,14 +100,14 @@ function ChronologyReading({ chronology }: { chronology: Chronology }) {
                 </span>
                 <bdi className="month__readname">{month.name}</bdi>
                 <span className="month__use">
-                  {month.dayCount === 1 ? '1 day' : `${month.dayCount} days`}
+                  {tn('time.chronology.reading.days', month.dayCount, { n: month.dayCount })}
                 </span>
               </li>
             ))}
           </ol>
         ) : (
           <p className="settings__note" data-testid="calendar-note">
-            Simple dates: months 1 to 12, days 1 to 31.
+            {t('time.chronology.reading.simple')}
           </p>
         )}
       </section>

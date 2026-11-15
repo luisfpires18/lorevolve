@@ -61,3 +61,13 @@ test('a group may hold a message called other without becoming a plural', () => 
   assert.equal(translate(groups, groups, 'kinds.other'), 'Other')
   assert.equal(translate(groups, groups, 'kinds.audio'), 'Audio')
 })
+
+test('a plural may take its count as its own placeholder, ungrouped', () => {
+  const raw = { edits: { one: '{n} edit', other: '{n} edits' } }
+  // What every `tn(key, count, { n: count })` call site relies on: `{count}` is filled with the
+  // formatted number, and any var passed by the caller is filled as given.
+  assert.equal(translatePlural('en', raw, raw, 'edits', 1234, { n: 1234 }), '1234 edits')
+  assert.equal(translatePlural('en', raw, raw, 'edits', 1, { n: 1 }), '1 edit')
+  // Without the override the placeholder is left visible, rather than silently dropped.
+  assert.equal(translatePlural('en', raw, raw, 'edits', 2), '{n} edits')
+})

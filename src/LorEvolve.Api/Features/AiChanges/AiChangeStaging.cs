@@ -11,7 +11,7 @@ namespace LorEvolve.Api.Features.AiChanges;
 
 /// <summary>
 /// Where a submission came from, as the server knows it: never anything the AI said about itself. <paramref name="SchemaAllowed"/>:
-/// this entry point may stage schema definitions (ADR 0062) - the assistant, asked by a signed-in person in propose mode, or an MCP
+/// this entry point may stage schema definitions (ADR 0062) - an MCP
 /// connection the person explicitly allowed to propose schema.
 /// </summary>
 internal sealed record AiChangeOrigin(AiChangeSource Source, Guid? McpConnectionId = null, string? ClientName = null, bool SchemaAllowed = false);
@@ -254,6 +254,7 @@ internal static partial class AiChangeStaging
         "article" => AiChangeResource.Article,
         "plot_arc" or "arc" => AiChangeResource.PlotArc,
         "world_rule" or "rule" => AiChangeResource.WorldRule,
+        "project_entry" or "project_entity" => AiChangeResource.ProjectEntry,
         "idea" => AiChangeResource.Idea,
         "lore_type" or "type" => AiChangeResource.LoreType,
         "lore_field" or "field" or "field_definition" => AiChangeResource.LoreField,
@@ -304,6 +305,7 @@ internal static partial class AiChangeStaging
                 (AiChangeResource.Article, _) => await ArticleAsync(cancellationToken),
                 (AiChangeResource.PlotArc, _) => await PlotArcAsync(cancellationToken),
                 (AiChangeResource.WorldRule, _) => await WorldRuleAsync(cancellationToken),
+                (AiChangeResource.ProjectEntry, _) => await ProjectEntryAsync(cancellationToken),
                 (AiChangeResource.Idea, _) => await IdeaAsync(cancellationToken),
                 (AiChangeResource.LoreType, _) => await LoreTypeAsync(cancellationToken),
                 (AiChangeResource.LoreField, _) => await LoreFieldAsync(cancellationToken),

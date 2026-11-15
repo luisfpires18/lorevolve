@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "scenario": "ley-lines",
+  "description": "An unrelated magic system where a practitioner draws on a line through an anchor. Covers relation traversal, nested AND inside OR, and an unknown arriving from a missing attribute rather than from an absent row.",
+  "facts": {
+    "subjects": [
+      { "id": "s.adept", "type": "practitioner", "attributes": { "attuned": true, "depth": 3 } },
+      { "id": "s.novice", "type": "practitioner", "attributes": { "attuned": false, "depth": 1 } },
+      { "id": "s.stranger", "type": "practitioner", "attributes": { "depth": 5 } },
+      { "id": "s.anchor-north", "type": "anchor", "attributes": { "intact": true } },
+      { "id": "s.anchor-south", "type": "anchor", "attributes": { "intact": false } },
+      { "id": "s.line-amber", "type": "line", "attributes": { "depth": 3 } }
+    ],
+    "relations": [
+      { "type": "boundTo", "fromId": "s.adept", "toId": "s.anchor-north" },
+      { "type": "boundTo", "fromId": "s.novice", "toId": "s.anchor-south" },
+      { "type": "boundTo", "fromId": "s.stranger", "toId": "s.anchor-north" },
+      { "type": "carries", "fromId": "s.anchor-north", "toId": "s.line-amber" }
+    ],
+    "events": []
+  },
+  "rules": [
+    {
+      "id": "rule.draw-requires-attunement-or-depth",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          {
+            "kind": "all",
+            "of": [
+              { "kind": "compare", "left": { "attribute": "attuned", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": true, "type": "boolean" } },
+              { "kind": "related", "relation": "boundTo", "from": { "subject": "self" }, "to": { "subject": "s.anchor-north" } }
+            ]
+          },
+          { "kind": "compare", "left": { "attribute": "depth", "of": { "subject": "self" } }, "op": "gte", "right": { "literal": 5, "type": "number" } }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.anchor-must-be-intact",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "compare",
+        "left": { "attribute": "intact", "of": { "subject": "self" } },
+        "op": "eq",
+        "right": { "literal": true, "type": "boolean" }
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.no-anchor-is-no-rule",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "not",
+        "of": {
+          "kind": "exists",
+          "query": {
+            "from": "relations",
+            "where": [
+              { "field": "type", "op": "eq", "value": "boundTo", "type": "text" },
+              { "field": "toId", "op": "eq", "value": "s.anchor-south", "type": "reference" }
+            ]
+          }
+        }
+      },
+      "exceptions": []
+    }
+  ],
+  "cases": [
+    {
+      "name": "an attuned practitioner bound to the northern anchor satisfies the first branch",
+      "ruleId": "rule.draw-requires-attunement-or-depth",
+      "target": "s.adept",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.adept", "s.anchor-north"] }
+    },
+    {
+      "name": "a practitioner who is neither attuned nor deep enough is a proven violation",
+      "ruleId": "rule.draw-requires-attunement-or-depth",
+      "target": "s.novice",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.novice"] }
+    },
+    {
+      "name": "a missing attunement attribute does not sink an OR whose other branch is true",
+      "ruleId": "rule.draw-requires-attunement-or-depth",
+      "target": "s.stranger",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.stranger"] }
+    },
+    {
+      "name": "a broken anchor is a proven violation",
+      "ruleId": "rule.anchor-must-be-intact",
+      "target": "s.anchor-south",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.anchor-south"] }
+    },
+    {
+      "name": "a line has no intact attribute, so the anchor rule is unknown over it",
+      "ruleId": "rule.anchor-must-be-intact",
+      "target": "s.line-amber",
+      "projectId": null,
+      "expect": { "outcome": "unknown", "errorCode": null, "exemptionId": null, "evidence": ["s.line-amber"] }
+    },
+    {
+      "name": "a target that does not exist leaves self missing and the rule unknown",
+      "ruleId": "rule.anchor-must-be-intact",
+      "target": "s.absent",
+      "projectId": null,
+      "expect": { "outcome": "unknown", "errorCode": null, "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "exists over a present source answers definitely even when the rule needs no target",
+      "ruleId": "rule.no-anchor-is-no-rule",
+      "target": null,
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": [] }
+    }
+  ]
+}

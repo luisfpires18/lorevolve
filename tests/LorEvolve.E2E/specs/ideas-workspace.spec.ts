@@ -242,9 +242,9 @@ test.describe('ideas workspace', () => {
 
     await page.goto(storyPath)
     const views = page.getByRole('navigation', { name: 'Story views' })
-    await expect(views.getByRole('link')).toHaveText(['Scenes', 'Manuscript', 'Ideas'])
+    await expect(views.getByRole('link')).toHaveText(['Structure', 'Manuscript', 'Ideas'])
     await views.getByRole('link', { name: 'Ideas' }).click()
-    await page.waitForURL(`${storyPath}/ideas`)
+    await page.waitForURL(`${storyPath.replace('/stories/', '/projects/')}/ideas`)
     await expect(views.getByRole('link', { name: 'Ideas' })).toHaveAttribute('aria-current', 'page')
     await expect(page.getByTestId('story-title')).toHaveText('The Long Winter')
     await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this story yet.')
@@ -266,7 +266,7 @@ test.describe('ideas workspace', () => {
     await expect(reference).toContainText('Story')
 
     await page.goBack()
-    await page.waitForURL(`${storyPath}/ideas`)
+    await page.waitForURL(`${storyPath.replace('/stories/', '/projects/')}/ideas`)
     await expect(row(page, 'What if the council already knows?')).toBeVisible()
     await expect(page.getByTestId('story-title')).toHaveText('The Long Winter')
   })
@@ -311,7 +311,7 @@ test.describe('ideas workspace', () => {
       ])
     }
     await seedIdea(page, 'Ember thought', universeId, [{ kind: Kind.Story, id: storyId }])
-    const ideasPath = `/app/universes/${universeId}/stories/${storyId}/ideas`
+    const ideasPath = `/app/universes/${universeId}/projects/${storyId}/ideas`
 
     await page.goto(ideasPath)
     await expect(rows(page)).toHaveCount(20)
@@ -350,7 +350,7 @@ test.describe('ideas workspace', () => {
     ])
     expect((await page.request.delete(`/api/ideas/${id}`)).status()).toBe(204)
 
-    const ideasPath = `/app/universes/${universeId}/stories/${storyId}/ideas`
+    const ideasPath = `/app/universes/${universeId}/projects/${storyId}/ideas`
     await page.goto(ideasPath)
     await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this story yet.')
 
@@ -394,7 +394,7 @@ test.describe('ideas workspace', () => {
     const storyPath = `/app/universes/${universeId}/stories/${storyId}`
     await editor.page.goto(storyPath)
     const views = editor.page.getByRole('navigation', { name: 'Story views' })
-    await expect(views.getByRole('link')).toHaveText(['Scenes', 'Manuscript'])
+    await expect(views.getByRole('link')).toHaveText(['Structure', 'Manuscript'])
 
     // By address, the view says it is not theirs, and asks for nothing.
     let asked = false
@@ -413,6 +413,51 @@ test.describe('ideas workspace', () => {
 
     await owner.context.close()
     await editor.context.close()
+  })
+
+  test('a project’s Ideas: captured on the project, listed there only, and kept through an editor save', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const { universeId } = await seedWorld(page)
+    const project = {
+      name: 'Salt Road',
+      kind: 1,
+      lifecycle: 1,
+      subtype: null,
+      summary: '',
+      universeId,
+    }
+    const projectId = await post(page, '/api/projects', project)
+    const otherId = await post(page, '/api/projects', { ...project, name: 'Other' })
+    const projectPath = `/app/universes/${universeId}/projects/${projectId}`
+
+    await page.goto(`${projectPath}/ideas`)
+    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this project yet.')
+
+    await capture(page, 'A boss on the bridge')
+    await expect(row(page, 'A boss on the bridge')).toBeVisible()
+
+    // Another project of the same universe does not list it; the universe's ideas do.
+    await page.goto(`/app/universes/${universeId}/projects/${otherId}/ideas`)
+    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this project yet.')
+    await page.goto(`/app/universes/${universeId}/ideas`)
+    await expect(row(page, 'A boss on the bridge')).toBeVisible()
+
+    // A save in the editor keeps the idea on its project.
+    await page.goto(`${projectPath}/ideas`)
+    await row(page, 'A boss on the bridge').getByTestId('idea-open').click()
+    await page.waitForURL(new RegExp(`/app/universes/${universeId}/ideas/[0-9a-f-]+$`))
+    const ideaId = page.url().split('/').pop()!
+    await page.getByTestId('idea-body').fill('Two phases.')
+    await page.getByTestId('idea-save').click()
+    await expect
+      .poll(async () => {
+        const response = await page.request.get(`/api/ideas/${ideaId}`)
+        const saved = (await response.json()) as { body: string; project: { id: string } | null }
+        return [saved.body, saved.project?.id ?? null]
+      })
+      .toEqual(['Two phases.', projectId])
   })
 
   for (const width of [390, 360]) {

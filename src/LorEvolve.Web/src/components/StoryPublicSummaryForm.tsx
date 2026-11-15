@@ -3,6 +3,7 @@ import { ApiError } from '../lib/api'
 import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { saveStoryPublicSummary } from '../publishing/api'
+import { useI18n } from '../i18n'
 import { PUBLIC_SUMMARY_MAX, type ContentPublicationState } from '../publishing/types'
 
 /**
@@ -25,6 +26,7 @@ export function StoryPublicSummaryForm({
   onClose: () => void
   onSaved: (state: ContentPublicationState) => void
 }) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const field = useRef<HTMLTextAreaElement>(null)
   const [draft, setDraft] = useState(summary ?? '')
@@ -34,7 +36,7 @@ export function StoryPublicSummaryForm({
   const isDirty = draft.trim() !== (summary ?? '').trim()
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
-    'The public summary has unsaved changes. Leave without saving them?',
+    t('stories.summaryForm.leaveUnsaved'),
     onClose,
   )
 
@@ -54,7 +56,7 @@ export function StoryPublicSummaryForm({
       setError(
         failure instanceof ApiError
           ? (failure.fieldErrors.publicSummary ?? failure.message)
-          : 'The public summary could not be saved.',
+          : t('stories.summaryForm.failedSave'),
       )
     } finally {
       setIsSaving(false)
@@ -77,7 +79,7 @@ export function StoryPublicSummaryForm({
         }}
       >
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Publishing</p>
+          <p className="drawer__eyebrow">{t('stories.summaryForm.eyebrow')}</p>
           <h2 className="drawer__title" id="story-public-summary-heading">
             <bdi>{title}</bdi>
           </h2>
@@ -92,10 +94,10 @@ export function StoryPublicSummaryForm({
 
           <div className="field">
             <label className="field__label" htmlFor="story-public-summary">
-              Public summary
+              {t('stories.summaryForm.label')}
             </label>
             <p className="field__hint" id="story-public-summary-hint">
-              Shown to readers on the public portal. Your premise stays private.
+              {t('stories.summaryForm.hint')}
             </p>
             <textarea
               id="story-public-summary"
@@ -111,7 +113,10 @@ export function StoryPublicSummaryForm({
               data-testid="story-public-summary-input"
             />
             <p className="field__hint" id="story-public-summary-count">
-              {draft.trim().length} of {PUBLIC_SUMMARY_MAX} characters
+              {t('stories.summaryForm.count', {
+                count: draft.trim().length,
+                max: PUBLIC_SUMMARY_MAX,
+              })}
             </p>
           </div>
         </div>
@@ -123,7 +128,7 @@ export function StoryPublicSummaryForm({
             disabled={isSaving}
             data-testid="save-story-public-summary"
           >
-            {isSaving ? 'Saving' : 'Save public summary'}
+            {isSaving ? t('stories.summaryForm.saving') : t('stories.summaryForm.save')}
           </button>
           <button
             className="button button--secondary"
@@ -131,7 +136,7 @@ export function StoryPublicSummaryForm({
             onClick={close}
             data-testid="cancel-story-public-summary"
           >
-            Cancel
+            {t('stories.summaryForm.cancel')}
           </button>
         </footer>
       </form>

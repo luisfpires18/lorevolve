@@ -17,6 +17,7 @@ import { RouteFocus, SkipLink } from './components/SkipLink'
 import { WorkspaceLayout } from './components/WorkspaceLayout'
 import { useI18n } from './i18n'
 import { HistoryLeaveGuard } from './lib/leaveGuard'
+import { StoryRedirect } from './components/StoryRedirect'
 import { ProfileImageProvider } from './profile/ProfileImageProvider'
 import UniverseOverview from './pages/UniverseOverview'
 import UniverseWorkspace from './pages/UniverseWorkspace'
@@ -42,6 +43,8 @@ import {
   MapsPage,
   MassCreatePage,
   ProfilePage,
+  ProjectPage,
+  ProjectsPage,
   PublicAuthorPage,
   PublicLorePage,
   PublicStoryPage,
@@ -49,13 +52,13 @@ import {
   RegisterPage,
   ResetPasswordPage,
   StoriesPage,
-  StoryPage,
   TimelinePage,
   UniversePublish,
   UniverseSettings,
   UniverseTrash,
   UniverseTypes,
   UniversesPage,
+  WorldLogicPage,
   WorldRulePage,
   WorldRulesPage,
 } from './screens'
@@ -166,6 +169,15 @@ function Root() {
             <Route element={<WorkspaceLayout />}>
               <Route path="/app" element={asSection('universes', <UniversesPage />)} />
               <Route path="/app/profile" element={asSection('profile', <ProfilePage />)} />
+              <Route path="/app/projects" element={asSection('projects', <ProjectsPage />)} />
+              <Route
+                path="/app/projects/new"
+                element={asSection('project', <ProjectPage isNew />)}
+              />
+              <Route
+                path="/app/projects/:projectId/*"
+                element={asSection('project', <ProjectPage />)}
+              />
               <Route path="/app/ideas" element={asSection('ideas', <IdeasPage />)} />
               <Route path="/app/ai-changes" element={asSection('ai-changes', <AiChangesPage />)} />
               <Route path="/app/ideas/new" element={asSection('idea', <IdeaPage isNew />)} />
@@ -245,8 +257,18 @@ function Root() {
                 element={asSection('family-tree', <FamilyTreePage />)}
               />
               <Route path="timeline" element={asSection('timeline', <TimelinePage />)} />
+              <Route path="world-logic" element={asSection('world-logic', <WorldLogicPage />)} />
+              {/* Every world rule address still works, so nothing an author linked or bookmarked broke (#152). */}
               <Route path="world-rules" element={asSection('world-rules', <WorldRulesPage />)} />
-              <Route path="chronology" element={asSection('chronology', <ChronologyPage />)} />
+              {/* Chronology is Timeline's configuration view (#200); its old address still resolves, by redirect. */}
+              <Route
+                path="timeline/configuration"
+                element={asSection('chronology', <ChronologyPage />)}
+              />
+              <Route
+                path="chronology"
+                element={<Navigate to="../timeline/configuration" relative="path" replace />}
+              />
               <Route
                 path="world-rules/new"
                 element={asSection(
@@ -265,24 +287,42 @@ function Root() {
                   </RoleGate>,
                 )}
               />
+              <Route path="projects" element={asSection('projects', <ProjectsPage inUniverse />)} />
+              <Route
+                path="projects/:projectId/*"
+                element={asSection('project', <ProjectPage inUniverse />)}
+              />
+              {/*
+               * A Story shown as a Writing Project opens its project shell like any other kind, and the shell renders
+               * the story's own page, which reads `storyId` and `sceneId` from the address (#194). These three routes
+               * carry those names; any other project reached through one reads it as that view. Every element below is
+               * the same `ProjectPage`, so moving between views keeps the page, as the story's own routes did.
+               */}
+              <Route
+                path="projects/:storyId/structure"
+                element={asSection('project', <ProjectPage inUniverse view="structure" />)}
+              />
+              <Route
+                path="projects/:storyId/manuscript/:sceneId?"
+                element={asSection('project', <ProjectPage inUniverse view="manuscript" />)}
+              />
+              <Route
+                path="projects/:storyId/ideas"
+                element={asSection('project', <ProjectPage inUniverse view="ideas" />)}
+              />
               <Route path="stories" element={asSection('stories', <StoriesPage />)} />
-              <Route
-                path="stories/:storyId"
-                element={asSection('story', <StoryPage view="scenes" />)}
-              />
-              {/* The Plot view was retired with plot beats (ADR 0070): an old link lands on the story. */}
-              <Route
-                path="stories/:storyId/plot"
-                element={<Navigate to=".." relative="path" replace />}
-              />
+              {/*
+               * Until #194 a story's pages lived here. Every one of these addresses still resolves, by a redirect to the
+               * story's project views that keeps the scene id, the query and the hash (a `#scene-` link lands on its
+               * scene). The Plot view was retired with plot beats (ADR 0070), so its old link lands on the Structure.
+               */}
+              <Route path="stories/:storyId" element={<StoryRedirect to="structure" />} />
+              <Route path="stories/:storyId/plot" element={<StoryRedirect to="structure" />} />
               <Route
                 path="stories/:storyId/manuscript/:sceneId?"
-                element={asSection('story', <StoryPage view="manuscript" />)}
+                element={<StoryRedirect to="manuscript" />}
               />
-              <Route
-                path="stories/:storyId/ideas"
-                element={asSection('story', <StoryPage view="ideas" />)}
-              />
+              <Route path="stories/:storyId/ideas" element={<StoryRedirect to="ideas" />} />
               <Route
                 path="ideas"
                 element={asSection(

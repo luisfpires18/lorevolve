@@ -16,6 +16,9 @@ namespace LorEvolve.Api.Hosting;
 /// </summary>
 public static class UnhandledFailure
 {
+    /// <summary>Stable marker for a failure nobody wrote a refusal for.</summary>
+    public const string UnexpectedCode = "unexpected_failure";
+
     /// <summary>Outside Development only: Development keeps the developer exception page.</summary>
     public static WebApplication UseLorEvolveUnhandledFailures(this WebApplication app)
     {
@@ -32,6 +35,10 @@ public static class UnhandledFailure
             title: "Something went wrong",
             detail: "LorEvolve could not finish that. Try again in a moment.",
             statusCode: StatusCodes.Status500InternalServerError,
-            extensions: new Dictionary<string, object?> { ["traceId"] = Activity.Current?.Id ?? context.TraceIdentifier })
+            extensions: new Dictionary<string, object?>
+            {
+                ["code"] = UnexpectedCode,
+                ["traceId"] = Activity.Current?.Id ?? context.TraceIdentifier,
+            })
         .ExecuteAsync(context);
 }

@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent } from 'react'
 import { X } from 'lucide-react'
+import { useI18n } from '../i18n'
 
 interface TokenInputProps {
   label: string
@@ -11,6 +12,7 @@ interface TokenInputProps {
 
 /** Comma or Enter commits a token. Used for aliases and tags. */
 export function TokenInput({ label, name, placeholder, values, onChange }: TokenInputProps) {
+  const { t } = useI18n()
   const [draft, setDraft] = useState('')
 
   function commit(raw: string) {
@@ -47,7 +49,7 @@ export function TokenInput({ label, name, placeholder, values, onChange }: Token
             <button
               type="button"
               className="token__remove"
-              aria-label={`Remove ${value}`}
+              aria-label={t('data.tokens.remove', { value })}
               onClick={() => onChange(values.filter((candidate) => candidate !== value))}
             >
               <X aria-hidden="true" focusable="false" size={14} strokeWidth={1.75} />

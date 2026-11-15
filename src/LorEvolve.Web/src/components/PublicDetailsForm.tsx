@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useLeaveGuard } from '../lib/leaveGuard'
@@ -73,6 +74,7 @@ export function PublicDetailsForm({
   onSaved: (next: PublicationState) => void
   onDirtyChange: (dirty: boolean) => void
 }) {
+  const { t } = useI18n()
   const summaryId = useId()
   const summaryHintId = useId()
   const categoryId = useId()
@@ -105,9 +107,7 @@ export function PublicDetailsForm({
   const details = detailsOf(summary, category, genres, attribution)
   const isDirty = !isSaving && payloadKey(details) !== saved
 
-  useLeaveGuard(
-    isDirty ? 'The public details have unsaved changes. Leave without saving them?' : null,
-  )
+  useLeaveGuard(isDirty ? t('universe.publicDetails.leave') : null)
 
   useEffect(() => {
     onDirtyChange(isDirty)
@@ -134,7 +134,7 @@ export function PublicDetailsForm({
     // Said here, beside its field, before a request: the server refuses the same.
     if (details.basedOnExternalWork && !details.originalCreator) {
       setFieldErrors({
-        originalcreator: 'Name the original creator or source this universe is based on.',
+        originalcreator: t('universe.publicDetails.creatorRequired'),
       })
       document.getElementById(creatorId)?.focus()
       return
@@ -163,9 +163,7 @@ export function PublicDetailsForm({
       if (error instanceof ApiError && Object.keys(error.fieldErrors).length > 0) {
         setFieldErrors(error.fieldErrors)
       } else {
-        setMessage(
-          error instanceof Error ? error.message : 'The public details could not be saved.',
-        )
+        setMessage(error instanceof Error ? error.message : t('universe.publicDetails.saveFailed'))
       }
     } finally {
       setIsSaving(false)
@@ -189,7 +187,7 @@ export function PublicDetailsForm({
 
       <div className="field">
         <label className="field__label" htmlFor={summaryId}>
-          Public summary
+          {t('universe.publicDetails.summary')}
         </label>
         <textarea
           id={summaryId}
@@ -206,9 +204,10 @@ export function PublicDetailsForm({
           data-testid="public-summary"
         />
         <p className="field__hint" id={summaryHintId}>
-          A few sentences for the world&rsquo;s card and public page, up to {PUBLIC_SUMMARY_MAX}{' '}
-          characters. The description above is never published. {summary.trim().length}/
-          {PUBLIC_SUMMARY_MAX}
+          {t('universe.publicDetails.summaryHint', {
+            max: PUBLIC_SUMMARY_MAX,
+            length: summary.trim().length,
+          })}
         </p>
         {fieldErrors.publicsummary ? (
           <p className="field__error" role="alert">
@@ -219,7 +218,7 @@ export function PublicDetailsForm({
 
       <div className="field">
         <label className="field__label" htmlFor={categoryId}>
-          Category
+          {t('universe.publicDetails.category')}
         </label>
         <select
           id={categoryId}
@@ -232,7 +231,7 @@ export function PublicDetailsForm({
           }}
           data-testid="public-category"
         >
-          <option value="">Choose a category</option>
+          <option value="">{t('universe.publicDetails.categoryChoose')}</option>
           {CATEGORIES.map((option) => (
             <option key={option.value} value={option.value}>
               {categoryLabel(option.value)}
@@ -247,9 +246,9 @@ export function PublicDetailsForm({
       </div>
 
       <fieldset className="publication__genres" aria-describedby={genresHintId}>
-        <legend className="field__label">Genres</legend>
+        <legend className="field__label">{t('universe.publicDetails.genres')}</legend>
         <p className="field__hint" id={genresHintId}>
-          Choose up to {MAX_GENRES}. {genres.length} chosen.
+          {t('universe.publicDetails.genresHint', { max: MAX_GENRES, count: genres.length })}
         </p>
         <div className="publication__genrelist" data-testid="public-genres">
           {GENRES.map((genre) => {
@@ -275,7 +274,7 @@ export function PublicDetailsForm({
       </fieldset>
 
       <fieldset className="publication__attribution" data-testid="public-attribution">
-        <legend className="field__label">Attribution</legend>
+        <legend className="field__label">{t('universe.publicDetails.attribution')}</legend>
         <label className="check">
           <input
             type="checkbox"
@@ -284,13 +283,13 @@ export function PublicDetailsForm({
             onChange={(event) => attribute({ based: event.target.checked })}
             data-testid="based-on-external-work"
           />
-          This universe is based on someone else&rsquo;s work
+          {t('universe.publicDetails.basedOn')}
         </label>
         {attribution.based ? (
           <div className="publication__attributionfields">
             <div className="field">
               <label className="field__label" htmlFor={creatorId}>
-                Original creator or source
+                {t('universe.publicDetails.creator')}
               </label>
               <input
                 id={creatorId}
@@ -306,8 +305,7 @@ export function PublicDetailsForm({
                 data-testid="original-creator"
               />
               <p className="field__hint" id={creatorHintId}>
-                Credited as the original creator. You are shown as this universe&rsquo;s curator on
-                LorEvolve, not its creator.
+                {t('universe.publicDetails.creatorHint')}
               </p>
               {fieldErrors.originalcreator ? (
                 <p className="field__error" id={creatorErrorId} role="alert">
@@ -317,7 +315,7 @@ export function PublicDetailsForm({
             </div>
             <div className="field">
               <label className="field__label" htmlFor={workId}>
-                Original work (optional)
+                {t('universe.publicDetails.work')}
               </label>
               <input
                 id={workId}
@@ -346,11 +344,11 @@ export function PublicDetailsForm({
           disabled={isSaving}
           data-testid="save-public-details"
         >
-          {isSaving ? 'Saving' : 'Save public details'}
+          {isSaving ? t('universe.publicDetails.saving') : t('universe.publicDetails.save')}
         </button>
         {savedMessage && !isDirty ? (
           <p className="settings__saved" role="status" data-testid="public-details-saved">
-            Saved.
+            {t('universe.publicDetails.saved')}
           </p>
         ) : null}
       </div>

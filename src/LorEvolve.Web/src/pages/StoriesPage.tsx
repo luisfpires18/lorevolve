@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
 import { ArrowDown, ArrowUp, Plus } from 'lucide-react'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ApiError } from '../lib/api'
@@ -29,6 +30,7 @@ type LoadState =
  * screen, and puts it back if the move is refused. A new story goes last.
  */
 export default function StoriesPage() {
+  const { t } = useI18n()
   const access = useUniverseAccess()
   const { universe } = useOutletContext<WorkspaceContext>()
   const navigate = useNavigate()
@@ -63,12 +65,12 @@ export default function StoriesPage() {
         after.map((candidate) => candidate.id),
       )
       setState({ kind: 'ready', stories: saved })
-      setAnnouncement(`“${story.title}” is now story ${to + 1} of ${after.length}.`)
+      setAnnouncement(
+        t('stories.browse.moved', { title: story.title, n: to + 1, total: after.length }),
+      )
     } catch (error: unknown) {
       setState({ kind: 'ready', stories: before })
-      setMoveError(
-        error instanceof ApiError ? error.message : 'That story could not be moved. Try again.',
-      )
+      setMoveError(error instanceof ApiError ? error.message : t('stories.browse.moveFailed'))
     } finally {
       isMoving.current = false
     }
@@ -92,8 +94,8 @@ export default function StoriesPage() {
   return (
     <article className="stories">
       <PageHeader
-        title="Stories"
-        lede="Narratives told with this world’s lore, scene by scene."
+        title={t('stories.browse.title')}
+        lede={t('stories.browse.lede')}
         actions={
           access.editContent ? (
             <button
@@ -103,7 +105,7 @@ export default function StoriesPage() {
               data-testid="new-story"
             >
               <ActionIcon icon={Plus} />
-              New story
+              {t('stories.browse.newStory')}
             </button>
           ) : undefined
         }
@@ -111,13 +113,13 @@ export default function StoriesPage() {
 
       {state.kind === 'loading' ? (
         <p className="notice" role="status">
-          Reading the stories…
+          {t('stories.browse.reading')}
         </p>
       ) : null}
 
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="stories-load-error">
-          <p>The stories could not be read.</p>
+          <p>{t('stories.browse.loadError')}</p>
           <button
             className="button button--secondary"
             type="button"
@@ -126,7 +128,7 @@ export default function StoriesPage() {
               setReads((count) => count + 1)
             }}
           >
-            Try again
+            {t('stories.browse.retry')}
           </button>
         </div>
       ) : null}
@@ -159,7 +161,7 @@ export default function StoriesPage() {
                 {access.editContent && state.stories.length > 1 ? (
                   <ActionMenu
                     className="storyrow__menu"
-                    label={`More actions for ${story.title}`}
+                    label={t('stories.browse.moreActions', { title: story.title })}
                     triggerTestId="story-actions"
                   >
                     {index > 0 ? (
@@ -170,7 +172,7 @@ export default function StoriesPage() {
                         data-testid="story-move-up"
                       >
                         <ActionIcon icon={ArrowUp} />
-                        Move up
+                        {t('stories.browse.moveUp')}
                       </button>
                     ) : null}
                     {index < state.stories.length - 1 ? (
@@ -181,7 +183,7 @@ export default function StoriesPage() {
                         data-testid="story-move-down"
                       >
                         <ActionIcon icon={ArrowDown} />
-                        Move down
+                        {t('stories.browse.moveDown')}
                       </button>
                     ) : null}
                   </ActionMenu>
@@ -196,8 +198,8 @@ export default function StoriesPage() {
       {state.kind === 'ready' && state.stories.length === 0 ? (
         <EmptyState
           testId="stories-empty"
-          title="No stories yet."
-          hint="A story tells something in this world, scene by scene. It draws on the lore and never changes it."
+          title={t('stories.browse.empty.title')}
+          hint={t('stories.browse.empty.hint')}
           action={
             access.editContent ? (
               <button
@@ -207,7 +209,7 @@ export default function StoriesPage() {
                 data-testid="empty-new-story"
               >
                 <ActionIcon icon={Plus} />
-                New story
+                {t('stories.browse.empty.newStory')}
               </button>
             ) : undefined
           }

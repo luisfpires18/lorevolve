@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { Maximize, ZoomIn, ZoomOut } from 'lucide-react'
 import {
+  BOARD_CARD_KIND_KEYS,
   BOARD_CARD_KIND_LABELS,
   BoardCardKind,
   cardName,
@@ -16,6 +17,7 @@ import {
   type BoardConnection,
 } from '../ideas/boards'
 import { usePanZoom, ZOOM_STEP, type StageSize, type View } from '../lib/usePanZoom'
+import { useI18n } from '../i18n'
 
 /** What is chosen on a board: one card, one line, or nothing. */
 export type BoardSelection = { kind: 'card'; id: string } | { kind: 'line'; id: string } | null
@@ -80,6 +82,7 @@ export function IdeaBoardCanvas({
   onMoveCard,
   centreRef,
 }: IdeaBoardCanvasProps) {
+  const { t } = useI18n()
   const stage = useRef<HTMLDivElement>(null)
   const hintId = useId()
   const [dragging, setDragging] = useState<{ id: string; x: number; y: number } | null>(null)
@@ -227,7 +230,7 @@ export function IdeaBoardCanvas({
         className="boardcanvas__stage"
         ref={stage}
         role="group"
-        aria-label={`Board: ${title || 'New board'}`}
+        aria-label={t('ideas.canvas.board', { title: title || t('ideas.canvas.newBoard') })}
         aria-describedby={hintId}
         tabIndex={0}
         data-testid="board-stage"
@@ -294,9 +297,12 @@ export function IdeaBoardCanvas({
                   height: `${card.height}px`,
                   zIndex: drawOrder.get(card.id),
                 }}
-                aria-label={`${kind}: ${name}${card.isGone ? ' (gone)' : ''}`}
+                aria-label={t(card.isGone ? 'ideas.canvas.cardGone' : 'ideas.canvas.card', {
+                  kind,
+                  name,
+                })}
                 aria-pressed={isSelected}
-                data-kind={kind.toLowerCase()}
+                data-kind={BOARD_CARD_KIND_KEYS[card.kind]}
                 data-gone={card.isGone || undefined}
                 data-connecting-from={connecting === card.id || undefined}
                 data-dragging={dragging?.id === card.id || undefined}
@@ -317,7 +323,9 @@ export function IdeaBoardCanvas({
                 </span>
                 {card.kind === BoardCardKind.Note ? (
                   <span className="boardcard__text" aria-hidden="true">
-                    {card.text || <span className="boardcard__empty">Empty note</span>}
+                    {card.text || (
+                      <span className="boardcard__empty">{t('ideas.canvas.emptyNote')}</span>
+                    )}
                   </span>
                 ) : (
                   <>
@@ -333,7 +341,9 @@ export function IdeaBoardCanvas({
                 )}
                 {card.isGone ? (
                   <span className="boardcard__gone" aria-hidden="true">
-                    {card.kind === BoardCardKind.Idea ? 'Deleted idea' : 'In the Trash'}
+                    {card.kind === BoardCardKind.Idea
+                      ? t('ideas.canvas.deletedIdea')
+                      : t('ideas.canvas.inTrash')}
                   </span>
                 ) : null}
               </button>
@@ -342,12 +352,16 @@ export function IdeaBoardCanvas({
         </div>
       </div>
 
-      <div className="mapviewer__controls boardcanvas__controls" role="group" aria-label="Zoom">
+      <div
+        className="mapviewer__controls boardcanvas__controls"
+        role="group"
+        aria-label={t('ideas.canvas.zoom')}
+      >
         <button
           className="iconbutton"
           type="button"
-          aria-label="Zoom in"
-          title="Zoom in"
+          aria-label={t('ideas.canvas.zoomIn')}
+          title={t('ideas.canvas.zoomIn')}
           onClick={() => zoomAbout(ZOOM_STEP, size.width / 2, size.height / 2)}
           data-testid="board-zoom-in"
         >
@@ -356,8 +370,8 @@ export function IdeaBoardCanvas({
         <button
           className="iconbutton"
           type="button"
-          aria-label="Zoom out"
-          title="Zoom out"
+          aria-label={t('ideas.canvas.zoomOut')}
+          title={t('ideas.canvas.zoomOut')}
           onClick={() => zoomAbout(1 / ZOOM_STEP, size.width / 2, size.height / 2)}
           data-testid="board-zoom-out"
         >
@@ -366,8 +380,8 @@ export function IdeaBoardCanvas({
         <button
           className="iconbutton"
           type="button"
-          aria-label="Fit every card in view"
-          title="Fit every card in view"
+          aria-label={t('ideas.canvas.fit')}
+          title={t('ideas.canvas.fit')}
           onClick={() => setView(fitView(cards, size))}
           data-testid="board-fit"
         >
@@ -376,10 +390,8 @@ export function IdeaBoardCanvas({
       </div>
 
       <p className="visually-hidden" id={hintId}>
-        Drag to pan and scroll to zoom. With the board focused, the arrow keys pan, plus and minus
-        zoom, and 0 fits every card. Tab reaches each card; Enter chooses it, and the arrow keys
-        move it.
-        {connecting ? ' Drawing a line: choose the card it ends at, or press Escape.' : ''}
+        {t('ideas.canvas.hint')}
+        {connecting ? ` ${t('ideas.canvas.hintConnecting')}` : ''}
       </p>
     </div>
   )

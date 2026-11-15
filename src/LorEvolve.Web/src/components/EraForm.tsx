@@ -9,6 +9,7 @@ import type { EntityChoice } from './EntityPicker'
 import { FieldInput } from './FieldInputs'
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology, ChronologyValue } from '../chronology/types'
+import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { isChangedElsewhere } from '../lib/editConflict'
@@ -112,8 +113,10 @@ function draftOf(era: Era | null, definitions: FieldDefinition[]): EraDraft {
               ? {
                   id: override.referencedEntityId,
                   name: override.referencedEntityIsTrashed
-                    ? `${override.referencedEntityName ?? 'Unavailable'} (in Trash)`
-                    : (override.referencedEntityName ?? 'Unavailable'),
+                    ? t('time.eraForm.heldInTrash', {
+                        name: override.referencedEntityName ?? t('time.eraForm.unavailable'),
+                      })
+                    : (override.referencedEntityName ?? t('time.eraForm.unavailable')),
                 }
               : null,
           },
@@ -174,6 +177,7 @@ export function EraForm({
   onClose,
   onSaved,
 }: EraFormProps) {
+  useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const nameInput = useRef<HTMLInputElement>(null)
   const saveButton = useRef<HTMLButtonElement>(null)
@@ -193,9 +197,7 @@ export function EraForm({
     payloadKey(inputOf(initial, null, reckonsInEras, custom))
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
-    era
-      ? `“${era.name}” has unsaved changes. Leave without saving them?`
-      : 'This new stage has not been saved. Leave without saving it?',
+    era ? t('time.eraForm.leaveGuardEdit', { name: era.name }) : t('time.eraForm.leaveGuardNew'),
     onClose,
   )
 
@@ -251,10 +253,10 @@ export function EraForm({
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this stage can be saved.',
+            : t('time.eraForm.needChange'),
         )
       } else {
-        setMessage('That stage could not be saved.')
+        setMessage(t('time.eraForm.saveFailed'))
       }
     } finally {
       setIsSaving(false)
@@ -278,10 +280,12 @@ export function EraForm({
       >
         <header className="drawer__head">
           <p className="drawer__eyebrow">
-            {era ? `A stage of ${entityName}` : `New stage of ${entityName}`}
+            {era
+              ? t('time.eraForm.eyebrowEdit', { name: entityName })
+              : t('time.eraForm.eyebrowNew', { name: entityName })}
           </p>
           <h2 className="drawer__title" id="era-heading">
-            {era ? era.name : 'New stage'}
+            {era ? era.name : t('time.eraForm.newStage')}
           </h2>
         </header>
 
@@ -294,7 +298,7 @@ export function EraForm({
 
           {conflict ? (
             <EditConflict
-              what="eras"
+              what={t('time.eraForm.conflictWhat')}
               read={() => getProgression(universeId, entityId)}
               renderLatest={(latest) => (
                 <ul className="namelist">
@@ -321,14 +325,14 @@ export function EraForm({
 
           <div className="field">
             <label className="field__label" htmlFor="era-name">
-              Name
+              {t('time.eraForm.name')}
             </label>
             <input
               id="era-name"
               ref={nameInput}
               className="field__input"
               dir="auto"
-              placeholder="Insert a name"
+              placeholder={t('time.eraForm.namePlaceholder')}
               value={draft.name}
               onChange={(event) => edit({ name: event.target.value })}
               aria-invalid={errorOf('name') ? true : undefined}
@@ -344,11 +348,9 @@ export function EraForm({
 
           <div className="field">
             <label className="field__label" htmlFor="era-description">
-              What happens then
+              {t('time.eraForm.happens')}
             </label>
-            <p className="field__hint">
-              Who {entityName} is in this stage, and what changes for them.
-            </p>
+            <p className="field__hint">{t('time.eraForm.happensHint', { name: entityName })}</p>
             <textarea
               id="era-description"
               className="field__input field__input--area"
@@ -368,12 +370,10 @@ export function EraForm({
           </div>
 
           <fieldset className="scenechron">
-            <legend className="field__label">When in the world</legend>
-            <p className="field__hint">
-              Optional, and either end may be left open. A year on its own covers the whole year.
-            </p>
+            <legend className="field__label">{t('time.eraForm.when')}</legend>
+            <p className="field__hint">{t('time.eraForm.whenHint')}</p>
             <EraPoint
-              label="From"
+              label={t('time.eraForm.from')}
               prefix="era-start"
               errorKey={`${key}.start`}
               chronology={chronology}
@@ -382,7 +382,7 @@ export function EraForm({
               onChange={(start) => edit({ start })}
             />
             <EraPoint
-              label="To"
+              label={t('time.eraForm.to')}
               prefix="era-end"
               errorKey={`${key}.end`}
               chronology={chronology}
@@ -403,11 +403,8 @@ export function EraForm({
 
           {definitions.length > 0 ? (
             <fieldset className="erafields" data-testid="era-fields">
-              <legend className="field__label">Details in this stage</legend>
-              <p className="field__hint">
-                A detail this stage doesn&rsquo;t set reads from {entityName}&rsquo;s main profile.
-                No other stage is consulted.
-              </p>
+              <legend className="field__label">{t('time.eraForm.details')}</legend>
+              <p className="field__hint">{t('time.eraForm.detailsHint', { name: entityName })}</p>
               {definitions.map((definition) => (
                 <EraFieldRow
                   key={definition.id}
@@ -435,7 +432,11 @@ export function EraForm({
             disabled={isSaving}
             data-testid="save-era"
           >
-            {isSaving ? 'Saving' : era ? 'Save stage' : 'Add stage'}
+            {isSaving
+              ? t('time.eraForm.saving')
+              : era
+                ? t('time.eraForm.save')
+                : t('time.eraForm.add')}
           </button>
           <button
             className="button button--secondary"
@@ -443,7 +444,7 @@ export function EraForm({
             onClick={close}
             data-testid="cancel-era"
           >
-            Cancel
+            {t('time.eraForm.cancel')}
           </button>
         </footer>
       </form>
@@ -468,6 +469,7 @@ function EraPoint({
   fieldErrors: Record<string, string>
   onChange: (next: ChronologyPointDraft) => void
 }) {
+  useI18n()
   const error = (part: string) => fieldErrors[`${errorKey}.${part}`.toLowerCase()]
 
   return (
@@ -481,8 +483,8 @@ function EraPoint({
           month: `${prefix}-month`,
           day: `${prefix}-day`,
         }}
-        eraLabel={`${label}: date period`}
-        yearLabel={`${label}: year`}
+        eraLabel={t('time.eraForm.pointEra', { label })}
+        yearLabel={t('time.eraForm.pointYear', { label })}
         value={value}
         onChange={(part: ChronologyPointPart, next: string) => onChange({ ...value, [part]: next })}
         errors={{
@@ -496,10 +498,10 @@ function EraPoint({
   )
 }
 
-const MODE_LABELS: Record<Mode, string> = {
-  inherit: 'From the main profile',
-  set: 'Set for this stage',
-  cleared: 'None in this stage',
+/** Looked up when drawn, never frozen at import, so a change of language shows. */
+function modeLabel(mode: Mode) {
+  if (mode === 'inherit') return t('time.eraForm.mode.inherit')
+  return mode === 'set' ? t('time.eraForm.mode.set') : t('time.eraForm.mode.cleared')
 }
 
 function EraFieldRow({
@@ -521,6 +523,7 @@ function EraFieldRow({
   error?: string
   onChange: (change: Partial<FieldDraft>) => void
 }) {
+  useI18n()
   const id = useId()
   const errorId = `${id}-error`
 
@@ -535,7 +538,7 @@ function EraFieldRow({
           className="field__input field__input--select erafield__mode"
           value={field.mode}
           onChange={(event) => onChange({ mode: event.target.value as Mode })}
-          aria-label={`${definition.name} in this stage`}
+          aria-label={t('time.eraForm.fieldInStage', { name: definition.name })}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           data-testid={`era-field-mode-${definition.name}`}
@@ -544,7 +547,7 @@ function EraFieldRow({
             .filter((mode) => mode !== 'cleared' || !definition.isRequired)
             .map((mode) => (
               <option key={mode} value={mode}>
-                {MODE_LABELS[mode]}
+                {modeLabel(mode)}
               </option>
             ))}
         </select>
@@ -552,7 +555,7 @@ function EraFieldRow({
 
       {field.mode === 'inherit' ? (
         <p className="erafield__inherited">
-          {inherited ? renderFact(inherited, chronology) : 'Not set on the main profile'}
+          {inherited ? renderFact(inherited, chronology) : t('time.eraForm.notSetOnMain')}
         </p>
       ) : field.mode === 'set' ? (
         <FieldInput
@@ -565,7 +568,7 @@ function EraFieldRow({
           onChange={(value) => onChange({ value })}
         />
       ) : (
-        <p className="erafield__inherited">Left empty in this stage.</p>
+        <p className="erafield__inherited">{t('time.eraForm.leftEmpty')}</p>
       )}
 
       {error ? (
@@ -597,6 +600,7 @@ function EraStories({
   storyError?: string
   sceneError?: string
 }) {
+  useI18n()
   const storySelect = useId()
   const sceneSelect = useId()
   const [available, setAvailable] = useState<StorySummary[] | null>(null)
@@ -649,19 +653,21 @@ function EraStories({
     <>
       <div className="field storylinks" data-testid="era-stories">
         <label className="field__label" htmlFor={storySelect}>
-          Stories
+          {t('time.eraForm.stories')}
         </label>
-        <p className="field__hint">The stories this stage covers, if any.</p>
+        <p className="field__hint">{t('time.eraForm.storiesHint')}</p>
         {stories.length > 0 ? (
           <ul className="storylinks__list">
             {stories.map((story) => (
               <li className="token" key={story.id} data-testid="era-story">
                 <bdi>{story.title}</bdi>
-                {story.isTrashed ? <span className="token__note"> (in Trash)</span> : null}
+                {story.isTrashed ? (
+                  <span className="token__note"> {t('time.eraForm.storyInTrash')}</span>
+                ) : null}
                 <button
                   type="button"
                   className="token__remove"
-                  aria-label={`Remove ${story.title}`}
+                  aria-label={t('time.eraForm.removeStory', { title: story.title })}
                   onClick={() =>
                     onChange(
                       stories.filter((one) => one.id !== story.id),
@@ -691,12 +697,12 @@ function EraStories({
         >
           <option value="">
             {available === null
-              ? 'Reading stories…'
+              ? t('time.eraForm.readingStories')
               : available.length === 0
-                ? 'No stories yet'
+                ? t('time.eraForm.noStories')
                 : offeredStories.length === 0
-                  ? 'Every story is chosen'
-                  : 'Add a story…'}
+                  ? t('time.eraForm.allChosen')
+                  : t('time.eraForm.addStory')}
           </option>
           {offeredStories.map((story) => (
             <option key={story.id} value={story.id}>
@@ -714,21 +720,21 @@ function EraStories({
       {stories.length > 0 ? (
         <div className="field storylinks" data-testid="era-scenes">
           <label className="field__label" htmlFor={sceneSelect}>
-            Scenes
+            {t('time.eraForm.scenes')}
           </label>
-          <p className="field__hint">
-            Scenes of those stories that fall in this stage, if you want to name them.
-          </p>
+          <p className="field__hint">{t('time.eraForm.scenesHint')}</p>
           {scenes.length > 0 ? (
             <ul className="storylinks__list">
               {scenes.map((scene) => (
                 <li className="token" key={scene.id} data-testid="era-scene">
                   <bdi>{scene.title}</bdi>
-                  {scene.isTrashed ? <span className="token__note"> (in Trash)</span> : null}
+                  {scene.isTrashed ? (
+                    <span className="token__note"> {t('time.eraForm.sceneInTrash')}</span>
+                  ) : null}
                   <button
                     type="button"
                     className="token__remove"
-                    aria-label={`Remove ${scene.title}`}
+                    aria-label={t('time.eraForm.removeScene', { title: scene.title })}
                     onClick={() =>
                       onChange(
                         stories,
@@ -756,7 +762,9 @@ function EraStories({
             data-testid="era-scene-add"
           >
             <option value="">
-              {offeredScenes.length === 0 ? 'No more scenes to add' : 'Add a scene…'}
+              {offeredScenes.length === 0
+                ? t('time.eraForm.noMoreScenes')
+                : t('time.eraForm.addScene')}
             </option>
             {stories.map((story) => {
               const options = (storyScenes[story.id] ?? []).filter(

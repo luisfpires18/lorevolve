@@ -5,6 +5,7 @@ using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Publishing;
+using LorEvolve.Api.Features.Systems;
 using Microsoft.EntityFrameworkCore;
 
 namespace LorEvolve.Api.Features.Export;
@@ -75,6 +76,11 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .Where(calibration => calibration.Map!.UniverseId == universeId)
             .ToDictionaryAsync(calibration => calibration.MapId, cancellationToken);
 
+
+        // Every entry's saved versions, read once: the lore's entries and the projects' entries both carry them (#146),
+        // and reading the same rows twice to hand them to two builders would be a second query set for nothing.
+        var revisions = await RevisionsAsync(universeId, cancellationToken);
+
         var payload = new UniverseBackupPayload(
             new BackupUniverse(
                 universe.Id,
@@ -106,7 +112,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await ErasAsync(universeId, cancellationToken),
             await EntityTypesAsync(universeId, cancellationToken),
             await TagsAsync(universeId, cancellationToken),
-            await EntitiesAsync(universeId, images, cancellationToken),
+            await EntitiesAsync(universeId, images, revisions, cancellationToken),
             await RelationshipTypesAsync(universeId, cancellationToken),
             await RelationshipsAsync(universeId, cancellationToken),
             await TimelineAsync(universeId, cancellationToken),
@@ -119,7 +125,13 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await EntityTypeGroupsAsync(universeId, cancellationToken),
             await KnowledgeAsync(universeId, cancellationToken),
             MapsOf(maps, calibrations),
-            await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken));
+            await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken),
+            await CreativeProjectsAsync(universeId, cancellationToken),
+            await ProjectEntriesAsync(universeId, revisions, cancellationToken),
+            await ProjectSeasonsAsync(universeId, cancellationToken),
+            await LoreSystemsAsync(universeId, cancellationToken),
+            await SystemRulesAsync(universeId, cancellationToken),
+            await DismissedFindingsAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -337,19 +349,27 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         Guid universeId,
         CancellationToken cancellationToken)
     {
+        // Both scopes: the universe's lore types and its projects' types, which travel with the projects themselves
+        // (version 39). This is the one read that means to see past the query filter (#143).
         var types = await db.EntityTypes.AsNoTracking()
+            .IgnoreQueryFilters()
             .Where(type => type.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var fields = await db.EntityFieldDefinitions.AsNoTracking()
+        // IgnoreQueryFilters on each of these three as well, and not only on the types above: they reach the type
+        // through a navigation, and the filter follows a navigation. Without it a project's type travelled with no
+        // fields, no choices and no sections, which is a type that cannot hold what its entries hold. Found by the
+        // round-trip test in ProjectEntityTests when a restored project entry's value named a field definition the
+        // archive had never carried.
+        var fields = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
             .Where(field => field.EntityType!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var options = await db.EntityFieldOptions.AsNoTracking()
+        var options = await db.EntityFieldOptions.AsNoTracking().IgnoreQueryFilters()
             .Where(option => option.FieldDefinition!.EntityType!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var sectionsByType = (await db.EntityFieldSections.AsNoTracking()
+        var sectionsByType = (await db.EntityFieldSections.AsNoTracking().IgnoreQueryFilters()
                 .Where(section => section.EntityType!.UniverseId == universeId)
                 .ToListAsync(cancellationToken))
             .GroupBy(section => section.EntityTypeId)
@@ -420,7 +440,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                     Utc(type.UpdatedAt),
                     fieldsByType.GetValueOrDefault(type.Id, []),
                     type.ParentId,
-                    sectionsByType.GetValueOrDefault(type.Id, []))),
+                    sectionsByType.GetValueOrDefault(type.Id, []),
+                    type.ProjectId)),
         ];
     }
 
@@ -448,6 +469,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     private async Task<IReadOnlyList<BackupEntity>> EntitiesAsync(
         Guid universeId,
         Dictionary<Guid, EntityImage> images,
+        Dictionary<Guid, IReadOnlyList<BackupRevision>> revisionsByEntity,
         CancellationToken cancellationToken)
     {
         // Every entry, the Trash included. A backup is the whole world as it currently stands,
@@ -468,8 +490,6 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         var values = await db.EntityFieldValues.AsNoTracking()
             .Where(value => value.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
-
-        var revisionsByEntity = await RevisionsAsync(universeId, cancellationToken);
 
         // The article is its own row, read here beside the entry it belongs to - trashed entries' included.
         var articles = await db.EntityArticles.AsNoTracking()
@@ -774,19 +794,19 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         Guid universeId,
         CancellationToken cancellationToken)
     {
-        var revisions = await db.EntityRevisions.AsNoTracking()
+        var revisions = await db.EntityRevisions.AsNoTracking().IgnoreQueryFilters()
             .Where(revision => revision.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var aliases = await db.EntityRevisionAliases.AsNoTracking()
+        var aliases = await db.EntityRevisionAliases.AsNoTracking().IgnoreQueryFilters()
             .Where(alias => alias.Revision!.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var tags = await db.EntityRevisionTags.AsNoTracking()
+        var tags = await db.EntityRevisionTags.AsNoTracking().IgnoreQueryFilters()
             .Where(tag => tag.Revision!.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var values = await db.EntityRevisionFieldValues.AsNoTracking()
+        var values = await db.EntityRevisionFieldValues.AsNoTracking().IgnoreQueryFilters()
             .Where(value => value.Revision!.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
@@ -1287,11 +1307,144 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                     Utc(idea.CreatedAt),
                     Utc(idea.UpdatedAt),
                     Utc(idea.DeletedAt),
-                    referencesByIdea.GetValueOrDefault(idea.Id, []))),
+                    referencesByIdea.GetValueOrDefault(idea.Id, []),
+                    idea.ProjectId)),
         ];
     }
 
     // ---------- Idea boards ----------
+
+    /// <summary>
+    /// Every project of this universe, oldest first (version 39). A universe owns its projects and deletes them with
+    /// it (#171), so they belong in its archive; the project-scoped entry types name them by the ids written here.
+    /// Nothing of the owning account travels: a restore makes each project the restoring account's, as it does the
+    /// universe itself.
+    /// </summary>
+    /// <summary>
+    /// Every season of every project of this universe, each with its episodes and their scripts, in their own order
+    /// (version 41, #145). No query filter stands in the way here: seasons are a project's own tables.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupProjectSeason>> ProjectSeasonsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.ProjectSeasons.AsNoTracking()
+            .Where(season => season.Project!.UniverseId == universeId)
+            .OrderBy(season => season.ProjectId)
+            .ThenBy(season => season.SortOrder)
+            .Select(season => new BackupProjectSeason(
+                season.Id,
+                season.ProjectId,
+                season.Name,
+                season.Summary,
+                season.SortOrder,
+                season.CreatedAt,
+                season.UpdatedAt,
+                season.Episodes
+                    .OrderBy(episode => episode.SortOrder)
+                    .Select(episode => new BackupProjectEpisode(
+                        episode.Id,
+                        episode.Title,
+                        episode.Synopsis,
+                        episode.Script,
+                        episode.SortOrder,
+                        episode.CreatedAt,
+                        episode.UpdatedAt,
+                        // A comic chapter's pages and their panels (version 43, #147). Empty for a series or a film,
+                        // which have no level below the episode.
+                        db.ProjectPages
+                            .Where(page => page.EpisodeId == episode.Id)
+                            .OrderBy(page => page.SortOrder)
+                            .Select(page => new BackupProjectPage(
+                                page.Id,
+                                page.Name,
+                                page.Notes,
+                                page.SortOrder,
+                                page.CreatedAt,
+                                page.UpdatedAt,
+                                page.Panels
+                                    .OrderBy(panel => panel.SortOrder)
+                                    .Select(panel => new BackupProjectPanel(
+                                        panel.Id,
+                                        panel.Description,
+                                        panel.Dialogue,
+                                        panel.CanonEntityId,
+                                        panel.SortOrder,
+                                        panel.CreatedAt,
+                                        panel.UpdatedAt))
+                                    .ToList()))
+                            .ToList()))
+                    .ToList()))
+            .ToListAsync(cancellationToken);
+
+    /// <summary>
+    /// Every entry of every project of this universe, the trashed ones included (version 40, #144).
+    ///
+    /// IgnoreQueryFilters because a project's entries are hidden from every ordinary read of the table, which is what
+    /// keeps them out of the lore; a backup is the one place that has to see both scopes, and it says so here rather
+    /// than relying on a filter to have been remembered.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupProjectEntity>> ProjectEntriesAsync(
+        Guid universeId,
+        Dictionary<Guid, IReadOnlyList<BackupRevision>> revisionsByEntity,
+        CancellationToken cancellationToken)
+    {
+        var entries = await ProjectEntryRowsAsync(universeId, cancellationToken);
+
+        // The same versions the lore's entries carry, from the same dictionary: a project entry's history is captured
+        // by the same code (#146), so it travels the same way rather than through a second path.
+        return [.. entries.Select(entry => entry with { Revisions = revisionsByEntity.GetValueOrDefault(entry.Id, []) })];
+    }
+
+    private async Task<List<BackupProjectEntity>> ProjectEntryRowsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.Entities.AsNoTracking().IgnoreQueryFilters()
+            .Where(entry => entry.UniverseId == universeId && entry.ProjectId != null)
+            .OrderBy(entry => entry.CreatedAt)
+            .ThenBy(entry => entry.Id)
+            .Select(entry => new BackupProjectEntity(
+                entry.Id,
+                entry.ProjectId!.Value,
+                entry.EntityTypeId,
+                entry.Name,
+                entry.Summary,
+                entry.CanonEntityId,
+                entry.DeletedAt,
+                entry.CreatedAt,
+                entry.UpdatedAt,
+                entry.FieldValues
+                    .OrderBy(value => value.FieldDefinitionId)
+                    .ThenBy(value => value.OptionId)
+                    .Select(value => new BackupFieldValue(
+                        value.FieldDefinitionId,
+                        value.TextValue,
+                        value.NumberValue,
+                        value.EraId,
+                        value.BooleanValue,
+                        value.DateValue,
+                        value.OptionId,
+                        value.ReferencedEntityId))
+                    .ToList(),
+                null))
+            .ToListAsync(cancellationToken);
+
+    private async Task<IReadOnlyList<BackupCreativeProject>> CreativeProjectsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.CreativeProjects.AsNoTracking()
+            .Where(project => project.UniverseId == universeId)
+            .OrderBy(project => project.CreatedAt)
+            .ThenBy(project => project.Id)
+            .Select(project => new BackupCreativeProject(
+                project.Id,
+                project.Name,
+                project.Kind,
+                project.Lifecycle,
+                project.Subtype,
+                project.Summary,
+                Utc(project.CreatedAt),
+                Utc(project.UpdatedAt)))
+            .ToListAsync(cancellationToken);
 
     /// <summary>
     /// Every idea board that belongs to this universe, live ones first, each group by title and then id, with its cards in
@@ -1405,6 +1558,130 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         ];
     }
 
+    // ---------- World Logic ----------
+
+    /// <summary>
+    /// Every System of the universe, by name and then id, with its saved states oldest first and the rule
+    /// definitions it references in its own order (ADR 0072). The normalized name uniqueness is enforced on is
+    /// derived from the name and never here; nor is anything a condition found, which is a finding.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupLoreSystem>> LoreSystemsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken)
+    {
+        var systems = await db.LoreSystems.AsNoTracking()
+            .Where(system => system.UniverseId == universeId)
+            .ToListAsync(cancellationToken);
+
+        // IgnoreQueryFilters is not needed here: neither table carries a global filter, and both are reached from
+        // the universe directly rather than through a filtered navigation.
+        var links = await db.LoreSystemRules.AsNoTracking()
+            .Where(link => link.LoreSystem!.UniverseId == universeId)
+            .Select(link => new { link.SystemId, link.RuleId, link.SortOrder, Title = link.Rule!.Title })
+            .ToListAsync(cancellationToken);
+
+        var revisions = await db.LoreSystemRevisions.AsNoTracking()
+            .Where(revision => revision.LoreSystem!.UniverseId == universeId)
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. systems
+                .OrderBy(system => system.Name, StringComparer.Ordinal)
+                .ThenBy(system => Key(system.Id), StringComparer.Ordinal)
+                .Select(system => new BackupLoreSystem(
+                    system.Id,
+                    system.Scope,
+                    system.ProjectId,
+                    system.Name,
+                    system.Summary,
+                    system.Version,
+                    Utc(system.CreatedAt),
+                    Utc(system.UpdatedAt),
+                    [
+                        .. links
+                            .Where(link => link.SystemId == system.Id)
+                            .OrderBy(link => link.SortOrder)
+                            .ThenBy(link => link.Title, StringComparer.Ordinal)
+                            .ThenBy(link => Key(link.RuleId), StringComparer.Ordinal)
+                            .Select(link => link.RuleId),
+                    ],
+                    [
+                        .. revisions
+                            .Where(revision => revision.SystemId == system.Id)
+                            .OrderBy(revision => revision.Version)
+                            .Select(revision => new BackupWorldLogicRevision(
+                                revision.Version,
+                                revision.Name,
+                                revision.Summary,
+                                SchemaVersion: null,
+                                Condition: null,
+                                Utc(revision.SavedAt))),
+                    ])),
+        ];
+    }
+
+    /// <summary>
+    /// Every rule definition of the universe, by title and then id, whether or not a System references it: it is a
+    /// definition in its own right. The condition is the stored text byte for byte, so a restored rule is the rule
+    /// that was validated.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupSystemRule>> SystemRulesAsync(
+        Guid universeId,
+        CancellationToken cancellationToken)
+    {
+        var rules = await db.SystemRules.AsNoTracking()
+            .Where(rule => rule.UniverseId == universeId)
+            .ToListAsync(cancellationToken);
+
+        var dependencies = await db.SystemRuleDependencies.AsNoTracking()
+            .Where(dependency => dependency.Rule!.UniverseId == universeId)
+            .Select(dependency => new { dependency.RuleId, dependency.DependsOnRuleId })
+            .ToListAsync(cancellationToken);
+
+        var revisions = await db.SystemRuleRevisions.AsNoTracking()
+            .Where(revision => revision.Rule!.UniverseId == universeId)
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. rules
+                .OrderBy(rule => rule.Title, StringComparer.Ordinal)
+                .ThenBy(rule => Key(rule.Id), StringComparer.Ordinal)
+                .Select(rule => new BackupSystemRule(
+                    rule.Id,
+                    rule.Scope,
+                    rule.ProjectId,
+                    rule.Title,
+                    rule.Description,
+                    rule.SchemaVersion,
+                    rule.ConditionJson,
+                    rule.Version,
+                    Utc(rule.CreatedAt),
+                    Utc(rule.UpdatedAt),
+                    [
+                        .. dependencies
+                            .Where(dependency => dependency.RuleId == rule.Id)
+                            .Select(dependency => dependency.DependsOnRuleId)
+                            .OrderBy(Key, StringComparer.Ordinal),
+                    ],
+                    [
+                        .. revisions
+                            .Where(revision => revision.RuleId == rule.Id)
+                            .OrderBy(revision => revision.Version)
+                            .Select(revision => new BackupWorldLogicRevision(
+                                revision.Version,
+                                revision.Title,
+                                revision.Description,
+                                revision.SchemaVersion,
+                                revision.ConditionJson,
+                                Utc(revision.SavedAt),
+                                revision.ExceptionsJson)),
+                    ],
+                    rule.ExceptionsJson)),
+        ];
+    }
+
     // ---------- Rule validation ----------
 
     /// <summary>
@@ -1457,6 +1734,58 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 .OrderBy(conflict => conflict.RuleCode, StringComparer.Ordinal)
                 .ThenBy(conflict => conflict.Fingerprint, StringComparer.Ordinal)
                 .Select(conflict => conflict with { DismissedAt = Utc(conflict.DismissedAt) }),
+        ];
+    }
+
+    /// <summary>
+    /// Only the dismissals, for the reason a Canon dismissal is the only conflict carried: an open or resolved
+    /// finding is re-derived by sweeping the lore in this same file, and a dismissal is not.
+    ///
+    /// What the fingerprint was taken over is carried rather than the fingerprint itself, because a restore gives
+    /// every record a new id. <c>UpdatedAt</c> is when the status last moved, which for a dismissed finding is when
+    /// it was dismissed.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupDismissedFinding>> DismissedFindingsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken)
+    {
+        var dismissed = await db.WorldLogicFindings.AsNoTracking()
+            .Where(finding => finding.UniverseId == universeId
+                && finding.Status == WorldLogicFindingStatus.Dismissed)
+            .Select(finding => new
+            {
+                finding.RuleId,
+                finding.ProjectId,
+                finding.Outcome,
+                finding.ErrorCode,
+                finding.RuleVersion,
+                finding.SchemaVersion,
+                finding.Rationale,
+                finding.Fingerprint,
+                finding.CreatedAt,
+                finding.UpdatedAt,
+                Evidence = finding.Evidence
+                    .OrderBy(item => item.SortOrder)
+                    .Select(item => new BackupFindingEvidence(item.Source, item.SourceRowId, item.Role))
+                    .ToList(),
+            })
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. dismissed
+                .OrderBy(finding => finding.Fingerprint, StringComparer.Ordinal)
+                .Select(finding => new BackupDismissedFinding(
+                    finding.RuleId,
+                    finding.ProjectId,
+                    finding.Outcome,
+                    finding.ErrorCode,
+                    finding.RuleVersion,
+                    finding.SchemaVersion,
+                    finding.Rationale,
+                    finding.Evidence,
+                    Utc(finding.CreatedAt),
+                    Utc(finding.UpdatedAt))),
         ];
     }
 

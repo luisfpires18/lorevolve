@@ -4,6 +4,7 @@ using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
+using LorEvolve.Api.Features.ProjectEntities;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Storage;
 using LorEvolve.Api.Features.Stories;
@@ -355,6 +356,14 @@ internal static class AiChangeCommit
                     AiChangeResource.TimelineEvent => await TimelineEndpoints.TrashCoreAsync(universeId, target!.Value, db, cancellationToken),
                     AiChangeResource.PlotArc => await PlotArcEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
                     AiChangeResource.WorldRule => await WorldRuleEndpoints.TrashCoreAsync(db, null, universeId, target!.Value, cancellationToken),
+                    AiChangeResource.ProjectEntry => await ProjectEntityEndpoints.TrashCoreAsync(
+                        db,
+                        await db.Entities.IgnoreQueryFilters()
+                            .Where(entry => entry.Id == target!.Value)
+                            .Select(entry => entry.ProjectId!.Value)
+                            .SingleAsync(cancellationToken),
+                        target!.Value,
+                        cancellationToken),
                     AiChangeResource.Idea => await IdeaEndpoints.DeleteCoreAsync(db, approverId, target!.Value, cancellationToken),
 
                     // A field is archived, never deleted: it keeps every value and comes back with a restore (Issue #39).
@@ -386,6 +395,47 @@ internal static class AiChangeCommit
                     ? Made<PlotArcResponse>(await PlotArcEndpoints.CreateCoreAsync(db, universeId, Id(arc.Story), plotArc, cancellationToken), detail => detail.Id)
                     : Done(await PlotArcEndpoints.UpdateCoreAsync(db, universeId, Id(arc.Story), target!.Value, plotArc, cancellationToken), target);
 
+            case ProjectEntryValues proposed:
+                // One path with the route's (#148): the same create, the same field preparation, the same history.
+                var projectValues = await ProjectEntityEndpoints.ValuesFromChoicesAsync(
+                    db,
+                    [.. proposed.Fields.Select(field => (field.FieldId, field.Text, field.Number, field.Boolean, field.Date, (IReadOnlyList<string>?)field.Choices, field.LinkedEntryId))],
+                    cancellationToken);
+
+                if (work.Action == AiChangeAction.Create)
+                {
+                    var created = await ProjectEntityEndpoints.CreateCoreAsync(
+                        db,
+                        universeId,
+                        proposed.ProjectId,
+                        proposed.TypeId,
+                        proposed.Name,
+                        proposed.Summary,
+                        proposed.CanonEntryId,
+                        projectValues,
+                        approverId,
+                        cancellationToken);
+
+                    return created.Problem is not null
+                        ? Done(created.Problem, null)
+                        : Done(Results.NoContent(), created.Id);
+                }
+
+                return Done(
+                    await ProjectEntityEndpoints.UpdateCoreAsync(
+                        db,
+                        universeId,
+                        proposed.ProjectId,
+                        target!.Value,
+                        proposed.TypeId,
+                        proposed.Name,
+                        proposed.Summary,
+                        proposed.CanonEntryId,
+                        projectValues,
+                        approverId,
+                        cancellationToken),
+                    target);
+
             case WorldRuleValues rule:
                 var stated = new WorldRuleRequest(
                     rule.Title,
@@ -410,7 +460,8 @@ internal static class AiChangeCommit
                     [.. idea.References.Select(reference => new IdeaReferenceInput(reference.Kind, Id(reference.Target)))],
                     work.Action == AiChangeAction.Create
                         ? null
-                        : await db.Ideas.Where(row => row.Id == target).Select(row => (DateTime?)row.UpdatedAt).SingleAsync(cancellationToken));
+                        : await db.Ideas.Where(row => row.Id == target).Select(row => (DateTime?)row.UpdatedAt).SingleAsync(cancellationToken),
+                    idea.ProjectId);
                 return work.Action == AiChangeAction.Create
                     ? Made<IdeaDetail>(await IdeaEndpoints.CreateCoreAsync(db, approverId, kept, cancellationToken), detail => detail.Id)
                     : Done(await IdeaEndpoints.UpdateCoreAsync(db, approverId, target!.Value, kept, cancellationToken), target);
@@ -622,7 +673,7 @@ internal static class AiChangeCommit
         var staged = await db.AiChangeMedia.FirstOrDefaultAsync(row => row.OperationId == work.OperationId && row.UniverseId == universeId, cancellationToken);
         if (staged is null)
         {
-            return (null, Results.Problem(detail: "The picture hasn't been uploaded.", statusCode: StatusCodes.Status409Conflict));
+            return (null, Refused(AiChangeCodes.AwaitingUpload, "Picture not uploaded", "The picture hasn't been uploaded."));
         }
 
         bool attached;
@@ -675,16 +726,17 @@ internal static class AiChangeCommit
         }
         catch (StorageQuotaExceededException)
         {
-            return (null, Results.Problem(detail: "The universe owner's storage has no room for this picture.", statusCode: StatusCodes.Status409Conflict));
+            return (null, Refused(StorageQuota.ExceededCode, "Not enough storage.", "The universe owner's storage has no room for this picture."));
         }
 
         if (!attached)
         {
-            return (null, Results.Problem(
-                detail: media.AppearanceId is null
+            return (null, Refused(
+                AiChangeCodes.ChangedSince,
+                "Changed since the proposal",
+                media.AppearanceId is null
                     ? "The entry was trashed or given a picture since, so this one wasn't attached."
-                    : "The appearance was removed or its gallery filled up since, so this picture wasn't attached.",
-                statusCode: StatusCodes.Status409Conflict));
+                    : "The appearance was removed or its gallery filled up since, so this picture wasn't attached."));
         }
 
         db.AiChangeMedia.Remove(staged);

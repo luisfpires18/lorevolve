@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { MessageSquareWarning } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { ApiError } from '../lib/api'
+import { useI18n } from '../i18n'
 import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
@@ -11,6 +12,7 @@ import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/
  * is sent goes to the Admin with the path of the page it was sent from - nothing typed into that page, and no query.
  */
 export function FeedbackButton() {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [thanked, setThanked] = useState(false)
 
@@ -27,11 +29,11 @@ export function FeedbackButton() {
         data-testid="feedback-open"
       >
         <MessageSquareWarning aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        <span>Feedback</span>
+        <span>{t('data.feedback.open')}</span>
       </button>
       {thanked ? (
         <p className="feedbackbutton__thanks" role="status" data-testid="feedback-sent">
-          Thanks. Your report was sent.
+          {t('data.feedback.thanks')}
         </p>
       ) : null}
       {open ? (
@@ -48,6 +50,7 @@ export function FeedbackButton() {
 }
 
 function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () => void }) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const headingId = useId()
   const textId = useId()
@@ -59,7 +62,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
   const [sending, setSending] = useState(false)
   const { close, dialogProps } = useDrawerGuard(
     text.trim() !== '' && !sending,
-    'This report has not been sent. Leave without sending it?',
+    t('data.feedback.leaveConfirm'),
     onClose,
   )
 
@@ -70,7 +73,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
 
   async function send() {
     if (text.trim() === '') {
-      setError('Describe it in a few words.')
+      setError(t('data.feedback.describe'))
       return
     }
     setSending(true)
@@ -82,7 +85,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
       setError(
         failure instanceof ApiError
           ? (Object.values(failure.fieldErrors)[0] ?? failure.message)
-          : 'That could not be sent. Try again.',
+          : t('data.feedback.sendFailed'),
       )
       setSending(false)
     }
@@ -106,9 +109,9 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
         }}
       >
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Feedback</p>
+          <p className="drawer__eyebrow">{t('data.feedback.open')}</p>
           <h2 className="drawer__title" id={headingId}>
-            Report a bug or ask for a feature
+            {t('data.feedback.title')}
           </h2>
         </header>
 
@@ -120,8 +123,8 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
           ) : null}
 
           <fieldset className="field" disabled={sending}>
-            <legend className="field__label">What is it?</legend>
-            <div className="segmented" role="group" aria-label="What is it?">
+            <legend className="field__label">{t('data.feedback.kindLabel')}</legend>
+            <div className="segmented" role="group" aria-label={t('data.feedback.kindGroup')}>
               <button
                 className="segmented__option"
                 type="button"
@@ -129,7 +132,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
                 onClick={() => setKind(FeedbackKind.Bug)}
                 data-testid="feedback-kind-bug"
               >
-                Bug
+                {t('data.feedback.kindBug')}
               </button>
               <button
                 className="segmented__option"
@@ -138,14 +141,16 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
                 onClick={() => setKind(FeedbackKind.Feature)}
                 data-testid="feedback-kind-feature"
               >
-                Feature request
+                {t('data.feedback.kindFeature')}
               </button>
             </div>
           </fieldset>
 
           <div className="field">
             <label className="field__label" htmlFor={textId}>
-              {kind === FeedbackKind.Bug ? 'What went wrong?' : 'What would you like?'}
+              {kind === FeedbackKind.Bug
+                ? t('data.feedback.textBug')
+                : t('data.feedback.textFeature')}
             </label>
             <textarea
               id={textId}
@@ -159,16 +164,15 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
             />
             <p className="field__hint">
               {kind === FeedbackKind.Bug
-                ? 'What you did, what you expected, and what happened instead.'
-                : 'What it would let you do, and where you would use it.'}{' '}
-              The page you are on is sent with it.
+                ? t('data.feedback.hintBug')
+                : t('data.feedback.hintFeature')}
             </p>
           </div>
         </div>
 
         <footer className="drawer__actions">
           <button className="button" type="submit" disabled={sending} data-testid="feedback-send">
-            {sending ? 'Sending' : 'Send'}
+            {sending ? t('data.feedback.sending') : t('data.feedback.send')}
           </button>
           <button
             className="button button--secondary"
@@ -176,7 +180,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
             onClick={close}
             disabled={sending}
           >
-            Cancel
+            {t('data.feedback.cancel')}
           </button>
         </footer>
       </form>

@@ -90,6 +90,16 @@ export function tn(key: PluralKey<Dictionary>, count: number, vars?: Vars) {
   return translatePlural(locale, messages, en, key, count, vars)
 }
 
+/**
+ * The message for an API refusal's `code`, or null when LorEvolve has no words for that one and the caller should
+ * keep the server's own sentence (#108). Looked up by a value the server chose, so it is checked at run time rather
+ * than by the key type.
+ */
+export function apiErrorMessage(code: string) {
+  const group = (en as Record<string, unknown>).apiErrors as Record<string, string>
+  return code in group ? translate(messages, en, `apiErrors.${code}`) : null
+}
+
 /** A message with nodes in its placeholders, for sentences that hold a link or a bold name. */
 export function tx(key: TextKey<Dictionary>, nodes: Record<string, ReactNode>): ReactNode {
   return splitPlaceholders(translate(messages, en, key)).map((part, index) => {

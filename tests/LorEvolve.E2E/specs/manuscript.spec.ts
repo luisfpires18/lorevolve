@@ -271,7 +271,7 @@ test.describe('manuscript', () => {
 
     // The Council moves to another chapter on the Scenes view. Same scene, same address, same prose.
     await page.getByTestId('story-view-scenes').click()
-    await page.waitForURL(new RegExp(`/stories/${storyId}$`))
+    await page.waitForURL(new RegExp(`/projects/${storyId}/structure$`))
     await expandStory(page)
     await structural(page, `/scenes/${council}/position`, async () => {
       await openMenuFor(scene(page, 'The Council'), 'scene-move-to-option')
@@ -495,7 +495,7 @@ test.describe('manuscript', () => {
     await page.goto(`${storyUrl}/manuscript`)
     await expect(page.getByTestId('manuscript-empty')).toContainText('No scenes yet.')
     await page.getByTestId('manuscript-empty-scenes').click()
-    await page.waitForURL(new RegExp(`/stories/${storyId}$`))
+    await page.waitForURL(new RegExp(`/projects/${storyId}/structure$`))
     await expect(page.getByTestId('scenes-empty')).toBeVisible()
 
     const arlen = await seedEntity(page, universeId, 'Arlen')

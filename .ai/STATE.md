@@ -1,4 +1,4 @@
-# STATE
+﻿# STATE
 
 Current operational state only, as of 2026-11-13. Trim instead of appending: when work merges, delete its line here;
 git history and ADRs keep the detail. History before this trim: `docs/history/state-archive-2026-10.md`.
@@ -9,7 +9,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 - Architecture decisions: `docs/architecture/decisions/README.md`. Files and responsibilities: `SYSTEMS.md`.
 - Branches, naming, sequence log: `docs/architecture/branching.md`. Tooling rules: `.claude/CLAUDE.md`.
 - Runbooks: `docs/deployment/azure-prod.md`, `docs/deployment/azure-dev.md`, `docs/deployment/cloudflare-r2.md`,
-  `docs/deployment/assistant-limits-and-cost.md`, `docs/recovery/database-backups.md`,
+  `docs/recovery/database-backups.md`,
   `docs/recovery/universe-recovery.md`. Domain and email layout: `docs/design/custom-domain-plan.md`.
 - Security assessment and open findings: `docs/security/alpha-security-assessment.md`.
 - Manual checklists: `docs/testing/` (PWA, maps, MCP images).
@@ -18,7 +18,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
   `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 43438561953 on `master` `70e98b2`, succeeded (2026-11-13, release PR #116: story arcs, chapters and scenes fold and start collapsed; scene point of view and lore chips redrawn, lore folds after 6; interface languages foundation and shell strings; no migration).
+  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 43468813582 on `master` `c8581c0`, succeeded (2026-11-13, release PR #121: a story opens on its first arc and first chapter; a scene lists all its lore in the author's order, dragged by a grip or the arrow keys, and group priority no longer reorders it; beats fold; more interface language strings; no migration).
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -39,7 +39,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-13 `master` and `dev` match (PR #116 released). `WEBSITE_RUN_FROM_PACKAGE=1` and
+As of 2026-11-14 `dev` is ahead of `master` by the language work merged since PR #121 (latest: #161, #162). `WEBSITE_RUN_FROM_PACKAGE=1` and
 `SCM_MAX_ZIP_PACKAGE_COUNT=2` are set on DEV and PROD (2026-11-11), so a deploy no longer swaps files under the running app. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
@@ -48,6 +48,7 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
+- `fix/project-screens-app-design`: the project screens use the app's own design (#184). The owner called them a mess and full of placeholders. First half: the class names that were in the markup and in no stylesheet, the buttons that carried no class, and `PageHeader` on the two pages that hand-rolled a head. Second half: the four always-open creation forms now open from each panel's head, a row's secondary and destructive verbs moved into `ActionMenu`, the panels stack in one column with one rhythm, and the copy went through `stop-slop` and `humanizer` (one "Loading" for every panel, fifteen of the sixteen placeholders gone, an action keeps its name from trigger to submit).
 
 ## Committed, not on `dev`
 
@@ -64,8 +65,10 @@ Checked 2026-10-29 with `git log origin/dev..<branch>`.
 
 ## Open issues
 
-- **Languages** (umbrella #99, ADR 0071): foundation #100, shell #101 and lore workspace #102 on `dev`. Next: string extraction #103 to
-  #105 (`BRAND_LINK_LABEL`, `NETWORK_FAILURE`, `ROLE_LABELS`, `ROLE_DESCRIPTIONS` stay as deprecated English exports until their screens move), then pt-PT #106 and #107 (switch goes live). Preview pt-PT locally: `localStorage['lorevolve-locale'] = 'pt-PT'`.
+- **Languages** (umbrella #99, ADR 0071): #100 to #109 are on `dev`, and #108 (refusal codes, PR #161) with #110's export half (PR #162) landed 2026-11-14; `dev` is at `4490106`. The switch is live in the account menu, the portal's appearance menu and Profile; the API writes its emails, starter types, the language line it hands a connected AI app, 56 refusal codes and the readable export in the reader's language. Open: #110's canon rule messages (approach is the owner's choice, TBD and plan on the issue) and #111 (public SEO, deferred until `PublicSite__AllowIndexing` is set at launch). #99 itself stays open for the owner, with its deferred checks in the milestone summary. A refusal whose English names the author's own records stays English by design; `ApiErrorCodeContractTests` refuses to translate one.
+- **Roadmap M1 to M4** (trackers #133, #134, #135, #136), started 2026-11-14 as an unattended milestone run. **M4 (#136) is done**, merged 2026-11-15: #156 (PR #182) the retirement inventory, #157 (PR #185) the web UI, #158 (PR #187) the API, the Groq and OpenAI providers and the `OpenAI` package, #159 (PR #190) no migration because nothing assistant-only was stored, #160 (PR #202) the settings, the Groq cost guide, the docs and `docs/testing/mcp-only-ai-checklist.md`. AI reaches a universe over MCP only. `UniverseAiHelpOff` (now the Connect to AI and AI Changes switch) and `AiChangeSource.Assistant` are kept on purpose. Owner actions on the milestone summary: delete the five `Assistant__*` settings on `dev-lorevolve`, revoke the Groq and OpenAI keys, and walk the MCP-only checklist on DEV. Closing #136 is the owner's. **M3 (#135) World Logic is done**, merged 2026-11-15: #149 (PR #183) the specification (ADR 0072, `docs/architecture/world-logic-condition-spec.md`, six fixtures), #150 (PR #188) `Features/Systems/` with backup format 44, #151 (PR #205) the evaluator in `Features/RuleValidation/Conditions/` with backup format 45, #152 (PR #206) the read-only World Logic page, #153 (PR #208) persisted findings with backup format 46, #154 (PR #211) seven MCP read tools plus `submit_semantic_finding`, #209 (PR #214) the Integrity tab reading those findings (the list route gained an optional `sort=newest`, its `attention` default unchanged), and #155 (PR #207) the MCP capability matrix (`docs/testing/mcp-capability-matrix.md`, `McpCapabilityMatrixTests`). Owner decisions are gathered in the milestone summary on #135; closing #135 is the owner's. Left open on purpose: #210 (`ConditionSchema.SourceFields` refuses `attributes.<name>` with `unknown_field` although section 2 of the specification lists it), nothing in `src/LorEvolve.Web` shows a submitted semantic finding so an author reviews one over the API, and the MCP findings reader cannot ask for `sort` because #154's tools predate it. M1 Projects Foundation and Writing: #137 (agent task template, PR #164), #138 (`CreativeProject` domain, PR #165) #139 (Projects navigation, PR #166), #140 (existing Stories listed as Writing Projects, PR #167, a derived mapping with no migration), #141 (the Structure tab, PR #168) and #142 (projects over MCP, PR #169) done. The milestone summary on #133 is next; closing #133 and starting M2 are the owner's. A project is account-owned with an optional universe link, reached at `/app/projects/<id>` whether or not it has one; a universe backup leaves projects out on purpose. #140 is the one that must not lose author data: existing Story URLs and MCP story IDs keep resolving. Trackers close only on the owner's word.
+- **Roadmap M5 Navigation and project workspace** (tracker #201, issues #191 to #200), opened 2026-11-15 from the owner's IA brief and the review at `docs/architecture/audits/2026-11-15-navigation-and-project-workspace-review.md` (PR #203). Running. Landed: #200 Chronology is Timeline's configuration view at `timeline/configuration` (a link on the Timeline header), no sidebar row, and `chronology` redirects there; #191 (PR #213) the universe sidebar as Overview, then labelled World building, Projects and Management groups, with Stories and Canon off the sidebar but at their addresses and Overview doors; #192 project sections as data per kind (`projects/sections.ts`), `ProjectShell` tab bar, routes `projects/:projectId/*` under both addresses (the bare address redirects to the kind's first view); #197 project Ideas: `Idea.ProjectId` (migration `AddIdeaProjects`, hand-written ALTER so the Ideas search triggers survive, backup format 47), a project idea takes its project's universe, the view is `components/ProjectIdeas.tsx` over `IdeasBrowser`, and MCP idea proposals carry `projectId`; #193 one panel per view: every kind now opens on Overview and offers Entities, the schema sits on Overview until #196, entries on Entities, the Series, Film and Comic structure on Structure, and any other view is an empty state; `schemaVersion` stays in `ProjectPage`'s `Project`, which stays mounted across the views; #196 Entities opens on the type cards (counts from `ListProjectEntityTypes`, one request), a card opens that type's entries 25 at a time with Show more, and the type editor (`ProjectSchema`, unchanged) is the Manage types action at `?manage=types`; a project with no types gets the starter offer there; the overview is an empty state until #195; `ListProjectEntities` takes `skip` and `take` (default and ceiling 500); #194 a Story shown as a Writing Project opens its project shell at `/app/universes/<u>/projects/<storyId>/structure|manuscript/:sceneId?|ideas`, rendering `StoryPage` unchanged (found by a client-side story read on the project 404, no API change); every `stories/:storyId...` address redirects there keeping scene id, query and hash; its sidebar row expands; #195 the non-Writing overview (`components/ProjectOverview.tsx`): counts per type from the one types list, the entries touched last from `GET /api/projects/{id}/entities?recent=true` (a second order on the read that already existed, not a new endpoint, since that list could only order by name), the universe's lore and every other view the kind offers as links, and a project with no types and no entries is an empty state leading to Entities. A recent entry opens that entry: `?entry=` beside the Entities view's `?type=`, which marks the row with `aria-current` and reads as many pages as it takes to reach it, bounded by the endpoint's 500-row ceiling (Codex round 1 required this rather than the deferral first offered). An entry still has no screen of its own, because nothing reads its field values although `GetProjectEntity` serves them; that is issue #222. The Series, Film and Comic script view is labelled Script from the existing `projects.seasons.script` strings, because the owner's table was not in the repository; owner check on #201. Order is dependency order: #191 sidebar groups and the duplicate Stories entry, #192 project sections and shell, #193 the project page split, #194 one entry point per kind, #195 non-Writing overview, #196 Entity Types inside Entities with paging, #197 project-scoped Ideas (needs a column on `Idea` and a migration, which is why it is P1 and not the brief's P2), #198 bound the sidebar project list, #199 addresses and the leftover no-universe assumptions, #200 Chronology under Timeline. Three open questions sit on the tracker. #198 the sidebar lists at most `SIDEBAR_PROJECT_LIMIT` (8, in `ProjectsNav.tsx`) projects plus the one in view, the PROJECTS heading folds the group, and `GET /api/projects` pages (`offset`, `limit` up to 100, `include`) with stored and story-derived projects merged in one order; the bound of eight is an owner check on #201.
+
 `gh issue list --repo luisfpires18/lorevolve --state open`. As of 2026-10-29:
 
 - Alpha: #34 launch readiness / final review (high), #35 alpha plan and issue index, #54 daily backups (high; the
@@ -87,10 +90,10 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
   MCP `get_arc`. Not yet tried in a real client: add, reorder, remove beats and move a chapter between arcs, approve.
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
   `/mcp/u/{name}` URL, and ChatGPT image rendering or its fallback link. Never tried in a real client
-  (`docs/testing/mcp-images-checklist.md`). The assistant's 10,000-character tool-result cap can cut a large catalog.
+  (`docs/testing/mcp-images-checklist.md`). A client's own tool-result cap can cut a large catalog.
 - **Real-device PWA**: Lore entities in an installed iOS, Android and desktop app (`docs/testing/pwa-checklist.md`).
   Passed only in Chromium simulation; #58 was closed without that check.
-- **Maps on a device**: a real map, real touch, the assistant's phrasing over geography tools
+- **Maps on a device**: a real map, real touch, a connected app's phrasing over the geography tools
   (`docs/testing/maps-checklist.md`).
 - **Password reset email live**: request a reset on DEV and on PROD, open the emailed link, set a password. Not tried
   with real Resend yet.
@@ -103,7 +106,6 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 ## Settings off until the owner sets them
 
 - PROD `PublicSite__AllowIndexing`: unset, so search engines are told not to index. Set at public launch.
-- PROD `Assistant__*`: only if PROD offers the assistant (`docs/deployment/assistant-limits-and-cost.md`).
 - Backup retention deletion is proposed and off (ADR 0064, `docs/recovery/database-backups.md`).
 - DEV `Mcp__Origin` and `PlatformAdmin__OwnerUserId` were owner steps; not rechecked here. Unset means MCP is off and
   nobody is Admin on DEV.

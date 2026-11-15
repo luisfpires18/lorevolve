@@ -8,6 +8,9 @@ using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Stories;
 using LorEvolve.Api.Features.Timeline;
+using LorEvolve.Api.Features.Systems;
+
+using LorEvolve.Api.Features.Projects;
 
 namespace LorEvolve.Api.Features.Export;
 
@@ -305,8 +308,39 @@ public sealed record UniverseBackup(
     /// <see cref="BackupScene.LinkedEntityIds"/> is in the order the author picked the lore, no longer sorted by id. Not
     /// ignorable: a version 37 reader would list stories by title and a scene's lore by name. A file at version 37 or earlier
     /// restores its stories in title order and each scene's lore by the entry's name, as it read then.
+    ///
+    /// 44 - World Logic (ADR 0072). <see cref="UniverseBackupPayload.LoreSystems"/> carries every System of the universe -
+    /// its scope, the project it belongs to by id, its words, its saved states and the rule definitions it references in
+    /// its own order - and <see cref="UniverseBackupPayload.SystemRules"/> every rule definition: its words, its condition
+    /// tree exactly as stored with the schema version it was written against, its declared dependencies and its saved
+    /// states. Every id inside a condition goes through the restore's map like any other reference, so a restored rule
+    /// names the restored universe's rows; an id the file does not hold is left as it was, and evaluation reports it.
+    /// Not ignorable: a System and its conditions are authored, and a version 43 reader would restore a world with its
+    /// whole logic silently gone. A file at version 43 or earlier has neither, and restores with neither, even when it
+    /// carries the member. World rules (ADR 0033) are unchanged and still carried as they were.
+    ///
+    /// 45 - A rule definition may carry explicit exceptions (ADR 0072, section 5.1).
+    /// <see cref="BackupSystemRule.Exceptions"/> and <see cref="BackupWorldLogicRevision.Exceptions"/> carry them as
+    /// stored text, byte for byte, with the ids inside them translated on restore like a condition's. Not
+    /// ignorable: an exception is the author's own statement that a violation is allowed, and a version 44 reader
+    /// would restore the rule without it and report a violation the author had excused. A file at version 44 or
+    /// earlier has none, and every restored rule has none.
+    ///
+    /// 46 - A universe carries the World Logic findings its author chose to live with (#153, ADR 0072).
+    /// <see cref="UniverseBackupPayload.DismissedFindings"/> holds one record per dismissed finding: the rule and
+    /// the scope it was found in, the outcome, the error code, the versions it was produced at, the trace and the
+    /// evidence ids the outcome depended on, with those ids translated on restore like a condition's. Nothing
+    /// pending or resolved is carried, because a finding is derived and the next sweep produces it again - exactly
+    /// as <see cref="UniverseBackupPayload.DismissedConflicts"/> carries only a Canon dismissal. Not ignorable: a
+    /// dismissal is the author's own decision that a finding needs no action, and a version 45 reader would restore
+    /// the universe and report it again. A file at version 45 or earlier has none, and restores with none.
+    ///
+    /// 47 - An idea may be a note for one of the universe's projects (#197). <see cref="BackupIdea.ProjectId"/> names
+    /// a project of the same file, translated on restore like every other id. Not ignorable: a version 46 reader would
+    /// restore the idea on no project, and the project's Ideas view would come back empty. A file at version 46 or
+    /// earlier has none, and every restored idea is on no project.
     /// </summary>
-    public const int CurrentVersion = 38;
+    public const int CurrentVersion = 47;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -339,6 +373,18 @@ public sealed record UniverseBackup(
 /// absent - null, in any earlier file - means the same thing.
 ///
 /// <paramref name="IdeaBoards"/> is every idea board that belongs to the universe, live ones first (since version 36).
+///
+/// <paramref name="LoreSystems"/> and <paramref name="SystemRules"/> are the universe's World Logic (since version
+/// 44, ADR 0072): its Systems by name, and its rule definitions by title, with each one's saved states. A rule
+/// definition is carried whether or not a System references it, because it is a definition in its own right. Empty
+/// means none; absent means the same thing.
+///
+/// <paramref name="DismissedFindings"/> is every World Logic finding the author dismissed (since version 46). Empty
+/// means none; absent means the same thing.
+///
+/// <paramref name="CreativeProjects"/> is every project of the universe (since version 39). A universe owns its
+/// projects and deletes them with it (#171), so a backup that left them out would lose them, and the project-scoped
+/// entry types that name them could not come back in their own scope.
 /// Empty means none; absent means the same thing. Boards that belong to no universe are never here.
 /// </summary>
 public sealed record UniverseBackupPayload(
@@ -359,7 +405,13 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupEntityTypeGroup>? EntityTypeGroups = null,
     IReadOnlyList<BackupKnowledgeRecord>? KnowledgeRecords = null,
     IReadOnlyList<BackupMap>? Maps = null,
-    IReadOnlyList<BackupIdeaBoard>? IdeaBoards = null);
+    IReadOnlyList<BackupIdeaBoard>? IdeaBoards = null,
+    IReadOnlyList<BackupCreativeProject>? CreativeProjects = null,
+    IReadOnlyList<BackupProjectEntity>? ProjectEntities = null,
+    IReadOnlyList<BackupProjectSeason>? ProjectSeasons = null,
+    IReadOnlyList<BackupLoreSystem>? LoreSystems = null,
+    IReadOnlyList<BackupSystemRule>? SystemRules = null,
+    IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
@@ -550,7 +602,24 @@ public sealed record BackupEntityType(
     DateTime UpdatedAt,
     IReadOnlyList<BackupFieldDefinition> Fields,
     Guid? ParentId = null,
-    IReadOnlyList<BackupFieldSection>? FieldSections = null);
+    IReadOnlyList<BackupFieldSection>? FieldSections = null,
+    Guid? ProjectId = null);
+
+/// <summary>
+/// One creative project of the universe (since version 39): what the author is making, with its kind and stage.
+///
+/// Its <c>Id</c> is this file's, like every other id here, and the entry types that belong to it name it by that id.
+/// Nothing of the account is carried: a restore makes the project the restoring account's, as it does the universe.
+/// </summary>
+public sealed record BackupCreativeProject(
+    Guid Id,
+    string Name,
+    ProjectKind Kind,
+    ProjectLifecycle Lifecycle,
+    string? Subtype,
+    string Summary,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
 /// <summary>One section of a type's fields (since version 31): its id, which its fields name, its name, place and fold.</summary>
 public sealed record BackupFieldSection(Guid Id, string Name, int DisplayOrder, bool StartsCollapsed);
@@ -837,6 +906,85 @@ public sealed record BackupImageCrop(double X, double Y, double Width, double He
 /// <paramref name="EraId"/> is the era <paramref name="NumberValue"/> is a year in, or null for
 /// a plain number - since version 4.
 /// </summary>
+/// <summary>
+/// One entry of one project (since version 40): a game's map or unit, a film's shot. Carried because #144 lets a
+/// project hold entries of its own types, and a universe that owns its projects (#171) is not whole without them.
+///
+/// <para>Narrower than <see cref="BackupEntity"/> on purpose, and not a variant of it: a project's entry has no Canon
+/// status, no article, no aliases, no tags, no picture and no revisions, because each of those says something about the
+/// world's record. <paramref name="CanonEntityId"/> is the optional link to the lore entry it stands for, carried as
+/// this file's own id like every other reference.</para>
+/// </summary>
+/// <summary>
+/// A season of one project, with its episodes (since version 41, #145). Carried for the same reason the projects and
+/// their entries are: a universe owns its projects (#171), so a universe restored without a series' episodes and their
+/// scripts is not the universe that was backed up.
+/// </summary>
+public sealed record BackupProjectSeason(
+    Guid Id,
+    Guid ProjectId,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupProjectEpisode> Episodes);
+
+/// <summary>One episode, with its script exactly as the author saved it, and a comic chapter's pages (version 43).</summary>
+public sealed record BackupProjectEpisode(
+    Guid Id,
+    string Title,
+    string? Synopsis,
+    string? Script,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupProjectPage>? Pages = null);
+
+/// <summary>
+/// One page of a comic's chapter, with its panels (since version 43, #147). Carried for the reason every other project
+/// row is: a universe owns its projects, so a universe restored without a comic's pages is not the one backed up.
+/// </summary>
+public sealed record BackupProjectPage(
+    Guid Id,
+    string? Name,
+    string? Notes,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupProjectPanel> Panels);
+
+/// <summary>
+/// One panel: what it shows, what is said in it, and the lore entry it names, carried as this file's own id like every
+/// other reference.
+/// </summary>
+public sealed record BackupProjectPanel(
+    Guid Id,
+    string? Description,
+    string? Dialogue,
+    Guid? CanonEntityId,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
+public sealed record BackupProjectEntity(
+    Guid Id,
+    Guid ProjectId,
+    Guid EntityTypeId,
+    string Name,
+    string? Summary,
+    Guid? CanonEntityId,
+    DateTime? DeletedAt,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupFieldValue> FieldValues,
+    /// <summary>
+    /// The entry's saved versions (since version 42, #146). The lore's own <see cref="BackupRevision"/> shape, because
+    /// a project entry's history is captured by the same code; carried because history that vanishes on a restore is
+    /// worse than no history at all.
+    /// </summary>
+    IReadOnlyList<BackupRevision>? Revisions = null);
+
 public sealed record BackupFieldValue(
     Guid FieldDefinitionId,
     string? TextValue,
@@ -1154,6 +1302,8 @@ public sealed record BackupPlotArc(
 /// carried. The owning account is not in the file: an importer gives the idea to the importing account and associates it
 /// with the universe being restored, re-creates each reference whose target is in the file, and never attaches the idea to
 /// any other universe. A browser's unsaved recovery copy of an idea is never in a backup: it was never saved.
+///
+/// <paramref name="ProjectId"/> (since version 47, #197) is the project of this same file the idea is a note for, or null.
 /// </summary>
 public sealed record BackupIdea(
     Guid Id,
@@ -1162,7 +1312,8 @@ public sealed record BackupIdea(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     DateTime? DeletedAt,
-    IReadOnlyList<BackupIdeaReference> References);
+    IReadOnlyList<BackupIdeaReference> References,
+    Guid? ProjectId = null);
 
 /// <summary>One reference of an idea: what the target is, stated explicitly, and its id.</summary>
 public sealed record BackupIdeaReference(IdeaReferenceKind Kind, Guid Id);
@@ -1201,6 +1352,72 @@ public sealed record BackupWorldRuleValidation(
     int MaxOccurrences);
 
 /// <summary>
+/// One System of the universe (since version 44, ADR 0072): a named set of rule definitions.
+///
+/// <paramref name="ProjectId"/> names a project of this file for a project-scoped System, and is null for one that is
+/// the whole universe's. <paramref name="RuleIds"/> are the rule definitions it references, in this System's own
+/// order; they are ids of this file's <see cref="UniverseBackupPayload.SystemRules"/>, never copies, because two
+/// Systems referencing one rule reference one definition. <paramref name="Revisions"/> are its saved states, oldest
+/// first, and <paramref name="Version"/> is the one it is at now.
+/// </summary>
+public sealed record BackupLoreSystem(
+    Guid Id,
+    WorldLogicScope Scope,
+    Guid? ProjectId,
+    string Name,
+    string Summary,
+    int Version,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> RuleIds,
+    IReadOnlyList<BackupWorldLogicRevision> Revisions);
+
+/// <summary>
+/// One reusable rule definition (since version 44, ADR 0072).
+///
+/// <paramref name="Condition"/> is the condition tree as stored text, byte for byte, with
+/// <paramref name="SchemaVersion"/> the version it was written against; both are null for a rule that is words only.
+/// The text is carried rather than re-serialised so a restored rule is the rule that was validated, and the ids
+/// inside it are translated on restore like every other reference. <paramref name="DependsOn"/> is the declared
+/// dependency set, by id in this file.
+/// </summary>
+public sealed record BackupSystemRule(
+    Guid Id,
+    WorldLogicScope Scope,
+    Guid? ProjectId,
+    string Title,
+    string Description,
+    int? SchemaVersion,
+    string? Condition,
+    int Version,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> DependsOn,
+    IReadOnlyList<BackupWorldLogicRevision> Revisions,
+
+    /// <summary>
+    /// The rule's explicit exceptions as stored text (since version 45), or null for a rule with none. Carried
+    /// as text for the reason the condition is: a restored rule is the rule that was validated.
+    /// </summary>
+    string? Exceptions = null);
+
+/// <summary>
+/// One saved state of a System or a rule definition (since version 44). <paramref name="Body"/> is a System's summary
+/// or a rule's description, and <paramref name="Condition"/> with <paramref name="SchemaVersion"/> are a rule's
+/// condition at that version - both null for a System, whose revisions carry no condition.
+/// </summary>
+public sealed record BackupWorldLogicRevision(
+    int Version,
+    string Title,
+    string Body,
+    int? SchemaVersion,
+    string? Condition,
+    DateTime SavedAt,
+
+    /// <summary>The exceptions the rule carried at that version (since version 45), or null.</summary>
+    string? Exceptions = null);
+
+/// <summary>
 /// One event kind or method of the universe (since version 13). The id is preserved because checks and moments name it; the kind
 /// is explicit, and the name is what an author reads. Two terms of one kind never share a name, compared case-insensitively.
 /// </summary>
@@ -1227,6 +1444,36 @@ public sealed record BackupChronologyValue(Guid? EraId, int Year, int? Month, in
 /// is not derived, and the fingerprint is enough to re-apply it, because it hashes only the
 /// rule code and the ids of the records at fault, all of which this backup preserves.
 /// </summary>
+/// <summary>
+/// One World Logic finding the author chose to live with (since version 46, ADR 0072, #153).
+///
+/// Findings themselves are derived and the whole table regenerates by sweeping the restored lore again, so nothing
+/// pending or resolved is carried. A dismissal is not derived, and unlike a Canon dismissal it cannot be carried as
+/// a bare fingerprint: the fingerprint is a hash over ids this universe no longer uses, so what the hash was taken
+/// over is carried instead and the fingerprint is computed again from the restored ids.
+///
+/// <paramref name="Evidence"/> is in the evaluator's own order, which is part of the fingerprint.
+/// <paramref name="Rationale"/> is the stored trace as text, unlocalised and never shown as prose.
+/// </summary>
+public sealed record BackupDismissedFinding(
+    Guid RuleId,
+    Guid? ProjectId,
+    WorldLogicFindingOutcome Outcome,
+    string? ErrorCode,
+    int RuleVersion,
+    int SchemaVersion,
+    string Rationale,
+    IReadOnlyList<BackupFindingEvidence> Evidence,
+    DateTime DetectedAt,
+    DateTime DismissedAt);
+
+/// <summary>
+/// One id a dismissed finding's outcome depended on (since version 46): the fact source, the id as the evaluator
+/// reported it, and the part it played. An id that is one of this file's rows is translated on restore; anything
+/// else is carried through as it was.
+/// </summary>
+public sealed record BackupFindingEvidence(string Source, string Id, string Role);
+
 public sealed record BackupDismissedConflict(
     string RuleCode,
     CanonConflictSeverity Severity,

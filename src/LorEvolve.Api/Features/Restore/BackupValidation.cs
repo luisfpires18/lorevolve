@@ -5,6 +5,8 @@ using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Knowledge;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.ProjectEntities;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Media;
@@ -14,6 +16,7 @@ using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Stories;
 using LorEvolve.Api.Features.Timeline;
 using LorEvolve.Api.Features.Universes;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.WorldRules;
 
 namespace LorEvolve.Api.Features.Restore;
@@ -409,7 +412,11 @@ internal static partial class BackupValidation
         return results;
     }
 
-    private static int CountRecords(UniverseBackupPayload payload)
+    /// <summary>
+    /// How many rows a restore of this file would write, for the limit above. Internal so a test can hold it to
+    /// counting a project's rows, which it did not until #146.
+    /// </summary>
+    internal static int CountRecords(UniverseBackupPayload payload)
     {
         long count = 1 + payload.ChronologyEras!.Count + (payload.ChronologyCalendar is { } calendar ? 1 + calendar.Months.Count : 0) + payload.Tags.Count + payload.RelationshipTypes.Count
             + payload.DismissedConflicts.Count + (payload.KnowledgeRecords?.Count ?? 0)
@@ -455,10 +462,72 @@ internal static partial class BackupValidation
             count += story.PlotArcs!.Count + story.Scenes.Sum(scene => (long)(scene.Beats?.Count ?? 0));
         }
 
+        // A project's own rows, which were counted as nothing until now: the projects (version 39), their entries with
+        // every field value and saved version under them (40 and 42), and their seasons with their episodes (41). The
+        // limit exists so a crafted archive cannot ask the restore to write an unbounded number of rows, and rows it
+        // does not count are rows it does not bound. Found by the third review round of #146.
+        count += payload.CreativeProjects?.Count ?? 0;
+
+        foreach (var entry in payload.ProjectEntities ?? [])
+        {
+            if (entry is null)
+            {
+                continue;
+            }
+
+            count += 1 + (entry.FieldValues?.Count ?? 0);
+
+            foreach (var revision in entry.Revisions ?? [])
+            {
+                if (revision is not null)
+                {
+                    count += 1 + revision.Aliases.Count + revision.Tags.Count + revision.FieldValues.Count;
+                }
+            }
+        }
+
+        foreach (var season in payload.ProjectSeasons ?? [])
+        {
+            if (season is null)
+            {
+                continue;
+            }
+
+            count += 1;
+
+            foreach (var episode in season.Episodes ?? [])
+            {
+                if (episode is null)
+                {
+                    continue;
+                }
+
+                // The episode, its pages and their panels (version 43, #147): rows the restore writes are rows the
+                // limit has to bound, which is what the third review round of #146 established.
+                count += 1 + (episode.Pages?.Count ?? 0)
+                    + (episode.Pages ?? []).Sum(page => page is null ? 0L : (long)(page.Panels?.Count ?? 0));
+            }
+        }
+
         count += payload.Ideas!.Sum(idea => 1L + idea.References.Count);
         count += payload.WorldRules!.Sum(rule => rule.Validation is null ? 1L : 2L);
         count += payload.ValidationTerms!.Count;
         count += payload.TimelineEntries.Count(entry => entry.Validation is not null);
+
+        // World Logic (version 44): a System, its revisions and its links; a rule definition, its revisions and its
+        // declared dependencies. Every one of them is a row the restore writes, so the limit has to bound it.
+        count += (payload.LoreSystems ?? []).Sum(system => system is null
+            ? 0L
+            : 1L + system.RuleIds.Count + system.Revisions.Count);
+        count += (payload.SystemRules ?? []).Sum(rule => rule is null
+            ? 0L
+            : 1L + rule.DependsOn.Count + rule.Revisions.Count);
+
+        // World Logic dismissals (version 46): the finding, its evidence and the one history entry the restore
+        // writes to say the dismissal was re-applied.
+        count += (payload.DismissedFindings ?? []).Sum(finding => finding is null
+            ? 0L
+            : 2L + finding.Evidence.Count);
 
         return (int)Math.Min(count, int.MaxValue);
     }
@@ -478,6 +547,10 @@ internal static partial class BackupValidation
     private sealed class ContentChecks(UniverseBackupPayload payload, int version, BackupIssueList issues, OpenedBackup opened)
     {
         private readonly HashSet<Guid> _ids = [];
+        private readonly HashSet<Guid> _projects = [];
+
+        /// <summary>Every rule definition this file holds, so a link and a dependency can be checked against it.</summary>
+        private readonly HashSet<Guid> _systemRules = [];
         private readonly Dictionary<Guid, BackupEntityType> _types = [];
         private readonly Dictionary<Guid, Guid> _fieldOwner = [];
         private readonly HashSet<Guid> _requiredFields = [];
@@ -527,17 +600,23 @@ internal static partial class BackupValidation
             var knowledge = Required(payload.KnowledgeRecords, "the list of knowledge records", since: 33);
             var maps = Required(payload.Maps, "the list of maps", since: 34);
             var boards = Required(payload.IdeaBoards, "the list of idea boards", since: 36);
+            var systems = Required(payload.LoreSystems, "the list of Systems", since: 44);
+            var systemRules = Required(payload.SystemRules, "the list of rule definitions", since: 44);
+            var dismissedFindings = Required(payload.DismissedFindings, "the dismissed World Logic findings", since: 46);
 
             // Everything that can be referenced is listed first, so a reference checked below can
             // point anywhere in the file regardless of order.
             RegisterEras(eras);
             RegisterCalendar(payload.ChronologyCalendar);
+            RegisterProjects(Required(payload.CreativeProjects, "the list of projects", since: 39));
             RegisterTypes(types);
             CheckTypeHierarchy(types);
             RegisterGroups(groups);
             CheckFieldTargets();
             RegisterTags(tags);
             RegisterEntities(entities);
+            RegisterProjectEntries(Required(payload.ProjectEntities, "the list of project entries", since: 40));
+            RegisterProjectSeasons(Required(payload.ProjectSeasons, "the list of project seasons", since: 41));
             RegisterRelationshipTypes(relationshipTypes);
             RegisterStories(stories);
             RegisterValidationTerms(terms);
@@ -583,9 +662,19 @@ internal static partial class BackupValidation
                 CheckWorldRule(rule);
             }
 
+            // The rule definitions before the Systems, so a System's link and a rule's dependency can both be
+            // checked against ids this file really holds (ADR 0072).
+            CheckSystemRules(systemRules);
+            CheckLoreSystems(systems);
+
             foreach (var conflict in dismissed)
             {
                 CheckDismissedConflict(conflict);
+            }
+
+            foreach (var finding in dismissedFindings)
+            {
+                CheckDismissedFinding(finding);
             }
 
             CheckArchiveHoldsOnlyPictures();
@@ -947,9 +1036,49 @@ internal static partial class BackupValidation
             }
         }
 
-        private void RegisterTypes(IReadOnlyList<BackupEntityType> types)
+        /// <summary>The universe's projects (version 39), so a project-scoped entry type can name one of them.</summary>
+        private void RegisterProjects(IReadOnlyList<BackupCreativeProject> projects)
         {
             var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var project in projects)
+            {
+                if (project is null)
+                {
+                    Missing("a project");
+                    continue;
+                }
+
+                var what = $"The project {Quote(project.Name)}";
+                Register(project.Id, what);
+                _projects.Add(project.Id);
+
+                if (Text(project.Name, ProjectLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(project.Name))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"Two projects are both called {Quote(project.Name)}.");
+                }
+
+                Text(project.Subtype, ProjectLimits.SubtypeMaxLength, $"{what}'s subtype");
+                Text(project.Summary, ProjectLimits.SummaryMaxLength, $"{what}'s summary");
+
+                if (!Enum.IsDefined(project.Kind))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is of a kind LorEvolve does not have.");
+                }
+
+                if (!Enum.IsDefined(project.Lifecycle))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is at a stage LorEvolve does not have.");
+                }
+            }
+        }
+
+        private void RegisterTypes(IReadOnlyList<BackupEntityType> types)
+        {
+            // One name set per scope: the lore's types among themselves, and each project's among themselves (#143).
+            // The database says the same with two partial unique indexes, so a single set across the file would
+            // refuse a backup the database had just produced.
+            var loreNames = new HashSet<string>(StringComparer.Ordinal);
+            var namesByProject = new Dictionary<Guid, HashSet<string>>();
 
             foreach (var type in types)
             {
@@ -963,9 +1092,24 @@ internal static partial class BackupValidation
                 Register(type.Id, what);
                 _types[type.Id] = type;
 
-                if (Text(type.Name, LoreLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(type.Name))
+                if (type.ProjectId is { } scope && !_projects.Contains(scope))
                 {
-                    Add(BackupIssueCodes.Duplicate, $"Two entry types are both called {Quote(type.Name)}.");
+                    Reference(false, $"{what} belongs to a project the backup does not hold.");
+                }
+
+                var scopeNames = type.ProjectId is { } projectId
+                    ? namesByProject.TryGetValue(projectId, out var held)
+                        ? held
+                        : namesByProject[projectId] = new HashSet<string>(StringComparer.Ordinal)
+                    : loreNames;
+
+                if (Text(type.Name, LoreLimits.NameMaxLength, $"{what}'s name", required: true) && !scopeNames.Add(type.Name))
+                {
+                    Add(
+                        BackupIssueCodes.Duplicate,
+                        type.ProjectId is null
+                            ? $"Two of the universe's entry types are both called {Quote(type.Name)}."
+                            : $"Two entry types of one project are both called {Quote(type.Name)}.");
                 }
 
                 Text(type.Description, LoreLimits.DescriptionMaxLength, $"{what}'s description");
@@ -1109,6 +1253,161 @@ internal static partial class BackupValidation
         }
 
         // ---------- Entries ----------
+
+        /// <summary>
+        /// A project's seasons and their episodes (version 41, #145). Each season belongs to a project this file holds,
+        /// and one project's season names are unique among themselves, which is what the database says too.
+        /// </summary>
+        private void RegisterProjectSeasons(IReadOnlyList<BackupProjectSeason> seasons)
+        {
+            var namesByProject = new Dictionary<Guid, HashSet<string>>();
+
+            foreach (var season in seasons)
+            {
+                if (season is null)
+                {
+                    Missing("a project season");
+                    continue;
+                }
+
+                var what = $"The season {Quote(season.Name)}";
+                Register(season.Id, what);
+
+                if (!_projects.Contains(season.ProjectId))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} belongs to a project this file does not hold.");
+                }
+
+                var names = namesByProject.TryGetValue(season.ProjectId, out var held)
+                    ? held
+                    : namesByProject[season.ProjectId] = new HashSet<string>(StringComparer.Ordinal);
+
+                if (Text(season.Name, SeriesLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(season.Name))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"Two seasons of one project are both called {Quote(season.Name)}.");
+                }
+
+                Text(season.Summary, SeriesLimits.SummaryMaxLength, $"{what}'s summary");
+
+                foreach (var episode in season.Episodes ?? [])
+                {
+                    if (episode is null)
+                    {
+                        Missing($"an episode of {what}");
+                        continue;
+                    }
+
+                    var which = $"The episode {Quote(episode.Title)} of {Quote(season.Name)}";
+                    Register(episode.Id, which);
+                    Text(episode.Title, SeriesLimits.NameMaxLength, $"{which}'s title", required: true);
+                    Text(episode.Synopsis, SeriesLimits.SummaryMaxLength, $"{which}'s synopsis");
+                    Text(episode.Script, SeriesLimits.ScriptMaxLength, $"{which}'s script");
+
+                    // A comic chapter's pages and panels (version 43, #147).
+                    foreach (var page in episode.Pages ?? [])
+                    {
+                        if (page is null)
+                        {
+                            Missing($"a page of {which}");
+                            continue;
+                        }
+
+                        Register(page.Id, $"A page of {which}");
+                        Text(page.Name, ComicLimits.NameMaxLength, $"a page's name of {which}");
+                        Text(page.Notes, ComicLimits.TextMaxLength, $"a page's notes of {which}");
+
+                        foreach (var panel in page.Panels ?? [])
+                        {
+                            if (panel is null)
+                            {
+                                Missing($"a panel of a page of {which}");
+                                continue;
+                            }
+
+                            Register(panel.Id, $"A panel of a page of {which}");
+                            Text(panel.Description, ComicLimits.TextMaxLength, $"a panel's description of {which}");
+                            Text(panel.Dialogue, ComicLimits.TextMaxLength, $"a panel's dialogue of {which}");
+
+                            // The link is optional, and a value must name a lore entry this file holds: a panel
+                            // pointing at a project's entry would show one project's work inside another's.
+                            if (panel.CanonEntityId is { } shown && !_entities.ContainsKey(shown))
+                            {
+                                Add(
+                                    BackupIssueCodes.MissingReference,
+                                    $"A panel of {which} shows a lore entry this file does not hold.");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// A project's entries (version 40, #144): each must belong to a project this file holds and to a type of that
+        /// same project, and its optional canon link must point at a lore entry of this file. A project's entry is
+        /// checked against its project's schema, never the lore's, which is the file-level half of the isolation the
+        /// database enforces (#143).
+        /// </summary>
+        private void RegisterProjectEntries(IReadOnlyList<BackupProjectEntity> entries)
+        {
+            foreach (var entry in entries)
+            {
+                if (entry is null)
+                {
+                    Missing("a project entry");
+                    continue;
+                }
+
+                var what = $"The project entry {Quote(entry.Name)}";
+                Register(entry.Id, what);
+
+                Text(entry.Name, LoreLimits.NameMaxLength, $"{what}'s name", required: true);
+                Text(entry.Summary, LoreLimits.SummaryMaxLength, $"{what}'s summary");
+
+                if (!_projects.Contains(entry.ProjectId))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} belongs to a project this file does not hold.");
+                }
+                else if (!_types.TryGetValue(entry.EntityTypeId, out var type))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} is of a type this file does not hold.");
+                }
+                else if (type.ProjectId != entry.ProjectId)
+                {
+                    Add(
+                        BackupIssueCodes.MissingReference,
+                        $"{what} is of a type that belongs to another scope, so it would come back in the wrong one.");
+                }
+
+                // The link is optional. A value has to name a lore entry of this file: a link to a project's entry
+                // would make one project's work stand for another's.
+                if (entry.CanonEntityId is { } canonId && !_entities.ContainsKey(canonId))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} stands for a lore entry this file does not hold.");
+                }
+
+                foreach (var value in entry.FieldValues ?? [])
+                {
+                    if (value is null)
+                    {
+                        Missing($"a field value of {what}");
+                    }
+                }
+
+                // The entry's saved versions (version 42, #146). Each id is registered, as a lore entry's versions are,
+                // so a reference to one inside the file resolves and a duplicate is caught.
+                foreach (var revision in entry.Revisions ?? [])
+                {
+                    if (revision is null)
+                    {
+                        Missing($"a saved version of {what}");
+                        continue;
+                    }
+
+                    Register(revision.Id, $"A saved version of {what}");
+                }
+            }
+        }
 
         private void RegisterEntities(IReadOnlyList<BackupEntity> entities)
         {
@@ -2033,6 +2332,11 @@ internal static partial class BackupValidation
                 Text(idea.Body, IdeaLimits.BodyMaxLength, $"{what}'s body");
             }
 
+            if (idea.ProjectId is { } projectId)
+            {
+                Reference(_projects.Contains(projectId), $"{what} is in a project the backup does not hold.");
+            }
+
             var references = new HashSet<(IdeaReferenceKind, Guid)>();
 
             foreach (var reference in Required(idea.References, $"{what}'s references"))
@@ -2108,6 +2412,235 @@ internal static partial class BackupValidation
             }
         }
 
+        // ---------- World Logic ----------
+
+        /// <summary>
+        /// Each rule definition's id, words, scope, condition and declared dependencies (version 44, ADR 0072).
+        ///
+        /// The condition is checked with the same <see cref="ConditionSchema"/> a save is held to, so a file cannot
+        /// restore a tree the endpoints would have refused. Its ids are not resolved here: a restore translates every
+        /// id it knows and leaves the rest, and an id the file does not hold is reported by evaluation as
+        /// <c>invalid_reference</c> rather than refusing a whole restore over one rule.
+        /// </summary>
+        private void CheckSystemRules(IReadOnlyList<BackupSystemRule> rules)
+        {
+            foreach (var rule in rules)
+            {
+                if (rule is null)
+                {
+                    Missing("a rule definition");
+                    continue;
+                }
+
+                var what = $"The rule {Quote(rule.Title)}";
+                Register(rule.Id, what);
+                _systemRules.Add(rule.Id);
+
+                Text(rule.Title, WorldLogicLimits.NameMaxLength, $"{what}'s title", required: true);
+
+                if (rule.Description is null)
+                {
+                    Missing($"the description of {what.ToLowerInvariant()}");
+                }
+                else
+                {
+                    Text(rule.Description, WorldLogicLimits.DescriptionMaxLength, $"{what}'s description");
+                }
+
+                CheckWorldLogicScope(rule.Scope, rule.ProjectId, what);
+                CheckCondition(rule.SchemaVersion, rule.Condition, what);
+                CheckExceptions(rule.SchemaVersion, rule.Exceptions, what);
+
+                if (rule.Version < 1)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is at a version below 1.");
+                }
+
+                if (rule.DependsOn.Count > WorldLogicLimits.MaxDependenciesPerRule)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} declares more dependencies than LorEvolve allows.");
+                }
+
+                if (rule.DependsOn.Contains(rule.Id))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} depends on itself.");
+                }
+
+                foreach (var revision in rule.Revisions)
+                {
+                    if (revision is null)
+                    {
+                        Missing($"a saved state of {what.ToLowerInvariant()}");
+                        continue;
+                    }
+
+                    Text(revision.Title, WorldLogicLimits.NameMaxLength, $"{what}'s saved title", required: true);
+                    Text(revision.Body, WorldLogicLimits.DescriptionMaxLength, $"{what}'s saved description");
+                    CheckCondition(revision.SchemaVersion, revision.Condition, $"{what}'s saved state");
+                    CheckExceptions(revision.SchemaVersion, revision.Exceptions, $"{what}'s saved state");
+                }
+            }
+
+            // The dependency ids after every rule is registered, so order in the file never decides the answer.
+            foreach (var rule in rules)
+            {
+                if (rule is null)
+                {
+                    continue;
+                }
+
+                foreach (var dependency in rule.DependsOn)
+                {
+                    if (!_systemRules.Contains(dependency))
+                    {
+                        Add(
+                            BackupIssueCodes.MissingReference,
+                            $"The rule {Quote(rule.Title)} depends on a rule the backup does not hold.");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Each System's id, name, scope, saved states and the rule definitions it references (version 44).
+        /// Two Systems in one scope never share a name, which is what the unique index enforces on a restore.
+        /// </summary>
+        private void CheckLoreSystems(IReadOnlyList<BackupLoreSystem> systems)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var system in systems)
+            {
+                if (system is null)
+                {
+                    Missing("a System");
+                    continue;
+                }
+
+                var what = $"The System {Quote(system.Name)}";
+                Register(system.Id, what);
+
+                if (Text(system.Name, WorldLogicLimits.NameMaxLength, $"{what}'s name", required: true)
+                    && !names.Add(FormattableString.Invariant($"{system.ProjectId}|{system.Name}")))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"Two Systems in one scope are both called {Quote(system.Name)}.");
+                }
+
+                Text(system.Summary, WorldLogicLimits.SummaryMaxLength, $"{what}'s summary");
+                CheckWorldLogicScope(system.Scope, system.ProjectId, what);
+
+                if (system.Version < 1)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is at a version below 1.");
+                }
+
+                if (system.RuleIds.Count > WorldLogicLimits.MaxRulesPerSystem)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} references more rules than LorEvolve allows.");
+                }
+
+                if (system.RuleIds.Distinct().Count() != system.RuleIds.Count)
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{what} references one rule twice.");
+                }
+
+                foreach (var ruleId in system.RuleIds)
+                {
+                    if (!_systemRules.Contains(ruleId))
+                    {
+                        Add(BackupIssueCodes.MissingReference, $"{what} references a rule the backup does not hold.");
+                    }
+                }
+
+                foreach (var revision in system.Revisions)
+                {
+                    if (revision is null)
+                    {
+                        Missing($"a saved state of {what.ToLowerInvariant()}");
+                        continue;
+                    }
+
+                    Text(revision.Title, WorldLogicLimits.NameMaxLength, $"{what}'s saved name", required: true);
+                    Text(revision.Body, WorldLogicLimits.SummaryMaxLength, $"{what}'s saved summary");
+                }
+            }
+        }
+
+        /// <summary>
+        /// A rule's exceptions, held to the same structural check a save is (version 45, ADR 0072). An exception
+        /// without a condition to except from is a modelling mistake the restore reports rather than carries.
+        /// </summary>
+        private void CheckExceptions(int? schemaVersion, string? exceptions, string what)
+        {
+            if (exceptions is null)
+            {
+                return;
+            }
+
+            if (schemaVersion is null)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} carries exceptions without a schema version.");
+                return;
+            }
+
+            if (ConditionSchema.ValidateExceptions(exceptions, schemaVersion.Value) is { } problem)
+            {
+                Add(
+                    BackupIssueCodes.InvalidValue,
+                    $"{what}'s exceptions are not ones LorEvolve can read ({problem.Code} at {problem.Path}).");
+            }
+        }
+
+        /// <summary>A scope and its project agree, and the project is one this file holds.</summary>
+        private void CheckWorldLogicScope(WorldLogicScope scope, Guid? projectId, string what)
+        {
+            if (!Enum.IsDefined(scope))
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} is in a scope LorEvolve does not have.");
+                return;
+            }
+
+            switch (scope)
+            {
+                case WorldLogicScope.Universe when projectId is not null:
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is the universe's but names a project.");
+                    break;
+
+                case WorldLogicScope.Project when projectId is null:
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is a project's but names no project.");
+                    break;
+
+                case WorldLogicScope.Project when !_projects.Contains(projectId!.Value):
+                    Add(BackupIssueCodes.MissingReference, $"{what} is in a project the backup does not hold.");
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// A condition's text and schema version, held to the same structural check a save is (ADR 0072). Both null
+        /// is a rule that is words only, which is normal; one without the other is not.
+        /// </summary>
+        private void CheckCondition(int? schemaVersion, string? condition, string what)
+        {
+            if (condition is null && schemaVersion is null)
+            {
+                return;
+            }
+
+            if (condition is null || schemaVersion is null)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} carries a condition without its schema version, or the reverse.");
+                return;
+            }
+
+            if (ConditionSchema.Validate(condition, schemaVersion.Value) is { } problem)
+            {
+                Add(
+                    BackupIssueCodes.InvalidValue,
+                    $"{what}'s condition is not one LorEvolve can read ({problem.Code} at {problem.Path}).");
+            }
+        }
+
         // ---------- Event kinds and methods ----------
 
         /// <summary>Each term's id, kind and name, and no two of one kind an author could not tell apart. Nothing a name says is judged.</summary>
@@ -2166,6 +2699,60 @@ internal static partial class BackupValidation
             if (conflict.Fingerprint is null || !FingerprintPattern().IsMatch(conflict.Fingerprint))
             {
                 Add(BackupIssueCodes.InvalidValue, "A dismissed Canon conflict does not carry a fingerprint LorEvolve wrote.");
+            }
+        }
+
+        /// <summary>
+        /// One dismissed World Logic finding (version 46). Its rule and its project have to be ones this file
+        /// holds, because the restore re-applies the dismissal to the finding that rule produces in that scope; a
+        /// dismissal naming a rule the file does not carry could never be matched to anything.
+        ///
+        /// The evidence ids are not resolved: they are the evaluator's own text, which is a row id in production
+        /// and a fixture's label in a test, and a restore translates the ones it knows and leaves the rest.
+        /// </summary>
+        private void CheckDismissedFinding(BackupDismissedFinding finding)
+        {
+            if (finding is null)
+            {
+                Missing("a dismissed World Logic finding");
+                return;
+            }
+
+            const string what = "A dismissed World Logic finding";
+
+            Defined(finding.Outcome, $"{what}'s outcome");
+            Reference(_systemRules.Contains(finding.RuleId), $"{what} names a rule the backup does not hold.");
+
+            if (finding.ProjectId is { } projectId)
+            {
+                Reference(_projects.Contains(projectId), $"{what} is in a project the backup does not hold.");
+            }
+
+            Text(finding.ErrorCode, WorldLogicFindingLimits.ErrorCodeMaxLength, $"{what}'s error code");
+            Text(finding.Rationale, WorldLogicFindingLimits.RationaleMaxLength, $"{what}'s rationale", required: true);
+
+            if (finding.RuleVersion < 1)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} is at a rule version below 1.");
+            }
+
+            if (finding.Evidence is null)
+            {
+                Missing($"the evidence of {what.ToLowerInvariant()}");
+                return;
+            }
+
+            foreach (var item in finding.Evidence)
+            {
+                if (item is null)
+                {
+                    Missing($"one piece of evidence of {what.ToLowerInvariant()}");
+                    continue;
+                }
+
+                Text(item.Source, WorldLogicFindingLimits.SourceMaxLength, $"{what}'s evidence source", required: true);
+                Text(item.Id, WorldLogicFindingLimits.SourceRowIdMaxLength, $"{what}'s evidence id", required: true);
+                Text(item.Role, WorldLogicFindingLimits.RoleMaxLength, $"{what}'s evidence role", required: true);
             }
         }
 

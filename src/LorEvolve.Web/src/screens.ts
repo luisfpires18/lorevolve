@@ -32,6 +32,8 @@ export const MapPage = lazyWithPreload(() => import('./pages/MapPage'))
 export const MapsPage = lazyWithPreload(() => import('./pages/MapsPage'))
 export const MassCreatePage = lazyWithPreload(() => import('./pages/MassCreatePage'))
 export const ProfilePage = lazyWithPreload(() => import('./pages/ProfilePage'))
+export const ProjectPage = lazyWithPreload(() => import('./pages/ProjectPage'))
+export const ProjectsPage = lazyWithPreload(() => import('./pages/ProjectsPage'))
 export const PublicAuthorPage = lazyWithPreload(() => import('./pages/PublicAuthorPage'))
 export const PublicLorePage = lazyWithPreload(() => import('./pages/PublicLorePage'))
 export const PublicStoryPage = lazyWithPreload(() => import('./pages/PublicStoryPage'))
@@ -49,6 +51,7 @@ export const UniverseTypes = lazyWithPreload(() => import('./pages/UniverseTypes
 export const UniversesPage = lazyWithPreload(() => import('./pages/UniversesPage'))
 export const WorldRulePage = lazyWithPreload(() => import('./pages/WorldRulePage'))
 export const WorldRulesPage = lazyWithPreload(() => import('./pages/WorldRulesPage'))
+export const WorldLogicPage = lazyWithPreload(() => import('./pages/WorldLogicPage'))
 
 type Screen = Pick<PreloadableScreen<object>, 'preload'>
 
@@ -58,6 +61,7 @@ const SECTIONS: Record<string, Screen> = {
   maps: MapsPage,
   'family-tree': FamilyTreePage,
   timeline: TimelinePage,
+  'world-logic': WorldLogicPage,
   'world-rules': WorldRulesPage,
   chronology: ChronologyPage,
   stories: StoriesPage,

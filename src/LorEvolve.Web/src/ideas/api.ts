@@ -10,6 +10,7 @@ import {
   type IdeaReference,
   type IdeaReferenceKindValue,
 } from './types'
+import { t } from '../i18n'
 
 const BASE = '/api/ideas'
 
@@ -22,6 +23,7 @@ export function listIdeas(query: IdeaQuery, signal?: AbortSignal) {
   const params = new URLSearchParams({ page: String(query.page), pageSize: String(IDEA_PAGE_SIZE) })
   if (query.universeId) params.set('universeId', query.universeId)
   if (query.universeId && query.storyId) params.set('storyId', query.storyId)
+  if (query.projectId) params.set('projectId', query.projectId)
   if (query.unassigned) params.set('unassigned', 'true')
   if (query.deleted) params.set('deleted', 'true')
   if (query.search.trim()) params.set('search', query.search.trim())
@@ -102,6 +104,6 @@ export function referenceContext(reference: IdeaReference) {
     case IdeaReferenceKind.Story:
       return null
     default:
-      return `In “${reference.storyTitle ?? ''}”`
+      return t('ideas.reference.inStory', { title: reference.storyTitle ?? '' })
   }
 }

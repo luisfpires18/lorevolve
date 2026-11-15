@@ -8,9 +8,10 @@ import type { Chronology } from '../chronology/types'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
+import { useI18n } from '../i18n'
 import { createScene, getScene, SCENE_CHANGED, updateScene } from '../stories/api'
 import { suggestSceneChanges } from '../suggestions/api'
-import { UNCHAPTERED } from '../stories/format'
+import { unchaptered } from '../stories/format'
 import { chapterChoices } from '../stories/structure'
 import { SceneBeatsField } from './SceneBeatsField'
 import { beatKey } from '../stories/beats'
@@ -65,6 +66,7 @@ export function SceneForm({
   onSuggested,
   startWithBeat = false,
 }: SceneFormProps) {
+  const { t } = useI18n()
   const suggesting = onSuggested !== undefined && scene !== null
   const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
@@ -101,10 +103,10 @@ export function SceneForm({
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
     suggesting && scene
-      ? `Your suggestion for “${scene.title}” hasn’t been sent. Leave without sending it?`
+      ? t('stories.sceneForm.leaveSuggestion', { title: scene.title })
       : scene
-        ? `“${scene.title}” has unsaved changes. Leave without saving them?`
-        : 'This new scene has not been created. Leave without saving it?',
+        ? t('stories.sceneForm.leaveUnsaved', { title: scene.title })
+        : t('stories.sceneForm.leaveNew'),
     onClose,
   )
 
@@ -173,12 +175,12 @@ export function SceneForm({
           Object.keys(error.fieldErrors).length === 0
             ? error.message
             : suggesting
-              ? 'Some details need a change before this can be sent.'
-              : 'Some details need a change before this can be saved.',
+              ? t('stories.sceneForm.detailsToSend')
+              : t('stories.sceneForm.detailsToSave'),
         )
       } else {
         setMessage(
-          suggesting ? 'That suggestion couldn’t be sent.' : 'That scene could not be saved.',
+          suggesting ? t('stories.sceneForm.failedSend') : t('stories.sceneForm.failedSave'),
         )
       }
     } finally {
@@ -204,19 +206,20 @@ export function SceneForm({
         <header className="drawer__head">
           {scene ? (
             <p className="drawer__eyebrow">
-              {suggesting ? 'Suggesting changes to a scene' : 'Editing a scene'}
+              {suggesting
+                ? t('stories.sceneForm.eyebrowSuggesting')
+                : t('stories.sceneForm.eyebrowEditing')}
             </p>
           ) : null}
           <h2 className="drawer__title" id="scene-heading">
-            {scene ? scene.title : 'New scene'}
+            {scene ? scene.title : t('stories.sceneForm.newTitle')}
           </h2>
         </header>
 
         <div className="drawer__body">
           {suggesting ? (
             <p className="callout" data-testid="scene-suggesting">
-              You&rsquo;re suggesting changes. The scene stays as it is until the owner or an Editor
-              accepts them.
+              {t('stories.sceneForm.suggestingNote')}
             </p>
           ) : null}
 
@@ -228,7 +231,7 @@ export function SceneForm({
 
           {conflict && scene ? (
             <EditConflict
-              what="scene"
+              what={t('stories.sceneForm.conflictNoun')}
               read={() => getScene(universeId, storyId, scene.id)}
               renderLatest={(latest) => (
                 <ChangeList changes={sceneChanges(draftFrom(latest, null), draft)} />
@@ -252,7 +255,7 @@ export function SceneForm({
 
           <div className="field">
             <label className="field__label" htmlFor="scene-title">
-              Title
+              {t('stories.sceneForm.titleLabel')}
             </label>
             <input
               id="scene-title"
@@ -260,7 +263,7 @@ export function SceneForm({
               ref={title}
               type="text"
               dir="auto"
-              placeholder="Insert a title"
+              placeholder={t('stories.sceneForm.titlePlaceholder')}
               value={draft.title}
               onChange={(event) => edit({ title: event.target.value })}
               aria-invalid={fieldErrors.title ? true : undefined}
@@ -272,12 +275,12 @@ export function SceneForm({
           {chapters.length > 0 ? (
             <div className="field">
               <label className="field__label" htmlFor="scene-chapter">
-                Chapter
+                {t('stories.sceneForm.chapterLabel')}
               </label>
               <p className="field__hint">
                 {scene
-                  ? 'Choosing another chapter moves the scene there, last.'
-                  : 'The scene goes last in it.'}
+                  ? t('stories.sceneForm.chapterHintMove')
+                  : t('stories.sceneForm.chapterHintNew')}
               </p>
               <select
                 id="scene-chapter"
@@ -287,7 +290,7 @@ export function SceneForm({
                 aria-invalid={fieldErrors.chapterid ? true : undefined}
                 data-testid="scene-chapter-select"
               >
-                <option value="">{UNCHAPTERED}</option>
+                <option value="">{unchaptered()}</option>
                 {chapterChoices(arcs, chapters).map((choice) => (
                   <option key={choice.id} value={choice.id}>
                     {choice.label}
@@ -302,9 +305,9 @@ export function SceneForm({
 
           <div className="field">
             <label className="field__label" htmlFor="scene-summary">
-              Summary
+              {t('stories.sceneForm.summaryLabel')}
             </label>
-            <p className="field__hint">What happens, briefly.</p>
+            <p className="field__hint">{t('stories.sceneForm.summaryHint')}</p>
             <textarea
               id="scene-summary"
               className="field__input field__input--area"
@@ -328,9 +331,9 @@ export function SceneForm({
 
           <div className="field">
             <label className="field__label" htmlFor="scene-notes">
-              Notes
+              {t('stories.sceneForm.notesLabel')}
             </label>
-            <p className="field__hint">Your own planning notes. Only shown here.</p>
+            <p className="field__hint">{t('stories.sceneForm.notesHint')}</p>
             <textarea
               id="scene-notes"
               className="field__input field__input--area"
@@ -345,20 +348,18 @@ export function SceneForm({
 
           <div data-testid="scene-pov-field">
             <EntityPicker
-              label="Point of view"
+              label={t('stories.sceneForm.povLabel')}
               universeId={universeId}
               value={draft.pov}
               onChange={(pov) => edit({ pov })}
-              placeholder="Anyone or anything in this universe"
+              placeholder={t('stories.sceneForm.povPlaceholder')}
               error={fieldErrors.poventityid}
             />
           </div>
 
           <fieldset className="scenechron">
-            <legend className="field__label">When in the world</legend>
-            <p className="field__hint">
-              Optional. Where this scene happens, not where it is told. It never moves the scene.
-            </p>
+            <legend className="field__label">{t('stories.sceneForm.whenLegend')}</legend>
+            <p className="field__hint">{t('stories.sceneForm.whenHint')}</p>
 
             <ChronologyPointFields
               chronology={chronology}
@@ -380,8 +381,7 @@ export function SceneForm({
 
             {unreckoned ? (
               <p className="field__hint" data-testid="scene-unreckoned">
-                Placed as a plain year before this universe had date periods. Choose its period, or
-                clear it.
+                {t('stories.sceneForm.unreckoned')}
               </p>
             ) : null}
 
@@ -392,15 +392,15 @@ export function SceneForm({
                 onClick={() => edit({ point: EMPTY_POINT })}
                 data-testid="scene-chronology-clear"
               >
-                Clear when
+                {t('stories.sceneForm.clearWhen')}
               </button>
             ) : null}
           </fieldset>
 
           <div data-testid="scene-lore-field">
             <EntityMultiPicker
-              label="Linked lore"
-              hint="Lore relevant to this scene. Linking says nothing about who is there."
+              label={t('stories.sceneForm.loreLabel')}
+              hint={t('stories.sceneForm.loreHint')}
               universeId={universeId}
               value={draft.entities}
               onChange={(entities) => edit({ entities })}
@@ -419,13 +419,13 @@ export function SceneForm({
           >
             {suggesting
               ? isSaving
-                ? 'Sending'
-                : 'Send suggestion'
+                ? t('stories.sceneForm.sending')
+                : t('stories.sceneForm.sendSuggestion')
               : isSaving
-                ? 'Saving'
+                ? t('stories.sceneForm.saving')
                 : scene
-                  ? 'Save scene'
-                  : 'Add scene'}
+                  ? t('stories.sceneForm.save')
+                  : t('stories.sceneForm.add')}
           </button>
           <button
             className="button button--secondary"
@@ -433,7 +433,7 @@ export function SceneForm({
             onClick={close}
             data-testid="cancel-scene"
           >
-            Cancel
+            {t('stories.sceneForm.cancel')}
           </button>
         </footer>
       </form>

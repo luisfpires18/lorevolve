@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using LorEvolve.Api.Features.Assistant;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Comments;
 using LorEvolve.Api.Features.Knowledge;
@@ -11,6 +10,7 @@ using LorEvolve.Api.Features.Publishing;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Stories;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.Trash;
 using LorEvolve.Api.Features.Universes;
 using LorEvolve.Api.Features.WorldRules;
@@ -170,6 +170,34 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("create rule", Post, $"{u}/world-rules", May.Edit, Json(new WorldRuleRequest("Salt binds", null, null))),
             new("edit rule", Put, $"{u}/world-rules/{w.Rule}", May.Edit, Json(new WorldRuleRequest("Tides keep count", "Edited", null))),
             new("trash rule", Delete, $"{u}/world-rules/{w.Rule}", May.Edit),
+            // World Logic (ADR 0072): Systems, reusable rule definitions and the list that reads both kinds.
+            new("systems", Get, $"{u}/systems", May.Read),
+            new("system", Get, $"{u}/systems/{w.LoreSystem}", May.Read),
+            new("create system", Post, $"{u}/systems", May.Edit, Json(new SystemRequest("Runeforging", "Metal."))),
+            new("edit system", Put, $"{u}/systems/{any}", May.Edit, Json(new SystemRequest("Runeforging", "Edited.", null, 1))),
+            new("delete system", Delete, $"{u}/systems/{any}", May.Edit),
+            new("system revisions", Get, $"{u}/systems/{w.LoreSystem}/revisions", May.Read),
+            new("link system rule", Put, $"{u}/systems/{any}/rules/{any}", May.Edit),
+            new("unlink system rule", Delete, $"{u}/systems/{any}/rules/{any}", May.Edit),
+            new("rule definitions", Get, $"{u}/system-rules", May.Read),
+            new("rule definition", Get, $"{u}/system-rules/{w.RuleDefinition}", May.Read),
+            new("create rule definition", Post, $"{u}/system-rules", May.Edit, Json(new SystemRuleRequest("Age of majority", "Sixteen."))),
+            new("edit rule definition", Put, $"{u}/system-rules/{any}", May.Edit, Json(new SystemRuleRequest("Age of majority", "Edited.", null, null, null, null, 1))),
+            new("delete rule definition", Delete, $"{u}/system-rules/{any}", May.Edit),
+            new("rule definition revisions", Get, $"{u}/system-rules/{w.RuleDefinition}/revisions", May.Read),
+            new("evaluate rule definition", Post, $"{u}/system-rules/{w.RuleDefinition}/evaluate", May.Read),
+            new("world logic rules", Get, $"{u}/world-logic/rules", May.Read),
+            new("world logic findings", Get, $"{u}/world-logic/findings", May.Read),
+            new("world logic finding", Get, $"{u}/world-logic/findings/{any}", May.Read),
+            new("sweep world logic", Post, $"{u}/world-logic/findings/evaluate", May.Edit),
+            new("review world logic finding", Post, $"{u}/world-logic/findings/{any}/review", May.Edit),
+            new("dismiss world logic finding", Post, $"{u}/world-logic/findings/{any}/dismiss", May.Edit),
+            new("resolve world logic finding", Post, $"{u}/world-logic/findings/{any}/resolve", May.Edit),
+            new("semantic findings", Get, $"{u}/world-logic/semantic-findings", May.Read),
+            new("semantic finding", Get, $"{u}/world-logic/semantic-findings/{any}", May.Read),
+            new("accept semantic finding", Post, $"{u}/world-logic/semantic-findings/{any}/accept", May.Edit),
+            new("dismiss semantic finding", Post, $"{u}/world-logic/semantic-findings/{any}/dismiss", May.Edit),
+
             new("validation terms", Get, $"{u}/validation-terms", May.Read),
             new("create term", Post, $"{u}/validation-terms", May.Edit, Json(new ValidationTermRequest(ValidationTermKind.EventKind, "Abdication"))),
             new("rename term", Put, $"{u}/validation-terms/{w.Term}", May.Edit, Json(new ValidationTermRenameRequest("Crowning"))),
@@ -180,8 +208,6 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("dismiss finding", Post, $"{u}/canon-conflicts/{any}/dismiss", May.Edit),
             new("reopen finding", Post, $"{u}/canon-conflicts/{any}/reopen", May.Edit),
             new("search", Get, $"{u}/search?q=Ember", May.Read),
-            new("assistant status", Get, $"{u}/assistant", May.Read),
-            new("ask assistant", Post, $"{u}/assistant", May.Read, Json(new AssistantRequest("Who is Ember Vale?", null))),
             new("mcp connect info", Get, $"{u}/mcp", May.Read),
 
             // ---------- Pending AI Changes (ADR 0047): ids the gate passes are random, so past it a member is told it is not there ----------
@@ -410,7 +436,7 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
                 var response = await w.Client(who).SendAsync(call.Request(call.Path));
 
                 // A finding id is random: past the gate, a member is told it is not there - the same as the owner is.
-                var expected = call.Name is "canon finding" or "ai change" or "map" or "map picture original" or "map picture display" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
+                var expected = call.Name is "canon finding" or "world logic finding" or "semantic finding" or "ai change" or "map" or "map picture original" or "map picture display" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
                     ? HttpStatusCode.NotFound
                     : HttpStatusCode.OK;
                 Assert.True(response.StatusCode == expected, $"{who}: {call.Name} answered {(int)response.StatusCode}");

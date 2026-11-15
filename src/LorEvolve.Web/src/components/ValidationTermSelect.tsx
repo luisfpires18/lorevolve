@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { createValidationTerm } from '../ruleValidation/api'
 import {
@@ -45,6 +46,7 @@ export function ValidationTermSelect({
   error,
   testId,
 }: ValidationTermSelectProps) {
+  const { t } = useI18n()
   const selectId = useId()
   const hintId = useId()
   const errorId = useId()
@@ -91,7 +93,7 @@ export function ValidationTermSelect({
     if (isCreating) return
     const trimmed = name.trim()
     if (trimmed === '') {
-      setNameError(`Give the ${word} a name.`)
+      setNameError(t('canon.termSelect.nameRequired', { word }))
       nameInput.current?.focus()
       return
     }
@@ -109,7 +111,7 @@ export function ValidationTermSelect({
       setNameError(
         failure instanceof ApiError
           ? (failure.fieldErrors.name ?? failure.message)
-          : `The ${word} could not be added. Try again.`,
+          : t('canon.termSelect.addFailed', { word }),
       )
       nameInput.current?.focus()
     } finally {
@@ -154,8 +156,10 @@ export function ValidationTermSelect({
           aria-describedby={describedBy || undefined}
           data-testid={testId}
         >
-          <option value="">{terms === null ? 'Reading…' : emptyLabel}</option>
-          {missing ? <option value={value}>{selectedName ?? 'The chosen one'}</option> : null}
+          <option value="">{terms === null ? t('canon.termSelect.reading') : emptyLabel}</option>
+          {missing ? (
+            <option value={value}>{selectedName ?? t('canon.termSelect.chosen')}</option>
+          ) : null}
           {options.map((term) => (
             <option key={term.id} value={term.id}>
               {term.name}
@@ -170,7 +174,7 @@ export function ValidationTermSelect({
             onClick={open}
             data-testid={`${testId}-new`}
           >
-            New {word}
+            {t('canon.termSelect.new', { word })}
           </button>
         ) : null}
       </div>
@@ -178,7 +182,7 @@ export function ValidationTermSelect({
       {isAdding ? (
         <div className="termselect__new" data-testid={`${testId}-adding`}>
           <label className="field__label" htmlFor={nameId}>
-            Name of the new {word}
+            {t('canon.termSelect.nameOf', { word })}
           </label>
           <div className="termselect__row">
             <input
@@ -203,10 +207,10 @@ export function ValidationTermSelect({
               onClick={() => void create()}
               data-testid={`${testId}-add`}
             >
-              {isCreating ? 'Adding…' : `Add ${word}`}
+              {isCreating ? t('canon.termSelect.adding') : t('canon.termSelect.add', { word })}
             </button>
             <button className="button button--secondary" type="button" onClick={cancel}>
-              Cancel
+              {t('canon.termSelect.cancel')}
             </button>
           </div>
           {nameError ? (

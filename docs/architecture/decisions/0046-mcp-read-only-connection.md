@@ -230,3 +230,39 @@ the one-universe rule apply unchanged. Sixteen tools in all.
 A universe also answers at a friendly address, `{origin}/mcp/u/{alias}`, resolved server-side to the same one universe; the
 address by id and every connection made with it are unchanged. A token's audience is the address the app asked for, in either
 spelling. ADR 0062 says how an alias is made, kept and answered.
+
+## Amendment (2026-11-15, issue 154, ADR 0072): World Logic, and the first write that is not a proposal
+
+Seven more read-only tools (`LorEvolveMcpWorldLogicTools`) over ADR 0072's World Logic: `list_world_logic_rules` and
+`list_systems` (paged; the world rules written in words and the rule definitions that may carry a typed condition are
+merged into one list, each row saying which it is and whether it can be evaluated), `get_world_logic_rule` (the
+condition as JSON rather than a string, with its exceptions, declared dependencies and the Systems that reference it),
+`evaluate_world_logic_rule`, `list_world_logic_findings`, `get_world_logic_finding` and `get_rule_impact`. The
+connection's gate, the live-entries rule and the one-universe rule apply unchanged; a trashed world rule reads as not
+found, and a project id that is not this universe's is refused rather than ignored. Thirty-one read-only tools in all.
+
+Evaluation is a read. `evaluate_world_logic_rule` runs the stored condition over the stored lore through
+`WorldLogicEvaluator` and stores nothing, which is why it needs no more than the read grant: the answer is a pure
+function of rows the connection may already read, and recording a finding stays the author's own sweep, behind
+`EditContent`.
+
+`submit_semantic_finding` is the one tool here that writes, and it is gated on `lorevolve.propose` through the same
+list-tools and call-tool filters as the three proposal tools, with the person's role read again on every call. It is
+not a proposal: nothing it writes can ever be applied to the universe, and there is no approval that turns it into
+content. It records, in its own `SemanticFindings` table, what a model claimed about the universe's meaning, with the
+records it cited, the version of each one it read and the range inside any prose. The status set is unverified,
+accepted and dismissed, and has no value meaning a violation was proven, so ADR 0072's rule that nothing a model
+asserts is recorded as a proven violation holds in the schema rather than in a filter someone could forget. A claim
+may only cite what the caller's own universe holds, checked per kind before anything is written, and one universe
+holds at most two hundred undecided claims so a connection cannot bury the author. Scope goes further than the
+universe: a rule definition that belongs to one project is only in scope for a claim scoped to that same project,
+whether it is the rule the claim is about or one it cites, which is the same scoping the rules list applies. A range
+is a span of prose, so it is accepted only on a manuscript and only where it falls inside that manuscript as it
+stands now; the current text is the only text there is to check against, so a range read at an earlier version is
+refused once the prose has been shortened past it, and the refusal says how long it is. The author accepts or dismisses
+each one under `/api/universes/{id}/world-logic/semantic-findings`.
+
+Nothing about `get_change_options` or `propose_changes` changes. Proposing a rule is still done through them, as a
+world rule; a typed condition is authored in LorEvolve and is not proposable over MCP. A universe backup carries no
+claim and no decision about one, for the same reason it carries no AI change proposal: both are review state about an
+account and a connection, not the world.

@@ -26,7 +26,13 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
     public const string ProposeTool = "propose_changes";
     public const string ReadTool = "get_change_proposal";
 
-    private static readonly HashSet<string> Names = [OptionsTool, ProposeTool, ReadTool];
+    /// <summary>
+    /// Every tool a connection must be allowed to propose before it may see or call it: these three, and the World
+    /// Logic tool that submits an observation for review (#154). One gate rather than two, so a tool cannot be added
+    /// to the server and quietly left ungated.
+    /// </summary>
+    private static readonly HashSet<string> Names =
+        [OptionsTool, ProposeTool, ReadTool, .. LorEvolveMcpWorldLogicTools.ProposeGated];
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
@@ -81,7 +87,9 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
         + "Send up to 100 changes: create, update or remove (to the Trash) lore entries, relationships, stories, chapters, scenes, plot arcs, "
         + "add to or change an entry's progression - its eras, forms, abilities and appearances, for the same entry - "
         + "ask for a picture for an entry or one of its appearances (image: no file is sent; the person uploads it on the review page), "
-        + "timeline moments, world rules and - for the universe owner - their ideas; write scene manuscripts and entry articles; "
+        + "timeline moments, world rules, entries of one of the universe's projects (project_entry: a game's unit, a series' "
+        + "character, a comic's prop, with the project and a type of that project from get_project_schema) "
+        + "and - for the universe owner - their ideas; write scene manuscripts and entry articles; "
         + "reorder a story's chapters or arcs, or a chapter's scenes. Where get_change_options says schema may be proposed, "
         + "a proposal of its own can instead create and update lore types, field definitions with their choices, semantic groups, "
         + "relationship kinds, event kinds and methods, add date periods and calendar months, and archive a field; propose what uses "

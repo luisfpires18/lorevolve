@@ -1,9 +1,10 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
 import { acceptConfirm } from './support/confirm'
+import { openType, stageAndReview } from './support/mcp-propose'
 
 /**
- * Issue 45 (ADR 0048), on the local Fake provider: the Assistant stages an entry's article, a world rule, an arc
+ * Issue 45 (ADR 0048): an AI app over MCP stages an entry's article, a world rule, an arc
  * and the owner's idea through the same Pending AI Changes; nothing exists before approval; an article reads as prose; a
  * collaborator is never shown a proposal holding the owner's idea; and a relationship or a timeline moment removed by hand
  * waits in the Trash and comes back from it.
@@ -51,19 +52,65 @@ async function seed(page: Page) {
   return universe.id
 }
 
-async function propose(page: Page, universeId: string, question: string) {
-  await page.goto(`/app/universes/${universeId}`)
-  await page.getByRole('button', { name: 'Assistant' }).click()
-  const drawer = page.getByTestId('assistant-drawer')
-  await drawer.getByLabel('Propose changes').check()
-  await drawer.getByLabel('The changes you want').fill(question)
-  await drawer.getByTestId('assistant-ask').click()
-  const review = drawer.getByTestId('assistant-proposal-review')
-  await expect(review).toBeVisible()
-  const href = await review.getAttribute('href')
-  await review.click()
-  await expect(page.getByTestId('ai-change')).toBeVisible()
-  return href!
+type Part = 'article' | 'rule' | 'arc' | 'idea'
+
+/**
+ * Stages one new entry for `name`, plus each asked-for part of issue 45's resources, over MCP, and opens the review
+ * page. Answers the review page's path.
+ */
+async function propose(page: Page, universeId: string, name: string, parts: Part[]) {
+  const staged = await stageAndReview(page, universeId, `New lore: ${name}`, (options) => {
+    const operations: ({ id: string } & Record<string, unknown>)[] = [
+      {
+        id: 'entry-1',
+        action: 'create',
+        resource: 'lore_entry',
+        lore: { typeId: openType(options), name },
+      },
+    ]
+    if (parts.includes('article')) {
+      operations.push({
+        id: 'article-1',
+        action: 'update',
+        resource: 'article',
+        article: {
+          entry: { ref: 'entry-1' },
+          mode: 'append',
+          blocks: [{ kind: 'paragraph', text: `${name}, as the app wrote it.` }],
+        },
+      })
+    }
+    if (parts.includes('rule')) {
+      operations.push({
+        id: 'rule-1',
+        action: 'create',
+        resource: 'world_rule',
+        worldRule: { title: `The rule of ${name}`, description: 'Kept as written.' },
+      })
+    }
+    if (parts.includes('arc')) {
+      operations.push({
+        id: 'arc-1',
+        action: 'create',
+        resource: 'plot_arc',
+        plotArc: { story: { id: options.stories[0].id }, title: name },
+      })
+    }
+    if (parts.includes('idea')) {
+      operations.push({
+        id: 'idea-1',
+        action: 'create',
+        resource: 'idea',
+        idea: {
+          title: `What if ${name}?`,
+          body: '',
+          references: [{ kind: 'lore_entry', ref: 'entry-1' }],
+        },
+      })
+    }
+    return operations
+  })
+  return staged.reviewPath
 }
 
 function item(page: Page, key: string) {
@@ -84,11 +131,11 @@ test.describe('AI changes to every authored resource', () => {
     await signUp(page)
     const universeId = await seed(page)
     const name = unique('Smith ')
-    await propose(page, universeId, `Create "${name}" with an article, a rule, an arc and an idea.`)
+    await propose(page, universeId, name, ['article', 'rule', 'arc', 'idea'])
 
     await expect(page.getByTestId('ai-change-item')).toHaveCount(5)
     await expect(item(page, 'article-1')).toContainText('Prose')
-    await expect(item(page, 'article-1')).toContainText(`${name}, as the assistant wrote it.`)
+    await expect(item(page, 'article-1')).toContainText(`${name}, as the app wrote it.`)
     await expect(item(page, 'rule-1')).toContainText(`New world rule: The rule of ${name}`)
     await expect(item(page, 'arc-1')).toBeVisible()
     await expect(item(page, 'idea-1')).toContainText(`New idea: What if ${name}?`)
@@ -106,7 +153,7 @@ test.describe('AI changes to every authored resource', () => {
     await expect(page.getByTestId('ai-change-feedback')).toHaveText('5 changes were applied.')
 
     await item(page, 'article-1').getByTestId('ai-change-open-item').click()
-    await expect(page.getByTestId('article')).toContainText(`${name}, as the assistant wrote it.`)
+    await expect(page.getByTestId('article')).toContainText(`${name}, as the app wrote it.`)
 
     await page.goto(`/app/universes/${universeId}/world-rules`)
     await expect(page.getByText(`The rule of ${name}`)).toBeVisible()
@@ -142,7 +189,7 @@ test.describe('AI changes to every authored resource', () => {
       ).ok(),
     ).toBe(true)
 
-    const review = await propose(page, universeId, `Create "${unique('Lia ')}" with an idea.`)
+    const review = await propose(page, universeId, unique('Lia '), ['idea'])
     await expect(page.getByTestId('ai-change-item')).toHaveCount(2)
 
     await editor.page.goto(review)

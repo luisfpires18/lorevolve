@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '../i18n'
 import { Field } from './Field'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
@@ -18,14 +19,11 @@ interface Props {
 }
 
 /** The family meanings offered here, in the Family Tree's words rather than the Types screen's source and target. */
-const MEANINGS: { value: FamilySemanticValue; label: string }[] = [
-  {
-    value: FamilySemantic.NonStructuralFamily,
-    label: 'Family relationship, does not define ancestry',
-  },
-  { value: FamilySemantic.BiologicalParent, label: 'Biological parent' },
-  { value: FamilySemantic.AdoptiveParent, label: 'Adoptive parent' },
-]
+const MEANINGS = [
+  { value: FamilySemantic.NonStructuralFamily, label: 'places.kindDialog.meaningFamily' },
+  { value: FamilySemantic.BiologicalParent, label: 'places.kindDialog.meaningBiological' },
+  { value: FamilySemantic.AdoptiveParent, label: 'places.kindDialog.meaningAdoptive' },
+] as const
 
 /**
  * A new family relation kind, made without leaving the Family Tree: an ordinary relation kind, posted to the same route
@@ -34,6 +32,7 @@ const MEANINGS: { value: FamilySemanticValue; label: string }[] = [
  * that is what an author reaching for "uncle of" mid-tree needs.
  */
 export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
+  const { t, tx } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const [name, setName] = useState('')
   const [inverseName, setInverseName] = useState('')
@@ -51,11 +50,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
       isSymmetric: false,
       semantic: FamilySemantic.NonStructuralFamily,
     })
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    'This relation kind has not been created. Leave without saving it?',
-    onClose,
-  )
+  const { close, dialogProps } = useDrawerGuard(isDirty, t('places.kindDialog.leave'), onClose)
 
   useReturnFocus()
 
@@ -91,17 +86,17 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
         setMessage(
           Object.keys(error.fieldErrors).length === 0
             ? error.message
-            : 'Some details need a change before this can be created.',
+            : t('places.kindDialog.fieldErrors'),
         )
       } else {
-        setMessage('That relation kind could not be created.')
+        setMessage(t('places.kindDialog.failed'))
       }
     } finally {
       setIsSaving(false)
     }
   }
 
-  const reads = name.trim() || 'reads as'
+  const reads = name.trim() || t('places.kindDialog.readsAs')
 
   return (
     <dialog
@@ -119,9 +114,9 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
         }}
       >
         <header className="drawer__head">
-          <p className="drawer__eyebrow">Family Tree</p>
+          <p className="drawer__eyebrow">{t('places.kindDialog.eyebrow')}</p>
           <h2 className="drawer__title" id="family-kind-heading">
-            New family relation kind
+            {t('places.kindDialog.title')}
           </h2>
         </header>
 
@@ -133,9 +128,9 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
           ) : null}
 
           <Field
-            label="Name"
+            label={t('places.kindDialog.name')}
             name="family-kind-name"
-            placeholder="Insert a name"
+            placeholder={t('places.kindDialog.namePlaceholder')}
             dir="auto"
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -145,13 +140,13 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
 
           {isSymmetric ? (
             <p className="field__hint" data-testid="family-kind-both-ways">
-              Both entries read “<bdi>{reads}</bdi>”. Nothing is worded in reverse.
+              {tx('places.kindDialog.bothWays', { reads: <bdi>{reads}</bdi> })}
             </p>
           ) : (
             <Field
-              label="Inverse name"
+              label={t('places.kindDialog.inverse')}
               name="family-kind-inverse"
-              placeholder="Insert an inverse name"
+              placeholder={t('places.kindDialog.inversePlaceholder')}
               dir="auto"
               value={inverseName}
               onChange={(event) => setInverseName(event.target.value)}
@@ -167,12 +162,12 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
               onChange={(event) => setIsSymmetric(event.target.checked)}
               data-testid="family-kind-symmetric"
             />
-            <span>Reads the same from both sides</span>
+            <span>{t('places.kindDialog.symmetric')}</span>
           </label>
 
           <div className="field">
             <label className="field__label" htmlFor="family-kind-meaning">
-              Family meaning
+              {t('places.kindDialog.meaning')}
             </label>
             <select
               id="family-kind-meaning"
@@ -185,14 +180,14 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
             >
               {meanings.map((each) => (
                 <option key={each.value} value={each.value}>
-                  {each.label}
+                  {t(each.label)}
                 </option>
               ))}
             </select>
             <p className="field__hint" id="family-kind-meaning-hint">
               {isParentSemantic(chosen)
-                ? 'The entry it is read from is the parent. The tree places both and works out relatives from it.'
-                : 'Listed with the family as you wrote it. It places nobody in the tree and implies no other relative.'}
+                ? t('places.kindDialog.hintParent')
+                : t('places.kindDialog.hintOther')}
             </p>
             {fieldErrors.familysemantic ? (
               <p className="field__error">{fieldErrors.familysemantic}</p>
@@ -207,7 +202,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
             disabled={isSaving}
             data-testid="create-family-kind"
           >
-            {isSaving ? 'Creating' : 'Create'}
+            {isSaving ? t('places.kindDialog.creating') : t('places.kindDialog.create')}
           </button>
           <button
             className="button button--secondary"
@@ -215,7 +210,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
             onClick={close}
             data-testid="cancel-family-kind"
           >
-            Cancel
+            {t('places.kindDialog.cancel')}
           </button>
         </footer>
       </form>

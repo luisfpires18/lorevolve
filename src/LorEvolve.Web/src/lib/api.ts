@@ -1,4 +1,4 @@
-import { t } from '../i18n'
+import { apiErrorMessage, currentLocale, t } from '../i18n'
 
 /**
  * Shape of an RFC 7807 response, plus the field errors ASP.NET Core adds and the
@@ -61,8 +61,15 @@ function flattenFieldErrors(errors: Record<string, string[]> | undefined) {
 export function apiErrorFrom(status: number, payload: unknown) {
   const problem = (payload ?? {}) as ProblemDetails
   const fieldErrors = flattenFieldErrors(problem.errors)
+  // A refusal LorEvolve has words for is said in the reader's language; anything else keeps the server's own
+  // English sentence, so a refusal is never swallowed and the API can add one without the web app changing (#108).
+  const translated = problem.code ? apiErrorMessage(problem.code) : null
   const message =
-    problem.detail ?? Object.values(fieldErrors)[0] ?? problem.title ?? t('shell.api.fallbackError')
+    translated ??
+    problem.detail ??
+    Object.values(fieldErrors)[0] ??
+    problem.title ??
+    t('shell.api.fallbackError')
 
   return new ApiError(status, message, fieldErrors, problem.code ?? null, payload)
 }
@@ -78,10 +85,6 @@ export const SESSION_ENDED = 'lorevolve:session-ended'
 export function networkFailure() {
   return t('shell.api.networkFailure')
 }
-
-/** @deprecated English only; read `networkFailure()` when the error is built so it follows the language. */
-export const NETWORK_FAILURE =
-  'LorEvolve could not be reached. Check your connection and try again.'
 
 /**
  * Calls the API on the same origin. The session cookie is HttpOnly, so the browser
@@ -141,6 +144,10 @@ async function performFetch<T>(
       credentials: 'same-origin',
       headers: {
         Accept: 'application/json',
+        // The language the reader chose here, not the list the browser sends of its own accord (ADR 0071). The API
+        // writes in it where it writes at all: the two emails, a new universe's starter types, and the language it
+        // tells a connected AI app to answer in.
+        'Accept-Language': currentLocale(),
         ...(init?.body && !isForm ? { 'Content-Type': 'application/json' } : {}),
         ...init?.headers,
       },

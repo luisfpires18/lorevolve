@@ -14,7 +14,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="SixLabors.ImageSharp" />
-    <PackageReference Include="OpenAI" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
     <PackageReference Include="OpenIddict.EntityFrameworkCore" />
     <PackageReference Include="OpenIddict.Server.AspNetCore" />

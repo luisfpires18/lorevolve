@@ -1,6 +1,7 @@
 import type { ChronologyValue } from '../chronology/types'
 import type { EntityImageRef } from '../lore/types'
 import type { VisibilityValue } from '../publishing/types'
+import { t } from '../i18n'
 
 /** Mirrors the backend enum. How far along the telling is - never whether any of it is true. */
 export const StoryStatus = {
@@ -11,10 +12,24 @@ export const StoryStatus = {
 
 export type StoryStatusValue = (typeof StoryStatus)[keyof typeof StoryStatus]
 
+/** Getters, so each word is looked up in the current language when read, never frozen at import. */
 export const STORY_STATUS_LABELS: Record<StoryStatusValue, string> = {
-  [StoryStatus.Planning]: 'Planning',
-  [StoryStatus.Drafting]: 'Drafting',
-  [StoryStatus.Complete]: 'Complete',
+  get [StoryStatus.Planning]() {
+    return t('stories.status.planning')
+  },
+  get [StoryStatus.Drafting]() {
+    return t('stories.status.drafting')
+  },
+  get [StoryStatus.Complete]() {
+    return t('stories.status.complete')
+  },
+}
+
+/** A status's stable key: what a test id or an address is built from, never the translated word. */
+export const STORY_STATUS_KEYS: Record<StoryStatusValue, string> = {
+  [StoryStatus.Planning]: 'planning',
+  [StoryStatus.Drafting]: 'drafting',
+  [StoryStatus.Complete]: 'complete',
 }
 
 export const STORY_STATUS_ORDER: StoryStatusValue[] = [

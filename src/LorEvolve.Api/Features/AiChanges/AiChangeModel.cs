@@ -10,7 +10,7 @@ public enum AiChangeSource
     /// <summary>An outside AI app over MCP, through a connection the person approved for proposals.</summary>
     Mcp = 0,
 
-    /// <summary>LorEvolve's own assistant, asked in its propose mode.</summary>
+    /// <summary>LorEvolve's own web assistant, asked in its propose mode. Retired in M4 (issue #158); proposals it staged keep this source, so the number never changes.</summary>
     Assistant = 1,
 }
 
@@ -96,6 +96,12 @@ public enum AiChangeResource
 
     /// <summary>A picture for an entry or one of its appearances, uploaded by a person in LorEvolve and quarantined until approved (ADR 0062). Content.</summary>
     Media = 19,
+
+    /// <summary>
+    /// An entry of one of the universe's projects (#148): a game's unit, a series' character, a comic's prop. The
+    /// project's own rows, never the universe's lore, and proposed through the same review as everything else here.
+    /// </summary>
+    ProjectEntry = 20,
 }
 
 public enum AiChangeAction
@@ -131,7 +137,7 @@ public sealed class AiChangeProposal
 
     public AiChangeSource Source { get; set; }
 
-    /// <summary>The MCP connection it came through, or null for the assistant. No foreign key: a revoke must not erase the record.</summary>
+    /// <summary>The MCP connection it came through, or null for a proposal the retired web assistant staged. No foreign key: a revoke must not erase the record.</summary>
     public Guid? McpConnectionId { get; set; }
 
     /// <summary>The app's own name when it was staged, as the consent screen showed it. Self-declared unless verified.</summary>
@@ -285,7 +291,7 @@ public sealed class AiChangeOperationConfiguration : IEntityTypeConfiguration<Ai
         builder.ToTable("AiChangeOperations", table =>
         {
             table.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
-            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)");
+            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)");
             table.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
         });
         builder.HasKey(operation => operation.Id);

@@ -1,13 +1,4 @@
 /**
- * The accessible name of every link LorEvolve's brand is drawn in - the bars' mark and wordmark, the auth plate's, the
- * workspace rail's `L`. The brand always leads to `/`, the front door - Explore (ADR 0069; a page about LorEvolve stood
- * there from 031 to 0069) - and the name says so, so nobody has to recognise a logo, or hover for a tooltip, to know
- * where it goes. Explore is always a link of its own as well. Read it as `t('shell.brand.homeLabel')` in render.
- * @deprecated English only, for the screens whose strings have not moved yet (#102 to #105).
- */
-export const BRAND_LINK_LABEL = 'LorEvolve, home'
-
-/**
  * The LorEvolve symbol: three interlocking rings around a star, the owner's own artwork.
  *
  * Always decorative, and always beside the `Wordmark`, which is what carries the name. A screen

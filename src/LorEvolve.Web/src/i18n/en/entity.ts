@@ -128,7 +128,7 @@ const entity = {
     gone: 'This entry is no longer here, so its note could not be saved. It may have been moved to the Trash in another window. Your text is still here: copy it before you close this.',
     saveFailed: 'The note could not be saved. Your text is still here. Try again.',
     privacy:
-      'Only you, the owner of this universe, can read this. It is never published, searched, shown to collaborators, or read by the Assistant or a connected app.',
+      'Only you, the owner of this universe, can read this. It is never published, searched, shown to collaborators, or read by a connected app.',
     opening: 'Opening the note…',
     openFailed: 'This note could not be opened.',
     retry: 'Try again',

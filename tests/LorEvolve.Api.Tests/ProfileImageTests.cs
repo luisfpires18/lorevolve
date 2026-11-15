@@ -674,7 +674,7 @@ public sealed class ProfileImageTests(LorEvolveApiFactory factory) : IClassFixtu
         var body = await response.Content.ReadAsStringAsync();
         using var problem = JsonDocument.Parse(body);
 
-        Assert.Equal("Image storage is unavailable.", problem.RootElement.GetProperty("title").GetString());
+        Assert.Equal(MediaProblem.UnavailableCode, problem.RootElement.GetProperty("code").GetString());
         Assert.DoesNotContain("synthetic-bucket", body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("STREAMING", body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("users/", body, StringComparison.OrdinalIgnoreCase);

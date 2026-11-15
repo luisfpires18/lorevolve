@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Quoted } from './NameList'
 import { listReferenceTargets, referenceContext } from '../ideas/api'
 import {
+  IDEA_REFERENCE_KIND_KEYS,
   IDEA_REFERENCE_KIND_LABELS,
   IDEA_REFERENCE_KINDS,
   IdeaReferenceKind,
@@ -9,14 +10,15 @@ import {
   type IdeaReferenceKindValue,
 } from '../ideas/types'
 import { useReturnFocus } from '../lib/returnFocus'
+import { useI18n } from '../i18n'
 
-/** What to type, per kind, in the words the rest of LorEvolve uses for it. */
-const PLACEHOLDERS: Record<IdeaReferenceKindValue, string> = {
-  [IdeaReferenceKind.Entity]: 'Name of a lore entry',
-  [IdeaReferenceKind.Story]: 'Title of a story',
-  [IdeaReferenceKind.Scene]: 'Title of a scene',
-  [IdeaReferenceKind.PlotArc]: 'Title of an arc',
-}
+/** What to type, per kind, in the words the rest of LorEvolve uses for it. Message keys, read in render. */
+const PLACEHOLDERS = {
+  [IdeaReferenceKind.Entity]: 'ideas.picker.placeholder.lore',
+  [IdeaReferenceKind.Story]: 'ideas.picker.placeholder.story',
+  [IdeaReferenceKind.Scene]: 'ideas.picker.placeholder.scene',
+  [IdeaReferenceKind.PlotArc]: 'ideas.picker.placeholder.arc',
+} as const satisfies Record<IdeaReferenceKindValue, string>
 
 /** What one request answered, and which request it was - so a list is never shown for words no longer typed. */
 interface Answer {
@@ -50,6 +52,7 @@ export function IdeaReferencePicker({
   onChoose,
   onClose,
 }: IdeaReferencePickerProps) {
+  const { t, tx } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const search = useRef<HTMLInputElement>(null)
   const headingId = useId()
@@ -114,23 +117,19 @@ export function IdeaReferencePicker({
       <div className="drawer__panel">
         <header className="drawer__head">
           <p className="drawer__eyebrow">
-            {universeName ? (
-              <>
-                In <Quoted text={universeName} />
-              </>
-            ) : (
-              'In this idea’s universe'
-            )}
+            {universeName
+              ? tx('ideas.picker.inUniverse', { universe: <Quoted text={universeName} /> })
+              : t('ideas.picker.inThisUniverse')}
           </p>
           <h2 className="drawer__title" id={headingId}>
-            Add a reference
+            {t('ideas.picker.title')}
           </h2>
         </header>
 
         <div className="drawer__body">
           <div className="field">
             <span className="field__label" id={kindsId}>
-              What to reference
+              {t('ideas.picker.whatToReference')}
             </span>
             <div className="segmented" role="group" aria-labelledby={kindsId}>
               {IDEA_REFERENCE_KINDS.map((option) => (
@@ -140,7 +139,7 @@ export function IdeaReferencePicker({
                   className="segmented__option"
                   aria-pressed={kind === option}
                   onClick={() => setKind(option)}
-                  data-testid={`idea-picker-kind-${IDEA_REFERENCE_KIND_LABELS[option].toLowerCase()}`}
+                  data-testid={`idea-picker-kind-${IDEA_REFERENCE_KIND_KEYS[option]}`}
                 >
                   {IDEA_REFERENCE_KIND_LABELS[option]}
                 </button>
@@ -150,7 +149,7 @@ export function IdeaReferencePicker({
 
           <div className="field">
             <label className="field__label" htmlFor={searchId}>
-              Find by name
+              {t('ideas.picker.findByName')}
             </label>
             <input
               id={searchId}
@@ -158,7 +157,7 @@ export function IdeaReferencePicker({
               className="field__input"
               type="search"
               value={query}
-              placeholder={PLACEHOLDERS[kind]}
+              placeholder={t(PLACEHOLDERS[kind])}
               onChange={(event) => setQuery(event.target.value)}
               aria-controls={resultsId}
               data-testid="idea-picker-search"
@@ -168,19 +167,17 @@ export function IdeaReferencePicker({
           <div id={resultsId} aria-live="polite">
             {results.kind === 'searching' ? (
               <p className="notice ideapicker__notice" role="status">
-                Looking…
+                {t('ideas.picker.looking')}
               </p>
             ) : null}
             {results.kind === 'error' ? (
               <p className="form__message" role="alert">
-                That list could not be read. Try again.
+                {t('ideas.picker.loadFailed')}
               </p>
             ) : null}
             {results.kind === 'ready' && results.targets.length === 0 ? (
               <p className="notice ideapicker__notice" data-testid="idea-picker-empty">
-                {query.trim()
-                  ? 'Nothing by that name here. Content in the Trash is not offered.'
-                  : 'Nothing of this kind here yet. Content in the Trash is not offered.'}
+                {query.trim() ? t('ideas.picker.emptyNamed') : t('ideas.picker.emptyKind')}
               </p>
             ) : null}
             {results.kind === 'ready' && results.targets.length > 0 ? (
@@ -200,7 +197,9 @@ export function IdeaReferencePicker({
                       >
                         <span className="ideapicker__name">{target.name}</span>
                         {context ? <span className="ideapicker__context">{context}</span> : null}
-                        <span className="ideapicker__state">{added ? 'Added' : 'Add'}</span>
+                        <span className="ideapicker__state">
+                          {added ? t('ideas.picker.added') : t('ideas.picker.add')}
+                        </span>
                       </button>
                     </li>
                   )
@@ -217,7 +216,7 @@ export function IdeaReferencePicker({
             onClick={onClose}
             data-testid="idea-picker-close"
           >
-            Close
+            {t('ideas.picker.close')}
           </button>
         </footer>
       </div>

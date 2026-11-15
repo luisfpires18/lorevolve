@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+
 /** Mirrors the backend enum. How badly a finding undermines the lore it was found in. */
 export const CanonSeverity = {
   Low: 0,
@@ -7,10 +9,17 @@ export const CanonSeverity = {
 
 export type CanonSeverityValue = (typeof CanonSeverity)[keyof typeof CanonSeverity]
 
+/** Getters, so each word is looked up in the current language when read, never frozen at import. */
 export const SEVERITY_LABELS: Record<CanonSeverityValue, string> = {
-  [CanonSeverity.Low]: 'Low',
-  [CanonSeverity.Medium]: 'Medium',
-  [CanonSeverity.High]: 'High',
+  get [CanonSeverity.Low]() {
+    return t('canon.severity.low')
+  },
+  get [CanonSeverity.Medium]() {
+    return t('canon.severity.medium')
+  },
+  get [CanonSeverity.High]() {
+    return t('canon.severity.high')
+  },
 }
 
 /** Worst first, which is the order the review reads in. */
@@ -25,9 +34,15 @@ export const SEVERITY_ORDER: CanonSeverityValue[] = [
  * the save that would create one - ADR 0012. Nothing here may imply otherwise.
  */
 export const SEVERITY_HINTS: Record<CanonSeverityValue, string> = {
-  [CanonSeverity.Low]: 'Worth a look. Never refuses anything.',
-  [CanonSeverity.Medium]: 'A likely inconsistency. Reported, never blocking.',
-  [CanonSeverity.High]: 'Cannot be true. A save that would create one is refused.',
+  get [CanonSeverity.Low]() {
+    return t('canon.severityHint.low')
+  },
+  get [CanonSeverity.Medium]() {
+    return t('canon.severityHint.medium')
+  },
+  get [CanonSeverity.High]() {
+    return t('canon.severityHint.high')
+  },
 }
 
 /** Mirrors the backend enum. Where a conflict stands with its author. */
@@ -41,9 +56,15 @@ export type CanonConflictStatusValue =
   (typeof CanonConflictStatus)[keyof typeof CanonConflictStatus]
 
 export const CONFLICT_STATUS_LABELS: Record<CanonConflictStatusValue, string> = {
-  [CanonConflictStatus.Pending]: 'Open',
-  [CanonConflictStatus.Resolved]: 'Resolved',
-  [CanonConflictStatus.Dismissed]: 'Dismissed',
+  get [CanonConflictStatus.Pending]() {
+    return t('canon.conflictStatus.pending')
+  },
+  get [CanonConflictStatus.Resolved]() {
+    return t('canon.conflictStatus.resolved')
+  },
+  get [CanonConflictStatus.Dismissed]() {
+    return t('canon.conflictStatus.dismissed')
+  },
 }
 
 /** Actionable first. Resolved is evaluation's own state and reads last. */
@@ -65,11 +86,21 @@ export const CanonSubjectKind = {
 export type CanonSubjectKindValue = (typeof CanonSubjectKind)[keyof typeof CanonSubjectKind]
 
 export const SUBJECT_KIND_LABELS: Record<CanonSubjectKindValue, string> = {
-  [CanonSubjectKind.Entity]: 'Entry',
-  [CanonSubjectKind.Relationship]: 'Relationship',
-  [CanonSubjectKind.TimelineEntry]: 'Moment',
-  [CanonSubjectKind.EntityField]: 'Field',
-  [CanonSubjectKind.WorldRule]: 'World rule',
+  get [CanonSubjectKind.Entity]() {
+    return t('canon.subjectKind.entity')
+  },
+  get [CanonSubjectKind.Relationship]() {
+    return t('canon.subjectKind.relationship')
+  },
+  get [CanonSubjectKind.TimelineEntry]() {
+    return t('canon.subjectKind.timelineEntry')
+  },
+  get [CanonSubjectKind.EntityField]() {
+    return t('canon.subjectKind.entityField')
+  },
+  get [CanonSubjectKind.WorldRule]() {
+    return t('canon.subjectKind.worldRule')
+  },
 }
 
 /** `name` is null when the record has gone and the universe has not been evaluated since. */

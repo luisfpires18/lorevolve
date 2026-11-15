@@ -320,12 +320,12 @@ test.describe('Changing place moves the focus to what was opened', () => {
 
     // Moving between a universe's sections leaves the focus on the section chosen.
     await page.goto(`/app/universes/${w.id}`)
-    const stories = page
+    const timeline = page
       .getByRole('navigation', { name: 'Universe', exact: true })
-      .getByRole('link', { name: 'Stories' })
-    await stories.click()
-    await expect(page).toHaveURL(`/app/universes/${w.id}/stories`)
-    await expect(stories).toBeFocused()
+      .getByRole('link', { name: 'Timeline' })
+    await timeline.click()
+    await expect(page).toHaveURL(`/app/universes/${w.id}/timeline`)
+    await expect(timeline).toBeFocused()
   })
 })
 

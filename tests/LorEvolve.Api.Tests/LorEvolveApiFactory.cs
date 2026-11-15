@@ -1,6 +1,5 @@
 using System.Data.Common;
 using LorEvolve.Api.Data;
-using LorEvolve.Api.Features.Assistant;
 using LorEvolve.Api.Features.Mcp;
 using LorEvolve.Api.Features.Media;
 using Microsoft.AspNetCore.Hosting;
@@ -38,12 +37,6 @@ public sealed class LorEvolveApiFactory : WebApplicationFactory<Program>
 
     /// <summary>The clock the host reads where it asks for one, which a test may move forward.</summary>
     public TestClock Clock { get; } = new();
-
-    /// <summary>
-    /// The assistant's model, when a test supplies one before the host is built. Unset, the host keeps what configuration
-    /// gives it - no provider in tests - so no test ever reaches a real model, and none needs a key.
-    /// </summary>
-    public IAssistantProvider? Assistant { get; init; }
 
     /// <summary>
     /// What answers when the authorization server fetches a client metadata document, when a test supplies it. Unset, a
@@ -105,12 +98,6 @@ public sealed class LorEvolveApiFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(Clock);
-
-            if (Assistant is not null)
-            {
-                services.RemoveAll<IAssistantProvider>();
-                services.AddSingleton(Assistant);
-            }
 
             if (ClientMetadata is not null)
             {

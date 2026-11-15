@@ -2,10 +2,12 @@ import { useId, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink } from 'react-router-dom'
 import { ManuscriptEditor } from './ManuscriptEditor'
 import type { Chronology } from '../chronology/types'
-import { UNCHAPTERED } from '../stories/format'
+import { t, useI18n } from '../i18n'
+import { unchaptered as unchapteredLabel } from '../stories/format'
 import { chapterChoices, readingOrder, scenesIn } from '../stories/structure'
 import type { Scene, StoryDetail } from '../stories/types'
 import { EmptyState } from './EmptyState'
+import { projectPath } from '../projects/sections'
 
 interface ManuscriptPanelProps {
   universeId: string
@@ -45,10 +47,13 @@ function whereOf(
             {chapter.prefix}: <bdi>{chapter.title}</bdi>
           </>
         ) : (
-          UNCHAPTERED
+          unchapteredLabel()
         )
       ) : null,
-    position: `Scene ${container.findIndex((candidate) => candidate.id === scene.id) + 1} of ${container.length}`,
+    position: t('manuscript.panel.position', {
+      number: container.findIndex((candidate) => candidate.id === scene.id) + 1,
+      total: container.length,
+    }),
   }
 }
 
@@ -75,6 +80,7 @@ export function ManuscriptPanel({
   onSceneSaved,
   manuscriptPublication,
 }: ManuscriptPanelProps) {
+  const { t, tx } = useI18n()
   const listId = useId()
   const toggle = useRef<HTMLButtonElement>(null)
 
@@ -86,23 +92,22 @@ export function ManuscriptPanel({
   const scenes = readingOrder(arcs, chapters, story.scenes)
   const choices = chapterChoices(arcs, chapters)
   const labels = new Map(choices.map((choice) => [choice.id, choice]))
-  const storyPath = `/app/universes/${universeId}/stories/${story.id}`
+  // The story's project views since #194; the old story address redirects there.
+  const storyPath = projectPath(story.id, '', universeId)
   const hasChapters = chapters.length > 0
 
   if (scenes.length === 0) {
     return (
       <EmptyState
         testId="manuscript-empty"
-        title="No scenes yet."
-        hint={
-          <>
-            A manuscript is written scene by scene.{' '}
-            <Link to={storyPath} data-testid="manuscript-empty-scenes">
-              Add a scene on the Scenes view
-            </Link>{' '}
-            to start writing.
-          </>
-        }
+        title={t('manuscript.panel.empty.title')}
+        hint={tx('manuscript.panel.empty.hint', {
+          link: (
+            <Link to={`${storyPath}/structure`} data-testid="manuscript-empty-scenes">
+              {t('manuscript.panel.empty.link')}
+            </Link>
+          ),
+        })}
       />
     )
   }
@@ -118,7 +123,7 @@ export function ManuscriptPanel({
   const groups = hasChapters
     ? [
         ...(unchaptered.length > 0
-          ? [{ key: 'unchaptered', label: UNCHAPTERED, scenes: unchaptered }]
+          ? [{ key: 'unchaptered', label: unchapteredLabel(), scenes: unchaptered }]
           : []),
         ...choices.map((choice) => ({
           key: choice.id,
@@ -146,11 +151,15 @@ export function ManuscriptPanel({
   return (
     <section className="manuscript" aria-labelledby="manuscript-heading" data-testid="manuscript">
       <h2 className="visually-hidden" id="manuscript-heading">
-        Manuscript
+        {t('manuscript.panel.heading')}
       </h2>
 
       <div className="manuscript__layout">
-        <nav className="msoutline" aria-label="Scenes to write" data-testid="manuscript-outline">
+        <nav
+          className="msoutline"
+          aria-label={t('manuscript.panel.outline')}
+          data-testid="manuscript-outline"
+        >
           <button
             ref={toggle}
             className="msoutline__toggle"
@@ -160,11 +169,13 @@ export function ManuscriptPanel({
             onClick={() => setOpenAt(isOpen ? null : sceneId)}
             data-testid="manuscript-outline-toggle"
           >
-            <span className="msoutline__togglelabel">{isOpen ? 'Close scenes' : 'Scenes'}</span>
+            <span className="msoutline__togglelabel">
+              {isOpen ? t('manuscript.panel.closeScenes') : t('manuscript.panel.scenes')}
+            </span>
             {/* Its own direction, not a <bdi>: the title is cut with an ellipsis, and the clipping
                 element's direction is what puts the cut at the end of a right-to-left title. */}
             <span className="msoutline__current" dir="auto">
-              {selected?.title ?? 'Choose a scene'}
+              {selected?.title ?? t('manuscript.panel.chooseScene')}
             </span>
           </button>
 
@@ -192,7 +203,7 @@ export function ManuscriptPanel({
                     </p>
                   ) : null}
                   {group.scenes.length === 0 ? (
-                    <p className="msoutline__none">No scenes yet.</p>
+                    <p className="msoutline__none">{t('manuscript.panel.noScenes')}</p>
                   ) : (
                     <ol
                       className="msoutline__scenes"
@@ -238,8 +249,8 @@ export function ManuscriptPanel({
           ) : (
             <EmptyState
               testId="manuscript-scene-missing"
-              title="That scene is not in this story."
-              hint="It may have been deleted. Choose a scene from the list."
+              title={t('manuscript.panel.missing.title')}
+              hint={t('manuscript.panel.missing.hint')}
             />
           )}
         </div>

@@ -10,6 +10,7 @@ import {
   type MapPinInput,
 } from '../maps/types'
 import { EntityPicker, type EntityChoice } from './EntityPicker'
+import { useI18n } from '../i18n'
 
 interface PinDraft {
   title: string
@@ -57,6 +58,7 @@ function inputOf(draft: PinDraft): MapPinInput {
  * stays the author's to change. Saving confirms the position against the picture the map shows now.
  */
 export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: MapPinFormProps) {
+  const { t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const titleInput = useRef<HTMLInputElement>(null)
   const [initial] = useState<PinDraft>(() => ({
@@ -77,9 +79,7 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
   const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
-    pin
-      ? `“${pin.title}” has unsaved changes. Leave without saving them?`
-      : 'This pin has not been placed yet. Leave without placing it?',
+    pin ? t('places.pinForm.leaveChanges', { title: pin.title }) : t('places.pinForm.leaveNew'),
     onClose,
   )
 
@@ -100,11 +100,11 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
 
     const input = inputOf(draft)
     const errors: Record<string, string> = {}
-    if (input.title === '') errors.title = 'Give the pin a title.'
+    if (input.title === '') errors.title = t('places.pinForm.titleMissing')
     if (!Number.isFinite(input.x) || input.x < 0 || input.x > 1)
-      errors.x = 'From 0 to 100, as a percentage of the width.'
+      errors.x = t('places.pinForm.xRange')
     if (!Number.isFinite(input.y) || input.y < 0 || input.y > 1)
-      errors.y = 'From 0 to 100, as a percentage of the height.'
+      errors.y = t('places.pinForm.yRange')
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
       return
@@ -124,10 +124,10 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
             ? error.message
             : Object.keys(error.fieldErrors).length === 0
               ? error.message
-              : 'Some details need a change before this pin can be saved.',
+              : t('places.pinForm.fieldErrors'),
         )
       } else {
-        setMessage('That pin could not be saved.')
+        setMessage(t('places.pinForm.failed'))
       }
     } finally {
       setIsSaving(false)
@@ -152,13 +152,15 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
         }}
       >
         <header className="drawer__head">
-          <p className="drawer__eyebrow">{pin ? 'Editing a pin' : 'New pin'}</p>
+          <p className="drawer__eyebrow">
+            {pin ? t('places.pinForm.eyebrowEdit') : t('places.pinForm.eyebrowNew')}
+          </p>
           <h2 className="drawer__title" id="map-pin-heading">
-            {pin ? <bdi>{pin.title}</bdi> : 'Place a pin'}
+            {pin ? <bdi>{pin.title}</bdi> : t('places.pinForm.title')}
           </h2>
           {pin && !pin.placedOnCurrentImage ? (
             <p className="drawer__context" data-testid="map-pin-review-note">
-              This pin was placed on an earlier picture. Check its position and save to confirm it.
+              {t('places.pinForm.reviewNote')}
             </p>
           ) : null}
         </header>
@@ -171,7 +173,7 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
           ) : null}
 
           <EntityPicker
-            label="Lore entry"
+            label={t('places.pinForm.lore')}
             universeId={universeId}
             value={draft.lore}
             onChange={(choice) =>
@@ -181,17 +183,16 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
                 title: current.title.trim() === '' && choice ? choice.name : current.title,
               }))
             }
-            placeholder="Search for the place this pin marks"
+            placeholder={t('places.pinForm.lorePlaceholder')}
             error={fieldErrors.entityid}
           />
           <p className="field__hint">
-            Optional. The pin opens this entry, and the entry leads back to this pin.
-            {trashed ? ' The entry it stood for is in the Trash; restore it to link it again.' : ''}
+            {trashed ? t('places.pinForm.loreHintTrashed') : t('places.pinForm.loreHint')}
           </p>
 
           <div className="field">
             <label className="field__label" htmlFor="map-pin-title">
-              Title
+              {t('places.pinForm.titleLabel')}
             </label>
             <input
               id="map-pin-title"
@@ -210,9 +211,9 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
 
           <div className="field">
             <label className="field__label" htmlFor="map-pin-note">
-              Note
+              {t('places.pinForm.note')}
             </label>
-            <p className="field__hint">A line or two about this place on the map. Optional.</p>
+            <p className="field__hint">{t('places.pinForm.noteHint')}</p>
             <textarea
               id="map-pin-note"
               className="field__input"
@@ -228,14 +229,11 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
           </div>
 
           <fieldset className="field mappinform__position">
-            <legend className="field__label">Position</legend>
-            <p className="field__hint">
-              As percentages of the picture, from its left edge and its top edge. Dragging the pin
-              on the map sets these too.
-            </p>
+            <legend className="field__label">{t('places.pinForm.position')}</legend>
+            <p className="field__hint">{t('places.pinForm.positionHint')}</p>
             <div className="mappinform__coords">
               <label className="mappinform__coord">
-                <span>Across</span>
+                <span>{t('places.pinForm.across')}</span>
                 <input
                   className="field__input"
                   type="number"
@@ -251,7 +249,7 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
                 <span aria-hidden="true">%</span>
               </label>
               <label className="mappinform__coord">
-                <span>Down</span>
+                <span>{t('places.pinForm.down')}</span>
                 <input
                   className="field__input"
                   type="number"
@@ -280,7 +278,11 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
             aria-busy={isSaving || undefined}
             data-testid="map-pin-save"
           >
-            {isSaving ? 'Saving…' : pin ? 'Save pin' : 'Place pin'}
+            {isSaving
+              ? t('places.pinForm.saving')
+              : pin
+                ? t('places.pinForm.save')
+                : t('places.pinForm.place')}
           </button>
           <button
             className="button button--secondary"
@@ -288,7 +290,7 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
             onClick={() => void close()}
             disabled={isSaving}
           >
-            Cancel
+            {t('places.pinForm.cancel')}
           </button>
         </div>
       </form>

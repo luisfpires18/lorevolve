@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from 'react'
+import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
@@ -47,6 +48,7 @@ export function ArcSection({
   publication,
   startsOpen = false,
 }: ArcSectionProps) {
+  const { t } = useI18n()
   const access = useUniverseAccess()
   const headingId = useId()
   const {
@@ -105,10 +107,10 @@ export function ArcSection({
                 data-testid="arc-new-chapter"
               >
                 <ActionIcon icon={Plus} />
-                Add chapter
+                {t('stories.arc.addChapter')}
               </button>
               <ActionMenu
-                label={`More actions for ${arcLabel(index, arc.title)}`}
+                label={t('stories.arc.moreActions', { label: arcLabel(index, arc.title) })}
                 triggerTestId="arc-actions"
               >
                 <button
@@ -118,7 +120,7 @@ export function ArcSection({
                   data-testid="arc-edit"
                 >
                   <ActionIcon icon={Pencil} />
-                  Edit arc
+                  {t('stories.arc.edit')}
                 </button>
                 {index > 0 ? (
                   <button
@@ -128,7 +130,7 @@ export function ArcSection({
                     data-testid="arc-move-up"
                   >
                     <ActionIcon icon={ArrowUp} />
-                    Move up
+                    {t('stories.arc.moveUp')}
                   </button>
                 ) : null}
                 {index < count - 1 ? (
@@ -139,7 +141,7 @@ export function ArcSection({
                     data-testid="arc-move-down"
                   >
                     <ActionIcon icon={ArrowDown} />
-                    Move down
+                    {t('stories.arc.moveDown')}
                   </button>
                 ) : null}
                 <hr className="actionmenu__divider" />
@@ -150,7 +152,7 @@ export function ArcSection({
                   data-testid="arc-delete"
                 >
                   <ActionIcon icon={Trash} />
-                  Delete arc
+                  {t('stories.arc.delete')}
                 </button>
               </ActionMenu>
             </>
@@ -174,8 +176,7 @@ export function ArcSection({
           children
         ) : (
           <p className="plotarc__empty" data-testid="arc-empty">
-            No chapters in this arc yet. Add one with New chapter, or move one here: Edit chapter,
-            then choose this arc, or Move to from the chapter&rsquo;s ⋯ menu.
+            {t('stories.arc.empty')}
           </p>
         )}
       </div>

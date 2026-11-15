@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { dateFormat } from '../i18n/format'
 
 const DAY: Intl.DateTimeFormatOptions = {
@@ -55,8 +56,8 @@ export function fromDateInput(value: string) {
 
 /** "1 May 3019 to 1 Mar 3120", or one open end, or nothing at all. */
 export function formatSpan(start: string | null, end: string | null) {
-  if (start && end) return `${formatDate(start)} to ${formatDate(end)}`
-  if (start) return `from ${formatDate(start)}`
-  if (end) return `until ${formatDate(end)}`
+  if (start && end) return t('time.span.range', { start: formatDate(start), end: formatDate(end) })
+  if (start) return t('time.span.from', { start: formatDate(start) })
+  if (end) return t('time.span.until', { end: formatDate(end) })
   return ''
 }

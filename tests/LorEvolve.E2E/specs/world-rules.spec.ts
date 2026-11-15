@@ -143,10 +143,8 @@ test.describe('world rules', () => {
     const universeId = await seedUniverse(page)
     const base = `/app/universes/${universeId}`
 
-    await page.goto(base)
-    await page.getByTestId('workspace-world-rules').click()
-    await page.waitForURL(`${base}/world-rules`)
-    await expect(page.getByTestId('workspace-world-rules')).toHaveAttribute('aria-current', 'page')
+    // The sidebar opens World Logic now (#152); the rule book keeps its own address, and this is the way to it.
+    await page.goto(`${base}/world-rules`)
     await expect(page.getByRole('heading', { name: 'World Rules', level: 1 })).toBeVisible()
     await expect(page.getByTestId('world-rules-empty')).toContainText(
       'World Rules define explicit constraints for how this universe works',
@@ -381,7 +379,8 @@ test.describe('world rules', () => {
     await expect(page.getByTestId('world-rule-heading')).toHaveText(
       'Quennelmark bonds break at dawn',
     )
-    await expect(page.getByTestId('workspace-world-rules')).toHaveAttribute('aria-current', 'page')
+    // A rule belongs to World Logic, which the sidebar marks while the author is at one (#152).
+    await expect(page.getByTestId('workspace-world-logic')).toHaveAttribute('aria-current', 'page')
 
     await page.goBack()
     await page.waitForURL(`${base}/timeline`)
@@ -426,8 +425,10 @@ test.describe('world rules', () => {
     // The section, from the folded bar.
     await page.goto(base)
     await page.getByTestId('workspace-nav-toggle').click()
-    await page.getByTestId('workspace-world-rules').click()
-    await page.waitForURL(`${base}/world-rules`)
+    await page.getByTestId('workspace-world-logic').click()
+    await page.waitForURL(`${base}/world-logic`)
+    // The rule book keeps its own address; the folded bar reaches World Logic, and this is the way on to it.
+    await page.goto(`${base}/world-rules`)
     await expect(page.getByTestId('world-rule-row')).toHaveCount(1)
     expect(await scrollsSideways(page)).toBe(false)
     const row = (await page.getByTestId('world-rule-row').boundingBox())!

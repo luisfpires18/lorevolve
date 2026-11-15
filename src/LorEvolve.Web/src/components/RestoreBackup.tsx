@@ -12,6 +12,7 @@ import {
 } from '../backups/api'
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
+import { useI18n } from '../i18n'
 import type { UniverseDetail } from '../universes/types'
 import { Field } from './Field'
 
@@ -41,6 +42,8 @@ interface RestoreBackupProps {
  * state is told by colour alone.
  */
 export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
+  const i18n = useI18n()
+  const { t, tn } = i18n
   const fileId = useId()
   const hintId = useId()
   const [file, setFile] = useState<File | null>(null)
@@ -83,15 +86,13 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
     setChooseError(null)
 
     if (!file) {
-      setChooseError('Choose a backup file first.')
+      setChooseError(t('admin.restore.chooseFirst'))
       fileInput.current?.focus()
       return
     }
 
     if (file.size > MAX_BACKUP_BYTES) {
-      setChooseError(
-        `That file is larger than LorEvolve restores (${MAX_BACKUP_BYTES / (1024 * 1024)} MB).`,
-      )
+      setChooseError(t('admin.restore.tooLarge', { mb: MAX_BACKUP_BYTES / (1024 * 1024) }))
       fileInput.current?.focus()
       return
     }
@@ -113,11 +114,7 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
 
       waiting.current = validation.token
       setName(validation.preview.universeName)
-      setNameError(
-        validation.preview.nameAvailable
-          ? undefined
-          : 'You already have a universe with that name. Choose another name for the restored one.',
-      )
+      setNameError(validation.preview.nameAvailable ? undefined : t('admin.restore.nameTaken'))
       setFailure(null)
       setStage({ kind: 'ready', validation })
     } catch (error: unknown) {
@@ -133,10 +130,10 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
           code: error instanceof ApiError ? error.code : null,
           detail:
             error instanceof ApiError && error.status === 413
-              ? 'This backup is larger than LorEvolve restores.'
+              ? t('admin.restore.serverTooLarge')
               : error instanceof ApiError && error.status !== 0
                 ? error.message
-                : 'The backup could not be sent. Check your connection and try again.',
+                : t('admin.restore.sendFailed'),
           issues: [],
           moreIssues: 0,
         },
@@ -194,7 +191,7 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
         setFailure(
           error instanceof ApiError && error.status !== 0
             ? error.message
-            : 'The backup could not be restored. Check your connection and try again.',
+            : t('admin.restore.restoreFailed'),
         )
       }
     }
@@ -203,21 +200,22 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
   const busy = stage.kind === 'checking' || stage.kind === 'restoring'
 
   return (
-    <section className="composer restore" aria-label="Restore a backup" data-testid="restore-panel">
-      <h2 className="composer__title">Restore a backup</h2>
-      <p className="restore__lead">
-        A backup becomes a new universe of its own. Nothing you already have is changed, replaced or
-        merged.
-      </p>
+    <section
+      className="composer restore"
+      aria-label={t('admin.restore.label')}
+      data-testid="restore-panel"
+    >
+      <h2 className="composer__title">{t('admin.restore.title')}</h2>
+      <p className="restore__lead">{t('admin.restore.lead')}</p>
 
       {stage.kind === 'choose' || stage.kind === 'checking' ? (
         <form className="form" onSubmit={check} noValidate>
           <div className="field">
             <label className="field__label" htmlFor={fileId}>
-              Backup file
+              {t('admin.restore.file.label')}
             </label>
             <p className="field__hint" id={hintId}>
-              The .zip file LorEvolve downloaded from a universe&rsquo;s Settings.
+              {t('admin.restore.file.hint')}
             </p>
             <input
               ref={fileInput}
@@ -246,7 +244,11 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
               <div
                 className="progressbar"
                 role="progressbar"
-                aria-label={stage.percent === null ? 'Checking the backup' : 'Uploading the backup'}
+                aria-label={
+                  stage.percent === null
+                    ? t('admin.restore.progress.checkingLabel')
+                    : t('admin.restore.progress.uploadingLabel')
+                }
                 aria-valuemin={stage.percent === null ? undefined : 0}
                 aria-valuemax={stage.percent === null ? undefined : 100}
                 aria-valuenow={stage.percent ?? undefined}
@@ -260,22 +262,22 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
               </div>
               <p className="restore__stage" role="status">
                 {stage.percent === null
-                  ? 'Checking the backup…'
-                  : `Uploading the backup… ${stage.percent}%`}
+                  ? t('admin.restore.progress.checking')
+                  : t('admin.restore.progress.uploading', { percent: stage.percent })}
               </p>
             </div>
           ) : null}
 
           <div className="form__actions">
             <button className="button" type="submit" disabled={busy} data-testid="restore-check">
-              {stage.kind === 'checking' ? 'Checking' : 'Check backup'}
+              {stage.kind === 'checking' ? t('admin.restore.checkBusy') : t('admin.restore.check')}
             </button>
             <button
               className="button button--secondary"
               type="button"
               onClick={() => (stage.kind === 'checking' ? upload.current?.abort() : onCancel())}
             >
-              Cancel
+              {t('admin.restore.cancel')}
             </button>
           </div>
         </form>
@@ -284,7 +286,7 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
       {stage.kind === 'refused' ? (
         <div className="restore__refused" role="alert" data-testid="restore-refused">
           <h3 className="restore__heading" ref={refusedHeading} tabIndex={-1}>
-            This backup cannot be restored
+            {t('admin.restore.refused.heading')}
           </h3>
           <p className="form__message">{stage.refusal.detail}</p>
           {stage.refusal.issues.length > 1 ? (
@@ -298,11 +300,12 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
           ) : null}
           {stage.refusal.moreIssues > 0 ? (
             <p className="restore__more">
-              and {stage.refusal.moreIssues} more{' '}
-              {stage.refusal.moreIssues === 1 ? 'problem' : 'problems'}.
+              {tn('admin.restore.refused.more', stage.refusal.moreIssues, {
+                n: stage.refusal.moreIssues,
+              })}
             </p>
           ) : null}
-          <p className="restore__note">No universe was created.</p>
+          <p className="restore__note">{t('admin.restore.refused.note')}</p>
           <div className="form__actions">
             <button
               className="button button--secondary"
@@ -310,10 +313,10 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
               onClick={chooseAnother}
               data-testid="restore-choose-another"
             >
-              Choose another file
+              {t('admin.restore.refused.chooseAnother')}
             </button>
             <button className="button button--secondary" type="button" onClick={onCancel}>
-              Close
+              {t('admin.restore.refused.close')}
             </button>
           </div>
         </div>
@@ -329,24 +332,28 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
         >
           <div className="restore__summary">
             <h3 className="restore__heading" ref={readyHeading} tabIndex={-1}>
-              Ready to restore
+              {t('admin.restore.ready.heading')}
             </h3>
             <dl className="restore__facts">
               <div className="restore__fact">
-                <dt>Universe</dt>
+                <dt>{t('admin.restore.ready.universe')}</dt>
                 <dd data-testid="restore-universe-name">
                   <bdi>{stage.validation.preview.universeName}</bdi>
                 </dd>
               </div>
               <div className="restore__fact">
-                <dt>Backed up</dt>
+                <dt>{t('admin.restore.ready.backedUp')}</dt>
                 <dd>{formatDateTime(stage.validation.preview.generatedAt)}</dd>
               </div>
               <div className="restore__fact">
-                <dt>Backup format</dt>
-                <dd>Version {stage.validation.preview.formatVersion}</dd>
+                <dt>{t('admin.restore.ready.format')}</dt>
+                <dd>
+                  {t('admin.restore.ready.version', {
+                    version: stage.validation.preview.formatVersion,
+                  })}
+                </dd>
               </div>
-              {summaryRows(stage.validation.preview.counts).map(([label, value]) => (
+              {summaryRows(stage.validation.preview.counts, i18n).map(([label, value]) => (
                 <div className="restore__fact" key={label}>
                   <dt>{label}</dt>
                   <dd>{value}</dd>
@@ -354,14 +361,12 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
               ))}
             </dl>
             {stage.validation.preview.isArchived ? (
-              <p className="restore__note">
-                This universe was archived when it was backed up, and is restored archived.
-              </p>
+              <p className="restore__note">{t('admin.restore.ready.archived')}</p>
             ) : null}
           </div>
 
           <Field
-            label="Name of the new universe"
+            label={t('admin.restore.ready.nameLabel')}
             name="restore-name"
             required
             maxLength={120}
@@ -390,7 +395,9 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
               disabled={stage.kind === 'restoring'}
               data-testid="restore-submit"
             >
-              {stage.kind === 'restoring' ? 'Restoring' : 'Restore as a new universe'}
+              {stage.kind === 'restoring'
+                ? t('admin.restore.ready.submitBusy')
+                : t('admin.restore.ready.submit')}
             </button>
             <button
               className="button button--secondary"
@@ -398,7 +405,7 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
               disabled={stage.kind === 'restoring'}
               onClick={chooseAnother}
             >
-              Choose another file
+              {t('admin.restore.ready.chooseAnother')}
             </button>
           </div>
         </form>
@@ -407,39 +414,48 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
   )
 }
 
-function plural(count: number, one: string, many: string) {
-  return `${count.toLocaleString()} ${count === 1 ? one : many}`
-}
-
 /** What the backup holds, a line per part of a world, leaving out what it has none of. */
-function summaryRows(counts: BackupPreviewCounts): [string, string][] {
+function summaryRows(
+  counts: BackupPreviewCounts,
+  { t, tn }: ReturnType<typeof useI18n>,
+): [string, string][] {
   const rows: [string, string][] = []
+  // The count is its own placeholder, grouped by the browser as it always was, not by the language.
+  const plural = (key: Parameters<typeof tn>[0], count: number) =>
+    tn(key, count, { n: count.toLocaleString() })
 
   const lore = [
-    plural(counts.entries, 'entry', 'entries'),
-    plural(counts.entityTypes, 'type', 'types'),
-    counts.relationships > 0 ? plural(counts.relationships, 'relationship', 'relationships') : null,
-    counts.timelineEntries > 0 ? plural(counts.timelineEntries, 'moment', 'moments') : null,
-    counts.eras > 0 ? plural(counts.eras, 'date period', 'date periods') : null,
-    counts.articles > 0 ? plural(counts.articles, 'article', 'articles') : null,
+    plural('admin.restore.counts.entry', counts.entries),
+    plural('admin.restore.counts.type', counts.entityTypes),
+    counts.relationships > 0
+      ? plural('admin.restore.counts.relationship', counts.relationships)
+      : null,
+    counts.timelineEntries > 0
+      ? plural('admin.restore.counts.moment', counts.timelineEntries)
+      : null,
+    counts.eras > 0 ? plural('admin.restore.counts.datePeriod', counts.eras) : null,
+    counts.articles > 0 ? plural('admin.restore.counts.article', counts.articles) : null,
   ]
-  rows.push(['Lore', lore.filter(Boolean).join(', ')])
+  rows.push([t('admin.restore.summary.lore'), lore.filter(Boolean).join(', ')])
 
   if (counts.images > 0) {
-    rows.push(['Pictures', plural(counts.images, 'picture', 'pictures')])
+    rows.push([
+      t('admin.restore.summary.pictures'),
+      plural('admin.restore.counts.picture', counts.images),
+    ])
   }
 
   if (counts.stories + counts.scenes > 0) {
     rows.push([
-      'Stories',
+      t('admin.restore.summary.stories'),
       [
-        plural(counts.stories, 'story', 'stories'),
-        counts.chapters > 0 ? plural(counts.chapters, 'chapter', 'chapters') : null,
-        plural(counts.scenes, 'scene', 'scenes'),
-        counts.plotArcs > 0 ? plural(counts.plotArcs, 'arc', 'arcs') : null,
-        counts.beats > 0 ? plural(counts.beats, 'beat', 'beats') : null,
+        plural('admin.restore.counts.story', counts.stories),
+        counts.chapters > 0 ? plural('admin.restore.counts.chapter', counts.chapters) : null,
+        plural('admin.restore.counts.scene', counts.scenes),
+        counts.plotArcs > 0 ? plural('admin.restore.counts.arc', counts.plotArcs) : null,
+        counts.beats > 0 ? plural('admin.restore.counts.beat', counts.beats) : null,
         counts.manuscripts > 0
-          ? plural(counts.manuscripts, 'scene with prose', 'scenes with prose')
+          ? plural('admin.restore.counts.sceneWithProse', counts.manuscripts)
           : null,
       ]
         .filter(Boolean)
@@ -449,10 +465,14 @@ function summaryRows(counts: BackupPreviewCounts): [string, string][] {
 
   if (counts.ideas + counts.ideasDeleted > 0) {
     rows.push([
-      'Ideas',
+      t('admin.restore.summary.ideas'),
       [
-        plural(counts.ideas, 'idea', 'ideas'),
-        counts.ideasDeleted > 0 ? `${counts.ideasDeleted.toLocaleString()} recently deleted` : null,
+        plural('admin.restore.counts.idea', counts.ideas),
+        counts.ideasDeleted > 0
+          ? t('admin.restore.summary.recentlyDeleted', {
+              n: counts.ideasDeleted.toLocaleString(),
+            })
+          : null,
       ]
         .filter(Boolean)
         .join(', '),
@@ -460,30 +480,40 @@ function summaryRows(counts: BackupPreviewCounts): [string, string][] {
   }
 
   if ((counts.ideaBoards ?? 0) > 0) {
-    rows.push(['Idea boards', plural(counts.ideaBoards ?? 0, 'board', 'boards')])
+    rows.push([
+      t('admin.restore.summary.ideaBoards'),
+      plural('admin.restore.counts.board', counts.ideaBoards ?? 0),
+    ])
   }
 
   if (counts.worldRules > 0) {
-    rows.push(['World Rules', plural(counts.worldRules, 'world rule', 'world rules')])
+    rows.push([
+      t('admin.restore.summary.worldRules'),
+      plural('admin.restore.counts.worldRule', counts.worldRules),
+    ])
   }
 
   if ((counts.maps ?? 0) > 0) {
     rows.push([
-      'Maps',
-      [plural(counts.maps ?? 0, 'map', 'maps'), plural(counts.mapPins ?? 0, 'pin', 'pins')].join(
-        ', ',
-      ),
+      t('admin.restore.summary.maps'),
+      [
+        plural('admin.restore.counts.map', counts.maps ?? 0),
+        plural('admin.restore.counts.pin', counts.mapPins ?? 0),
+      ].join(', '),
     ])
   }
 
   const history = counts.entryVersions + counts.articleVersions + counts.manuscriptVersions
   if (history > 0) {
-    rows.push(['Saved versions', plural(history, 'saved version', 'saved versions')])
+    rows.push([
+      t('admin.restore.summary.versions'),
+      plural('admin.restore.counts.savedVersion', history),
+    ])
   }
 
   const trash = counts.entriesInTrash + counts.storyItemsInTrash + counts.worldRulesInTrash
   if (trash > 0) {
-    rows.push(['In the Trash', plural(trash, 'item', 'items')])
+    rows.push([t('admin.restore.summary.trash'), plural('admin.restore.counts.item', trash)])
   }
 
   return rows
@@ -494,6 +524,7 @@ function summaryRows(counts: BackupPreviewCounts): [string, string][] {
  * and the time so far, so a long restore of a universe with many pictures reads as working rather than stuck.
  */
 function Restoring() {
+  const { t, tx } = useI18n()
   const [seconds, setSeconds] = useState(0)
 
   useEffect(() => {
@@ -512,16 +543,18 @@ function Restoring() {
       <div
         className="progressbar"
         role="progressbar"
-        aria-label="Restoring the universe"
+        aria-label={t('admin.restore.restoring.label')}
         data-state="working"
       >
         <span className="progressbar__fill" />
       </div>
       <p className="restore__stage">
-        Restoring the universe and its pictures… <span aria-hidden="true">{elapsed}</span>
+        {tx('admin.restore.restoring.stage', {
+          elapsed: <span aria-hidden="true">{elapsed}</span>,
+        })}
       </p>
       <p className="restore__stage" role="status">
-        A large backup can take a few minutes. Keep this page open.
+        {t('admin.restore.restoring.note')}
       </p>
     </div>
   )

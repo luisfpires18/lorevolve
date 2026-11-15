@@ -205,7 +205,7 @@ namespace LorEvolve.Api.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
 
-                            t.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)");
+                            t.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)");
 
                             t.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
                         });
@@ -645,6 +645,9 @@ namespace LorEvolve.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -659,6 +662,8 @@ namespace LorEvolve.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId", "DeletedAt", "UpdatedAt");
+
+                    b.HasIndex("ProjectId", "DeletedAt", "UpdatedAt");
 
                     b.HasIndex("UniverseId", "DeletedAt", "UpdatedAt");
 
@@ -1463,6 +1468,9 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("UniverseId")
                         .HasColumnType("TEXT");
 
@@ -1471,10 +1479,15 @@ namespace LorEvolve.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ProjectId", "Name")
+                        .IsUnique()
+                        .HasFilter("\"ProjectId\" IS NOT NULL");
+
                     b.HasIndex("UniverseId", "DisplayOrder");
 
                     b.HasIndex("UniverseId", "Name")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"ProjectId\" IS NULL");
 
                     b.HasIndex("UniverseId", "ParentId");
 
@@ -1536,6 +1549,9 @@ namespace LorEvolve.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("CanonEntityId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CanonStatus")
                         .HasColumnType("INTEGER");
 
@@ -1554,6 +1570,9 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PublicSlug")
@@ -1581,6 +1600,9 @@ namespace LorEvolve.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CanonEntityId")
+                        .HasFilter("\"CanonEntityId\" IS NOT NULL");
+
                     b.HasIndex("EntityTypeId");
 
                     b.HasIndex("UniverseId", "EntityTypeId");
@@ -1589,6 +1611,9 @@ namespace LorEvolve.Api.Data.Migrations
 
                     b.HasIndex("UniverseId", "PublicSlug")
                         .IsUnique();
+
+                    b.HasIndex("ProjectId", "DeletedAt", "UpdatedAt")
+                        .HasFilter("\"ProjectId\" IS NOT NULL");
 
                     b.HasIndex("UniverseId", "DeletedAt", "IsArchived", "UpdatedAt");
 
@@ -2394,6 +2419,206 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("EntityProgressionRevisions", (string)null);
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectEpisode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Script")
+                        .HasMaxLength(400000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SeasonId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Synopsis")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SeasonId", "SortOrder");
+
+                    b.ToTable("ProjectEpisodes", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EpisodeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EpisodeId", "SortOrder");
+
+                    b.ToTable("ProjectPages", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPanel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CanonEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Dialogue")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PageId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CanonEntityId")
+                        .HasFilter("\"CanonEntityId\" IS NOT NULL");
+
+                    b.HasIndex("PageId", "SortOrder");
+
+                    b.ToTable("ProjectPanels", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectSeason", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId", "Name")
+                        .IsUnique();
+
+                    b.HasIndex("ProjectId", "SortOrder");
+
+                    b.ToTable("ProjectSeasons", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Projects.CreativeProject", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Lifecycle")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Subtype")
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "UpdatedAt");
+
+                    b.HasIndex("UniverseId", "UpdatedAt");
+
+                    b.ToTable("CreativeProjects", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Publishing.UniverseArtwork", b =>
                 {
                     b.Property<Guid>("UniverseId")
@@ -3182,6 +3407,433 @@ namespace LorEvolve.Api.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.LoreSystem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("UniverseId", "UpdatedAt");
+
+                    b.HasIndex("UniverseId", "ProjectId", "NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("LoreSystems", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.LoreSystemRevision", b =>
+                {
+                    b.Property<Guid>("SystemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SavedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("SystemId", "Version");
+
+                    b.ToTable("LoreSystemRevisions", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.LoreSystemRule", b =>
+                {
+                    b.Property<Guid>("SystemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("SystemId", "RuleId");
+
+                    b.HasIndex("RuleId");
+
+                    b.ToTable("LoreSystemRules", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFinding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Claim")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClientName")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ConnectionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DecisionNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SubmittedByUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RuleId");
+
+                    b.HasIndex("UniverseId", "ProjectId");
+
+                    b.HasIndex("UniverseId", "Status", "CreatedAt");
+
+                    b.ToTable("SemanticFindings", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFindingCitation", b =>
+                {
+                    b.Property<Guid>("FindingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("RangeLength")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RangeStart")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SourceVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("FindingId", "SortOrder");
+
+                    b.ToTable("SemanticFindingCitations", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConditionJson")
+                        .HasMaxLength(32768)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExceptionsJson")
+                        .HasMaxLength(524288)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SchemaVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("UniverseId", "UpdatedAt");
+
+                    b.ToTable("SystemRules", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRuleDependency", b =>
+                {
+                    b.Property<Guid>("RuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DependsOnRuleId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("RuleId", "DependsOnRuleId");
+
+                    b.HasIndex("DependsOnRuleId");
+
+                    b.ToTable("SystemRuleDependencies", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRuleRevision", b =>
+                {
+                    b.Property<Guid>("RuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ConditionJson")
+                        .HasMaxLength(32768)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExceptionsJson")
+                        .HasMaxLength(524288)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SavedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SchemaVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("RuleId", "Version");
+
+                    b.ToTable("SystemRuleRevisions", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFinding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Rationale")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RuleVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RuleId");
+
+                    b.HasIndex("UniverseId", "Fingerprint")
+                        .IsUnique();
+
+                    b.HasIndex("UniverseId", "ProjectId");
+
+                    b.HasIndex("UniverseId", "Status", "Outcome");
+
+                    b.ToTable("WorldLogicFindings", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFindingEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ActorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FindingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FindingId", "At");
+
+                    b.ToTable("WorldLogicFindingEvents", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFindingEvidence", b =>
+                {
+                    b.Property<Guid>("FindingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceRowId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("FindingId", "SortOrder");
+
+                    b.ToTable("WorldLogicFindingEvidence", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Timeline.TimelineEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3939,12 +4591,19 @@ namespace LorEvolve.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
                         .WithMany()
                         .HasForeignKey("UniverseId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Owner");
+
+                    b.Navigation("Project");
 
                     b.Navigation("Universe");
                 });
@@ -4854,6 +5513,69 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Entity");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectEpisode", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.ProjectEntities.ProjectSeason", "Season")
+                        .WithMany("Episodes")
+                        .HasForeignKey("SeasonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Season");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.ProjectEntities.ProjectEpisode", "Episode")
+                        .WithMany()
+                        .HasForeignKey("EpisodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Episode");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPanel", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.ProjectEntities.ProjectPage", "Page")
+                        .WithMany("Panels")
+                        .HasForeignKey("PageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Page");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectSeason", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Projects.CreativeProject", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Auth.LorEvolveUser", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Universe");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Publishing.UniverseArtwork", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Universes.Universe", null)
@@ -5203,6 +5925,178 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Story");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.LoreSystem", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.LoreSystemRevision", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.LoreSystem", "LoreSystem")
+                        .WithMany()
+                        .HasForeignKey("SystemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LoreSystem");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.LoreSystemRule", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemRule", "Rule")
+                        .WithMany()
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LorEvolve.Api.Features.Systems.LoreSystem", "LoreSystem")
+                        .WithMany("Rules")
+                        .HasForeignKey("SystemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LoreSystem");
+
+                    b.Navigation("Rule");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFinding", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemRule", "Rule")
+                        .WithMany()
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Rule");
+
+                    b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFindingCitation", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.SemanticFinding", "Finding")
+                        .WithMany("Citations")
+                        .HasForeignKey("FindingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Finding");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRule", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRuleDependency", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemRule", "DependsOnRule")
+                        .WithMany()
+                        .HasForeignKey("DependsOnRuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemRule", "Rule")
+                        .WithMany("Dependencies")
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DependsOnRule");
+
+                    b.Navigation("Rule");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRuleRevision", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemRule", "Rule")
+                        .WithMany()
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Rule");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFinding", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemRule", "Rule")
+                        .WithMany()
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Rule");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFindingEvent", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.WorldLogicFinding", "Finding")
+                        .WithMany("Events")
+                        .HasForeignKey("FindingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Finding");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFindingEvidence", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.WorldLogicFinding", "Finding")
+                        .WithMany("Evidence")
+                        .HasForeignKey("FindingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Finding");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Timeline.TimelineEntry", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Chronology.ChronologyEra", "EndEra")
@@ -5539,6 +6433,16 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Scenes");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
+                {
+                    b.Navigation("Panels");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectSeason", b =>
+                {
+                    b.Navigation("Episodes");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Relationships.LoreRelationship", b =>
                 {
                     b.Navigation("Periods");
@@ -5570,6 +6474,28 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("PlotArcs");
 
                     b.Navigation("Scenes");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.LoreSystem", b =>
+                {
+                    b.Navigation("Rules");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFinding", b =>
+                {
+                    b.Navigation("Citations");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRule", b =>
+                {
+                    b.Navigation("Dependencies");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFinding", b =>
+                {
+                    b.Navigation("Events");
+
+                    b.Navigation("Evidence");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Timeline.TimelineEntry", b =>

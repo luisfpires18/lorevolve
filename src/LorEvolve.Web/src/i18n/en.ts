@@ -1,15 +1,29 @@
 import type { Shape } from './core'
 import account from './en/account'
+import ai from './en/ai'
 import auth from './en/auth'
+import ideas from './en/ideas'
+import review from './en/review'
+import canon from './en/canon'
+import data from './en/data'
+import admin from './en/admin'
+import apiErrors from './en/apiErrors'
 import entity from './en/entity'
 import entityTypes from './en/entityTypes'
 import lore from './en/lore'
+import time from './en/time'
+import progression from './en/progression'
+import places from './en/places'
+import manuscript from './en/manuscript'
 import relationships from './en/relationships'
 import workspace from './en/workspace'
+import projects from './en/projects'
 import portal from './en/portal'
 import publishing from './en/publishing'
 import roles from './en/roles'
 import shell from './en/shell'
+import universe from './en/universe'
+import stories from './en/stories'
 
 /**
  * The source dictionary (ADR 0071): every message LorEvolve shows, in English, grouped by feature. Its keys are the
@@ -22,16 +36,30 @@ import shell from './en/shell'
  */
 const en = {
   account,
+  ai,
   auth,
+  ideas,
+  review,
+  canon,
+  data,
+  admin,
+  apiErrors,
   entity,
   entityTypes,
   lore,
+  time,
+  progression,
+  places,
+  manuscript,
   relationships,
   workspace,
+  projects,
   portal,
   publishing,
   roles,
   shell,
+  universe,
+  stories,
   language: {
     label: 'Language',
   },

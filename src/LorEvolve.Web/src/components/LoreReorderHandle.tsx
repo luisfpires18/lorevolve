@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { GripVertical } from 'lucide-react'
+import { useI18n } from '../i18n'
 
 /**
  * The grip a scene's lore chip is reordered by, and only the grip: the chip itself stays a link to the entry. A mouse drags
@@ -17,6 +18,7 @@ export function LoreReorderHandle({
   name: string
   onKey: (event: KeyboardEvent<HTMLButtonElement>) => void
 }) {
+  const { t } = useI18n()
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id })
 
   return (
@@ -26,7 +28,7 @@ export function LoreReorderHandle({
       ref={setNodeRef}
       className="lorechip__grip"
       type="button"
-      aria-label={`Reorder ${name}, with the arrow keys`}
+      aria-label={t('stories.picks.reorder', { name })}
       aria-pressed={isDragging}
       onKeyDown={onKey}
       data-testid={`lore-reorder-${name}`}

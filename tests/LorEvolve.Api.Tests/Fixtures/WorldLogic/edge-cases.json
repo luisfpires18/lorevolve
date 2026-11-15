@@ -1,0 +1,476 @@
+{
+  "schemaVersion": 1,
+  "scenario": "edge-cases",
+  "description": "No domain at all. Every failure and ambiguity the specification names, written as a case with its expected error code, so an implementation cannot pass by guessing.",
+  "limits": {
+    "maxDepth": 16,
+    "maxNodes": 256,
+    "maxWhereClauses": 8,
+    "maxExceptions": 16,
+    "maxConditionBytes": 32768,
+    "maxSteps": 20000,
+    "maxQueryRows": 2000,
+    "maxDependencyDepth": 8,
+    "maxRulesPerEvaluation": 500,
+    "wallClockSecondsPerRule": 2
+  },
+  "facts": {
+    "subjects": [
+      { "id": "s.a", "type": "thing", "attributes": { "count": 3, "label": "alpha", "flag": true, "whenCalendar": "calendar:0400-01-01", "whenEra": "era:era.first/12" } },
+      { "id": "s.b", "type": "thing", "attributes": {} }
+    ],
+    "relations": [],
+    "events": [
+      { "id": "e.a", "kind": "note", "method": "manual", "subjectIds": ["s.a"], "at": "calendar:0400-06-01", "canon": true }
+    ]
+  },
+  "rules": [
+    {
+      "id": "rule.missing-attribute",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "gt", "right": { "literal": 0, "type": "number" } },
+      "exceptions": []
+    },
+    {
+      "id": "rule.contradiction-high",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "gte", "right": { "literal": 3, "type": "number" } },
+      "exceptions": []
+    },
+    {
+      "id": "rule.contradiction-low",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "lt", "right": { "literal": 3, "type": "number" } },
+      "exceptions": []
+    },
+    {
+      "id": "rule.cycle-a",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": ["rule.cycle-b"],
+      "condition": { "kind": "ruleHolds", "ruleId": "rule.cycle-b" },
+      "exceptions": []
+    },
+    {
+      "id": "rule.cycle-b",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": ["rule.cycle-c"],
+      "condition": { "kind": "ruleHolds", "ruleId": "rule.cycle-c" },
+      "exceptions": []
+    },
+    {
+      "id": "rule.cycle-c",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": ["rule.cycle-a"],
+      "condition": { "kind": "ruleHolds", "ruleId": "rule.cycle-a" },
+      "exceptions": []
+    },
+    {
+      "id": "rule.self-cycle",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": ["rule.self-cycle"],
+      "condition": { "kind": "ruleHolds", "ruleId": "rule.self-cycle" },
+      "exceptions": []
+    },
+    {
+      "id": "rule.off-the-cycle",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "always", "value": "true" },
+      "exceptions": []
+    },
+    {
+      "id": "rule.scope-mismatch",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "within",
+        "point": { "attribute": "whenEra", "of": { "subject": "self" } },
+        "from": { "literal": "calendar:0399-01-01", "type": "timePoint" },
+        "to": { "literal": "calendar:0401-01-01", "type": "timePoint" }
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.type-mismatch",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": "3", "type": "text" } },
+      "exceptions": []
+    },
+    {
+      "id": "rule.operator-not-applicable",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "compare", "left": { "attribute": "label", "of": { "subject": "self" } }, "op": "gt", "right": { "literal": "alpha", "type": "text" } },
+      "exceptions": []
+    },
+    {
+      "id": "rule.undeclared-dependency",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "ruleHolds", "ruleId": "rule.off-the-cycle" },
+      "exceptions": []
+    },
+    {
+      "id": "rule.missing-rule",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": ["rule.nowhere"],
+      "condition": { "kind": "ruleHolds", "ruleId": "rule.nowhere" },
+      "exceptions": []
+    },
+    {
+      "id": "rule.future-schema",
+      "version": 1,
+      "schemaVersion": 2,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "always", "value": "true" },
+      "exceptions": []
+    },
+    {
+      "id": "rule.unknown-node-kind",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "someday", "of": [] },
+      "exceptions": []
+    },
+    {
+      "id": "rule.empty-group",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "all", "of": [] },
+      "exceptions": []
+    },
+    {
+      "id": "rule.too-deep",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "not", "of": { "kind": "always", "value": "true" } } } } } } } } } } } } } } } } },
+      "exceptions": []
+    },
+    {
+      "id": "rule.error-loses-to-a-definite-false",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "all",
+        "of": [
+          { "kind": "always", "value": "false" },
+          { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": "3", "type": "text" } }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.error-beats-unknown",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "all",
+        "of": [
+          { "kind": "always", "value": "unknown" },
+          { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": "3", "type": "text" } }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.any-definite-true-beats-an-error",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          { "kind": "always", "value": "true" },
+          { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": "3", "type": "text" } }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.any-false-and-an-error-is-an-error",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          { "kind": "always", "value": "false" },
+          { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": "3", "type": "text" } }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.any-false-unknown-and-an-error-is-an-error",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          { "kind": "always", "value": "false" },
+          { "kind": "always", "value": "unknown" },
+          { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": "3", "type": "text" } }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.any-false-and-unknown-is-unknown",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          { "kind": "always", "value": "false" },
+          { "kind": "always", "value": "unknown" }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.unknown-exception-blocks-a-violation",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "always", "value": "false" },
+      "exceptions": [
+        {
+          "id": "ex.unknowable",
+          "scope": { "kind": "universe" },
+          "when": { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "s.b" } }, "op": "gt", "right": { "literal": 0, "type": "number" } }
+        }
+      ]
+    },
+    {
+      "id": "rule.erroring-exception",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "always", "value": "false" },
+      "exceptions": [
+        {
+          "id": "ex.broken",
+          "scope": { "kind": "universe" },
+          "when": { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "s.a" } }, "op": "eq", "right": { "literal": "3", "type": "text" } }
+        }
+      ]
+    },
+    {
+      "id": "rule.invalid-reference",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": { "kind": "exists", "query": { "from": "nowhere", "where": [] } },
+      "exceptions": []
+    }
+  ],
+  "cases": [
+    {
+      "name": "a missing attribute is unknown",
+      "ruleId": "rule.missing-attribute",
+      "target": "s.b",
+      "projectId": null,
+      "expect": { "outcome": "unknown", "errorCode": null, "exemptionId": null, "evidence": ["s.b"] }
+    },
+    {
+      "name": "two rules that cannot both hold each report their own outcome, and the high one passes",
+      "ruleId": "rule.contradiction-high",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "the contradicting rule fails over the same facts, and nothing reconciles them",
+      "ruleId": "rule.contradiction-low",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "every rule on a three-rule cycle fails with dependency_cycle",
+      "ruleId": "rule.cycle-a",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "dependency_cycle", "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "the second rule on the cycle fails the same way",
+      "ruleId": "rule.cycle-b",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "dependency_cycle", "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "the third rule closing the cycle fails the same way",
+      "ruleId": "rule.cycle-c",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "dependency_cycle", "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "a rule depending on itself is a cycle",
+      "ruleId": "rule.self-cycle",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "dependency_cycle", "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "a rule off the cycle still evaluates",
+      "ruleId": "rule.off-the-cycle",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "an era point compared against calendar bounds is a scope mismatch, not a guess",
+      "ruleId": "rule.scope-mismatch",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "scope_mismatch", "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "a number compared with text is a type mismatch, never false",
+      "ruleId": "rule.type-mismatch",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "type_mismatch", "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "ordering text is refused rather than collated",
+      "ruleId": "rule.operator-not-applicable",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "operator_not_applicable", "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "referencing a rule outside dependsOn is refused",
+      "ruleId": "rule.undeclared-dependency",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "undeclared_dependency", "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "depending on a rule that does not exist is missing_rule",
+      "ruleId": "rule.missing-rule",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "missing_rule", "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "a condition stored at a newer schema version errors rather than passing",
+      "ruleId": "rule.future-schema",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "schema_version_unsupported", "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "an unrecognised node kind errors",
+      "ruleId": "rule.unknown-node-kind",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "unknown_node_kind", "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "an empty group is an arity error, not a vacuous truth",
+      "ruleId": "rule.empty-group",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "node_arity", "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "seventeen nested nodes exceed the depth limit",
+      "ruleId": "rule.too-deep",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "depth_limit", "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "a definite false wins over an erroring sibling",
+      "ruleId": "rule.error-loses-to-a-definite-false",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "an error dominates an unknown sibling",
+      "ruleId": "rule.error-beats-unknown",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "type_mismatch", "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "a definite true wins over an erroring sibling in any, mirroring all",
+      "ruleId": "rule.any-definite-true-beats-an-error",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "any over a false and an error is an error, never false",
+      "ruleId": "rule.any-false-and-an-error-is-an-error",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "type_mismatch", "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "any over a false, an unknown and an error is an error",
+      "ruleId": "rule.any-false-unknown-and-an-error-is-an-error",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "type_mismatch", "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "any over a false and an unknown is unknown",
+      "ruleId": "rule.any-false-and-unknown-is-unknown",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "unknown", "errorCode": null, "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "an exception that might apply makes the outcome unknown, not a violation",
+      "ruleId": "rule.unknown-exception-blocks-a-violation",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "unknown", "errorCode": null, "exemptionId": null, "evidence": ["s.b"] }
+    },
+    {
+      "name": "an exception that errors makes the outcome an error",
+      "ruleId": "rule.erroring-exception",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "type_mismatch", "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "a query over a source that does not exist is refused",
+      "ruleId": "rule.invalid-reference",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "unknown_source", "exemptionId": null, "evidence": [] }
+    }
+  ]
+}

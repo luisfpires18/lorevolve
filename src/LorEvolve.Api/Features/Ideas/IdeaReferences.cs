@@ -280,6 +280,8 @@ internal static class IdeaReferences
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(idea => idea.UniverseId, (Guid?)null)
+                    // The universe's projects go with it, so a project link goes the same way the universe link does.
+                    .SetProperty(idea => idea.ProjectId, (Guid?)null)
                     .SetProperty(idea => idea.UpdatedAt, now),
                 cancellationToken);
     }

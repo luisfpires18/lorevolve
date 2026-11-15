@@ -1,2 +1,190 @@
-// Untranslated: the English text stands in until the pt-PT dictionary issue (#106) replaces this file.
-export { default } from '../en/portal'
+import type { Dictionary } from '../en'
+
+/** O portal público: Explorar, páginas de mundo, autor, entrada e história, pesquisa, rodapé, páginas em falta (#101). */
+const portal: Dictionary['portal'] = {
+  layout: {
+    exploreNav: 'Explorar',
+    explore: 'Explorar',
+    workspace: 'O meu espaço',
+    appearance: 'Aparência',
+    login: 'Entrar',
+    join: 'Criar conta',
+  },
+  search: {
+    label: 'Pesquisar mundos e autores',
+    placeholder: 'Pesquisar mundos e autores',
+    clear: 'Limpar a pesquisa',
+  },
+  footer: {
+    tagline: 'Um espaço de trabalho para universos de ficção',
+    product: 'Produto',
+    explore: 'Explorar',
+    workspace: 'O meu espaço',
+    register: 'Criar conta',
+    login: 'Entrar',
+    copyright: '© {year} LorEvolve',
+  },
+  missing: {
+    documentTitle: 'Página indisponível',
+    hint: 'O endereço pode estar errado, ou a página não é pública.',
+    explore: 'Explorar',
+  },
+  error: {
+    documentTitle: 'Não foi possível carregar a página',
+    title: 'Não foi possível carregar esta página.',
+    hint: 'Algo correu mal pelo caminho. Tenta de novo daqui a pouco.',
+    retry: 'Tentar de novo',
+  },
+  card: {
+    genres: 'Géneros',
+    basedOn: 'Baseado em obras de {creator}',
+    curatedBy: 'organizado por {author}',
+    by: 'por {author}',
+  },
+  attribution: {
+    by: 'por {author}',
+    basedOn: 'Baseado em obras de {creator}',
+    curatedOn: 'Organizado no LorEvolve por {author}',
+    unofficial:
+      'Projeto não oficial de fãs ou de referência. Sem afiliação com o criador original nem aprovação deste.',
+  },
+  authorSection: {
+    loadFailed: 'Não foi possível carregar as definições da tua página de autor.',
+    photoShown: 'A tua fotografia é mostrada na tua página de autor.',
+    photoHidden: 'A tua fotografia já não é mostrada.',
+    changeFailed: 'Não foi possível alterar isso. Tenta de novo.',
+    title: 'Página de autor',
+    readersFind: 'Os leitores encontram os teus mundos públicos em {link}.',
+    readersFindLink: 'a tua página de autor',
+    hiddenAgain:
+      'A tua página de autor volta a aparecer enquanto um dos teus universos for público.',
+    hiddenFirst: 'A tua página de autor aparece quando publicares o teu primeiro universo.',
+    showPhoto: 'Mostrar a minha fotografia na minha página de autor',
+    photoHintHas: 'Desligado a menos que o ligues. Substituir a fotografia volta a desligá-lo.',
+    photoHintNone:
+      'Adiciona primeiro uma fotografia acima. Sem ela, a tua página de autor mostra a tua inicial.',
+  },
+  explore: {
+    documentTitle: 'Explorar mundos',
+    title: 'Explorar mundos',
+    lede: 'Universos que os seus autores escolheram partilhar.',
+    categories: 'Categorias',
+    all: 'Todos',
+    genre: 'Género',
+    allGenres: 'Todos os géneros',
+    sortBy: 'Ordenar por',
+    sortRecent: 'Publicados recentemente',
+    sortAz: 'De A a Z',
+    finding: 'A procurar mundos…',
+    worldsHeading: 'Mundos',
+    error: {
+      message:
+        'Não foi possível carregar os mundos publicados. Verifica a ligação e tenta de novo.',
+      retry: 'Tentar de novo',
+    },
+    empty: {
+      title: 'Ainda não foi publicado nenhum mundo.',
+      hint: 'Quando um autor torna um universo público, ele aparece aqui.',
+    },
+    noMatch: {
+      title: 'Nenhum mundo publicado corresponde.',
+      hint: 'Tenta outra palavra, categoria ou género, ou vê todos os mundos.',
+      clear: 'Limpar a pesquisa e os filtros',
+    },
+    shown: 'A mostrar {shown} de {total} mundos',
+    more: {
+      error: 'Não foi possível carregar mais mundos.',
+      loading: 'A carregar mundos…',
+      retry: 'Tentar de novo',
+      show: 'Mostrar mais mundos',
+    },
+    count: {
+      partial: {
+        one: 'A mostrar {shown} de {total} mundo',
+        other: 'A mostrar {shown} de {total} mundos',
+      },
+      matching: {
+        one: '{total} mundo corresponde',
+        other: '{total} mundos correspondem',
+      },
+      all: {
+        one: '{total} mundo',
+        other: '{total} mundos',
+      },
+    },
+  },
+  world: {
+    missing: 'Este mundo não está disponível.',
+    opening: 'A abrir este mundo',
+    genres: 'Géneros',
+    edit: 'Editar este mundo',
+    nav: 'Neste mundo',
+    navLore: 'Lore',
+    navStories: 'Histórias',
+    loading: 'A abrir o que está publicado aqui…',
+    loreHeading: 'Lore',
+    storiesHeading: 'Histórias',
+    loadFailed: 'Não foi possível carregar o que está publicado aqui.',
+    retry: 'Tentar de novo',
+    empty: 'Ainda não foi publicada aqui nenhuma lore nem história.',
+    storyCta: 'Ler sobre esta história →',
+    shown: 'A mostrar {shown} de {total}',
+    loreMore: {
+      error: 'Não foi possível carregar mais lore.',
+      loading: 'A carregar…',
+      retry: 'Tentar de novo',
+      show: 'Mostrar mais lore',
+    },
+    storiesMore: {
+      error: 'Não foi possível carregar mais histórias.',
+      loading: 'A carregar…',
+      retry: 'Tentar de novo',
+      show: 'Mostrar mais histórias',
+    },
+  },
+  author: {
+    missing: 'Este autor não está disponível.',
+    opening: 'A abrir este autor',
+    eyebrow: 'Criador no LorEvolve',
+    count: {
+      one: '{n} mundo publicado',
+      other: '{n} mundos publicados',
+    },
+    worldsHeading: 'Mundos',
+    loadFailed: 'Não foi possível carregar estes mundos.',
+    retry: 'Tentar de novo',
+    loading: 'A abrir os seus mundos…',
+    moreLoading: 'A carregar…',
+    more: 'Mostrar mais mundos',
+  },
+  lore: {
+    missing: 'Esta página não está disponível.',
+    opening: 'A abrir esta entrada',
+    breadcrumb: 'Caminho',
+    crumb: 'Lore',
+    edit: 'Editar no espaço de trabalho',
+    moreFrom: 'Mais de {world}',
+  },
+  story: {
+    missing: 'Esta página não está disponível.',
+    opening: 'A abrir esta história',
+    breadcrumb: 'Caminho',
+    crumb: 'Histórias',
+    eyebrow: 'Uma história',
+    published: 'Publicada a {date}',
+    edit: 'Editar no espaço de trabalho',
+    sections: 'Nesta história',
+    manuscript: 'Manuscrito',
+    scenes: 'Cenas',
+    arcs: 'Arcos',
+    manuscriptHeading: 'Manuscrito',
+    manuscriptContents: 'Conteúdo do manuscrito',
+    scenesHeading: 'Cenas',
+    arcsHeading: 'Arcos',
+    worldLabel: 'O mundo desta história',
+    setIn: 'Passa-se em',
+    exploreWorld: 'Explorar este mundo',
+  },
+}
+
+export default portal

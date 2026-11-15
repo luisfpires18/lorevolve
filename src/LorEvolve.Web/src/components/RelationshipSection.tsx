@@ -28,7 +28,13 @@ import {
   type RelationshipType,
   type RelationshipView,
 } from '../relationships/types'
-import { CANON_LABELS, CANON_ORDER, CanonStatus, type CanonStatusValue } from '../lore/types'
+import {
+  CANON_LABELS,
+  CANON_ORDER,
+  CanonStatus,
+  type CanonStatusValue,
+  CANON_KEYS,
+} from '../lore/types'
 import { StatusBadge } from './StatusBadge'
 import { ActionIcon } from './ActionIcon'
 import { EmptyState } from './EmptyState'
@@ -413,7 +419,7 @@ export function RelationshipSection({
                 className="canon__step"
                 aria-pressed={draft.canonStatus === option}
                 onClick={() => edit({ canonStatus: option })}
-                data-testid={`relation-canon-${CANON_LABELS[option].toLowerCase()}`}
+                data-testid={`relation-canon-${CANON_KEYS[option]}`}
               >
                 {CANON_LABELS[option]}
               </button>

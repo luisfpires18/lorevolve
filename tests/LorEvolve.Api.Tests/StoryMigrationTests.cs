@@ -169,10 +169,17 @@ public sealed class StoryMigrationTests : IDisposable
 
     private sealed record LoreCounts(int Entities, int Eras, int Moments, int Participations);
 
-    /// <summary>Counting selects no column, so it reads a rolled-back schema through today's model.</summary>
+    /// <summary>
+    /// Counting selects no column, so it reads a rolled-back schema through today's model.
+    ///
+    /// <para>Entries are counted past the query filter on purpose. The filter is <c>ProjectId == null</c> (#144), and a
+    /// filter is part of the SQL, so an ordinary count would name a column the rolled-back schema does not have yet.
+    /// Ignoring it asks the question this test means to ask - how many entry rows are in the file - rather than a
+    /// question about a scope that does not exist before the migration.</para>
+    /// </summary>
     private static async Task<LoreCounts> Count(LorEvolveDbContext db) =>
         new(
-            await db.Entities.CountAsync(),
+            await db.Entities.IgnoreQueryFilters().CountAsync(),
             await db.ChronologyEras.CountAsync(),
             await db.TimelineEntries.CountAsync(),
             await db.TimelineEntryLinks.CountAsync());

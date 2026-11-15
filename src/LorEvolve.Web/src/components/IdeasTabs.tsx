@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useI18n } from '../i18n'
 
 /** The two ways into one universe's - or the account's - ideas: the list, and the boards they are laid out on. */
 export function IdeasTabs({
@@ -8,15 +9,16 @@ export function IdeasTabs({
   basePath: string
   current: 'ideas' | 'boards'
 }) {
+  const { t } = useI18n()
   return (
-    <nav className="views ideatabs" aria-label="Ideas views" data-testid="ideas-tabs">
+    <nav className="views ideatabs" aria-label={t('ideas.tabs.ariaLabel')} data-testid="ideas-tabs">
       <Link
         className="views__link"
         to={basePath}
         aria-current={current === 'ideas' ? 'page' : undefined}
         data-testid="ideas-tab-list"
       >
-        Ideas
+        {t('ideas.tabs.ideas')}
       </Link>
       <Link
         className="views__link"
@@ -24,7 +26,7 @@ export function IdeasTabs({
         aria-current={current === 'boards' ? 'page' : undefined}
         data-testid="ideas-tab-boards"
       >
-        Boards
+        {t('ideas.tabs.boards')}
       </Link>
     </nav>
   )

@@ -2,6 +2,7 @@ import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { IdeaEditor } from '../components/IdeaEditor'
 import { Quoted } from '../components/NameList'
 import type { IdeasListNotice } from '../components/IdeasBrowser'
+import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
 interface IdeaPageProps {
@@ -14,6 +15,7 @@ interface IdeaPageProps {
  * universe starts in that universe; its author may take it out again before saving.
  */
 export default function IdeaPage({ inUniverse = false, isNew = false }: IdeaPageProps) {
+  const { t, tx } = useI18n()
   const { ideaId } = useParams<{ ideaId: string }>()
   const navigate = useNavigate()
   const context = useOutletContext<WorkspaceContext | undefined>()
@@ -29,13 +31,9 @@ export default function IdeaPage({ inUniverse = false, isNew = false }: IdeaPage
       contextUniverse={universe ? { id: universe.id, name: universe.name } : null}
       listPath={listPath}
       listLabel={
-        universe ? (
-          <>
-            Ideas in <Quoted text={universe.name} />
-          </>
-        ) : (
-          'All ideas'
-        )
+        universe
+          ? tx('ideas.pages.ideasIn', { universe: <Quoted text={universe.name} /> })
+          : t('ideas.pages.allIdeas')
       }
       // Creating is finished once it is created: back to the list it was started from - this universe's while the idea is
       // still this universe's, otherwise all ideas, since a universe's Ideas list only its own. Replacing the finished form

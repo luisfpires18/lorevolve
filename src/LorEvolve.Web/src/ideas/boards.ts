@@ -1,4 +1,5 @@
 import { apiFetch } from '../lib/api'
+import { t } from '../i18n'
 import type { IdeaUniverse } from './types'
 
 /**
@@ -24,10 +25,24 @@ export const BOARD_MAX_CONNECTIONS = 600
 export const BoardCardKind = { Note: 0, Idea: 1, Entity: 2 } as const
 export type BoardCardKindValue = (typeof BoardCardKind)[keyof typeof BoardCardKind]
 
+/** Getters, so each word is looked up in the current language when read. */
 export const BOARD_CARD_KIND_LABELS: Record<BoardCardKindValue, string> = {
-  [BoardCardKind.Note]: 'Note',
-  [BoardCardKind.Idea]: 'Idea',
-  [BoardCardKind.Entity]: 'Lore',
+  get [BoardCardKind.Note]() {
+    return t('ideas.boardCardKind.note')
+  },
+  get [BoardCardKind.Idea]() {
+    return t('ideas.boardCardKind.idea')
+  },
+  get [BoardCardKind.Entity]() {
+    return t('ideas.boardCardKind.lore')
+  },
+}
+
+/** A card kind's stable key: what a selector or test id is built from, never the translated word. */
+export const BOARD_CARD_KIND_KEYS: Record<BoardCardKindValue, string> = {
+  [BoardCardKind.Note]: 'note',
+  [BoardCardKind.Idea]: 'idea',
+  [BoardCardKind.Entity]: 'lore',
 }
 
 /** One card as read: its place, its payload and - for an idea or an entry - what it points at, as it is now. */
@@ -52,9 +67,9 @@ export interface BoardCard {
 export function cardName(card: BoardCard) {
   if (card.kind === BoardCardKind.Note) {
     const text = (card.text ?? '').trim()
-    return text === '' ? 'Empty note' : text.split('\n')[0]!.slice(0, 80)
+    return text === '' ? t('ideas.boardCard.emptyNote') : text.split('\n')[0]!.slice(0, 80)
   }
-  return card.name ?? 'Untitled'
+  return card.name ?? t('ideas.boardCard.untitled')
 }
 
 /** Top-left first, a row at a time: the order cards are read in, tabbed through and listed. */

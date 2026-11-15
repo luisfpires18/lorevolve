@@ -1,12 +1,13 @@
-using System.Security.Claims;
-using System.Text.RegularExpressions;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Ideas;
+using LorEvolve.Api.Features.Localization;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Publishing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace LorEvolve.Api.Features.Universes;
 
@@ -17,6 +18,9 @@ namespace LorEvolve.Api.Features.Universes;
 /// </summary>
 public static partial class UniverseEndpoints
 {
+    /// <summary>The 409 for deleting a universe that has not been archived first.</summary>
+    public const string NotArchivedCode = "universe_not_archived";
+
     private const int DefaultPageSize = 12;
     private const int MaxPageSize = 50;
 
@@ -145,6 +149,7 @@ public static partial class UniverseEndpoints
         [FromBody] CreateUniverseRequest request,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
+        HttpContext http,
         CancellationToken cancellationToken)
     {
         var ownerId = principal.RequireUserId();
@@ -195,7 +200,7 @@ public static partial class UniverseEndpoints
         // the author's, and no read puts back one they removed.
         if (request.StarterTypes != false)
         {
-            await EntityTypeDefaults.EnsureAsync(db, universe.Id, cancellationToken);
+            await EntityTypeDefaults.EnsureAsync(db, universe.Id, cancellationToken, RequestLanguage.Of(http.Request));
         }
 
         return Results.Created($"/api/universes/{universe.Id}", ToDetail(universe, artwork: null, aiHelp: request.AiHelp != false));
@@ -352,7 +357,8 @@ public static partial class UniverseEndpoints
             return Results.Problem(
                 title: "Universe is not archived",
                 detail: "Archive the universe before deleting it.",
-                statusCode: StatusCodes.Status409Conflict);
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = NotArchivedCode });
         }
 
         // Ideas belong to the account, not to the universe (ADR 0030): every idea about this

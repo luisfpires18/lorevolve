@@ -421,6 +421,7 @@ internal static class AiChangeCatalog
         AiChangeResource.TimelineEvent => "timeline_event",
         AiChangeResource.PlotArc => "plot_arc",
         AiChangeResource.WorldRule => "world_rule",
+        AiChangeResource.ProjectEntry => "project_entry",
         AiChangeResource.LoreType => "lore_type",
         AiChangeResource.LoreField => "lore_field",
         AiChangeResource.LoreGroup => "lore_group",
