@@ -112,7 +112,11 @@ A query is a selector, not a language. No joins, no ordering, no projection, no 
 `where` is an AND of at most eight clauses. A clause's `field` must be in section 2's table for that source, and its
 `value` carries its `type`, which it is held to exactly as a literal operand is: a `reference` is an id, a
 `timePoint` names a scope from section 6, a `boolean` is `true` or `false`, and anything else is `type_mismatch`
-on save rather than at evaluation time. `subjectIds` supports only `contains`, whose value is a `reference`. A clause may name
+on save rather than at evaluation time. The type also has to be the one the field carries: `id`, `fromId`, `toId`
+and `subjectIds` compare a `reference`, `type`, `kind` and `method` a `text`, `at` a `timePoint` and `canon` a
+`boolean`. The same holds for an `operandValue` whose type is known before anything is evaluated: a literal
+declares its own, a `count` is a number and a `subject` is a reference, while an `attribute` or a `field` is only
+settled by the stored facts and is checked at evaluation time instead. `subjectIds` supports only `contains`, whose value is a `reference`. A clause may name
 `{ "operandValue": operand }` in place of `value`, which is how a rule compares a row against the evaluation target;
 an operand that resolves to missing makes the whole query return zero rows, and `count` therefore returns `0` while
 `exists` returns `false`. That is the one place a query is allowed to treat missing as empty, and it is called out

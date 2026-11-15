@@ -59,6 +59,27 @@ public static class ConditionSchema
         ["events"] = ["id", "kind", "method", "subjectIds", "at", "canon"],
     };
 
+    /// <summary>
+    /// The value type each selectable field carries. A where-clause compares one field against one value, so the
+    /// field decides what that value may be: declaring anything else can only ever be a type mismatch when the
+    /// condition is evaluated, and is refused on save instead. <c>subjectIds</c> is a set of references, and
+    /// membership in it compares one reference.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> FieldTypes = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["subjects.id"] = "reference",
+        ["subjects.type"] = "text",
+        ["relations.type"] = "text",
+        ["relations.fromId"] = "reference",
+        ["relations.toId"] = "reference",
+        ["events.id"] = "reference",
+        ["events.kind"] = "text",
+        ["events.method"] = "text",
+        ["events.subjectIds"] = "reference",
+        ["events.at"] = "timePoint",
+        ["events.canon"] = "boolean",
+    };
+
     /// <summary>The scopes a time point may be written in. A point is ordered only inside one scope.</summary>
     public static readonly string[] TimeScopes = ["calendar", "era"];
 
@@ -376,6 +397,33 @@ public static class ConditionSchema
         return matches ? null : new ConditionProblem("type_mismatch", path);
     }
 
+    /// <summary>
+    /// The type an operand has before anything is evaluated, or null when only the stored facts decide it. A
+    /// literal declares its own, a count is always a number, and a subject is always a reference; an attribute or a
+    /// field depends on what is stored, so it has none here.
+    /// </summary>
+    private static string? StaticType(JsonElement operand)
+    {
+        if (operand.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        if (operand.TryGetProperty("literal", out _)
+            && operand.TryGetProperty("type", out var declared)
+            && declared.ValueKind == JsonValueKind.String)
+        {
+            return declared.GetString();
+        }
+
+        if (operand.TryGetProperty("count", out _))
+        {
+            return "number";
+        }
+
+        return operand.TryGetProperty("subject", out _) ? "reference" : null;
+    }
+
     /// <summary>A time point is <c>scope:value</c>, with a scope section 6 of the specification names.</summary>
     public static bool IsTimePoint(string value)
     {
@@ -441,11 +489,24 @@ public static class ConditionSchema
                 return new ConditionProblem("operator_not_applicable", clausePath);
             }
 
+            // What this field carries, and so what the clause's value has to be, in either of its two forms.
+            var required = FieldTypes[$"{from.GetString()}.{field.GetString()}"];
+
             if (clause.TryGetProperty("operandValue", out var operandValue))
             {
                 if (ValidateOperandCore(operandValue, $"{clausePath}.operandValue", depth + 1, ref nodes) is { } problem)
                 {
                     return problem;
+                }
+
+                // An operand whose type is known before anything is evaluated is checked too: a literal declares
+                // its type, a count is a number, and a subject is a reference. An attribute or a field is only
+                // known from the stored facts, so there is nothing to check here and evaluation reports it.
+                var operandType = StaticType(operandValue);
+
+                if (operandType is not null && operandType != required)
+                {
+                    return new ConditionProblem("type_mismatch", $"{clausePath}.operandValue");
                 }
 
                 continue;
@@ -459,19 +520,17 @@ public static class ConditionSchema
                 return new ConditionProblem("type_mismatch", clausePath);
             }
 
-            // The value against the type it declares, exactly as a literal operand's is: a clause that says
-            // reference and carries a number, or says timePoint and carries an unordered scope, can only ever be a
-            // type mismatch at evaluation time, so it is refused here instead.
-            if (Typed(clauseValue, clauseType.GetString()!, clausePath) is { } mismatch)
-            {
-                return mismatch;
-            }
-
-            // Membership in an event's subjects compares references, so a literal of any other type cannot be
-            // what the clause means.
-            if (isSubjectIds && clauseType.GetString() != "reference")
+            // The declared type has to be the field's, and the value has to match what it declares, exactly as a
+            // literal operand's does. A clause that says reference and carries a number, or compares an event's
+            // date against plain text, can only ever be a type mismatch at evaluation time.
+            if (clauseType.GetString() != required)
             {
                 return new ConditionProblem("type_mismatch", clausePath);
+            }
+
+            if (Typed(clauseValue, required, clausePath) is { } mismatch)
+            {
+                return mismatch;
             }
         }
 

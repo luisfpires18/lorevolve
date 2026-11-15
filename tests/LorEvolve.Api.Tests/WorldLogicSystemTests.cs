@@ -346,6 +346,72 @@ public sealed class WorldLogicSystemTests(LorEvolveApiFactory factory) : IClassF
         Assert.Equal("exists", rule.Condition!.Value.GetProperty("kind").GetString());
     }
 
+    /// <summary>
+    /// The operand form of a clause value is held to the field's type too, wherever the operand's type is known
+    /// before anything is evaluated. Codex round 2 on #150 found this: membership in an event's subjects took an
+    /// operand of any kind, so a clause could compare a set of references against a number.
+    /// </summary>
+    [Theory]
+    [InlineData("opnumber", "{\"field\":\"subjectIds\",\"op\":\"contains\",\"operandValue\":{\"literal\":3,\"type\":\"number\"}}")]
+    [InlineData("optext", "{\"field\":\"subjectIds\",\"op\":\"contains\",\"operandValue\":{\"literal\":\"anyone\",\"type\":\"text\"}}")]
+    [InlineData("opcount", "{\"field\":\"subjectIds\",\"op\":\"contains\",\"operandValue\":{\"count\":{\"from\":\"events\",\"where\":[]}}}")]
+    [InlineData("opsubjecttime", "{\"field\":\"at\",\"op\":\"lt\",\"operandValue\":{\"subject\":\"self\"}}")]
+    [InlineData("opsubjectkind", "{\"field\":\"kind\",\"op\":\"eq\",\"operandValue\":{\"subject\":\"self\"}}")]
+    public async Task A_clause_operand_of_the_wrong_type_for_its_field_is_refused(string tag, string clause)
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, $"wl{tag}");
+
+        var refused = await client.PostAsJsonAsync(
+            Rules(universe.Id),
+            new SystemRuleRequest("Broken operand", null, null, 1, Parse(Exists(clause))));
+
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+
+        var body = await refused.Content.ReadAsStringAsync();
+        Assert.Contains("type_mismatch", body, StringComparison.Ordinal);
+        Assert.Contains("where[0].operandValue", body, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The compatible operands are accepted, including an attribute, whose type only the stored facts decide and
+    /// which therefore has nothing to check on save.
+    /// </summary>
+    [Theory]
+    [InlineData("opself", "{\"field\":\"subjectIds\",\"op\":\"contains\",\"operandValue\":{\"subject\":\"self\"}}")]
+    [InlineData("opref", "{\"field\":\"id\",\"op\":\"eq\",\"operandValue\":{\"literal\":\"0f8fad5b-d9cb-469f-a165-70867728950e\",\"type\":\"reference\"}}")]
+    [InlineData("opattribute", "{\"field\":\"kind\",\"op\":\"eq\",\"operandValue\":{\"attribute\":\"label\",\"of\":{\"subject\":\"self\"}}}")]
+    public async Task A_clause_operand_of_the_right_type_for_its_field_is_stored(string tag, string clause)
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, $"wl{tag}");
+
+        var rule = await PostJson<SystemRuleDetail>(
+            client,
+            Rules(universe.Id),
+            new SystemRuleRequest("Good operand", null, null, 1, Parse(Exists(clause))));
+
+        Assert.Equal(1, rule.SchemaVersion);
+        Assert.Equal("exists", rule.Condition!.Value.GetProperty("kind").GetString());
+    }
+
+    /// <summary>A clause's declared type has to be the field's, not merely a type that exists.</summary>
+    [Fact]
+    public async Task A_clause_that_declares_a_type_the_field_does_not_carry_is_refused()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlfieldtype");
+
+        var refused = await client.PostAsJsonAsync(
+            Rules(universe.Id),
+            new SystemRuleRequest(
+                "Wrong field type",
+                null,
+                null,
+                1,
+                Parse(Exists("{\"field\":\"canon\",\"op\":\"eq\",\"value\":\"yes\",\"type\":\"text\"}"))));
+
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+        Assert.Contains("type_mismatch", await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_condition_deeper_than_the_limit_is_refused_on_save()
     {
