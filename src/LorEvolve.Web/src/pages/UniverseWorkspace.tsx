@@ -44,7 +44,8 @@ function groupKey(first: Section) {
 /** A group's name, drawn as a heading so a screen reader reads it as the group's name and can jump between them. */
 function GroupLabel({ id, label }: { id: string; label: string }) {
   return (
-    <h2 className="sidebar__grouplabel" id={id}>
+    // The small muted capitals the type switcher already uses for its row labels; no new style (#191).
+    <h2 className="typeswitch__rowlabel" id={id}>
       {label}
     </h2>
   )
@@ -543,7 +544,7 @@ function Workspace() {
 function ProjectsLabelled({ universeId }: { universeId: string }) {
   return (
     <>
-      <li className="sidebar__labelrow">
+      <li>
         <GroupLabel id="sidebar-group-projects" label={t('workspace.rail.groups.projects')} />
       </li>
       <ProjectsNav universeId={universeId} />

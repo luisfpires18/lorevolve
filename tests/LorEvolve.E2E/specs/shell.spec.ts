@@ -204,7 +204,7 @@ test.describe('the shell', () => {
       expect(lore.y).toBeGreaterThan(overview.y)
       expect(Math.abs(maps.x - overview.x)).toBeLessThanOrEqual(1)
       // Groups stay whole: all of world building shares a column, projects the other. Management - AI Changes,
-      // Publish, Trash, Settings - is two rows across the sheet's foot, under everything else (#191).
+      // Publish, Trash, Settings - fills the sheet's three-across foot row, under everything else (#191).
       expect(Math.abs(ideas.x - lore.x)).toBeLessThanOrEqual(1)
       expect(projects.x).toBeGreaterThan(lore.x)
       const aiChanges = await at('workspace-ai-changes')
@@ -212,10 +212,10 @@ test.describe('the shell', () => {
       const publish = await at('workspace-publish')
       const settings = await at('workspace-settings')
       expect(Math.abs(publish.y - aiChanges.y)).toBeLessThanOrEqual(1)
-      expect(Math.abs(settings.y - trash.y)).toBeLessThanOrEqual(1)
+      expect(Math.abs(trash.y - aiChanges.y)).toBeLessThanOrEqual(1)
       expect(aiChanges.x).toBeLessThan(publish.x)
-      expect(trash.x).toBeLessThan(settings.x)
-      expect(trash.y).toBeGreaterThan(aiChanges.y)
+      expect(publish.x).toBeLessThan(trash.x)
+      expect(settings.y).toBeGreaterThan(aiChanges.y)
       expect(aiChanges.y).toBeGreaterThan(Math.max(ideas.y, projects.y))
       // The same three labels as the wide sidebar.
       await expect(page.locator('.sidebar').getByRole('heading', { level: 2 })).toHaveText([
