@@ -18662,7 +18662,29 @@ details.reviewsection > .reviewsection__list {
   min-width: 0;
 }
 
-/* The universe and the project above the tabs (#199), quiet like the story's own crumb, with a slash between. */
+/*
+ * The universe and the project, then the tabs, on one row over one rule (#199). The crumb shares the tabs' row so it
+ * costs no height where both fit, which keeps a story's first screen for its prose; where they do not, it wraps above.
+ */
+.projectframe__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  column-gap: var(--space-5);
+  min-width: 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.projectcrumbs {
+  align-self: center;
+  min-width: 0;
+}
+
+.projecttabs {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .projectcrumbs__list {
   display: flex;
   flex-wrap: wrap;
@@ -18695,7 +18717,6 @@ details.reviewsection > .reviewsection__list {
   margin: 0;
   padding: 0;
   list-style: none;
-  border-bottom: 1px solid var(--rule);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -18749,9 +18770,10 @@ details.reviewsection > .reviewsection__list {
   /*
    * A story-backed project's three views are the story's own, and the story's page already carries them in its view
    * bar (#194). On a phone two bars of the same three links would push the manuscript off the first screen, so the
-   * project's copy steps aside there, as the sidebar's does.
+   * project's copy steps aside there, as the sidebar's does. The breadcrumb steps aside with it (#199): the story's
+   * own header already leads back, and on a phone the first screen belongs to the prose.
    */
-  .projectframe--story > .projecttabs {
+  .projectframe--story > .projectframe__head {
     display: none;
   }
 }
