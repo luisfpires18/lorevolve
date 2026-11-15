@@ -52,7 +52,8 @@ One line per branch. Delete the line when it merges.
 - `docs/retire-assistant-config` (#160, M4's last task): the `Assistant` settings, the Groq cost guide and the assistant's rows in `SYSTEMS.md` go; ADR 0045 is marked superseded and `docs/testing/mcp-only-ai-checklist.md` is added. #156 (PR #182), #157 (PR #185), #158 (PR #187) and #159 (PR #190) are on `dev`: the web assistant, its API, the Groq and OpenAI providers and the `OpenAI` package are gone, `UniverseAiHelpOff` and `AiChangeSource.Assistant` stay, and no migration was written. Owner actions after the merge: delete the five `Assistant__*` app settings on `dev-lorevolve` and revoke the Groq and OpenAI keys.
 - M3 World Logic run (tracker #135, issues #149 to #155), one PR per issue. Landed: #149 the condition and System
   specification (ADR 0072, `docs/architecture/world-logic-condition-spec.md`, six fixtures under
-  `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/`). Next: #150 persistence. Delete this line when #155 merges.
+  `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/`); #150 persistence (`Features/Systems/`, backup format 44,
+  migration `AddWorldLogicSystems`). Next: #151 the evaluator. Delete this line when #155 merges.
 
 ## Committed, not on `dev`
 

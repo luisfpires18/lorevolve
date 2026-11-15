@@ -127,7 +127,9 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken),
             await CreativeProjectsAsync(universeId, cancellationToken),
             await ProjectEntriesAsync(universeId, revisions, cancellationToken),
-            await ProjectSeasonsAsync(universeId, cancellationToken));
+            await ProjectSeasonsAsync(universeId, cancellationToken),
+            await LoreSystemsAsync(universeId, cancellationToken),
+            await SystemRulesAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1550,6 +1552,128 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                     checks.TryGetValue(rule.Id, out var check)
                         ? new BackupWorldRuleValidation(check.Kind, check.EventKindTermId, check.MethodTermId, check.MaxOccurrences)
                         : null)),
+        ];
+    }
+
+    // ---------- World Logic ----------
+
+    /// <summary>
+    /// Every System of the universe, by name and then id, with its saved states oldest first and the rule
+    /// definitions it references in its own order (ADR 0072). The normalized name uniqueness is enforced on is
+    /// derived from the name and never here; nor is anything a condition found, which is a finding.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupLoreSystem>> LoreSystemsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken)
+    {
+        var systems = await db.LoreSystems.AsNoTracking()
+            .Where(system => system.UniverseId == universeId)
+            .ToListAsync(cancellationToken);
+
+        // IgnoreQueryFilters is not needed here: neither table carries a global filter, and both are reached from
+        // the universe directly rather than through a filtered navigation.
+        var links = await db.LoreSystemRules.AsNoTracking()
+            .Where(link => link.LoreSystem!.UniverseId == universeId)
+            .Select(link => new { link.SystemId, link.RuleId, link.SortOrder, Title = link.Rule!.Title })
+            .ToListAsync(cancellationToken);
+
+        var revisions = await db.LoreSystemRevisions.AsNoTracking()
+            .Where(revision => revision.LoreSystem!.UniverseId == universeId)
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. systems
+                .OrderBy(system => system.Name, StringComparer.Ordinal)
+                .ThenBy(system => Key(system.Id), StringComparer.Ordinal)
+                .Select(system => new BackupLoreSystem(
+                    system.Id,
+                    system.Scope,
+                    system.ProjectId,
+                    system.Name,
+                    system.Summary,
+                    system.Version,
+                    Utc(system.CreatedAt),
+                    Utc(system.UpdatedAt),
+                    [
+                        .. links
+                            .Where(link => link.SystemId == system.Id)
+                            .OrderBy(link => link.SortOrder)
+                            .ThenBy(link => link.Title, StringComparer.Ordinal)
+                            .ThenBy(link => Key(link.RuleId), StringComparer.Ordinal)
+                            .Select(link => link.RuleId),
+                    ],
+                    [
+                        .. revisions
+                            .Where(revision => revision.SystemId == system.Id)
+                            .OrderBy(revision => revision.Version)
+                            .Select(revision => new BackupWorldLogicRevision(
+                                revision.Version,
+                                revision.Name,
+                                revision.Summary,
+                                SchemaVersion: null,
+                                Condition: null,
+                                Utc(revision.SavedAt))),
+                    ])),
+        ];
+    }
+
+    /// <summary>
+    /// Every rule definition of the universe, by title and then id, whether or not a System references it: it is a
+    /// definition in its own right. The condition is the stored text byte for byte, so a restored rule is the rule
+    /// that was validated.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupSystemRule>> SystemRulesAsync(
+        Guid universeId,
+        CancellationToken cancellationToken)
+    {
+        var rules = await db.SystemRules.AsNoTracking()
+            .Where(rule => rule.UniverseId == universeId)
+            .ToListAsync(cancellationToken);
+
+        var dependencies = await db.SystemRuleDependencies.AsNoTracking()
+            .Where(dependency => dependency.Rule!.UniverseId == universeId)
+            .Select(dependency => new { dependency.RuleId, dependency.DependsOnRuleId })
+            .ToListAsync(cancellationToken);
+
+        var revisions = await db.SystemRuleRevisions.AsNoTracking()
+            .Where(revision => revision.Rule!.UniverseId == universeId)
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. rules
+                .OrderBy(rule => rule.Title, StringComparer.Ordinal)
+                .ThenBy(rule => Key(rule.Id), StringComparer.Ordinal)
+                .Select(rule => new BackupSystemRule(
+                    rule.Id,
+                    rule.Scope,
+                    rule.ProjectId,
+                    rule.Title,
+                    rule.Description,
+                    rule.SchemaVersion,
+                    rule.ConditionJson,
+                    rule.Version,
+                    Utc(rule.CreatedAt),
+                    Utc(rule.UpdatedAt),
+                    [
+                        .. dependencies
+                            .Where(dependency => dependency.RuleId == rule.Id)
+                            .Select(dependency => dependency.DependsOnRuleId)
+                            .OrderBy(Key, StringComparer.Ordinal),
+                    ],
+                    [
+                        .. revisions
+                            .Where(revision => revision.RuleId == rule.Id)
+                            .OrderBy(revision => revision.Version)
+                            .Select(revision => new BackupWorldLogicRevision(
+                                revision.Version,
+                                revision.Title,
+                                revision.Description,
+                                revision.SchemaVersion,
+                                revision.ConditionJson,
+                                Utc(revision.SavedAt))),
+                    ])),
         ];
     }
 

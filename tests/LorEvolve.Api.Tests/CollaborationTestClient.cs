@@ -7,6 +7,7 @@ using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Stories;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.Extensions.DependencyInjection;
 using static LorEvolve.Api.Tests.ArticleTestClient;
@@ -54,7 +55,11 @@ internal sealed record SharedWorld(
     Trashed Trash,
     Guid ProgressionRevision = default,
     Guid Appearance = default,
-    Guid AppearanceImage = default)
+    Guid AppearanceImage = default,
+
+    /// <summary>A System and a reusable rule definition of this universe (ADR 0072), so a read route has a real row.</summary>
+    Guid LoreSystem = default,
+    Guid RuleDefinition = default)
 {
     public HttpClient Client(Who who) => who switch
     {
@@ -149,12 +154,28 @@ internal static class CollaborationTestClient
         await MoveChapterToArc(owner, u, story, chapter, arc.Id);
         await SetBeats(owner, u, story, scene, "The will is read");
 
+        // World Logic (ADR 0072): one System referencing one rule definition, so every read route has a real row.
+        var ruleDefinition = await PostJson<SystemRuleDetail>(
+            owner,
+            $"/api/universes/{u}/system-rules",
+            new SystemRuleRequest("Age of majority", "Sixteen."));
+
+        var loreSystem = await PostJson<SystemDetail>(
+            owner,
+            $"/api/universes/{u}/systems",
+            new SystemRequest("Succession", "Who may hold a seat."));
+
+        await Ok(owner.PutAsJsonAsync(
+            $"/api/universes/{u}/systems/{loreSystem.Id}/rules/{ruleDefinition.Id}",
+            new { }));
+
         var trash = await FillTrash(owner, u);
 
         return new SharedWorld(
             factory, u, owner, editor, reviewer, viewer, outsider, ownerId, editorId, reviewerId, viewerId, outsiderId,
             character, entry, other, image, entryRevision, articleRevision, kind.Id, relationship.Id, moment.Id, rule.Id,
-            term.Id, story, chapter, scene, manuscriptRevision, arc.Id, trash, progressionRevision, appearance, appearanceImage);
+            term.Id, story, chapter, scene, manuscriptRevision, arc.Id, trash, progressionRevision, appearance,
+            appearanceImage, loreSystem.Id, ruleDefinition.Id);
     }
 
     /// <summary>A membership written straight to the database: the only way one is made until invitations exist.</summary>
