@@ -485,7 +485,28 @@ internal static partial class BackupValidation
             }
         }
 
-        count += (payload.ProjectSeasons ?? []).Sum(season => season is null ? 0L : 1L + (season.Episodes?.Count ?? 0));
+        foreach (var season in payload.ProjectSeasons ?? [])
+        {
+            if (season is null)
+            {
+                continue;
+            }
+
+            count += 1;
+
+            foreach (var episode in season.Episodes ?? [])
+            {
+                if (episode is null)
+                {
+                    continue;
+                }
+
+                // The episode, its pages and their panels (version 43, #147): rows the restore writes are rows the
+                // limit has to bound, which is what the third review round of #146 established.
+                count += 1 + (episode.Pages?.Count ?? 0)
+                    + (episode.Pages ?? []).Sum(page => page is null ? 0L : (long)(page.Panels?.Count ?? 0));
+            }
+        }
 
         count += payload.Ideas!.Sum(idea => 1L + idea.References.Count);
         count += payload.WorldRules!.Sum(rule => rule.Validation is null ? 1L : 2L);
@@ -1249,6 +1270,42 @@ internal static partial class BackupValidation
                     Text(episode.Title, SeriesLimits.NameMaxLength, $"{which}'s title", required: true);
                     Text(episode.Synopsis, SeriesLimits.SummaryMaxLength, $"{which}'s synopsis");
                     Text(episode.Script, SeriesLimits.ScriptMaxLength, $"{which}'s script");
+
+                    // A comic chapter's pages and panels (version 43, #147).
+                    foreach (var page in episode.Pages ?? [])
+                    {
+                        if (page is null)
+                        {
+                            Missing($"a page of {which}");
+                            continue;
+                        }
+
+                        Register(page.Id, $"A page of {which}");
+                        Text(page.Name, ComicLimits.NameMaxLength, $"a page's name of {which}");
+                        Text(page.Notes, ComicLimits.TextMaxLength, $"a page's notes of {which}");
+
+                        foreach (var panel in page.Panels ?? [])
+                        {
+                            if (panel is null)
+                            {
+                                Missing($"a panel of a page of {which}");
+                                continue;
+                            }
+
+                            Register(panel.Id, $"A panel of a page of {which}");
+                            Text(panel.Description, ComicLimits.TextMaxLength, $"a panel's description of {which}");
+                            Text(panel.Dialogue, ComicLimits.TextMaxLength, $"a panel's dialogue of {which}");
+
+                            // The link is optional, and a value must name a lore entry this file holds: a panel
+                            // pointing at a project's entry would show one project's work inside another's.
+                            if (panel.CanonEntityId is { } shown && !_entities.ContainsKey(shown))
+                            {
+                                Add(
+                                    BackupIssueCodes.MissingReference,
+                                    $"A panel of {which} shows a lore entry this file does not hold.");
+                            }
+                        }
+                    }
                 }
             }
         }

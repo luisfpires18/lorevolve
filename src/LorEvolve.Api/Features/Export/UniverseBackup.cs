@@ -308,7 +308,7 @@ public sealed record UniverseBackup(
     /// ignorable: a version 37 reader would list stories by title and a scene's lore by name. A file at version 37 or earlier
     /// restores its stories in title order and each scene's lore by the entry's name, as it read then.
     /// </summary>
-    public const int CurrentVersion = 42;
+    public const int CurrentVersion = 43;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -887,12 +887,39 @@ public sealed record BackupProjectSeason(
     DateTime UpdatedAt,
     IReadOnlyList<BackupProjectEpisode> Episodes);
 
-/// <summary>One episode, with its script exactly as the author saved it.</summary>
+/// <summary>One episode, with its script exactly as the author saved it, and a comic chapter's pages (version 43).</summary>
 public sealed record BackupProjectEpisode(
     Guid Id,
     string Title,
     string? Synopsis,
     string? Script,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupProjectPage>? Pages = null);
+
+/// <summary>
+/// One page of a comic's chapter, with its panels (since version 43, #147). Carried for the reason every other project
+/// row is: a universe owns its projects, so a universe restored without a comic's pages is not the one backed up.
+/// </summary>
+public sealed record BackupProjectPage(
+    Guid Id,
+    string? Name,
+    string? Notes,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupProjectPanel> Panels);
+
+/// <summary>
+/// One panel: what it shows, what is said in it, and the lore entry it names, carried as this file's own id like every
+/// other reference.
+/// </summary>
+public sealed record BackupProjectPanel(
+    Guid Id,
+    string? Description,
+    string? Dialogue,
+    Guid? CanonEntityId,
     int SortOrder,
     DateTime CreatedAt,
     DateTime UpdatedAt);
