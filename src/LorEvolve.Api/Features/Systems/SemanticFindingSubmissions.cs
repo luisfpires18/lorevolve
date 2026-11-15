@@ -74,9 +74,9 @@ public static class SemanticFindingSubmissions
                 $"Keep the claim to {WorldLogicAccess.Number(SemanticFindingLimits.ClaimMaxLength)} characters or fewer."));
         }
 
-        var ruleId = await RuleAsync(db, universeId, input.RuleId, problems, cancellationToken);
         var projectId = await ProjectAsync(db, universeId, input.ProjectId, problems, cancellationToken);
-        var citations = await CitationsAsync(db, universeId, input.Citations, problems, cancellationToken);
+        var ruleId = await RuleAsync(db, universeId, projectId, input.RuleId, problems, cancellationToken);
+        var citations = await CitationsAsync(db, universeId, projectId, input.Citations, problems, cancellationToken);
 
         if (problems.Count == 0 && await WaitingAsync(db, universeId, cancellationToken) >= SemanticFindingLimits.MaxUnverifiedPerUniverse)
         {
@@ -140,6 +140,7 @@ public static class SemanticFindingSubmissions
     private static async Task<Guid?> RuleAsync(
         LorEvolveDbContext db,
         Guid universeId,
+        Guid? claimProjectId,
         string? sent,
         List<SemanticFindingProblem> problems,
         CancellationToken cancellationToken)
@@ -155,10 +156,24 @@ public static class SemanticFindingSubmissions
             return null;
         }
 
-        if (!await db.SystemRules.AsNoTracking()
-                .AnyAsync(rule => rule.Id == id && rule.UniverseId == universeId, cancellationToken))
+        var rule = await db.SystemRules.AsNoTracking()
+            .Where(candidate => candidate.Id == id && candidate.UniverseId == universeId)
+            .Select(candidate => new { candidate.ProjectId })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (rule is null)
         {
             problems.Add(new(null, "ruleId", "not_found", "No World Logic rule with that id is in this universe."));
+            return null;
+        }
+
+        // The same scope rule the citations are held to: a rule belonging to one project is only about that project.
+        if (rule.ProjectId is { } owner && owner != claimProjectId)
+        {
+            problems.Add(new(null, "ruleId", "out_of_scope",
+                claimProjectId is null
+                    ? "That rule belongs to one project, so a claim about the whole universe cannot be about it. Scope the claim to that project with projectId."
+                    : "That rule belongs to a different project from the one this claim is scoped to."));
             return null;
         }
 
@@ -198,6 +213,7 @@ public static class SemanticFindingSubmissions
     private static async Task<List<Cited>> CitationsAsync(
         LorEvolveDbContext db,
         Guid universeId,
+        Guid? claimProjectId,
         IReadOnlyList<SemanticCitationInput>? sent,
         List<SemanticFindingProblem> problems,
         CancellationToken cancellationToken)
@@ -277,15 +293,60 @@ public static class SemanticFindingSubmissions
             return [];
         }
 
-        // Nothing may be cited that this universe does not hold. This is the boundary in code: the ids come from the
-        // client, the universe comes from the token, and a mismatch is refused rather than stored.
-        var inside = await InsideAsync(db, universeId, read, cancellationToken);
-        foreach (var (citation, index) in read.Select((citation, index) => (citation, index)))
+        // Nothing may be cited that this universe does not hold, nothing outside the claim's own scope, and no range
+        // that is not inside the prose it points at. This is the boundary in code: the ids and offsets come from the
+        // client, the universe and the scope come from the token and the claim, and a mismatch is refused rather
+        // than stored.
+        var inside = await ResolveAsync(db, universeId, read, cancellationToken);
+
+        for (var index = 0; index < read.Count; index++)
         {
-            if (!inside.Contains((citation.Kind, citation.SourceId)))
+            var citation = read[index];
+
+            if (!inside.TryGetValue((citation.Kind, citation.SourceId), out var cited))
             {
                 problems.Add(new(index, "sourceId", "not_found",
                     "Nothing of that kind with that id is in this universe. Cite a record you read from this connection."));
+                continue;
+            }
+
+            // A rule that belongs to one project is only in scope for a claim about that same project. A claim about
+            // the whole universe, or about another project, would be citing something its reader cannot see in
+            // context, and the rules list this connection read is scoped the same way.
+            if (cited.ProjectId is { } owner && owner != claimProjectId)
+            {
+                problems.Add(new(index, "sourceId", "out_of_scope",
+                    claimProjectId is null
+                        ? "That rule belongs to one project, so a claim about the whole universe cannot cite it. Scope the claim to that project with projectId."
+                        : "That rule belongs to a different project from the one this claim is scoped to."));
+                continue;
+            }
+
+            if (citation.RangeStart is null && citation.RangeLength is null)
+            {
+                continue;
+            }
+
+            // A range is a span of prose, and a manuscript is the only thing cited here that has any. A range on
+            // anything else would point into text that does not exist.
+            if (cited.TextLength is not { } length)
+            {
+                problems.Add(new(index, "rangeStart", "range_not_supported",
+                    "A range only applies to a manuscript, which is the prose cited here. Leave it out for any other kind."));
+                continue;
+            }
+
+            // The range is checked against the prose as it stands now, which is the only text there is to check
+            // against. A claim read at an earlier version can therefore be refused because the prose has since been
+            // shortened; that is the honest answer, and read_scene_manuscript gives the current text and version.
+            var start = citation.RangeStart ?? 0;
+            var covered = citation.RangeLength ?? (length - start);
+
+            if (start >= length || covered < 1 || start + covered > length)
+            {
+                problems.Add(new(index, "rangeStart", "out_of_range",
+                    $"That range is not inside the manuscript, which is {WorldLogicAccess.Number(length)} characters now. "
+                    + "Read it again and cite the range in the text you were given."));
             }
         }
 
@@ -293,19 +354,20 @@ public static class SemanticFindingSubmissions
     }
 
     /// <summary>
-    /// Which of the cited records this universe actually holds, one query per kind that was cited. A scene and its
+    /// What this universe actually holds of the cited records, one query per kind that was cited: whether it is there
+    /// at all, which project owns it where anything does, and how long its prose is where it has any. A scene and its
     /// manuscript reach the universe through the scene's story, which EF's own universe filter follows, so no
     /// <c>IgnoreQueryFilters</c> is needed and the universe bound still holds.
     /// </summary>
-    private static async Task<HashSet<(SemanticCitationKind Kind, Guid Id)>> InsideAsync(
+    private static async Task<Dictionary<(SemanticCitationKind Kind, Guid Id), Resolved>> ResolveAsync(
         LorEvolveDbContext db,
         Guid universeId,
         IReadOnlyList<Cited> cited,
         CancellationToken cancellationToken)
     {
-        var found = new HashSet<(SemanticCitationKind, Guid)>();
+        var found = new Dictionary<(SemanticCitationKind, Guid), Resolved>();
 
-        async Task AddAsync(SemanticCitationKind kind, Func<Guid[], Task<List<Guid>>> read)
+        async Task AddAsync(SemanticCitationKind kind, Func<Guid[], Task<List<Resolved>>> read)
         {
             var ids = cited.Where(item => item.Kind == kind).Select(item => item.SourceId).Distinct().ToArray();
             if (ids.Length == 0)
@@ -313,9 +375,9 @@ public static class SemanticFindingSubmissions
                 return;
             }
 
-            foreach (var id in await read(ids))
+            foreach (var row in await read(ids))
             {
-                found.Add((kind, id));
+                found[(kind, row.Id)] = row;
             }
         }
 
@@ -323,35 +385,37 @@ public static class SemanticFindingSubmissions
             SemanticCitationKind.LoreEntry,
             async ids => await db.Entities.AsNoTracking()
                 .Where(entry => ids.Contains(entry.Id) && entry.UniverseId == universeId)
-                .Select(entry => entry.Id)
+                .Select(entry => new Resolved(entry.Id, null, null))
                 .ToListAsync(cancellationToken));
 
         await AddAsync(
             SemanticCitationKind.Relationship,
             async ids => await db.Relationships.AsNoTracking()
                 .Where(relationship => ids.Contains(relationship.Id) && relationship.UniverseId == universeId)
-                .Select(relationship => relationship.Id)
+                .Select(relationship => new Resolved(relationship.Id, null, null))
                 .ToListAsync(cancellationToken));
 
         await AddAsync(
             SemanticCitationKind.TimelineMoment,
             async ids => await db.TimelineEntries.AsNoTracking()
                 .Where(moment => ids.Contains(moment.Id) && moment.UniverseId == universeId)
-                .Select(moment => moment.Id)
+                .Select(moment => new Resolved(moment.Id, null, null))
                 .ToListAsync(cancellationToken));
 
         await AddAsync(
             SemanticCitationKind.Scene,
             async ids => await db.Scenes.AsNoTracking()
                 .Where(scene => ids.Contains(scene.Id) && scene.Story!.UniverseId == universeId)
-                .Select(scene => scene.Id)
+                .Select(scene => new Resolved(scene.Id, null, null))
                 .ToListAsync(cancellationToken));
 
+        // The one kind a range applies to, so the one that reports its length. It is keyed by its scene, so a client
+        // cites the scene's id and the kind says which of the two it read.
         await AddAsync(
             SemanticCitationKind.Manuscript,
             async ids => await db.SceneManuscripts.AsNoTracking()
                 .Where(manuscript => ids.Contains(manuscript.SceneId) && manuscript.Scene!.Story!.UniverseId == universeId)
-                .Select(manuscript => manuscript.SceneId)
+                .Select(manuscript => new Resolved(manuscript.SceneId, null, manuscript.Content.Length))
                 .ToListAsync(cancellationToken));
 
         // A trashed world rule is not something a claim may be about: it is not part of the universe any more.
@@ -359,16 +423,23 @@ public static class SemanticFindingSubmissions
             SemanticCitationKind.WorldRule,
             async ids => await db.WorldRules.AsNoTracking()
                 .Where(rule => ids.Contains(rule.Id) && rule.UniverseId == universeId && rule.DeletedAt == null)
-                .Select(rule => rule.Id)
+                .Select(rule => new Resolved(rule.Id, null, null))
                 .ToListAsync(cancellationToken));
 
+        // The one kind that can belong to a project rather than to the whole universe (ADR 0072).
         await AddAsync(
             SemanticCitationKind.SystemRule,
             async ids => await db.SystemRules.AsNoTracking()
                 .Where(rule => ids.Contains(rule.Id) && rule.UniverseId == universeId)
-                .Select(rule => rule.Id)
+                .Select(rule => new Resolved(rule.Id, rule.ProjectId, null))
                 .ToListAsync(cancellationToken));
 
         return found;
     }
+
+    /// <summary>
+    /// One cited record as this universe holds it: its id, the project that owns it where one does, and the length of
+    /// its prose where it has any. Null in both means a universe-wide record with no text a range could point into.
+    /// </summary>
+    private sealed record Resolved(Guid Id, Guid? ProjectId, int? TextLength);
 }

@@ -254,7 +254,12 @@ records it cited, the version of each one it read and the range inside any prose
 accepted and dismissed, and has no value meaning a violation was proven, so ADR 0072's rule that nothing a model
 asserts is recorded as a proven violation holds in the schema rather than in a filter someone could forget. A claim
 may only cite what the caller's own universe holds, checked per kind before anything is written, and one universe
-holds at most two hundred undecided claims so a connection cannot bury the author. The author accepts or dismisses
+holds at most two hundred undecided claims so a connection cannot bury the author. Scope goes further than the
+universe: a rule definition that belongs to one project is only in scope for a claim scoped to that same project,
+whether it is the rule the claim is about or one it cites, which is the same scoping the rules list applies. A range
+is a span of prose, so it is accepted only on a manuscript and only where it falls inside that manuscript as it
+stands now; the current text is the only text there is to check against, so a range read at an earlier version is
+refused once the prose has been shortened past it, and the refusal says how long it is. The author accepts or dismisses
 each one under `/api/universes/{id}/world-logic/semantic-findings`.
 
 Nothing about `get_change_options` or `propose_changes` changes. Proposing a rule is still done through them, as a

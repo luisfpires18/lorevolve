@@ -304,7 +304,9 @@ public sealed class McpWorldLogicToolTests(McpWorldLogicFixture fixture) : IClas
             ["citations"] = new object[]
             {
                 new { kind = "lore_entry", sourceId = W.Entry.ToString(), note = "calls itself the heir", sourceVersion = 2 },
-                new { kind = "lore_entry", sourceId = W.Other.ToString(), note = "the earlier statement", rangeStart = 0, rangeLength = 12 },
+
+                // A range cites prose, so it goes on the manuscript: the only kind here that has any.
+                new { kind = "manuscript", sourceId = W.Scene.ToString(), note = "the line that says otherwise", rangeStart = 0, rangeLength = 3 },
             },
         });
 
@@ -320,8 +322,9 @@ public sealed class McpWorldLogicToolTests(McpWorldLogicFixture fixture) : IClas
         Assert.Equal(fixture.ConditionRule, detail.Finding.RuleId);
         Assert.Equal(2, detail.Citations.Count);
         Assert.Equal(2, detail.Citations[0].SourceVersion);
+        Assert.Equal("manuscript", detail.Citations[1].Kind);
         Assert.Equal(0, detail.Citations[1].RangeStart);
-        Assert.Equal(12, detail.Citations[1].RangeLength);
+        Assert.Equal(3, detail.Citations[1].RangeLength);
 
         // And it is nowhere near the computed findings: a model's claim is not a proven violation (ADR 0072).
         var findings = await W.Owner.GetFromJsonAsync<WorldLogicPage<WorldLogicFindingRow>>(

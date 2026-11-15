@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Systems;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using static LorEvolve.Api.Tests.ManuscriptTestClient;
 using static LorEvolve.Api.Tests.PlotTestClient;
 
 namespace LorEvolve.Api.Tests;
@@ -221,6 +223,101 @@ public sealed class SemanticFindingTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Empty(page!.Items);
     }
 
+    /// <summary>
+    /// The scope boundary inside one universe. A rule definition can belong to one project (ADR 0072), and the rules
+    /// a connection lists are scoped the same way, so a claim may only be about or cite a rule its own scope reaches:
+    /// a claim about the whole universe cannot cite one project's rule, and a claim about project A cannot cite
+    /// project B's.
+    /// </summary>
+    [Fact]
+    public async Task A_claim_cannot_cite_a_rule_of_a_project_its_own_scope_does_not_reach()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "semprojectscope");
+        var entry = await Entry(client, universe.Id, "Ember Vale");
+        var projectA = await Project(client, universe.Id, "The Tide Engine");
+        var projectB = await Project(client, universe.Id, "The Second Game");
+        var ruleOfB = await ProjectRule(client, universe.Id, projectB, "B's own rule");
+
+        // A claim about the whole universe cannot reach a rule that belongs to one project.
+        var universeWide = await SubmitCiting(universe.Id, null, ("system_rule", ruleOfB, null));
+        Assert.Null(universeWide.Finding);
+        Assert.Contains(universeWide.Problems, problem => problem.Code == "out_of_scope" && problem.Citation == 0);
+
+        // Nor can a claim about another project.
+        var wrongProject = await SubmitCiting(universe.Id, projectA, ("system_rule", ruleOfB, null));
+        Assert.Null(wrongProject.Finding);
+        Assert.Contains(wrongProject.Problems, problem => problem.Code == "out_of_scope" && problem.Citation == 0);
+
+        // Scoped to its own project it is in scope, and a universe-wide record stays citable beside it.
+        var right = await SubmitCiting(universe.Id, projectB, ("system_rule", ruleOfB, null), ("lore_entry", entry, null));
+        Assert.NotNull(right.Finding);
+    }
+
+    [Fact]
+    public async Task A_claim_cannot_be_about_a_rule_of_a_project_its_own_scope_does_not_reach()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "semrulescope");
+        var entry = await Entry(client, universe.Id, "Ember Vale");
+        var project = await Project(client, universe.Id, "The Tide Engine");
+        var rule = await ProjectRule(client, universe.Id, project, "The project's own rule");
+
+        var refused = await Run(async (db, clock) => await SemanticFindingSubmissions.SubmitAsync(
+            db, clock, universe.Id, "mcp-submitter", Guid.NewGuid(), "A connected client",
+            new SemanticFindingInput(
+                "About a project rule, from nowhere",
+                "The lore breaks it.",
+                RuleId: rule.ToString(),
+                Citations: [new SemanticCitationInput("lore_entry", entry.ToString(), "the entry")]),
+            CancellationToken.None));
+
+        Assert.Null(refused.Finding);
+        Assert.Contains(refused.Problems, problem => problem.Field == "ruleId" && problem.Code == "out_of_scope");
+    }
+
+    /// <summary>
+    /// A range is a span of prose, and a manuscript is the only thing cited here that has any, so a range on another
+    /// kind points into text that does not exist and is refused rather than stored.
+    /// </summary>
+    [Fact]
+    public async Task A_range_on_a_kind_with_no_prose_is_refused()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "semrangekind");
+        var entry = await Entry(client, universe.Id, "Ember Vale");
+
+        var refused = await SubmitCiting(universe.Id, null, ("lore_entry", entry, (0, 5)));
+
+        Assert.Null(refused.Finding);
+        Assert.Contains(refused.Problems, problem => problem.Code == "range_not_supported");
+    }
+
+    /// <summary>
+    /// A range past the end of the prose is refused, and the refusal says how long the prose is now. The check is
+    /// against the current text, which is the only text there is: a claim read at an earlier version can therefore
+    /// be refused because the manuscript has since been shortened, and that is the honest answer.
+    /// </summary>
+    [Fact]
+    public async Task A_range_outside_the_manuscript_is_refused_and_one_inside_it_is_kept()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "semrangetext");
+        var scene = await SceneWithProse(client, universe.Id, "Twelve chars");
+
+        var past = await SubmitCiting(universe.Id, null, ("manuscript", scene, (0, 500)));
+        Assert.Null(past.Finding);
+        Assert.Contains(past.Problems, problem => problem.Code == "out_of_range" && problem.Citation == 0);
+
+        var startedPastTheEnd = await SubmitCiting(universe.Id, null, ("manuscript", scene, (5_000, 1)));
+        Assert.Null(startedPastTheEnd.Finding);
+        Assert.Contains(startedPastTheEnd.Problems, problem => problem.Code == "out_of_range");
+
+        var inside = await SubmitCiting(universe.Id, null, ("manuscript", scene, (0, 6)));
+        Assert.NotNull(inside.Finding);
+
+        var detail = await client.GetFromJsonAsync<SemanticFindingDetail>(
+            Finding(universe.Id, inside.Finding!.Id));
+        Assert.Equal(0, detail!.Citations[0].RangeStart);
+        Assert.Equal(6, detail.Citations[0].RangeLength);
+    }
+
     // ---------- Helpers ----------
 
     private static string Findings(Guid universeId) => $"/api/universes/{universeId}/world-logic/semantic-findings";
@@ -236,6 +333,42 @@ public sealed class SemanticFindingTests(LorEvolveApiFactory factory) : IClassFi
             new { entityTypeId = types!.First(type => type.Name == "Character").Id, name, summary = "The heir." });
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<Api.Features.Lore.EntityDetail>())!.Id;
+    }
+
+    private static async Task<Guid> Project(HttpClient client, Guid universeId, string name)
+    {
+        var response = await client.PostAsJsonAsync(
+            "/api/projects",
+            new
+            {
+                name,
+                kind = 1,
+                lifecycle = 0,
+                subtype = (string?)null,
+                summary = string.Empty,
+                universeId,
+                expectedVersion = (int?)null,
+            });
+
+        response.EnsureSuccessStatusCode();
+        using var created = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return created.RootElement.GetProperty("id").GetGuid();
+    }
+
+    /// <summary>A rule definition scoped to one project, which only a claim about that project may reach.</summary>
+    private static async Task<Guid> ProjectRule(HttpClient client, Guid universeId, Guid projectId, string title) =>
+        (await PostJson<SystemRuleDetail>(
+            client,
+            $"/api/universes/{universeId}/system-rules",
+            new SystemRuleRequest(title, "Only inside this project.", projectId))).Id;
+
+    /// <summary>A scene with prose of a known length, so a range can be checked against it.</summary>
+    private static async Task<Guid> SceneWithProse(HttpClient client, Guid universeId, string prose)
+    {
+        var story = await CreateStory(client, universeId, "The drowned heir");
+        var scene = await CreateScene(client, universeId, story, "The causeway");
+        await WriteManuscript(client, universeId, story, scene, prose);
+        return scene;
     }
 
     /// <summary>One save, so the entry's version moves on and a citation to the earlier one goes stale.</summary>
@@ -275,6 +408,33 @@ public sealed class SemanticFindingTests(LorEvolveApiFactory factory) : IClassFi
                 Citations:
                 [
                     new SemanticCitationInput("lore_entry", entry.ToString(), "the entry in question", sourceVersion),
+                ]),
+            CancellationToken.None));
+
+    /// <summary>One submission citing exactly what the test names, each with an optional range.</summary>
+    private Task<SemanticFindingResult> SubmitCiting(
+        Guid universeId,
+        Guid? projectId,
+        params (string Kind, Guid SourceId, (int Start, int Length)? Range)[] citations) =>
+        Run(async (db, clock) => await SemanticFindingSubmissions.SubmitAsync(
+            db,
+            clock,
+            universeId,
+            "mcp-submitter",
+            Guid.NewGuid(),
+            "A connected client",
+            new SemanticFindingInput(
+                "Something worth a look",
+                "Two records disagree, and one of them must be wrong.",
+                ProjectId: projectId?.ToString(),
+                Citations:
+                [
+                    .. citations.Select(citation => new SemanticCitationInput(
+                        citation.Kind,
+                        citation.SourceId.ToString(),
+                        "what this contributes",
+                        RangeStart: citation.Range?.Start,
+                        RangeLength: citation.Range?.Length)),
                 ]),
             CancellationToken.None));
 
