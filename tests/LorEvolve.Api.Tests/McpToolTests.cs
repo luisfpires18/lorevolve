@@ -172,6 +172,43 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
         Assert.Contains(timeline.GetProperty("items").EnumerateArray(), item => item.GetProperty("id").GetGuid() == W.Moment);
     }
 
+    /// <summary>
+    /// The one paged read of the universe itself (issue #155): a page holds 25, the pages join back to the whole
+    /// timeline with nothing repeated and nothing lost, a page below the first is the first, and a page past the end is
+    /// empty rather than an error. Its own universe, because the shared one's timeline is asserted whole elsewhere.
+    /// </summary>
+    [Fact]
+    public async Task The_timeline_is_browsed_a_page_at_a_time()
+    {
+        var (browser, _) = await NewBrowser(Api, "mcppaging");
+        var universe = (await CreateUniverse(browser, "Long reckoning")).Id;
+        for (var year = 1; year <= 26; year++)
+        {
+            await RuleValidationTestClient.CreateMoment(
+                browser, universe, RuleValidationTestClient.Moment($"Year {year}", null, year: year));
+        }
+
+        var connection = await Connect(Api, browser, universe);
+        await using var client = await SdkClient(Api, universe, connection.AccessToken);
+
+        var first = await Call(client, "browse_timeline");
+        var second = await Call(client, "browse_timeline", new() { ["page"] = 2 });
+
+        Assert.Equal(1, first.GetProperty("page").GetInt32());
+        Assert.Equal(2, first.GetProperty("totalPages").GetInt32());
+        Assert.Equal(25, first.GetProperty("items").GetArrayLength());
+        Assert.Equal(2, second.GetProperty("page").GetInt32());
+        Assert.Equal(1, second.GetProperty("items").GetArrayLength());
+
+        // Nothing is on both pages, and between them they are the whole timeline.
+        var ids = Ids(first).Concat(Ids(second)).ToList();
+        Assert.Equal(26, ids.Distinct().Count());
+
+        // A page below the first is the first; a page past the end is empty, not an error.
+        Assert.Equal(Ids(first), Ids(await Call(client, "browse_timeline", new() { ["page"] = 0 })));
+        Assert.Empty(Ids(await Call(client, "browse_timeline", new() { ["page"] = 900 })));
+    }
+
     [Fact]
     public async Task Ids_from_another_universe_the_Trash_or_nowhere_read_as_not_found()
     {
@@ -200,6 +237,43 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
             var result = await client.CallToolAsync(tool, arguments);
             Assert.True(result.IsError, $"{tool}({id}) was not an error.");
             using var json = JsonDocument.Parse(Text(result));
+            Assert.Equal("not_found", json.RootElement.GetProperty("error").GetString());
+        }
+
+        // Every tool that takes an id answers the same way when it is not an id at all: told it is not there, never an
+        // unhandled exception and never a different shape of refusal (issue #155).
+        const string Nonsense = "not-an-id";
+        foreach (var (tool, arguments) in new (string, Dictionary<string, object?>)[]
+                 {
+                     ("get_lore_entry", new() { ["loreId"] = Nonsense }),
+                     ("get_lore_relationships", new() { ["loreId"] = Nonsense }),
+                     ("get_story", new() { ["storyId"] = Nonsense }),
+                     ("get_arc", new() { ["arcId"] = Nonsense }),
+                     ("get_scene", new() { ["sceneId"] = Nonsense }),
+                     ("read_scene_manuscript", new() { ["sceneId"] = Nonsense }),
+                     ("search_scene_manuscript", new() { ["sceneId"] = Nonsense, ["text"] = "ran" }),
+                     ("get_timeline_moment", new() { ["momentId"] = Nonsense }),
+                     ("list_lore_images", new() { ["lore"] = Nonsense }),
+                     ("get_lore_image", new() { ["loreId"] = Nonsense, ["imageId"] = Nonsense }),
+                     ("get_map_location", new() { ["lore"] = Nonsense }),
+                     ("measure_map_distance", new() { ["fromPinId"] = Nonsense, ["toPinId"] = Nonsense }),
+                     ("get_project", new() { ["projectId"] = Nonsense }),
+                     ("get_project_schema", new() { ["projectId"] = Nonsense }),
+                     ("list_project_entries", new() { ["projectId"] = Nonsense }),
+                     ("get_project_entry", new() { ["projectId"] = Nonsense, ["entryId"] = Nonsense }),
+                     ("get_project_structure", new() { ["projectId"] = Nonsense }),
+                     ("get_project_script", new() { ["projectId"] = Nonsense, ["unitId"] = Nonsense }),
+                     ("get_world_logic_rule", new() { ["ruleId"] = Nonsense }),
+                     ("evaluate_world_logic_rule", new() { ["ruleId"] = Nonsense }),
+                     ("get_rule_impact", new() { ["ruleId"] = Nonsense }),
+                     ("get_world_logic_finding", new() { ["findingId"] = Nonsense }),
+                 })
+        {
+            var result = await client.CallToolAsync(tool, arguments);
+            var text = Text(result);
+            Assert.True(result.IsError, $"{tool}(not-an-id) was not an error: {text}");
+            Assert.True(text.StartsWith('{'), $"{tool}(not-an-id) did not answer with the error contract: {text}");
+            using var json = JsonDocument.Parse(text);
             Assert.Equal("not_found", json.RootElement.GetProperty("error").GetString());
         }
 
@@ -297,6 +371,10 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
     }
 
     private static string Text(CallToolResult result) => Assert.IsType<TextContentBlock>(Assert.Single(result.Content)).Text;
+
+    /// <summary>The ids of a reading's items, in the order they were read.</summary>
+    private static List<Guid> Ids(JsonElement reading) =>
+        [.. reading.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetGuid())];
 
     /// <summary>About 30,000 characters in paragraphs, with surrogate pairs and one findable word.</summary>
     private static string LongProse()
