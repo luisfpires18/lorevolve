@@ -50,17 +50,13 @@ public static class StoryProjects
     };
 
     /// <summary>
-    /// The live stories the caller can read, as Writing Projects. Access is the universe's, exactly as it is for the
-    /// story itself: a story in a universe the caller owns or is a member of, and nothing else. A story in the Trash
-    /// is not offered, the same way it leaves every other list.
+    /// The live stories the caller can read, to be shown as Writing Projects with <see cref="Detail"/>. Access is the
+    /// universe's, exactly as it is for the story itself: a story in a universe the caller owns or is a member of, and
+    /// nothing else. A story in the Trash is not offered, the same way it leaves every other list. A query rather than a
+    /// list, so the projects list can order and cut it in the database (#198).
     /// </summary>
-    public static async Task<List<ProjectDetail>> ReadableAsync(
-        LorEvolveDbContext db,
-        string userId,
-        Guid? universeId,
-        CancellationToken cancellationToken)
-    {
-        var query = db.Stories.AsNoTracking()
+    public static IQueryable<Story> Readable(LorEvolveDbContext db, string userId) =>
+        db.Stories.AsNoTracking()
             .Include(story => story.Universe)
             .Where(story =>
                 story.DeletedAt == null
@@ -68,17 +64,8 @@ public static class StoryProjects
                     || db.UniverseMemberships.Any(membership =>
                         membership.UniverseId == story.UniverseId && membership.UserId == userId)));
 
-        if (universeId is { } id)
-        {
-            query = query.Where(story => story.UniverseId == id);
-        }
-
-        var stories = await query.ToListAsync(cancellationToken);
-        return [.. stories.Select(story => Detail(story, userId))];
-    }
-
     /// <summary>One story as a Writing Project. A projection, never a stored row.</summary>
-    private static ProjectDetail Detail(Story story, string userId) =>
+    public static ProjectDetail Detail(Story story, string userId) =>
         new(
             story.Id,
             story.Title,

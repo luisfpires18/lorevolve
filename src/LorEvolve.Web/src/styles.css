@@ -18486,6 +18486,29 @@ details.reviewsection > .reviewsection__list {
   cursor: pointer;
 }
 
+.sidebar__grouptoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.sidebar__grouphead {
+  margin: 0;
+}
+
+/* The folded projects group: .sidebar__links sets display, so the attribute alone would not hide it (#198). */
+.sidebar__links[hidden] {
+  display: none;
+}
+
 .sidebar__disclosure:hover {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
