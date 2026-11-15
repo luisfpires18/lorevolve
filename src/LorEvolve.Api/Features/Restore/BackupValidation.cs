@@ -16,6 +16,7 @@ using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Stories;
 using LorEvolve.Api.Features.Timeline;
 using LorEvolve.Api.Features.Universes;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.WorldRules;
 
 namespace LorEvolve.Api.Features.Restore;
@@ -513,6 +514,15 @@ internal static partial class BackupValidation
         count += payload.ValidationTerms!.Count;
         count += payload.TimelineEntries.Count(entry => entry.Validation is not null);
 
+        // World Logic (version 44): a System, its revisions and its links; a rule definition, its revisions and its
+        // declared dependencies. Every one of them is a row the restore writes, so the limit has to bound it.
+        count += (payload.LoreSystems ?? []).Sum(system => system is null
+            ? 0L
+            : 1L + system.RuleIds.Count + system.Revisions.Count);
+        count += (payload.SystemRules ?? []).Sum(rule => rule is null
+            ? 0L
+            : 1L + rule.DependsOn.Count + rule.Revisions.Count);
+
         return (int)Math.Min(count, int.MaxValue);
     }
 
@@ -532,6 +542,9 @@ internal static partial class BackupValidation
     {
         private readonly HashSet<Guid> _ids = [];
         private readonly HashSet<Guid> _projects = [];
+
+        /// <summary>Every rule definition this file holds, so a link and a dependency can be checked against it.</summary>
+        private readonly HashSet<Guid> _systemRules = [];
         private readonly Dictionary<Guid, BackupEntityType> _types = [];
         private readonly Dictionary<Guid, Guid> _fieldOwner = [];
         private readonly HashSet<Guid> _requiredFields = [];
@@ -581,6 +594,8 @@ internal static partial class BackupValidation
             var knowledge = Required(payload.KnowledgeRecords, "the list of knowledge records", since: 33);
             var maps = Required(payload.Maps, "the list of maps", since: 34);
             var boards = Required(payload.IdeaBoards, "the list of idea boards", since: 36);
+            var systems = Required(payload.LoreSystems, "the list of Systems", since: 44);
+            var systemRules = Required(payload.SystemRules, "the list of rule definitions", since: 44);
 
             // Everything that can be referenced is listed first, so a reference checked below can
             // point anywhere in the file regardless of order.
@@ -639,6 +654,11 @@ internal static partial class BackupValidation
             {
                 CheckWorldRule(rule);
             }
+
+            // The rule definitions before the Systems, so a System's link and a rule's dependency can both be
+            // checked against ids this file really holds (ADR 0072).
+            CheckSystemRules(systemRules);
+            CheckLoreSystems(systems);
 
             foreach (var conflict in dismissed)
             {
@@ -2372,6 +2392,208 @@ internal static partial class BackupValidation
                 {
                     Add(BackupIssueCodes.InvalidValue, $"{what}'s check has a limit that is not a whole number from 1 to {RuleValidationLimits.MaxOccurrencesCeiling:N0}.");
                 }
+            }
+        }
+
+        // ---------- World Logic ----------
+
+        /// <summary>
+        /// Each rule definition's id, words, scope, condition and declared dependencies (version 44, ADR 0072).
+        ///
+        /// The condition is checked with the same <see cref="ConditionSchema"/> a save is held to, so a file cannot
+        /// restore a tree the endpoints would have refused. Its ids are not resolved here: a restore translates every
+        /// id it knows and leaves the rest, and an id the file does not hold is reported by evaluation as
+        /// <c>invalid_reference</c> rather than refusing a whole restore over one rule.
+        /// </summary>
+        private void CheckSystemRules(IReadOnlyList<BackupSystemRule> rules)
+        {
+            foreach (var rule in rules)
+            {
+                if (rule is null)
+                {
+                    Missing("a rule definition");
+                    continue;
+                }
+
+                var what = $"The rule {Quote(rule.Title)}";
+                Register(rule.Id, what);
+                _systemRules.Add(rule.Id);
+
+                Text(rule.Title, WorldLogicLimits.NameMaxLength, $"{what}'s title", required: true);
+
+                if (rule.Description is null)
+                {
+                    Missing($"the description of {what.ToLowerInvariant()}");
+                }
+                else
+                {
+                    Text(rule.Description, WorldLogicLimits.DescriptionMaxLength, $"{what}'s description");
+                }
+
+                CheckWorldLogicScope(rule.Scope, rule.ProjectId, what);
+                CheckCondition(rule.SchemaVersion, rule.Condition, what);
+
+                if (rule.Version < 1)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is at a version below 1.");
+                }
+
+                if (rule.DependsOn.Count > WorldLogicLimits.MaxDependenciesPerRule)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} declares more dependencies than LorEvolve allows.");
+                }
+
+                if (rule.DependsOn.Contains(rule.Id))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} depends on itself.");
+                }
+
+                foreach (var revision in rule.Revisions)
+                {
+                    if (revision is null)
+                    {
+                        Missing($"a saved state of {what.ToLowerInvariant()}");
+                        continue;
+                    }
+
+                    Text(revision.Title, WorldLogicLimits.NameMaxLength, $"{what}'s saved title", required: true);
+                    Text(revision.Body, WorldLogicLimits.DescriptionMaxLength, $"{what}'s saved description");
+                    CheckCondition(revision.SchemaVersion, revision.Condition, $"{what}'s saved state");
+                }
+            }
+
+            // The dependency ids after every rule is registered, so order in the file never decides the answer.
+            foreach (var rule in rules)
+            {
+                if (rule is null)
+                {
+                    continue;
+                }
+
+                foreach (var dependency in rule.DependsOn)
+                {
+                    if (!_systemRules.Contains(dependency))
+                    {
+                        Add(
+                            BackupIssueCodes.MissingReference,
+                            $"The rule {Quote(rule.Title)} depends on a rule the backup does not hold.");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Each System's id, name, scope, saved states and the rule definitions it references (version 44).
+        /// Two Systems in one scope never share a name, which is what the unique index enforces on a restore.
+        /// </summary>
+        private void CheckLoreSystems(IReadOnlyList<BackupLoreSystem> systems)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var system in systems)
+            {
+                if (system is null)
+                {
+                    Missing("a System");
+                    continue;
+                }
+
+                var what = $"The System {Quote(system.Name)}";
+                Register(system.Id, what);
+
+                if (Text(system.Name, WorldLogicLimits.NameMaxLength, $"{what}'s name", required: true)
+                    && !names.Add(FormattableString.Invariant($"{system.ProjectId}|{system.Name}")))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"Two Systems in one scope are both called {Quote(system.Name)}.");
+                }
+
+                Text(system.Summary, WorldLogicLimits.SummaryMaxLength, $"{what}'s summary");
+                CheckWorldLogicScope(system.Scope, system.ProjectId, what);
+
+                if (system.Version < 1)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is at a version below 1.");
+                }
+
+                if (system.RuleIds.Count > WorldLogicLimits.MaxRulesPerSystem)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} references more rules than LorEvolve allows.");
+                }
+
+                if (system.RuleIds.Distinct().Count() != system.RuleIds.Count)
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{what} references one rule twice.");
+                }
+
+                foreach (var ruleId in system.RuleIds)
+                {
+                    if (!_systemRules.Contains(ruleId))
+                    {
+                        Add(BackupIssueCodes.MissingReference, $"{what} references a rule the backup does not hold.");
+                    }
+                }
+
+                foreach (var revision in system.Revisions)
+                {
+                    if (revision is null)
+                    {
+                        Missing($"a saved state of {what.ToLowerInvariant()}");
+                        continue;
+                    }
+
+                    Text(revision.Title, WorldLogicLimits.NameMaxLength, $"{what}'s saved name", required: true);
+                    Text(revision.Body, WorldLogicLimits.SummaryMaxLength, $"{what}'s saved summary");
+                }
+            }
+        }
+
+        /// <summary>A scope and its project agree, and the project is one this file holds.</summary>
+        private void CheckWorldLogicScope(WorldLogicScope scope, Guid? projectId, string what)
+        {
+            if (!Enum.IsDefined(scope))
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} is in a scope LorEvolve does not have.");
+                return;
+            }
+
+            switch (scope)
+            {
+                case WorldLogicScope.Universe when projectId is not null:
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is the universe's but names a project.");
+                    break;
+
+                case WorldLogicScope.Project when projectId is null:
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is a project's but names no project.");
+                    break;
+
+                case WorldLogicScope.Project when !_projects.Contains(projectId!.Value):
+                    Add(BackupIssueCodes.MissingReference, $"{what} is in a project the backup does not hold.");
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// A condition's text and schema version, held to the same structural check a save is (ADR 0072). Both null
+        /// is a rule that is words only, which is normal; one without the other is not.
+        /// </summary>
+        private void CheckCondition(int? schemaVersion, string? condition, string what)
+        {
+            if (condition is null && schemaVersion is null)
+            {
+                return;
+            }
+
+            if (condition is null || schemaVersion is null)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} carries a condition without its schema version, or the reverse.");
+                return;
+            }
+
+            if (ConditionSchema.Validate(condition, schemaVersion.Value) is { } problem)
+            {
+                Add(
+                    BackupIssueCodes.InvalidValue,
+                    $"{what}'s condition is not one LorEvolve can read ({problem.Code} at {problem.Path}).");
             }
         }
 

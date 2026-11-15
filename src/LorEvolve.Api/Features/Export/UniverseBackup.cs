@@ -8,6 +8,7 @@ using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Stories;
 using LorEvolve.Api.Features.Timeline;
+using LorEvolve.Api.Features.Systems;
 
 using LorEvolve.Api.Features.Projects;
 
@@ -307,8 +308,18 @@ public sealed record UniverseBackup(
     /// <see cref="BackupScene.LinkedEntityIds"/> is in the order the author picked the lore, no longer sorted by id. Not
     /// ignorable: a version 37 reader would list stories by title and a scene's lore by name. A file at version 37 or earlier
     /// restores its stories in title order and each scene's lore by the entry's name, as it read then.
+    ///
+    /// 44 - World Logic (ADR 0072). <see cref="UniverseBackupPayload.LoreSystems"/> carries every System of the universe -
+    /// its scope, the project it belongs to by id, its words, its saved states and the rule definitions it references in
+    /// its own order - and <see cref="UniverseBackupPayload.SystemRules"/> every rule definition: its words, its condition
+    /// tree exactly as stored with the schema version it was written against, its declared dependencies and its saved
+    /// states. Every id inside a condition goes through the restore's map like any other reference, so a restored rule
+    /// names the restored universe's rows; an id the file does not hold is left as it was, and evaluation reports it.
+    /// Not ignorable: a System and its conditions are authored, and a version 43 reader would restore a world with its
+    /// whole logic silently gone. A file at version 43 or earlier has neither, and restores with neither, even when it
+    /// carries the member. World rules (ADR 0033) are unchanged and still carried as they were.
     /// </summary>
-    public const int CurrentVersion = 43;
+    public const int CurrentVersion = 44;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -342,6 +353,11 @@ public sealed record UniverseBackup(
 ///
 /// <paramref name="IdeaBoards"/> is every idea board that belongs to the universe, live ones first (since version 36).
 ///
+/// <paramref name="LoreSystems"/> and <paramref name="SystemRules"/> are the universe's World Logic (since version
+/// 44, ADR 0072): its Systems by name, and its rule definitions by title, with each one's saved states. A rule
+/// definition is carried whether or not a System references it, because it is a definition in its own right. Empty
+/// means none; absent means the same thing.
+///
 /// <paramref name="CreativeProjects"/> is every project of the universe (since version 39). A universe owns its
 /// projects and deletes them with it (#171), so a backup that left them out would lose them, and the project-scoped
 /// entry types that name them could not come back in their own scope.
@@ -368,7 +384,9 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupIdeaBoard>? IdeaBoards = null,
     IReadOnlyList<BackupCreativeProject>? CreativeProjects = null,
     IReadOnlyList<BackupProjectEntity>? ProjectEntities = null,
-    IReadOnlyList<BackupProjectSeason>? ProjectSeasons = null);
+    IReadOnlyList<BackupProjectSeason>? ProjectSeasons = null,
+    IReadOnlyList<BackupLoreSystem>? LoreSystems = null,
+    IReadOnlyList<BackupSystemRule>? SystemRules = null);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
@@ -1304,6 +1322,63 @@ public sealed record BackupWorldRuleValidation(
     Guid EventKindTermId,
     Guid MethodTermId,
     int MaxOccurrences);
+
+/// <summary>
+/// One System of the universe (since version 44, ADR 0072): a named set of rule definitions.
+///
+/// <paramref name="ProjectId"/> names a project of this file for a project-scoped System, and is null for one that is
+/// the whole universe's. <paramref name="RuleIds"/> are the rule definitions it references, in this System's own
+/// order; they are ids of this file's <see cref="UniverseBackupPayload.SystemRules"/>, never copies, because two
+/// Systems referencing one rule reference one definition. <paramref name="Revisions"/> are its saved states, oldest
+/// first, and <paramref name="Version"/> is the one it is at now.
+/// </summary>
+public sealed record BackupLoreSystem(
+    Guid Id,
+    WorldLogicScope Scope,
+    Guid? ProjectId,
+    string Name,
+    string Summary,
+    int Version,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> RuleIds,
+    IReadOnlyList<BackupWorldLogicRevision> Revisions);
+
+/// <summary>
+/// One reusable rule definition (since version 44, ADR 0072).
+///
+/// <paramref name="Condition"/> is the condition tree as stored text, byte for byte, with
+/// <paramref name="SchemaVersion"/> the version it was written against; both are null for a rule that is words only.
+/// The text is carried rather than re-serialised so a restored rule is the rule that was validated, and the ids
+/// inside it are translated on restore like every other reference. <paramref name="DependsOn"/> is the declared
+/// dependency set, by id in this file.
+/// </summary>
+public sealed record BackupSystemRule(
+    Guid Id,
+    WorldLogicScope Scope,
+    Guid? ProjectId,
+    string Title,
+    string Description,
+    int? SchemaVersion,
+    string? Condition,
+    int Version,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> DependsOn,
+    IReadOnlyList<BackupWorldLogicRevision> Revisions);
+
+/// <summary>
+/// One saved state of a System or a rule definition (since version 44). <paramref name="Body"/> is a System's summary
+/// or a rule's description, and <paramref name="Condition"/> with <paramref name="SchemaVersion"/> are a rule's
+/// condition at that version - both null for a System, whose revisions carry no condition.
+/// </summary>
+public sealed record BackupWorldLogicRevision(
+    int Version,
+    string Title,
+    string Body,
+    int? SchemaVersion,
+    string? Condition,
+    DateTime SavedAt);
 
 /// <summary>
 /// One event kind or method of the universe (since version 13). The id is preserved because checks and moments name it; the kind

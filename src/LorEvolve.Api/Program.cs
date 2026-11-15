@@ -32,6 +32,7 @@ using LorEvolve.Api.Features.Suggestions;
 using LorEvolve.Api.Features.Timeline;
 using LorEvolve.Api.Features.Trash;
 using LorEvolve.Api.Features.Universes;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.WorldRules;
 using LorEvolve.Api.Hosting;
 
@@ -161,6 +162,8 @@ app.MapRelationshipEndpoints();
 app.MapFamilyTreeEndpoints();
 app.MapTimelineEndpoints();
 app.MapWorldRuleEndpoints();
+app.MapSystemEndpoints();
+app.MapSystemRuleEndpoints();
 app.MapValidationTermEndpoints();
 app.MapStoryEndpoints();
 app.MapChapterEndpoints();
