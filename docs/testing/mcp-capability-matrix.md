@@ -152,10 +152,12 @@ shape of the surface, not unfinished work.
   until it is classified, but a route nested under an existing prefix is claimed by that prefix and answered the same
   way, with nothing failing.
 
-  This is not theoretical. Until #153 and #154 landed, those three prefixes were one excepted row keyed on `systems`,
-  `system-rules` and a bare `world-logic`, and when the two new route groups arrived, `world-logic/findings` and
-  `world-logic/semantic-findings` were both claimed by that bare `world-logic` prefix and inherited its exception
-  without complaint. What caught them was the tool test, because their eight new tools were unmapped. The bare prefix
-  is now `world-logic/rules`, so those two have rows of their own, but the general hole stands: a change that adds a
-  nested route family and no tool is the case to read this document carefully for. Making the route test exact would
-  mean a row per endpoint, about 250 of them, which is the trade this shape was chosen against.
+  The prefixes this limitation showed up on are `systems`, `system-rules` and `world-logic/rules`: the three that make
+  up the World Logic Systems and rule definitions row today. Until #153 and #154 landed, that row was an excepted one
+  keyed on `systems`, `system-rules` and a bare `world-logic`, and when the two new route groups arrived,
+  `world-logic/findings` and `world-logic/semantic-findings` were both claimed by that bare `world-logic` prefix and
+  inherited its exception without complaint. What caught them was the tool test, because their eight new tools were
+  unmapped. Narrowing the bare prefix to `world-logic/rules` is what gave those two rows of their own, and it is why
+  the three are listed separately now, but the general hole stands: a change that adds a nested route family and no
+  tool is the case to read this document carefully for. Making the route test exact would mean a row per endpoint,
+  about 250 of them, which is the trade this shape was chosen against.
