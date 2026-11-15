@@ -135,6 +135,8 @@ It is never coerced to `false`, and a rule that cannot be checked never counts a
 | `any` | `true` if any child is `true`. Otherwise `error` if any child is `error`. Otherwise `unknown` if any child is `unknown`. Otherwise `false`. |
 | `not` | `true` becomes `false`, `false` becomes `true`, `unknown` stays `unknown`, `error` stays `error`. |
 
+A fifth answer, `exempt`, reaches a node only through `ruleHolds`, and section 5.2 says how it travels.
+
 A definite answer therefore wins over an error, and the two groups are exact mirrors of each other. The definite
 answer is the one that settles the group on its own: `false` for `all`, `true` for `any`. So `all` with one `false`
 child is `false` even when a sibling failed, and `any` with one `true` child is `true` even when a sibling failed,
@@ -206,6 +208,13 @@ rule that does not exist, is deleted or belongs to another universe is `missing_
 `maxDependencyDepth` is `dependency_depth_limit`.
 
 A dependency is evaluated once per evaluation per target and memoised, so a diamond costs one evaluation, not two.
+
+`exempt` propagates. A rule whose dependency came out `exempt` held, but held by an exception the author wrote, so
+its own outcome is `exempt` and carries that exception's id: a finding then says what the whole chain rests on
+instead of reporting a clean pass. Inside a group, `exempt` counts as `true` for deciding the group and is carried
+out of it, so a group that came out true with an exempt child is `exempt`, naming the first exception that excused
+one; a definite `false` still settles an `all`, and an `unknown` sibling still outranks a held answer. `not` over
+`exempt` is `false` and names no exception, because "not excused" is not something an exception excuses.
 
 ### 5.3 Rules that contradict each other
 

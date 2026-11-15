@@ -143,6 +143,9 @@ public sealed class WorldLogicEvaluator
 
         var outcome = run.Node(condition.Value, rule, depth: 1);
 
+        // A condition that came out exempt did so because a dependency was excused; the rule inherits that outcome
+        // and the exception's id, rather than reporting the pass the exception produced.
+
         // Exceptions run only when the condition came out false, so one can never change a pass and none costs
         // budget on the common path (specification section 5.1).
         if (outcome.Outcome == ConditionOutcome.False)
@@ -235,6 +238,9 @@ public sealed class WorldLogicEvaluator
 
         public static NodeResult Error(string code) => new(ConditionOutcome.Error, code);
 
+        /// <summary>Held, by an exception. Carries the id so a finding can name what excused it.</summary>
+        public static NodeResult Exempt(string? exemptionId) => new(ConditionOutcome.Exempt, null, exemptionId);
+
         public static NodeResult Of(bool value) => value ? True : False;
     }
 
@@ -306,6 +312,11 @@ public sealed class WorldLogicEvaluator
         /// Section 4's table. The answer that settles the group on its own wins over a sibling's error, which is
         /// <c>false</c> for <c>all</c> and <c>true</c> for <c>any</c>; everywhere else an error dominates an
         /// unknown. Short-circuiting is observable only in the evidence, never in the outcome.
+        ///
+        /// <c>exempt</c> is a held answer that held by an exception, so it counts as <c>true</c> for deciding the
+        /// group and is then carried out of it: a group that came out true with an exempt child is exempt, naming
+        /// the first exception that excused one. That is what keeps a rule built on an excused dependency from
+        /// reporting a clean pass.
         /// </summary>
         private NodeResult Group(JsonElement node, EvaluatedRule rule, int depth, bool all)
         {
@@ -314,18 +325,31 @@ public sealed class WorldLogicEvaluator
                 return NodeResult.Error(ConditionErrors.NodeArity);
             }
 
-            var settling = all ? ConditionOutcome.False : ConditionOutcome.True;
             string? error = null;
+            string? exemption = null;
+            var exempt = false;
             var unknown = false;
 
             foreach (var child in of.EnumerateArray())
             {
                 var result = Node(child, rule, depth + 1);
 
-                if (result.Outcome == settling)
+                // Exempt is a true for the purposes of the table, and remembered so it can be carried out.
+                var held = result.Outcome is ConditionOutcome.True or ConditionOutcome.Exempt;
+                if (result.Outcome == ConditionOutcome.Exempt)
                 {
+                    exempt = true;
+                    exemption ??= result.ExemptionId;
+                }
+
+                if (all ? result.Outcome == ConditionOutcome.False : held)
+                {
+                    var settling = all ? ConditionOutcome.False : exempt ? ConditionOutcome.Exempt : ConditionOutcome.True;
                     Trace($"{(all ? "all" : "any")} settled by a child -> {Name(settling)}");
-                    return new NodeResult(settling);
+
+                    return settling == ConditionOutcome.Exempt
+                        ? NodeResult.Exempt(exemption)
+                        : new NodeResult(settling);
                 }
 
                 switch (result.Outcome)
@@ -352,6 +376,12 @@ public sealed class WorldLogicEvaluator
                 return NodeResult.Unknown;
             }
 
+            if (all && exempt)
+            {
+                Trace("all -> exempt");
+                return NodeResult.Exempt(exemption);
+            }
+
             var settled = all ? ConditionOutcome.True : ConditionOutcome.False;
             Trace($"{(all ? "all" : "any")} -> {Name(settled)}");
             return new NodeResult(settled);
@@ -367,7 +397,10 @@ public sealed class WorldLogicEvaluator
             var result = Node(inner, rule, depth + 1);
             return result.Outcome switch
             {
-                ConditionOutcome.True => NodeResult.False,
+                // Exempt is a held answer, so its negation is false. The exception's id is not carried past a
+                // negation: "not excused" is not something an exception excuses, and a finding that named one here
+                // would be naming the reason its opposite held.
+                ConditionOutcome.True or ConditionOutcome.Exempt => NodeResult.False,
                 ConditionOutcome.False => NodeResult.True,
                 _ => result,
             };
@@ -644,9 +677,10 @@ public sealed class WorldLogicEvaluator
             {
                 ConditionOutcome.True => NodeResult.True,
 
-                // An exempt dependency held, as far as a rule that depends on it is concerned: the author excused
-                // it, and excusing it is a decision about the dependency, not about everything built on it.
-                ConditionOutcome.Exempt => NodeResult.True,
+                // An exempt dependency held, but it held by an exception the author wrote, and a rule built on it
+                // inherits that: the outcome stays exempt and carries the exception's id, so a finding says which
+                // exception the whole chain rests on rather than reporting a clean pass.
+                ConditionOutcome.Exempt => NodeResult.Exempt(result.ExemptionId),
                 ConditionOutcome.False => NodeResult.False,
                 ConditionOutcome.Unknown => NodeResult.Unknown,
                 _ => NodeResult.Error(result.ErrorCode ?? ConditionErrors.MissingRule),

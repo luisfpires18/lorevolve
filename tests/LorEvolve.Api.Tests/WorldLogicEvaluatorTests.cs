@@ -203,6 +203,61 @@ public sealed class WorldLogicEvaluatorTests
         Assert.Equal(ConditionOutcome.Unknown, evaluator.Evaluate("rule.any-false-and-unknown-is-unknown", "s.a").Outcome);
     }
 
+    /// <summary>
+    /// An excused dependency is inherited, not flattened. Codex round 1 on #151 asked for this: a rule built on a
+    /// rule that only held by an exception must not report the clean pass the exception produced, or a finding
+    /// would say a chain holds without saying what the whole chain rests on.
+    /// </summary>
+    [Fact]
+    public void A_rule_depending_on_an_exempt_rule_is_exempt_and_names_the_exception()
+    {
+        var evaluator = Chain();
+
+        var dependency = evaluator.Evaluate("rule.excused", "s.a", "p.1");
+        Assert.Equal(ConditionOutcome.Exempt, dependency.Outcome);
+        Assert.Equal("ex.allowed", dependency.ExemptionId);
+
+        // One hop up, and two hops up: the outcome and the id both carry.
+        var dependent = evaluator.Evaluate("rule.depends", "s.a", "p.1");
+        Assert.Equal(ConditionOutcome.Exempt, dependent.Outcome);
+        Assert.Equal("ex.allowed", dependent.ExemptionId);
+
+        var further = evaluator.Evaluate("rule.depends-twice", "s.a", "p.1");
+        Assert.Equal(ConditionOutcome.Exempt, further.Outcome);
+        Assert.Equal("ex.allowed", further.ExemptionId);
+
+        // Outside the exception's project the dependency is a plain violation, and so is everything on it.
+        Assert.Equal(ConditionOutcome.False, evaluator.Evaluate("rule.excused", "s.a").Outcome);
+        Assert.Equal(ConditionOutcome.False, evaluator.Evaluate("rule.depends", "s.a").Outcome);
+    }
+
+    [Fact]
+    public void An_exempt_child_carries_out_of_a_group_and_a_definite_answer_still_wins()
+    {
+        var evaluator = Chain();
+
+        // all(true, exempt) held, but by an exception: exempt, with the id.
+        var all = evaluator.Evaluate("rule.all-with-exempt", "s.a", "p.1");
+        Assert.Equal(ConditionOutcome.Exempt, all.Outcome);
+        Assert.Equal("ex.allowed", all.ExemptionId);
+
+        // any(exempt, ...) settles on the exempt child, and says so.
+        var any = evaluator.Evaluate("rule.any-with-exempt", "s.a", "p.1");
+        Assert.Equal(ConditionOutcome.Exempt, any.Outcome);
+        Assert.Equal("ex.allowed", any.ExemptionId);
+
+        // all(false, exempt) is false: a definite answer still settles the group.
+        Assert.Equal(ConditionOutcome.False, evaluator.Evaluate("rule.all-false-with-exempt", "s.a", "p.1").Outcome);
+
+        // not(exempt) is false, and no exception is named: "not excused" is not what an exception excuses.
+        var negated = evaluator.Evaluate("rule.not-exempt", "s.a", "p.1");
+        Assert.Equal(ConditionOutcome.False, negated.Outcome);
+        Assert.Null(negated.ExemptionId);
+
+        // An unknown sibling still outranks a held answer, exempt included.
+        Assert.Equal(ConditionOutcome.Unknown, evaluator.Evaluate("rule.all-unknown-with-exempt", "s.a", "p.1").Outcome);
+    }
+
     [Fact]
     public void A_rule_that_is_words_only_is_never_evaluated_and_never_a_violation()
     {
@@ -351,6 +406,77 @@ public sealed class WorldLogicEvaluatorTests
         // Both branches read the shared standing rule, and the attribute behind it is read once.
         Assert.Equal(1, counting.Attributes["standing"]);
     }
+
+    /// <summary>
+    /// A rule excused by a project-scoped exception, two rules depending on it in a chain, and one group of each
+    /// shape over it. Written here rather than in a fixture because the point is the propagation, and a fixture
+    /// case states one rule's outcome at a time.
+    /// </summary>
+    private static WorldLogicEvaluator Chain()
+    {
+        const string ExemptRule = "{\"kind\":\"ruleHolds\",\"ruleId\":\"rule.excused\"}";
+
+        return new WorldLogicEvaluator(
+            new WorldLogicFixtureFacts(Facts()),
+            [
+                // Its condition is false, and the exception applies in p.1 only.
+                new EvaluatedRule(
+                    "rule.excused",
+                    1,
+                    1,
+                    "{\"kind\":\"always\",\"value\":\"false\"}",
+                    [],
+                    [new EvaluatedException("ex.allowed", "p.1", "{\"kind\":\"always\",\"value\":\"true\"}")]),
+
+                new EvaluatedRule("rule.depends", 1, 1, ExemptRule, ["rule.excused"], []),
+                new EvaluatedRule(
+                    "rule.depends-twice",
+                    1,
+                    1,
+                    "{\"kind\":\"ruleHolds\",\"ruleId\":\"rule.depends\"}",
+                    ["rule.depends"],
+                    []),
+
+                new EvaluatedRule(
+                    "rule.all-with-exempt",
+                    1,
+                    1,
+                    "{\"kind\":\"all\",\"of\":[{\"kind\":\"always\",\"value\":\"true\"}," + ExemptRule + "]}",
+                    ["rule.excused"],
+                    []),
+
+                new EvaluatedRule(
+                    "rule.any-with-exempt",
+                    1,
+                    1,
+                    "{\"kind\":\"any\",\"of\":[" + ExemptRule + ",{\"kind\":\"always\",\"value\":\"false\"}]}",
+                    ["rule.excused"],
+                    []),
+
+                new EvaluatedRule(
+                    "rule.all-false-with-exempt",
+                    1,
+                    1,
+                    "{\"kind\":\"all\",\"of\":[{\"kind\":\"always\",\"value\":\"false\"}," + ExemptRule + "]}",
+                    ["rule.excused"],
+                    []),
+
+                new EvaluatedRule(
+                    "rule.all-unknown-with-exempt",
+                    1,
+                    1,
+                    "{\"kind\":\"all\",\"of\":[{\"kind\":\"always\",\"value\":\"unknown\"}," + ExemptRule + "]}",
+                    ["rule.excused"],
+                    []),
+
+                new EvaluatedRule("rule.not-exempt", 1, 1, "{\"kind\":\"not\",\"of\":" + ExemptRule + "}", ["rule.excused"], []),
+            ]);
+    }
+
+    /// <summary>One subject, which is all these rules need: their conditions are constants and dependencies.</summary>
+    private static JsonElement Facts() => JsonDocument
+        .Parse("{\"subjects\":[{\"id\":\"s.a\",\"type\":\"thing\",\"attributes\":{}}],\"relations\":[],\"events\":[]}")
+        .RootElement.Clone();
 
     private static WorldLogicEvaluator Evaluator(JsonDocument document) =>
         new(new WorldLogicFixtureFacts(document.RootElement.GetProperty("facts")), Rules(document.RootElement));
