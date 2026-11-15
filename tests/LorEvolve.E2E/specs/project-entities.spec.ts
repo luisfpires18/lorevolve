@@ -81,7 +81,8 @@ test.describe('Project entities', () => {
     await expect(types).toContainText('Several choices')
 
     // An entry of a type, with one of those choices made. The form opens from the panel's head rather than standing
-    // open on the page (#184).
+    // open on the page (#184). Entries are a view of their own, beside the schema's (#193).
+    await page.getByTestId('projecttab-entities').click()
     await page.getByTestId('project-entries-type').selectOption({ label: 'Map' })
     await page.getByTestId('project-entry-add').click()
     await page.getByTestId('project-entry-new-name').fill('Saltflats')
@@ -92,6 +93,7 @@ test.describe('Project entities', () => {
     await page.getByTestId('project-entry-new-save').click()
 
     await expect(page.getByTestId('project-entry-list')).toContainText('Saltflats')
+    await page.getByTestId('projecttab-overview').click()
     await expect(types).toContainText('1 entry')
 
     // From here the schema is the author's: a type of their own, and one of the starters gone.
@@ -129,6 +131,7 @@ test.describe('Project entities', () => {
     await page.getByTestId('project-type-new-save').click()
     await expect(page.getByTestId('project-types')).toContainText('Unit')
 
+    await page.getByTestId('projecttab-entities').click()
     await page.getByTestId('project-entry-add').click()
     await page.getByTestId('project-entry-new-name').fill('Saltbearer')
     await page.getByTestId('project-entry-new-save').click()
@@ -138,6 +141,7 @@ test.describe('Project entities', () => {
     await page.goto(`/app/projects/${second.id}`)
     await expect(page.getByTestId('project-schema-offer')).toBeVisible()
     await expect(page.getByTestId('project-types').locator('> li')).toHaveCount(0)
+    await page.getByTestId('projecttab-entities').click()
     await expect(page.getByTestId('project-entries-needs-type')).toBeVisible()
 
     // And the universe's own Types screen shows only the lore's types, with none of the game's.

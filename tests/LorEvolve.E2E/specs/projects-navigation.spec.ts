@@ -111,7 +111,7 @@ test.describe('Projects navigation', () => {
     // The project itself, from the universe's own sidebar.
     await page.getByTestId(`project-link-${inWorld.id}`).click()
     await expect(page).toHaveURL(
-      new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}/structure$`),
+      new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}/overview$`),
     )
     await expect(page.getByTestId('project-name')).toContainText(inWorld.name)
 

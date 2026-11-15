@@ -103,20 +103,73 @@ test.describe('Project sections', () => {
     await page.getByTestId('projecttab-ideas').click()
     await expect(page.getByTestId('project-view-empty-ideas')).toBeVisible()
 
-    // Every other view still renders today's overview panels.
+    // Each view renders one panel and never another's (#193).
     await page.getByTestId('projecttab-entities').click()
-    await expect(page.getByTestId('project-page')).toBeVisible()
+    await expect(page.getByTestId('project-entries')).toBeVisible()
+    await expect(page.getByTestId('project-schema')).toHaveCount(0)
     await expect(page.getByTestId('project-view-empty-ideas')).toHaveCount(0)
+    await page.getByTestId('projecttab-overview').click()
+    await expect(page.getByTestId('project-schema')).toBeVisible()
+    await expect(page.getByTestId('project-entries')).toHaveCount(0)
+    await page.getByTestId('projecttab-systems').click()
+    await expect(page.getByTestId('project-view-empty-systems')).toBeVisible()
+    await expect(page.getByTestId('project-schema')).toHaveCount(0)
+  })
+
+  test('a type made on the overview is in the entries the moment Entities opens', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const game = await project(page, world.id, 1)
+    const base = `/app/universes/${world.id}/projects/${game.id}`
+
+    await page.goto(`${base}/entities`)
+    await expect(page.getByTestId('project-entries')).toBeVisible()
+    await expect(page.getByTestId('project-entries-needs-type')).toBeVisible()
+
+    // The write happens on another route, then the author moves by the tab bar, without a reload.
+    await page.getByTestId('projecttab-overview').click()
+    await expect(page.getByTestId('project-schema')).toBeVisible()
+    await page.getByTestId('project-type-add').click()
+    await page.getByTestId('project-type-new-name').fill('Encounter')
+    await page.getByTestId('project-type-new-save').click()
+    await expect(page.getByTestId('project-types')).toContainText('Encounter')
+    await page.getByTestId('projecttab-entities').click()
+    await expect(page.getByTestId('project-entries-type')).toContainText('Encounter')
+  })
+
+  test('only Series, Film and Comic draw a structure panel, on Structure alone', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+    for (const kind of [2, 3, 4]) {
+      const one = await project(page, world.id, kind)
+      await page.goto(`/app/projects/${one.id}/structure`)
+      await expect(page.getByTestId('project-seasons')).toBeVisible()
+      await expect(page.getByTestId('project-schema')).toHaveCount(0)
+      await expect(page.getByTestId('project-entries')).toHaveCount(0)
+      for (const segment of ['overview', 'script', 'entities']) {
+        await page.getByTestId(`projecttab-${segment}`).click()
+        await expect(page).toHaveURL(new RegExp(`/${segment}$`))
+        await expect(page.getByTestId('project-seasons')).toHaveCount(0)
+      }
+    }
+    const book = await project(page, world.id, 0)
+    await page.goto(`/app/projects/${book.id}/structure`)
+    await expect(page.getByTestId('project-view-empty-structure')).toBeVisible()
+    await expect(page.getByTestId('project-seasons')).toHaveCount(0)
   })
 
   test('each kind offers its own views, at both project addresses', async ({ page }) => {
     await signUp(page)
     const world = await universe(page)
     const cases: Array<[number, string[]]> = [
-      [0, ['structure', 'manuscript', 'ideas']],
-      [2, ['structure', 'script', 'entities', 'ideas']],
-      [3, ['structure', 'script', 'entities', 'ideas']],
-      [4, ['structure', 'script', 'entities', 'ideas']],
+      [0, ['overview', 'structure', 'manuscript', 'entities', 'ideas']],
+      [2, ['overview', 'structure', 'script', 'entities', 'ideas']],
+      [3, ['overview', 'structure', 'script', 'entities', 'ideas']],
+      [4, ['overview', 'structure', 'script', 'entities', 'ideas']],
     ]
 
     for (const [kind, expected] of cases) {
@@ -147,13 +200,13 @@ test.describe('Project sections', () => {
     const book = await project(page, world.id, 0)
 
     await page.goto(`/app/projects/${book.id}/no-such-view`)
-    await expect(page).toHaveURL(new RegExp(`/app/projects/${book.id}/structure$`))
+    await expect(page).toHaveURL(new RegExp(`/app/projects/${book.id}/overview$`))
     await expect(page.getByTestId('project-name')).toContainText(book.name)
 
     // A view another kind offers is unknown to this one.
     await page.goto(`/app/universes/${world.id}/projects/${book.id}/systems`)
     await expect(page).toHaveURL(
-      new RegExp(`/app/universes/${world.id}/projects/${book.id}/structure$`),
+      new RegExp(`/app/universes/${world.id}/projects/${book.id}/overview$`),
     )
   })
 

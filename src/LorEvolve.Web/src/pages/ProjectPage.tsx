@@ -265,8 +265,12 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
       </section>
 
       {/*
-       * Every view renders today's overview panels until #193 gives each view its own content; a view the project's
-       * data cannot fill yet says so instead.
+       * One panel per view (#193). The schema sits on the overview until #196 moves it into Entities, the entries on
+       * Entities, and the structure on Structure. A view with no panel of its own yet says so rather than borrowing one.
+       *
+       * A schema write changes what the entries can offer - a new type is a type an entry can be of - so the two still
+       * share `schemaVersion`. It lives here, in the component that stays mounted while the author moves between this
+       * project's views, so a type added on the overview is in the entries the moment Entities opens.
        */}
       {section.pending ? (
         <EmptyState
@@ -274,47 +278,46 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
           hint={t('projects.ideas.emptyHint')}
           testId={`project-view-empty-${section.segment}`}
         />
-      ) : (
-        <>
-          {/*
-           * The project's own schema and what it holds (#144). A write on the left changes what the right can offer - a
-           * new type is a type an entry can be of - so the schema tells this page when it has changed and the entries
-           * panel re-reads.
-           */}
-          <ProjectSchema
-            projectId={project.id}
-            reloadKey={schemaVersion}
-            onChanged={() => setSchemaVersion((version) => version + 1)}
-          />
-          <ProjectEntries
-            projectId={project.id}
-            reloadKey={schemaVersion}
-            onChanged={() => setSchemaVersion((version) => version + 1)}
-          />
-
-          {/*
-           * One structure under three names: a Series' seasons of episodes (#145), a Film's sequences of scenes (#146)
-           * and a Comic's volumes of chapters (#147), the last of which opens pages and panels beneath a chapter. The API
-           * answers 404 for any other kind, so drawing the panel there would show an author a failure for a feature their
-           * project does not have.
-           */}
-          {project.kind === ProjectKind.Series ||
+      ) : section.segment === 'overview' ? (
+        <ProjectSchema
+          projectId={project.id}
+          reloadKey={schemaVersion}
+          onChanged={() => setSchemaVersion((version) => version + 1)}
+        />
+      ) : section.segment === 'entities' ? (
+        <ProjectEntries
+          projectId={project.id}
+          reloadKey={schemaVersion}
+          onChanged={() => setSchemaVersion((version) => version + 1)}
+        />
+      ) : section.segment === 'structure' &&
+        /*
+         * One structure under three names: a Series' seasons of episodes (#145), a Film's sequences of scenes (#146)
+         * and a Comic's volumes of chapters (#147), the last of which opens pages and panels beneath a chapter. The API
+         * answers 404 for any other kind, so drawing the panel there would show an author a failure for a feature their
+         * project does not have.
+         */
+        (project.kind === ProjectKind.Series ||
           project.kind === ProjectKind.Film ||
-          project.kind === ProjectKind.Comic ? (
-            <ProjectSeasons
-              projectId={project.id}
-              universeId={project.universe!.id}
-              words={
-                project.kind === ProjectKind.Film
-                  ? 'sequences'
-                  : project.kind === ProjectKind.Comic
-                    ? 'volumes'
-                    : 'seasons'
-              }
-              pages={project.kind === ProjectKind.Comic}
-            />
-          ) : null}
-        </>
+          project.kind === ProjectKind.Comic) ? (
+        <ProjectSeasons
+          projectId={project.id}
+          universeId={project.universe!.id}
+          words={
+            project.kind === ProjectKind.Film
+              ? 'sequences'
+              : project.kind === ProjectKind.Comic
+                ? 'volumes'
+                : 'seasons'
+          }
+          pages={project.kind === ProjectKind.Comic}
+        />
+      ) : (
+        <EmptyState
+          title={t('projects.view.empty')}
+          hint={t('projects.view.emptyHint')}
+          testId={`project-view-empty-${section.segment}`}
+        />
       )}
     </div>
   )
