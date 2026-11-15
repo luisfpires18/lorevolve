@@ -196,6 +196,63 @@
       "exceptions": []
     },
     {
+      "id": "rule.any-definite-true-beats-an-error",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          { "kind": "always", "value": "true" },
+          { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": "3", "type": "text" } }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.any-false-and-an-error-is-an-error",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          { "kind": "always", "value": "false" },
+          { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": "3", "type": "text" } }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.any-false-unknown-and-an-error-is-an-error",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          { "kind": "always", "value": "false" },
+          { "kind": "always", "value": "unknown" },
+          { "kind": "compare", "left": { "attribute": "count", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": "3", "type": "text" } }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.any-false-and-unknown-is-unknown",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "any",
+        "of": [
+          { "kind": "always", "value": "false" },
+          { "kind": "always", "value": "unknown" }
+        ]
+      },
+      "exceptions": []
+    },
+    {
       "id": "rule.unknown-exception-blocks-a-violation",
       "version": 1,
       "scope": { "kind": "universe" },
@@ -365,6 +422,34 @@
       "target": "s.a",
       "projectId": null,
       "expect": { "outcome": "error", "errorCode": "type_mismatch", "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "a definite true wins over an erroring sibling in any, mirroring all",
+      "ruleId": "rule.any-definite-true-beats-an-error",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": [] }
+    },
+    {
+      "name": "any over a false and an error is an error, never false",
+      "ruleId": "rule.any-false-and-an-error-is-an-error",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "type_mismatch", "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "any over a false, an unknown and an error is an error",
+      "ruleId": "rule.any-false-unknown-and-an-error-is-an-error",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "error", "errorCode": "type_mismatch", "exemptionId": null, "evidence": ["s.a"] }
+    },
+    {
+      "name": "any over a false and an unknown is unknown",
+      "ruleId": "rule.any-false-and-unknown-is-unknown",
+      "target": "s.a",
+      "projectId": null,
+      "expect": { "outcome": "unknown", "errorCode": null, "exemptionId": null, "evidence": [] }
     },
     {
       "name": "an exception that might apply makes the outcome unknown, not a violation",

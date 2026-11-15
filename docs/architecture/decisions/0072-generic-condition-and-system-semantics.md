@@ -38,10 +38,14 @@ refused. A condition still reads no prose, exactly as ADR 0033 requires.
 ### Four outcomes, and `unknown` is never `false`
 
 An evaluation answers `true`, `false`, `unknown` or `error`. `all` is `false` when any child is `false`, `error` when
-any child errored, `unknown` when any child is unknown, and `true` otherwise; `any` mirrors it; `not` maps `true` and
-`false` and leaves `unknown` and `error` alone. A definite `false` wins over a sibling's error, because the rule is
-already broken and the author deserves the finding. Everywhere else an error dominates an unknown, because an error
-is a defect to fix before the unknown is worth reading.
+any child errored, `unknown` when any child is unknown, and `true` otherwise; `any` is its exact mirror, `true` when
+any child is `true`, then `error`, then `unknown`, then `false`; `not` maps `true` and `false` and leaves `unknown`
+and `error` alone.
+
+The answer that settles a group on its own wins over a sibling's error: `false` for `all`, `true` for `any`, because
+the group's answer is already settled and the author deserves it rather than a diagnostic. In every other
+combination an error dominates an unknown, because an error is a defect to fix before the unknown is worth reading.
+So `any` over a `false` and an error is an error, not `false`.
 
 A rule whose stored `schemaVersion` this build does not implement is `error` with `schema_version_unsupported`, never
 a pass. That is the same stance ADR 0034 took for an unrecognised check kind.

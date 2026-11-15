@@ -128,10 +128,15 @@ It is never coerced to `false`, and a rule that cannot be checked never counts a
 | `any` | `true` if any child is `true`. Otherwise `error` if any child is `error`. Otherwise `unknown` if any child is `unknown`. Otherwise `false`. |
 | `not` | `true` becomes `false`, `false` becomes `true`, `unknown` stays `unknown`, `error` stays `error`. |
 
-A definite answer therefore wins over an error: `all` with one `false` child is `false` even when a sibling failed,
-because the rule is already broken and the author deserves the finding rather than a diagnostic. Everywhere else an
-error dominates `unknown`, because an error is a defect in the rule or the budget and must be fixed before the
-`unknown` is worth reading.
+A definite answer therefore wins over an error, and the two groups are exact mirrors of each other. The definite
+answer is the one that settles the group on its own: `false` for `all`, `true` for `any`. So `all` with one `false`
+child is `false` even when a sibling failed, and `any` with one `true` child is `true` even when a sibling failed,
+because in both cases the group's answer is already settled and the author deserves it rather than a diagnostic.
+
+In every other combination an error dominates `unknown`, because an error is a defect in the rule or the budget and
+must be fixed before the `unknown` is worth reading. In particular `any` over a `false` and an error is `error`, not
+`false`, and `any` over a `false`, an `unknown` and an error is `error` too. The fixtures pin all four of these
+cases, for `all` and for `any`, in `edge-cases.json`.
 
 Evaluation order is the declared order of `of`, left to right, and short-circuits as soon as the table above is
 decided. Short-circuiting is observable only in the evidence list, never in the outcome: an implementation that
