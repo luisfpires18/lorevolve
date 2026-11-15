@@ -11,11 +11,11 @@ namespace LorEvolve.Api.Features.ProjectEntities;
 /// <summary>
 /// The seasons of a project and the episodes in them (#145).
 ///
-/// <para><b>A Series project only.</b> #145 asks for seasons as the structure a Series groups episodes into, and the
-/// first review of this PR was right that offering them on every kind is wider than the issue. A project of another
-/// kind answers exactly as one with no seasons route at all, so nothing discloses that the feature exists elsewhere.
-/// When a comic wants volumes and issues (#147), that kind joins <see cref="Holds"/>: one line, and the structure is
-/// already here.</para>
+/// <para><b>A Series or a Film.</b> #145 asked for seasons as the structure a Series groups episodes into, and #146
+/// for the sequences and scenes a Film is cut into: the same shape under two names, so one structure serves both and
+/// <see cref="Holds"/> says which kinds have it. A project of another kind answers exactly as one with no seasons
+/// route at all, so nothing discloses that the feature exists elsewhere. When a comic wants volumes and issues
+/// (#147), that kind joins the predicate and nothing else changes.</para>
 ///
 /// <para>Order is a stored place, not a derivation: an author reorders seasons and episodes, and "Season 10" sorts
 /// before "Season 2" by name. Both lists are renumbered 0, 1, 2 on every move, the same way a story's arcs are
@@ -33,10 +33,17 @@ public static class SeriesEndpoints
     public const string SeasonHasEpisodesCode = "project_season_has_episodes";
 
     /// <summary>
-    /// The kinds of project that have seasons. Series alone today (#145); a comic's volumes would add
-    /// <see cref="Projects.ProjectKind.Comic"/> here and nothing else.
+    /// The kinds of project built out of ordered bands of ordered, written units: a Series' seasons and episodes
+    /// (#145), a Film's sequences and scenes (#146). One structure, named for the kind that holds it.
+    ///
+    /// <para>The vocabulary is the screen's, not the schema's: a film's sequence is a <see cref="ProjectSeason"/> row
+    /// and its scene a <see cref="ProjectEpisode"/> row, because the shape is the same and this issue's constraint is
+    /// a shared engine rather than one implementation per kind. The alternative, a second pair of tables differing
+    /// only in what they are called, would have doubled the migration, the backup format, the validation and the
+    /// endpoints to say nothing new.</para>
     /// </summary>
-    private static bool Holds(Projects.ProjectKind kind) => kind is Projects.ProjectKind.Series;
+    private static bool Holds(Projects.ProjectKind kind) =>
+        kind is Projects.ProjectKind.Series or Projects.ProjectKind.Film;
 
     /// <summary>
     /// The project when it may be read and has seasons at all, otherwise the answer to send. A project of another kind

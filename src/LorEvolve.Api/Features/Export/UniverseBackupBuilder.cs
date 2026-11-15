@@ -75,6 +75,11 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .Where(calibration => calibration.Map!.UniverseId == universeId)
             .ToDictionaryAsync(calibration => calibration.MapId, cancellationToken);
 
+
+        // Every entry's saved versions, read once: the lore's entries and the projects' entries both carry them (#146),
+        // and reading the same rows twice to hand them to two builders would be a second query set for nothing.
+        var revisions = await RevisionsAsync(universeId, cancellationToken);
+
         var payload = new UniverseBackupPayload(
             new BackupUniverse(
                 universe.Id,
@@ -106,7 +111,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await ErasAsync(universeId, cancellationToken),
             await EntityTypesAsync(universeId, cancellationToken),
             await TagsAsync(universeId, cancellationToken),
-            await EntitiesAsync(universeId, images, cancellationToken),
+            await EntitiesAsync(universeId, images, revisions, cancellationToken),
             await RelationshipTypesAsync(universeId, cancellationToken),
             await RelationshipsAsync(universeId, cancellationToken),
             await TimelineAsync(universeId, cancellationToken),
@@ -121,7 +126,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             MapsOf(maps, calibrations),
             await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken),
             await CreativeProjectsAsync(universeId, cancellationToken),
-            await ProjectEntriesAsync(universeId, cancellationToken),
+            await ProjectEntriesAsync(universeId, revisions, cancellationToken),
             await ProjectSeasonsAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
@@ -460,6 +465,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     private async Task<IReadOnlyList<BackupEntity>> EntitiesAsync(
         Guid universeId,
         Dictionary<Guid, EntityImage> images,
+        Dictionary<Guid, IReadOnlyList<BackupRevision>> revisionsByEntity,
         CancellationToken cancellationToken)
     {
         // Every entry, the Trash included. A backup is the whole world as it currently stands,
@@ -480,8 +486,6 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         var values = await db.EntityFieldValues.AsNoTracking()
             .Where(value => value.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
-
-        var revisionsByEntity = await RevisionsAsync(universeId, cancellationToken);
 
         // The article is its own row, read here beside the entry it belongs to - trashed entries' included.
         var articles = await db.EntityArticles.AsNoTracking()
@@ -786,19 +790,19 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         Guid universeId,
         CancellationToken cancellationToken)
     {
-        var revisions = await db.EntityRevisions.AsNoTracking()
+        var revisions = await db.EntityRevisions.AsNoTracking().IgnoreQueryFilters()
             .Where(revision => revision.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var aliases = await db.EntityRevisionAliases.AsNoTracking()
+        var aliases = await db.EntityRevisionAliases.AsNoTracking().IgnoreQueryFilters()
             .Where(alias => alias.Revision!.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var tags = await db.EntityRevisionTags.AsNoTracking()
+        var tags = await db.EntityRevisionTags.AsNoTracking().IgnoreQueryFilters()
             .Where(tag => tag.Revision!.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var values = await db.EntityRevisionFieldValues.AsNoTracking()
+        var values = await db.EntityRevisionFieldValues.AsNoTracking().IgnoreQueryFilters()
             .Where(value => value.Revision!.Entity!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
@@ -1352,6 +1356,18 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     /// </summary>
     private async Task<IReadOnlyList<BackupProjectEntity>> ProjectEntriesAsync(
         Guid universeId,
+        Dictionary<Guid, IReadOnlyList<BackupRevision>> revisionsByEntity,
+        CancellationToken cancellationToken)
+    {
+        var entries = await ProjectEntryRowsAsync(universeId, cancellationToken);
+
+        // The same versions the lore's entries carry, from the same dictionary: a project entry's history is captured
+        // by the same code (#146), so it travels the same way rather than through a second path.
+        return [.. entries.Select(entry => entry with { Revisions = revisionsByEntity.GetValueOrDefault(entry.Id, []) })];
+    }
+
+    private async Task<List<BackupProjectEntity>> ProjectEntryRowsAsync(
+        Guid universeId,
         CancellationToken cancellationToken) =>
         await db.Entities.AsNoTracking().IgnoreQueryFilters()
             .Where(entry => entry.UniverseId == universeId && entry.ProjectId != null)
@@ -1379,7 +1395,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                         value.DateValue,
                         value.OptionId,
                         value.ReferencedEntityId))
-                    .ToList()))
+                    .ToList(),
+                null))
             .ToListAsync(cancellationToken);
 
     private async Task<IReadOnlyList<BackupCreativeProject>> CreativeProjectsAsync(

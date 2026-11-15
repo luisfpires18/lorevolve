@@ -411,7 +411,11 @@ internal static partial class BackupValidation
         return results;
     }
 
-    private static int CountRecords(UniverseBackupPayload payload)
+    /// <summary>
+    /// How many rows a restore of this file would write, for the limit above. Internal so a test can hold it to
+    /// counting a project's rows, which it did not until #146.
+    /// </summary>
+    internal static int CountRecords(UniverseBackupPayload payload)
     {
         long count = 1 + payload.ChronologyEras!.Count + (payload.ChronologyCalendar is { } calendar ? 1 + calendar.Months.Count : 0) + payload.Tags.Count + payload.RelationshipTypes.Count
             + payload.DismissedConflicts.Count + (payload.KnowledgeRecords?.Count ?? 0)
@@ -456,6 +460,32 @@ internal static partial class BackupValidation
                 + (scene.Manuscript is null ? 0 : 1 + scene.Manuscript.Revisions!.Count));
             count += story.PlotArcs!.Count + story.Scenes.Sum(scene => (long)(scene.Beats?.Count ?? 0));
         }
+
+        // A project's own rows, which were counted as nothing until now: the projects (version 39), their entries with
+        // every field value and saved version under them (40 and 42), and their seasons with their episodes (41). The
+        // limit exists so a crafted archive cannot ask the restore to write an unbounded number of rows, and rows it
+        // does not count are rows it does not bound. Found by the third review round of #146.
+        count += payload.CreativeProjects?.Count ?? 0;
+
+        foreach (var entry in payload.ProjectEntities ?? [])
+        {
+            if (entry is null)
+            {
+                continue;
+            }
+
+            count += 1 + (entry.FieldValues?.Count ?? 0);
+
+            foreach (var revision in entry.Revisions ?? [])
+            {
+                if (revision is not null)
+                {
+                    count += 1 + revision.Aliases.Count + revision.Tags.Count + revision.FieldValues.Count;
+                }
+            }
+        }
+
+        count += (payload.ProjectSeasons ?? []).Sum(season => season is null ? 0L : 1L + (season.Episodes?.Count ?? 0));
 
         count += payload.Ideas!.Sum(idea => 1L + idea.References.Count);
         count += payload.WorldRules!.Sum(rule => rule.Validation is null ? 1L : 2L);
@@ -1273,6 +1303,19 @@ internal static partial class BackupValidation
                     {
                         Missing($"a field value of {what}");
                     }
+                }
+
+                // The entry's saved versions (version 42, #146). Each id is registered, as a lore entry's versions are,
+                // so a reference to one inside the file resolves and a duplicate is caught.
+                foreach (var revision in entry.Revisions ?? [])
+                {
+                    if (revision is null)
+                    {
+                        Missing($"a saved version of {what}");
+                        continue;
+                    }
+
+                    Register(revision.Id, $"A saved version of {what}");
                 }
             }
         }

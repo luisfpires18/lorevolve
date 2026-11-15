@@ -134,6 +134,23 @@ const projects = {
       'Este episódio foi alterado noutro lugar. Nada foi substituído: abra-o outra vez para ver o que diz agora.',
     moveToSeason: 'Mover para',
   },
+  sequences: {
+    title: 'Sequências',
+    lede: 'Os trechos em que este filme está dividido, e as cenas que os compõem.',
+    empty: 'Ainda não há sequências.',
+    emptyHint: 'Uma sequência agrupa cenas: um ato, uma cena de ação, um trecho do filme.',
+    add: 'Acrescentar uma sequência',
+    save: 'Acrescentar sequência',
+    delete: 'Apagar sequência',
+    noEpisodes: 'Ainda não há cenas.',
+    episodeCount: {
+      one: '1 cena',
+      other: '{count} cenas',
+    },
+    addEpisode: 'Acrescentar uma cena',
+    deleteEpisode: 'Apagar cena',
+    moveToSeason: 'Mover para',
+  },
   entries: {
     title: 'Registos',
     lede: 'O que este projeto guarda, por tipo.',

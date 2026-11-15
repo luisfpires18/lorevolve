@@ -308,7 +308,7 @@ public sealed record UniverseBackup(
     /// ignorable: a version 37 reader would list stories by title and a scene's lore by name. A file at version 37 or earlier
     /// restores its stories in title order and each scene's lore by the entry's name, as it read then.
     /// </summary>
-    public const int CurrentVersion = 41;
+    public const int CurrentVersion = 42;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -907,7 +907,13 @@ public sealed record BackupProjectEntity(
     DateTime? DeletedAt,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    IReadOnlyList<BackupFieldValue> FieldValues);
+    IReadOnlyList<BackupFieldValue> FieldValues,
+    /// <summary>
+    /// The entry's saved versions (since version 42, #146). The lore's own <see cref="BackupRevision"/> shape, because
+    /// a project entry's history is captured by the same code; carried because history that vanishes on a restore is
+    /// worse than no history at all.
+    /// </summary>
+    IReadOnlyList<BackupRevision>? Revisions = null);
 
 public sealed record BackupFieldValue(
     Guid FieldDefinitionId,

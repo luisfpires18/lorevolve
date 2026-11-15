@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.ProjectEntities;
+using LorEvolve.Api.Features.Restore;
 using LorEvolve.Api.Features.Projects;
 using Microsoft.EntityFrameworkCore;
 using static LorEvolve.Api.Tests.PlotTestClient;
@@ -389,6 +390,191 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
                 [new FieldValueInput(fieldId, null, null, null, null, null, targetId)]));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    /// <summary>
+    /// A Film gets its own starter types and the shared engine under them (#146).
+    ///
+    /// <para>The first review of PR #179 was right to ask for this: the PR body claimed the criterion was met by the
+    /// shared infrastructure without a test saying so for a Film in particular. This is that test: the template is
+    /// offered and applied, a field of its own is added, a value is stored, an entry links to another entry of the
+    /// same film, and one points at a lore entry.</para>
+    ///
+    /// <para><b>Revisions are deliberately absent</b>, which is #144's decision and is asserted here rather than left
+    /// to be assumed: a lore entry's history is a record of the world's claims, and a film's prop is not one. The
+    /// entry's own <c>Version</c> still guards a concurrent save, and an episode's screenplay has the same guard.</para>
+    /// </summary>
+    [Fact]
+    public async Task A_film_gets_its_starter_types_and_the_shared_engine_under_them()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "filmengine");
+        var film = await NewFilm(client, universe.Id);
+
+        // Offered, named for a film, and not yet applied.
+        var offer = await client.GetFromJsonAsync<ProjectTemplateResponse>($"/api/projects/{film.Id}/template");
+        Assert.Equal("Film", offer!.Name);
+        Assert.Equal(["Character", "Location", "Prop"], offer.Types);
+        Assert.False(offer.AlreadyApplied);
+
+        var applied = await Apply(client, film.Id);
+        Assert.Equal(["Character", "Location", "Prop"], applied.Select(type => type.Name));
+
+        // A film's billing words, which differ from a series' on purpose.
+        var billing = applied.First(type => type.Name == "Character").Fields.First(field => field.Name == "Billing");
+        Assert.Equal(EntityFieldKind.Select, billing.Kind);
+        Assert.Equal(["Lead", "Supporting", "Background"], billing.Options.Select(option => option.Value));
+
+        // A custom field of the author's own, on a starter type, through the shared engine.
+        var prop = applied.First(type => type.Name == "Prop");
+        var withField = await AddField(
+            client,
+            film.Id,
+            prop.Id,
+            new ProjectEntityFieldRequest("Made of", EntityFieldKind.ShortText));
+        var madeOf = withField.Fields.First(field => field.Name == "Made of");
+
+        var knife = await NewEntry(
+            client,
+            film.Id,
+            prop.Id,
+            "The salt knife",
+            fields: [new FieldValueInput(madeOf.Id, "bone", null, null, null, null, null)]);
+
+        Assert.Equal("bone", knife.Fields.First(field => field.FieldDefinitionId == madeOf.Id).Text);
+
+        // A link to another entry of the same film, and an optional link to the lore.
+        var carries = await AddField(
+            client,
+            film.Id,
+            applied.First(type => type.Name == "Character").Id,
+            new ProjectEntityFieldRequest("Carries", EntityFieldKind.EntityReference));
+        var carriesField = carries.Fields.First(field => field.Name == "Carries");
+
+        var loreId = await CreateEntity(client, universe.Id, "Alenna Vance");
+
+        var alenna = await NewEntry(
+            client,
+            film.Id,
+            applied.First(type => type.Name == "Character").Id,
+            "Alenna",
+            canonEntityId: loreId,
+            fields: [new FieldValueInput(carriesField.Id, null, null, null, null, null, knife.Id)]);
+
+        var link = alenna.Fields.First(field => field.FieldDefinitionId == carriesField.Id);
+        Assert.Equal(knife.Id, link.ReferencedEntityId);
+        Assert.Equal("The salt knife", link.ReferencedEntityName);
+
+        var row = (await Entries(client, film.Id)).First(entry => entry.Id == alenna.Id);
+        Assert.Equal(loreId, row.CanonEntityId);
+        Assert.Equal("Alenna Vance", row.CanonEntityName);
+
+        // The concurrency guard is the shared one: a save over a stale version is refused, and nothing is overwritten.
+        var stale = await client.PutAsJsonAsync(
+            $"/api/projects/{film.Id}/entities/{alenna.Id}",
+            new ProjectEntityRequest(
+                alenna.EntityTypeId,
+                "Alenna, rewritten",
+                null,
+                null,
+                null,
+                alenna.Version - 1));
+
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        Assert.Equal("Alenna", (await Entries(client, film.Id)).First(entry => entry.Id == alenna.Id).Name);
+
+        // The entry keeps a history, through the same capture the lore's entries use. The second review round was
+        // right to insist on this: "we decided not to" is not the shared infrastructure the criterion asks for.
+        var edited = await Put<EntityDetail>(
+            client,
+            $"/api/projects/{film.Id}/entities/{knife.Id}",
+            new ProjectEntityRequest(prop.Id, "The salt knife, notched", null, null, null, knife.Version));
+
+        Assert.Equal("The salt knife, notched", edited.Name);
+
+        var history = await client.GetFromJsonAsync<List<EntityRevisionSummary>>(
+            $"/api/projects/{film.Id}/entities/{knife.Id}/revisions");
+
+        // Newest first: the edit, then the version the create left behind.
+        Assert.Equal(2, history!.Count);
+        Assert.Equal(EntityRevisionKind.Edited, history[0].Kind);
+        Assert.Equal("The salt knife, notched", history[0].Name);
+        Assert.Equal(EntityRevisionKind.Created, history[1].Kind);
+        Assert.Equal("The salt knife", history[1].Name);
+    }
+
+    private static async Task<ProjectDetail> NewFilm(HttpClient client, Guid universeId)
+    {
+        var response = await client.PostAsJsonAsync(
+            "/api/projects",
+            new ProjectRequest("Low Tide", ProjectKind.Film, ProjectLifecycle.Active, "animated", null, universeId, null));
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<ProjectDetail>())!;
+    }
+
+    /// <summary>
+    /// A project entry's history survives a backup and a restore, and every row of it counts toward the restore's
+    /// record limit.
+    ///
+    /// <para>The third review round of PR #179 asked for both halves, and both were missing. The limit exists so a
+    /// crafted archive cannot ask the restore to write an unbounded number of rows; rows it does not count are rows it
+    /// does not bound, and until now a project's entries, their versions, their field values and its seasons counted
+    /// as nothing at all.</para>
+    /// </summary>
+    [Fact]
+    public async Task A_project_entry_s_history_survives_a_restore_and_counts_toward_the_limit()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "filmhistory");
+        var film = await NewFilm(client, universe.Id);
+        var type = await NewType(client, film.Id, "Prop");
+        var entry = await NewEntry(client, film.Id, type.Id, "The salt knife");
+
+        await Put<EntityDetail>(
+            client,
+            $"/api/projects/{film.Id}/entities/{entry.Id}",
+            new ProjectEntityRequest(type.Id, "The salt knife, notched", null, null, null, entry.Version));
+
+        var archive = await RawArchive(client, universe.Id);
+        var payload = BackupOf(archive).Payload;
+
+        // The file carries the entry and both its versions.
+        var carried = payload.ProjectEntities!.Single(each => each.Id == entry.Id);
+        Assert.Equal(["The salt knife", "The salt knife, notched"], carried.Revisions!.OrderBy(each => each.Number).Select(each => each.Name));
+
+        // Every one of those rows is counted. Measured by removing them and watching the count fall by exactly the
+        // number of rows they are, rather than by asserting a magic total.
+        var counted = BackupValidation.CountRecords(payload);
+        var withoutHistory = BackupValidation.CountRecords(payload with
+        {
+            ProjectEntities = [.. payload.ProjectEntities!.Select(each => each with { Revisions = [] })],
+        });
+
+        Assert.Equal(2, counted - withoutHistory);
+
+        var withoutProjects = BackupValidation.CountRecords(payload with
+        {
+            CreativeProjects = [],
+            ProjectEntities = [],
+        });
+
+        // The project, its entry and the entry's two versions: four rows the count missed entirely before.
+        Assert.Equal(4, counted - withoutProjects);
+
+        // And the history is there after a restore, under new ids, in the same order.
+        var restored = await RestoreArchive(client, archive, "Film history restored");
+
+        await WithDb(_factory, async db =>
+        {
+            var copied = await db.Entities.AsNoTracking().IgnoreQueryFilters()
+                .SingleAsync(each => each.UniverseId == restored.Id && each.ProjectId != null);
+
+            var history = await db.EntityRevisions.AsNoTracking()
+                .Where(revision => revision.EntityId == copied.Id)
+                .OrderBy(revision => revision.Number)
+                .ToListAsync();
+
+            Assert.Equal(["The salt knife", "The salt knife, notched"], history.Select(each => each.Name));
+            Assert.All(history, revision => Assert.NotEqual(Guid.Empty, revision.Id));
+        });
     }
 
     // ---------- helpers ----------

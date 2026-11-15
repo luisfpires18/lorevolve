@@ -131,6 +131,23 @@ const projects = {
       'This episode was changed somewhere else. Nothing was overwritten: reopen it to see what it says now.',
     moveToSeason: 'Move to',
   },
+  sequences: {
+    title: 'Sequences',
+    lede: 'The stretches this film is cut into, and the scenes in them.',
+    empty: 'No sequences yet.',
+    emptyHint: 'A sequence groups scenes: an act, a set piece, a stretch of the film.',
+    add: 'Add a sequence',
+    save: 'Add sequence',
+    delete: 'Delete sequence',
+    noEpisodes: 'No scenes yet.',
+    episodeCount: {
+      one: '1 scene',
+      other: '{count} scenes',
+    },
+    addEpisode: 'Add a scene',
+    deleteEpisode: 'Delete scene',
+    moveToSeason: 'Move to',
+  },
   entries: {
     title: 'Entries',
     lede: 'What this project holds, by type.',

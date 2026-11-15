@@ -23,7 +23,54 @@ import { t, tn, useI18n } from '../i18n'
  * does not work this way can leave it empty. Order is moved one place at a time, up or down, which is the plainest
  * control that works with a keyboard and needs no drag.</p>
  */
-export function ProjectSeasons({ projectId }: { projectId: string }) {
+/**
+ * The words a kind of project uses for the same structure. A film is cut into sequences of scenes and a series into
+ * seasons of episodes; the rows are the same, so the component is too and only the labels differ (#146).
+ *
+ * Every key that differs is listed here rather than chosen with a conditional at each use: a label that only one of
+ * the two kinds has would otherwise be easy to miss, and `satisfies` makes the two sets provably the same shape.
+ */
+const WORDS = {
+  seasons: {
+    title: () => t('projects.seasons.title'),
+    lede: () => t('projects.seasons.lede'),
+    empty: () => t('projects.seasons.empty'),
+    emptyHint: () => t('projects.seasons.emptyHint'),
+    add: () => t('projects.seasons.add'),
+    save: () => t('projects.seasons.save'),
+    delete: () => t('projects.seasons.delete'),
+    noEpisodes: () => t('projects.seasons.noEpisodes'),
+    episodeCount: (count: number) => tn('projects.seasons.episodeCount', count),
+    addEpisode: () => t('projects.seasons.addEpisode'),
+    deleteEpisode: () => t('projects.seasons.deleteEpisode'),
+    moveToSeason: () => t('projects.seasons.moveToSeason'),
+  },
+  sequences: {
+    title: () => t('projects.sequences.title'),
+    lede: () => t('projects.sequences.lede'),
+    empty: () => t('projects.sequences.empty'),
+    emptyHint: () => t('projects.sequences.emptyHint'),
+    add: () => t('projects.sequences.add'),
+    save: () => t('projects.sequences.save'),
+    delete: () => t('projects.sequences.delete'),
+    noEpisodes: () => t('projects.sequences.noEpisodes'),
+    episodeCount: (count: number) => tn('projects.sequences.episodeCount', count),
+    addEpisode: () => t('projects.sequences.addEpisode'),
+    deleteEpisode: () => t('projects.sequences.deleteEpisode'),
+    moveToSeason: () => t('projects.sequences.moveToSeason'),
+  },
+} as const
+
+export type ProjectStructureWords = keyof typeof WORDS
+
+export function ProjectSeasons({
+  projectId,
+  words = 'seasons',
+}: {
+  projectId: string
+  /** Which vocabulary to draw: a series' seasons, or a film's sequences. */
+  words?: ProjectStructureWords
+}) {
   useI18n()
   const [seasons, setSeasons] = useState<ProjectSeason[] | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
@@ -33,6 +80,7 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
   const [renameTo, setRenameTo] = useState('')
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
+  const say = WORDS[words]
 
   useEffect(() => {
     const controller = new AbortController()
@@ -73,8 +121,8 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
   return (
     <section className="projects" data-testid="project-seasons">
       <header className="projects__head">
-        <h2>{t('projects.seasons.title')}</h2>
-        <p className="projects__lede">{t('projects.seasons.lede')}</p>
+        <h2>{say.title()}</h2>
+        <p className="projects__lede">{say.lede()}</p>
       </header>
 
       {failed ? (
@@ -84,11 +132,7 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
       ) : null}
 
       {seasons.length === 0 ? (
-        <EmptyState
-          title={t('projects.seasons.empty')}
-          hint={t('projects.seasons.emptyHint')}
-          testId="project-seasons-empty"
-        />
+        <EmptyState title={say.empty()} hint={say.emptyHint()} testId="project-seasons-empty" />
       ) : null}
 
       <ol className="cardlist" data-testid="project-season-list">
@@ -128,8 +172,8 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
                 <h3 className="card__title">{season.name}</h3>
                 <p className="projects__lede">
                   {season.episodes.length === 0
-                    ? t('projects.seasons.noEpisodes')
-                    : tn('projects.seasons.episodeCount', season.episodes.length)}
+                    ? say.noEpisodes()
+                    : say.episodeCount(season.episodes.length)}
                 </p>
                 <div className="card__actions">
                   <button
@@ -164,7 +208,7 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
                     data-testid={`project-season-delete-${season.id}`}
                     onClick={() => run(deleteSeason(projectId, season.id))}
                   >
-                    {t('projects.seasons.delete')}
+                    {say.delete()}
                   </button>
                 </div>
               </div>
@@ -219,7 +263,7 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
                           )
                         }
                       >
-                        {t('projects.seasons.moveToSeason')} {other.name}
+                        {say.moveToSeason()} {other.name}
                       </button>
                     ))}
                   <button
@@ -237,7 +281,7 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
                     data-testid={`project-episode-delete-${episode.id}`}
                     onClick={() => run(deleteEpisode(projectId, season.id, episode.id))}
                   >
-                    {t('projects.seasons.deleteEpisode')}
+                    {say.deleteEpisode()}
                   </button>
                   {editing === episode.id ? (
                     <ScriptEditor
@@ -257,6 +301,7 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
             {addingTo === season.id ? (
               <EpisodeForm
                 busy={busy}
+                addLabel={say.addEpisode()}
                 onCancel={() => setAddingTo(null)}
                 onSubmit={(title, synopsis) => {
                   setBusy(true)
@@ -279,7 +324,7 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
                 data-testid={`project-episode-add-${season.id}`}
                 onClick={() => setAddingTo(season.id)}
               >
-                {t('projects.seasons.addEpisode')}
+                {say.addEpisode()}
               </button>
             )}
           </li>
@@ -301,7 +346,7 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
             .catch(failing)
         }}
       >
-        <h3>{t('projects.seasons.add')}</h3>
+        <h3>{say.add()}</h3>
         <label className="field">
           <span className="field__label">{t('projects.seasons.name')}</span>
           <input
@@ -314,7 +359,7 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
           />
         </label>
         <button type="submit" disabled={busy} data-testid="project-season-new-save">
-          {busy ? t('projects.seasons.saving') : t('projects.seasons.save')}
+          {busy ? t('projects.seasons.saving') : say.save()}
         </button>
       </form>
     </section>
@@ -323,10 +368,13 @@ export function ProjectSeasons({ projectId }: { projectId: string }) {
 
 function EpisodeForm({
   busy,
+  addLabel,
   onSubmit,
   onCancel,
 }: {
   busy: boolean
+  /** "Add an episode" or "Add a scene", from the project's own vocabulary. */
+  addLabel: string
   onSubmit: (title: string, synopsis: string | null) => void
   onCancel: () => void
 }) {
@@ -366,7 +414,7 @@ function EpisodeForm({
         />
       </label>
       <button type="submit" disabled={busy} data-testid="project-episode-new-save">
-        {t('projects.seasons.saveEpisode')}
+        {addLabel}
       </button>
       <button type="button" onClick={onCancel} data-testid="project-episode-new-cancel">
         {t('projects.seasons.closeScript')}

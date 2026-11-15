@@ -256,10 +256,16 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
       />
 
       {/*
-       * Seasons and episodes (#145), for a Series. The API answers 404 for another kind, so drawing the panel there
-       * would show an author a failure for a feature their project does not have.
+       * The same structure under two names: a Series' seasons of episodes (#145) and a Film's sequences of scenes
+       * (#146). The API answers 404 for any other kind, so drawing the panel there would show an author a failure for
+       * a feature their project does not have.
        */}
-      {project.kind === ProjectKind.Series ? <ProjectSeasons projectId={project.id} /> : null}
+      {project.kind === ProjectKind.Series || project.kind === ProjectKind.Film ? (
+        <ProjectSeasons
+          projectId={project.id}
+          words={project.kind === ProjectKind.Film ? 'sequences' : 'seasons'}
+        />
+      ) : null}
     </div>
   )
 }

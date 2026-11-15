@@ -38,6 +38,7 @@ public static class ProjectEntityEndpoints
         group.MapGet("/{entityId:guid}", GetAsync).WithName("GetProjectEntity");
         group.MapPut("/{entityId:guid}", UpdateAsync).WithName("UpdateProjectEntity");
         group.MapDelete("/{entityId:guid}", DeleteAsync).WithName("DeleteProjectEntity");
+        group.MapGet("/{entityId:guid}/revisions", RevisionsAsync).WithName("ListProjectEntityRevisions");
 
         return endpoints;
     }
@@ -218,6 +219,12 @@ public static class ProjectEntityEndpoints
         db.EntityFieldValues.AddRange(prepared.Rows);
 
         await db.SaveChangesAsync(cancellationToken);
+
+        // The entry's history, through the same capture the lore uses (#146). Inside the transaction, so an edit that
+        // fails leaves no version behind claiming it happened.
+        await EntityRevisions.CaptureAsync(
+            db, entityId, EntityRevisionKind.Edited, restoredFromRevisionId: null, principal.RequireUserId(), cancellationToken);
+
         await transaction.CommitAsync(cancellationToken);
 
         var detail = await EntityEndpoints.LoadDetailAsync(
@@ -263,6 +270,58 @@ public static class ProjectEntityEndpoints
         }
 
         return Results.NoContent();
+    }
+
+    /// <summary>
+    /// An entry's saved versions, newest first (#146). The same rows and the same shape the lore's history uses, read
+    /// through the project so a stranger learns nothing and an entry of another project is not found.
+    ///
+    /// <para>Reading history needs the universe's <c>ManageHistory</c>, as it does for the lore: a saved version holds
+    /// what an entry used to say, which is more than its current state discloses.</para>
+    /// </summary>
+    private static async Task<IResult> RevisionsAsync(
+        Guid projectId,
+        Guid entityId,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var (project, denied) = await ReadableAsync(db, projectId, principal, cancellationToken);
+
+        if (denied is not null)
+        {
+            return denied;
+        }
+
+        if (await UniverseAccess.DenyAsync(
+                db, project!.UniverseId, principal, UniverseCapability.ManageHistory, cancellationToken) is { } refused)
+        {
+            return refused;
+        }
+
+        if (!await db.Entities.IgnoreQueryFilters().AnyAsync(
+                entry => entry.Id == entityId && entry.ProjectId == projectId && entry.DeletedAt == null,
+                cancellationToken))
+        {
+            return Results.NotFound();
+        }
+
+        var revisions = await db.EntityRevisions.AsNoTracking()
+            .Where(revision => revision.EntityId == entityId)
+            .OrderByDescending(revision => revision.Number)
+            .Select(revision => new EntityRevisionSummary(
+                revision.Id,
+                revision.Number,
+                revision.Kind,
+                revision.Changes,
+                revision.Name,
+                revision.CanonStatus,
+                revision.RestoredFromRevisionId,
+                revision.CreatedAt,
+                db.Users.Where(user => user.Id == revision.ActorUserId).Select(user => user.UserName).FirstOrDefault()))
+            .ToListAsync(cancellationToken);
+
+        return Results.Ok(revisions);
     }
 
     /// <summary>
