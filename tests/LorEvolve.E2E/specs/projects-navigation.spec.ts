@@ -237,7 +237,7 @@ test.describe('Projects navigation', () => {
     expect(overflow).toBeLessThanOrEqual(0)
   })
 
-  test('a story an author already has is a Writing Project, and leads to the story', async ({
+  test('a story an author already has is a Writing Project, and opens its project shell like any other', async ({
     page,
   }) => {
     await signUp(page)
@@ -250,16 +250,85 @@ test.describe('Projects navigation', () => {
     await expect(row).toContainText(existing.title)
     await expect(row).toContainText('Writing')
 
-    // It leads to the story, at the address the story has always had: nothing of it was copied anywhere (#140).
+    // It opens the project shell, whose Structure is the story's own page: nothing of it was copied anywhere (#140),
+    // and since #194 it is reached the way every other project is.
     await row.click()
-    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}/stories/${existing.id}`))
+    await expect(page).toHaveURL(
+      new RegExp(`/app/universes/${world.id}/projects/${existing.id}/structure`),
+    )
 
-    // And in the universe's own sidebar, as one link rather than a group of its own.
+    await expect(page.getByTestId('project-tabs')).toBeVisible()
+    await expect(page.getByTestId('story-title')).toHaveText(existing.title)
+
+    // And in the universe's own sidebar, a row that expands like every other project's, to the story's three views.
     await page.goto(`/app/universes/${world.id}`)
     const link = page.getByTestId(`project-link-${existing.id}`)
     await expect(link).toContainText(existing.title)
-    await expect(page.getByTestId(`project-toggle-${existing.id}`)).toHaveCount(0)
+    await page.getByTestId(`project-toggle-${existing.id}`).click()
+    const pages = page.getByTestId(`project-pages-${existing.id}`)
+    await expect(pages.getByRole('link')).toHaveText(['Structure', 'Manuscript', 'Ideas'])
     await link.click()
-    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}/stories/${existing.id}`))
+    await expect(page).toHaveURL(
+      new RegExp(`/app/universes/${world.id}/projects/${existing.id}/structure`),
+    )
+  })
+
+  test('every address a story had still opens the same screen, under its project', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const existing = await story(page, world.id, unique('The Salt Road '))
+    const scene = await api<{ id: string; title: string }>(
+      page,
+      'POST',
+      `/api/universes/${world.id}/stories/${existing.id}/scenes`,
+      {
+        title: unique('Crossing '),
+        summary: null,
+        notes: null,
+        povEntityId: null,
+        chronology: null,
+        entityIds: [],
+      },
+    )
+    const old = `/app/universes/${world.id}/stories/${existing.id}`
+    const next = `/app/universes/${world.id}/projects/${existing.id}`
+
+    // Each old address, and where it lands: the same view, inside the project shell (#194).
+    const cases: Array<[string, string]> = [
+      [old, `${next}/structure`],
+      [`${old}/plot`, `${next}/structure`],
+      [`${old}/ideas`, `${next}/ideas`],
+      [`${old}/manuscript/${scene.id}`, `${next}/manuscript/${scene.id}`],
+    ]
+    for (const [from, to] of cases) {
+      await page.goto(from)
+      await expect(page).toHaveURL(new RegExp(`${to}$`))
+      await expect(page.getByTestId('project-tabs')).toBeVisible()
+      await expect(page.getByTestId('story-title')).toHaveText(existing.title)
+    }
+
+    // A manuscript link to one scene still opens that scene, and the query and the hash travel with the redirect.
+    await page.goto(`${old}/manuscript/${scene.id}?from=search#scene-${scene.id}`)
+    await expect(page).toHaveURL(
+      new RegExp(`${next}/manuscript/${scene.id}\\?from=search#scene-${scene.id}$`),
+    )
+    await expect(page.getByTestId('manuscript-scene-title')).toHaveText(scene.title)
+    await page.goto(`${old}#scene-${scene.id}`)
+    await expect(page).toHaveURL(new RegExp(`${next}/structure#scene-${scene.id}$`))
+
+    // The project's own tabs are the story's three views, and the story's page is the one it always was.
+    await page.getByTestId('projecttab-manuscript').click()
+    await expect(page).toHaveURL(new RegExp(`${next}/manuscript/${scene.id}$`))
+    await expect(page.getByTestId('manuscript-scene-title')).toHaveText(scene.title)
+    await page.getByTestId('projecttab-ideas').click()
+    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this story yet.')
+
+    // The bare project address, and a view a story does not have, land on the Structure.
+    await page.goto(next)
+    await expect(page).toHaveURL(new RegExp(`${next}/structure$`))
+    await page.goto(`${next}/entities`)
+    await expect(page).toHaveURL(new RegExp(`${next}/structure$`))
   })
 })

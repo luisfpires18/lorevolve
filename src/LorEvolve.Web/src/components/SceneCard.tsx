@@ -22,6 +22,7 @@ import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
 import type { Chronology } from '../chronology/types'
 import { chapterLabel, unchaptered } from '../stories/format'
 import type { Scene } from '../stories/types'
+import { storyProjectPath } from '../projects/sections'
 
 /** A container a scene can be moved into: a chapter, or Unchaptered when `chapterId` is null. */
 export interface MoveTarget {
@@ -176,7 +177,7 @@ export function SceneCard({
         ) : null}
         <Link
           className="button button--text"
-          to={`/app/universes/${universeId}/stories/${scene.storyId}/manuscript/${scene.id}`}
+          to={storyProjectPath(universeId, scene.storyId, 'manuscript', scene.id)}
           aria-describedby={titleId}
           data-testid="scene-write"
         >

@@ -14,16 +14,19 @@ export function ProjectShell({
   projectId,
   universeId,
   sections,
+  story = false,
   children,
 }: {
   projectId: string
   /** Set inside a universe's workspace, so each tab keeps the author inside that universe's frame. */
   universeId?: string
   sections: readonly ProjectSection[]
+  /** A Story shown as a Writing Project, whose page carries its own bar of the same views (#194). */
+  story?: boolean
   children: ReactNode
 }) {
   return (
-    <div className="projectframe">
+    <div className={story ? 'projectframe projectframe--story' : 'projectframe'}>
       <nav className="projecttabs" aria-label={t('projects.tabs.label')} data-testid="project-tabs">
         <ul className="projecttabs__list">
           {sections.map((section) => (

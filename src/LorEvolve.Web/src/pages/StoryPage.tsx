@@ -71,6 +71,7 @@ import {
 import { StatusBadge } from '../components/StatusBadge'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { confirmAction } from '../lib/confirm'
+import { projectPath } from '../projects/sections'
 
 type LoadState =
   | { kind: 'loading' }
@@ -302,7 +303,8 @@ function StoryView({ view }: { view: StoryViewName }) {
   const opensOn = (groups.unarced[0] ?? groups.arcs[0]?.chapters[0])?.id ?? null
   const numbers = chapterNumbers(arcs, chapters)
   const labels = new Map(chapterChoices(arcs, chapters).map((choice) => [choice.id, choice.label]))
-  const storyPath = `/app/universes/${universe.id}/stories/${story.id}`
+  // The story's project views since #194; the old story address redirects there.
+  const storyPath = projectPath(story.id, '', universe.id)
   // The universe's one timeline, narrowed to this story: its dated scenes and the moments linked to it.
   const timelinePath = `/app/universes/${universe.id}/timeline?story=${story.id}`
 
@@ -902,7 +904,12 @@ function StoryView({ view }: { view: StoryViewName }) {
             aria-label={t('stories.page.views')}
             data-testid="story-views"
           >
-            <NavLink to={storyPath} end className="views__link" data-testid="story-view-scenes">
+            <NavLink
+              to={`${storyPath}/structure`}
+              end
+              className="views__link"
+              data-testid="story-view-scenes"
+            >
               {t('stories.page.viewStructure')}
             </NavLink>
             <NavLink

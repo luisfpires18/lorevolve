@@ -86,9 +86,25 @@ const SECTIONS_BY_KIND: Record<ProjectDetail['kind'], readonly ProjectSection[]>
   [ProjectKind.Comic]: [overview, structure, script, entities, ideas],
 }
 
-/** The sections a project of this kind offers, in order. */
-export function projectSections(kind: ProjectDetail['kind']): readonly ProjectSection[] {
+// A Story shown as a Writing Project has the story's own three views and nothing else: it is not a stored project, so
+// it holds no project types or entries, and its Overview would be a second header over the story's (#194).
+const STORY_SECTIONS: readonly ProjectSection[] = [structure, manuscript, ideas]
+
+/** The sections a project of this kind offers, in order; a story-backed project offers the story's views. */
+export function projectSections(
+  kind: ProjectDetail['kind'],
+  storyId?: string | null,
+): readonly ProjectSection[] {
+  if (storyId) return STORY_SECTIONS
   return SECTIONS_BY_KIND[kind] ?? SECTIONS_BY_KIND[ProjectKind.Writing]
+}
+
+/**
+ * The universe whose frame a project opens in. A story belongs to exactly one universe and is only ever read through
+ * it, so a story-backed project opens inside that universe even from the account-level lists (#194).
+ */
+export function projectFrameUniverse(project: ProjectDetail, universeId?: string) {
+  return project.storyId && project.universe ? project.universe.id : universeId
 }
 
 /** A section's name, in the current language. */
@@ -142,15 +158,28 @@ export function projectPath(projectId: string, segment = '', universeId?: string
 }
 
 /**
+ * A story's address, as the view of its Writing Project (#194). The story's page and the screens beside it link here
+ * directly rather than through the old story address, because a redirect between two routes would start the story's
+ * page again, and moving between its views is meant to keep it.
+ */
+export function storyProjectPath(
+  universeId: string,
+  storyId: string,
+  view: 'structure' | 'manuscript' | 'ideas' = 'structure',
+  sceneId?: string,
+) {
+  const path = projectPath(storyId, view, universeId)
+  return sceneId ? `${path}/${sceneId}` : path
+}
+
+/**
  * Where one row of the projects list leads.
  *
- * A Story shown as a Writing Project leads to the story, at the address it has always had: its content is the story's
- * and nothing was copied anywhere else (#140). Anything else leads to the project's own page.
+ * #140 sent a Story shown as a Writing Project to the story's own address, because the project shell did not exist yet
+ * and the story's screen was the only place its content could be read. #194 reverses that: every kind now opens its
+ * project shell the same way, and a story-backed project's shell renders the story's own views, so its content is
+ * still the story's and nothing was copied anywhere (#140). The story's old addresses redirect here.
  */
 export function projectRowPath(project: ProjectDetail, universeId?: string) {
-  if (project.storyId && project.universe) {
-    return `/app/universes/${project.universe.id}/stories/${project.storyId}`
-  }
-
-  return projectPath(project.id, '', universeId)
+  return projectPath(project.id, '', projectFrameUniverse(project, universeId))
 }

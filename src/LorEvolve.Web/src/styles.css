@@ -18737,6 +18737,15 @@ details.reviewsection > .reviewsection__list {
   .sidebar__projectrow .sidebar__disclosure {
     display: none;
   }
+
+  /*
+   * A story-backed project's three views are the story's own, and the story's page already carries them in its view
+   * bar (#194). On a phone two bars of the same three links would push the manuscript off the first screen, so the
+   * project's copy steps aside there, as the sidebar's does.
+   */
+  .projectframe--story > .projecttabs {
+    display: none;
+  }
 }
 
 @media (min-width: 60rem) {

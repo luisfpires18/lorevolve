@@ -173,7 +173,7 @@ test.describe('story workspace', () => {
     )
 
     await views.getByRole('link', { name: 'Manuscript' }).click()
-    await page.waitForURL(new RegExp(`/stories/${storyId}/manuscript$`))
+    await page.waitForURL(new RegExp(`/projects/${storyId}/manuscript$`))
     await expect(views.getByRole('link', { name: 'Manuscript' })).toHaveAttribute(
       'aria-current',
       'page',
@@ -183,10 +183,10 @@ test.describe('story workspace', () => {
 
     // The browser's own history walks the views back and forth, and a reload keeps each where it is.
     await page.goBack()
-    await page.waitForURL(new RegExp(`/stories/${storyId}$`))
+    await page.waitForURL(new RegExp(`/projects/${storyId}/structure$`))
     await expect(page.getByTestId('scenes-empty')).toBeVisible()
     await page.goForward()
-    await page.waitForURL(new RegExp(`/stories/${storyId}/manuscript$`))
+    await page.waitForURL(new RegExp(`/projects/${storyId}/manuscript$`))
     await page.reload()
     await expect(page.getByTestId('manuscript-empty')).toBeVisible()
 
@@ -204,7 +204,7 @@ test.describe('story workspace', () => {
 
     // An old link to the retired Plot view lands on the story (ADR 0070).
     await page.goto(`${storyUrl}/plot`)
-    await page.waitForURL(new RegExp(`/stories/${storyId}$`))
+    await page.waitForURL(new RegExp(`/projects/${storyId}/structure$`))
 
     // The first useful thing is a scene, straight from the empty state.
     await page.getByTestId('new-scene').click()
@@ -241,7 +241,7 @@ test.describe('story workspace', () => {
     ])
 
     const storyUrl = `/app/universes/${universeId}/stories/${storyId}`
-    const atCouncil = new RegExp(`/stories/${storyId}#scene-${council}$`)
+    const atCouncil = new RegExp(`/projects/${storyId}/structure#scene-${council}$`)
     const editor = page.getByTestId('manuscript-editor')
 
     // Write, on the scene itself, opens that scene's manuscript at the one address it has.
@@ -487,7 +487,7 @@ test.describe('the Structure tab', () => {
 
     // A scene is still a link away, at the address it had: its own Write link, from its card.
     await page.locator(`#scene-${sceneId} [data-testid="scene-write"]`).click()
-    await page.waitForURL(new RegExp(`/stories/${storyId}/manuscript/${sceneId}$`))
+    await page.waitForURL(new RegExp(`/projects/${storyId}/manuscript/${sceneId}$`))
 
     // And the other two views keep theirs.
     await page.goto(`${storyUrl}/manuscript`)

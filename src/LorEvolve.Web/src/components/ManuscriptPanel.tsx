@@ -7,6 +7,7 @@ import { unchaptered as unchapteredLabel } from '../stories/format'
 import { chapterChoices, readingOrder, scenesIn } from '../stories/structure'
 import type { Scene, StoryDetail } from '../stories/types'
 import { EmptyState } from './EmptyState'
+import { projectPath } from '../projects/sections'
 
 interface ManuscriptPanelProps {
   universeId: string
@@ -91,7 +92,8 @@ export function ManuscriptPanel({
   const scenes = readingOrder(arcs, chapters, story.scenes)
   const choices = chapterChoices(arcs, chapters)
   const labels = new Map(choices.map((choice) => [choice.id, choice]))
-  const storyPath = `/app/universes/${universeId}/stories/${story.id}`
+  // The story's project views since #194; the old story address redirects there.
+  const storyPath = projectPath(story.id, '', universeId)
   const hasChapters = chapters.length > 0
 
   if (scenes.length === 0) {
@@ -101,7 +103,7 @@ export function ManuscriptPanel({
         title={t('manuscript.panel.empty.title')}
         hint={tx('manuscript.panel.empty.hint', {
           link: (
-            <Link to={storyPath} data-testid="manuscript-empty-scenes">
+            <Link to={`${storyPath}/structure`} data-testid="manuscript-empty-scenes">
               {t('manuscript.panel.empty.link')}
             </Link>
           ),
