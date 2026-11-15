@@ -116,6 +116,32 @@ its JSON shown read-only. Labels go into both `en` and `pt-PT` dictionaries if t
 6. ADR 0072 gets a short "Proposed through review" addendum (or a new ADR if the owner prefers), and `SYSTEMS.md`
    names the new partials.
 
+## Files and what each step reuses
+
+All paths under `src/LorEvolve.Api/` unless marked.
+
+| Step | File | Change | Reuses |
+| --- | --- | --- | --- |
+| 1 | `Features/Systems/SystemRuleEndpoints.cs` | `internal static CreateCoreAsync` / `UpdateCoreAsync` taking `(db, universeId, id?, SystemRuleRequest)`; `CreateAsync` / `UpdateAsync` keep only the `WorldLogicAccess.DenyChangeAsync` check and call them. `Validate`, `Refuse`, `DependencyProblemAsync` (with `ReachesItself` and `Depth`) become `internal` so staging calls the same checks | shape of `WorldRuleEndpoints.CreateCoreAsync` / `UpdateCoreAsync`, which `AiChangeCommit` already calls |
+| 1 | `Features/Systems/SystemEndpoints.cs` | `internal static CreateCoreAsync`, `UpdateCoreAsync`, `LinkCoreAsync`, `UnlinkCoreAsync`; handlers call them | `DetailAsync`, `Changed`, `Taken` stay as they are |
+| 1 | `Features/Systems/WorldLogicAccess.cs` | none | `IsProjectOfUniverseAsync` for the `projectId` check at staging, `Normalize` for name clashes |
+| 2 | `Features/AiChanges/AiChangeModel.cs` | `SystemRule = 21`, `LoreSystem = 22` | |
+| 2 | `Data/Migrations/<stamp>_AllowWorldLogicProposals.cs` (+ Designer, `LorEvolveDbContextModelSnapshot.cs`) | `CK_AiChangeOperations_Resource` to `0..22`, `Down` back to `0..20` | `20261115094834_AllowProjectEntryProposals.cs` as the template |
+| 3 | `Features/AiChanges/AiChangeContracts.cs` | `SystemRuleValues`, `LoreSystemValues` (`ruleIds` as ids or refs) beside `WorldRuleValues` | |
+| 3 | `Features/AiChanges/AiChangeStaging.cs` | aliases `system_rule` / `world_logic_rule` and `system` in the resource switch (line 256), dispatch (line 307) | |
+| 3 | new `Features/AiChanges/AiChangeStaging.WorldLogic.cs`, `AiChangeChecks.WorldLogic.cs`, `AiChangeSnapshots.WorldLogic.cs` | staging, checks (calls step 1's `Refuse`, `Validate`, `DependencyProblemAsync`), before snapshots with `Version` | `AiChangeStaging.Content.cs` `ProjectEntryAsync`, `AiChangeChecks.Content.cs`, `AiChangeSnapshots.Content.cs` as the pattern |
+| 3 | `Features/AiChanges/AiChangeChecks.cs` | Remove refused for both resources | existing per-resource action table |
+| 3 | `Features/AiChanges/AiChangeCommit.cs` | two `case` arms beside `WorldRuleValues` (line 439): rule through `SystemRuleEndpoints.*CoreAsync`; System through `SystemEndpoints.*CoreAsync`, then the rule-list difference through `LinkCoreAsync` / `UnlinkCoreAsync`; refs resolved as `DependsOn` already resolves them (line 852) | `Made<T>`, `Done` |
+| 3 | `Features/AiChanges/AiChangeCatalog.cs` | Systems and rules as options, names at line 423 | the `WorldRules` options query (line 248) |
+| 3 | `Features/AiChanges/AiChangeViews.cs` | title (line 205), before/after (line 259), editable (line 524), label (line 670) | |
+| 4 | `Features/Mcp/LorEvolveMcpProposalTools.cs`, `Features/Mcp/LorEvolveMcpWorldLogicTools.cs` | `propose_changes` description (line 90); `Instructions` text | |
+| 5 | `docs/testing/mcp-capability-matrix.md`, `tests/LorEvolve.Api.Tests/McpCapabilityMatrixTests.cs` | row 52 and the limitation note | |
+| 6 | `docs/architecture/decisions/0072-generic-condition-and-system-semantics.md`, `SYSTEMS.md` | addendum; new partials | |
+| tests | new `tests/LorEvolve.Api.Tests/McpWorldLogicProposalTests.cs` | cases below | `McpTestClient.cs`, `AiChangeTestClient.cs`, the setup in `McpProjectEntityToolTests.cs` |
+
+`src/LorEvolve.Web/src/aiChanges/` (`api.ts`, `diff.ts`, `words.ts`) is touched only if a new resource name needs a
+label there; checked in step 3.
+
 ## Validation
 
 - New `McpWorldLogicProposalTests`:
@@ -133,6 +159,24 @@ its JSON shown read-only. Labels go into both `en` and `pt-PT` dictionaries if t
 - Release build; pending-migration check (a migration is owed).
 - No UI change, so no Playwright spec unless the review rows need web changes; then the AI Changes spec.
 - CI runs both full suites on the PR.
+
+Commands, from the repository root:
+
+```bash
+dotnet build LorEvolve.slnx -c Release
+```
+
+```bash
+dotnet tool restore
+dotnet ef migrations has-pending-model-changes --project src/LorEvolve.Api --configuration Release --no-build
+```
+
+```bash
+dotnet test tests/LorEvolve.Api.Tests -c Release --no-build --filter "FullyQualifiedName~McpWorldLogicProposalTests|FullyQualifiedName~McpWorldLogicToolTests|FullyQualifiedName~WorldLogicSystemTests|FullyQualifiedName~McpCapabilityMatrixTests|FullyQualifiedName~McpProposalTests|FullyQualifiedName~McpToolTests|FullyQualifiedName~AiChange"
+```
+
+Pass means: the build has no errors, the migration check says no pending changes, and the test run reports
+`Failed: 0`.
 
 ## Owner decisions
 
