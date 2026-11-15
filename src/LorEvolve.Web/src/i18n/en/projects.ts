@@ -94,12 +94,10 @@ const projects = {
     starterHint: 'A starting point. Rename them, delete them, or make your own.',
     starterApply: 'Add these types',
     starterApplying: 'Adding',
-    addType: 'Add a type',
-    typeName: 'Name',
-    typeSaving: 'Adding',
-    rename: 'Rename',
-    renameSave: 'Save name',
-    deleteType: 'Delete type',
+    iconHint:
+      'Optional, and only a picture: it marks the type on its card. Nothing is chosen for you from the name.',
+    parentHint:
+      'Organises the types: a nested type sits under its parent and has every field of the types above it.',
     entryCount: {
       one: '1 entry',
       other: '{count} entries',

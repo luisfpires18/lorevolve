@@ -3,24 +3,35 @@ import { Link, useSearchParams, type To } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Layers } from 'lucide-react'
 import { useI18n } from '../i18n'
 import type { EntityTypeGroup } from '../lore/types'
-import { branchIds, type TypeNode, type TypeTree } from '../lore/typeTree'
+import { branchIds, type TreeType, type TypeNode, type TypeTree } from '../lore/typeTree'
 import { TypeIcon } from './TypeIcon'
 
 /** How many card shapes stand in for the catalog while the types are read. */
 const SKELETON_CARDS = 6
 
 /**
+ * What a card reads of a type. A lore type has it as it is; a project's own type (#144) is the same card, its entry count
+ * read as `listedEntityCount`, so a game's Entities screen is this catalog rather than a second one.
+ */
+export type CatalogType = TreeType & {
+  description: string | null
+  icon: string | null
+  accentColor: string | null
+  listedEntityCount: number
+}
+
+/**
  * The entries a type's card counts: what the type's list shows when the card is opened - its own and those of every type
  * nested beneath it, neither in the Trash nor archived. Summed from each type's `listedEntityCount`, which the universe's
  * types list already carries, so no card makes a request of its own.
  */
-function listedEntries(node: TypeNode, byId: Map<string, TypeNode>) {
+function listedEntries(node: TypeNode<CatalogType>, byId: Map<string, TypeNode<CatalogType>>) {
   let count = 0
   for (const id of branchIds(node)) count += byId.get(id)?.type.listedEntityCount ?? 0
   return count
 }
 
-function TypeCard({ node, count, href }: { node: TypeNode; count: number; href: To }) {
+function TypeCard({ node, count, href }: { node: TypeNode<CatalogType>; count: number; href: To }) {
   const { t, tn, tx } = useI18n()
   const nameId = useId()
   const detailsId = useId()
@@ -90,8 +101,9 @@ export function LoreCatalog({
   typeHref,
   groupHref,
   typesUrl,
+  countBranch = true,
 }: {
-  tree: TypeTree
+  tree: TypeTree<CatalogType>
   groups: EntityTypeGroup[]
   /** The group the cards are narrowed to, or null for every type. */
   browsing: EntityTypeGroup | null
@@ -99,6 +111,11 @@ export function LoreCatalog({
   typeHref: (typeId: string) => To
   groupHref: (groupId: string) => To
   typesUrl: string
+  /**
+   * Whether a card counts its nested types' entries too. Lore's type list shows them, so it does; a project's type list
+   * shows only the type's own (#196), so a project's card counts only those and says what opening it will show.
+   */
+  countBranch?: boolean
 }) {
   const { t, tn, tx } = useI18n()
   const headingId = useId()
@@ -228,7 +245,7 @@ export function LoreCatalog({
               <li key={node.type.id} className={classes.length > 0 ? classes.join(' ') : undefined}>
                 <TypeCard
                   node={node}
-                  count={listedEntries(node, tree.byId)}
+                  count={countBranch ? listedEntries(node, tree.byId) : node.type.listedEntityCount}
                   href={typeHref(node.type.id)}
                 />
                 {/* Inside the card's lower corner, beside the link rather than in it: a button can't sit in a link. */}
