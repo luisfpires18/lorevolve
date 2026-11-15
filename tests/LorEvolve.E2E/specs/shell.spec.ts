@@ -198,7 +198,7 @@ test.describe('the shell', () => {
       const lore = await at('workspace-lore')
       const maps = await at('workspace-maps')
       const ideas = await at('workspace-ideas')
-      const projects = await at('projects-all')
+      const projects = await at('projects-group-toggle')
       expect(Math.abs(lore.x - overview.x)).toBeLessThanOrEqual(1)
       expect(lore.y).toBeGreaterThan(overview.y)
       expect(Math.abs(maps.x - overview.x)).toBeLessThanOrEqual(1)

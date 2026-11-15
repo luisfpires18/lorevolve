@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { ChevronRight, FolderOpen, Plus } from 'lucide-react'
-import { listProjects } from '../projects/api'
+import { ChevronRight, Plus } from 'lucide-react'
+import { listAllProjects } from '../projects/api'
 import {
   kindLabel,
   projectPath,
@@ -13,17 +13,11 @@ import type { ProjectDetail } from '../projects/types'
 import { t } from '../i18n'
 
 /**
- * How many projects the sidebar lists, most recently updated first, before the rest are left to All projects (#198).
- * The issue proposed eight and the owner has not confirmed it, so it lives here alone: changing it is this one line.
- */
-export const SIDEBAR_PROJECT_LIMIT = 8
-
-/**
  * The project an address is in, or null anywhere else. Both of a project's frames count, the account-level
  * `/app/projects/<id>` and the universe-scoped `/app/universes/<universeId>/projects/<id>`, because the group is drawn
  * in both and the project being read is the one that starts expanded in either. Anything below the project, as its
  * later pages will be, is still that project. A story's own address counts too, because a story is the Writing Project
- * it is listed as (#140), and the list must keep the one being read even when it is past the bound (#198).
+ * it is listed as (#140).
  */
 function projectInPath(pathname: string) {
   const match =
@@ -35,11 +29,8 @@ function projectInPath(pathname: string) {
 }
 
 /**
- * The projects an author can reach, as a group of the sidebar: All projects, the projects themselves, and New project.
- *
- * The list is bounded: the `SIDEBAR_PROJECT_LIMIT` most recently updated, plus the project the author is in when it is
- * older than those, so forty projects still draw a sidebar that can be read and a request that stays small (#198). The
- * rest are one click away under All projects. The group's own heading folds the whole group away.
+ * The projects an author can reach, as a group of the sidebar: every project, then New project. The group's own
+ * heading folds the whole group away, so it needs no separate All projects row (#231).
  *
  * One project expands to its own pages. Only the project the author is in is expanded to begin with, because a list
  * where everything is open is a list nobody can scan; opening another is a click, and what was opened by hand stays
@@ -60,10 +51,7 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
 
   useEffect(() => {
     const controller = new AbortController()
-    listProjects(
-      { universeId, limit: SIDEBAR_PROJECT_LIMIT, include: active ?? undefined },
-      controller.signal,
-    )
+    listAllProjects({ universeId }, controller.signal)
       .then((next) => {
         setProjects(next)
         // What was opened by hand is kept only for rows still listed, so the record never outgrows the list.
@@ -111,28 +99,6 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
         aria-labelledby="sidebar-group-projects"
         hidden={!groupOpen}
       >
-        <li>
-          {/*
-           * A project's own pages live at one address, inside the universe it belongs to (#199). Only the list is
-           * shown where the author is: inside a universe it is that universe's list, in the workspace it is
-           * everything, and every row opens in its own universe.
-           */}
-          <NavLink
-            className="sidebar__link"
-            to={universeId ? `/app/universes/${universeId}/projects` : '/app/projects'}
-            end
-            data-testid="projects-all"
-          >
-            <FolderOpen
-              className="sidebar__icon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            {t('projects.nav.all')}
-          </NavLink>
-        </li>
-
         {rows.map((project) => {
           const isOpen = opened[project.id] ?? project.id === active
           const panelId = `${listId}-${project.id}`
