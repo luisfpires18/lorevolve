@@ -91,7 +91,7 @@ public sealed class IdeaMigrationTests : IDisposable
             Assert.Equal(0, await db.Ideas.CountAsync());
 
             Assert.Equal(
-                ["AspNetUsers.OwnerId:CASCADE", "Universes.UniverseId:SET NULL"],
+                ["AspNetUsers.OwnerId:CASCADE", "CreativeProjects.ProjectId:SET NULL", "Universes.UniverseId:SET NULL"],
                 (await ForeignKeys(db, "Ideas")).Order(StringComparer.Ordinal));
             Assert.Equal(
                 ["Entities.EntityId:CASCADE", "Ideas.IdeaId:CASCADE"],

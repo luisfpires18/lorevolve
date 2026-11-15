@@ -1,5 +1,6 @@
 using LorEvolve.Api.Features.Auth;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Stories;
 using LorEvolve.Api.Features.Universes;
 
@@ -34,6 +35,16 @@ public sealed class Idea
     public Guid? UniverseId { get; set; }
 
     public Universe? Universe { get; set; }
+
+    /// <summary>
+    /// The project this idea is a note for, or null (#197). Only ever set together with <see cref="UniverseId"/>, and always
+    /// a project inside that same universe: a project idea is a universe idea with a narrower home, so everything that
+    /// holds for a universe idea (references, backup, the Trash) holds for it unchanged. When the project goes, the idea
+    /// stays, released from it exactly as it is from a deleted universe.
+    /// </summary>
+    public Guid? ProjectId { get; set; }
+
+    public CreativeProject? Project { get; set; }
 
     public required string Title { get; set; }
 

@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-r
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntries } from '../components/ProjectEntries'
+import { ProjectIdeas } from '../components/ProjectIdeas'
 import { ProjectSchema } from '../components/ProjectSchema'
 import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
@@ -273,11 +274,7 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
        * project's views, so a type added on the overview is in the entries the moment Entities opens.
        */}
       {section.pending ? (
-        <EmptyState
-          title={t('projects.ideas.empty')}
-          hint={t('projects.ideas.emptyHint')}
-          testId={`project-view-empty-${section.segment}`}
-        />
+        <ProjectIdeas project={project} />
       ) : section.segment === 'overview' ? (
         <ProjectSchema
           projectId={project.id}

@@ -47,6 +47,15 @@ public sealed class IdeaConfiguration : IEntityTypeConfiguration<Idea>
             .HasForeignKey(idea => idea.UniverseId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // The same association one level down: a project going never takes an idea with it.
+        builder.HasOne(idea => idea.Project)
+            .WithMany()
+            .HasForeignKey(idea => idea.ProjectId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // One project's ideas, and the foreign key.
+        builder.HasIndex(idea => new { idea.ProjectId, idea.DeletedAt, idea.UpdatedAt });
+
         // Every list starts from the account, says live or deleted, and reads newest first; the deleted list orders by
         // DeletedAt, which this index leads to as well.
         builder.HasIndex(idea => new { idea.OwnerId, idea.DeletedAt, idea.UpdatedAt });

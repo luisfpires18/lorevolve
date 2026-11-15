@@ -475,6 +475,15 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 47)
+        {
+            // An idea's project came in version 47 (#197).
+            foreach (var idea in payload["ideas"]?.AsArray() ?? [])
+            {
+                Drop(idea, "projectId");
+            }
+        }
+
         if (version < 38)
         {
             // A story's place in the list came in version 38; before it the list read by title.

@@ -56,6 +56,8 @@ interface Fields {
 interface Stored extends Fields {
   universe: IdeaUniverse | null
   updatedAt: string | null
+  /** The project the idea is a note for (#197). Not edited here: kept on every save while the universe stays. */
+  projectId: string | null
 }
 
 const count = (value: number) => numberFormat({}, 'en').format(value)
@@ -79,6 +81,7 @@ function storedFrom(idea: IdeaDetail): Stored {
     universe: idea.universe,
     references: idea.references,
     updatedAt: idea.updatedAt,
+    projectId: idea.project?.id ?? null,
   }
 }
 
@@ -201,6 +204,7 @@ export function IdeaEditor({
     universe: null,
     references: [],
     updatedAt: null,
+    projectId: null,
   }))
   const [draft, setDraft] = useState<Fields>(() => fieldsOf(stored))
   const [universes, setUniverses] = useState<UniverseSummary[] | null>(null)
@@ -334,6 +338,8 @@ export function IdeaEditor({
       universeId: sent.universeId,
       references: sent.references.map(({ kind, id }) => ({ kind, id })),
       expectedUpdatedAt,
+      // A project belongs to one universe, so moving the idea to another takes it off the project.
+      projectId: sent.universeId === stored.universeId ? stored.projectId : null,
     }
 
     try {

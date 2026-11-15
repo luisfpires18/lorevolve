@@ -460,7 +460,8 @@ internal static class AiChangeCommit
                     [.. idea.References.Select(reference => new IdeaReferenceInput(reference.Kind, Id(reference.Target)))],
                     work.Action == AiChangeAction.Create
                         ? null
-                        : await db.Ideas.Where(row => row.Id == target).Select(row => (DateTime?)row.UpdatedAt).SingleAsync(cancellationToken));
+                        : await db.Ideas.Where(row => row.Id == target).Select(row => (DateTime?)row.UpdatedAt).SingleAsync(cancellationToken),
+                    idea.ProjectId);
                 return work.Action == AiChangeAction.Create
                     ? Made<IdeaDetail>(await IdeaEndpoints.CreateCoreAsync(db, approverId, kept, cancellationToken), detail => detail.Id)
                     : Done(await IdeaEndpoints.UpdateCoreAsync(db, approverId, target!.Value, kept, cancellationToken), target);

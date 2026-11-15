@@ -54,6 +54,13 @@ export interface IdeaUniverse {
   isArchived: boolean
 }
 
+/** The project an idea is a note for (#197). Always a project of the idea's own universe. */
+export interface IdeaProject {
+  id: string
+  name: string
+  kind: number
+}
+
 /**
  * One reference, resolved: the target's name as it is now. `isInTrash` says the target, or what it sits in, is in the
  * Trash - shown, and not opened. The context members say where it is.
@@ -79,6 +86,7 @@ export interface IdeaSummary {
   createdAt: string
   updatedAt: string
   deletedAt: string | null
+  project: IdeaProject | null
 }
 
 export interface IdeaPage {
@@ -97,6 +105,7 @@ export interface IdeaDetail {
   references: IdeaReference[]
   createdAt: string
   updatedAt: string
+  project: IdeaProject | null
 }
 
 /** A save, whole. `expectedUpdatedAt` names the save this edit was written over; ignored on create. */
@@ -106,6 +115,8 @@ export interface IdeaInput {
   universeId: string | null
   references: { kind: IdeaReferenceKindValue; id: string }[]
   expectedUpdatedAt: string | null
+  /** Saved whole like the rest: left out, the idea is taken off its project. */
+  projectId?: string | null
 }
 
 /**
@@ -121,11 +132,17 @@ export type IdeasScope =
       universe: { id: string; name: string }
       story: { id: string }
     }
+  | {
+      kind: 'project'
+      universe: { id: string; name: string }
+      project: { id: string }
+    }
 
 /** Which ideas a list shows. `universeId` and `unassigned` are never both set; `storyId` needs `universeId`. */
 export interface IdeaQuery {
   universeId: string | null
   storyId?: string | null
+  projectId?: string | null
   unassigned: boolean
   deleted: boolean
   search: string

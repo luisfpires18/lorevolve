@@ -415,6 +415,51 @@ test.describe('ideas workspace', () => {
     await editor.context.close()
   })
 
+  test('a project’s Ideas: captured on the project, listed there only, and kept through an editor save', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const { universeId } = await seedWorld(page)
+    const project = {
+      name: 'Salt Road',
+      kind: 1,
+      lifecycle: 1,
+      subtype: null,
+      summary: '',
+      universeId,
+    }
+    const projectId = await post(page, '/api/projects', project)
+    const otherId = await post(page, '/api/projects', { ...project, name: 'Other' })
+    const projectPath = `/app/universes/${universeId}/projects/${projectId}`
+
+    await page.goto(`${projectPath}/ideas`)
+    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this project yet.')
+
+    await capture(page, 'A boss on the bridge')
+    await expect(row(page, 'A boss on the bridge')).toBeVisible()
+
+    // Another project of the same universe does not list it; the universe's ideas do.
+    await page.goto(`/app/universes/${universeId}/projects/${otherId}/ideas`)
+    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this project yet.')
+    await page.goto(`/app/universes/${universeId}/ideas`)
+    await expect(row(page, 'A boss on the bridge')).toBeVisible()
+
+    // A save in the editor keeps the idea on its project.
+    await page.goto(`${projectPath}/ideas`)
+    await row(page, 'A boss on the bridge').getByTestId('idea-open').click()
+    await page.waitForURL(new RegExp(`/app/universes/${universeId}/ideas/[0-9a-f-]+$`))
+    const ideaId = page.url().split('/').pop()!
+    await page.getByTestId('idea-body').fill('Two phases.')
+    await page.getByTestId('idea-save').click()
+    await expect
+      .poll(async () => {
+        const response = await page.request.get(`/api/ideas/${ideaId}`)
+        const saved = (await response.json()) as { body: string; project: { id: string } | null }
+        return [saved.body, saved.project?.id ?? null]
+      })
+      .toEqual(['Two phases.', projectId])
+  })
+
   for (const width of [390, 360]) {
     test(`a story’s three views and its capture fit a ${width}px phone`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 })

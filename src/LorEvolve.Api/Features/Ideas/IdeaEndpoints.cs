@@ -60,6 +60,8 @@ public static class IdeaEndpoints
     /// or to one of its scenes, arcs or beats - a projection of the references, never a column on the idea, and never read
     /// from a title or a body. It needs <paramref name="universeId"/>, and a story that is not live in one of the caller's
     /// universes answers 404, exactly as a missing one does. One idea is one row however many of the story's parts it names.
+    ///
+    /// <paramref name="projectId"/> narrows to one project's ideas, and combines with everything else.
     /// </summary>
     private static async Task<IResult> ListAsync(
         ClaimsPrincipal principal,
@@ -67,6 +69,7 @@ public static class IdeaEndpoints
         CancellationToken cancellationToken,
         [FromQuery] Guid? universeId = null,
         [FromQuery] Guid? storyId = null,
+        [FromQuery] Guid? projectId = null,
         [FromQuery] bool unassigned = false,
         [FromQuery] bool deleted = false,
         [FromQuery] string? search = null,
@@ -107,6 +110,13 @@ public static class IdeaEndpoints
         }
 
         var query = db.Ideas.AsNoTracking().Where(idea => idea.OwnerId == ownerId);
+
+        // One project's ideas (#197). The owner filter above already keeps this to the caller's own, so a project that is
+        // not theirs simply has none.
+        if (projectId is { } onlyProject)
+        {
+            query = query.Where(idea => idea.ProjectId == onlyProject);
+        }
 
         query = deleted ? query.Where(idea => idea.DeletedAt != null) : query.Where(idea => idea.DeletedAt == null);
 
@@ -161,6 +171,9 @@ public static class IdeaEndpoints
                         idea.Universe.Name,
                         idea.Universe.AccentColor,
                         idea.Universe.IsArchived),
+                Project = idea.ProjectId == null
+                    ? null
+                    : new IdeaProject(idea.Project!.Id, idea.Project.Name, idea.Project.Kind),
                 ReferenceCount = idea.EntityReferences.Count
                     + idea.StoryReferences.Count
                     + idea.SceneReferences.Count
@@ -181,7 +194,8 @@ public static class IdeaEndpoints
                 row.ReferenceCount,
                 Utc(row.CreatedAt),
                 Utc(row.UpdatedAt),
-                row.DeletedAt is { } deletedAt ? Utc(deletedAt) : null))
+                row.DeletedAt is { } deletedAt ? Utc(deletedAt) : null,
+                row.Project))
             .ToList();
 
         var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -227,7 +241,13 @@ public static class IdeaEndpoints
 
         await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
-        if (await CheckAssociationAsync(db, ownerId, request.UniverseId, references, [], cancellationToken) is { } refused)
+        var (universeId, outOfScope) = await ResolveScopeAsync(db, ownerId, request, cancellationToken);
+        if (outOfScope is not null)
+        {
+            return Results.ValidationProblem(outOfScope);
+        }
+
+        if (await CheckAssociationAsync(db, ownerId, universeId, references, [], cancellationToken) is { } refused)
         {
             return Results.ValidationProblem(refused);
         }
@@ -237,7 +257,8 @@ public static class IdeaEndpoints
         {
             Id = Guid.NewGuid(),
             OwnerId = ownerId,
-            UniverseId = request.UniverseId,
+            UniverseId = universeId,
+            ProjectId = request.ProjectId,
             Title = request.Title!.Trim(),
             Body = request.Body ?? string.Empty,
             CreatedAt = now,
@@ -300,7 +321,13 @@ public static class IdeaEndpoints
         var references = Requested(request.References);
         var stored = await IdeaReferences.StoredAsync(db, idea.Id, cancellationToken);
 
-        if (await CheckAssociationAsync(db, ownerId, request.UniverseId, references, stored, cancellationToken)
+        var (universeId, outOfScope) = await ResolveScopeAsync(db, ownerId, request, cancellationToken);
+        if (outOfScope is not null)
+        {
+            return Results.ValidationProblem(outOfScope);
+        }
+
+        if (await CheckAssociationAsync(db, ownerId, universeId, references, stored, cancellationToken)
             is { } refused)
         {
             return Results.ValidationProblem(refused);
@@ -310,14 +337,16 @@ public static class IdeaEndpoints
         var body = request.Body ?? string.Empty;
         var unchanged = string.Equals(idea.Title, title, StringComparison.Ordinal)
             && string.Equals(idea.Body, body, StringComparison.Ordinal)
-            && idea.UniverseId == request.UniverseId
+            && idea.UniverseId == universeId
+            && idea.ProjectId == request.ProjectId
             && references.ToHashSet().SetEquals(stored);
 
         if (!unchanged)
         {
             idea.Title = title;
             idea.Body = body;
-            idea.UniverseId = request.UniverseId;
+            idea.UniverseId = universeId;
+            idea.ProjectId = request.ProjectId;
             idea.UpdatedAt = DateTime.UtcNow;
             IdeaReferences.Replace(db, idea.Id, stored, references);
             await db.SaveChangesAsync(cancellationToken);
@@ -439,6 +468,9 @@ public static class IdeaEndpoints
                         candidate.Universe.Name,
                         candidate.Universe.AccentColor,
                         candidate.Universe.IsArchived),
+                Project = candidate.ProjectId == null
+                    ? null
+                    : new IdeaProject(candidate.Project!.Id, candidate.Project.Name, candidate.Project.Kind),
                 candidate.CreatedAt,
                 candidate.UpdatedAt,
             })
@@ -465,7 +497,8 @@ public static class IdeaEndpoints
             idea.Universe,
             references,
             Utc(idea.CreatedAt),
-            Utc(idea.UpdatedAt));
+            Utc(idea.UpdatedAt),
+            idea.Project);
     }
 
     // ---------- Checks ----------
@@ -600,6 +633,45 @@ public static class IdeaEndpoints
     /// Whether the caller owns the universe. Deliberately owner-only, not <c>UniverseAccess</c>: an idea is account data,
     /// and membership of someone else's universe does not let one's ideas point into it (ADR 0041).
     /// </summary>
+    /// <summary>
+    /// The universe a save puts the idea in (#197). Without a project it is the one the request names. With one, it is the
+    /// project's universe, which must be one the caller owns - a collaborator's project is refused exactly as a missing one,
+    /// so nothing says whether it exists - and a request that names a different universe is refused rather than corrected.
+    /// </summary>
+    private static async Task<(Guid? UniverseId, Dictionary<string, string[]>? Refused)> ResolveScopeAsync(
+        LorEvolveDbContext db,
+        string ownerId,
+        IdeaRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.ProjectId is not { } projectId)
+        {
+            return (request.UniverseId, null);
+        }
+
+        var projectUniverse = await db.CreativeProjects
+            .Where(project => project.Id == projectId && project.Universe!.OwnerId == ownerId)
+            .Select(project => (Guid?)project.UniverseId)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (projectUniverse is null)
+        {
+            return (null, new Dictionary<string, string[]>
+            {
+                ["projectId"] = ["Choose a project in one of your universes, or none."],
+            });
+        }
+
+        if (request.UniverseId is { } named && named != projectUniverse)
+        {
+            return (null, new Dictionary<string, string[]>
+            {
+                ["projectId"] = ["A project idea belongs to the project's universe. Choose that universe, or no project."],
+            });
+        }
+
+        return (projectUniverse, null);
+    }
+
     internal static Task<bool> OwnsUniverseAsync(
         LorEvolveDbContext db,
         Guid universeId,
