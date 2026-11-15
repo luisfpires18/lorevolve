@@ -185,6 +185,7 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("edit rule definition", Put, $"{u}/system-rules/{any}", May.Edit, Json(new SystemRuleRequest("Age of majority", "Edited.", null, null, null, null, 1))),
             new("delete rule definition", Delete, $"{u}/system-rules/{any}", May.Edit),
             new("rule definition revisions", Get, $"{u}/system-rules/{w.RuleDefinition}/revisions", May.Read),
+            new("evaluate rule definition", Post, $"{u}/system-rules/{w.RuleDefinition}/evaluate", May.Read),
             new("world logic rules", Get, $"{u}/world-logic/rules", May.Read),
 
             new("validation terms", Get, $"{u}/validation-terms", May.Read),

@@ -318,8 +318,15 @@ public sealed record UniverseBackup(
     /// Not ignorable: a System and its conditions are authored, and a version 43 reader would restore a world with its
     /// whole logic silently gone. A file at version 43 or earlier has neither, and restores with neither, even when it
     /// carries the member. World rules (ADR 0033) are unchanged and still carried as they were.
+    ///
+    /// 45 - A rule definition may carry explicit exceptions (ADR 0072, section 5.1).
+    /// <see cref="BackupSystemRule.Exceptions"/> and <see cref="BackupWorldLogicRevision.Exceptions"/> carry them as
+    /// stored text, byte for byte, with the ids inside them translated on restore like a condition's. Not
+    /// ignorable: an exception is the author's own statement that a violation is allowed, and a version 44 reader
+    /// would restore the rule without it and report a violation the author had excused. A file at version 44 or
+    /// earlier has none, and every restored rule has none.
     /// </summary>
-    public const int CurrentVersion = 44;
+    public const int CurrentVersion = 45;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -1365,7 +1372,13 @@ public sealed record BackupSystemRule(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     IReadOnlyList<Guid> DependsOn,
-    IReadOnlyList<BackupWorldLogicRevision> Revisions);
+    IReadOnlyList<BackupWorldLogicRevision> Revisions,
+
+    /// <summary>
+    /// The rule's explicit exceptions as stored text (since version 45), or null for a rule with none. Carried
+    /// as text for the reason the condition is: a restored rule is the rule that was validated.
+    /// </summary>
+    string? Exceptions = null);
 
 /// <summary>
 /// One saved state of a System or a rule definition (since version 44). <paramref name="Body"/> is a System's summary
@@ -1378,7 +1391,10 @@ public sealed record BackupWorldLogicRevision(
     string Body,
     int? SchemaVersion,
     string? Condition,
-    DateTime SavedAt);
+    DateTime SavedAt,
+
+    /// <summary>The exceptions the rule carried at that version (since version 45), or null.</summary>
+    string? Exceptions = null);
 
 /// <summary>
 /// One event kind or method of the universe (since version 13). The id is preserved because checks and moments name it; the kind

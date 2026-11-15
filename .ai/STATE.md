@@ -53,7 +53,9 @@ One line per branch. Delete the line when it merges.
 - M3 World Logic run (tracker #135, issues #149 to #155), one PR per issue. Landed: #149 the condition and System
   specification (ADR 0072, `docs/architecture/world-logic-condition-spec.md`, six fixtures under
   `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/`); #150 persistence (`Features/Systems/`, backup format 44,
-  migration `AddWorldLogicSystems`). Next: #151 the evaluator. Delete this line when #155 merges.
+  migration `AddWorldLogicSystems`); #151 the evaluator (`Features/RuleValidation/Conditions/`, stored exceptions,
+  backup format 45, migration `AddRuleExceptions`). Next: #152 the World Logic page. Delete this line when #155
+  merges.
 
 ## Committed, not on `dev`
 

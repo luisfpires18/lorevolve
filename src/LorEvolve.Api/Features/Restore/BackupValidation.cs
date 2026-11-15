@@ -2432,6 +2432,7 @@ internal static partial class BackupValidation
 
                 CheckWorldLogicScope(rule.Scope, rule.ProjectId, what);
                 CheckCondition(rule.SchemaVersion, rule.Condition, what);
+                CheckExceptions(rule.SchemaVersion, rule.Exceptions, what);
 
                 if (rule.Version < 1)
                 {
@@ -2459,6 +2460,7 @@ internal static partial class BackupValidation
                     Text(revision.Title, WorldLogicLimits.NameMaxLength, $"{what}'s saved title", required: true);
                     Text(revision.Body, WorldLogicLimits.DescriptionMaxLength, $"{what}'s saved description");
                     CheckCondition(revision.SchemaVersion, revision.Condition, $"{what}'s saved state");
+                    CheckExceptions(revision.SchemaVersion, revision.Exceptions, $"{what}'s saved state");
                 }
             }
 
@@ -2544,6 +2546,31 @@ internal static partial class BackupValidation
                     Text(revision.Title, WorldLogicLimits.NameMaxLength, $"{what}'s saved name", required: true);
                     Text(revision.Body, WorldLogicLimits.SummaryMaxLength, $"{what}'s saved summary");
                 }
+            }
+        }
+
+        /// <summary>
+        /// A rule's exceptions, held to the same structural check a save is (version 45, ADR 0072). An exception
+        /// without a condition to except from is a modelling mistake the restore reports rather than carries.
+        /// </summary>
+        private void CheckExceptions(int? schemaVersion, string? exceptions, string what)
+        {
+            if (exceptions is null)
+            {
+                return;
+            }
+
+            if (schemaVersion is null)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} carries exceptions without a schema version.");
+                return;
+            }
+
+            if (ConditionSchema.ValidateExceptions(exceptions, schemaVersion.Value) is { } problem)
+            {
+                Add(
+                    BackupIssueCodes.InvalidValue,
+                    $"{what}'s exceptions are not ones LorEvolve can read ({problem.Code} at {problem.Path}).");
             }
         }
 

@@ -57,8 +57,14 @@ public sealed record SystemDetail(
 /// Sending it requires <paramref name="SchemaVersion"/>; the pair is validated structurally before anything is
 /// written, and a tree the specification does not describe is refused with the specification's own error code.
 ///
-/// <paramref name="DependsOn"/> is the set of rule definitions this rule's <c>ruleHolds</c> nodes may name. A
-/// reference to a rule outside it, a cycle, or an id from another universe is refused.
+/// <paramref name="Exceptions"/> is the rule's explicit exceptions, an array of
+/// <c>{ id, scope: { kind, projectId? }, when }</c>, or null for a rule with none (ADR 0072, section 5.1). Each
+/// <c>when</c> is an ordinary condition tree and is validated as one. They are evaluated only when the condition
+/// came out false, a project-scoped one outranks a universe-scoped one, and declared order decides inside a scope.
+///
+/// <paramref name="DependsOn"/> is the set of rule definitions this rule's <c>ruleHolds</c> nodes may name, in the
+/// condition and in any exception. A reference to a rule outside it, a cycle, or an id from another universe is
+/// refused.
 ///
 /// <paramref name="ProjectId"/> and <paramref name="ExpectedVersion"/> behave as they do for a System.
 /// </summary>
@@ -69,7 +75,8 @@ public sealed record SystemRuleRequest(
     int? SchemaVersion = null,
     JsonElement? Condition = null,
     IReadOnlyList<Guid>? DependsOn = null,
-    int? ExpectedVersion = null);
+    int? ExpectedVersion = null,
+    JsonElement? Exceptions = null);
 
 /// <summary>
 /// A rule definition's list row. <paramref name="HasCondition"/> says the rule carries a condition tree; what the
@@ -104,7 +111,8 @@ public sealed record SystemRuleDetail(
     IReadOnlyList<SystemReference> Systems,
     int Version,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    JsonElement? Exceptions = null);
 
 /// <summary>A System named from somewhere else: its id and the name a reader recognises.</summary>
 public sealed record SystemReference(Guid Id, string Name);
@@ -137,6 +145,29 @@ public sealed record WorldLogicRuleRow(
     Guid? ProjectId,
     DateTime CreatedAt,
     DateTime UpdatedAt);
+
+/// <summary>
+/// One evaluation of one rule against one target (ADR 0072, specification section 9).
+///
+/// <paramref name="Outcome"/> is <c>true</c>, <c>false</c>, <c>unknown</c>, <c>error</c> or <c>exempt</c>, as text
+/// rather than a number, because a client shows the word and a new outcome must not shift an existing one's
+/// meaning. <paramref name="Evidence"/> is the ids the outcome depended on, in evaluation order.
+/// <paramref name="Rationale"/> is a diagnostic trace in one language: it is never rendered as prose to a reader.
+///
+/// Nothing is stored by an evaluation through this route. Persisting a finding is LOREX-020.
+/// </summary>
+public sealed record ConditionEvaluationResponse(
+    Guid RuleId,
+    int RuleVersion,
+    int SchemaVersion,
+    string Outcome,
+    string? ErrorCode,
+    string? ExemptionId,
+    IReadOnlyList<ConditionEvidenceRow> Evidence,
+    IReadOnlyList<string> Rationale);
+
+/// <summary>One record an outcome depended on: which table, which row, and the part it played.</summary>
+public sealed record ConditionEvidenceRow(string Source, string Id, string Role);
 
 public sealed record WorldLogicPage<T>(
     IReadOnlyList<T> Items,

@@ -190,6 +190,11 @@ into anything else and never costs budget on the common path.
 
 An exception whose `scope` names a project that is not the evaluation's project is skipped before its `when` runs.
 
+An exception is stored with the rule, as an array of `{ id, scope: { kind, projectId? }, when }` in declared order,
+and each `when` is held to every rule in this document exactly as a rule's own condition is: the same closed sets,
+the same static budgets and the same error codes. An `id` is unique within its rule, because it is what a finding
+records as the reason a violation was excused.
+
 ### 5.2 Dependencies
 
 `dependsOn` is the declared set of rules this rule's `ruleHolds` nodes may name. A `ruleHolds` naming a rule outside
@@ -211,14 +216,15 @@ deliberately adds none.
 
 ## 6. Time
 
-A `timePoint` is `"<scope>:<value>"`. Two scopes exist in version 1:
+A `timePoint` is `"<scope>:<value>"`. Three scopes exist in version 1:
 
 - `calendar:<ISO-8601 date>`, a point on a universe calendar.
 - `era:<eraId>/<number>`, a number within a named era.
+- `year:<signed integer>`, a point on the plain reckoning a universe that has not named its eras keeps (ADR 0022).
 
-Points are ordered only inside one scope and one era. Comparing `calendar:` with `era:`, or two different eras, is a
-`scope_mismatch` error rather than a guess, because the relation between eras is the author's to state and version 1
-does not store it. This is the known limitation ADR 0072 records.
+Points are ordered only inside one scope and one era. Comparing `calendar:` with `era:` or with `year:`, or two
+different eras, is a `scope_mismatch` error rather than a guess, because the relation between them is the author's to
+state and version 1 does not store it. This is the known limitation ADR 0072 records.
 
 A missing `at` is missing, not the beginning of time.
 
@@ -290,7 +296,7 @@ outcome, the rule and the evidence; it never renders `rationale` as prose.
 | --- | --- | --- |
 | A new fact source or field | Add a row to section 2's table and a reader behind it | Additive. No schema bump: an older rule never names it. |
 | A new node kind or operator | Add it here and bump `schemaVersion` | A rule stored at the new version is refused by an older build with `schema_version_unsupported`. Never silently skipped. |
-| A new time scope | Add it to section 6 | Additive while existing scopes keep their ordering. |
+| A new time scope | Add it to section 6 | Additive while existing scopes keep their ordering. `year` was added this way, for a universe that has not named its eras. |
 | A new error code | Add it to section 8 | Additive. A client that does not know a code shows the code. |
 | A domain-specific predicate | Not an extension point | A condition never gains a kind that knows a genre, a mechanic or a world. Domain meaning lives in the author's attributes and terms. |
 
@@ -325,5 +331,6 @@ outcome, the rule and the evidence; it never renders `rationale` as prose.
 | `edge-cases.json` | None | Missing data, contradictory rules, a cycle, scope mismatch, type mismatch, every budget |
 
 Each file carries `cases`, and each case states the expected outcome and error code. `WorldLogicFixtureTests`
-validates every document against this specification today; LOREX-018's evaluator runs the same `cases` and asserts
-the stated outcomes, which is why the expectations are written now and not with the evaluator.
+validates every document against this specification, and `WorldLogicEvaluatorTests` runs every case through the
+evaluator and asserts the stated outcome, error code, exemption and evidence. The expectations were written before
+the evaluator existed, which is what makes them evidence about the evaluator rather than a description of it.

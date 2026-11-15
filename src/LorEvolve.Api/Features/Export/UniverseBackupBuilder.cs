@@ -1672,8 +1672,10 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                                 revision.Description,
                                 revision.SchemaVersion,
                                 revision.ConditionJson,
-                                Utc(revision.SavedAt))),
-                    ])),
+                                Utc(revision.SavedAt),
+                                revision.ExceptionsJson)),
+                    ],
+                    rule.ExceptionsJson)),
         ];
     }
 

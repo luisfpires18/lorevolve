@@ -149,6 +149,17 @@ public sealed class SystemRule
     /// </summary>
     public string? ConditionJson { get; set; }
 
+    /// <summary>
+    /// The rule's explicit exceptions as stored JSON, or null for a rule that has none (ADR 0072, section 5.1).
+    ///
+    /// A JSON column rather than a table of its own, for the reason <see cref="ConditionJson"/> is one: an exception
+    /// is a condition tree with a scope, it is only ever read with the rule it belongs to, and nothing queries one
+    /// on its own. It is validated part by part on save, exactly as the condition is.
+    ///
+    /// Order is the author's and is part of the meaning: inside one scope, the first exception that holds wins.
+    /// </summary>
+    public string? ExceptionsJson { get; set; }
+
     /// <summary>Counts up by one on every save that changes something, starting at 1. As <see cref="LoreSystem.Version"/>.</summary>
     public int Version { get; set; }
 
@@ -181,6 +192,9 @@ public sealed class SystemRuleRevision
     public int? SchemaVersion { get; set; }
 
     public string? ConditionJson { get; set; }
+
+    /// <summary>The exceptions the rule carried at this version, as stored. Null when it had none.</summary>
+    public string? ExceptionsJson { get; set; }
 
     public DateTime SavedAt { get; set; }
 }
