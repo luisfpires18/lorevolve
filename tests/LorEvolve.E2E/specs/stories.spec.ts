@@ -314,9 +314,10 @@ test.describe('stories', () => {
     await seedTheFall(page, universeId)
     await seedEntities(page, universeId, ['Arlen', 'White Tower', 'Council of Nine'])
 
-    // Reached from the universe's own sidebar, where nothing has been told yet.
+    // Reached from the universe's Overview, where nothing has been told yet. The sidebar lists stories as Writing
+    // Projects rather than as a section of their own (#191).
     await page.goto(`/app/universes/${universeId}`)
-    await page.getByTestId('workspace-stories').click()
+    await page.getByTestId('overview-stories').click()
     await page.waitForURL(/\/stories$/)
     await expect(page.getByTestId('stories-empty')).toContainText('No stories yet.')
 
@@ -420,7 +421,8 @@ test.describe('stories', () => {
     await acceptConfirm(page)
     await expect.poll(() => sceneOrder(page)).toEqual(['Childhood', 'Aftermath at the Gate'])
 
-    await page.getByTestId('workspace-stories').click()
+    await page.getByTestId('workspace-overview').click()
+    await page.getByTestId('overview-stories').click()
     await page.waitForURL(/\/stories$/)
     const row = page.locator('[data-testid="story-row"][data-title="The Long Winter"]')
     await expect(row.getByTestId('story-scene-count')).toHaveText('2 scenes')
@@ -584,7 +586,8 @@ test.describe('stories', () => {
     await page.waitForURL(/\/lore\/[0-9a-f-]+$/)
     await expect(page.getByText('Arlen').first()).toBeVisible()
 
-    await page.getByTestId('workspace-stories').click()
+    await page.getByTestId('workspace-overview').click()
+    await page.getByTestId('overview-stories').click()
     await page.waitForURL(/\/stories$/)
     const row = page.locator('[data-testid="story-row"][data-title="The Ashen Road"]')
     await expect(row.getByTestId('story-scene-count')).toHaveText('4 scenes')
@@ -856,12 +859,10 @@ test.describe('stories', () => {
       await page.emulateMedia({ colorScheme })
       await page.setViewportSize({ width, height: 900 })
 
-      // Where the sections fold away behind the toggle, Stories is still one of them.
+      // At every width the stories list is a door on the Overview (#191 took it out of the sidebar).
       await page.goto(`/app/universes/${universeId}`)
       await expect(page.getByTestId('workspace-name')).toBeAttached()
-      const toggle = page.getByTestId('workspace-nav-toggle')
-      if (await toggle.isVisible()) await toggle.click()
-      await page.getByTestId('workspace-stories').click()
+      await page.getByTestId('overview-stories').click()
       await page.waitForURL(/\/stories$/)
       await expect(page.getByTestId('story-row')).toHaveCount(1)
       expect(await scrollsSideways(page), `stories at ${width}px`).toBe(false)

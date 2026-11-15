@@ -287,8 +287,10 @@ test.describe('canon integrity', () => {
     await signUp(page)
     const universeId = await newUniverse(page, unique('Ashen Reach '))
 
-    // The sidebar item is a real link, and an untouched universe has nothing to answer for.
-    await page.getByTestId('workspace-canon').click()
+    // Canon is no longer a sidebar section (#191); the Overview's door is a real link, and an untouched universe
+    // has nothing to answer for.
+    await expect(page.getByTestId('workspace-canon')).toHaveCount(0)
+    await page.getByTestId('overview-canon').click()
     await page.waitForURL(/\/canon$/)
     await expect(page.getByRole('heading', { name: 'Canon integrity' })).toBeVisible()
     await expect(page.getByTestId(`canon-status-${Status.pending}`)).toHaveAttribute(

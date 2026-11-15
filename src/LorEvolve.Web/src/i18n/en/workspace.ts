@@ -9,6 +9,11 @@ const workspace = {
     close: 'Close',
     allUniverses: 'All universes',
     sharedAs: 'Shared as {role}',
+    groups: {
+      worldBuilding: 'World building',
+      projects: 'Projects',
+      management: 'Management',
+    },
   },
   missing: {
     title: 'That universe is not here.',

@@ -73,8 +73,9 @@ test.describe('the shell', () => {
     // The way up, then fifteen sections: Publish joined the foot in 014, Chronology left Settings for a section of its
     // own, AI Changes joined (ADR 0047) and Maps (ADR 0060). All universes shares the
     // landmark since refinement 024. Projects added All projects and New project above upkeep (#139); this universe
-    // has no projects yet, so those two are all that group contributes here.
-    await expect(sections.getByRole('link')).toHaveCount(18)
+    // has no projects yet, so those two are all that group contributes here. Stories and Canon left the sidebar
+    // (#191): stories are listed as Writing Projects, and both addresses still resolve.
+    await expect(sections.getByRole('link')).toHaveCount(16)
     await expect(sections.getByRole('link').first()).toHaveText('All universes')
 
     // One h1 per screen, and it is the screen's title - the universe name in the sidebar is not it.
@@ -92,7 +93,7 @@ test.describe('the shell', () => {
       .getByRole('link', { name: 'Timeline' })
       .evaluate((element) => getComputedStyle(element).backgroundColor)
     const rest = await sections
-      .getByRole('link', { name: 'Stories' })
+      .getByRole('link', { name: 'Lore' })
       .evaluate((element) => getComputedStyle(element).backgroundColor)
     expect(tint).not.toBe(rest)
 
@@ -192,29 +193,36 @@ test.describe('the shell', () => {
 
       const at = async (testId: string) => (await page.getByTestId(testId).boundingBox())!
 
-      // Overview and the world's sections fill the first column, top to bottom; the writing
-      // and the upkeep start the second - not a zigzag across the two.
+      // Overview and the world building group fill the first column, top to bottom; the projects
+      // start the second - not a zigzag across the two.
       const overview = await at('workspace-overview')
       const lore = await at('workspace-lore')
       const maps = await at('workspace-maps')
-      const stories = await at('workspace-stories')
+      const ideas = await at('workspace-ideas')
+      const projects = await at('projects-all')
       expect(Math.abs(lore.x - overview.x)).toBeLessThanOrEqual(1)
       expect(lore.y).toBeGreaterThan(overview.y)
       expect(Math.abs(maps.x - overview.x)).toBeLessThanOrEqual(1)
-      // Groups stay whole: the writing pair shares a column. The upkeep - Trash, Publish, Settings - is one row
-      // across the sheet's foot, under everything else.
-      const ideas = await at('workspace-ideas')
-      const types = await at('workspace-types')
-      const chronology = await at('workspace-chronology')
+      // Groups stay whole: all of world building shares a column, projects the other. Management - AI Changes,
+      // Publish, Trash, Settings - fills the sheet's three-across foot row, under everything else (#191).
+      expect(Math.abs(ideas.x - lore.x)).toBeLessThanOrEqual(1)
+      expect(projects.x).toBeGreaterThan(lore.x)
+      const aiChanges = await at('workspace-ai-changes')
       const trash = await at('workspace-trash')
       const publish = await at('workspace-publish')
       const settings = await at('workspace-settings')
-      expect(Math.abs(ideas.x - stories.x)).toBeLessThanOrEqual(1)
-      expect(Math.abs(publish.y - trash.y)).toBeLessThanOrEqual(1)
-      expect(Math.abs(settings.y - trash.y)).toBeLessThanOrEqual(1)
-      expect(trash.x).toBeLessThan(publish.x)
-      expect(publish.x).toBeLessThan(settings.x)
-      expect(trash.y).toBeGreaterThan(Math.max(types.y, chronology.y))
+      expect(Math.abs(publish.y - aiChanges.y)).toBeLessThanOrEqual(1)
+      expect(Math.abs(trash.y - aiChanges.y)).toBeLessThanOrEqual(1)
+      expect(aiChanges.x).toBeLessThan(publish.x)
+      expect(publish.x).toBeLessThan(trash.x)
+      expect(settings.y).toBeGreaterThan(aiChanges.y)
+      expect(aiChanges.y).toBeGreaterThan(Math.max(ideas.y, projects.y))
+      // The same three labels as the wide sidebar.
+      await expect(page.locator('.sidebar').getByRole('heading', { level: 2 })).toHaveText([
+        'World building',
+        'Projects',
+        'Management',
+      ])
 
       // Every row is a target a thumb can hit.
       for (const id of ['workspace-overview', 'workspace-trash', 'workspace-settings']) {
