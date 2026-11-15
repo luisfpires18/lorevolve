@@ -11,6 +11,11 @@ const workspace: Dictionary['workspace'] = {
     close: 'Fechar',
     allUniverses: 'Todos os universos',
     sharedAs: 'Partilhado como {role}',
+    groups: {
+      worldBuilding: 'Construção do mundo',
+      projects: 'Projetos',
+      management: 'Gestão',
+    },
   },
   missing: {
     title: 'Esse universo não está aqui.',

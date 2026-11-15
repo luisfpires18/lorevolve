@@ -241,8 +241,8 @@ test.describe('universe search', () => {
     // Moving between sections keeps one bar, and what was typed in it.
     await page.goto(`${base}/lore`)
     await searchBox(page).fill('Quennell')
-    await page.getByTestId('workspace-stories').click()
-    await page.waitForURL(`${base}/stories`)
+    await page.getByTestId('workspace-timeline').click()
+    await page.waitForURL(`${base}/timeline`)
     await expect(searchBox(page)).toHaveValue('Quennell')
     await expect(page.getByRole('combobox')).toHaveCount(1)
 

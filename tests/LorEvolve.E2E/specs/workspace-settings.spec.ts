@@ -112,14 +112,15 @@ test.describe('Publish', () => {
     await page.goto(`/app/universes/${w.id}`)
 
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
-    // Publish is the upkeep row's middle, directly above Settings.
+    // Publish follows AI Changes in the management group (#191).
     await expect(page.getByTestId('sidebar-upkeep').getByRole('link')).toHaveText([
-      'Trash',
+      'AI Changes',
       'Publish',
+      'Trash',
       'Settings',
     ])
     const links = (await sections.getByRole('link').allTextContents()).map((text) => text.trim())
-    expect(links.indexOf('Publish')).toBe(links.indexOf('Settings') - 1)
+    expect(links.indexOf('Publish')).toBe(links.indexOf('AI Changes') + 1)
 
     await page.getByTestId('workspace-settings').click()
     await expect(page.getByTestId('settings-tabs')).toBeVisible()
@@ -162,7 +163,7 @@ test.describe('Publish', () => {
 })
 
 test.describe('the sidebar, Chronology and the theme control (014 follow-up)', () => {
-  test('worldbuilding above, upkeep apart below; Chronology a section after World Rules, not a Settings tab', async ({
+  test('three labelled groups: world building, projects, management; Chronology a section, not a Settings tab', async ({
     page,
   }) => {
     await signUp(page)
@@ -170,8 +171,8 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
     await page.goto(`/app/universes/${w.id}`)
 
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
-    // The way up, All universes, then an owner's fifteen sections in order, the projects group, and upkeep apart
-    // at the foot (#139).
+    // The way up, All universes, then the Overview and three labelled groups in the owner's order (#191): world
+    // building, projects (#139), and management apart at the foot. Stories and Canon are no longer sections here.
     await expect(sections.getByRole('link')).toHaveText([
       'All universes',
       'Overview',
@@ -179,21 +180,32 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
       'Types',
       'Family Tree',
       'Maps',
-      'World Logic',
-      'Canon',
-      'Chronology',
-      'Stories',
       'Timeline',
+      'Chronology',
+      'World Logic',
       'Ideas',
-      'AI Changes',
       'All projects',
       'New project',
-      'Trash',
+      'AI Changes',
       'Publish',
+      'Trash',
       'Settings',
     ])
+    await expect(sections.getByRole('heading', { level: 2 })).toHaveText([
+      'World building',
+      'Projects',
+      'Management',
+    ])
+    // Each label names its group's list for a screen reader.
+    await expect(sections.getByRole('list', { name: 'World building' })).toBeVisible()
+    await expect(sections.getByRole('list', { name: 'Management' })).toBeVisible()
     const upkeep = page.getByTestId('sidebar-upkeep')
-    await expect(upkeep.getByRole('link')).toHaveText(['Trash', 'Publish', 'Settings'])
+    await expect(upkeep.getByRole('link')).toHaveText([
+      'AI Changes',
+      'Publish',
+      'Trash',
+      'Settings',
+    ])
 
     // Chronology is a page of its own, with its editor, and Settings has no trace of it.
     await page.getByTestId('workspace-chronology').click()
