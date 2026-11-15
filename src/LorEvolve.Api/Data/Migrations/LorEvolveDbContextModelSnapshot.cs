@@ -3500,6 +3500,104 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("LoreSystemRules", (string)null);
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFinding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Claim")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClientName")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ConnectionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DecisionNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SubmittedByUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RuleId");
+
+                    b.HasIndex("UniverseId", "ProjectId");
+
+                    b.HasIndex("UniverseId", "Status", "CreatedAt");
+
+                    b.ToTable("SemanticFindings", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFindingCitation", b =>
+                {
+                    b.Property<Guid>("FindingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("RangeLength")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RangeStart")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SourceVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("FindingId", "SortOrder");
+
+                    b.ToTable("SemanticFindingCitations", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5863,6 +5961,42 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Rule");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFinding", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemRule", "Rule")
+                        .WithMany()
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Rule");
+
+                    b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFindingCitation", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.SemanticFinding", "Finding")
+                        .WithMany("Citations")
+                        .HasForeignKey("FindingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Finding");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRule", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
@@ -6333,6 +6467,11 @@ namespace LorEvolve.Api.Data.Migrations
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.LoreSystem", b =>
                 {
                     b.Navigation("Rules");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFinding", b =>
+                {
+                    b.Navigation("Citations");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRule", b =>

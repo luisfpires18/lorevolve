@@ -26,7 +26,13 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
     public const string ProposeTool = "propose_changes";
     public const string ReadTool = "get_change_proposal";
 
-    private static readonly HashSet<string> Names = [OptionsTool, ProposeTool, ReadTool];
+    /// <summary>
+    /// Every tool a connection must be allowed to propose before it may see or call it: these three, and the World
+    /// Logic tool that submits an observation for review (#154). One gate rather than two, so a tool cannot be added
+    /// to the server and quietly left ungated.
+    /// </summary>
+    private static readonly HashSet<string> Names =
+        [OptionsTool, ProposeTool, ReadTool, .. LorEvolveMcpWorldLogicTools.ProposeGated];
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {

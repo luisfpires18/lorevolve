@@ -50,6 +50,23 @@ Inventory and evidence: `docs/architecture/audits/2026-11-15-m4-assistant-retire
    where an entry can use it.
 7. Connected apps > stop this app's proposals. The app can still read, and can propose nothing more.
 
+## 4b. World Logic over MCP (#154)
+
+Needs a universe with at least one rule definition carrying a typed condition, and one the author has swept.
+
+1. Ask the app what rules this world has. It lists both kinds, says which carry a condition, and names the Systems.
+2. Ask it what a rule with a condition answers. The outcome it reports is the one the World Logic page shows for the
+   same rule; it says `unknown` where the lore does not say, and it does not call an `unknown` a violation.
+3. Ask it to evaluate a rule written only in words. It says there is no condition rather than inventing an answer.
+4. Ask it what the recorded findings are. It lists what your own sweep recorded, with the ids each one cited.
+5. Ask it what would be affected by changing a rule other rules depend on. It names those rules.
+6. Ask it, with the app allowed to propose, for something it noticed that no condition can express. It submits an
+   observation, tells you it is unverified and waiting, and does not say a problem is confirmed.
+7. The observation is readable at `/api/universes/{id}/world-logic/semantic-findings`, with the records it cited and
+   the version of each one it read. It is not in the World Logic page's findings, because nothing computed it.
+   Accepting or dismissing it there is the author's decision; there is no screen for this yet (#154).
+8. With the app's proposals turned off, it can still do steps 1 to 5 and cannot submit an observation at all.
+
 ## 5. Where a proposal the old assistant staged still shows
 
 If any universe still has a proposal from before M4, Pending AI Changes labels it "LorEvolve Assistant", and it reviews,

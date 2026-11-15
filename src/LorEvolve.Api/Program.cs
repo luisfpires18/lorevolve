@@ -168,6 +168,7 @@ app.MapWorldRuleEndpoints();
 app.MapSystemEndpoints();
 app.MapSystemRuleEndpoints();
 app.MapWorldLogicFindingEndpoints();
+app.MapSemanticFindingEndpoints();
 app.MapValidationTermEndpoints();
 app.MapStoryEndpoints();
 app.MapChapterEndpoints();
