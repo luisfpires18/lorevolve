@@ -303,13 +303,24 @@ test.describe('Projects navigation', () => {
       [`${old}/plot`, `${next}/structure`],
       [`${old}/ideas`, `${next}/ideas`],
       [`${old}/manuscript/${scene.id}`, `${next}/manuscript/${scene.id}`],
+      // The account-level project address names no universe; a story reached there finds its own (#199).
+      [`/app/projects/${existing.id}`, `${next}/structure`],
+      [`/app/projects/${existing.id}/manuscript/${scene.id}`, `${next}/manuscript/${scene.id}`],
     ]
     for (const [from, to] of cases) {
       await page.goto(from)
       await expect(page).toHaveURL(new RegExp(`${to}$`))
       await expect(page.getByTestId('project-tabs')).toBeVisible()
       await expect(page.getByTestId('story-title')).toHaveText(existing.title)
+      await expect(page.getByTestId('project-breadcrumb-universe')).toHaveText(world.name)
+      await expect(page.getByTestId('project-breadcrumb-project')).toHaveText(existing.title)
     }
+    await page.goto(
+      `/app/projects/${existing.id}/manuscript/${scene.id}?from=search#scene-${scene.id}`,
+    )
+    await expect(page).toHaveURL(
+      new RegExp(`${next}/manuscript/${scene.id}\\?from=search#scene-${scene.id}$`),
+    )
 
     // A manuscript link to one scene still opens that scene, and the query and the hash travel with the redirect.
     await page.goto(`${old}/manuscript/${scene.id}?from=search#scene-${scene.id}`)

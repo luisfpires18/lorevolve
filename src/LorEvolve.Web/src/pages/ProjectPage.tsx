@@ -15,7 +15,7 @@ import { ProjectIdeas } from '../components/ProjectIdeas'
 import { ProjectOverview } from '../components/ProjectOverview'
 import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
-import { createProject, getProject } from '../projects/api'
+import { createProject, getProject, listProjects } from '../projects/api'
 import { getStory } from '../stories/api'
 import StoryPage from './StoryPage'
 import type { WorkspaceContext } from './UniverseWorkspace'
@@ -169,6 +169,8 @@ type LoadState =
   | { kind: 'ready'; for: string; project: ProjectDetail }
   /** A Story shown as a Writing Project (#140): read as the story, because no project row exists for it. */
   | { kind: 'story'; for: string; title: string }
+  /** A story reached at the account-level address, which carries no universe: where it belongs (#199). */
+  | { kind: 'elsewhere'; for: string; universeId: string }
   | { kind: 'missing'; for: string }
   | { kind: 'failed'; for: string }
 
@@ -186,8 +188,8 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   const universeId = params.id
   const segment = view ?? params['*'] ?? ''
   const { search, hash } = useLocation()
-  // Read only by the story branch, which is reached inside a universe's workspace alone (the story read needs one).
-  const workspace = useOutletContext<WorkspaceContext>()
+  // The universe's workspace, when the route is inside one. The account-level route has none.
+  const workspace = useOutletContext<WorkspaceContext | undefined>()
   const [state, setState] = useState<LoadState | null>(null)
   const [schemaVersion, setSchemaVersion] = useState(0)
   const read = state !== null && state.for === projectId ? state : null
@@ -207,7 +209,20 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
         // `/api/projects/{id}` does not resolve a story id, by design (#140), so a project that is not stored may be a
         // story of this universe. Only read here, never copied: the story's page reads the story itself.
         if (!inUniverse || !universeId) {
-          setState({ kind: 'missing', for: projectId })
+          // The account-level address names no universe, so the story's is read from the projects list, which carries
+          // story-backed rows with their universe and keeps the one named by `include` (#198).
+          listProjects({ limit: 1, include: projectId }, controller.signal)
+            .then((rows) => {
+              const row = rows.find((candidate) => candidate.id === projectId)
+              setState(
+                row
+                  ? { kind: 'elsewhere', for: projectId, universeId: row.universe.id }
+                  : { kind: 'missing', for: projectId },
+              )
+            })
+            .catch(() => {
+              if (!controller.signal.aborted) setState({ kind: 'failed', for: projectId })
+            })
           return
         }
         getStory(universeId, projectId, controller.signal)
@@ -246,7 +261,15 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
     return <EmptyState title={t('projects.one.failed')} testId="project-failed" />
   }
 
+  if (read.kind === 'elsewhere') {
+    // The universe-scoped routes then serve the story's views, a scene id included, as any other address there does.
+    const target = projectPath(read.for, params['*'] ?? '', read.universeId)
+    return <Navigate to={`${target}${search}${hash}`} replace />
+  }
+
   if (read.kind === 'story') {
+    // A story is only read inside a universe's workspace (the read above needs one), so this never shows.
+    if (!workspace) return <EmptyState title={t('projects.one.failed')} testId="project-failed" />
     const storySections = projectSections(ProjectKind.Writing, read.for)
     const storyView = storySections.find((candidate) => candidate.segment === segment)
     // Reached through `*` (the bare address, or a view a story does not have) or by a segment the story routes do not
