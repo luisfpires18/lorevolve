@@ -131,7 +131,7 @@ const entity: Dictionary['entity'] = {
     gone: 'Esta entrada já não está aqui, por isso não foi possível guardar a nota. Pode ter sido movida para a Reciclagem noutra janela. O teu texto continua aqui: copia-o antes de fechares.',
     saveFailed: 'Não foi possível guardar a nota. O teu texto continua aqui. Tenta de novo.',
     privacy:
-      'Só tu, o proprietário deste universo, podes ler isto. Nunca é publicado, pesquisado, mostrado a colaboradores nem lido pelo Assistente ou por uma aplicação ligada.',
+      'Só tu, o proprietário deste universo, podes ler isto. Nunca é publicado, pesquisado, mostrado a colaboradores nem lido por uma aplicação ligada.',
     opening: 'A abrir a nota…',
     openFailed: 'Não foi possível abrir esta nota.',
     retry: 'Tentar de novo',

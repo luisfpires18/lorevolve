@@ -41,7 +41,7 @@ const admin: Dictionary['admin'] = {
     ai: {
       label: 'Utilização e custo da IA',
       source:
-        'As perguntas ao assistente são contadas apenas em memória, por processo do servidor.',
+        'Nada é contado aqui: a IA chega a um universo por MCP, e uma proposta não custa nada a este servidor.',
     },
   },
   role: {

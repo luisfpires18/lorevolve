@@ -226,30 +226,8 @@ test.describe('a map of the world', () => {
     await expect(page.getByTestId('map-scale-text')).toContainText('400 leagues')
     await expect(page.getByTestId('map-scale-line')).toBeVisible()
 
-    // ---------- The assistant answers from the pins, and only from them (#53) ----------
-
-    await page.getByRole('button', { name: 'Assistant' }).click()
-    await expect(page.getByTestId('assistant-drawer')).toBeVisible()
-    await page.getByTestId('assistant-input').fill(`Where is ${capital}?`)
-    await page.getByTestId('assistant-ask').click()
-    const located = page.getByTestId('assistant-turn').last()
-    await expect(located.getByTestId('assistant-answer')).toContainText(
-      `is pinned on the map ${mapName}`,
-    )
-    await expect(located.getByTestId('assistant-source').first()).toHaveAttribute(
-      'href',
-      `/app/universes/${universeId}/maps/${mapId}?pin=${pinId}`,
-    )
-    await page.getByTestId('assistant-input').fill('Where is Atlantis?')
-    await page.getByTestId('assistant-ask').click()
-    await expect(
-      page.getByTestId('assistant-turn').last().getByTestId('assistant-answer'),
-    ).toContainText('records no map location')
-    await expect(
-      page.getByTestId('assistant-turn').last().getByTestId('assistant-source'),
-    ).toHaveCount(0)
-    await page.keyboard.press('Escape')
-    await expect(page.getByTestId('assistant-drawer')).toHaveCount(0)
+    // An AI asking where a pin is, and being told only from the pins, is the MCP map tools' job (#53). The web
+    // assistant answered it here until M4 (issue #157) retired it; `MapGeographyTests` proves the tools themselves.
 
     // ---------- The picture replaced, pins kept for review ----------
 

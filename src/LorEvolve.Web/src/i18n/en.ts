@@ -1,5 +1,6 @@
 import type { Shape } from './core'
 import account from './en/account'
+import ai from './en/ai'
 import auth from './en/auth'
 import ideas from './en/ideas'
 import review from './en/review'
@@ -7,7 +8,6 @@ import canon from './en/canon'
 import data from './en/data'
 import admin from './en/admin'
 import apiErrors from './en/apiErrors'
-import assistant from './en/assistant'
 import entity from './en/entity'
 import entityTypes from './en/entityTypes'
 import lore from './en/lore'
@@ -36,6 +36,7 @@ import stories from './en/stories'
  */
 const en = {
   account,
+  ai,
   auth,
   ideas,
   review,
@@ -43,7 +44,6 @@ const en = {
   data,
   admin,
   apiErrors,
-  assistant,
   entity,
   entityTypes,
   lore,

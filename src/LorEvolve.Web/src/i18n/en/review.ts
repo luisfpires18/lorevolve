@@ -9,6 +9,8 @@ const review = {
       expired: 'Expired',
     },
     source: {
+      // M4 retired the web assistant, but proposals it staged are still in authors' review lists, so they keep their
+      // own label (AiChangeSource.Assistant).
       assistant: 'LorEvolve Assistant',
       app: '{name} (connected app)',
       unnamedApp: 'A connected app',
@@ -38,7 +40,7 @@ const review = {
     ledeUniverse:
       'Changes an AI proposed for this universe. Nothing in them is applied until you approve it here.',
     ledeAccount:
-      'Changes an AI proposed for your universes, from a connected app or the Assistant. Nothing in them is applied until someone approves it.',
+      'Changes an AI proposed for your universes, from the apps you connected. Nothing in them is applied until someone approves it.',
     which: 'Which proposals',
     waiting: 'Waiting',
     decided: 'Decided',
@@ -47,8 +49,7 @@ const review = {
     retry: 'Try again',
     emptyOpen: 'Nothing is waiting for review.',
     emptyDecided: 'Nothing has been decided yet.',
-    emptyHint:
-      'Ask the Assistant with Propose changes turned on, or connect an AI app and let it propose changes.',
+    emptyHint: 'Connect an AI app to a universe and allow it to propose changes.',
     proposedChanges: {
       one: '{n} proposed change',
       other: '{n} proposed changes',

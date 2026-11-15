@@ -18,7 +18,7 @@ type Load = { kind: 'loading' } | { kind: 'ready'; page: ProposalPage } | { kind
 
 /**
  * Pending AI Changes (ADR 0047): the proposals an AI staged and a person decides on, from an app over MCP and from the
- * assistant alike, newest first. Account-wide in My workspace; one universe's inside it. Each opens its review.
+ * connected apps, newest first. Account-wide in My workspace; one universe's inside it. Each opens its review.
  */
 export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boolean }) {
   const { t, tn, tx } = useI18n()

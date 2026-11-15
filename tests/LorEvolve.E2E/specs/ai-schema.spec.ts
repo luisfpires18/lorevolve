@@ -1,12 +1,13 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
 import { png } from './support/png'
+import { stageAndReview } from './support/mcp-propose'
 
 /**
- * Schema proposals and picture hand-over (issue 59, ADR 0062), on the local Fake provider. Asked for a "type", the Fake stages
- * a lore type with its fields in a proposal of their own; approving it puts the type and its fields in Types, and entries of
- * the new type can be made with the ids it got. Asked for a "picture", it asks for one for an entry; the person uploads the
- * file on the review page, sees it there, and approving attaches it to the entry. No real model is reached.
+ * Schema proposals and picture hand-over (issue 59, ADR 0062), staged by an AI app over MCP since M4 (issue #157) retired
+ * the web assistant. A lore type with its fields is proposed on its own; approving it puts the type and its fields in Types,
+ * and entries of the new type can be made with the ids it got. A picture is asked for rather than sent: the person uploads
+ * the file on the review page, sees it there, and approving attaches it to the entry. No model is reached.
  */
 
 function unique(prefix: string) {
@@ -36,19 +37,39 @@ async function api<T>(
   return (await response.json()) as T
 }
 
-/** Asks the Assistant, with Propose changes on, and opens the review of what it staged. */
-async function ask(page: Page, universeId: string, question: string) {
-  await page.goto(`/app/universes/${universeId}`)
-  await page.getByRole('button', { name: 'Assistant' }).click()
-  const drawer = page.getByTestId('assistant-drawer')
-  await expect(drawer).toBeVisible()
-  await drawer.getByLabel('Propose changes').check()
-  await drawer.getByLabel('The changes you want').fill(question)
-  await drawer.getByTestId('assistant-ask').click()
-  const review = drawer.getByTestId('assistant-proposal-review')
-  await expect(review).toBeVisible()
-  await review.click()
-  await expect(page.getByTestId('ai-change')).toBeVisible()
+/**
+ * Stages a schema proposal over MCP and opens its review: a new lore type, a short text field for each name but the
+ * last, and the last one a link to the universe's first existing type. Schema goes in a proposal of its own
+ * (ADR 0062), and an owner's connection may propose it as soon as it may propose at all.
+ */
+async function proposeType(page: Page, universeId: string, typeName: string, fieldNames: string[]) {
+  await stageAndReview(page, universeId, `New type: ${typeName}`, (options) => {
+    const linkTo = options.loreTypes[0].id
+    return [
+      { id: 'type-1', action: 'create', resource: 'lore_type', loreType: { name: typeName } },
+      ...fieldNames.map((name, index) => ({
+        id: `field-${index + 1}`,
+        action: 'create',
+        resource: 'lore_field',
+        field:
+          index === fieldNames.length - 1
+            ? { type: { ref: 'type-1' }, name, kind: 'link', linksToType: { id: linkTo } }
+            : { type: { ref: 'type-1' }, name, kind: 'short_text', linksToType: null },
+      })),
+    ]
+  })
+}
+
+/** Stages a request for a picture of one entry, which the person then uploads on the review page. */
+async function proposePicture(page: Page, universeId: string, entryId: string, note: string) {
+  await stageAndReview(page, universeId, `A picture of ${note}`, () => [
+    {
+      id: 'picture-1',
+      action: 'create',
+      resource: 'image',
+      image: { entry: entryId, note },
+    },
+  ])
 }
 
 function item(page: Page, key: string) {
@@ -67,11 +88,7 @@ test.describe('AI schema and pictures', () => {
     })
     const typeName = unique('WEAPON OF ORDER ')
 
-    await ask(
-      page,
-      universe.id,
-      `Create a type "${typeName}" with "AURA" "POWER" and a "WIELDER" link.`,
-    )
+    await proposeType(page, universe.id, typeName, ['AURA', 'POWER', 'WIELDER'])
     await expect(page.getByTestId('ai-change-item')).toHaveCount(4)
     await expect(item(page, 'type-1')).toContainText(`New lore type: ${typeName}`)
     await expect(item(page, 'field-3')).toContainText(`New field on ${typeName} (new): WIELDER`)
@@ -162,7 +179,7 @@ test.describe('AI schema and pictures', () => {
       },
     )
 
-    await ask(page, universe.id, `Find a picture of "${name}".`)
+    await proposePicture(page, universe.id, bilbo.id, name)
     const change = item(page, 'picture-1')
     await expect(change).toContainText(`Add a profile picture to ${name}`)
     await expect(change).toContainText('No picture yet')

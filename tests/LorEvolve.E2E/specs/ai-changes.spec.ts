@@ -2,15 +2,17 @@ import { expect, test, type APIRequestContext, type Browser, type Page } from '@
 import { createHash, randomBytes } from 'node:crypto'
 import { makeTestPassword } from './support/account'
 import { dismissConfirm } from './support/confirm'
+import { openConsent, openType, stageAndReview } from './support/mcp-propose'
 
 /**
- * Pending AI Changes (ADR 0047), on the local Fake provider: the Assistant asked, with Propose changes on, prepares changes
- * that wait for review; nothing exists until a person approves; choosing a change chooses what it needs; rejecting one
- * rejects what needs it; an edit is applied exactly; it works on a phone and from the keyboard; a Viewer is offered no
- * proposing; and an AI app's consent asks for proposing separately, unticked.
+ * Pending AI Changes (ADR 0047): an AI app over MCP prepares changes that wait for review; nothing exists until a
+ * person approves; choosing a change chooses what it needs; rejecting one rejects what needs it; an edit is applied
+ * exactly; it works on a phone and from the keyboard; a Viewer is offered no proposing; and an AI app's consent asks
+ * for proposing separately, unticked.
  *
- * The Fake stages one new entry for every name in double quotes and, for two or more, a relationship of the universe's
- * first kind from the first to the second. No real model is reached.
+ * The web assistant was the other way to stage a proposal until M4 (issue #157) retired it, so every proposal here is
+ * staged over the real MCP connection instead (`support/mcp-propose.ts`): one new entry per name and, for two or more,
+ * a relationship of the universe's first kind from the first to the second. No model is reached either way.
  */
 
 const CALLBACK = 'http://127.0.0.1:7792/callback'
@@ -68,25 +70,42 @@ async function names(page: Page, universeId: string, search: string) {
   return found.items.map((item) => item.name)
 }
 
-/** Asks the Assistant, with Propose changes on, for one entry per quoted name; answers the review page's path. */
-async function propose(page: Page, universeId: string, quoted: string[]) {
-  await page.goto(`/app/universes/${universeId}`)
-  await page.getByRole('button', { name: 'Assistant' }).click()
-  const drawer = page.getByTestId('assistant-drawer')
-  await expect(drawer).toBeVisible()
-  await drawer.getByLabel('Propose changes').check()
-  await drawer
-    .getByLabel('The changes you want')
-    .fill(`Create ${quoted.map((name) => `"${name}"`).join(' and ')}.`)
-  await drawer.getByTestId('assistant-ask').click()
-  const review = drawer.getByTestId('assistant-proposal-review')
-  await expect(review).toBeVisible()
-  await expect(drawer.getByTestId('assistant-proposal')).toContainText('Nothing has changed yet')
-  await review.click()
-  await expect(page.getByTestId('ai-change')).toBeVisible()
+/**
+ * Stages one entry per name over MCP, with a relationship between the first two, and opens the review page. The app is
+ * a proposing connection the person approved; nothing in the universe has changed when this returns.
+ */
+async function propose(page: Page, universeId: string, named: string[]) {
+  const staged = await stageAndReview(
+    page,
+    universeId,
+    `New lore: ${named.join(', ')}`,
+    (options) => {
+      const typeId = openType(options)
+      const operations: ({ id: string } & Record<string, unknown>)[] = named.map((name, index) => ({
+        id: `entry-${index + 1}`,
+        action: 'create',
+        resource: 'lore_entry',
+        lore: { typeId, name },
+      }))
+      if (named.length >= 2) {
+        operations.push({
+          id: 'link-1',
+          action: 'create',
+          resource: 'relationship',
+          relationship: {
+            typeId: options.relationshipTypes[0].id,
+            source: { ref: 'entry-1' },
+            target: { ref: 'entry-2' },
+          },
+        })
+      }
+      return operations
+    },
+  )
+  return staged
 }
 
-/** A change by the Fake's own key: entry-1, entry-2 ... for the names in order, link-1 for the relationship. */
+/** A change by the key its proposal gave it: entry-1, entry-2 ... for the names in order, link-1 for the relationship. */
 function item(page: Page, key: string) {
   return page.locator(`[data-testid="ai-change-item"][data-key="${key}"]`)
 }
@@ -100,7 +119,7 @@ async function hasSideScroll(page: Page) {
 }
 
 test.describe('Pending AI Changes', () => {
-  test('the Assistant prepares changes that wait, and approving applies them together', async ({
+  test('an AI app prepares changes that wait, and approving applies them together', async ({
     page,
   }) => {
     await signUp(page)
@@ -109,7 +128,7 @@ test.describe('Pending AI Changes', () => {
     const bel = unique('Bel ')
     await propose(page, universeId, [arin, bel])
 
-    await expect(page.getByTestId('ai-change-source')).toHaveText('LorEvolve Assistant')
+    await expect(page.getByTestId('ai-change-source')).toHaveText('E2E staging app (connected app)')
     await expect(page.getByTestId('ai-change-item')).toHaveCount(3)
     await expect(item(page, 'entry-1')).toContainText(`New Character: ${arin}`)
     await expect(item(page, 'link-1')).toContainText('Needs:')
@@ -242,7 +261,7 @@ test.describe('Pending AI Changes', () => {
     await page.goto('/app/ai-changes')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Pending AI Changes')
     await expect(page.getByTestId('ai-change-proposal')).toHaveCount(1)
-    await expect(page.getByTestId('ai-change-source')).toHaveText('LorEvolve Assistant')
+    await expect(page.getByTestId('ai-change-source')).toHaveText('E2E staging app (connected app)')
 
     // A proposal opened from the account-wide list goes back to that list.
     await page.getByTestId('ai-change-proposal').getByRole('link').first().click()
@@ -261,19 +280,14 @@ test.describe('Pending AI Changes', () => {
   test('an unsaved draft is never lost on the way to a review', async ({ page }) => {
     await signUp(page)
     const universeId = await seed(page)
+    await propose(page, universeId, [unique('Ivo ')])
+
     await page.goto(`/app/universes/${universeId}/lore/new`)
     await page.getByLabel('Name').fill('Half-written entry')
     await expect(page.getByTestId('entry-form-status')).toHaveText('Unsaved changes')
 
-    await page.getByRole('button', { name: 'Assistant' }).click()
-    const drawer = page.getByTestId('assistant-drawer')
-    await drawer.getByLabel('Propose changes').check()
-    await drawer.getByLabel('The changes you want').fill(`Create "${unique('Ivo ')}".`)
-    await drawer.getByTestId('assistant-ask').click()
-    await expect(drawer.getByTestId('assistant-proposal-review')).toBeVisible()
-
-    // Following the review link asks first, and staying keeps the draft exactly as it was.
-    await drawer.getByTestId('assistant-proposal-review').click()
+    // Leaving the half-written entry for the waiting proposal asks first, and staying keeps the draft as it was.
+    await page.getByTestId('workspace-ai-changes').click()
     await dismissConfirm(page)
     await expect(page).toHaveURL(new RegExp(`/app/universes/${universeId}/lore/new$`))
     await expect(page.getByLabel('Name')).toHaveValue('Half-written entry')
@@ -318,12 +332,11 @@ test.describe('Pending AI Changes', () => {
     await viewer.page.goto(`/app/universes/${universeId}`)
     await expect(viewer.page.getByTestId('workspace-types')).toBeVisible()
     await expect(viewer.page.getByTestId('workspace-ai-changes')).toHaveCount(0)
-    await viewer.page.getByRole('button', { name: 'Assistant' }).click()
-    await expect(viewer.page.getByTestId('assistant-drawer')).toBeVisible()
-    await expect(viewer.page.getByTestId('assistant-propose')).toHaveCount(0)
-    await expect(
-      viewer.page.getByText('It reads this universe and never changes it.'),
-    ).toBeVisible()
+
+    // An app a Viewer connects is offered no proposing at all: the choice is not there to tick.
+    await openConsent(viewer.page, universeId, 'E2E viewer app')
+    await expect(viewer.page.getByTestId('consent-propose')).toHaveCount(0)
+    await expect(viewer.page.getByTestId('consent-propose-unavailable')).toBeVisible()
   })
 
   test('an AI app asks to propose separately, unticked, and is read-only unless the person ticks it', async ({

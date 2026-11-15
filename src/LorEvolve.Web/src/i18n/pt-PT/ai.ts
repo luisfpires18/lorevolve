@@ -1,74 +1,7 @@
 import type { Dictionary } from '../en'
 
-/** The universe assistant and what an outside AI app may read: its panel, sources and knowledge view (#104). */
-const assistant: Dictionary['assistant'] = {
-  sourceKind: {
-    lore: 'Lore',
-    story: 'História',
-    chapter: 'Capítulo',
-    scene: 'Cena',
-    plotArc: 'Arco',
-    timelineMoment: 'Acontecimento',
-    mapPin: 'Marcador',
-    map: 'Mapa',
-  },
-  panel: {
-    part: {
-      recorded: 'Registado',
-      inference: 'Inferência',
-      suggestion: 'Sugestão',
-    },
-    prompt: {
-      summarize: 'Resume este universo',
-      connected: 'O que está ligado a ',
-      scenes: 'Que cenas envolvem ',
-    },
-    failed: 'O assistente não conseguiu responder a isso. Tenta novamente.',
-    triggerTitle: 'Assistente',
-    triggerLabel: 'Assistente',
-    announceBusy: 'A consultar {name}.',
-    announceAnswered: 'Respondido.',
-    eyebrow: 'Assistente',
-    contextPropose:
-      'Pode preparar as alterações que pedires. Ficam à espera da tua revisão, e nada muda até as aprovares.',
-    contextRead: 'Lê este universo e nunca o altera.',
-    unavailable:
-      'O assistente ainda não está configurado neste LorEvolve. Tudo o resto funciona como de costume.',
-    emptyLead:
-      'Pergunta sobre qualquer coisa registada em {name}. As respostas vêm apenas do que está escrito aqui.',
-    emptyHint:
-      'Cada resposta assinala o que está registado, o que é inferido e o que é apenas uma sugestão, e liga de volta à origem.',
-    waysToStart: 'Formas de começar',
-    conversation: 'Conversa',
-    youPropose: 'Tu, a pedir alterações',
-    you: 'Tu',
-    retry: 'Tentar novamente',
-    pending: 'A consultar {name}…',
-    proposeLabel: 'Propor alterações',
-    proposeOn:
-      'Diz exatamente o que criar ou alterar. Vai para as Alterações da IA pendentes para o reveres.',
-    proposeOff: 'Desativado: o Assistente só lê.',
-    changesLabel: 'As alterações que queres',
-    questionLabel: 'A tua pergunta',
-    inputHint: 'Enter para perguntar, Shift+Enter para uma nova linha.',
-    preparing: 'A preparar',
-    asking: 'A perguntar',
-    prepare: 'Preparar alterações',
-    ask: 'Perguntar',
-    close: 'Fechar',
-    closeUnavailable: 'Fechar',
-  },
-  answer: {
-    waiting: {
-      one: '{n} alteração aguarda a tua revisão.',
-      other: '{n} alterações aguardam a tua revisão.',
-    },
-    nothingChanged: 'Ainda nada foi alterado.',
-    review: 'Rever as alterações',
-    incomplete:
-      'Parei antes de ler tudo o que pode ser relevante. Uma pergunta mais restrita pode obter uma resposta mais completa.',
-    sources: 'Fontes',
-  },
+/** What an outside AI app may read: Connect to AI and the knowledge view (#104). */
+const ai: Dictionary['ai'] = {
   connect: {
     readable: {
       lore: 'Entradas de lore, com os respetivos campos, nomes alternativos e resumos',
@@ -103,7 +36,7 @@ const assistant: Dictionary['assistant'] = {
     readsNote:
       'Lê apenas este universo, com o teu acesso. Não pode criar, editar nem eliminar nada. Se deixares este universo, a aplicação deixa de o poder ler.',
     privacyNote:
-      'O que a aplicação lê é enviado para o serviço de IA que está por trás dela, nos termos desse serviço. Manuscritos longos podem consumir grande parte do contexto da aplicação, por isso lê a prosa uma secção de cada vez. As perguntas feitas desta forma não contam para o Assistente do próprio LorEvolve.',
+      'O que a aplicação lê é enviado para o serviço de IA que está por trás dela, nos termos desse serviço. Manuscritos longos podem consumir grande parte do contexto da aplicação, por isso lê a prosa uma secção de cada vez.',
     manage: 'Para desligar uma aplicação, vai a {link}.',
     manageLink: 'Perfil, Aplicações ligadas',
   },
@@ -179,4 +112,4 @@ const assistant: Dictionary['assistant'] = {
   },
 }
 
-export default assistant
+export default ai

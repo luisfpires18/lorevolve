@@ -36,7 +36,8 @@ const admin = {
     },
     ai: {
       label: 'AI usage and cost',
-      source: 'Assistant questions are counted in memory only, per server process.',
+      source:
+        'Nothing is counted here: AI reaches a universe over MCP, and a proposal costs this host nothing.',
     },
   },
   role: {

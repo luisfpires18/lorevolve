@@ -101,11 +101,11 @@ export function deleteKnowledgeRecord(universeId: string, recordId: string) {
 /** Where a record was learnt, in a reader's words: "The Causeway · Chapter 2: Arrival, scene 1 of The Drowned Heir". */
 export function describeScene(scene: KnowledgeSceneRef) {
   return scene.chapterNumber === null
-    ? t('assistant.knowledge.sceneUnchaptered', {
+    ? t('ai.knowledge.sceneUnchaptered', {
         position: scene.position,
         story: scene.storyTitle,
       })
-    : t('assistant.knowledge.sceneInChapter', {
+    : t('ai.knowledge.sceneInChapter', {
         chapter: scene.chapterNumber,
         position: scene.position,
         story: scene.storyTitle,
