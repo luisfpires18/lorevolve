@@ -464,19 +464,20 @@ public sealed class WorldLogicFindingTests(LorEvolveApiFactory factory) : IClass
     }
 
     /// <summary>
-    /// The other half of that finding, which the refusal above deliberately does not cover: deleting a project
-    /// takes its project-scoped findings, dismissals included, because a decision about one project's scope has
-    /// nothing left to be about once the project is gone. Refusing a project delete over a World Logic dismissal
-    /// would be the undeletable-row failure this milestone has already paid for once.
+    /// The other half of Codex round 1, which the refusal above deliberately does not cover: a project-scoped
+    /// finding cascades with its project, dismissals included, because a decision about one project's scope has
+    /// nothing left to be about once the project is gone. Refusing that would be the undeletable-row failure this
+    /// milestone has already paid for once, and a project has no delete route of its own today in any case: the
+    /// cascade is reached by deleting the universe, or by the row going away beneath the API.
     ///
     /// What has to hold is that it leaves no invalid backup behind. A dismissal is only ever carried with its rule
-    /// and its project, both of which a backup holds for the whole universe, so the payload after the delete
+    /// and its project, both of which a backup holds for the whole universe, so the payload after the cascade
     /// carries no dismissal naming anything missing, and it restores.
     /// </summary>
     [Fact]
-    public async Task Deleting_a_project_takes_its_scoped_findings_and_leaves_a_restorable_backup()
+    public async Task A_project_scoped_dismissal_goes_with_its_project_and_leaves_a_restorable_backup()
     {
-        var (client, universe) = await SignedInWithUniverse(_factory, "wlfindprojectdelete");
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlfindprojectgone");
         var entry = await CreateEntity(client, universe.Id, "Arlen");
 
         var project = await PostJson<ProjectDetail>(
@@ -491,25 +492,37 @@ public sealed class WorldLogicFindingTests(LorEvolveApiFactory factory) : IClass
         Assert.Equal(project.Id, scoped.ProjectId);
 
         await Decide(client, universe.Id, scoped.Id, "dismiss", "Not in this story.");
-        Assert.Single((await Backup(client, universe.Id)).Payload.DismissedFindings!);
 
-        (await client.DeleteAsync($"/api/projects/{project.Id}")).EnsureSuccessStatusCode();
+        // While both stand, the dismissal is carried and names a rule and a project this backup holds. That is the
+        // invariant a restore is validated against, and the one the cascade below must not be able to break.
+        var before = await Backup(client, universe.Id);
+        var carried = Assert.Single(before.Payload.DismissedFindings!);
+        Assert.Contains(before.Payload.SystemRules!, rule => rule.Id == carried.RuleId);
+        Assert.Contains(before.Payload.CreativeProjects!, candidate => candidate.Id == carried.ProjectId);
 
-        // The finding went with the project, and so did the decision about it.
+        // The project row goes, as a universe delete would take it.
+        await WithDb(_factory, async db =>
+        {
+            await db.CreativeProjects
+                .IgnoreQueryFilters()
+                .Where(candidate => candidate.Id == project.Id)
+                .ExecuteDeleteAsync();
+        });
+
+        // The finding went with it, and so did the decision about it.
         Assert.Equal(0, (await List(client, universe.Id)).TotalCount);
 
-        // And the backup is whole: no dismissal is carried, and it restores.
         var after = await Backup(client, universe.Id);
         Assert.Empty(after.Payload.DismissedFindings!);
 
         var restored = await RestoreArchive(
             client,
             await RawArchive(client, universe.Id),
-            "World wlfindprojectdelete restored");
+            "World wlfindprojectgone restored");
 
         Assert.Equal(0, (await List(client, restored.Id)).TotalCount);
 
-        // The rule itself survived the project delete, so the restored universe can still find the problem.
+        // The rule itself survived, so the restored universe can still find the problem.
         Assert.Equal(1, (await Sweep(client, restored.Id)).Created);
     }
 
