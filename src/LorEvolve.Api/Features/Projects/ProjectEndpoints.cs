@@ -39,9 +39,22 @@ public static class ProjectEndpoints
         return endpoints;
     }
 
+    /// <summary>The most rows one list request answers with, and what it answers with when no limit is named (#198).</summary>
+    public const int MaxPageSize = 100;
+
     /// <summary>
-    /// The projects the caller can reach, most recently updated first. <paramref name="universeId"/> narrows to one
-    /// universe's projects.
+    /// One page of the projects the caller can reach, most recently updated first. <paramref name="universeId"/> narrows
+    /// to one universe's projects; <paramref name="offset"/> and <paramref name="limit"/> pick the page, and the limit
+    /// is never more than <see cref="MaxPageSize"/>, so the payload is bounded whatever the caller asks (#198).
+    /// <paramref name="include"/> names one project or story the caller is inside: when it is readable and not on the
+    /// page, it is added after the page, so a sidebar showing the first few always shows the one being read.
+    ///
+    /// <b>How two sources are paged as one.</b> The rows are the stored projects and every readable Story shown as a
+    /// Writing Project (#140), and one ordering runs over both. Each source is read in that ordering and cut at
+    /// <c>offset + limit</c> in the database, which is enough: no row past that point in its own source can be inside
+    /// the first <c>offset + limit</c> rows of the two together. The two cut lists are then merged, newest first, and
+    /// the page is taken from the merge. A tie on the update time keeps each source's own order (its id) and puts a
+    /// stored project before a story, so a page boundary falls in the same place on every request.
     ///
     /// There is no filter for projects belonging to no universe, because there are none: every project is inside
     /// exactly one (#171).
@@ -50,26 +63,76 @@ public static class ProjectEndpoints
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         CancellationToken cancellationToken,
-        [FromQuery] Guid? universeId = null)
+        [FromQuery] Guid? universeId = null,
+        [FromQuery] int offset = 0,
+        [FromQuery] int limit = MaxPageSize,
+        [FromQuery] Guid? include = null)
     {
+        if (offset < 0 || limit < 1 || limit > MaxPageSize)
+        {
+            var errors = new Dictionary<string, string[]>();
+            if (offset < 0)
+            {
+                errors[nameof(offset)] = ["The offset cannot be negative."];
+            }
+
+            if (limit < 1 || limit > MaxPageSize)
+            {
+                errors[nameof(limit)] = [$"The limit must be between 1 and {MaxPageSize}."];
+            }
+
+            return Results.ValidationProblem(errors);
+        }
+
         var userId = principal.RequireUserId();
-        IQueryable<CreativeProject> query = ProjectAccess.Readable(db, userId)
+        var reach = offset + limit;
+
+        IQueryable<CreativeProject> projects = ProjectAccess.Readable(db, userId)
             .AsNoTracking()
             .Include(project => project.Universe);
+        var stories = StoryProjects.Readable(db, userId);
 
         if (universeId is { } id)
         {
-            query = query.Where(project => project.UniverseId == id);
+            projects = projects.Where(project => project.UniverseId == id);
+            stories = stories.Where(story => story.UniverseId == id);
         }
 
-        var projects = await query.ToListAsync(cancellationToken);
-        var rows = projects.Select(project => Detail(project, userId)).ToList();
+        var ownRows = await projects
+            .OrderByDescending(project => project.UpdatedAt)
+            .ThenBy(project => project.Id)
+            .Take(reach)
+            .ToListAsync(cancellationToken);
+        var storyRows = await stories
+            .OrderByDescending(story => story.UpdatedAt)
+            .ThenBy(story => story.Id)
+            .Take(reach)
+            .ToListAsync(cancellationToken);
 
-        // Every Story the caller can read is already a Writing Project, so the list says so rather than pretending an
-        // author's existing work is not a project (#140). Nothing of the story is stored or copied: see StoryProjects.
-        rows.AddRange(await StoryProjects.ReadableAsync(db, userId, universeId, cancellationToken));
+        // Each source keeps its database order through the merge; the sort only interleaves them by update time.
+        var page = ownRows.Select((project, index) => (Row: Detail(project, userId), Source: 0, Index: index))
+            .Concat(storyRows.Select((story, index) => (Row: StoryProjects.Detail(story, userId), Source: 1, Index: index)))
+            .OrderByDescending(candidate => candidate.Row.UpdatedAt)
+            .ThenBy(candidate => candidate.Source)
+            .ThenBy(candidate => candidate.Index)
+            .Skip(offset)
+            .Take(limit)
+            .Select(candidate => candidate.Row)
+            .ToList();
 
-        return Results.Ok(rows.OrderByDescending(project => project.UpdatedAt).ToList());
+        if (include is { } wanted && page.All(row => row.Id != wanted))
+        {
+            if (await projects.FirstOrDefaultAsync(project => project.Id == wanted, cancellationToken) is { } project)
+            {
+                page.Add(Detail(project, userId));
+            }
+            else if (await stories.FirstOrDefaultAsync(story => story.Id == wanted, cancellationToken) is { } story)
+            {
+                page.Add(StoryProjects.Detail(story, userId));
+            }
+        }
+
+        return Results.Ok(page);
     }
 
     private static async Task<IResult> GetAsync(

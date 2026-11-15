@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
-import { listProjects } from '../projects/api'
+import { listAllProjects } from '../projects/api'
 import { kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
 import type { ProjectDetail } from '../projects/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -36,7 +36,8 @@ export default function ProjectsPage({ inUniverse = false }: { inUniverse?: bool
 
   useEffect(() => {
     const controller = new AbortController()
-    listProjects(universeId ? { universeId } : {}, controller.signal)
+    // Every page, not the first: this screen is where the projects the sidebar leaves out are found (#198).
+    listAllProjects(universeId ? { universeId } : {}, controller.signal)
       .then((projects) => setState({ kind: 'ready', for: requested, projects }))
       .catch(() => {
         if (!controller.signal.aborted) setState({ kind: 'failed', for: requested })

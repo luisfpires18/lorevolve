@@ -13,20 +13,33 @@ import type { ProjectDetail } from '../projects/types'
 import { t } from '../i18n'
 
 /**
+ * How many projects the sidebar lists, most recently updated first, before the rest are left to All projects (#198).
+ * The issue proposed eight and the owner has not confirmed it, so it lives here alone: changing it is this one line.
+ */
+export const SIDEBAR_PROJECT_LIMIT = 8
+
+/**
  * The project an address is in, or null anywhere else. Both of a project's frames count, the account-level
  * `/app/projects/<id>` and the universe-scoped `/app/universes/<universeId>/projects/<id>`, because the group is drawn
  * in both and the project being read is the one that starts expanded in either. Anything below the project, as its
- * later pages will be, is still that project.
+ * later pages will be, is still that project. A story's own address counts too, because a story is the Writing Project
+ * it is listed as (#140), and the list must keep the one being read even when it is past the bound (#198).
  */
 function projectInPath(pathname: string) {
   const match =
     /^\/app\/projects\/([0-9a-fA-F-]{36})(?:\/|$)/.exec(pathname) ??
-    /^\/app\/universes\/[0-9a-fA-F-]{36}\/projects\/([0-9a-fA-F-]{36})(?:\/|$)/.exec(pathname)
+    /^\/app\/universes\/[0-9a-fA-F-]{36}\/(?:projects|stories)\/([0-9a-fA-F-]{36})(?:\/|$)/.exec(
+      pathname,
+    )
   return match ? match[1] : null
 }
 
 /**
  * The projects an author can reach, as a group of the sidebar: All projects, the projects themselves, and New project.
+ *
+ * The list is bounded: the `SIDEBAR_PROJECT_LIMIT` most recently updated, plus the project the author is in when it is
+ * older than those, so forty projects still draw a sidebar that can be read and a request that stays small (#198). The
+ * rest are one click away under All projects. The group's own heading folds the whole group away.
  *
  * One project expands to its own pages. Only the project the author is in is expanded to begin with, because a list
  * where everything is open is a list nobody can scan; opening another is a click, and what was opened by hand stays
@@ -41,26 +54,63 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
   const { pathname } = useLocation()
   const [projects, setProjects] = useState<ProjectDetail[] | 'failed' | null>(null)
   const [opened, setOpened] = useState<Record<string, boolean>>({})
+  const [groupOpen, setGroupOpen] = useState(true)
   const listId = useId()
+  const active = projectInPath(pathname)
 
   useEffect(() => {
     const controller = new AbortController()
-    listProjects(universeId ? { universeId } : {}, controller.signal)
-      .then(setProjects)
+    listProjects(
+      { universeId, limit: SIDEBAR_PROJECT_LIMIT, include: active ?? undefined },
+      controller.signal,
+    )
+      .then((next) => {
+        setProjects(next)
+        // What was opened by hand is kept only for rows still listed, so the record never outgrows the list.
+        setOpened((current) =>
+          Object.fromEntries(
+            next.filter((row) => row.id in current).map((row) => [row.id, current[row.id]]),
+          ),
+        )
+      })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setProjects('failed')
         if (error) return
       })
     return () => controller.abort()
-  }, [universeId])
+  }, [universeId, active])
 
-  const active = projectInPath(pathname)
   const rows = projects === null || projects === 'failed' ? [] : projects
+  const linksId = `${listId}-links`
 
   return (
     <li className="sidebar__group" data-testid="sidebar-projects">
-      <ul className="sidebar__links">
+      {/* The group's label is its fold: one button, announced as expanded or collapsed, named by the label it shows. */}
+      <h2 className="typeswitch__rowlabel sidebar__grouphead" id="sidebar-group-projects">
+        <button
+          type="button"
+          className="sidebar__grouptoggle"
+          aria-expanded={groupOpen}
+          aria-controls={linksId}
+          data-testid="projects-group-toggle"
+          onClick={() => setGroupOpen((open) => !open)}
+        >
+          <ChevronRight
+            className={groupOpen ? 'sidebar__chevron sidebar__chevron--open' : 'sidebar__chevron'}
+            aria-hidden="true"
+            focusable="false"
+            strokeWidth={1.75}
+          />
+          {t('workspace.rail.groups.projects')}
+        </button>
+      </h2>
+      <ul
+        className="sidebar__links"
+        id={linksId}
+        aria-labelledby="sidebar-group-projects"
+        hidden={!groupOpen}
+      >
         <li>
           {/*
            * A project's own pages live at one address, `/app/projects/<id>`, because a project may have no universe

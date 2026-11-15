@@ -538,16 +538,9 @@ function Workspace() {
 }
 
 /**
- * The projects group under its label. Its label is drawn here, as its own row just above it, so the projects group
- * reads the same as the two section groups around it while its component keeps its own rows (#191).
+ * The projects group under its label. The label is drawn by `ProjectsNav` itself since #198, because there it is the
+ * button that folds the group; it reads the same as the section groups' labels around it (#191).
  */
 function ProjectsLabelled({ universeId }: { universeId: string }) {
-  return (
-    <>
-      <li>
-        <GroupLabel id="sidebar-group-projects" label={t('workspace.rail.groups.projects')} />
-      </li>
-      <ProjectsNav universeId={universeId} />
-    </>
-  )
+  return <ProjectsNav universeId={universeId} />
 }
