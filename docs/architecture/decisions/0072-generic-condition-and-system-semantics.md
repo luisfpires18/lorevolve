@@ -127,3 +127,21 @@ LorEvolve demo world, and the nonfantasy file contains no fantasy term at all.
 - `rationale` is diagnostic text in one language, never translated, and never rendered as prose to a reader.
 - A rule's condition has no notion of the rule's own history: evaluation sees the current facts, not what they were
   when the rule was written.
+
+## Addendum 2026-11-15: proposed through review
+
+A rule definition and a System can now be staged by an AI through `propose_changes` and approved in LorEvolve like
+every other AI change (ADR 0047). Plan: `docs/architecture/audits/2026-11-15-systems-and-rules-through-review-plan.md`.
+
+- Two resources: `system_rule` (alias `world_logic_rule`) and `system`. Create and update only. Neither is removed by
+  an AI: a rule definition has no Trash and a System delete is permanent, and `remove` means the Trash.
+- A System's whole ordered rule list travels with the System. At commit its own write runs first, then the difference
+  from the stored list is applied through the existing link and unlink paths, so the order follows the list. A rule
+  the proposal creates is named by its `ref`, so the System waits for that rule's approval, and rejecting the rule
+  rejects the System change with it. Unlinking still never deletes a rule.
+- Staging and commit run the routes' own checks, lifted rather than copied: the condition refusal, the dependency
+  check, the name and scope rules. The commit passes the version read at staging, so an author edit after staging
+  fails the change rather than being overwritten. A System is also held to the rule list it was staged over.
+- Unchanged: a rule stands on its own, a System references and never owns, one universe per proposal, the REST
+  contracts and their 409 markers.
+- Limit: a condition may name only records that already exist, not ones created in the same proposal.

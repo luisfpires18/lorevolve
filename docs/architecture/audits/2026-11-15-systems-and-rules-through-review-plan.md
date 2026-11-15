@@ -1,6 +1,6 @@
 # Plan: Systems and rule definitions through AI Changes review
 
-Status: plan, not approved. Owner request, 2026-11-15 chat: "Yes, plan it first", answering whether `propose_changes`
+Status: approved by the owner on 2026-11-15 with the four defaults below (no Remove, the rule list travels with the System, stricter staleness, an addendum to ADR 0072); implemented on `feat/world-logic-proposals`. Owner request, 2026-11-15 chat: "Yes, plan it first", answering whether `propose_changes`
 should be able to stage World Logic Systems and rule definitions. This settles the open box on #135: "Whether they
 should get a proposal resource, so an app can stage one."
 
