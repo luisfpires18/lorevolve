@@ -155,7 +155,10 @@ internal static class EntityRevisions
         Guid entityId,
         CancellationToken cancellationToken)
     {
-        var row = await db.Entities.AsNoTracking()
+        // IgnoreQueryFilters so a project's entry can be snapshotted too (#146): the filter hides a project's entries
+        // from the lore, and without this opt-out CaptureAsync read nothing for one and silently recorded no history.
+        // The id is the whole scope here - a caller has already decided which entry it means.
+        var row = await db.Entities.AsNoTracking().IgnoreQueryFilters()
             .Where(entity => entity.Id == entityId)
             .Select(entity => new
             {

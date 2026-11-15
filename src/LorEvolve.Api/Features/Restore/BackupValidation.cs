@@ -1274,6 +1274,19 @@ internal static partial class BackupValidation
                         Missing($"a field value of {what}");
                     }
                 }
+
+                // The entry's saved versions (version 42, #146). Each id is registered, as a lore entry's versions are,
+                // so a reference to one inside the file resolves and a duplicate is caught.
+                foreach (var revision in entry.Revisions ?? [])
+                {
+                    if (revision is null)
+                    {
+                        Missing($"a saved version of {what}");
+                        continue;
+                    }
+
+                    Register(revision.Id, $"A saved version of {what}");
+                }
             }
         }
 

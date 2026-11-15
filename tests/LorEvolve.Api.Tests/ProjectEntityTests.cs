@@ -481,10 +481,24 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
         Assert.Equal("Alenna", (await Entries(client, film.Id)).First(entry => entry.Id == alenna.Id).Name);
 
-        // And a project's entry has no revision history of its own, by design (#144): the lore's history records the
-        // world's claims, and a film's prop makes none.
-        await WithDb(_factory, async db =>
-            Assert.Empty(await db.EntityRevisions.Where(revision => revision.EntityId == knife.Id).ToListAsync()));
+        // The entry keeps a history, through the same capture the lore's entries use. The second review round was
+        // right to insist on this: "we decided not to" is not the shared infrastructure the criterion asks for.
+        var edited = await Put<EntityDetail>(
+            client,
+            $"/api/projects/{film.Id}/entities/{knife.Id}",
+            new ProjectEntityRequest(prop.Id, "The salt knife, notched", null, null, null, knife.Version));
+
+        Assert.Equal("The salt knife, notched", edited.Name);
+
+        var history = await client.GetFromJsonAsync<List<EntityRevisionSummary>>(
+            $"/api/projects/{film.Id}/entities/{knife.Id}/revisions");
+
+        // Newest first: the edit, then the version the create left behind.
+        Assert.Equal(2, history!.Count);
+        Assert.Equal(EntityRevisionKind.Edited, history[0].Kind);
+        Assert.Equal("The salt knife, notched", history[0].Name);
+        Assert.Equal(EntityRevisionKind.Created, history[1].Kind);
+        Assert.Equal("The salt knife", history[1].Name);
     }
 
     private static async Task<ProjectDetail> NewFilm(HttpClient client, Guid universeId)

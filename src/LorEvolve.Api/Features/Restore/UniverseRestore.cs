@@ -98,6 +98,13 @@ internal sealed class RestoreIdentity
         foreach (var entry in payload.ProjectEntities ?? [])
         {
             yield return entry.Id;
+
+            // Its saved versions' ids too (version 42, #146), the way a lore entry's are: AddRevisions maps every id
+            // it writes, so a version whose id was never collected fails the whole restore.
+            foreach (var revision in entry.Revisions ?? [])
+            {
+                yield return revision.Id;
+            }
         }
 
         foreach (var season in payload.ProjectSeasons ?? [])
@@ -1067,6 +1074,9 @@ internal sealed partial class UniverseRestore(
                 UpdatedAt = entry.UpdatedAt,
             });
 
+            // The entry's history, through the same writer the lore's entries use (version 42, #146).
+            AddRevisions(ids.Map(entry.Id), entry.Revisions ?? [], ids);
+
             foreach (var value in entry.FieldValues ?? [])
             {
                 db.EntityFieldValues.Add(new EntityFieldValue
@@ -1276,7 +1286,22 @@ internal sealed partial class UniverseRestore(
             db.EntityImages.Add(image);
         }
 
-        foreach (var revision in entity.Revisions)
+        AddRevisions(entityId, entity.Revisions, ids);
+
+        if (entity.Progression is { } progression)
+        {
+            AddProgression(entityId, progression, ids);
+        }
+    }
+
+    /// <summary>
+    /// An entry's saved versions, with every id inside them translated the same way every other reference is (ADR
+    /// 0013). Shared by a lore entry and a project's entry (#146), which is the point: a project entry's history is
+    /// captured by the same code, so it is restored by the same code rather than by a copy of it.
+    /// </summary>
+    private void AddRevisions(Guid entityId, IReadOnlyList<BackupRevision> revisions, RestoreIdentity ids)
+    {
+        foreach (var revision in revisions)
         {
             var revisionRow = new EntityRevision
             {
@@ -1331,10 +1356,6 @@ internal sealed partial class UniverseRestore(
             }
         }
 
-        if (entity.Progression is { } progression)
-        {
-            AddProgression(entityId, progression, ids);
-        }
     }
 
     /// <summary>
