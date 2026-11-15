@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "scenario": "succession",
+  "description": "Who may hold a seat, and when. Covers number ordering, temporal containment inside one calendar scope, and precedence between a project-scoped and a universe-scoped exception declared in that order.",
+  "facts": {
+    "subjects": [
+      { "id": "s.elder", "type": "claimant", "attributes": { "age": 41, "acclaimed": true, "regent": false, "bornOn": "calendar:1104-02-11" } },
+      { "id": "s.child", "type": "claimant", "attributes": { "age": 9, "acclaimed": true, "regent": false, "bornOn": "calendar:1136-07-30" } },
+      { "id": "s.regent-child", "type": "claimant", "attributes": { "age": 9, "acclaimed": true, "regent": true, "bornOn": "calendar:1136-07-30" } },
+      { "id": "s.acclaimed-child", "type": "claimant", "attributes": { "age": 11, "acclaimed": true, "regent": true, "bornOn": "calendar:1134-01-05" } },
+      { "id": "s.unaged-claimant", "type": "claimant", "attributes": { "acclaimed": true, "regent": false } },
+      { "id": "s.seat", "type": "seat", "attributes": { "vacantFrom": "calendar:1145-01-01", "vacantUntil": "calendar:1147-12-31" } }
+    ],
+    "relations": [
+      { "type": "claims", "fromId": "s.elder", "toId": "s.seat" },
+      { "type": "claims", "fromId": "s.child", "toId": "s.seat" }
+    ],
+    "events": [
+      { "id": "e.claim-in-window", "kind": "claim", "method": "acclamation", "subjectIds": ["s.elder"], "at": "calendar:1146-05-04", "canon": true },
+      { "id": "e.claim-too-early", "kind": "claim", "method": "acclamation", "subjectIds": ["s.child"], "at": "calendar:1141-05-04", "canon": true },
+      { "id": "e.claim-undated", "kind": "claim", "method": "acclamation", "subjectIds": ["s.unaged-claimant"], "canon": true }
+    ]
+  },
+  "rules": [
+    {
+      "id": "rule.age-of-majority",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "compare",
+        "left": { "attribute": "age", "of": { "subject": "self" } },
+        "op": "gte",
+        "right": { "literal": 16, "type": "number" }
+      },
+      "exceptions": [
+        {
+          "id": "ex.regency",
+          "scope": { "kind": "project", "projectId": "p.interregnum" },
+          "when": {
+            "kind": "compare",
+            "left": { "attribute": "regent", "of": { "subject": "self" } },
+            "op": "eq",
+            "right": { "literal": true, "type": "boolean" }
+          }
+        },
+        {
+          "id": "ex.acclaimed-over-ten",
+          "scope": { "kind": "universe" },
+          "when": {
+            "kind": "all",
+            "of": [
+              { "kind": "compare", "left": { "attribute": "acclaimed", "of": { "subject": "self" } }, "op": "eq", "right": { "literal": true, "type": "boolean" } },
+              { "kind": "compare", "left": { "attribute": "age", "of": { "subject": "self" } }, "op": "gte", "right": { "literal": 10, "type": "number" } }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rule.claim-inside-vacancy",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "within",
+        "point": { "field": "at", "of": { "subject": "self" }, "from": "events" },
+        "from": { "attribute": "vacantFrom", "of": { "subject": "s.seat" } },
+        "to": { "attribute": "vacantUntil", "of": { "subject": "s.seat" } }
+      },
+      "exceptions": []
+    }
+  ],
+  "cases": [
+    {
+      "name": "an adult claimant passes on age alone",
+      "ruleId": "rule.age-of-majority",
+      "target": "s.elder",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.elder"] }
+    },
+    {
+      "name": "a nine-year-old claimant with no exception applying is a proven violation",
+      "ruleId": "rule.age-of-majority",
+      "target": "s.child",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.child"] }
+    },
+    {
+      "name": "the project-scoped regency exception wins although it is declared first and the universe one would not apply",
+      "ruleId": "rule.age-of-majority",
+      "target": "s.regent-child",
+      "projectId": "p.interregnum",
+      "expect": { "outcome": "exempt", "errorCode": null, "exemptionId": "ex.regency", "evidence": ["s.regent-child"] }
+    },
+    {
+      "name": "the project-scoped exception outranks the universe one when both are true",
+      "ruleId": "rule.age-of-majority",
+      "target": "s.acclaimed-child",
+      "projectId": "p.interregnum",
+      "expect": { "outcome": "exempt", "errorCode": null, "exemptionId": "ex.regency", "evidence": ["s.acclaimed-child"] }
+    },
+    {
+      "name": "outside that project the universe exception is the one that applies",
+      "ruleId": "rule.age-of-majority",
+      "target": "s.acclaimed-child",
+      "projectId": null,
+      "expect": { "outcome": "exempt", "errorCode": null, "exemptionId": "ex.acclaimed-over-ten", "evidence": ["s.acclaimed-child"] }
+    },
+    {
+      "name": "a claimant with no age is unknown, and the exceptions never run because the condition was not false",
+      "ruleId": "rule.age-of-majority",
+      "target": "s.unaged-claimant",
+      "projectId": null,
+      "expect": { "outcome": "unknown", "errorCode": null, "exemptionId": null, "evidence": ["s.unaged-claimant"] }
+    },
+    {
+      "name": "a claim inside the vacancy window passes",
+      "ruleId": "rule.claim-inside-vacancy",
+      "target": "e.claim-in-window",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["e.claim-in-window", "s.seat"] }
+    },
+    {
+      "name": "a claim before the vacancy opened is a proven violation",
+      "ruleId": "rule.claim-inside-vacancy",
+      "target": "e.claim-too-early",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["e.claim-too-early", "s.seat"] }
+    },
+    {
+      "name": "an undated claim is unknown, not the beginning of time",
+      "ruleId": "rule.claim-inside-vacancy",
+      "target": "e.claim-undated",
+      "projectId": null,
+      "expect": { "outcome": "unknown", "errorCode": null, "exemptionId": null, "evidence": ["e.claim-undated"] }
+    }
+  ]
+}

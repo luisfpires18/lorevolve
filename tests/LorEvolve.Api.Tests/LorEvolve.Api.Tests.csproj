@@ -21,6 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The World Logic condition fixtures (ADR 0072) are read from disk at run time. -->
+    <Content Include="Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\LorEvolve.Api\LorEvolve.Api.csproj" />
   </ItemGroup>
 

@@ -49,6 +49,9 @@ deferred.
 One line per branch. Delete the line when it merges.
 
 - `docs/m4-assistant-audit`: the M4 retirement inventory (#156), `docs/architecture/audits/2026-11-15-m4-assistant-retirement-audit.md`. Its findings bind #157 to #160: `UniverseAiHelpOff` and `AiChangeSource.Assistant` are kept (they gate and label MCP and AI Changes), so #159 writes no migration, and the AI Changes E2E specs must move off the assistant drawer onto MCP staging in #157. The assistant runs on Groq on DEV and has never been on in PROD.
+- M3 World Logic run (tracker #135, issues #149 to #155), one PR per issue. Landed: #149 the condition and System
+  specification (ADR 0072, `docs/architecture/world-logic-condition-spec.md`, six fixtures under
+  `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/`). Next: #150 persistence. Delete this line when #155 merges.
 
 ## Committed, not on `dev`
 
