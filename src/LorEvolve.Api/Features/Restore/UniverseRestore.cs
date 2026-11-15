@@ -94,6 +94,11 @@ internal sealed class RestoreIdentity
             yield return project.Id;
         }
 
+        foreach (var entry in payload.ProjectEntities ?? [])
+        {
+            yield return entry.Id;
+        }
+
         foreach (var type in payload.EntityTypes)
         {
             yield return type.Id;
@@ -998,6 +1003,44 @@ internal sealed partial class UniverseRestore(
         foreach (var entity in payload.Entities)
         {
             AddEntity(entity, ids, universeId, images);
+        }
+
+        // The projects' own entries (version 40, #144), after the lore entries, because a project entry may stand for
+        // one of them. Each keeps its scope: the project and the type come back under their restored ids, so what was
+        // a game's unit is a game's unit again and never the universe's lore.
+        foreach (var entry in payload.ProjectEntities ?? [])
+        {
+            db.Entities.Add(new LoreEntity
+            {
+                Id = ids.Map(entry.Id),
+                UniverseId = universeId,
+                ProjectId = ids.Map(entry.ProjectId),
+                CanonEntityId = entry.CanonEntityId is { } canonId ? ids.Map(canonId) : null,
+                EntityTypeId = ids.Map(entry.EntityTypeId),
+                Name = entry.Name,
+                Summary = entry.Summary,
+                CanonStatus = CanonStatus.Draft,
+                DeletedAt = entry.DeletedAt,
+                CreatedAt = entry.CreatedAt,
+                UpdatedAt = entry.UpdatedAt,
+            });
+
+            foreach (var value in entry.FieldValues ?? [])
+            {
+                db.EntityFieldValues.Add(new EntityFieldValue
+                {
+                    Id = Guid.NewGuid(),
+                    EntityId = ids.Map(entry.Id),
+                    FieldDefinitionId = ids.Map(value.FieldDefinitionId),
+                    TextValue = value.TextValue,
+                    NumberValue = value.NumberValue,
+                    EraId = value.EraId is { } eraId ? ids.Map(eraId) : null,
+                    BooleanValue = value.BooleanValue,
+                    DateValue = value.DateValue,
+                    OptionId = value.OptionId is { } optionId ? ids.Map(optionId) : null,
+                    ReferencedEntityId = value.ReferencedEntityId is { } referenced ? ids.Map(referenced) : null,
+                });
+            }
         }
 
         foreach (var type in payload.RelationshipTypes)

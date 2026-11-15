@@ -120,7 +120,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await KnowledgeAsync(universeId, cancellationToken),
             MapsOf(maps, calibrations),
             await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken),
-            await CreativeProjectsAsync(universeId, cancellationToken));
+            await CreativeProjectsAsync(universeId, cancellationToken),
+            await ProjectEntriesAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1304,6 +1305,45 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     /// Nothing of the owning account travels: a restore makes each project the restoring account's, as it does the
     /// universe itself.
     /// </summary>
+    /// <summary>
+    /// Every entry of every project of this universe, the trashed ones included (version 40, #144).
+    ///
+    /// IgnoreQueryFilters because a project's entries are hidden from every ordinary read of the table, which is what
+    /// keeps them out of the lore; a backup is the one place that has to see both scopes, and it says so here rather
+    /// than relying on a filter to have been remembered.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupProjectEntity>> ProjectEntriesAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.Entities.AsNoTracking().IgnoreQueryFilters()
+            .Where(entry => entry.UniverseId == universeId && entry.ProjectId != null)
+            .OrderBy(entry => entry.CreatedAt)
+            .ThenBy(entry => entry.Id)
+            .Select(entry => new BackupProjectEntity(
+                entry.Id,
+                entry.ProjectId!.Value,
+                entry.EntityTypeId,
+                entry.Name,
+                entry.Summary,
+                entry.CanonEntityId,
+                entry.DeletedAt,
+                entry.CreatedAt,
+                entry.UpdatedAt,
+                entry.FieldValues
+                    .OrderBy(value => value.FieldDefinitionId)
+                    .ThenBy(value => value.OptionId)
+                    .Select(value => new BackupFieldValue(
+                        value.FieldDefinitionId,
+                        value.TextValue,
+                        value.NumberValue,
+                        value.EraId,
+                        value.BooleanValue,
+                        value.DateValue,
+                        value.OptionId,
+                        value.ReferencedEntityId))
+                    .ToList()))
+            .ToListAsync(cancellationToken);
+
     private async Task<IReadOnlyList<BackupCreativeProject>> CreativeProjectsAsync(
         Guid universeId,
         CancellationToken cancellationToken) =>

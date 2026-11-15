@@ -308,7 +308,7 @@ public sealed record UniverseBackup(
     /// ignorable: a version 37 reader would list stories by title and a scene's lore by name. A file at version 37 or earlier
     /// restores its stories in title order and each scene's lore by the entry's name, as it read then.
     /// </summary>
-    public const int CurrentVersion = 39;
+    public const int CurrentVersion = 40;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -366,7 +366,8 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupKnowledgeRecord>? KnowledgeRecords = null,
     IReadOnlyList<BackupMap>? Maps = null,
     IReadOnlyList<BackupIdeaBoard>? IdeaBoards = null,
-    IReadOnlyList<BackupCreativeProject>? CreativeProjects = null);
+    IReadOnlyList<BackupCreativeProject>? CreativeProjects = null,
+    IReadOnlyList<BackupProjectEntity>? ProjectEntities = null);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
@@ -861,6 +862,27 @@ public sealed record BackupImageCrop(double X, double Y, double Width, double He
 /// <paramref name="EraId"/> is the era <paramref name="NumberValue"/> is a year in, or null for
 /// a plain number - since version 4.
 /// </summary>
+/// <summary>
+/// One entry of one project (since version 40): a game's map or unit, a film's shot. Carried because #144 lets a
+/// project hold entries of its own types, and a universe that owns its projects (#171) is not whole without them.
+///
+/// <para>Narrower than <see cref="BackupEntity"/> on purpose, and not a variant of it: a project's entry has no Canon
+/// status, no article, no aliases, no tags, no picture and no revisions, because each of those says something about the
+/// world's record. <paramref name="CanonEntityId"/> is the optional link to the lore entry it stands for, carried as
+/// this file's own id like every other reference.</para>
+/// </summary>
+public sealed record BackupProjectEntity(
+    Guid Id,
+    Guid ProjectId,
+    Guid EntityTypeId,
+    string Name,
+    string? Summary,
+    Guid? CanonEntityId,
+    DateTime? DeletedAt,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupFieldValue> FieldValues);
+
 public sealed record BackupFieldValue(
     Guid FieldDefinitionId,
     string? TextValue,
