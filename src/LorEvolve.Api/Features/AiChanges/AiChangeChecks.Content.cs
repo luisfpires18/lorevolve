@@ -236,6 +236,12 @@ internal sealed partial class AiChangeChecker
             keptTargets = [.. stored.References.Where(reference => reference.Target.Id is not null).Select(reference => (reference.Kind, reference.Target.Id!.Value))];
         }
 
+        if (idea.ProjectId is { } projectId
+            && !await db.CreativeProjects.AnyAsync(project => project.Id == projectId && project.UniverseId == universeId, cancellationToken))
+        {
+            work.Problem(AiChangeCodes.Invalid, "That project isn't one of this universe's. Choose one from list_projects, or none.", "projectId");
+        }
+
         if (string.IsNullOrEmpty(idea.Title))
         {
             work.Problem(AiChangeCodes.Invalid, "Give the idea a title, so it can be found again.", "title");

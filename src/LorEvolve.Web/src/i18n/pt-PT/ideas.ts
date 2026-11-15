@@ -133,6 +133,7 @@ const ideas: Dictionary['ideas'] = {
     heading: 'Ideias',
     ledeStory:
       'Ideias ligadas a esta história ou a uma das suas cenas ou arcos. Só tu as podes ver.',
+    ledeProject: 'As tuas notas para este projeto. Só tu as podes ver, e nada aqui altera o mundo.',
     ledeUniverse: 'As tuas ideias para {universe}. Só tu as podes ver, e nada aqui altera o mundo.',
     ledeAll:
       'Todas as ideias que tens, num universo ou não. Só tu as podes ver, e ficam fora do teu lore.',
@@ -165,6 +166,8 @@ const ideas: Dictionary['ideas'] = {
       storyTitle: 'Ainda não há ideias para esta história.',
       storyHint:
         'Regista uma acima. As ideias ligadas a qualquer cena ou arco da história também aparecem aqui.',
+      projectTitle: 'Ainda não há ideias para este projeto.',
+      projectHint: 'Regista uma acima. Também aparece nas ideias do universo.',
       noneTitle: 'Ainda não há ideias.',
       noneHint: 'Guarda aqui as possibilidades, à parte do que é verdade no teu mundo.',
     },

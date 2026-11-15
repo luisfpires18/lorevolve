@@ -128,6 +128,8 @@ const ideas = {
     allYours: 'All your ideas',
     heading: 'Ideas',
     ledeStory: 'Ideas linked to this story or to one of its scenes or arcs. Only you can see them.',
+    ledeProject:
+      'Your notes for this project. Only you can see them, and nothing here changes the world.',
     ledeUniverse:
       'Your ideas for {universe}. Only you can see them, and nothing here changes the world.',
     ledeAll:
@@ -159,6 +161,8 @@ const ideas = {
       filteredHint: 'Try other words, or show all ideas.',
       storyTitle: 'No ideas for this story yet.',
       storyHint: 'Capture one above. Ideas linked to any scene or arc in it show up here too.',
+      projectTitle: 'No ideas for this project yet.',
+      projectHint: "Capture one above. It also shows in the universe's ideas.",
       noneTitle: 'No ideas yet.',
       noneHint: 'Keep possibilities here, apart from what is true in your world.',
     },

@@ -59,6 +59,7 @@ function captureInput(scope: IdeasScope, title: string): IdeaInput {
     references:
       scope.kind === 'story' ? [{ kind: IdeaReferenceKind.Story, id: scope.story.id }] : [],
     expectedUpdatedAt: null,
+    projectId: scope.kind === 'project' ? scope.project.id : null,
   }
 }
 
@@ -87,6 +88,9 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
 
   const universe = scope.kind === 'all' ? null : scope.universe
   const storyId = scope.kind === 'story' ? scope.story.id : null
+  const projectId = scope.kind === 'project' ? scope.project.id : null
+  // A story's and a project's ideas are views inside a page that has its own header and tabs.
+  const isNested = scope.kind === 'story' || scope.kind === 'project'
   // Where an idea opens, and a new one starts. A story's ideas open in their universe's editor: Back returns here.
   const basePath = universe ? `/app/universes/${universe.id}/ideas` : '/app/ideas'
 
@@ -169,6 +173,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       {
         universeId: show !== '' && show !== UNASSIGNED ? show : null,
         storyId,
+        projectId,
         unassigned: show === UNASSIGNED,
         deleted: view === 'deleted',
         search,
@@ -185,7 +190,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
     return () => {
       controller.abort()
     }
-  }, [show, storyId, view, search, page, reads, t])
+  }, [show, storyId, projectId, view, search, page, reads, t])
 
   useEffect(() => {
     if (outcome) outcomeRef.current?.focus()
@@ -244,13 +249,17 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       aria-labelledby={headingId}
       data-testid="ideas"
     >
-      {scope.kind === 'story' ? (
-        // Inside a story the story's own header is the page's: this is one of its views, named for a screen reader.
+      {isNested ? (
+        // Inside a story or a project its own header is the page's: this is one of its views, named for a screen reader.
         <div className="ideas__intro">
           <h2 className="visually-hidden" id={headingId}>
             {t('ideas.browser.heading')}
           </h2>
-          <p className="ideas__lede">{t('ideas.browser.ledeStory')}</p>
+          <p className="ideas__lede">
+            {scope.kind === 'project'
+              ? t('ideas.browser.ledeProject')
+              : t('ideas.browser.ledeStory')}
+          </p>
           {allLink}
         </div>
       ) : (
@@ -276,7 +285,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
         />
       )}
 
-      {scope.kind === 'story' ? null : <IdeasTabs basePath={basePath} current="ideas" />}
+      {isNested ? null : <IdeasTabs basePath={basePath} current="ideas" />}
 
       {deleted ? null : <QuickCapture scope={scope} onCaptured={captured} />}
 
@@ -506,6 +515,12 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
             testId="ideas-empty"
             title={t('ideas.browser.empty.storyTitle')}
             hint={t('ideas.browser.empty.storyHint')}
+          />
+        ) : scope.kind === 'project' ? (
+          <EmptyState
+            testId="ideas-empty"
+            title={t('ideas.browser.empty.projectTitle')}
+            hint={t('ideas.browser.empty.projectHint')}
           />
         ) : (
           <EmptyState

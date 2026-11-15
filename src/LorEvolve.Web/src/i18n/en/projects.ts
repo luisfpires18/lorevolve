@@ -29,8 +29,9 @@ const projects = {
     label: 'Project views',
   },
   ideas: {
-    empty: 'No ideas in this project yet.',
-    emptyHint: 'Ideas will gather here once an idea can belong to a project.',
+    ownerOnly: "Ideas here are the universe owner's.",
+    ownerOnlyHint:
+      'An idea belongs to the account that keeps it, so only the owner of this universe keeps ideas for its projects.',
   },
   kind: {
     writing: 'Writing',

@@ -132,7 +132,7 @@ internal static partial class AiChangeSnapshots
     {
         var idea = await db.Ideas.AsNoTracking()
             .Where(candidate => candidate.Id == ideaId && candidate.OwnerId == ownerId && candidate.UniverseId == universeId && candidate.DeletedAt == null)
-            .Select(candidate => new { candidate.Title, candidate.Body })
+            .Select(candidate => new { candidate.Title, candidate.Body, candidate.ProjectId })
             .FirstOrDefaultAsync(cancellationToken);
         if (idea is null)
         {
@@ -146,7 +146,8 @@ internal static partial class AiChangeSnapshots
             [.. references
                 .Select(reference => new IdeaReferenceValue(reference.Kind, AiRef.To(reference.Id)))
                 .OrderBy(reference => reference.Kind)
-                .ThenBy(reference => reference.Target.Id)]);
+                .ThenBy(reference => reference.Target.Id)],
+            idea.ProjectId);
     }
 
     /// <summary>
