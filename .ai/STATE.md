@@ -53,8 +53,11 @@ One line per branch. Delete the line when it merges.
   specification (ADR 0072, `docs/architecture/world-logic-condition-spec.md`, six fixtures under
   `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/`); #150 persistence (`Features/Systems/`, backup format 44,
   migration `AddWorldLogicSystems`); #151 the evaluator (`Features/RuleValidation/Conditions/`, stored exceptions,
-  backup format 45, migration `AddRuleExceptions`). Next: #152 the World Logic page. Delete this line when #155
-  merges.
+  backup format 45, migration `AddRuleExceptions`); #155 the MCP capability matrix
+  (`docs/testing/mcp-capability-matrix.md`, `McpCapabilityMatrixTests`), which audits what had merged and records
+  `pending-issue-154` for World Logic over MCP. Still open: #152 the World Logic page (PR #206), #153 persisted
+  findings (no PR), #154 the MCP integrity and rule-proposal tools (blocked on #153). Delete this line when those
+  three merge; the matrix and the milestone summary on #135 are then revisited for what #153 and #154 add.
 
 ## Committed, not on `dev`
 
