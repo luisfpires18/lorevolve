@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
 import { EmptyState } from '../components/EmptyState'
@@ -53,6 +53,12 @@ export default function WorldLogicPage() {
 
   const [tab, choose] = useQueryTab<View>(tabs)
 
+  // Each list keeps its own page in the address, so a link lands on the page it was taken from and the two cannot
+  // read each other's: both panels stay mounted, so one shared number would page the list nobody is looking at.
+  const [params, setParams] = useSearchParams()
+  const rulesPage = asPage(params.get('rulesPage'))
+  const systemsPage = asPage(params.get('systemsPage'))
+
   const base = `/app/universes/${universe.id}`
   const [rules, setRules] = useState<Load<WorldLogicRuleRow>>({ kind: 'loading' })
   const [systems, setSystems] = useState<Load<SystemSummary>>({ kind: 'loading' })
@@ -61,13 +67,21 @@ export default function WorldLogicPage() {
   useEffect(() => {
     const controller = new AbortController()
 
-    listWorldLogicRules(universe.id, 1, controller.signal)
+    listWorldLogicRules(universe.id, rulesPage, controller.signal)
       .then((page) => setRules({ kind: 'ready', page }))
       .catch(() => {
         if (!controller.signal.aborted) setRules({ kind: 'error' })
       })
 
-    listSystems(universe.id, 1, controller.signal)
+    return () => {
+      controller.abort()
+    }
+  }, [universe.id, rulesPage, reads])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    listSystems(universe.id, systemsPage, controller.signal)
       .then((page) => setSystems({ kind: 'ready', page }))
       .catch(() => {
         if (!controller.signal.aborted) setSystems({ kind: 'error' })
@@ -76,7 +90,22 @@ export default function WorldLogicPage() {
     return () => {
       controller.abort()
     }
-  }, [universe.id, reads])
+  }, [universe.id, systemsPage, reads])
+
+  /** Moves one list to a page, leaving the other list's page and the chosen tab where they are. */
+  function goTo(which: 'rulesPage' | 'systemsPage', next: number) {
+    // The list says it is loading from here, where the author asked for it, rather than from the effect that reads
+    // it: a setState inside the effect would start a second render for something this event already knows.
+    if (which === 'rulesPage') setRules({ kind: 'loading' })
+    else setSystems({ kind: 'loading' })
+
+    setParams((current) => {
+      const updated = new URLSearchParams(current)
+      if (next <= 1) updated.delete(which)
+      else updated.set(which, String(next))
+      return updated
+    })
+  }
 
   function retry() {
     setRules({ kind: 'loading' })
@@ -199,6 +228,31 @@ export default function WorldLogicPage() {
             }
           />
         ) : null}
+
+        {rules.kind === 'ready' && rules.page.items.length === 0 && rules.page.totalCount > 0 ? (
+          <EmptyState
+            testId="world-logic-rules-page-empty"
+            title={t('canon.rules.pageEmpty.title')}
+            action={
+              <button
+                className="button button--secondary"
+                type="button"
+                onClick={() => goTo('rulesPage', 1)}
+              >
+                {t('canon.rules.pageEmpty.first')}
+              </button>
+            }
+          />
+        ) : null}
+
+        {rules.kind === 'ready' ? (
+          <Pager
+            testId="world-logic-rules-pager"
+            page={rules.page.page}
+            totalPages={rules.page.totalPages}
+            onGo={(next) => goTo('rulesPage', next)}
+          />
+        ) : null}
       </TabPanel>
 
       <TabPanel idPrefix="world-logic" id="systems" tab={tab}>
@@ -236,6 +290,33 @@ export default function WorldLogicPage() {
             hint={t('canon.worldLogic.systems.empty.hint')}
           />
         ) : null}
+
+        {systems.kind === 'ready' &&
+        systems.page.items.length === 0 &&
+        systems.page.totalCount > 0 ? (
+          <EmptyState
+            testId="world-logic-systems-page-empty"
+            title={t('canon.rules.pageEmpty.title')}
+            action={
+              <button
+                className="button button--secondary"
+                type="button"
+                onClick={() => goTo('systemsPage', 1)}
+              >
+                {t('canon.rules.pageEmpty.first')}
+              </button>
+            }
+          />
+        ) : null}
+
+        {systems.kind === 'ready' ? (
+          <Pager
+            testId="world-logic-systems-pager"
+            page={systems.page.page}
+            totalPages={systems.page.totalPages}
+            onGo={(next) => goTo('systemsPage', next)}
+          />
+        ) : null}
       </TabPanel>
 
       <TabPanel idPrefix="world-logic" id="integrity" tab={tab}>
@@ -255,6 +336,51 @@ export default function WorldLogicPage() {
         />
       </TabPanel>
     </section>
+  )
+}
+
+/** A page number from the address: at least 1, and 1 for anything that is not a number. */
+function asPage(written: string | null) {
+  return Math.max(1, Number.parseInt(written ?? '1', 10) || 1)
+}
+
+/**
+ * One list's pages, drawn only when there is more than one. The same shape the rule book's own pager has, so the two
+ * read the same way; each list on this page has its own, because each has its own page in the address.
+ */
+function Pager({
+  testId,
+  page,
+  totalPages,
+  onGo,
+}: {
+  testId: string
+  page: number
+  totalPages: number
+  onGo: (next: number) => void
+}) {
+  if (totalPages <= 1) return null
+
+  return (
+    <nav className="pager" aria-label={t('canon.rules.pagination')} data-testid={testId}>
+      <button
+        className="button button--secondary"
+        type="button"
+        disabled={page <= 1}
+        onClick={() => onGo(page - 1)}
+      >
+        {t('canon.rules.previous')}
+      </button>
+      <span className="pager__position">{t('canon.rules.position', { page, totalPages })}</span>
+      <button
+        className="button button--secondary"
+        type="button"
+        disabled={page >= totalPages}
+        onClick={() => onGo(page + 1)}
+      >
+        {t('canon.rules.next')}
+      </button>
+    </nav>
   )
 }
 
