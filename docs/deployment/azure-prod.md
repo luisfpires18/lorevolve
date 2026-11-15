@@ -55,7 +55,6 @@ settings below. Left for the owner: the two R2 tokens, the first deploy, the Adm
    | `PublicSite__Origin` | `https://lorevolve.com` |
    | `Media__Provider`, `Media__R2__*` | a new bucket (insert a name) and a token for it only ([cloudflare-r2.md](cloudflare-r2.md)) |
    | `DatabaseBackup__*` | `Environment=prod`, a new private bucket and its own token ([../recovery/database-backups.md](../recovery/database-backups.md)) |
-   | `Assistant__*` | only if PROD offers the assistant |
    | `Registration__InviteOnly` | `true`, but only after step 6 |
    | `WEBSITE_RUN_FROM_PACKAGE`, `SCM_MAX_ZIP_PACKAGE_COUNT` | `1`, `2` ([azure-dev.md](azure-dev.md), How a deploy replaces the app) |
 

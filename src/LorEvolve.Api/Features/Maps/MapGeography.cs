@@ -7,7 +7,8 @@ namespace LorEvolve.Api.Features.Maps;
 /// <summary>
 /// The one geography reader (issue #53, ADR 0061): a universe's maps, where an entry is pinned, pins found by name, one pin,
 /// and the straight-line separation of two pins - read live from the rows the map screen reads, and nothing else. The
-/// built-in assistant and the MCP tools are adapters over this class; neither keeps a geography of its own.
+/// MCP map tools are adapters over this class; they keep no geography of their own, and the retired web assistant read
+/// the same class.
 ///
 /// <para><b>One universe, already allowed.</b> The caller has proved the universe may be read; every read names the universe
 /// again, so a map, pin or entry id from anywhere else is simply not found. Live entries only: a pin whose entry is in the

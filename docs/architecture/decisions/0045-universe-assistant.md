@@ -1,6 +1,15 @@
 # ADR 0045 - The universe assistant reads through permission-safe tools over a shared read layer, behind a narrow provider boundary
 
-Status: accepted (2026-10-14). Roadmap task 047 (GitHub issue 5).
+Status: retired (2026-11-15, M4, GitHub issue #160). Accepted 2026-10-14, roadmap task 047 (GitHub issue 5).
+
+The web assistant this record decided was removed in milestone M4 (#156 to #160): the drawer, the API, the per-account
+allowance and the OpenAI and Groq providers are gone, and no `Assistant` setting exists. AI reaches a universe only
+through an app the person connects over MCP (ADR 0046), proposing through the one staging contract (ADR 0047). What this
+record decided is kept where it was never only the assistant's: the shared read layer (`UniverseReader`,
+`MapGeography`), the rule that an answer may cite only what was read, and that nothing an AI reads can change anything.
+The author's AI help switch stays too, and now governs Connect to AI and Pending AI Changes. The inventory and the
+evidence are in `docs/architecture/audits/2026-11-15-m4-assistant-retirement-audit.md`. The text below is the decision as
+it was taken, unedited.
 
 ## Context
 

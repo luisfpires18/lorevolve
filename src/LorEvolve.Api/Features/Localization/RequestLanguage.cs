@@ -6,7 +6,7 @@ namespace LorEvolve.Api.Features.Localization;
 /// is English.
 ///
 /// This is deliberately small. The API's text is a handful of places - two emails, the starter types a new universe is
-/// given, the line that tells the assistant which language to answer in - so each of those holds its own words beside
+/// given, the line that tells a connected AI app which language to answer in - so each of those holds its own words beside
 /// the English, in the same shape the web app's dictionary uses. There is no resource file and no
 /// <c>IStringLocalizer</c>: a feature that needs a second language adds a <c>switch</c>, and one that needs none says
 /// nothing.
@@ -61,6 +61,6 @@ public static class RequestLanguage
             && tag[language.Length] == '-'
             && tag.AsSpan(0, language.Length).Equals(language, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>The language's own name, for telling the assistant which one to answer in.</summary>
+    /// <summary>The language's own name, for telling a connected AI app which one to answer in.</summary>
     public static string NameOf(string language) => language == Portuguese ? "European Portuguese" : "English";
 }

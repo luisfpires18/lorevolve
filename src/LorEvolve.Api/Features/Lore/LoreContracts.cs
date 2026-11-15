@@ -304,7 +304,7 @@ public sealed record FieldValueResponse(
 /// stored before the author chose one, whose thumbnail is the centred square.
 ///
 /// <paramref name="HasDisplay"/>: whether a fitted display copy exists at <c>/{assetId}/display</c>. False for a picture
-/// stored before display copies, restored from a backup or staged by the assistant: the client draws the original then.
+/// stored before display copies, restored from a backup or staged by an AI: the client draws the original then.
 /// </summary>
 public sealed record EntityImageRef(
     Guid AssetId,

@@ -9,7 +9,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 - Architecture decisions: `docs/architecture/decisions/README.md`. Files and responsibilities: `SYSTEMS.md`.
 - Branches, naming, sequence log: `docs/architecture/branching.md`. Tooling rules: `.claude/CLAUDE.md`.
 - Runbooks: `docs/deployment/azure-prod.md`, `docs/deployment/azure-dev.md`, `docs/deployment/cloudflare-r2.md`,
-  `docs/deployment/assistant-limits-and-cost.md`, `docs/recovery/database-backups.md`,
+  `docs/recovery/database-backups.md`,
   `docs/recovery/universe-recovery.md`. Domain and email layout: `docs/design/custom-domain-plan.md`.
 - Security assessment and open findings: `docs/security/alpha-security-assessment.md`.
 - Manual checklists: `docs/testing/` (PWA, maps, MCP images).
@@ -49,7 +49,7 @@ deferred.
 One line per branch. Delete the line when it merges.
 
 - `fix/project-screens-app-design`: the project screens use the app's own design (#184). The owner called them a mess and full of placeholders. First half: the class names that were in the markup and in no stylesheet, the buttons that carried no class, and `PageHeader` on the two pages that hand-rolled a head. Second half: the four always-open creation forms now open from each panel's head, a row's secondary and destructive verbs moved into `ActionMenu`, the panels stack in one column with one rhythm, and the copy went through `stop-slop` and `humanizer` (one "Loading" for every panel, fifteen of the sixteen placeholders gone, an action keeps its name from trigger to submit).
-- `docs/m4-assistant-audit`: the M4 retirement inventory (#156), `docs/architecture/audits/2026-11-15-m4-assistant-retirement-audit.md`. Its findings bind #157 to #160: `UniverseAiHelpOff` and `AiChangeSource.Assistant` are kept (they gate and label MCP and AI Changes), so #159 writes no migration, and the AI Changes E2E specs must move off the assistant drawer onto MCP staging in #157. The assistant runs on Groq on DEV and has never been on in PROD.
+- `docs/retire-assistant-config` (#160, M4's last task): the `Assistant` settings, the Groq cost guide and the assistant's rows in `SYSTEMS.md` go; ADR 0045 is marked superseded and `docs/testing/mcp-only-ai-checklist.md` is added. #156 (PR #182), #157 (PR #185), #158 (PR #187) and #159 (PR #190) are on `dev`: the web assistant, its API, the Groq and OpenAI providers and the `OpenAI` package are gone, `UniverseAiHelpOff` and `AiChangeSource.Assistant` stay, and no migration was written. Owner actions after the merge: delete the five `Assistant__*` app settings on `dev-lorevolve` and revoke the Groq and OpenAI keys.
 - M3 World Logic run (tracker #135, issues #149 to #155), one PR per issue. Landed: #149 the condition and System
   specification (ADR 0072, `docs/architecture/world-logic-condition-spec.md`, six fixtures under
   `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/`); #150 persistence (`Features/Systems/`, backup format 44,
@@ -70,7 +70,7 @@ Checked 2026-10-29 with `git log origin/dev..<branch>`.
 
 ## Open issues
 
-- **Languages** (umbrella #99, ADR 0071): #100 to #109 are on `dev`, and #108 (refusal codes, PR #161) with #110's export half (PR #162) landed 2026-11-14; `dev` is at `4490106`. The switch is live in the account menu, the portal's appearance menu and Profile; the API writes its emails, starter types, assistant language, 56 refusal codes and the readable export in the reader's language. Open: #110's canon rule messages (approach is the owner's choice, TBD and plan on the issue) and #111 (public SEO, deferred until `PublicSite__AllowIndexing` is set at launch). #99 itself stays open for the owner, with its deferred checks in the milestone summary. A refusal whose English names the author's own records stays English by design; `ApiErrorCodeContractTests` refuses to translate one.
+- **Languages** (umbrella #99, ADR 0071): #100 to #109 are on `dev`, and #108 (refusal codes, PR #161) with #110's export half (PR #162) landed 2026-11-14; `dev` is at `4490106`. The switch is live in the account menu, the portal's appearance menu and Profile; the API writes its emails, starter types, the language line it hands a connected AI app, 56 refusal codes and the readable export in the reader's language. Open: #110's canon rule messages (approach is the owner's choice, TBD and plan on the issue) and #111 (public SEO, deferred until `PublicSite__AllowIndexing` is set at launch). #99 itself stays open for the owner, with its deferred checks in the milestone summary. A refusal whose English names the author's own records stays English by design; `ApiErrorCodeContractTests` refuses to translate one.
 - **Roadmap M1 to M4** (trackers #133, #134, #135, #136), started 2026-11-14 as an unattended milestone run. M1 Projects Foundation and Writing: #137 (agent task template, PR #164), #138 (`CreativeProject` domain, PR #165) #139 (Projects navigation, PR #166), #140 (existing Stories listed as Writing Projects, PR #167, a derived mapping with no migration), #141 (the Structure tab, PR #168) and #142 (projects over MCP, PR #169) done. The milestone summary on #133 is next; closing #133 and starting M2 are the owner's. A project is account-owned with an optional universe link, reached at `/app/projects/<id>` whether or not it has one; a universe backup leaves projects out on purpose. #140 is the one that must not lose author data: existing Story URLs and MCP story IDs keep resolving. Trackers close only on the owner's word.
 `gh issue list --repo luisfpires18/lorevolve --state open`. As of 2026-10-29:
 
@@ -93,10 +93,10 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
   MCP `get_arc`. Not yet tried in a real client: add, reorder, remove beats and move a chapter between arcs, approve.
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
   `/mcp/u/{name}` URL, and ChatGPT image rendering or its fallback link. Never tried in a real client
-  (`docs/testing/mcp-images-checklist.md`). The assistant's 10,000-character tool-result cap can cut a large catalog.
+  (`docs/testing/mcp-images-checklist.md`). A client's own tool-result cap can cut a large catalog.
 - **Real-device PWA**: Lore entities in an installed iOS, Android and desktop app (`docs/testing/pwa-checklist.md`).
   Passed only in Chromium simulation; #58 was closed without that check.
-- **Maps on a device**: a real map, real touch, the assistant's phrasing over geography tools
+- **Maps on a device**: a real map, real touch, a connected app's phrasing over the geography tools
   (`docs/testing/maps-checklist.md`).
 - **Password reset email live**: request a reset on DEV and on PROD, open the emailed link, set a password. Not tried
   with real Resend yet.
@@ -109,7 +109,6 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 ## Settings off until the owner sets them
 
 - PROD `PublicSite__AllowIndexing`: unset, so search engines are told not to index. Set at public launch.
-- PROD `Assistant__*`: only if PROD offers the assistant (`docs/deployment/assistant-limits-and-cost.md`).
 - Backup retention deletion is proposed and off (ADR 0064, `docs/recovery/database-backups.md`).
 - DEV `Mcp__Origin` and `PlatformAdmin__OwnerUserId` were owner steps; not rechecked here. Unset means MCP is off and
   nobody is Admin on DEV.

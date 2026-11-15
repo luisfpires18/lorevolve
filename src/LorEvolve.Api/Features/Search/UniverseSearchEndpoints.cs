@@ -73,7 +73,7 @@ public static class UniverseSearchEndpoints
 
     /// <summary>
     /// The search itself, beneath the bar's route: the one implementation of what searching a universe means, shared by the
-    /// bar and by anything else that reads the universe the same way (the assistant, ADR 0045). The caller has already
+    /// bar and by anything else that reads the universe the same way. The caller has already
     /// proved the universe may be read; this names it in every query.
     ///
     /// <paramref name="ideasOwnerId"/> is the account whose ideas assigned to this universe are searched too, as the bar
