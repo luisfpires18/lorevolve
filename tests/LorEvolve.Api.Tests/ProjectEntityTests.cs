@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.ProjectEntities;
+using LorEvolve.Api.Features.Restore;
 using LorEvolve.Api.Features.Projects;
 using Microsoft.EntityFrameworkCore;
 using static LorEvolve.Api.Tests.PlotTestClient;
@@ -508,6 +509,72 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
             new ProjectRequest("Low Tide", ProjectKind.Film, ProjectLifecycle.Active, "animated", null, universeId, null));
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<ProjectDetail>())!;
+    }
+
+    /// <summary>
+    /// A project entry's history survives a backup and a restore, and every row of it counts toward the restore's
+    /// record limit.
+    ///
+    /// <para>The third review round of PR #179 asked for both halves, and both were missing. The limit exists so a
+    /// crafted archive cannot ask the restore to write an unbounded number of rows; rows it does not count are rows it
+    /// does not bound, and until now a project's entries, their versions, their field values and its seasons counted
+    /// as nothing at all.</para>
+    /// </summary>
+    [Fact]
+    public async Task A_project_entry_s_history_survives_a_restore_and_counts_toward_the_limit()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "filmhistory");
+        var film = await NewFilm(client, universe.Id);
+        var type = await NewType(client, film.Id, "Prop");
+        var entry = await NewEntry(client, film.Id, type.Id, "The salt knife");
+
+        await Put<EntityDetail>(
+            client,
+            $"/api/projects/{film.Id}/entities/{entry.Id}",
+            new ProjectEntityRequest(type.Id, "The salt knife, notched", null, null, null, entry.Version));
+
+        var archive = await RawArchive(client, universe.Id);
+        var payload = BackupOf(archive).Payload;
+
+        // The file carries the entry and both its versions.
+        var carried = payload.ProjectEntities!.Single(each => each.Id == entry.Id);
+        Assert.Equal(["The salt knife", "The salt knife, notched"], carried.Revisions!.OrderBy(each => each.Number).Select(each => each.Name));
+
+        // Every one of those rows is counted. Measured by removing them and watching the count fall by exactly the
+        // number of rows they are, rather than by asserting a magic total.
+        var counted = BackupValidation.CountRecords(payload);
+        var withoutHistory = BackupValidation.CountRecords(payload with
+        {
+            ProjectEntities = [.. payload.ProjectEntities!.Select(each => each with { Revisions = [] })],
+        });
+
+        Assert.Equal(2, counted - withoutHistory);
+
+        var withoutProjects = BackupValidation.CountRecords(payload with
+        {
+            CreativeProjects = [],
+            ProjectEntities = [],
+        });
+
+        // The project, its entry and the entry's two versions: four rows the count missed entirely before.
+        Assert.Equal(4, counted - withoutProjects);
+
+        // And the history is there after a restore, under new ids, in the same order.
+        var restored = await RestoreArchive(client, archive, "Film history restored");
+
+        await WithDb(_factory, async db =>
+        {
+            var copied = await db.Entities.AsNoTracking().IgnoreQueryFilters()
+                .SingleAsync(each => each.UniverseId == restored.Id && each.ProjectId != null);
+
+            var history = await db.EntityRevisions.AsNoTracking()
+                .Where(revision => revision.EntityId == copied.Id)
+                .OrderBy(revision => revision.Number)
+                .ToListAsync();
+
+            Assert.Equal(["The salt knife", "The salt knife, notched"], history.Select(each => each.Name));
+            Assert.All(history, revision => Assert.NotEqual(Guid.Empty, revision.Id));
+        });
     }
 
     // ---------- helpers ----------
