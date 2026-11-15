@@ -346,15 +346,20 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .Where(type => type.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var fields = await db.EntityFieldDefinitions.AsNoTracking()
+        // IgnoreQueryFilters on each of these three as well, and not only on the types above: they reach the type
+        // through a navigation, and the filter follows a navigation. Without it a project's type travelled with no
+        // fields, no choices and no sections, which is a type that cannot hold what its entries hold. Found by the
+        // round-trip test in ProjectEntityTests when a restored project entry's value named a field definition the
+        // archive had never carried.
+        var fields = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
             .Where(field => field.EntityType!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var options = await db.EntityFieldOptions.AsNoTracking()
+        var options = await db.EntityFieldOptions.AsNoTracking().IgnoreQueryFilters()
             .Where(option => option.FieldDefinition!.EntityType!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
-        var sectionsByType = (await db.EntityFieldSections.AsNoTracking()
+        var sectionsByType = (await db.EntityFieldSections.AsNoTracking().IgnoreQueryFilters()
                 .Where(section => section.EntityType!.UniverseId == universeId)
                 .ToListAsync(cancellationToken))
             .GroupBy(section => section.EntityTypeId)
