@@ -24,9 +24,6 @@ const projects = {
     entities: 'Entities',
     systems: 'Systems',
     ideas: 'Ideas',
-    scripts: 'Scripts',
-    screenplay: 'Screenplay',
-    comicScript: 'Script',
   },
   tabs: {
     label: 'Project views',

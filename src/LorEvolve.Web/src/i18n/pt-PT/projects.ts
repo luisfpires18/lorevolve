@@ -22,9 +22,6 @@ const projects = {
     entities: 'Entidades',
     systems: 'Sistemas',
     ideas: 'Ideias',
-    scripts: 'Guiões',
-    screenplay: 'Argumento',
-    comicScript: 'Guião',
   },
   tabs: {
     label: 'Vistas do projeto',

@@ -135,10 +135,10 @@ test.describe('Project sections', () => {
       )
     }
 
-    // The script view is named in each kind's own word.
+    // The script view keeps the app's own word for what an episode, a scene and a chapter carry.
     const film = await project(page, world.id, 3)
     await page.goto(`/app/projects/${film.id}/script`)
-    await expect(page.getByTestId('projecttab-script')).toHaveText('Screenplay')
+    await expect(page.getByTestId('projecttab-script')).toHaveText('Script')
   })
 
   test('an unknown segment lands on the first view, at both addresses', async ({ page }) => {

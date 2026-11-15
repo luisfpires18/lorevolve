@@ -20,7 +20,7 @@ import { ProjectKind, ProjectLifecycle, type ProjectDetail } from './types'
 export interface ProjectSection {
   /** The part of the URL below the project. */
   segment: string
-  /** The key of its name under `projects.sections`. */
+  /** The key of its name under `projects`. */
   label: string
   testId: string
   icon: LucideIcon
@@ -30,54 +30,58 @@ export interface ProjectSection {
 
 const overview: ProjectSection = {
   segment: 'overview',
-  label: 'overview',
+  label: 'sections.overview',
   testId: 'project-overview',
   icon: Compass,
 }
 const structure: ProjectSection = {
   segment: 'structure',
-  label: 'structure',
+  label: 'sections.structure',
   testId: 'project-structure',
   icon: ListTree,
 }
 const manuscript: ProjectSection = {
   segment: 'manuscript',
-  label: 'manuscript',
+  label: 'sections.manuscript',
   testId: 'project-manuscript',
   icon: FileText,
 }
 const entities: ProjectSection = {
   segment: 'entities',
-  label: 'entities',
+  label: 'sections.entities',
   testId: 'project-entities',
   icon: Boxes,
 }
 const systems: ProjectSection = {
   segment: 'systems',
-  label: 'systems',
+  label: 'sections.systems',
   testId: 'project-systems',
   icon: Settings2,
 }
 // Ideas have no project link yet, so the view stays empty until #197 gives an idea a project.
 const ideas: ProjectSection = {
   segment: 'ideas',
-  label: 'ideas',
+  label: 'sections.ideas',
   testId: 'project-ideas',
   icon: Lightbulb,
   pending: true,
 }
 
-/** One address for the script view of every screen kind, named in each kind's own word. */
-function script(label: string): ProjectSection {
-  return { segment: 'script', label, testId: 'project-script', icon: FileText }
+// Series episodes, Film scenes and Comic chapters all carry a script, and the app already calls it Script in both
+// languages (`projects.seasons.script`), so one section serves the three kinds.
+const script: ProjectSection = {
+  segment: 'script',
+  label: 'seasons.script',
+  testId: 'project-script',
+  icon: FileText,
 }
 
 const SECTIONS_BY_KIND: Record<ProjectDetail['kind'], readonly ProjectSection[]> = {
   [ProjectKind.Writing]: [structure, manuscript, ideas],
   [ProjectKind.Game]: [overview, entities, systems, ideas],
-  [ProjectKind.Series]: [structure, script('scripts'), entities, ideas],
-  [ProjectKind.Film]: [structure, script('screenplay'), entities, ideas],
-  [ProjectKind.Comic]: [structure, script('comicScript'), entities, ideas],
+  [ProjectKind.Series]: [structure, script, entities, ideas],
+  [ProjectKind.Film]: [structure, script, entities, ideas],
+  [ProjectKind.Comic]: [structure, script, entities, ideas],
 }
 
 /** The sections a project of this kind offers, in order. */
@@ -87,7 +91,7 @@ export function projectSections(kind: ProjectDetail['kind']): readonly ProjectSe
 
 /** A section's name, in the current language. */
 export function projectSectionLabel(section: ProjectSection) {
-  return t(`projects.sections.${section.label}` as never)
+  return t(`projects.${section.label}` as never)
 }
 
 /** What kind of work this is, in the current language. */
