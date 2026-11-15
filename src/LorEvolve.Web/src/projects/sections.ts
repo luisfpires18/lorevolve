@@ -1,34 +1,97 @@
-import { Compass, type LucideIcon } from 'lucide-react'
+import {
+  Boxes,
+  Compass,
+  FileText,
+  Lightbulb,
+  ListTree,
+  Settings2,
+  type LucideIcon,
+} from 'lucide-react'
 import { t } from '../i18n'
 import { ProjectKind, ProjectLifecycle, type ProjectDetail } from './types'
 
 /**
- * The pages one project has, in the order its expansion lists them.
+ * The pages one project has, in the order its expansion and its tab bar list them.
  *
- * Held as data for the same reason the universe's sections are: the sidebar needs the list, and so does anything that
- * has to name the page an author is on. Today a project has one page, its overview. #140 gives a Writing project its
- * story's pages and #141 renames that story's Scenes tab to Structure; both add entries here rather than touching the
- * markup that draws them.
+ * Held as data for the same reason the universe's sections are: the sidebar needs the list, the project's tab bar needs
+ * the same list, and so does anything that has to name the page an author is on. Each kind offers the views its
+ * structure gives it (#192). Every section is an address of its own; the project's bare address leads to the first.
  */
 export interface ProjectSection {
-  /** The part of the URL below the project, empty for the project's own page. */
+  /** The part of the URL below the project. */
   segment: string
+  /** The key of its name under `projects`. */
+  label: string
   testId: string
   icon: LucideIcon
+  /** A view the project's data cannot fill yet, drawn as an empty state rather than as the overview. */
+  pending?: boolean
 }
 
-export const PROJECT_SECTIONS: readonly ProjectSection[] = [
-  {
-    segment: '',
-    testId: 'project-overview',
-    icon: Compass,
-  },
-]
+const overview: ProjectSection = {
+  segment: 'overview',
+  label: 'sections.overview',
+  testId: 'project-overview',
+  icon: Compass,
+}
+const structure: ProjectSection = {
+  segment: 'structure',
+  label: 'sections.structure',
+  testId: 'project-structure',
+  icon: ListTree,
+}
+const manuscript: ProjectSection = {
+  segment: 'manuscript',
+  label: 'sections.manuscript',
+  testId: 'project-manuscript',
+  icon: FileText,
+}
+const entities: ProjectSection = {
+  segment: 'entities',
+  label: 'sections.entities',
+  testId: 'project-entities',
+  icon: Boxes,
+}
+const systems: ProjectSection = {
+  segment: 'systems',
+  label: 'sections.systems',
+  testId: 'project-systems',
+  icon: Settings2,
+}
+// Ideas have no project link yet, so the view stays empty until #197 gives an idea a project.
+const ideas: ProjectSection = {
+  segment: 'ideas',
+  label: 'sections.ideas',
+  testId: 'project-ideas',
+  icon: Lightbulb,
+  pending: true,
+}
+
+// Series episodes, Film scenes and Comic chapters all carry a script, and the app already calls it Script in both
+// languages (`projects.seasons.script`), so one section serves the three kinds.
+const script: ProjectSection = {
+  segment: 'script',
+  label: 'seasons.script',
+  testId: 'project-script',
+  icon: FileText,
+}
+
+const SECTIONS_BY_KIND: Record<ProjectDetail['kind'], readonly ProjectSection[]> = {
+  [ProjectKind.Writing]: [structure, manuscript, ideas],
+  [ProjectKind.Game]: [overview, entities, systems, ideas],
+  [ProjectKind.Series]: [structure, script, entities, ideas],
+  [ProjectKind.Film]: [structure, script, entities, ideas],
+  [ProjectKind.Comic]: [structure, script, entities, ideas],
+}
+
+/** The sections a project of this kind offers, in order. */
+export function projectSections(kind: ProjectDetail['kind']): readonly ProjectSection[] {
+  return SECTIONS_BY_KIND[kind] ?? SECTIONS_BY_KIND[ProjectKind.Writing]
+}
 
 /** A section's name, in the current language. */
 export function projectSectionLabel(section: ProjectSection) {
-  const key = section.segment === '' ? 'overview' : section.segment
-  return t(`projects.sections.${key}` as never)
+  return t(`projects.${section.label}` as never)
 }
 
 /** What kind of work this is, in the current language. */

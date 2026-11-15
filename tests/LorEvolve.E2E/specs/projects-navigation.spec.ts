@@ -109,7 +109,9 @@ test.describe('Projects navigation', () => {
 
     // The project itself, from the universe's own sidebar.
     await page.getByTestId(`project-link-${inWorld.id}`).click()
-    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}$`))
+    await expect(page).toHaveURL(
+      new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}/structure$`),
+    )
     await expect(page.getByTestId('project-name')).toContainText(inWorld.name)
 
     // The universe's own sections are still in the same navigation, which is the point.
@@ -124,9 +126,11 @@ test.describe('Projects navigation', () => {
       'true',
     )
 
-    // And the project's Overview entry stays inside the universe too.
-    await page.getByTestId(`project-overview-${inWorld.id}`).click()
-    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}$`))
+    // And the project's own views stay inside the universe too (#192).
+    await page.getByTestId(`project-manuscript-${inWorld.id}`).click()
+    await expect(page).toHaveURL(
+      new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}/manuscript$`),
+    )
     await expect(page.getByTestId('workspace-lore')).toBeVisible()
   })
 
@@ -159,8 +163,8 @@ test.describe('Projects navigation', () => {
     await expect(openToggle).toHaveAttribute('aria-expanded', 'false')
     await expect(shutToggle).toHaveAttribute('aria-expanded', 'true')
 
-    await page.getByTestId(`project-overview-${shut.id}`).click()
-    await expect(page).toHaveURL(new RegExp(`/app/projects/${shut.id}$`))
+    await page.getByTestId(`project-structure-${shut.id}`).click()
+    await expect(page).toHaveURL(new RegExp(`/app/projects/${shut.id}/structure$`))
     await expect(page.getByTestId('project-name')).toContainText(shut.name)
   })
 
