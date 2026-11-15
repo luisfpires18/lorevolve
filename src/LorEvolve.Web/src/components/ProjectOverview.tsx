@@ -20,15 +20,10 @@ const RECENT = 5
  * Before #195 this route drew the header and an empty state, because #196 moved the schema panel it used to hold into
  * Entities. This is the content that belongs here instead.
  */
-export function ProjectOverview({
-  project,
-  universeId,
-}: {
-  project: ProjectDetail
-  /** Set inside a universe's workspace, so every link out of here keeps the author in that universe's frame. */
-  universeId?: string
-}) {
+export function ProjectOverview({ project }: { project: ProjectDetail }) {
   useI18n()
+  // Every link out of here stays inside the universe the project belongs to (#199).
+  const universeId = project.universe.id
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
   const [recent, setRecent] = useState<ProjectEntitySummary[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -181,22 +176,16 @@ export function ProjectOverview({
         </header>
 
         <ul className="projectcardlist" data-testid="project-overview-link-list">
-          {/*
-           * The universe is required on a project (`RequireProjectUniverse`), and the web type will say so in #199.
-           * Until it does, the lore link is drawn only when the value is there, rather than dereferenced.
-           */}
-          {project.universe ? (
-            <li className="projectcard">
-              <Link
-                to={`/app/universes/${project.universe.id}/lore`}
-                className="projectcard__head"
-                data-testid="project-overview-lore"
-              >
-                <h3 className="projectcard__title">{t('projects.overview.loreOf')}</h3>
-                <p className="projectcard__meta">{project.universe.name}</p>
-              </Link>
-            </li>
-          ) : null}
+          <li className="projectcard">
+            <Link
+              to={`/app/universes/${universeId}/lore`}
+              className="projectcard__head"
+              data-testid="project-overview-lore"
+            >
+              <h3 className="projectcard__title">{t('projects.overview.loreOf')}</h3>
+              <p className="projectcard__meta">{project.universe.name}</p>
+            </Link>
+          </li>
           {ways.map((section) => (
             <li key={section.segment} className="projectcard">
               <Link

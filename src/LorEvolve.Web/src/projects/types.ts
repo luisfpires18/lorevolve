@@ -36,7 +36,8 @@ export interface ProjectDetail {
   lifecycle: ProjectLifecycleValue
   subtype: string | null
   summary: string
-  universe: ProjectUniverse | null
+  /** The universe the project belongs to. Every project belongs to exactly one (#172). */
+  universe: ProjectUniverse
   /** True when this account owns the project, rather than reaching it through the linked universe. */
   isOwned: boolean
   createdAt: string
@@ -57,6 +58,6 @@ export interface ProjectInput {
   lifecycle: ProjectLifecycleValue
   subtype: string | null
   summary: string
-  universeId: string | null
+  universeId: string
   expectedVersion: number | null
 }

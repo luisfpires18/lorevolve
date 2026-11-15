@@ -99,14 +99,6 @@ export function projectSections(
   return SECTIONS_BY_KIND[kind] ?? SECTIONS_BY_KIND[ProjectKind.Writing]
 }
 
-/**
- * The universe whose frame a project opens in. A story belongs to exactly one universe and is only ever read through
- * it, so a story-backed project opens inside that universe even from the account-level lists (#194).
- */
-export function projectFrameUniverse(project: ProjectDetail, universeId?: string) {
-  return project.storyId && project.universe ? project.universe.id : universeId
-}
-
 /** A section's name, in the current language. */
 export function projectSectionLabel(section: ProjectSection) {
   return t(`projects.${section.label}` as never)
@@ -145,15 +137,12 @@ export function lifecycleLabel(lifecycle: ProjectDetail['lifecycle']) {
 /**
  * Where a project's pages live.
  *
- * `/app/projects/<id>` is the canonical address: a project may belong to no universe, so it has to have a home that
- * does not depend on one. Inside a universe's workspace the same project is served at
- * `/app/universes/<universeId>/projects/<id>`, so opening one from that sidebar keeps the author inside the universe
- * shell, as every other section does. The page is the same component either way; only the frame around it differs.
+ * `/app/universes/<universeId>/projects/<id>` is the canonical address, because every project belongs to exactly one
+ * universe (#172) and opening it there keeps the author inside that universe's shell, as every other section does.
+ * `/app/projects/<id>` is kept as the account-level way in: it reads the project and redirects here (#199).
  */
-export function projectPath(projectId: string, segment = '', universeId?: string) {
-  const base = universeId
-    ? `/app/universes/${universeId}/projects/${projectId}`
-    : `/app/projects/${projectId}`
+export function projectPath(projectId: string, segment: string, universeId: string) {
+  const base = `/app/universes/${universeId}/projects/${projectId}`
   return segment ? `${base}/${segment}` : base
 }
 
@@ -180,6 +169,6 @@ export function storyProjectPath(
  * project shell the same way, and a story-backed project's shell renders the story's own views, so its content is
  * still the story's and nothing was copied anywhere (#140). The story's old addresses redirect here.
  */
-export function projectRowPath(project: ProjectDetail, universeId?: string) {
-  return projectPath(project.id, '', projectFrameUniverse(project, universeId))
+export function projectRowPath(project: ProjectDetail) {
+  return projectPath(project.id, '', project.universe.id)
 }
