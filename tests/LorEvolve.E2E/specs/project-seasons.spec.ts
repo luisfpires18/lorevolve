@@ -239,7 +239,8 @@ test.describe('Project seasons', () => {
     await expect(pageRow).toContainText('Nothing from the lore')
 
     // The manga template is the one offered, chosen by the subtype, on Entities, which holds the schema (#196).
-    await page.getByTestId('projecttab-entities').click()
+    // From the sidebar: on a wide screen it lists the project's views and the tab bar steps aside.
+    await page.getByTestId(`project-entities-${book.id}`).click()
     await expect(page.getByTestId('project-schema-offer')).toContainText('Chapter')
   })
 

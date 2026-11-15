@@ -60,7 +60,8 @@ async function sidebarSegments(page: Page, projectId: string) {
 // Read even where the bar is hidden: a wide screen lists the same views in the sidebar, so the bar steps aside there.
 async function tabSegments(page: Page) {
   await expect(page.getByTestId('project-tabs')).toBeAttached()
-  const links = page.getByTestId('project-tabs').getByRole('link')
+  // `a`, not the link role: a hidden bar is out of the accessibility tree, and its links with it.
+  const links = page.getByTestId('project-tabs').locator('a')
   const hrefs = await links.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')))
   return hrefs.map((href) => href?.split('/').pop())
 }
@@ -179,7 +180,7 @@ test.describe('Project sections', () => {
       await expect(page.getByTestId('project-schema')).toHaveCount(0)
       await expect(page.getByTestId('project-entries')).toHaveCount(0)
       for (const segment of ['overview', 'script', 'entities']) {
-        await page.getByTestId(`projecttab-${segment}`).click()
+        await page.getByTestId(`project-${segment}-${one.id}`).click()
         await expect(page).toHaveURL(new RegExp(`/${segment}$`))
         await expect(page.getByTestId('project-seasons')).toHaveCount(0)
       }
