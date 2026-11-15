@@ -43,9 +43,10 @@ type View = 'rules' | 'systems' | 'integrity'
  * rule definitions that came with it, each row saying which it is. A world rule still opens in its own editor at its
  * own address, so every link an author already has keeps working and nothing was migrated out from under them.
  *
- * <b>Read-only, on purpose.</b> This page shows what is there. A world rule is written in its own editor; a rule
- * definition and a System are written through MCP or the API until an editor for a condition tree exists, and
- * pretending otherwise with a form that cannot express a condition would be worse than saying so.
+ * <b>A System is written here; a rule definition is not.</b> A System is a name and a summary, so it has an editor
+ * (`SystemEditorPage`). A world rule is written in its own editor; a rule definition is written through MCP or the API
+ * until an editor for a condition tree exists, and pretending otherwise with a form that cannot express a condition
+ * would be worse than saying so.
  *
  * <b>Integrity keeps the three outcomes apart.</b> It lists what checking the rules found, newest first. A
  * contradiction, a rule the stored facts cannot answer and a rule that is itself broken are three different things
@@ -190,14 +191,25 @@ export default function WorldLogicPage() {
         lede={t('canon.worldLogic.lede')}
         actions={
           access.editContent ? (
-            <Link
-              className="button"
-              to={`${base}/world-rules/new`}
-              data-testid="world-logic-new-rule"
-            >
-              <ActionIcon icon={Plus} />
-              {t('canon.rules.newRule')}
-            </Link>
+            tab === 'systems' ? (
+              <Link
+                className="button"
+                to={`${base}/world-logic/systems/new`}
+                data-testid="world-logic-new-system"
+              >
+                <ActionIcon icon={Plus} />
+                {t('canon.worldLogic.systems.newSystem')}
+              </Link>
+            ) : (
+              <Link
+                className="button"
+                to={`${base}/world-rules/new`}
+                data-testid="world-logic-new-rule"
+              >
+                <ActionIcon icon={Plus} />
+                {t('canon.rules.newRule')}
+              </Link>
+            )
           ) : undefined
         }
       />
@@ -582,6 +594,7 @@ function SystemRow({ universeId, system }: { universeId: string; system: SystemS
   const [detail, setDetail] = useState<SystemDetail | null>(null)
   const [failed, setFailed] = useState(false)
   const panelId = useId()
+  const access = useUniverseAccess()
 
   useEffect(() => {
     if (!open || detail) return
@@ -628,6 +641,16 @@ function SystemRow({ universeId, system }: { universeId: string; system: SystemS
         </span>
         {tn('canon.worldLogic.systems.ruleCount', system.ruleCount, { count: system.ruleCount })}
       </p>
+
+      {access.editContent ? (
+        <Link
+          className="button button--secondary"
+          to={`/app/universes/${universeId}/world-logic/systems/${system.id}`}
+          data-testid="world-logic-system-edit"
+        >
+          {t('canon.worldLogic.systems.edit')}
+        </Link>
+      ) : null}
 
       <div id={panelId} hidden={!open} data-testid="world-logic-system-rules">
         {failed ? (

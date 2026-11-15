@@ -52,6 +52,17 @@ export interface SystemRuleSummary {
   updatedAt: string
 }
 
+/** What a System save sends. `projectId` is the scope it was created in and never changes. */
+export interface SystemInput {
+  name: string
+  summary: string
+  projectId?: string | null
+  expectedVersion?: number
+}
+
+export const SYSTEM_NAME_MAX_LENGTH = 200
+export const SYSTEM_SUMMARY_MAX_LENGTH = 2000
+
 export interface SystemDetail {
   id: string
   name: string

@@ -1,6 +1,7 @@
 import { apiFetch } from '../lib/api'
 import type {
   SystemDetail,
+  SystemInput,
   SystemSummary,
   WorldLogicFindingDetail,
   WorldLogicFindingRow,
@@ -48,6 +49,27 @@ export function listSystems(universeId: string, page: number, signal?: AbortSign
 /** One System, with the rule definitions it references in its own order. */
 export function getSystem(universeId: string, id: string, signal?: AbortSignal) {
   return apiFetch<SystemDetail>(`${base(universeId)}/systems/${id}`, { signal })
+}
+
+/** A System is created in the whole universe; its scope is fixed at creation (ADR 0072). */
+export function createSystem(universeId: string, input: SystemInput) {
+  return apiFetch<SystemDetail>(`${base(universeId)}/systems`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+/** Saves a System whole. `expectedVersion` is the version the edit was written over; a stale one is 409 `system_changed`. */
+export function saveSystem(universeId: string, id: string, input: SystemInput) {
+  return apiFetch<SystemDetail>(`${base(universeId)}/systems/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}
+
+/** Deletes the System and its links, never a rule definition. There is no Trash for a System. */
+export function deleteSystem(universeId: string, id: string) {
+  return apiFetch<void>(`${base(universeId)}/systems/${id}`, { method: 'DELETE' })
 }
 
 function findings(universeId: string) {
