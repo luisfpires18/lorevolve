@@ -25,6 +25,9 @@ const projects = {
     systems: 'Systems',
     ideas: 'Ideas',
   },
+  shell: {
+    breadcrumb: 'Breadcrumb',
+  },
   tabs: {
     label: 'Project views',
   },
@@ -72,7 +75,6 @@ const projects = {
     failed: 'Your projects could not be read.',
     empty: 'No projects yet.',
     emptyHint: 'A project is what you are making: a novel, a game, a series, a film or a comic.',
-    noUniverse: 'No universe',
   },
   one: {
     title: 'Project',

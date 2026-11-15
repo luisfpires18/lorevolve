@@ -18637,19 +18637,6 @@ details.reviewsection > .reviewsection__list {
 }
 
 /*
- * One project beside the list of projects, on the account-level screens that have no sidebar. One column on a phone,
- * where the list comes first because it is how the author got here.
- */
-.projectshell {
-  display: grid;
-  gap: var(--space-5);
-}
-
-.projectshell__nav {
-  min-width: 0;
-}
-
-/*
  * One project's panels: the head, then its types, its entries and its structure, one under the next and each the full
  * width of the column. They are the same kind of thing, so they share one rhythm and a rule between them rather than
  * being dealt into columns of unequal weight by the shell's grid (#184).
@@ -18665,12 +18652,6 @@ details.reviewsection > .reviewsection__list {
   border-block-start: 1px solid var(--rule);
 }
 
-.projectshell__nav .sidebar__nav {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 /*
  * One project's tab bar (#192): the same destinations as its sidebar expansion, drawn like the screen tabs elsewhere
  * but as links, with the current one marked by aria-current rather than aria-selected.
@@ -18681,13 +18662,61 @@ details.reviewsection > .reviewsection__list {
   min-width: 0;
 }
 
+/*
+ * The universe and the project, then the tabs, on one row over one rule (#199). The crumb shares the tabs' row so it
+ * costs no height where both fit, which keeps a story's first screen for its prose; where they do not, it wraps above.
+ */
+.projectframe__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  column-gap: var(--space-5);
+  min-width: 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.projectcrumbs {
+  align-self: center;
+  min-width: 0;
+}
+
+.projecttabs {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.projectcrumbs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  min-width: 0;
+}
+
+.projectcrumbs__list li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.projectcrumbs__list li + li::before {
+  content: '/';
+  margin-inline-end: var(--space-2);
+}
+
+.projectcrumbs__list a {
+  color: var(--muted);
+}
+
 .projecttabs__list {
   display: flex;
   gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
-  border-bottom: 1px solid var(--rule);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -18741,17 +18770,11 @@ details.reviewsection > .reviewsection__list {
   /*
    * A story-backed project's three views are the story's own, and the story's page already carries them in its view
    * bar (#194). On a phone two bars of the same three links would push the manuscript off the first screen, so the
-   * project's copy steps aside there, as the sidebar's does.
+   * project's copy steps aside there, as the sidebar's does. The breadcrumb steps aside with it (#199): the story's
+   * own header already leads back, and on a phone the first screen belongs to the prose.
    */
-  .projectframe--story > .projecttabs {
+  .projectframe--story > .projectframe__head {
     display: none;
-  }
-}
-
-@media (min-width: 60rem) {
-  .projectshell {
-    grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
-    align-items: start;
   }
 }
 

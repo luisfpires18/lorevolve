@@ -197,7 +197,10 @@ test.describe('Project sections', () => {
     for (const [kind, expected] of cases) {
       const one = await project(page, world.id, kind)
       await page.goto(`/app/projects/${one.id}`)
-      await expect(page).toHaveURL(new RegExp(`/app/projects/${one.id}/${expected[0]}$`))
+      // The account-level address redirects to the canonical one, inside the project's universe (#199).
+      await expect(page).toHaveURL(
+        new RegExp(`/app/universes/${world.id}/projects/${one.id}/${expected[0]}$`),
+      )
       expect(await tabSegments(page)).toEqual(expected)
       expect(await sidebarSegments(page, one.id)).toEqual(expected)
 
@@ -222,7 +225,9 @@ test.describe('Project sections', () => {
     const book = await project(page, world.id, 0)
 
     await page.goto(`/app/projects/${book.id}/no-such-view`)
-    await expect(page).toHaveURL(new RegExp(`/app/projects/${book.id}/overview$`))
+    await expect(page).toHaveURL(
+      new RegExp(`/app/universes/${world.id}/projects/${book.id}/overview$`),
+    )
     await expect(page.getByTestId('project-name')).toContainText(book.name)
 
     // A view another kind offers is unknown to this one.
@@ -230,6 +235,35 @@ test.describe('Project sections', () => {
     await expect(page).toHaveURL(
       new RegExp(`/app/universes/${world.id}/projects/${book.id}/overview$`),
     )
+  })
+
+  test('every project address resolves to one canonical address, under a breadcrumb', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const other = await universe(page)
+    const game = await project(page, world.id, 1)
+    const canonical = `/app/universes/${world.id}/projects/${game.id}/entities`
+
+    // The account-level address, a deep link included, redirects and keeps the query and the hash (#199).
+    await page.goto(`/app/projects/${game.id}/entities?manage=types#top`)
+    await expect(page).toHaveURL(new RegExp(`${canonical}\\?manage=types#top$`))
+
+    // A universe the project does not belong to lands on the one it does.
+    await page.goto(`/app/universes/${other.id}/projects/${game.id}/entities`)
+    await expect(page).toHaveURL(new RegExp(`${canonical}$`))
+
+    // The breadcrumb names the universe and the project, and the universe crumb opens the universe.
+    const crumbs = page.getByTestId('project-breadcrumb')
+    await expect(crumbs).toHaveAttribute('aria-label', 'Breadcrumb')
+    await expect(page.getByTestId('project-breadcrumb-project')).toHaveText(game.name)
+    await expect(page.getByTestId('project-breadcrumb-project')).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await page.getByTestId('project-breadcrumb-universe').click()
+    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}$`))
   })
 
   test('on a narrow screen the tab bar stands in for the sidebar expansion', async ({ page }) => {

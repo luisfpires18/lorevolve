@@ -4,7 +4,6 @@ import { ChevronRight, FolderOpen, Plus } from 'lucide-react'
 import { listProjects } from '../projects/api'
 import {
   kindLabel,
-  projectFrameUniverse,
   projectPath,
   projectRowPath,
   projectSectionLabel,
@@ -114,9 +113,9 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
       >
         <li>
           {/*
-           * A project's own pages live at one address, `/app/projects/<id>`, because a project may have no universe
-           * and must never have two addresses. Only the list is shown where the author is: inside a universe it is
-           * that universe's list, in the workspace it is everything.
+           * A project's own pages live at one address, inside the universe it belongs to (#199). Only the list is
+           * shown where the author is: inside a universe it is that universe's list, in the workspace it is
+           * everything, and every row opens in its own universe.
            */}
           <NavLink
             className="sidebar__link"
@@ -141,7 +140,7 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
           // #140 gave a Story shown as a Writing Project one link to the story and no disclosure, because its pages were
           // the story's own tabs on the story's screen. Since #194 the project shell renders those same views, so its row
           // expands like every other project's, to the story's Structure, Manuscript and Ideas.
-          const frame = projectFrameUniverse(project, universeId)
+          const frame = project.universe.id
 
           return (
             <li key={project.id}>
@@ -168,7 +167,7 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
                 </button>
                 <NavLink
                   className="sidebar__link sidebar__link--project"
-                  to={projectRowPath(project, universeId)}
+                  to={projectRowPath(project)}
                   data-testid={`project-link-${project.id}`}
                 >
                   <span className="sidebar__projectname">{project.name}</span>
