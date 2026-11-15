@@ -40,7 +40,7 @@ public static partial class ManuscriptMentions
 
     /// <summary>
     /// The prose as a reader reads it: every mention as the name the author wrote, in plain text. What the public page, the
-    /// assistant and an outside app over MCP are given. Text with no mention comes back as the same string.
+    /// an outside app over MCP is given. Text with no mention comes back as the same string.
     /// </summary>
     public static string Plain(string text) =>
         text.Contains("](lore:", StringComparison.Ordinal) ? Token().Replace(text, match => match.Groups[1].Value) : text;

@@ -9,7 +9,7 @@ namespace LorEvolve.Api.Features.AiChanges;
 
 /// <summary>
 /// Pending AI Changes (ADR 0047): where a person reviews what an AI proposed - from an outside app over MCP or from the
-/// assistant - and decides. Browser routes on the session cookie only, like the rest of <c>/api</c> (ADR 0005: SameSite
+/// retired web assistant - and decides. Browser routes on the session cookie only, like the rest of <c>/api</c> (ADR 0005: SameSite
 /// Strict and JSON bodies); an MCP bearer token is never a session here, so no AI can reach a decision.
 ///
 /// The owner and Editors read every proposal of their universe and decide them; anyone else reads only their own, and only

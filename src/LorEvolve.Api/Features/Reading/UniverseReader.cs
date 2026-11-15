@@ -11,8 +11,9 @@ namespace LorEvolve.Api.Features.Reading;
 
 /// <summary>
 /// The live universe read for something other than a screen: search it, then read what was found - an entry, a story, a
-/// scene, a timeline moment, an entry's direct relationships, the timeline in order, an overview (ADR 0045). The assistant
-/// reads through it; nothing here knows the assistant exists, so a later reader can use it as it is.
+/// scene, a timeline moment, an entry's direct relationships, the timeline in order, an overview (ADR 0045). MCP's tools
+/// read through it, as the retired web assistant did; nothing here knows its callers, so a later reader can use it as it
+/// is.
 ///
 /// <b>Built on what the screens already read.</b> Search is the bar's own (<see cref="UniverseSearchEndpoints.RunAsync"/>),
 /// the timeline is the timeline's own feed, and an entry, a story, a scene, a moment and an entry's relationships are
@@ -283,7 +284,7 @@ public static class UniverseReader
                     .Take(MentionLimit)
                     .Select(link => new LoreMention(link.EntityId, link.Name, link.EntityTypeName)),
             ],
-            // Mentions read as the names the author wrote (ADR 0058): an assistant reads prose, not markup.
+            // Mentions read as the names the author wrote (ADR 0058): an AI reads prose, not markup.
             ReadingText.Cut(prose is null ? null : ManuscriptMentions.Plain(prose), ProseLength),
             await UniverseSearchIndex.ManuscriptPassageAsync(db, sceneId, find, cancellationToken) is { } passage
                 ? ManuscriptMentions.PlainExcerpt(passage)

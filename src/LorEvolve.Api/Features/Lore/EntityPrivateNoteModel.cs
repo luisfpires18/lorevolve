@@ -9,7 +9,7 @@ namespace LorEvolve.Api.Features.Lore;
 /// conversation among members, ADR 0041 amendment), not a field (part of the entry every member reads).
 ///
 /// <b>Read by the owner alone, by construction.</b> It lives in its own row with no navigation from <see cref="LoreEntity"/>,
-/// so no projection of an entry - the list, the read, search, the public page, the assistant's and MCP's reader, an AI
+/// so no projection of an entry - the list, the read, search, the public page, MCP's reader, an AI
 /// proposal, a suggestion, a revision - can carry it by accident: only its own route reads this table, behind the
 /// <c>PrivateNotes</c> capability, which the owner alone holds. Nothing indexes it and nothing reads it for meaning.
 ///

@@ -72,7 +72,7 @@ internal static class TimelineFeed
     /// <summary>
     /// The feed itself, beneath the route: one page of the unified timeline with the route's filters. The caller has already
     /// proved the universe may be read and that <paramref name="source"/> is a defined kind; every query names the universe.
-    /// Shared with the assistant's timeline reading (ADR 0045), so both read the same order and the same filters.
+    /// Shared with MCP's timeline reading, so both read the same order and the same filters.
     /// </summary>
     internal static async Task<TimelineItemPage> ReadAsync(
         LorEvolveDbContext db,

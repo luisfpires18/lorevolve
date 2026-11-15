@@ -225,14 +225,10 @@ Accepted deliberately. Each one is a reason this topology is not a production to
 - **Entry images need Cloudflare R2, which is a separate owner setup.** Until the bucket, the
   token and the five `Media__*` app settings exist, every image route answers 503 and nothing
   else is affected. Steps, config keys and limitations: [cloudflare-r2.md](cloudflare-r2.md).
-- **The universe assistant is off until it is given a model.** With no `Assistant__*` app settings it says it is not
-  set up and nothing else is affected. To turn it on, set `Assistant__Provider=OpenAI`, `Assistant__OpenAI__Model` to
-  the model to use and `Assistant__OpenAI__ApiKey` to the key, as app settings, never in a file. The universe content a
-  question needs is then sent to OpenAI (`store: false`). Groq instead, at no cost on its free tier:
-  `Assistant__Provider=Groq`, `Assistant__Groq__Model=openai/gpt-oss-120b` and `Assistant__Groq__ApiKey`; the content
-  then goes to Groq, whose Responses API takes no `store` setting, so none is sent. Never set `Assistant__Provider=Fake` on a deployed host: it
-  is the test stand-in. An OpenAI account with no credit answers every question with "couldn't answer" (logged as
-  `insufficient_quota`), not "busy". ADR 0045.
+- **There is no AI provider to configure.** M4 (issue #160) retired the built-in web assistant, so LorEvolve calls no
+  model and holds no model key. AI reaches a universe only through an app the person connects over MCP, which runs on
+  their own AI service and needs `Mcp__Origin` here and nothing else. Any `Assistant__*` app setting left on a host is
+  read by nothing and can be deleted.
 - **Connect to AI is off until `Mcp__Origin` is set** (see below). Its OAuth tables share the one SQLite writer: a
   token refresh writes, and "last used" writes at most every five minutes per connection. Whoever can read
   `/home/data/keys` can read token payloads, as they can already forge a session.

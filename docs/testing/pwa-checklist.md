@@ -66,7 +66,7 @@ behavior. Keep the real-device row open until the reporting device and build are
 ## 4. Manual checklist - real installed app (mark each row verified, failed or not available)
 
 Record for every platform: device and OS version, browser and version, how it was installed, `display-mode` as shown by
-the app (open the Assistant drawer's About, or the browser's own dev tools), viewport size (`innerWidth x innerHeight`),
+the app (the browser's own dev tools), viewport size (`innerWidth x innerHeight`),
 signed-in account, and the exact screen.
 
 ### 4.1 The reported path - do this first, on the reporting device
