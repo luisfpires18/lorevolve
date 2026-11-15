@@ -147,10 +147,15 @@ shape of the surface, not unfinished work.
   the API; `AiChangeResource` has no member for either, so an app cannot stage one. Whether it should is on the
   milestone summary for #135.
 - **The matrix is domain-level, and a nested family inherits its parent's answer.** A row covers a family of routes
-  sharing a prefix. A route whose first segment is new fails the route test until it is classified, but a route nested
-  under an existing prefix is claimed by that prefix and answered the same way, with nothing failing. This is not
-  theoretical: when #153 and #154 landed, `world-logic/findings` and `world-logic/semantic-findings` were both claimed
-  by the `world-logic` row and inherited its `pending-issue-154` without complaint. What caught it was the tool test,
-  because their eight new tools were unmapped. So the two tests cover each other here, and a change that adds a nested
-  route family but no tool is the case to read this document carefully for. Making the route test exact would mean a
-  row per endpoint, about 250 of them, which is the trade this shape was chosen against.
+  sharing a prefix, and one row may hold several: World Logic's rules are read through the single row that covers
+  `systems`, `system-rules` and `world-logic/rules` together. A route whose first segment is new fails the route test
+  until it is classified, but a route nested under an existing prefix is claimed by that prefix and answered the same
+  way, with nothing failing.
+
+  This is not theoretical. Until #153 and #154 landed, those three prefixes were one excepted row keyed on `systems`,
+  `system-rules` and a bare `world-logic`, and when the two new route groups arrived, `world-logic/findings` and
+  `world-logic/semantic-findings` were both claimed by that bare `world-logic` prefix and inherited its exception
+  without complaint. What caught them was the tool test, because their eight new tools were unmapped. The bare prefix
+  is now `world-logic/rules`, so those two have rows of their own, but the general hole stands: a change that adds a
+  nested route family and no tool is the case to read this document carefully for. Making the route test exact would
+  mean a row per endpoint, about 250 of them, which is the trade this shape was chosen against.

@@ -17,9 +17,10 @@ namespace LorEvolve.Api.Tests;
 /// no proposable resource is unmapped. The published matrix in <c>docs/testing/mcp-capability-matrix.md</c> is compared
 /// against this catalog, so the document cannot drift away from the code.</para>
 /// <para>Known limit, stated in the document's "Known gaps" too: a route nested under an existing prefix is claimed by
-/// it and answered the same way, so only a new first segment fails the route test. #153's and #154's route groups were
-/// both claimed by the <c>world-logic</c> row and inherited its answer; what caught them was their unmapped tools. The
-/// alternative is a row per endpoint, about 250 of them.</para>
+/// it and answered the same way, so only a new first segment fails the route test. While <c>systems</c>,
+/// <c>system-rules</c> and a bare <c>world-logic</c> were one excepted row, #153's and #154's route groups were both
+/// claimed by that bare prefix and inherited its answer; what caught them was their unmapped tools. The alternative is
+/// a row per endpoint, about 250 of them.</para>
 /// </summary>
 public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : IClassFixture<LorEvolveApiFactory>
 {
