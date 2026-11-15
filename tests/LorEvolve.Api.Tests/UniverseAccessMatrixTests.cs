@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using LorEvolve.Api.Features.Assistant;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Comments;
 using LorEvolve.Api.Features.Knowledge;
@@ -180,8 +179,6 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("dismiss finding", Post, $"{u}/canon-conflicts/{any}/dismiss", May.Edit),
             new("reopen finding", Post, $"{u}/canon-conflicts/{any}/reopen", May.Edit),
             new("search", Get, $"{u}/search?q=Ember", May.Read),
-            new("assistant status", Get, $"{u}/assistant", May.Read),
-            new("ask assistant", Post, $"{u}/assistant", May.Read, Json(new AssistantRequest("Who is Ember Vale?", null))),
             new("mcp connect info", Get, $"{u}/mcp", May.Read),
 
             // ---------- Pending AI Changes (ADR 0047): ids the gate passes are random, so past it a member is told it is not there ----------

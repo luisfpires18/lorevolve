@@ -10,7 +10,7 @@ public enum AiChangeSource
     /// <summary>An outside AI app over MCP, through a connection the person approved for proposals.</summary>
     Mcp = 0,
 
-    /// <summary>LorEvolve's own assistant, asked in its propose mode.</summary>
+    /// <summary>LorEvolve's own web assistant, asked in its propose mode. Retired in M4 (issue #158); proposals it staged keep this source, so the number never changes.</summary>
     Assistant = 1,
 }
 
@@ -137,7 +137,7 @@ public sealed class AiChangeProposal
 
     public AiChangeSource Source { get; set; }
 
-    /// <summary>The MCP connection it came through, or null for the assistant. No foreign key: a revoke must not erase the record.</summary>
+    /// <summary>The MCP connection it came through, or null for a proposal the retired web assistant staged. No foreign key: a revoke must not erase the record.</summary>
     public Guid? McpConnectionId { get; set; }
 
     /// <summary>The app's own name when it was staged, as the consent screen showed it. Self-declared unless verified.</summary>

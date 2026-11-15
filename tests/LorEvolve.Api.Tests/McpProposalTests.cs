@@ -4,7 +4,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.AiChanges;
-using LorEvolve.Api.Features.Assistant;
 using LorEvolve.Api.Features.Mcp;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.EntityFrameworkCore;
@@ -16,17 +15,16 @@ namespace LorEvolve.Api.Tests;
 /// <summary>
 /// MCP V2 (ADR 0047): proposing is a separate permission a person ticks at consent, never part of read; the proposal
 /// tools exist only for connections that have it; they stage, and nothing over MCP approves. Read-only connections work
-/// exactly as before. The assistant's propose mode stages through the same service, and both land in one review list.
+/// exactly as before. MCP is the only entry point since M4 (issue #158) retired the web assistant, which staged through
+/// the same service.
 /// </summary>
 public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
 {
     public sealed class Host : IDisposable
     {
-        public ScriptedAssistantProvider Model { get; } = new();
-
         public LorEvolveApiFactory Factory { get; }
 
-        public Host() => Factory = new LorEvolveApiFactory { Assistant = Model };
+        public Host() => Factory = new LorEvolveApiFactory();
 
         public void Dispose() => Factory.Dispose();
     }
@@ -37,13 +35,7 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
 
     private readonly LorEvolveApiFactory _factory;
 
-    private readonly ScriptedAssistantProvider _model;
-
-    public McpProposalTests(Host host)
-    {
-        _factory = host.Factory;
-        _model = host.Model;
-    }
+    public McpProposalTests(Host host) => _factory = host.Factory;
 
     /// <summary>The whole flow with the app asking to propose too, and the person ticking it - or not.</summary>
     private async Task<(Connection Connection, TokenAnswer Tokens)> ConnectAsync(HttpClient browser, Guid universeId, bool allowProposals, bool allowSchema = false)
@@ -141,6 +133,10 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
         var (connection, tokens) = await ConnectAsync(viewer, u, allowProposals: true);
         Assert.DoesNotContain("lorevolve.propose", tokens.Scope!.Split(' '));
         Assert.DoesNotContain(LorEvolveMcpProposalTools.ProposeTool, await ToolsAsync(connection));
+
+        // Called anyway, it is refused: a Viewer stages nothing, and the web assistant's own refusal went with it (#158).
+        var refused = await CallAsync(connection, LorEvolveMcpProposalTools.ProposeTool, new { summary = "x", operations = Array.Empty<object>() });
+        Assert.True(refused.GetProperty("isError").GetBoolean());
     }
 
     [Fact]
@@ -224,85 +220,6 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
     }
 
     [Fact]
-    public async Task The_assistant_proposes_only_in_propose_mode_through_the_same_review()
-    {
-        var (browser, userId, u, character) = await OwnerAsync("assistpropose");
-
-        // An ordinary question is handed no proposal tool.
-        _model.Use(_ => ScriptedAssistantProvider.Answer(("note", "Only reading.", [])));
-        (await browser.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Who is Nara?", null))).EnsureSuccessStatusCode();
-        Assert.DoesNotContain(_model.Steps[0].Brief.Tools, tool => tool.Name == AssistantProposing.ProposeTool);
-        Assert.Contains(UniverseAssistant.ReadOnlyRule, _model.Steps[0].Brief.Instructions, StringComparison.Ordinal);
-
-        _model.Use(step => step.Number == 1
-            ? ScriptedAssistantProvider.Calls((AssistantProposing.ProposeTool, new
-            {
-                summary = "A new character",
-                operations = new object[] { new { id = "q", action = "create", resource = "lore_entry", lore = new { typeId = character, name = "Quill" } } },
-            }))
-            : ScriptedAssistantProvider.Answer(("note", "Your change is waiting for review.", [])));
-
-        var asked = await browser.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Create a character called Quill.", null, AssistantEndpoints.ProposeMode));
-        Assert.Equal(HttpStatusCode.OK, asked.StatusCode);
-        var answer = (await asked.Content.ReadFromJsonAsync<AssistantAnswer>())!;
-        Assert.NotNull(answer.Proposal);
-        Assert.Contains(_model.Steps[0].Brief.Tools, tool => tool.Name == AssistantProposing.ProposeTool);
-
-        await PlotTestClient.WithDb(_factory, async db =>
-        {
-            Assert.False(await db.Entities.AnyAsync(entity => entity.UniverseId == u && entity.Name == "Quill"));
-            Assert.Equal((AiChangeSource.Assistant, userId), await db.AiChangeProposals.Where(row => row.Id == answer.Proposal!.Id).Select(row => ValueTuple.Create(row.Source, row.ProposedByUserId)).SingleAsync());
-        });
-
-        // An app's proposal and the assistant's sit side by side in Pending AI Changes.
-        var (connection, _) = await ConnectAsync(browser, u, allowProposals: true);
-        await CallAsync(connection, LorEvolveMcpProposalTools.ProposeTool, new
-        {
-            summary = "From the app",
-            operations = new object[] { new { id = "r", action = "create", resource = "lore_entry", lore = new { typeId = character, name = "Rook" } } },
-        });
-        var listed = (await browser.GetFromJsonAsync<AiChangePage>($"/api/ai-changes?universeId={u}"))!;
-        Assert.Equal([AiChangeSource.Mcp, AiChangeSource.Assistant], listed.Items.Select(item => item.Source).Order());
-    }
-
-    [Fact]
-    public async Task A_provider_busy_after_staging_still_answers_with_the_one_proposal_so_asking_again_is_not_needed()
-    {
-        var (browser, _, u, character) = await OwnerAsync("assistbusy");
-
-        // Issue #46: the proposal is staged, then the answering step is rate limited.
-        _model.Use(step => step.Number == 1
-            ? ScriptedAssistantProvider.Calls((AssistantProposing.ProposeTool, new
-            {
-                summary = "A new character",
-                operations = new object[] { new { id = "w", action = "create", resource = "lore_entry", lore = new { typeId = character, name = "Wren" } } },
-            }))
-            : throw new AssistantProviderException(AssistantFailure.Busy, "Groq is rate limiting this host."));
-
-        var asked = await browser.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Create a character called Wren.", null, AssistantEndpoints.ProposeMode));
-
-        Assert.Equal(HttpStatusCode.OK, asked.StatusCode);
-        var answer = (await asked.Content.ReadFromJsonAsync<AssistantAnswer>())!;
-        Assert.Equal(1, answer.Proposal!.ChangeCount);
-        Assert.Equal(
-            "I've prepared 1 change for you to review. Nothing changes until you approve them in Pending AI Changes.",
-            Assert.Single(answer.Segments).Text);
-        Assert.Equal(2, _model.Steps.Count);
-
-        await PlotTestClient.WithDb(_factory, async db =>
-        {
-            Assert.Equal([answer.Proposal.Id], await db.AiChangeProposals.Where(row => row.UniverseId == u).Select(row => row.Id).ToListAsync());
-            Assert.False(await db.Entities.AnyAsync(entity => entity.UniverseId == u && entity.Name == "Wren"));
-        });
-
-        // Busy before anything was staged is still the busy answer.
-        _model.Use(_ => throw new AssistantProviderException(AssistantFailure.Busy, "Groq is rate limiting this host."));
-        var busy = await browser.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Create another.", null, AssistantEndpoints.ProposeMode));
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, busy.StatusCode);
-        await PlotTestClient.WithDb(_factory, async db => Assert.Equal(1, await db.AiChangeProposals.CountAsync(row => row.UniverseId == u)));
-    }
-
-    [Fact]
     public async Task Both_entry_points_stage_the_issue_45_resources_through_the_one_contract()
     {
         var (browser, _, u, character) = await OwnerAsync("mcpcontent");
@@ -328,26 +245,14 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
         Assert.Equal(4, receipt.Applied.Count);
         Assert.Equal(["Rise"], (await PlotTestClient.Plot(browser, u, story)).Select(arc => arc.Title));
 
-        // From the assistant: the owner's own idea, through the same staging, as the strict schema shapes it.
-        _model.Use(step => step.Number == 1
-            ? ScriptedAssistantProvider.Calls((AssistantProposing.ProposeTool, new
-            {
-                summary = "An idea",
-                operations = new object[] { new { id = "i", action = "create", resource = "idea", idea = new { title = "What if steel lies?", body = "", references = new object[] { new { kind = "lore_entry", id = receipt.Applied.Single(line => line.Key == "smith").ResultId } } } } },
-            }))
-            : ScriptedAssistantProvider.Answer(("note", "Your idea is waiting for review.", [])));
-        var asked = await browser.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Keep an idea about steel.", null, AssistantEndpoints.ProposeMode));
-        var answer = (await asked.Content.ReadFromJsonAsync<AssistantAnswer>())!;
-        Assert.NotNull(answer.Proposal);
-        await AiChangeTestClient.ApproveAll(browser, u, answer.Proposal!.Id);
-        await PlotTestClient.WithDb(_factory, async db => Assert.True(await db.Ideas.AnyAsync(idea => idea.UniverseId == u && idea.Title == "What if steel lies?")));
-
-        // The assistant's propose schema carries every resource the contract does.
-        var schema = _model.Steps[0].Brief.Tools.Single(tool => tool.Name == AssistantProposing.ProposeTool).ParametersSchema;
-        foreach (var member in new[] { "\"article\"", "\"plotArc\"", "\"worldRule\"", "\"idea\"", "\"order\"", "\"stories\"", "\"details\"", "\"startDate\"" })
+        // The owner's own idea, about what the first proposal created, through the same staging.
+        var idea = Body(await CallAsync(connection, LorEvolveMcpProposalTools.ProposeTool, new
         {
-            Assert.Contains(member, schema, StringComparison.Ordinal);
-        }
+            summary = "An idea",
+            operations = new object[] { new { id = "i", action = "create", resource = "idea", idea = new { title = "What if steel lies?", body = "", references = new object[] { new { kind = "lore_entry", id = receipt.Applied.Single(line => line.Key == "smith").ResultId } } } } },
+        }));
+        await AiChangeTestClient.ApproveAll(browser, u, idea.GetProperty("proposalId").GetGuid());
+        await PlotTestClient.WithDb(_factory, async db => Assert.True(await db.Ideas.AnyAsync(idea => idea.UniverseId == u && idea.Title == "What if steel lies?")));
     }
 
     [Fact]
@@ -405,30 +310,20 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
     }
 
     [Fact]
-    public async Task The_assistant_stages_schema_through_the_same_contract_and_review()
+    public async Task A_choice_field_is_staged_through_the_same_contract_and_review()
     {
-        var (browser, _, u, character) = await OwnerAsync("assistschema");
-        _model.Use(step => step.Number == 1
-            ? ScriptedAssistantProvider.Calls((AssistantProposing.ProposeTool, new
-            {
-                summary = "Races as a field",
-                operations = new object[]
-                {
-                    new { id = "race", action = "create", resource = "lore_field", field = new { type = new { id = character }, name = "Race", kind = "one_choice", options = Races } },
-                },
-            }))
-            : ScriptedAssistantProvider.Answer(("note", "A Race field is waiting for review.", [])));
-
-        var asked = await browser.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Add a Race choice to Character: Orc, Human, Elf.", null, AssistantEndpoints.ProposeMode));
-        var answer = (await asked.Content.ReadFromJsonAsync<AssistantAnswer>())!;
-        Assert.NotNull(answer.Proposal);
-        var schema = _model.Steps[0].Brief.Tools.Single(tool => tool.Name == AssistantProposing.ProposeTool).ParametersSchema;
-        foreach (var member in new[] { "\"loreType\"", "\"field\"", "\"group\"", "\"linksToGroup\"", "\"relationshipKind\"", "\"chronology\"", "\"months\"", "\"term\"" })
+        var (browser, _, u, character) = await OwnerAsync("mcpchoicefield");
+        var (connection, _) = await ConnectAsync(browser, u, allowProposals: true);
+        var staged = Body(await CallAsync(connection, LorEvolveMcpProposalTools.ProposeTool, new
         {
-            Assert.Contains(member, schema, StringComparison.Ordinal);
-        }
+            summary = "Races as a field",
+            operations = new object[]
+            {
+                new { id = "race", action = "create", resource = "lore_field", field = new { type = new { id = character }, name = "Race", kind = "one_choice", options = Races } },
+            },
+        }));
 
-        await AiChangeTestClient.ApproveAll(browser, u, answer.Proposal!.Id);
+        await AiChangeTestClient.ApproveAll(browser, u, staged.GetProperty("proposalId").GetGuid());
         var race = (await browser.GetFromJsonAsync<List<LorEvolve.Api.Features.Lore.EntityTypeResponse>>($"/api/universes/{u}/entity-types"))!
             .Single(type => type.Id == character).Fields.Single(field => field.Name == "Race");
         Assert.Equal(["Orc", "Human", "Elf"], race.Options.Select(option => option.Value));
@@ -484,14 +379,4 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
         Assert.Equal(lifeRune, blood!.Fields.Single(value => value.FieldDefinitionId == baseRune).ReferencedEntityId);
     }
 
-    [Fact]
-    public async Task A_viewer_cannot_ask_the_assistant_to_propose()
-    {
-        var (_, _, u, _) = await OwnerAsync("assistviewer");
-        var (viewer, viewerId) = await NewBrowser(_factory, "assistviewer-viewer");
-        await CollaborationTestClient.Join(_factory, u, viewerId, UniverseRole.Viewer);
-
-        var asked = await viewer.PostAsJsonAsync($"/api/universes/{u}/assistant", new AssistantRequest("Create a character called Sky.", null, AssistantEndpoints.ProposeMode));
-        Assert.Equal(HttpStatusCode.Forbidden, asked.StatusCode);
-    }
 }

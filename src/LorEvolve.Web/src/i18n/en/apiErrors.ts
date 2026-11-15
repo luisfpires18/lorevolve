@@ -110,12 +110,6 @@ const apiErrors = {
   publication_required_while_public:
     'A public universe needs this. Fill it in, or unpublish the universe first.',
 
-  // ---------- The assistant ----------
-  assistant_unavailable: "The assistant isn't set up on this LorEvolve yet.",
-  assistant_busy: 'The assistant is busy right now. Try again in a minute.',
-  assistant_timeout: 'That took too long to answer. Try again, or ask something narrower.',
-  assistant_failed: "The assistant couldn't answer that. Try again.",
-
   // ---------- Backups and restores ----------
   backup_restore_busy:
     'Too many backups are waiting to be restored at once. Try again in a few minutes.',

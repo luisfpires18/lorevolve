@@ -11,7 +11,7 @@ namespace LorEvolve.Api.Features.AiChanges;
 
 /// <summary>
 /// Where a submission came from, as the server knows it: never anything the AI said about itself. <paramref name="SchemaAllowed"/>:
-/// this entry point may stage schema definitions (ADR 0062) - the assistant, asked by a signed-in person in propose mode, or an MCP
+/// this entry point may stage schema definitions (ADR 0062) - an MCP
 /// connection the person explicitly allowed to propose schema.
 /// </summary>
 internal sealed record AiChangeOrigin(AiChangeSource Source, Guid? McpConnectionId = null, string? ClientName = null, bool SchemaAllowed = false);

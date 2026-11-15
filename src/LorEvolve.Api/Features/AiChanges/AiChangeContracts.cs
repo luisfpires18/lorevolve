@@ -8,7 +8,7 @@ namespace LorEvolve.Api.Features.AiChanges;
 
 // ---------- What an AI sends ----------
 //
-// One contract for both entry points (ADR 0047): MCP's propose_changes binds it from the tool call, and the assistant's
+// One contract for the AI entry point (ADR 0047): MCP's propose_changes binds it from the tool call, as the retired web assistant's
 // propose_changes parses the model's arguments into it. Everything here is untrusted: names and enums arrive as strings
 // and are checked, ids are re-resolved inside the connected universe, and nothing the AI says about who is asking or
 // which universe it is counts. Descriptions are written for the AI reading the tool's schema.

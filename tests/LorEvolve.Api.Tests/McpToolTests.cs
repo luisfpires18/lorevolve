@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using LorEvolve.Api.Features.Assistant;
 using ModelContextProtocol;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -282,20 +281,6 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
 
         var outside = await client.CallToolAsync("read_scene_manuscript", new Dictionary<string, object?> { ["sceneId"] = scene.ToString(), ["offset"] = prose.Length + 100 });
         Assert.True(outside.IsError);
-    }
-
-    [Fact]
-    public async Task Reading_through_MCP_does_not_spend_the_built_in_assistant_s_questions()
-    {
-        var viewer = await SignIn(Api, "user-mcptools-viewer");
-        await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
-        for (var i = 0; i < 5; i++)
-        {
-            await Call(client, "get_universe_overview");
-        }
-
-        var usage = await viewer.GetFromJsonAsync<JsonElement>("/api/profile/assistant-usage");
-        Assert.Equal(0, usage.GetProperty("ask").GetProperty("used").GetInt32());
     }
 
     // ---------- Helpers ----------

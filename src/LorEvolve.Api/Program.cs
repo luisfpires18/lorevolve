@@ -2,7 +2,6 @@ using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Admin;
 using LorEvolve.Api.Features.Feedback;
 using LorEvolve.Api.Features.AiChanges;
-using LorEvolve.Api.Features.Assistant;
 using LorEvolve.Api.Features.Auth;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Chronology;
@@ -77,7 +76,6 @@ builder.Services.AddSingleton<LorEvolve.Api.Features.AiChanges.AiChangeProgress>
 builder.Services.AddBackupRestore();
 builder.Services.AddLorEvolveDatabaseBackups(builder.Configuration);
 builder.Services.AddLorEvolveSeo(builder.Configuration);
-builder.Services.AddLorEvolveAssistant(builder.Configuration);
 builder.Services.AddLorEvolveMcp(builder.Configuration, builder.Environment);
 
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
@@ -184,7 +182,6 @@ app.MapComicEndpoints();
 app.MapIdeaEndpoints();
 app.MapIdeaBoardEndpoints();
 app.MapUniverseSearchEndpoints();
-app.MapAssistantEndpoints();
 app.MapOAuthEndpoints();
 app.MapClientRegistrationEndpoints();
 app.MapConnectedAppEndpoints();
