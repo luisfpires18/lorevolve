@@ -287,6 +287,99 @@ public sealed class McpProjectEntityToolTests(McpProjectEntityFixture fixture) :
             Assert.False(await db.Entities.IgnoreQueryFilters().AnyAsync(entry => entry.Name == "Not allowed")));
     }
 
+    [Fact]
+    public async Task A_script_is_read_whole_by_its_own_tool()
+    {
+        await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
+
+        var structure = await Call(
+            client,
+            LorEvolveMcpProjectEntityTools.StructureTool,
+            new() { ["projectId"] = fixture.Comic.ToString() });
+
+        var chapter = structure.GetProperty("bands")[0].GetProperty("units")[0];
+        var chapterId = chapter.GetProperty("id").GetGuid();
+
+        // The structure says a script is there and how long it is; this tool is the one that reads it.
+        Assert.True(chapter.GetProperty("hasScript").GetBoolean());
+
+        var script = await Call(
+            client,
+            LorEvolveMcpProjectEntityTools.ScriptTool,
+            new() { ["projectId"] = fixture.Comic.ToString(), ["unitId"] = chapterId.ToString() });
+
+        Assert.Equal("PAGE ONE", script.GetProperty("script").GetString());
+        Assert.Equal("The tide goes out", script.GetProperty("title").GetString());
+        Assert.Equal("Volume 1", script.GetProperty("band").GetString());
+
+        // A unit of another project is not found through this project's id.
+        var crossed = await Failing(
+            client,
+            LorEvolveMcpProjectEntityTools.ScriptTool,
+            new() { ["projectId"] = fixture.Project.ToString(), ["unitId"] = chapterId.ToString() });
+        Assert.Equal("not_found", crossed.GetProperty("error").GetString());
+    }
+
+    /// <summary>
+    /// An entry stays in the project it was made in. The first review round of #148 found that a proposal could name
+    /// another project on an update: the check let it through and the commit then refused it as a missing entry, so the
+    /// person would have approved a change that failed. It is refused before approval now.
+    /// </summary>
+    [Fact]
+    public async Task A_proposal_that_moves_an_entry_to_another_project_is_refused_before_approval()
+    {
+        await using var client = await SdkClient(Api, W.U, fixture.Proposer.AccessToken);
+
+        var refused = await Failing(
+            client,
+            LorEvolveMcpProposalTools.ProposeTool,
+            Proposal("Move a unit into the comic", new
+            {
+                id = "u1",
+                action = "update",
+                resource = "project_entry",
+                targetId = fixture.Shoreward,
+                projectEntry = new { projectId = fixture.Comic, typeId = fixture.UnitType, name = "Shoreward" },
+            }));
+
+        Assert.Equal("invalid_proposal", refused.GetProperty("error").GetString());
+        Assert.Contains(
+            "stays in the project",
+            refused.GetProperty("problems")[0].GetProperty("message").GetString()!,
+            StringComparison.Ordinal);
+
+        // Nothing was staged, so there is nothing for the person to approve by mistake.
+        await WithDb(Api, async db =>
+            Assert.False(await db.AiChangeOperations.AnyAsync(operation => operation.TargetId == fixture.Shoreward)));
+
+        // And an update that leaves the project alone is accepted, which is the ordinary case.
+        var staged = await Call(
+            client,
+            LorEvolveMcpProposalTools.ProposeTool,
+            Proposal("Rename the Shoreward", new
+            {
+                id = "u1",
+                action = "update",
+                resource = "project_entry",
+                targetId = fixture.Shoreward,
+                projectEntry = new { name = "Shoreward, veteran" },
+            }));
+
+        Assert.Equal("waiting_for_review", staged.GetProperty("status").GetString());
+
+        await AiChangeTestClient.ApproveAll(W.Owner, W.U, staged.GetProperty("proposalId").GetGuid());
+
+        await WithDb(Api, async db =>
+        {
+            var entry = await db.Entities.IgnoreQueryFilters().SingleAsync(each => each.Id == fixture.Shoreward);
+            Assert.Equal("Shoreward, veteran", entry.Name);
+
+            // The project it belongs to is exactly as it was, which is what the refusal above protects.
+            Assert.Equal(fixture.Project, entry.ProjectId);
+            Assert.Equal(fixture.UnitType, entry.EntityTypeId);
+        });
+    }
+
     // ---------- helpers ----------
 
     private static Dictionary<string, object?> Proposal(string summary, object operation) =>
@@ -342,6 +435,9 @@ public sealed class McpProjectEntityFixture : IAsyncLifetime
     public Guid RoleField { get; private set; }
 
     public Guid Saltbearer { get; private set; }
+
+    /// <summary>A second unit, for the one test that renames an entry: the others assert the Saltbearer by name.</summary>
+    public Guid Shoreward { get; private set; }
 
     public Guid Alenna { get; private set; }
 
@@ -405,10 +501,11 @@ public sealed class McpProjectEntityFixture : IAsyncLifetime
                 [new FieldValueInput(CostField, null, 35, null, null, null, null)]));
         Saltbearer = saltbearer.Id;
 
-        await PostJson<EntityDetail>(
+        var shoreward = await PostJson<EntityDetail>(
             World.Owner,
             $"/api/projects/{Project}/entities",
             new ProjectEntityRequest(UnitType, "Shoreward", null));
+        Shoreward = shoreward.Id;
 
         await PostJson<EntityDetail>(
             World.Owner,

@@ -162,6 +162,7 @@ internal static class AiChangeJson
         (AiChangeResource.TimelineEvent, _) => Read<TimelineValues>(json),
         (AiChangeResource.PlotArc, _) => Read<PlotArcValues>(json),
         (AiChangeResource.WorldRule, _) => Read<WorldRuleValues>(json),
+        (AiChangeResource.ProjectEntry, _) => Read<ProjectEntryValues>(json),
         (AiChangeResource.Idea, _) => Read<IdeaValues>(json),
         (AiChangeResource.LoreType, _) => Read<TypeValues>(json),
         (AiChangeResource.LoreField, _) => Read<FieldValues>(json),

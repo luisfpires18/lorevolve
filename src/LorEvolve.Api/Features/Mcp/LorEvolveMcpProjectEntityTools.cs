@@ -35,6 +35,7 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
     public const string ListTool = "list_project_entries";
     public const string GetTool = "get_project_entry";
     public const string StructureTool = "get_project_structure";
+    public const string ScriptTool = "get_project_script";
 
     /// <summary>How many entries one page holds. The same 25 the timeline browses in.</summary>
     public const int PageSize = 25;
@@ -46,7 +47,7 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
         + "inherits. list_project_entries reads that project's entries, 25 to a page, optionally of one type or matching words. "
         + "get_project_entry reads one entry with its field values and the lore entry it stands for, when the author named one. "
         + "get_project_structure reads how a series, a film or a comic is laid out: seasons of episodes, sequences of scenes, or "
-        + "volumes of chapters with pages and panels. To change a project's entries, send propose_changes with projectEntry "
+        + "volumes of chapters with pages and panels; get_project_script reads one episode's, scene's or chapter's script whole.  To change a project's entries, send propose_changes with projectEntry "
         + "operations: nothing is applied until the person approves it in LorEvolve.";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
@@ -341,6 +342,54 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
             hasStructure = bands.Count > 0,
             bands,
         });
+    }
+
+    [McpServerTool(Name = ScriptTool, Title = "Read a script", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("One episode's, scene's or chapter's script, whole, as the author wrote it. The structure tool says which of "
+        + "them have one and how long each is; this reads one. A unit with no script yet answers with none rather than an error.")]
+    public async Task<CallToolResult> GetProjectScriptAsync(
+        [Description("The project's id, from list_projects.")] string projectId,
+        [Description("The episode's, scene's or chapter's id, from get_project_structure.")] string unitId,
+        CancellationToken cancellationToken)
+    {
+        if (Guard() is { } refused)
+        {
+            return refused;
+        }
+
+        if (await ProjectAsync(projectId, cancellationToken) is not { } project
+            || !OptionalId(unitId, out var wanted)
+            || wanted is not { } id)
+        {
+            return NotFound();
+        }
+
+        // Scoped through the season to the project in one read, so a unit of another project is not found.
+        var unit = await db.ProjectEpisodes.AsNoTracking()
+            .Where(episode => episode.Id == id && episode.Season!.ProjectId == project.Id)
+            .Select(episode => new
+            {
+                episode.Id,
+                episode.Title,
+                episode.Synopsis,
+                episode.Script,
+                Band = episode.Season!.Name,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return unit is null
+            ? NotFound()
+            : Result(new
+            {
+                projectId = project.Id,
+                kind = project.Kind,
+                unitId = unit.Id,
+                title = unit.Title,
+                unit.Synopsis,
+                band = unit.Band,
+                hasScript = unit.Script is not null,
+                script = unit.Script,
+            });
     }
 
     // ---------- Reading ----------

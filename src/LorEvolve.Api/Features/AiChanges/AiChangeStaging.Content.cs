@@ -146,7 +146,20 @@ internal static partial class AiChangeStaging
                 return null;
             }
 
-            var projectId = entry?.ProjectId ?? before?.ProjectId ?? Guid.Empty;
+            // An entry belongs to the project it was made in and does not move between projects, so on an update the
+            // stored project wins and a proposal naming another one is refused rather than quietly corrected. Found by
+            // the first review round of #148: without this a cross-project update reached the commit, which refused it
+            // as a missing entry, so the person would have approved a change that then failed.
+            if (before is { } current && entry?.ProjectId is { } named && named != current.ProjectId)
+            {
+                Fail(
+                    AiChangeCodes.Invalid,
+                    "An entry stays in the project it was made in. Leave projectId out, or send its own project.",
+                    "projectEntry.projectId");
+                return null;
+            }
+
+            var projectId = before?.ProjectId ?? entry?.ProjectId ?? Guid.Empty;
             var typeId = entry?.TypeId ?? before?.TypeId ?? Guid.Empty;
 
             if (projectId == Guid.Empty)
