@@ -4,6 +4,7 @@ import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
 import { ProjectIdeas } from '../components/ProjectIdeas'
+import { ProjectOverview } from '../components/ProjectOverview'
 import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
 import { ProjectsNav } from '../components/ProjectsNav'
@@ -313,9 +314,9 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       </section>
 
       {/*
-       * One panel per view (#193). Entities holds the type cards, a type's entries and the type editor behind an action
-       * (#196), and Structure the structure. A view with no panel of its own yet, the overview until #195 among them,
-       * says so rather than borrowing one.
+       * One panel per view (#193). The overview holds the project's own content, its counts and the ways into the rest
+       * of it (#195), Entities the type cards, a type's entries and the type editor behind an action (#196), and
+       * Structure the structure. A view with no panel of its own yet says so rather than borrowing one.
        *
        * A schema write changes what the entries can offer - a new type is a type an entry can be of - so the editor and
        * the entries still share `schemaVersion`. It lives here, in the component that stays mounted while the author
@@ -323,6 +324,8 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
        */}
       {section.pending ? (
         <ProjectIdeas project={project} />
+      ) : section.segment === 'overview' ? (
+        <ProjectOverview project={project} universeId={frameUniverseId} />
       ) : section.segment === 'entities' ? (
         <ProjectEntitiesView
           projectId={project.id}
