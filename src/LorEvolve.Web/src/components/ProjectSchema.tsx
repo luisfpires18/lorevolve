@@ -16,6 +16,7 @@ import {
   type ProjectField,
   type ProjectTemplate,
 } from '../projectEntities/types'
+import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
 import { t, tn, useI18n } from '../i18n'
 
@@ -62,6 +63,7 @@ export function ProjectSchema({
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [name, setName] = useState('')
+  const [adding, setAdding] = useState(false)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameTo, setRenameTo] = useState('')
   const [addingFieldTo, setAddingFieldTo] = useState<string | null>(null)
@@ -106,17 +108,87 @@ export function ProjectSchema({
   }
 
   if (types === null) {
-    return <p className="projectcard__meta">{t('projects.schema.loading')}</p>
+    return <p className="projectcard__meta">{t('projects.common.loading')}</p>
   }
 
   const offerStarters = types.length === 0 && template !== null && template.types.length > 0
 
   return (
     <section className="projects" data-testid="project-schema">
+      {/* The panel's own primary action sits in its head, where `PageHeader` and the lore screens put one (#184). */}
       <header className="projects__head">
-        <h2>{t('projects.schema.title')}</h2>
-        <p className="projects__lede">{t('projects.schema.lede')}</p>
+        <div className="projects__headtext">
+          <h2>{t('projects.schema.title')}</h2>
+          <p className="projects__lede">{t('projects.schema.lede')}</p>
+        </div>
+        <button
+          className="button"
+          type="button"
+          aria-expanded={adding}
+          data-testid="project-type-add"
+          onClick={() => setAdding((open) => !open)}
+        >
+          {t('projects.schema.addType')}
+        </button>
       </header>
+
+      {/*
+       * Shown when asked for rather than standing open under the list: an empty box with a grey placeholder in it is
+       * not a thing an author came to read, and three of them on one screen were what made this page look unfinished.
+       */}
+      {adding ? (
+        <form
+          className="form"
+          data-testid="project-type-new"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (busy) return
+            setBusy(true)
+            createProjectType(projectId, {
+              name,
+              description: null,
+              icon: null,
+              accentColor: null,
+              parentId: null,
+            })
+              .then(() => {
+                setName('')
+                setAdding(false)
+                refresh()
+              })
+              .catch(failing)
+          }}
+        >
+          <label className="field">
+            <span className="field__label">{t('projects.schema.typeName')}</span>
+            <input
+              className="field__input"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              data-testid="project-type-new-name"
+              required
+            />
+          </label>
+          <div className="form__actions">
+            <button
+              className="button"
+              type="submit"
+              disabled={busy}
+              data-testid="project-type-new-save"
+            >
+              {busy ? t('projects.schema.typeSaving') : t('projects.schema.addType')}
+            </button>
+            <button
+              className="button button--secondary"
+              type="button"
+              onClick={() => setAdding(false)}
+              data-testid="project-type-new-cancel"
+            >
+              {t('projects.common.cancel')}
+            </button>
+          </div>
+        </form>
+      ) : null}
 
       {failed ? (
         <p role="alert" data-testid="project-schema-failed">
@@ -205,7 +277,7 @@ export function ProjectSchema({
                   onClick={() => setRenaming(null)}
                   data-testid="project-type-rename-cancel"
                 >
-                  {t('projects.entries.close')}
+                  {t('projects.common.cancel')}
                 </button>
               </form>
             ) : (
@@ -216,30 +288,37 @@ export function ProjectSchema({
                     ? t('projects.schema.noEntries')
                     : tn('projects.schema.entryCount', type.entryCount)}
                 </p>
+                {/* A row's secondary and destructive verbs go in the app's one menu for them, as a lore type's row
+                    already does, rather than as two outlined pills repeated down the list. */}
                 <div className="projectcard__actions">
-                  <button
-                    className="button button--secondary button--sm"
-                    type="button"
-                    data-testid={`project-type-rename-${type.id}`}
-                    onClick={() => {
-                      setRenaming(type.id)
-                      setRenameTo(type.name)
-                    }}
+                  <ActionMenu
+                    label={t('projects.common.more', { name: type.name })}
+                    triggerTestId={`project-type-actions-${type.id}`}
                   >
-                    {t('projects.schema.rename')}
-                  </button>
-                  <button
-                    className="button button--secondary button--danger-quiet button--sm"
-                    type="button"
-                    disabled={busy}
-                    data-testid={`project-type-delete-${type.id}`}
-                    onClick={() => {
-                      setBusy(true)
-                      deleteProjectType(projectId, type.id).then(refresh).catch(failing)
-                    }}
-                  >
-                    {t('projects.schema.deleteType')}
-                  </button>
+                    <button
+                      className="actionmenu__item"
+                      type="button"
+                      data-testid={`project-type-rename-${type.id}`}
+                      onClick={() => {
+                        setRenaming(type.id)
+                        setRenameTo(type.name)
+                      }}
+                    >
+                      {t('projects.schema.rename')}
+                    </button>
+                    <button
+                      className="actionmenu__item actionmenu__item--danger"
+                      type="button"
+                      disabled={busy}
+                      data-testid={`project-type-delete-${type.id}`}
+                      onClick={() => {
+                        setBusy(true)
+                        deleteProjectType(projectId, type.id).then(refresh).catch(failing)
+                      }}
+                    >
+                      {t('projects.schema.deleteType')}
+                    </button>
+                  </ActionMenu>
                 </div>
               </div>
             )}
@@ -278,22 +357,27 @@ export function ProjectSchema({
                         <span className="fieldlist__name">{field.name}</span>
                         <span className="fieldlist__meta">{kindLabel(field.kind)}</span>
                       </span>
-                      <span className="fieldlist__actions">
-                        <button
-                          className="button button--secondary button--danger-quiet button--sm"
-                          type="button"
-                          disabled={busy}
-                          data-testid={`project-field-delete-${field.id}`}
-                          onClick={() => {
-                            setBusy(true)
-                            deleteProjectField(projectId, type.id, field.id)
-                              .then(refresh)
-                              .catch(failing)
-                          }}
+                      <div className="fieldlist__actions">
+                        <ActionMenu
+                          label={t('projects.common.more', { name: field.name })}
+                          triggerTestId={`project-field-actions-${field.id}`}
                         >
-                          {t('projects.schema.deleteField')}
-                        </button>
-                      </span>
+                          <button
+                            className="actionmenu__item actionmenu__item--danger"
+                            type="button"
+                            disabled={busy}
+                            data-testid={`project-field-delete-${field.id}`}
+                            onClick={() => {
+                              setBusy(true)
+                              deleteProjectField(projectId, type.id, field.id)
+                                .then(refresh)
+                                .catch(failing)
+                            }}
+                          >
+                            {t('projects.schema.deleteField')}
+                          </button>
+                        </ActionMenu>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -327,51 +411,6 @@ export function ProjectSchema({
           </li>
         ))}
       </ul>
-
-      <form
-        className="form"
-        data-testid="project-type-new"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (busy) return
-          setBusy(true)
-          createProjectType(projectId, {
-            name,
-            description: null,
-            icon: null,
-            accentColor: null,
-            parentId: null,
-          })
-            .then(() => {
-              setName('')
-              refresh()
-            })
-            .catch(failing)
-        }}
-      >
-        <h3 className="sectionrule">{t('projects.schema.addType')}</h3>
-        <label className="field">
-          <span className="field__label">{t('projects.schema.typeName')}</span>
-          <input
-            className="field__input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t('projects.schema.typeNamePlaceholder')}
-            data-testid="project-type-new-name"
-            required
-          />
-        </label>
-        <div className="form__actions">
-          <button
-            className="button"
-            type="submit"
-            disabled={busy}
-            data-testid="project-type-new-save"
-          >
-            {busy ? t('projects.schema.typeSaving') : t('projects.schema.typeSave')}
-          </button>
-        </div>
-      </form>
     </section>
   )
 }
@@ -424,7 +463,6 @@ function FieldForm({
           className="field__input"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder={t('projects.schema.fieldNamePlaceholder')}
           data-testid="project-field-new-name"
           required
         />
@@ -453,7 +491,6 @@ function FieldForm({
             className="field__input"
             value={options}
             onChange={(event) => setOptions(event.target.value)}
-            placeholder={t('projects.schema.fieldOptionsPlaceholder')}
             data-testid="project-field-new-options"
           />
         </label>
@@ -478,7 +515,7 @@ function FieldForm({
           disabled={busy}
           data-testid="project-field-new-save"
         >
-          {busy ? t('projects.schema.fieldSaving') : t('projects.schema.fieldSave')}
+          {busy ? t('projects.schema.fieldSaving') : t('projects.schema.addField')}
         </button>
         <button
           className="button button--secondary"
@@ -486,7 +523,7 @@ function FieldForm({
           onClick={onCancel}
           data-testid="project-field-new-cancel"
         >
-          {t('projects.entries.close')}
+          {t('projects.common.cancel')}
         </button>
       </div>
     </form>

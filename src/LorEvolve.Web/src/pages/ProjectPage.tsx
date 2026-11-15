@@ -97,7 +97,6 @@ function NewProject() {
             className="field__input"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder={t('projects.new.namePlaceholder')}
             data-testid="project-new-name"
             required
           />
@@ -125,7 +124,6 @@ function NewProject() {
             className="field__input"
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
-            placeholder={t('projects.new.summaryPlaceholder')}
             data-testid="project-new-summary"
             rows={4}
           />
@@ -203,16 +201,13 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
    * project and the next. A universe's workspace has the same group in its sidebar; this is the copy for the
    * account-level screens, which have no sidebar of their own.
    */
-  return (
-    <div className={inUniverse ? undefined : 'projectshell'}>
-      {inUniverse ? null : (
-        <nav className="projectshell__nav" aria-label={t('projects.list.title')}>
-          <ul className="sidebar__nav">
-            <ProjectsNav />
-          </ul>
-        </nav>
-      )}
-
+  /*
+   * One column, one rhythm. The panels used to be the grid children of the shell beside the nav, which auto-placed
+   * Types and Entries into two columns of unequal weight and dropped the structure panel full width underneath. They
+   * are the same kind of thing and now read as one stack, separated by a rule, at every width (#184).
+   */
+  const body = (
+    <div className="projectbody">
       <section className="projects" data-testid="project-page">
         {/*
          * The head every other workspace screen uses (#184): the universe above the name as the crumb it already was,
@@ -288,6 +283,19 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
           pages={project.kind === ProjectKind.Comic}
         />
       ) : null}
+    </div>
+  )
+
+  if (inUniverse) return body
+
+  return (
+    <div className="projectshell">
+      <nav className="projectshell__nav" aria-label={t('projects.list.title')}>
+        <ul className="sidebar__nav">
+          <ProjectsNav />
+        </ul>
+      </nav>
+      {body}
     </div>
   )
 }

@@ -48,6 +48,7 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
+- `fix/project-screens-app-design`: the project screens use the app's own design (#184). The owner called them a mess and full of placeholders. First half: the class names that were in the markup and in no stylesheet, the buttons that carried no class, and `PageHeader` on the two pages that hand-rolled a head. Second half: the four always-open creation forms now open from each panel's head, a row's secondary and destructive verbs moved into `ActionMenu`, the panels stack in one column with one rhythm, and the copy went through `stop-slop` and `humanizer` (one "Loading" for every panel, fifteen of the sixteen placeholders gone, an action keeps its name from trigger to submit).
 - `docs/m4-assistant-audit`: the M4 retirement inventory (#156), `docs/architecture/audits/2026-11-15-m4-assistant-retirement-audit.md`. Its findings bind #157 to #160: `UniverseAiHelpOff` and `AiChangeSource.Assistant` are kept (they gate and label MCP and AI Changes), so #159 writes no migration, and the AI Changes E2E specs must move off the assistant drawer onto MCP staging in #157. The assistant runs on Groq on DEV and has never been on in PROD.
 
 ## Committed, not on `dev`

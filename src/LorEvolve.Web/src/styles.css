@@ -18846,6 +18846,16 @@ details.reviewsection > .reviewsection__list {
   color: var(--muted);
 }
 
+/*
+ * A panel's name and its lede, kept together so the panel's own primary action can sit opposite them on the same line
+ * and drop under them on a phone (#184).
+ */
+.projects__headtext {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
 .projects__filters {
   margin: 0;
 }
@@ -18891,6 +18901,22 @@ details.reviewsection > .reviewsection__list {
 
 .projectshell__nav {
   min-width: 0;
+}
+
+/*
+ * One project's panels: the head, then its types, its entries and its structure, one under the next and each the full
+ * width of the column. They are the same kind of thing, so they share one rhythm and a rule between them rather than
+ * being dealt into columns of unequal weight by the shell's grid (#184).
+ */
+.projectbody {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.projectbody > .projects + .projects {
+  padding-block-start: var(--space-6);
+  border-block-start: 1px solid var(--rule);
 }
 
 .projectshell__nav .sidebar__nav {

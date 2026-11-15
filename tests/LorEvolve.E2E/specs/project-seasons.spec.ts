@@ -90,11 +90,13 @@ test.describe('Project seasons', () => {
 
     await expect(page.getByTestId('project-seasons-empty')).toBeVisible()
 
-    // Two seasons, in the order they were made.
+    // Two seasons, in the order they were made. The form opens from the panel's head (#184).
+    await page.getByTestId('project-season-add').click()
     await page.getByTestId('project-season-new-name').fill('Season 1')
     await page.getByTestId('project-season-new-save').click()
     await expect(page.getByTestId('project-season-list')).toContainText('Season 1')
 
+    await page.getByTestId('project-season-add').click()
     await page.getByTestId('project-season-new-name').fill('Season 2')
     await page.getByTestId('project-season-new-save').click()
 
@@ -112,9 +114,13 @@ test.describe('Project seasons', () => {
 
     await expect(first).toContainText('3 episodes')
 
-    // Reordered: the last one moved to the top, by its own button rather than a drag.
+    // Reordered: the last one moved up from its own menu rather than by a drag.
     const episodes = first.locator('ol > li')
     await expect(episodes).toHaveCount(3)
+    await episodes
+      .nth(2)
+      .getByRole('button', { name: /More actions/ })
+      .click()
     await episodes.nth(2).getByRole('button', { name: 'Move up' }).click()
 
     await expect(first.locator('ol > li').nth(1)).toContainText('Low Tide')
@@ -129,11 +135,9 @@ test.describe('Project seasons', () => {
     await expect(first).toContainText('Script,')
 
     // Moved to the other season, which closes the first season's list up behind it.
-    await first
-      .locator('ol > li')
-      .first()
-      .getByRole('button', { name: /Move to Season 2/ })
-      .click()
+    const moving = first.locator('ol > li').first()
+    await moving.getByRole('button', { name: /More actions/ }).click()
+    await moving.getByRole('button', { name: /Move to Season 2/ }).click()
 
     await expect(first).toContainText('2 episodes')
     await expect(seasons.locator('> li').nth(1)).toContainText('1 episode')
@@ -154,6 +158,7 @@ test.describe('Project seasons', () => {
     await expect(panel).toContainText('No sequences yet.')
     await expect(panel).not.toContainText('Season')
 
+    await page.getByTestId('project-season-add').click()
     await page.getByTestId('project-season-new-name').fill('Act one')
     await page.getByTestId('project-season-new-save').click()
 
@@ -164,7 +169,11 @@ test.describe('Project seasons', () => {
 
     await expect(sequence).toContainText('1 scene')
     await expect(sequence).toContainText('The tide goes out')
-    await expect(sequence.getByRole('button', { name: 'Delete scene' })).toBeVisible()
+
+    // The film's words reach the row's menu too, not only the panel's heading.
+    const scene = sequence.locator('ol > li').first()
+    await scene.getByRole('button', { name: /More actions/ }).click()
+    await expect(scene.getByRole('button', { name: 'Delete scene' })).toBeVisible()
 
     // A game has no such panel at all: widening the structure to Film must not widen it to everything.
     const game = await api<{ id: string }>(page, 'POST', '/api/projects', {
@@ -196,6 +205,7 @@ test.describe('Project seasons', () => {
     await expect(panel.getByRole('heading', { name: 'Volumes' })).toBeVisible()
     await expect(panel).toContainText('No volumes yet.')
 
+    await page.getByTestId('project-season-add').click()
     await page.getByTestId('project-season-new-name').fill('Volume 1')
     await page.getByTestId('project-season-new-save').click()
 
@@ -210,6 +220,7 @@ test.describe('Project seasons', () => {
     await volume.getByRole('button', { name: 'Open pages' }).click()
     await expect(volume).toContainText('No pages yet.')
 
+    await volume.getByRole('button', { name: 'Add a page' }).click()
     await page.locator('[data-testid^="project-page-new-name-"]').first().fill('1')
     await page.locator('[data-testid^="project-page-new-save-"]').first().click()
 
@@ -259,6 +270,7 @@ test.describe('Project seasons', () => {
 
     await page.goto(`/app/projects/${book.id}`)
 
+    await page.getByTestId('project-season-add').click()
     await page.getByTestId('project-season-new-name').fill('Volume 1')
     await page.getByTestId('project-season-new-save').click()
 
@@ -268,6 +280,7 @@ test.describe('Project seasons', () => {
     await page.getByTestId('project-episode-new-save').click()
 
     await volume.getByRole('button', { name: 'Open pages' }).click()
+    await volume.getByRole('button', { name: 'Add a page' }).click()
     await page.locator('[data-testid^="project-page-new-name-"]').first().fill('1')
     await page.locator('[data-testid^="project-page-new-save-"]').first().click()
 
@@ -304,6 +317,7 @@ test.describe('Project seasons', () => {
 
     await page.goto(`/app/projects/${project.id}`)
 
+    await page.getByTestId('project-season-add').click()
     await page.getByTestId('project-season-new-name').fill('Season 1')
     await page.getByTestId('project-season-new-save').click()
 
@@ -313,21 +327,27 @@ test.describe('Project seasons', () => {
     await page.getByTestId('project-episode-new-save').click()
     await expect(season).toContainText('Pilot')
 
-    await season.getByRole('button', { name: 'Delete season' }).click()
+    const seasonHead = season.locator('.projectcard__head').first()
+    await seasonHead.getByRole('button', { name: /More actions/ }).click()
+    await seasonHead.getByRole('button', { name: 'Delete season' }).click()
 
     await expect(page.getByTestId('project-seasons-failed')).toBeVisible()
     await expect(page.getByTestId('project-season-list')).toContainText('Season 1')
 
     // Emptied first, it goes.
-    await season.getByRole('button', { name: 'Delete episode' }).click()
+    const episode = season.locator('ol > li').first()
+    await episode.getByRole('button', { name: /More actions/ }).click()
+    await episode.getByRole('button', { name: 'Delete episode' }).click()
     await expect(season).toContainText('No episodes yet.')
 
-    await page
+    const head = page
       .getByTestId('project-season-list')
       .locator('> li')
       .first()
-      .getByRole('button', { name: 'Delete season' })
-      .click()
+      .locator('.projectcard__head')
+      .first()
+    await head.getByRole('button', { name: /More actions/ }).click()
+    await head.getByRole('button', { name: 'Delete season' }).click()
 
     await expect(page.getByTestId('project-seasons-empty')).toBeVisible()
   })

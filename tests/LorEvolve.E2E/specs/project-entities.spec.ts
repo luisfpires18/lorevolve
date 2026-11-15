@@ -80,8 +80,10 @@ test.describe('Project entities', () => {
     await expect(types).toContainText('Supported players')
     await expect(types).toContainText('Several choices')
 
-    // An entry of a type, with one of those choices made.
+    // An entry of a type, with one of those choices made. The form opens from the panel's head rather than standing
+    // open on the page (#184).
     await page.getByTestId('project-entries-type').selectOption({ label: 'Map' })
+    await page.getByTestId('project-entry-add').click()
     await page.getByTestId('project-entry-new-name').fill('Saltflats')
 
     const players = page.locator('[data-testid^="project-entry-value-"]').first()
@@ -93,16 +95,21 @@ test.describe('Project entities', () => {
     await expect(types).toContainText('1 entry')
 
     // From here the schema is the author's: a type of their own, and one of the starters gone.
+    await page.getByTestId('project-type-add').click()
     await page.getByTestId('project-type-new-name').fill('Encounter')
     await page.getByTestId('project-type-new-save').click()
     await expect(types).toContainText('Encounter')
 
-    const item = types.locator('li', { hasText: 'Item' }).first()
+    // Rename and delete live in the row's menu, as they do on a lore type's row.
+    // The card's own head, not the whole card: a field row inside it carries a menu of its own.
+    const item = types.locator('> li', { hasText: 'Item' }).first().locator('.projectcard__head')
+    await item.getByRole('button', { name: /More actions/ }).click()
     await item.getByRole('button', { name: 'Delete type' }).click()
     await expect(types).not.toContainText('Item')
 
     // A type still used by an entry is not deleted: the refusal is shown rather than the entry losing its type.
-    const map = types.locator('li', { hasText: 'Map' }).first()
+    const map = types.locator('> li', { hasText: 'Map' }).first().locator('.projectcard__head')
+    await map.getByRole('button', { name: /More actions/ }).click()
     await map.getByRole('button', { name: 'Delete type' }).click()
     await expect(page.getByTestId('project-schema-failed')).toBeVisible()
     await expect(types).toContainText('Map')
@@ -117,10 +124,12 @@ test.describe('Project entities', () => {
     const second = await game(page, world.id)
 
     await page.goto(`/app/projects/${first.id}`)
+    await page.getByTestId('project-type-add').click()
     await page.getByTestId('project-type-new-name').fill('Unit')
     await page.getByTestId('project-type-new-save').click()
     await expect(page.getByTestId('project-types')).toContainText('Unit')
 
+    await page.getByTestId('project-entry-add').click()
     await page.getByTestId('project-entry-new-name').fill('Saltbearer')
     await page.getByTestId('project-entry-new-save').click()
     await expect(page.getByTestId('project-entry-list')).toContainText('Saltbearer')

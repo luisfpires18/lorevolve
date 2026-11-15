@@ -11,6 +11,7 @@ import {
   savePanel,
   type ProjectPage,
 } from '../projectEntities/pages'
+import { ActionMenu } from './ActionMenu'
 import { EntityPicker } from './EntityPicker'
 import { t, tn, useI18n } from '../i18n'
 
@@ -43,6 +44,7 @@ export function ChapterPages({
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [name, setName] = useState('')
+  const [addingPage, setAddingPage] = useState(false)
   const [addingTo, setAddingTo] = useState<string | null>(null)
 
   useEffect(() => {
@@ -98,6 +100,15 @@ export function ChapterPages({
         <h4 className="sectionrule sectionrule--accent">{t('projects.pages.title')}</h4>
         <div className="projectcard__actions">
           <button
+            className="button button--sm"
+            type="button"
+            aria-expanded={addingPage}
+            data-testid={`chapter-page-add-${chapterId}`}
+            onClick={() => setAddingPage((isOpen) => !isOpen)}
+          >
+            {t('projects.pages.add')}
+          </button>
+          <button
             className="button button--secondary button--sm"
             type="button"
             data-testid={`chapter-pages-close-${chapterId}`}
@@ -114,7 +125,59 @@ export function ChapterPages({
         </p>
       ) : null}
 
-      {pages === null ? <p className="projectcard__meta">{t('projects.pages.loading')}</p> : null}
+      {pages === null ? <p className="projectcard__meta">{t('projects.common.loading')}</p> : null}
+
+      {/* The page form opens from the head above, rather than sitting open under every chapter an author expands. */}
+      {addingPage ? (
+        <form
+          className="form"
+          data-testid={`project-page-new-${chapterId}`}
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (busy) return
+            setBusy(true)
+            createPage(projectId, volumeId, chapterId, {
+              name: name.length > 0 ? name : null,
+              notes: null,
+            })
+              .then(() => {
+                setName('')
+                setAddingPage(false)
+                return refresh()
+              })
+              .catch(failing)
+          }}
+        >
+          <label className="field">
+            <span className="field__label">{t('projects.pages.name')}</span>
+            <input
+              className="field__input"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={t('projects.pages.namePlaceholder')}
+              data-testid={`project-page-new-name-${chapterId}`}
+            />
+          </label>
+          <div className="form__actions">
+            <button
+              className="button"
+              type="submit"
+              disabled={busy}
+              data-testid={`project-page-new-save-${chapterId}`}
+            >
+              {t('projects.pages.add')}
+            </button>
+            <button
+              className="button button--secondary"
+              type="button"
+              onClick={() => setAddingPage(false)}
+              data-testid={`project-page-new-cancel-${chapterId}`}
+            >
+              {t('projects.common.cancel')}
+            </button>
+          </div>
+        </form>
+      ) : null}
 
       {pages !== null && pages.length === 0 ? (
         <p className="projectcard__meta">{t('projects.pages.empty')}</p>
@@ -131,35 +194,48 @@ export function ChapterPages({
                   : tn('projects.pages.panelCount', page.panels.length)}
               </span>
             </span>
-            <span className="fieldlist__actions">
-              <button
-                className="button button--text button--sm"
-                type="button"
-                disabled={busy || index === 0}
-                data-testid={`project-page-up-${page.id}`}
-                onClick={() => run(movePage(projectId, volumeId, chapterId, page.id, index - 1))}
+            <div className="fieldlist__actions">
+              <ActionMenu
+                label={t('projects.common.more', { name: page.name ?? String(index + 1) })}
+                triggerTestId={`project-page-actions-${page.id}`}
               >
-                {t('projects.seasons.moveUp')}
-              </button>
-              <button
-                className="button button--text button--sm"
-                type="button"
-                disabled={busy || index === (pages ?? []).length - 1}
-                data-testid={`project-page-down-${page.id}`}
-                onClick={() => run(movePage(projectId, volumeId, chapterId, page.id, index + 1))}
-              >
-                {t('projects.seasons.moveDown')}
-              </button>
-              <button
-                className="button button--secondary button--danger-quiet button--sm"
-                type="button"
-                disabled={busy}
-                data-testid={`project-page-delete-${page.id}`}
-                onClick={() => run(deletePage(projectId, volumeId, chapterId, page.id))}
-              >
-                {t('projects.pages.delete')}
-              </button>
-            </span>
+                {index === 0 ? null : (
+                  <button
+                    className="actionmenu__item"
+                    type="button"
+                    disabled={busy}
+                    data-testid={`project-page-up-${page.id}`}
+                    onClick={() =>
+                      run(movePage(projectId, volumeId, chapterId, page.id, index - 1))
+                    }
+                  >
+                    {t('projects.common.moveUp')}
+                  </button>
+                )}
+                {index === (pages ?? []).length - 1 ? null : (
+                  <button
+                    className="actionmenu__item"
+                    type="button"
+                    disabled={busy}
+                    data-testid={`project-page-down-${page.id}`}
+                    onClick={() =>
+                      run(movePage(projectId, volumeId, chapterId, page.id, index + 1))
+                    }
+                  >
+                    {t('projects.common.moveDown')}
+                  </button>
+                )}
+                <button
+                  className="actionmenu__item actionmenu__item--danger"
+                  type="button"
+                  disabled={busy}
+                  data-testid={`project-page-delete-${page.id}`}
+                  onClick={() => run(deletePage(projectId, volumeId, chapterId, page.id))}
+                >
+                  {t('projects.pages.delete')}
+                </button>
+              </ActionMenu>
+            </div>
             {/* Under the page's own row rather than beside it: the row is a line, its panels are a list. */}
             <div className="projectcard__under">
               <ol className="projectcard__inner" data-testid={`project-panels-${page.id}`}>
@@ -203,49 +279,60 @@ export function ChapterPages({
                       }
                     />
 
-                    <span className="projectcard__actions">
-                      <button
-                        className="button button--text button--sm"
-                        type="button"
-                        disabled={busy || place === 0}
-                        data-testid={`project-panel-up-${panel.id}`}
-                        onClick={() =>
-                          run(
-                            movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
-                              place: place - 1,
-                            }),
-                          )
-                        }
+                    <div className="projectcard__actions">
+                      <ActionMenu
+                        label={t('projects.common.more', {
+                          name: panel.description ?? String(place + 1),
+                        })}
+                        triggerTestId={`project-panel-actions-${panel.id}`}
                       >
-                        {t('projects.seasons.moveUp')}
-                      </button>
-                      <button
-                        className="button button--text button--sm"
-                        type="button"
-                        disabled={busy || place === page.panels.length - 1}
-                        data-testid={`project-panel-down-${panel.id}`}
-                        onClick={() =>
-                          run(
-                            movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
-                              place: place + 1,
-                            }),
-                          )
-                        }
-                      >
-                        {t('projects.seasons.moveDown')}
-                      </button>
-                      <button
-                        className="button button--secondary button--danger-quiet button--sm"
-                        type="button"
-                        disabled={busy}
-                        data-testid={`project-panel-delete-${panel.id}`}
-                        onClick={() =>
-                          run(deletePanel(projectId, volumeId, chapterId, page.id, panel.id))
-                        }
-                      >
-                        {t('projects.pages.deletePanel')}
-                      </button>
-                    </span>
+                        {place === 0 ? null : (
+                          <button
+                            className="actionmenu__item"
+                            type="button"
+                            disabled={busy}
+                            data-testid={`project-panel-up-${panel.id}`}
+                            onClick={() =>
+                              run(
+                                movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
+                                  place: place - 1,
+                                }),
+                              )
+                            }
+                          >
+                            {t('projects.common.moveUp')}
+                          </button>
+                        )}
+                        {place === page.panels.length - 1 ? null : (
+                          <button
+                            className="actionmenu__item"
+                            type="button"
+                            disabled={busy}
+                            data-testid={`project-panel-down-${panel.id}`}
+                            onClick={() =>
+                              run(
+                                movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
+                                  place: place + 1,
+                                }),
+                              )
+                            }
+                          >
+                            {t('projects.common.moveDown')}
+                          </button>
+                        )}
+                        <button
+                          className="actionmenu__item actionmenu__item--danger"
+                          type="button"
+                          disabled={busy}
+                          data-testid={`project-panel-delete-${panel.id}`}
+                          onClick={() =>
+                            run(deletePanel(projectId, volumeId, chapterId, page.id, panel.id))
+                          }
+                        >
+                          {t('projects.pages.deletePanel')}
+                        </button>
+                      </ActionMenu>
+                    </div>
                   </li>
                 ))}
               </ol>
@@ -282,46 +369,6 @@ export function ChapterPages({
           </li>
         ))}
       </ol>
-
-      <form
-        className="form"
-        data-testid={`project-page-new-${chapterId}`}
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (busy) return
-          setBusy(true)
-          createPage(projectId, volumeId, chapterId, {
-            name: name.length > 0 ? name : null,
-            notes: null,
-          })
-            .then(() => {
-              setName('')
-              return refresh()
-            })
-            .catch(failing)
-        }}
-      >
-        <label className="field">
-          <span className="field__label">{t('projects.pages.name')}</span>
-          <input
-            className="field__input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t('projects.pages.namePlaceholder')}
-            data-testid={`project-page-new-name-${chapterId}`}
-          />
-        </label>
-        <div className="form__actions">
-          <button
-            className="button"
-            type="submit"
-            disabled={busy}
-            data-testid={`project-page-new-save-${chapterId}`}
-          >
-            {t('projects.pages.save')}
-          </button>
-        </div>
-      </form>
     </section>
   )
 }
@@ -366,7 +413,6 @@ function PanelForm({
           className="field__input"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          placeholder={t('projects.pages.descriptionPlaceholder')}
           data-testid="project-panel-new-description"
         />
       </label>
@@ -376,7 +422,6 @@ function PanelForm({
           className="field__input"
           value={dialogue}
           onChange={(event) => setDialogue(event.target.value)}
-          placeholder={t('projects.pages.dialoguePlaceholder')}
           data-testid="project-panel-new-dialogue"
         />
       </label>
@@ -398,7 +443,7 @@ function PanelForm({
           disabled={busy}
           data-testid="project-panel-new-save"
         >
-          {t('projects.pages.savePanel')}
+          {t('projects.pages.addPanel')}
         </button>
         <button
           className="button button--secondary"
@@ -406,7 +451,7 @@ function PanelForm({
           onClick={onCancel}
           data-testid="project-panel-new-cancel"
         >
-          {t('projects.pages.close')}
+          {t('projects.common.cancel')}
         </button>
       </div>
     </form>
@@ -465,7 +510,7 @@ function PanelLore({
         data-testid={`project-panel-shows-cancel-${panelId}`}
         onClick={() => setOpen(false)}
       >
-        {t('projects.pages.close')}
+        {t('projects.common.cancel')}
       </button>
     </div>
   )

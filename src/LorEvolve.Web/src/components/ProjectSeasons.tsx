@@ -13,6 +13,7 @@ import {
   type ProjectEpisodeSummary,
   type ProjectSeason,
 } from '../projectEntities/seasons'
+import { ActionMenu } from './ActionMenu'
 import { ChapterPages } from './ChapterPages'
 import { EmptyState } from './EmptyState'
 import { t, tn, useI18n } from '../i18n'
@@ -38,7 +39,6 @@ const WORDS = {
     empty: () => t('projects.seasons.empty'),
     emptyHint: () => t('projects.seasons.emptyHint'),
     add: () => t('projects.seasons.add'),
-    save: () => t('projects.seasons.save'),
     delete: () => t('projects.seasons.delete'),
     noEpisodes: () => t('projects.seasons.noEpisodes'),
     episodeCount: (count: number) => tn('projects.seasons.episodeCount', count),
@@ -52,7 +52,6 @@ const WORDS = {
     empty: () => t('projects.volumes.empty'),
     emptyHint: () => t('projects.volumes.emptyHint'),
     add: () => t('projects.volumes.add'),
-    save: () => t('projects.volumes.save'),
     delete: () => t('projects.volumes.delete'),
     noEpisodes: () => t('projects.volumes.noEpisodes'),
     episodeCount: (count: number) => tn('projects.volumes.episodeCount', count),
@@ -66,7 +65,6 @@ const WORDS = {
     empty: () => t('projects.sequences.empty'),
     emptyHint: () => t('projects.sequences.emptyHint'),
     add: () => t('projects.sequences.add'),
-    save: () => t('projects.sequences.save'),
     delete: () => t('projects.sequences.delete'),
     noEpisodes: () => t('projects.sequences.noEpisodes'),
     episodeCount: (count: number) => tn('projects.sequences.episodeCount', count),
@@ -97,6 +95,7 @@ export function ProjectSeasons({
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [name, setName] = useState('')
+  const [adding, setAdding] = useState(false)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameTo, setRenameTo] = useState('')
   const [addingTo, setAddingTo] = useState<string | null>(null)
@@ -136,15 +135,75 @@ export function ProjectSeasons({
   }
 
   if (seasons === null) {
-    return <p className="projectcard__meta">{t('projects.seasons.loading')}</p>
+    return <p className="projectcard__meta">{t('projects.common.loading')}</p>
   }
 
   return (
     <section className="projects" data-testid="project-seasons">
       <header className="projects__head">
-        <h2>{say.title()}</h2>
-        <p className="projects__lede">{say.lede()}</p>
+        <div className="projects__headtext">
+          <h2>{say.title()}</h2>
+          <p className="projects__lede">{say.lede()}</p>
+        </div>
+        <button
+          className="button"
+          type="button"
+          aria-expanded={adding}
+          data-testid="project-season-add"
+          onClick={() => setAdding((open) => !open)}
+        >
+          {say.add()}
+        </button>
       </header>
+
+      {/* Asked for rather than standing open at the foot of the list. */}
+      {adding ? (
+        <form
+          className="form"
+          data-testid="project-season-new"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (busy) return
+            setBusy(true)
+            createSeason(projectId, { name, summary: null })
+              .then(() => {
+                setName('')
+                setAdding(false)
+                return refresh()
+              })
+              .catch(failing)
+          }}
+        >
+          <label className="field">
+            <span className="field__label">{t('projects.seasons.name')}</span>
+            <input
+              className="field__input"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              data-testid="project-season-new-name"
+              required
+            />
+          </label>
+          <div className="form__actions">
+            <button
+              className="button"
+              type="submit"
+              disabled={busy}
+              data-testid="project-season-new-save"
+            >
+              {busy ? t('projects.seasons.saving') : say.add()}
+            </button>
+            <button
+              className="button button--secondary"
+              type="button"
+              onClick={() => setAdding(false)}
+              data-testid="project-season-new-cancel"
+            >
+              {t('projects.common.cancel')}
+            </button>
+          </div>
+        </form>
+      ) : null}
 
       {failed ? (
         <p role="alert" data-testid="project-seasons-failed">
@@ -200,7 +259,7 @@ export function ProjectSeasons({
                   onClick={() => setRenaming(null)}
                   data-testid="project-season-rename-cancel"
                 >
-                  {t('projects.entries.close')}
+                  {t('projects.common.cancel')}
                 </button>
               </form>
             ) : (
@@ -211,45 +270,56 @@ export function ProjectSeasons({
                     ? say.noEpisodes()
                     : say.episodeCount(season.episodes.length)}
                 </p>
+                {/* Order, rename and delete are this row's secondary verbs: one menu, as the lore types screen does,
+                    rather than four pills on every card. */}
                 <div className="projectcard__actions">
-                  <button
-                    className="button button--text button--sm"
-                    type="button"
-                    disabled={busy || index === 0}
-                    data-testid={`project-season-up-${season.id}`}
-                    onClick={() => run(moveSeason(projectId, season.id, { place: index - 1 }))}
+                  <ActionMenu
+                    label={t('projects.common.more', { name: season.name })}
+                    triggerTestId={`project-season-actions-${season.id}`}
                   >
-                    {t('projects.seasons.moveUp')}
-                  </button>
-                  <button
-                    className="button button--text button--sm"
-                    type="button"
-                    disabled={busy || index === seasons.length - 1}
-                    data-testid={`project-season-down-${season.id}`}
-                    onClick={() => run(moveSeason(projectId, season.id, { place: index + 1 }))}
-                  >
-                    {t('projects.seasons.moveDown')}
-                  </button>
-                  <button
-                    className="button button--secondary button--sm"
-                    type="button"
-                    data-testid={`project-season-rename-${season.id}`}
-                    onClick={() => {
-                      setRenaming(season.id)
-                      setRenameTo(season.name)
-                    }}
-                  >
-                    {t('projects.seasons.rename')}
-                  </button>
-                  <button
-                    className="button button--secondary button--danger-quiet button--sm"
-                    type="button"
-                    disabled={busy}
-                    data-testid={`project-season-delete-${season.id}`}
-                    onClick={() => run(deleteSeason(projectId, season.id))}
-                  >
-                    {say.delete()}
-                  </button>
+                    {index === 0 ? null : (
+                      <button
+                        className="actionmenu__item"
+                        type="button"
+                        disabled={busy}
+                        data-testid={`project-season-up-${season.id}`}
+                        onClick={() => run(moveSeason(projectId, season.id, { place: index - 1 }))}
+                      >
+                        {t('projects.common.moveUp')}
+                      </button>
+                    )}
+                    {index === seasons.length - 1 ? null : (
+                      <button
+                        className="actionmenu__item"
+                        type="button"
+                        disabled={busy}
+                        data-testid={`project-season-down-${season.id}`}
+                        onClick={() => run(moveSeason(projectId, season.id, { place: index + 1 }))}
+                      >
+                        {t('projects.common.moveDown')}
+                      </button>
+                    )}
+                    <button
+                      className="actionmenu__item"
+                      type="button"
+                      data-testid={`project-season-rename-${season.id}`}
+                      onClick={() => {
+                        setRenaming(season.id)
+                        setRenameTo(season.name)
+                      }}
+                    >
+                      {t('projects.seasons.rename')}
+                    </button>
+                    <button
+                      className="actionmenu__item actionmenu__item--danger"
+                      type="button"
+                      disabled={busy}
+                      data-testid={`project-season-delete-${season.id}`}
+                      onClick={() => run(deleteSeason(projectId, season.id))}
+                    >
+                      {say.delete()}
+                    </button>
+                  </ActionMenu>
                 </div>
               </div>
             )}
@@ -271,51 +341,9 @@ export function ProjectSeasons({
                         : t('projects.seasons.noScript')}
                     </span>
                   </span>
-                  <span className="fieldlist__actions">
-                    <button
-                      className="button button--text button--sm"
-                      type="button"
-                      disabled={busy || place === 0}
-                      data-testid={`project-episode-up-${episode.id}`}
-                      onClick={() =>
-                        run(moveEpisode(projectId, season.id, episode.id, { place: place - 1 }))
-                      }
-                    >
-                      {t('projects.seasons.moveUp')}
-                    </button>
-                    <button
-                      className="button button--text button--sm"
-                      type="button"
-                      disabled={busy || place === season.episodes.length - 1}
-                      data-testid={`project-episode-down-${episode.id}`}
-                      onClick={() =>
-                        run(moveEpisode(projectId, season.id, episode.id, { place: place + 1 }))
-                      }
-                    >
-                      {t('projects.seasons.moveDown')}
-                    </button>
-                    {/* Moving between seasons needs no drag: the other seasons are a short list of buttons. */}
-                    {seasons
-                      .filter((other) => other.id !== season.id)
-                      .map((other) => (
-                        <button
-                          className="button button--text button--sm"
-                          key={other.id}
-                          type="button"
-                          disabled={busy}
-                          data-testid={`project-episode-to-${episode.id}-${other.id}`}
-                          onClick={() =>
-                            run(
-                              moveEpisode(projectId, season.id, episode.id, {
-                                place: other.episodes.length,
-                                seasonId: other.id,
-                              }),
-                            )
-                          }
-                        >
-                          {say.moveToSeason()} {other.name}
-                        </button>
-                      ))}
+                  {/* The script is what an author opens an episode for, so it stays on the row. Order, moving to
+                      another season and deleting are the row's secondary verbs and go in its menu. */}
+                  <div className="fieldlist__actions">
                     <button
                       className="button button--secondary button--sm"
                       type="button"
@@ -326,16 +354,69 @@ export function ProjectSeasons({
                         ? t('projects.seasons.closeScript')
                         : t('projects.seasons.openScript')}
                     </button>
-                    <button
-                      className="button button--secondary button--danger-quiet button--sm"
-                      type="button"
-                      disabled={busy}
-                      data-testid={`project-episode-delete-${episode.id}`}
-                      onClick={() => run(deleteEpisode(projectId, season.id, episode.id))}
+                    <ActionMenu
+                      label={t('projects.common.more', { name: episode.title })}
+                      triggerTestId={`project-episode-actions-${episode.id}`}
                     >
-                      {say.deleteEpisode()}
-                    </button>
-                  </span>
+                      {place === 0 ? null : (
+                        <button
+                          className="actionmenu__item"
+                          type="button"
+                          disabled={busy}
+                          data-testid={`project-episode-up-${episode.id}`}
+                          onClick={() =>
+                            run(moveEpisode(projectId, season.id, episode.id, { place: place - 1 }))
+                          }
+                        >
+                          {t('projects.common.moveUp')}
+                        </button>
+                      )}
+                      {place === season.episodes.length - 1 ? null : (
+                        <button
+                          className="actionmenu__item"
+                          type="button"
+                          disabled={busy}
+                          data-testid={`project-episode-down-${episode.id}`}
+                          onClick={() =>
+                            run(moveEpisode(projectId, season.id, episode.id, { place: place + 1 }))
+                          }
+                        >
+                          {t('projects.common.moveDown')}
+                        </button>
+                      )}
+                      {/* Moving between seasons needs no drag: the other seasons are a short list of items. */}
+                      {seasons
+                        .filter((other) => other.id !== season.id)
+                        .map((other) => (
+                          <button
+                            className="actionmenu__item"
+                            key={other.id}
+                            type="button"
+                            disabled={busy}
+                            data-testid={`project-episode-to-${episode.id}-${other.id}`}
+                            onClick={() =>
+                              run(
+                                moveEpisode(projectId, season.id, episode.id, {
+                                  place: other.episodes.length,
+                                  seasonId: other.id,
+                                }),
+                              )
+                            }
+                          >
+                            {say.moveToSeason()} {other.name}
+                          </button>
+                        ))}
+                      <button
+                        className="actionmenu__item actionmenu__item--danger"
+                        type="button"
+                        disabled={busy}
+                        data-testid={`project-episode-delete-${episode.id}`}
+                        onClick={() => run(deleteEpisode(projectId, season.id, episode.id))}
+                      >
+                        {say.deleteEpisode()}
+                      </button>
+                    </ActionMenu>
+                  </div>
                   {/* Only a comic has a level below the chapter (#147). */}
                   {pages ? (
                     <ChapterPages
@@ -393,45 +474,6 @@ export function ProjectSeasons({
           </li>
         ))}
       </ol>
-
-      <form
-        className="form"
-        data-testid="project-season-new"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (busy) return
-          setBusy(true)
-          createSeason(projectId, { name, summary: null })
-            .then(() => {
-              setName('')
-              return refresh()
-            })
-            .catch(failing)
-        }}
-      >
-        <h3 className="sectionrule">{say.add()}</h3>
-        <label className="field">
-          <span className="field__label">{t('projects.seasons.name')}</span>
-          <input
-            className="field__input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t('projects.seasons.namePlaceholder')}
-            data-testid="project-season-new-name"
-            required
-          />
-        </label>
-        <div className="form__actions">
-          <button
-            className="button"
-            type="submit"
-            disabled={busy}
-            data-testid="project-season-new-save"
-          >
-            {busy ? t('projects.seasons.saving') : say.save()}
-          </button>
-        </div>
-      </form>
     </section>
   )
 }
@@ -468,7 +510,6 @@ function EpisodeForm({
           className="field__input"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder={t('projects.seasons.episodeTitlePlaceholder')}
           data-testid="project-episode-new-title"
           required
         />
@@ -479,7 +520,6 @@ function EpisodeForm({
           className="field__input"
           value={synopsis}
           onChange={(event) => setSynopsis(event.target.value)}
-          placeholder={t('projects.seasons.synopsisPlaceholder')}
           data-testid="project-episode-new-synopsis"
         />
       </label>
@@ -498,7 +538,7 @@ function EpisodeForm({
           onClick={onCancel}
           data-testid="project-episode-new-cancel"
         >
-          {t('projects.seasons.closeScript')}
+          {t('projects.common.cancel')}
         </button>
       </div>
     </form>
@@ -611,7 +651,7 @@ function ScriptEditor({
        * take back what the author typed in between, which the E2E spec caught doing exactly that.
        */}
       {script === null ? (
-        <p className="projectcard__meta">{t('projects.seasons.loading')}</p>
+        <p className="projectcard__meta">{t('projects.common.loading')}</p>
       ) : (
         <label className="field">
           <span className="field__label">{t('projects.seasons.script')}</span>
@@ -620,7 +660,6 @@ function ScriptEditor({
             rows={12}
             value={script}
             onChange={(event) => setScript(event.target.value)}
-            placeholder={t('projects.seasons.scriptPlaceholder')}
             data-testid={`project-script-text-${episode.id}`}
           />
         </label>
