@@ -8,9 +8,10 @@ using Microsoft.EntityFrameworkCore;
 namespace LorEvolve.Api.Features.AiChanges;
 
 /// <summary>
-/// Pending AI Changes (ADR 0047): where a person reviews what an AI proposed - from an outside app over MCP or from the
-/// retired web assistant - and decides. Browser routes on the session cookie only, like the rest of <c>/api</c> (ADR 0005: SameSite
-/// Strict and JSON bodies); an MCP bearer token is never a session here, so no AI can reach a decision.
+/// Pending AI Changes (ADR 0047): where a person reviews, and decides on, what an AI proposed - today from an outside app
+/// over MCP, and in rows staged before M4 from the retired web assistant. Browser routes on the session cookie only, like
+/// the rest of <c>/api</c> (ADR 0005: SameSite Strict and JSON bodies); an MCP bearer token is never a session here, so no
+/// AI, by either route, reaches a decision.
 ///
 /// The owner and Editors read every proposal of their universe and decide them; anyone else reads only their own, and only
 /// while they can still read the universe. A proposal of another universe, or another person's, answers as missing.

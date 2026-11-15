@@ -12,7 +12,7 @@ namespace LorEvolve.Api.Features.Mcp;
 
 /// <summary>
 /// The MCP geography tools (issue #53, ADR 0061): the universe's maps, where an entry is pinned, pins found by name, and the
-/// straight-line separation of two pins - every one a call into <see cref="MapGeography"/>, the same reader the built-in
+/// straight-line separation of two pins - every one a call into <see cref="MapGeography"/>, the same reader the app's own
 /// map screens use. Read-only; nothing here places, moves or calibrates anything.
 ///
 /// <para>A location is a pin someone placed, never a guess from a name or a picture. A distance exists only when both pins

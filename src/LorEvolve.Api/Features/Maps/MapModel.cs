@@ -18,7 +18,7 @@ namespace LorEvolve.Api.Features.Maps;
 /// The same fraction names the same point of the map at every zoom and on every screen.</para>
 ///
 /// <para>Never public: a map is read by the universe's members through LorEvolve and nowhere else. It is not Lore the Canon
-/// rules read, not searched, and - until #53 - not read by MCP.</para>
+/// rules read, and not searched; #53 gave it readers of its own, which today are the MCP map tools.</para>
 /// </summary>
 public sealed class UniverseMap
 {
