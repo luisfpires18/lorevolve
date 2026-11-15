@@ -229,6 +229,23 @@ public sealed class LoreEntityConfiguration : IEntityTypeConfiguration<LoreEntit
         builder.HasIndex(entity => new { entity.UniverseId, entity.EntityTypeId });
         builder.HasIndex(entity => new { entity.UniverseId, entity.Name });
 
+        // A project's entries are not the universe's lore (#144), and the filter is what keeps every existing read of
+        // this table right without being edited. It matches EntityTypeConfiguration's, which is also what settles the
+        // required relationship between them: an entry and its type are visible or hidden together.
+        builder.HasQueryFilter(entity => entity.ProjectId == null);
+
+        // The optional canon link a project's entry may carry (#144). Deliberately **not** a foreign key, for the
+        // reason EntityType.ParentId is not one either: SQLite adds a foreign key only by rebuilding the table, and a
+        // rebuild of "Entities" drops the EntitySearchIndex_EntityDeleted trigger with it, silently. The link is
+        // enforced where it can be read instead: the route checks the lore entry is in the project's own universe, and
+        // a trigger refuses deleting a lore entry a project entry still names, so nothing unlinks an author's
+        // reference behind their back.
+        builder.HasIndex(entity => entity.CanonEntityId).HasFilter("\"CanonEntityId\" IS NOT NULL");
+
+        // One index for a project's own listing, the same shape as the universe's above.
+        builder.HasIndex(entity => new { entity.ProjectId, entity.DeletedAt, entity.UpdatedAt })
+            .HasFilter("\"ProjectId\" IS NOT NULL");
+
         // Publishing (ADR 0036). An address is unique among one universe's entries - a story may share it, under
         // its own route segment. Only entries ever published have one, so the same index is what the public
         // listing reads: UniverseId, and a slug that is not null.

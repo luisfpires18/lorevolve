@@ -382,6 +382,18 @@ internal static class LaterSchema
     ];
 
     /// <summary>
+    /// A project's own entries (AddProjectEntities, 2026-11-15, #144): two indexes on "Entities" and the trigger that
+    /// keeps a lore entry a project entry stands for. The columns themselves are excluded by the tests that compare a
+    /// table's columns, not here.
+    /// </summary>
+    private static readonly string[] ProjectEntities =
+    [
+        "IX_Entities_CanonEntityId",
+        "IX_Entities_ProjectId_DeletedAt_UpdatedAt",
+        "Entities_CanonLinkKeepsEntry_Delete",
+    ];
+
+    /// <summary>
     /// Creative projects (AddCreativeProjects, 2026-11-14, #138): one table, its key's index and two indexes.
     /// </summary>
     private static readonly string[] Projects =
@@ -396,39 +408,39 @@ internal static class LaterSchema
     /// rolls back to its own target rolls back past this one too, so what it added is not there to compare.
     /// </summary>
     public static bool BeforeProjects(string name) =>
-        !Projects.Concat(ProjectScopedTypes)
+        !Projects.Concat(ProjectScopedTypes).Concat(ProjectEntities)
             .Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates AI change pictures - and so everything after them.</summary>
     public static bool BeforeAiMedia(string name) =>
-        !AiMedia.Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !AiMedia.Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates semantic type groups.</summary>
     public static bool BeforeTypeGroups(string name) =>
-        !TypeGroups.Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !TypeGroups.Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name (or "name on table") predates nested types - and so everything after them.</summary>
     public static bool BeforeNestedTypes(string name) =>
-        !NestedTypes.Concat(Memberships).Concat(ReferenceTargets).Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes)
+        !NestedTypes.Concat(Memberships).Concat(ReferenceTargets).Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities)
             .Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates the link field's allowed type - and so everything after it.</summary>
     public static bool BeforeReferenceTargets(string name) =>
-        !ReferenceTargets.Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !ReferenceTargets.Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates a moment's stories - and so everything after it.</summary>
     public static bool BeforeTimelineStories(string name) =>
-        !TimelineStories.Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !TimelineStories.Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates custom calendars - and so everything after them.</summary>
     public static bool BeforeCalendars(string name) =>
-        !Calendars.Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !Calendars.Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates review comments - and so everything after them.</summary>
     public static bool BeforeComments(string name) =>
-        !Comments.Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !Comments.Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates suggested changes.</summary>
     public static bool BeforeSuggestions(string name) =>
-        !Suggestions.Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !Suggestions.Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 }

@@ -68,7 +68,7 @@ public sealed class EntityFieldSectionMigrationTests : IDisposable
             Assert.Empty(await TriggersOf(db));
 
             // Rolling back took nothing that was there before it.
-            Assert.Equal(LaterSchema.WithDroppedTriggers(earlier), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
+            Assert.Equal(LaterSchema.WithDroppedTriggers(earlier).Where(LaterSchema.BeforeProjects), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
         }
 
         SqliteConnection.ClearAllPools();

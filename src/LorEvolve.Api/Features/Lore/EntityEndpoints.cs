@@ -527,9 +527,11 @@ public static class EntityEndpoints
         Guid universeId,
         EntityRequest request,
         string actorUserId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? projectId = null,
+        Guid? canonEntityId = null)
     {
-        if (await CheckEntryAsync(db, universeId, request, cancellationToken) is { } refused)
+        if (await CheckEntryAsync(db, universeId, request, cancellationToken, projectId) is { } refused)
         {
             return (null, refused);
         }
@@ -539,6 +541,8 @@ public static class EntityEndpoints
         {
             Id = Guid.NewGuid(),
             UniverseId = universeId,
+            ProjectId = projectId,
+            CanonEntityId = canonEntityId,
             EntityTypeId = request.EntityTypeId,
             Name = request.Name!.Trim(),
             Summary = LoreValidation.Normalize(request.Summary),
@@ -558,8 +562,12 @@ public static class EntityEndpoints
         await db.SaveChangesAsync(cancellationToken);
 
         // Also inside the gate's transaction: a refused candidate is not searchable, because it
-        // does not exist.
-        await EntitySearchIndex.ReindexAsync(db, entity.Id, cancellationToken);
+        // does not exist. A project's entry is not indexed at all: universe search reads the lore, and an entry of a
+        // game or a film is not part of the world's record (#144).
+        if (projectId is null)
+        {
+            await EntitySearchIndex.ReindexAsync(db, entity.Id, cancellationToken);
+        }
 
         // Inside the gate's transaction, so a candidate that is refused takes its first
         // version down with it.
@@ -616,22 +624,28 @@ public static class EntityEndpoints
         LorEvolveDbContext db,
         Guid universeId,
         EntityRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? projectId = null)
     {
         if (LoreValidation.ValidateEntity(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
         }
 
-        var typeExists = await db.EntityTypes.AnyAsync(
-            type => type.Id == request.EntityTypeId && type.UniverseId == universeId,
+        // The type has to be in the entry's own scope: a lore entry takes a lore type, a project's entry one of that
+        // project's (#144). IgnoreQueryFilters so a project's types are visible to this check at all, with the scope
+        // named rather than inherited from the filter.
+        var typeExists = await db.EntityTypes.IgnoreQueryFilters().AnyAsync(
+            type => type.Id == request.EntityTypeId
+                && type.UniverseId == universeId
+                && type.ProjectId == projectId,
             cancellationToken);
 
         return typeExists
             ? null
             : Results.ValidationProblem(new Dictionary<string, string[]>
             {
-                ["entityTypeId"] = ["Choose a type from this universe."],
+                ["entityTypeId"] = [projectId is null ? "Choose a type from this universe." : "Choose a type from this project."],
             });
     }
 
@@ -1219,7 +1233,9 @@ public static class EntityEndpoints
         EntityRequest request,
         CancellationToken cancellationToken)
     {
-        var prepared = await PrepareFieldValuesAsync(db, universeId, entity.Id, request, cancellationToken);
+        // The entry's own scope, so a project's entry is validated against its project's fields (#144).
+        var prepared = await PrepareFieldValuesAsync(
+            db, universeId, entity.Id, request, cancellationToken, entity.ProjectId);
         db.EntityFieldValues.AddRange(prepared.Rows);
 
         return prepared.Errors.Count == 0 ? null : Results.ValidationProblem(prepared.Errors);
@@ -1234,8 +1250,14 @@ public static class EntityEndpoints
     /// The types whose fields an entry of <paramref name="typeId"/> has: the type and every type above it, since a nested type
     /// inherits its ancestors' fields (ADR 0007 amendment, 2026-11-12).
     /// </summary>
-    internal static async Task<List<Guid>> FieldLineageAsync(LorEvolveDbContext db, Guid universeId, Guid typeId, CancellationToken cancellationToken) =>
-        [.. EntityTypeHierarchy.Lineage(await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken), typeId)];
+    internal static async Task<List<Guid>> FieldLineageAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid typeId,
+        CancellationToken cancellationToken,
+        Guid? projectId = null) =>
+        [.. EntityTypeHierarchy.Lineage(
+            await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken, projectId), typeId)];
 
     internal static async Task<(List<EntityFieldDefinition> Definitions, List<EntityFieldValue> Rows, Dictionary<string, string[]> Errors)>
         PrepareFieldValuesAsync(
@@ -1243,17 +1265,23 @@ public static class EntityEndpoints
             Guid universeId,
             Guid entityId,
             EntityRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            Guid? projectId = null)
     {
         // Only active fields of the chosen type and of every type above it (a nested type inherits its ancestors' fields), in
         // this universe, are addressable. A value sent for an archived one - a form opened before it was archived, a version
         // restored, a suggestion - is ignored like any unknown field, and the value it holds is left alone by the save
         // (Issue #39).
-        var lineage = await FieldLineageAsync(db, universeId, request.EntityTypeId, cancellationToken);
-        var definitions = await db.EntityFieldDefinitions.AsNoTracking()
+        var lineage = await FieldLineageAsync(db, universeId, request.EntityTypeId, cancellationToken, projectId);
+
+        // IgnoreQueryFilters because the navigation to the type is filtered to the lore, and a project's fields hang
+        // off a project's type (#144). The scope is still named here rather than left to the lineage: a field whose
+        // type is in another scope must not be addressable even if a lineage ever disagreed.
+        var definitions = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
             .Include(field => field.Options)
             .Where(field => lineage.Contains(field.EntityTypeId)
                 && field.EntityType!.UniverseId == universeId
+                && field.EntityType!.ProjectId == projectId
                 && field.ArchivedAt == null)
             .ToListAsync(cancellationToken);
 
@@ -1278,7 +1306,8 @@ public static class EntityEndpoints
             .Select(definition => supplied.GetValueOrDefault(definition.Id)?.ReferencedEntityId)
             .OfType<Guid>();
 
-        var (referenced, members, parentOf) = await LinkTargetsAsync(db, universeId, definitions, wanted, cancellationToken);
+        var (referenced, members, parentOf) = await LinkTargetsAsync(
+            db, universeId, definitions, wanted, cancellationToken, projectId);
 
         var rows = new List<EntityFieldValue>();
 
@@ -1310,14 +1339,21 @@ public static class EntityEndpoints
         Guid universeId,
         IEnumerable<EntityFieldDefinition> definitions,
         IEnumerable<Guid> linked,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? projectId = null)
     {
         var wanted = linked.Distinct().ToList();
 
+        // Within one scope, never across: a lore entry links to lore, and a project's entry links to entries of that
+        // same project (#144). An id from the other scope is simply not in this dictionary, so BuildRows refuses the
+        // link exactly as it refuses an id from another universe. IgnoreQueryFilters with the scope named, because the
+        // filter would otherwise make a project's entries invisible to a project's own link field.
         var referenced = wanted.Count == 0
             ? []
-            : await db.Entities.AsNoTracking()
-                .Where(candidate => candidate.UniverseId == universeId && wanted.Contains(candidate.Id))
+            : await db.Entities.AsNoTracking().IgnoreQueryFilters()
+                .Where(candidate => candidate.UniverseId == universeId
+                    && candidate.ProjectId == projectId
+                    && wanted.Contains(candidate.Id))
                 .ToDictionaryAsync(candidate => candidate.Id, candidate => candidate.EntityTypeId, cancellationToken);
 
         var targetGroups = definitions
@@ -1337,7 +1373,7 @@ public static class EntityEndpoints
 
         var parentOf = wanted.Count == 0 || !definitions.Any(definition => definition.TargetEntityTypeId is not null)
             ? []
-            : await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken);
+            : await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken, projectId);
 
         return (referenced, members, parentOf);
     }
@@ -1579,11 +1615,16 @@ public static class EntityEndpoints
         Guid universeId,
         Guid entityId,
         CancellationToken cancellationToken,
-        bool liveOnly = false)
+        bool liveOnly = false,
+        Guid? projectId = null)
     {
-        var entity = await db.Entities.AsNoTracking()
+        // IgnoreQueryFilters with the scope named: the same read serves a lore entry (projectId null, which is what
+        // the filter would have said anyway) and a project's entry (#144), and an id from the other scope is simply
+        // not found, exactly as an id from another universe is not.
+        var entity = await db.Entities.AsNoTracking().IgnoreQueryFilters()
             .Where(candidate => candidate.Id == entityId
                 && candidate.UniverseId == universeId
+                && candidate.ProjectId == projectId
                 && (!liveOnly || candidate.DeletedAt == null))
             .Select(candidate => new
             {

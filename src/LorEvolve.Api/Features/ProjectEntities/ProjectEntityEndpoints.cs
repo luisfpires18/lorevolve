@@ -1,0 +1,312 @@
+using System.Security.Claims;
+using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.CanonIntegrity;
+using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Universes;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using static LorEvolve.Api.Features.ProjectEntities.ProjectEntityTypeEndpoints;
+
+namespace LorEvolve.Api.Features.ProjectEntities;
+
+/// <summary>
+/// The entries a project holds: a game's maps, units and items, and later a series' episodes or a film's scenes (#144).
+///
+/// <para>These are <c>Entities</c> rows scoped by <see cref="LoreEntity.ProjectId"/>, written through the same engine
+/// the lore uses: <see cref="EntityEndpoints.CreateEntryAsync"/> validates the type, writes the field values and
+/// refuses a required field left empty, with the project passed in so every one of those checks happens inside the
+/// project's own scope. There is no second schema engine, which is what this issue asks for.</para>
+///
+/// <para>What a project's entry deliberately does not have: a Canon status, a publication, an article, revisions or a
+/// place in universe search. Those describe the world's record, and a unit of a game is not a claim about the world.
+/// What it does have instead is <see cref="LoreEntity.CanonEntityId"/>, an optional link to the lore entry it stands
+/// for, which is checked to be of the project's own universe and never required.</para>
+/// </summary>
+public static class ProjectEntityEndpoints
+{
+    /// <summary>The 409 for a save written over a version that is no longer current (ADR 0043).</summary>
+    public const string ChangedCode = "project_entity_changed";
+
+    public static IEndpointRouteBuilder MapProjectEntityEndpoints(this IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/api/projects/{projectId:guid}/entities")
+            .WithTags("Project entities")
+            .RequireAuthorization();
+
+        group.MapGet("/", ListAsync).WithName("ListProjectEntities");
+        group.MapPost("/", CreateAsync).WithName("CreateProjectEntity");
+        group.MapGet("/{entityId:guid}", GetAsync).WithName("GetProjectEntity");
+        group.MapPut("/{entityId:guid}", UpdateAsync).WithName("UpdateProjectEntity");
+        group.MapDelete("/{entityId:guid}", DeleteAsync).WithName("DeleteProjectEntity");
+
+        return endpoints;
+    }
+
+    private static async Task<IResult> ListAsync(
+        Guid projectId,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken,
+        [FromQuery] Guid? typeId = null)
+    {
+        var (project, denied) = await ReadableAsync(db, projectId, principal, cancellationToken);
+
+        if (denied is not null)
+        {
+            return denied;
+        }
+
+        var rows = await db.Entities.AsNoTracking().IgnoreQueryFilters()
+            .Where(entry => entry.ProjectId == projectId
+                && entry.DeletedAt == null
+                && (typeId == null || entry.EntityTypeId == typeId))
+            .OrderBy(entry => entry.Name)
+            .Select(entry => new ProjectEntitySummary(
+                entry.Id,
+                entry.Name,
+                entry.Summary,
+                entry.EntityTypeId,
+                entry.EntityType!.Name,
+                entry.EntityType.Icon,
+                entry.EntityType.AccentColor,
+                entry.CanonEntityId,
+                // The linked entry's name, read through the id rather than a navigation, because the link is
+                // deliberately not a foreign key (see LoreConfiguration).
+                db.Entities.IgnoreQueryFilters()
+                    .Where(canon => canon.Id == entry.CanonEntityId)
+                    .Select(canon => canon.Name)
+                    .FirstOrDefault(),
+                entry.UpdatedAt))
+            .ToListAsync(cancellationToken);
+
+        _ = project;
+        return Results.Ok(rows);
+    }
+
+    private static async Task<IResult> GetAsync(
+        Guid projectId,
+        Guid entityId,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var (project, denied) = await ReadableAsync(db, projectId, principal, cancellationToken);
+
+        if (denied is not null)
+        {
+            return denied;
+        }
+
+        var detail = await EntityEndpoints.LoadDetailAsync(
+            db, project!.UniverseId, entityId, cancellationToken, liveOnly: true, projectId);
+
+        return detail is null ? Results.NotFound() : Results.Ok(detail);
+    }
+
+    private static async Task<IResult> CreateAsync(
+        Guid projectId,
+        [FromBody] ProjectEntityRequest request,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+
+        if (denied is not null)
+        {
+            return denied;
+        }
+
+        if (await CheckCanonLinkAsync(db, project!.UniverseId, request.CanonEntityId, cancellationToken) is { } refusedLink)
+        {
+            return refusedLink;
+        }
+
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+
+        var (entity, problem) = await EntityEndpoints.CreateEntryAsync(
+            db,
+            project.UniverseId,
+            Lore(request),
+            principal.RequireUserId(),
+            cancellationToken,
+            projectId,
+            request.CanonEntityId);
+
+        if (problem is not null)
+        {
+            return problem;
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+
+        var detail = await EntityEndpoints.LoadDetailAsync(
+            db, project.UniverseId, entity!.Id, cancellationToken, liveOnly: false, projectId);
+
+        return Results.Created($"/api/projects/{projectId}/entities/{entity.Id}", detail);
+    }
+
+    private static async Task<IResult> UpdateAsync(
+        Guid projectId,
+        Guid entityId,
+        [FromBody] ProjectEntityRequest request,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+
+        if (denied is not null)
+        {
+            return denied;
+        }
+
+        if (await CheckCanonLinkAsync(db, project!.UniverseId, request.CanonEntityId, cancellationToken) is { } refusedLink)
+        {
+            return refusedLink;
+        }
+
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+
+        var entity = await db.Entities.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(
+                candidate => candidate.Id == entityId
+                    && candidate.ProjectId == projectId
+                    && candidate.DeletedAt == null,
+                cancellationToken);
+
+        if (entity is null)
+        {
+            return Results.NotFound();
+        }
+
+        // Read inside the transaction the write commits in, so nothing can land between the comparison and the write.
+        if (!EditVersion.Matches(entity.Version, request.ExpectedVersion))
+        {
+            return EditVersion.Changed(
+                ChangedCode,
+                "Entry changed",
+                "This entry was changed after it was opened here. Nothing was overwritten.",
+                entity.Version);
+        }
+
+        if (await EntityEndpoints.CheckEntryAsync(db, project.UniverseId, Lore(request), cancellationToken, projectId)
+            is { } refused)
+        {
+            return refused;
+        }
+
+        entity.EntityTypeId = request.EntityTypeId;
+        entity.Name = request.Name!.Trim();
+        entity.Summary = LoreValidation.Normalize(request.Summary);
+        entity.CanonEntityId = request.CanonEntityId;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        // The client sends the complete set of values it wants stored, so the old rows go first, straight against the
+        // database: EF does not promise to order deletes ahead of inserts within one SaveChanges, and re-saving an
+        // unchanged value would then collide with the row still in the table.
+        await db.EntityFieldValues.Where(value => value.EntityId == entityId).ExecuteDeleteAsync(cancellationToken);
+
+        var prepared = await EntityEndpoints.PrepareFieldValuesAsync(
+            db, project.UniverseId, entityId, Lore(request), cancellationToken, projectId);
+
+        if (prepared.Errors.Count > 0)
+        {
+            return Results.ValidationProblem(prepared.Errors);
+        }
+
+        db.EntityFieldValues.AddRange(prepared.Rows);
+
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        var detail = await EntityEndpoints.LoadDetailAsync(
+            db, project.UniverseId, entityId, cancellationToken, liveOnly: false, projectId);
+
+        return Results.Ok(detail);
+    }
+
+    /// <summary>
+    /// Moves the entry to the Trash, the same way a lore entry goes: the row and everything pointing at it stay where
+    /// they are and a timestamp says when it was thrown away (ADR 0015), so nothing dependent is destroyed on the way
+    /// in and a restore has nothing to rebuild.
+    /// </summary>
+    private static async Task<IResult> DeleteAsync(
+        Guid projectId,
+        Guid entityId,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+
+        if (denied is not null)
+        {
+            return denied;
+        }
+
+        var entity = await db.Entities.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(
+                candidate => candidate.Id == entityId && candidate.ProjectId == projectId,
+                cancellationToken);
+
+        if (entity is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (entity.DeletedAt is null)
+        {
+            entity.DeletedAt = DateTime.UtcNow;
+            entity.UpdatedAt = entity.DeletedAt.Value;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// The optional link to a lore entry: null is accepted, and a value has to be a live lore entry of the project's
+    /// own universe. A link to a project's entry, to a trashed entry or to another universe's entry is refused by field
+    /// rather than reported as missing, so the message tells an author what to fix without disclosing what exists
+    /// elsewhere.
+    /// </summary>
+    private static async Task<IResult?> CheckCanonLinkAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid? canonEntityId,
+        CancellationToken cancellationToken)
+    {
+        if (canonEntityId is not { } id)
+        {
+            return null;
+        }
+
+        // db.Entities is filtered to the lore, which is exactly what a canon link may point at, so this read needs no
+        // opt-out: a project's entry is not a candidate and is not found here.
+        var exists = await db.Entities
+            .AnyAsync(entry => entry.Id == id && entry.UniverseId == universeId && entry.DeletedAt == null, cancellationToken);
+
+        return exists
+            ? null
+            : Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["canonEntityId"] = ["Choose an entry from this universe's lore, or none."],
+            });
+    }
+
+    /// <summary>
+    /// The project's request as the lore engine's own request. A project's entry has no Canon status of its own, so it
+    /// is written as <see cref="CanonStatus.Draft"/> and never read back: nothing about a game's unit says the world
+    /// holds it to be true.
+    /// </summary>
+    private static EntityRequest Lore(ProjectEntityRequest request) => new(
+        request.EntityTypeId,
+        request.Name,
+        request.Summary,
+        CanonStatus.Draft,
+        Aliases: null,
+        Tags: null,
+        request.Fields,
+        request.ExpectedVersion);
+}

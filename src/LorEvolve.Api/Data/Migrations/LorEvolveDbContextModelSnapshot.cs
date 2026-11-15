@@ -1544,6 +1544,9 @@ namespace LorEvolve.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("CanonEntityId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CanonStatus")
                         .HasColumnType("INTEGER");
 
@@ -1562,6 +1565,9 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PublicSlug")
@@ -1589,6 +1595,9 @@ namespace LorEvolve.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CanonEntityId")
+                        .HasFilter("\"CanonEntityId\" IS NOT NULL");
+
                     b.HasIndex("EntityTypeId");
 
                     b.HasIndex("UniverseId", "EntityTypeId");
@@ -1597,6 +1606,9 @@ namespace LorEvolve.Api.Data.Migrations
 
                     b.HasIndex("UniverseId", "PublicSlug")
                         .IsUnique();
+
+                    b.HasIndex("ProjectId", "DeletedAt", "UpdatedAt")
+                        .HasFilter("\"ProjectId\" IS NOT NULL");
 
                     b.HasIndex("UniverseId", "DeletedAt", "IsArchived", "UpdatedAt");
 

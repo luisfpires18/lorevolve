@@ -80,7 +80,7 @@ public sealed class ContentEditVersionMigrationTests : IDisposable
 
             Assert.Empty(await Strings(db, "SELECT \"table\" AS Value FROM pragma_foreign_key_check"));
             Assert.Equal(LaterSchema.WithDropped(indexes).Where(LaterSchema.BeforeSuggestions), await Strings(db, "SELECT name || ' on ' || tbl_name AS Value FROM sqlite_master WHERE type = 'index' AND name IS NOT NULL ORDER BY name"));
-            Assert.Equal(LaterSchema.WithDroppedTriggers(triggers).Where(LaterSchema.BeforeTypeGroups), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
+            Assert.Equal(LaterSchema.WithDroppedTriggers(triggers).Where(LaterSchema.BeforeProjects).Where(LaterSchema.BeforeTypeGroups), await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
             Assert.Equal(content, await Content(db));
         }
 
@@ -132,8 +132,11 @@ public sealed class ContentEditVersionMigrationTests : IDisposable
         var rows = new List<string>();
         foreach (var table in Tables)
         {
-            // A story's place in its universe's list (KeepAuthorOrders) arrives later, so a rollback past it takes it.
-            var columns = (await Columns(db, table)).Where(column => column != "Version" && !(table == "Stories" && column == "SortOrder"));
+            // A story's place in its universe's list (KeepAuthorOrders) and an entry's project scope and canon link
+            // (AddProjectEntities, #144) arrive later, so a rollback past them takes them.
+            var columns = (await Columns(db, table)).Where(column =>
+                column is not "Version" and not "ProjectId" and not "CanonEntityId"
+                && !(table == "Stories" && column == "SortOrder"));
             var select = string.Join(" || '|' || ", columns.Select(column => $"COALESCE(CAST(\"{column}\" AS TEXT), '~')"));
             rows.AddRange(await Strings(db, $"SELECT '{table}:' || {select} AS Value FROM \"{table}\" ORDER BY 1"));
         }

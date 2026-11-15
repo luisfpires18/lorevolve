@@ -243,7 +243,7 @@ public static class EntitySearchIndex
             .SqlQuery<Guid>(
                 $"""
                 SELECT Id AS Value FROM Entities
-                WHERE Id NOT IN (SELECT EntityId FROM EntitySearchIndex)
+                WHERE "ProjectId" IS NULL AND Id NOT IN (SELECT EntityId FROM EntitySearchIndex)
                 """)
             .ToListAsync(cancellationToken);
 

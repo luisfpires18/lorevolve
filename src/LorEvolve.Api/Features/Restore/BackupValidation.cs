@@ -541,6 +541,7 @@ internal static partial class BackupValidation
             CheckFieldTargets();
             RegisterTags(tags);
             RegisterEntities(entities);
+            RegisterProjectEntries(Required(payload.ProjectEntities, "the list of project entries", since: 40));
             RegisterRelationshipTypes(relationshipTypes);
             RegisterStories(stories);
             RegisterValidationTerms(terms);
@@ -1167,6 +1168,60 @@ internal static partial class BackupValidation
         }
 
         // ---------- Entries ----------
+
+        /// <summary>
+        /// A project's entries (version 40, #144): each must belong to a project this file holds and to a type of that
+        /// same project, and its optional canon link must point at a lore entry of this file. A project's entry is
+        /// checked against its project's schema, never the lore's, which is the file-level half of the isolation the
+        /// database enforces (#143).
+        /// </summary>
+        private void RegisterProjectEntries(IReadOnlyList<BackupProjectEntity> entries)
+        {
+            foreach (var entry in entries)
+            {
+                if (entry is null)
+                {
+                    Missing("a project entry");
+                    continue;
+                }
+
+                var what = $"The project entry {Quote(entry.Name)}";
+                Register(entry.Id, what);
+
+                Text(entry.Name, LoreLimits.NameMaxLength, $"{what}'s name", required: true);
+                Text(entry.Summary, LoreLimits.SummaryMaxLength, $"{what}'s summary");
+
+                if (!_projects.Contains(entry.ProjectId))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} belongs to a project this file does not hold.");
+                }
+                else if (!_types.TryGetValue(entry.EntityTypeId, out var type))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} is of a type this file does not hold.");
+                }
+                else if (type.ProjectId != entry.ProjectId)
+                {
+                    Add(
+                        BackupIssueCodes.MissingReference,
+                        $"{what} is of a type that belongs to another scope, so it would come back in the wrong one.");
+                }
+
+                // The link is optional. A value has to name a lore entry of this file: a link to a project's entry
+                // would make one project's work stand for another's.
+                if (entry.CanonEntityId is { } canonId && !_entities.ContainsKey(canonId))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} stands for a lore entry this file does not hold.");
+                }
+
+                foreach (var value in entry.FieldValues ?? [])
+                {
+                    if (value is null)
+                    {
+                        Missing($"a field value of {what}");
+                    }
+                }
+            }
+        }
 
         private void RegisterEntities(IReadOnlyList<BackupEntity> entities)
         {
