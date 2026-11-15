@@ -64,7 +64,7 @@ const projects = {
     deleteType: 'Apagar tipo',
     entryCount: {
       one: '1 registo',
-      other: '{n} registos',
+      other: '{count} registos',
     },
     noEntries: 'Ainda não há registos',
     fields: 'Campos',
@@ -113,7 +113,7 @@ const projects = {
     noEpisodes: 'Ainda não há episódios.',
     episodeCount: {
       one: '1 episódio',
-      other: '{n} episódios',
+      other: '{count} episódios',
     },
     addEpisode: 'Acrescentar um episódio',
     episodeTitle: 'Título',

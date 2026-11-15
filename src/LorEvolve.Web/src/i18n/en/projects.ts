@@ -61,7 +61,7 @@ const projects = {
     deleteType: 'Delete type',
     entryCount: {
       one: '1 entry',
-      other: '{n} entries',
+      other: '{count} entries',
     },
     noEntries: 'No entries yet',
     fields: 'Fields',
@@ -110,7 +110,7 @@ const projects = {
     noEpisodes: 'No episodes yet.',
     episodeCount: {
       one: '1 episode',
-      other: '{n} episodes',
+      other: '{count} episodes',
     },
     addEpisode: 'Add an episode',
     episodeTitle: 'Title',
