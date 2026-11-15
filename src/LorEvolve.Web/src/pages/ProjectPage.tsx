@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntries } from '../components/ProjectEntries'
 import { ProjectSchema } from '../components/ProjectSchema'
 import { ProjectSeasons } from '../components/ProjectSeasons'
+import { ProjectShell } from '../components/ProjectShell'
 import { ProjectsNav } from '../components/ProjectsNav'
 import { createProject, getProject } from '../projects/api'
-import { kindLabel, lifecycleLabel, projectPath } from '../projects/sections'
+import { kindLabel, lifecycleLabel, projectPath, projectSections } from '../projects/sections'
 import {
   ProjectKind,
   ProjectLifecycle,
@@ -153,7 +154,16 @@ type LoadState =
 
 function Project({ inUniverse }: { inUniverse: boolean }) {
   useI18n()
-  const { projectId } = useParams<{ projectId: string }>()
+  // `id` is the universe in the universe-scoped twin; `*` is whatever the address names below the project.
+  const {
+    projectId,
+    id: universeId,
+    '*': segment = '',
+  } = useParams<{
+    projectId: string
+    id: string
+    '*': string
+  }>()
   const [state, setState] = useState<LoadState | null>(null)
   const [schemaVersion, setSchemaVersion] = useState(0)
   const read = state !== null && state.for === projectId ? state : null
@@ -195,6 +205,15 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
   }
 
   const { project } = read
+  const frameUniverseId = inUniverse ? universeId : undefined
+  const sections = projectSections(project.kind)
+  const section = sections.find((candidate) => candidate.segment === segment)
+
+  // The bare address and any segment this kind does not offer lead to the kind's first view, so an old link or a
+  // mistyped one lands on the project rather than on a failure (#192).
+  if (!section) {
+    return <Navigate to={projectPath(project.id, sections[0].segment, frameUniverseId)} replace />
+  }
 
   /*
    * The project's own pages sit beside the list of projects, because this screen is where an author moves between one
@@ -246,47 +265,67 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
       </section>
 
       {/*
-       * The project's own schema and what it holds (#144). A write on the left changes what the right can offer - a
-       * new type is a type an entry can be of - so the schema tells this page when it has changed and the entries
-       * panel re-reads.
+       * Every view renders today's overview panels until #193 gives each view its own content; a view the project's
+       * data cannot fill yet says so instead.
        */}
-      <ProjectSchema
-        projectId={project.id}
-        reloadKey={schemaVersion}
-        onChanged={() => setSchemaVersion((version) => version + 1)}
-      />
-      <ProjectEntries
-        projectId={project.id}
-        reloadKey={schemaVersion}
-        onChanged={() => setSchemaVersion((version) => version + 1)}
-      />
-
-      {/*
-       * One structure under three names: a Series' seasons of episodes (#145), a Film's sequences of scenes (#146)
-       * and a Comic's volumes of chapters (#147), the last of which opens pages and panels beneath a chapter. The API
-       * answers 404 for any other kind, so drawing the panel there would show an author a failure for a feature their
-       * project does not have.
-       */}
-      {project.kind === ProjectKind.Series ||
-      project.kind === ProjectKind.Film ||
-      project.kind === ProjectKind.Comic ? (
-        <ProjectSeasons
-          projectId={project.id}
-          universeId={project.universe!.id}
-          words={
-            project.kind === ProjectKind.Film
-              ? 'sequences'
-              : project.kind === ProjectKind.Comic
-                ? 'volumes'
-                : 'seasons'
-          }
-          pages={project.kind === ProjectKind.Comic}
+      {section.pending ? (
+        <EmptyState
+          title={t('projects.ideas.empty')}
+          hint={t('projects.ideas.emptyHint')}
+          testId={`project-view-empty-${section.segment}`}
         />
-      ) : null}
+      ) : (
+        <>
+          {/*
+           * The project's own schema and what it holds (#144). A write on the left changes what the right can offer - a
+           * new type is a type an entry can be of - so the schema tells this page when it has changed and the entries
+           * panel re-reads.
+           */}
+          <ProjectSchema
+            projectId={project.id}
+            reloadKey={schemaVersion}
+            onChanged={() => setSchemaVersion((version) => version + 1)}
+          />
+          <ProjectEntries
+            projectId={project.id}
+            reloadKey={schemaVersion}
+            onChanged={() => setSchemaVersion((version) => version + 1)}
+          />
+
+          {/*
+           * One structure under three names: a Series' seasons of episodes (#145), a Film's sequences of scenes (#146)
+           * and a Comic's volumes of chapters (#147), the last of which opens pages and panels beneath a chapter. The API
+           * answers 404 for any other kind, so drawing the panel there would show an author a failure for a feature their
+           * project does not have.
+           */}
+          {project.kind === ProjectKind.Series ||
+          project.kind === ProjectKind.Film ||
+          project.kind === ProjectKind.Comic ? (
+            <ProjectSeasons
+              projectId={project.id}
+              universeId={project.universe!.id}
+              words={
+                project.kind === ProjectKind.Film
+                  ? 'sequences'
+                  : project.kind === ProjectKind.Comic
+                    ? 'volumes'
+                    : 'seasons'
+              }
+              pages={project.kind === ProjectKind.Comic}
+            />
+          ) : null}
+        </>
+      )}
     </div>
   )
 
-  if (inUniverse) return body
+  const framed = (
+    <ProjectShell projectId={project.id} universeId={frameUniverseId} sections={sections}>
+      {body}
+    </ProjectShell>
+  )
+
+  if (inUniverse) return framed
 
   return (
     <div className="projectshell">
@@ -295,7 +334,7 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
           <ProjectsNav />
         </ul>
       </nav>
-      {body}
+      {framed}
     </div>
   )
 }
