@@ -287,6 +287,7 @@ public static class McpSetup
             .WithTools<LorEvolveMcpProjectTools>()
             .WithTools<LorEvolveMcpProjectEntityTools>()
             .WithTools<LorEvolveMcpProposalTools>()
+            .WithTools<LorEvolveMcpWorldLogicTools>()
             .WithRequestFilters(LorEvolveMcpProposalTools.Filters);
 
         services.AddHostedService<McpMaintenance>();

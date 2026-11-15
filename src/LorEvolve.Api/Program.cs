@@ -69,6 +69,9 @@ builder.Services.AddLorEvolveAuth(builder.Environment);
 builder.Services.AddLorEvolveAdmin();
 LorEvolve.Api.Features.Email.AppEmail.AddAppEmail(builder.Services);
 builder.Services.AddCanonIntegrity();
+
+// The World Logic finding sweep (ADR 0072, LOREX-020). Scoped, because it writes on the request's own context.
+builder.Services.AddScoped<WorldLogicFindingSweep>();
 builder.Services.AddLoreSearch();
 builder.Services.AddHostedService<LorEvolve.Api.Features.Publishing.PublicAuthorBackfill>();
 builder.Services.AddLorEvolveMedia(builder.Configuration);
@@ -164,6 +167,8 @@ app.MapTimelineEndpoints();
 app.MapWorldRuleEndpoints();
 app.MapSystemEndpoints();
 app.MapSystemRuleEndpoints();
+app.MapWorldLogicFindingEndpoints();
+app.MapSemanticFindingEndpoints();
 app.MapValidationTermEndpoints();
 app.MapStoryEndpoints();
 app.MapChapterEndpoints();

@@ -187,6 +187,16 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("rule definition revisions", Get, $"{u}/system-rules/{w.RuleDefinition}/revisions", May.Read),
             new("evaluate rule definition", Post, $"{u}/system-rules/{w.RuleDefinition}/evaluate", May.Read),
             new("world logic rules", Get, $"{u}/world-logic/rules", May.Read),
+            new("world logic findings", Get, $"{u}/world-logic/findings", May.Read),
+            new("world logic finding", Get, $"{u}/world-logic/findings/{any}", May.Read),
+            new("sweep world logic", Post, $"{u}/world-logic/findings/evaluate", May.Edit),
+            new("review world logic finding", Post, $"{u}/world-logic/findings/{any}/review", May.Edit),
+            new("dismiss world logic finding", Post, $"{u}/world-logic/findings/{any}/dismiss", May.Edit),
+            new("resolve world logic finding", Post, $"{u}/world-logic/findings/{any}/resolve", May.Edit),
+            new("semantic findings", Get, $"{u}/world-logic/semantic-findings", May.Read),
+            new("semantic finding", Get, $"{u}/world-logic/semantic-findings/{any}", May.Read),
+            new("accept semantic finding", Post, $"{u}/world-logic/semantic-findings/{any}/accept", May.Edit),
+            new("dismiss semantic finding", Post, $"{u}/world-logic/semantic-findings/{any}/dismiss", May.Edit),
 
             new("validation terms", Get, $"{u}/validation-terms", May.Read),
             new("create term", Post, $"{u}/validation-terms", May.Edit, Json(new ValidationTermRequest(ValidationTermKind.EventKind, "Abdication"))),
@@ -426,7 +436,7 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
                 var response = await w.Client(who).SendAsync(call.Request(call.Path));
 
                 // A finding id is random: past the gate, a member is told it is not there - the same as the owner is.
-                var expected = call.Name is "canon finding" or "ai change" or "map" or "map picture original" or "map picture display" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
+                var expected = call.Name is "canon finding" or "world logic finding" or "semantic finding" or "ai change" or "map" or "map picture original" or "map picture display" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
                     ? HttpStatusCode.NotFound
                     : HttpStatusCode.OK;
                 Assert.True(response.StatusCode == expected, $"{who}: {call.Name} answered {(int)response.StatusCode}");
