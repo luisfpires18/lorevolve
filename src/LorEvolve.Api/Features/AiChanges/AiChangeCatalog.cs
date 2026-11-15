@@ -82,7 +82,9 @@ public sealed record AiChangeOptions(
     IReadOnlyList<AiChangeOptionNamed>? Ideas = null,
     bool MoreIdeas = false,
     AiChangeSchemaOptions? Schema = null,
-    AiChangeOptionProgression? Progression = null);
+    AiChangeOptionProgression? Progression = null,
+    IReadOnlyList<AiChangeOptionNamed>? Systems = null,
+    IReadOnlyList<AiChangeOptionNamed>? SystemRules = null);
 
 internal static class AiChangeCatalog
 {
@@ -215,7 +217,9 @@ internal static class AiChangeCatalog
                 var ordered = resource is AiChangeResource.Chapter or AiChangeResource.Scene or AiChangeResource.PlotArc;
                 var offered = action switch
                 {
-                    AiChangeAction.Create or AiChangeAction.Remove => !prose && resource != AiChangeResource.Progression,
+                    AiChangeAction.Create => !prose && resource != AiChangeResource.Progression,
+                    // A rule definition has no Trash and a System delete is permanent, so neither is removed by an AI.
+                    AiChangeAction.Remove => !prose && resource is not (AiChangeResource.Progression or AiChangeResource.SystemRule or AiChangeResource.LoreSystem),
                     AiChangeAction.Reorder => ordered,
                     _ => resource != AiChangeResource.Media,
                 };
@@ -369,7 +373,20 @@ internal static class AiChangeCatalog
             ideas is null ? null : [.. ideas.Take(IdeaLimit)],
             ideas is { Count: > IdeaLimit },
             schema,
-            progressionOf is { } entityId ? await ProgressionAsync(db, universeId, entityId, cancellationToken) : null);
+            progressionOf is { } entityId ? await ProgressionAsync(db, universeId, entityId, cancellationToken) : null,
+            // World Logic, by name, for a system or system_rule change to name; list_systems and the rule readers say more.
+            await db.LoreSystems.AsNoTracking()
+                .Where(system => system.UniverseId == universeId)
+                .OrderBy(system => system.Name)
+                .Take(RuleLimit)
+                .Select(system => new AiChangeOptionNamed(system.Id, system.Name))
+                .ToListAsync(cancellationToken),
+            await db.SystemRules.AsNoTracking()
+                .Where(rule => rule.UniverseId == universeId)
+                .OrderBy(rule => rule.Title)
+                .Take(RuleLimit)
+                .Select(rule => new AiChangeOptionNamed(rule.Id, rule.Title))
+                .ToListAsync(cancellationToken));
     }
 
     /// <summary>A live entry's progression, by id, for a progression change; null for anything else.</summary>
@@ -422,6 +439,8 @@ internal static class AiChangeCatalog
         AiChangeResource.PlotArc => "plot_arc",
         AiChangeResource.WorldRule => "world_rule",
         AiChangeResource.ProjectEntry => "project_entry",
+        AiChangeResource.SystemRule => "system_rule",
+        AiChangeResource.LoreSystem => "system",
         AiChangeResource.LoreType => "lore_type",
         AiChangeResource.LoreField => "lore_field",
         AiChangeResource.LoreGroup => "lore_group",

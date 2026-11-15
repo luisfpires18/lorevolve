@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Stories;
@@ -26,7 +27,7 @@ public sealed record AiChangeOperationInput(
     string? Id,
     [property: Description("create, update, remove or reorder. remove moves the item to LorEvolve's Trash (an idea to the owner's deleted ideas), from where it can be restored; nothing is deleted for good. reorder sets the whole order of a story's chapters or plot arcs, or a chapter's scenes.")]
     string? Action,
-    [property: Description("lore_entry, article, progression (an entry's eras, forms, abilities and appearances), image (a picture the person uploads in LorEvolve), relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule, idea or project_entry (an entry of one of the universe's projects) - or, for a connection allowed to propose schema, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method. Schema changes go in a proposal of their own.")]
+    [property: Description("lore_entry, article, progression (an entry's eras, forms, abilities and appearances), image (a picture the person uploads in LorEvolve), relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule, idea, project_entry (an entry of one of the universe's projects), system_rule (a World Logic rule definition) or system (a World Logic System and its ordered rule list) - or, for a connection allowed to propose schema, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method. Schema changes go in a proposal of their own.")]
     string? Resource,
     [property: Description("For update and remove: the existing item's id, exactly as a read tool gave it. For a manuscript or an article, the scene or entry goes in manuscript.scene or article.entry instead; for reorder, the container goes in order.")]
     Guid? TargetId = null,
@@ -52,7 +53,9 @@ public sealed record AiChangeOperationInput(
     AiTermInput? Term = null,
     AiProgressionInput? Progression = null,
     AiImageInput? Image = null,
-    AiProjectEntryInput? ProjectEntry = null);
+    AiProjectEntryInput? ProjectEntry = null,
+    AiSystemRuleInput? SystemRule = null,
+    AiSystemInput? System = null);
 
 /// <summary>Something that exists, by its id, or something this proposal creates, by the change's id.</summary>
 public sealed record AiRefInput(
@@ -198,6 +201,26 @@ public sealed record AiProjectFieldInput(
     [property: Description("For a field of one choice or several: the choice values exactly as get_project_schema gives them.")] IReadOnlyList<string>? Choices = null,
     [property: Description("For a link field: another entry of the same project.")] Guid? LinkedEntryId = null);
 
+[Description("A World Logic rule definition (system_rule): it stands on its own and can sit in several Systems (ADR 0072). "
+    + "Read the existing ones with list_world_logic_rules and get_world_logic_rule. There is no remove: a rule is deleted by hand.")]
+public sealed record AiSystemRuleInput(
+    [property: Description("Required on create.")] string? Title = null,
+    [property: Description("Plain text. On update, \"\" clears it.")] string? Description = null,
+    [property: Description("Create only: a project's id, from list_projects, for one project's rule. Leave it out for a rule of the whole universe. A rule stays in the scope it was made in.")] Guid? ProjectId = null,
+    [property: Description("The condition tree, exactly as the World Logic condition specification describes it. Optional: a rule may stay in prose. It may name only rules and records that already exist. On update, leave it out to keep the stored condition.")] JsonElement? Condition = null,
+    [property: Description("The condition's exceptions, in the same specification. They need a condition. On update, leave them out to keep the stored ones.")] JsonElement? Exceptions = null,
+    [property: Description("The specification version the condition is written in. Leave it out for the current one.")] int? SchemaVersion = null,
+    [property: Description("The rules this one depends on: {\"id\"} for an existing rule, {\"ref\"} for a system_rule this proposal creates. A condition may name only an existing rule listed here. On update, leave it out to keep the stored list; [] clears it.")] IReadOnlyList<AiRefInput>? DependsOn = null,
+    [property: Description("On update, true removes the condition and its exceptions.")] bool? RemoveCondition = null);
+
+[Description("A World Logic System (system): a named, ordered set of rule definitions it references and never owns (ADR 0072). "
+    + "Read the existing ones with list_systems. There is no remove: a System is deleted by hand.")]
+public sealed record AiSystemInput(
+    [property: Description("Required on create. Unique among the Systems of its scope.")] string? Name = null,
+    [property: Description("Plain text. On update, \"\" clears it.")] string? Summary = null,
+    [property: Description("Create only: a project's id, from list_projects, for one project's System. Leave it out for a System of the whole universe. A project's System may reference the universe's rules and its own project's.")] Guid? ProjectId = null,
+    [property: Description("The System's whole rule list, in order: {\"id\"} for an existing rule, {\"ref\"} for a system_rule this proposal creates. On update, leave it out to keep the stored list; a list given replaces it, so a rule left out is unlinked from this System, never deleted.")] IReadOnlyList<AiRefInput>? RuleIds = null);
+
 public sealed record AiRuleCheckInput(
     [property: Description("An event kind's id, from get_change_options.")] Guid? EventKindId = null,
     [property: Description("A method's id, from get_change_options.")] Guid? MethodId = null,
@@ -342,6 +365,31 @@ public sealed record PlotArcValues(AiRef Story, string Title, string? Descriptio
 public sealed record RuleCheckValues(Guid EventKindId, Guid MethodId, int MaxOccurrences);
 
 public sealed record WorldRuleValues(string Title, string Description, RuleCheckValues? Check);
+
+/// <summary>
+/// What a proposed World Logic rule definition would hold: the fields of <c>SystemRuleRequest</c>, with its dependencies as
+/// references so one can name a rule this proposal creates. The condition and exceptions are kept as the raw JSON the
+/// route stores. The scope is fixed at creation, so on an update it is the stored one.
+/// </summary>
+public sealed record SystemRuleValues(
+    Guid? ProjectId,
+    string Title,
+    string Description,
+    int? SchemaVersion,
+    string? Condition,
+    string? Exceptions,
+    List<AiRef> DependsOn);
+
+/// <summary>
+/// What a proposed World Logic System would hold: its name and summary, and its whole ordered rule list, each an existing
+/// rule or one this proposal creates. The commit applies the list as the difference from the stored one, through the
+/// System's own link and unlink paths.
+/// </summary>
+public sealed record LoreSystemValues(
+    Guid? ProjectId,
+    string Name,
+    string Summary,
+    List<AiRef> RuleIds);
 
 /// <summary>
 /// What a proposed project entry would hold (#148). The project and the type are the entry's scope, carried so a

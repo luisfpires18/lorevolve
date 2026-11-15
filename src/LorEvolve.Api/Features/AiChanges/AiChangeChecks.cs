@@ -138,6 +138,8 @@ internal static class AiChangeJson
                 AiChangeResource.PlotArc => Read<PlotArcValues>(json),
                 AiChangeResource.WorldRule => Read<WorldRuleValues>(json),
                 AiChangeResource.ProjectEntry => Read<ProjectEntryValues>(json),
+                AiChangeResource.SystemRule => Read<SystemRuleValues>(json),
+                AiChangeResource.LoreSystem => Read<LoreSystemValues>(json),
                 AiChangeResource.Idea => Read<IdeaValues>(json),
                 AiChangeResource.LoreType => Read<TypeValues>(json),
                 AiChangeResource.LoreField => Read<FieldValues>(json),
@@ -163,6 +165,8 @@ internal static class AiChangeJson
         (AiChangeResource.PlotArc, _) => Read<PlotArcValues>(json),
         (AiChangeResource.WorldRule, _) => Read<WorldRuleValues>(json),
         (AiChangeResource.ProjectEntry, _) => Read<ProjectEntryValues>(json),
+        (AiChangeResource.SystemRule, _) => Read<SystemRuleValues>(json),
+        (AiChangeResource.LoreSystem, _) => Read<LoreSystemValues>(json),
         (AiChangeResource.Idea, _) => Read<IdeaValues>(json),
         (AiChangeResource.LoreType, _) => Read<TypeValues>(json),
         (AiChangeResource.LoreField, _) => Read<FieldValues>(json),
@@ -497,6 +501,12 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
                 case (AiChangeResource.ProjectEntry, _):
                     await CheckProjectEntryAsync(work, cancellationToken);
                     break;
+                case (AiChangeResource.SystemRule, _):
+                    await CheckSystemRuleAsync(work, cancellationToken);
+                    break;
+                case (AiChangeResource.LoreSystem, _):
+                    await CheckLoreSystemAsync(work, cancellationToken);
+                    break;
                 case (AiChangeResource.WorldRule, _):
                     await CheckWorldRuleAsync(work, cancellationToken);
                     break;
@@ -606,6 +616,8 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
         PlotArcValues arc => [(arc.Story, AiChangeResource.Story, "story")],
         IdeaValues idea => idea.References.Select(reference => (reference.Target, IdeaKind(reference.Kind), "references")),
         MediaValues media => [(AiRef.To(media.EntityId), AiChangeResource.LoreEntry, "entry")],
+        SystemRuleValues rule => rule.DependsOn.Select(dependency => (dependency, AiChangeResource.SystemRule, "dependsOn")),
+        LoreSystemValues system => system.RuleIds.Select(rule => (rule, AiChangeResource.SystemRule, "ruleIds")),
         TypeValues type =>
         [
             .. type.Parent is { } parent ? [(parent, AiChangeResource.LoreType, "parent")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
@@ -1237,7 +1249,7 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
             _ => (false, null, true),
         };
 
-        if (work.Resource is AiChangeResource.Manuscript or AiChangeResource.Article)
+        if (work.Resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.SystemRule or AiChangeResource.LoreSystem)
         {
             work.Problem(AiChangeCodes.Unsupported, AiChangeText.NoTrash(work.Resource));
             return;
@@ -1424,6 +1436,8 @@ internal static class AiChangeText
     {
         AiChangeResource.Article => "An article isn't removed. To empty one, replace it with no blocks, and its saved versions keep the old article.",
         AiChangeResource.Progression => "An AI change never removes an era, form, ability or appearance. Remove one by hand on the entry's Progression page, where it shows what goes with it.",
+        AiChangeResource.SystemRule => "An AI change never deletes a rule definition: it has no Trash. Delete it by hand in LorEvolve, once no System or rule references it.",
+        AiChangeResource.LoreSystem => "An AI change never deletes a System: a System delete is permanent. Delete it by hand in LorEvolve, or propose an update that changes its rule list.",
         _ => "A manuscript isn't removed. To empty one, replace its text, and its saved versions keep the old prose.",
     };
 
