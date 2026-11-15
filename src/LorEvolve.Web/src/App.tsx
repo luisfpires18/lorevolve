@@ -260,7 +260,15 @@ function Root() {
               <Route path="world-logic" element={asSection('world-logic', <WorldLogicPage />)} />
               {/* Every world rule address still works, so nothing an author linked or bookmarked broke (#152). */}
               <Route path="world-rules" element={asSection('world-rules', <WorldRulesPage />)} />
-              <Route path="chronology" element={asSection('chronology', <ChronologyPage />)} />
+              {/* Chronology is Timeline's configuration view (#200); its old address still resolves, by redirect. */}
+              <Route
+                path="timeline/configuration"
+                element={asSection('chronology', <ChronologyPage />)}
+              />
+              <Route
+                path="chronology"
+                element={<Navigate to="../timeline/configuration" relative="path" replace />}
+              />
               <Route
                 path="world-rules/new"
                 element={asSection(

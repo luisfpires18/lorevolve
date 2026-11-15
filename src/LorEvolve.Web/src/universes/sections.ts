@@ -3,7 +3,6 @@ import type { UniverseCapabilities } from './access'
 import {
   BadgeCheck,
   Blocks,
-  CalendarRange,
   Compass,
   Feather,
   FileDiff,
@@ -66,11 +65,6 @@ const WORLD_LOGIC: Section = {
   also: ['world-rules'],
 }
 const CANON: Section = { segment: 'canon', testId: 'workspace-canon', icon: BadgeCheck, wip: true }
-const CHRONOLOGY: Section = {
-  segment: 'chronology',
-  testId: 'workspace-chronology',
-  icon: CalendarRange,
-}
 const STORIES: Section = { segment: 'stories', testId: 'workspace-stories', icon: Feather }
 const TIMELINE: Section = { segment: 'timeline', testId: 'workspace-timeline', icon: Hourglass }
 const IDEAS: Section = {
@@ -108,8 +102,11 @@ const SETTINGS: Section = {
 /** The world itself: its entries, the kinds they come in, its families and its places. */
 export const WORLD: readonly Section[] = [LORE, TYPES, FAMILY_TREE, MAPS]
 
-/** The rules it keeps: how it works, where the lore breaks that, and how its dates run. */
-export const RULES: readonly Section[] = [WORLD_LOGIC, CANON, CHRONOLOGY]
+/**
+ * The rules it keeps: how it works, and where the lore breaks that. How its dates run is Timeline's configuration view
+ * (#200), at `timeline/configuration`, so Timeline owns it by its first segment and the old `chronology` address redirects.
+ */
+export const RULES: readonly Section[] = [WORLD_LOGIC, CANON]
 
 /** The writing done with it, and the world's chronology it is told against - Stories, then Timeline (Issue #48). */
 export const WRITING: readonly Section[] = [STORIES, TIMELINE, IDEAS]
@@ -118,8 +115,8 @@ export const WRITING: readonly Section[] = [STORIES, TIMELINE, IDEAS]
 export const REVIEW: readonly Section[] = [AI_CHANGES]
 
 /**
- * The sidebar's world building group (#191): every worldbuilding destination in the owner's order. Chronology stays a
- * section of its own after Timeline until #200 moves it under Timeline.
+ * The sidebar's world building group (#191): every worldbuilding destination in the owner's order. Chronology is no
+ * section of its own: it is Timeline's configuration view (#200).
  */
 export const WORLD_BUILDING: readonly Section[] = [
   LORE,
@@ -127,7 +124,6 @@ export const WORLD_BUILDING: readonly Section[] = [
   FAMILY_TREE,
   MAPS,
   TIMELINE,
-  CHRONOLOGY,
   WORLD_LOGIC,
   IDEAS,
 ]
