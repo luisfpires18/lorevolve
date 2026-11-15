@@ -255,8 +255,11 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
         onChanged={() => setSchemaVersion((version) => version + 1)}
       />
 
-      {/* Seasons and episodes (#145). Offered to every project; a project that does not work that way leaves it empty. */}
-      <ProjectSeasons projectId={project.id} />
+      {/*
+       * Seasons and episodes (#145), for a Series. The API answers 404 for another kind, so drawing the panel there
+       * would show an author a failure for a feature their project does not have.
+       */}
+      {project.kind === ProjectKind.Series ? <ProjectSeasons projectId={project.id} /> : null}
     </div>
   )
 }

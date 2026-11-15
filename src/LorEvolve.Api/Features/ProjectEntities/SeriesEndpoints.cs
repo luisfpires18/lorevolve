@@ -11,9 +11,11 @@ namespace LorEvolve.Api.Features.ProjectEntities;
 /// <summary>
 /// The seasons of a project and the episodes in them (#145).
 ///
-/// <para>Offered to every project, not only a Series: a comic has volumes and issues, a film has none, and an author
-/// is better served by a structure they may ignore than by one the product decides they are allowed. Nothing here
-/// reads <see cref="Projects.ProjectKind"/>.</para>
+/// <para><b>A Series project only.</b> #145 asks for seasons as the structure a Series groups episodes into, and the
+/// first review of this PR was right that offering them on every kind is wider than the issue. A project of another
+/// kind answers exactly as one with no seasons route at all, so nothing discloses that the feature exists elsewhere.
+/// When a comic wants volumes and issues (#147), that kind joins <see cref="Holds"/>: one line, and the structure is
+/// already here.</para>
 ///
 /// <para>Order is a stored place, not a derivation: an author reorders seasons and episodes, and "Season 10" sorts
 /// before "Season 2" by name. Both lists are renumbered 0, 1, 2 on every move, the same way a story's arcs are
@@ -29,6 +31,43 @@ public static class SeriesEndpoints
 
     /// <summary>The 409 for deleting a season that still holds episodes.</summary>
     public const string SeasonHasEpisodesCode = "project_season_has_episodes";
+
+    /// <summary>
+    /// The kinds of project that have seasons. Series alone today (#145); a comic's volumes would add
+    /// <see cref="Projects.ProjectKind.Comic"/> here and nothing else.
+    /// </summary>
+    private static bool Holds(Projects.ProjectKind kind) => kind is Projects.ProjectKind.Series;
+
+    /// <summary>
+    /// The project when it may be read and has seasons at all, otherwise the answer to send. A project of another kind
+    /// is answered as a missing one rather than refused, because for it this route does not exist.
+    /// </summary>
+    private static async Task<(Projects.CreativeProject? Project, IResult? Denied)> SeriesReadableAsync(
+        LorEvolveDbContext db,
+        Guid projectId,
+        ClaimsPrincipal principal,
+        CancellationToken cancellationToken)
+    {
+        var (project, denied) = await ReadableAsync(db, projectId, principal, cancellationToken);
+
+        return denied is not null
+            ? (null, denied)
+            : Holds(project!.Kind) ? (project, null) : (null, Results.NotFound());
+    }
+
+    /// <summary>The same, for a write.</summary>
+    private static async Task<(Projects.CreativeProject? Project, IResult? Denied)> SeriesWritableAsync(
+        LorEvolveDbContext db,
+        Guid projectId,
+        ClaimsPrincipal principal,
+        CancellationToken cancellationToken)
+    {
+        var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+
+        return denied is not null
+            ? (null, denied)
+            : Holds(project!.Kind) ? (project, null) : (null, Results.NotFound());
+    }
 
     public static IEndpointRouteBuilder MapSeriesEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -62,7 +101,7 @@ public static class SeriesEndpoints
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
     {
-        var (_, denied) = await ReadableAsync(db, projectId, principal, cancellationToken);
+        var (_, denied) = await SeriesReadableAsync(db, projectId, principal, cancellationToken);
 
         if (denied is not null)
         {
@@ -105,7 +144,7 @@ public static class SeriesEndpoints
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
     {
-        var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+        var (_, denied) = await SeriesWritableAsync(db, projectId, principal, cancellationToken);
 
         if (denied is not null)
         {
@@ -178,7 +217,7 @@ public static class SeriesEndpoints
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
     {
-        var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+        var (_, denied) = await SeriesWritableAsync(db, projectId, principal, cancellationToken);
 
         if (denied is not null)
         {
@@ -226,7 +265,7 @@ public static class SeriesEndpoints
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
     {
-        var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+        var (_, denied) = await SeriesWritableAsync(db, projectId, principal, cancellationToken);
 
         if (denied is not null)
         {
@@ -274,7 +313,7 @@ public static class SeriesEndpoints
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
     {
-        var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+        var (_, denied) = await SeriesWritableAsync(db, projectId, principal, cancellationToken);
 
         if (denied is not null)
         {
@@ -316,7 +355,7 @@ public static class SeriesEndpoints
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
     {
-        var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+        var (_, denied) = await SeriesWritableAsync(db, projectId, principal, cancellationToken);
 
         if (denied is not null)
         {
@@ -375,7 +414,7 @@ public static class SeriesEndpoints
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
     {
-        var (_, denied) = await ReadableAsync(db, projectId, principal, cancellationToken);
+        var (_, denied) = await SeriesReadableAsync(db, projectId, principal, cancellationToken);
 
         if (denied is not null)
         {
@@ -402,7 +441,7 @@ public static class SeriesEndpoints
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
     {
-        var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+        var (_, denied) = await SeriesWritableAsync(db, projectId, principal, cancellationToken);
 
         if (denied is not null)
         {
@@ -457,7 +496,7 @@ public static class SeriesEndpoints
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
     {
-        var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+        var (_, denied) = await SeriesWritableAsync(db, projectId, principal, cancellationToken);
 
         if (denied is not null)
         {
@@ -499,7 +538,7 @@ public static class SeriesEndpoints
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
     {
-        var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+        var (_, denied) = await SeriesWritableAsync(db, projectId, principal, cancellationToken);
 
         if (denied is not null)
         {
@@ -521,15 +560,29 @@ public static class SeriesEndpoints
 
         var targetId = request.SeasonId ?? seasonId;
 
-        if (targetId != seasonId
-            && !await db.ProjectSeasons.AnyAsync(
-                season => season.Id == targetId && season.ProjectId == projectId,
-                cancellationToken))
+        if (targetId != seasonId)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
+            if (!await db.ProjectSeasons.AnyAsync(
+                    season => season.Id == targetId && season.ProjectId == projectId,
+                    cancellationToken))
             {
-                ["seasonId"] = ["Choose a season of this project."],
-            });
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["seasonId"] = ["Choose a season of this project."],
+                });
+            }
+
+            // The limit a create respects holds for a move as well. Without this an author could put more episodes in
+            // a season by moving them in than by making them there, which is the limit saying one thing and meaning
+            // another.
+            if (await db.ProjectEpisodes.CountAsync(episode => episode.SeasonId == targetId, cancellationToken)
+                >= SeriesLimits.MaxEpisodesPerSeason)
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["seasonId"] = [$"That season already holds {SeriesLimits.MaxEpisodesPerSeason} episodes."],
+                });
+            }
         }
 
         var from = episode.SeasonId;

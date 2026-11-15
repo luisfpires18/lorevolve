@@ -472,17 +472,25 @@ function ScriptEditor({
         />
       </label>
 
-      <label className="field">
-        <span className="field__label">{t('projects.seasons.script')}</span>
-        <textarea
-          className="field__input"
-          rows={12}
-          value={script ?? ''}
-          onChange={(event) => setScript(event.target.value)}
-          placeholder={t('projects.seasons.scriptPlaceholder')}
-          data-testid={`project-script-text-${episode.id}`}
-        />
-      </label>
+      {/*
+       * Drawn only once the stored script has arrived. Showing an empty field first and filling it in on arrival would
+       * take back what the author typed in between, which the E2E spec caught doing exactly that.
+       */}
+      {script === null ? (
+        <p className="projects__lede">{t('projects.seasons.loading')}</p>
+      ) : (
+        <label className="field">
+          <span className="field__label">{t('projects.seasons.script')}</span>
+          <textarea
+            className="field__input"
+            rows={12}
+            value={script}
+            onChange={(event) => setScript(event.target.value)}
+            placeholder={t('projects.seasons.scriptPlaceholder')}
+            data-testid={`project-script-text-${episode.id}`}
+          />
+        </label>
+      )}
 
       <button
         type="submit"

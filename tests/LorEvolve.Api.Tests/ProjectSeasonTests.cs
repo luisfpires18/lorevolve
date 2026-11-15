@@ -296,6 +296,85 @@ public sealed class ProjectSeasonTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Equal(HttpStatusCode.OK, read.StatusCode);
     }
 
+    /// <summary>
+    /// A season full to its limit does not take one more by a move. The first review of this PR found that the limit a
+    /// create respects was not checked on a cross-season move, which would have let an author put more episodes in a
+    /// season by moving them in than by making them there.
+    /// </summary>
+    [Fact]
+    public async Task A_full_season_does_not_take_another_episode_by_a_move()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "seriesfull");
+        var project = await NewProject(client, universe.Id, ProjectKind.Series);
+        var from = await NewSeason(client, project.Id, "Season 1");
+        var full = await NewSeason(client, project.Id, "Season 2");
+        var moving = await NewEpisode(client, project.Id, from.Id, "Pilot");
+
+        // Filled straight against the database: five hundred requests would make this test about speed instead.
+        await WithDb(_factory, async db =>
+        {
+            var now = DateTime.UtcNow;
+            for (var index = 0; index < SeriesLimits.MaxEpisodesPerSeason; index++)
+            {
+                db.ProjectEpisodes.Add(new ProjectEpisode
+                {
+                    Id = Guid.NewGuid(),
+                    SeasonId = full.Id,
+                    Title = $"Episode {index}",
+                    SortOrder = index,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                });
+            }
+
+            await db.SaveChangesAsync();
+        });
+
+        var refused = await client.PostAsJsonAsync(
+            $"/api/projects/{project.Id}/seasons/{from.Id}/episodes/{moving.Id}/move",
+            new ProjectMoveRequest(0, full.Id));
+
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+
+        // The episode stayed where it was, and the full season is no fuller.
+        Assert.Equal(["Pilot"], (await Episodes(client, project.Id, from.Id)).Select(episode => episode.Title));
+
+        await WithDb(_factory, async db =>
+            Assert.Equal(
+                SeriesLimits.MaxEpisodesPerSeason,
+                await db.ProjectEpisodes.CountAsync(episode => episode.SeasonId == full.Id)));
+
+        // A create into it is refused for the same reason, which is the limit this move now matches.
+        var created = await client.PostAsJsonAsync(
+            $"/api/projects/{project.Id}/seasons/{full.Id}/episodes",
+            new ProjectEpisodeRequest("One too many", null));
+
+        Assert.Equal(HttpStatusCode.BadRequest, created.StatusCode);
+    }
+
+    /// <summary>
+    /// Seasons are a Series project's (#145). A project of another kind answers as one with no seasons route at all,
+    /// so nothing tells its author that the feature exists elsewhere.
+    /// </summary>
+    [Fact]
+    public async Task A_project_that_is_not_a_series_has_no_seasons_route()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "seriesgate");
+        var game = await NewProject(client, universe.Id, ProjectKind.Game);
+
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/projects/{game.Id}/seasons")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            (await client.PostAsJsonAsync(
+                $"/api/projects/{game.Id}/seasons",
+                new ProjectSeasonRequest("Season 1", null))).StatusCode);
+
+        // A Series project of the same account, in the same universe, has them.
+        var show = await NewProject(client, universe.Id, ProjectKind.Series);
+        await NewSeason(client, show.Id, "Season 1");
+        Assert.Single(await Seasons(client, show.Id));
+    }
+
     // ---------- helpers ----------
 
     private static async Task<ProjectDetail> NewProject(HttpClient client, Guid universeId, ProjectKind kind)
