@@ -304,3 +304,32 @@ Nothing here blocks M4; the plan above proceeds without any of it.
    Assistant block in the Profile's Usage section, Connect to AI still offered on a universe's front page, the AI
    Changes section still listed, a proposal from a connected AI app still reviewable and applicable, and the AI help
    toggle in universe settings still hiding the last two.
+
+## 8. Appendix: what #159 found when it looked again (2026-11-15)
+
+Issue #159 was to retire the assistant's persisted state. Section 2.2 predicted there was none to retire; the task
+confirmed it against the schema as it stands with #157 and #158 merged, and wrote no migration.
+
+| Checked | Result |
+| --- | --- |
+| Tables, columns or indexes owned by the assistant | none. The feature folder held no entity type and no configuration; the only persistence that ever carried its name is the two items below |
+| `UniverseAiHelpOff` | kept. It is the author's choice to hide this universe's AI, which is now Connect to AI and Pending AI Changes |
+| `AiChangeSource.Assistant` (value 1) | kept, number unchanged. Proposals authors reviewed hold it, and `AiChangeTestClient.Stage` still stages with it, so the whole AI Changes suite exercises the value on every run |
+| The allowance and its windows | nothing persisted. `AssistantAllowance` counted in the process's memory, so its removal deleted no row |
+| Questions, answers, conversations | nothing persisted. The provider was asked with `store: false` and no turn was ever written |
+| Backup format | unchanged. Both kept items are classified LeftOut (`BackupInventoryTests`), so no export, no validation count and no restore reads them, and `UniverseBackup.CurrentVersion` did not move |
+| `LaterSchema` and the four table-list fingerprints | unchanged, because no table was added or dropped |
+| `dotnet ef migrations has-pending-model-changes` | "No changes have been made to the model since the last migration" |
+
+Backups written before the retirement restore unchanged, which is the same statement as the format not moving: the file a
+host wrote the day before M4 is in version 43, the version this code still writes. `BackupVersionTests` restores every
+one of the 43 versions LorEvolve has ever written, and `AssistantRetirementPersistenceTests` restores versions 1, 17 and
+43 again by name, so the oldest file the project supports and a file from just before M4 are both proved to come back.
+
+So the retirement needed no rollback path, because it changed no schema. `AssistantRetirementPersistenceTests` now holds
+the decision where it fails if someone undoes it: the AI help row is written and removed by the author's switch, a
+proposal staged with the assistant's source reads back with it, and a restored universe starts with AI help on and no
+proposal.
+
+The owner decision in section 7.3 is unchanged and still theirs: if they would rather `UniverseAiHelpOff` went, that is
+a migration and a separate task, and every author's choice would be lost with it.
