@@ -418,6 +418,102 @@ public sealed class WorldLogicFindingTests(LorEvolveApiFactory factory) : IClass
     }
 
     /// <summary>
+    /// Codex round 1 on #153: deleting a rule cascades its findings, so an author's dismissal would go with it
+    /// without being mentioned. Every other finding of the rule is derived and goes, which is right; a dismissal
+    /// is the one the author wrote, so the route refuses until it is resolved.
+    /// </summary>
+    [Fact]
+    public async Task A_rule_with_a_dismissed_finding_is_not_deleted_until_the_author_resolves_it()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlfinddelete");
+        var entry = await CreateEntity(client, universe.Id, "Arlen");
+
+        var open = await Rule(client, universe.Id, "A dragon is on record", DragonExists());
+        var dismissed = await Rule(client, universe.Id, "Arlen is a dragon", EntryIsOfType(entry, "Dragon"));
+
+        await Sweep(client, universe.Id);
+        var findings = await List(client, universe.Id);
+        var keep = findings.Items.Single(row => row.RuleId == dismissed);
+        await Decide(client, universe.Id, keep.Id, "dismiss", "Arlen is deliberately not one.");
+
+        // A rule whose findings are all derived is deleted, and they go with it: nothing of the author's is lost.
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await client.DeleteAsync($"{Rules(universe.Id)}/{open}")).StatusCode);
+
+        var left = await List(client, universe.Id);
+        Assert.Equal(keep.Id, Assert.Single(left.Items).Id);
+
+        // The dismissal is the author's, so the rule it is about is not deleted while it stands.
+        var refused = await client.DeleteAsync($"{Rules(universe.Id)}/{dismissed}");
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("rule_has_dismissals", body.GetProperty("code").GetString());
+        Assert.Equal(1, body.GetProperty("dismissedFindings").GetInt32());
+        Assert.Equal(1, (await List(client, universe.Id)).TotalCount);
+
+        // Resolving it is the explicit way to say the decision no longer matters, and then the rule goes.
+        await Decide(client, universe.Id, keep.Id, "resolve");
+
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await client.DeleteAsync($"{Rules(universe.Id)}/{dismissed}")).StatusCode);
+
+        Assert.Equal(0, (await List(client, universe.Id)).TotalCount);
+    }
+
+    /// <summary>
+    /// The other half of that finding, which the refusal above deliberately does not cover: deleting a project
+    /// takes its project-scoped findings, dismissals included, because a decision about one project's scope has
+    /// nothing left to be about once the project is gone. Refusing a project delete over a World Logic dismissal
+    /// would be the undeletable-row failure this milestone has already paid for once.
+    ///
+    /// What has to hold is that it leaves no invalid backup behind. A dismissal is only ever carried with its rule
+    /// and its project, both of which a backup holds for the whole universe, so the payload after the delete
+    /// carries no dismissal naming anything missing, and it restores.
+    /// </summary>
+    [Fact]
+    public async Task Deleting_a_project_takes_its_scoped_findings_and_leaves_a_restorable_backup()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlfindprojectdelete");
+        var entry = await CreateEntity(client, universe.Id, "Arlen");
+
+        var project = await PostJson<ProjectDetail>(
+            client,
+            "/api/projects",
+            new ProjectRequest("The siege", ProjectKind.Writing, ProjectLifecycle.Active, null, null, universe.Id, null));
+
+        await Rule(client, universe.Id, "Arlen is a dragon", EntryIsOfType(entry, "Dragon"));
+
+        await Sweep(client, universe.Id, project.Id);
+        var scoped = Assert.Single((await List(client, universe.Id)).Items);
+        Assert.Equal(project.Id, scoped.ProjectId);
+
+        await Decide(client, universe.Id, scoped.Id, "dismiss", "Not in this story.");
+        Assert.Single((await Backup(client, universe.Id)).Payload.DismissedFindings!);
+
+        (await client.DeleteAsync($"/api/projects/{project.Id}")).EnsureSuccessStatusCode();
+
+        // The finding went with the project, and so did the decision about it.
+        Assert.Equal(0, (await List(client, universe.Id)).TotalCount);
+
+        // And the backup is whole: no dismissal is carried, and it restores.
+        var after = await Backup(client, universe.Id);
+        Assert.Empty(after.Payload.DismissedFindings!);
+
+        var restored = await RestoreArchive(
+            client,
+            await RawArchive(client, universe.Id),
+            "World wlfindprojectdelete restored");
+
+        Assert.Equal(0, (await List(client, restored.Id)).TotalCount);
+
+        // The rule itself survived the project delete, so the restored universe can still find the problem.
+        Assert.Equal(1, (await Sweep(client, restored.Id)).Created);
+    }
+
+    /// <summary>
     /// The promise to ADR 0010: Canon keeps its own conflicts, its own rules and its own gate. A World Logic sweep
     /// writes no conflict and closes none, and a Canon evaluation writes no World Logic finding.
     /// </summary>
