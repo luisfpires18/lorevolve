@@ -93,4 +93,28 @@ public sealed class AssistantRetirementPersistenceTests(LorEvolveApiFactory fact
             Assert.False(await db.AiChangeProposals.AnyAsync(row => row.UniverseId == restored.Id));
         });
     }
+
+    /// <summary>
+    /// A file written before the assistant was retired still restores. M4 changed no table, so the format version did
+    /// not move and a backup taken before it is byte-for-byte a backup of the version this code writes; the older files
+    /// below are the stronger claim, and the one <see cref="BackupVersionTests"/> makes for all 43 versions.
+    /// </summary>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(17)]
+    [InlineData(UniverseBackup.CurrentVersion)]
+    public async Task A_backup_written_before_the_retirement_still_restores(int version)
+    {
+        var client = await SignedIn(_factory, $"aikeptolder-{version}");
+        var world = await BuildPlainWorld(client, $"World exported at v{version}");
+        var older = Downgrade(await RawArchive(client, world.Universe.Id), version);
+
+        var validated = await Validated(client, older);
+        Assert.Equal(version, validated.Preview.FormatVersion);
+        var restored = await Restored(client, validated.Token, $"Restored from v{version}");
+
+        // The world came back, and the restored universe offers AI help as a restore always has.
+        Assert.NotEmpty(BackupOf(await RawArchive(client, restored.Id)).Payload.Entities);
+        Assert.True((await client.GetFromJsonAsync<UniverseDetail>($"/api/universes/{restored.Id}"))!.AiHelp);
+    }
 }

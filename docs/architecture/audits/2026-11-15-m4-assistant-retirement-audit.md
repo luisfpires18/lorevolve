@@ -321,6 +321,11 @@ confirmed it against the schema as it stands with #157 and #158 merged, and wrot
 | `LaterSchema` and the four table-list fingerprints | unchanged, because no table was added or dropped |
 | `dotnet ef migrations has-pending-model-changes` | "No changes have been made to the model since the last migration" |
 
+Backups written before the retirement restore unchanged, which is the same statement as the format not moving: the file a
+host wrote the day before M4 is in version 43, the version this code still writes. `BackupVersionTests` restores every
+one of the 43 versions LorEvolve has ever written, and `AssistantRetirementPersistenceTests` restores versions 1, 17 and
+43 again by name, so the oldest file the project supports and a file from just before M4 are both proved to come back.
+
 So the retirement needed no rollback path, because it changed no schema. `AssistantRetirementPersistenceTests` now holds
 the decision where it fails if someone undoes it: the AI help row is written and removed by the author's switch, a
 proposal staged with the assistant's source reads back with it, and a restored universe starts with AI help on and no
