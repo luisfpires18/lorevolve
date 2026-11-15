@@ -55,12 +55,15 @@ function findings(universeId: string) {
 }
 
 /**
- * What checking this universe's rules found, in the server's own order: what needs attention first (open findings,
- * then the worst severity, then the oldest). The order is the server's on purpose, so paging is stable and a finding
- * never swaps pages between two requests.
+ * What checking this universe's rules found, newest first, which is the order a list of records reads in.
+ *
+ * The order is the server's, asked for by name: sorting a page here would reorder that page rather than the list, so
+ * paging and ordering have to be decided in the same place. The route's own default is attention order, which is
+ * what it answered before this page asked, so nothing else that reads it changed.
  */
 export function listWorldLogicFindings(universeId: string, page: number, signal?: AbortSignal) {
   const params = new URLSearchParams({
+    sort: 'newest',
     page: String(page),
     pageSize: String(WORLD_LOGIC_PAGE_SIZE),
   })

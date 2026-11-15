@@ -47,10 +47,9 @@ type View = 'rules' | 'systems' | 'integrity'
  * definition and a System are written through MCP or the API until an editor for a condition tree exists, and
  * pretending otherwise with a form that cannot express a condition would be worse than saying so.
  *
- * <b>Integrity keeps the three outcomes apart.</b> It lists what checking the rules found, in the server's order:
- * what needs attention first. A contradiction, a rule the stored facts cannot answer and a rule that is itself
- * broken are three different things and each row says which, because a finding that could not be checked is not a
- * finding that passed.
+ * <b>Integrity keeps the three outcomes apart.</b> It lists what checking the rules found, newest first. A
+ * contradiction, a rule the stored facts cannot answer and a rule that is itself broken are three different things
+ * and each row says which, because a finding that could not be checked is not a finding that passed.
  *
  * <b>And it is honest about an empty list.</b> No finding recorded can mean no check has run or that the last one
  * found nothing, and the page cannot tell the two apart from the store: nothing records when a sweep last ran. So an

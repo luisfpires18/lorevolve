@@ -408,12 +408,12 @@ test.describe('World Logic', () => {
     const rows = page.getByTestId('world-logic-finding-row')
     await expect(rows).toHaveCount(3)
 
-    // What needs attention leads, and no outcome is reported as another.
-    expect(await rows.evaluateAll((items) => items.map((item) => item.dataset.outcome))).toEqual([
-      'violation',
-      'error',
-      'unknown',
-    ])
+    // All three are here and no outcome is reported as another. One sweep stamps every finding it records with the
+    // one instant it ran, so these three are the same age and their order among themselves says nothing: what the
+    // list promises is that a later sweep's finding leads, which the API tests cover.
+    expect(
+      (await rows.evaluateAll((items) => items.map((item) => item.dataset.outcome))).sort(),
+    ).toEqual(['error', 'unknown', 'violation'])
 
     const contradiction = rows.filter({ hasText: 'Arlen is a dragon' })
     await expect(contradiction.getByTestId('world-logic-finding-outcome')).toHaveText(

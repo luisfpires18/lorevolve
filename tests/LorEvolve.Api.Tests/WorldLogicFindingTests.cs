@@ -257,6 +257,55 @@ public sealed class WorldLogicFindingTests(LorEvolveApiFactory factory) : IClass
     }
 
     /// <summary>
+    /// The list answers in the order the caller asked for, and attention order is still what it answers unasked
+    /// (#209). The World Logic page lists records, so it asks for the newest first; nothing that read this route
+    /// before asks for an order, so nothing that reads it unasked saw its answer change.
+    ///
+    /// <b>What newest first can and cannot separate.</b> One sweep stamps every finding it records with the one
+    /// instant it ran, so findings from the same sweep are the same age and the id settles them. What newest first
+    /// separates is sweeps: a problem a later sweep found leads over one an earlier sweep found, which is what a
+    /// list of records is expected to do and what attention order deliberately does not do.
+    /// </summary>
+    [Fact]
+    public async Task The_list_orders_by_attention_unasked_and_by_newest_when_asked()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlfindsort");
+
+        // The older finding is the violation, which is the one attention order puts first. So the two orders
+        // disagree, and a test that passes under both proves nothing.
+        var violation = await Rule(client, universe.Id, "A dragon is on record", DragonExists());
+        await Sweep(client, universe.Id);
+
+        var unknown = await Rule(client, universe.Id, "Purity floor", PurityAtLeast(2));
+        await Sweep(client, universe.Id);
+
+        var unasked = await List(client, universe.Id);
+        Assert.Equal([violation, unknown], unasked.Items.Select(row => row.RuleId));
+
+        var newest = await List(client, universe.Id, sort: "newest");
+        Assert.Equal([unknown, violation], newest.Items.Select(row => row.RuleId));
+        Assert.True(newest.Items[0].CreatedAt > newest.Items[1].CreatedAt);
+
+        // The second sweep did not restamp the first finding: persisting one leaves it as old as it is.
+        Assert.Equal(
+            unasked.Items.Single(row => row.RuleId == violation).CreatedAt,
+            newest.Items.Single(row => row.RuleId == violation).CreatedAt);
+
+        // A page of one, twice, holds two different findings: the order is the server's, so paging stays stable.
+        var first = await List(client, universe.Id, sort: "newest", page: 1, pageSize: 1);
+        var second = await List(client, universe.Id, sort: "newest", page: 2, pageSize: 1);
+
+        Assert.Equal(2, first.TotalCount);
+        Assert.Equal(unknown, Assert.Single(first.Items).RuleId);
+        Assert.Equal(violation, Assert.Single(second.Items).RuleId);
+
+        // An order nobody offers is refused rather than quietly answered in another one.
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            (await client.GetAsync($"{Findings(universe.Id)}?sort=whatever")).StatusCode);
+    }
+
+    /// <summary>
     /// A rule that is words only has no condition and would answer unknown for every universe forever. Recording
     /// that would bury the unknowns that mean something, so it produces no finding at all.
     /// </summary>
@@ -627,8 +676,22 @@ public sealed class WorldLogicFindingTests(LorEvolveApiFactory factory) : IClass
         return (await response.Content.ReadFromJsonAsync<WorldLogicSweepResponse>())!;
     }
 
-    private static async Task<WorldLogicPage<WorldLogicFindingRow>> List(HttpClient client, Guid universeId) =>
-        (await client.GetFromJsonAsync<WorldLogicPage<WorldLogicFindingRow>>(Findings(universeId)))!;
+    private static async Task<WorldLogicPage<WorldLogicFindingRow>> List(
+        HttpClient client,
+        Guid universeId,
+        string? sort = null,
+        int? page = null,
+        int? pageSize = null)
+    {
+        var asked = new List<string>();
+        if (sort is not null) asked.Add($"sort={sort}");
+        if (page is { } wantedPage) asked.Add($"page={wantedPage}");
+        if (pageSize is { } wantedSize) asked.Add($"pageSize={wantedSize}");
+        var query = asked.Count == 0 ? string.Empty : $"?{string.Join('&', asked)}";
+
+        return (await client.GetFromJsonAsync<WorldLogicPage<WorldLogicFindingRow>>(
+            $"{Findings(universeId)}{query}"))!;
+    }
 
     private static async Task<WorldLogicFindingDetail> Decide(
         HttpClient client,

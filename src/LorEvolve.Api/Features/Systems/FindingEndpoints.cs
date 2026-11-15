@@ -231,12 +231,23 @@ public static class FindingEndpoints
         [FromQuery] WorldLogicFindingOutcome? outcome = null,
         [FromQuery] WorldLogicFindingStatus? status = null,
         [FromQuery] Guid? ruleId = null,
+        [FromQuery] string? sort = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = WorldLogicFindingLimits.DefaultPageSize)
     {
         if (await WorldLogicAccess.DenyReadAsync(db, universeId, principal, cancellationToken) is { } denied)
         {
             return denied;
+        }
+
+        // The order is a word on the wire, as the outcome and the status are in the answer, and an order nobody
+        // offers is refused rather than quietly answered in another one.
+        if (Sort(sort) is not { } wantedSort)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["sort"] = ["Insert either attention or newest."],
+            });
         }
 
         var (wantedPage, wantedSize) = WorldLogicAccess.Paging(page, pageSize);
@@ -261,7 +272,7 @@ public static class FindingEndpoints
 
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var rows = await Ordered(query)
+        var rows = await Ordered(query, wantedSort)
             .Skip((wantedPage - 1) * wantedSize)
             .Take(wantedSize)
             .Select(Projection())
@@ -293,20 +304,40 @@ public static class FindingEndpoints
     }
 
     /// <summary>
-    /// What needs attention, first. Open findings lead, then the worst severity, then the oldest, then the id, so a
-    /// finding never swaps pages between two requests.
-    ///
-    /// Severity is the outcome, so the ordering is on the outcome itself rather than on a stored column: a
-    /// violation outranks an error, and an error outranks an unknown.
+    /// The order a caller asked for by name, or null for a word nobody offers. Unasked, it is attention order,
+    /// which is what this route answered before #209, so nothing that does not ask saw its answer change.
     /// </summary>
-    private static IOrderedQueryable<WorldLogicFinding> Ordered(IQueryable<WorldLogicFinding> query) =>
-        query
-            .OrderBy(finding => finding.Status == WorldLogicFindingStatus.Open ? 0 : 1)
-            .ThenBy(finding => finding.Outcome == WorldLogicFindingOutcome.Violation
-                ? 0
-                : finding.Outcome == WorldLogicFindingOutcome.Error ? 1 : 2)
-            .ThenBy(finding => finding.CreatedAt)
-            .ThenBy(finding => finding.Id);
+    private static WorldLogicFindingSort? Sort(string? asked) => asked switch
+    {
+        null or "" or "attention" => WorldLogicFindingSort.Attention,
+        "newest" => WorldLogicFindingSort.Newest,
+        _ => null,
+    };
+
+    /// <summary>
+    /// The order the caller asked for, which is what needs attention first unless it asked for the newest first.
+    ///
+    /// Attention order: open findings lead, then the worst severity, then the oldest. Severity is the outcome, so
+    /// that ordering is on the outcome itself rather than on a stored column: a violation outranks an error, and an
+    /// error outranks an unknown.
+    ///
+    /// Either way the last key is the id, so two findings made in the same tick keep one order and a finding never
+    /// swaps pages between two requests.
+    /// </summary>
+    private static IOrderedQueryable<WorldLogicFinding> Ordered(
+        IQueryable<WorldLogicFinding> query,
+        WorldLogicFindingSort sort) =>
+        sort == WorldLogicFindingSort.Newest
+            ? query
+                .OrderByDescending(finding => finding.CreatedAt)
+                .ThenBy(finding => finding.Id)
+            : query
+                .OrderBy(finding => finding.Status == WorldLogicFindingStatus.Open ? 0 : 1)
+                .ThenBy(finding => finding.Outcome == WorldLogicFindingOutcome.Violation
+                    ? 0
+                    : finding.Outcome == WorldLogicFindingOutcome.Error ? 1 : 2)
+                .ThenBy(finding => finding.CreatedAt)
+                .ThenBy(finding => finding.Id);
 
     private static async Task<WorldLogicFindingDetail?> DetailAsync(
         LorEvolveDbContext db,

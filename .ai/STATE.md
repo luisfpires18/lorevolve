@@ -60,7 +60,8 @@ One line per branch. Delete the line when it merges.
   tools plus `submit_semantic_finding`, `Features/Systems/SemanticFinding*`, `/world-logic/semantic-findings`,
   migration `AddSemanticFindings`, no backup format change because a claim is review state); #209 the Integrity tab
   (the World Logic page reads `/world-logic/findings`, runs the sweep, shows a finding's evidence, trace and history,
-  and dismisses or takes one up again; web only, no API change). Next: #155. One thing is left for whoever touches
+  and dismisses or takes one up again; the list route gained an optional `sort=newest`, its `attention` default
+  unchanged, which is the one line of API the acceptance criterion needed). Next: #155. One thing is left for whoever touches
   the page next, noted on its issue: nothing in the web UI shows a submitted semantic finding, so the author reviews
   one over the API for now. `ConditionSchema.SourceFields` still has only `id` and `type` for subjects, so a where clause naming
   `attributes.<name>` is refused with `unknown_field` although the specification's section 2 lists it; that is
