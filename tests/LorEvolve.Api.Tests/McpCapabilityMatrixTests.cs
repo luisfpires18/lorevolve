@@ -16,6 +16,10 @@ namespace LorEvolve.Api.Tests;
 /// <para>Three things are kept honest at once: no API domain is unclassified, no registered MCP tool is unmapped, and
 /// no proposable resource is unmapped. The published matrix in <c>docs/testing/mcp-capability-matrix.md</c> is compared
 /// against this catalog, so the document cannot drift away from the code.</para>
+/// <para>Known limit, stated in the document's "Known gaps" too: a route nested under an existing prefix is claimed by
+/// it and answered the same way, so only a new first segment fails the route test. #153's and #154's route groups were
+/// both claimed by the <c>world-logic</c> row and inherited its answer; what caught them was their unmapped tools. The
+/// alternative is a row per endpoint, about 250 of them.</para>
 /// </summary>
 public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : IClassFixture<LorEvolveApiFactory>
 {
@@ -37,9 +41,6 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
 
         /// <summary>Bytes, not data: a picture is fetched by its own tool or its address, never as a general route.</summary>
         public const string MediaBytes = "media-bytes";
-
-        /// <summary>No MCP tool yet. World Logic Systems and rule definitions get theirs in issue #154.</summary>
-        public const string PendingWorldLogic = "pending-issue-154";
 
         /// <summary>History and the Trash are not read over MCP: an app reads what is live (ADR 0046).</summary>
         public const string LiveOnly = "live-only";
@@ -92,7 +93,24 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Mapped("The timeline", ["timeline"], ["browse_timeline", "get_timeline_moment"], ["TimelineEvent"]),
         Mapped("The reckoning and its calendar", ["chronology"], ["get_change_options"], ["Chronology"]),
         Mapped("World Rules", ["world-rules"], ["get_change_options"], ["WorldRule"]),
-        Excepted("World Logic Systems and rule definitions", ["systems", "system-rules", "world-logic"], Why.PendingWorldLogic),
+        ReadOnly(
+            "World Logic Systems and rule definitions",
+            ["systems", "system-rules", "world-logic/rules"],
+            ["list_systems", "list_world_logic_rules", "get_world_logic_rule", "evaluate_world_logic_rule", "get_rule_impact"]),
+        new(
+            "Recorded World Logic findings",
+            ["world-logic/findings"],
+            ["list_world_logic_findings", "get_world_logic_finding"],
+            "",
+            [],
+            Why.PersonOnly),
+        new(
+            "An AI client's unverified claim",
+            ["world-logic/semantic-findings"],
+            [],
+            Why.PersonOnly,
+            ["submit_semantic_finding"],
+            ""),
         Mapped("The rule vocabulary", ["validation-terms"], ["get_change_options"], ["ValidationTerm"]),
         Excepted("Canon findings", ["canon-conflicts"], Why.PersonOnly),
         ReadOnly("Search", ["search"], ["search_universe"]),
@@ -153,6 +171,18 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
     /// <summary>Resources a proposal may name that no universe route of its own answers for.</summary>
     private static readonly string[] WriteOnlyResources = ["Idea"];
 
+    /// <summary>
+    /// The names a proposal may name. A write cell holds one of these, or the name of a tool that writes the domain
+    /// itself - today only <c>submit_semantic_finding</c>, which stages a claim rather than a change.
+    /// </summary>
+    private static readonly HashSet<string> Resources = [.. Enum.GetNames<AiChangeResource>()];
+
+    private static IEnumerable<string> WrittenByTool(Domain domain) =>
+        domain.Write.Where(name => !Resources.Contains(name));
+
+    private static IEnumerable<string> WrittenByProposal(Domain domain) =>
+        domain.Write.Where(Resources.Contains);
+
     // ---------- What the matrix is held to ----------
 
     [Fact]
@@ -179,26 +209,27 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
 
         // A read-only connection sees the reads alone; the proposal tools appear only once a person ticks proposals.
         var mapped = Universe.Concat(Project)
-            .SelectMany(domain => domain.Read)
+            .SelectMany(domain => domain.Read.Concat(WrittenByTool(domain)))
             .Concat(ProposalTools)
             .ToHashSet(StringComparer.Ordinal);
 
-        Assert.Empty(offered.Except(mapped).Order(StringComparer.Ordinal));
-        Assert.Empty(mapped.Except(offered).Order(StringComparer.Ordinal));
-        Assert.Equal(27, offered.Count);
+        Nothing("Tools the server offers that the matrix does not map", [.. offered.Except(mapped).Order(StringComparer.Ordinal)]);
+        Nothing("Names the matrix maps that the server does not offer", [.. mapped.Except(offered).Order(StringComparer.Ordinal)]);
+        Assert.Equal(35, offered.Count);
     }
 
     [Fact]
     public void Every_resource_a_proposal_may_name_is_mapped_by_the_matrix()
     {
-        var resources = Enum.GetNames<AiChangeResource>().ToHashSet(StringComparer.Ordinal);
         var mapped = Universe.Concat(Project)
-            .SelectMany(domain => domain.Write)
+            .SelectMany(WrittenByProposal)
             .Concat(WriteOnlyResources)
             .ToHashSet(StringComparer.Ordinal);
 
-        Assert.Empty(resources.Except(mapped).Order(StringComparer.Ordinal));
-        Assert.Empty(mapped.Except(resources).Order(StringComparer.Ordinal));
+        // A write cell naming neither a resource nor a tool the server offers fails the tool test, so both directions
+        // of a mistyped write cell are caught between the two.
+        Nothing("Resources a proposal may name that the matrix does not map", [.. Resources.Except(mapped).Order(StringComparer.Ordinal)]);
+        Nothing("Resources the matrix maps that a proposal cannot name", [.. mapped.Except(Resources).Order(StringComparer.Ordinal)]);
     }
 
     [Fact]
@@ -222,34 +253,28 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
             }
         }
 
-        foreach (var code in new[] { Why.ReadOnly, Why.PersonOnly, Why.MediaBytes, Why.PendingWorldLogic, Why.LiveOnly })
+        foreach (var code in new[] { Why.ReadOnly, Why.PersonOnly, Why.MediaBytes, Why.LiveOnly })
         {
             Assert.Contains($"`{code}`", published, StringComparison.Ordinal);
         }
     }
 
     [Fact]
-    public void The_matrix_records_what_this_milestone_could_not_cover()
+    public void A_domain_waiting_on_unfinished_work_is_named_in_the_known_gaps()
     {
         var published = File.ReadAllText(Path.Combine(RepositoryRoot(), Path.Combine(Document)));
-
-        // World Logic Systems and rule definitions are persisted (#150) and evaluated (#151) with no MCP tool of their
-        // own: #154 adds them. The matrix must say so rather than leave the gap unexplained.
-        Assert.Contains(Why.PendingWorldLogic, published, StringComparison.Ordinal);
-        Assert.Contains("154", published, StringComparison.Ordinal);
-
-        // The prose has to name every prefix the table excepts, or a reader is told of fewer gaps than there are.
         var gaps = published[published.IndexOf("## Known gaps", StringComparison.Ordinal)..];
-        foreach (var prefix in Universe.Where(domain => domain.ReadWhy == Why.PendingWorldLogic).SelectMany(domain => domain.Prefixes))
-        {
-            Assert.Contains($"`{prefix}`", gaps, StringComparison.Ordinal);
-        }
 
-        Assert.Equal(
-            ["system-rules", "systems", "world-logic"],
-            Universe.Where(domain => domain.ReadWhy == Why.PendingWorldLogic)
-                .SelectMany(domain => domain.Prefixes)
-                .Order(StringComparer.Ordinal));
+        // A `pending-...` code says a domain has no tool because work that would give it one has not landed. Nothing
+        // carries one now that every M3 child has merged. If a later milestone adds one, the prose has to name every
+        // prefix it covers, or a reader is told of fewer gaps than there are.
+        foreach (var domain in Universe.Concat(Project).Where(domain => domain.ReadWhy.StartsWith("pending-", StringComparison.Ordinal)))
+        {
+            foreach (var prefix in domain.Prefixes)
+            {
+                Assert.Contains($"`{prefix}`", gaps, StringComparison.Ordinal);
+            }
+        }
     }
 
     // ---------- Reading the result ----------

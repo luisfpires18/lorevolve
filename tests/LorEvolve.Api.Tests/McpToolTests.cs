@@ -263,6 +263,10 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
                      ("get_project_entry", new() { ["projectId"] = Nonsense, ["entryId"] = Nonsense }),
                      ("get_project_structure", new() { ["projectId"] = Nonsense }),
                      ("get_project_script", new() { ["projectId"] = Nonsense, ["unitId"] = Nonsense }),
+                     ("get_world_logic_rule", new() { ["ruleId"] = Nonsense }),
+                     ("evaluate_world_logic_rule", new() { ["ruleId"] = Nonsense }),
+                     ("get_rule_impact", new() { ["ruleId"] = Nonsense }),
+                     ("get_world_logic_finding", new() { ["findingId"] = Nonsense }),
                  })
         {
             var result = await client.CallToolAsync(tool, arguments);
