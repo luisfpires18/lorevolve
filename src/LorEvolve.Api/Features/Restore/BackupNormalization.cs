@@ -261,6 +261,15 @@ internal static class BackupNormalization
         IdeaBoards = payload.IdeaBoards ?? [],
         LoreSystems = payload.LoreSystems ?? [],
         SystemRules = payload.SystemRules ?? [],
+
+        // One dismissal per finding. Two records of the same finding would be the same decision twice, and the
+        // restore re-applies it by fingerprint, so a duplicate would be a wasted row at best.
+        DismissedFindings =
+        [
+            .. (payload.DismissedFindings ?? []).DistinctBy(
+                finding => (finding.RuleId, finding.ProjectId, finding.Outcome, finding.ErrorCode,
+                    string.Join('', finding.Evidence.Select(item => $"{item.Source}:{item.Id}:{item.Role}")))),
+        ],
         TimelineEntries =
         [
             .. payload.TimelineEntries.Select(entry =>

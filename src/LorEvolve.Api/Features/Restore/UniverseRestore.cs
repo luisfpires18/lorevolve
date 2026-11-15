@@ -12,6 +12,7 @@ using LorEvolve.Api.Features.ProjectEntities;
 using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.RuleValidation;
+using LorEvolve.Api.Features.RuleValidation.Conditions;
 using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Storage;
@@ -826,6 +827,7 @@ internal sealed partial class UniverseRestore(
             AddIdeaBoards(payload, ids, universeId, ownerId, ownedOutsideIdeas);
             AddWorldRules(payload, ids, universeId);
             AddWorldLogic(payload, ids, universeId);
+            AddDismissedFindings(payload, ids, universeId);
             AddRuleValidation(payload, ids, universeId);
 
             await db.SaveChangesAsync(cancellationToken);
@@ -1927,8 +1929,9 @@ internal sealed partial class UniverseRestore(
     /// it does not know is left as it was, and evaluation reports it as <c>invalid_reference</c> rather than the
     /// restore quietly changing what the rule says.
     ///
-    /// <b>Nothing is evaluated.</b> No finding is written: a finding is derived, and the next evaluation produces it
-    /// again from the restored rules and the restored lore.
+    /// <b>Nothing is evaluated.</b> No finding is produced here: a finding is derived, and the next sweep produces
+    /// it again from the restored rules and the restored lore. The one exception is a finding the author dismissed,
+    /// which is not derived and is written back dismissed (<see cref="AddDismissedFindings"/>).
     /// </summary>
     private void AddWorldLogic(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId)
     {
@@ -2084,6 +2087,93 @@ internal sealed partial class UniverseRestore(
     /// finding whose old fingerprint was dismissed is dismissed again, as of when it was. A dismissal whose finding no
     /// longer arises is not kept: evaluation would have resolved it in the source universe the next time it ran.
     /// </summary>
+    /// <summary>
+    /// Writes back the World Logic findings the author chose to live with (version 46, ADR 0072).
+    ///
+    /// <b>Only the dismissals, and dismissed.</b> Every other finding is derived and the next sweep produces it
+    /// again. A dismissal is the author's own decision that a finding needs no action, so restoring the universe
+    /// without it would report the same thing again and ask the author to decide twice.
+    ///
+    /// <b>The fingerprint is computed again, not carried.</b> It is a hash over the rule, the scope, the outcome,
+    /// the error code and the evidence ids, and a restore gives every record a new id, so the backup carries what
+    /// the hash was taken over and the hash is taken again from the restored ids. The next sweep then matches the
+    /// finding it produces to the dismissal rather than opening a second one beside it.
+    ///
+    /// <b>An evidence id the map does not know is left as it was</b>, exactly as a condition's is: evidence may
+    /// name a row the backup did not hold, and the honest answer is a dismissal that the next sweep simply does not
+    /// match, rather than a quietly different fingerprint.
+    ///
+    /// The history entry carries no actor: no account did this, the restore did.
+    /// </summary>
+    private void AddDismissedFindings(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId)
+    {
+        foreach (var dismissed in payload.DismissedFindings ?? [])
+        {
+            var ruleId = ids.Map(dismissed.RuleId);
+            var projectId = ids.Map(dismissed.ProjectId);
+
+            var evidence = dismissed.Evidence
+                .Select(item => new ConditionEvidence(item.Source, Translated(item.Id, ids), item.Role))
+                .ToList();
+
+            var finding = new WorldLogicFinding
+            {
+                Id = Guid.NewGuid(),
+                UniverseId = universeId,
+                RuleId = ruleId,
+                ProjectId = projectId,
+                Outcome = dismissed.Outcome,
+                ErrorCode = dismissed.ErrorCode,
+                RuleVersion = dismissed.RuleVersion,
+                SchemaVersion = dismissed.SchemaVersion,
+                Fingerprint = WorldLogicFingerprint.Of(
+                    ruleId,
+                    projectId,
+                    dismissed.Outcome,
+                    dismissed.ErrorCode,
+                    evidence),
+                Status = WorldLogicFindingStatus.Dismissed,
+                Rationale = dismissed.Rationale,
+                CreatedAt = dismissed.DetectedAt,
+                UpdatedAt = dismissed.DismissedAt,
+            };
+
+            var order = 0;
+            foreach (var item in evidence)
+            {
+                finding.Evidence.Add(new WorldLogicFindingEvidence
+                {
+                    FindingId = finding.Id,
+                    SortOrder = order++,
+                    Source = item.Source,
+                    SourceRowId = item.Id,
+                    Role = item.Role,
+                });
+            }
+
+            finding.Events.Add(new WorldLogicFindingEvent
+            {
+                Id = Guid.NewGuid(),
+                FindingId = finding.Id,
+                Action = WorldLogicFindingAction.Dismissed,
+                ActorId = null,
+                Note = string.Empty,
+                At = dismissed.DismissedAt,
+            });
+
+            db.WorldLogicFindings.Add(finding);
+        }
+    }
+
+    /// <summary>
+    /// An evidence id through the restore's map. The evaluator reports a row id as text in production and a
+    /// fixture's own label in a test, so anything that is not a Guid the map knows passes through unchanged.
+    /// </summary>
+    private static string Translated(string id, RestoreIdentity ids) =>
+        Guid.TryParse(id, out var parsed) && ids.Known(parsed) is { } restored
+            ? restored.ToString()
+            : id;
+
     private async Task ReconcileCanonAsync(
         UniverseBackupPayload payload,
         RestoreIdentity ids,

@@ -5,6 +5,7 @@ using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Publishing;
+using LorEvolve.Api.Features.Systems;
 using Microsoft.EntityFrameworkCore;
 
 namespace LorEvolve.Api.Features.Export;
@@ -129,7 +130,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await ProjectEntriesAsync(universeId, revisions, cancellationToken),
             await ProjectSeasonsAsync(universeId, cancellationToken),
             await LoreSystemsAsync(universeId, cancellationToken),
-            await SystemRulesAsync(universeId, cancellationToken));
+            await SystemRulesAsync(universeId, cancellationToken),
+            await DismissedFindingsAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1731,6 +1733,58 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 .OrderBy(conflict => conflict.RuleCode, StringComparer.Ordinal)
                 .ThenBy(conflict => conflict.Fingerprint, StringComparer.Ordinal)
                 .Select(conflict => conflict with { DismissedAt = Utc(conflict.DismissedAt) }),
+        ];
+    }
+
+    /// <summary>
+    /// Only the dismissals, for the reason a Canon dismissal is the only conflict carried: an open or resolved
+    /// finding is re-derived by sweeping the lore in this same file, and a dismissal is not.
+    ///
+    /// What the fingerprint was taken over is carried rather than the fingerprint itself, because a restore gives
+    /// every record a new id. <c>UpdatedAt</c> is when the status last moved, which for a dismissed finding is when
+    /// it was dismissed.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupDismissedFinding>> DismissedFindingsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken)
+    {
+        var dismissed = await db.WorldLogicFindings.AsNoTracking()
+            .Where(finding => finding.UniverseId == universeId
+                && finding.Status == WorldLogicFindingStatus.Dismissed)
+            .Select(finding => new
+            {
+                finding.RuleId,
+                finding.ProjectId,
+                finding.Outcome,
+                finding.ErrorCode,
+                finding.RuleVersion,
+                finding.SchemaVersion,
+                finding.Rationale,
+                finding.Fingerprint,
+                finding.CreatedAt,
+                finding.UpdatedAt,
+                Evidence = finding.Evidence
+                    .OrderBy(item => item.SortOrder)
+                    .Select(item => new BackupFindingEvidence(item.Source, item.SourceRowId, item.Role))
+                    .ToList(),
+            })
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. dismissed
+                .OrderBy(finding => finding.Fingerprint, StringComparer.Ordinal)
+                .Select(finding => new BackupDismissedFinding(
+                    finding.RuleId,
+                    finding.ProjectId,
+                    finding.Outcome,
+                    finding.ErrorCode,
+                    finding.RuleVersion,
+                    finding.SchemaVersion,
+                    finding.Rationale,
+                    finding.Evidence,
+                    Utc(finding.CreatedAt),
+                    Utc(finding.UpdatedAt))),
         ];
     }
 

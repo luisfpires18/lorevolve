@@ -36,6 +36,9 @@ public static class SystemRuleEndpoints
     /// <summary>The marker on the 409 for a delete refused because something still references the rule.</summary>
     public const string InUseCode = "system_rule_in_use";
 
+    /// <summary>Refused because the author dismissed a finding of this rule; resolving it is how they let it go.</summary>
+    private const string HasDismissalsCode = "rule_has_dismissals";
+
     /// <summary>The marker on the 400 for a condition the specification does not describe. The body carries the code and path.</summary>
     public const string ConditionField = "condition";
 
@@ -331,6 +334,16 @@ public static class SystemRuleEndpoints
     /// <summary>
     /// Deletes a rule definition, refused while anything still points at it. The message names the Systems and the
     /// rules in the way, because the author's next move is to unlink them.
+    ///
+    /// <b>A dismissed finding is in the way too</b> (Codex round 1 on #153). Every other finding of the rule is
+    /// derived and goes with it, but a dismissal is the author's own decision that a finding needs no action, and
+    /// it is the one part of the findings table a backup carries. Deleting the rule would discard that decision
+    /// without saying so, so the route refuses and says how many there are; the author's next move is to resolve
+    /// them, which is the explicit way to say the decision no longer matters.
+    ///
+    /// The refusal is this route's, not a foreign key's. The finding cascades from the rule in the database on
+    /// purpose, so deleting a universe or a project is never blocked by one: a universe that cannot be deleted is a
+    /// worse failure than a dismissal that goes with the project it was about.
     /// </summary>
     private static async Task<IResult> DeleteAsync(
         Guid universeId,
@@ -370,6 +383,21 @@ public static class SystemRuleEndpoints
                 message = "This rule is still referenced. Unlink it from its Systems and its dependents first.",
                 systems,
                 dependentRuleIds = dependents,
+            });
+        }
+
+        var dismissals = await db.WorldLogicFindings.AsNoTracking()
+            .CountAsync(
+                finding => finding.RuleId == id && finding.Status == WorldLogicFindingStatus.Dismissed,
+                cancellationToken);
+
+        if (dismissals > 0)
+        {
+            return Results.Conflict(new
+            {
+                code = HasDismissalsCode,
+                message = "This rule has findings you chose to live with. Resolve them first, then delete the rule.",
+                dismissedFindings = dismissals,
             });
         }
 

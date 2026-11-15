@@ -3606,6 +3606,131 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("SystemRuleRevisions", (string)null);
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFinding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Rationale")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("RuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RuleVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RuleId");
+
+                    b.HasIndex("UniverseId", "Fingerprint")
+                        .IsUnique();
+
+                    b.HasIndex("UniverseId", "ProjectId");
+
+                    b.HasIndex("UniverseId", "Status", "Outcome");
+
+                    b.ToTable("WorldLogicFindings", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFindingEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ActorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FindingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FindingId", "At");
+
+                    b.ToTable("WorldLogicFindingEvents", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFindingEvidence", b =>
+                {
+                    b.Property<Guid>("FindingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceRowId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("FindingId", "SortOrder");
+
+                    b.ToTable("WorldLogicFindingEvidence", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Timeline.TimelineEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5786,6 +5911,46 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Rule");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFinding", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemRule", "Rule")
+                        .WithMany()
+                        .HasForeignKey("RuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Rule");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFindingEvent", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.WorldLogicFinding", "Finding")
+                        .WithMany("Events")
+                        .HasForeignKey("FindingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Finding");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFindingEvidence", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.WorldLogicFinding", "Finding")
+                        .WithMany("Evidence")
+                        .HasForeignKey("FindingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Finding");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Timeline.TimelineEntry", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Chronology.ChronologyEra", "EndEra")
@@ -6173,6 +6338,13 @@ namespace LorEvolve.Api.Data.Migrations
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRule", b =>
                 {
                     b.Navigation("Dependencies");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFinding", b =>
+                {
+                    b.Navigation("Events");
+
+                    b.Navigation("Evidence");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Timeline.TimelineEntry", b =>
