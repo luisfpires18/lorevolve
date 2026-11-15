@@ -256,14 +256,24 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
       />
 
       {/*
-       * The same structure under two names: a Series' seasons of episodes (#145) and a Film's sequences of scenes
-       * (#146). The API answers 404 for any other kind, so drawing the panel there would show an author a failure for
-       * a feature their project does not have.
+       * One structure under three names: a Series' seasons of episodes (#145), a Film's sequences of scenes (#146)
+       * and a Comic's volumes of chapters (#147), the last of which opens pages and panels beneath a chapter. The API
+       * answers 404 for any other kind, so drawing the panel there would show an author a failure for a feature their
+       * project does not have.
        */}
-      {project.kind === ProjectKind.Series || project.kind === ProjectKind.Film ? (
+      {project.kind === ProjectKind.Series ||
+      project.kind === ProjectKind.Film ||
+      project.kind === ProjectKind.Comic ? (
         <ProjectSeasons
           projectId={project.id}
-          words={project.kind === ProjectKind.Film ? 'sequences' : 'seasons'}
+          words={
+            project.kind === ProjectKind.Film
+              ? 'sequences'
+              : project.kind === ProjectKind.Comic
+                ? 'volumes'
+                : 'seasons'
+          }
+          pages={project.kind === ProjectKind.Comic}
         />
       ) : null}
     </div>

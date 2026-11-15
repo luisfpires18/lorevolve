@@ -13,6 +13,7 @@ import {
   type ProjectEpisodeSummary,
   type ProjectSeason,
 } from '../projectEntities/seasons'
+import { ChapterPages } from './ChapterPages'
 import { EmptyState } from './EmptyState'
 import { t, tn, useI18n } from '../i18n'
 
@@ -45,6 +46,20 @@ const WORDS = {
     deleteEpisode: () => t('projects.seasons.deleteEpisode'),
     moveToSeason: () => t('projects.seasons.moveToSeason'),
   },
+  volumes: {
+    title: () => t('projects.volumes.title'),
+    lede: () => t('projects.volumes.lede'),
+    empty: () => t('projects.volumes.empty'),
+    emptyHint: () => t('projects.volumes.emptyHint'),
+    add: () => t('projects.volumes.add'),
+    save: () => t('projects.volumes.save'),
+    delete: () => t('projects.volumes.delete'),
+    noEpisodes: () => t('projects.volumes.noEpisodes'),
+    episodeCount: (count: number) => tn('projects.volumes.episodeCount', count),
+    addEpisode: () => t('projects.volumes.addEpisode'),
+    deleteEpisode: () => t('projects.volumes.deleteEpisode'),
+    moveToSeason: () => t('projects.volumes.moveToSeason'),
+  },
   sequences: {
     title: () => t('projects.sequences.title'),
     lede: () => t('projects.sequences.lede'),
@@ -66,10 +81,13 @@ export type ProjectStructureWords = keyof typeof WORDS
 export function ProjectSeasons({
   projectId,
   words = 'seasons',
+  pages = false,
 }: {
   projectId: string
-  /** Which vocabulary to draw: a series' seasons, or a film's sequences. */
+  /** Which vocabulary to draw: a series' seasons, a film's sequences, or a comic's volumes. */
   words?: ProjectStructureWords
+  /** Whether a chapter opens its pages and panels, which only a comic has. */
+  pages?: boolean
 }) {
   useI18n()
   const [seasons, setSeasons] = useState<ProjectSeason[] | null>(null)
@@ -283,6 +301,14 @@ export function ProjectSeasons({
                   >
                     {say.deleteEpisode()}
                   </button>
+                  {/* Only a comic has a level below the chapter (#147). */}
+                  {pages ? (
+                    <ChapterPages
+                      projectId={projectId}
+                      volumeId={season.id}
+                      chapterId={episode.id}
+                    />
+                  ) : null}
                   {editing === episode.id ? (
                     <ScriptEditor
                       projectId={projectId}
