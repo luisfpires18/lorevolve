@@ -11,6 +11,7 @@ using LorEvolve.Api.Features.Publishing;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Stories;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.Trash;
 using LorEvolve.Api.Features.Universes;
 using LorEvolve.Api.Features.WorldRules;
@@ -170,6 +171,23 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("create rule", Post, $"{u}/world-rules", May.Edit, Json(new WorldRuleRequest("Salt binds", null, null))),
             new("edit rule", Put, $"{u}/world-rules/{w.Rule}", May.Edit, Json(new WorldRuleRequest("Tides keep count", "Edited", null))),
             new("trash rule", Delete, $"{u}/world-rules/{w.Rule}", May.Edit),
+            // World Logic (ADR 0072): Systems, reusable rule definitions and the list that reads both kinds.
+            new("systems", Get, $"{u}/systems", May.Read),
+            new("system", Get, $"{u}/systems/{w.LoreSystem}", May.Read),
+            new("create system", Post, $"{u}/systems", May.Edit, Json(new SystemRequest("Runeforging", "Metal."))),
+            new("edit system", Put, $"{u}/systems/{any}", May.Edit, Json(new SystemRequest("Runeforging", "Edited.", null, 1))),
+            new("delete system", Delete, $"{u}/systems/{any}", May.Edit),
+            new("system revisions", Get, $"{u}/systems/{w.LoreSystem}/revisions", May.Read),
+            new("link system rule", Put, $"{u}/systems/{any}/rules/{any}", May.Edit),
+            new("unlink system rule", Delete, $"{u}/systems/{any}/rules/{any}", May.Edit),
+            new("rule definitions", Get, $"{u}/system-rules", May.Read),
+            new("rule definition", Get, $"{u}/system-rules/{w.RuleDefinition}", May.Read),
+            new("create rule definition", Post, $"{u}/system-rules", May.Edit, Json(new SystemRuleRequest("Age of majority", "Sixteen."))),
+            new("edit rule definition", Put, $"{u}/system-rules/{any}", May.Edit, Json(new SystemRuleRequest("Age of majority", "Edited.", null, null, null, null, 1))),
+            new("delete rule definition", Delete, $"{u}/system-rules/{any}", May.Edit),
+            new("rule definition revisions", Get, $"{u}/system-rules/{w.RuleDefinition}/revisions", May.Read),
+            new("world logic rules", Get, $"{u}/world-logic/rules", May.Read),
+
             new("validation terms", Get, $"{u}/validation-terms", May.Read),
             new("create term", Post, $"{u}/validation-terms", May.Edit, Json(new ValidationTermRequest(ValidationTermKind.EventKind, "Abdication"))),
             new("rename term", Put, $"{u}/validation-terms/{w.Term}", May.Edit, Json(new ValidationTermRenameRequest("Crowning"))),
