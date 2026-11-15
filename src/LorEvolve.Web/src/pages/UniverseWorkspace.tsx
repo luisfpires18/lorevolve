@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useId, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
+import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { AccountMenu } from '../components/AccountMenu'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
@@ -10,7 +10,7 @@ import type { Chronology } from '../chronology/types'
 import { listEntityTypeGroups, listEntityTypes } from '../lore/api'
 import type { EntityType, EntityTypeGroup } from '../lore/types'
 import { getUniverse } from '../universes/api'
-import { FRONT, offered, SECTION_GROUPS, sectionLabel, UPKEEP } from '../universes/sections'
+import { FRONT, offered, owns, SECTION_GROUPS, sectionLabel, UPKEEP } from '../universes/sections'
 import { capabilitiesOf, roleLabel, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
@@ -72,7 +72,7 @@ function pathWithin(pathname: string, id: string | undefined) {
  */
 function currentSection(pathname: string, id: string | undefined) {
   const segment = pathWithin(pathname, id).split('/')[0] ?? ''
-  return SECTIONS.find((section) => section.segment === segment) ?? FRONT[0]
+  return SECTIONS.find((section) => owns(section, segment)) ?? FRONT[0]
 }
 
 /** One workspace per universe: another universe's address starts a new one, so nothing read for the last carries over. */
@@ -420,22 +420,25 @@ function Workspace() {
                 data-testid={UPKEEP.includes(group[0]) ? 'sidebar-upkeep' : undefined}
               >
                 <ul className="sidebar__links">
-                  {group.map((section) => (
-                    <li key={section.segment}>
-                      <NavLink
-                        to={section.segment === '' ? '.' : section.segment}
-                        end={section.segment === ''}
+                  {group.map((each) => (
+                    <li key={each.segment}>
+                      {/* A Link rather than a NavLink: which section is current is this component's answer, not a
+                          path match, because World Logic is still the current section at a world rule's own address
+                          (#152). The style keys off aria-current either way. */}
+                      <Link
+                        to={each.segment === '' ? '.' : each.segment}
                         className="sidebar__link"
-                        data-testid={section.testId}
+                        aria-current={section.testId === each.testId ? 'page' : undefined}
+                        data-testid={each.testId}
                       >
-                        <section.icon
+                        <each.icon
                           className="sidebar__icon"
                           aria-hidden="true"
                           focusable="false"
                           strokeWidth={1.75}
                         />
-                        {sectionLabel(section)}
-                      </NavLink>
+                        {sectionLabel(each)}
+                      </Link>
                     </li>
                   ))}
                 </ul>

@@ -12087,6 +12087,20 @@ a.idearef__name {
   text-decoration: underline;
 }
 
+/* A row title that opens the row rather than going somewhere: a button, drawn as the title beside it, with the
+   chevron saying which way it is. */
+.rulerow__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: start;
+  cursor: pointer;
+}
+
 /* The start of the description, on two lines at most: line breaks fold into spaces here, and the whole text is on the rule. */
 .rulerow__excerpt {
   margin: 0;

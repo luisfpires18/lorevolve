@@ -30,6 +30,13 @@ export interface Section {
   requires?: keyof UniverseCapabilities
   /** Shown, but marked as not yet working properly. */
   wip?: boolean
+  /**
+   * Other address segments this section owns, so the sidebar still marks it while the author is at one of them.
+   *
+   * World Logic owns `world-rules` for exactly this reason (#152): a world rule keeps its own address and its own
+   * editor, and it is still part of World Logic, so the sidebar says so rather than marking nothing.
+   */
+  also?: readonly string[]
 }
 
 /** The front page. */
@@ -68,9 +75,12 @@ export const WORLD: readonly Section[] = [
 /** The rules it keeps: how it works, where the lore breaks that, and how its dates run. */
 export const RULES: readonly Section[] = [
   {
-    segment: 'world-rules',
-    testId: 'workspace-world-rules',
+    // World Logic is where both kinds of rule are read (#152, ADR 0072). Every `world-rules` address still works and
+    // a world rule is still edited at its own, so nothing an author has linked or bookmarked broke.
+    segment: 'world-logic',
+    testId: 'workspace-world-logic',
     icon: Scale,
+    also: ['world-rules'],
   },
   {
     segment: 'canon',
@@ -153,6 +163,11 @@ export const UPKEEP: readonly Section[] = [
  * The sections a role is offered: those it needs nothing for, and those whose capability it has. AI Changes only while
  * the universe has AI help on.
  */
+/** Whether a section is at this address: its own segment, or one of the others it owns. */
+export function owns(section: Section, segment: string) {
+  return section.segment === segment || (section.also?.includes(segment) ?? false)
+}
+
 /** A section's key in the dictionary: its address, or `overview` for the front page. */
 function sectionKey(segment: string) {
   return segment === ''
