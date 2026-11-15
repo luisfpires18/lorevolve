@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "scenario": "quest-unlocks",
+  "description": "Gating one step of a progression behind earlier steps. Covers declared rule dependencies, a diamond that must be evaluated once per branch and memoised, and exists over events.",
+  "facts": {
+    "subjects": [
+      { "id": "s.finisher", "type": "participant", "attributes": { "standing": 7 } },
+      { "id": "s.partial", "type": "participant", "attributes": { "standing": 7 } },
+      { "id": "s.lowstanding", "type": "participant", "attributes": { "standing": 1 } },
+      { "id": "s.unrated", "type": "participant", "attributes": {} }
+    ],
+    "relations": [],
+    "events": [
+      { "id": "e.f-intro", "kind": "completed", "method": "step-intro", "subjectIds": ["s.finisher"], "at": "calendar:2031-01-04", "canon": true },
+      { "id": "e.f-middle", "kind": "completed", "method": "step-middle", "subjectIds": ["s.finisher"], "at": "calendar:2031-01-09", "canon": true },
+      { "id": "e.p-intro", "kind": "completed", "method": "step-intro", "subjectIds": ["s.partial"], "at": "calendar:2031-02-01", "canon": true },
+      { "id": "e.l-intro", "kind": "completed", "method": "step-intro", "subjectIds": ["s.lowstanding"], "at": "calendar:2031-03-01", "canon": true },
+      { "id": "e.l-middle", "kind": "completed", "method": "step-middle", "subjectIds": ["s.lowstanding"], "at": "calendar:2031-03-02", "canon": true },
+      { "id": "e.u-intro", "kind": "completed", "method": "step-intro", "subjectIds": ["s.unrated"], "at": "calendar:2031-04-01", "canon": true },
+      { "id": "e.u-middle", "kind": "completed", "method": "step-middle", "subjectIds": ["s.unrated"], "at": "calendar:2031-04-02", "canon": true }
+    ]
+  },
+  "rules": [
+    {
+      "id": "rule.intro-done",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "exists",
+        "query": {
+          "from": "events",
+          "where": [
+            { "field": "kind", "op": "eq", "value": "completed", "type": "text" },
+            { "field": "method", "op": "eq", "value": "step-intro", "type": "text" },
+            { "field": "subjectIds", "op": "contains", "operandValue": { "subject": "self" } }
+          ]
+        }
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.middle-done",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "exists",
+        "query": {
+          "from": "events",
+          "where": [
+            { "field": "kind", "op": "eq", "value": "completed", "type": "text" },
+            { "field": "method", "op": "eq", "value": "step-middle", "type": "text" },
+            { "field": "subjectIds", "op": "contains", "operandValue": { "subject": "self" } }
+          ]
+        }
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.standing-high-enough",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "compare",
+        "left": { "attribute": "standing", "of": { "subject": "self" } },
+        "op": "gte",
+        "right": { "literal": 5, "type": "number" }
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.left-branch",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": ["rule.intro-done", "rule.standing-high-enough"],
+      "condition": {
+        "kind": "all",
+        "of": [
+          { "kind": "ruleHolds", "ruleId": "rule.intro-done" },
+          { "kind": "ruleHolds", "ruleId": "rule.standing-high-enough" }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.right-branch",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": ["rule.middle-done", "rule.standing-high-enough"],
+      "condition": {
+        "kind": "all",
+        "of": [
+          { "kind": "ruleHolds", "ruleId": "rule.middle-done" },
+          { "kind": "ruleHolds", "ruleId": "rule.standing-high-enough" }
+        ]
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.final-unlock",
+      "version": 4,
+      "scope": { "kind": "universe" },
+      "dependsOn": ["rule.left-branch", "rule.right-branch"],
+      "condition": {
+        "kind": "all",
+        "of": [
+          { "kind": "ruleHolds", "ruleId": "rule.left-branch" },
+          { "kind": "ruleHolds", "ruleId": "rule.right-branch" }
+        ]
+      },
+      "exceptions": []
+    }
+  ],
+  "cases": [
+    {
+      "name": "the diamond passes when both branches and the shared dependency pass",
+      "ruleId": "rule.final-unlock",
+      "target": "s.finisher",
+      "projectId": null,
+      "expect": { "outcome": "true", "errorCode": null, "exemptionId": null, "evidence": ["s.finisher", "e.f-intro", "e.f-middle"] }
+    },
+    {
+      "name": "a missing middle step fails the right branch and so the unlock",
+      "ruleId": "rule.final-unlock",
+      "target": "s.partial",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.partial", "e.p-intro"] }
+    },
+    {
+      "name": "the shared dependency failing fails both branches",
+      "ruleId": "rule.final-unlock",
+      "target": "s.lowstanding",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.lowstanding", "e.l-intro"] }
+    },
+    {
+      "name": "an unknown shared dependency makes the whole unlock unknown rather than false",
+      "ruleId": "rule.final-unlock",
+      "target": "s.unrated",
+      "projectId": null,
+      "expect": { "outcome": "unknown", "errorCode": null, "exemptionId": null, "evidence": ["s.unrated", "e.u-intro"] }
+    },
+    {
+      "name": "exists is definite over a participant who completed nothing",
+      "ruleId": "rule.middle-done",
+      "target": "s.partial",
+      "projectId": null,
+      "expect": { "outcome": "false", "errorCode": null, "exemptionId": null, "evidence": ["s.partial"] }
+    }
+  ]
+}
