@@ -115,7 +115,8 @@ reaches; that one says who may reach it at all.
 
 ## Known gaps
 
-- **World Logic over MCP is not there yet.** `systems` and `system-rules` carry `pending-issue-154`. Issue #152 (the
+- **World Logic over MCP is not there yet.** `systems`, `system-rules` and `world-logic` (the one read that returns
+  both kinds of rule together) carry `pending-issue-154`. Issue #152 (the
   World Logic page) and #153 (persisted findings) were still open when this matrix was written, so a findings domain
   will join the tables when #153 lands, and the two `pending-issue-154` rows become tools when #154 does.
 - **A connected app never reads a canon finding.** Today findings are a person's review queue (`person-only`). If #154

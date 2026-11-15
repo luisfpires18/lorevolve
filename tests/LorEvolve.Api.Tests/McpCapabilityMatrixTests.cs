@@ -237,6 +237,14 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         // own: #154 adds them. The matrix must say so rather than leave the gap unexplained.
         Assert.Contains(Why.PendingWorldLogic, published, StringComparison.Ordinal);
         Assert.Contains("154", published, StringComparison.Ordinal);
+
+        // The prose has to name every prefix the table excepts, or a reader is told of fewer gaps than there are.
+        var gaps = published[published.IndexOf("## Known gaps", StringComparison.Ordinal)..];
+        foreach (var prefix in Universe.Where(domain => domain.ReadWhy == Why.PendingWorldLogic).SelectMany(domain => domain.Prefixes))
+        {
+            Assert.Contains($"`{prefix}`", gaps, StringComparison.Ordinal);
+        }
+
         Assert.Equal(
             ["system-rules", "systems", "world-logic"],
             Universe.Where(domain => domain.ReadWhy == Why.PendingWorldLogic)
