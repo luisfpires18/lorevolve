@@ -309,6 +309,13 @@ public sealed class SemanticFindingTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Null(startedPastTheEnd.Finding);
         Assert.Contains(startedPastTheEnd.Problems, problem => problem.Code == "out_of_range");
 
+        // A length large enough that adding it to the start would overflow to a negative number, which would read
+        // as inside the text. The check subtracts rather than adds, so it is refused like any other range past the
+        // end.
+        var overflowing = await SubmitCiting(universe.Id, null, ("manuscript", scene, (1, int.MaxValue)));
+        Assert.Null(overflowing.Finding);
+        Assert.Contains(overflowing.Problems, problem => problem.Code == "out_of_range");
+
         var inside = await SubmitCiting(universe.Id, null, ("manuscript", scene, (0, 6)));
         Assert.NotNull(inside.Finding);
 

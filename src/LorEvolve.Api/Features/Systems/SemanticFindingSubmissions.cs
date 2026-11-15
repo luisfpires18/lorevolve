@@ -342,7 +342,9 @@ public static class SemanticFindingSubmissions
             var start = citation.RangeStart ?? 0;
             var covered = citation.RangeLength ?? (length - start);
 
-            if (start >= length || covered < 1 || start + covered > length)
+            // Compared by subtraction rather than by adding the two: a start of 1 with a length of int.MaxValue
+            // overflows to a negative sum, which would read as inside the text and be stored.
+            if (start >= length || covered < 1 || covered > length - start)
             {
                 problems.Add(new(index, "rangeStart", "out_of_range",
                     $"That range is not inside the manuscript, which is {WorldLogicAccess.Number(length)} characters now. "
