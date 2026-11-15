@@ -64,6 +64,77 @@ export interface SystemDetail {
   rules: SystemRuleSummary[]
 }
 
+/**
+ * What checking a rule concluded. `violation` is a proven contradiction, `unknown` is a rule the stored facts cannot
+ * answer, and `error` is a rule that is itself broken. An unknown is never a pass: the three stay apart everywhere,
+ * in the interface as in the store (ADR 0072).
+ */
+export type WorldLogicFindingOutcome = 'violation' | 'unknown' | 'error'
+
+/** A pure function of the outcome, not a confidence number: violation is high, error medium, unknown low. */
+export type WorldLogicFindingSeverity = 'high' | 'medium' | 'low'
+
+/** Where the author has got to with a finding. `resolved` is settled; the other three are live. */
+export type WorldLogicFindingStatus = 'open' | 'reviewing' | 'resolved' | 'dismissed'
+
+export interface WorldLogicFindingRow {
+  id: string
+  ruleId: string
+  ruleTitle: string
+  projectId: string | null
+  outcome: WorldLogicFindingOutcome
+  severity: WorldLogicFindingSeverity
+  status: WorldLogicFindingStatus
+  errorCode: string | null
+  ruleVersion: number
+  schemaVersion: number
+  fingerprint: string
+  evidenceCount: number
+  createdAt: string
+  updatedAt: string
+  resolvedAt: string | null
+}
+
+/** One record the outcome depended on: which store it came from, which row, and the part it played. */
+export interface ConditionEvidenceRow {
+  source: string
+  id: string
+  role: string
+}
+
+/** One thing that happened to a finding. `actorId` is null for what evaluation itself did. */
+export interface WorldLogicFindingEventRow {
+  action: string
+  actorId: string | null
+  note: string
+  at: string
+}
+
+/**
+ * One finding, whole. `rationale` is the evaluator's own trace: diagnostic text in one language, shown as the record
+ * it is and never as prose written for a reader (ADR 0072, specification section 9).
+ */
+export interface WorldLogicFindingDetail {
+  finding: WorldLogicFindingRow
+  evidence: ConditionEvidenceRow[]
+  rationale: string[]
+  history: WorldLogicFindingEventRow[]
+}
+
+/**
+ * What one sweep did. `isTruncated` is true when the rules produced more findings than one sweep records, and
+ * nothing is closed in that case, so a truncated run must not be read as a complete picture.
+ */
+export interface WorldLogicSweepResult {
+  detected: number
+  created: number
+  reopened: number
+  persisted: number
+  closed: number
+  isTruncated: boolean
+  evaluatedAt: string
+}
+
 export interface WorldLogicPage<T> {
   items: T[]
   page: number

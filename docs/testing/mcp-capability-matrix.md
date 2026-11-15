@@ -135,6 +135,10 @@ shape of the surface, not unfinished work.
   queue is a person's to work through. World Logic's own findings (#153) *are* readable, by
   `list_world_logic_findings` and `get_world_logic_finding`, so the two integrity surfaces answer differently. Worth
   revisiting together rather than one at a time.
+- **The MCP findings reader cannot ask for the newest first.** `GET world-logic/findings` gained an optional `sort`
+  of `attention` (the default) or `newest` in #209, after #154's tools were written, so `list_world_logic_findings`
+  always reads the `attention` order. A client that wants the newest has to page and sort what it gets. Recorded
+  rather than fixed: adding the argument is a change to #154's tool, not to this audit.
 - **A submitted claim cannot be read back over MCP.** `submit_semantic_finding` writes
   `world-logic/semantic-findings`, but its read cell is `person-only`: there is no tool for a client to see what
   became of its own claim, the way `get_change_proposal` does for a proposal. Deliberate for now, since nothing in

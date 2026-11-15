@@ -19,6 +19,18 @@ const projects = {
   },
   sections: {
     overview: 'Overview',
+    structure: 'Structure',
+    manuscript: 'Manuscript',
+    entities: 'Entities',
+    systems: 'Systems',
+    ideas: 'Ideas',
+  },
+  tabs: {
+    label: 'Project views',
+  },
+  ideas: {
+    empty: 'No ideas in this project yet.',
+    emptyHint: 'Ideas will gather here once an idea can belong to a project.',
   },
   kind: {
     writing: 'Writing',
