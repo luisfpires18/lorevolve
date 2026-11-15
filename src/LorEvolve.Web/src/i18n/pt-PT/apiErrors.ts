@@ -89,13 +89,6 @@ const apiErrors: Dictionary['apiErrors'] = {
   publication_required_while_public:
     'Um universo público precisa disto. Preenche-o, ou despublica o universo primeiro.',
 
-  // ---------- O assistente ----------
-  assistant_unavailable: 'O assistente ainda não está configurado neste LorEvolve.',
-  assistant_busy: 'O assistente está ocupado neste momento. Tenta de novo dentro de um minuto.',
-  assistant_timeout:
-    'Isso demorou demasiado a responder. Tenta de novo, ou pergunta algo mais específico.',
-  assistant_failed: 'O assistente não conseguiu responder a isso. Tenta de novo.',
-
   // ---------- Cópias de segurança e restauros ----------
   backup_restore_busy:
     'Estão demasiadas cópias de segurança à espera de serem restauradas ao mesmo tempo. Tenta de novo dentro de alguns minutos.',
