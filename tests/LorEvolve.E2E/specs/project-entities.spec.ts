@@ -168,6 +168,22 @@ test.describe('Project entities', () => {
     await expect(list.locator('> li')).toHaveCount(26)
     await expect(list).toContainText('Unit 26')
     await expect(page.getByTestId('project-entries-more')).toHaveCount(0)
+
+    // A type the project no longer has, named by the address, is said to be missing rather than swapped for another.
+    await api(page, 'POST', `/api/projects/${project.id}/entity-types`, {
+      name: 'Map',
+      description: null,
+      icon: null,
+      accentColor: null,
+    })
+    await page.goto(
+      `/app/projects/${project.id}/entities?type=00000000-0000-0000-0000-000000000000`,
+    )
+    await expect(page.getByTestId('project-entries-type-missing')).toBeVisible()
+    await expect(page.getByTestId('project-entry-list')).toHaveCount(0)
+    await expect(page.getByTestId('project-entry-add')).toHaveCount(0)
+    await page.getByTestId('project-entities-back').click()
+    await expect(page.getByTestId('project-entity-type-cards').locator('> li')).toHaveCount(2)
   })
 
   test("a project's types and entries stay out of the universe's lore and out of another project", async ({

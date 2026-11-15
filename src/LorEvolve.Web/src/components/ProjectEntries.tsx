@@ -55,6 +55,8 @@ export function ProjectEntries({
     listProjectTypes(projectId, controller.signal)
       .then((read) => {
         setTypes(read)
+        // A type named by the address is never swapped for another: if it is gone, the render below says so.
+        if (fixedTypeId) return
         setTypeId((current) =>
           current !== null && read.some((type) => type.id === current)
             ? current
@@ -140,6 +142,19 @@ export function ProjectEntries({
           title={t('projects.entries.needsType')}
           hint={t('projects.entries.needsTypeHint')}
           testId="project-entries-needs-type"
+        />
+      </section>
+    )
+  }
+
+  if (fixedTypeId && !types.some((each) => each.id === fixedTypeId)) {
+    return (
+      <section className="projects" data-testid="project-entries">
+        <h2>{t('projects.entries.title')}</h2>
+        <EmptyState
+          title={t('projects.entries.typeMissing')}
+          hint={t('projects.entries.typeMissingHint')}
+          testId="project-entries-type-missing"
         />
       </section>
     )

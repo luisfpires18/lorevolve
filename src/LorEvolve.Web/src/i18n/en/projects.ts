@@ -212,6 +212,8 @@ const projects = {
     emptyHint: 'Add an entry to make the first one.',
     needsType: 'Make a type first.',
     needsTypeHint: 'An entry is of a type, so this project needs at least one.',
+    typeMissing: 'This type is not in this project.',
+    typeMissingHint: 'It may have been deleted. Go back to all types to choose another.',
     ofType: 'Type',
     add: 'Add an entry',
     name: 'Name',
