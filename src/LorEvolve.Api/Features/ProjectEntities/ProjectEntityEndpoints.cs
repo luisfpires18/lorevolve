@@ -324,6 +324,160 @@ public static class ProjectEntityEndpoints
         return Results.Ok(revisions);
     }
 
+    // ---------- The core an approved AI change commits through (#148) ----------
+
+    /// <summary>
+    /// Creates a project's entry after the caller's check: the route's, and an approved AI change's, which runs it
+    /// inside the approval's transaction. One path, so a proposal cannot write what a route would refuse.
+    /// </summary>
+    internal static async Task<(Guid? Id, IResult? Problem)> CreateCoreAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid projectId,
+        Guid typeId,
+        string name,
+        string? summary,
+        Guid? canonEntityId,
+        IReadOnlyList<FieldValueInput> fields,
+        string actorUserId,
+        CancellationToken cancellationToken)
+    {
+        var (entity, problem) = await EntityEndpoints.CreateEntryAsync(
+            db,
+            universeId,
+            new EntityRequest(typeId, name, summary, CanonStatus.Draft, null, null, fields),
+            actorUserId,
+            cancellationToken,
+            projectId,
+            canonEntityId);
+
+        return problem is not null ? (null, problem) : (entity!.Id, null);
+    }
+
+    /// <summary>
+    /// Saves a project's entry after the caller's check. <paramref name="expectedVersion"/> is null for an approved AI
+    /// change: the proposal's own check already compared what it read against what is stored, and a second comparison
+    /// here would refuse an approval for a change the person had already seen and accepted.
+    /// </summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid projectId,
+        Guid entityId,
+        Guid typeId,
+        string name,
+        string? summary,
+        Guid? canonEntityId,
+        IReadOnlyList<FieldValueInput> fields,
+        string actorUserId,
+        CancellationToken cancellationToken)
+    {
+        var entity = await db.Entities.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(
+                candidate => candidate.Id == entityId && candidate.ProjectId == projectId && candidate.DeletedAt == null,
+                cancellationToken);
+
+        if (entity is null)
+        {
+            return Results.NotFound();
+        }
+
+        entity.EntityTypeId = typeId;
+        entity.Name = name.Trim();
+        entity.Summary = LoreValidation.Normalize(summary);
+        entity.CanonEntityId = canonEntityId;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        await db.EntityFieldValues.Where(value => value.EntityId == entityId).ExecuteDeleteAsync(cancellationToken);
+
+        var prepared = await EntityEndpoints.PrepareFieldValuesAsync(
+            db,
+            universeId,
+            entityId,
+            new EntityRequest(typeId, name, summary, CanonStatus.Draft, null, null, fields),
+            cancellationToken,
+            projectId);
+
+        if (prepared.Errors.Count > 0)
+        {
+            return Results.ValidationProblem(prepared.Errors);
+        }
+
+        db.EntityFieldValues.AddRange(prepared.Rows);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await EntityRevisions.CaptureAsync(
+            db, entityId, EntityRevisionKind.Edited, restoredFromRevisionId: null, actorUserId, cancellationToken);
+
+        return Results.NoContent();
+    }
+
+    /// <summary>Moves a project's entry to the Trash, the one way it leaves a listing (ADR 0015).</summary>
+    internal static async Task<IResult> TrashCoreAsync(
+        LorEvolveDbContext db,
+        Guid projectId,
+        Guid entityId,
+        CancellationToken cancellationToken)
+    {
+        var entity = await db.Entities.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(
+                candidate => candidate.Id == entityId && candidate.ProjectId == projectId,
+                cancellationToken);
+
+        if (entity is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (entity.DeletedAt is null)
+        {
+            entity.DeletedAt = DateTime.UtcNow;
+            entity.UpdatedAt = entity.DeletedAt.Value;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return Results.NoContent();
+    }
+
+    /// <summary>
+    /// The field values a proposal's shape becomes, with a field of choices resolved from the choice text a client
+    /// sent to the option ids the engine stores. A client reads the choices as words from <c>get_project_schema</c>,
+    /// so it sends words back; nothing asks it to carry option ids around.
+    /// </summary>
+    internal static async Task<List<FieldValueInput>> ValuesFromChoicesAsync(
+        LorEvolveDbContext db,
+        IReadOnlyList<(Guid FieldId, string? Text, double? Number, bool? Boolean, DateTime? Date, IReadOnlyList<string>? Choices, Guid? LinkedEntryId)> values,
+        CancellationToken cancellationToken)
+    {
+        var fieldIds = values.Select(value => value.FieldId).Distinct().ToList();
+
+        var options = await db.EntityFieldOptions.AsNoTracking()
+            .Where(option => fieldIds.Contains(option.FieldDefinitionId))
+            .Select(option => new { option.Id, option.FieldDefinitionId, option.Value })
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. values.Select(value => new FieldValueInput(
+                value.FieldId,
+                value.Text,
+                value.Number,
+                value.Boolean,
+                value.Date,
+                value.Choices is null
+                    ? null
+                    : [
+                        .. value.Choices
+                            .Select(choice => options.FirstOrDefault(option =>
+                                option.FieldDefinitionId == value.FieldId
+                                && string.Equals(option.Value, choice, StringComparison.OrdinalIgnoreCase)))
+                            .Where(option => option is not null)
+                            .Select(option => option!.Id),
+                    ],
+                value.LinkedEntryId)),
+        ];
+    }
+
     /// <summary>
     /// The optional link to a lore entry: null is accepted, and a value has to be a live lore entry of the project's
     /// own universe. A link to a project's entry, to a trashed entry or to another universe's entry is refused by field

@@ -35,6 +35,75 @@ internal static partial class AiChangeSnapshots
             .Select(arc => new PlotArcValues(new AiRef(arc.StoryId, null), arc.Title, arc.Description, arc.Notes))
             .FirstOrDefaultAsync(cancellationToken);
 
+    /// <summary>
+    /// What a project's entry holds now (#148), or null when there is no live entry of that id in a project of this
+    /// universe. IgnoreQueryFilters because a project's entries are hidden from every ordinary read of the table; the
+    /// universe is still proved, through the project.
+    /// </summary>
+    public static async Task<ProjectEntryValues?> ProjectEntryAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid entryId,
+        CancellationToken cancellationToken)
+    {
+        var row = await db.Entities.AsNoTracking().IgnoreQueryFilters()
+            .Where(entry => entry.Id == entryId
+                && entry.ProjectId != null
+                && entry.UniverseId == universeId
+                && entry.DeletedAt == null)
+            .Select(entry => new
+            {
+                ProjectId = entry.ProjectId!.Value,
+                entry.EntityTypeId,
+                entry.Name,
+                entry.Summary,
+                entry.CanonEntityId,
+                Values = entry.FieldValues
+                    .Where(value => value.FieldDefinition!.ArchivedAt == null)
+                    .Select(value => new
+                    {
+                        value.FieldDefinitionId,
+                        value.TextValue,
+                        value.NumberValue,
+                        value.BooleanValue,
+                        value.DateValue,
+                        Choice = value.Option != null ? value.Option.Value : null,
+                        value.ReferencedEntityId,
+                    })
+                    .ToList(),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (row is null)
+        {
+            return null;
+        }
+
+        // One row per chosen option is how a field of several choices is stored, so the snapshot groups them back into
+        // the one value a proposal and the review screen both talk about.
+        var fields = row.Values
+            .GroupBy(value => value.FieldDefinitionId)
+            .Select(group => new ProjectFieldValue(
+                group.Key,
+                group.Select(value => value.TextValue).FirstOrDefault(text => text is not null),
+                group.Select(value => value.NumberValue).FirstOrDefault(number => number is not null),
+                group.Select(value => value.BooleanValue).FirstOrDefault(boolean => boolean is not null),
+                group.Select(value => value.DateValue).FirstOrDefault(date => date is not null),
+                group.Select(value => value.Choice).OfType<string>().Order(StringComparer.Ordinal).ToList() is { Count: > 0 } chosen
+                    ? chosen
+                    : null,
+                group.Select(value => value.ReferencedEntityId).FirstOrDefault(linked => linked is not null)))
+            .ToList();
+
+        return new ProjectEntryValues(
+            row.ProjectId,
+            row.EntityTypeId,
+            row.Name,
+            row.Summary ?? string.Empty,
+            row.CanonEntityId,
+            fields);
+    }
+
     public static async Task<WorldRuleValues?> WorldRuleAsync(LorEvolveDbContext db, Guid universeId, Guid ruleId, CancellationToken cancellationToken)
     {
         var row = await db.WorldRules.AsNoTracking()

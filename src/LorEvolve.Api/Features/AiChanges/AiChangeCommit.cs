@@ -4,6 +4,7 @@ using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
+using LorEvolve.Api.Features.ProjectEntities;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Storage;
 using LorEvolve.Api.Features.Stories;
@@ -355,6 +356,14 @@ internal static class AiChangeCommit
                     AiChangeResource.TimelineEvent => await TimelineEndpoints.TrashCoreAsync(universeId, target!.Value, db, cancellationToken),
                     AiChangeResource.PlotArc => await PlotArcEndpoints.TrashCoreAsync(db, universeId, remove.StoryId!.Value, target!.Value, cancellationToken),
                     AiChangeResource.WorldRule => await WorldRuleEndpoints.TrashCoreAsync(db, null, universeId, target!.Value, cancellationToken),
+                    AiChangeResource.ProjectEntry => await ProjectEntityEndpoints.TrashCoreAsync(
+                        db,
+                        await db.Entities.IgnoreQueryFilters()
+                            .Where(entry => entry.Id == target!.Value)
+                            .Select(entry => entry.ProjectId!.Value)
+                            .SingleAsync(cancellationToken),
+                        target!.Value,
+                        cancellationToken),
                     AiChangeResource.Idea => await IdeaEndpoints.DeleteCoreAsync(db, approverId, target!.Value, cancellationToken),
 
                     // A field is archived, never deleted: it keeps every value and comes back with a restore (Issue #39).
@@ -385,6 +394,47 @@ internal static class AiChangeCommit
                 return work.Action == AiChangeAction.Create
                     ? Made<PlotArcResponse>(await PlotArcEndpoints.CreateCoreAsync(db, universeId, Id(arc.Story), plotArc, cancellationToken), detail => detail.Id)
                     : Done(await PlotArcEndpoints.UpdateCoreAsync(db, universeId, Id(arc.Story), target!.Value, plotArc, cancellationToken), target);
+
+            case ProjectEntryValues proposed:
+                // One path with the route's (#148): the same create, the same field preparation, the same history.
+                var projectValues = await ProjectEntityEndpoints.ValuesFromChoicesAsync(
+                    db,
+                    [.. proposed.Fields.Select(field => (field.FieldId, field.Text, field.Number, field.Boolean, field.Date, (IReadOnlyList<string>?)field.Choices, field.LinkedEntryId))],
+                    cancellationToken);
+
+                if (work.Action == AiChangeAction.Create)
+                {
+                    var created = await ProjectEntityEndpoints.CreateCoreAsync(
+                        db,
+                        universeId,
+                        proposed.ProjectId,
+                        proposed.TypeId,
+                        proposed.Name,
+                        proposed.Summary,
+                        proposed.CanonEntryId,
+                        projectValues,
+                        approverId,
+                        cancellationToken);
+
+                    return created.Problem is not null
+                        ? Done(created.Problem, null)
+                        : Done(Results.NoContent(), created.Id);
+                }
+
+                return Done(
+                    await ProjectEntityEndpoints.UpdateCoreAsync(
+                        db,
+                        universeId,
+                        proposed.ProjectId,
+                        target!.Value,
+                        proposed.TypeId,
+                        proposed.Name,
+                        proposed.Summary,
+                        proposed.CanonEntryId,
+                        projectValues,
+                        approverId,
+                        cancellationToken),
+                    target);
 
             case WorldRuleValues rule:
                 var stated = new WorldRuleRequest(
