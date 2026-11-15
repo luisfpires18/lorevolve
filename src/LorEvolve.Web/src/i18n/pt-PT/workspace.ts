@@ -56,6 +56,10 @@ const workspace: Dictionary['workspace'] = {
       label: 'Mapas',
       purpose: 'Imagens do mundo, com marcadores que abrem a lore que representam.',
     },
+    worldLogic: {
+      label: 'Lógica do mundo',
+      purpose: 'As regras que mantém, os Sistemas que as agrupam e o que a verificação encontrou.',
+    },
     worldRules: {
       label: 'Regras do mundo',
       purpose: 'Como este universo funciona, dito com clareza.',

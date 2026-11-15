@@ -54,6 +54,10 @@ const workspace = {
       label: 'Maps',
       purpose: 'Pictures of the world, with pins that open the Lore they stand for.',
     },
+    worldLogic: {
+      label: 'World Logic',
+      purpose: 'The rules it keeps, the Systems that group them, and what checking them found.',
+    },
     worldRules: {
       label: 'World Rules',
       purpose: 'How this universe works, stated plainly.',

@@ -107,9 +107,9 @@ test.describe('the shell', () => {
 
     // The front page is the universe's contents, and each doorway goes where the sidebar goes.
     await sections.getByRole('link', { name: 'Overview' }).click()
-    await page.getByTestId('overview-world-rules').click()
-    await expect(page).toHaveURL(`${base}/world-rules`)
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('World Rules')
+    await page.getByTestId('overview-world-logic').click()
+    await expect(page).toHaveURL(`${base}/world-logic`)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('World Logic')
   })
 
   test('a menu is worked from the keyboard: arrows, Home, End, Escape, and Tab out', async ({

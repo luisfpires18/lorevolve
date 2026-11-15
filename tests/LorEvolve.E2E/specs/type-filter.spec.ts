@@ -468,7 +468,7 @@ test.describe('lore types', () => {
     for (const section of [
       'workspace-lore',
       'workspace-timeline',
-      'workspace-world-rules',
+      'workspace-world-logic',
       'workspace-canon',
       'workspace-types',
       'workspace-trash',

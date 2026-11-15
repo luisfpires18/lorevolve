@@ -1,0 +1,364 @@
+import { useEffect, useId, useState } from 'react'
+import { Link, useOutletContext } from 'react-router-dom'
+import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
+import { ActionIcon } from '../components/ActionIcon'
+import { EmptyState } from '../components/EmptyState'
+import { PageHeader } from '../components/PageHeader'
+import { QueryTabList, TabPanel } from '../components/QueryTabs'
+import { t, useI18n } from '../i18n'
+import { formatDate } from '../lib/dates'
+import { useQueryTab } from '../lib/queryTab'
+import { useUniverseAccess } from '../universes/access'
+import { getSystem, listSystems, listWorldLogicRules } from '../worldLogic/api'
+import type {
+  SystemDetail,
+  SystemSummary,
+  WorldLogicPage as Page,
+  WorldLogicRuleRow,
+} from '../worldLogic/types'
+import type { WorkspaceContext } from './UniverseWorkspace'
+
+type Load<T> = { kind: 'loading' } | { kind: 'ready'; page: Page<T> } | { kind: 'error' }
+
+type View = 'rules' | 'systems' | 'integrity'
+
+/**
+ * A universe's World Logic: the rules it keeps, the Systems that group them, and what checking them found
+ * (ADR 0072).
+ *
+ * <b>One place for both kinds of rule.</b> Rules lists the world rules that came before ADR 0072 beside the reusable
+ * rule definitions that came with it, each row saying which it is. A world rule still opens in its own editor at its
+ * own address, so every link an author already has keeps working and nothing was migrated out from under them.
+ *
+ * <b>Read-only, on purpose.</b> This page shows what is there. A world rule is written in its own editor; a rule
+ * definition and a System are written through MCP or the API until an editor for a condition tree exists, and
+ * pretending otherwise with a form that cannot express a condition would be worse than saying so.
+ *
+ * <b>Integrity is honest about having nothing yet.</b> Findings are produced and stored by LOREX-020; until a
+ * universe has been checked, the tab says that rather than showing an empty list that looks like a clean bill.
+ *
+ * The tab is in the address as `?tab=`, so Back and a reload land on the same one.
+ */
+export default function WorldLogicPage() {
+  const { tx } = useI18n()
+  const access = useUniverseAccess()
+  const { universe } = useOutletContext<WorkspaceContext>()
+  const headingId = useId()
+
+  const tabs = [
+    { id: 'rules' as View, label: t('canon.worldLogic.tabs.rules') },
+    { id: 'systems' as View, label: t('canon.worldLogic.tabs.systems') },
+    { id: 'integrity' as View, label: t('canon.worldLogic.tabs.integrity') },
+  ] as const
+
+  const [tab, choose] = useQueryTab<View>(tabs)
+
+  const base = `/app/universes/${universe.id}`
+  const [rules, setRules] = useState<Load<WorldLogicRuleRow>>({ kind: 'loading' })
+  const [systems, setSystems] = useState<Load<SystemSummary>>({ kind: 'loading' })
+  const [reads, setReads] = useState(0)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    listWorldLogicRules(universe.id, 1, controller.signal)
+      .then((page) => setRules({ kind: 'ready', page }))
+      .catch(() => {
+        if (!controller.signal.aborted) setRules({ kind: 'error' })
+      })
+
+    listSystems(universe.id, 1, controller.signal)
+      .then((page) => setSystems({ kind: 'ready', page }))
+      .catch(() => {
+        if (!controller.signal.aborted) setSystems({ kind: 'error' })
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [universe.id, reads])
+
+  function retry() {
+    setRules({ kind: 'loading' })
+    setSystems({ kind: 'loading' })
+    setReads((current) => current + 1)
+  }
+
+  return (
+    <section className="rules" aria-labelledby={headingId} data-testid="world-logic">
+      <PageHeader
+        title={t('canon.worldLogic.title')}
+        titleId={headingId}
+        lede={t('canon.worldLogic.lede')}
+        actions={
+          access.editContent ? (
+            <Link
+              className="button"
+              to={`${base}/world-rules/new`}
+              data-testid="world-logic-new-rule"
+            >
+              <ActionIcon icon={Plus} />
+              {t('canon.rules.newRule')}
+            </Link>
+          ) : undefined
+        }
+      />
+
+      <QueryTabList
+        label={t('canon.worldLogic.title')}
+        idPrefix="world-logic"
+        tabs={tabs}
+        tab={tab}
+        onChoose={choose}
+      />
+
+      <TabPanel idPrefix="world-logic" id="rules" tab={tab}>
+        {rules.kind === 'loading' ? (
+          <p className="notice" role="status">
+            {t('canon.rules.loading')}
+          </p>
+        ) : null}
+
+        {rules.kind === 'error' ? (
+          <div className="notice notice--error" role="alert" data-testid="world-logic-rules-error">
+            <p>{t('canon.rules.readFailed')}</p>
+            <button className="button button--secondary" type="button" onClick={retry}>
+              {t('canon.rules.retry')}
+            </button>
+          </div>
+        ) : null}
+
+        {rules.kind === 'ready' && rules.page.items.length > 0 ? (
+          <ul className="rulelist" data-testid="world-logic-rule-list">
+            {rules.page.items.map((rule) => (
+              <li
+                className={rule.source === 'worldRule' ? 'rulerow rowlink' : 'rulerow'}
+                key={`${rule.source}-${rule.id}`}
+                data-testid="world-logic-rule-row"
+                data-source={rule.source}
+                data-title={rule.title}
+              >
+                {rule.source === 'worldRule' ? (
+                  <Link
+                    className="rulerow__title rowlink__target"
+                    to={`${base}/world-rules/${rule.id}`}
+                    data-testid="world-logic-rule-open"
+                  >
+                    <bdi>{rule.title}</bdi>
+                  </Link>
+                ) : (
+                  <p className="rulerow__title">
+                    <bdi>{rule.title}</bdi>
+                  </p>
+                )}
+
+                {rule.excerpt ? (
+                  <p className="rulerow__excerpt" dir="auto">
+                    {rule.excerpt}
+                    {rule.isExcerptShortened ? '…' : null}
+                  </p>
+                ) : null}
+
+                <p className="rulerow__meta">
+                  <span className="rulerow__check" data-testid="world-logic-rule-kind">
+                    {rule.source === 'worldRule'
+                      ? t('canon.worldLogic.kinds.worldRule')
+                      : t('canon.worldLogic.kinds.definition')}
+                  </span>
+                  {rule.hasCheck ? (
+                    <span className="rulerow__check" data-testid="world-logic-rule-has-check">
+                      {t('canon.rules.checked')}
+                    </span>
+                  ) : null}
+                  {rule.hasCondition ? (
+                    <span className="rulerow__check" data-testid="world-logic-rule-has-condition">
+                      {t('canon.worldLogic.hasCondition')}
+                    </span>
+                  ) : null}
+                  {tx('canon.rules.updated', {
+                    time: <time dateTime={rule.updatedAt}>{formatDate(rule.updatedAt)}</time>,
+                  })}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {rules.kind === 'ready' && rules.page.totalCount === 0 ? (
+          <EmptyState
+            testId="world-logic-rules-empty"
+            title={t('canon.rules.empty.title')}
+            hint={t('canon.rules.empty.hint')}
+            action={
+              access.editContent ? (
+                <Link className="button" to={`${base}/world-rules/new`}>
+                  <ActionIcon icon={Plus} />
+                  {t('canon.rules.newRule')}
+                </Link>
+              ) : undefined
+            }
+          />
+        ) : null}
+      </TabPanel>
+
+      <TabPanel idPrefix="world-logic" id="systems" tab={tab}>
+        {systems.kind === 'loading' ? (
+          <p className="notice" role="status">
+            {t('canon.worldLogic.systems.loading')}
+          </p>
+        ) : null}
+
+        {systems.kind === 'error' ? (
+          <div
+            className="notice notice--error"
+            role="alert"
+            data-testid="world-logic-systems-error"
+          >
+            <p>{t('canon.worldLogic.systems.readFailed')}</p>
+            <button className="button button--secondary" type="button" onClick={retry}>
+              {t('canon.rules.retry')}
+            </button>
+          </div>
+        ) : null}
+
+        {systems.kind === 'ready' && systems.page.items.length > 0 ? (
+          <ul className="rulelist" data-testid="world-logic-system-list">
+            {systems.page.items.map((system) => (
+              <SystemRow key={system.id} universeId={universe.id} system={system} />
+            ))}
+          </ul>
+        ) : null}
+
+        {systems.kind === 'ready' && systems.page.totalCount === 0 ? (
+          <EmptyState
+            testId="world-logic-systems-empty"
+            title={t('canon.worldLogic.systems.empty.title')}
+            hint={t('canon.worldLogic.systems.empty.hint')}
+          />
+        ) : null}
+      </TabPanel>
+
+      <TabPanel idPrefix="world-logic" id="integrity" tab={tab}>
+        <EmptyState
+          testId="world-logic-integrity-empty"
+          title={t('canon.worldLogic.integrity.empty.title')}
+          hint={t('canon.worldLogic.integrity.empty.hint')}
+          action={
+            <Link
+              className="button button--secondary"
+              to={`${base}/canon`}
+              data-testid="world-logic-canon-link"
+            >
+              {t('canon.worldLogic.integrity.canonLink')}
+            </Link>
+          }
+        />
+      </TabPanel>
+    </section>
+  )
+}
+
+/**
+ * One System, and the rule definitions it references once the author opens it.
+ *
+ * Its rules are read when it is opened rather than with the list, because a universe's Systems are a list of names
+ * and its rules are not: reading every System's rules to draw a list of names would be most of the page's work for
+ * none of its content.
+ */
+function SystemRow({ universeId, system }: { universeId: string; system: SystemSummary }) {
+  const { tn } = useI18n()
+  const [open, setOpen] = useState(false)
+  const [detail, setDetail] = useState<SystemDetail | null>(null)
+  const [failed, setFailed] = useState(false)
+  const panelId = useId()
+
+  useEffect(() => {
+    if (!open || detail) return
+
+    const controller = new AbortController()
+
+    getSystem(universeId, system.id, controller.signal)
+      .then((read) => setDetail(read))
+      .catch(() => {
+        if (!controller.signal.aborted) setFailed(true)
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [open, detail, universeId, system.id])
+
+  return (
+    <li className="rulerow" data-testid="world-logic-system-row" data-name={system.name}>
+      <button
+        className="rulerow__title rulerow__toggle"
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((current) => !current)}
+        data-testid="world-logic-system-toggle"
+      >
+        <ActionIcon icon={open ? ChevronDown : ChevronRight} />
+        <bdi>{system.name}</bdi>
+      </button>
+
+      {system.excerpt ? (
+        <p className="rulerow__excerpt" dir="auto">
+          {system.excerpt}
+          {system.isExcerptShortened ? '…' : null}
+        </p>
+      ) : null}
+
+      <p className="rulerow__meta">
+        <span className="rulerow__check" data-testid="world-logic-system-scope">
+          {system.scope === 'Project'
+            ? t('canon.worldLogic.scopes.project')
+            : t('canon.worldLogic.scopes.universe')}
+        </span>
+        {tn('canon.worldLogic.systems.ruleCount', system.ruleCount, { count: system.ruleCount })}
+      </p>
+
+      <div id={panelId} hidden={!open} data-testid="world-logic-system-rules">
+        {failed ? (
+          <p className="notice notice--error" role="alert">
+            {t('canon.worldLogic.systems.readFailed')}
+          </p>
+        ) : null}
+
+        {open && !detail && !failed ? (
+          <p className="notice" role="status">
+            {t('canon.worldLogic.systems.loading')}
+          </p>
+        ) : null}
+
+        {detail && detail.rules.length > 0 ? (
+          <ul className="rulelist">
+            {detail.rules.map((rule) => (
+              <li className="rulerow" key={rule.id} data-testid="world-logic-system-rule">
+                <p className="rulerow__title">
+                  <bdi>{rule.title}</bdi>
+                </p>
+                <p className="rulerow__meta">
+                  {rule.hasCondition ? (
+                    <span className="rulerow__check">{t('canon.worldLogic.hasCondition')}</span>
+                  ) : (
+                    <span className="rulerow__check">{t('canon.worldLogic.wordsOnly')}</span>
+                  )}
+                  {tn('canon.worldLogic.systems.sharedWith', rule.systemCount, {
+                    count: rule.systemCount,
+                  })}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {detail && detail.rules.length === 0 ? (
+          <p className="notice" data-testid="world-logic-system-no-rules">
+            {t('canon.worldLogic.systems.noRules')}
+          </p>
+        ) : null}
+      </div>
+    </li>
+  )
+}
