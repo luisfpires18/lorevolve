@@ -1306,7 +1306,8 @@ public static class EntityEndpoints
             .Select(definition => supplied.GetValueOrDefault(definition.Id)?.ReferencedEntityId)
             .OfType<Guid>();
 
-        var (referenced, members, parentOf) = await LinkTargetsAsync(db, universeId, definitions, wanted, cancellationToken);
+        var (referenced, members, parentOf) = await LinkTargetsAsync(
+            db, universeId, definitions, wanted, cancellationToken, projectId);
 
         var rows = new List<EntityFieldValue>();
 
@@ -1338,14 +1339,21 @@ public static class EntityEndpoints
         Guid universeId,
         IEnumerable<EntityFieldDefinition> definitions,
         IEnumerable<Guid> linked,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? projectId = null)
     {
         var wanted = linked.Distinct().ToList();
 
+        // Within one scope, never across: a lore entry links to lore, and a project's entry links to entries of that
+        // same project (#144). An id from the other scope is simply not in this dictionary, so BuildRows refuses the
+        // link exactly as it refuses an id from another universe. IgnoreQueryFilters with the scope named, because the
+        // filter would otherwise make a project's entries invisible to a project's own link field.
         var referenced = wanted.Count == 0
             ? []
-            : await db.Entities.AsNoTracking()
-                .Where(candidate => candidate.UniverseId == universeId && wanted.Contains(candidate.Id))
+            : await db.Entities.AsNoTracking().IgnoreQueryFilters()
+                .Where(candidate => candidate.UniverseId == universeId
+                    && candidate.ProjectId == projectId
+                    && wanted.Contains(candidate.Id))
                 .ToDictionaryAsync(candidate => candidate.Id, candidate => candidate.EntityTypeId, cancellationToken);
 
         var targetGroups = definitions
@@ -1365,7 +1373,7 @@ public static class EntityEndpoints
 
         var parentOf = wanted.Count == 0 || !definitions.Any(definition => definition.TargetEntityTypeId is not null)
             ? []
-            : await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken);
+            : await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken, projectId);
 
         return (referenced, members, parentOf);
     }

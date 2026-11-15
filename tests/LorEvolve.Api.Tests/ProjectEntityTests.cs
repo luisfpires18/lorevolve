@@ -322,6 +322,75 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
         });
     }
 
+    /// <summary>
+    /// A link field on a project's type reaches that project's own entries, and nothing else.
+    ///
+    /// <para>This is the criterion's "relationships" as this PR provides them, so it is tested rather than asserted in
+    /// prose: a unit may name another unit of the same game, and a link to a lore entry or to another game's entry is
+    /// refused. The refusal is the same one an id from another universe gets - the id is not a candidate at all - so it
+    /// discloses nothing about what exists elsewhere.</para>
+    /// </summary>
+    [Fact]
+    public async Task A_link_field_on_a_project_s_type_reaches_that_project_s_entries_and_no_others()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "gamelinks");
+        var project = await NewProject(client, universe.Id, "Hollow Season");
+        var other = await NewProject(client, universe.Id, "Another game");
+
+        var unit = await NewType(client, project.Id, "Unit");
+        var withField = await AddField(
+            client,
+            project.Id,
+            unit.Id,
+            new ProjectEntityFieldRequest("Escorts", EntityFieldKind.EntityReference));
+        var escorts = withField.Fields.First(field => field.Name == "Escorts");
+
+        var target = await NewEntry(client, project.Id, unit.Id, "Saltbearer");
+
+        // Its own project's entry: accepted, and read back with the target's name.
+        var linked = await NewEntry(
+            client,
+            project.Id,
+            unit.Id,
+            "Dune strider",
+            fields: [new FieldValueInput(escorts.Id, null, null, null, null, null, target.Id)]);
+
+        var value = linked.Fields.First(field => field.FieldDefinitionId == escorts.Id);
+        Assert.Equal(target.Id, value.ReferencedEntityId);
+        Assert.Equal("Saltbearer", value.ReferencedEntityName);
+
+        // A lore entry of the same universe: not a candidate, so the link is refused.
+        var loreId = await CreateEntity(client, universe.Id, "Alenna Vance");
+        await RefusedLink(client, project.Id, unit.Id, escorts.Id, loreId);
+
+        // Another project's entry, in the same universe: refused the same way.
+        var otherUnit = await NewType(client, other.Id, "Unit");
+        var otherEntry = await NewEntry(client, other.Id, otherUnit.Id, "Theirs");
+        await RefusedLink(client, project.Id, unit.Id, escorts.Id, otherEntry.Id);
+
+        // And the project still holds exactly the two entries it made.
+        Assert.Equal(2, (await Entries(client, project.Id)).Count);
+    }
+
+    private static async Task RefusedLink(
+        HttpClient client,
+        Guid projectId,
+        Guid typeId,
+        Guid fieldId,
+        Guid targetId)
+    {
+        var response = await client.PostAsJsonAsync(
+            $"/api/projects/{projectId}/entities",
+            new ProjectEntityRequest(
+                typeId,
+                "Across scopes",
+                null,
+                null,
+                [new FieldValueInput(fieldId, null, null, null, null, null, targetId)]));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     // ---------- helpers ----------
 
     private static async Task<ProjectDetail> NewProject(HttpClient client, Guid universeId, string name)
