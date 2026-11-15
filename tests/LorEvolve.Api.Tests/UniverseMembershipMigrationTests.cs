@@ -166,11 +166,13 @@ public sealed class UniverseMembershipMigrationTests : IDisposable
             // ADR 0042), a version's author (AddRevisionActors, 042), an edit version (AddContentEditVersions, ADR 0043) and a
             // type's field layout version (AddEntityFieldSections, Issue #26) and an account's platform role and block (AddPlatformAdmin,
             // ADR 0059) and its creation and sign-in times (AddAccountSignInTimes) and a story's place in its universe's list
-            // (KeepAuthorOrders) and a type's project scope (AddProjectScopedEntityTypes, #143) arrive after
-            // memberships, so a rollback past them takes them.
+            // (KeepAuthorOrders) and a type's project scope (AddProjectScopedEntityTypes, #143) and an entry's own
+            // project scope and canon link (AddProjectEntities, #144) arrive after memberships, so a rollback past them
+            // takes them.
             var columns = (await Strings(db, $"SELECT name AS Value FROM pragma_table_info('{table}') ORDER BY cid"))
                 .Where(column => column is not "MonthId" and not "StorageQuotaBytes" and not "ActorUserId" and not "Version" and not "FieldLayoutVersion"
                     and not "PlatformRole" and not "BlockedAt" and not "CreatedAt" and not "LastSignInAt" and not "ProjectId"
+                    and not "CanonEntityId"
                     && !(table == "Stories" && column == "SortOrder"));
             var select = string.Join(" || '|' || ", columns.Select(column => $"COALESCE(CAST(\"{column}\" AS TEXT), '~')"));
             rows.AddRange(await Strings(db, $"SELECT '{table}:' || {select} AS Value FROM \"{table}\" ORDER BY 1"));
