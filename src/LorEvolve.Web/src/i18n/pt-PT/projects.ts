@@ -30,6 +30,21 @@ const projects = {
     empty: 'Ainda não há nada nesta vista.',
     emptyHint: 'Esta vista vai encher-se à medida que o projeto ganhar o que pertence aqui.',
   },
+  overview: {
+    types: 'O que há neste projeto',
+    noTypes: 'Ainda não há tipos, por isso não se conta nada aqui.',
+    recent: 'Trabalhado há menos tempo',
+    recentLede: 'As entradas alteradas mais recentemente, as mais recentes primeiro.',
+    noRecent: 'Ainda não foi escrito nada aqui.',
+    lore: 'Onde este projeto chega',
+    loreLede: 'O seu universo, e as suas próprias vistas.',
+    loreOf: 'Lore',
+    failed: 'Parte deste projeto não pôde ser lida.',
+    empty: 'Este projeto ainda não tem nada.',
+    emptyHint:
+      'Comece por lhe dar os tipos de coisa de que é feito, e depois acrescente entradas desses tipos.',
+    start: 'Definir os seus tipos',
+  },
   ideas: {
     ownerOnly: 'As ideias aqui são do dono do universo.',
     ownerOnlyHint:

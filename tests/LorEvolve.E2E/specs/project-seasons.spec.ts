@@ -186,8 +186,10 @@ test.describe('Project seasons', () => {
       expectedVersion: null,
     })
 
+    // A game has no structure of its own, and its overview is its own view (#195), not the structure panel. With
+    // nothing in the project yet that overview is its empty state.
     await page.goto(`/app/projects/${game.id}`)
-    await expect(page.getByTestId('project-view-empty-overview')).toBeVisible()
+    await expect(page.getByTestId('project-overview-empty')).toBeVisible()
     await expect(page.getByTestId('project-seasons')).toHaveCount(0)
   })
 

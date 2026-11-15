@@ -642,6 +642,47 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
         }
     }
 
+    [Fact]
+    public async Task The_entry_list_answers_the_newest_first_when_the_overview_asks_for_it()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "entryrecent");
+        var project = await NewProject(client, universe.Id, "Field Notes");
+        var units = await NewType(client, project.Id, "Unit");
+        var maps = await NewType(client, project.Id, "Map");
+
+        // Names chosen so that the two orders cannot agree by accident: by name this is Aardvark, Beacon, Cairn.
+        var aardvark = await NewEntry(client, project.Id, units.Id, "Aardvark");
+        await NewEntry(client, project.Id, units.Id, "Beacon");
+        await NewEntry(client, project.Id, maps.Id, "Cairn");
+
+        // Touching the first-by-name entry makes it the newest, so the two orders disagree at the front.
+        await Put<EntityDetail>(
+            client,
+            $"/api/projects/{project.Id}/entities/{aardvark.Id}",
+            new ProjectEntityRequest(units.Id, "Aardvark", "Seen again", null, null, aardvark.Version));
+
+        var byName = await Entries(client, project.Id);
+        var newest = await Recent(client, project.Id, take: 3);
+
+        Assert.Equal(["Aardvark", "Beacon", "Cairn"], byName.Select(entry => entry.Name));
+        Assert.Equal("Aardvark", newest[0].Name);
+        Assert.Equal(3, newest.Count);
+        Assert.NotEqual(byName.Select(entry => entry.Name), newest.Select(entry => entry.Name));
+
+        // The order is the only thing `recent` changes: the type filter and the page bound still hold.
+        var onePage = await Recent(client, project.Id, take: 2);
+        Assert.Equal(2, onePage.Count);
+        Assert.Equal(newest.Take(2).Select(entry => entry.Id), onePage.Select(entry => entry.Id));
+
+        var ofType = (await client.GetFromJsonAsync<List<ProjectEntitySummary>>(
+            $"/api/projects/{project.Id}/entities?typeId={maps.Id}&recent=true"))!;
+        Assert.Equal(["Cairn"], ofType.Select(entry => entry.Name));
+    }
+
+    private static async Task<List<ProjectEntitySummary>> Recent(HttpClient client, Guid projectId, int take) =>
+        (await client.GetFromJsonAsync<List<ProjectEntitySummary>>(
+            $"/api/projects/{projectId}/entities?recent=true&skip=0&take={take}"))!;
+
     private static async Task<List<ProjectEntitySummary>> Page(
         HttpClient client,
         Guid projectId,

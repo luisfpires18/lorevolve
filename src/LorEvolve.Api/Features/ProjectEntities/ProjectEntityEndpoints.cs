@@ -57,7 +57,8 @@ public static class ProjectEntityEndpoints
         CancellationToken cancellationToken,
         [FromQuery] Guid? typeId = null,
         [FromQuery] int skip = 0,
-        [FromQuery] int take = ListMaxTake)
+        [FromQuery] int take = ListMaxTake,
+        [FromQuery] bool recent = false)
     {
         var (project, denied) = await ReadableAsync(db, projectId, principal, cancellationToken);
 
@@ -76,13 +77,20 @@ public static class ProjectEntityEndpoints
             });
         }
 
-        var rows = await db.Entities.AsNoTracking().IgnoreQueryFilters()
+        var matching = db.Entities.AsNoTracking().IgnoreQueryFilters()
             .Where(entry => entry.ProjectId == projectId
                 && entry.DeletedAt == null
-                && (typeId == null || entry.EntityTypeId == typeId))
-            // The id breaks ties between equal names, so a page boundary never repeats or drops a row.
-            .OrderBy(entry => entry.Name)
-            .ThenBy(entry => entry.Id)
+                && (typeId == null || entry.EntityTypeId == typeId));
+
+        // The id breaks ties, so a page boundary never repeats or drops a row. By name is this list's own order, the
+        // one the Entities view reads a type a page at a time in. `recent` asks for the newest first instead, for the
+        // project's overview (#195): the only way to answer "what was touched last" without reading every row and
+        // sorting in the client, which is what the issue's one-request-per-list rule forbids.
+        var ordered = recent
+            ? matching.OrderByDescending(entry => entry.UpdatedAt).ThenBy(entry => entry.Id)
+            : matching.OrderBy(entry => entry.Name).ThenBy(entry => entry.Id);
+
+        var rows = await ordered
             .Skip(skip)
             .Take(take)
             .Select(entry => new ProjectEntitySummary(

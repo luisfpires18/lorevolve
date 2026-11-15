@@ -216,4 +216,82 @@ test.describe('Project entities', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     await expect(page.locator('main')).not.toContainText('Unit')
   })
+
+  test('a game overview says what is in the project, what was touched last, and the way into the rest', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const project = await game(page, world.id)
+    const overview = `/app/projects/${project.id}/overview`
+
+    // Nothing of its own yet: the overview says what to do first rather than drawing empty panels (#195).
+    await page.goto(overview)
+    const empty = page.getByTestId('project-overview-empty')
+    await expect(empty).toBeVisible()
+    await expect(empty).toContainText('nothing in it yet')
+    await expect(page.getByTestId('project-overview-counts')).toHaveCount(0)
+
+    // Its action leads into Entities, which is where a project with no types starts.
+    await empty.getByRole('link').click()
+    await page.waitForURL(/\/entities$/)
+
+    const types = await api<{ id: string; name: string }[]>(
+      page,
+      'POST',
+      `/api/projects/${project.id}/template`,
+    )
+    const unit = types.find((type) => type.name === 'Unit')!
+    const map = types.find((type) => type.name === 'Map')!
+
+    for (const name of ['Saltbearer', 'Tidewarden']) {
+      await api(page, 'POST', `/api/projects/${project.id}/entities`, {
+        entityTypeId: unit.id,
+        name,
+        summary: null,
+      })
+    }
+    const latest = await api<{ id: string; name: string }>(
+      page,
+      'POST',
+      `/api/projects/${project.id}/entities`,
+      { entityTypeId: map.id, name: 'Aback Flats', summary: null },
+    )
+
+    await page.goto(overview)
+
+    // Counts per type, from the types list rather than from counting entries.
+    const counts = page.getByTestId('project-overview-type-counts')
+    await expect(counts.getByTestId(`project-overview-type-${unit.id}`)).toContainText('2 entries')
+    await expect(counts.getByTestId(`project-overview-type-${map.id}`)).toContainText('1 entry')
+
+    // The newest first, which is the order the list has to be asked for: by name Aback Flats would lead anyway, so
+    // the assertion that carries weight is that the newest entry heads the list while two older ones exist.
+    const recent = page.getByTestId('project-overview-recent-list')
+    await expect(recent.locator('> li')).toHaveCount(3)
+    await expect(recent.locator('> li').first()).toContainText('Aback Flats')
+
+    // Each one opens that entry: its type's list, on its own row, marked as the row in view.
+    await page.getByTestId(`project-overview-entry-${latest.id}`).click()
+    await expect(page.getByTestId('project-entries')).toContainText('Aback Flats')
+    await expect(page.getByTestId(`project-entry-${latest.id}`)).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
+    // The address names it, so a direct load opens the same row rather than the top of the list.
+    const named = page.url()
+    await page.goto(named)
+    await expect(page.getByTestId(`project-entry-${latest.id}`)).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
+
+    // The universe's lore and every other view this kind offers are a link away.
+    await page.goto(overview)
+    await expect(page.getByTestId('project-overview-lore')).toContainText(/\w/)
+    for (const segment of ['entities', 'systems', 'ideas']) {
+      await expect(page.getByTestId(`project-overview-way-${segment}`)).toBeVisible()
+    }
+    await expect(page.getByTestId('project-overview-way-overview')).toHaveCount(0)
+  })
 })

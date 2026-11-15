@@ -32,6 +32,21 @@ const projects = {
     empty: 'Nothing in this view yet.',
     emptyHint: 'This view will fill as the project gains what belongs here.',
   },
+  overview: {
+    types: 'What is in this project',
+    noTypes: 'No types yet, so nothing is counted here.',
+    recent: 'Last worked on',
+    recentLede: 'The entries changed most recently, newest first.',
+    noRecent: 'Nothing has been written here yet.',
+    lore: 'Where this project reaches',
+    loreLede: 'Its universe, and its own views.',
+    loreOf: 'Lore',
+    failed: 'Some of this project could not be read.',
+    empty: 'This project has nothing in it yet.',
+    emptyHint:
+      'Start by giving it the types of thing it is made of, then add entries of those types.',
+    start: 'Set up its types',
+  },
   ideas: {
     ownerOnly: "Ideas here are the universe owner's.",
     ownerOnlyHint:

@@ -56,18 +56,24 @@ export function deleteProjectField(projectId: string, typeId: string, fieldId: s
   })
 }
 
-/** The entries of a project, or of one type; `page` reads a slice of them in the API's own order (#196). */
+/**
+ * The entries of a project, or of one type; `page` reads a slice of them in the API's own order (#196).
+ *
+ * `page.recent` asks for the most recently updated first rather than by name, which is what the project's overview
+ * draws (#195). Everything else reads the list in its own order.
+ */
 export function listProjectEntities(
   projectId: string,
   typeId?: string,
   signal?: AbortSignal,
-  page?: { skip: number; take: number },
+  page?: { skip: number; take: number; recent?: boolean },
 ) {
   const params = new URLSearchParams()
   if (typeId) params.set('typeId', typeId)
   if (page) {
     params.set('skip', String(page.skip))
     params.set('take', String(page.take))
+    if (page.recent) params.set('recent', 'true')
   }
   const query = params.toString() ? `?${params.toString()}` : ''
   return apiFetch<ProjectEntitySummary[]>(`${base(projectId)}/entities${query}`, { signal })

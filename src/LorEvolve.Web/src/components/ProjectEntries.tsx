@@ -19,6 +19,9 @@ import { t, useI18n } from '../i18n'
 /** How many entries one read shows; the next page is asked for, never loaded behind the author's back (#196). */
 export const ENTRY_PAGE_SIZE = 25
 
+/** The most rows reaching a named entry will read, matching the endpoint's own ceiling on one request. */
+const ENTRY_LIST_CEILING = 500
+
 /**
  * The entries a project holds, by type (#144).
  *
@@ -28,12 +31,19 @@ export const ENTRY_PAGE_SIZE = 25
 export function ProjectEntries({
   projectId,
   fixedTypeId,
+  openEntryId,
   reloadKey,
   onChanged,
 }: {
   projectId: string
   /** Set when the author opened one type's card: only its entries are listed and no other type is offered (#196). */
   fixedTypeId?: string
+  /**
+   * The entry the address names, which a link from elsewhere in the app opens (#195). Rows are read a page at a time,
+   * so the one named may be past the first page: enough pages are read to reach it, and its row is marked and brought
+   * into view. An entry has no screen of its own to open, so its row in its own type's list is what opening it means.
+   */
+  openEntryId?: string
   reloadKey: number
   /** Called after a write, so the Types panel's entry counts are re-read rather than left stale. */
   onChanged?: () => void
@@ -77,18 +87,47 @@ export function ProjectEntries({
     if (typeId === null) return
 
     const controller = new AbortController()
-    listProjectEntities(projectId, typeId, controller.signal, {
-      skip: 0,
-      take: ENTRY_PAGE_SIZE + 1,
-    })
-      .then((read) => showing(read, ENTRY_PAGE_SIZE))
+
+    /*
+     * The first page, or as many pages as it takes to include the entry the address names, so a link to an entry does
+     * not land on a list that does not hold it. Bounded by the endpoint's own ceiling on one request, so a long list
+     * cannot become an unbounded read. Defined here rather than beside the component, because it closes over the read
+     * this effect owns and belongs to its lifetime.
+     */
+    const reach = async (signal: AbortSignal, forType: string) => {
+      const first = await listProjectEntities(projectId, forType, signal, {
+        skip: 0,
+        take: ENTRY_PAGE_SIZE + 1,
+      })
+
+      if (!openEntryId) return { read: first, shown: ENTRY_PAGE_SIZE }
+
+      let read = first
+      let shown = ENTRY_PAGE_SIZE
+      while (
+        read.length > shown &&
+        shown < ENTRY_LIST_CEILING &&
+        !read.slice(0, shown).some((entry) => entry.id === openEntryId)
+      ) {
+        const next = await listProjectEntities(projectId, forType, signal, {
+          skip: read.length,
+          take: ENTRY_PAGE_SIZE + 1,
+        })
+        read = [...read.slice(0, shown), ...next]
+        shown += ENTRY_PAGE_SIZE
+      }
+      return { read, shown }
+    }
+
+    reach(controller.signal, typeId)
+      .then(({ read, shown }) => showing(read, shown))
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setEntries([])
         setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
       })
     return () => controller.abort()
-  }, [projectId, typeId, reloadKey])
+  }, [projectId, typeId, reloadKey, openEntryId])
 
   /** One more row than is shown is asked for, so whether another page exists is known without a count. */
   function showing(read: ProjectEntitySummary[], shown: number) {
@@ -306,7 +345,19 @@ export function ProjectEntries({
       ) : (
         <ul className="projectcardlist" data-testid="project-entry-list">
           {(entries ?? []).map((entry) => (
-            <li key={entry.id} className="projectcard" data-testid={`project-entry-${entry.id}`}>
+            <li
+              key={entry.id}
+              className="projectcard"
+              data-testid={`project-entry-${entry.id}`}
+              // The entry the address named: marked for a screen reader as the row in view, and scrolled to, because
+              // it may sit below the fold of a list that had to read several pages to include it (#195).
+              aria-current={entry.id === openEntryId ? 'true' : undefined}
+              ref={
+                entry.id === openEntryId
+                  ? (node) => node?.scrollIntoView({ block: 'center' })
+                  : undefined
+              }
+            >
               <div className="projectcard__head">
                 <h3 className="projectcard__title">{entry.name}</h3>
                 <p className="projectcard__meta">
