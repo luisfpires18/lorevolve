@@ -353,18 +353,23 @@ public static class ConditionSchema
     /// A literal's JSON has to match the type it declares, so a save cannot store a condition that can only ever
     /// be a type mismatch. A time point also has to name a scope the specification orders.
     /// </summary>
-    private static ConditionProblem? ValidateLiteral(JsonElement operand, string path)
-    {
-        var declared = operand.GetProperty("type").GetString()!;
-        var literal = operand.GetProperty("literal");
+    private static ConditionProblem? ValidateLiteral(JsonElement operand, string path) =>
+        Typed(operand.GetProperty("literal"), operand.GetProperty("type").GetString()!, path);
 
+    /// <summary>
+    /// One value against one declared type, shared by a literal operand and a where-clause's <c>value</c>. The two
+    /// are the same thing written in two places, and checking only the operand was the gap Codex found on #150:
+    /// a clause could declare <c>reference</c> and carry a number, and the save would take it.
+    /// </summary>
+    private static ConditionProblem? Typed(JsonElement value, string declared, string path)
+    {
         var matches = declared switch
         {
-            "boolean" => literal.ValueKind is JsonValueKind.True or JsonValueKind.False,
-            "number" => literal.ValueKind == JsonValueKind.Number,
-            "text" => literal.ValueKind == JsonValueKind.String,
-            "reference" => literal.ValueKind == JsonValueKind.String && Guid.TryParse(literal.GetString(), out _),
-            "timePoint" => literal.ValueKind == JsonValueKind.String && IsTimePoint(literal.GetString()!),
+            "boolean" => value.ValueKind is JsonValueKind.True or JsonValueKind.False,
+            "number" => value.ValueKind == JsonValueKind.Number,
+            "text" => value.ValueKind == JsonValueKind.String,
+            "reference" => value.ValueKind == JsonValueKind.String && Guid.TryParse(value.GetString(), out _),
+            "timePoint" => value.ValueKind == JsonValueKind.String && IsTimePoint(value.GetString()!),
             _ => false,
         };
 
@@ -446,10 +451,25 @@ public static class ConditionSchema
                 continue;
             }
 
-            if (!clause.TryGetProperty("value", out _)
+            if (!clause.TryGetProperty("value", out var clauseValue)
                 || !clause.TryGetProperty("type", out var clauseType)
                 || clauseType.ValueKind != JsonValueKind.String
                 || !ValueTypes.Contains(clauseType.GetString()!, StringComparer.Ordinal))
+            {
+                return new ConditionProblem("type_mismatch", clausePath);
+            }
+
+            // The value against the type it declares, exactly as a literal operand's is: a clause that says
+            // reference and carries a number, or says timePoint and carries an unordered scope, can only ever be a
+            // type mismatch at evaluation time, so it is refused here instead.
+            if (Typed(clauseValue, clauseType.GetString()!, clausePath) is { } mismatch)
+            {
+                return mismatch;
+            }
+
+            // Membership in an event's subjects compares references, so a literal of any other type cannot be
+            // what the clause means.
+            if (isSubjectIds && clauseType.GetString() != "reference")
             {
                 return new ConditionProblem("type_mismatch", clausePath);
             }

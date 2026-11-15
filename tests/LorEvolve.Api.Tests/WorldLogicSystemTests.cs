@@ -297,6 +297,55 @@ public sealed class WorldLogicSystemTests(LorEvolveApiFactory factory) : IClassF
         Assert.Contains(code, await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A where-clause's literal is held to the type it declares, exactly as a literal operand's is. Codex round 1
+    /// on #150 found this missing: a clause could say <c>reference</c> and carry a number, and the save took it,
+    /// leaving a condition that could only ever be a type mismatch when it was evaluated.
+    /// </summary>
+    [Theory]
+    [InlineData("clausenumber", "{\"field\":\"canon\",\"op\":\"eq\",\"value\":1,\"type\":\"boolean\"}")]
+    [InlineData("clausetext", "{\"field\":\"kind\",\"op\":\"eq\",\"value\":7,\"type\":\"text\"}")]
+    [InlineData("clauseref", "{\"field\":\"id\",\"op\":\"eq\",\"value\":3,\"type\":\"reference\"}")]
+    [InlineData("clauserefword", "{\"field\":\"id\",\"op\":\"eq\",\"value\":\"not-an-id\",\"type\":\"reference\"}")]
+    [InlineData("clausetime", "{\"field\":\"at\",\"op\":\"lt\",\"value\":\"someday:1\",\"type\":\"timePoint\"}")]
+    [InlineData("clausetimeplain", "{\"field\":\"at\",\"op\":\"lt\",\"value\":\"2026-01-01\",\"type\":\"timePoint\"}")]
+    [InlineData("clausebool", "{\"field\":\"canon\",\"op\":\"eq\",\"value\":\"true\",\"type\":\"boolean\"}")]
+    [InlineData("clausesubjects", "{\"field\":\"subjectIds\",\"op\":\"contains\",\"value\":\"anyone\",\"type\":\"text\"}")]
+    public async Task A_where_clause_value_that_does_not_match_its_declared_type_is_refused(string tag, string clause)
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, $"wl{tag}");
+
+        var refused = await client.PostAsJsonAsync(
+            Rules(universe.Id),
+            new SystemRuleRequest("Broken clause", null, null, 1, Parse(Exists(clause))));
+
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+
+        var body = await refused.Content.ReadAsStringAsync();
+        Assert.Contains("type_mismatch", body, StringComparison.Ordinal);
+        Assert.Contains("where[0]", body, StringComparison.Ordinal);
+    }
+
+    /// <summary>The same clauses written correctly are accepted, so the check above refuses the value and not the shape.</summary>
+    [Theory]
+    [InlineData("okbool", "{\"field\":\"canon\",\"op\":\"eq\",\"value\":true,\"type\":\"boolean\"}")]
+    [InlineData("oktext", "{\"field\":\"kind\",\"op\":\"eq\",\"value\":\"dose\",\"type\":\"text\"}")]
+    [InlineData("oktime", "{\"field\":\"at\",\"op\":\"lt\",\"value\":\"calendar:2026-01-01\",\"type\":\"timePoint\"}")]
+    [InlineData("oktimeera", "{\"field\":\"at\",\"op\":\"lt\",\"value\":\"era:first/12\",\"type\":\"timePoint\"}")]
+    [InlineData("oksubjects", "{\"field\":\"subjectIds\",\"op\":\"contains\",\"operandValue\":{\"subject\":\"self\"}}")]
+    public async Task A_where_clause_value_that_matches_its_declared_type_is_stored(string tag, string clause)
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, $"wl{tag}");
+
+        var rule = await PostJson<SystemRuleDetail>(
+            client,
+            Rules(universe.Id),
+            new SystemRuleRequest("Good clause", null, null, 1, Parse(Exists(clause))));
+
+        Assert.Equal(1, rule.SchemaVersion);
+        Assert.Equal("exists", rule.Condition!.Value.GetProperty("kind").GetString());
+    }
+
     [Fact]
     public async Task A_condition_deeper_than_the_limit_is_refused_on_save()
     {
@@ -600,6 +649,9 @@ public sealed class WorldLogicSystemTests(LorEvolveApiFactory factory) : IClassF
     private static JsonElement Condition(string json) => Parse(json);
 
     private static string Holds(Guid ruleId) => $"{{\"kind\":\"ruleHolds\",\"ruleId\":\"{ruleId}\"}}";
+
+    private static string Exists(string clause) =>
+        $"{{\"kind\":\"exists\",\"query\":{{\"from\":\"events\",\"where\":[{clause}]}}}}";
 
     private static string PurityAtLeast(int floor) =>
         "{\"kind\":\"compare\",\"left\":{\"attribute\":\"purity\",\"of\":{\"subject\":\"self\"}},"
