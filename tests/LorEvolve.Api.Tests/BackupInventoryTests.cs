@@ -113,6 +113,10 @@ public sealed class BackupInventoryTests
         // A project's seasons and the episodes in them, with their scripts (#145).
         "ProjectSeasons",
         "ProjectEpisodes",
+
+        // A comic chapter's pages and the panels on them (#147).
+        "ProjectPages",
+        "ProjectPanels",
     ];
 
     /// <summary>Not in the archive because LorEvolve produces it again from what is.</summary>

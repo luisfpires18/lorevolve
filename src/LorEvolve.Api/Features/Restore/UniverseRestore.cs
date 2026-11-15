@@ -114,6 +114,16 @@ internal sealed class RestoreIdentity
             foreach (var episode in season.Episodes ?? [])
             {
                 yield return episode.Id;
+
+                foreach (var page in episode.Pages ?? [])
+                {
+                    yield return page.Id;
+
+                    foreach (var panel in page.Panels ?? [])
+                    {
+                        yield return panel.Id;
+                    }
+                }
             }
         }
 
@@ -963,6 +973,37 @@ internal sealed partial class UniverseRestore(
                     UpdatedAt = episode.UpdatedAt,
                     Version = 1,
                 });
+
+                // A comic chapter's pages and panels (version 43, #147). A panel's lore link is mapped like every
+                // other reference, so it names the restored entry rather than the one in the file.
+                foreach (var page in episode.Pages ?? [])
+                {
+                    db.ProjectPages.Add(new ProjectPage
+                    {
+                        Id = ids.Map(page.Id),
+                        EpisodeId = ids.Map(episode.Id),
+                        Name = page.Name,
+                        Notes = page.Notes,
+                        SortOrder = page.SortOrder,
+                        CreatedAt = page.CreatedAt,
+                        UpdatedAt = page.UpdatedAt,
+                    });
+
+                    foreach (var panel in page.Panels ?? [])
+                    {
+                        db.ProjectPanels.Add(new ProjectPanel
+                        {
+                            Id = ids.Map(panel.Id),
+                            PageId = ids.Map(page.Id),
+                            Description = panel.Description,
+                            Dialogue = panel.Dialogue,
+                            CanonEntityId = panel.CanonEntityId is { } shown ? ids.Map(shown) : null,
+                            SortOrder = panel.SortOrder,
+                            CreatedAt = panel.CreatedAt,
+                            UpdatedAt = panel.UpdatedAt,
+                        });
+                    }
+                }
             }
         }
 

@@ -65,6 +65,19 @@ async function film(page: Page, universeId: string) {
   })
 }
 
+/** 4 is Comic. Volumes of chapters, with pages and panels beneath a chapter (#147). */
+async function comic(page: Page, universeId: string, subtype: string | null = null) {
+  return api<{ id: string }>(page, 'POST', '/api/projects', {
+    name: unique('Low Tide '),
+    kind: 4,
+    lifecycle: 1,
+    subtype,
+    summary: '',
+    universeId,
+    expectedVersion: null,
+  })
+}
+
 test.describe('Project seasons', () => {
   test('a series gets seasons, episodes in order, and a script on one of them', async ({
     page,
@@ -167,6 +180,119 @@ test.describe('Project seasons', () => {
     await page.goto(`/app/projects/${game.id}`)
     await expect(page.getByTestId('project-schema')).toBeVisible()
     await expect(page.getByTestId('project-seasons')).toHaveCount(0)
+  })
+
+  test('a comic says volumes and chapters, and a chapter opens its pages and panels', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const book = await comic(page, world.id, 'manga')
+
+    await page.goto(`/app/projects/${book.id}`)
+
+    // A comic's own words.
+    const panel = page.getByTestId('project-seasons')
+    await expect(panel.getByRole('heading', { name: 'Volumes' })).toBeVisible()
+    await expect(panel).toContainText('No volumes yet.')
+
+    await page.getByTestId('project-season-new-name').fill('Volume 1')
+    await page.getByTestId('project-season-new-save').click()
+
+    const volume = page.getByTestId('project-season-list').locator('> li').first()
+    await volume.getByRole('button', { name: 'Add a chapter' }).click()
+    await page.getByTestId('project-episode-new-title').fill('The tide goes out')
+    await page.getByTestId('project-episode-new-save').click()
+
+    await expect(volume).toContainText('1 chapter')
+
+    // The level only a comic has, folded away until asked for.
+    await volume.getByRole('button', { name: 'Open pages' }).click()
+    await expect(volume).toContainText('No pages yet.')
+
+    await page.locator('[data-testid^="project-page-new-name-"]').first().fill('1')
+    await page.locator('[data-testid^="project-page-new-save-"]').first().click()
+
+    const pageRow = volume.locator('[data-testid^="project-page-"]').first()
+    await expect(pageRow).toContainText('No panels yet.')
+
+    await pageRow.getByRole('button', { name: 'Add a panel' }).click()
+    await page.getByTestId('project-panel-new-description').fill('Wide on the saltflats')
+    await page.getByTestId('project-panel-new-dialogue').fill('Nobody comes back twice.')
+    await page.getByTestId('project-panel-new-save').click()
+
+    await expect(pageRow).toContainText('1 panel')
+    await expect(pageRow).toContainText('Wide on the saltflats')
+    await expect(pageRow).toContainText('Nothing from the lore')
+
+    // The manga template is the one offered, chosen by the subtype.
+    await expect(page.getByTestId('project-schema-offer')).toContainText('Chapter')
+  })
+
+  test('a panel is pointed at a lore entry from the screen, and the reference leads to it', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const book = await comic(page, world.id)
+
+    // A lore entry to point at, and the type it needs.
+    const types = await api<{ id: string; name: string }[]>(
+      page,
+      'GET',
+      `/api/universes/${world.id}/entity-types`,
+    )
+    const entry = await api<{ id: string; name: string }>(
+      page,
+      'POST',
+      `/api/universes/${world.id}/entities`,
+      {
+        entityTypeId: types[0].id,
+        name: 'Alenna Vance',
+        summary: null,
+        canonStatus: 0,
+        aliases: [],
+        tags: [],
+        fields: [],
+      },
+    )
+
+    await page.goto(`/app/projects/${book.id}`)
+
+    await page.getByTestId('project-season-new-name').fill('Volume 1')
+    await page.getByTestId('project-season-new-save').click()
+
+    const volume = page.getByTestId('project-season-list').locator('> li').first()
+    await volume.getByRole('button', { name: 'Add a chapter' }).click()
+    await page.getByTestId('project-episode-new-title').fill('The tide goes out')
+    await page.getByTestId('project-episode-new-save').click()
+
+    await volume.getByRole('button', { name: 'Open pages' }).click()
+    await page.locator('[data-testid^="project-page-new-name-"]').first().fill('1')
+    await page.locator('[data-testid^="project-page-new-save-"]').first().click()
+
+    const pageRow = volume.locator('[data-testid^="project-page-"]').first()
+
+    // A panel created with the entry chosen through the picker the rest of LorEvolve uses.
+    await pageRow.getByRole('button', { name: 'Add a panel' }).click()
+    await page.getByTestId('project-panel-new-description').fill('Alenna, close')
+
+    const picker = page.getByTestId('project-panel-new-shows')
+    await picker.getByRole('combobox').fill('Alenna')
+    await page
+      .getByRole('option', { name: /Alenna Vance/ })
+      .first()
+      .click()
+
+    await page.getByTestId('project-panel-new-save').click()
+
+    // The reference is shown as a link, and it leads to the entry.
+    const shown = pageRow.locator('[data-testid^="project-panel-shows-"]').first()
+    await expect(shown).toContainText('Alenna Vance')
+    await shown.click()
+
+    await page.waitForURL(`**/app/universes/${world.id}/lore/${entry.id}`)
+    await expect(page.getByRole('heading', { name: 'Alenna Vance' })).toBeVisible()
   })
 
   test('a season that still holds an episode is not deleted, and the refusal is shown', async ({

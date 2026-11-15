@@ -1343,7 +1343,31 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                         episode.Script,
                         episode.SortOrder,
                         episode.CreatedAt,
-                        episode.UpdatedAt))
+                        episode.UpdatedAt,
+                        // A comic chapter's pages and their panels (version 43, #147). Empty for a series or a film,
+                        // which have no level below the episode.
+                        db.ProjectPages
+                            .Where(page => page.EpisodeId == episode.Id)
+                            .OrderBy(page => page.SortOrder)
+                            .Select(page => new BackupProjectPage(
+                                page.Id,
+                                page.Name,
+                                page.Notes,
+                                page.SortOrder,
+                                page.CreatedAt,
+                                page.UpdatedAt,
+                                page.Panels
+                                    .OrderBy(panel => panel.SortOrder)
+                                    .Select(panel => new BackupProjectPanel(
+                                        panel.Id,
+                                        panel.Description,
+                                        panel.Dialogue,
+                                        panel.CanonEntityId,
+                                        panel.SortOrder,
+                                        panel.CreatedAt,
+                                        panel.UpdatedAt))
+                                    .ToList()))
+                            .ToList()))
                     .ToList()))
             .ToListAsync(cancellationToken);
 

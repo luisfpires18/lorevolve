@@ -14,9 +14,10 @@ namespace LorEvolve.Api.Features.ProjectEntities;
 /// <para><b>No WOO-specific content.</b> These are the shapes any game, series, film or comic has, not one world's.
 /// Nothing here names a faction, a rune or a weapon.</para>
 ///
-/// <para>Game (#144), Series (#145) and Film (#146) are filled in; Comic is #147 and adds its own entry to this one
-/// table rather than a mechanism of its own. A kind with no template is not an error: its author defines every type
-/// themselves, which is also what happens to an author who declines one.</para>
+/// <para>Game (#144), Series (#145), Film (#146) and Comic (#147) are all here. Only Comic reads the project's
+/// subtype, because #147 names three forms - comic, manga and webtoon - where the other issues name one each. A kind
+/// with no template is not an error: its author defines every type themselves, which is also what happens to an author
+/// who declines one.</para>
 ///
 /// <para>Film and Series start from the same three types under different billing vocabulary, which is honest rather
 /// than lazy: a film and a series are made of characters, places and things either way, and inventing a difference to
@@ -112,6 +113,36 @@ public static class ProjectTemplates
                 ]),
         ]);
 
+    /// <summary>
+    /// A comic's starter types, and the two variants #147 asks for by name. The three differ only where the form
+    /// genuinely does: a manga's chapters are serialised, so its Character carries a first-appearance chapter; a
+    /// webtoon scrolls, so its page-level type is an Episode rather than an Issue. Everything else is the same three
+    /// types, because inventing differences would leave an author deleting types they never wanted.
+    /// </summary>
+    private static Template ComicTemplate(string name, string unit, IReadOnlyList<StarterField> extra) => new(
+        name,
+        [
+            new StarterType(
+                "Character",
+                "Someone who appears in it. Separate from the lore's own characters, and may point at one.",
+                [
+                    new StarterField("Billing", EntityFieldKind.Select, ["Main", "Recurring", "Guest"]),
+                    .. extra,
+                    new StarterField("Notes", EntityFieldKind.LongText, []),
+                ]),
+            new StarterType(
+                "Location",
+                "A place it returns to.",
+                [new StarterField("Notes", EntityFieldKind.LongText, [])]),
+            new StarterType(
+                unit,
+                "A published part: what a reader buys or opens at once.",
+                [
+                    new StarterField("Published", EntityFieldKind.Date, []),
+                    new StarterField("Notes", EntityFieldKind.LongText, []),
+                ]),
+        ]);
+
     private static readonly Template Empty = new("None", []);
 
     /// <summary>
@@ -119,11 +150,34 @@ public static class ProjectTemplates
     /// without a template is not an error: it means an author of that kind defines every type themselves, which is
     /// also what happens to a kind whose template they decline.
     /// </summary>
-    public static Template For(ProjectKind kind) => kind switch
+    public static Template For(ProjectKind kind, string? subtype = null) => kind switch
     {
         ProjectKind.Game => GameTemplate,
         ProjectKind.Series => SeriesTemplate,
         ProjectKind.Film => FilmTemplate,
+        ProjectKind.Comic => Comic(subtype),
         _ => Empty,
     };
+
+    /// <summary>
+    /// Which comic template a project gets, from its own subtype (#147). The subtype is free text an author typed, so
+    /// it is matched loosely and anything unrecognised gets the plain comic one: a project called "graphic novel"
+    /// should start somewhere rather than nowhere.
+    /// </summary>
+    private static Template Comic(string? subtype)
+    {
+        var said = subtype?.Trim() ?? string.Empty;
+
+        if (said.Contains("manga", StringComparison.OrdinalIgnoreCase))
+        {
+            return ComicTemplate(
+                "Manga",
+                "Chapter",
+                [new StarterField("First appears in", EntityFieldKind.ShortText, [])]);
+        }
+
+        return said.Contains("webtoon", StringComparison.OrdinalIgnoreCase)
+            ? ComicTemplate("Webtoon", "Episode", [])
+            : ComicTemplate("Comic", "Issue", []);
+    }
 }
