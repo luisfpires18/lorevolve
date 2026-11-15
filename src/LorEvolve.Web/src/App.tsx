@@ -58,6 +58,7 @@ import {
   UniverseTrash,
   UniverseTypes,
   UniversesPage,
+  WorldLogicPage,
   WorldRulePage,
   WorldRulesPage,
 } from './screens'
@@ -256,6 +257,8 @@ function Root() {
                 element={asSection('family-tree', <FamilyTreePage />)}
               />
               <Route path="timeline" element={asSection('timeline', <TimelinePage />)} />
+              <Route path="world-logic" element={asSection('world-logic', <WorldLogicPage />)} />
+              {/* Every world rule address still works, so nothing an author linked or bookmarked broke (#152). */}
               <Route path="world-rules" element={asSection('world-rules', <WorldRulesPage />)} />
               <Route path="chronology" element={asSection('chronology', <ChronologyPage />)} />
               <Route

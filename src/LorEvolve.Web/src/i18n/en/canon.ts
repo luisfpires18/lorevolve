@@ -78,6 +78,43 @@ const canon = {
     noDescription: 'No description.',
     lastChanged: 'Last changed {date}',
   },
+  worldLogic: {
+    title: 'World Logic',
+    lede: 'The rules this universe keeps, the Systems that group them, and what checking them found. A rule is read only where you stated it explicitly; LorEvolve never reads what a rule says.',
+    tabs: {
+      rules: 'Rules',
+      systems: 'Systems',
+      integrity: 'Integrity',
+    },
+    kinds: {
+      worldRule: 'World rule · ',
+      definition: 'Rule definition · ',
+    },
+    hasCondition: 'Has a condition · ',
+    wordsOnly: 'Words only · ',
+    scopes: {
+      universe: 'Whole universe · ',
+      project: 'One project · ',
+    },
+    systems: {
+      loading: 'Gathering Systems…',
+      readFailed: 'The Systems could not be read.',
+      noRules: 'This System references no rules yet.',
+      ruleCount: { one: '{count} rule', other: '{count} rules' },
+      sharedWith: { one: 'In {count} System', other: 'In {count} Systems' },
+      empty: {
+        title: 'No Systems yet.',
+        hint: 'A System is a named set of rules, such as a magic system or a line of succession. The same rule can belong to several Systems without being copied.',
+      },
+    },
+    integrity: {
+      empty: {
+        title: 'Nothing has been checked yet.',
+        hint: 'Checking a rule against this universe produces findings with the records they are about. Until a check has run there is nothing here, which is not the same as nothing being wrong.',
+      },
+      canonLink: 'Open Canon findings',
+    },
+  },
   rules: {
     readFailed: 'The rules could not be read.',
     title: 'World Rules',

@@ -81,6 +81,43 @@ const canon: Dictionary['canon'] = {
     noDescription: 'Sem descrição.',
     lastChanged: 'Última alteração {date}',
   },
+  worldLogic: {
+    title: 'Lógica do mundo',
+    lede: 'As regras que este universo mantém, os Sistemas que as agrupam e o que a verificação encontrou. Uma regra só é lida onde a declaraste explicitamente; o LorEvolve nunca lê o que uma regra diz.',
+    tabs: {
+      rules: 'Regras',
+      systems: 'Sistemas',
+      integrity: 'Integridade',
+    },
+    kinds: {
+      worldRule: 'Regra do mundo · ',
+      definition: 'Definição de regra · ',
+    },
+    hasCondition: 'Tem uma condição · ',
+    wordsOnly: 'Só palavras · ',
+    scopes: {
+      universe: 'Todo o universo · ',
+      project: 'Um projeto · ',
+    },
+    systems: {
+      loading: 'A reunir Sistemas…',
+      readFailed: 'Não foi possível ler os Sistemas.',
+      noRules: 'Este Sistema ainda não referencia regras.',
+      ruleCount: { one: '{count} regra', other: '{count} regras' },
+      sharedWith: { one: 'Em {count} Sistema', other: 'Em {count} Sistemas' },
+      empty: {
+        title: 'Ainda não há Sistemas.',
+        hint: 'Um Sistema é um conjunto de regras com nome, como um sistema de magia ou uma linha de sucessão. A mesma regra pode pertencer a vários Sistemas sem ser copiada.',
+      },
+    },
+    integrity: {
+      empty: {
+        title: 'Ainda nada foi verificado.',
+        hint: 'Verificar uma regra neste universo produz resultados com os registos a que dizem respeito. Enquanto nenhuma verificação corre, não há nada aqui, o que não é o mesmo que não haver nada errado.',
+      },
+      canonLink: 'Abrir resultados do Canon',
+    },
+  },
   rules: {
     readFailed: 'Não foi possível ler as regras.',
     title: 'Regras do mundo',

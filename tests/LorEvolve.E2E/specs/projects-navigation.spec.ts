@@ -77,7 +77,7 @@ test.describe('Projects navigation', () => {
       'workspace-types',
       'workspace-family-tree',
       'workspace-maps',
-      'workspace-world-rules',
+      'workspace-world-logic',
       'workspace-chronology',
       'workspace-stories',
       'workspace-timeline',

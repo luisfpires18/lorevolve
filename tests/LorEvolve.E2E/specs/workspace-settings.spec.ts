@@ -179,7 +179,7 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
       'Types',
       'Family Tree',
       'Maps',
-      'World Rules',
+      'World Logic',
       'Canon',
       'Chronology',
       'Stories',

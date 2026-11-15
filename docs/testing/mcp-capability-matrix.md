@@ -116,8 +116,9 @@ reaches; that one says who may reach it at all.
 ## Known gaps
 
 - **World Logic over MCP is not there yet.** `systems`, `system-rules` and `world-logic` (the one read that returns
-  both kinds of rule together) carry `pending-issue-154`. Issue #152 (the
-  World Logic page) and #153 (persisted findings) were still open when this matrix was written, so a findings domain
-  will join the tables when #153 lands, and the two `pending-issue-154` rows become tools when #154 does.
+  both kinds of rule together) carry `pending-issue-154`. Issue #153 (persisted findings) and #154 (the MCP integrity
+  and rule-proposal tools) were still open when this matrix was written, so a findings domain will join the tables when
+  #153 lands, and the three `pending-issue-154` prefixes become tools when #154 does. Issue #152, the World Logic page,
+  merged while this was in review and added no API route of its own.
 - **A connected app never reads a canon finding.** Today findings are a person's review queue (`person-only`). If #154
   gives an app a finding-submission workflow, the `canon-conflicts` row is the one to revisit.
