@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { ProjectEntries } from '../components/ProjectEntries'
 import { ProjectSchema } from '../components/ProjectSchema'
+import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectsNav } from '../components/ProjectsNav'
 import { createProject, getProject } from '../projects/api'
 import { kindLabel, lifecycleLabel, projectPath } from '../projects/sections'
@@ -253,6 +254,12 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
         reloadKey={schemaVersion}
         onChanged={() => setSchemaVersion((version) => version + 1)}
       />
+
+      {/*
+       * Seasons and episodes (#145), for a Series. The API answers 404 for another kind, so drawing the panel there
+       * would show an author a failure for a feature their project does not have.
+       */}
+      {project.kind === ProjectKind.Series ? <ProjectSeasons projectId={project.id} /> : null}
     </div>
   )
 }

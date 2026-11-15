@@ -308,7 +308,7 @@ public sealed record UniverseBackup(
     /// ignorable: a version 37 reader would list stories by title and a scene's lore by name. A file at version 37 or earlier
     /// restores its stories in title order and each scene's lore by the entry's name, as it read then.
     /// </summary>
-    public const int CurrentVersion = 40;
+    public const int CurrentVersion = 41;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -367,7 +367,8 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupMap>? Maps = null,
     IReadOnlyList<BackupIdeaBoard>? IdeaBoards = null,
     IReadOnlyList<BackupCreativeProject>? CreativeProjects = null,
-    IReadOnlyList<BackupProjectEntity>? ProjectEntities = null);
+    IReadOnlyList<BackupProjectEntity>? ProjectEntities = null,
+    IReadOnlyList<BackupProjectSeason>? ProjectSeasons = null);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
@@ -871,6 +872,31 @@ public sealed record BackupImageCrop(double X, double Y, double Width, double He
 /// world's record. <paramref name="CanonEntityId"/> is the optional link to the lore entry it stands for, carried as
 /// this file's own id like every other reference.</para>
 /// </summary>
+/// <summary>
+/// A season of one project, with its episodes (since version 41, #145). Carried for the same reason the projects and
+/// their entries are: a universe owns its projects (#171), so a universe restored without a series' episodes and their
+/// scripts is not the universe that was backed up.
+/// </summary>
+public sealed record BackupProjectSeason(
+    Guid Id,
+    Guid ProjectId,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupProjectEpisode> Episodes);
+
+/// <summary>One episode, with its script exactly as the author saved it.</summary>
+public sealed record BackupProjectEpisode(
+    Guid Id,
+    string Title,
+    string? Synopsis,
+    string? Script,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
 public sealed record BackupProjectEntity(
     Guid Id,
     Guid ProjectId,

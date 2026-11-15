@@ -25,7 +25,7 @@ public sealed class PlotBackupTests(LorEvolveApiFactory factory) : IClassFixture
         var world = await BuildStructure(client, universe.Id);
 
         var backup = await Backup(client, universe.Id);
-        Assert.Equal(40, UniverseBackup.CurrentVersion);
+        Assert.Equal(41, UniverseBackup.CurrentVersion);
         Assert.Equal(UniverseBackup.CurrentVersion, backup.FormatVersion);
 
         var stories = backup.Payload.Stories!;

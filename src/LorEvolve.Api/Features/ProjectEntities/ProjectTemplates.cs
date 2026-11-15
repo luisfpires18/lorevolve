@@ -14,8 +14,9 @@ namespace LorEvolve.Api.Features.ProjectEntities;
 /// <para><b>No WOO-specific content.</b> These are the shapes any game, series, film or comic has, not one world's.
 /// Nothing here names a faction, a rune or a weapon.</para>
 ///
-/// <para>Only the Game template is filled in here, because #144 is the Game issue; Series, Film and Comic are #145,
-/// #146 and #147 and add their own entries to this one table rather than a mechanism of their own.</para>
+/// <para>Game (#144) and Series (#145) are filled in; Film and Comic are #146 and #147 and add their own entries to
+/// this one table rather than a mechanism of their own. A kind with no template is not an error: its author defines
+/// every type themselves, which is also what happens to an author who declines one.</para>
 /// </summary>
 public static class ProjectTemplates
 {
@@ -59,6 +60,30 @@ public static class ProjectTemplates
                 ]),
         ]);
 
+    private static readonly Template SeriesTemplate = new(
+        "Series",
+        [
+            new StarterType(
+                "Character",
+                "Someone who appears in the series. Separate from the lore's own characters, and may point at one.",
+                [
+                    new StarterField("Billing", EntityFieldKind.Select, ["Main", "Recurring", "Guest"]),
+                    new StarterField("Notes", EntityFieldKind.LongText, []),
+                ]),
+            new StarterType(
+                "Location",
+                "A standing set or place the series returns to.",
+                [
+                    new StarterField("Notes", EntityFieldKind.LongText, []),
+                ]),
+            new StarterType(
+                "Prop",
+                "Something that has to exist on screen.",
+                [
+                    new StarterField("Notes", EntityFieldKind.LongText, []),
+                ]),
+        ]);
+
     private static readonly Template Empty = new("None", []);
 
     /// <summary>
@@ -69,6 +94,7 @@ public static class ProjectTemplates
     public static Template For(ProjectKind kind) => kind switch
     {
         ProjectKind.Game => GameTemplate,
+        ProjectKind.Series => SeriesTemplate,
         _ => Empty,
     };
 }

@@ -5,6 +5,7 @@ using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Knowledge;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.ProjectEntities;
 using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Progression;
@@ -542,6 +543,7 @@ internal static partial class BackupValidation
             RegisterTags(tags);
             RegisterEntities(entities);
             RegisterProjectEntries(Required(payload.ProjectEntities, "the list of project entries", since: 40));
+            RegisterProjectSeasons(Required(payload.ProjectSeasons, "the list of project seasons", since: 41));
             RegisterRelationshipTypes(relationshipTypes);
             RegisterStories(stories);
             RegisterValidationTerms(terms);
@@ -1168,6 +1170,58 @@ internal static partial class BackupValidation
         }
 
         // ---------- Entries ----------
+
+        /// <summary>
+        /// A project's seasons and their episodes (version 41, #145). Each season belongs to a project this file holds,
+        /// and one project's season names are unique among themselves, which is what the database says too.
+        /// </summary>
+        private void RegisterProjectSeasons(IReadOnlyList<BackupProjectSeason> seasons)
+        {
+            var namesByProject = new Dictionary<Guid, HashSet<string>>();
+
+            foreach (var season in seasons)
+            {
+                if (season is null)
+                {
+                    Missing("a project season");
+                    continue;
+                }
+
+                var what = $"The season {Quote(season.Name)}";
+                Register(season.Id, what);
+
+                if (!_projects.Contains(season.ProjectId))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} belongs to a project this file does not hold.");
+                }
+
+                var names = namesByProject.TryGetValue(season.ProjectId, out var held)
+                    ? held
+                    : namesByProject[season.ProjectId] = new HashSet<string>(StringComparer.Ordinal);
+
+                if (Text(season.Name, SeriesLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(season.Name))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"Two seasons of one project are both called {Quote(season.Name)}.");
+                }
+
+                Text(season.Summary, SeriesLimits.SummaryMaxLength, $"{what}'s summary");
+
+                foreach (var episode in season.Episodes ?? [])
+                {
+                    if (episode is null)
+                    {
+                        Missing($"an episode of {what}");
+                        continue;
+                    }
+
+                    var which = $"The episode {Quote(episode.Title)} of {Quote(season.Name)}";
+                    Register(episode.Id, which);
+                    Text(episode.Title, SeriesLimits.NameMaxLength, $"{which}'s title", required: true);
+                    Text(episode.Synopsis, SeriesLimits.SummaryMaxLength, $"{which}'s synopsis");
+                    Text(episode.Script, SeriesLimits.ScriptMaxLength, $"{which}'s script");
+                }
+            }
+        }
 
         /// <summary>
         /// A project's entries (version 40, #144): each must belong to a project this file holds and to a type of that
