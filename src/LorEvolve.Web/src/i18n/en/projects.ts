@@ -43,7 +43,8 @@ const projects = {
     loreOf: 'Lore',
     failed: 'Some of this project could not be read.',
     empty: 'This project has nothing in it yet.',
-    emptyHint: 'Start by giving it the types of thing it is made of, then add entries of those types.',
+    emptyHint:
+      'Start by giving it the types of thing it is made of, then add entries of those types.',
     start: 'Set up its types',
   },
   ideas: {

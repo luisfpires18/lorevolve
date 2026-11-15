@@ -111,7 +111,9 @@ test.describe('Project sections', () => {
     await expect(page.getByTestId('project-entries')).toHaveCount(0)
     await expect(page.getByTestId('ideas')).toHaveCount(0)
     await page.getByTestId('projecttab-overview').click()
-    await expect(page.getByTestId('project-view-empty-overview')).toBeVisible()
+    // The overview is its own view now (#195); with no types and no entries it is that view's empty state, and it
+    // still holds neither the schema nor the entries.
+    await expect(page.getByTestId('project-overview-empty')).toBeVisible()
     await expect(page.getByTestId('project-schema')).toHaveCount(0)
     await expect(page.getByTestId('project-entries')).toHaveCount(0)
     await page.getByTestId('projecttab-systems').click()
