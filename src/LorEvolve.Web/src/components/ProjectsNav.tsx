@@ -3,11 +3,11 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { ChevronRight, FolderOpen, Plus } from 'lucide-react'
 import { listProjects } from '../projects/api'
 import {
-  PROJECT_SECTIONS,
   kindLabel,
   projectPath,
   projectRowPath,
   projectSectionLabel,
+  projectSections,
 } from '../projects/sections'
 import type { ProjectDetail } from '../projects/types'
 import { t } from '../i18n'
@@ -130,7 +130,6 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
                 <NavLink
                   className="sidebar__link sidebar__link--project"
                   to={projectPath(project.id, '', universeId)}
-                  end
                   data-testid={`project-link-${project.id}`}
                 >
                   <span className="sidebar__projectname">{project.name}</span>
@@ -139,17 +138,18 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
               </div>
 
               {isOpen ? (
+                // Below 60rem the project's tab bar carries these same destinations, so CSS hides this list there and the
+                // two are never drawn at once.
                 <ul
-                  className="sidebar__sublinks"
+                  className="sidebar__sublinks sidebar__sublinks--project"
                   id={panelId}
                   data-testid={`project-pages-${project.id}`}
                 >
-                  {PROJECT_SECTIONS.map((section) => (
+                  {projectSections(project.kind).map((section) => (
                     <li key={section.segment}>
                       <NavLink
                         className="sidebar__sublink"
                         to={projectPath(project.id, section.segment, universeId)}
-                        end={section.segment === ''}
                         data-testid={`${section.testId}-${project.id}`}
                       >
                         <section.icon

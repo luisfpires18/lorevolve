@@ -175,7 +175,7 @@ function Root() {
                 element={asSection('project', <ProjectPage isNew />)}
               />
               <Route
-                path="/app/projects/:projectId"
+                path="/app/projects/:projectId/*"
                 element={asSection('project', <ProjectPage />)}
               />
               <Route path="/app/ideas" element={asSection('ideas', <IdeasPage />)} />
@@ -281,7 +281,7 @@ function Root() {
               />
               <Route path="projects" element={asSection('projects', <ProjectsPage inUniverse />)} />
               <Route
-                path="projects/:projectId"
+                path="projects/:projectId/*"
                 element={asSection('project', <ProjectPage inUniverse />)}
               />
               <Route path="stories" element={asSection('stories', <StoriesPage />)} />

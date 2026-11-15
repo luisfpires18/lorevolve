@@ -18648,6 +18648,74 @@ details.reviewsection > .reviewsection__list {
   list-style: none;
 }
 
+/*
+ * One project's tab bar (#192): the same destinations as its sidebar expansion, drawn like the screen tabs elsewhere
+ * but as links, with the current one marked by aria-current rather than aria-selected.
+ */
+.projectframe {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.projecttabs__list {
+  display: flex;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--rule);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.projecttabs__tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  min-height: 2.75rem;
+  margin-bottom: -1px;
+  padding: 0 var(--space-4);
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  text-decoration: none;
+  transition:
+    color var(--duration-1) var(--ease),
+    border-color var(--duration-1) var(--ease);
+}
+
+.projecttabs__tab:hover {
+  color: var(--ink);
+}
+
+.projecttabs__tab[aria-current='page'] {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.projecttabs__tab:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.projecttabs__icon {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+
+/* On a narrow screen the tab bar is the way between a project's views, so the sidebar's copy of them steps aside. */
+@media (max-width: 59.99rem) {
+  .sidebar__sublinks--project,
+  .sidebar__projectrow .sidebar__disclosure {
+    display: none;
+  }
+}
+
 @media (min-width: 60rem) {
   .projectshell {
     grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);

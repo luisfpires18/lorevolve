@@ -19,6 +19,21 @@ const projects = {
   },
   sections: {
     overview: 'Overview',
+    structure: 'Structure',
+    manuscript: 'Manuscript',
+    entities: 'Entities',
+    systems: 'Systems',
+    ideas: 'Ideas',
+    scripts: 'Scripts',
+    screenplay: 'Screenplay',
+    comicScript: 'Script',
+  },
+  tabs: {
+    label: 'Project views',
+  },
+  ideas: {
+    empty: 'No ideas in this project yet.',
+    emptyHint: 'Ideas will gather here once an idea can belong to a project.',
   },
   kind: {
     writing: 'Writing',
