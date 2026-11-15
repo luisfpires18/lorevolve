@@ -26,6 +26,7 @@ const projects = {
   },
   list: {
     title: 'Projetos',
+    lede: 'O que está a fazer neste universo, e até onde cada um já chegou.',
     loading: 'A ler os seus projetos.',
     failed: 'Não foi possível ler os seus projetos.',
     empty: 'Ainda não há projetos.',

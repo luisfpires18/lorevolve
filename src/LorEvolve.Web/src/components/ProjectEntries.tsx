@@ -94,7 +94,7 @@ export function ProjectEntries({
   }
 
   if (types === null) {
-    return <p className="projects__lede">{t('projects.entries.loading')}</p>
+    return <p className="projectcard__meta">{t('projects.entries.loading')}</p>
   }
 
   if (types.length === 0) {
@@ -148,7 +148,7 @@ export function ProjectEntries({
       </label>
 
       {typeId !== null && entries === null ? (
-        <p className="projects__lede">{t('projects.entries.loading')}</p>
+        <p className="projectcard__meta">{t('projects.entries.loading')}</p>
       ) : (entries ?? []).length === 0 ? (
         <EmptyState
           title={t('projects.entries.empty')}
@@ -156,25 +156,30 @@ export function ProjectEntries({
           testId="project-entries-empty"
         />
       ) : (
-        <ul className="cardlist" data-testid="project-entry-list">
+        <ul className="projectcardlist" data-testid="project-entry-list">
           {(entries ?? []).map((entry) => (
-            <li key={entry.id} className="card" data-testid={`project-entry-${entry.id}`}>
-              <h3 className="card__title">{entry.name}</h3>
-              {entry.summary ? <p>{entry.summary}</p> : null}
-              <p className="projects__lede">
-                {entry.canonEntityName ?? t('projects.entries.canonNone')}
-              </p>
-              <button
-                type="button"
-                disabled={busy}
-                data-testid={`project-entry-delete-${entry.id}`}
-                onClick={() => {
-                  setBusy(true)
-                  deleteProjectEntity(projectId, entry.id).then(refresh).catch(failing)
-                }}
-              >
-                {t('projects.entries.delete')}
-              </button>
+            <li key={entry.id} className="projectcard" data-testid={`project-entry-${entry.id}`}>
+              <div className="projectcard__head">
+                <h3 className="projectcard__title">{entry.name}</h3>
+                <p className="projectcard__meta">
+                  {entry.canonEntityName ?? t('projects.entries.canonNone')}
+                </p>
+                <div className="projectcard__actions">
+                  <button
+                    className="button button--secondary button--danger-quiet button--sm"
+                    type="button"
+                    disabled={busy}
+                    data-testid={`project-entry-delete-${entry.id}`}
+                    onClick={() => {
+                      setBusy(true)
+                      deleteProjectEntity(projectId, entry.id).then(refresh).catch(failing)
+                    }}
+                  >
+                    {t('projects.entries.delete')}
+                  </button>
+                </div>
+              </div>
+              {entry.summary ? <p className="prose">{entry.summary}</p> : null}
             </li>
           ))}
         </ul>
@@ -229,7 +234,9 @@ export function ProjectEntries({
           />
         </label>
 
-        {fields.length > 0 ? <h4>{t('projects.entries.values')}</h4> : null}
+        {fields.length > 0 ? (
+          <h4 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h4>
+        ) : null}
 
         {fields.map((field) => (
           <ValueField
@@ -240,9 +247,16 @@ export function ProjectEntries({
           />
         ))}
 
-        <button type="submit" disabled={busy} data-testid="project-entry-new-save">
-          {busy ? t('projects.entries.saving') : t('projects.entries.save')}
-        </button>
+        <div className="form__actions">
+          <button
+            className="button"
+            type="submit"
+            disabled={busy}
+            data-testid="project-entry-new-save"
+          >
+            {busy ? t('projects.entries.saving') : t('projects.entries.save')}
+          </button>
+        </div>
       </form>
     </section>
   )
@@ -280,45 +294,49 @@ function ValueField({
           {field.name}
           {field.isRequired ? ' *' : ''}
         </legend>
-        {field.options.map((option) => (
-          <label key={option.id} className="field field--check">
-            <input
-              type="checkbox"
-              checked={chosen.includes(option.id)}
-              data-testid={`${testId}-${option.id}`}
-              onChange={(event) =>
-                onChange({
-                  ...blank,
-                  // One choice replaces, several accumulate: the kind decides, not the control.
-                  optionIds: event.target.checked
-                    ? field.kind === FieldKind.Select
-                      ? [option.id]
-                      : [...chosen, option.id]
-                    : chosen.filter((id) => id !== option.id),
-                })
-              }
-            />
-            <span>{option.value}</span>
-          </label>
-        ))}
+        <div className="choices">
+          {field.options.map((option) => (
+            <label key={option.id} className="check">
+              <input
+                type="checkbox"
+                checked={chosen.includes(option.id)}
+                data-testid={`${testId}-${option.id}`}
+                onChange={(event) =>
+                  onChange({
+                    ...blank,
+                    // One choice replaces, several accumulate: the kind decides, not the control.
+                    optionIds: event.target.checked
+                      ? field.kind === FieldKind.Select
+                        ? [option.id]
+                        : [...chosen, option.id]
+                      : chosen.filter((id) => id !== option.id),
+                  })
+                }
+              />
+              <span>{option.value}</span>
+            </label>
+          ))}
+        </div>
       </fieldset>
     )
   }
 
   if (field.kind === FieldKind.Boolean) {
     return (
-      <label className="field field--check">
-        <input
-          type="checkbox"
-          checked={current.boolean === true}
-          data-testid={testId}
-          onChange={(event) => onChange({ ...blank, boolean: event.target.checked })}
-        />
-        <span className="field__label">
-          {field.name}
-          {field.isRequired ? ' *' : ''}
-        </span>
-      </label>
+      <div className="field">
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={current.boolean === true}
+            data-testid={testId}
+            onChange={(event) => onChange({ ...blank, boolean: event.target.checked })}
+          />
+          <span>
+            {field.name}
+            {field.isRequired ? ' *' : ''}
+          </span>
+        </label>
+      </div>
     )
   }
 

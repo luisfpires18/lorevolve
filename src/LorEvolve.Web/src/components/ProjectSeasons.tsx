@@ -136,7 +136,7 @@ export function ProjectSeasons({
   }
 
   if (seasons === null) {
-    return <p className="projects__lede">{t('projects.seasons.loading')}</p>
+    return <p className="projectcard__meta">{t('projects.seasons.loading')}</p>
   }
 
   return (
@@ -156,12 +156,12 @@ export function ProjectSeasons({
         <EmptyState title={say.empty()} hint={say.emptyHint()} testId="project-seasons-empty" />
       ) : null}
 
-      <ol className="cardlist" data-testid="project-season-list">
+      <ol className="projectcardlist" data-testid="project-season-list">
         {seasons.map((season, index) => (
-          <li key={season.id} className="card" data-testid={`project-season-${season.id}`}>
+          <li key={season.id} className="projectcard" data-testid={`project-season-${season.id}`}>
             {renaming === season.id ? (
               <form
-                className="form form--inline"
+                className="form projectform--inline"
                 onSubmit={(event) => {
                   event.preventDefault()
                   if (busy) return
@@ -184,20 +184,36 @@ export function ProjectSeasons({
                     required
                   />
                 </label>
-                <button type="submit" disabled={busy} data-testid="project-season-rename-save">
+                <button
+                  className="button button--sm"
+                  type="submit"
+                  disabled={busy}
+                  data-testid="project-season-rename-save"
+                >
                   {t('projects.seasons.renameSave')}
+                </button>
+                {/* Without this the only way out of a rename the author thought better of was to save it. */}
+                <button
+                  className="button button--secondary button--sm"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setRenaming(null)}
+                  data-testid="project-season-rename-cancel"
+                >
+                  {t('projects.entries.close')}
                 </button>
               </form>
             ) : (
-              <div className="card__head">
-                <h3 className="card__title">{season.name}</h3>
-                <p className="projects__lede">
+              <div className="projectcard__head">
+                <h3 className="projectcard__title">{season.name}</h3>
+                <p className="projectcard__meta">
                   {season.episodes.length === 0
                     ? say.noEpisodes()
                     : say.episodeCount(season.episodes.length)}
                 </p>
-                <div className="card__actions">
+                <div className="projectcard__actions">
                   <button
+                    className="button button--text button--sm"
                     type="button"
                     disabled={busy || index === 0}
                     data-testid={`project-season-up-${season.id}`}
@@ -206,6 +222,7 @@ export function ProjectSeasons({
                     {t('projects.seasons.moveUp')}
                   </button>
                   <button
+                    className="button button--text button--sm"
                     type="button"
                     disabled={busy || index === seasons.length - 1}
                     data-testid={`project-season-down-${season.id}`}
@@ -214,6 +231,7 @@ export function ProjectSeasons({
                     {t('projects.seasons.moveDown')}
                   </button>
                   <button
+                    className="button button--secondary button--sm"
                     type="button"
                     data-testid={`project-season-rename-${season.id}`}
                     onClick={() => {
@@ -224,6 +242,7 @@ export function ProjectSeasons({
                     {t('projects.seasons.rename')}
                   </button>
                   <button
+                    className="button button--secondary button--danger-quiet button--sm"
                     type="button"
                     disabled={busy}
                     data-testid={`project-season-delete-${season.id}`}
@@ -235,75 +254,88 @@ export function ProjectSeasons({
               </div>
             )}
 
-            {season.summary ? <p>{season.summary}</p> : null}
+            {season.summary ? <p className="prose">{season.summary}</p> : null}
 
-            <ol data-testid={`project-episodes-${season.id}`}>
+            <ol className="fieldlist" data-testid={`project-episodes-${season.id}`}>
               {season.episodes.map((episode, place) => (
-                <li key={episode.id} data-testid={`project-episode-${episode.id}`}>
-                  <span>{episode.title}</span>{' '}
-                  <span className="projects__lede">
-                    {episode.hasScript
-                      ? t('projects.seasons.hasScript', { count: String(episode.scriptLength) })
-                      : t('projects.seasons.noScript')}
+                <li
+                  key={episode.id}
+                  className="fieldlist__row"
+                  data-testid={`project-episode-${episode.id}`}
+                >
+                  <span className="fieldlist__text">
+                    <span className="fieldlist__name">{episode.title}</span>
+                    <span className="fieldlist__meta">
+                      {episode.hasScript
+                        ? t('projects.seasons.hasScript', { count: String(episode.scriptLength) })
+                        : t('projects.seasons.noScript')}
+                    </span>
                   </span>
-                  <button
-                    type="button"
-                    disabled={busy || place === 0}
-                    data-testid={`project-episode-up-${episode.id}`}
-                    onClick={() =>
-                      run(moveEpisode(projectId, season.id, episode.id, { place: place - 1 }))
-                    }
-                  >
-                    {t('projects.seasons.moveUp')}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy || place === season.episodes.length - 1}
-                    data-testid={`project-episode-down-${episode.id}`}
-                    onClick={() =>
-                      run(moveEpisode(projectId, season.id, episode.id, { place: place + 1 }))
-                    }
-                  >
-                    {t('projects.seasons.moveDown')}
-                  </button>
-                  {/* Moving between seasons needs no drag: the other seasons are a short list of buttons. */}
-                  {seasons
-                    .filter((other) => other.id !== season.id)
-                    .map((other) => (
-                      <button
-                        key={other.id}
-                        type="button"
-                        disabled={busy}
-                        data-testid={`project-episode-to-${episode.id}-${other.id}`}
-                        onClick={() =>
-                          run(
-                            moveEpisode(projectId, season.id, episode.id, {
-                              place: other.episodes.length,
-                              seasonId: other.id,
-                            }),
-                          )
-                        }
-                      >
-                        {say.moveToSeason()} {other.name}
-                      </button>
-                    ))}
-                  <button
-                    type="button"
-                    data-testid={`project-episode-open-${episode.id}`}
-                    onClick={() => setEditing(editing === episode.id ? null : episode.id)}
-                  >
-                    {editing === episode.id
-                      ? t('projects.seasons.closeScript')
-                      : t('projects.seasons.openScript')}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    data-testid={`project-episode-delete-${episode.id}`}
-                    onClick={() => run(deleteEpisode(projectId, season.id, episode.id))}
-                  >
-                    {say.deleteEpisode()}
-                  </button>
+                  <span className="fieldlist__actions">
+                    <button
+                      className="button button--text button--sm"
+                      type="button"
+                      disabled={busy || place === 0}
+                      data-testid={`project-episode-up-${episode.id}`}
+                      onClick={() =>
+                        run(moveEpisode(projectId, season.id, episode.id, { place: place - 1 }))
+                      }
+                    >
+                      {t('projects.seasons.moveUp')}
+                    </button>
+                    <button
+                      className="button button--text button--sm"
+                      type="button"
+                      disabled={busy || place === season.episodes.length - 1}
+                      data-testid={`project-episode-down-${episode.id}`}
+                      onClick={() =>
+                        run(moveEpisode(projectId, season.id, episode.id, { place: place + 1 }))
+                      }
+                    >
+                      {t('projects.seasons.moveDown')}
+                    </button>
+                    {/* Moving between seasons needs no drag: the other seasons are a short list of buttons. */}
+                    {seasons
+                      .filter((other) => other.id !== season.id)
+                      .map((other) => (
+                        <button
+                          className="button button--text button--sm"
+                          key={other.id}
+                          type="button"
+                          disabled={busy}
+                          data-testid={`project-episode-to-${episode.id}-${other.id}`}
+                          onClick={() =>
+                            run(
+                              moveEpisode(projectId, season.id, episode.id, {
+                                place: other.episodes.length,
+                                seasonId: other.id,
+                              }),
+                            )
+                          }
+                        >
+                          {say.moveToSeason()} {other.name}
+                        </button>
+                      ))}
+                    <button
+                      className="button button--secondary button--sm"
+                      type="button"
+                      data-testid={`project-episode-open-${episode.id}`}
+                      onClick={() => setEditing(editing === episode.id ? null : episode.id)}
+                    >
+                      {editing === episode.id
+                        ? t('projects.seasons.closeScript')
+                        : t('projects.seasons.openScript')}
+                    </button>
+                    <button
+                      className="button button--secondary button--danger-quiet button--sm"
+                      type="button"
+                      disabled={busy}
+                      data-testid={`project-episode-delete-${episode.id}`}
+                      onClick={() => run(deleteEpisode(projectId, season.id, episode.id))}
+                    >
+                      {say.deleteEpisode()}
+                    </button>
+                  </span>
                   {/* Only a comic has a level below the chapter (#147). */}
                   {pages ? (
                     <ChapterPages
@@ -350,6 +382,7 @@ export function ProjectSeasons({
               />
             ) : (
               <button
+                className="button button--text button--sm"
                 type="button"
                 data-testid={`project-episode-add-${season.id}`}
                 onClick={() => setAddingTo(season.id)}
@@ -376,7 +409,7 @@ export function ProjectSeasons({
             .catch(failing)
         }}
       >
-        <h3>{say.add()}</h3>
+        <h3 className="sectionrule">{say.add()}</h3>
         <label className="field">
           <span className="field__label">{t('projects.seasons.name')}</span>
           <input
@@ -388,9 +421,16 @@ export function ProjectSeasons({
             required
           />
         </label>
-        <button type="submit" disabled={busy} data-testid="project-season-new-save">
-          {busy ? t('projects.seasons.saving') : say.save()}
-        </button>
+        <div className="form__actions">
+          <button
+            className="button"
+            type="submit"
+            disabled={busy}
+            data-testid="project-season-new-save"
+          >
+            {busy ? t('projects.seasons.saving') : say.save()}
+          </button>
+        </div>
       </form>
     </section>
   )
@@ -443,12 +483,24 @@ function EpisodeForm({
           data-testid="project-episode-new-synopsis"
         />
       </label>
-      <button type="submit" disabled={busy} data-testid="project-episode-new-save">
-        {addLabel}
-      </button>
-      <button type="button" onClick={onCancel} data-testid="project-episode-new-cancel">
-        {t('projects.seasons.closeScript')}
-      </button>
+      <div className="form__actions">
+        <button
+          className="button"
+          type="submit"
+          disabled={busy}
+          data-testid="project-episode-new-save"
+        >
+          {addLabel}
+        </button>
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={onCancel}
+          data-testid="project-episode-new-cancel"
+        >
+          {t('projects.seasons.closeScript')}
+        </button>
+      </div>
     </form>
   )
 }
@@ -524,7 +576,11 @@ function ScriptEditor({
       }}
     >
       {failed ? (
-        <p role="alert" data-testid={`project-script-failed-${episode.id}`}>
+        <p
+          className="form__message"
+          role="alert"
+          data-testid={`project-script-failed-${episode.id}`}
+        >
           {failed}
         </p>
       ) : null}
@@ -555,7 +611,7 @@ function ScriptEditor({
        * take back what the author typed in between, which the E2E spec caught doing exactly that.
        */}
       {script === null ? (
-        <p className="projects__lede">{t('projects.seasons.loading')}</p>
+        <p className="projectcard__meta">{t('projects.seasons.loading')}</p>
       ) : (
         <label className="field">
           <span className="field__label">{t('projects.seasons.script')}</span>
@@ -570,13 +626,16 @@ function ScriptEditor({
         </label>
       )}
 
-      <button
-        type="submit"
-        disabled={saving || script === null}
-        data-testid={`project-script-save-${episode.id}`}
-      >
-        {saving ? t('projects.seasons.savingScript') : t('projects.seasons.saveScript')}
-      </button>
+      <div className="form__actions">
+        <button
+          className="button"
+          type="submit"
+          disabled={saving || script === null}
+          data-testid={`project-script-save-${episode.id}`}
+        >
+          {saving ? t('projects.seasons.savingScript') : t('projects.seasons.saveScript')}
+        </button>
+      </div>
     </form>
   )
 }

@@ -24,6 +24,7 @@ const projects = {
   },
   list: {
     title: 'Projects',
+    lede: 'What you are making in this universe, and how far each one has come.',
     loading: 'Reading your projects.',
     failed: 'Your projects could not be read.',
     empty: 'No projects yet.',

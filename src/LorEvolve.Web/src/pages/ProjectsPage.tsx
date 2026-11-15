@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
+import { PageHeader } from '../components/PageHeader'
 import { listProjects } from '../projects/api'
 import { kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
 import type { ProjectDetail } from '../projects/types'
@@ -53,23 +54,27 @@ export default function ProjectsPage({ inUniverse = false }: { inUniverse?: bool
 
   return (
     <section className="projects" data-testid="projects-page">
-      <header className="projects__head">
-        <h1>{t('projects.list.title')}</h1>
-        {/*
-         * Only inside a universe: a project belongs to exactly one, so the account-level list has no universe to put a
-         * new project in and does not pretend otherwise (#172). The universe's own Projects screen is one click away
-         * from any row here.
-         */}
-        {universeId ? (
-          <Link
-            className="button"
-            to={`/app/projects/new?universeId=${universeId}`}
-            data-testid="projects-page-new"
-          >
-            {t('projects.nav.new')}
-          </Link>
-        ) : null}
-      </header>
+      {/* The head every other workspace screen uses, so Projects reads as one of them (#184). */}
+      <PageHeader
+        title={t('projects.list.title')}
+        lede={t('projects.list.lede')}
+        actions={
+          /*
+           * Only inside a universe: a project belongs to exactly one, so the account-level list has no universe to put
+           * a new project in and does not pretend otherwise (#172). The universe's own Projects screen is one click
+           * away from any row here.
+           */
+          universeId ? (
+            <Link
+              className="button"
+              to={`/app/projects/new?universeId=${universeId}`}
+              data-testid="projects-page-new"
+            >
+              {t('projects.nav.new')}
+            </Link>
+          ) : null
+        }
+      />
 
       {state.projects.length === 0 ? (
         <EmptyState

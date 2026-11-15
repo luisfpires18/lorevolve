@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
+import { PageHeader } from '../components/PageHeader'
 import { ProjectEntries } from '../components/ProjectEntries'
 import { ProjectSchema } from '../components/ProjectSchema'
 import { ProjectSeasons } from '../components/ProjectSeasons'
@@ -213,27 +214,37 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
       )}
 
       <section className="projects" data-testid="project-page">
-        <header className="projects__head">
-          <h1 data-testid="project-name">{project.name}</h1>
-          <p className="projects__lede projectmeta" data-testid="project-meta">
-            <span>{kindLabel(project.kind)}</span>
-            <span>{lifecycleLabel(project.lifecycle)}</span>
-            {project.subtype ? <span>{project.subtype}</span> : null}
-          </p>
-        </header>
-
-        <p data-testid="project-universe">
-          {project.universe ? (
-            <Link to={`/app/universes/${project.universe.id}`}>{project.universe.name}</Link>
-          ) : (
-            t('projects.list.noUniverse')
-          )}
-        </p>
+        {/*
+         * The head every other workspace screen uses (#184): the universe above the name as the crumb it already was,
+         * the project's facts as the lede, and the summary under it as the project's own words.
+         */}
+        <PageHeader
+          title={project.name}
+          titleTestId="project-name"
+          crumb={
+            <span data-testid="project-universe">
+              {project.universe ? (
+                <Link to={`/app/universes/${project.universe.id}`}>{project.universe.name}</Link>
+              ) : (
+                t('projects.list.noUniverse')
+              )}
+            </span>
+          }
+          lede={
+            <span className="projectmeta" data-testid="project-meta">
+              <span>{kindLabel(project.kind)}</span>
+              <span>{lifecycleLabel(project.lifecycle)}</span>
+              {project.subtype ? <span>{project.subtype}</span> : null}
+            </span>
+          }
+        />
 
         {project.summary ? (
-          <p data-testid="project-summary">{project.summary}</p>
+          <p className="prose" data-testid="project-summary">
+            {project.summary}
+          </p>
         ) : (
-          <p className="projects__lede" data-testid="project-summary-empty">
+          <p className="projectcard__meta" data-testid="project-summary-empty">
             {t('projects.one.noSummary')}
           </p>
         )}
