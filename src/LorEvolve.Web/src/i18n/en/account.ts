@@ -1,4 +1,4 @@
-/** Account menu, Profile, avatar, public name, storage and assistant usage, theme, picture cropping (#101). */
+/** Account menu, Profile, avatar, public name, storage usage, theme, picture cropping (#101). */
 const account = {
   menu: {
     open: 'Open account menu',
@@ -67,24 +67,6 @@ const account = {
     amount: '{used} used of {quota}',
     full: 'Your storage is full. Remove some images to add new ones.',
     note: 'Images on Lore entries and maps in universes you own count here, including entries in the Trash and images your collaborators add.',
-  },
-  assistant: {
-    name: 'AI Assistant',
-    note: 'Each hour you can ask {ask} questions and send {propose} change requests, across all your universes. One counts even when the answer fails. The {minutes} minutes start with your first one, and then they all come back at once.',
-    ask: {
-      name: 'Questions',
-      amount: '{used} of {limit} questions used',
-      none: 'No questions left.',
-      noneAgain: 'No questions left. You can ask again at {time}.',
-      left: { one: '{n} question left', other: '{n} questions left' },
-    },
-    propose: {
-      name: 'Change requests',
-      amount: '{used} of {limit} change requests used',
-      none: 'No change requests left.',
-      noneAgain: 'No change requests left. You can ask again at {time}.',
-      left: { one: '{n} change request left', other: '{n} change requests left' },
-    },
   },
   theme: {
     label: 'Theme',

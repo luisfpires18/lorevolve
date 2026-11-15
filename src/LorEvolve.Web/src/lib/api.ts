@@ -146,7 +146,7 @@ async function performFetch<T>(
         Accept: 'application/json',
         // The language the reader chose here, not the list the browser sends of its own accord (ADR 0071). The API
         // writes in it where it writes at all: the two emails, a new universe's starter types, and the language it
-        // tells the assistant to answer in.
+        // tells a connected AI app to answer in.
         'Accept-Language': currentLocale(),
         ...(init?.body && !isForm ? { 'Content-Type': 'application/json' } : {}),
         ...init?.headers,

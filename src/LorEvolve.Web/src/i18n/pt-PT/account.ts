@@ -1,6 +1,6 @@
 import type { Dictionary } from '../en'
 
-/** Menu da conta, Perfil, fotografia, nome público, espaço e utilização do assistente, tema, recorte de imagens (#101). */
+/** Menu da conta, Perfil, fotografia, nome público, espaço, tema, recorte de imagens (#101). */
 const account: Dictionary['account'] = {
   menu: {
     open: 'Abrir o menu da conta',
@@ -69,24 +69,6 @@ const account: Dictionary['account'] = {
     amount: '{used} usados de {quota}',
     full: 'O teu espaço está cheio. Remove algumas imagens para adicionares novas.',
     note: 'As imagens das entradas de lore e dos mapas dos universos que te pertencem contam aqui, incluindo as entradas na Reciclagem e as imagens que os teus colaboradores adicionam.',
-  },
-  assistant: {
-    name: 'Assistente de IA',
-    note: 'Em cada hora podes fazer {ask} perguntas e enviar {propose} pedidos de alteração, em todos os teus universos. Cada um conta mesmo quando a resposta falha. Os {minutes} minutos começam no primeiro, e depois voltam todos de uma vez.',
-    ask: {
-      name: 'Perguntas',
-      amount: '{used} de {limit} perguntas usadas',
-      none: 'Não restam perguntas.',
-      noneAgain: 'Não restam perguntas. Podes perguntar de novo às {time}.',
-      left: { one: 'Resta {n} pergunta', other: 'Restam {n} perguntas' },
-    },
-    propose: {
-      name: 'Pedidos de alteração',
-      amount: '{used} de {limit} pedidos de alteração usados',
-      none: 'Não restam pedidos de alteração.',
-      noneAgain: 'Não restam pedidos de alteração. Podes pedir de novo às {time}.',
-      left: { one: 'Resta {n} pedido de alteração', other: 'Restam {n} pedidos de alteração' },
-    },
   },
   theme: {
     label: 'Tema',

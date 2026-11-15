@@ -27,7 +27,7 @@ export function mapsPath(universeId: string) {
 }
 
 /**
- * One map's page, optionally opened on one pin: `?pin=` is the deep link the entry's page and the assistant's sources
+ * One map's page, optionally opened on one pin: `?pin=` is the deep link the entry's page and a proposal's sources
  * use, read on arrival and after a reload. Ids only, never a name.
  */
 export function mapPath(universeId: string, mapId: string, pinId?: string | null) {

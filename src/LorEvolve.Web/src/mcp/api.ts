@@ -118,5 +118,5 @@ const READABLE_KEYS = ['lore', 'relationships', 'stories', 'scenes', 'timeline']
 
 /** What an outside AI app may read, in the current language. Read it when the list is drawn. */
 export function readable() {
-  return READABLE_KEYS.map((key) => t(`assistant.connect.readable.${key}` as never))
+  return READABLE_KEYS.map((key) => t(`ai.connect.readable.${key}` as never))
 }

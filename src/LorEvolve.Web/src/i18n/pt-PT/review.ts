@@ -11,6 +11,8 @@ const review: Dictionary['review'] = {
       expired: 'Expirada',
     },
     source: {
+      // M4 retired the web assistant, but proposals it staged are still in authors' review lists, so they keep their
+      // own label (AiChangeSource.Assistant).
       assistant: 'Assistente do LorEvolve',
       app: '{name} (aplicação ligada)',
       unnamedApp: 'Uma aplicação ligada',
@@ -40,7 +42,7 @@ const review: Dictionary['review'] = {
     ledeUniverse:
       'Alterações que uma IA propôs para este universo. Nada nelas é aplicado até as aprovares aqui.',
     ledeAccount:
-      'Alterações que uma IA propôs para os teus universos, a partir de uma aplicação ligada ou do Assistente. Nada nelas é aplicado até alguém as aprovar.',
+      'Alterações que uma IA propôs para os teus universos, a partir das aplicações que ligaste. Nada nelas é aplicado até alguém as aprovar.',
     which: 'Que propostas',
     waiting: 'Em espera',
     decided: 'Decididas',
@@ -49,8 +51,7 @@ const review: Dictionary['review'] = {
     retry: 'Tentar novamente',
     emptyOpen: 'Nada aguarda revisão.',
     emptyDecided: 'Ainda nada foi decidido.',
-    emptyHint:
-      'Pede ao Assistente com a opção Propor alterações ativada, ou liga uma aplicação de IA e deixa-a propor alterações.',
+    emptyHint: 'Liga uma aplicação de IA a um universo e permite-lhe propor alterações.',
     proposedChanges: {
       one: '{n} alteração proposta',
       other: '{n} alterações propostas',

@@ -26,7 +26,7 @@ export function ConnectToAi({
 }) {
   const { t } = useI18n()
   const location = useLocation()
-  // Open for one address only, as the Assistant's drawer is: following the Profile link closes it.
+  // Open for one address only: following the Profile link closes it.
   const [openAt, setOpenAt] = useState<string | null>(null)
   const isOpen = openAt === location.key
 
@@ -40,7 +40,7 @@ export function ConnectToAi({
         data-testid="connect-ai-trigger"
       >
         <ActionIcon icon={Plug} />
-        {t('assistant.connect.trigger')}
+        {t('ai.connect.trigger')}
       </button>
 
       {isOpen ? (
@@ -97,25 +97,25 @@ function ConnectDrawer({
     >
       <div className="drawer__panel">
         <header className="drawer__head">
-          <p className="drawer__eyebrow">{t('assistant.connect.eyebrow')}</p>
+          <p className="drawer__eyebrow">{t('ai.connect.eyebrow')}</p>
           <h2 className="drawer__title" id={headingId}>
             <bdi>{universeName}</bdi>
           </h2>
-          <p className="drawer__context">{t('assistant.connect.context')}</p>
+          <p className="drawer__context">{t('ai.connect.context')}</p>
         </header>
 
         <div className="drawer__body connect__body">
           {load.kind === 'loading' ? (
             <p className="history__quiet" role="status">
-              {t('assistant.connect.loading')}
+              {t('ai.connect.loading')}
             </p>
           ) : load.kind === 'error' ? (
             <p className="form__message" role="alert" data-testid="connect-ai-error">
-              {t('assistant.connect.loadFailed')}
+              {t('ai.connect.loadFailed')}
             </p>
           ) : load.url === null ? (
             <p className="history__quiet" data-testid="connect-ai-unavailable">
-              {t('assistant.connect.unavailable')}
+              {t('ai.connect.unavailable')}
             </p>
           ) : (
             <ConnectSteps url={load.url} name={load.name} onFollow={onClose} />
@@ -129,7 +129,7 @@ function ConnectDrawer({
             onClick={close}
             data-testid="connect-ai-close"
           >
-            {t('assistant.connect.close')}
+            {t('ai.connect.close')}
           </button>
         </footer>
       </div>
@@ -169,7 +169,7 @@ function ConnectSteps({
     <>
       <div className="connect__url">
         <label className="field__label" htmlFor={inputId}>
-          {t('assistant.connect.urlLabel')}
+          {t('ai.connect.urlLabel')}
         </label>
         <div className="connect__copyrow">
           <input
@@ -189,64 +189,64 @@ function ConnectSteps({
             onClick={() => void copy()}
             data-testid="connect-ai-copy"
           >
-            {t('assistant.connect.copy')}
+            {t('ai.connect.copy')}
           </button>
         </div>
         <p className="connect__hint" id={hintId}>
-          {t('assistant.connect.urlHint')}
+          {t('ai.connect.urlHint')}
         </p>
         <p className="connect__status" role="status" data-testid="connect-ai-copy-status">
           {copied === 'copied'
-            ? t('assistant.connect.copied')
+            ? t('ai.connect.copied')
             : copied === 'manual'
-              ? t('assistant.connect.copyManual')
+              ? t('ai.connect.copyManual')
               : ''}
         </p>
       </div>
 
       <section className="connect__section" aria-labelledby={`${inputId}-how`}>
         <h3 className="connect__heading" id={`${inputId}-how`}>
-          {t('assistant.connect.how')}
+          {t('ai.connect.how')}
         </h3>
         <ol className="connect__steps">
-          <li>{t('assistant.connect.step1')}</li>
+          <li>{t('ai.connect.step1')}</li>
           <li>
-            {t('assistant.connect.step2')}
+            {t('ai.connect.step2')}
             {name ? (
               <>
                 {' '}
-                {tx('assistant.connect.step2Name', {
+                {tx('ai.connect.step2Name', {
                   name: <q data-testid="connect-ai-name">{name}</q>,
                 })}
               </>
             ) : null}
           </li>
-          <li>{t('assistant.connect.step3')}</li>
+          <li>{t('ai.connect.step3')}</li>
         </ol>
       </section>
 
       <section className="connect__section" aria-labelledby={`${inputId}-reads`}>
         <h3 className="connect__heading" id={`${inputId}-reads`}>
-          {t('assistant.connect.reads')}
+          {t('ai.connect.reads')}
         </h3>
         <ul className="connect__list">
           {readable().map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
-        <p className="settings__note">{t('assistant.connect.readsNote')}</p>
-        <p className="settings__note">{t('assistant.connect.privacyNote')}</p>
+        <p className="settings__note">{t('ai.connect.readsNote')}</p>
+        <p className="settings__note">{t('ai.connect.privacyNote')}</p>
       </section>
 
       <p className="connect__manage">
-        {tx('assistant.connect.manage', {
+        {tx('ai.connect.manage', {
           link: (
             <Link
               to="/app/profile?tab=connected-apps#connected-apps"
               onClick={onFollow}
               data-testid="connect-ai-manage"
             >
-              {t('assistant.connect.manageLink')}
+              {t('ai.connect.manageLink')}
             </Link>
           ),
         })}

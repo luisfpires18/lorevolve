@@ -42,8 +42,7 @@ const universe: Dictionary['universe'] = {
     name: 'Nome',
     description: 'Descrição',
     aiHelp: 'Ajuda da IA',
-    aiHelpHint:
-      'Mostra o assistente de IA, Ligar à IA e Alterações da IA neste universo. Desativa para os esconder.',
+    aiHelpHint: 'Mostra Ligar à IA e Alterações da IA neste universo. Desativa para os esconder.',
     starterTypes: 'Começar com tipos de entrada iniciais',
     starterTypesHint:
       'Desativado, o universo começa vazio e crias os teus próprios tipos de entrada em Tipos. Ativado, começa com alguns comuns e grupos que podes renomear ou eliminar.',

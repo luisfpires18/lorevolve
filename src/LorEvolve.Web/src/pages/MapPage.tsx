@@ -32,7 +32,7 @@ type MapDialog = 'details' | 'replace' | null
  * owner - the authoring: place a pin by pressing the map or by typing where it goes, drag it or edit its numbers to move
  * it, link it to the entry it stands for, replace the picture with an explicit decision about the pins, rename, delete.
  *
- * The chosen pin lives in the address as `?pin=`, so the entry's page and the assistant can open the map on one pin, and a
+ * The chosen pin lives in the address as `?pin=`, so the entry's page and a connected app's source can open the map on one pin, and a
  * reload lands where it was. The list beside the picture is the keyboard's and the screen reader's way to every pin,
  * whatever the zoom; the picture's own pins are buttons too.
  */

@@ -327,9 +327,9 @@ const places: Dictionary['places'] = {
     removeConfirm: 'Remover escala',
     scale: 'Escala',
     summary:
-      'Dois pontos estão a {distance} de distância, por isso um píxel da imagem equivale a cerca de {perPixel} {unit}. As distâncias pedidas ao assistente são linhas retas nesta imagem, segundo esta escala.',
+      'Dois pontos estão a {distance} de distância, por isso um píxel da imagem equivale a cerca de {perPixel} {unit}. As distâncias pedidas a uma aplicação de IA ligada são linhas retas nesta imagem, segundo esta escala.',
     noneEditor:
-      'Ainda sem escala. Marca dois pontos e diz a que distância estão um do outro, e o assistente consegue medir distâncias em linha reta entre marcadores.',
+      'Ainda sem escala. Marca dois pontos e diz a que distância estão um do outro, e uma aplicação de IA ligada consegue medir distâncias em linha reta entre marcadores.',
     none: 'Ainda sem escala. Não é possível medir distâncias neste mapa.',
     setAgain: 'Definir a escala de novo',
     set: 'Definir a escala',

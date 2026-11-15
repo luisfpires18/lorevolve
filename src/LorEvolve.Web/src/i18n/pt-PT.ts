@@ -1,5 +1,6 @@
 import type { Dictionary } from './en'
 import account from './pt-PT/account'
+import ai from './pt-PT/ai'
 import auth from './pt-PT/auth'
 import ideas from './pt-PT/ideas'
 import review from './pt-PT/review'
@@ -7,7 +8,6 @@ import canon from './pt-PT/canon'
 import data from './pt-PT/data'
 import admin from './pt-PT/admin'
 import apiErrors from './pt-PT/apiErrors'
-import assistant from './pt-PT/assistant'
 import entity from './pt-PT/entity'
 import entityTypes from './pt-PT/entityTypes'
 import lore from './pt-PT/lore'
@@ -31,6 +31,7 @@ import stories from './pt-PT/stories'
  */
 const ptPT = {
   account,
+  ai,
   auth,
   ideas,
   review,
@@ -38,7 +39,6 @@ const ptPT = {
   data,
   admin,
   apiErrors,
-  assistant,
   entity,
   entityTypes,
   lore,

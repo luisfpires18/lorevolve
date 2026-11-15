@@ -3,7 +3,6 @@ import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { AccountMenu } from '../components/AccountMenu'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
-import { UniverseAssistant } from '../components/UniverseAssistant'
 import { SiteFooter } from '../components/SiteFooter'
 import { UniverseSearch } from '../components/UniverseSearch'
 import { getChronology } from '../chronology/api'
@@ -467,17 +466,10 @@ function Workspace() {
 
         {/* The universe's search, above every screen in it rather than on any one of them. Keyed by the universe, so a
             search typed in one world is never left standing in the next. Search was the sidebar's last greyed section;
-            it is not a section, it is how any section's content is reached. The assistant sits beside it for the same
-            reason, keyed the same way so one world's conversation never follows the author into the next (ADR 0045). */}
+            it is not a section, it is how any section's content is reached. The web assistant stood beside it until M4
+            (issue #157) retired it; AI reaches a universe over MCP now (ADR 0046). */}
         <div className="workspace__top" key={universe.id}>
           <UniverseSearch universeId={universe.id} />
-          {universe.aiHelp ? (
-            <UniverseAssistant
-              universeId={universe.id}
-              universeName={universe.name}
-              canPropose={access.suggestChanges}
-            />
-          ) : null}
         </div>
 
         <main className="canvas" id={MAIN_CONTENT_ID} tabIndex={-1}>

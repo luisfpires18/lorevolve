@@ -40,8 +40,7 @@ const universe = {
     name: 'Name',
     description: 'Description',
     aiHelp: 'AI help',
-    aiHelpHint:
-      'Shows the AI assistant, Connect to AI and AI Changes in this universe. Turn it off to hide them.',
+    aiHelpHint: 'Shows Connect to AI and AI Changes in this universe. Turn it off to hide them.',
     starterTypes: 'Start with starter lore types',
     starterTypesHint:
       'Off, the universe starts empty and you make your own lore types in Types. On, it starts with a few common ones and groups you can rename or delete.',

@@ -38,16 +38,16 @@ type Side = 'knows' | 'about'
 /** Getters, so each word is looked up in the current language when read, never frozen at import. */
 const ISSUE_WORDS: Record<KnowledgeIssue, string> = {
   get knower_not_in_scene() {
-    return t('assistant.knowledge.issue.knowerNotInScene')
+    return t('ai.knowledge.issue.knowerNotInScene')
   },
   get scene_trashed() {
-    return t('assistant.knowledge.issue.sceneTrashed')
+    return t('ai.knowledge.issue.sceneTrashed')
   },
   get knower_trashed() {
-    return t('assistant.knowledge.issue.knowerTrashed')
+    return t('ai.knowledge.issue.knowerTrashed')
   },
   get subject_trashed() {
-    return t('assistant.knowledge.issue.subjectTrashed')
+    return t('ai.knowledge.issue.subjectTrashed')
   },
 }
 
@@ -95,10 +95,10 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
   async function remove(record: KnowledgeRecord) {
     if (
       !(await confirmAction({
-        title: t('assistant.knowledge.remove.title'),
-        message: t('assistant.knowledge.remove.message', { statement: record.statement }),
-        confirmLabel: t('assistant.knowledge.remove.confirm'),
-        cancelLabel: t('assistant.knowledge.remove.cancel'),
+        title: t('ai.knowledge.remove.title'),
+        message: t('ai.knowledge.remove.message', { statement: record.statement }),
+        confirmLabel: t('ai.knowledge.remove.confirm'),
+        cancelLabel: t('ai.knowledge.remove.cancel'),
         variant: 'destructive',
       }))
     ) {
@@ -109,7 +109,7 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
       await deleteKnowledgeRecord(universeId, record.id)
       reload()
     } catch {
-      setMessage(t('assistant.knowledge.remove.failed'))
+      setMessage(t('ai.knowledge.remove.failed'))
     }
   }
 
@@ -123,7 +123,7 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
     >
       <div className="relations__head">
         <h2 className="relations__title" id={headingId}>
-          {t('assistant.knowledge.title')}
+          {t('ai.knowledge.title')}
         </h2>
         {access.editContent ? (
           <button
@@ -133,12 +133,12 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
             data-testid="knowledge-add"
           >
             <ActionIcon icon={Plus} />
-            {tx('assistant.knowledge.add', { name: <bdi>{entityName}</bdi> })}
+            {tx('ai.knowledge.add', { name: <bdi>{entityName}</bdi> })}
           </button>
         ) : null}
       </div>
       <p className="relations__quiet">
-        {tx('assistant.knowledge.lede', { name: <bdi>{entityName}</bdi> })}
+        {tx('ai.knowledge.lede', { name: <bdi>{entityName}</bdi> })}
       </p>
 
       {message ? (
@@ -149,14 +149,14 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
 
       {failed ? (
         <div className="notice notice--error" role="alert" data-testid="knowledge-load-error">
-          <p>{t('assistant.knowledge.loadFailed')}</p>
+          <p>{t('ai.knowledge.loadFailed')}</p>
           <button className="button button--secondary" type="button" onClick={reload}>
-            {t('assistant.knowledge.retry')}
+            {t('ai.knowledge.retry')}
           </button>
         </div>
       ) : isLoading ? (
         <p className="relations__quiet" role="status">
-          {t('assistant.knowledge.reading')}
+          {t('ai.knowledge.reading')}
         </p>
       ) : (
         <>
@@ -164,7 +164,7 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
             records={knows}
             side="knows"
             universeId={universeId}
-            emptyText={t('assistant.knowledge.emptyKnows', { name: entityName })}
+            emptyText={t('ai.knowledge.emptyKnows', { name: entityName })}
             testId="knowledge-knows"
             canEdit={access.editContent}
             onEdit={(record) => setEditing({ side: 'knows', record })}
@@ -173,7 +173,7 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
 
           <div className="relations__head knowledge__abouthead">
             <h3 className="relations__reading knowledge__abouttitle">
-              {tx('assistant.knowledge.knownAbout', { name: <bdi>{entityName}</bdi> })}
+              {tx('ai.knowledge.knownAbout', { name: <bdi>{entityName}</bdi> })}
             </h3>
             {access.editContent ? (
               <button
@@ -183,7 +183,7 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
                 data-testid="knowledge-add-about"
               >
                 <ActionIcon icon={Plus} />
-                {tx('assistant.knowledge.addAbout', { name: <bdi>{entityName}</bdi> })}
+                {tx('ai.knowledge.addAbout', { name: <bdi>{entityName}</bdi> })}
               </button>
             ) : null}
           </div>
@@ -191,7 +191,7 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
             records={about}
             side="about"
             universeId={universeId}
-            emptyText={t('assistant.knowledge.emptyAbout', { name: entityName })}
+            emptyText={t('ai.knowledge.emptyAbout', { name: entityName })}
             testId="knowledge-known-about"
             canEdit={access.editContent}
             onEdit={(record) => setEditing({ side: 'about', record })}
@@ -255,8 +255,7 @@ function RecordList({
 
   const groups: { label: string; records: KnowledgeRecord[] }[] = []
   for (const record of records) {
-    const label =
-      record.scene === null ? t('assistant.knowledge.fromStartGroup') : record.scene.storyTitle
+    const label = record.scene === null ? t('ai.knowledge.fromStartGroup') : record.scene.storyTitle
     const last = groups[groups.length - 1]
     if (last && last.label === label) {
       last.records.push(record)
@@ -287,7 +286,7 @@ function RecordList({
                 >
                   {side === 'about' ? (
                     <>
-                      {tx('assistant.knowledge.knowerKnows', {
+                      {tx('ai.knowledge.knowerKnows', {
                         knower: (
                           <Link to={`/app/universes/${universeId}/lore/${record.knower.id}`}>
                             <bdi>{record.knower.name}</bdi>
@@ -301,7 +300,7 @@ function RecordList({
                 <p className="knowledge__meta">
                   {side === 'knows' && record.subject ? (
                     <>
-                      {tx('assistant.knowledge.about', {
+                      {tx('ai.knowledge.about', {
                         subject: (
                           <Link to={`/app/universes/${universeId}/lore/${record.subject.id}`}>
                             <bdi>{record.subject.name}</bdi>
@@ -313,7 +312,7 @@ function RecordList({
                   ) : null}
                   {record.scene ? (
                     <>
-                      {tx('assistant.knowledge.since', {
+                      {tx('ai.knowledge.since', {
                         scene: (
                           <Link
                             to={`/app/universes/${universeId}/stories/${record.scene.storyId}#scene-${record.scene.sceneId}`}
@@ -326,7 +325,7 @@ function RecordList({
                       })}
                     </>
                   ) : (
-                    t('assistant.knowledge.fromStartMeta')
+                    t('ai.knowledge.fromStartMeta')
                   )}
                   {record.issues.map((issue) => (
                     <span
@@ -341,10 +340,7 @@ function RecordList({
                 </p>
                 {canEdit ? (
                   <div className="knowledge__tools">
-                    <ActionMenu
-                      label={t('assistant.knowledge.actions')}
-                      triggerTestId="knowledge-actions"
-                    >
+                    <ActionMenu label={t('ai.knowledge.actions')} triggerTestId="knowledge-actions">
                       <button
                         className="actionmenu__item"
                         type="button"
@@ -352,7 +348,7 @@ function RecordList({
                         data-testid="knowledge-edit"
                       >
                         <ActionIcon icon={Pencil} />
-                        {t('assistant.knowledge.edit')}
+                        {t('ai.knowledge.edit')}
                       </button>
                       <button
                         className="actionmenu__item actionmenu__item--danger"
@@ -361,7 +357,7 @@ function RecordList({
                         data-testid="knowledge-delete"
                       >
                         <ActionIcon icon={Trash} />
-                        {t('assistant.knowledge.remove.button')}
+                        {t('ai.knowledge.remove.button')}
                       </button>
                     </ActionMenu>
                   </div>
@@ -448,11 +444,7 @@ function RecordForm({
   const [isSaving, setIsSaving] = useState(false)
 
   const isDirty = draftKey(draft) !== draftKey(initial)
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    t('assistant.knowledge.form.discard'),
-    onClose,
-  )
+  const { close, dialogProps } = useDrawerGuard(isDirty, t('ai.knowledge.form.discard'), onClose)
   useReturnFocus()
 
   useEffect(() => {
@@ -464,7 +456,7 @@ function RecordForm({
     listStories(universeId, controller.signal)
       .then(setStories)
       .catch(() => {
-        if (!controller.signal.aborted) setMessage(t('assistant.knowledge.form.storiesFailed'))
+        if (!controller.signal.aborted) setMessage(t('ai.knowledge.form.storiesFailed'))
       })
     return () => controller.abort()
   }, [universeId])
@@ -475,7 +467,7 @@ function RecordForm({
     getStory(universeId, draft.storyId, controller.signal)
       .then(setStoryRead)
       .catch(() => {
-        if (!controller.signal.aborted) setMessage(t('assistant.knowledge.form.storyFailed'))
+        if (!controller.signal.aborted) setMessage(t('ai.knowledge.form.storyFailed'))
       })
     return () => controller.abort()
   }, [universeId, draft.storyId])
@@ -488,7 +480,7 @@ function RecordForm({
     const index = story.chapters.findIndex((chapter) => chapter.id === chapterId)
     return index < 0
       ? unchaptered()
-      : t('assistant.knowledge.form.chapter', {
+      : t('ai.knowledge.form.chapter', {
           number: index + 1,
           title: story.chapters[index].title,
         })
@@ -518,10 +510,10 @@ function RecordForm({
     }
 
     const local: Record<string, string> = {}
-    if (side === 'about' && !draft.other) local.other = t('assistant.knowledge.form.chooseKnower')
-    if (draft.statement.trim() === '') local.statement = t('assistant.knowledge.form.sayWhat')
+    if (side === 'about' && !draft.other) local.other = t('ai.knowledge.form.chooseKnower')
+    if (draft.statement.trim() === '') local.statement = t('ai.knowledge.form.sayWhat')
     if (!draft.knownFromStart && !draft.sceneId) {
-      local.sceneId = t('assistant.knowledge.form.chooseScene')
+      local.sceneId = t('ai.knowledge.form.chooseScene')
     }
     if (Object.keys(local).length > 0) {
       setErrors(local)
@@ -550,9 +542,9 @@ function RecordForm({
           setMessage(error.message)
         }
       } else if (error instanceof ApiError && error.status === 404) {
-        setMessage(t('assistant.knowledge.form.gone'))
+        setMessage(t('ai.knowledge.form.gone'))
       } else {
-        setMessage(t('assistant.knowledge.form.saveFailed'))
+        setMessage(t('ai.knowledge.form.saveFailed'))
       }
     } finally {
       setIsSaving(false)
@@ -569,15 +561,15 @@ function RecordForm({
     >
       <div className="drawer__panel">
         <header className="drawer__head">
-          <p className="drawer__eyebrow">{t('assistant.knowledge.form.eyebrow')}</p>
+          <p className="drawer__eyebrow">{t('ai.knowledge.form.eyebrow')}</p>
           <h2 className="drawer__title" id={headingId}>
             {record
-              ? t('assistant.knowledge.form.titleEdit')
+              ? t('ai.knowledge.form.titleEdit')
               : side === 'knows'
-                ? tx('assistant.knowledge.form.titleKnows', { name: <bdi>{entityName}</bdi> })
-                : tx('assistant.knowledge.form.titleAbout', { name: <bdi>{entityName}</bdi> })}
+                ? tx('ai.knowledge.form.titleKnows', { name: <bdi>{entityName}</bdi> })
+                : tx('ai.knowledge.form.titleAbout', { name: <bdi>{entityName}</bdi> })}
           </h2>
-          <p className="drawer__context">{t('assistant.knowledge.form.context')}</p>
+          <p className="drawer__context">{t('ai.knowledge.form.context')}</p>
         </header>
 
         <form className="drawer__body" onSubmit={(event) => void save(event)} noValidate>
@@ -589,12 +581,12 @@ function RecordForm({
 
           {side === 'knows' ? (
             <>
-              <p className="field__label">{t('assistant.knowledge.form.whoKnowsFixed')}</p>
+              <p className="field__label">{t('ai.knowledge.form.whoKnowsFixed')}</p>
               <p className="knowledge__fixed" data-testid="knowledge-knower">
                 <bdi>{entityName}</bdi>
               </p>
               <EntityPicker
-                label={t('assistant.knowledge.form.aboutOptional')}
+                label={t('ai.knowledge.form.aboutOptional')}
                 universeId={universeId}
                 value={draft.other}
                 onChange={(other) => setDraft((current) => ({ ...current, other }))}
@@ -604,13 +596,13 @@ function RecordForm({
           ) : (
             <>
               <EntityPicker
-                label={t('assistant.knowledge.form.whoKnowsPicker')}
+                label={t('ai.knowledge.form.whoKnowsPicker')}
                 universeId={universeId}
                 value={draft.other}
                 onChange={(other) => setDraft((current) => ({ ...current, other }))}
                 excludeId={entityId}
               />
-              <p className="field__label">{t('assistant.knowledge.form.aboutFixed')}</p>
+              <p className="field__label">{t('ai.knowledge.form.aboutFixed')}</p>
               <p className="knowledge__fixed" data-testid="knowledge-subject">
                 <bdi>{entityName}</bdi>
               </p>
@@ -624,7 +616,7 @@ function RecordForm({
 
           <div className="field">
             <label className="field__label" htmlFor={statementId}>
-              {t('assistant.knowledge.form.statement')}
+              {t('ai.knowledge.form.statement')}
             </label>
             <textarea
               id={statementId}
@@ -662,14 +654,14 @@ function RecordForm({
               }
               data-testid="knowledge-from-start"
             />{' '}
-            {t('assistant.knowledge.fromStartLabel')}
+            {t('ai.knowledge.fromStartLabel')}
           </label>
 
           {draft.knownFromStart ? null : (
             <>
               <div className="field">
                 <label className="field__label" htmlFor={storyId}>
-                  {t('assistant.knowledge.form.story')}
+                  {t('ai.knowledge.form.story')}
                 </label>
                 <select
                   id={storyId}
@@ -686,8 +678,8 @@ function RecordForm({
                 >
                   <option value="">
                     {stories === null
-                      ? t('assistant.knowledge.form.readingStories')
-                      : t('assistant.knowledge.form.chooseStory')}
+                      ? t('ai.knowledge.form.readingStories')
+                      : t('ai.knowledge.form.chooseStory')}
                   </option>
                   {(stories ?? []).map((candidate) => (
                     <option key={candidate.id} value={candidate.id}>
@@ -698,7 +690,7 @@ function RecordForm({
               </div>
               <div className="field">
                 <label className="field__label" htmlFor={sceneId}>
-                  {t('assistant.knowledge.form.scene')}
+                  {t('ai.knowledge.form.scene')}
                 </label>
                 <select
                   id={sceneId}
@@ -714,10 +706,10 @@ function RecordForm({
                 >
                   <option value="">
                     {draft.storyId === ''
-                      ? t('assistant.knowledge.form.chooseStoryFirst')
+                      ? t('ai.knowledge.form.chooseStoryFirst')
                       : story === null
-                        ? t('assistant.knowledge.form.readingScenes')
-                        : t('assistant.knowledge.form.chooseSceneOption')}
+                        ? t('ai.knowledge.form.readingScenes')
+                        : t('ai.knowledge.form.chooseSceneOption')}
                   </option>
                   {groupedScenes.map((group) => (
                     <optgroup key={group.label} label={group.label}>
@@ -746,10 +738,10 @@ function RecordForm({
               data-testid="knowledge-save"
             >
               {isSaving
-                ? t('assistant.knowledge.form.saving')
+                ? t('ai.knowledge.form.saving')
                 : record
-                  ? t('assistant.knowledge.form.save')
-                  : t('assistant.knowledge.form.add')}
+                  ? t('ai.knowledge.form.save')
+                  : t('ai.knowledge.form.add')}
             </button>
             <button
               className="button button--secondary"
@@ -757,7 +749,7 @@ function RecordForm({
               onClick={() => void close()}
               data-testid="knowledge-cancel"
             >
-              {t('assistant.knowledge.form.cancel')}
+              {t('ai.knowledge.form.cancel')}
             </button>
           </footer>
         </form>

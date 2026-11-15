@@ -323,9 +323,9 @@ const places = {
     removeConfirm: 'Remove scale',
     scale: 'Scale',
     summary:
-      'Two points are {distance} apart, so a pixel of the picture is about {perPixel} {unit}. Distances asked of the assistant are straight lines on this picture, by this scale.',
+      'Two points are {distance} apart, so a pixel of the picture is about {perPixel} {unit}. Distances asked of a connected AI app are straight lines on this picture, by this scale.',
     noneEditor:
-      'No scale yet. Mark two points and say how far apart they are, and the assistant can measure straight-line distances between pins.',
+      'No scale yet. Mark two points and say how far apart they are, and a connected AI app can measure straight-line distances between pins.',
     none: 'No scale yet. Distances cannot be measured on this map.',
     setAgain: 'Set the scale again',
     set: 'Set the scale',

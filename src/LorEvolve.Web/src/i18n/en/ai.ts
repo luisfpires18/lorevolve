@@ -1,71 +1,5 @@
-/** The universe assistant and what an outside AI app may read: its panel, sources and knowledge view (#104). */
-const assistant = {
-  sourceKind: {
-    lore: 'Lore',
-    story: 'Story',
-    chapter: 'Chapter',
-    scene: 'Scene',
-    plotArc: 'Arc',
-    timelineMoment: 'Moment',
-    mapPin: 'Pin',
-    map: 'Map',
-  },
-  panel: {
-    part: {
-      recorded: 'Recorded',
-      inference: 'Inference',
-      suggestion: 'Suggestion',
-    },
-    prompt: {
-      summarize: 'Summarize this universe',
-      connected: 'What is connected to ',
-      scenes: 'Which scenes involve ',
-    },
-    failed: "The assistant couldn't answer that. Try again.",
-    triggerTitle: 'Assistant',
-    triggerLabel: 'Assistant',
-    announceBusy: 'Looking through {name}.',
-    announceAnswered: 'Answered.',
-    eyebrow: 'Assistant',
-    contextPropose:
-      'It can prepare changes you ask for. They wait for your review, and nothing changes until you approve them.',
-    contextRead: 'It reads this universe and never changes it.',
-    unavailable:
-      'The assistant isn’t set up on this LorEvolve yet. Everything else works as usual.',
-    emptyLead: 'Ask about anything recorded in {name}. Answers come only from what’s written here.',
-    emptyHint:
-      'Each answer marks what’s recorded, what’s inferred and what’s only a suggestion, and links back to where it comes from.',
-    waysToStart: 'Ways to start',
-    conversation: 'Conversation',
-    youPropose: 'You, asking for changes',
-    you: 'You',
-    retry: 'Try again',
-    pending: 'Looking through {name}…',
-    proposeLabel: 'Propose changes',
-    proposeOn:
-      'Say exactly what to create or change. It goes to Pending AI Changes for you to review.',
-    proposeOff: 'Off: the Assistant only reads.',
-    changesLabel: 'The changes you want',
-    questionLabel: 'Your question',
-    inputHint: 'Enter to ask, Shift+Enter for a new line.',
-    preparing: 'Preparing',
-    asking: 'Asking',
-    prepare: 'Prepare changes',
-    ask: 'Ask',
-    close: 'Close',
-    closeUnavailable: 'Close',
-  },
-  answer: {
-    waiting: {
-      one: '{n} change is waiting for your review.',
-      other: '{n} changes are waiting for your review.',
-    },
-    nothingChanged: 'Nothing has changed yet.',
-    review: 'Review the changes',
-    incomplete:
-      'I stopped before reading everything that might matter. A narrower question may get a fuller answer.',
-    sources: 'Sources',
-  },
+/** What an outside AI app may read: Connect to AI and the knowledge view (#104). */
+const ai = {
   connect: {
     readable: {
       lore: 'Lore entries, with their fields, aliases and summaries',
@@ -100,7 +34,7 @@ const assistant = {
     readsNote:
       'It reads only this universe, with your access. It can’t create, edit or delete anything. If you leave this universe, the app stops being able to read it.',
     privacyNote:
-      'What the app reads is sent to the AI service behind it, under that service’s terms. Long manuscripts can use up a lot of the app’s context, so it reads prose a section at a time. Questions asked this way don’t count toward LorEvolve’s own Assistant.',
+      'What the app reads is sent to the AI service behind it, under that service’s terms. Long manuscripts can use up a lot of the app’s context, so it reads prose a section at a time.',
     manage: 'To disconnect an app, go to {link}.',
     manageLink: 'Profile, Connected apps',
   },
@@ -176,4 +110,4 @@ const assistant = {
   },
 }
 
-export default assistant
+export default ai
