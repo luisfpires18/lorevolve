@@ -138,7 +138,20 @@ internal static class BackupNormalization
         // World Logic arrived at version 44 (ADR 0072). An older file has no System and no rule definition, and
         // nothing is inferred for it: a universe restored from one simply has no World Logic.
         LoreSystems = version >= 44 ? payload.LoreSystems : null,
-        SystemRules = version >= 44 ? payload.SystemRules : null,
+
+        // Exceptions arrived at version 45. An older file carries a rule without them, and none is invented: a
+        // restored rule simply excuses nothing, which is what the file says.
+        SystemRules = version >= 45 || payload.SystemRules is null
+            ? version >= 44 ? payload.SystemRules : null
+            : [.. payload.SystemRules.Select(rule => rule is null
+                ? null!
+                : rule with
+                {
+                    Exceptions = null,
+                    Revisions = [.. rule.Revisions.Select(revision => revision is null
+                        ? null!
+                        : revision with { Exceptions = null })],
+                })],
     };
 
     /// <summary>

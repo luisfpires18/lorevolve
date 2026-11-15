@@ -135,6 +135,8 @@ It is never coerced to `false`, and a rule that cannot be checked never counts a
 | `any` | `true` if any child is `true`. Otherwise `error` if any child is `error`. Otherwise `unknown` if any child is `unknown`. Otherwise `false`. |
 | `not` | `true` becomes `false`, `false` becomes `true`, `unknown` stays `unknown`, `error` stays `error`. |
 
+A fifth answer, `exempt`, reaches a node only through `ruleHolds`, and section 5.2 says how it travels.
+
 A definite answer therefore wins over an error, and the two groups are exact mirrors of each other. The definite
 answer is the one that settles the group on its own: `false` for `all`, `true` for `any`. So `all` with one `false`
 child is `false` even when a sibling failed, and `any` with one `true` child is `true` even when a sibling failed,
@@ -190,6 +192,11 @@ into anything else and never costs budget on the common path.
 
 An exception whose `scope` names a project that is not the evaluation's project is skipped before its `when` runs.
 
+An exception is stored with the rule, as an array of `{ id, scope: { kind, projectId? }, when }` in declared order,
+and each `when` is held to every rule in this document exactly as a rule's own condition is: the same closed sets,
+the same static budgets and the same error codes. An `id` is unique within its rule, because it is what a finding
+records as the reason a violation was excused.
+
 ### 5.2 Dependencies
 
 `dependsOn` is the declared set of rules this rule's `ruleHolds` nodes may name. A `ruleHolds` naming a rule outside
@@ -202,6 +209,13 @@ rule that does not exist, is deleted or belongs to another universe is `missing_
 
 A dependency is evaluated once per evaluation per target and memoised, so a diamond costs one evaluation, not two.
 
+`exempt` propagates. A rule whose dependency came out `exempt` held, but held by an exception the author wrote, so
+its own outcome is `exempt` and carries that exception's id: a finding then says what the whole chain rests on
+instead of reporting a clean pass. Inside a group, `exempt` counts as `true` for deciding the group and is carried
+out of it, so a group that came out true with an exempt child is `exempt`, naming the first exception that excused
+one; a definite `false` still settles an `all`, and an `unknown` sibling still outranks a held answer. `not` over
+`exempt` is `false` and names no exception, because "not excused" is not something an exception excuses.
+
 ### 5.3 Rules that contradict each other
 
 Two rules that cannot both hold are not an error and are not reconciled. Each is evaluated independently against the
@@ -211,14 +225,15 @@ deliberately adds none.
 
 ## 6. Time
 
-A `timePoint` is `"<scope>:<value>"`. Two scopes exist in version 1:
+A `timePoint` is `"<scope>:<value>"`. Three scopes exist in version 1:
 
 - `calendar:<ISO-8601 date>`, a point on a universe calendar.
 - `era:<eraId>/<number>`, a number within a named era.
+- `year:<signed integer>`, a point on the plain reckoning a universe that has not named its eras keeps (ADR 0022).
 
-Points are ordered only inside one scope and one era. Comparing `calendar:` with `era:`, or two different eras, is a
-`scope_mismatch` error rather than a guess, because the relation between eras is the author's to state and version 1
-does not store it. This is the known limitation ADR 0072 records.
+Points are ordered only inside one scope and one era. Comparing `calendar:` with `era:` or with `year:`, or two
+different eras, is a `scope_mismatch` error rather than a guess, because the relation between them is the author's to
+state and version 1 does not store it. This is the known limitation ADR 0072 records.
 
 A missing `at` is missing, not the beginning of time.
 
@@ -290,7 +305,7 @@ outcome, the rule and the evidence; it never renders `rationale` as prose.
 | --- | --- | --- |
 | A new fact source or field | Add a row to section 2's table and a reader behind it | Additive. No schema bump: an older rule never names it. |
 | A new node kind or operator | Add it here and bump `schemaVersion` | A rule stored at the new version is refused by an older build with `schema_version_unsupported`. Never silently skipped. |
-| A new time scope | Add it to section 6 | Additive while existing scopes keep their ordering. |
+| A new time scope | Add it to section 6 | Additive while existing scopes keep their ordering. `year` was added this way, for a universe that has not named its eras. |
 | A new error code | Add it to section 8 | Additive. A client that does not know a code shows the code. |
 | A domain-specific predicate | Not an extension point | A condition never gains a kind that knows a genre, a mechanic or a world. Domain meaning lives in the author's attributes and terms. |
 
@@ -325,5 +340,6 @@ outcome, the rule and the evidence; it never renders `rationale` as prose.
 | `edge-cases.json` | None | Missing data, contradictory rules, a cycle, scope mismatch, type mismatch, every budget |
 
 Each file carries `cases`, and each case states the expected outcome and error code. `WorldLogicFixtureTests`
-validates every document against this specification today; LOREX-018's evaluator runs the same `cases` and asserts
-the stated outcomes, which is why the expectations are written now and not with the evaluator.
+validates every document against this specification, and `WorldLogicEvaluatorTests` runs every case through the
+evaluator and asserts the stated outcome, error code, exemption and evidence. The expectations were written before
+the evaluator existed, which is what makes them evidence about the evaluator rather than a description of it.

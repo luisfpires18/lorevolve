@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.RuleValidation.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,6 +56,7 @@ public static class SystemRuleEndpoints
         group.MapPut("/{id:guid}", UpdateAsync).WithName("UpdateSystemRule");
         group.MapDelete("/{id:guid}", DeleteAsync).WithName("DeleteSystemRule");
         group.MapGet("/{id:guid}/revisions", RevisionsAsync).WithName("ListSystemRuleRevisions");
+        group.MapPost("/{id:guid}/evaluate", EvaluateAsync).WithName("EvaluateSystemRule");
 
         endpoints.MapGet("/api/universes/{universeId:guid}/world-logic/rules", UnifiedAsync)
             .WithTags("World Logic rules")
@@ -163,15 +165,19 @@ public static class SystemRuleEndpoints
         }
 
         var condition = request.Condition?.GetRawText();
-        int? schemaVersion = condition is null ? null : request.SchemaVersion ?? ConditionSchema.CurrentVersion;
+        var exceptions = request.Exceptions?.GetRawText();
+        int? schemaVersion = condition is null && exceptions is null
+            ? null
+            : request.SchemaVersion ?? ConditionSchema.CurrentVersion;
 
-        if (condition is not null && ConditionSchema.Validate(condition, schemaVersion!.Value) is { } problem)
+        if (Refuse(condition, exceptions, schemaVersion) is { } refused)
         {
-            return ConditionRefused(problem);
+            return refused;
         }
 
         var dependsOn = (request.DependsOn ?? []).Distinct().ToList();
-        if (await DependencyProblemAsync(db, universeId, ruleId: null, dependsOn, condition, cancellationToken) is { } dependencyErrors)
+        if (await DependencyProblemAsync(db, universeId, ruleId: null, dependsOn, condition, exceptions, cancellationToken)
+            is { } dependencyErrors)
         {
             return Results.ValidationProblem(dependencyErrors);
         }
@@ -187,6 +193,7 @@ public static class SystemRuleEndpoints
             Description = request.Description ?? string.Empty,
             SchemaVersion = schemaVersion,
             ConditionJson = condition,
+            ExceptionsJson = exceptions,
             Version = 1,
             CreatedAt = now,
             UpdatedAt = now,
@@ -252,15 +259,19 @@ public static class SystemRuleEndpoints
         }
 
         var condition = request.Condition?.GetRawText();
-        int? schemaVersion = condition is null ? null : request.SchemaVersion ?? ConditionSchema.CurrentVersion;
+        var exceptions = request.Exceptions?.GetRawText();
+        int? schemaVersion = condition is null && exceptions is null
+            ? null
+            : request.SchemaVersion ?? ConditionSchema.CurrentVersion;
 
-        if (condition is not null && ConditionSchema.Validate(condition, schemaVersion!.Value) is { } problem)
+        if (Refuse(condition, exceptions, schemaVersion) is { } refusal)
         {
-            return ConditionRefused(problem);
+            return refusal;
         }
 
         var dependsOn = (request.DependsOn ?? []).Distinct().ToList();
-        if (await DependencyProblemAsync(db, universeId, rule.Id, dependsOn, condition, cancellationToken) is { } dependencyErrors)
+        if (await DependencyProblemAsync(db, universeId, rule.Id, dependsOn, condition, exceptions, cancellationToken)
+            is { } dependencyErrors)
         {
             return Results.ValidationProblem(dependencyErrors);
         }
@@ -278,6 +289,7 @@ public static class SystemRuleEndpoints
         if (rule.Title == title
             && rule.Description == description
             && rule.ConditionJson == condition
+            && rule.ExceptionsJson == exceptions
             && rule.SchemaVersion == schemaVersion
             && !dependenciesChanged)
         {
@@ -305,6 +317,7 @@ public static class SystemRuleEndpoints
         rule.Description = description;
         rule.SchemaVersion = schemaVersion;
         rule.ConditionJson = condition;
+        rule.ExceptionsJson = exceptions;
         rule.Version++;
         rule.UpdatedAt = now;
 
@@ -402,6 +415,67 @@ public static class SystemRuleEndpoints
                 row.Version, WorldLogicAccess.Utc(row.SavedAt), row.Title, row.Description, row.HasCondition))
             .ToList());
     }
+
+    /// <summary>
+    /// Evaluates one rule against one target and answers what it found, storing nothing.
+    ///
+    /// <b>It reads, so reading is what it needs.</b> Nothing is written: no finding, no revision, no row of any
+    /// kind, and the evaluator is a pure function of the universe's stored rules and stored lore. Recording a
+    /// finding is LOREX-020, and it is a separate route with a separate capability for that reason.
+    ///
+    /// <b>The whole rule set is loaded, not just this rule.</b> A condition may name any rule it declared, and that
+    /// rule may name others, so a run that loaded one rule could not answer <c>ruleHolds</c> at all.
+    ///
+    /// <paramref name="targetId"/> is the entry or moment <c>self</c> resolves to. A rule written with <c>self</c>
+    /// and asked without a target answers unknown, which is the honest answer: the rule is fine, the question was
+    /// incomplete.
+    /// </summary>
+    private static async Task<IResult> EvaluateAsync(
+        Guid universeId,
+        Guid id,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken,
+        [FromQuery] Guid? targetId = null,
+        [FromQuery] Guid? projectId = null)
+    {
+        if (await WorldLogicAccess.DenyReadAsync(db, universeId, principal, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        if (!await db.SystemRules.AsNoTracking()
+                .AnyAsync(candidate => candidate.Id == id && candidate.UniverseId == universeId, cancellationToken))
+        {
+            return Results.NotFound();
+        }
+
+        var rules = await WorldLogicRuleSet.LoadAsync(db, universeId, cancellationToken);
+        var facts = await UniverseConditionFacts.LoadAsync(db, universeId, cancellationToken);
+        var evaluator = new WorldLogicEvaluator(facts, rules);
+
+        var result = evaluator.Evaluate(id.ToString(), targetId?.ToString(), projectId?.ToString());
+
+        return Results.Ok(new ConditionEvaluationResponse(
+            id,
+            result.RuleVersion,
+            result.SchemaVersion,
+            Outcome(result.Outcome),
+            result.ErrorCode,
+            result.ExemptionId,
+            [.. result.Evidence.Select(item => new ConditionEvidenceRow(item.Source, item.Id, item.Role))],
+            result.Rationale));
+    }
+
+    /// <summary>The outcome as the specification writes it. Text, so a new outcome never shifts an existing one.</summary>
+    private static string Outcome(ConditionOutcome outcome) => outcome switch
+    {
+        ConditionOutcome.True => "true",
+        ConditionOutcome.False => "false",
+        ConditionOutcome.Unknown => "unknown",
+        ConditionOutcome.Exempt => "exempt",
+        _ => "error",
+    };
 
     /// <summary>
     /// Every rule the universe has, of both kinds, in one list by title: the world rules that came before ADR 0072
@@ -599,6 +673,13 @@ public static class SystemRuleEndpoints
             condition = document.RootElement.Clone();
         }
 
+        JsonElement? exceptions = null;
+        if (rule.ExceptionsJson is { } exceptionsJson)
+        {
+            using var document = JsonDocument.Parse(exceptionsJson);
+            exceptions = document.RootElement.Clone();
+        }
+
         return new SystemRuleDetail(
             rule.Id,
             rule.Title,
@@ -611,7 +692,8 @@ public static class SystemRuleEndpoints
             systems,
             rule.Version,
             WorldLogicAccess.Utc(rule.CreatedAt),
-            WorldLogicAccess.Utc(rule.UpdatedAt));
+            WorldLogicAccess.Utc(rule.UpdatedAt),
+            exceptions);
     }
 
     private static Dictionary<string, string[]>? Validate(SystemRuleRequest request)
@@ -638,7 +720,12 @@ public static class SystemRuleEndpoints
             ];
         }
 
-        if (request.Condition is null && request.SchemaVersion is not null)
+        if (request.Condition is null && request.Exceptions is not null)
+        {
+            errors[ConditionField] = ["An exception belongs to a condition; this rule has none."];
+        }
+
+        if (request.Condition is null && request.Exceptions is null && request.SchemaVersion is not null)
         {
             errors[ConditionField] = ["A schema version belongs to a condition; this rule has none."];
         }
@@ -655,10 +742,31 @@ public static class SystemRuleEndpoints
     }
 
     /// <summary>
+    /// The condition and the exceptions, each held to the specification, or null when both are acceptable. The
+    /// exceptions are checked with the same closed sets and budgets, because the same evaluator reads them.
+    /// </summary>
+    private static IResult? Refuse(string? condition, string? exceptions, int? schemaVersion)
+    {
+        if (schemaVersion is not { } version)
+        {
+            return null;
+        }
+
+        if (condition is not null && ConditionSchema.Validate(condition, version) is { } problem)
+        {
+            return ConditionRefused(problem);
+        }
+
+        return exceptions is not null && ConditionSchema.ValidateExceptions(exceptions, version) is { } exceptionProblem
+            ? ConditionRefused(exceptionProblem)
+            : null;
+    }
+
+    /// <summary>
     /// What is wrong with the declared dependencies, or null. Four things are checked, in this order, so the first
-    /// message is the most basic mistake: every declared rule exists in this universe; the condition references
-    /// only declared rules; the declared set closes no cycle; and the chain is not deeper than the specification
-    /// allows.
+    /// message is the most basic mistake: every declared rule exists in this universe; the condition and the
+    /// exceptions reference only declared rules; the declared set closes no cycle; and the chain is not deeper than
+    /// the specification allows.
     /// </summary>
     private static async Task<Dictionary<string, string[]>?> DependencyProblemAsync(
         LorEvolveDbContext db,
@@ -666,6 +774,7 @@ public static class SystemRuleEndpoints
         Guid? ruleId,
         IReadOnlyList<Guid> dependsOn,
         string? conditionJson,
+        string? exceptionsJson,
         CancellationToken cancellationToken)
     {
         if (ruleId is { } self && dependsOn.Contains(self))
@@ -686,11 +795,14 @@ public static class SystemRuleEndpoints
             }
         }
 
-        if (conditionJson is not null)
+        if (conditionJson is not null || exceptionsJson is not null)
         {
             var declared = dependsOn.Select(id => id.ToString()).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var referenced in ConditionSchema.ReferencedRuleIds(conditionJson))
+            var referencedIds = (conditionJson is null ? [] : ConditionSchema.ReferencedRuleIds(conditionJson))
+                .Concat(exceptionsJson is null ? [] : ConditionSchema.ReferencedRuleIdsInExceptions(exceptionsJson));
+
+            foreach (var referenced in referencedIds)
             {
                 if (!declared.Contains(referenced))
                 {
@@ -791,6 +903,7 @@ public static class SystemRuleEndpoints
         Description = rule.Description,
         SchemaVersion = rule.SchemaVersion,
         ConditionJson = rule.ConditionJson,
+        ExceptionsJson = rule.ExceptionsJson,
         SavedAt = savedAt,
     };
 

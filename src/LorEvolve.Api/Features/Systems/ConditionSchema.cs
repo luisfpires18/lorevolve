@@ -35,6 +35,9 @@ public static class ConditionSchema
 
     public const int MaxConditionBytes = 32_768;
 
+    /// <summary>How long an exception's id may be. It is an author's own label, not a sentence.</summary>
+    public const int MaxExceptionIdLength = 80;
+
     public const int MaxDependencyDepth = 8;
 
     /// <summary>The nine node kinds of version 1.</summary>
@@ -80,8 +83,15 @@ public static class ConditionSchema
         ["events.canon"] = "boolean",
     };
 
-    /// <summary>The scopes a time point may be written in. A point is ordered only inside one scope.</summary>
-    public static readonly string[] TimeScopes = ["calendar", "era"];
+    /// <summary>
+    /// The scopes a time point may be written in. A point is ordered only inside one scope, and two eras are two
+    /// scopes: version 1 does not store the relation between them (ADR 0022).
+    ///
+    /// <c>year</c> is the plain signed reckoning a universe that has not named its eras keeps. It is a scope of its
+    /// own rather than a calendar date, because a signed year and a date on a calendar are not ordered against each
+    /// other any more than two eras are.
+    /// </summary>
+    public static readonly string[] TimeScopes = ["calendar", "era", "year"];
 
     /// <summary>
     /// Null when the condition is one version 1 describes; otherwise the first problem, as a stable code and the
@@ -116,6 +126,117 @@ public static class ConditionSchema
             return ValidateNode(document.RootElement, "condition", depth: 1, ref nodes);
         }
     }
+
+    /// <summary>
+    /// Null when the exception list is one version 1 describes; otherwise the first problem.
+    ///
+    /// The shape is an array of <c>{ id, scope: { kind, projectId? }, when }</c>. Each <c>when</c> is an ordinary
+    /// condition tree and is held to exactly the same closed sets and budgets as a rule's own condition, because it
+    /// is evaluated by the same evaluator; an exception that could not be read would make a violation permanently
+    /// unknown, which is the quietest possible way to lose a finding.
+    /// </summary>
+    public static ConditionProblem? ValidateExceptions(string exceptionsJson, int schemaVersion)
+    {
+        if (schemaVersion != CurrentVersion)
+        {
+            return new ConditionProblem("schema_version_unsupported", "exceptions");
+        }
+
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(exceptionsJson);
+        }
+        catch (JsonException)
+        {
+            return new ConditionProblem("invalid_reference", "exceptions");
+        }
+
+        using (document)
+        {
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Array)
+            {
+                return new ConditionProblem("node_arity", "exceptions");
+            }
+
+            if (root.GetArrayLength() > MaxExceptions)
+            {
+                return new ConditionProblem("node_arity", "exceptions");
+            }
+
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            var index = 0;
+
+            foreach (var exception in root.EnumerateArray())
+            {
+                var path = $"exceptions[{index++}]";
+
+                if (exception.ValueKind != JsonValueKind.Object)
+                {
+                    return new ConditionProblem("node_arity", path);
+                }
+
+                if (!exception.TryGetProperty("id", out var id)
+                    || id.ValueKind != JsonValueKind.String
+                    || string.IsNullOrWhiteSpace(id.GetString())
+                    || id.GetString()!.Length > MaxExceptionIdLength)
+                {
+                    return new ConditionProblem("invalid_reference", path);
+                }
+
+                // An id is what a finding records as the reason a violation was excused, so two exceptions of one
+                // rule cannot share one.
+                if (!ids.Add(id.GetString()!))
+                {
+                    return new ConditionProblem("invalid_reference", path);
+                }
+
+                if (!exception.TryGetProperty("scope", out var scope)
+                    || scope.ValueKind != JsonValueKind.Object
+                    || !scope.TryGetProperty("kind", out var kind)
+                    || kind.ValueKind != JsonValueKind.String)
+                {
+                    return new ConditionProblem("node_arity", $"{path}.scope");
+                }
+
+                var hasProject = scope.TryGetProperty("projectId", out var projectId)
+                                 && projectId.ValueKind == JsonValueKind.String;
+
+                switch (kind.GetString())
+                {
+                    case "universe" when !hasProject:
+                        break;
+
+                    case "project" when hasProject && Guid.TryParse(projectId.GetString(), out _):
+                        break;
+
+                    default:
+                        return new ConditionProblem("invalid_reference", $"{path}.scope");
+                }
+
+                if (!exception.TryGetProperty("when", out var when))
+                {
+                    return new ConditionProblem("node_arity", $"{path}.when");
+                }
+
+                var nodes = 0;
+                if (ValidateNode(when, $"{path}.when", depth: 1, ref nodes) is { } problem)
+                {
+                    return problem;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Every rule id the exceptions name, so a save checks them against the declared dependencies the way a
+    /// condition's are checked.
+    /// </summary>
+    public static IReadOnlyList<string> ReferencedRuleIdsInExceptions(string exceptionsJson) =>
+        ReferencedRuleIds(exceptionsJson);
 
     /// <summary>
     /// Every rule id a <c>ruleHolds</c> node in this condition names, so a save can check them against the

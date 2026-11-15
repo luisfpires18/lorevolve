@@ -102,6 +102,12 @@ public sealed class SystemRuleConfiguration : IEntityTypeConfiguration<SystemRul
         builder.Property(rule => rule.Title).IsRequired().HasMaxLength(WorldLogicLimits.NameMaxLength);
         builder.Property(rule => rule.Description).IsRequired().HasMaxLength(WorldLogicLimits.DescriptionMaxLength);
         builder.Property(rule => rule.ConditionJson).HasMaxLength(ConditionSchema.MaxConditionBytes);
+
+        // The exceptions are bounded by their count and each one's own condition, so the column's bound is the
+        // condition's times the exception count, which is what a save enforces part by part.
+        builder.Property(rule => rule.ExceptionsJson)
+            .HasMaxLength(ConditionSchema.MaxConditionBytes * ConditionSchema.MaxExceptions);
+
         builder.Property(rule => rule.Scope).HasConversion<int>();
 
         builder.HasOne(rule => rule.Universe)
@@ -131,6 +137,8 @@ public sealed class SystemRuleRevisionConfiguration : IEntityTypeConfiguration<S
         builder.Property(revision => revision.Title).IsRequired().HasMaxLength(WorldLogicLimits.NameMaxLength);
         builder.Property(revision => revision.Description).IsRequired().HasMaxLength(WorldLogicLimits.DescriptionMaxLength);
         builder.Property(revision => revision.ConditionJson).HasMaxLength(ConditionSchema.MaxConditionBytes);
+        builder.Property(revision => revision.ExceptionsJson)
+            .HasMaxLength(ConditionSchema.MaxConditionBytes * ConditionSchema.MaxExceptions);
 
         builder.HasOne(revision => revision.Rule)
             .WithMany()

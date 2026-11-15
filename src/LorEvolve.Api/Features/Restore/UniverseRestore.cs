@@ -1944,6 +1944,7 @@ internal sealed partial class UniverseRestore(
                 Description = rule.Description,
                 SchemaVersion = rule.SchemaVersion,
                 ConditionJson = Condition(rule.Condition, ids),
+                ExceptionsJson = Condition(rule.Exceptions, ids),
                 Version = rule.Version,
                 CreatedAt = rule.CreatedAt,
                 UpdatedAt = rule.UpdatedAt,
@@ -1968,6 +1969,7 @@ internal sealed partial class UniverseRestore(
                     Description = revision.Body,
                     SchemaVersion = revision.SchemaVersion,
                     ConditionJson = Condition(revision.Condition, ids),
+                    ExceptionsJson = Condition(revision.Exceptions, ids),
                     SavedAt = revision.SavedAt,
                 });
             }

@@ -3518,6 +3518,10 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasMaxLength(10000)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ExceptionsJson")
+                        .HasMaxLength(524288)
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("TEXT");
 
@@ -3580,6 +3584,10 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(10000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExceptionsJson")
+                        .HasMaxLength(524288)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("SavedAt")
