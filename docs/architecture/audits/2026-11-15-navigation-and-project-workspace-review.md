@@ -7,7 +7,8 @@ against the source as it stands. It is a review, not an implementation: nothing 
 The brief's own screenshots are treated as intent, not as a specification of pixels, as the owner asked.
 
 The proposed work is listed in the last section and opened as issues under the M5 tracker. All of it waits
-for M3 (#135) and M4 (#136) to finish.
+for M3 (#135) to finish. M4 (#136) finished on 2026-11-15, while this review was being written, so it no longer
+blocks the pass; section 8 says what it covered.
 
 ## How to read this
 
@@ -268,9 +269,10 @@ Read from trackers #135 and #136 and their children on 2026-11-15.
 **M3 does not cover**: removing the `RULES` group, moving Chronology, labelling the groups, or any project-side
 navigation. #152 lists "unrelated navigation redesign" as out of scope.
 
-**M4 (#136) covers**: the legacy web assistant's removal. #156, #157 and #158 merged in PR #182, #185 and #187.
-#159 (assistant-only database state) and #160 (configuration and docs) are open. Connect to AI, MCP and AI Changes
-are preserved on purpose, so the MANAGEMENT group must still carry AI Changes.
+**M4 (#136) covers**: the legacy web assistant's removal. Every child merged on 2026-11-15, after this review was
+first written: #156 in PR #182, #157 in PR #185, #158 in PR #187, #159 in PR #190 and #160 in PR #202. So M4 no
+longer blocks this pass; only M3 does. The tracker itself stays open until the owner closes it. Connect to AI, MCP
+and AI Changes are preserved on purpose, so the MANAGEMENT group must still carry AI Changes.
 
 **M4 does not cover**: moving AI Changes into a labelled Management group, which is navigation.
 
@@ -278,8 +280,9 @@ are preserved on purpose, so the MANAGEMENT group must still carry AI Changes.
 
 ## 9. Proposed task breakdown
 
-One issue per pull request, ordered so that no issue depends on a later one. All of them wait for #135 and #136.
-They are open under the M5 tracker, #201, which repeats that wait in its own Constraints section.
+One issue per pull request, ordered so that no issue depends on a later one. All of them wait for M3 (#135); M4's
+children merged on 2026-11-15 and no longer block them. They are open under the M5 tracker, #201, which carries that
+wait in its own Constraints section.
 
 ### P0
 
