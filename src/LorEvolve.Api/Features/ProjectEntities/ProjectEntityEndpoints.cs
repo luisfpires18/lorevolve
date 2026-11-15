@@ -27,6 +27,13 @@ public static class ProjectEntityEndpoints
     /// <summary>The 409 for a save written over a version that is no longer current (ADR 0043).</summary>
     public const string ChangedCode = "project_entity_changed";
 
+    /// <summary>
+    /// The most rows one read of the list returns, and what a caller that sends no <c>take</c> gets (#196). High enough
+    /// that no project an author has built by hand is cut short, low enough that one request is always bounded; the
+    /// web client reads a page at a time well under it.
+    /// </summary>
+    public const int ListMaxTake = 500;
+
     public static IEndpointRouteBuilder MapProjectEntityEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/projects/{projectId:guid}/entities")
@@ -48,7 +55,9 @@ public static class ProjectEntityEndpoints
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         CancellationToken cancellationToken,
-        [FromQuery] Guid? typeId = null)
+        [FromQuery] Guid? typeId = null,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = ListMaxTake)
     {
         var (project, denied) = await ReadableAsync(db, projectId, principal, cancellationToken);
 
@@ -57,11 +66,25 @@ public static class ProjectEntityEndpoints
             return denied;
         }
 
+        if (skip < 0 || take < 1 || take > ListMaxTake)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                [skip < 0 ? "skip" : "take"] = [skip < 0
+                    ? "Skip cannot be negative."
+                    : $"Take must be between 1 and {ListMaxTake}."],
+            });
+        }
+
         var rows = await db.Entities.AsNoTracking().IgnoreQueryFilters()
             .Where(entry => entry.ProjectId == projectId
                 && entry.DeletedAt == null
                 && (typeId == null || entry.EntityTypeId == typeId))
+            // The id breaks ties between equal names, so a page boundary never repeats or drops a row.
             .OrderBy(entry => entry.Name)
+            .ThenBy(entry => entry.Id)
+            .Skip(skip)
+            .Take(take)
             .Select(entry => new ProjectEntitySummary(
                 entry.Id,
                 entry.Name,

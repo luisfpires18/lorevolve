@@ -60,10 +60,11 @@ test.describe('Project entities', () => {
     await signUp(page)
     const world = await universe(page)
     const project = await game(page, world.id)
+    const base = `/app/projects/${project.id}/entities`
 
-    await page.goto(`/app/projects/${project.id}`)
+    await page.goto(base)
 
-    // The starter types are offered, not already there: the project begins with none.
+    // The starter types are offered, not already there: with no types the Entities view is the offer (#196).
     const offer = page.getByTestId('project-schema-offer')
     await expect(offer).toContainText('Map')
     await expect(offer).toContainText('Unit')
@@ -71,19 +72,31 @@ test.describe('Project entities', () => {
 
     await page.getByTestId('project-schema-starters').click()
 
-    const types = page.getByTestId('project-types')
-    await expect(types.locator('> li')).toHaveCount(3)
-    await expect(types).toContainText('Map')
-    await expect(page.getByTestId('project-schema-offer')).toHaveCount(0)
+    // Taken, the view opens on the type cards with their counts, and no schema editor above them.
+    const cards = page.getByTestId('project-entity-type-cards')
+    await expect(cards.locator('> li')).toHaveCount(3)
+    await expect(cards).toContainText('Map')
+    await expect(cards).toContainText('No entries yet')
+    await expect(page.getByTestId('project-schema')).toHaveCount(0)
 
-    // Map's starter field records the player counts it supports, as several choices rather than one number.
+    // The definitions are one action away. Map's starter field records the player counts it supports, as several
+    // choices rather than one number.
+    await page.getByTestId('project-types-manage').click()
+    await expect(page).toHaveURL(/\/entities\?manage=types$/)
+    const types = page.getByTestId('project-types')
     await expect(types).toContainText('Supported players')
     await expect(types).toContainText('Several choices')
+    await expect(page.getByTestId('project-schema-offer')).toHaveCount(0)
+    await page.getByTestId('project-entities-back').click()
 
-    // An entry of a type, with one of those choices made. The form opens from the panel's head rather than standing
-    // open on the page (#184). Entries are a view of their own, beside the schema's (#193).
-    await page.getByTestId('projecttab-entities').click()
-    await page.getByTestId('project-entries-type').selectOption({ label: 'Map' })
+    // A card opens that type's entries alone: no other type is offered and the editor is not on the way.
+    await cards.getByRole('link', { name: /Map/ }).click()
+    await expect(page).toHaveURL(/\/entities\?type=/)
+    await expect(page.getByTestId('project-entries')).toBeVisible()
+    await expect(page.getByTestId('project-entries-type')).toHaveCount(0)
+    await expect(page.getByTestId('project-schema')).toHaveCount(0)
+
+    // An entry of the type, with one of those choices made. The form opens from the panel's head (#184).
     await page.getByTestId('project-entry-add').click()
     await page.getByTestId('project-entry-new-name').fill('Saltflats')
 
@@ -93,10 +106,13 @@ test.describe('Project entities', () => {
     await page.getByTestId('project-entry-new-save').click()
 
     await expect(page.getByTestId('project-entry-list')).toContainText('Saltflats')
-    await page.getByTestId('projecttab-overview').click()
-    await expect(types).toContainText('1 entry')
+
+    // Back on the cards, the count is read again.
+    await page.getByTestId('project-entities-back').click()
+    await expect(cards.locator('> li', { hasText: 'Map' })).toContainText('1 entry')
 
     // From here the schema is the author's: a type of their own, and one of the starters gone.
+    await page.getByTestId('project-types-manage').click()
     await page.getByTestId('project-type-add').click()
     await page.getByTestId('project-type-new-name').fill('Encounter')
     await page.getByTestId('project-type-new-save').click()
@@ -117,6 +133,43 @@ test.describe('Project entities', () => {
     await expect(types).toContainText('Map')
   })
 
+  test('a type with more entries than one page shows the rest when asked', async ({ page }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const project = await game(page, world.id)
+    const type = await api<{ id: string }>(
+      page,
+      'POST',
+      `/api/projects/${project.id}/entity-types`,
+      {
+        name: 'Unit',
+        description: null,
+        icon: null,
+        accentColor: null,
+      },
+    )
+    // One more than a page, so a list that ignored paging would show them all at once and fail here.
+    for (let index = 1; index <= 26; index += 1) {
+      await api(page, 'POST', `/api/projects/${project.id}/entities`, {
+        entityTypeId: type.id,
+        name: `Unit ${String(index).padStart(2, '0')}`,
+        summary: null,
+        canonEntityId: null,
+        fields: [],
+      })
+    }
+
+    await page.goto(`/app/projects/${project.id}/entities?type=${type.id}`)
+    const list = page.getByTestId('project-entry-list')
+    await expect(list.locator('> li')).toHaveCount(25)
+    await expect(list).not.toContainText('Unit 26')
+
+    await page.getByTestId('project-entries-more').click()
+    await expect(list.locator('> li')).toHaveCount(26)
+    await expect(list).toContainText('Unit 26')
+    await expect(page.getByTestId('project-entries-more')).toHaveCount(0)
+  })
+
   test("a project's types and entries stay out of the universe's lore and out of another project", async ({
     page,
   }) => {
@@ -125,24 +178,22 @@ test.describe('Project entities', () => {
     const first = await game(page, world.id)
     const second = await game(page, world.id)
 
-    await page.goto(`/app/projects/${first.id}`)
+    await page.goto(`/app/projects/${first.id}/entities`)
     await page.getByTestId('project-type-add').click()
     await page.getByTestId('project-type-new-name').fill('Unit')
     await page.getByTestId('project-type-new-save').click()
-    await expect(page.getByTestId('project-types')).toContainText('Unit')
+    await page.getByTestId('project-entity-type-cards').getByRole('link', { name: /Unit/ }).click()
 
-    await page.getByTestId('projecttab-entities').click()
     await page.getByTestId('project-entry-add').click()
     await page.getByTestId('project-entry-new-name').fill('Saltbearer')
     await page.getByTestId('project-entry-new-save').click()
     await expect(page.getByTestId('project-entry-list')).toContainText('Saltbearer')
 
     // The other project of the same universe shares neither: it is offered its own starters and holds nothing.
-    await page.goto(`/app/projects/${second.id}`)
+    await page.goto(`/app/projects/${second.id}/entities`)
     await expect(page.getByTestId('project-schema-offer')).toBeVisible()
     await expect(page.getByTestId('project-types').locator('> li')).toHaveCount(0)
-    await page.getByTestId('projecttab-entities').click()
-    await expect(page.getByTestId('project-entries-needs-type')).toBeVisible()
+    await expect(page.getByTestId('project-entity-type-cards')).toHaveCount(0)
 
     // And the universe's own Types screen shows only the lore's types, with none of the game's.
     await page.goto(`/app/universes/${world.id}/types`)

@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
-import { ProjectEntries } from '../components/ProjectEntries'
+import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
 import { ProjectIdeas } from '../components/ProjectIdeas'
-import { ProjectSchema } from '../components/ProjectSchema'
 import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
 import { ProjectsNav } from '../components/ProjectsNav'
@@ -266,23 +265,18 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
       </section>
 
       {/*
-       * One panel per view (#193). The schema sits on the overview until #196 moves it into Entities, the entries on
-       * Entities, and the structure on Structure. A view with no panel of its own yet says so rather than borrowing one.
+       * One panel per view (#193). Entities holds the type cards, a type's entries and the type editor behind an action
+       * (#196), and Structure the structure. A view with no panel of its own yet, the overview until #195 among them,
+       * says so rather than borrowing one.
        *
-       * A schema write changes what the entries can offer - a new type is a type an entry can be of - so the two still
-       * share `schemaVersion`. It lives here, in the component that stays mounted while the author moves between this
-       * project's views, so a type added on the overview is in the entries the moment Entities opens.
+       * A schema write changes what the entries can offer - a new type is a type an entry can be of - so the editor and
+       * the entries still share `schemaVersion`. It lives here, in the component that stays mounted while the author
+       * moves between this project's views and between the Entities view's own screens.
        */}
       {section.pending ? (
         <ProjectIdeas project={project} />
-      ) : section.segment === 'overview' ? (
-        <ProjectSchema
-          projectId={project.id}
-          reloadKey={schemaVersion}
-          onChanged={() => setSchemaVersion((version) => version + 1)}
-        />
       ) : section.segment === 'entities' ? (
-        <ProjectEntries
+        <ProjectEntitiesView
           projectId={project.id}
           reloadKey={schemaVersion}
           onChanged={() => setSchemaVersion((version) => version + 1)}

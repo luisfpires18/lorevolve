@@ -104,40 +104,59 @@ test.describe('Project sections', () => {
     await expect(page.getByTestId('ideas')).toBeVisible()
     await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this project yet.')
 
-    // Each view renders one panel and never another's (#193).
+    // Each view renders one panel and never another's (#193). A project with no types opens Entities on the starter
+    // offer, and the overview no longer holds the schema (#196).
     await page.getByTestId('projecttab-entities').click()
-    await expect(page.getByTestId('project-entries')).toBeVisible()
-    await expect(page.getByTestId('project-schema')).toHaveCount(0)
+    await expect(page.getByTestId('project-schema-offer')).toBeVisible()
+    await expect(page.getByTestId('project-entries')).toHaveCount(0)
     await expect(page.getByTestId('ideas')).toHaveCount(0)
     await page.getByTestId('projecttab-overview').click()
-    await expect(page.getByTestId('project-schema')).toBeVisible()
+    await expect(page.getByTestId('project-view-empty-overview')).toBeVisible()
+    await expect(page.getByTestId('project-schema')).toHaveCount(0)
     await expect(page.getByTestId('project-entries')).toHaveCount(0)
     await page.getByTestId('projecttab-systems').click()
     await expect(page.getByTestId('project-view-empty-systems')).toBeVisible()
     await expect(page.getByTestId('project-schema')).toHaveCount(0)
   })
 
-  test('a type made on the overview is in the entries the moment Entities opens', async ({
+  test('a type made in the type editor is in the entries the moment its card opens', async ({
     page,
   }) => {
     await signUp(page)
     const world = await universe(page)
     const game = await project(page, world.id, 1)
-    const base = `/app/universes/${world.id}/projects/${game.id}`
+    const base = `/app/universes/${world.id}/projects/${game.id}/entities`
+    const unit = await page.request.post(`/api/projects/${game.id}/entity-types`, {
+      data: { name: 'Unit', description: null, icon: null, accentColor: null },
+    })
+    expect(unit.ok()).toBe(true)
 
-    await page.goto(`${base}/entities`)
-    await expect(page.getByTestId('project-entries')).toBeVisible()
-    await expect(page.getByTestId('project-entries-needs-type')).toBeVisible()
+    await page.goto(base)
+    const cards = page.getByTestId('project-entity-type-cards')
+    await expect(cards.locator('> li')).toHaveCount(1)
+    // A marker on the window: a reload anywhere below would drop it.
+    await page.evaluate(() => Object.assign(window, { noReload: true }))
 
-    // The write happens on another route, then the author moves by the tab bar, without a reload.
-    await page.getByTestId('projecttab-overview').click()
-    await expect(page.getByTestId('project-schema')).toBeVisible()
+    // The write happens in the editor behind the action, then the author moves by links, without a reload.
+    await page.getByTestId('project-types-manage').click()
     await page.getByTestId('project-type-add').click()
     await page.getByTestId('project-type-new-name').fill('Encounter')
     await page.getByTestId('project-type-new-save').click()
     await expect(page.getByTestId('project-types')).toContainText('Encounter')
-    await page.getByTestId('projecttab-entities').click()
-    await expect(page.getByTestId('project-entries-type')).toContainText('Encounter')
+    await page.getByTestId('project-entities-back').click()
+
+    await expect(cards.locator('> li')).toHaveCount(2)
+    await cards.getByRole('link', { name: /Encounter/ }).click()
+    await expect(page.getByTestId('project-entries')).toBeVisible()
+    await expect(page.getByTestId('project-entries-needs-type')).toHaveCount(0)
+    await page.getByTestId('project-entry-add').click()
+    await page.getByTestId('project-entry-new-name').fill('Ambush')
+    await page.getByTestId('project-entry-new-save').click()
+    await expect(page.getByTestId('project-entry-list')).toContainText('Ambush')
+
+    expect(await page.evaluate(() => (window as unknown as { noReload?: boolean }).noReload)).toBe(
+      true,
+    )
   })
 
   test('only Series, Film and Comic draw a structure panel, on Structure alone', async ({

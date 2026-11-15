@@ -197,7 +197,14 @@ const projects = {
     chooseShows: 'Choose what it shows',
     changeShows: 'Change what it shows',
   },
+  entities: {
+    title: 'Entities',
+    lede: 'What this project holds, by type. Open a type to see its entries.',
+    manage: 'Manage types',
+    back: 'All types',
+  },
   entries: {
+    more: 'Show more',
     title: 'Entries',
     lede: 'What this project holds, by type.',
     failed: "This project's entries could not be read.",

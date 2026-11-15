@@ -598,6 +598,59 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
         return (await response.Content.ReadFromJsonAsync<List<ProjectEntityTypeResponse>>())!;
     }
 
+    [Fact]
+    public async Task The_entry_list_reads_one_type_a_page_at_a_time_across_the_boundary()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "entrypaging");
+        var project = await NewProject(client, universe.Id, "Long Survey");
+        var units = await NewType(client, project.Id, "Unit");
+        var maps = await NewType(client, project.Id, "Map");
+
+        // More than one page of one type, with two equal names so the order has to break the tie, and an entry of
+        // another type that the filter must keep out of every page.
+        var names = Enumerable.Range(1, 7).Select(index => $"Unit {index:00}").Append("Unit 07").ToList();
+        foreach (var name in names)
+        {
+            await NewEntry(client, project.Id, units.Id, name);
+        }
+
+        await NewEntry(client, project.Id, maps.Id, "Saltflats");
+
+        var first = await Page(client, project.Id, units.Id, skip: 0, take: 3);
+        var second = await Page(client, project.Id, units.Id, skip: 3, take: 3);
+        var third = await Page(client, project.Id, units.Id, skip: 6, take: 3);
+        var past = await Page(client, project.Id, units.Id, skip: 9, take: 3);
+
+        Assert.Equal(3, first.Count);
+        Assert.Equal(3, second.Count);
+        Assert.Equal(2, third.Count);
+        Assert.Empty(past);
+
+        // Every entry once, none twice, none of the other type, in the same order an unpaged read gives.
+        var paged = first.Concat(second).Concat(third).ToList();
+        Assert.Equal(names.Count, paged.Select(entry => entry.Id).Distinct().Count());
+        Assert.All(paged, entry => Assert.Equal(units.Id, entry.EntityTypeId));
+        Assert.Equal((await Entries(client, project.Id, units.Id)).Select(entry => entry.Id), paged.Select(entry => entry.Id));
+
+        // No parameters still answers the plain list, bounded; out-of-range parameters are refused rather than clamped.
+        Assert.Equal(names.Count + 1, (await Entries(client, project.Id)).Count);
+        foreach (var query in new[] { "skip=-1", "take=0", $"take={ProjectEntityEndpoints.ListMaxTake + 1}" })
+        {
+            Assert.Equal(
+                HttpStatusCode.BadRequest,
+                (await client.GetAsync($"/api/projects/{project.Id}/entities?{query}")).StatusCode);
+        }
+    }
+
+    private static async Task<List<ProjectEntitySummary>> Page(
+        HttpClient client,
+        Guid projectId,
+        Guid typeId,
+        int skip,
+        int take) =>
+        (await client.GetFromJsonAsync<List<ProjectEntitySummary>>(
+            $"/api/projects/{projectId}/entities?typeId={typeId}&skip={skip}&take={take}"))!;
+
     private static async Task<ProjectEntityTypeResponse> NewType(HttpClient client, Guid projectId, string name)
     {
         var response = await client.PostAsJsonAsync(

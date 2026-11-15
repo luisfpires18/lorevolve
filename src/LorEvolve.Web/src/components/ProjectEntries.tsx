@@ -16,6 +16,9 @@ import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
 
+/** How many entries one read shows; the next page is asked for, never loaded behind the author's back (#196). */
+export const ENTRY_PAGE_SIZE = 25
+
 /**
  * The entries a project holds, by type (#144).
  *
@@ -24,18 +27,22 @@ import { t, useI18n } from '../i18n'
  */
 export function ProjectEntries({
   projectId,
+  fixedTypeId,
   reloadKey,
   onChanged,
 }: {
   projectId: string
+  /** Set when the author opened one type's card: only its entries are listed and no other type is offered (#196). */
+  fixedTypeId?: string
   reloadKey: number
   /** Called after a write, so the Types panel's entry counts are re-read rather than left stale. */
   onChanged?: () => void
 }) {
   useI18n()
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
-  const [typeId, setTypeId] = useState<string | null>(null)
+  const [typeId, setTypeId] = useState<string | null>(fixedTypeId ?? null)
   const [entries, setEntries] = useState<ProjectEntitySummary[] | null>(null)
+  const [more, setMore] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [name, setName] = useState('')
@@ -68,8 +75,11 @@ export function ProjectEntries({
     if (typeId === null) return
 
     const controller = new AbortController()
-    listProjectEntities(projectId, typeId, controller.signal)
-      .then(setEntries)
+    listProjectEntities(projectId, typeId, controller.signal, {
+      skip: 0,
+      take: ENTRY_PAGE_SIZE + 1,
+    })
+      .then((read) => showing(read, ENTRY_PAGE_SIZE))
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setEntries([])
@@ -78,11 +88,34 @@ export function ProjectEntries({
     return () => controller.abort()
   }, [projectId, typeId, reloadKey])
 
+  /** One more row than is shown is asked for, so whether another page exists is known without a count. */
+  function showing(read: ProjectEntitySummary[], shown: number) {
+    setEntries(read.slice(0, shown))
+    setMore(read.length > shown)
+  }
+
+  function loadMore() {
+    if (typeId === null || entries === null) return
+    setBusy(true)
+    listProjectEntities(projectId, typeId, undefined, {
+      skip: entries.length,
+      take: ENTRY_PAGE_SIZE + 1,
+    })
+      .then((read) => {
+        setEntries([...entries, ...read.slice(0, ENTRY_PAGE_SIZE)])
+        setMore(read.length > ENTRY_PAGE_SIZE)
+        setBusy(false)
+      })
+      .catch(failing)
+  }
+
   function refresh() {
     if (typeId === null) return
-    listProjectEntities(projectId, typeId)
+    // A write re-reads as many rows as were already open, so the author keeps their place in a long list.
+    const shown = Math.max(entries?.length ?? 0, ENTRY_PAGE_SIZE)
+    listProjectEntities(projectId, typeId, undefined, { skip: 0, take: shown + 1 })
       .then((read) => {
-        setEntries(read)
+        showing(read, shown)
         setBusy(false)
         setFailed(null)
         onChanged?.()
@@ -141,24 +174,26 @@ export function ProjectEntries({
         </p>
       ) : null}
 
-      <label className="field">
-        <span className="field__label">{t('projects.entries.ofType')}</span>
-        <select
-          className="field__input"
-          value={typeId ?? ''}
-          onChange={(event) => {
-            setTypeId(event.target.value)
-            setValues({})
-          }}
-          data-testid="project-entries-type"
-        >
-          {types.map((each) => (
-            <option key={each.id} value={each.id}>
-              {each.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      {fixedTypeId ? null : (
+        <label className="field">
+          <span className="field__label">{t('projects.entries.ofType')}</span>
+          <select
+            className="field__input"
+            value={typeId ?? ''}
+            onChange={(event) => {
+              setTypeId(event.target.value)
+              setValues({})
+            }}
+            data-testid="project-entries-type"
+          >
+            {types.map((each) => (
+              <option key={each.id} value={each.id}>
+                {each.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {/*
        * Asked for rather than always open. Its fields are the chosen type's, so it sits under the type above it and
@@ -287,6 +322,17 @@ export function ProjectEntries({
           ))}
         </ul>
       )}
+      {more ? (
+        <button
+          className="button button--secondary"
+          type="button"
+          disabled={busy}
+          data-testid="project-entries-more"
+          onClick={loadMore}
+        >
+          {t('projects.entries.more')}
+        </button>
+      ) : null}
     </section>
   )
 }

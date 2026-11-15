@@ -197,7 +197,14 @@ const projects = {
     chooseShows: 'Escolher o que mostra',
     changeShows: 'Mudar o que mostra',
   },
+  entities: {
+    title: 'Entidades',
+    lede: 'O que este projeto contém, por tipo. Abre um tipo para ver os seus registos.',
+    manage: 'Gerir tipos',
+    back: 'Todos os tipos',
+  },
   entries: {
+    more: 'Mostrar mais',
     title: 'Registos',
     lede: 'O que este projeto guarda, por tipo.',
     failed: 'Não foi possível ler os registos deste projeto.',
