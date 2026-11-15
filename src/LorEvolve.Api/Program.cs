@@ -179,6 +179,7 @@ app.MapAiChangeMediaEndpoints();
 app.MapProjectEndpoints();
 app.MapProjectEntityTypeEndpoints();
 app.MapProjectEntityEndpoints();
+app.MapSeriesEndpoints();
 app.MapIdeaEndpoints();
 app.MapIdeaBoardEndpoints();
 app.MapUniverseSearchEndpoints();
