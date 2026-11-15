@@ -30,6 +30,8 @@ export function ProjectEntitiesView({
   const { pathname } = useLocation()
   const typeId = params.get('type')
   const managing = params.get('manage') === 'types'
+  // The entry a link from elsewhere named, carried to the list so that it opens on that row (#195).
+  const entryId = params.get('entry')
 
   if (managing) {
     return (
@@ -53,6 +55,7 @@ export function ProjectEntitiesView({
           key={typeId}
           projectId={projectId}
           fixedTypeId={typeId}
+          openEntryId={entryId ?? undefined}
           reloadKey={reloadKey}
         />
       </div>

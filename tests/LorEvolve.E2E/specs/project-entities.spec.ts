@@ -271,9 +271,20 @@ test.describe('Project entities', () => {
     await expect(recent.locator('> li')).toHaveCount(3)
     await expect(recent.locator('> li').first()).toContainText('Aback Flats')
 
-    // Each one opens its type's entries, where an entry is read.
+    // Each one opens that entry: its type's list, on its own row, marked as the row in view.
     await page.getByTestId(`project-overview-entry-${latest.id}`).click()
     await expect(page.getByTestId('project-entries')).toContainText('Aback Flats')
+    await expect(page.getByTestId(`project-entry-${latest.id}`)).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
+    // The address names it, so a direct load opens the same row rather than the top of the list.
+    const named = page.url()
+    await page.goto(named)
+    await expect(page.getByTestId(`project-entry-${latest.id}`)).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
 
     // The universe's lore and every other view this kind offers are a link away.
     await page.goto(overview)

@@ -153,11 +153,12 @@ export function ProjectOverview({
             {recent.map((entry) => (
               <li key={entry.id} className="projectcard">
                 {/*
-                 * An entry has no address of its own: it is read inside its type's list, which is where this link
-                 * opens it. A per-entry address would be a change to the Entities view, which this issue does not own.
+                 * The entry itself, named in the address: its type's list opens on its row, reading as many pages as
+                 * it takes to reach it. An entry has no screen of its own, so its own row is what opening it means;
+                 * a screen that shows an entry's fields is issue #222.
                  */}
                 <Link
-                  to={`${projectPath(project.id, 'entities', universeId)}?type=${entry.entityTypeId}`}
+                  to={`${projectPath(project.id, 'entities', universeId)}?type=${entry.entityTypeId}&entry=${entry.id}`}
                   className="projectcard__head"
                   data-testid={`project-overview-entry-${entry.id}`}
                 >
