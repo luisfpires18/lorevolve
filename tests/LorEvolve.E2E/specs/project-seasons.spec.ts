@@ -187,7 +187,7 @@ test.describe('Project seasons', () => {
     })
 
     await page.goto(`/app/projects/${game.id}`)
-    await expect(page.getByTestId('project-schema')).toBeVisible()
+    await expect(page.getByTestId('project-view-empty-overview')).toBeVisible()
     await expect(page.getByTestId('project-seasons')).toHaveCount(0)
   })
 
@@ -236,8 +236,8 @@ test.describe('Project seasons', () => {
     await expect(pageRow).toContainText('Wide on the saltflats')
     await expect(pageRow).toContainText('Nothing from the lore')
 
-    // The manga template is the one offered, chosen by the subtype, on the overview that holds the schema (#193).
-    await page.getByTestId('projecttab-overview').click()
+    // The manga template is the one offered, chosen by the subtype, on Entities, which holds the schema (#196).
+    await page.getByTestId('projecttab-entities').click()
     await expect(page.getByTestId('project-schema-offer')).toContainText('Chapter')
   })
 

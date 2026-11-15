@@ -197,7 +197,14 @@ const projects = {
     chooseShows: 'Choose what it shows',
     changeShows: 'Change what it shows',
   },
+  entities: {
+    title: 'Entities',
+    lede: 'What this project holds, by type. Open a type to see its entries.',
+    manage: 'Manage types',
+    back: 'All types',
+  },
   entries: {
+    more: 'Show more',
     title: 'Entries',
     lede: 'What this project holds, by type.',
     failed: "This project's entries could not be read.",
@@ -205,6 +212,8 @@ const projects = {
     emptyHint: 'Add an entry to make the first one.',
     needsType: 'Make a type first.',
     needsTypeHint: 'An entry is of a type, so this project needs at least one.',
+    typeMissing: 'This type is not in this project.',
+    typeMissingHint: 'It may have been deleted. Go back to all types to choose another.',
     ofType: 'Type',
     add: 'Add an entry',
     name: 'Name',

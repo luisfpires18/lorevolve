@@ -197,7 +197,14 @@ const projects = {
     chooseShows: 'Escolher o que mostra',
     changeShows: 'Mudar o que mostra',
   },
+  entities: {
+    title: 'Entidades',
+    lede: 'O que este projeto contém, por tipo. Abre um tipo para ver os seus registos.',
+    manage: 'Gerir tipos',
+    back: 'Todos os tipos',
+  },
   entries: {
+    more: 'Mostrar mais',
     title: 'Registos',
     lede: 'O que este projeto guarda, por tipo.',
     failed: 'Não foi possível ler os registos deste projeto.',
@@ -205,6 +212,8 @@ const projects = {
     emptyHint: 'Acrescente um registo para fazer o primeiro.',
     needsType: 'Crie primeiro um tipo.',
     needsTypeHint: 'Um registo é de um tipo, por isso este projeto precisa de ter pelo menos um.',
+    typeMissing: 'Este tipo não está neste projeto.',
+    typeMissingHint: 'Pode ter sido apagado. Volta a todos os tipos para escolher outro.',
     ofType: 'Tipo',
     add: 'Acrescentar um registo',
     name: 'Nome',

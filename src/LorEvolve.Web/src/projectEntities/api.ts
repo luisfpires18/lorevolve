@@ -56,8 +56,20 @@ export function deleteProjectField(projectId: string, typeId: string, fieldId: s
   })
 }
 
-export function listProjectEntities(projectId: string, typeId?: string, signal?: AbortSignal) {
-  const query = typeId ? `?typeId=${typeId}` : ''
+/** The entries of a project, or of one type; `page` reads a slice of them in the API's own order (#196). */
+export function listProjectEntities(
+  projectId: string,
+  typeId?: string,
+  signal?: AbortSignal,
+  page?: { skip: number; take: number },
+) {
+  const params = new URLSearchParams()
+  if (typeId) params.set('typeId', typeId)
+  if (page) {
+    params.set('skip', String(page.skip))
+    params.set('take', String(page.take))
+  }
+  const query = params.toString() ? `?${params.toString()}` : ''
   return apiFetch<ProjectEntitySummary[]>(`${base(projectId)}/entities${query}`, { signal })
 }
 
