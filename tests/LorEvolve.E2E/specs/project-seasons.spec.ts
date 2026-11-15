@@ -52,6 +52,19 @@ async function series(page: Page, universeId: string) {
   })
 }
 
+/** 3 is Film. The same structure the series uses, under the vocabulary a film uses (#146). */
+async function film(page: Page, universeId: string) {
+  return api<{ id: string }>(page, 'POST', '/api/projects', {
+    name: unique('Low Tide '),
+    kind: 3,
+    lifecycle: 1,
+    subtype: 'animated',
+    summary: '',
+    universeId,
+    expectedVersion: null,
+  })
+}
+
 test.describe('Project seasons', () => {
   test('a series gets seasons, episodes in order, and a script on one of them', async ({
     page,
@@ -111,6 +124,49 @@ test.describe('Project seasons', () => {
 
     await expect(first).toContainText('2 episodes')
     await expect(seasons.locator('> li').nth(1)).toContainText('1 episode')
+  })
+
+  test('a film says sequences and scenes for the same structure, and a game has none', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const movie = await film(page, world.id)
+
+    await page.goto(`/app/projects/${movie.id}`)
+
+    // The film's own words, and not the series' ones.
+    const panel = page.getByTestId('project-seasons')
+    await expect(panel.getByRole('heading', { name: 'Sequences' })).toBeVisible()
+    await expect(panel).toContainText('No sequences yet.')
+    await expect(panel).not.toContainText('Season')
+
+    await page.getByTestId('project-season-new-name').fill('Act one')
+    await page.getByTestId('project-season-new-save').click()
+
+    const sequence = page.getByTestId('project-season-list').locator('> li').first()
+    await sequence.getByRole('button', { name: 'Add a scene' }).click()
+    await page.getByTestId('project-episode-new-title').fill('The tide goes out')
+    await page.getByTestId('project-episode-new-save').click()
+
+    await expect(sequence).toContainText('1 scene')
+    await expect(sequence).toContainText('The tide goes out')
+    await expect(sequence.getByRole('button', { name: 'Delete scene' })).toBeVisible()
+
+    // A game has no such panel at all: widening the structure to Film must not widen it to everything.
+    const game = await api<{ id: string }>(page, 'POST', '/api/projects', {
+      name: unique('Hollow Season '),
+      kind: 1,
+      lifecycle: 1,
+      subtype: null,
+      summary: '',
+      universeId: world.id,
+      expectedVersion: null,
+    })
+
+    await page.goto(`/app/projects/${game.id}`)
+    await expect(page.getByTestId('project-schema')).toBeVisible()
+    await expect(page.getByTestId('project-seasons')).toHaveCount(0)
   })
 
   test('a season that still holds an episode is not deleted, and the refusal is shown', async ({
