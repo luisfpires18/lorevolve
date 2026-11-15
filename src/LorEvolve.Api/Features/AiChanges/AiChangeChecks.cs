@@ -137,6 +137,7 @@ internal static class AiChangeJson
                 AiChangeResource.Article => Read<ArticleValues>(json),
                 AiChangeResource.PlotArc => Read<PlotArcValues>(json),
                 AiChangeResource.WorldRule => Read<WorldRuleValues>(json),
+                AiChangeResource.ProjectEntry => Read<ProjectEntryValues>(json),
                 AiChangeResource.Idea => Read<IdeaValues>(json),
                 AiChangeResource.LoreType => Read<TypeValues>(json),
                 AiChangeResource.LoreField => Read<FieldValues>(json),
@@ -161,6 +162,7 @@ internal static class AiChangeJson
         (AiChangeResource.TimelineEvent, _) => Read<TimelineValues>(json),
         (AiChangeResource.PlotArc, _) => Read<PlotArcValues>(json),
         (AiChangeResource.WorldRule, _) => Read<WorldRuleValues>(json),
+        (AiChangeResource.ProjectEntry, _) => Read<ProjectEntryValues>(json),
         (AiChangeResource.Idea, _) => Read<IdeaValues>(json),
         (AiChangeResource.LoreType, _) => Read<TypeValues>(json),
         (AiChangeResource.LoreField, _) => Read<FieldValues>(json),
@@ -491,6 +493,9 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
                     break;
                 case (AiChangeResource.PlotArc, _):
                     await CheckPlotArcAsync(work, cancellationToken);
+                    break;
+                case (AiChangeResource.ProjectEntry, _):
+                    await CheckProjectEntryAsync(work, cancellationToken);
                     break;
                 case (AiChangeResource.WorldRule, _):
                     await CheckWorldRuleAsync(work, cancellationToken);
@@ -1205,6 +1210,9 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
                 : (false, null, true),
             AiChangeResource.WorldRule => await AiChangeSnapshots.WorldRuleAsync(db, universeId, target, cancellationToken) is { } rule
                 ? (true, null, AiChangeSnapshots.Same(rule, work.Before))
+                : (false, null, true),
+            AiChangeResource.ProjectEntry => await AiChangeSnapshots.ProjectEntryAsync(db, universeId, target, cancellationToken) is { } entry
+                ? (true, null, AiChangeSnapshots.Same(entry, work.Before))
                 : (false, null, true),
             AiChangeResource.Idea => await AiChangeSnapshots.IdeaAsync(db, universeId, proposerId, target, cancellationToken) is { } idea
                 ? (true, null, AiChangeSnapshots.Same(idea, work.Before))

@@ -104,8 +104,9 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
         var (readOnly, readOnlyTokens) = await ConnectAsync(browser, u, allowProposals: false);
         Assert.Equal(["lorevolve.read", "offline_access"], readOnlyTokens.Scope!.Split(' ').Order());
         var tools = await ToolsAsync(readOnly);
-        // Seventeen read-only tools, plus list_projects and get_project (#142), which are read-only too.
-        Assert.Equal(19, tools.Count);
+        // Every read-only tool and no more: seventeen of the lore, maps and stories, list_projects and get_project
+        // (#142), and the five that read a project's own schema, entries, structure and scripts (#148).
+        Assert.Equal(24, tools.Count);
         Assert.DoesNotContain(LorEvolveMcpProposalTools.ProposeTool, tools);
         var refused = await CallAsync(readOnly, LorEvolveMcpProposalTools.ProposeTool, new { summary = "x", operations = Array.Empty<object>() });
         Assert.True(refused.GetProperty("isError").GetBoolean());
@@ -213,7 +214,7 @@ public sealed class McpProposalTests : IClassFixture<McpProposalTests.Host>
         Assert.Equal(HttpStatusCode.NoContent, (await browser.DeleteAsync($"/api/profile/connected-apps/{app.Id}/proposals")).StatusCode);
 
         // Reading goes on; proposing stops at the next call, and what it staged can only be rejected.
-        Assert.Equal(19, (await ToolsAsync(connection)).Count);
+        Assert.Equal(24, (await ToolsAsync(connection)).Count);
         var refused = await CallAsync(connection, LorEvolveMcpProposalTools.ProposeTool, new { summary = "x", operations = Array.Empty<object>() });
         Assert.True(refused.GetProperty("isError").GetBoolean());
         var proposal = await AiChangeTestClient.Read(browser, u, proposalId);

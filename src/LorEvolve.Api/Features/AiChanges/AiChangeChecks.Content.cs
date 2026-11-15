@@ -2,6 +2,7 @@ using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Stories;
+using LorEvolve.Api.Features.ProjectEntities;
 using LorEvolve.Api.Features.WorldRules;
 using Microsoft.EntityFrameworkCore;
 
@@ -74,6 +75,99 @@ internal sealed partial class AiChangeChecker
         }
 
         work.Problems(StoryValidation.ValidatePlotArc(new PlotArcRequest(arc.Title, arc.Description, arc.Notes)));
+    }
+
+    /// <summary>
+    /// A proposed project entry (#148), checked against the same rules the web routes apply: the project is this
+    /// universe's, the type is that project's, the name fits, every field named belongs to the type or one above it,
+    /// a link stays inside the project, and the lore entry it stands for is this universe's lore.
+    ///
+    /// <para>This is the parity the issue asks for. Nothing here is a second rule set: the limits come from
+    /// <see cref="LoreLimits"/>, the scope comes from the same <c>ProjectId</c> the routes use, and anything refused
+    /// here would be refused by the route as well.</para>
+    /// </summary>
+    private async Task CheckProjectEntryAsync(AiChangeWork work, CancellationToken cancellationToken)
+    {
+        var entry = (ProjectEntryValues)work.Proposed;
+
+        if (string.IsNullOrWhiteSpace(entry.Name))
+        {
+            work.Problem(AiChangeCodes.Invalid, "Give the entry a name.", "name");
+        }
+        else if (entry.Name.Length > LoreLimits.NameMaxLength)
+        {
+            work.Problem(AiChangeCodes.Invalid, $"Keep the name to {LoreLimits.NameMaxLength} characters or fewer.", "name");
+        }
+
+        if (entry.Summary.Length > LoreLimits.SummaryMaxLength)
+        {
+            work.Problem(AiChangeCodes.Invalid, $"Keep the summary to {LoreLimits.SummaryMaxLength:N0} characters or fewer.", "summary");
+        }
+
+        // The project has to be one of this universe's. A project of another universe is reported as not found rather
+        // than refused, so a proposal cannot be used to discover that it exists.
+        if (!await db.CreativeProjects.AsNoTracking()
+                .AnyAsync(project => project.Id == entry.ProjectId && project.UniverseId == universeId, cancellationToken))
+        {
+            work.Problem(AiChangeCodes.NotFound, "No project of this universe has that id.", "projectId");
+            return;
+        }
+
+        // The type has to be that project's own, which is what keeps a project's entries out of the lore and out of
+        // another project (#143).
+        if (!await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
+                .AnyAsync(type => type.Id == entry.TypeId && type.ProjectId == entry.ProjectId, cancellationToken))
+        {
+            work.Problem(AiChangeCodes.NotFound, "That type does not belong to this project. Read its types with get_project_schema.", "typeId");
+            return;
+        }
+
+        // The fields an entry of this type may hold: its own and every type above it, resolved by the same helper the
+        // routes use, over this project's types only.
+        var parents = await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken, entry.ProjectId);
+        var lineage = EntityTypeHierarchy.Lineage(parents, entry.TypeId);
+
+        var definitions = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
+            .Where(field => lineage.Contains(field.EntityTypeId) && field.ArchivedAt == null)
+            .Select(field => new { field.Id, field.Name, field.Kind, field.IsRequired })
+            .ToListAsync(cancellationToken);
+
+        var byId = definitions.ToDictionary(field => field.Id);
+
+        foreach (var value in entry.Fields)
+        {
+            if (!byId.TryGetValue(value.FieldId, out var definition))
+            {
+                work.Problem(
+                    AiChangeCodes.NotFound,
+                    "That field is not on this type or any type above it. Read the type's fields with get_project_schema.",
+                    "fields");
+                continue;
+            }
+
+            // A link field reaches entries of this same project, never the lore and never another project's (#144).
+            if (value.LinkedEntryId is { } linked
+                && !await db.Entities.AsNoTracking().IgnoreQueryFilters()
+                    .AnyAsync(
+                        candidate => candidate.Id == linked
+                            && candidate.ProjectId == entry.ProjectId
+                            && candidate.DeletedAt == null,
+                        cancellationToken))
+            {
+                work.Problem(AiChangeCodes.NotFound, $"{definition.Name} can only link to another entry of this project.", "fields");
+            }
+        }
+
+        // The optional link to the lore: this universe's lore, live, and never a project's entry. db.Entities carries
+        // the lore filter, which is exactly the set a canon link may name.
+        if (entry.CanonEntryId is { } canon
+            && !await db.Entities.AsNoTracking()
+                .AnyAsync(
+                    lore => lore.Id == canon && lore.UniverseId == universeId && lore.DeletedAt == null,
+                    cancellationToken))
+        {
+            work.Problem(AiChangeCodes.NotFound, "No live lore entry of this universe has that id.", "canonEntryId");
+        }
     }
 
     private async Task CheckWorldRuleAsync(AiChangeWork work, CancellationToken cancellationToken)

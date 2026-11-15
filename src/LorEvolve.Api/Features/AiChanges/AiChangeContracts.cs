@@ -26,7 +26,7 @@ public sealed record AiChangeOperationInput(
     string? Id,
     [property: Description("create, update, remove or reorder. remove moves the item to LorEvolve's Trash (an idea to the owner's deleted ideas), from where it can be restored; nothing is deleted for good. reorder sets the whole order of a story's chapters or plot arcs, or a chapter's scenes.")]
     string? Action,
-    [property: Description("lore_entry, article, progression (an entry's eras, forms, abilities and appearances), image (a picture the person uploads in LorEvolve), relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule or idea - or, for a connection allowed to propose schema, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method. Schema changes go in a proposal of their own.")]
+    [property: Description("lore_entry, article, progression (an entry's eras, forms, abilities and appearances), image (a picture the person uploads in LorEvolve), relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule, idea or project_entry (an entry of one of the universe's projects) - or, for a connection allowed to propose schema, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method. Schema changes go in a proposal of their own.")]
     string? Resource,
     [property: Description("For update and remove: the existing item's id, exactly as a read tool gave it. For a manuscript or an article, the scene or entry goes in manuscript.scene or article.entry instead; for reorder, the container goes in order.")]
     Guid? TargetId = null,
@@ -51,7 +51,8 @@ public sealed record AiChangeOperationInput(
     AiChronologyInput? Chronology = null,
     AiTermInput? Term = null,
     AiProgressionInput? Progression = null,
-    AiImageInput? Image = null);
+    AiImageInput? Image = null,
+    AiProjectEntryInput? ProjectEntry = null);
 
 /// <summary>Something that exists, by its id, or something this proposal creates, by the change's id.</summary>
 public sealed record AiRefInput(
@@ -173,6 +174,29 @@ public sealed record AiWorldRuleInput(
     [property: Description("Plain text. On update, \"\" clears it.")] string? Description = null,
     [property: Description("The rule's check: at most maxOccurrences Canon moments of one event kind by one method for each participant. On update, leave it out to keep the stored check.")] AiRuleCheckInput? Check = null,
     [property: Description("On update, true removes the rule's check.")] bool? RemoveCheck = null);
+
+[Description("An entry of one of the universe's projects: a game's unit or map, a series' or film's character, a comic's "
+    + "prop. Its type is one the project defines for itself, from get_project_schema, never one of the universe's lore types. "
+    + "A project's entry may stand for a lore entry, which is optional: a game or a film can be made in a universe that holds "
+    + "almost no worldbuilding.")]
+public sealed record AiProjectEntryInput(
+    [property: Description("The project's id, from list_projects. Required on create.")] Guid? ProjectId = null,
+    [property: Description("A type of that project, from get_project_schema. Required on create.")] Guid? TypeId = null,
+    string? Name = null,
+    [property: Description("Plain text. On update, \"\" clears it.")] string? Summary = null,
+    [property: Description("Optional: the universe's lore entry this stands for. On update, null leaves it as it is and clearCanonEntry removes it.")] Guid? CanonEntryId = null,
+    [property: Description("On update, true removes the link to the lore entry.")] bool? ClearCanonEntry = null,
+    [property: Description("The field values to store, by field id from get_project_schema. On update, only the fields named are changed.")] IReadOnlyList<AiProjectFieldInput>? Fields = null);
+
+[Description("One field value of a project's entry. Fill only the member the field's kind uses.")]
+public sealed record AiProjectFieldInput(
+    [property: Description("The field's id, from get_project_schema.")] Guid? FieldId = null,
+    string? Text = null,
+    double? Number = null,
+    bool? Boolean = null,
+    DateTime? Date = null,
+    [property: Description("For a field of one choice or several: the choice values exactly as get_project_schema gives them.")] IReadOnlyList<string>? Choices = null,
+    [property: Description("For a link field: another entry of the same project.")] Guid? LinkedEntryId = null);
 
 public sealed record AiRuleCheckInput(
     [property: Description("An event kind's id, from get_change_options.")] Guid? EventKindId = null,
@@ -317,6 +341,28 @@ public sealed record PlotArcValues(AiRef Story, string Title, string? Descriptio
 public sealed record RuleCheckValues(Guid EventKindId, Guid MethodId, int MaxOccurrences);
 
 public sealed record WorldRuleValues(string Title, string Description, RuleCheckValues? Check);
+
+/// <summary>
+/// What a proposed project entry would hold (#148). The project and the type are the entry's scope, carried so a
+/// check can prove the type belongs to that project and the link to a lore entry belongs to its universe.
+/// </summary>
+public sealed record ProjectEntryValues(
+    Guid ProjectId,
+    Guid TypeId,
+    string Name,
+    string Summary,
+    Guid? CanonEntryId,
+    List<ProjectFieldValue> Fields);
+
+/// <summary>One field value of a proposed project entry, in the shape the check and the review screen both read.</summary>
+public sealed record ProjectFieldValue(
+    Guid FieldId,
+    string? Text,
+    double? Number,
+    bool? Boolean,
+    DateTime? Date,
+    List<string>? Choices,
+    Guid? LinkedEntryId);
 
 public sealed record IdeaReferenceValue(Ideas.IdeaReferenceKind Kind, AiRef Target);
 

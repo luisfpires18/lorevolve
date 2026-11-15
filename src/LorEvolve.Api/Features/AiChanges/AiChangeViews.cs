@@ -667,6 +667,7 @@ internal static class AiChangeViews
         AiChangeResource.TimelineEvent => "timeline moment",
         AiChangeResource.PlotArc => "plot arc",
         AiChangeResource.WorldRule => "world rule",
+        AiChangeResource.ProjectEntry => "project entry",
         _ => "item",
     };
 

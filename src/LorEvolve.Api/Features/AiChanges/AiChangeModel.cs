@@ -96,6 +96,12 @@ public enum AiChangeResource
 
     /// <summary>A picture for an entry or one of its appearances, uploaded by a person in LorEvolve and quarantined until approved (ADR 0062). Content.</summary>
     Media = 19,
+
+    /// <summary>
+    /// An entry of one of the universe's projects (#148): a game's unit, a series' character, a comic's prop. The
+    /// project's own rows, never the universe's lore, and proposed through the same review as everything else here.
+    /// </summary>
+    ProjectEntry = 20,
 }
 
 public enum AiChangeAction
@@ -285,7 +291,7 @@ public sealed class AiChangeOperationConfiguration : IEntityTypeConfiguration<Ai
         builder.ToTable("AiChangeOperations", table =>
         {
             table.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
-            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)");
+            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)");
             table.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
         });
         builder.HasKey(operation => operation.Id);
