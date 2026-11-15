@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
+import { ProjectEntries } from '../components/ProjectEntries'
+import { ProjectSchema } from '../components/ProjectSchema'
 import { ProjectsNav } from '../components/ProjectsNav'
 import { createProject, getProject } from '../projects/api'
 import { kindLabel, lifecycleLabel, projectPath } from '../projects/sections'
@@ -153,6 +155,7 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
   useI18n()
   const { projectId } = useParams<{ projectId: string }>()
   const [state, setState] = useState<LoadState | null>(null)
+  const [schemaVersion, setSchemaVersion] = useState(0)
   const read = state !== null && state.for === projectId ? state : null
 
   useEffect(() => {
@@ -234,6 +237,17 @@ function Project({ inUniverse }: { inUniverse: boolean }) {
           </p>
         )}
       </section>
+
+      {/*
+       * The project's own schema and what it holds (#144). A write on the left changes what the right can offer - a
+       * new type is a type an entry can be of - so the schema tells this page when it has changed and the entries
+       * panel re-reads.
+       */}
+      <ProjectSchema
+        projectId={project.id}
+        onChanged={() => setSchemaVersion((version) => version + 1)}
+      />
+      <ProjectEntries projectId={project.id} reloadKey={schemaVersion} />
     </div>
   )
 }
