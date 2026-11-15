@@ -26,6 +26,10 @@ const projects = {
   tabs: {
     label: 'Vistas do projeto',
   },
+  view: {
+    empty: 'Ainda não há nada nesta vista.',
+    emptyHint: 'Esta vista vai encher-se à medida que o projeto ganhar o que pertence aqui.',
+  },
   ideas: {
     ownerOnly: 'As ideias aqui são do dono do universo.',
     ownerOnlyHint:
