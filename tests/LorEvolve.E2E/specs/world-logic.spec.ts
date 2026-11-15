@@ -66,11 +66,61 @@ async function seedUniverse(page: Page) {
   return universe.id
 }
 
+/** A rule written with `self`, so a sweep with no target cannot answer it: an unknown, never a pass. */
 const purityAtLeastTwo = {
   kind: 'compare',
   left: { attribute: 'Purity', of: { subject: 'self' } },
   op: 'gte',
   right: { literal: 2, type: 'number' },
+}
+
+/** Text against a number: the rule itself is broken, which is a third thing again. */
+const textAtLeastNumber = {
+  kind: 'compare',
+  left: { literal: 'two', type: 'text' },
+  op: 'gte',
+  right: { literal: 2, type: 'number' },
+}
+
+/** One named entry is of that type. It names the entry rather than `self`, so a sweep can answer it. */
+function entryIsOfType(entryId: string, type: string) {
+  return {
+    kind: 'compare',
+    left: { field: 'type', from: 'subjects', of: { subject: entryId } },
+    op: 'eq',
+    right: { literal: type, type: 'text' },
+  }
+}
+
+async function seedEntity(page: Page, universeId: string, name: string) {
+  const types = await api<{ id: string; name: string }[]>(
+    page,
+    'GET',
+    `/api/universes/${universeId}/entity-types`,
+  )
+
+  return (
+    await api<{ id: string }>(page, 'POST', `/api/universes/${universeId}/entities`, {
+      entityTypeId: types.find((type) => type.name === 'Character')!.id,
+      name,
+      summary: null,
+      canonStatus: 2,
+      aliases: [],
+      tags: [],
+      fields: [],
+    })
+  ).id
+}
+
+async function seedRule(page: Page, universeId: string, title: string, condition: unknown) {
+  return (
+    await api<{ id: string }>(page, 'POST', `/api/universes/${universeId}/system-rules`, {
+      title,
+      description: null,
+      schemaVersion: 1,
+      condition,
+    })
+  ).id
 }
 
 test.describe('World Logic', () => {
@@ -233,9 +283,10 @@ test.describe('World Logic', () => {
       'true',
     )
 
-    // Integrity says nothing has been checked, which is not the same as nothing being wrong.
+    // Integrity says no finding is recorded, and says plainly that this is not the same as a clean bill: nothing
+    // stores when a check last ran, so an empty list cannot tell the two apart until one is run from here.
     await expect(page.getByTestId('world-logic-integrity-empty')).toContainText(
-      'Nothing has been checked yet',
+      'No findings are recorded',
     )
 
     // A reload lands on the same tab, because the tab is in the address.
@@ -334,6 +385,111 @@ test.describe('World Logic', () => {
 
     await page.getByTestId('world-logic-tab-rules').click()
     await expect(ruleRows).toHaveCount(1)
+  })
+
+  test('Integrity lists what the rules found and keeps the three outcomes apart', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const universeId = await seedUniverse(page)
+    const arlen = await seedEntity(page, universeId, 'Arlen')
+
+    // One of each: a proven contradiction, a rule the stored facts cannot answer, and a broken rule.
+    await seedRule(page, universeId, 'Arlen is a dragon', entryIsOfType(arlen, 'Dragon'))
+    await seedRule(page, universeId, 'Purity floor', purityAtLeastTwo)
+    await seedRule(page, universeId, 'Mismatched', textAtLeastNumber)
+
+    await page.goto(`/app/universes/${universeId}/world-logic?tab=integrity`)
+
+    // Checking is what produces the findings, and it is run from this tab.
+    await page.getByTestId('world-logic-integrity-check').click()
+    await expect(page.getByTestId('world-logic-integrity-checked')).toBeVisible()
+
+    const rows = page.getByTestId('world-logic-finding-row')
+    await expect(rows).toHaveCount(3)
+
+    // What needs attention leads, and no outcome is reported as another.
+    expect(await rows.evaluateAll((items) => items.map((item) => item.dataset.outcome))).toEqual([
+      'violation',
+      'error',
+      'unknown',
+    ])
+
+    const contradiction = rows.filter({ hasText: 'Arlen is a dragon' })
+    await expect(contradiction.getByTestId('world-logic-finding-outcome')).toHaveText(
+      'Contradiction',
+    )
+    await expect(contradiction.getByTestId('world-logic-finding-status')).toHaveText('Open')
+
+    const unanswered = rows.filter({ hasText: 'Purity floor' })
+    await expect(unanswered.getByTestId('world-logic-finding-outcome')).toHaveText(
+      'Could not be answered',
+    )
+    await expect(unanswered).toContainText('This is not a pass')
+
+    const broken = rows.filter({ hasText: 'Mismatched' })
+    await expect(broken.getByTestId('world-logic-finding-outcome')).toHaveText('The rule is broken')
+    await expect(broken.getByTestId('world-logic-finding-code')).toBeVisible()
+
+    // Opened, a finding shows the records its outcome rested on and what has happened to it.
+    await expect(contradiction.getByTestId('world-logic-finding-detail')).toBeHidden()
+    await contradiction.getByTestId('world-logic-finding-toggle').click()
+    await expect(contradiction.getByTestId('world-logic-finding-evidence')).toContainText(arlen)
+    await expect(contradiction.getByTestId('world-logic-finding-history')).toContainText('Found')
+    await expect(contradiction.getByTestId('world-logic-finding-history')).toContainText(
+      'By the check itself',
+    )
+  })
+
+  test('a finding is dismissed and taken up again, and the state survives a reload', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const universeId = await seedUniverse(page)
+    const arlen = await seedEntity(page, universeId, 'Arlen')
+    await seedRule(page, universeId, 'Arlen is a dragon', entryIsOfType(arlen, 'Dragon'))
+    await api(page, 'POST', `/api/universes/${universeId}/world-logic/findings/evaluate`)
+
+    const address = `/app/universes/${universeId}/world-logic?tab=integrity`
+    await page.goto(address)
+
+    const row = page.getByTestId('world-logic-finding-row')
+    await expect(row).toHaveCount(1)
+    await row.getByTestId('world-logic-finding-toggle').click()
+    await row.getByTestId('world-logic-finding-dismiss').click()
+    await expect(row.getByTestId('world-logic-finding-status')).toHaveText('Dismissed')
+
+    // The dismissal is in the store, not in this page: a reload still finds it dismissed.
+    await page.goto(address)
+    await expect(row).toHaveAttribute('data-status', 'dismissed')
+    await expect(row.getByTestId('world-logic-finding-status')).toHaveText('Dismissed')
+
+    // And the way back is open, which is taking the problem up rather than suppressing it.
+    await row.getByTestId('world-logic-finding-toggle').click()
+    await row.getByTestId('world-logic-finding-undismiss').click()
+    await expect(row.getByTestId('world-logic-finding-status')).toHaveText('Reviewing')
+
+    await page.goto(address)
+    await expect(row).toHaveAttribute('data-status', 'reviewing')
+  })
+
+  test('an empty Integrity tab says it cannot tell, and a check that finds nothing says so', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const universeId = await seedUniverse(page)
+    await page.goto(`/app/universes/${universeId}/world-logic?tab=integrity`)
+
+    // Nothing recorded is not a clean bill, and the page does not pretend it knows which it is.
+    const nothing = page.getByTestId('world-logic-integrity-empty')
+    await expect(nothing).toContainText('No findings are recorded')
+    await expect(nothing).toContainText('no check has run yet')
+
+    // A check run from here does know: it found nothing, so every rule it could answer passed.
+    await page.getByTestId('world-logic-integrity-check').click()
+    const passed = page.getByTestId('world-logic-integrity-passed')
+    await expect(passed).toContainText('Every rule that could be answered passed')
+    await expect(page.getByTestId('world-logic-integrity-empty')).toBeHidden()
   })
 
   test('it reads on a phone, and the sections sheet reaches it', async ({ page }) => {

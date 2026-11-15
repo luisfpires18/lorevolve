@@ -1,5 +1,13 @@
 import { apiFetch } from '../lib/api'
-import type { SystemDetail, SystemSummary, WorldLogicPage, WorldLogicRuleRow } from './types'
+import type {
+  SystemDetail,
+  SystemSummary,
+  WorldLogicFindingDetail,
+  WorldLogicFindingRow,
+  WorldLogicPage,
+  WorldLogicRuleRow,
+  WorldLogicSweepResult,
+} from './types'
 
 /** One page of a universe's World Logic. The API allows up to 100. */
 export const WORLD_LOGIC_PAGE_SIZE = 50
@@ -40,4 +48,51 @@ export function listSystems(universeId: string, page: number, signal?: AbortSign
 /** One System, with the rule definitions it references in its own order. */
 export function getSystem(universeId: string, id: string, signal?: AbortSignal) {
   return apiFetch<SystemDetail>(`${base(universeId)}/systems/${id}`, { signal })
+}
+
+function findings(universeId: string) {
+  return `${base(universeId)}/world-logic/findings`
+}
+
+/**
+ * What checking this universe's rules found, in the server's own order: what needs attention first (open findings,
+ * then the worst severity, then the oldest). The order is the server's on purpose, so paging is stable and a finding
+ * never swaps pages between two requests.
+ */
+export function listWorldLogicFindings(universeId: string, page: number, signal?: AbortSignal) {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(WORLD_LOGIC_PAGE_SIZE),
+  })
+
+  return apiFetch<WorldLogicPage<WorldLogicFindingRow>>(
+    `${findings(universeId)}?${params.toString()}`,
+    { signal },
+  )
+}
+
+/** One finding with the evidence it rested on, the evaluator's trace and what the author has done about it. */
+export function getWorldLogicFinding(universeId: string, findingId: string, signal?: AbortSignal) {
+  return apiFetch<WorldLogicFindingDetail>(`${findings(universeId)}/${findingId}`, { signal })
+}
+
+/**
+ * One of the author's three decisions about a finding. `review` is also the way back from a dismissal: it is the only
+ * transition out of `dismissed`, and it says the author is looking at the problem again rather than suppressing it.
+ */
+export function decideWorldLogicFinding(
+  universeId: string,
+  findingId: string,
+  decision: 'review' | 'dismiss' | 'resolve',
+) {
+  return apiFetch<WorldLogicFindingDetail>(`${findings(universeId)}/${findingId}/${decision}`, {
+    method: 'POST',
+    // No note: the page offers no field for one, and the API never reads a note for meaning.
+    body: JSON.stringify({}),
+  })
+}
+
+/** Checks every rule of the universe and records what it found. The answer is the counts, not the findings. */
+export function evaluateWorldLogicFindings(universeId: string) {
+  return apiFetch<WorldLogicSweepResult>(`${findings(universeId)}/evaluate`, { method: 'POST' })
 }
