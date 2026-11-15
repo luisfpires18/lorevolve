@@ -56,8 +56,14 @@ One line per branch. Delete the line when it merges.
   backup format 45, migration `AddRuleExceptions`); #152 the World Logic page (`src/pages/WorldLogicPage.tsx`, the
   sidebar's World Logic section, which owns every `world-rules` address); #153 persisted findings
   (`Features/Systems/Finding*`, `WorldLogicFindingSweep`, `/world-logic/findings`, backup format 46, migration
-  `AddWorldLogicFindings`). Next: #154. The page's Integrity tab does not show the new findings yet; that is
-  noted on #153 and belongs to whoever touches the page next. Delete this line when #155 merges.
+  `AddWorldLogicFindings`); #154 the MCP World Logic tools (`Features/Mcp/LorEvolveMcpWorldLogicTools.cs`, seven read
+  tools plus `submit_semantic_finding`, `Features/Systems/SemanticFinding*`, `/world-logic/semantic-findings`,
+  migration `AddSemanticFindings`, no backup format change because a claim is review state). Next: #155. Two things
+  are left for whoever touches the page next, both noted on their issues: the page's Integrity tab does not show
+  #153's findings, and nothing in the web UI shows a submitted semantic finding, so the author reviews one over the
+  API for now. `ConditionSchema.SourceFields` still has only `id` and `type` for subjects, so a where clause naming
+  `attributes.<name>` is refused with `unknown_field` although the specification's section 2 lists it; that is
+  #151's surface and wants its own issue. Delete this line when #155 merges.
 
 ## Committed, not on `dev`
 

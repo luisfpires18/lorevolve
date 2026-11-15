@@ -222,6 +222,15 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
 
     public DbSet<WorldLogicFindingEvent> WorldLogicFindingEvents => Set<WorldLogicFindingEvent>();
 
+    /// <summary>
+    /// What connected AI clients claimed about this universe's meaning, waiting for the author to accept or dismiss
+    /// (ADR 0072, ADR 0046, LOREX-021). Deliberately a different table from <see cref="WorldLogicFindings"/>: nothing
+    /// a model asserts is ever recorded as a proven violation.
+    /// </summary>
+    public DbSet<SemanticFinding> SemanticFindings => Set<SemanticFinding>();
+
+    public DbSet<SemanticFindingCitation> SemanticFindingCitations => Set<SemanticFindingCitation>();
+
     public DbSet<EntityPrivateNote> EntityPrivateNotes => Set<EntityPrivateNote>();
 
     public DbSet<KnowledgeRecord> KnowledgeRecords => Set<KnowledgeRecord>();

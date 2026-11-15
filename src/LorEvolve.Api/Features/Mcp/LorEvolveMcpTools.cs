@@ -40,7 +40,8 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         + "distance only when both are on one calibrated map. A location is a pin someone placed and a distance only what that tool "
         + "returns - never estimate either from a name, a description or the picture. "
         + LorEvolveMcpProjectTools.Instructions
-        + LorEvolveMcpProjectEntityTools.Instructions;
+        + LorEvolveMcpProjectEntityTools.Instructions
+        + LorEvolveMcpWorldLogicTools.Instructions;
 
     /// <summary>A chunk of prose by default: about 2,000 tokens of English.</summary>
     public const int ManuscriptChunkDefault = 8_000;
