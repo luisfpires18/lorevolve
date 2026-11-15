@@ -14,9 +14,13 @@ namespace LorEvolve.Api.Features.ProjectEntities;
 /// <para><b>No WOO-specific content.</b> These are the shapes any game, series, film or comic has, not one world's.
 /// Nothing here names a faction, a rune or a weapon.</para>
 ///
-/// <para>Game (#144) and Series (#145) are filled in; Film and Comic are #146 and #147 and add their own entries to
-/// this one table rather than a mechanism of their own. A kind with no template is not an error: its author defines
-/// every type themselves, which is also what happens to an author who declines one.</para>
+/// <para>Game (#144), Series (#145) and Film (#146) are filled in; Comic is #147 and adds its own entry to this one
+/// table rather than a mechanism of its own. A kind with no template is not an error: its author defines every type
+/// themselves, which is also what happens to an author who declines one.</para>
+///
+/// <para>Film and Series start from the same three types under different billing vocabulary, which is honest rather
+/// than lazy: a film and a series are made of characters, places and things either way, and inventing a difference to
+/// look thorough would leave an author deleting types they did not want.</para>
 /// </summary>
 public static class ProjectTemplates
 {
@@ -84,6 +88,30 @@ public static class ProjectTemplates
                 ]),
         ]);
 
+    private static readonly Template FilmTemplate = new(
+        "Film",
+        [
+            new StarterType(
+                "Character",
+                "Someone who appears in the film. Separate from the lore's own characters, and may point at one.",
+                [
+                    new StarterField("Billing", EntityFieldKind.Select, ["Lead", "Supporting", "Background"]),
+                    new StarterField("Notes", EntityFieldKind.LongText, []),
+                ]),
+            new StarterType(
+                "Location",
+                "A place the film is set or shot in.",
+                [
+                    new StarterField("Notes", EntityFieldKind.LongText, []),
+                ]),
+            new StarterType(
+                "Prop",
+                "Something that has to exist on screen.",
+                [
+                    new StarterField("Notes", EntityFieldKind.LongText, []),
+                ]),
+        ]);
+
     private static readonly Template Empty = new("None", []);
 
     /// <summary>
@@ -95,6 +123,7 @@ public static class ProjectTemplates
     {
         ProjectKind.Game => GameTemplate,
         ProjectKind.Series => SeriesTemplate,
+        ProjectKind.Film => FilmTemplate,
         _ => Empty,
     };
 }

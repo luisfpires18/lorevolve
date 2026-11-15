@@ -375,6 +375,108 @@ public sealed class ProjectSeasonTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Single(await Seasons(client, show.Id));
     }
 
+    /// <summary>
+    /// A Film is cut into sequences of scenes, which is the same structure a Series uses for seasons of episodes
+    /// (#146). One engine, two vocabularies: the rows are identical, so this asserts a film really does get the
+    /// structure and that the ordering and the script work there too.
+    /// </summary>
+    [Fact]
+    public async Task A_film_holds_sequences_of_scenes_with_screenplay_text()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "filmorder");
+        var film = await NewProject(client, universe.Id, ProjectKind.Film);
+
+        var first = await NewSeason(client, film.Id, "Act one");
+        var second = await NewSeason(client, film.Id, "Act two");
+
+        var opening = await NewEpisode(client, film.Id, first.Id, "The tide goes out");
+        var later = await NewEpisode(client, film.Id, first.Id, "Salt House, night");
+
+        // The screenplay text of one scene, saved whole and versioned like an episode's script.
+        var written = await Put<ProjectEpisodeDetail>(
+            client,
+            $"/api/projects/{film.Id}/seasons/{first.Id}/episodes/{opening.Id}",
+            new ProjectEpisodeRequest(
+                "The tide goes out",
+                "Alenna walks out of the sea.",
+                "EXT. SALTFLATS - DAWN",
+                opening.Version));
+
+        Assert.Equal("EXT. SALTFLATS - DAWN", written.Script);
+        Assert.Equal(2, written.Version);
+
+        // Order works the same way, and a scene moves between sequences of the same film.
+        await Move(
+            client,
+            $"/api/projects/{film.Id}/seasons/{first.Id}/episodes/{later.Id}/move",
+            new ProjectMoveRequest(0, second.Id));
+
+        Assert.Equal(["The tide goes out"], (await Episodes(client, film.Id, first.Id)).Select(scene => scene.Title));
+        Assert.Equal(["Salt House, night"], (await Episodes(client, film.Id, second.Id)).Select(scene => scene.Title));
+
+        // "Animated or live-action" is the project's own subtype, so nothing new was needed for it.
+        var animated = await client.PostAsJsonAsync(
+            "/api/projects",
+            new ProjectRequest("Hollow Season, animated", ProjectKind.Film, ProjectLifecycle.Active, "animated", null, universe.Id, null));
+        animated.EnsureSuccessStatusCode();
+        Assert.Equal("animated", (await animated.Content.ReadFromJsonAsync<ProjectDetail>())!.Subtype);
+    }
+
+    /// <summary>
+    /// A film's sequences are its own, and a project of a kind without the structure has no route to it. The Game case
+    /// is the one that matters: #146 widens the structure to Film, and that must not widen it to everything.
+    /// </summary>
+    [Fact]
+    public async Task A_film_s_sequences_are_its_own_and_a_game_still_has_none()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "filmisolation");
+        var film = await NewProject(client, universe.Id, ProjectKind.Film);
+        var show = await NewProject(client, universe.Id, ProjectKind.Series);
+        var game = await NewProject(client, universe.Id, ProjectKind.Game);
+
+        var sequence = await NewSeason(client, film.Id, "Act one");
+        await NewSeason(client, show.Id, "Season 1");
+
+        Assert.Single(await Seasons(client, film.Id));
+        Assert.Single(await Seasons(client, show.Id));
+
+        // The film's sequence is not reachable through the series, even though both kinds hold the structure.
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            (await client.DeleteAsync($"/api/projects/{show.Id}/seasons/{sequence.Id}")).StatusCode);
+
+        // And a Game has no route at all.
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/projects/{game.Id}/seasons")).StatusCode);
+    }
+
+    /// <summary>
+    /// The public reading endpoints are a universe's published lore and stories (ADR 0036), and a film's scenes are
+    /// neither: #146 requires they stay unaffected, so this reads the portal with a film in the universe and asserts
+    /// nothing of it appears.
+    /// </summary>
+    [Fact]
+    public async Task A_film_s_scenes_are_not_in_the_public_reading_endpoints()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "filmportal");
+        var film = await NewProject(client, universe.Id, ProjectKind.Film);
+        var sequence = await NewSeason(client, film.Id, "Act one");
+        var scene = await NewEpisode(client, film.Id, sequence.Id, "The tide goes out");
+
+        await Put<ProjectEpisodeDetail>(
+            client,
+            $"/api/projects/{film.Id}/seasons/{sequence.Id}/episodes/{scene.Id}",
+            new ProjectEpisodeRequest("The tide goes out", null, "EXT. SALTFLATS - DAWN", scene.Version));
+
+        // The universe's own search, which is what a reader reaches, holds none of it.
+        var searched = await client.GetStringAsync($"/api/universes/{universe.Id}/search?query=Saltflats");
+        Assert.DoesNotContain("Saltflats", searched, StringComparison.Ordinal);
+        Assert.DoesNotContain("tide goes out", searched, StringComparison.Ordinal);
+
+        // Nor does anything of the film sit in the universe's lore listing.
+        var lore = await client.GetStringAsync($"/api/universes/{universe.Id}/entities");
+        Assert.DoesNotContain("tide goes out", lore, StringComparison.Ordinal);
+    }
+
     // ---------- helpers ----------
 
     private static async Task<ProjectDetail> NewProject(HttpClient client, Guid universeId, ProjectKind kind)
