@@ -216,12 +216,10 @@ const projects = {
     title: 'Entidades',
     lede: 'O que este projeto contém, por tipo. Abre um tipo para ver os seus registos.',
     manage: 'Gerir tipos',
-    back: 'Todos os tipos',
   },
   entries: {
     more: 'Mostrar mais',
     title: 'Registos',
-    lede: 'O que este projeto guarda, por tipo.',
     failed: 'Não foi possível ler os registos deste projeto.',
     empty: 'Ainda não há nada deste tipo.',
     emptyHint: 'Acrescente um registo para fazer o primeiro.',
@@ -235,7 +233,7 @@ const projects = {
     summary: 'Descrição',
     saving: 'A acrescentar',
     delete: 'Mover para o Lixo',
-    canonNone: 'Nada no saber',
+    canon: 'No Lore: {name}',
     values: 'Campos',
   },
   new: {

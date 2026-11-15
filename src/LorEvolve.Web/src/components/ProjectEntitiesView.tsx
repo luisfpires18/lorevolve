@@ -34,14 +34,22 @@ export function ProjectEntitiesView({
   const managing = params.get('manage') === 'types'
   // The entry a link from elsewhere named, carried to the list so that it opens on that row (#195).
   const entryId = params.get('entry')
+  // The way back to the cards, said as Lore says it above a type: a quiet crumb over the screen's own name.
+  const back = (
+    <Link to={pathname} data-testid="project-entities-back">
+      {t('projects.entities.title')}
+    </Link>
+  )
 
   if (managing) {
     return (
       <div className="projectbody" data-testid="project-entities-manage">
-        <Link to={pathname} className="button button--text" data-testid="project-entities-back">
-          {t('projects.entities.back')}
-        </Link>
-        <ProjectSchema projectId={projectId} reloadKey={reloadKey} onChanged={onChanged} />
+        <ProjectSchema
+          projectId={projectId}
+          reloadKey={reloadKey}
+          onChanged={onChanged}
+          crumb={back}
+        />
       </div>
     )
   }
@@ -49,9 +57,6 @@ export function ProjectEntitiesView({
   if (typeId) {
     return (
       <div className="projectbody" data-testid="project-entities-type">
-        <Link to={pathname} className="button button--text" data-testid="project-entities-back">
-          {t('projects.entities.back')}
-        </Link>
         {/* Keyed by the type, so opening another card starts its own first page rather than carrying this one's. */}
         <ProjectEntries
           key={typeId}
@@ -59,6 +64,7 @@ export function ProjectEntitiesView({
           fixedTypeId={typeId}
           openEntryId={entryId ?? undefined}
           reloadKey={reloadKey}
+          crumb={back}
         />
       </div>
     )

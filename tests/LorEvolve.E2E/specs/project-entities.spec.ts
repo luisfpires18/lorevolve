@@ -302,4 +302,60 @@ test.describe('Project entities', () => {
     }
     await expect(page.getByTestId('project-overview-way-overview')).toHaveCount(0)
   })
+
+  test('a series and a film open a type as Lore does: its name, Lore cards and a crumb back, on a phone too', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await universe(page)
+
+    // 2 is Series and 3 is Film: the two kinds with five views, whose tab bar used to widen a phone's page.
+    for (const kind of [2, 3]) {
+      const project = await api<{ id: string }>(page, 'POST', '/api/projects', {
+        name: unique('Low Tide '),
+        kind,
+        lifecycle: 1,
+        subtype: null,
+        summary: '',
+        universeId: world.id,
+        expectedVersion: null,
+      })
+      const types = await api<{ id: string; name: string }[]>(
+        page,
+        'POST',
+        `/api/projects/${project.id}/template`,
+      )
+      const character = types.find((type) => type.name === 'Character')!
+      await api(page, 'POST', `/api/projects/${project.id}/entities`, {
+        entityTypeId: character.id,
+        name: 'Mara Vell',
+        summary: 'Comes back to the harbour.',
+      })
+
+      await page.setViewportSize({ width: 1280, height: 800 })
+      await page.goto(`/app/projects/${project.id}/entities?type=${character.id}`)
+
+      // The type's own name heads its list and New is named for it, as above a Lore type's list.
+      const entries = page.getByTestId('project-entries')
+      await expect(entries.getByRole('heading', { level: 2, name: 'Character' })).toBeVisible()
+      await expect(page.getByTestId('project-entry-add')).toHaveAccessibleName('New Character')
+
+      // Its entries are Lore's cards.
+      const card = page.getByTestId('project-entry-list').locator('.entitycard')
+      await expect(card).toHaveCount(1)
+      await expect(card).toContainText('Mara Vell')
+      await expect(card).toContainText('Comes back to the harbour.')
+
+      // On a phone the tabs scroll inside their own bar and the page stays the screen's width.
+      await page.setViewportSize({ width: 375, height: 740 })
+      await expect(page.getByTestId('project-tabs')).toBeVisible()
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        375,
+      )
+
+      // The crumb leads back to the type cards.
+      await page.getByTestId('project-entities-back').click()
+      await expect(page.getByTestId('project-entity-type-cards')).toBeVisible()
+    }
+  })
 })

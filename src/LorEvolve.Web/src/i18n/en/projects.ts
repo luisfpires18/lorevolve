@@ -216,12 +216,10 @@ const projects = {
     title: 'Entities',
     lede: 'What this project holds, by type. Open a type to see its entries.',
     manage: 'Manage types',
-    back: 'All types',
   },
   entries: {
     more: 'Show more',
     title: 'Entries',
-    lede: 'What this project holds, by type.',
     failed: "This project's entries could not be read.",
     empty: 'Nothing of this type yet.',
     emptyHint: 'Add an entry to make the first one.',
@@ -235,7 +233,7 @@ const projects = {
     summary: 'Summary',
     saving: 'Adding',
     delete: 'Move to Trash',
-    canonNone: 'Nothing in the lore',
+    canon: 'In the lore: {name}',
     values: 'Fields',
   },
   new: {

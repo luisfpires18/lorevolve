@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ListTree, Pencil, Plus } from 'lucide-react'
 import {
   addProjectField,
@@ -54,6 +54,7 @@ export function ProjectSchema({
   projectId,
   reloadKey,
   onChanged,
+  crumb,
 }: {
   projectId: string
   /**
@@ -64,6 +65,8 @@ export function ProjectSchema({
   reloadKey: number
   /** Called after any write, so the entries panel beside this one re-reads the types it offers. */
   onChanged?: () => void
+  /** The way back to the type cards, above the panel's name, when the panel is a screen of its own. */
+  crumb?: ReactNode
 }) {
   useI18n()
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
@@ -126,6 +129,7 @@ export function ProjectSchema({
     <section className="projects" data-testid="project-schema">
       {/* The panel's own primary action sits in its head, where `PageHeader` and the lore screens put one (#184). */}
       <header className="projects__head">
+        {crumb ? <div className="pageheader__crumb projects__crumb">{crumb}</div> : null}
         <div className="projects__headtext">
           <h2>{t('projects.schema.title')}</h2>
           <p className="projects__lede">{t('projects.schema.lede')}</p>

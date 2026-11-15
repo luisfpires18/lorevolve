@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { Plus } from 'lucide-react'
 import {
   createProjectEntity,
   deleteProjectEntity,
@@ -12,9 +14,12 @@ import {
   type ProjectEntitySummary,
   type ProjectField,
 } from '../projectEntities/types'
+import { buildTypeTree } from '../lore/typeTree'
+import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
-import { t, useI18n } from '../i18n'
+import { EntityCardBody } from './EntityCard'
+import { t, tx, useI18n } from '../i18n'
 
 /** How many entries one read shows; the next page is asked for, never loaded behind the author's back (#196). */
 export const ENTRY_PAGE_SIZE = 25
@@ -34,6 +39,7 @@ export function ProjectEntries({
   openEntryId,
   reloadKey,
   onChanged,
+  crumb,
 }: {
   projectId: string
   /** Set when the author opened one type's card: only its entries are listed and no other type is offered (#196). */
@@ -47,8 +53,11 @@ export function ProjectEntries({
   reloadKey: number
   /** Called after a write, so the Types panel's entry counts are re-read rather than left stale. */
   onChanged?: () => void
+  /** The way back to the type cards, which the type's ancestors follow as they do above a Lore type's list. */
+  crumb?: ReactNode
 }) {
   useI18n()
+  const { pathname } = useLocation()
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
   const [typeId, setTypeId] = useState<string | null>(fixedTypeId ?? null)
   const [entries, setEntries] = useState<ProjectEntitySummary[] | null>(null)
@@ -169,6 +178,43 @@ export function ProjectEntries({
     setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
   }
 
+  /**
+   * Lore's head for one type (#196): the path back with the type's ancestors, the type's name, and New beside it. Every
+   * state draws it, so the way back is there even when the type is gone.
+   */
+  const head = (
+    title: ReactNode,
+    ancestors: readonly ProjectEntityType[] = [],
+    action?: ReactNode,
+  ) => (
+    <header className="projects__head">
+      {crumb ? (
+        <div className="pageheader__crumb projects__crumb">
+          <span className="lore__path">
+            {crumb}
+            {ancestors.map((ancestor) => (
+              <Fragment key={ancestor.id}>
+                <span className="lore__pathsep" aria-hidden="true">
+                  ›
+                </span>
+                <Link
+                  to={`${pathname}?type=${ancestor.id}`}
+                  data-testid="project-entities-path-type"
+                >
+                  <bdi>{ancestor.name}</bdi>
+                </Link>
+              </Fragment>
+            ))}
+          </span>
+        </div>
+      ) : null}
+      <div className="projects__headtext">
+        <h2>{title}</h2>
+      </div>
+      {action}
+    </header>
+  )
+
   if (types === null) {
     return <p className="projectcard__meta">{t('projects.common.loading')}</p>
   }
@@ -176,7 +222,7 @@ export function ProjectEntries({
   if (types.length === 0) {
     return (
       <section className="projects" data-testid="project-entries">
-        <h2>{t('projects.entries.title')}</h2>
+        {head(t('projects.entries.title'))}
         <EmptyState
           title={t('projects.entries.needsType')}
           hint={t('projects.entries.needsTypeHint')}
@@ -189,7 +235,7 @@ export function ProjectEntries({
   if (fixedTypeId && !types.some((each) => each.id === fixedTypeId)) {
     return (
       <section className="projects" data-testid="project-entries">
-        <h2>{t('projects.entries.title')}</h2>
+        {head(t('projects.entries.title'))}
         <EmptyState
           title={t('projects.entries.typeMissing')}
           hint={t('projects.entries.typeMissingHint')}
@@ -203,24 +249,30 @@ export function ProjectEntries({
   // A type's own fields and the ones it inherits are both filled in on an entry; they differ only in where they are
   // defined, which is the Types screen's business and not this one's.
   const fields: ProjectField[] = type ? [...type.fields, ...type.inheritedFields] : []
+  // The types above this one, each a link to its own list, as Lore's path reads above a type's list.
+  const ancestors = (type && buildTypeTree(types).byId.get(type.id)?.path.slice(0, -1)) || []
 
   return (
     <section className="projects" data-testid="project-entries">
-      <header className="projects__head">
-        <div className="projects__headtext">
-          <h2>{t('projects.entries.title')}</h2>
-          <p className="projects__lede">{t('projects.entries.lede')}</p>
-        </div>
+      {head(
+        type ? <bdi>{type.name}</bdi> : t('projects.entries.title'),
+        ancestors,
         <button
           className="button"
           type="button"
           aria-expanded={adding}
+          aria-label={type ? t('lore.page.newTypeLabel', { name: type.name }) : undefined}
           data-testid="project-entry-add"
           onClick={() => setAdding((open) => !open)}
         >
-          {t('projects.entries.add')}
-        </button>
-      </header>
+          <ActionIcon icon={Plus} />
+          <span className="lore__createlabel">
+            {type
+              ? tx('lore.page.newType', { type: <bdi>{type.name}</bdi> })
+              : t('projects.entries.add')}
+          </span>
+        </button>,
+      )}
 
       {failed ? (
         <p role="alert" data-testid="project-entries-failed">
@@ -343,11 +395,10 @@ export function ProjectEntries({
           testId="project-entries-empty"
         />
       ) : (
-        <ul className="projectcardlist" data-testid="project-entry-list">
+        <ul className="cardgrid lore__grid" data-testid="project-entry-list">
           {(entries ?? []).map((entry) => (
             <li
               key={entry.id}
-              className="projectcard"
               data-testid={`project-entry-${entry.id}`}
               // The entry the address named: marked for a screen reader as the row in view, and scrolled to, because
               // it may sit below the fold of a list that had to read several pages to include it (#195).
@@ -358,12 +409,19 @@ export function ProjectEntries({
                   : undefined
               }
             >
-              <div className="projectcard__head">
-                <h3 className="projectcard__title">{entry.name}</h3>
-                <p className="projectcard__meta">
-                  {entry.canonEntityName ?? t('projects.entries.canonNone')}
-                </p>
-                <div className="projectcard__actions">
+              {/* Lore's card, without the link: an entry has no page of its own, so its one action is the menu. */}
+              <div className="entitycard entitycard--static">
+                {/* No picture, so the tile draws the type's icon and never reads a universe. */}
+                <EntityCardBody
+                  universeId=""
+                  entity={entry}
+                  note={
+                    entry.canonEntityName
+                      ? t('projects.entries.canon', { name: entry.canonEntityName })
+                      : undefined
+                  }
+                />
+                <div className="entitycard__actions">
                   <ActionMenu
                     label={t('projects.common.more', { name: entry.name })}
                     triggerTestId={`project-entry-actions-${entry.id}`}
@@ -383,7 +441,6 @@ export function ProjectEntries({
                   </ActionMenu>
                 </div>
               </div>
-              {entry.summary ? <p className="prose">{entry.summary}</p> : null}
             </li>
           ))}
         </ul>
