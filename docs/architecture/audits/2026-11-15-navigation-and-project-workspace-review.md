@@ -279,11 +279,11 @@ are preserved on purpose, so the MANAGEMENT group must still carry AI Changes.
 ## 9. Proposed task breakdown
 
 One issue per pull request, ordered so that no issue depends on a later one. All of them wait for #135 and #136.
-Issue numbers are filled in once opened; the tracker lists them.
+They are open under the M5 tracker, #201, which repeats that wait in its own Constraints section.
 
 ### P0
 
-**1. Regroup the universe sidebar into Worldbuilding, Projects and Management, and drop the duplicate Stories entry.**
+**1. Regroup the universe sidebar into Worldbuilding, Projects and Management, and drop the duplicate Stories entry.** (LOREX-032, #191)
 Changes `src/LorEvolve.Web/src/universes/sections.ts` (group constants and `SECTION_GROUPS`),
 `src/LorEvolve.Web/src/pages/UniverseWorkspace.tsx` (group labels and the narrow-layout sheet), the locale files, and
 the workspace navigation E2E specs. Stories leaves the sidebar; `/app/universes/:id/stories` keeps working and keeps
@@ -293,7 +293,7 @@ navigation specs assert the new grouping.
 Verification: `(cd src/LorEvolve.Web && npm run typecheck && npm run lint && npm run build)`, then the workspace
 navigation E2E specs.
 
-**2. Give a project its own sections and a workspace shell.**
+**2. Give a project its own sections and a workspace shell.** (LOREX-033, #192)
 Changes `src/LorEvolve.Web/src/projects/sections.ts` (per-kind section lists and their labels),
 `src/LorEvolve.Web/src/App.tsx` (child routes under both project addresses) and a new project shell component with a
 tab bar, plus locale strings. No content moves yet: every new route renders what the overview renders today, so the
@@ -302,15 +302,15 @@ expansions, the tab bar and the sidebar expansion never both show on a narrow vi
 redirects to the overview.
 Verification: web checks as above, plus a new focused E2E spec for project navigation.
 
-**3. Split the project page into its views.**
+**3. Split the project page into its views.** (LOREX-034, #193)
 Changes `src/LorEvolve.Web/src/pages/ProjectPage.tsx` to render one view per route rather than the stack at `:253`,
 `:258` and `:270`, moving `ProjectEntries` to the Entities route and `ProjectSeasons` to Structure.
-`ProjectSchema` moves with Entities under issue 6; until then it stays on the overview. Done when no route renders
+`ProjectSchema` moves with Entities under LOREX-037 (#196); until then it stays on the overview. Done when no route renders
 more than one panel, the `schemaVersion` reload link between schema and entries still works, and the existing
 project E2E specs pass with updated navigation steps.
 Verification: web checks, project E2E specs.
 
-**4. One entry point for every project kind.**
+**4. One entry point for every project kind.** (LOREX-035, #194)
 Changes `src/LorEvolve.Web/src/projects/sections.ts` (`projectRowPath`), `ProjectsNav.tsx:90-105` (the disclosure
 a Writing project does not get) and `App.tsx` so a Writing project opens its project shell, whose Structure,
 Manuscript and Ideas tabs render the existing `StoryPage` views unchanged. Existing story URLs redirect to the
@@ -320,14 +320,14 @@ Verification: web checks, the story E2E specs, and the projects navigation spec.
 
 ### P1
 
-**5. A real overview for non-Writing projects.**
-Changes the overview view from issue 3 to show what the brief's screenshot shows: recent entities, linked lore,
+**5. A real overview for non-Writing projects.** (LOREX-036, #195)
+Changes the overview view from LOREX-034 (#193) to show what the brief's screenshot shows: recent entities, linked lore,
 counts per type and a link into each major view. Reads `ListProjectEntityTypes` for the counts, which already carries
 them. Done when the overview of a Game, Series, Film or Comic project shows its own content rather than a header and
 nothing.
 Verification: web checks, project E2E spec extended with the overview.
 
-**6. Entity Types inside the Entities view.**
+**6. Entity Types inside the Entities view.** (LOREX-037, #196)
 Moves `ProjectSchema` from the overview into Entities as a secondary view reached by an action, so an author does
 not scroll through definitions to reach content. Adds the type drill-in using
 `GET /api/projects/{projectId}/entities?typeId=`, and pages that endpoint, since it returns every match today
@@ -335,14 +335,14 @@ not scroll through definitions to reach content. Adds the type drill-in using
 entries, the type editor is one action away, and a type with many entries loads a page at a time.
 Verification: web checks, backend tests for the new paging parameters, project entities E2E spec.
 
-**7. Project-scoped Ideas.**
+**7. Project-scoped Ideas.** (LOREX-038, #197)
 Adds a project link to `Idea` (`src/LorEvolve.Api/Features/Ideas/IdeaModel.cs`), the migration, the contract and
 endpoint changes under `Features/Ideas`, the MCP tools that expose ideas, and the project Ideas view. Writing
 projects keep the story Ideas they have. Done when an idea can belong to a project, a universe, or neither as it can
 now, no existing idea is changed by the migration, and the backup and restore paths account for the new link.
 Verification: `dotnet test` on the idea test classes, web checks, ideas E2E spec.
 
-**8. Bound the sidebar project list.**
+**8. Bound the sidebar project list.** (LOREX-039, #198)
 Changes `ProjectsNav.tsx` to show a fixed number of projects plus the one in view, with the rest behind All
 Projects, to give the PROJECTS group a collapse, and `projects/api.ts` with `ProjectEndpoints.ListAsync` to page the
 list. Done when a universe with forty projects draws a bounded sidebar, the payload is bounded too, and the author's
@@ -352,7 +352,7 @@ the bound.
 
 ### P2
 
-**9. Normalize project addresses, breadcrumbs and legacy redirects.**
+**9. Normalize project addresses, breadcrumbs and legacy redirects.** (LOREX-040, #199)
 Settles one canonical address per project view, redirects the other, and puts a breadcrumb on the project shell.
 Also clears the stale no-universe assumptions listed in section 7: `projects/types.ts:39` and `:60`, the branch at
 `ProjectPage.tsx:221-224`, the unguarded `project.universe!.id` at `:275`, and the comments at
@@ -360,7 +360,7 @@ Also clears the stale no-universe assumptions listed in section 7: `projects/typ
 address redirects, and no web type or comment says a project may lack a universe.
 Verification: web checks, the full project and story E2E specs.
 
-**10. Chronology under Timeline.**
+**10. Chronology under Timeline.** (LOREX-041, #200)
 Moves the chronology screen to a configuration view of Timeline and redirects the old address. Done when chronology
 is reached from Timeline, the old link still resolves, and the sidebar has one fewer top-level entry.
 Verification: web checks, chronology E2E spec.
@@ -368,7 +368,7 @@ Verification: web checks, chronology E2E spec.
 ## Open questions for the owner
 
 1. The group labels reverse an explicit decision recorded at `universes/sections.ts:144-147`. Confirmed as intended?
-2. Ideas on every project kind needs the schema change in issue 7. If that is too much for this pass, the Ideas tab
+2. Ideas on every project kind needs the schema change in LOREX-038 (#197). If that is too much for this pass, the Ideas tab
    can be dropped for non-Writing projects and the pass shrinks by one issue.
-3. The sidebar bound in issue 8 is a visible behaviour change. Eight projects is a guess; the owner may prefer a
+3. The sidebar bound in LOREX-039 (#198) is a visible behaviour change. Eight projects is a guess; the owner may prefer a
    different number or no bound at all.
