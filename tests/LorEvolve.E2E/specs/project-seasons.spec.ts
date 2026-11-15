@@ -86,7 +86,7 @@ test.describe('Project seasons', () => {
     const world = await universe(page)
     const project = await series(page, world.id)
 
-    await page.goto(`/app/projects/${project.id}`)
+    await page.goto(`/app/projects/${project.id}/structure`)
 
     await expect(page.getByTestId('project-seasons-empty')).toBeVisible()
 
@@ -150,7 +150,7 @@ test.describe('Project seasons', () => {
     const world = await universe(page)
     const movie = await film(page, world.id)
 
-    await page.goto(`/app/projects/${movie.id}`)
+    await page.goto(`/app/projects/${movie.id}/structure`)
 
     // The film's own words, and not the series' ones.
     const panel = page.getByTestId('project-seasons')
@@ -198,7 +198,7 @@ test.describe('Project seasons', () => {
     const world = await universe(page)
     const book = await comic(page, world.id, 'manga')
 
-    await page.goto(`/app/projects/${book.id}`)
+    await page.goto(`/app/projects/${book.id}/structure`)
 
     // A comic's own words.
     const panel = page.getByTestId('project-seasons')
@@ -236,7 +236,8 @@ test.describe('Project seasons', () => {
     await expect(pageRow).toContainText('Wide on the saltflats')
     await expect(pageRow).toContainText('Nothing from the lore')
 
-    // The manga template is the one offered, chosen by the subtype.
+    // The manga template is the one offered, chosen by the subtype, on the overview that holds the schema (#193).
+    await page.getByTestId('projecttab-overview').click()
     await expect(page.getByTestId('project-schema-offer')).toContainText('Chapter')
   })
 
@@ -268,7 +269,7 @@ test.describe('Project seasons', () => {
       },
     )
 
-    await page.goto(`/app/projects/${book.id}`)
+    await page.goto(`/app/projects/${book.id}/structure`)
 
     await page.getByTestId('project-season-add').click()
     await page.getByTestId('project-season-new-name').fill('Volume 1')
@@ -315,7 +316,7 @@ test.describe('Project seasons', () => {
     const world = await universe(page)
     const project = await series(page, world.id)
 
-    await page.goto(`/app/projects/${project.id}`)
+    await page.goto(`/app/projects/${project.id}/structure`)
 
     await page.getByTestId('project-season-add').click()
     await page.getByTestId('project-season-new-name').fill('Season 1')
