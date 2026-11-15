@@ -2455,6 +2455,78 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("ProjectEpisodes", (string)null);
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EpisodeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EpisodeId", "SortOrder");
+
+                    b.ToTable("ProjectPages", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPanel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CanonEntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Dialogue")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PageId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CanonEntityId")
+                        .HasFilter("\"CanonEntityId\" IS NOT NULL");
+
+                    b.HasIndex("PageId", "SortOrder");
+
+                    b.ToTable("ProjectPanels", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectSeason", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5013,6 +5085,28 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Season");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.ProjectEntities.ProjectEpisode", "Episode")
+                        .WithMany()
+                        .HasForeignKey("EpisodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Episode");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPanel", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.ProjectEntities.ProjectPage", "Page")
+                        .WithMany("Panels")
+                        .HasForeignKey("PageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Page");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectSeason", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
@@ -5726,6 +5820,11 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Eras");
 
                     b.Navigation("Scenes");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
+                {
+                    b.Navigation("Panels");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectSeason", b =>

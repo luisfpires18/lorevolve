@@ -154,6 +154,11 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
 
     public DbSet<ProjectEpisode> ProjectEpisodes => Set<ProjectEpisode>();
 
+    /// <summary>The pages of a comic's chapter, and the panels on them (#147).</summary>
+    public DbSet<ProjectPage> ProjectPages => Set<ProjectPage>();
+
+    public DbSet<ProjectPanel> ProjectPanels => Set<ProjectPanel>();
+
     public DbSet<Story> Stories => Set<Story>();
 
     public DbSet<Chapter> Chapters => Set<Chapter>();

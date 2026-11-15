@@ -15,7 +15,8 @@ namespace LorEvolve.Api.Features.ProjectEntities;
 /// for the sequences and scenes a Film is cut into: the same shape under two names, so one structure serves both and
 /// <see cref="Holds"/> says which kinds have it. A project of another kind answers exactly as one with no seasons
 /// route at all, so nothing discloses that the feature exists elsewhere. When a comic wants volumes and issues
-/// (#147), that kind joins the predicate and nothing else changes.</para>
+/// (#147), that kind joins the predicate, which it now has: a comic's volumes are seasons and its chapters episodes,
+/// with pages and panels beneath them in <see cref="ComicEndpoints"/>.</para>
 ///
 /// <para>Order is a stored place, not a derivation: an author reorders seasons and episodes, and "Season 10" sorts
 /// before "Season 2" by name. Both lists are renumbered 0, 1, 2 on every move, the same way a story's arcs are
@@ -43,12 +44,26 @@ public static class SeriesEndpoints
     /// endpoints to say nothing new.</para>
     /// </summary>
     private static bool Holds(Projects.ProjectKind kind) =>
-        kind is Projects.ProjectKind.Series or Projects.ProjectKind.Film;
+        kind is Projects.ProjectKind.Series or Projects.ProjectKind.Film or Projects.ProjectKind.Comic;
 
     /// <summary>
     /// The project when it may be read and has seasons at all, otherwise the answer to send. A project of another kind
     /// is answered as a missing one rather than refused, because for it this route does not exist.
     /// </summary>
+    internal static Task<(Projects.CreativeProject? Project, IResult? Denied)> ReadableHolderAsync(
+        LorEvolveDbContext db,
+        Guid projectId,
+        ClaimsPrincipal principal,
+        CancellationToken cancellationToken) =>
+        SeriesReadableAsync(db, projectId, principal, cancellationToken);
+
+    internal static Task<(Projects.CreativeProject? Project, IResult? Denied)> WritableHolderAsync(
+        LorEvolveDbContext db,
+        Guid projectId,
+        ClaimsPrincipal principal,
+        CancellationToken cancellationToken) =>
+        SeriesWritableAsync(db, projectId, principal, cancellationToken);
+
     private static async Task<(Projects.CreativeProject? Project, IResult? Denied)> SeriesReadableAsync(
         LorEvolveDbContext db,
         Guid projectId,
@@ -656,7 +671,7 @@ public static class SeriesEndpoints
     /// Gives an ordered list the places 0, 1, 2. Neither index is unique, so this writes straight through rather than
     /// parking the rows first the way <see cref="Stories.PlotOrder"/> has to.
     /// </summary>
-    private static async Task PlaceAsync<T>(
+    internal static async Task PlaceAsync<T>(
         LorEvolveDbContext db,
         List<T> ordered,
         Func<T, int> read,
