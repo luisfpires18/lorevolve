@@ -12,7 +12,6 @@ import { EmptyState } from '../components/EmptyState'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
-import { ProjectIdeas } from '../components/ProjectIdeas'
 import { ProjectOverview } from '../components/ProjectOverview'
 import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
@@ -52,7 +51,7 @@ export default function ProjectPage({
    * story's own page, which reads `storyId` and `sceneId` from the address, so those views have routes of their own
    * that carry those names (#194); any other project reached through one of them reads it as that segment.
    */
-  view?: 'structure' | 'manuscript' | 'ideas'
+  view?: 'structure' | 'manuscript'
 }) {
   return isNew ? <NewProject /> : <Project inUniverse={inUniverse} view={view} />
 }
@@ -293,9 +292,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
         sections={storySections}
         story
       >
-        <StoryPage
-          view={view === 'structure' ? 'scenes' : view === 'manuscript' ? 'manuscript' : 'ideas'}
-        />
+        <StoryPage view={view === 'manuscript' ? 'manuscript' : 'scenes'} />
       </ProjectShell>
     )
   }
@@ -363,9 +360,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
        * the entries still share `schemaVersion`. It lives here, in the component that stays mounted while the author
        * moves between this project's views and between the Entities view's own screens.
        */}
-      {section.pending ? (
-        <ProjectIdeas project={project} />
-      ) : section.segment === 'overview' ? (
+      {section.segment === 'overview' ? (
         <ProjectOverview project={project} />
       ) : section.segment === 'entities' ? (
         <ProjectEntitiesView

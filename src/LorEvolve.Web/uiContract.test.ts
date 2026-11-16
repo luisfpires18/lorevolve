@@ -27,7 +27,6 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['aichanges__summary', '#248'],
   ['article__historytoggle', '#248'],
   ['artwork', '#248'],
-  ['avatarcircle', '#255'],
   ['board', '#248'],
   ['board__layout', '#248'],
   ['boardcanvas__controls', '#248'],
@@ -178,6 +177,18 @@ test('no new hand-written <dialog>', () => {
     DIALOG_FILES.filter((file) => !found.includes(file)),
     [],
     'No longer writes a <dialog>: remove it from DIALOG_FILES',
+  )
+})
+
+test('no native prompt, alert or confirm', () => {
+  const files = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
+    .filter((file) => /\.tsx?$/.test(file) && !file.endsWith('.test.ts'))
+    .sort()
+    .map((file) => 'src/' + file.replaceAll('\\', '/'))
+  assert.deepEqual(
+    files.filter((file) => /\bwindow\.(prompt|alert|confirm)\s*\(/.test(read(file))),
+    [],
+    'Use confirmAction or a Drawer form instead of a browser dialog',
   )
 })
 

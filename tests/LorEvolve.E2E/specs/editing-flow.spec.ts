@@ -166,13 +166,14 @@ function scrollsSideways(page: Page) {
 }
 
 test.describe('creating an idea returns to its list', () => {
-  test('a new idea goes back to all ideas, Back does not reopen the finished form, and an existing idea stays put', async ({
+  test('a new idea goes back to the universe’s ideas, Back does not reopen the finished form, and an existing idea stays put', async ({
     page,
   }) => {
     await signUp(page)
-    await page.goto('/app/ideas')
+    const base = `/app/universes/${await seedUniverse(page)}/ideas`
+    await page.goto(base)
     await page.getByTestId('new-idea').click()
-    await page.waitForURL('/app/ideas/new')
+    await page.waitForURL(`${base}/new`)
 
     // A create that fails stays, with everything written still there.
     await page.getByTestId('idea-title').fill('The Grey Havens')
@@ -185,15 +186,15 @@ test.describe('creating an idea returns to its list', () => {
     await expect(page.getByTestId('idea-save')).toHaveText('Create idea')
     await page.getByTestId('idea-save').click()
     await expect(page.getByTestId('idea-error')).toContainText('could not be saved')
-    await expect(page).toHaveURL('/app/ideas/new')
+    await expect(page).toHaveURL(`${base}/new`)
     await expect(page.getByTestId('idea-title')).toHaveValue('The Grey Havens')
     await expect(page.getByTestId('idea-body')).toHaveValue('Where the ships leave from.')
     await expect(page.getByTestId('idea-save')).toBeEnabled()
     await page.unrouteAll()
 
-    // Then it is created, and the author is back among all ideas - not on the idea.
+    // Then it is created, and the author is back among the universe’s ideas - not on the idea.
     await page.getByTestId('idea-save').click()
-    await page.waitForURL('/app/ideas')
+    await page.waitForURL(base)
     await expect(page.getByTestId('ideas-created-notice')).toHaveText('Created “The Grey Havens”.')
     const row = page.locator('[data-testid="idea-row"][data-title="The Grey Havens"]')
     await expect(row).toBeVisible()
@@ -201,12 +202,12 @@ test.describe('creating an idea returns to its list', () => {
 
     // Back leaves the list for where it was before New idea, never the finished form.
     await page.goBack()
-    await expect(page).toHaveURL('/app/ideas')
+    await expect(page).toHaveURL(base)
     await expect(page.getByTestId('idea-editor')).toHaveCount(0)
 
     // An existing idea saves where it is, by button and by keyboard.
     await row.getByTestId('idea-open').click()
-    await page.waitForURL(/\/app\/ideas\/[0-9a-f-]+$/)
+    await page.waitForURL(new RegExp(`${base}/[0-9a-f-]+$`))
     const url = page.url()
     await page.getByTestId('idea-body').fill('Where the ships leave from, into the West.')
     await page.getByTestId('idea-save').click()
@@ -226,8 +227,9 @@ test.describe('explicit save states', () => {
     page,
   }) => {
     await signUp(page)
-    const id = await seedIdea(page, 'Mithril')
-    await page.goto(`/app/ideas/${id}`)
+    const universeId = await seedUniverse(page)
+    const id = await seedIdea(page, 'Mithril', universeId)
+    await page.goto(`/app/universes/${universeId}/ideas/${id}`)
 
     const button = page.getByTestId('idea-save')
     const status = page.getByTestId('idea-status')
@@ -407,7 +409,7 @@ test.describe('save controls fit', () => {
     const base = `/app/universes/${universeId}`
 
     const pages: [string, string][] = [
-      [`/app/ideas/${idea}`, 'idea-save'],
+      [`${base}/ideas/${idea}`, 'idea-save'],
       [`${base}/world-rules/${rule}`, 'world-rule-save'],
       [manuscript, 'manuscript-save'],
       [`${base}/chronology`, 'save-chronology'],

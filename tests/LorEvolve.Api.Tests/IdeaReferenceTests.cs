@@ -120,24 +120,26 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
     }
 
     [Fact]
-    public async Task An_unassigned_idea_holds_no_references()
+    public async Task An_idea_in_no_universe_is_refused_whatever_it_references()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "idearefloose");
         var world = await BuildWorld(client, universe.Id, "l");
 
         var created = await client.PostAsJsonAsync(Ideas, new IdeaRequest("Loose", null, null, world.All, null));
-        Assert.Contains("references", await Errors(created), StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.BadRequest, created.StatusCode);
+        Assert.Contains("universeId", await Errors(created), StringComparison.Ordinal);
 
         var idea = await CreateIdea(client, "Assigned", universeId: universe.Id, references: world.All);
 
-        // Unassigning while it still references content is refused - the references are not silently dropped.
+        // Taking it out of its universe is refused, with or without its references.
         var unassigned = await TrySave(client, idea, universeId: null);
-        Assert.Contains("references", await Errors(unassigned), StringComparison.Ordinal);
-        Assert.Equal(4, (await ReadIdea(client, idea.Id)).References.Count);
+        Assert.Contains("universeId", await Errors(unassigned), StringComparison.Ordinal);
+        var cleared = await TrySave(client, idea, universeId: null, references: []);
+        Assert.Contains("universeId", await Errors(cleared), StringComparison.Ordinal);
 
-        var cleared = await Save(client, idea, universeId: null, references: []);
-        Assert.Null(cleared.Universe);
-        Assert.Empty(cleared.References);
+        var read = await ReadIdea(client, idea.Id);
+        Assert.Equal(universe.Id, read.Universe!.Id);
+        Assert.Equal(4, read.References.Count);
     }
 
     [Fact]
@@ -219,9 +221,9 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
     {
         var (owner, universe) = await SignedInWithUniverse(_factory, "ideaownera");
         var world = await BuildWorld(owner, universe.Id, "own");
-        var loose = await CreateIdea(owner, "Unassigned secret", "Only mine.");
+        var loose = await CreateIdea(owner, "Plain secret", "Only mine.", universe.Id);
         var assigned = await CreateIdea(owner, "Assigned secret", "Also mine.", universe.Id, world.All);
-        var binned = await CreateIdea(owner, "Deleted secret", "Mine too.");
+        var binned = await CreateIdea(owner, "Deleted secret", "Mine too.", universe.Id);
         (await owner.DeleteAsync(Idea(binned.Id))).EnsureSuccessStatusCode();
 
         var (intruder, intruderUniverse) = await SignedInWithUniverse(_factory, "ideaownerb");
@@ -268,7 +270,7 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Contains("universeId", await Errors(owned), StringComparison.Ordinal);
 
         // Nothing moved.
-        Assert.Equal(("Only mine.", (Guid?)null), ((await ReadIdea(owner, loose.Id)).Body, (await ReadIdea(owner, loose.Id)).Universe?.Id));
+        Assert.Equal(("Only mine.", (Guid?)universe.Id), ((await ReadIdea(owner, loose.Id)).Body, (await ReadIdea(owner, loose.Id)).Universe?.Id));
         Assert.Equal(4, (await ReadIdea(owner, assigned.Id)).References.Count);
         Assert.Empty((await ListIdeas(intruder)).Items);
         Assert.Single((await ListIdeas(owner, "?deleted=true")).Items);
@@ -324,7 +326,7 @@ public sealed class IdeaReferenceTests(LorEvolveApiFactory factory) : IClassFixt
         idea = await Save(client, idea, body: "Canon: Arlen is dead.");
         (await client.DeleteAsync(Idea(idea.Id))).EnsureSuccessStatusCode();
         (await client.PostAsync($"{Idea(idea.Id)}/restore", content: null)).EnsureSuccessStatusCode();
-        await Save(client, await ReadIdea(client, idea.Id), universeId: null, references: []);
+        await Save(client, await ReadIdea(client, idea.Id), references: []);
 
         Assert.Equal(before, await Snapshot());
         Assert.Equal(searchBefore, await client.GetStringAsync($"/api/universes/{u}/entities?search=Arlen"));

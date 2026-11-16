@@ -92,7 +92,7 @@ public sealed class UniverseSearchMigrationTests : IDisposable
             (await client.DeleteAsync($"{Story(universeId, storyId)}/scenes/{trashedSceneId}")).EnsureSuccessStatusCode();
 
             await CreateIdea(client, "Mira betrays Arlen", "Maybe.", universeId);
-            await CreateIdea(client, "Obsidian, unassigned", "No world.");
+            await CreateIdea(client, "Obsidian, unassigned", "No world.", universeId);
         }
 
         SqliteConnection.ClearAllPools();
@@ -117,6 +117,8 @@ public sealed class UniverseSearchMigrationTests : IDisposable
             await db.Database.ExecuteSqlAsync($"UPDATE SceneManuscripts SET Content = 'Obsidian dust on the floor.' WHERE SceneId = {sceneId}");
             await db.Database.ExecuteSqlAsync($"UPDATE Stories SET Premise = 'An obsidian siege.' WHERE Id = {storyId}");
             await db.Database.ExecuteSqlRawAsync("UPDATE Ideas SET Body = 'Obsidian eyes.' WHERE Title = 'Mira betrays Arlen'");
+            // The API no longer takes an idea without a universe, so the file from before is made by hand.
+            await db.Database.ExecuteSqlRawAsync("UPDATE Ideas SET UniverseId = NULL WHERE Title = 'Obsidian, unassigned'");
 
             // A lore index row as a database from before the clean-up could hold it: a marker character in its copy.
             await db.Database.ExecuteSqlAsync(
@@ -133,14 +135,18 @@ public sealed class UniverseSearchMigrationTests : IDisposable
 
             Assert.False(db.Database.HasPendingModelChanges());
             Assert.Empty(await ForeignKeyViolations(db));
-            // Every arc goes on the way up: the story structure migration drops the old plot (ADR 0070).
-            Assert.Equal(authored.Where(row => !row.StartsWith("arc|", StringComparison.Ordinal)), await AuthoredRows(db));
+            // Every arc goes on the way up: the story structure migration drops the old plot (ADR 0070). So does the idea
+            // with no universe: ideas live only in a universe (#230).
+            Assert.Equal(
+                authored.Where(row => !row.StartsWith("arc|", StringComparison.Ordinal)
+                    && !row.StartsWith("idea|Obsidian, unassigned|", StringComparison.Ordinal)),
+                await AuthoredRows(db));
 
             var tables = await Names(db, "table");
             Assert.All(IndexTables, table => Assert.Contains(table, tables));
             Assert.Equal(Triggers.Order(StringComparer.Ordinal), (await Names(db, "trigger")).Intersect(Triggers).Order(StringComparer.Ordinal));
 
-            // Everything written is copied, the Trash and the unassigned idea included: whether a row is found is the
+            // Everything written is copied, the Trash included: whether a row is found is the
             // search's question, not the index's.
             Assert.Equal(await Scalar(db, "SELECT (SELECT COUNT(*) FROM Stories) + (SELECT COUNT(*) FROM Chapters) + (SELECT COUNT(*) FROM Scenes) + (SELECT COUNT(*) FROM PlotArcs) AS Value"),
                 await Scalar(db, "SELECT COUNT(*) AS Value FROM StorySearchIndex"));
@@ -159,7 +165,7 @@ public sealed class UniverseSearchMigrationTests : IDisposable
             (await client.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-searchmigrate", Password)))
                 .EnsureSuccessStatusCode();
 
-            // Text written before the upgrade is found where it lives; the Trash and the unassigned idea are not.
+            // Text written before the upgrade is found where it lives; the Trash is not.
             var found = await Search(client, universeId, "Obsidian");
             Assert.Equal(
                 [UniverseSearchKind.Story, UniverseSearchKind.Scene, UniverseSearchKind.Manuscript, UniverseSearchKind.Idea],

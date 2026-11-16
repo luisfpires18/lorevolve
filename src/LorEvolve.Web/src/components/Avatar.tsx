@@ -18,12 +18,12 @@ import type { ProfileImageRef } from '../profile/types'
 export function Avatar({
   image,
   name,
-  className = 'avatarcircle',
+  className,
   testId,
 }: {
   image: ProfileImageRef | null
   name: string
-  className?: string
+  className: string
   testId?: string
 }) {
   if (!image) {

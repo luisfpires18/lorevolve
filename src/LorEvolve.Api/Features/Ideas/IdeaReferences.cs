@@ -248,43 +248,5 @@ internal static class IdeaReferences
         }
     }
 
-    /// <summary>
-    /// Lets go of every idea's association with a universe that is about to be deleted, inside the caller's transaction.
-    ///
-    /// Each idea stays, whole - title, body, when it was written - and becomes unassigned; its references go, because what
-    /// they point at is being deleted with the universe and an unassigned idea holds none. The ideas' <c>UpdatedAt</c> moves,
-    /// so a window still holding the old association is refused as stale rather than saving a universe that is gone.
-    /// Ideas in the Trash are released the same way. Nothing is attached to another universe.
-    /// </summary>
-    public static async Task ReleaseUniverseAsync(
-        LorEvolveDbContext db,
-        Guid universeId,
-        CancellationToken cancellationToken)
-    {
-        await db.Set<IdeaEntityReference>()
-            .Where(reference => reference.Idea!.UniverseId == universeId)
-            .ExecuteDeleteAsync(cancellationToken);
-        await db.Set<IdeaStoryReference>()
-            .Where(reference => reference.Idea!.UniverseId == universeId)
-            .ExecuteDeleteAsync(cancellationToken);
-        await db.Set<IdeaSceneReference>()
-            .Where(reference => reference.Idea!.UniverseId == universeId)
-            .ExecuteDeleteAsync(cancellationToken);
-        await db.Set<IdeaPlotArcReference>()
-            .Where(reference => reference.Idea!.UniverseId == universeId)
-            .ExecuteDeleteAsync(cancellationToken);
-
-        var now = DateTime.UtcNow;
-        await db.Ideas
-            .Where(idea => idea.UniverseId == universeId)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(idea => idea.UniverseId, (Guid?)null)
-                    // The universe's projects go with it, so a project link goes the same way the universe link does.
-                    .SetProperty(idea => idea.ProjectId, (Guid?)null)
-                    .SetProperty(idea => idea.UpdatedAt, now),
-                cancellationToken);
-    }
-
     private static List<Guid> Ids(ILookup<IdeaReferenceKind, Guid> byKind, IdeaReferenceKind kind) => [.. byKind[kind]];
 }

@@ -235,14 +235,6 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
   const isFiltered = search.trim() !== '' || (!universe && show !== '')
   const deleted = view === 'deleted'
 
-  const allLink = universe ? (
-    <p className="ideas__all">
-      <Link to="/app/ideas" data-testid="ideas-all">
-        {t('ideas.browser.allYours')}
-      </Link>
-    </p>
-  ) : null
-
   return (
     <section
       className={`ideas ideas--${scope.kind}`}
@@ -260,7 +252,6 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
               ? t('ideas.browser.ledeProject')
               : t('ideas.browser.ledeStory')}
           </p>
-          {allLink}
         </div>
       ) : (
         <PageHeader
@@ -273,7 +264,6 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
                   ? tx('ideas.browser.ledeUniverse', { universe: <Quoted text={universe.name} /> })
                   : t('ideas.browser.ledeAll')}
               </p>
-              {allLink}
             </>
           }
           actions={

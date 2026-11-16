@@ -17,16 +17,22 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
     private readonly LorEvolveApiFactory _factory = factory;
 
     [Fact]
-    public async Task An_idea_is_created_without_a_universe_and_read_back_exactly()
+    public async Task An_idea_is_created_in_a_universe_and_read_back_exactly_and_never_without_one()
     {
-        var client = await SignedIn(_factory, "user-ideacreate");
+        var (client, universe) = await SignedInWithUniverse(_factory, "user-ideacreate");
         const string body = "  Maybe the city floats.\n\n\tNobody below has seen its underside. 北の門 👩‍👩‍👧  ";
 
-        var created = await CreateIdea(client, "  Maybe this city floats  ", body);
+        // An idea lives only in a universe (#230): none, or one that is not the author's, is a problem on universeId.
+        var without = await client.PostAsJsonAsync(Ideas, new IdeaRequest("Maybe this city floats", body, null, null, null));
+        Assert.Equal(HttpStatusCode.BadRequest, without.StatusCode);
+        Assert.Contains("universeId", await Errors(without), StringComparison.Ordinal);
+        Assert.Empty((await ListIdeas(client)).Items);
+
+        var created = await CreateIdea(client, "  Maybe this city floats  ", body, universe.Id);
 
         Assert.Equal("Maybe this city floats", created.Title);
         Assert.Equal(body, created.Body, StringComparer.Ordinal);
-        Assert.Null(created.Universe);
+        Assert.Equal(universe.Id, created.Universe!.Id);
         Assert.Empty(created.References);
         Assert.Equal(DateTimeKind.Utc, created.UpdatedAt.Kind);
         Assert.Equal(created.CreatedAt, created.UpdatedAt);
@@ -39,30 +45,31 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
     [Fact]
     public async Task A_body_is_optional_and_a_title_is_not()
     {
-        var client = await SignedIn(_factory, "user-ideashape");
+        var (client, universe) = await SignedInWithUniverse(_factory, "user-ideashape");
+        var u = universe.Id;
 
-        var bare = await CreateIdea(client, "What if Mira betrays Arlen?");
+        var bare = await CreateIdea(client, "What if Mira betrays Arlen?", universeId: u);
         Assert.Equal(string.Empty, bare.Body);
 
-        var untitled = await client.PostAsJsonAsync(Ideas, new IdeaRequest("   ", "Body only.", null, null, null));
+        var untitled = await client.PostAsJsonAsync(Ideas, new IdeaRequest("   ", "Body only.", u, null, null));
         Assert.Contains("title", await Errors(untitled), StringComparison.Ordinal);
 
         var longTitle = await client.PostAsJsonAsync(
-            Ideas, new IdeaRequest(new string('t', IdeaLimits.TitleMaxLength + 1), null, null, null, null));
+            Ideas, new IdeaRequest(new string('t', IdeaLimits.TitleMaxLength + 1), null, u, null, null));
         Assert.Contains("title", await Errors(longTitle), StringComparison.Ordinal);
 
         var longBody = await client.PostAsJsonAsync(
-            Ideas, new IdeaRequest("Too long", new string('b', IdeaLimits.BodyMaxLength + 1), null, null, null));
+            Ideas, new IdeaRequest("Too long", new string('b', IdeaLimits.BodyMaxLength + 1), u, null, null));
         Assert.Contains("body", await Errors(longBody), StringComparison.Ordinal);
 
-        var atBound = await CreateIdea(client, new string('t', IdeaLimits.TitleMaxLength), new string('b', IdeaLimits.BodyMaxLength));
+        var atBound = await CreateIdea(client, new string('t', IdeaLimits.TitleMaxLength), new string('b', IdeaLimits.BodyMaxLength), u);
         Assert.Equal(IdeaLimits.BodyMaxLength, (await ReadIdea(client, atBound.Id)).Body.Length);
 
         Assert.Equal(2, (await ListIdeas(client)).TotalCount);
     }
 
     [Fact]
-    public async Task An_idea_is_created_in_a_universe_and_can_be_moved_out_of_it_and_back()
+    public async Task An_idea_is_created_in_a_universe_and_can_be_moved_to_another_but_never_out_of_one()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "ideaassoc");
         var other = await CreateUniverse(client, "Second world ideaassoc");
@@ -76,33 +83,34 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
         Assert.True(edited.UpdatedAt > idea.UpdatedAt);
         Assert.Equal(idea.CreatedAt, edited.CreatedAt);
 
-        var unassigned = await Save(client, edited, universeId: null);
-        Assert.Null(unassigned.Universe);
+        var outOfIt = await TrySave(client, edited, universeId: null);
+        Assert.Equal(HttpStatusCode.BadRequest, outOfIt.StatusCode);
+        Assert.Contains("universeId", await Errors(outOfIt), StringComparison.Ordinal);
+        Assert.Equal(universe.Id, (await ReadIdea(client, idea.Id)).Universe!.Id);
 
-        var moved = await Save(client, unassigned, universeId: other.Id);
+        var moved = await Save(client, edited, universeId: other.Id);
         Assert.Equal(other.Id, moved.Universe!.Id);
         Assert.Equal(("A religion of forgotten memories", "Priests forget on purpose."), (moved.Title, moved.Body));
     }
 
     [Fact]
-    public async Task The_list_is_newest_first_filtered_by_universe_or_unassigned_and_searchable()
+    public async Task The_list_is_newest_first_filtered_by_universe_and_searchable()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "idealist");
         var other = await CreateUniverse(client, "Other idealist");
 
         var floating = await CreateIdea(client, "Floating city", "Held up by old storms.", universe.Id);
-        await CreateIdea(client, "Loose thought", "No world yet.");
         await CreateIdea(client, "Other world's idea", "Elsewhere.", other.Id);
         var betrayal = await CreateIdea(client, "Betrayal", "What if Mira betrays Arlen?", universe.Id);
 
-        Assert.Equal(["Betrayal", "Other world's idea", "Loose thought", "Floating city"], await ListedTitles(client));
+        Assert.Equal(["Betrayal", "Other world's idea", "Floating city"], await ListedTitles(client));
 
         // Editing moves an idea to the top; nothing else orders the list.
         await Save(client, floating, body: "Held up by old storms, and by the storms' names.");
         Assert.Equal("Floating city", (await ListedTitles(client))[0]);
 
         Assert.Equal(["Floating city", "Betrayal"], await ListedTitles(client, $"?universeId={universe.Id}"));
-        Assert.Equal(["Loose thought"], await ListedTitles(client, "?unassigned=true"));
+        Assert.Empty(await ListedTitles(client, "?unassigned=true"));
         Assert.Equal(["Other world's idea"], await ListedTitles(client, $"?universeId={other.Id}"));
 
         // Title or body, case-insensitively, and wildcards are literal.
@@ -116,15 +124,14 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
         // A row names its universe and counts nothing it was not given.
         var row = (await ListIdeas(client, $"?universeId={universe.Id}")).Items.Single(item => item.Id == betrayal.Id);
         Assert.Equal((universe.Id, universe.Name, 0), (row.Universe!.Id, row.Universe.Name, row.ReferenceCount));
-        Assert.Null((await ListIdeas(client, "?unassigned=true")).Items.Single().Universe);
     }
 
     [Fact]
     public async Task A_list_row_carries_a_bounded_excerpt_never_the_whole_body_and_pages_are_stable()
     {
-        var client = await SignedIn(_factory, "user-ideapage");
+        var (client, universe) = await SignedInWithUniverse(_factory, "user-ideapage");
         var longBody = string.Concat(Enumerable.Repeat("北の門 is a gate. ", 200));
-        var idea = await CreateIdea(client, "Long idea", longBody);
+        var idea = await CreateIdea(client, "Long idea", longBody, universe.Id);
 
         using (var document = JsonDocument.Parse(await client.GetStringAsync(Ideas)))
         {
@@ -140,7 +147,7 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
 
         for (var index = 0; index < 4; index++)
         {
-            await CreateIdea(client, $"Short {index}", "Brief.");
+            await CreateIdea(client, $"Short {index}", "Brief.", universe.Id);
         }
 
         var first = await ListIdeas(client, "?pageSize=2&page=1");
@@ -154,8 +161,8 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
     [Fact]
     public async Task A_stale_save_is_refused_and_writes_nothing()
     {
-        var client = await SignedIn(_factory, "user-ideastale");
-        var opened = await CreateIdea(client, "Two windows", "First words.");
+        var (client, universe) = await SignedInWithUniverse(_factory, "user-ideastale");
+        var opened = await CreateIdea(client, "Two windows", "First words.", universe.Id);
 
         var elsewhere = await Save(client, opened, body: "Saved in the other window.");
 
@@ -198,7 +205,7 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
         var (client, universe) = await SignedInWithUniverse(_factory, "ideatrash");
         var arlen = await CreateEntity(client, universe.Id, "Arlen");
         var idea = await CreateIdea(client, "Binned idea", "Kept words.", universe.Id, [Ref(IdeaReferenceKind.Entity, arlen)]);
-        await CreateIdea(client, "Still here");
+        await CreateIdea(client, "Still here", universeId: (await CreateUniverse(client, "Second world ideatrash")).Id);
 
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync(Idea(idea.Id))).StatusCode);
 
@@ -230,7 +237,7 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
     }
 
     [Fact]
-    public async Task Deleting_a_universe_keeps_its_ideas_unassigned_with_their_words_and_no_references()
+    public async Task Deleting_a_universe_deletes_its_ideas_with_their_references_and_leaves_other_universes_alone()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "ideauniversedelete");
         var kept = await CreateUniverse(client, "Kept world ideauniversedelete");
@@ -255,35 +262,24 @@ public sealed class IdeaEndpointTests(LorEvolveApiFactory factory) : IClassFixtu
         var binned = await CreateIdea(client, "Deleted before the universe", "Still words.", u, [Ref(IdeaReferenceKind.Entity, arlen)]);
         (await client.DeleteAsync(Idea(binned.Id))).EnsureSuccessStatusCode();
         var elsewhere = await CreateIdea(client, "In the kept world", universeId: kept.Id);
-        var loose = await CreateIdea(client, "Loose");
 
         await DeleteUniverse(client, u);
 
-        var survived = await ReadIdea(client, idea.Id);
-        Assert.Null(survived.Universe);
-        Assert.Empty(survived.References);
-        Assert.Equal(("What if the council lies?", "Every word of this stays."), (survived.Title, survived.Body));
-        Assert.Equal(idea.CreatedAt, survived.CreatedAt);
-        Assert.True(survived.UpdatedAt > idea.UpdatedAt);
+        // The ideas go with the universe, the deleted one too: nothing is left to read, list, restore or save.
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Idea(idea.Id))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await TrySave(client, idea, body: "Edited in the old window.")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsync($"{Idea(binned.Id)}/restore", content: null)).StatusCode);
+        Assert.Empty(await ListedTitles(client, "?unassigned=true"));
+        Assert.Empty((await ListIdeas(client, "?deleted=true")).Items);
+        Assert.Equal(["In the kept world"], await ListedTitles(client));
 
-        // A window still holding the old universe is refused as stale, never saved into a universe that is gone.
-        Assert.Equal(HttpStatusCode.Conflict, (await TrySave(client, idea, body: "Edited in the old window.")).StatusCode);
-
-        // Not attached anywhere else, and the untouched ideas are untouched.
+        // The other universe's idea is untouched.
         Assert.Equal(kept.Id, (await ReadIdea(client, elsewhere.Id)).Universe!.Id);
-        Assert.Equal(loose.UpdatedAt, (await ReadIdea(client, loose.Id)).UpdatedAt);
-        Assert.Contains("What if the council lies?", await ListedTitles(client, "?unassigned=true"));
-
-        // The deleted idea is released the same way and restores unassigned.
-        var deletedRow = Assert.Single((await ListIdeas(client, "?deleted=true")).Items);
-        Assert.Equal((binned.Id, 0), (deletedRow.Id, deletedRow.ReferenceCount));
-        Assert.Null(deletedRow.Universe);
-        (await client.PostAsync($"{Idea(binned.Id)}/restore", content: null)).EnsureSuccessStatusCode();
-        Assert.Null((await ReadIdea(client, binned.Id)).Universe);
 
         await WithDb(_factory, async db =>
         {
             Assert.Equal(0, await db.IdeaEntityReferences.CountAsync(reference => reference.IdeaId == idea.Id || reference.IdeaId == binned.Id));
+            Assert.Equal(0, await db.Ideas.CountAsync(row => row.Id == idea.Id || row.Id == binned.Id));
             Assert.Equal(0, await db.IdeaStoryReferences.CountAsync(reference => reference.IdeaId == idea.Id));
             Assert.Equal(0, await db.IdeaSceneReferences.CountAsync(reference => reference.IdeaId == idea.Id));
             Assert.Equal(0, await db.IdeaPlotArcReferences.CountAsync(reference => reference.IdeaId == idea.Id));

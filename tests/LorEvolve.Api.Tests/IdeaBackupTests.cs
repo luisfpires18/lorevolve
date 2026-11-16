@@ -46,7 +46,6 @@ public sealed class IdeaBackupTests(LorEvolveApiFactory factory) : IClassFixture
         var binned = await CreateIdea(client, "A binned idea", "Still recoverable.", u, [Ref(IdeaReferenceKind.Entity, arlen)]);
         (await client.DeleteAsync(Idea(binned.Id))).EnsureSuccessStatusCode();
 
-        await CreateIdea(client, "Unassigned idea", "Belongs to the account, not to a world.");
         await CreateIdea(client, "Another world's idea", "Belongs elsewhere.", other.Id);
 
         var archive = await RawArchive(client, u);
@@ -99,21 +98,19 @@ public sealed class IdeaBackupTests(LorEvolveApiFactory factory) : IClassFixture
             Assert.Equal("PlotArc", written.GetProperty("references")[3].GetProperty("kind").GetString());
         }
 
-        Assert.DoesNotContain("Unassigned idea", raw, StringComparison.Ordinal);
-        Assert.DoesNotContain("Belongs to the account", raw, StringComparison.Ordinal);
         Assert.DoesNotContain("Another world's idea", raw, StringComparison.Ordinal);
         Assert.DoesNotContain("ownerId", raw, StringComparison.OrdinalIgnoreCase);
 
         // Unchanged ideas, unchanged bytes.
         Assert.Equal(PayloadText(raw), PayloadText(DocumentText(await RawArchive(client, u))));
 
-        // The other universe's backup holds only its own idea, and the unassigned one is in neither.
+        // The other universe's backup holds only its own idea.
         var otherIdeas = (await Backup(client, other.Id)).Payload.Ideas!;
         Assert.Equal(["Another world's idea"], otherIdeas.Select(idea => idea.Title));
     }
 
     [Fact]
-    public async Task A_universe_with_no_ideas_writes_an_empty_list_and_a_released_idea_is_in_no_backup()
+    public async Task A_universe_with_no_ideas_writes_an_empty_list_and_a_deleted_universe_takes_its_ideas_with_it()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "ideabackupempty");
         var doomed = await CreateUniverse(client, "Doomed ideabackupempty");
@@ -124,9 +121,9 @@ public sealed class IdeaBackupTests(LorEvolveApiFactory factory) : IClassFixture
 
         await DeleteUniverse(client, doomed.Id);
 
-        // Unassigned now, so it belongs to no universe backup - and is still the account's.
+        // Its idea went with it (#230): no other backup carries it and the account no longer lists it.
         Assert.Empty((await Backup(client, universe.Id)).Payload.Ideas!);
-        Assert.Equal("Words that outlive it.", Assert.Single((await ListIdeas(client, "?unassigned=true")).Items).Excerpt);
+        Assert.Empty((await ListIdeas(client)).Items);
     }
 
     [Fact]

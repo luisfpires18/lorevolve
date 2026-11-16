@@ -209,7 +209,6 @@ function routes(world: World) {
     ['Publish', `${base}/publish`],
     ['Settings', `${base}/settings`],
     ['My universes', '/app'],
-    ['My ideas', '/app/ideas'],
   ] as const
 }
 

@@ -448,7 +448,7 @@ public sealed class UniverseCollaborationTests(LorEvolveApiFactory factory) : IC
     {
         var w = await NewSharedWorld(_factory, "coideas");
         var ownersIdea = await CreateIdea(w.Owner, "Ember secret", "The heir is alive.", w.U, [Ref(IdeaReferenceKind.Entity, w.Entry)]);
-        var editorsIdea = await CreateIdea(w.Editor, "Editor's private hunch", "Nobody else reads this.");
+        var editorsIdea = await CreateIdea(w.Editor, "Editor's private hunch", "Nobody else reads this.", (await CreateUniverse(w.Editor, "Colist editor's hunch world")).Id);
 
         Assert.DoesNotContain(await ListedTitles(w.Editor), title => title == "Ember secret");
         Assert.DoesNotContain(await ListedTitles(w.Owner), title => title == "Editor's private hunch");

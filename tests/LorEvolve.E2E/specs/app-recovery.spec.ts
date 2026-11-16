@@ -78,10 +78,15 @@ test.describe('app recovery', () => {
     page,
   }) => {
     await signUp(page)
+    const created = await page.request.post('/api/universes', {
+      data: { name: unique('Updated '), description: null, accentColor: null },
+    })
+    expect(created.ok()).toBe(true)
+    const { id } = (await created.json()) as { id: string }
 
     // The dev server serves the module by its source path; a build by a hashed chunk name. Either is refused.
     await page.route(/IdeasPage[^/]*\.(tsx|js)(\?.*)?$/, (route) => route.abort())
-    await page.goto('/app/ideas')
+    await page.goto(`/app/universes/${id}/ideas`)
 
     const alert = page.getByRole('alert')
     await expect(alert).toContainText('LorEvolve was updated while this page was open')

@@ -22,19 +22,25 @@ public sealed class IdeaBoardTests(LorEvolveApiFactory factory) : IClassFixture<
     [Fact]
     public async Task A_board_is_created_and_read_back_exactly_in_draw_order()
     {
-        var client = await SignedIn(_factory, "user-boardcreate");
-        var idea = await CreateIdea(client, "Maybe this city floats", "Held up by old storms.");
+        var (client, universe) = await SignedInWithUniverse(_factory, "user-boardcreate");
+        var idea = await CreateIdea(client, "Maybe this city floats", "Held up by old storms.", universe.Id);
+
+        // A board lives only in a universe (#230).
+        var without = await client.PostAsJsonAsync(Boards, new IdeaBoardRequest("Nowhere", null, [], [], null));
+        Assert.Equal(HttpStatusCode.BadRequest, without.StatusCode);
+        Assert.Contains("universeId", await Errors(without), StringComparison.Ordinal);
 
         var note = Note(-120.5, 40.25, "  The underside nobody has seen  ");
         var ideaCard = IdeaCard(idea.Id, 300, 60);
         var created = await Create(
             client,
             "  City thoughts  ",
+            universeId: universe.Id,
             cards: [note, ideaCard],
             connections: [Line(note, ideaCard, "  why?  ")]);
 
         Assert.Equal("City thoughts", created.Title);
-        Assert.Null(created.Universe);
+        Assert.Equal(universe.Id, created.Universe!.Id);
         Assert.Equal([note.Id, ideaCard.Id], created.Cards.Select(card => card.Id));
         Assert.Equal((-120.5, 40.25, 200d, 120d), (created.Cards[0].X, created.Cards[0].Y, created.Cards[0].Width, created.Cards[0].Height));
         Assert.Equal("  The underside nobody has seen  ", created.Cards[0].Text);
@@ -48,16 +54,16 @@ public sealed class IdeaBoardTests(LorEvolveApiFactory factory) : IClassFixture<
     public async Task Another_account_never_sees_or_touches_a_board_or_places_someone_elses_idea()
     {
         var (owner, universe) = await SignedInWithUniverse(_factory, "boardowner");
-        var stranger = await SignedIn(_factory, "user-boardstranger");
+        var (stranger, strangerUniverse) = await SignedInWithUniverse(_factory, "user-boardstranger");
         var board = await Create(owner, "Mine", universeId: universe.Id);
-        var ownersIdea = await CreateIdea(owner, "Owner's idea");
+        var ownersIdea = await CreateIdea(owner, "Owner's idea", universeId: universe.Id);
 
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync($"{Boards}/{board.Id}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.PutAsJsonAsync($"{Boards}/{board.Id}", Request(board))).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.DeleteAsync($"{Boards}/{board.Id}")).StatusCode);
         Assert.Empty((await List(stranger)).Items);
 
-        var placed = await stranger.PostAsJsonAsync(Boards, new IdeaBoardRequest("Theft", null, [IdeaCard(ownersIdea.Id)], [], null));
+        var placed = await stranger.PostAsJsonAsync(Boards, new IdeaBoardRequest("Theft", strangerUniverse.Id, [IdeaCard(ownersIdea.Id)], [], null));
         Assert.Contains("Choose one of your ideas", await Errors(placed), StringComparison.Ordinal);
 
         var intoTheirs = await stranger.PostAsJsonAsync(Boards, new IdeaBoardRequest("Theirs", universe.Id, [], [], null));
@@ -74,7 +80,7 @@ public sealed class IdeaBoardTests(LorEvolveApiFactory factory) : IClassFixture<
         var stranger = await CreateEntity(client, other.Id, "Elsewhere");
 
         var loose = await client.PostAsJsonAsync(Boards, new IdeaBoardRequest("Loose", null, [EntryCard(arlen)], [], null));
-        Assert.Contains("belongs to no universe", await Errors(loose), StringComparison.Ordinal);
+        Assert.Contains("universeId", await Errors(loose), StringComparison.Ordinal);
 
         var foreign = await client.PostAsJsonAsync(Boards, new IdeaBoardRequest("Mixed", universe.Id, [EntryCard(stranger)], [], null));
         Assert.Contains("not in its universe", await Errors(foreign), StringComparison.Ordinal);
@@ -102,24 +108,24 @@ public sealed class IdeaBoardTests(LorEvolveApiFactory factory) : IClassFixture<
     }
 
     [Fact]
-    public async Task A_universe_board_takes_its_own_and_unassigned_ideas_and_a_deleted_idea_stays_marked()
+    public async Task A_board_takes_only_its_own_universes_ideas_and_a_deleted_idea_stays_marked()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "boardideas");
         var other = await CreateUniverse(client, "Other boardideas");
         var own = await CreateIdea(client, "Own", universeId: universe.Id);
-        var unassigned = await CreateIdea(client, "Unassigned");
+        var second = await CreateIdea(client, "Second", universeId: universe.Id);
         var elsewhere = await CreateIdea(client, "Elsewhere", universeId: other.Id);
 
         var foreign = await client.PostAsJsonAsync(
             Boards, new IdeaBoardRequest("Mixed", universe.Id, [IdeaCard(elsewhere.Id)], [], null));
         Assert.Contains("another universe", await Errors(foreign), StringComparison.Ordinal);
 
-        var board = await Create(client, "Plot", universeId: universe.Id, cards: [IdeaCard(own.Id), IdeaCard(unassigned.Id)]);
-        Assert.Equal(["Own", "Unassigned"], board.Cards.Select(card => card.Name));
+        var board = await Create(client, "Plot", universeId: universe.Id, cards: [IdeaCard(own.Id), IdeaCard(second.Id)]);
+        Assert.Equal(["Own", "Second"], board.Cards.Select(card => card.Name));
 
-        // An unassigned board takes any of the owner's ideas.
-        var anywhere = await Create(client, "Anywhere", cards: [IdeaCard(elsewhere.Id)]);
-        Assert.Single(anywhere.Cards);
+        // A board in no universe takes no idea: it is refused before its cards are read.
+        var anywhere = await client.PostAsJsonAsync(Boards, new IdeaBoardRequest("Anywhere", null, [IdeaCard(elsewhere.Id)], [], null));
+        Assert.Contains("universeId", await Errors(anywhere), StringComparison.Ordinal);
 
         (await client.DeleteAsync(Idea(own.Id))).EnsureSuccessStatusCode();
         var marked = await Read(client, board.Id);
@@ -135,38 +141,39 @@ public sealed class IdeaBoardTests(LorEvolveApiFactory factory) : IClassFixture<
     [Fact]
     public async Task The_shape_of_a_board_is_held_to_its_bounds()
     {
-        var client = await SignedIn(_factory, "user-boardshape");
+        var (client, universe) = await SignedInWithUniverse(_factory, "user-boardshape");
+        var u = universe.Id;
         var a = Note(0, 0);
         var b = Note(300, 0);
 
         async Task<string> Refusal(IdeaBoardRequest request) => await Errors(await client.PostAsJsonAsync(Boards, request));
 
-        Assert.Contains("title", await Refusal(new IdeaBoardRequest("  ", null, [], [], null)), StringComparison.Ordinal);
-        Assert.Contains("different cards", await Refusal(new IdeaBoardRequest("Self", null, [a], [Line(a, a)], null)), StringComparison.Ordinal);
-        Assert.Contains("different cards", await Refusal(new IdeaBoardRequest("Dangling", null, [a], [Line(a, b)], null)), StringComparison.Ordinal);
-        Assert.Contains("at most", await Refusal(new IdeaBoardRequest("Twice", null, [a, b], [Line(a, b), Line(b, a)], null)), StringComparison.Ordinal);
-        Assert.Contains("share an id", await Refusal(new IdeaBoardRequest("Twins", null, [a, a with { X = 9 }], [], null)), StringComparison.Ordinal);
-        Assert.Contains("outside", await Refusal(new IdeaBoardRequest("Far", null, [a with { X = 2_000_000 }], [], null)), StringComparison.Ordinal);
-        Assert.Contains("outside", await Refusal(new IdeaBoardRequest("Tiny", null, [a with { Width = 10 }], [], null)), StringComparison.Ordinal);
-        Assert.Contains("only that", await Refusal(new IdeaBoardRequest("Both", null, [a with { IdeaId = Guid.NewGuid() }], [], null)), StringComparison.Ordinal);
-        Assert.Contains("only that", await Refusal(new IdeaBoardRequest("Empty idea", null, [a with { Kind = IdeaBoardCardKind.Idea, Text = null }], [], null)), StringComparison.Ordinal);
-        Assert.Contains("note", await Refusal(new IdeaBoardRequest("Long", null, [a with { Text = new string('n', IdeaBoardLimits.NoteMaxLength + 1) }], [], null)), StringComparison.Ordinal);
+        Assert.Contains("title", await Refusal(new IdeaBoardRequest("  ", u, [], [], null)), StringComparison.Ordinal);
+        Assert.Contains("different cards", await Refusal(new IdeaBoardRequest("Self", u, [a], [Line(a, a)], null)), StringComparison.Ordinal);
+        Assert.Contains("different cards", await Refusal(new IdeaBoardRequest("Dangling", u, [a], [Line(a, b)], null)), StringComparison.Ordinal);
+        Assert.Contains("at most", await Refusal(new IdeaBoardRequest("Twice", u, [a, b], [Line(a, b), Line(b, a)], null)), StringComparison.Ordinal);
+        Assert.Contains("share an id", await Refusal(new IdeaBoardRequest("Twins", u, [a, a with { X = 9 }], [], null)), StringComparison.Ordinal);
+        Assert.Contains("outside", await Refusal(new IdeaBoardRequest("Far", u, [a with { X = 2_000_000 }], [], null)), StringComparison.Ordinal);
+        Assert.Contains("outside", await Refusal(new IdeaBoardRequest("Tiny", u, [a with { Width = 10 }], [], null)), StringComparison.Ordinal);
+        Assert.Contains("only that", await Refusal(new IdeaBoardRequest("Both", u, [a with { IdeaId = Guid.NewGuid() }], [], null)), StringComparison.Ordinal);
+        Assert.Contains("only that", await Refusal(new IdeaBoardRequest("Empty idea", u, [a with { Kind = IdeaBoardCardKind.Idea, Text = null }], [], null)), StringComparison.Ordinal);
+        Assert.Contains("note", await Refusal(new IdeaBoardRequest("Long", u, [a with { Text = new string('n', IdeaBoardLimits.NoteMaxLength + 1) }], [], null)), StringComparison.Ordinal);
 
         var tooMany = Enumerable.Range(0, IdeaBoardLimits.MaxCards + 1).Select(i => Note(i, 0)).ToList();
-        Assert.Contains("up to", await Refusal(new IdeaBoardRequest("Crowded", null, tooMany, [], null)), StringComparison.Ordinal);
+        Assert.Contains("up to", await Refusal(new IdeaBoardRequest("Crowded", u, tooMany, [], null)), StringComparison.Ordinal);
 
         // A note with no text is an empty note, and at the bound everything is accepted.
         var full = Enumerable.Range(0, IdeaBoardLimits.MaxCards).Select(i => Note(i * 10, 0) with { Text = null }).ToList();
-        var board = await Create(client, "Full", cards: full);
+        var board = await Create(client, "Full", universeId: u, cards: full);
         Assert.All(board.Cards, card => Assert.Equal(string.Empty, card.Text));
     }
 
     [Fact]
     public async Task A_stale_save_is_refused_and_a_save_that_changes_nothing_writes_nothing()
     {
-        var client = await SignedIn(_factory, "user-boardstale");
+        var (client, universe) = await SignedInWithUniverse(_factory, "user-boardstale");
         var note = Note(0, 0, "First");
-        var board = await Create(client, "Stale", cards: [note]);
+        var board = await Create(client, "Stale", universeId: universe.Id, cards: [note]);
 
         var unchanged = await Save(client, board);
         Assert.Equal(board.UpdatedAt, unchanged.UpdatedAt);
@@ -189,11 +196,11 @@ public sealed class IdeaBoardTests(LorEvolveApiFactory factory) : IClassFixture<
         var a = Note(0, 0);
         var b = Note(300, 0);
         var inWorld = await Create(client, "In the world", universeId: universe.Id, cards: [a, b], connections: [Line(a, b)]);
-        await Create(client, "Loose board");
+        await Create(client, "Other board", universeId: (await CreateUniverse(client, "Other boardlist")).Id);
 
-        Assert.Equal(["Loose board", "In the world"], (await List(client)).Items.Select(item => item.Title));
+        Assert.Equal(["Other board", "In the world"], (await List(client)).Items.Select(item => item.Title));
         Assert.Equal(["In the world"], (await List(client, $"?universeId={universe.Id}")).Items.Select(item => item.Title));
-        Assert.Equal(["Loose board"], (await List(client, "?unassigned=true")).Items.Select(item => item.Title));
+        Assert.Empty((await List(client, "?unassigned=true")).Items);
         Assert.Equal(["In the world"], (await List(client, "?search=WORLD")).Items.Select(item => item.Title));
         Assert.Equal(2, (await List(client, $"?universeId={universe.Id}")).Items.Single().CardCount);
 
@@ -207,7 +214,7 @@ public sealed class IdeaBoardTests(LorEvolveApiFactory factory) : IClassFixture<
     }
 
     [Fact]
-    public async Task Deleting_the_universe_keeps_its_boards_unassigned_without_their_entry_cards()
+    public async Task Deleting_the_universe_deletes_its_boards_with_their_cards_and_lines_and_leaves_other_boards()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "boarduniverse");
         var arlen = await CreateEntity(client, universe.Id, "Arlen");
@@ -223,19 +230,24 @@ public sealed class IdeaBoardTests(LorEvolveApiFactory factory) : IClassFixture<
             cards: [note, ideaCard, entry],
             connections: [Line(note, ideaCard), Line(ideaCard, entry)]);
 
+        var kept = await Create(client, "Other world's board", universeId: (await CreateUniverse(client, "Kept boarduniverse")).Id, cards: [Note(0, 0, "Stays")]);
+
         await DeleteUniverse(client, universe.Id);
 
-        var after = await Read(client, board.Id);
-        Assert.Null(after.Universe);
-        Assert.True(after.UpdatedAt > board.UpdatedAt);
-        Assert.Equal([note.Id, ideaCard.Id], after.Cards.Select(card => card.Id));
-        Assert.Equal((note.Id, ideaCard.Id), (Assert.Single(after.Connections).FromCardId, after.Connections[0].ToCardId));
-
-        // A window still holding the old universe saves as stale.
-        Assert.Equal(HttpStatusCode.Conflict, (await TrySave(client, board, title: "Old window")).StatusCode);
+        // The board goes with the universe: no read, no save, no list row, no card or line left.
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"{Boards}/{board.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await TrySave(client, board, title: "Old window")).StatusCode);
+        Assert.Equal([kept.Id], (await List(client)).Items.Select(item => item.Id));
+        Assert.Empty((await List(client, "?deleted=true")).Items);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Idea(idea.Id))).StatusCode);
 
         await WithDb(_factory, async db =>
-            Assert.Equal(0, await db.IdeaBoardCards.CountAsync(card => card.EntityId == arlen)));
+        {
+            Assert.Equal(0, await db.IdeaBoards.CountAsync(row => row.Id == board.Id));
+            Assert.Equal(0, await db.IdeaBoardCards.CountAsync(card => card.BoardId == board.Id));
+            Assert.Equal(0, await db.IdeaBoardConnections.CountAsync(line => line.BoardId == board.Id));
+            Assert.Equal(1, await db.IdeaBoardCards.CountAsync(card => card.BoardId == kept.Id));
+        });
     }
 
     // ---------- Steps ----------

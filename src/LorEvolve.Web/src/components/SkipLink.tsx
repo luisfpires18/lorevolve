@@ -37,7 +37,6 @@ export function SkipLink() {
 function placeOf(pathname: string) {
   const universe = /^\/app\/universes\/([^/]+)/.exec(pathname)
   if (universe) return `universe:${universe[1]}`
-  if (pathname.startsWith('/app/ideas')) return 'ideas'
   if (pathname.startsWith('/app/profile')) return 'profile'
   if (pathname.startsWith('/app')) return 'universes'
   if (pathname.startsWith('/login') || pathname.startsWith('/register')) return pathname

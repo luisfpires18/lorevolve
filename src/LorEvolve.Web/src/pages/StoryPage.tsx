@@ -18,7 +18,6 @@ import { ContentPublication } from '../components/ContentPublication'
 import { ChapterForm } from '../components/ChapterForm'
 import { ChapterSection, type ArcTarget } from '../components/ChapterSection'
 import { EmptyState } from '../components/EmptyState'
-import { IdeasBrowser } from '../components/IdeasBrowser'
 import { ManuscriptPanel } from '../components/ManuscriptPanel'
 import { PageHeader } from '../components/PageHeader'
 import { ReviewComments } from '../components/ReviewComments'
@@ -99,7 +98,7 @@ const sceneMenu = (sceneId: string) => `#scene-${sceneId} [data-testid="scene-ac
 /** How long a scene reached by a link stays marked, so the eye can pick it out from its neighbours. */
 const ARRIVAL_MS = 2400
 
-type StoryViewName = 'scenes' | 'manuscript' | 'ideas'
+type StoryViewName = 'scenes' | 'manuscript'
 
 /**
  * A story's page, one per story. Moving between its views keeps the page and everything read for it; moving to
@@ -115,11 +114,9 @@ export default function StoryPage({ view = 'scenes' }: { view?: StoryViewName })
 /**
  * One story, told in the order its author sets: arcs, the chapters in each, and the scenes in each chapter (ADR 0070).
  *
- * The page has three views under one header: Scenes, at the story's own address, Manuscript, at `/manuscript/:sceneId`,
- * and Ideas, at `/ideas`. All three read the same story, once, so moving between them costs nothing and the header never
- * changes. Neither read carries prose: the Manuscript view reads one scene's text
- * when that scene is opened, and the Ideas view reads one page of the author's own ideas for the story. Ideas are the
- * account's, never the universe's (ADR 0030), so the view is offered only to a member who keeps ideas here - the owner.
+ * The page has two views under one header: Scenes, at the story's own address, and Manuscript, at `/manuscript/:sceneId`.
+ * Both read the same story, once, so moving between them costs nothing and the header never changes. Neither read
+ * carries prose: the Manuscript view reads one scene's text when that scene is opened.
  *
  * The header is deliberately short, because on a phone every line of it stands between the author and the work: the
  * title, one line of facts, the premise on Scenes alone - the story's home - and one bar holding the views and the
@@ -919,15 +916,6 @@ function StoryView({ view }: { view: StoryViewName }) {
             >
               {t('stories.page.viewManuscript')}
             </NavLink>
-            {access.keepIdeas ? (
-              <NavLink
-                to={`${storyPath}/ideas`}
-                className="views__link"
-                data-testid="story-view-ideas"
-              >
-                {t('stories.page.viewIdeas')}
-              </NavLink>
-            ) : null}
           </nav>
 
           {/* Every view keeps a way to the story's world chronology here, the Manuscript view included, whose header has
@@ -994,23 +982,7 @@ function StoryView({ view }: { view: StoryViewName }) {
         </div>
       ) : null}
 
-      {view === 'ideas' ? (
-        access.keepIdeas ? (
-          <IdeasBrowser
-            scope={{
-              kind: 'story',
-              universe: { id: universe.id, name: universe.name },
-              story: { id: story.id },
-            }}
-          />
-        ) : (
-          <EmptyState
-            testId="role-unavailable"
-            title={t('stories.page.unavailable.title')}
-            hint={t('stories.page.unavailable.hint')}
-          />
-        )
-      ) : view === 'manuscript' ? (
+      {view === 'manuscript' ? (
         <ManuscriptPanel
           universeId={universe.id}
           story={story}

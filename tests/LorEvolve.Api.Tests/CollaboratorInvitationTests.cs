@@ -375,7 +375,8 @@ public sealed class CollaboratorInvitationTests(LorEvolveApiFactory factory) : I
         var w = await NewSharedWorld(_factory, "inv-remove");
         var written = await CreateEntity(w.Editor, w.U, "Editor's entry");
         await Ok(w.Editor.DeleteAsync($"/api/universes/{w.U}/entities/{w.Other}"));
-        var idea = await IdeaTestClient.CreateIdea(w.Editor, "Editor's own idea");
+        var editorsWorld = await CreateUniverse(w.Editor, "Inv removal own");
+        var idea = await IdeaTestClient.CreateIdea(w.Editor, "Editor's own idea", universeId: editorsWorld.Id);
 
         Assert.Equal(HttpStatusCode.NoContent, (await w.Owner.DeleteAsync($"/api/universes/{w.U}/collaborators/{w.EditorId}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await w.Owner.DeleteAsync($"/api/universes/{w.U}/collaborators/{w.EditorId}")).StatusCode);

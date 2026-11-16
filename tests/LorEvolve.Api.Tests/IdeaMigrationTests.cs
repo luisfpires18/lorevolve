@@ -59,7 +59,6 @@ public sealed class IdeaMigrationTests : IDisposable
             await CreateScene(client, universeId, storyId, "The Council");
 
             await CreateIdea(client, "Assigned", "Words.", universeId, [Ref(IdeaReferenceKind.Entity, entityId), Ref(IdeaReferenceKind.Story, storyId)]);
-            await CreateIdea(client, "Loose", "No world.");
         }
 
         SqliteConnection.ClearAllPools();

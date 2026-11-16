@@ -1,12 +1,4 @@
-import {
-  Boxes,
-  Compass,
-  FileText,
-  Lightbulb,
-  ListTree,
-  Settings2,
-  type LucideIcon,
-} from 'lucide-react'
+import { Boxes, Compass, FileText, ListTree, Settings2, type LucideIcon } from 'lucide-react'
 import { t } from '../i18n'
 import { ProjectKind, ProjectLifecycle, type ProjectDetail } from './types'
 
@@ -24,8 +16,6 @@ export interface ProjectSection {
   label: string
   testId: string
   icon: LucideIcon
-  /** A view the project's data cannot fill yet, drawn as an empty state rather than as the overview. */
-  pending?: boolean
 }
 
 const overview: ProjectSection = {
@@ -58,14 +48,6 @@ const systems: ProjectSection = {
   testId: 'project-systems',
   icon: Settings2,
 }
-// Ideas have no project link yet, so the view stays empty until #197 gives an idea a project.
-const ideas: ProjectSection = {
-  segment: 'ideas',
-  label: 'sections.ideas',
-  testId: 'project-ideas',
-  icon: Lightbulb,
-  pending: true,
-}
 
 // Series episodes, Film scenes and Comic chapters all carry a script, and the app already calls it Script in both
 // languages (`projects.seasons.script`), so one section serves the three kinds.
@@ -79,16 +61,16 @@ const script: ProjectSection = {
 // Every kind opens on its overview and offers Entities, because the overview holds the project's schema and Entities
 // its entries until #196 moves the schema into Entities (#193): a kind without either would put a panel out of reach.
 const SECTIONS_BY_KIND: Record<ProjectDetail['kind'], readonly ProjectSection[]> = {
-  [ProjectKind.Writing]: [overview, structure, manuscript, entities, ideas],
-  [ProjectKind.Game]: [overview, entities, systems, ideas],
-  [ProjectKind.Series]: [overview, structure, script, entities, ideas],
-  [ProjectKind.Film]: [overview, structure, script, entities, ideas],
-  [ProjectKind.Comic]: [overview, structure, script, entities, ideas],
+  [ProjectKind.Writing]: [overview, structure, manuscript, entities],
+  [ProjectKind.Game]: [overview, entities, systems],
+  [ProjectKind.Series]: [overview, structure, script, entities],
+  [ProjectKind.Film]: [overview, structure, script, entities],
+  [ProjectKind.Comic]: [overview, structure, script, entities],
 }
 
 // A Story shown as a Writing Project has the story's own three views and nothing else: it is not a stored project, so
 // it holds no project types or entries, and its Overview would be a second header over the story's (#194).
-const STORY_SECTIONS: readonly ProjectSection[] = [structure, manuscript, ideas]
+const STORY_SECTIONS: readonly ProjectSection[] = [structure, manuscript]
 
 /** The sections a project of this kind offers, in order; a story-backed project offers the story's views. */
 export function projectSections(
@@ -154,7 +136,7 @@ export function projectPath(projectId: string, segment: string, universeId: stri
 export function storyProjectPath(
   universeId: string,
   storyId: string,
-  view: 'structure' | 'manuscript' | 'ideas' = 'structure',
+  view: 'structure' | 'manuscript' = 'structure',
   sceneId?: string,
 ) {
   const path = projectPath(storyId, view, universeId)
