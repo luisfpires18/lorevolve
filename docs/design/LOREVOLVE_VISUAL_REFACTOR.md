@@ -456,10 +456,10 @@ its icon.
 | EntityTypeSwitcher | The same thing as TypeSwitcher. |
 | A Button React component | Classes already serve both `<button>` and `<Link>`; a component would need two render paths. |
 | A generic InlineTabs / LocalNav | Views (routes) and filters (pressed state) are different semantics; one component would blur them. |
-| Modal, ConfirmDialog | Destructive confirmation keeps today's native `confirm()`. |
+| Modal, ConfirmDialog | Destructive confirmation goes through `confirmAction` and `ConfirmHost` (ADR 0049). |
 | Tooltip | `title` plus `aria-label` covers icon buttons. |
 | Toasts | Save status lives in the ActionBar; no global notification system. |
-| A token pipeline, Storybook, splitting `styles.css` into many files | Custom properties stay in `styles.css`; shared patterns go in one "Shared components" section near its top. |
+| A token pipeline, Storybook, splitting `styles.css` into many files | Custom properties stay in `styles.css`; shared patterns go in the "Shared surfaces" section. |
 
 ---
 

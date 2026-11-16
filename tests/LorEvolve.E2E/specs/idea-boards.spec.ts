@@ -149,6 +149,25 @@ test('an author lays out a board in a universe, joins two cards and finds it all
   ).toContainText('3 cards')
 })
 
+test('the board picker closes on Escape and on a press on the backdrop', async ({ page }) => {
+  await signUp(page)
+  const universeId = await seedWorld(page)
+  await page.goto(`/app/universes/${universeId}/ideas/boards`)
+  await page.getByTestId('new-board').first().click()
+  await page.getByTestId('board-title').fill('Who betrays whom')
+
+  const picker = page.getByTestId('board-picker')
+  await page.getByTestId('board-add-idea').click()
+  await expect(picker).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(picker).toHaveCount(0)
+
+  await page.getByTestId('board-add-idea').click()
+  await expect(picker).toBeVisible()
+  await page.mouse.click(5, 300)
+  await expect(picker).toHaveCount(0)
+})
+
 test('a save over a board saved elsewhere is refused, and the author keeps theirs', async ({
   page,
 }) => {
