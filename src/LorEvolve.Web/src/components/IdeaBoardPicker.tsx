@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import { Quoted } from './NameList'
 import { listIdeas, listReferenceTargets } from '../ideas/api'
 import { IdeaReferenceKind } from '../ideas/types'
@@ -140,32 +141,31 @@ export function IdeaBoardPicker({
         </>
       )}
     >
-      <div className="field">
-        <label className="field__label" htmlFor={searchId}>
-          {t('ideas.boardPicker.findByName')}
-        </label>
-        <input
-          id={searchId}
-          ref={search}
-          className="field__input"
-          type="search"
-          value={query}
-          placeholder={
-            what === 'idea'
-              ? t('ideas.boardPicker.placeholderIdea')
-              : t('ideas.boardPicker.placeholderEntry')
-          }
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape' && query) {
-              event.preventDefault()
-              setQuery('')
+      <Field id={searchId} label={t('ideas.boardPicker.findByName')}>
+        {(control) => (
+          <input
+            {...control}
+            ref={search}
+            className="field__input"
+            type="search"
+            value={query}
+            placeholder={
+              what === 'idea'
+                ? t('ideas.boardPicker.placeholderIdea')
+                : t('ideas.boardPicker.placeholderEntry')
             }
-          }}
-          aria-controls={resultsId}
-          data-testid="board-picker-search"
-        />
-      </div>
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && query) {
+                event.preventDefault()
+                setQuery('')
+              }
+            }}
+            aria-controls={resultsId}
+            data-testid="board-picker-search"
+          />
+        )}
+      </Field>
 
       <div id={resultsId} aria-live="polite">
         {results === undefined ? (
