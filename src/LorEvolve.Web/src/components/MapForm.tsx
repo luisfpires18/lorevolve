@@ -4,6 +4,7 @@ import { formatBytes } from '../lib/bytes'
 import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import type { UploadProgress } from '../lib/upload'
 import {
   createMap,
@@ -197,90 +198,92 @@ export function MapForm(props: MapFormProps) {
 
       {props.mode !== 'replace' ? (
         <>
-          <div className="field">
-            <label className="field__label" htmlFor="map-name">
-              {t('places.mapForm.name')}
-            </label>
-            <input
-              id="map-name"
-              className="field__input"
-              ref={firstInput}
-              type="text"
-              dir="auto"
-              maxLength={MAP_NAME_MAX_LENGTH}
-              placeholder={t('places.mapForm.namePlaceholder')}
-              value={draft.name}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, name: event.target.value }))
-              }
-              aria-invalid={fieldErrors.name ? true : undefined}
-              data-testid="map-name-input"
-            />
-            {fieldErrors.name ? <p className="field__error">{fieldErrors.name}</p> : null}
-          </div>
+          <Field id="map-name" label={t('places.mapForm.name')} error={fieldErrors.name}>
+            {(control) => (
+              <input
+                {...control}
+                className="field__input"
+                ref={firstInput}
+                type="text"
+                dir="auto"
+                maxLength={MAP_NAME_MAX_LENGTH}
+                placeholder={t('places.mapForm.namePlaceholder')}
+                value={draft.name}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, name: event.target.value }))
+                }
+                data-testid="map-name-input"
+              />
+            )}
+          </Field>
 
-          <div className="field">
-            <label className="field__label" htmlFor="map-description">
-              {t('places.mapForm.description')}
-            </label>
-            <p className="field__hint">{t('places.mapForm.descriptionHint')}</p>
-            <textarea
-              id="map-description"
-              className="field__input"
-              dir="auto"
-              rows={3}
-              value={draft.description}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, description: event.target.value }))
-              }
-              aria-invalid={fieldErrors.description ? true : undefined}
-              data-testid="map-description-input"
-            />
-            {fieldErrors.description ? (
-              <p className="field__error">{fieldErrors.description}</p>
-            ) : null}
-          </div>
+          <Field
+            id="map-description"
+            label={t('places.mapForm.description')}
+            hint={t('places.mapForm.descriptionHint')}
+            error={fieldErrors.description}
+          >
+            {(control) => (
+              <textarea
+                {...control}
+                className="field__input"
+                dir="auto"
+                rows={3}
+                value={draft.description}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, description: event.target.value }))
+                }
+                data-testid="map-description-input"
+              />
+            )}
+          </Field>
         </>
       ) : null}
 
       {props.mode !== 'details' ? (
-        <div className="field">
-          <label className="field__label" htmlFor="map-file">
-            {props.mode === 'new' ? t('places.mapForm.imageNew') : t('places.mapForm.imageReplace')}
-          </label>
-          <p className="field__hint">
-            {t('places.mapForm.imageHint', { size: formatBytes(MAP_IMAGE_MAX_BYTES) })}
-          </p>
-          <input
-            id="map-file"
-            className="field__input mapform__file"
-            ref={props.mode === 'replace' ? firstInput : undefined}
-            type="file"
-            accept={MAP_IMAGE_ACCEPT}
-            onChange={(event) => choose(event.target.files?.[0])}
-            aria-invalid={fieldErrors.file ? true : undefined}
-            data-testid="map-file-input"
-          />
-          {file ? (
-            <p className="field__hint" data-testid="map-file-chosen">
-              {tx('places.mapForm.chosen', {
-                name: <bdi>{file.name}</bdi>,
-                size: formatBytes(file.size),
-              })}
-            </p>
-          ) : null}
-          {fieldErrors.file ? <p className="field__error">{fieldErrors.file}</p> : null}
-        </div>
+        <Field
+          id="map-file"
+          label={
+            props.mode === 'new' ? t('places.mapForm.imageNew') : t('places.mapForm.imageReplace')
+          }
+          hint={t('places.mapForm.imageHint', { size: formatBytes(MAP_IMAGE_MAX_BYTES) })}
+          error={fieldErrors.file}
+        >
+          {(control) => (
+            <>
+              <input
+                {...control}
+                className="field__input mapform__file"
+                ref={props.mode === 'replace' ? firstInput : undefined}
+                type="file"
+                accept={MAP_IMAGE_ACCEPT}
+                onChange={(event) => choose(event.target.files?.[0])}
+                data-testid="map-file-input"
+              />
+              {file ? (
+                <p className="field__hint" data-testid="map-file-chosen">
+                  {tx('places.mapForm.chosen', {
+                    name: <bdi>{file.name}</bdi>,
+                    size: formatBytes(file.size),
+                  })}
+                </p>
+              ) : null}
+            </>
+          )}
+        </Field>
       ) : null}
 
       {props.mode === 'replace' ? (
-        <fieldset className="field">
-          <legend className="field__label">{t('places.mapForm.pinsLegend')}</legend>
-          <p className="field__hint">
-            {pinCount === 0
+        <Field
+          group="fieldset"
+          label={t('places.mapForm.pinsLegend')}
+          hint={
+            pinCount === 0
               ? t('places.mapForm.noPins')
-              : tn('places.mapForm.pinsPlaced', pinCount, { n: pinCount })}
-          </p>
+              : tn('places.mapForm.pinsPlaced', pinCount, { n: pinCount })
+          }
+          error={fieldErrors.pins}
+        >
           {map?.calibration ? (
             <p className="field__hint" data-testid="map-replace-scale-note">
               {t('places.mapForm.scaleNote')}
@@ -316,8 +319,7 @@ export function MapForm(props: MapFormProps) {
               })}
             </span>
           </label>
-          {fieldErrors.pins ? <p className="field__error">{fieldErrors.pins}</p> : null}
-        </fieldset>
+        </Field>
       ) : null}
 
       {progress ? (

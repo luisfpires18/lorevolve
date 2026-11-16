@@ -48,7 +48,7 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
-#248 UI consistency tracker running sequentially. #249 merged (PR #258); #250 done: `Drawer.tsx` plus all 23 drawers (PR #260, then #261), `DIALOG_FILES` at five. #255 done: link `Drawer` replaces `window.prompt`/`alert`, `Avatar` default dropped, inline confirms stay inline and are listed in the catalogue (PR #263). #251 merged (PR #264, one `Field` markup). #253 one set of verbs in PR #265: glossary in the catalogue, 131 i18n values in both languages, 11 specs.
+#248 UI consistency tracker running sequentially. #249 merged (PR #258); #250 done: `Drawer.tsx` plus all 23 drawers (PR #260, then #261), `DIALOG_FILES` at five. #255 done: link `Drawer` replaces `window.prompt`/`alert`, `Avatar` default dropped, inline confirms stay inline and are listed in the catalogue (PR #263). #251 merged (PR #264, one `Field` markup). #253 one set of verbs (PR #265). #254 part 1 (PR #269): stories, maps, chronology on `Field`, new fieldset form, `FIELD_LABEL_FILES` frozen at 40 in `uiContract.test.ts`; parts 2 to 4 are follow-up Issues.
 
 #247 backend consistency tracker running sequentially. #241 done: unused members removed, including `MapGeography.GetPinAsync` (PR #257, merged 2026-11-16). #242 done: `Common/` holds `UtcDates`, `Problems`, `Sql`, `PrincipalExtensions` (PR #267).
 

@@ -3,6 +3,7 @@ import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { createChapter, moveChapterToArc, updateChapter } from '../stories/api'
 import { arcLabel } from '../stories/format'
@@ -167,86 +168,90 @@ export function ChapterForm({
         </p>
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="chapter-title">
-          {t('stories.chapterForm.titleLabel')}
-        </label>
-        <p className="field__hint">{t('stories.chapterForm.titleHint')}</p>
-        <input
-          id="chapter-title"
-          className="field__input"
-          ref={title}
-          type="text"
-          dir="auto"
-          placeholder={t('stories.chapterForm.titlePlaceholder')}
-          value={draft.title}
-          onChange={(event) => edit({ title: event.target.value })}
-          aria-invalid={fieldErrors.title ? true : undefined}
-          data-testid="chapter-title-input"
-        />
-        {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
-      </div>
+      <Field
+        id="chapter-title"
+        label={t('stories.chapterForm.titleLabel')}
+        hint={t('stories.chapterForm.titleHint')}
+        error={fieldErrors.title}
+      >
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            ref={title}
+            type="text"
+            dir="auto"
+            placeholder={t('stories.chapterForm.titlePlaceholder')}
+            value={draft.title}
+            onChange={(event) => edit({ title: event.target.value })}
+            data-testid="chapter-title-input"
+          />
+        )}
+      </Field>
 
       {arcs.length > 0 ? (
-        <div className="field">
-          <label className="field__label" htmlFor="chapter-arc">
-            {t('stories.chapterForm.arcLabel')}
-          </label>
-          <p className="field__hint">
-            {chapter ? t('stories.chapterForm.arcHintMove') : t('stories.chapterForm.arcHintNew')}
-          </p>
-          <select
-            id="chapter-arc"
-            className="field__input field__input--select"
-            value={draft.arcId}
-            onChange={(event) => edit({ arcId: event.target.value })}
-            aria-invalid={fieldErrors.plotarcid ? true : undefined}
-            data-testid="chapter-arc-select"
-          >
-            <option value="">{t('stories.chapterForm.noArc')}</option>
-            {arcs.map((arc, index) => (
-              <option key={arc.id} value={arc.id}>
-                {arcLabel(index, arc.title)}
-              </option>
-            ))}
-          </select>
-          {fieldErrors.plotarcid ? <p className="field__error">{fieldErrors.plotarcid}</p> : null}
-        </div>
+        <Field
+          id="chapter-arc"
+          label={t('stories.chapterForm.arcLabel')}
+          hint={
+            chapter ? t('stories.chapterForm.arcHintMove') : t('stories.chapterForm.arcHintNew')
+          }
+          error={fieldErrors.plotarcid}
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={draft.arcId}
+              onChange={(event) => edit({ arcId: event.target.value })}
+              data-testid="chapter-arc-select"
+            >
+              <option value="">{t('stories.chapterForm.noArc')}</option>
+              {arcs.map((arc, index) => (
+                <option key={arc.id} value={arc.id}>
+                  {arcLabel(index, arc.title)}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="chapter-summary">
-          {t('stories.chapterForm.summaryLabel')}
-        </label>
-        <p className="field__hint">{t('stories.chapterForm.summaryHint')}</p>
-        <textarea
-          id="chapter-summary"
-          className="field__input field__input--area"
-          rows={3}
-          value={draft.summary}
-          onChange={(event) => edit({ summary: event.target.value })}
-          aria-invalid={fieldErrors.summary ? true : undefined}
-          data-testid="chapter-summary-input"
-        />
-        {fieldErrors.summary ? <p className="field__error">{fieldErrors.summary}</p> : null}
-      </div>
+      <Field
+        id="chapter-summary"
+        label={t('stories.chapterForm.summaryLabel')}
+        hint={t('stories.chapterForm.summaryHint')}
+        error={fieldErrors.summary}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={3}
+            value={draft.summary}
+            onChange={(event) => edit({ summary: event.target.value })}
+            data-testid="chapter-summary-input"
+          />
+        )}
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor="chapter-notes">
-          {t('stories.chapterForm.notesLabel')}
-        </label>
-        <p className="field__hint">{t('stories.chapterForm.notesHint')}</p>
-        <textarea
-          id="chapter-notes"
-          className="field__input field__input--area"
-          rows={4}
-          value={draft.notes}
-          onChange={(event) => edit({ notes: event.target.value })}
-          aria-invalid={fieldErrors.notes ? true : undefined}
-          data-testid="chapter-notes-input"
-        />
-        {fieldErrors.notes ? <p className="field__error">{fieldErrors.notes}</p> : null}
-      </div>
+      <Field
+        id="chapter-notes"
+        label={t('stories.chapterForm.notesLabel')}
+        hint={t('stories.chapterForm.notesHint')}
+        error={fieldErrors.notes}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={4}
+            value={draft.notes}
+            onChange={(event) => edit({ notes: event.target.value })}
+            data-testid="chapter-notes-input"
+          />
+        )}
+      </Field>
     </Drawer>
   )
 }

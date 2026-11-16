@@ -3,6 +3,7 @@ import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import { createPin, DUPLICATE_LINK_CODE, updatePin } from '../maps/api'
 import {
   MAP_NAME_MAX_LENGTH,
@@ -198,47 +199,49 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
         {trashed ? t('places.pinForm.loreHintTrashed') : t('places.pinForm.loreHint')}
       </p>
 
-      <div className="field">
-        <label className="field__label" htmlFor="map-pin-title">
-          {t('places.pinForm.titleLabel')}
-        </label>
-        <input
-          id="map-pin-title"
-          className="field__input"
-          ref={titleInput}
-          type="text"
-          dir="auto"
-          maxLength={MAP_NAME_MAX_LENGTH}
-          value={draft.title}
-          onChange={(event) => edit({ title: event.target.value })}
-          aria-invalid={fieldErrors.title ? true : undefined}
-          data-testid="map-pin-title-input"
-        />
-        {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
-      </div>
+      <Field id="map-pin-title" label={t('places.pinForm.titleLabel')} error={fieldErrors.title}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            ref={titleInput}
+            type="text"
+            dir="auto"
+            maxLength={MAP_NAME_MAX_LENGTH}
+            value={draft.title}
+            onChange={(event) => edit({ title: event.target.value })}
+            data-testid="map-pin-title-input"
+          />
+        )}
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor="map-pin-note">
-          {t('places.pinForm.note')}
-        </label>
-        <p className="field__hint">{t('places.pinForm.noteHint')}</p>
-        <textarea
-          id="map-pin-note"
-          className="field__input"
-          dir="auto"
-          rows={3}
-          maxLength={MAP_NOTE_MAX_LENGTH}
-          value={draft.note}
-          onChange={(event) => edit({ note: event.target.value })}
-          aria-invalid={fieldErrors.note ? true : undefined}
-          data-testid="map-pin-note-input"
-        />
-        {fieldErrors.note ? <p className="field__error">{fieldErrors.note}</p> : null}
-      </div>
+      <Field
+        id="map-pin-note"
+        label={t('places.pinForm.note')}
+        hint={t('places.pinForm.noteHint')}
+        error={fieldErrors.note}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input"
+            dir="auto"
+            rows={3}
+            maxLength={MAP_NOTE_MAX_LENGTH}
+            value={draft.note}
+            onChange={(event) => edit({ note: event.target.value })}
+            data-testid="map-pin-note-input"
+          />
+        )}
+      </Field>
 
-      <fieldset className="field mappinform__position">
-        <legend className="field__label">{t('places.pinForm.position')}</legend>
-        <p className="field__hint">{t('places.pinForm.positionHint')}</p>
+      <Field
+        group="fieldset"
+        className="mappinform__position"
+        label={t('places.pinForm.position')}
+        hint={t('places.pinForm.positionHint')}
+        error={[fieldErrors.x, fieldErrors.y].filter(Boolean).join(' ') || undefined}
+      >
         <div className="mappinform__coords">
           <label className="mappinform__coord">
             <span>{t('places.pinForm.across')}</span>
@@ -273,9 +276,7 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
             <span aria-hidden="true">%</span>
           </label>
         </div>
-        {fieldErrors.x ? <p className="field__error">{fieldErrors.x}</p> : null}
-        {fieldErrors.y ? <p className="field__error">{fieldErrors.y}</p> : null}
-      </fieldset>
+      </Field>
     </Drawer>
   )
 }

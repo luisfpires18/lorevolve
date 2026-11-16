@@ -4,6 +4,7 @@ import { useReturnFocus } from '../lib/returnFocus'
 import { saveStoryPublicSummary } from '../publishing/api'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import { PUBLIC_SUMMARY_MAX, type ContentPublicationState } from '../publishing/types'
 
 /**
@@ -93,33 +94,35 @@ export function StoryPublicSummaryForm({
         </p>
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="story-public-summary">
-          {t('stories.summaryForm.label')}
-        </label>
-        <p className="field__hint" id="story-public-summary-hint">
-          {t('stories.summaryForm.hint')}
-        </p>
-        <textarea
-          id="story-public-summary"
-          className="field__input field__input--area"
-          ref={field}
-          rows={5}
-          dir="auto"
-          maxLength={PUBLIC_SUMMARY_MAX}
-          aria-describedby="story-public-summary-hint story-public-summary-count"
-          aria-invalid={error ? true : undefined}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          data-testid="story-public-summary-input"
-        />
-        <p className="field__hint" id="story-public-summary-count">
-          {t('stories.summaryForm.count', {
-            count: draft.trim().length,
-            max: PUBLIC_SUMMARY_MAX,
-          })}
-        </p>
-      </div>
+      <Field
+        id="story-public-summary"
+        label={t('stories.summaryForm.label')}
+        hint={t('stories.summaryForm.hint')}
+      >
+        {(control) => (
+          <>
+            <textarea
+              {...control}
+              className="field__input field__input--area"
+              ref={field}
+              rows={5}
+              dir="auto"
+              maxLength={PUBLIC_SUMMARY_MAX}
+              aria-describedby={`${control['aria-describedby']} story-public-summary-count`}
+              aria-invalid={error ? true : undefined}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              data-testid="story-public-summary-input"
+            />
+            <p className="field__hint" id="story-public-summary-count">
+              {t('stories.summaryForm.count', {
+                count: draft.trim().length,
+                max: PUBLIC_SUMMARY_MAX,
+              })}
+            </p>
+          </>
+        )}
+      </Field>
     </Drawer>
   )
 }

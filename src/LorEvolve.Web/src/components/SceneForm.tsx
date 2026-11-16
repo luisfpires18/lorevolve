@@ -9,6 +9,7 @@ import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { createScene, getScene, SCENE_CHANGED, updateScene } from '../stories/api'
 import { suggestSceneChanges } from '../suggestions/api'
@@ -269,68 +270,67 @@ export function SceneForm({
         />
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="scene-title">
-          {t('stories.sceneForm.titleLabel')}
-        </label>
-        <input
-          id="scene-title"
-          className="field__input"
-          ref={title}
-          type="text"
-          dir="auto"
-          placeholder={t('stories.sceneForm.titlePlaceholder')}
-          value={draft.title}
-          onChange={(event) => edit({ title: event.target.value })}
-          aria-invalid={fieldErrors.title ? true : undefined}
-          data-testid="scene-title-input"
-        />
-        {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
-      </div>
+      <Field id="scene-title" label={t('stories.sceneForm.titleLabel')} error={fieldErrors.title}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            ref={title}
+            type="text"
+            dir="auto"
+            placeholder={t('stories.sceneForm.titlePlaceholder')}
+            value={draft.title}
+            onChange={(event) => edit({ title: event.target.value })}
+            data-testid="scene-title-input"
+          />
+        )}
+      </Field>
 
       {chapters.length > 0 ? (
-        <div className="field">
-          <label className="field__label" htmlFor="scene-chapter">
-            {t('stories.sceneForm.chapterLabel')}
-          </label>
-          <p className="field__hint">
-            {scene ? t('stories.sceneForm.chapterHintMove') : t('stories.sceneForm.chapterHintNew')}
-          </p>
-          <select
-            id="scene-chapter"
-            className="field__input field__input--select"
-            value={draft.chapterId}
-            onChange={(event) => edit({ chapterId: event.target.value })}
-            aria-invalid={fieldErrors.chapterid ? true : undefined}
-            data-testid="scene-chapter-select"
-          >
-            <option value="">{unchaptered()}</option>
-            {chapterChoices(arcs, chapters).map((choice) => (
-              <option key={choice.id} value={choice.id}>
-                {choice.label}
-              </option>
-            ))}
-          </select>
-          {fieldErrors.chapterid ? <p className="field__error">{fieldErrors.chapterid}</p> : null}
-        </div>
+        <Field
+          id="scene-chapter"
+          label={t('stories.sceneForm.chapterLabel')}
+          hint={
+            scene ? t('stories.sceneForm.chapterHintMove') : t('stories.sceneForm.chapterHintNew')
+          }
+          error={fieldErrors.chapterid}
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={draft.chapterId}
+              onChange={(event) => edit({ chapterId: event.target.value })}
+              data-testid="scene-chapter-select"
+            >
+              <option value="">{unchaptered()}</option>
+              {chapterChoices(arcs, chapters).map((choice) => (
+                <option key={choice.id} value={choice.id}>
+                  {choice.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="scene-summary">
-          {t('stories.sceneForm.summaryLabel')}
-        </label>
-        <p className="field__hint">{t('stories.sceneForm.summaryHint')}</p>
-        <textarea
-          id="scene-summary"
-          className="field__input field__input--area"
-          rows={3}
-          value={draft.summary}
-          onChange={(event) => edit({ summary: event.target.value })}
-          aria-invalid={fieldErrors.summary ? true : undefined}
-          data-testid="scene-summary-input"
-        />
-        {fieldErrors.summary ? <p className="field__error">{fieldErrors.summary}</p> : null}
-      </div>
+      <Field
+        id="scene-summary"
+        label={t('stories.sceneForm.summaryLabel')}
+        hint={t('stories.sceneForm.summaryHint')}
+        error={fieldErrors.summary}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={3}
+            value={draft.summary}
+            onChange={(event) => edit({ summary: event.target.value })}
+            data-testid="scene-summary-input"
+          />
+        )}
+      </Field>
 
       {/* A suggestion never changes a scene's beats: the API takes none from one. */}
       {suggesting ? null : (
@@ -341,22 +341,23 @@ export function SceneForm({
         />
       )}
 
-      <div className="field">
-        <label className="field__label" htmlFor="scene-notes">
-          {t('stories.sceneForm.notesLabel')}
-        </label>
-        <p className="field__hint">{t('stories.sceneForm.notesHint')}</p>
-        <textarea
-          id="scene-notes"
-          className="field__input field__input--area"
-          rows={4}
-          value={draft.notes}
-          onChange={(event) => edit({ notes: event.target.value })}
-          aria-invalid={fieldErrors.notes ? true : undefined}
-          data-testid="scene-notes-input"
-        />
-        {fieldErrors.notes ? <p className="field__error">{fieldErrors.notes}</p> : null}
-      </div>
+      <Field
+        id="scene-notes"
+        label={t('stories.sceneForm.notesLabel')}
+        hint={t('stories.sceneForm.notesHint')}
+        error={fieldErrors.notes}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={4}
+            value={draft.notes}
+            onChange={(event) => edit({ notes: event.target.value })}
+            data-testid="scene-notes-input"
+          />
+        )}
+      </Field>
 
       <div data-testid="scene-pov-field">
         <EntityPicker
@@ -369,10 +370,12 @@ export function SceneForm({
         />
       </div>
 
-      <fieldset className="scenechron">
-        <legend className="field__label">{t('stories.sceneForm.whenLegend')}</legend>
-        <p className="field__hint">{t('stories.sceneForm.whenHint')}</p>
-
+      <Field
+        group="fieldset"
+        className="scenechron"
+        label={t('stories.sceneForm.whenLegend')}
+        hint={t('stories.sceneForm.whenHint')}
+      >
         <ChronologyPointFields
           chronology={chronology}
           ids={{
@@ -407,7 +410,7 @@ export function SceneForm({
             {t('stories.sceneForm.clearWhen')}
           </button>
         ) : null}
-      </fieldset>
+      </Field>
 
       <div data-testid="scene-lore-field">
         <EntityMultiPicker

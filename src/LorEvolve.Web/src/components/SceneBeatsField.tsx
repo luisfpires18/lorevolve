@@ -1,6 +1,7 @@
-import { useId, useRef } from 'react'
+import { useRef } from 'react'
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { beatKey, type BeatDraft } from '../stories/beats'
 
@@ -17,7 +18,6 @@ interface SceneBeatsFieldProps {
  */
 export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProps) {
   const { t } = useI18n()
-  const hintId = useId()
   const list = useRef<HTMLOListElement>(null)
 
   function focusRow(index: number) {
@@ -53,16 +53,14 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
   }
 
   return (
-    <fieldset
-      className="field scenebeats"
-      aria-describedby={hintId}
+    <Field
+      group="fieldset"
+      className="scenebeats"
+      label={t('stories.beats.legend')}
+      hint={t('stories.beats.hint')}
+      error={errors.beats}
       data-testid="scene-beats-field"
     >
-      <legend className="field__label">{t('stories.beats.legend')}</legend>
-      <p className="field__hint" id={hintId}>
-        {t('stories.beats.hint')}
-      </p>
-
       {beats.length > 0 ? (
         <ol className="scenebeats__list" ref={list}>
           {beats.map((beat, index) => {
@@ -148,7 +146,6 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
         <ActionIcon icon={Plus} />
         {t('stories.beats.add')}
       </button>
-      {errors.beats ? <p className="field__error">{errors.beats}</p> : null}
-    </fieldset>
+    </Field>
   )
 }
