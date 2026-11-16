@@ -1,9 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
 /**
- * Issue #192: a project's own sections. Each kind offers its views as addresses under both project addresses, as rows
- * under the project's sidebar expansion, and as a tab bar in the project's shell. These walk a project's views both
- * ways, pin the per-kind lists, and check that an unknown segment lands on the first view.
+ * Issue #192: a project's own sections. Each kind offers its views as addresses under both project addresses, and as a
+ * tab bar in the project's shell, the only place they are walked (#271). These walk a project's views, pin the per-kind lists, and check that an unknown segment lands on the first view.
  */
 
 const PASSWORD = 'Test-password-123!'
@@ -49,15 +48,6 @@ async function project(page: Page, universeId: string, kind: number) {
   })
 }
 
-// The sidebar reads its projects on its own, so wait for the expansion before reading what it lists.
-async function sidebarSegments(page: Page, projectId: string) {
-  await expect(page.getByTestId(`project-pages-${projectId}`)).toBeVisible()
-  const links = page.getByTestId(`project-pages-${projectId}`).getByRole('link')
-  const hrefs = await links.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')))
-  return hrefs.map((href) => href?.split('/').pop())
-}
-
-// Read even where the bar is hidden: a wide screen lists the same views in the sidebar, so the bar steps aside there.
 async function tabSegments(page: Page) {
   await expect(page.getByTestId('project-tabs')).toBeAttached()
   // `a`, not the link role: a hidden bar is out of the accessibility tree, and its links with it.
@@ -67,7 +57,7 @@ async function tabSegments(page: Page) {
 }
 
 test.describe('Project sections', () => {
-  test('a game project walks its views from the sidebar and from the tab bar', async ({ page }) => {
+  test('a game project walks its views from the tab bar', async ({ page }) => {
     await signUp(page)
     const world = await universe(page)
     const game = await project(page, world.id, 1)
@@ -78,31 +68,24 @@ test.describe('Project sections', () => {
     await expect(page).toHaveURL(new RegExp(`${base}/overview$`))
     await expect(page.getByTestId('project-name')).toContainText(game.name)
 
-    // The sidebar expansion and the tab bar list exactly the same views, in order.
+    // The tab bar lists the kind's views, in order, and the sidebar lists none of them.
     const expected = ['overview', 'entities', 'systems']
-    expect(await sidebarSegments(page, game.id)).toEqual(expected)
     expect(await tabSegments(page)).toEqual(expected)
+    await expect(page.locator('[data-testid^="project-pages-"]')).toHaveCount(0)
 
-    // Each view is reachable from the sidebar, inside the universe's frame.
-    for (const segment of expected) {
-      await page.getByTestId(`project-${segment}-${game.id}`).click()
-      await expect(page).toHaveURL(new RegExp(`${base}/${segment}$`))
-      await expect(page.getByTestId(`projecttab-${segment}`)).toHaveAttribute(
-        'aria-current',
-        'page',
-      )
-      await expect(page.getByTestId('workspace-lore')).toBeVisible()
-    }
-
-    // A wide screen shows no tab bar beside the sidebar's copy of the same links.
-    await expect(page.getByTestId('project-tabs')).toBeHidden()
-
-    // On a phone, where the sidebar folds the views away, the tab bar is a navigation landmark of links.
-    await page.setViewportSize({ width: 390, height: 844 })
-    await expect(page.getByRole('navigation', { name: 'Project views' })).toBeVisible()
-    for (const segment of [...expected].reverse()) {
-      await page.getByTestId(`projecttab-${segment}`).click()
-      await expect(page).toHaveURL(new RegExp(`${base}/${segment}$`))
+    // The tab bar is a visible navigation landmark of links at every width, and walks each view inside the universe's frame.
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 844 })
+      await expect(page.getByRole('navigation', { name: 'Project views' })).toBeVisible()
+      for (const segment of [...expected].reverse()) {
+        await page.getByTestId(`projecttab-${segment}`).click()
+        await expect(page).toHaveURL(new RegExp(`${base}/${segment}$`))
+        await expect(page.getByTestId(`projecttab-${segment}`)).toHaveAttribute(
+          'aria-current',
+          'page',
+        )
+        await expect(page.getByTestId('workspace-lore')).toBeAttached()
+      }
     }
 
     // Each view renders one panel and never another's (#193). A project with no types opens Entities on the starter
@@ -174,7 +157,7 @@ test.describe('Project sections', () => {
       await expect(page.getByTestId('project-schema')).toHaveCount(0)
       await expect(page.getByTestId('project-entries')).toHaveCount(0)
       for (const segment of ['overview', 'script', 'entities']) {
-        await page.getByTestId(`project-${segment}-${one.id}`).click()
+        await page.getByTestId(`projecttab-${segment}`).click()
         await expect(page).toHaveURL(new RegExp(`/${segment}$`))
         await expect(page.getByTestId('project-seasons')).toHaveCount(0)
       }
@@ -203,7 +186,6 @@ test.describe('Project sections', () => {
         new RegExp(`/app/universes/${world.id}/projects/${one.id}/${expected[0]}$`),
       )
       expect(await tabSegments(page)).toEqual(expected)
-      expect(await sidebarSegments(page, one.id)).toEqual(expected)
 
       // The universe-scoped twin serves the same view.
       await page.goto(`/app/universes/${world.id}/projects/${one.id}/${expected[1]}`)
@@ -267,7 +249,7 @@ test.describe('Project sections', () => {
     await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}$`))
   })
 
-  test('on a narrow screen the tab bar stands in for the sidebar expansion', async ({ page }) => {
+  test('on a narrow screen the tab bar is still the only copy of the views', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await signUp(page)
     const world = await universe(page)
@@ -279,14 +261,14 @@ test.describe('Project sections', () => {
     ]) {
       await page.goto(address)
       await expect(page.getByTestId('project-tabs')).toBeVisible()
-      await expect(page.getByTestId(`project-pages-${game.id}`)).toBeHidden()
+      await expect(page.getByTestId(`project-pages-${game.id}`)).toHaveCount(0)
 
       // Opening the universe's section list on a phone still shows no second copy of the views.
       const toggle = page.getByTestId('workspace-nav-toggle')
       if (await toggle.isVisible()) {
         await toggle.click()
-        await expect(page.getByTestId(`project-link-${game.id}`)).toBeVisible()
-        await expect(page.getByTestId(`project-pages-${game.id}`)).toBeHidden()
+        await expect(page.getByTestId('workspace-projects')).toBeVisible()
+        await expect(page.getByTestId(`project-link-${game.id}`)).toHaveCount(0)
       }
     }
   })

@@ -347,11 +347,11 @@ test.describe('Project entities', () => {
       await expect(card).toContainText('Mara Vell')
       await expect(card).toContainText('Comes back to the harbour.')
 
-      // On a wide screen the tab bar steps aside and the sidebar is the way between the views.
-      await expect(page.getByTestId('project-tabs')).toBeHidden()
-      await page.getByTestId(`project-overview-${project.id}`).click()
+      // The tab bar is the way between the views at every width (#271).
+      await expect(page.getByTestId('project-tabs')).toBeVisible()
+      await page.getByTestId('projecttab-overview').click()
       await expect(page).toHaveURL(new RegExp(`${base}/overview$`))
-      await page.getByTestId(`project-entities-${project.id}`).click()
+      await page.getByTestId('projecttab-entities').click()
       await expect(page).toHaveURL(new RegExp(`${base}/entities$`))
 
       // A type of the project's own, made in the Types screen's drawer, is on the cards when the crumb leads back.

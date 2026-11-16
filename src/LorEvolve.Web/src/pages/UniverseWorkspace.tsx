@@ -12,6 +12,7 @@ import type { EntityType, EntityTypeGroup } from '../lore/types'
 import { getUniverse } from '../universes/api'
 import {
   ALL_SECTIONS,
+  CREATION,
   FRONT,
   MANAGEMENT,
   offered,
@@ -30,16 +31,22 @@ import type { UniverseDetail } from '../universes/types'
 import { artworkUrl } from '../publishing/api'
 import type { UniverseArtworkRef } from '../publishing/types'
 import { EmptyState } from '../components/EmptyState'
-import { ProjectsNav } from '../components/ProjectsNav'
 
 const SECTIONS = ALL_SECTIONS
 
 /** A labelled group's dictionary key; the front page alone carries no label (#191). */
-function groupKey(first: Section) {
-  if (WORLD_BUILDING.includes(first)) return 'worldBuilding'
-  if (MANAGEMENT.includes(first)) return 'management'
+function groupKey(source: readonly Section[]) {
+  if (source === WORLD_BUILDING) return 'worldBuilding'
+  if (source === CREATION) return 'creation'
+  if (source === MANAGEMENT) return 'management'
   return null
 }
+
+const GROUP_TEST_IDS = {
+  worldBuilding: 'sidebar-world-building',
+  creation: 'sidebar-creation',
+  management: 'sidebar-upkeep',
+} as const
 
 /** A group's name, drawn as a heading so a screen reader reads it as the group's name and can jump between them. */
 function GroupLabel({ id, label }: { id: string; label: string }) {
@@ -320,9 +327,11 @@ function Workspace() {
   // What this account may do here, for what is drawn: the API decides every request on its own (ADR 0041).
   const access = capabilitiesOf(universe.accessRole)
   const shared = universe.accessRole !== UniverseRole.Owner
-  const groups = SECTION_GROUPS.map((group) => offered(group, access, universe.aiHelp)).filter(
-    (group) => group.length > 0,
-  )
+  // Creation is drawn while it has nothing in it: it is a labelled place that later tasks fill (#271).
+  const groups = SECTION_GROUPS.map((source) => ({
+    source,
+    items: offered(source, access, universe.aiHelp),
+  })).filter(({ source, items }) => items.length > 0 || source === CREATION)
   const section = currentSection(pathname, id)
 
   return (
@@ -430,31 +439,25 @@ function Workspace() {
         </div>
 
         <ul className="sidebar__nav">
-          {/*
-           * The universe's own sections, then this universe's projects, and management last - set apart at the foot,
-           * as upkeep was before the projects group existed. Projects is drawn by its own component because, unlike a section, its rows
-           * are read from the API and each one expands.
-           */}
-          {groups.map((group) => {
-            const key = groupKey(group[0])
+          {/* The universe's own sections: the front page, world building, creation, and management last - set apart
+              at the foot. */}
+          {groups.map(({ source, items }) => {
+            const key = groupKey(source)
             const isManagement = key === 'management'
             const labelId = key ? `sidebar-group-${key}` : undefined
             return (
-              <Fragment key={`group-${group[0].segment}`}>
-                {isManagement && id ? <ProjectsLabelled universeId={id} /> : null}
+              <Fragment key={`group-${key ?? 'front'}`}>
                 <li
                   className={
                     isManagement ? 'sidebar__group sidebar__group--upkeep' : 'sidebar__group'
                   }
-                  data-testid={
-                    isManagement ? 'sidebar-upkeep' : key ? 'sidebar-world-building' : undefined
-                  }
+                  data-testid={key ? GROUP_TEST_IDS[key] : undefined}
                 >
                   {key && labelId ? (
                     <GroupLabel id={labelId} label={t(`workspace.rail.groups.${key}`)} />
                   ) : null}
                   <ul className="sidebar__links" aria-labelledby={labelId}>
-                    {group.map((each) => (
+                    {items.map((each) => (
                       <li key={each.segment}>
                         {/* A Link rather than a NavLink: which section is current is this component's answer, not a
                             path match, because World Logic is still the current section at a world rule's own address
@@ -480,10 +483,6 @@ function Workspace() {
               </Fragment>
             )
           })}
-          {/* A role with no management section at all still gets the projects group, at the foot. */}
-          {!groups.some((group) => MANAGEMENT.includes(group[0])) && id ? (
-            <ProjectsLabelled universeId={id} />
-          ) : null}
         </ul>
       </nav>
 
@@ -535,12 +534,4 @@ function Workspace() {
       </div>
     </div>
   )
-}
-
-/**
- * The projects group under its label. The label is drawn by `ProjectsNav` itself since #198, because there it is the
- * button that folds the group; it reads the same as the section groups' labels around it (#191).
- */
-function ProjectsLabelled({ universeId }: { universeId: string }) {
-  return <ProjectsNav universeId={universeId} />
 }

@@ -13,7 +13,7 @@ const workspace: Dictionary['workspace'] = {
     sharedAs: 'Partilhado como {role}',
     groups: {
       worldBuilding: 'Construção do mundo',
-      projects: 'Projetos',
+      creation: 'Criação',
       management: 'Gestão',
     },
   },
@@ -84,6 +84,10 @@ const workspace: Dictionary['workspace'] = {
     ideas: {
       label: 'Ideias',
       purpose: 'Possibilidades, mantidas à parte da lore.',
+    },
+    projects: {
+      label: 'Projetos',
+      purpose: 'Os trabalhos escritos neste universo.',
     },
     aiChanges: {
       label: 'Alterações da IA',

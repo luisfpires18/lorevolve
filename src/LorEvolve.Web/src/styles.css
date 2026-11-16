@@ -2882,7 +2882,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
 
 /* A section: its icon and its name, 36px tall. Where you are is the accent wash, the ink label at
    500 and the universe's own colour as a bar on the inside edge - never the ink fill, which means
-   "act". `aria-current="page"` comes from the router's NavLink. */
+   "act". `aria-current="page"` is set by the workspace, which knows the current section. */
 .wipbadge {
   display: inline-block;
   margin-inline-start: var(--space-2);
@@ -18522,47 +18522,7 @@ details.reviewsection > .reviewsection__list {
 
 /* ---------- Projects (#139) ---------- */
 
-/*
- * A project in the sidebar: the disclosure that opens it and the link that goes to it sit on one row, so the row reads
- * as one thing while each half stays its own control. The row is positioned because the disclosure's label is for
- * screen readers only and an absolutely positioned span in a scrolling column would otherwise stretch the column on a
- * phone.
- */
-.sidebar__projectrow {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.sidebar__disclosure {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.75rem;
-  min-height: 1.75rem;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: inherit;
-  cursor: pointer;
-}
-
-.sidebar__grouptoggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  cursor: pointer;
-}
-
+/* A sidebar group's head: the small muted capitals the type switcher's row labels use (#191). */
 .sidebar__grouphead {
   margin: 0;
   color: var(--muted);
@@ -18570,74 +18530,6 @@ details.reviewsection > .reviewsection__list {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-
-/* The folded projects group: .sidebar__links sets display, so the attribute alone would not hide it (#198). */
-.sidebar__links[hidden] {
-  display: none;
-}
-
-.sidebar__disclosure:hover {
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
-}
-
-.sidebar__chevron {
-  width: 1rem;
-  height: 1rem;
-  transition: transform 150ms ease;
-}
-
-.sidebar__chevron--open {
-  transform: rotate(90deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sidebar__chevron {
-    transition: none;
-  }
-}
-
-.sidebar__link--project {
-  flex: 1 1 auto;
-  min-width: 0;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.sidebar__projectname {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar__projectkind {
-  flex: 0 0 auto;
-  font-size: var(--text-sm);
-  color: var(--muted);
-}
-
-.sidebar__sublinks {
-  margin: 0;
-  padding: 0 0 0 var(--space-5);
-  list-style: none;
-}
-
-.sidebar__sublink {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 2rem;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
-  text-decoration: none;
-}
-
-.sidebar__sublink:hover,
-.sidebar__sublink.active {
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
-  color: var(--ink);
 }
 
 /* The Projects screens: the list of projects, and one project. */
@@ -18762,26 +18654,11 @@ details.reviewsection > .reviewsection__list {
   overflow-wrap: anywhere;
 }
 
-/*
- * From this width the sidebar lists the open project's pages under its name, so the same links as tabs above the page
- * would only repeat them. Below it the sidebar folds those away and the tabs are the way between the views.
- */
-@media (min-width: 60rem) {
-  .projectframe__head > .views {
-    display: none;
-  }
-}
-
 @media (max-width: 59.99rem) {
-  .sidebar__sublinks--project,
-  .sidebar__projectrow .sidebar__disclosure {
-    display: none;
-  }
-
   /*
    * A story-backed project's three views are the story's own, and the story's page already carries them in its view
    * bar (#194). On a phone two bars of the same three links would push the manuscript off the first screen, so the
-   * project's copy steps aside there, as the sidebar's does. The breadcrumb steps aside with it (#199): the story's
+   * project's copy steps aside there. The breadcrumb steps aside with it (#199): the story's
    * own header already leads back, and on a phone the first screen belongs to the prose.
    */
   .projectframe--story > .projectframe__head {
