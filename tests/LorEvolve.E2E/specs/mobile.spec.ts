@@ -200,10 +200,8 @@ test.describe('on a phone', () => {
 
     // ---- And Canon integrity, the densest read-only screen ----
 
-    // Canon left the sidebar (#191); its door is on the Overview.
-    await openSection(page, 'workspace-overview')
-    await page.getByTestId('overview-canon').click()
-    await page.waitForURL(/\/canon$/)
+    // Canon left the sidebar (#191) and the Overview (#273); it is reached by its address.
+    await page.goto(page.url().replace(/(\/app\/universes\/[^/]+).*/, '$1/canon'))
     await expect(where).toContainText('Canon')
     await expect(page.getByTestId('canon-empty')).toBeVisible()
     await expectNoSidewaysScroll(page, 'canon integrity')

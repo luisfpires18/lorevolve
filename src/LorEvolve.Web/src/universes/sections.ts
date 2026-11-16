@@ -61,7 +61,7 @@ export const FRONT: readonly Section[] = [
   },
 ]
 
-// Each section once, by name, because the sidebar and the Overview's contents page group them differently (#191).
+// Each section once, by name, so the sidebar and the Overview's contents page draw the same objects (#191, #273).
 const LORE: Section = { segment: 'lore', testId: 'workspace-lore', icon: Library }
 const TYPES: Section = { segment: 'types', testId: 'workspace-types', icon: Blocks }
 const FAMILY_TREE: Section = {
@@ -143,22 +143,6 @@ const SETTINGS: Section = {
   requires: 'manageUniverse',
 }
 
-// The Overview's contents page still reads these four parts (#191 changes only the sidebar).
-/** The world itself: its entries, the kinds they come in, its families and its places. */
-export const WORLD: readonly Section[] = [LORE, TYPES, FAMILY_TREE, MAPS]
-
-/**
- * The rules it keeps: how it works, and where the lore breaks that. How its dates run is Timeline's configuration view
- * (#200), at `timeline/configuration`, so Timeline owns it by its first segment and the old `chronology` address redirects.
- */
-export const RULES: readonly Section[] = [WORLD_LOGIC, CANON]
-
-/** The writing done with it, and the world's chronology it is told against - Stories, then Timeline (Issue #48). */
-export const WRITING: readonly Section[] = [STORIES, TIMELINE, IDEAS]
-
-/** What an AI proposed, waiting for review. */
-export const REVIEW: readonly Section[] = [AI_CHANGES]
-
 /**
  * The sidebar's world building group (#191): every worldbuilding destination in the owner's order. Chronology is no
  * section of its own: it is Timeline's configuration view (#200).
@@ -187,11 +171,19 @@ export const CREATION: readonly Section[] = [WRITING_PROJECTS, GAMING, CINEMA, C
  */
 export const MANAGEMENT: readonly Section[] = [PROJECTS, AI_CHANGES, PUBLISH, TRASH, SETTINGS]
 
+/** A labelled group's dictionary key; the front page alone carries no label (#191). */
+export function groupKey(source: readonly Section[]) {
+  if (source === WORLD_BUILDING) return 'worldBuilding'
+  if (source === CREATION) return 'creation'
+  if (source === MANAGEMENT) return 'management'
+  return null
+}
+
 /**
  * Sections with an address but no place in the sidebar (#191). Stories are listed as Writing Projects under the
  * Projects section, so a Stories entry beside it would show one body of work twice. Canon is not offered as a top-level
- * section any more. Both pages keep every address, and the Overview's contents page still links to them; they are
- * listed here only so the workspace can still name the page the author is on.
+ * section any more. Both pages keep every address: Stories are reached through Writing, Canon through World Logic's Integrity tab and
+ * the canon block notice. They are listed here only so the workspace can still name the page the author is on.
  */
 export const UNLISTED: readonly Section[] = [STORIES, CANON]
 

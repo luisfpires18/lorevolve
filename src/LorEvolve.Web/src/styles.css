@@ -3239,22 +3239,22 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
 /* The world's parts as a small spread once there is room: three across, Lore - where most of a world lives - leading
    at double width, so five doorways fill two rows instead of leaving one alone on a third. */
 @container (min-width: 46rem) {
-  .contents--world .contents__list {
+  .contents--worldBuilding .contents__list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .contents--world .contents__list > li:first-child {
+  .contents--worldBuilding .contents__list > li:first-child {
     grid-column: span 2;
   }
 
-  .contents--world .contents__list > li:first-child .doorway__name {
+  .contents--worldBuilding .contents__list > li:first-child .doorway__name {
     font-size: 1.75rem;
   }
 }
 
 /* Between a phone and the spread, two across: Lore takes the whole first row, so the other four pair off beneath it. */
 @container (min-width: 29rem) and (max-width: 45.99rem) {
-  .contents--world .contents__list > li:first-child {
+  .contents--worldBuilding .contents__list > li:first-child {
     grid-column: 1 / -1;
   }
 }
@@ -3287,7 +3287,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
     transform var(--duration-2) var(--ease);
 }
 
-.contents--review .doorway {
+.contents--management .doorway {
   background: transparent;
   box-shadow: none;
 }
@@ -3398,7 +3398,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
     margin: 0;
   }
 
-  .contents--world .contents__list > li:first-child .doorway__name {
+  .contents--worldBuilding .contents__list > li:first-child .doorway__name {
     font-size: 1.3125rem;
   }
 }
