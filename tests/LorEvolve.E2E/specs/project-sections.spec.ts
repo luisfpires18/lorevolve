@@ -79,7 +79,7 @@ test.describe('Project sections', () => {
     await expect(page.getByTestId('project-name')).toContainText(game.name)
 
     // The sidebar expansion and the tab bar list exactly the same views, in order.
-    const expected = ['overview', 'entities', 'systems', 'ideas']
+    const expected = ['overview', 'entities', 'systems']
     expect(await sidebarSegments(page, game.id)).toEqual(expected)
     expect(await tabSegments(page)).toEqual(expected)
 
@@ -105,17 +105,11 @@ test.describe('Project sections', () => {
       await expect(page).toHaveURL(new RegExp(`${base}/${segment}$`))
     }
 
-    // Ideas lists the project's own ideas (#197), empty so far.
-    await page.getByTestId('projecttab-ideas').click()
-    await expect(page.getByTestId('ideas')).toBeVisible()
-    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this project yet.')
-
     // Each view renders one panel and never another's (#193). A project with no types opens Entities on the starter
     // offer, and the overview no longer holds the schema (#196).
     await page.getByTestId('projecttab-entities').click()
     await expect(page.getByTestId('project-schema-offer')).toBeVisible()
     await expect(page.getByTestId('project-entries')).toHaveCount(0)
-    await expect(page.getByTestId('ideas')).toHaveCount(0)
     await page.getByTestId('projecttab-overview').click()
     // The overview is its own view now (#195); with no types and no entries it is that view's empty state, and it
     // still holds neither the schema nor the entries.
@@ -195,10 +189,10 @@ test.describe('Project sections', () => {
     await signUp(page)
     const world = await universe(page)
     const cases: Array<[number, string[]]> = [
-      [0, ['overview', 'structure', 'manuscript', 'entities', 'ideas']],
-      [2, ['overview', 'structure', 'script', 'entities', 'ideas']],
-      [3, ['overview', 'structure', 'script', 'entities', 'ideas']],
-      [4, ['overview', 'structure', 'script', 'entities', 'ideas']],
+      [0, ['overview', 'structure', 'manuscript', 'entities']],
+      [2, ['overview', 'structure', 'script', 'entities']],
+      [3, ['overview', 'structure', 'script', 'entities']],
+      [4, ['overview', 'structure', 'script', 'entities']],
     ]
 
     for (const [kind, expected] of cases) {
