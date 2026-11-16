@@ -73,6 +73,11 @@ const projects = {
     failed: 'Your projects could not be read.',
     empty: 'No projects yet.',
     emptyHint: 'A project is what you are making: a novel, a game, a series, a film or a comic.',
+    emptyWriting: 'No writing projects yet.',
+    emptyGame: 'No game projects yet.',
+    emptyCinema: 'No film or series projects yet.',
+    emptyComic: 'No comic projects yet.',
+    emptyCategoryHint: 'Use New project to start one in this universe.',
   },
   one: {
     title: 'Project',
