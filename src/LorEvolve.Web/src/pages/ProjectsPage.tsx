@@ -22,7 +22,8 @@ import type { WorkspaceContext } from './UniverseWorkspace'
  * from whether the key still matches.
  */
 type LoadState =
-  { kind: 'ready'; for: string; projects: ProjectDetail[] } | { kind: 'failed'; for: string }
+  | { kind: 'ready'; for: string; projects: ProjectDetail[]; ordered: boolean }
+  | { kind: 'failed'; for: string }
 
 /**
  * Every project an author can reach, most recently updated first, each inside the universe it belongs to.
@@ -63,7 +64,9 @@ export default function ProjectsPage({
     // Every page, not the first: this screen is where the projects the sidebar leaves out are found (#198).
     Promise.all([
       listAllProjects(universeId ? { universeId } : {}, controller.signal),
-      reorderable && universeId ? listStories(universeId, controller.signal) : null,
+      reorderable && universeId // The order is a nicety: a refused read leaves the list by update time, without the move menu.
+        ? listStories(universeId, controller.signal).catch(() => null)
+        : null,
     ])
       .then(([projects, stories]) =>
         setState({
@@ -75,6 +78,7 @@ export default function ProjectsPage({
                 stories.map((story) => story.id),
               )
             : projects,
+          ordered: stories !== null,
         }),
       )
       .catch(() => {
@@ -95,7 +99,7 @@ export default function ProjectsPage({
     after.splice(to, 0, ...after.splice(from, 1))
     isMoving.current = true
     setMoveError(null)
-    setState({ kind: 'ready', for: requested, projects: after })
+    setState({ kind: 'ready', for: requested, projects: after, ordered: true })
     requestAnimationFrame(() =>
       document
         .querySelector<HTMLElement>(
@@ -115,12 +119,13 @@ export default function ProjectsPage({
           after,
           saved.map((story) => story.id),
         ),
+        ordered: true,
       })
       setAnnouncement(
         t('stories.browse.moved', { title: project.name, n: to + 1, total: after.length }),
       )
     } catch (error: unknown) {
-      setState({ kind: 'ready', for: requested, projects: before })
+      setState({ kind: 'ready', for: requested, projects: before, ordered: true })
       setMoveError(error instanceof ApiError ? error.message : t('stories.browse.moveFailed'))
     } finally {
       isMoving.current = false
@@ -198,7 +203,7 @@ export default function ProjectsPage({
                 <span>{kindLabel(project.kind)}</span>
                 <span>{lifecycleLabel(project.lifecycle)}</span>
                 <span>{project.universe.name}</span>
-                {reorderable && access.editContent && shown.length > 1 ? (
+                {reorderable && state.ordered && access.editContent && shown.length > 1 ? (
                   <ActionMenu
                     className="storyrow__menu"
                     label={t('stories.browse.moreActions', { title: project.name })}
