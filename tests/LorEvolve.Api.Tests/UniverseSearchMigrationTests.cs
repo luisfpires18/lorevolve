@@ -92,7 +92,7 @@ public sealed class UniverseSearchMigrationTests : IDisposable
             (await client.DeleteAsync($"{Story(universeId, storyId)}/scenes/{trashedSceneId}")).EnsureSuccessStatusCode();
 
             await CreateIdea(client, "Mira betrays Arlen", "Maybe.", universeId);
-            await CreateIdea(client, "Obsidian, unassigned", "No world.");
+            await CreateIdea(client, "Obsidian, unassigned", "No world.", universeId);
         }
 
         SqliteConnection.ClearAllPools();
@@ -117,6 +117,8 @@ public sealed class UniverseSearchMigrationTests : IDisposable
             await db.Database.ExecuteSqlAsync($"UPDATE SceneManuscripts SET Content = 'Obsidian dust on the floor.' WHERE SceneId = {sceneId}");
             await db.Database.ExecuteSqlAsync($"UPDATE Stories SET Premise = 'An obsidian siege.' WHERE Id = {storyId}");
             await db.Database.ExecuteSqlRawAsync("UPDATE Ideas SET Body = 'Obsidian eyes.' WHERE Title = 'Mira betrays Arlen'");
+            // The API no longer takes an idea without a universe, so the file from before is made by hand.
+            await db.Database.ExecuteSqlRawAsync("UPDATE Ideas SET UniverseId = NULL WHERE Title = 'Obsidian, unassigned'");
 
             // A lore index row as a database from before the clean-up could hold it: a marker character in its copy.
             await db.Database.ExecuteSqlAsync(

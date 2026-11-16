@@ -805,7 +805,6 @@ export function IdeaBoardEditor({
             }
             data-testid="board-universe"
           >
-            <option value="">{t('ideas.board.fields.noUniverse')}</option>
             {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
               <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
             ) : null}

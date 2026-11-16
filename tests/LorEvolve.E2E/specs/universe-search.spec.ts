@@ -57,14 +57,13 @@ interface World {
   proseSceneId: string
   arcId: string
   ideaId: string
-  unassignedIdeaId: string
   elsewhereIdeaId: string
 }
 
 /**
  * A universe holding one of everything the search reads, each found by a word of its own: an entry by its name, another
  * by its article, a story, a chapter, a scene by its summary, a scene's prose, an arc by its description, and an
- * idea - beside an unassigned idea and another universe that hold the same words and must never be offered.
+ * idea - beside another universe's idea that holds the same words and must never be offered.
  */
 async function seedWorld(page: Page): Promise<World> {
   const universe = await api<{ id: string }>(page, 'POST', '/api/universes', {
@@ -140,14 +139,7 @@ async function seedWorld(page: Page): Promise<World> {
     expectedUpdatedAt: null,
   })
 
-  // The same words where the bar must never look.
-  const unassignedIdea = await api<{ id: string }>(page, 'POST', '/api/ideas', {
-    title: 'Vesperine, unassigned',
-    body: 'Quennell Tarrowmere Hollowmere',
-    universeId: null,
-    references: [],
-    expectedUpdatedAt: null,
-  })
+  // The same words where the bar must never look: another universe.
   const elsewhere = await api<{ id: string }>(page, 'POST', '/api/universes', {
     name: unique('Elsewhere '),
     description: null,
@@ -171,7 +163,6 @@ async function seedWorld(page: Page): Promise<World> {
     proseSceneId: proseScene.id,
     arcId: arc.id,
     ideaId: idea.id,
-    unassignedIdeaId: unassignedIdea.id,
     elsewhereIdeaId: elsewhereIdea.id,
   }
 }
@@ -345,7 +336,7 @@ test.describe('universe search', () => {
       'The hall had emptied long before the Hollowmere bells rang.',
     )
 
-    // The universe's idea, in the universe's Ideas - and neither the unassigned one nor another universe's.
+    // The universe's idea, in the universe's Ideas - and not another universe's.
     await search(page, 'Vesperine')
     await expect(results(page)).toHaveCount(1)
     await result(page, 'Idea', 'What if Vesperine floats?').click()
@@ -377,7 +368,7 @@ test.describe('universe search', () => {
       expectedUpdatedAt: null,
     })
 
-    // Both of this universe's ideas are offered; the unassigned one and the other universe's are not.
+    // Both of this universe's ideas are offered; the other universe's is not.
     await page.goto(`${base}/timeline`)
     await search(page, 'Vesperine')
     await expect(results(page)).toHaveCount(2)
@@ -432,25 +423,25 @@ test.describe('universe search', () => {
     const world = await seedWorld(page)
     const base = `/app/universes/${world.universeId}`
 
-    // The account's own ideas from another universe, or from none: nothing of them here.
-    for (const [id, title] of [
-      [world.elsewhereIdeaId, 'Vesperine elsewhere'],
-      [world.unassignedIdeaId, 'Vesperine, unassigned'],
-    ] as const) {
-      await page.goto(`${base}/ideas/${id}`)
-      await expect(page.getByTestId('idea-not-in-universe')).toBeVisible()
-      await expect(page.getByTestId('idea-editor')).toHaveCount(0)
-      await expect(page.locator('main')).not.toContainText(title)
-    }
+    // The account's own idea from another universe: nothing of it here.
+    await page.goto(`${base}/ideas/${world.elsewhereIdeaId}`)
+    await expect(page.getByTestId('idea-not-in-universe')).toBeVisible()
+    await expect(page.getByTestId('idea-editor')).toHaveCount(0)
+    await expect(page.locator('main')).not.toContainText('Vesperine elsewhere')
 
     // An idea that does not exist, and another account's: not here, and nothing of it.
     const strangerContext = await browser.newContext({ baseURL: testInfo.project.use.baseURL })
     const stranger = await strangerContext.newPage()
     await signUp(stranger)
+    const theirUniverse = await api<{ id: string }>(stranger, 'POST', '/api/universes', {
+      name: unique('Theirs '),
+      description: null,
+      accentColor: null,
+    })
     const theirs = await api<{ id: string }>(stranger, 'POST', '/api/ideas', {
       title: 'A stranger’s secret idea',
       body: 'Not for anyone else.',
-      universeId: null,
+      universeId: theirUniverse.id,
       references: [],
       expectedUpdatedAt: null,
     })

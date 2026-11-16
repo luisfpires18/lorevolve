@@ -68,7 +68,7 @@ public sealed class IdeaBoardBackupTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Equal(world.Board.Cards.Select(card => card.Id), board.Cards.Select(card => card.Id));
         Assert.Equal(world.Board.Connections.OrderBy(c => c.Id), board.Connections.OrderBy(c => c.Id));
 
-        // The universe's own idea is the restored copy; the unassigned one is the account's original.
+        // The universe's own idea is the restored copy; the moved one is the account's original.
         Assert.NotEqual(world.OwnIdea, board.Cards[1].IdeaId);
         Assert.Equal("Arlen's secret", board.Cards[1].Name);
         Assert.Equal(world.LooseIdea, board.Cards[2].IdeaId);
@@ -121,8 +121,8 @@ public sealed class IdeaBoardBackupTests(LorEvolveApiFactory factory) : IClassFi
     private sealed record Seeded(HttpClient Client, Guid Universe, Guid Entity, Guid OwnIdea, Guid LooseIdea, IdeaBoardDetail Board);
 
     /// <summary>
-    /// A universe with one live board - a note, its own idea, an unassigned idea and an entry, two lines - and one deleted
-    /// board; plus an unassigned board and another universe's board, neither of which belongs in its file.
+    /// A universe with one live board - a note, its own idea, an idea that moved to another universe and an entry, two lines - and one deleted
+    /// board; plus another universe's board, which does not belong in its file.
     /// </summary>
     private async Task<Seeded> World(string tag)
     {
@@ -130,7 +130,7 @@ public sealed class IdeaBoardBackupTests(LorEvolveApiFactory factory) : IClassFi
         var other = await CreateUniverse(client, $"Other {tag}");
         var arlen = await CreateEntity(client, universe.Id, "Arlen");
         var own = await CreateIdea(client, "Arlen's secret", universeId: universe.Id);
-        var loose = await CreateIdea(client, "Loose thought");
+        var loose = await CreateIdea(client, "Loose thought", universeId: universe.Id);
 
         var note = Card(IdeaBoardCardKind.Note, -40.5, 12.25, text: "Underside");
         var ownCard = Card(IdeaBoardCardKind.Idea, 300, 0, ideaId: own.Id);
@@ -148,7 +148,9 @@ public sealed class IdeaBoardBackupTests(LorEvolveApiFactory factory) : IClassFi
         var binned = await Create(client, new IdeaBoardRequest("Binned board", universe.Id, [Card(IdeaBoardCardKind.Note, 0, 0, text: "")], [], null));
         (await client.DeleteAsync($"{Boards}/{binned.Id}")).EnsureSuccessStatusCode();
 
-        await Create(client, new IdeaBoardRequest("Unassigned board", null, [], [], null));
+
+        // The idea moves to the other world after it was placed: its card is now an outside idea.
+        await Save(client, loose, universeId: other.Id);
         await Create(client, new IdeaBoardRequest("Other world's board", other.Id, [], [], null));
 
         return new Seeded(client, universe.Id, arlen, own.Id, loose.Id, board);

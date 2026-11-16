@@ -402,21 +402,20 @@ test.describe('ideas', () => {
     await page.waitForURL(`/app/universes/${worldA}/projects/${storyId}/structure#scene-${sceneId}`)
     await expect(page.locator('[data-testid="scene"][data-title="The Council"]')).toBeVisible()
 
-    // Moving the idea out of its universe asks, and takes the reference out of the unsaved idea in plain sight.
+    // Moving the idea to another universe asks, and takes the reference out of the unsaved idea in plain sight.
     await page.goto(`/app/universes/${worldA}/ideas/${ideaId}`)
-    await page.getByTestId('idea-universe').selectOption('')
+    await page.getByTestId('idea-universe').selectOption(worldB)
     await acceptConfirm(page, 'references stay inside its universe')
     await expect(page.getByTestId('idea-reference')).toHaveCount(0)
-    await expect(page.getByTestId('idea-references-need-universe')).toBeVisible()
     expect((await readIdea(page, ideaId)).references).toHaveLength(1)
     await saveWith(page, () => page.getByTestId('idea-save').click())
     const moved = await readIdea(page, ideaId)
-    expect(moved.universe).toBeNull()
+    expect(moved.universe?.id).toBe(worldB)
     expect(moved.references).toEqual([])
-    await expect(page.getByTestId('idea-elsewhere')).toContainText('belongs to no universe')
+    await expect(page.getByTestId('idea-elsewhere')).toContainText('Distant Isle')
   })
 
-  test('a universe’s Ideas open only its own ideas: one started there but created elsewhere returns to the universe’s list without it', async ({
+  test('a universe’s Ideas open only its own ideas: one started there but created in another universe returns to the universe’s list without it', async ({
     page,
   }) => {
     await signUp(page)
@@ -430,28 +429,20 @@ test.describe('ideas', () => {
     await page.waitForURL(`/app/universes/${home}/ideas`)
     await expect(row(page, 'A thought that stays')).toBeVisible()
 
-    // Started here but given no universe, or another one: back in this universe's list, where it does not show.
-    const moved: [string, string][] = []
-    for (const [title, universe] of [
-      ['A thought for nowhere', ''],
-      ['A thought for elsewhere', other],
-    ] as const) {
-      await page.goto(`/app/universes/${home}/ideas/new`)
-      await page.getByTestId('idea-title').fill(title)
-      await page.getByTestId('idea-universe').selectOption(universe)
-      const id = await createWith(page, () => page.getByTestId('idea-save').click())
-      await page.waitForURL(`/app/universes/${home}/ideas`)
-      await expect(row(page, title)).toHaveCount(0)
-      moved.push([id, title])
-    }
+    // Started here but given another universe: back in this universe's list, where it does not show.
+    const title = 'A thought for elsewhere'
+    await page.goto(`/app/universes/${home}/ideas/new`)
+    await page.getByTestId('idea-title').fill(title)
+    await page.getByTestId('idea-universe').selectOption(other)
+    const id = await createWith(page, () => page.getByTestId('idea-save').click())
+    await page.waitForURL(`/app/universes/${home}/ideas`)
+    await expect(row(page, title)).toHaveCount(0)
 
-    // Neither opens at this universe's address: nothing of it shows.
-    for (const [id, title] of moved) {
-      await page.goto(`/app/universes/${home}/ideas/${id}`)
-      await expect(page.getByTestId('idea-not-in-universe')).toContainText('does not open here')
-      await expect(page.getByTestId('idea-editor')).toHaveCount(0)
-      await expect(page.locator('main')).not.toContainText(title)
-    }
+    // It does not open at this universe's address: nothing of it shows.
+    await page.goto(`/app/universes/${home}/ideas/${id}`)
+    await expect(page.getByTestId('idea-not-in-universe')).toContainText('does not open here')
+    await expect(page.getByTestId('idea-editor')).toHaveCount(0)
+    await expect(page.locator('main')).not.toContainText(title)
   })
 
   test('unsaved idea writing comes back as a recovered draft, is kept by failed and refused saves, and is never offered to another account', async ({

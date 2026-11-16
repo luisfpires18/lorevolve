@@ -150,7 +150,6 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
 
         var titled = await CreateIdea(client, "Velmora floats above the sea", "Maybe.", universe.Id);
         var bodied = await CreateIdea(client, "A religion of forgetting", "Its priests come from Velmora.", universe.Id);
-        await CreateIdea(client, "Velmora, but unassigned", "No world yet.");
         await CreateIdea(client, "Velmora elsewhere", null, other.Id);
 
         var results = (await Search(client, universe.Id, "Velmora")).Results;
@@ -171,8 +170,8 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
         Assert.Equal([titled.Id], (await Search(client, universe.Id, "Ostrava")).Results.Select(result => result.Id));
         Assert.Equal([bodied.Id], (await Search(client, universe.Id, "Velmora")).Results.Select(result => result.Id));
 
-        // Taken out of the universe, it is no longer this universe's to find.
-        await Save(client, await ReadIdea(client, bodied.Id), universeId: new Optional<Guid?>(null));
+        // Moved to another universe, it is no longer this universe's to find.
+        await Save(client, await ReadIdea(client, bodied.Id), universeId: other.Id);
         Assert.Empty((await Search(client, universe.Id, "Velmora")).Results);
     }
 
@@ -531,7 +530,7 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
     // ---------- The indexes ----------
 
     [Fact]
-    public async Task Deleting_a_universe_takes_every_index_row_of_its_story_content_and_prose_and_leaves_its_ideas_findable_nowhere()
+    public async Task Deleting_a_universe_takes_every_index_row_of_its_story_content_and_prose_and_its_ideas_with_them()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "uscascade");
         var story = await CreateStory(client, universe.Id, "Cascade");
@@ -549,9 +548,10 @@ public sealed class UniverseSearchTests(LorEvolveApiFactory factory) : IClassFix
         Assert.Equal(0, await StoryIndexRows(story, chapter, scene, arc.Id));
         Assert.Equal(0, await ManuscriptIndexRows(scene));
 
-        // The idea survives, unassigned, with its words indexed - and no universe search can reach it.
-        Assert.Equal(1, await Count($"SELECT COUNT(*) AS Value FROM IdeaSearchIndex WHERE IdeaId = '{Key(idea.Id)}'"));
-        Assert.Null((await ReadIdea(client, idea.Id)).Universe);
+        // The idea goes with the universe: no row, no index row, no way to read it (#230).
+        Assert.Equal(0, await Count($"SELECT COUNT(*) AS Value FROM IdeaSearchIndex WHERE IdeaId = '{Key(idea.Id)}'"));
+        Assert.Equal(0, await Count($"SELECT COUNT(*) AS Value FROM Ideas WHERE Id = '{Key(idea.Id)}'"));
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Idea(idea.Id))).StatusCode);
     }
 
     [Fact]

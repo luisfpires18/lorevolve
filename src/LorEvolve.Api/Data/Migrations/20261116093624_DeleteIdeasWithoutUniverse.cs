@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LorEvolve.Api.Data.Migrations
 {
     /// <summary>
-    /// Ideas live only in a universe (#230). An idea with no universe is deleted for good, with its references and board
+    /// Ideas and idea boards live only in a universe (#230). One with no universe is deleted for good, with its references and board
     /// cards (cascade) and its search row (the Ideas delete trigger). There is nothing to restore on the way down.
     /// </summary>
     public partial class DeleteIdeasWithoutUniverse : Migration
@@ -14,6 +14,7 @@ namespace LorEvolve.Api.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql("""DELETE FROM "Ideas" WHERE "UniverseId" IS NULL;""");
+            migrationBuilder.Sql("""DELETE FROM "IdeaBoards" WHERE "UniverseId" IS NULL;""");
         }
 
         /// <inheritdoc />

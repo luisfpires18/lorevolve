@@ -554,20 +554,17 @@ public static class IdeaEndpoints
     {
         if (universeId is null)
         {
-            return references.Count == 0
-                ? null
-                : new Dictionary<string, string[]>
-                {
-                    ["references"] =
-                        ["An idea that belongs to no universe cannot reference anything. Remove the references, or choose a universe."],
-                };
+            return new Dictionary<string, string[]>
+            {
+                ["universeId"] = ["Choose one of your universes."],
+            };
         }
 
         if (!await OwnsUniverseAsync(db, universeId.Value, ownerId, cancellationToken))
         {
             return new Dictionary<string, string[]>
             {
-                ["universeId"] = ["Choose one of your universes, or none."],
+                ["universeId"] = ["Choose one of your universes."],
             };
         }
 

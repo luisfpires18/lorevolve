@@ -763,7 +763,6 @@ export function IdeaEditor({
             aria-describedby={`${universeFieldId}-hint`}
             data-testid="idea-universe"
           >
-            <option value="">{t('ideas.editor.fields.noUniverse')}</option>
             {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
               <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
             ) : null}

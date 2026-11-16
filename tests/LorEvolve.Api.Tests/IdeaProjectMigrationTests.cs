@@ -49,7 +49,7 @@ public sealed class IdeaProjectMigrationTests : IDisposable
 
             universeId = (await CreateUniverse(client, "World ipmigrate")).Id;
             await IdeaTestClient.CreateIdea(client, "A floating city", "Maybe it floats.", universeId);
-            await IdeaTestClient.CreateIdea(client, "Nowhere yet", "Belongs to no universe.");
+            await IdeaTestClient.CreateIdea(client, "Nowhere yet", "Belongs to no universe.", universeId);
         }
 
         SqliteConnection.ClearAllPools();
@@ -58,6 +58,9 @@ public sealed class IdeaProjectMigrationTests : IDisposable
         {
             // Rolled back first, so the "before" rows are read from the schema as it was before this change.
             await db.GetService<IMigrator>().MigrateAsync(BeforeIdeaProjects);
+
+            // The API no longer takes an idea without a universe, so the file from before is made by hand.
+            await db.Database.ExecuteSqlRawAsync("UPDATE Ideas SET UniverseId = NULL WHERE Title = 'Nowhere yet'");
 
             Assert.DoesNotContain("ProjectId", await Columns(db));
             var ideasBefore = await Ideas(db);
