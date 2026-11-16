@@ -45,7 +45,7 @@ function groupKey(first: Section) {
 function GroupLabel({ id, label }: { id: string; label: string }) {
   return (
     // The small muted capitals the type switcher already uses for its row labels; no new style (#191).
-    <h2 className="typeswitch__rowlabel" id={id}>
+    <h2 className="sidebar__grouphead" id={id}>
       {label}
     </h2>
   )

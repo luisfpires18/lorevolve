@@ -139,7 +139,7 @@ export function ProjectSchema({
       <header className="projects__head">
         {crumb ? <div className="pageheader__crumb projects__crumb">{crumb}</div> : null}
         <div className="projects__headtext">
-          <h2>{t('projects.schema.title')}</h2>
+          <h2 className="sectionrule">{t('projects.schema.title')}</h2>
           <p className="projects__lede">{t('projects.schema.lede')}</p>
         </div>
         <button

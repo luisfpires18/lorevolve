@@ -9,7 +9,7 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 
 | Need | Use |
 | --- | --- |
-| Screen title, crumb, lede, actions | `components/PageHeader.tsx` |
+| Screen title, crumb, lede, actions | `components/PageHeader.tsx`. A crumb outside a header, or of several steps, is `.pageheader__crumb` around a `nav > ol`, as `ProjectShell` |
 | A form field: label, hint, control, error | `components/Field.tsx`: an input, or any control through its slot; a group of buttons with `group`; a set of controls under a legend with `group: 'fieldset'` |
 | The name above a fixed value that is shown, not chosen, such as the knower in a knowledge form | `.knowledge__fixedlabel`; no `Field`, since it names no control |
 | A button or a link that looks like one | `.button` 519, with `--secondary`, `--text`, `--danger`, `--sm`; the icon inside is `components/ActionIcon.tsx` |
@@ -20,22 +20,24 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | A status word with its glyph | `components/StatusBadge.tsx` |
 | An entry's picture or type icon | `components/EntityTile.tsx` |
 | Tabs on one screen | `QueryTabList` and `TabPanel` from `components/QueryTabs.tsx` |
-| Routed views of one object | `.views` 9999 |
-| A choice on the page | `.segmented` 1981 |
+| Routed views of one object | `.views` 10009; a project's tabs are `.views` too |
+| A raised card's surface | `.entitycard`, `.typecard`, `.projectcard` share one rule, first in "Shared surfaces" |
+| A sidebar group's head | `.sidebar__grouphead` |
+| A choice on the page | `.segmented` 1996 |
 | Confirm a destructive step | `confirmAction` in `lib/confirm.ts:79`, drawn by `ConfirmHost` in `components/ConfirmDialog.tsx` (ADR 0049) |
 | Confirm leaving unsaved work | `confirmDiscard` in `lib/confirm.ts:91` |
 | A drawer: head, body, actions, Escape and backdrop guarded | `components/Drawer.tsx` |
 | Guard a drawer against a lost draft | `useDrawerGuard` in `lib/drawerGuard.ts:31`, used through `Drawer` |
-| A drawer's look | `.drawer*` 9266 |
+| A drawer's look | `.drawer*` 9276 |
 | Ask for one value, such as a link address | A Drawer with `onSubmit` and a `Field`, as `LinkDrawer` in `components/LoreEditor.tsx`; never `window.prompt` or `window.alert` |
-| A message box | `.callout` 2436, `.notice` 2423 |
+| A message box | `.callout` 2476, `.notice` 2438 |
 | A form's own message | `.form__message` 423 |
-| Sticky status and actions for a document or drawer | `.actionbar` 2540 |
-| A section heading with its rule | `.sectionrule` 1509 |
-| A loading placeholder | `.skeleton` 2557 |
+| Sticky status and actions for a document or drawer | `.actionbar` 2568 |
+| A section heading with its rule | `.sectionrule` 1524 |
+| A loading placeholder | `.skeleton` 2585 |
 
 Form and button rules start with their own comments: forms at `styles.css:410`, buttons at `styles.css:508`.
-The stylesheet keeps shared patterns in its "Shared surfaces" section, at line 2496.
+The stylesheet keeps shared patterns in its "Shared surfaces" section, at line 2511.
 
 ## Verbs
 
