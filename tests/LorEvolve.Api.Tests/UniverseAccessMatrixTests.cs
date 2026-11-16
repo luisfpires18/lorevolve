@@ -117,6 +117,11 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("upload image", Put, $"{e}/image", May.Edit, PngForm),
             new("reframe image", Put, $"{e}/image/thumbnail", May.Edit, Json(new EntityThumbnailRequest(w.Image.AssetId, null))),
             new("remove image", Delete, $"{e}/image", May.Edit),
+            new("field picture original", Get, $"{e}/field-images/{any}/{any}/original", May.Read),
+            new("field picture crop", Get, $"{e}/field-images/{any}/{any}/crop/{any}", May.Read),
+            new("upload field picture", Put, $"{e}/field-images/{any}", May.Edit, PngForm),
+            new("recrop field picture", Put, $"{e}/field-images/{any}/crop", May.Edit, Json(new FieldImageCropRequest(any, null))),
+            new("remove field picture", Delete, $"{e}/field-images/{any}", May.Edit),
 
             new("article", Get, $"{e}/article", May.Read),
             new("save article", Put, $"{e}/article", May.Edit, Json(new EntityArticleRequest(ArticleTestClient.Doc("Changed."), null))),
@@ -436,7 +441,7 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
                 var response = await w.Client(who).SendAsync(call.Request(call.Path));
 
                 // A finding id is random: past the gate, a member is told it is not there - the same as the owner is.
-                var expected = call.Name is "canon finding" or "world logic finding" or "semantic finding" or "ai change" or "map" or "map picture original" or "map picture display" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
+                var expected = call.Name is "canon finding" or "world logic finding" or "semantic finding" or "ai change" or "map" or "map picture original" or "map picture display" or "field picture original" or "field picture crop" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
                     ? HttpStatusCode.NotFound
                     : HttpStatusCode.OK;
                 Assert.True(response.StatusCode == expected, $"{who}: {call.Name} answered {(int)response.StatusCode}");
