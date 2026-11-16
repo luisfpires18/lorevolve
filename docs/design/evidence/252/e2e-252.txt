@@ -1,229 +1,49 @@
 
 Running 43 tests using 2 workers
 
-  ok  1 [chromium] › specs\canon.spec.ts:284:3 › canon integrity › the review screen opens on what is open, filters, and walks a finding through dismiss, reopen and resolution (12.0s)
-  ok  2 [chromium] › specs\canon.spec.ts:382:3 › canon integrity › a fingerprint is the identity of one problem: it returns as open when the problem does, and a materially different fact opens a different conflict (13.7s)
-  ok  4 [chromium] › specs\canon.spec.ts:567:3 › canon integrity › a meaning is declared, refused, cleared and redeclared on the Types screen, and only a Number field is ever offered one (12.3s)
-  ok  3 [chromium] › specs\canon.spec.ts:449:3 › canon integrity › a High finding refuses only the save that would create it, says so in place, and leaves the draft and the rest of the world alone (17.2s)
-  ok  5 [chromium] › specs\canon.spec.ts:634:3 › canon integrity › a write reconciles the findings it touches, a rename rewords one without losing it, and a delete closes it (11.5s)
-  ok  6 [chromium] › specs\canon.spec.ts:683:3 › canon integrity › a finding links the entries it names, says so plainly when one has gone, and never reaches outside its universe (12.3s)
-  ok  7 [chromium] › specs\entity-image.spec.ts:114:3 › an entry with a picture › an author adds, replaces and removes an entry image (5.8s)
-  ok  8 [chromium] › specs\entity-image.spec.ts:211:3 › an entry with a picture › an author chooses what the card shows, and chooses again without uploading (6.5s)
-  ok  9 [chromium] › specs\entity-image.spec.ts:314:3 › an entry with a picture › a thumbnail is one square crop, and the picture always covers the square (6.9s)
-  ok 10 [chromium] › specs\entity-image.spec.ts:413:3 › an entry with a picture › a sideways photo is framed the way it is shown (5.2s)
-  ok 11 [chromium] › specs\entity-image.spec.ts:451:3 › an entry with a picture › the cropper fits a phone and can be used on one (5.4s)
-  ok 12 [chromium] › specs\entity-image.spec.ts:501:3 › an entry with a picture › a picture fits a phone without pushing the page sideways (5.1s)
-  ok 13 [chromium] › specs\entity-image.spec.ts:546:3 › an entry with a picture › history records the picture, and says it will not put one back (4.8s)
-  ok 14 [chromium] › specs\entity-image.spec.ts:573:3 › an entry with a picture › a backup carries the picture beside the lore (5.4s)
+  ok  2 [chromium] › specs\canon.spec.ts:284:3 › canon integrity › the review screen opens on what is open, filters, and walks a finding through dismiss, reopen and resolution (13.7s)
+  ok  1 [chromium] › specs\canon.spec.ts:382:3 › canon integrity › a fingerprint is the identity of one problem: it returns as open when the problem does, and a materially different fact opens a different conflict (14.5s)
+  ok  4 [chromium] › specs\canon.spec.ts:567:3 › canon integrity › a meaning is declared, refused, cleared and redeclared on the Types screen, and only a Number field is ever offered one (12.8s)
+  ok  3 [chromium] › specs\canon.spec.ts:449:3 › canon integrity › a High finding refuses only the save that would create it, says so in place, and leaves the draft and the rest of the world alone (17.5s)
+  ok  5 [chromium] › specs\canon.spec.ts:634:3 › canon integrity › a write reconciles the findings it touches, a rename rewords one without losing it, and a delete closes it (15.4s)
+  ok  6 [chromium] › specs\canon.spec.ts:683:3 › canon integrity › a finding links the entries it names, says so plainly when one has gone, and never reaches outside its universe (13.8s)
+  ok  7 [chromium] › specs\entity-image.spec.ts:114:3 › an entry with a picture › an author adds, replaces and removes an entry image (7.2s)
+  ok  8 [chromium] › specs\entity-image.spec.ts:211:3 › an entry with a picture › an author chooses what the card shows, and chooses again without uploading (6.9s)
+  ok 10 [chromium] › specs\entity-image.spec.ts:413:3 › an entry with a picture › a sideways photo is framed the way it is shown (5.4s)
+  ok  9 [chromium] › specs\entity-image.spec.ts:314:3 › an entry with a picture › a thumbnail is one square crop, and the picture always covers the square (8.2s)
+  ok 11 [chromium] › specs\entity-image.spec.ts:451:3 › an entry with a picture › the cropper fits a phone and can be used on one (6.5s)
+  ok 12 [chromium] › specs\entity-image.spec.ts:501:3 › an entry with a picture › a picture fits a phone without pushing the page sideways (5.7s)
+  ok 13 [chromium] › specs\entity-image.spec.ts:546:3 › an entry with a picture › history records the picture, and says it will not put one back (4.4s)
+  ok 14 [chromium] › specs\entity-image.spec.ts:573:3 › an entry with a picture › a backup carries the picture beside the lore (5.9s)
   ok 15 [chromium] › specs\entity-image.spec.ts:601:3 › an entry with a picture › the service worker never keeps an entry image (4.6s)
-  ok 16 [chromium] › specs\project-entities.spec.ts:57:3 › Project entities › a game takes the starter types, holds an entry with a field value, and the author shapes the rest (4.6s)
+  ok 16 [chromium] › specs\project-entities.spec.ts:57:3 › Project entities › a game takes the starter types, holds an entry with a field value, and the author shapes the rest (4.5s)
   ok 17 [chromium] › specs\project-entities.spec.ts:141:3 › Project entities › a type with more entries than one page shows the rest when asked (4.2s)
-  ok 18 [chromium] › specs\project-entities.spec.ts:196:3 › Project entities › a project's types and entries stay out of the universe's lore and out of another project (4.9s)
-  ok 19 [chromium] › specs\project-entities.spec.ts:228:3 › Project entities › a game overview says what is in the project, what was touched last, and the way into the rest (5.7s)
-  ok 21 [chromium] › specs\project-field-images.spec.ts:59:3 › Image fields on project entries › a type with two Image fields holds a picture in each, shows them, and lets one go (4.2s)
-  ok 20 [chromium] › specs\project-entities.spec.ts:306:3 › Project entities › a game, a series and a film open a type as Lore does, edit types, and move between views at both widths (8.3s)
-  ok 22 [chromium] › specs\project-field-images.spec.ts:143:3 › Image fields on project entries › while an entry type change is unsaved, its Image field controls are disabled (2.6s)
-  ok 23 [chromium] › specs\project-seasons.spec.ts:82:3 › Project seasons › a series gets seasons, episodes in order, and a script on one of them (3.6s)
-  ok 24 [chromium] › specs\project-seasons.spec.ts:146:3 › Project seasons › a film says sequences and scenes for the same structure, and a game has none (4.1s)
-  ok 25 [chromium] › specs\project-seasons.spec.ts:196:3 › Project seasons › a comic says volumes and chapters, and a chapter opens its pages and panels (3.4s)
-  ok 26 [chromium] › specs\project-seasons.spec.ts:247:3 › Project seasons › a panel is pointed at a lore entry from the screen, and the reference leads to it (4.5s)
-  ok 27 [chromium] › specs\project-seasons.spec.ts:315:3 › Project seasons › a season that still holds an episode is not deleted, and the refusal is shown (3.3s)
-  ok 28 [chromium] › specs\project-sections.spec.ts:70:3 › Project sections › a game project walks its views from the sidebar and from the tab bar (3.0s)
+  ok 18 [chromium] › specs\project-entities.spec.ts:196:3 › Project entities › a project's types and entries stay out of the universe's lore and out of another project (4.8s)
+  ok 19 [chromium] › specs\project-entities.spec.ts:228:3 › Project entities › a game overview says what is in the project, what was touched last, and the way into the rest (5.8s)
+  ok 21 [chromium] › specs\project-field-images.spec.ts:59:3 › Image fields on project entries › a type with two Image fields holds a picture in each, shows them, and lets one go (4.3s)
+  ok 20 [chromium] › specs\project-entities.spec.ts:306:3 › Project entities › a game, a series and a film open a type as Lore does, edit types, and move between views at both widths (11.8s)
+  ok 22 [chromium] › specs\project-field-images.spec.ts:143:3 › Image fields on project entries › while an entry type change is unsaved, its Image field controls are disabled (3.9s)
+  ok 23 [chromium] › specs\project-seasons.spec.ts:82:3 › Project seasons › a series gets seasons, episodes in order, and a script on one of them (4.8s)
+  ok 24 [chromium] › specs\project-seasons.spec.ts:146:3 › Project seasons › a film says sequences and scenes for the same structure, and a game has none (5.0s)
+  ok 25 [chromium] › specs\project-seasons.spec.ts:196:3 › Project seasons › a comic says volumes and chapters, and a chapter opens its pages and panels (4.5s)
+  ok 26 [chromium] › specs\project-seasons.spec.ts:247:3 › Project seasons › a panel is pointed at a lore entry from the screen, and the reference leads to it (5.7s)
+  ok 27 [chromium] › specs\project-seasons.spec.ts:315:3 › Project seasons › a season that still holds an episode is not deleted, and the refusal is shown (4.1s)
+  ok 28 [chromium] › specs\project-sections.spec.ts:70:3 › Project sections › a game project walks its views from the sidebar and from the tab bar (3.2s)
   ok 29 [chromium] › specs\project-sections.spec.ts:124:3 › Project sections › a type made in the type editor is in the entries the moment its card opens (3.5s)
-  ok 30 [chromium] › specs\project-sections.spec.ts:165:3 › Project sections › only Series, Film and Comic draw a structure panel, on Structure alone (6.5s)
-  x  31 [chromium] › specs\project-sections.spec.ts:188:3 › Project sections › each kind offers its own views, at both project addresses (10.0s)
-  x  33 [chromium] › specs\project-sections.spec.ts:241:3 › Project sections › every project address resolves to one canonical address, under a breadcrumb (205ms)
-  x  34 [chromium] › specs\project-sections.spec.ts:270:3 › Project sections › on a narrow screen the tab bar stands in for the sidebar expansion (206ms)
-  x  35 [chromium] › specs\projects-navigation.spec.ts:64:3 › Projects navigation › a universe keeps every section it had, and gains its projects beside them (206ms)
-  x  36 [chromium] › specs\projects-navigation.spec.ts:98:3 › Projects navigation › opening a project from a universe keeps the author inside that universe (238ms)
-  x  32 [chromium] › specs\project-sections.spec.ts:223:3 › Project sections › an unknown segment lands on the first view, at both addresses (30.1s)
-  ok 38 [chromium] › specs\projects-navigation.spec.ts:174:3 › Projects navigation › the account-level list gathers every universe s projects and makes none of its own (5.0s)
-  x  37 [chromium] › specs\projects-navigation.spec.ts:134:3 › Projects navigation › only the project being read is expanded, and the others open on request (30.1s)
-  ok 39 [chromium] › specs\projects-navigation.spec.ts:209:3 › Projects navigation › a project is made from the sidebar, and the list works at phone width (4.4s)
-  ok 40 [chromium] › specs\projects-navigation.spec.ts:238:3 › Projects navigation › a story an author already has is a Writing Project, and opens its project shell like any other (4.2s)
-  ok 42 [chromium] › specs\projects-sidebar-bound.spec.ts:62:3 › Sidebar project list › the sidebar lists every project and has no All projects row (2.0s)
-  ok 43 [chromium] › specs\projects-sidebar-bound.spec.ts:74:3 › Sidebar project list › the projects group folds from its heading and says so (2.0s)
-  ok 41 [chromium] › specs\projects-navigation.spec.ts:274:3 › Projects navigation › every address a story had still opens the same screen, under its project (9.5s)
+  ok 30 [chromium] › specs\project-sections.spec.ts:165:3 › Project sections › only Series, Film and Comic draw a structure panel, on Structure alone (5.9s)
+  ok 32 [chromium] › specs\project-sections.spec.ts:223:3 › Project sections › an unknown segment lands on the first view, at both addresses (3.5s)
+  ok 33 [chromium] › specs\project-sections.spec.ts:241:3 › Project sections › every project address resolves to one canonical address, under a breadcrumb (3.2s)
+  ok 31 [chromium] › specs\project-sections.spec.ts:188:3 › Project sections › each kind offers its own views, at both project addresses (10.8s)
+  ok 35 [chromium] › specs\projects-navigation.spec.ts:64:3 › Projects navigation › a universe keeps every section it had, and gains its projects beside them (2.3s)
+  ok 34 [chromium] › specs\project-sections.spec.ts:270:3 › Project sections › on a narrow screen the tab bar stands in for the sidebar expansion (4.0s)
+  ok 36 [chromium] › specs\projects-navigation.spec.ts:98:3 › Projects navigation › opening a project from a universe keeps the author inside that universe (3.1s)
+  ok 37 [chromium] › specs\projects-navigation.spec.ts:134:3 › Projects navigation › only the project being read is expanded, and the others open on request (3.1s)
+  ok 38 [chromium] › specs\projects-navigation.spec.ts:174:3 › Projects navigation › the account-level list gathers every universe s projects and makes none of its own (5.4s)
+  ok 39 [chromium] › specs\projects-navigation.spec.ts:209:3 › Projects navigation › a project is made from the sidebar, and the list works at phone width (5.0s)
+  ok 40 [chromium] › specs\projects-navigation.spec.ts:238:3 › Projects navigation › a story an author already has is a Writing Project, and opens its project shell like any other (5.3s)
+  ok 42 [chromium] › specs\projects-sidebar-bound.spec.ts:62:3 › Sidebar project list › the sidebar lists every project and has no All projects row (2.3s)
+  ok 43 [chromium] › specs\projects-sidebar-bound.spec.ts:74:3 › Sidebar project list › the projects group folds from its heading and says so (2.5s)
+  ok 41 [chromium] › specs\projects-navigation.spec.ts:274:3 › Projects navigation › every address a story had still opens the same screen, under its project (11.6s)
 
-
-  1) [chromium] › specs\project-sections.spec.ts:188:3 › Project sections › each kind offers its own views, at both project addresses 
-
-    Error: expect(locator).toContainText(expected) failed
-
-    Locator: getByTestId('project-name')
-    Expected substring: "Sectioned mwjbww3edsb"
-    Timeout: 5000ms
-    Error: element(s) not found
-
-    Call log:
-      - Expect "toContainText" getByTestId('project-name') with timeout 5000ms
-      - waiting for getByTestId('project-name')
-
-
-      208 |       // The universe-scoped twin serves the same view.
-      209 |       await page.goto(`/app/universes/${world.id}/projects/${one.id}/${expected[1]}`)
-    > 210 |       await expect(page.getByTestId('project-name')).toContainText(one.name)
-          |                                                      ^
-      211 |       await expect(page.getByTestId(`projecttab-${expected[1]}`)).toHaveAttribute(
-      212 |         'aria-current',
-      213 |         'page',
-        at D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\project-sections.spec.ts:210:54
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    test-results\project-sections-Project-s-5aae4-s-at-both-project-addresses-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: test-results\project-sections-Project-s-5aae4-s-at-both-project-addresses-chromium\error-context.md
-
-  2) [chromium] › specs\project-sections.spec.ts:223:3 › Project sections › an unknown segment lands on the first view, at both addresses 
-
-    Test timeout of 30000ms exceeded.
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation to "/app" until "load"
-    ============================================================
-
-      21 |   await page.getByLabel('Confirm password').fill(PASSWORD)
-      22 |   await page.getByRole('button', { name: 'Create account' }).click()
-    > 23 |   await page.waitForURL('/app')
-         |              ^
-      24 | }
-      25 |
-      26 | async function api<T>(page: Page, method: string, path: string, data?: object) {
-        at signUp (D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\project-sections.spec.ts:23:14)
-        at D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\project-sections.spec.ts:224:5
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    test-results\project-sections-Project-s-954d9-irst-view-at-both-addresses-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: test-results\project-sections-Project-s-954d9-irst-view-at-both-addresses-chromium\error-context.md
-
-  3) [chromium] › specs\project-sections.spec.ts:241:3 › Project sections › every project address resolves to one canonical address, under a breadcrumb 
-
-    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/register
-    Call log:
-      - navigating to "http://localhost:5173/register", waiting until "load"
-
-
-      15 | async function signUp(page: Page) {
-      16 |   const username = unique('projsec')
-    > 17 |   await page.goto('/register')
-         |              ^
-      18 |   await page.getByLabel('Username').fill(username)
-      19 |   await page.getByLabel('Email').fill(`${username}@example.test`)
-      20 |   await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
-        at signUp (D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\project-sections.spec.ts:17:14)
-        at D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\project-sections.spec.ts:244:11
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    test-results\project-sections-Project-s-1fcfc--address-under-a-breadcrumb-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: test-results\project-sections-Project-s-1fcfc--address-under-a-breadcrumb-chromium\error-context.md
-
-  4) [chromium] › specs\project-sections.spec.ts:270:3 › Project sections › on a narrow screen the tab bar stands in for the sidebar expansion 
-
-    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/register
-    Call log:
-      - navigating to "http://localhost:5173/register", waiting until "load"
-
-
-      15 | async function signUp(page: Page) {
-      16 |   const username = unique('projsec')
-    > 17 |   await page.goto('/register')
-         |              ^
-      18 |   await page.getByLabel('Username').fill(username)
-      19 |   await page.getByLabel('Email').fill(`${username}@example.test`)
-      20 |   await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
-        at signUp (D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\project-sections.spec.ts:17:14)
-        at D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\project-sections.spec.ts:272:11
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    test-results\project-sections-Project-s-3d9e7-n-for-the-sidebar-expansion-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: test-results\project-sections-Project-s-3d9e7-n-for-the-sidebar-expansion-chromium\error-context.md
-
-  5) [chromium] › specs\projects-navigation.spec.ts:64:3 › Projects navigation › a universe keeps every section it had, and gains its projects beside them 
-
-    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/register
-    Call log:
-      - navigating to "http://localhost:5173/register", waiting until "load"
-
-
-      16 | async function signUp(page: Page) {
-      17 |   const username = unique('projnav')
-    > 18 |   await page.goto('/register')
-         |              ^
-      19 |   await page.getByLabel('Username').fill(username)
-      20 |   await page.getByLabel('Email').fill(`${username}@example.test`)
-      21 |   await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
-        at signUp (D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\projects-navigation.spec.ts:18:14)
-        at D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\projects-navigation.spec.ts:67:11
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    test-results\projects-navigation-Projec-622ff-ns-its-projects-beside-them-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: test-results\projects-navigation-Projec-622ff-ns-its-projects-beside-them-chromium\error-context.md
-
-  6) [chromium] › specs\projects-navigation.spec.ts:98:3 › Projects navigation › opening a project from a universe keeps the author inside that universe 
-
-    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/register
-    Call log:
-      - navigating to "http://localhost:5173/register", waiting until "load"
-
-
-      16 | async function signUp(page: Page) {
-      17 |   const username = unique('projnav')
-    > 18 |   await page.goto('/register')
-         |              ^
-      19 |   await page.getByLabel('Username').fill(username)
-      20 |   await page.getByLabel('Email').fill(`${username}@example.test`)
-      21 |   await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
-        at signUp (D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\projects-navigation.spec.ts:18:14)
-        at D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\projects-navigation.spec.ts:101:11
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    test-results\projects-navigation-Projec-974b0-author-inside-that-universe-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: test-results\projects-navigation-Projec-974b0-author-inside-that-universe-chromium\error-context.md
-
-  7) [chromium] › specs\projects-navigation.spec.ts:134:3 › Projects navigation › only the project being read is expanded, and the others open on request 
-
-    Test timeout of 30000ms exceeded.
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation to "/app" until "load"
-    ============================================================
-
-      22 |   await page.getByLabel('Confirm password').fill(PASSWORD)
-      23 |   await page.getByRole('button', { name: 'Create account' }).click()
-    > 24 |   await page.waitForURL('/app')
-         |              ^
-      25 |   return username
-      26 | }
-      27 |
-        at signUp (D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\projects-navigation.spec.ts:24:14)
-        at D:\Workspace\LOREVOLVE\.claude\worktrees\m4-assistant-cleanup-1a4b98\tests\LorEvolve.E2E\specs\projects-navigation.spec.ts:137:5
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    test-results\projects-navigation-Projec-83a54--the-others-open-on-request-chromium\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: test-results\projects-navigation-Projec-83a54--the-others-open-on-request-chromium\error-context.md
-
-  7 failed
-    [chromium] › specs\project-sections.spec.ts:188:3 › Project sections › each kind offers its own views, at both project addresses 
-    [chromium] › specs\project-sections.spec.ts:223:3 › Project sections › an unknown segment lands on the first view, at both addresses 
-    [chromium] › specs\project-sections.spec.ts:241:3 › Project sections › every project address resolves to one canonical address, under a breadcrumb 
-    [chromium] › specs\project-sections.spec.ts:270:3 › Project sections › on a narrow screen the tab bar stands in for the sidebar expansion 
-    [chromium] › specs\projects-navigation.spec.ts:64:3 › Projects navigation › a universe keeps every section it had, and gains its projects beside them 
-    [chromium] › specs\projects-navigation.spec.ts:98:3 › Projects navigation › opening a project from a universe keeps the author inside that universe 
-    [chromium] › specs\projects-navigation.spec.ts:134:3 › Projects navigation › only the project being read is expanded, and the others open on request 
-  36 passed (2.5m)
-exit 1
+  43 passed (3.3m)
+exit 0
