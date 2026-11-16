@@ -853,7 +853,7 @@ test.describe('stories', () => {
       await page.emulateMedia({ colorScheme })
       await page.setViewportSize({ width, height: 900 })
 
-      // At every width the stories list is a door on the Overview (#191 took it out of the sidebar).
+      // At every width the stories list is reached by its address (#191 took it out of the sidebar, #273 off the Overview).
       await page.goto(`/app/universes/${universeId}`)
       await expect(page.getByTestId('workspace-name')).toBeAttached()
       await page.goto(`/app/universes/${universeId}/stories`)
