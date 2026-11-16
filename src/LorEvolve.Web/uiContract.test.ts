@@ -1,0 +1,250 @@
+// Run with `node --test uiContract.test.ts` (Node 22.18+ strips the types itself).
+//
+// Keeps the UI on its shared parts. Each list below only shrinks: a task that fixes a file removes
+// the file from the list in its own PR, and a stale entry fails so nobody forgets.
+// Catalogue: docs/design/ui-components.md. Tracker: #248.
+
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
+
+const webRoot = import.meta.dirname
+
+// Classes kept with no rule on purpose, because code or an E2E spec reads them as a hook.
+// Only shrinks. Each entry says who reads it.
+const HOOK_ONLY = new Map<string, string>([
+  ['entitycard__status', 'E2E text-direction.spec.ts reads it'],
+  ['entry__head', 'E2E shell-layout and text-direction specs read it'],
+  ['moment__player', 'E2E timeline and text-direction specs read it'],
+])
+
+// Classes used in a .tsx file with no rule in styles.css, mapped to the Issue that removes them.
+// Only shrinks. #248 means no child Issue removes it: owner decision at the end of the tracker.
+const UNDEFINED_TODAY = new Map<string, string>([
+  ['aichange', '#248'],
+  ['aichanges', '#248'],
+  ['aichanges__summary', '#248'],
+  ['article__historytoggle', '#248'],
+  ['artwork', '#248'],
+  ['avatarcircle', '#255'],
+  ['board', '#248'],
+  ['board__layout', '#248'],
+  ['boardcanvas__controls', '#248'],
+  ['boardlist', '#248'],
+  ['chapter__name', '#248'],
+  ['checkbox', '#248'],
+  ['chron', '#248'],
+  ['chronologypage', '#248'],
+  ['collab', '#248'],
+  ['colourfield', '#248'],
+  ['connect__url', '#248'],
+  ['connectdrawer', '#248'],
+  ['connectedapps', '#248'],
+  ['connectedapps__controls', '#248'],
+  ['consent__form', '#248'],
+  ['contents__heading', '#248'],
+  ['entitycard__tile', '#248'],
+  ['entry__article', '#248'],
+  ['entry__fieldimages', '#252'],
+  ['era__body', '#248'],
+  ['era__run', '#248'],
+  ['eranav', '#248'],
+  ['eras--reading', '#248'],
+  ['family', '#248'],
+  ['family__othername', '#248'],
+  ['history__actions', '#248'],
+  ['history__item', '#248'],
+  ['history__line', '#248'],
+  ['idea__preview', '#248'],
+  ['ideapicker', '#248'],
+  ['ideas__outcome', '#248'],
+  ['integrity', '#248'],
+  ['knowledge', '#248'],
+  ['knowledge__list', '#248'],
+  ['lore__loading', '#248'],
+  ['lorecontext', '#248'],
+  ['loretrigger', '#248'],
+  ['manuscript__editor', '#248'],
+  ['maps', '#248'],
+  ['mapscreen', '#248'],
+  ['masscreate', '#248'],
+  ['months--reading', '#248'],
+  ['muted', '#248'],
+  ['namelist', '#248'],
+  ['pauthor__worlds', '#248'],
+  ['plore', '#248'],
+  ['plotarc__name', '#248'],
+  ['portal__workspace', '#248'],
+  ['privatenote', '#248'],
+  ['profile__publicname', '#248'],
+  ['pstory', '#248'],
+  ['pstory__head', '#248'],
+  ['pstory__scene', '#248'],
+  ['publication__form', '#248'],
+  ['publish', '#248'],
+  ['publish__status', '#248'],
+  ['pworld', '#248'],
+  ['pworld--loading', '#248'],
+  ['pworld-hero__text', '#248'],
+  ['quickcreate', '#248'],
+  ['recovery__since', '#248'],
+  ['relation__kind', '#248'],
+  ['relation__menu', '#248'],
+  ['relation__span', '#248'],
+  ['relations__group', '#248'],
+  ['relform__subject', '#248'],
+  ['restore__summary', '#248'],
+  ['reviewtrigger', '#248'],
+  ['scene__refs--beats', '#248'],
+  ['settings', '#248'],
+  ['stories', '#248'],
+  ['storylinks', '#248'],
+  ['terms', '#248'],
+  ['terms__new', '#248'],
+  ['termselect', '#248'],
+  ['token__note', '#248'],
+  ['trash', '#248'],
+  ['typegroups', '#248'],
+  ['types', '#248'],
+  ['types__trashed', '#248'],
+  ['unisearch__excerpttext', '#248'],
+])
+
+// Files that write their own <dialog>. Only shrinks; the tracker ends at five.
+const DIALOG_FILES = [
+  'src/components/ChapterForm.tsx',
+  'src/components/ConfirmDialog.tsx',
+  'src/components/ConnectToAi.tsx',
+  'src/components/EraForm.tsx',
+  'src/components/FamilyKindDialog.tsx',
+  'src/components/FamilyMemberDetails.tsx',
+  'src/components/FeedbackButton.tsx',
+  'src/components/FieldSectionsDialog.tsx',
+  'src/components/IdeaBoardPicker.tsx',
+  'src/components/IdeaReferencePicker.tsx',
+  'src/components/ImageCropDialog.tsx',
+  'src/components/ImageViewer.tsx',
+  'src/components/KnowledgeView.tsx',
+  'src/components/LoreContext.tsx',
+  'src/components/MapForm.tsx',
+  'src/components/MapPinForm.tsx',
+  'src/components/PlotArcForm.tsx',
+  'src/components/PrivateNotes.tsx',
+  'src/components/ProgressionItemForm.tsx',
+  'src/components/QuickCreateDialog.tsx',
+  'src/components/ReviewComments.tsx',
+  'src/components/SceneForm.tsx',
+  'src/components/StoryForm.tsx',
+  'src/components/StoryPublicSummaryForm.tsx',
+  'src/components/TimelineEntryForm.tsx',
+  'src/components/TypeDialog.tsx',
+  'src/components/TypeFields.tsx',
+]
+
+// Files that write a field as label > span.field__label with no htmlFor. Only shrinks; the tracker ends at zero.
+const SPAN_LABEL_FILES = [
+  'src/components/CalendarEditor.tsx',
+  'src/components/ChapterPages.tsx',
+  'src/components/ChronologyEditor.tsx',
+  'src/components/FamilyLinkForm.tsx',
+  'src/components/FieldImageInput.tsx',
+  'src/components/IdeaReferencePicker.tsx',
+  'src/components/ProjectEntries.tsx',
+  'src/components/ProjectSchema.tsx',
+  'src/components/ProjectSeasons.tsx',
+  'src/components/QuickCreateDialog.tsx',
+  'src/components/RelationshipSection.tsx',
+  'src/components/StoryForm.tsx',
+  'src/components/TimelineEntryForm.tsx',
+  'src/pages/MassCreatePage.tsx',
+  'src/pages/ProjectPage.tsx',
+]
+
+// Font sizes written as a literal in styles.css instead of a --text-* token. Only goes down:
+// lower it when a screen's sizes move to tokens.
+const MAX_LITERAL_FONT_SIZES = 214
+
+const tsxFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
+  .filter((file) => file.endsWith('.tsx'))
+  .map((file) => 'src/' + file.replaceAll('\\', '/'))
+  .sort()
+
+const read = (file: string) => readFileSync(join(webRoot, file), 'utf8')
+const stylesheet = read('src/styles.css').replace(/\/\*[\s\S]*?\*\//g, '')
+
+const definedClasses = new Set(
+  [...stylesheet.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)].map((match) => match[1]),
+)
+
+// className="a b" and the default-parameter form className = 'a b'. Template literals and {...} are skipped.
+const usedClasses = new Map<string, Set<string>>()
+for (const file of tsxFiles) {
+  for (const match of read(file).matchAll(/className\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+    for (const name of (match[1] ?? match[2]).split(/\s+/).filter(Boolean)) {
+      if (!usedClasses.has(name)) usedClasses.set(name, new Set())
+      usedClasses.get(name)!.add(file)
+    }
+  }
+}
+
+const filesWith = (pattern: RegExp) => tsxFiles.filter((file) => pattern.test(read(file)))
+
+test('every class a component uses has a rule in styles.css', () => {
+  const missing = [...usedClasses]
+    .filter(
+      ([name]) => !definedClasses.has(name) && !HOOK_ONLY.has(name) && !UNDEFINED_TODAY.has(name),
+    )
+    .map(([name, files]) => `.${name} (${[...files].sort().join(', ')})`)
+  assert.deepEqual(
+    missing,
+    [],
+    'Add a rule to styles.css, or reuse a class from docs/design/ui-components.md',
+  )
+
+  const stale = [...HOOK_ONLY.keys(), ...UNDEFINED_TODAY.keys()].filter(
+    (name) => definedClasses.has(name) || !usedClasses.has(name),
+  )
+  assert.deepEqual(stale, [], 'Now defined or unused: remove it from the list')
+})
+
+test('no new hand-written <dialog>', () => {
+  const found = filesWith(/<dialog/)
+  assert.deepEqual(
+    found.filter((file) => !DIALOG_FILES.includes(file)),
+    [],
+    'Use the shared drawer or ConfirmHost instead of a new <dialog>',
+  )
+  assert.deepEqual(
+    DIALOG_FILES.filter((file) => !found.includes(file)),
+    [],
+    'No longer writes a <dialog>: remove it from DIALOG_FILES',
+  )
+})
+
+test('no new span-label fields', () => {
+  const found = filesWith(/<span[^>]*field__label/)
+  assert.deepEqual(
+    found.filter((file) => !SPAN_LABEL_FILES.includes(file)),
+    [],
+    'Use Field (label with htmlFor, hint, control, error) instead of label > span.field__label',
+  )
+  assert.deepEqual(
+    SPAN_LABEL_FILES.filter((file) => !found.includes(file)),
+    [],
+    'No longer writes a span label: remove it from SPAN_LABEL_FILES',
+  )
+})
+
+test('literal font sizes in styles.css do not grow', () => {
+  let count = 0
+  for (const match of stylesheet.matchAll(/(?<![-\w])font-size\s*:\s*([^;}]+)/g)) {
+    const value = match[1].trim()
+    if (/\d/.test(value) && !value.startsWith('var(')) count++
+  }
+  assert.ok(
+    count <= MAX_LITERAL_FONT_SIZES,
+    `${count} literal font sizes, limit ${MAX_LITERAL_FONT_SIZES}: use a --text-* token`,
+  )
+  assert.equal(count, MAX_LITERAL_FONT_SIZES, 'Fewer than the limit: lower MAX_LITERAL_FONT_SIZES')
+})

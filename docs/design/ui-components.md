@@ -1,0 +1,57 @@
+# UI components
+
+One page. Read it before any UI change, and reuse a row before writing something new.
+The design contract is `LOREVOLVE_VISUAL_REFACTOR.md` section 5. This page lists what exists.
+
+Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first rule in `styles.css`.
+
+## Need, use this
+
+| Need | Use |
+| --- | --- |
+| Screen title, crumb, lede, actions | `components/PageHeader.tsx` |
+| A form field: label, hint, control, error | `components/Field.tsx` (input only today) |
+| A button or a link that looks like one | `.button` 518, with `--secondary`, `--text`, `--danger`, `--sm`; the icon inside is `components/ActionIcon.tsx` |
+| An icon with a name | `.iconbutton` 695 |
+| Save with its status | `components/SaveAction.tsx` |
+| Row tools behind a ⋯ | `components/ActionMenu.tsx` |
+| Empty list or view | `components/EmptyState.tsx` |
+| A status word with its glyph | `components/StatusBadge.tsx` |
+| An entry's picture or type icon | `components/EntityTile.tsx` |
+| Tabs on one screen | `QueryTabList` and `TabPanel` from `components/QueryTabs.tsx` |
+| Routed views of one object | `.views` 9998 |
+| A choice on the page | `.segmented` 1980 |
+| Confirm a destructive step | `confirmAction` in `lib/confirm.ts:79`, drawn by `ConfirmHost` in `components/ConfirmDialog.tsx` (ADR 0049) |
+| Confirm leaving unsaved work | `confirmDiscard` in `lib/confirm.ts:91` |
+| Guard a drawer against a lost draft | `useDrawerGuard` in `lib/drawerGuard.ts:31` |
+| A drawer's look | `.drawer*` 9265 |
+| A message box | `.callout` 2435, `.notice` 2422 |
+| A form's own message | `.form__message` 422 |
+| Sticky status and actions for a document or drawer | `.actionbar` 2539 |
+| A section heading with its rule | `.sectionrule` 1508 |
+| A loading placeholder | `.skeleton` 2556 |
+
+Form and button rules start with their own comments: forms at `styles.css:409`, buttons at `styles.css:507`.
+The stylesheet keeps shared patterns in its "Shared surfaces" section, at line 2495.
+
+## Tokens
+
+Custom properties of the first `:root` block (`styles.css:37-130`). Use these names, not literal values. Values are left out so this page does not drift when a colour moves.
+
+- Surfaces: `--paper`, `--surface`, `--raised`, `--plate`, `--plate-ink`, `--plate-muted`, `--plate-ink-accent`
+- Ink: `--ink`, `--muted`, `--accent`, `--danger`, `--warning`
+- Lines: `--rule`, `--rule-strong`, `--border-control`, `--accent-rule`
+- Action and state: `--primary-bg`, `--primary-ink`, `--accent-wash`, `--hover-wash`, `--press-wash`, `--focus-ring`
+- Atmosphere: `--atmosphere-opacity`, `--atmosphere-veil`
+- Shadows and radii: `--shadow-1`, `--shadow-2`, `--shadow-3`, `--radius-xs`, `--radius-sm`, `--radius-md`, `--radius-full`
+- Type: `--display`, `--ui`, `--text-xs`, `--text-sm`, `--text-ui`, `--text-body`, `--text-item`, `--text-section`, `--text-page`, `--text-document`, `--title-tracking`
+- Space: `--space-1` to `--space-9`
+- Control sizes and layout: `--control-sm`, `--control-md`, `--control-touch`, `--gutter`, `--canvas-max`
+- Motion: `--duration-1`, `--duration-2`, `--duration-3`, `--ease`
+- Layers: `--z-sticky`, `--z-dropdown`, `--z-drawer`, `--z-modal`
+
+## One rule
+
+Add a class or a component only when no row above fits. Add its row to this page in the same PR.
+
+`uiContract.test.ts` (run by `npm test`) holds the line. It fails on a class with no rule in `styles.css`, a new hand-written `<dialog`, a new `label > span.field__label` field, and more literal `font-size` values than the stylesheet has now. Its allowlists only shrink: fix a file, then remove it from the list.
